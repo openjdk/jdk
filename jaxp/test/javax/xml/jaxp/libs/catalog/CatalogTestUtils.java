@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@ package catalog;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
-
 import jaxp.library.JAXPTestUtilities;
 
 /*
@@ -115,20 +114,20 @@ final class CatalogTestUtils {
     }
 
     // Gets the paths of the specified catalogs.
-    private static String[] getCatalogPaths(String... catalogNames) {
+    private static URI[] getCatalogPaths(String... catalogNames) {
         return catalogNames == null
                 ? null
                 : Stream.of(catalogNames).map(
                         catalogName -> getCatalogPath(catalogName)).collect(
-                                Collectors.toList()).toArray(new String[0]);
+                                Collectors.toList()).toArray(new URI[0]);
     }
 
     // Gets the paths of the specified catalogs.
-    static String getCatalogPath(String catalogName) {
+    static URI getCatalogPath(String catalogName) {
         return catalogName == null
                 ? null
-                : JAXPTestUtilities.getPathByClassName(CatalogTestUtils.class, "catalogFiles")
-                        + catalogName;
+                : Paths.get(JAXPTestUtilities.getPathByClassName(CatalogTestUtils.class, "catalogFiles")
+                        + catalogName).toUri();
     }
 
     /* ********** jaxp.properties ********** */

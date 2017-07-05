@@ -33,8 +33,8 @@ import java.util.Hashtable;
 import java.net.URL;
 import java.awt.MenuBar;
 
-public
-interface AppletViewerFactory {
+@Deprecated(since = "9")
+public interface AppletViewerFactory {
         public AppletViewer createAppletViewer(int x, int y, URL doc,
                                                Hashtable<String, String> atts);
         public MenuBar getBaseMenuBar();

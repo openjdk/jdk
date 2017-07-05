@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,13 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Paths;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Permissions;
+import java.security.Policy;
+import java.security.ProtectionDomain;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogResolver;
@@ -133,8 +140,8 @@ public class CatalogSupportBase {
         dtd_system = filepath + "system.dtd";
         dtd_systemResolved = "<!ENTITY system \"resolved by an EntityHandler, rather than a Catalog\">";
 
-        xml_catalog = filepath + "CatalogSupport.xml";
-        xml_bogus_catalog = filepath + "CatalogSupport_bogus.xml";
+        xml_catalog = Paths.get(filepath + "CatalogSupport.xml").toUri().toASCIIString();
+        xml_bogus_catalog = Paths.get(filepath + "CatalogSupport_bogus.xml").toUri().toASCIIString();
 
         xml_xInclude = "<?xml version=\"1.0\"?>\n" +
             "<xinclude:include xmlns:xinclude=\"http://www.w3.org/2001/XInclude\"\n" +
@@ -995,6 +1002,37 @@ public class CatalogSupportBase {
                 }
             }
             return null;
+        }
+    }
+
+    /**
+     * Simple policy implementation that grants a set of permissions to all code
+     * sources and protection domains.
+     */
+    static class SimplePolicy extends Policy {
+
+        private final Permissions perms;
+
+        public SimplePolicy(Permission... permissions) {
+            perms = new Permissions();
+            for (Permission permission : permissions) {
+                perms.add(permission);
+            }
+        }
+
+        @Override
+        public PermissionCollection getPermissions(CodeSource cs) {
+            return perms;
+        }
+
+        @Override
+        public PermissionCollection getPermissions(ProtectionDomain pd) {
+            return perms;
+        }
+
+        @Override
+        public boolean implies(ProtectionDomain pd, Permission p) {
+            return perms.implies(p);
         }
     }
 }

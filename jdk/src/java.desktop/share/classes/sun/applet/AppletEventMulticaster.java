@@ -36,7 +36,12 @@ import java.io.IOException;
  * responsible for dispatching events to them.
  *
  * @author  Sunita Mani
+ *
+ * @deprecated The Applet API is deprecated. See the
+ * <a href="../../java/applet/package-summary.html"> java.applet package
+ * documentation</a> for further information.
  */
+@Deprecated(since = "9")
 public class AppletEventMulticaster implements AppletListener {
 
     private final AppletListener a, b;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,14 +17,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: SAX2DTM.java,v 1.2.4.1 2005/09/15 08:15:11 suresh_emailid Exp $
- */
+
 package com.sun.org.apache.xml.internal.dtm.ref.sax2dtm;
 
-
-import com.sun.org.apache.xml.internal.dtm.*;
-import com.sun.org.apache.xml.internal.dtm.ref.*;
+import com.sun.org.apache.xml.internal.dtm.DTM;
+import com.sun.org.apache.xml.internal.dtm.DTMManager;
+import com.sun.org.apache.xml.internal.dtm.DTMWSFilter;
+import com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBaseIterators;
+import com.sun.org.apache.xml.internal.dtm.ref.DTMManagerDefault;
+import com.sun.org.apache.xml.internal.dtm.ref.DTMStringPool;
+import com.sun.org.apache.xml.internal.dtm.ref.DTMTreeWalker;
+import com.sun.org.apache.xml.internal.dtm.ref.IncrementalSAXSource;
+import com.sun.org.apache.xml.internal.dtm.ref.NodeLocator;
 import com.sun.org.apache.xml.internal.res.XMLErrorResources;
 import com.sun.org.apache.xml.internal.res.XMLMessages;
 import com.sun.org.apache.xml.internal.utils.FastStringBuffer;
@@ -36,13 +40,23 @@ import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
 import com.sun.org.apache.xml.internal.utils.WrappedRuntimeException;
 import com.sun.org.apache.xml.internal.utils.XMLString;
 import com.sun.org.apache.xml.internal.utils.XMLStringFactory;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 import javax.xml.transform.Source;
 import javax.xml.transform.SourceLocator;
-import org.xml.sax.*;
-import org.xml.sax.ext.*;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.DTDHandler;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.ext.DeclHandler;
+import org.xml.sax.ext.LexicalHandler;
 
 /**
  * This class implements a DTM that tends to be optimized more for speed than
@@ -82,7 +96,6 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * Made protected rather than private so SAX2RTFDTM can access it.
    */
-  //private FastStringBuffer m_chars = new FastStringBuffer(13, 13);
   protected FastStringBuffer m_chars;
 
   /** This vector holds offset and length data.
@@ -102,8 +115,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
   /** Namespace support, only relevent at construction time.
    * Made protected rather than private so SAX2RTFDTM can access it.
    */
-  transient protected java.util.Vector m_prefixMappings =
-    new java.util.Vector();
+  transient protected Vector<String> m_prefixMappings = new Vector<>();
 
   /** Namespace support, only relevent at construction time.
    * Made protected rather than private so SAX2RTFDTM can access it.
@@ -164,7 +176,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * Vector of entities.  Each record is composed of four Strings:
    *  publicId, systemID, notationName, and name.
    */
-  private Vector m_entities = null;
+  private ArrayList<String> m_entities = null;
 
   /** m_entities public ID offset. */
   private static final int ENTITY_FIELD_PUBLICID = 0;
@@ -196,13 +208,15 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    */
   protected boolean m_useSourceLocationProperty = false;
 
-   /** Made protected for access by SAX2RTFDTM.
+  /** Made protected for access by SAX2RTFDTM.
    */
   protected StringVector m_sourceSystemId;
-   /** Made protected for access by SAX2RTFDTM.
+
+  /** Made protected for access by SAX2RTFDTM.
    */
   protected IntVector m_sourceLine;
-   /** Made protected for access by SAX2RTFDTM.
+
+  /** Made protected for access by SAX2RTFDTM.
    */
   protected IntVector m_sourceColumn;
 
@@ -252,23 +266,19 @@ public class SAX2DTM extends DTMDefaultBaseIterators
                  boolean usePrevsib,
                  boolean newNameTable)
   {
-
     super(mgr, source, dtmIdentity, whiteSpaceFilter,
           xstringfactory, doIndexing, blocksize, usePrevsib, newNameTable);
 
     // %OPT% Use smaller sizes for all internal storage units when
     // the blocksize is small. This reduces the cost of creating an RTF.
-    if (blocksize <= 64)
-    {
+    if (blocksize <= 64) {
       m_data = new SuballocatedIntVector(blocksize, DEFAULT_NUMBLOCKS_SMALL);
       m_dataOrQName = new SuballocatedIntVector(blocksize, DEFAULT_NUMBLOCKS_SMALL);
       m_valuesOrPrefixes = new DTMStringPool(16);
       m_chars = new FastStringBuffer(7, 10);
       m_contextIndexes = new IntStack(4);
       m_parents = new IntStack(4);
-    }
-    else
-    {
+    } else {
       m_data = new SuballocatedIntVector(blocksize, DEFAULT_NUMBLOCKS);
       m_dataOrQName = new SuballocatedIntVector(blocksize, DEFAULT_NUMBLOCKS);
       m_valuesOrPrefixes = new DTMStringPool();
@@ -289,7 +299,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
     // m_useSourceLocationProperty=com.sun.org.apache.xalan.internal.processor.TransformerFactoryImpl.m_source_location;
     m_useSourceLocationProperty = mgr.getSource_location();
     m_sourceSystemId = (m_useSourceLocationProperty) ? new StringVector() : null;
-        m_sourceLine = (m_useSourceLocationProperty) ?  new IntVector() : null;
+    m_sourceLine = (m_useSourceLocationProperty) ?  new IntVector() : null;
     m_sourceColumn = (m_useSourceLocationProperty) ?  new IntVector() : null;
   }
 
@@ -297,8 +307,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * Set whether information about document source location
    * should be maintained or not.
    */
-  public void setUseSourceLocation(boolean useSourceLocation)
-  {
+  public void setUseSourceLocation(boolean useSourceLocation) {
     m_useSourceLocationProperty = useSourceLocation;
   }
 
@@ -309,17 +318,14 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @return The data or qualified name, or DTM.NULL.
    */
-  protected int _dataOrQName(int identity)
-  {
-
+  protected int _dataOrQName(int identity) {
     if (identity < m_size)
       return m_dataOrQName.elementAt(identity);
 
     // Check to see if the information requested has been processed, and,
     // if not, advance the iterator until we the information has been
     // processed.
-    while (true)
-    {
+    while (true) {
       boolean isMore = nextNode();
 
       if (!isMore)
@@ -332,8 +338,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
   /**
    * Ask the CoRoutine parser to doTerminate and clear the reference.
    */
-  public void clearCoRoutine()
-  {
+  public void clearCoRoutine() {
     clearCoRoutine(true);
   }
 
@@ -344,11 +349,8 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param callDoTerminate true of doTerminate should be called on the
    * coRoutine parser.
    */
-  public void clearCoRoutine(boolean callDoTerminate)
-  {
-
-    if (null != m_incrementalSAXSource)
-    {
+  public void clearCoRoutine(boolean callDoTerminate) {
+    if (null != m_incrementalSAXSource) {
       if (callDoTerminate)
         m_incrementalSAXSource.deliverMoreNodes(false);
 
@@ -368,9 +370,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param incrementalSAXSource The parser that we want to recieve events from
    * on demand.
    */
-  public void setIncrementalSAXSource(IncrementalSAXSource incrementalSAXSource)
-  {
-
+  public void setIncrementalSAXSource(IncrementalSAXSource incrementalSAXSource) {
     // Establish coroutine link so we can request more data
     //
     // Note: It's possible that some versions of IncrementalSAXSource may
@@ -406,11 +406,9 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * Note that IncrementalSAXSource_Filter is package private, hence
    * it can be statically referenced using instanceof (CR 6537912).
    */
-  public ContentHandler getContentHandler()
-  {
-
-    if (m_incrementalSAXSource.getClass()
-        .getName().equals("com.sun.org.apache.xml.internal.dtm.ref.IncrementalSAXSource_Filter"))
+  public ContentHandler getContentHandler() {
+    if (m_incrementalSAXSource.getClass().getName()
+        .equals("com.sun.org.apache.xml.internal.dtm.ref.IncrementalSAXSource_Filter"))
       return (ContentHandler) m_incrementalSAXSource;
     else
       return this;
@@ -429,11 +427,9 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * Note that IncrementalSAXSource_Filter is package private, hence
    * it can be statically referenced using instanceof (CR 6537912).
    */
-  public LexicalHandler getLexicalHandler()
-  {
-
-    if (m_incrementalSAXSource.getClass()
-        .getName().equals("com.sun.org.apache.xml.internal.dtm.ref.IncrementalSAXSource_Filter"))
+  public LexicalHandler getLexicalHandler() {
+    if (m_incrementalSAXSource.getClass().getName()
+        .equals("com.sun.org.apache.xml.internal.dtm.ref.IncrementalSAXSource_Filter"))
       return (LexicalHandler) m_incrementalSAXSource;
     else
       return this;
@@ -444,8 +440,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @return null if this model doesn't respond to SAX entity ref events.
    */
-  public EntityResolver getEntityResolver()
-  {
+  public EntityResolver getEntityResolver() {
     return this;
   }
 
@@ -454,8 +449,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @return null if this model doesn't respond to SAX dtd events.
    */
-  public DTDHandler getDTDHandler()
-  {
+  public DTDHandler getDTDHandler() {
     return this;
   }
 
@@ -464,8 +458,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @return null if this model doesn't respond to SAX error events.
    */
-  public ErrorHandler getErrorHandler()
-  {
+  public ErrorHandler getErrorHandler() {
     return this;
   }
 
@@ -474,8 +467,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @return null if this model doesn't respond to SAX Decl events.
    */
-  public DeclHandler getDeclHandler()
-  {
+  public DeclHandler getDeclHandler() {
     return this;
   }
 
@@ -485,8 +477,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * transformation and the parse run simultaneously. Guidance to the
    * DTMManager.
    */
-  public boolean needsTwoThreads()
-  {
+  public boolean needsTwoThreads() {
     return null != m_incrementalSAXSource;
   }
 
@@ -509,9 +500,8 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    */
   public void dispatchCharactersEvents(int nodeHandle, ContentHandler ch,
                                        boolean normalize)
-          throws SAXException
+    throws SAXException
   {
-
     int identity = makeNodeIdentity(nodeHandle);
 
     if (identity == DTM.NULL)
@@ -519,8 +509,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
 
     int type = _type(identity);
 
-    if (isTextType(type))
-    {
+    if (isTextType(type)) {
       int dataIndex = m_dataOrQName.elementAt(identity);
       int offset = m_data.elementAt(dataIndex);
       int length = m_data.elementAt(dataIndex + 1);
@@ -529,13 +518,10 @@ public class SAX2DTM extends DTMDefaultBaseIterators
         m_chars.sendNormalizedSAXcharacters(ch, offset, length);
       else
         m_chars.sendSAXcharacters(ch, offset, length);
-    }
-    else
-    {
+    } else {
       int firstChild = _firstch(identity);
 
-      if (DTM.NULL != firstChild)
-      {
+      if (DTM.NULL != firstChild) {
         int offset = -1;
         int length = 0;
         int startNode = identity;
@@ -545,12 +531,10 @@ public class SAX2DTM extends DTMDefaultBaseIterators
         do {
           type = _type(identity);
 
-          if (isTextType(type))
-          {
+          if (isTextType(type)) {
             int dataIndex = _dataOrQName(identity);
 
-            if (-1 == offset)
-            {
+            if (-1 == offset) {
               offset = m_data.elementAt(dataIndex);
             }
 
@@ -560,35 +544,30 @@ public class SAX2DTM extends DTMDefaultBaseIterators
           identity = getNextNodeIdentity(identity);
         } while (DTM.NULL != identity && (_parent(identity) >= startNode));
 
-        if (length > 0)
-        {
+        if (length > 0) {
           if(normalize)
             m_chars.sendNormalizedSAXcharacters(ch, offset, length);
           else
             m_chars.sendSAXcharacters(ch, offset, length);
         }
-      }
-      else if(type != DTM.ELEMENT_NODE)
-      {
+      } else if(type != DTM.ELEMENT_NODE) {
         int dataIndex = _dataOrQName(identity);
 
-        if (dataIndex < 0)
-        {
+        if (dataIndex < 0) {
           dataIndex = -dataIndex;
           dataIndex = m_data.elementAt(dataIndex + 1);
         }
 
         String str = m_valuesOrPrefixes.indexToString(dataIndex);
 
-          if(normalize)
-            FastStringBuffer.sendNormalizedSAXcharacters(str.toCharArray(),
-                                                         0, str.length(), ch);
-          else
-            ch.characters(str.toCharArray(), 0, str.length());
+        if(normalize)
+          FastStringBuffer.sendNormalizedSAXcharacters(str.toCharArray(),
+                                                       0, str.length(), ch);
+        else
+          ch.characters(str.toCharArray(), 0, str.length());
       }
     }
   }
-
 
   /**
    * Given a node handle, return its DOM-style node name. This will
@@ -599,39 +578,29 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * %REVIEW% Document when empty string is possible...
    * %REVIEW-COMMENT% It should never be empty, should it?
    */
-  public String getNodeName(int nodeHandle)
-  {
-
+  public String getNodeName(int nodeHandle) {
     int expandedTypeID = getExpandedTypeID(nodeHandle);
     // If just testing nonzero, no need to shift...
     int namespaceID = m_expandedNameTable.getNamespaceID(expandedTypeID);
 
-    if (0 == namespaceID)
-    {
+    if (0 == namespaceID) {
       // Don't retrieve name until/unless needed
       // String name = m_expandedNameTable.getLocalName(expandedTypeID);
       int type = getNodeType(nodeHandle);
 
-      if (type == DTM.NAMESPACE_NODE)
-      {
+      if (type == DTM.NAMESPACE_NODE) {
         if (null == m_expandedNameTable.getLocalName(expandedTypeID))
           return "xmlns";
         else
           return "xmlns:" + m_expandedNameTable.getLocalName(expandedTypeID);
-      }
-      else if (0 == m_expandedNameTable.getLocalNameID(expandedTypeID))
-      {
+      } else if (0 == m_expandedNameTable.getLocalNameID(expandedTypeID)) {
         return m_fixednames[type];
-      }
-      else
+      } else
         return m_expandedNameTable.getLocalName(expandedTypeID);
-    }
-    else
-    {
+    } else {
       int qnameIndex = m_dataOrQName.elementAt(makeNodeIdentity(nodeHandle));
 
-      if (qnameIndex < 0)
-      {
+      if (qnameIndex < 0) {
         qnameIndex = -qnameIndex;
         qnameIndex = m_data.elementAt(qnameIndex);
       }
@@ -648,27 +617,21 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param nodeHandle the id of the node.
    * @return String Name of this node, which may be an empty string.
    */
-  public String getNodeNameX(int nodeHandle)
-  {
-
+  public String getNodeNameX(int nodeHandle) {
     int expandedTypeID = getExpandedTypeID(nodeHandle);
     int namespaceID = m_expandedNameTable.getNamespaceID(expandedTypeID);
 
-    if (0 == namespaceID)
-    {
+    if (namespaceID == 0) {
       String name = m_expandedNameTable.getLocalName(expandedTypeID);
 
       if (name == null)
         return "";
       else
         return name;
-    }
-    else
-    {
+    } else {
       int qnameIndex = m_dataOrQName.elementAt(makeNodeIdentity(nodeHandle));
 
-      if (qnameIndex < 0)
-      {
+      if (qnameIndex < 0) {
         qnameIndex = -qnameIndex;
         qnameIndex = m_data.elementAt(qnameIndex);
       }
@@ -686,11 +649,9 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @return <code>true</code> if the attribute was specified;
    *         <code>false</code> if it was defaulted.
    */
-  public boolean isAttributeSpecified(int attributeHandle)
-  {
-
+  public boolean isAttributeSpecified(int attributeHandle) {
     // I'm not sure if I want to do anything with this...
-    return true;  // ??
+    return true; // ??
   }
 
   /**
@@ -701,9 +662,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @return the system identifier String object, or null if there is none.
    */
-  public String getDocumentTypeDeclarationSystemIdentifier()
-  {
-
+  public String getDocumentTypeDeclarationSystemIdentifier() {
     /** @todo: implement this com.sun.org.apache.xml.internal.dtm.DTMDefaultBase abstract method */
     error(XMLMessages.createXMLMessage(XMLErrorResources.ER_METHOD_NOT_SUPPORTED, null));//"Not yet supported!");
 
@@ -717,14 +676,11 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param identity The node identity (index).
    * @return identity+1, or DTM.NULL.
    */
-  protected int getNextNodeIdentity(int identity)
-  {
-
+  protected int getNextNodeIdentity(int identity) {
     identity += 1;
 
-    while (identity >= m_size)
-    {
-      if (null == m_incrementalSAXSource)
+    while (identity >= m_size) {
+      if (m_incrementalSAXSource == null)
         return DTM.NULL;
 
       nextNode();
@@ -739,10 +695,10 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param nodeHandle The node ID.
    * @param ch A non-null reference to a ContentHandler.
    *
-   * @throws org.xml.sax.SAXException
+   * @throws SAXException
    */
-  public void dispatchToEvents(int nodeHandle, org.xml.sax.ContentHandler ch)
-          throws org.xml.sax.SAXException
+  public void dispatchToEvents(int nodeHandle, ContentHandler ch)
+          throws SAXException
   {
 
     DTMTreeWalker treeWalker = m_walker;
@@ -1087,28 +1043,22 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @return String containing the URI of the Unparsed Entity, or an
    * empty string if no such entity exists.
    */
-  public String getUnparsedEntityURI(String name)
-  {
-
+  public String getUnparsedEntityURI(String name) {
     String url = "";
 
-    if (null == m_entities)
+    if (null == m_entities) {
       return url;
+    }
 
     int n = m_entities.size();
 
-    for (int i = 0; i < n; i += ENTITY_FIELDS_PER)
-    {
-      String ename = (String) m_entities.elementAt(i + ENTITY_FIELD_NAME);
+    for (int i = 0; i < n; i += ENTITY_FIELDS_PER) {
+      String ename = m_entities.get(i + ENTITY_FIELD_NAME);
 
-      if (null != ename && ename.equals(name))
-      {
-        String nname = (String) m_entities.elementAt(i
-                         + ENTITY_FIELD_NOTATIONNAME);
+      if (null != ename && ename.equals(name)) {
+        String nname = m_entities.get(i + ENTITY_FIELD_NOTATIONNAME);
 
-        if (null != nname)
-        {
-
+        if (null != nname) {
           // The draft says: "The XSLT processor may use the public
           // identifier to generate a URI for the entity instead of the URI
           // specified in the system identifier. If the XSLT processor does
@@ -1118,11 +1068,10 @@ public class SAX2DTM extends DTMDefaultBaseIterators
           // the resource containing the entity declaration as the base
           // URI [RFC2396]."
           // So I'm falling a bit short here.
-          url = (String) m_entities.elementAt(i + ENTITY_FIELD_SYSTEMID);
+          url = m_entities.get(i + ENTITY_FIELD_SYSTEMID);
 
-          if (null == url)
-          {
-            url = (String) m_entities.elementAt(i + ENTITY_FIELD_PUBLICID);
+          if (null == url) {
+            url = m_entities.get(i + ENTITY_FIELD_PUBLICID);
           }
         }
 
@@ -1400,26 +1349,18 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @return The prefix if there is one, or null.
    */
-  public String getPrefix(String qname, String uri)
-  {
-
+  public String getPrefix(String qname, String uri) {
     String prefix;
     int uriIndex = -1;
 
-    if (null != uri && uri.length() > 0)
-    {
-
-      do
-      {
+    if (null != uri && uri.length() > 0) {
+      do {
         uriIndex = m_prefixMappings.indexOf(uri, ++uriIndex);
-      } while ( (uriIndex & 0x01) == 0);
+      } while ((uriIndex & 0x01) == 0);
 
-      if (uriIndex >= 0)
-      {
-        prefix = (String) m_prefixMappings.elementAt(uriIndex - 1);
-      }
-      else if (null != qname)
-      {
+      if (uriIndex >= 0) {
+        prefix = m_prefixMappings.elementAt(uriIndex - 1);
+      } else if (null != qname) {
         int indexOfNSSep = qname.indexOf(':');
 
         if (qname.equals("xmlns"))
@@ -1429,33 +1370,24 @@ public class SAX2DTM extends DTMDefaultBaseIterators
         else
           prefix = (indexOfNSSep > 0)
                    ? qname.substring(0, indexOfNSSep) : null;
-      }
-      else
-      {
+      } else {
         prefix = null;
       }
-    }
-    else if (null != qname)
-    {
+    } else if (null != qname) {
       int indexOfNSSep = qname.indexOf(':');
 
-      if (indexOfNSSep > 0)
-      {
+      if (indexOfNSSep > 0) {
         if (qname.startsWith("xmlns:"))
           prefix = qname.substring(indexOfNSSep + 1);
         else
           prefix = qname.substring(0, indexOfNSSep);
-      }
-      else
-      {
+      } else {
         if (qname.equals("xmlns"))
           prefix = "";
         else
           prefix = null;
       }
-    }
-    else
-    {
+    } else {
       prefix = null;
     }
 
@@ -1470,38 +1402,31 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @return The prefix if there is one, or null.
    */
-  public int getIdForNamespace(String uri)
-  {
-
+  public int getIdForNamespace(String uri) {
      return m_valuesOrPrefixes.stringToIndex(uri);
-
   }
 
-    /**
+  /**
    * Get a prefix either from the qname or from the uri mapping, or just make
    * one up!
    *
    * @return The prefix if there is one, or null.
    */
-  public String getNamespaceURI(String prefix)
-  {
-
+  public String getNamespaceURI(String prefix) {
     String uri = "";
     int prefixIndex = m_contextIndexes.peek() - 1 ;
 
-    if(null == prefix)
+    if (null == prefix) {
       prefix = "";
+    }
 
-      do
-      {
-        prefixIndex = m_prefixMappings.indexOf(prefix, ++prefixIndex);
-      } while ( (prefixIndex >= 0) && (prefixIndex & 0x01) == 0x01);
+    do {
+      prefixIndex = m_prefixMappings.indexOf(prefix, ++prefixIndex);
+    } while ((prefixIndex >= 0) && (prefixIndex & 0x01) == 0x01);
 
-      if (prefixIndex > -1)
-      {
-        uri = (String) m_prefixMappings.elementAt(prefixIndex + 1);
-      }
-
+    if (prefixIndex > -1) {
+      uri = m_prefixMappings.elementAt(prefixIndex + 1);
+    }
 
     return uri;
   }
@@ -1578,7 +1503,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *         default behaviour.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.EntityResolver#resolveEntity
+   * @see EntityResolver#resolveEntity
    *
    * @throws SAXException
    */
@@ -1605,7 +1530,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param systemId The notation system identifier.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.DTDHandler#notationDecl
+   * @see DTDHandler#notationDecl
    *
    * @throws SAXException
    */
@@ -1630,41 +1555,35 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param notationName The name of the associated notation.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.DTDHandler#unparsedEntityDecl
+   * @see DTDHandler#unparsedEntityDecl
    *
    * @throws SAXException
    */
-  public void unparsedEntityDecl(
-          String name, String publicId, String systemId, String notationName)
-            throws SAXException
+  public void unparsedEntityDecl(String name, String publicId, String systemId,
+                                 String notationName) throws SAXException
   {
-
-    if (null == m_entities)
-    {
-      m_entities = new Vector();
+    if (null == m_entities) {
+      m_entities = new ArrayList<>();
     }
 
-    try
-    {
+    try {
       systemId = SystemIDResolver.getAbsoluteURI(systemId,
                                                  getDocumentBaseURI());
-    }
-    catch (Exception e)
-    {
-      throw new org.xml.sax.SAXException(e);
+    } catch (Exception e) {
+      throw new SAXException(e);
     }
 
     //  private static final int ENTITY_FIELD_PUBLICID = 0;
-    m_entities.addElement(publicId);
+    m_entities.add(publicId);
 
     //  private static final int ENTITY_FIELD_SYSTEMID = 1;
-    m_entities.addElement(systemId);
+    m_entities.add(systemId);
 
     //  private static final int ENTITY_FIELD_NOTATIONNAME = 2;
-    m_entities.addElement(notationName);
+    m_entities.add(notationName);
 
     //  private static final int ENTITY_FIELD_NAME = 3;
-    m_entities.addElement(name);
+    m_entities.add(name);
   }
 
   ////////////////////////////////////////////////////////////////////
@@ -1679,8 +1598,8 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * with other document events.</p>
    *
    * @param locator A locator for all SAX document events.
-   * @see org.xml.sax.ContentHandler#setDocumentLocator
-   * @see org.xml.sax.Locator
+   * @see ContentHandler#setDocumentLocator
+   * @see Locator
    */
   public void setDocumentLocator(Locator locator)
   {
@@ -1693,7 +1612,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#startDocument
+   * @see ContentHandler#startDocument
    */
   public void startDocument() throws SAXException
   {
@@ -1716,7 +1635,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#endDocument
+   * @see ContentHandler#endDocument
    */
   public void endDocument() throws SAXException
   {
@@ -1754,7 +1673,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param uri The Namespace URI mapped to the prefix.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#startPrefixMapping
+   * @see ContentHandler#startPrefixMapping
    */
   public void startPrefixMapping(String prefix, String uri)
           throws SAXException
@@ -1780,7 +1699,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param prefix The Namespace prefix being declared.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#endPrefixMapping
+   * @see ContentHandler#endPrefixMapping
    */
   public void endPrefixMapping(String prefix) throws SAXException
   {
@@ -1815,16 +1734,13 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @return true if the declaration has already been declared in the
    *         current context.
    */
-  protected boolean declAlreadyDeclared(String prefix)
-  {
-
+  protected boolean declAlreadyDeclared(String prefix) {
     int startDecls = m_contextIndexes.peek();
-    java.util.Vector prefixMappings = m_prefixMappings;
+    Vector<String> prefixMappings = m_prefixMappings;
     int nDecls = prefixMappings.size();
 
-    for (int i = startDecls; i < nDecls; i += 2)
-    {
-      String prefixDecl = (String) prefixMappings.elementAt(i);
+    for (int i = startDecls; i < nDecls; i += 2) {
+      String prefixDecl = prefixMappings.elementAt(i);
 
       if (prefixDecl == null)
         continue;
@@ -1836,7 +1752,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
     return false;
   }
 
-        boolean m_pastFirstElement=false;
+  boolean m_pastFirstElement=false;
 
   /**
    * Receive notification of the start of an element.
@@ -1857,34 +1773,37 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param attributes The specified or defaulted attributes.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#startElement
+   * @see ContentHandler#startElement
    */
-  public void startElement(
-          String uri, String localName, String qName, Attributes attributes)
-            throws SAXException
+  public void startElement(String uri, String localName, String qName,
+                           Attributes attributes) throws SAXException
   {
-   if (DEBUG)
-         {
-      System.out.println("startElement: uri: " + uri + ", localname: "
-                                                                                                 + localName + ", qname: "+qName+", atts: " + attributes);
+    if (DEBUG) {
+      System.out.println("startElement: uri: " + uri +
+                         ", localname: " + localName +
+                         ", qname: "+qName+", atts: " + attributes);
 
-                        boolean DEBUG_ATTRS=true;
-                        if(DEBUG_ATTRS & attributes!=null)
-                        {
-                                int n = attributes.getLength();
-                                if(n==0)
-                                        System.out.println("\tempty attribute list");
-                                else for (int i = 0; i < n; i++)
-                                        System.out.println("\t attr: uri: " + attributes.getURI(i) +
-                                                                                                                 ", localname: " + attributes.getLocalName(i) +
-                                                                                                                 ", qname: " + attributes.getQName(i) +
-                                                                                                                 ", type: " + attributes.getType(i) +
-                                                                                                                 ", value: " + attributes.getValue(i)
-                                                                                                                 );
-                        }
-         }
+      boolean DEBUG_ATTRS=true;
+      if (DEBUG_ATTRS & attributes!=null) {
+        int n = attributes.getLength();
+        if (n==0) {
+          System.out.println("\tempty attribute list");
+        } else for (int i = 0; i < n; i++) {
+          System.out.println("\t attr: uri: " + attributes.getURI(i) +
+                             ", localname: " + attributes.getLocalName(i) +
+                             ", qname: " + attributes.getQName(i) +
+                             ", type: " + attributes.getType(i) +
+                             ", value: " + attributes.getValue(i));
+        }
+      }
+    }
 
     charactersFlush();
+
+    if ((localName == null || localName.isEmpty()) &&
+        (uri == null || uri.isEmpty())) {
+      localName = qName;
+    }
 
     int exName = m_expandedNameTable.getExpandedTypeID(uri, localName, DTM.ELEMENT_NODE);
     String prefix = getPrefix(qName, uri);
@@ -1894,9 +1813,8 @@ public class SAX2DTM extends DTMDefaultBaseIterators
     int elemNode = addNode(DTM.ELEMENT_NODE, exName,
                            m_parents.peek(), m_previous, prefixIndex, true);
 
-    if(m_indexing)
+    if (m_indexing)
       indexNode(exName, elemNode);
-
 
     m_parents.push(elemNode);
 
@@ -1904,10 +1822,9 @@ public class SAX2DTM extends DTMDefaultBaseIterators
     int nDecls = m_prefixMappings.size();
     int prev = DTM.NULL;
 
-    if(!m_pastFirstElement)
-    {
+    if (!m_pastFirstElement) {
       // SPECIAL CASE: Implied declaration at root element
-      prefix="xml";
+      prefix = "xml";
       String declURL = "http://www.w3.org/XML/1998/namespace";
       exName = m_expandedNameTable.getExpandedTypeID(null, prefix, DTM.NAMESPACE_NODE);
       int val = m_valuesOrPrefixes.stringToIndex(declURL);
@@ -1916,14 +1833,13 @@ public class SAX2DTM extends DTMDefaultBaseIterators
       m_pastFirstElement=true;
     }
 
-    for (int i = startDecls; i < nDecls; i += 2)
-    {
-      prefix = (String) m_prefixMappings.elementAt(i);
+    for (int i = startDecls; i < nDecls; i += 2) {
+      prefix = m_prefixMappings.elementAt(i);
 
       if (prefix == null)
         continue;
 
-      String declURL = (String) m_prefixMappings.elementAt(i + 1);
+      String declURL = m_prefixMappings.elementAt(i + 1);
 
       exName = m_expandedNameTable.getExpandedTypeID(null, prefix, DTM.NAMESPACE_NODE);
 
@@ -1935,8 +1851,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
 
     int n = attributes.getLength();
 
-    for (int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
       String attrUri = attributes.getURI(i);
       String attrQName = attributes.getQName(i);
       String valString = attributes.getValue(i);
@@ -1947,17 +1862,13 @@ public class SAX2DTM extends DTMDefaultBaseIterators
 
        String attrLocalName = attributes.getLocalName(i);
 
-      if ((null != attrQName)
-              && (attrQName.equals("xmlns")
-                  || attrQName.startsWith("xmlns:")))
-      {
+      if ((null != attrQName) &&
+          (attrQName.equals("xmlns") || attrQName.startsWith("xmlns:"))) {
         if (declAlreadyDeclared(prefix))
           continue;  // go to the next attribute.
 
         nodeType = DTM.NAMESPACE_NODE;
-      }
-      else
-      {
+      } else {
         nodeType = DTM.ATTRIBUTE_NODE;
 
         if (attributes.getType(i).equalsIgnoreCase("ID"))
@@ -1966,15 +1877,13 @@ public class SAX2DTM extends DTMDefaultBaseIterators
 
       // Bit of a hack... if somehow valString is null, stringToIndex will
       // return -1, which will make things very unhappy.
-      if(null == valString)
+      if (null == valString)
         valString = "";
 
       int val = m_valuesOrPrefixes.stringToIndex(valString);
       //String attrLocalName = attributes.getLocalName(i);
 
-      if (null != prefix)
-      {
-
+      if (null != prefix) {
         prefixIndex = m_valuesOrPrefixes.stringToIndex(attrQName);
 
         int dataIndex = m_data.size();
@@ -1993,8 +1902,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
     if (DTM.NULL != prev)
       m_nextsib.setElementAt(DTM.NULL,prev);
 
-    if (null != m_wsfilter)
-    {
+    if (null != m_wsfilter) {
       short wsv = m_wsfilter.getShouldStripSpace(makeNodeHandle(elemNode), this);
       boolean shouldStrip = (DTMWSFilter.INHERIT == wsv)
                             ? getShouldStripWhitespace()
@@ -2026,7 +1934,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *        empty string if qualified names are not available.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#endElement
+   * @see ContentHandler#endElement
    */
   public void endElement(String uri, String localName, String qName)
           throws SAXException
@@ -2074,7 +1982,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *               character array.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#characters
+   * @see ContentHandler#characters
    */
   public void characters(char ch[], int start, int length) throws SAXException
   {
@@ -2109,7 +2017,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *               character array.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#ignorableWhitespace
+   * @see ContentHandler#ignorableWhitespace
    */
   public void ignorableWhitespace(char ch[], int start, int length)
           throws SAXException
@@ -2133,7 +2041,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    *             none is supplied.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#processingInstruction
+   * @see ContentHandler#processingInstruction
    */
   public void processingInstruction(String target, String data)
           throws SAXException
@@ -2163,7 +2071,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param name The name of the skipped entity.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ContentHandler#processingInstruction
+   * @see ContentHandler#processingInstruction
    */
   public void skippedEntity(String name) throws SAXException
   {
@@ -2187,8 +2095,8 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param e The warning information encoded as an exception.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ErrorHandler#warning
-   * @see org.xml.sax.SAXParseException
+   * @see ErrorHandler#warning
+   * @see SAXParseException
    */
   public void warning(SAXParseException e) throws SAXException
   {
@@ -2208,8 +2116,8 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param e The warning information encoded as an exception.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ErrorHandler#warning
-   * @see org.xml.sax.SAXParseException
+   * @see ErrorHandler#warning
+   * @see SAXParseException
    */
   public void error(SAXParseException e) throws SAXException
   {
@@ -2230,8 +2138,8 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param e The error information encoded as an exception.
    * @throws SAXException Any SAX exception, possibly
    *            wrapping another exception.
-   * @see org.xml.sax.ErrorHandler#fatalError
-   * @see org.xml.sax.SAXParseException
+   * @see ErrorHandler#fatalError
+   * @see SAXParseException
    */
   public void fatalError(SAXParseException e) throws SAXException
   {
@@ -2299,7 +2207,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param value The replacement text of the entity.
    * @throws SAXException The application may raise an exception.
    * @see #externalEntityDecl
-   * @see org.xml.sax.DTDHandler#unparsedEntityDecl
+   * @see DTDHandler#unparsedEntityDecl
    */
   public void internalEntityDecl(String name, String value)
           throws SAXException
@@ -2321,7 +2229,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * @param systemId The declared system identifier of the entity.
    * @throws SAXException The application may raise an exception.
    * @see #internalEntityDecl
-   * @see org.xml.sax.DTDHandler#unparsedEntityDecl
+   * @see DTDHandler#unparsedEntityDecl
    */
   public void externalEntityDecl(
           String name, String publicId, String systemId) throws SAXException
@@ -2386,15 +2294,15 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * properly nested within start/end entity events.</p>
    *
    * <p>Note that skipped entities will be reported through the
-   * {@link org.xml.sax.ContentHandler#skippedEntity skippedEntity}
+   * {@link ContentHandler#skippedEntity skippedEntity}
    * event, which is part of the ContentHandler interface.</p>
    *
    * @param name The name of the entity.  If it is a parameter
    *        entity, the name will begin with '%'.
    * @throws SAXException The application may raise an exception.
    * @see #endEntity
-   * @see org.xml.sax.ext.DeclHandler#internalEntityDecl
-   * @see org.xml.sax.ext.DeclHandler#externalEntityDecl
+   * @see DeclHandler#internalEntityDecl
+   * @see DeclHandler#externalEntityDecl
    */
   public void startEntity(String name) throws SAXException
   {
@@ -2419,7 +2327,7 @@ public class SAX2DTM extends DTMDefaultBaseIterators
    * Report the start of a CDATA section.
    *
    * <p>The contents of the CDATA section will be reported through
-   * the regular {@link org.xml.sax.ContentHandler#characters
+   * the regular {@link ContentHandler#characters
    * characters} event.</p>
    *
    * @throws SAXException The application may raise an exception.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,14 +56,14 @@ import jdk.xml.internal.SecuritySupport;
  *
  * <tr>
  * <td><a name="FILES">FILES</a></td>
- * <td>A semicolon-delimited list of catalog files. Relative file paths are
- * considered relative to ${user.dir}.
+ * <td>A semicolon-delimited list of URIs to locate the catalog files.
+ * The URIs must be absolute and have a URL protocol handler for the URI scheme.
  * </td>
  * <td>javax.xml.catalog.files</td>
  * <td>javax.xml.catalog.files</td>
  * <td>javax.xml.catalog.files</td>
  * <td>String</td>
- * <td>File paths</td>
+ * <td>URIs</td>
  * <td>
  * Reads the first catalog as the current catalog; Loads others if no match
  * is found in the current catalog including delegate catalogs if any.
@@ -170,7 +170,7 @@ import jdk.xml.internal.SecuritySupport;
  * Properties set through the Catalog API override those that may have been set
  * by system properties and/or in {@code jaxp.properties}. In case of multiple
  * interfaces, the latest in a procedure shall take preference. For
- * {@link Feature#FILES}, this means that the path(s) specified through the methods
+ * {@link Feature#FILES}, this means that the URI(s) specified through the methods
  * of the {@link CatalogManager} will override any that may have been entered
  * through the {@link Builder}.
  *
@@ -188,7 +188,7 @@ import jdk.xml.internal.SecuritySupport;
  * in the following sample code:
  * <pre>{@code
                 CatalogFeatures f = CatalogFeatures.builder()
-                        .with(Feature.FILES, "catalog.xml")
+                        .with(Feature.FILES, "file:///etc/xml/catalog")
                         .with(Feature.PREFER, "public")
                         .with(Feature.DEFER, "true")
                         .with(Feature.RESOLVE, "ignore")
@@ -202,14 +202,14 @@ import jdk.xml.internal.SecuritySupport;
  * Schema Validation ({@link javax.xml.validation}), and XML Transformation
  * ({@link javax.xml.transform}). The features described above can be set through JAXP
  * factories or processors that define a setProperty or setAttribute interface.
- * For example, the following code snippet sets a path to a catalog file on a SAX
+ * For example, the following code snippet sets a URI to a catalog file on a SAX
  * parser through the {@code javax.xml.catalog.files} property:
  * <p>
  * <pre>{@code
  *      SAXParserFactory spf = SAXParserFactory.newInstance();
  *      spf.setFeature(XMLConstants.USE_CATALOG, true); [1]
  *      SAXParser parser = spf.newSAXParser();
- *      parser.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), "catalog.xml");
+ *      parser.setProperty(CatalogFeatures.Feature.FILES.getPropertyName(), "file:///etc/xml/catalog");
  * }</pre>
  * <p>
  * [1] Note that this statement is not required since the default value of
@@ -275,7 +275,7 @@ import jdk.xml.internal.SecuritySupport;
    The following XInclude element:
    <xi:include href="http://openjdk.java.net/xml/disclaimer.xml"/>
 
-   can be resolved using an uri entry:
+   can be resolved using a URI entry:
    <uri name="http://openjdk.java.net/xml/disclaimer.xml" uri="file:///pathto/local/disclaimer.xml"/>
    or
    <uriSuffix uriSuffix="disclaimer.xml" uri="file:///pathto/local/disclaimer.xml"/>
@@ -291,7 +291,7 @@ import jdk.xml.internal.SecuritySupport;
     <xsd:import namespace="http://openjdk.java.net/xsd/XSDImport_person"
                 schemaLocation="http://openjdk.java.net/xsd/XSDImport_person.xsd"/>
 
-   can be resolved using an uri entry:
+   can be resolved using a URI entry:
    <uri name="http://openjdk.java.net/xsd/XSDImport_person.xsd" uri="file:///pathto/local/XSDImport_person.xsd"/>
    or
    <uriSuffix uriSuffix="XSDImport_person.xsd" uri="file:///pathto/local/XSDImport_person.xsd"/>
@@ -308,7 +308,7 @@ import jdk.xml.internal.SecuritySupport;
    The following include element:
    <xsd:include schemaLocation="http://openjdk.java.net/xsd/XSDInclude_person.xsd"/>
 
-   can be resolved using an uri entry:
+   can be resolved using a URI entry:
    <uri name="http://openjdk.java.net/xsd/XSDInclude_person.xsd" uri="file:///pathto/local/XSDInclude_person.xsd"/>
    or
    <uriSuffix uriSuffix="XSDInclude_person.xsd" uri="file:///pathto/local/XSDInclude_person.xsd"/>
@@ -323,7 +323,7 @@ import jdk.xml.internal.SecuritySupport;
    The following include element:
    <xsl:include href="http://openjdk.java.net/xsl/include.xsl"/>
 
-   can be resolved using an uri entry:
+   can be resolved using a URI entry:
    <uri name="http://openjdk.java.net/xsl/include.xsl" uri="file:///pathto/local/include.xsl"/>
    or
    <uriSuffix uriSuffix="include.xsl" uri="file:///pathto/local/include.xsl"/>
@@ -338,7 +338,7 @@ import jdk.xml.internal.SecuritySupport;
    The document in the following element:
    <xsl:variable name="dummy" select="document('http://openjdk.java.net/xsl/list.xml')"/>
 
-   can be resolved using an uri entry:
+   can be resolved using a URI entry:
    <uri name="http://openjdk.java.net/xsl/list.xml" uri="file:///pathto/local/list.xml"/>
    or
    <uriSuffix uriSuffix="list.xml" uri="file:///pathto/local/list.xml"/>
@@ -559,7 +559,7 @@ public class CatalogFeatures {
         values = new String[Feature.values().length];
         states = new State[Feature.values().length];
         for (Feature cf : Feature.values()) {
-            setProperty(cf.ordinal(), State.DEFAULT, cf.defaultValue());
+            setProperty(cf, State.DEFAULT, cf.defaultValue());
         }
         //read system properties or jaxp.properties
         readSystemProperties();
@@ -571,51 +571,26 @@ public class CatalogFeatures {
      */
     private void setProperties(Builder builder) {
         builder.values.entrySet().stream().forEach((entry) -> {
-            setProperty(entry.getKey().ordinal(), State.APIPROPERTY, entry.getValue());
+            setProperty(entry.getKey(), State.APIPROPERTY, entry.getValue());
         });
     }
     /**
-     * Sets the value of a property by its index, updates only if it shall override.
+     * Sets the value of a property, updates only if it shall override.
      *
      * @param index the index of the property
      * @param state the state of the property
      * @param value the value of the property
      * @throws IllegalArgumentException if the value is invalid
      */
-    private void setProperty(int index, State state, String value) {
+    private void setProperty(Feature feature, State state, String value) {
+        int index = feature.ordinal();
         if (value != null && value.length() != 0) {
-            if (index == Feature.PREFER.ordinal()) {
-                if (!value.equals(PREFER_SYSTEM) && !value.equals(PREFER_PUBLIC)) {
-                    CatalogMessages.reportIAE(new Object[]{value, Feature.PREFER.name()}, null);
-                }
-            } else if (index == Feature.DEFER.ordinal()) {
-                if (!value.equals(DEFER_TRUE) && !value.equals(DEFER_FALSE)) {
-                    CatalogMessages.reportIAE(new Object[]{value, Feature.DEFER.name()}, null);
-                }
-            } else if (index == Feature.RESOLVE.ordinal()) {
-                if (!value.equals(RESOLVE_STRICT) && !value.equals(RESOLVE_CONTINUE)
-                         && !value.equals(RESOLVE_IGNORE)) {
-                    CatalogMessages.reportIAE(new Object[]{value, Feature.RESOLVE.name()}, null);
-                }
-            } else if (index == Feature.FILES.ordinal()) {
-                try {
-                    String[] catalogFile = value.split(";[ ]*");
-                    for (String temp : catalogFile) {
-                        if (Util.verifyAndGetURI(temp, null) == null) {
-                            CatalogMessages.reportIAE(new Object[]{value, Feature.FILES.name()}, null);
-                        }
-                    }
-                }catch (MalformedURLException | URISyntaxException | IllegalArgumentException ex) {
-                    CatalogMessages.reportIAE(new Object[]{value, Feature.FILES.name()}, ex);
-                }
+            if (state != State.APIPROPERTY) {
+                Util.validateFeatureInput(feature, value);
             }
             if (states[index] == null || state.compareTo(states[index]) >= 0) {
                 values[index] = value;
                 states[index] = state;
-            }
-        } else {
-            if (state == State.SYSTEMPROPERTY || state == State.JAXPDOTPROPERTIES) {
-                CatalogMessages.reportIAE(new Object[]{value, Feature.values()[index].name()}, null);
             }
         }
     }
@@ -639,13 +614,13 @@ public class CatalogFeatures {
         if (cf.hasSystemProperty()) {
             String value = SecuritySupport.getSystemProperty(sysPropertyName);
             if (value != null && !value.equals("")) {
-                setProperty(cf.ordinal(), State.SYSTEMPROPERTY, value);
+                setProperty(cf, State.SYSTEMPROPERTY, value);
                 return true;
             }
 
             value = SecuritySupport.readJAXPProperty(sysPropertyName);
             if (value != null && !value.equals("")) {
-                setProperty(cf.ordinal(), State.JAXPDOTPROPERTIES, value);
+                setProperty(cf, State.JAXPDOTPROPERTIES, value);
                 return true;
             }
         }
@@ -685,9 +660,7 @@ public class CatalogFeatures {
          * property
          */
         public Builder with(Feature feature, String value) {
-            if (value == null || value.length() == 0) {
-                CatalogMessages.reportIAE(new Object[]{value, feature.name()}, null);
-            }
+            Util.validateFeatureInput(feature, value);
             values.put(feature, value);
             return this;
         }
