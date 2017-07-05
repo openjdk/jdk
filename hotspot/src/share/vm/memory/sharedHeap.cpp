@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ SharedHeap::SharedHeap(CollectorPolicy* policy_) :
   }
   _sh = this;  // ch is static, should be set only once.
   if (UseConcMarkSweepGC || UseG1GC) {
-    _workers = new FlexibleWorkGang("Parallel GC Threads", ParallelGCThreads,
+    _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
                             /* are_GC_task_threads */true,
                             /* are_ConcurrentGC_threads */false);
     if (_workers == NULL) {

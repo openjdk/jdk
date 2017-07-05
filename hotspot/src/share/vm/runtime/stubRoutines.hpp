@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,31 +84,21 @@ class StubRoutines: AllStatic {
 
   // Dependencies
   friend class StubGenerator;
-#ifdef TARGET_ARCH_MODEL_x86_32
+#if defined STUBROUTINES_MD_HPP
+# include STUBROUTINES_MD_HPP
+#elif defined TARGET_ARCH_MODEL_x86_32
 # include "stubRoutines_x86_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_x86_64
+#elif defined TARGET_ARCH_MODEL_x86_64
 # include "stubRoutines_x86_64.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_sparc
+#elif defined TARGET_ARCH_MODEL_sparc
 # include "stubRoutines_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_zero
+#elif defined TARGET_ARCH_MODEL_zero
 # include "stubRoutines_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_arm
-# include "stubRoutines_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_32
-# include "stubRoutines_ppc_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_64
+#elif defined TARGET_ARCH_MODEL_ppc_64
 # include "stubRoutines_ppc_64.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_aarch64
+#elif defined TARGET_ARCH_MODEL_aarch64
 # include "stubRoutines_aarch64.hpp"
 #endif
-
 
   static jint    _verify_oop_count;
   static address _verify_oop_subroutine_entry;
