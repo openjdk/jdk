@@ -49,11 +49,11 @@ import java.util.jar.Attributes.Name;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+import jdk.internal.loader.Resource;
+import jdk.internal.loader.URLClassPath;
 import jdk.internal.misc.JavaNetAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.perf.PerfCounter;
-import sun.misc.Resource;
-import sun.misc.URLClassPath;
 import sun.net.www.ParseUtil;
 import sun.security.util.SecurityConstants;
 

@@ -53,8 +53,8 @@ public class MultiCommand extends AbstractTestBase {
         List<CompileCommand> testCases = new ArrayList<>();
         for (Command cmd : commands) {
             if (validOnly && cmd == Command.NONEXISTENT) {
-                // skip invalid command
-                continue;
+                // replace with a valid command
+                cmd = Command.EXCLUDE;
             }
             Executable exec = Utils.getRandomElement(METHODS).first;
             MethodDescriptor md;

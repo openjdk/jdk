@@ -162,6 +162,9 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
     CLEAR_PENDING_EXCEPTION;
 
     java_lang_Throwable::java_printStackTrace(exception, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      CLEAR_PENDING_EXCEPTION;
+    }
 
     env->set_failure("exception throw", false);
   } else {

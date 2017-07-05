@@ -157,10 +157,10 @@ AC_DEFUN_ONCE([LIB_SETUP_ZLIB],
 
   AC_MSG_CHECKING([for which zlib to use])
 
-  DEFAULT_ZLIB=bundled
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # On macosx default is system...on others default is bundled
-    DEFAULT_ZLIB=system
+  DEFAULT_ZLIB=system
+  if test "x$OPENJDK_TARGET_OS" = xwindows; then
+    # On windows default is bundled...on others default is system
+    DEFAULT_ZLIB=bundled
   fi
 
   if test "x${ZLIB_FOUND}" != "xyes"; then

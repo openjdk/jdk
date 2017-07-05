@@ -1013,9 +1013,11 @@ public:
 
 //------------------------------ClearArray-------------------------------------
 class ClearArrayNode: public Node {
+private:
+  bool _is_large;
 public:
-  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base )
-    : Node(ctrl,arymem,word_cnt,base) {
+  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, bool is_large)
+    : Node(ctrl,arymem,word_cnt,base), _is_large(is_large) {
     init_class_id(Class_ClearArray);
   }
   virtual int         Opcode() const;
@@ -1026,6 +1028,7 @@ public:
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const;
+  bool is_large() const { return _is_large; }
 
   // Clear the given area of an object or array.
   // The start offset must always be aligned mod BytesPerInt.

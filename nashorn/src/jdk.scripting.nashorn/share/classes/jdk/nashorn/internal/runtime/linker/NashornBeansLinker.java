@@ -32,8 +32,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.function.Supplier;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.beans.BeansLinker;
 import jdk.dynalink.linker.ConversionComparator.Comparison;
@@ -153,7 +155,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         if (arg instanceof ConsString) {
             return arg.toString();
         } else if (mirrorAlways && arg instanceof ScriptObject) {
-            return ScriptUtils.wrap((ScriptObject)arg);
+            return ScriptUtils.wrap(arg);
         } else {
             return arg;
         }
@@ -249,6 +251,11 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         @Override
         public MethodHandle filterInternalObjects(final MethodHandle target) {
             return linkerServices.filterInternalObjects(target);
+        }
+
+        @Override
+        public <T> T getWithLookup(final Supplier<T> operation, final SecureLookupSupplier lookupSupplier) {
+            return linkerServices.getWithLookup(operation, lookupSupplier);
         }
     }
 }

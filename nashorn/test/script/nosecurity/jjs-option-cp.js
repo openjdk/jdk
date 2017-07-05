@@ -25,37 +25,44 @@
  * JDK-8144113: Nashorn: enable jjs testing. 
  * @test
  * @option -scripting
- * @runif os.not.windows
  * @run
  * @summary Test to check if -cp flag and its basic functionality
  */
 
 load(__DIR__ + "jjs-common.js")
 
-var hello = __DIR__ + "Hello.class";
-var helloj = __DIR__ + "Hello.java";
+var hello = __DIR__ + "Hello.class"
+var helloj = __DIR__ + "Hello.java"
+
+hello = toShellPath(hello)
+helloj = toShellPath(helloj)
 
 // code to check -flag
 var msg_flag = "print($OPTIONS._classpath)"
 
 // code to check basic functionality
 var msg_func = <<EOD
-$EXEC("rm -f ${hello}")
+var Files = Java.type('java.nio.file.Files')
+var Paths = Java.type('java.nio.file.Paths')
+Files.deleteIfExists(Paths.get("${hello}"))
 $EXEC("${javac} ${helloj}")
-var v = new Packages.Hello();
+var v = new Packages.Hello()
 if (v.string != 'hello') {
-    throw new Error("Unexpected property value");
+    throw new Error("Unexpected property value")
 }
 EOD
 
+var dir = toShellPath(__DIR__)
+
 // flag test expected output variables
-var e_outp = "__DIR__"
+var e_outp = "${dir}"
 var e_outn = "null"
 
 // functionality test arguments
-var arg_p = "-scripting -cp ${__DIR__}  ${testfunc_file}"
+var arg_p = "-scripting -cp ${dir}  ${testfunc_file}"
 var arg_n = "-scripting ${testfunc_file}"
 
 // Testing starts here
-testjjs_flag_and_func("-cp", " __DIR__")
-$EXEC("rm -f ${hello}")
+testjjs_flag_and_func("-cp", " ${dir}")
+rm("${hello}")
+
