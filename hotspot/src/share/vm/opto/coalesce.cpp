@@ -291,7 +291,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               _phc.clone_projs(pred, pred->end_idx(), m, copy, _phc._lrg_map);
             } else {
               const RegMask *rm = C->matcher()->idealreg2spillmask[m->ideal_reg()];
-              copy = new (C) MachSpillCopyNode(m, *rm, *rm);
+              copy = new (C) MachSpillCopyNode(MachSpillCopyNode::PhiInput, m, *rm, *rm);
               // Find a good place to insert.  Kinda tricky, use a subroutine
               insert_copy_with_overlap(pred,copy,phi_name,src_name);
             }
@@ -325,7 +325,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               l += _phc.clone_projs(b, l, m, copy, _phc._lrg_map);
             } else {
               const RegMask *rm = C->matcher()->idealreg2spillmask[m->ideal_reg()];
-              copy = new (C) MachSpillCopyNode(m, *rm, *rm);
+              copy = new (C) MachSpillCopyNode(MachSpillCopyNode::TwoAddress, m, *rm, *rm);
               // Insert the copy in the basic block, just before us
               b->insert_node(copy, l++);
             }
@@ -372,7 +372,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
                 continue;     // Live out; do not pre-split
               // Split the lrg at this use
               const RegMask *rm = C->matcher()->idealreg2spillmask[inp->ideal_reg()];
-              Node *copy = new (C) MachSpillCopyNode( inp, *rm, *rm );
+              Node* copy = new (C) MachSpillCopyNode(MachSpillCopyNode::DebugUse, inp, *rm, *rm);
               // Insert the copy in the use-def chain
               n->set_req(inpidx, copy );
               // Insert the copy in the basic block, just before us

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,7 @@ public final class AttributeSetUtilities {
       */
     private static class UnmodifiableAttributeSet
         implements AttributeSet, Serializable {
+        private static final long serialVersionUID = -6131802583863447813L;
 
         private AttributeSet attrset;
 
@@ -147,6 +148,7 @@ public final class AttributeSetUtilities {
     private static class UnmodifiableDocAttributeSet
         extends UnmodifiableAttributeSet
         implements DocAttributeSet, Serializable {
+        private static final long serialVersionUID = -6349408326066898956L;
 
         public UnmodifiableDocAttributeSet(DocAttributeSet attributeSet) {
 
@@ -161,6 +163,7 @@ public final class AttributeSetUtilities {
         extends UnmodifiableAttributeSet
         implements PrintRequestAttributeSet, Serializable
     {
+        private static final long serialVersionUID = 7799373532614825073L;
         public UnmodifiablePrintRequestAttributeSet
             (PrintRequestAttributeSet attributeSet) {
 
@@ -175,6 +178,7 @@ public final class AttributeSetUtilities {
         extends UnmodifiableAttributeSet
         implements PrintJobAttributeSet, Serializable
     {
+        private static final long serialVersionUID = -8002245296274522112L;
         public UnmodifiablePrintJobAttributeSet
             (PrintJobAttributeSet attributeSet) {
 
@@ -189,6 +193,7 @@ public final class AttributeSetUtilities {
         extends UnmodifiableAttributeSet
         implements PrintServiceAttributeSet, Serializable
     {
+        private static final long serialVersionUID = -7112165137107826819L;
         public UnmodifiablePrintServiceAttributeSet
             (PrintServiceAttributeSet attributeSet) {
 
@@ -291,6 +296,7 @@ public final class AttributeSetUtilities {
       */
     private static class SynchronizedAttributeSet
                         implements AttributeSet, Serializable {
+        private static final long serialVersionUID = 8365731020128564925L;
 
         private AttributeSet attrset;
 
@@ -357,6 +363,7 @@ public final class AttributeSetUtilities {
     private static class SynchronizedDocAttributeSet
         extends SynchronizedAttributeSet
         implements DocAttributeSet, Serializable {
+        private static final long serialVersionUID = 6455869095246629354L;
 
         public SynchronizedDocAttributeSet(DocAttributeSet attributeSet) {
             super(attributeSet);
@@ -369,6 +376,7 @@ public final class AttributeSetUtilities {
     private static class SynchronizedPrintRequestAttributeSet
         extends SynchronizedAttributeSet
         implements PrintRequestAttributeSet, Serializable {
+        private static final long serialVersionUID = 5671237023971169027L;
 
         public SynchronizedPrintRequestAttributeSet
             (PrintRequestAttributeSet attributeSet) {
@@ -382,6 +390,7 @@ public final class AttributeSetUtilities {
     private static class SynchronizedPrintJobAttributeSet
         extends SynchronizedAttributeSet
         implements PrintJobAttributeSet, Serializable {
+        private static final long serialVersionUID = 2117188707856965749L;
 
         public SynchronizedPrintJobAttributeSet
             (PrintJobAttributeSet attributeSet) {
@@ -395,6 +404,8 @@ public final class AttributeSetUtilities {
     private static class SynchronizedPrintServiceAttributeSet
         extends SynchronizedAttributeSet
         implements PrintServiceAttributeSet, Serializable {
+        private static final long serialVersionUID = -2830705374001675073L;
+
         public SynchronizedPrintServiceAttributeSet
             (PrintServiceAttributeSet attributeSet) {
             super(attributeSet);

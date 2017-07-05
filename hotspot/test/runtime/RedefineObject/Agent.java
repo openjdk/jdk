@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,8 +65,8 @@ public class Agent implements ClassFileTransformer {
     public static void main(String[] args) {
         byte[] ba = new byte[0];
 
-        // If it survives 1000 GC's, it's good.
-        for (int i = 0; i < 1000 ; i++) {
+        // If it survives 100 GC's, it's good.
+        for (int i = 0; i < 100 ; i++) {
             System.gc();
             ba.clone();
         }

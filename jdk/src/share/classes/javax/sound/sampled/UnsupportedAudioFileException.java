@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,15 +33,8 @@ package javax.sound.sampled;
  * @author Kara Kytle
  * @since 1.3
  */
-/*
- * An <code>UnsupportedAudioFileException</code> is an exception indicating that an
- * operation failed because a file did not contain valid data of a recognized file
- * type and format.
- *
- * @author Kara Kytle
- */
-
 public class UnsupportedAudioFileException extends Exception {
+    private static final long serialVersionUID = -139127412623160368L;
 
     /**
      * Constructs a <code>UnsupportedAudioFileException</code> that has
@@ -51,7 +44,6 @@ public class UnsupportedAudioFileException extends Exception {
 
         super();
     }
-
 
     /**
      * Constructs a <code>UnsupportedAudioFileException</code> that has

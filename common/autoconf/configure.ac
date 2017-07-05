@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@
 
 
 AC_PREREQ([2.69])
-AC_INIT(OpenJDK, jdk8, build-dev@openjdk.java.net,,http://openjdk.java.net)
+AC_INIT(OpenJDK, jdk9, build-dev@openjdk.java.net,,http://openjdk.java.net)
 
-AC_CONFIG_AUX_DIR([build-aux])
+AC_CONFIG_AUX_DIR([$TOPDIR/common/autoconf/build-aux])
 m4_include([build-aux/pkg.m4])
 
 # Include these first...
@@ -43,6 +43,7 @@ m4_include([builddeps.m4])
 # ... then the rest
 m4_include([boot-jdk.m4])
 m4_include([build-performance.m4])
+m4_include([flags.m4])
 m4_include([help.m4])
 m4_include([jdk-options.m4])
 m4_include([libraries.m4])
@@ -71,7 +72,11 @@ DATE_WHEN_GENERATED=@DATE_WHEN_GENERATED@
 #
 ###############################################################################
 
-# Basic initialization that must happen first of all
+# If we are requested to print additional help, do that and then exit.
+# This must be the very first call.
+HELP_PRINT_ADDITIONAL_HELP_AND_EXIT
+
+# Basic initialization that must happen first of all in the normal process.
 BASIC_INIT
 BASIC_SETUP_FUNDAMENTAL_TOOLS
 
@@ -148,26 +153,41 @@ SRCDIRS_SETUP_OUTPUT_DIRS
 
 ###############################################################################
 #
-# Setup the toolchain (compilers etc), i.e. the tools that need to be
-# cross-compilation aware.
+# Setup the toolchain (compilers etc), i.e. tools used to compile and process
+# native code.
 #
 ###############################################################################
 
-TOOLCHAIN_SETUP_SYSROOT_AND_OUT_OPTIONS
-# Locate the actual tools
-TOOLCHAIN_SETUP_PATHS
+# First determine the toolchain type (compiler family)
+TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE
 
-# FIXME: Currently we must test this after paths but before flags. Fix!
+# Then detect the actual binaries needed
+TOOLCHAIN_PRE_DETECTION
+TOOLCHAIN_DETECT_TOOLCHAIN_CORE
+TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA
+TOOLCHAIN_POST_DETECTION
 
-# And we can test some aspects on the target using configure macros.
+# Finally do some processing after the detection phase
+TOOLCHAIN_SETUP_BUILD_COMPILERS
+TOOLCHAIN_SETUP_LEGACY
+TOOLCHAIN_MISC_CHECKS
+
+# Setup the JTReg Regression Test Harness.
+TOOLCHAIN_SETUP_JTREG
+
+FLAGS_SETUP_INIT_FLAGS
+
+# FIXME: Currently we must test this after toolchain but before flags. Fix!
+
+# Now we can test some aspects on the target using configure macros.
 PLATFORM_SETUP_OPENJDK_TARGET_BITS
 PLATFORM_SETUP_OPENJDK_TARGET_ENDIANNESS
 
 # Configure flags for the tools
-TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_LIBS
-TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION
-TOOLCHAIN_SETUP_COMPILER_FLAGS_FOR_JDK
-TOOLCHAIN_SETUP_COMPILER_FLAGS_MISC
+FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS
+FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION
+FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK
+FLAGS_SETUP_COMPILER_FLAGS_MISC
 
 # Setup debug symbols (need objcopy from the toolchain for that)
 JDKOPT_SETUP_DEBUG_SYMBOLS
@@ -188,7 +208,7 @@ LIB_SETUP_FREETYPE
 LIB_SETUP_ALSA
 LIB_SETUP_MISC_LIBS
 LIB_SETUP_STATIC_LINK_LIBSTDCPP
-
+LIB_SETUP_ON_WINDOWS
 
 ###############################################################################
 #

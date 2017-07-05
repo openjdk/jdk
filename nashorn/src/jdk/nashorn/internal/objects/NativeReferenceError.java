@@ -78,7 +78,7 @@ public final class NativeReferenceError extends ScriptObject {
     }
 
     NativeReferenceError(final Object msg, final Global global) {
-        this(msg, global.getReferenceErrorPrototype(), global.getReferenceErrorMap());
+        this(msg, global.getReferenceErrorPrototype(), getInitialMap());
     }
 
     private NativeReferenceError(final Object msg) {

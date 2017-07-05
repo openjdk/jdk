@@ -80,6 +80,9 @@ public abstract class ScriptFunction extends ScriptObject {
 
     private final ScriptFunctionData data;
 
+    /** The property map used for newly allocated object when function is used as constructor. */
+    protected PropertyMap allocatorMap;
+
     /**
      * Constructor
      *
@@ -125,6 +128,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
         this.data  = data;
         this.scope = scope;
+        this.allocatorMap = data.getAllocatorMap();
     }
 
     @Override
@@ -229,16 +233,16 @@ public abstract class ScriptFunction extends ScriptObject {
         }
         assert !isBoundFunction(); // allocate never invoked on bound functions
 
-        final ScriptObject object = data.allocate();
+        final ScriptObject object = data.allocate(allocatorMap);
 
         if (object != null) {
             Object prototype = getPrototype();
             if (prototype instanceof ScriptObject) {
-                object.setProto((ScriptObject)prototype);
+                object.setInitialProto((ScriptObject)prototype);
             }
 
             if (object.getProto() == null) {
-                object.setProto(getObjectPrototype());
+                object.setInitialProto(getObjectPrototype());
             }
         }
 

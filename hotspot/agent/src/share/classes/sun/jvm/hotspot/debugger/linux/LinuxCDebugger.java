@@ -55,31 +55,21 @@ class LinuxCDebugger implements CDebugger {
     if (pc == null) {
       return null;
     }
-    List objs = getLoadObjectList();
-    Object[] arr = objs.toArray();
-    // load objects are sorted by base address, do binary search
-    int mid  = -1;
-    int low  = 0;
-    int high = arr.length - 1;
 
-    while (low <= high) {
-       mid = (low + high) >> 1;
-       LoadObject midVal = (LoadObject) arr[mid];
-       long cmp = pc.minus(midVal.getBase());
-       if (cmp < 0) {
-          high = mid - 1;
-       } else if (cmp > 0) {
-          long size = midVal.getSize();
-          if (cmp >= size) {
-             low = mid + 1;
-          } else {
-             return (LoadObject) arr[mid];
-          }
-       } else { // match found
-          return (LoadObject) arr[mid];
-       }
+    /* Typically we have about ten loaded objects here. So no reason to do
+      sort/binary search here. Linear search gives us acceptable performance.*/
+
+    List objs = getLoadObjectList();
+
+    for (int i = 0; i < objs.size(); i++) {
+      LoadObject ob = (LoadObject) objs.get(i);
+      Address base = ob.getBase();
+      long size = ob.getSize();
+      if ( pc.greaterThanOrEqual(base) && pc.lessThan(base.addOffsetTo(size))) {
+        return ob;
+      }
     }
-    // no match found.
+
     return null;
   }
 

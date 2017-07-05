@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,10 +100,10 @@ class UnixChannelFactory {
     /**
      * Constructs a file channel from an existing (open) file descriptor
      */
-    static FileChannel newFileChannel(int fd, boolean reading, boolean writing) {
+    static FileChannel newFileChannel(int fd, String path, boolean reading, boolean writing) {
         FileDescriptor fdObj = new FileDescriptor();
         fdAccess.set(fdObj, fd);
-        return FileChannelImpl.open(fdObj, reading, writing, null);
+        return FileChannelImpl.open(fdObj, path, reading, writing, null);
     }
 
     /**
@@ -134,7 +134,7 @@ class UnixChannelFactory {
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
 
         FileDescriptor fdObj = open(dfd, path, pathForPermissionCheck, flags, mode);
-        return FileChannelImpl.open(fdObj, flags.read, flags.write, flags.append, null);
+        return FileChannelImpl.open(fdObj, path.toString(), flags.read, flags.write, flags.append, null);
     }
 
     /**

@@ -25,72 +25,34 @@
 
 GENDATA_FONT_CONFIG_DST := $(JDK_OUTPUTDIR)/lib
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  GENDATA_FONT_CONFIG_SRC_DIR := $(JDK_TOPDIR)/src/windows/classes/sun/awt/windows
-  GENDATA_FONT_CONFIG_SRC_FILES := fontconfig.properties
-  GENDATA_FONT_CONFIG_SRC_PREFIX :=
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), linux)
-  GENDATA_FONT_CONFIG_SRC_PREFIX := linux.
-  ifdef OPENJDK
-    GENDATA_FONT_CONFIG_SRC_DIR := \
-        $(JDK_TOPDIR)/src/solaris/classes/sun/awt/fontconfigs
-    # This is placeholder for possible fonconfig files which may
-    # useful for some highly specialized Linux distributions
-    GENDATA_FONT_CONFIG_SRC_FILES :=
-  else
-    GENDATA_FONT_CONFIG_SRC_DIR := \
-        $(JDK_TOPDIR)/src/closed/solaris/classes/sun/awt/fontconfigs
-    GENDATA_FONT_CONFIG_SRC_FILES := \
-        fontconfig.properties \
-        fontconfig.RedHat.5.properties \
-        fontconfig.RedHat.6.properties \
-        fontconfig.Turbo.properties \
-        fontconfig.SuSE.10.properties \
-        fontconfig.SuSE.11.properties
+GENDATA_FONT_CONFIG_DATA_DIR := $(JDK_TOPDIR)/make/data/fontconfig
+ifndef OPENJDK
+  ifeq ($(OPENJDK_TARGET_OS), linux)
+    GENDATA_FONT_CONFIG_DATA_DIR := $(JDK_TOPDIR)/make/closed/data/fontconfig
   endif
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  GENDATA_FONT_CONFIG_SRC_DIR := \
-      $(JDK_TOPDIR)/src/solaris/classes/sun/awt/fontconfigs
-  GENDATA_FONT_CONFIG_SRC_FILES := fontconfig.properties
-  GENDATA_FONT_CONFIG_SRC_PREFIX := solaris.
-endif
+GENDATA_FONT_CONFIG_SRC_FILES := \
+    $(wildcard $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).*)
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  GENDATA_FONT_CONFIG_SRC_DIR := \
-      $(JDK_TOPDIR)/src/macosx/classes/sun/awt/fontconfigs
-  GENDATA_FONT_CONFIG_SRC_FILES := fontconfig.properties
-  GENDATA_FONT_CONFIG_SRC_PREFIX := macosx.
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), aix)
-  GENDATA_FONT_CONFIG_SRC_DIR    := \
-      $(JDK_TOPDIR)/src/aix/classes/sun/awt/fontconfigs
-  GENDATA_FONT_CONFIG_SRC_FILES  := fontconfig.properties
-  GENDATA_FONT_CONFIG_SRC_PREFIX := aix.
-endif
-
-###
 
 $(GENDATA_FONT_CONFIG_DST)/%.src: \
-    $(GENDATA_FONT_CONFIG_SRC_DIR)/$(GENDATA_FONT_CONFIG_SRC_PREFIX)%
+    $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%
 	$(call install-file)
 
 $(GENDATA_FONT_CONFIG_DST)/%.bfc: \
-    $(GENDATA_FONT_CONFIG_SRC_DIR)/$(GENDATA_FONT_CONFIG_SRC_PREFIX)%.properties
+    $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%.properties \
+    $(BUILD_TOOLS)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(TOOL_COMPILEFONTCONFIG) $< $@
 	$(CHMOD) 444 $@
 
-###
 
-GENDATA_FONT_CONFIGS := $(GENDATA_FONT_CONFIG_SRC_FILES:%=$(GENDATA_FONT_CONFIG_DST)/%.src)
-GENDATA_BFONT_CONFIGS := $(GENDATA_FONT_CONFIG_SRC_FILES:%.properties=$(GENDATA_FONT_CONFIG_DST)/%.bfc)
+GENDATA_FONT_CONFIGS := $(patsubst $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%, \
+    $(GENDATA_FONT_CONFIG_DST)/%.src, $(GENDATA_FONT_CONFIG_SRC_FILES))
+GENDATA_BFONT_CONFIGS := $(patsubst $(GENDATA_FONT_CONFIG_DATA_DIR)/$(OPENJDK_TARGET_OS).%.properties, \
+    $(GENDATA_FONT_CONFIG_DST)/%.bfc, $(GENDATA_FONT_CONFIG_SRC_FILES))
 
 GENDATA_FONT_CONFIG := $(GENDATA_FONT_CONFIGS) $(GENDATA_BFONT_CONFIGS)
 
-###

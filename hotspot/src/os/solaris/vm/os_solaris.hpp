@@ -27,6 +27,9 @@
 
 // Solaris_OS defines the interface to Solaris operating systems
 
+// Information about the protection of the page at address '0' on this os.
+static bool zero_page_read_protected() { return true; }
+
 class Solaris {
   friend class os;
 
