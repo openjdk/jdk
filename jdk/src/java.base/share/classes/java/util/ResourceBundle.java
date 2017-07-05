@@ -2942,17 +2942,6 @@ public abstract class ResourceBundle {
                             script = "Hans";
                             break;
                         }
-                    } else if (script.length() > 0 && region.length() == 0) {
-                        // Supply region(country) for users who still package Chinese
-                        // bundles using old convension.
-                        switch (script) {
-                        case "Hans":
-                            region = "CN";
-                            break;
-                        case "Hant":
-                            region = "TW";
-                            break;
-                        }
                     }
                 }
 
@@ -2983,6 +2972,21 @@ public abstract class ResourceBundle {
                 }
                 if (script.length() > 0) {
                     list.add(Locale.getInstance(language, script, "", "", null));
+                    // Special handling for Chinese
+                    if (language.equals("zh")) {
+                        if (region.length() == 0) {
+                            // Supply region(country) for users who still package Chinese
+                            // bundles using old convension.
+                            switch (script) {
+                                case "Hans":
+                                    region = "CN";
+                                    break;
+                                case "Hant":
+                                    region = "TW";
+                                    break;
+                            }
+                        }
+                    }
 
                     // With script, after truncating variant, region and script,
                     // start over without script.

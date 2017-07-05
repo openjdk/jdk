@@ -2038,15 +2038,15 @@ class StubGenerator: public StubCodeGenerator {
     generate_push_parmBlk(keylen, fCode, parmBlk, key, cv, true);
 
     // Prepare other registers for instruction.
-    // __ z_lgr(src, from);  // Not needed, registers are the same.
+    // __ z_lgr(src, from);     // Not needed, registers are the same.
     __ z_lgr(dst, to);
-    __ z_lgr(srclen, msglen);
+    __ z_llgfr(srclen, msglen); // We pass the offsets as ints, not as longs as required.
 
-    __ kmc(dst, src);          // Decipher the message.
+    __ kmc(dst, src);           // Decipher the message.
 
     generate_pop_parmBlk(keylen, parmBlk, key, cv);
 
-    __ z_lgr(Z_RET, msglen);
+    __ z_llgfr(Z_RET, msglen);  // We pass the offsets as ints, not as longs as required.
     __ z_br(Z_R14);
 
     return __ addr_at(start_off);

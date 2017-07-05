@@ -53,6 +53,7 @@ import org.graalvm.compiler.hotspot.stubs.ExceptionHandlerStub;
 import org.graalvm.compiler.hotspot.stubs.Stub;
 import org.graalvm.compiler.hotspot.stubs.UnwindExceptionToCallerStub;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
+import org.graalvm.compiler.hotspot.word.MethodCountersPointer;
 import org.graalvm.compiler.lir.LIR;
 import org.graalvm.compiler.lir.LIRFrameState;
 import org.graalvm.compiler.lir.LIRInstruction;
@@ -316,8 +317,8 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
     /**
      * Tiered support.
      */
-    public static final ForeignCallDescriptor INVOCATION_EVENT = new ForeignCallDescriptor("invocation_event", void.class, Word.class);
-    public static final ForeignCallDescriptor BACKEDGE_EVENT = new ForeignCallDescriptor("backedge_event", void.class, Word.class, int.class, int.class);
+    public static final ForeignCallDescriptor INVOCATION_EVENT = new ForeignCallDescriptor("invocation_event", void.class, MethodCountersPointer.class);
+    public static final ForeignCallDescriptor BACKEDGE_EVENT = new ForeignCallDescriptor("backedge_event", void.class, MethodCountersPointer.class, int.class, int.class);
 
     /**
      * @see UncommonTrapCallNode

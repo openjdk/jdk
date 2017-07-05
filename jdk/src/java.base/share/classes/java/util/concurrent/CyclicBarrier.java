@@ -149,7 +149,8 @@ public class CyclicBarrier {
      * but no subsequent reset.
      */
     private static class Generation {
-        boolean broken;         // initially false
+        Generation() {}                 // prevent access constructor creation
+        boolean broken;                 // initially false
     }
 
     /** The lock for guarding barrier entry */
