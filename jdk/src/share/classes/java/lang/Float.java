@@ -121,6 +121,13 @@ public final class Float extends Number implements Comparable<Float> {
     public static final int SIZE = 32;
 
     /**
+     * The number of bytes used to represent a {@code float} value.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
+
+    /**
      * The {@code Class} instance representing the primitive type
      * {@code float}.
      *
@@ -648,7 +655,20 @@ public final class Float extends Number implements Comparable<Float> {
      *
      * @return a hash code value for this object.
      */
+    @Override
     public int hashCode() {
+        return Float.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code float} value; compatible with
+     * {@code Float.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code float} value.
+     */
+    public static int hashCode(float value) {
         return floatToIntBits(value);
     }
 

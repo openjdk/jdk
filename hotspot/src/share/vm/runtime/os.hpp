@@ -479,7 +479,8 @@ class os: AllStatic {
   static const char*    get_current_directory(char *buf, int buflen);
 
   // Builds a platform-specific full library path given a ld path and lib name
-  static void           dll_build_name(char* buffer, size_t size,
+  // Returns true if buffer contains full path to existing file, false otherwise
+  static bool           dll_build_name(char* buffer, size_t size,
                                        const char* pathname, const char* fname);
 
   // Symbol lookup, find nearest function name; basically it implements

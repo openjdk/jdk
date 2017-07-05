@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "ci/ciMetadata.hpp"
 #include "ci/ciMethodData.hpp"
+#include "ci/ciReplay.hpp"
 #include "ci/ciUtilities.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -115,6 +116,11 @@ void ciMethodData::load_data() {
   _arg_local = mdo->arg_local();
   _arg_stack = mdo->arg_stack();
   _arg_returned  = mdo->arg_returned();
+#ifndef PRODUCT
+  if (ReplayCompiles) {
+    ciReplay::initialize(this);
+  }
+#endif
 }
 
 void ciReceiverTypeData::translate_receiver_data_from(ProfileData* data) {
@@ -364,6 +370,79 @@ ciArgInfoData *ciMethodData::arg_info() const {
 // Implementation of the print method.
 void ciMethodData::print_impl(outputStream* st) {
   ciMetadata::print_impl(st);
+}
+
+void ciMethodData::dump_replay_data(outputStream* out) {
+  ASSERT_IN_VM;
+  MethodData* mdo = get_MethodData();
+  Method* method = mdo->method();
+  Klass* holder = method->method_holder();
+  out->print("ciMethodData %s %s %s %d %d",
+             holder->name()->as_quoted_ascii(),
+             method->name()->as_quoted_ascii(),
+             method->signature()->as_quoted_ascii(),
+             _state,
+             current_mileage());
+
+  // dump the contents of the MDO header as raw data
+  unsigned char* orig = (unsigned char*)&_orig;
+  int length = sizeof(_orig);
+  out->print(" orig %d", length);
+  for (int i = 0; i < length; i++) {
+    out->print(" %d", orig[i]);
+  }
+
+  // dump the MDO data as raw data
+  int elements = data_size() / sizeof(intptr_t);
+  out->print(" data %d", elements);
+  for (int i = 0; i < elements; i++) {
+    // We could use INTPTR_FORMAT here but that's a zero justified
+    // which makes comparing it with the SA version of this output
+    // harder.
+#ifdef _LP64
+    out->print(" 0x%" FORMAT64_MODIFIER "x", data()[i]);
+#else
+    out->print(" 0x%x", data()[i]);
+#endif
+  }
+
+  // The MDO contained oop references as ciObjects, so scan for those
+  // and emit pairs of offset and klass name so that they can be
+  // reconstructed at runtime.  The first round counts the number of
+  // oop references and the second actually emits them.
+  int count = 0;
+  for (int round = 0; round < 2; round++) {
+    if (round == 1) out->print(" oops %d", count);
+    ProfileData* pdata = first_data();
+    for ( ; is_valid(pdata); pdata = next_data(pdata)) {
+      if (pdata->is_ReceiverTypeData()) {
+        ciReceiverTypeData* vdata = (ciReceiverTypeData*)pdata;
+        for (uint i = 0; i < vdata->row_limit(); i++) {
+          ciKlass* k = vdata->receiver(i);
+          if (k != NULL) {
+            if (round == 0) {
+              count++;
+            } else {
+              out->print(" %d %s", dp_to_di(vdata->dp() + in_bytes(vdata->receiver_offset(i))) / sizeof(intptr_t), k->name()->as_quoted_ascii());
+            }
+          }
+        }
+      } else if (pdata->is_VirtualCallData()) {
+        ciVirtualCallData* vdata = (ciVirtualCallData*)pdata;
+        for (uint i = 0; i < vdata->row_limit(); i++) {
+          ciKlass* k = vdata->receiver(i);
+          if (k != NULL) {
+            if (round == 0) {
+              count++;
+            } else {
+              out->print(" %d %s", dp_to_di(vdata->dp() + in_bytes(vdata->receiver_offset(i))) / sizeof(intptr_t), k->name()->as_quoted_ascii());
+            }
+          }
+        }
+      }
+    }
+  }
+  out->cr();
 }
 
 #ifndef PRODUCT

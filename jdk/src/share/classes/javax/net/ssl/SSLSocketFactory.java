@@ -127,6 +127,7 @@ public abstract class SSLSocketFactory extends SocketFactory
 
     static String getSecurityProperty(final String name) {
         return AccessController.doPrivileged(new PrivilegedAction<String>() {
+            @Override
             public String run() {
                 String s = java.security.Security.getProperty(name);
                 if (s != null) {
@@ -247,18 +248,21 @@ class DefaultSSLSocketFactory extends SSLSocketFactory
             new SocketException(reason.toString()).initCause(reason);
     }
 
+    @Override
     public Socket createSocket()
     throws IOException
     {
         return throwException();
     }
 
+    @Override
     public Socket createSocket(String host, int port)
     throws IOException
     {
         return throwException();
     }
 
+    @Override
     public Socket createSocket(Socket s, String host,
                                 int port, boolean autoClose)
     throws IOException
@@ -266,12 +270,14 @@ class DefaultSSLSocketFactory extends SSLSocketFactory
         return throwException();
     }
 
+    @Override
     public Socket createSocket(InetAddress address, int port)
     throws IOException
     {
         return throwException();
     }
 
+    @Override
     public Socket createSocket(String host, int port,
         InetAddress clientAddress, int clientPort)
     throws IOException
@@ -279,6 +285,7 @@ class DefaultSSLSocketFactory extends SSLSocketFactory
         return throwException();
     }
 
+    @Override
     public Socket createSocket(InetAddress address, int port,
         InetAddress clientAddress, int clientPort)
     throws IOException
@@ -286,10 +293,12 @@ class DefaultSSLSocketFactory extends SSLSocketFactory
         return throwException();
     }
 
+    @Override
     public String [] getDefaultCipherSuites() {
         return new String[0];
     }
 
+    @Override
     public String [] getSupportedCipherSuites() {
         return new String[0];
     }

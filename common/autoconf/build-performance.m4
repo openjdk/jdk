@@ -204,7 +204,7 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
 #
 AC_ARG_ENABLE([precompiled-headers], [AS_HELP_STRING([--disable-precompiled-headers],
 	[disable using precompiled headers when compiling C++ @<:@enabled@:>@])],
-    [ENABLE_PRECOMPH=${enable_precompiled-headers}], [ENABLE_PRECOMPH=yes])
+    [ENABLE_PRECOMPH=${enable_precompiled_headers}], [ENABLE_PRECOMPH=yes])
 
 USE_PRECOMPILED_HEADER=1
 if test "x$ENABLE_PRECOMPH" = xno; then
@@ -214,17 +214,16 @@ fi
 if test "x$ENABLE_PRECOMPH" = xyes; then
     # Check that the compiler actually supports precomp headers.
     if test "x$GCC" = xyes; then
-         AC_MSG_CHECKING([that precompiled headers work])         
+         AC_MSG_CHECKING([that precompiled headers work])
          echo "int alfa();" > conftest.h
-         $CXX -x c++-header conftest.h -o conftest.hpp.gch
+         $CXX -x c++-header conftest.h -o conftest.hpp.gch 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD
          if test ! -f conftest.hpp.gch; then
-             echo Precompiled header is not working!
              USE_PRECOMPILED_HEADER=0
              AC_MSG_RESULT([no])        
          else
              AC_MSG_RESULT([yes])
          fi
-         rm -f conftest.h
+         rm -f conftest.h conftest.hpp.gch
     fi
 fi
 

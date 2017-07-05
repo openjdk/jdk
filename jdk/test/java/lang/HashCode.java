@@ -23,18 +23,20 @@
 
 /*
  * @test
- * @bug 4245470
+ * @bug 4245470 7088913
  * @summary Test the primitive wrappers hashCode()
  */
 
+import java.util.Objects;
 import java.util.Random;
 
 public class HashCode {
 
     final Random rnd = new Random();
 
-    void test(String args[]) throws Exception {
-        int[] ints = {
+    void testOrdinals(String args[]) throws Exception {
+        long[] longs = {
+            Long.MIN_VALUE,
             Integer.MIN_VALUE,
             Short.MIN_VALUE,
             Character.MIN_VALUE,
@@ -44,20 +46,73 @@ public class HashCode {
             Character.MAX_VALUE,
             Short.MAX_VALUE,
             Integer.MAX_VALUE,
+            Long.MAX_VALUE,
             rnd.nextInt(),
         };
 
-        for (int x : ints) {
+        for (long x : longs) {
             check(    new Long(x).hashCode() == (int)((long)x ^ (long)x>>>32));
             check(Long.valueOf(x).hashCode() == (int)((long)x ^ (long)x>>>32));
-            check(    new Integer(x).hashCode() == x);
-            check(Integer.valueOf(x).hashCode() == x);
+            check(  (new Long(x)).hashCode() == Long.hashCode(x));
+            check(    new Integer((int)x).hashCode() == (int) x);
+            check(Integer.valueOf((int)x).hashCode() == (int) x);
+            check(  (new Integer((int)x)).hashCode() == Integer.hashCode((int)x));
             check(    new Short((short)x).hashCode() == (short) x);
             check(Short.valueOf((short)x).hashCode() == (short) x);
+            check(         (new Short((short)x)).hashCode() == Short.hashCode((short)x));
             check(    new Character((char) x).hashCode() == (char) x);
             check(Character.valueOf((char) x).hashCode() == (char) x);
+            check(         (new Character((char)x)).hashCode() == Character.hashCode((char)x));
             check(    new Byte((byte) x).hashCode() == (byte) x);
             check(Byte.valueOf((byte) x).hashCode() == (byte) x);
+            check(         (new Byte((byte)x)).hashCode() == Byte.hashCode((byte)x));
+        }
+    }
+
+    void testBoolean() {
+        check( Boolean.FALSE.hashCode() == 1237);
+        check( Boolean.TRUE.hashCode() == 1231);
+        check( Boolean.valueOf(false).hashCode() == 1237);
+        check( Boolean.valueOf(true).hashCode() == 1231);
+        check( (new Boolean(false)).hashCode() == 1237);
+        check( (new Boolean(true)).hashCode() == 1231);
+        check( Boolean.hashCode(false) == 1237);
+        check( Boolean.hashCode(true) == 1231);
+    }
+
+    void testFloat() {
+        float[] floats = {
+            Float.NaN,
+            Float.NEGATIVE_INFINITY,
+               -1f,
+               0f,
+               1f,
+               Float.POSITIVE_INFINITY
+        };
+
+        for(float f : floats) {
+            check( Float.hashCode(f) == Float.floatToIntBits(f));
+            check( Float.valueOf(f).hashCode() == Float.floatToIntBits(f));
+            check( (new Float(f)).hashCode() == Float.floatToIntBits(f));
+        }
+    }
+
+    void testDouble() {
+        double[] doubles = {
+            Double.NaN,
+            Double.NEGATIVE_INFINITY,
+               -1f,
+               0f,
+               1f,
+               Double.POSITIVE_INFINITY
+        };
+
+        for(double d : doubles) {
+            long bits = Double.doubleToLongBits(d);
+            int bitsHash = (int)(bits^(bits>>>32));
+            check( Double.hashCode(d) == bitsHash);
+            check( Double.valueOf(d).hashCode() == bitsHash);
+            check( (new Double(d)).hashCode() == bitsHash);
         }
     }
 
@@ -69,12 +124,16 @@ public class HashCode {
     void unexpected(Throwable t) {failed++; t.printStackTrace();}
     void check(boolean cond) {if (cond) pass(); else fail();}
     void equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) pass();
+        if (Objects.equals(x,y)) pass();
         else fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
         new HashCode().instanceMain(args);}
     public void instanceMain(String[] args) throws Throwable {
-        try {test(args);} catch (Throwable t) {unexpected(t);}
+        try { testOrdinals(args);
+              testBoolean();
+                testFloat();
+                testDouble();
+        } catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
 }

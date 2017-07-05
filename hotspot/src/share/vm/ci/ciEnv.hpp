@@ -46,6 +46,8 @@ class ciEnv : StackObj {
   friend class CompileBroker;
   friend class Dependencies;  // for get_object, during logging
 
+  static fileStream* _replay_data_stream;
+
 private:
   Arena*           _arena;       // Alias for _ciEnv_arena except in init_shared_objects()
   Arena            _ciEnv_arena;
@@ -448,6 +450,13 @@ public:
 
   // RedefineClasses support
   void metadata_do(void f(Metadata*)) { _factory->metadata_do(f); }
+
+  // Dump the compilation replay data for this ciEnv to
+  // ReplayDataFile, creating the file if needed.
+  void  dump_replay_data();
+
+  // Dump the compilation replay data for the ciEnv to the stream.
+  void dump_replay_data(outputStream* out);
 };
 
 #endif // SHARE_VM_CI_CIENV_HPP

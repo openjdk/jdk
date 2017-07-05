@@ -144,6 +144,7 @@ public:
 
 class ciMethodData : public ciMetadata {
   CI_PACKAGE_ACCESS
+  friend class ciReplay;
 
 private:
   // Size in bytes
@@ -320,6 +321,7 @@ public:
   void print();
   void print_data_on(outputStream* st);
 #endif
+  void dump_replay_data(outputStream* out);
 };
 
 #endif // SHARE_VM_CI_CIMETHODDATA_HPP
