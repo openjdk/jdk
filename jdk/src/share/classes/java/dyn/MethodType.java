@@ -333,7 +333,7 @@ class MethodType {
 
     /** Convenience method for {@link #make(java.lang.Class, java.lang.Class[])}.
      * Convert all wrapper types to their corresponding primitive types.
-     * A return type of {@java.lang.Void} is changed to {@code void}.
+     * A return type of {@code java.lang.Void} is changed to {@code void}.
      * @return a version of the original type with all wrapper types replaced
      */
     public MethodType unwrap() {
