@@ -126,7 +126,7 @@ public class AquaTableHeaderBorder extends AbstractBorder {
         return State.ACTIVE;
     }
 
-    static final RecyclableSingleton<Border> alternateBorder = new RecyclableSingleton<Border>() {
+    private static final RecyclableSingleton<Border> alternateBorder = new RecyclableSingleton<Border>() {
         @Override
         protected Border getInstance() {
             return BorderFactory.createRaisedBevelBorder();

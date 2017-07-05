@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Defines the JDK-specific API for HTTP server.
+ *
+ * @moduleGraph
+ * @since 9
+ */
 module jdk.httpserver {
 
     exports com.sun.net.httpserver;
