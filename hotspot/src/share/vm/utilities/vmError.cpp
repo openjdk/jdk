@@ -680,8 +680,10 @@ void VMError::report(outputStream* st) {
   STEP(190, "(printing heap information)" )
 
      if (_verbose && Universe::is_fully_initialized()) {
-       // print heap information before vm abort
-       Universe::print_on(st);
+       // Print heap information before vm abort. As we'd like as much
+       // information as possible in the report we ask for the
+       // extended (i.e., more detailed) version.
+       Universe::print_on(st, true /* extended */);
        st->cr();
      }
 
