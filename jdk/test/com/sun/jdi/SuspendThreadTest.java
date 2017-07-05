@@ -36,7 +36,6 @@ import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 
-import java.util.*;
 
     /********** target program **********/
 
@@ -78,7 +77,11 @@ public class SuspendThreadTest extends TestScaffold {
 
     // 1000 makes the test take over 2 mins on win32
     static int maxBkpts = 200;
-    int bkptCount;
+    volatile int bkptCount;
+    // to guard against spurious wakeups from bkptSignal.wait()
+    boolean signalSent;
+    // signal that a breakpoint has happened
+    Object bkptSignal = new Object() {};
     BreakpointRequest bkptRequest;
     Field debuggeeCountField;
 
@@ -99,8 +102,12 @@ public class SuspendThreadTest extends TestScaffold {
         // The main thread watchs the bkptCount to
         // see if bkpts stop coming in.  The
         // test _should_ fail well before maxBkpts bkpts.
-        if (bkptCount++ < maxBkpts) {
-            bkptRequest.enable();
+        synchronized (bkptSignal) {
+            if (bkptCount++ < maxBkpts) {
+                bkptRequest.enable();
+            }
+            signalSent = true;
+            bkptSignal.notifyAll();
         }
     }
 
@@ -130,29 +137,32 @@ public class SuspendThreadTest extends TestScaffold {
 
         debuggeeCountField = targetClass.fieldByName("count");
         try {
-
             addListener (this);
         } catch (Exception ex){
             ex.printStackTrace();
             failure("failure: Could not add listener");
-            throw new Exception("SuspendThreadTest: failed");
+            throw new Exception("SuspendThreadTest: failed", ex);
         }
 
         int prevBkptCount;
         vm().resume();
-        while (bkptCount < maxBkpts) {
-            prevBkptCount = bkptCount;
-            // If we don't get a bkpt within 5 secs,
-            // the test fails
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException ee) {
+        synchronized (bkptSignal) {
+            while (bkptCount < maxBkpts) {
+                prevBkptCount = bkptCount;
+                // If we don't get a bkpt within 5 secs,
+                // the test fails
+                signalSent = false;
+                do {
+                    try {
+                        bkptSignal.wait(5000);
+                    } catch (InterruptedException ee) {
+                    }
+                } while (signalSent == false);
+                if (prevBkptCount == bkptCount) {
+                    failure("failure: test hung");
+                    break;
+                }
             }
-            if (prevBkptCount == bkptCount) {
-                failure("failure: test hung");
-                break;
-            }
-            prevBkptCount = bkptCount;
         }
         println("done with loop");
         bkptRequest.disable();

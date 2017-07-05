@@ -719,52 +719,49 @@ NewStringPlatform(JNIEnv *env, const char *str)
 JNIEXPORT jstring JNICALL
 JNU_NewStringPlatform(JNIEnv *env, const char *str)
 {
-    jstring result;
-    result = nativeNewStringPlatform(env, str);
-    if (result == NULL) {
-        jbyteArray hab = 0;
-        int len;
+    jstring result = NULL;
+    jbyteArray hab = 0;
+    int len;
 
-        if (fastEncoding == NO_ENCODING_YET) {
-            initializeEncoding(env);
-            JNU_CHECK_EXCEPTION_RETURN(env, NULL);
-        }
+    if (fastEncoding == NO_ENCODING_YET) {
+        initializeEncoding(env);
+        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
+    }
 
-        if ((fastEncoding == FAST_8859_1) || (fastEncoding == NO_ENCODING_YET))
-            return newString8859_1(env, str);
-        if (fastEncoding == FAST_646_US)
-            return newString646_US(env, str);
-        if (fastEncoding == FAST_CP1252)
-            return newStringCp1252(env, str);
+    if ((fastEncoding == FAST_8859_1) || (fastEncoding == NO_ENCODING_YET))
+        return newString8859_1(env, str);
+    if (fastEncoding == FAST_646_US)
+        return newString646_US(env, str);
+    if (fastEncoding == FAST_CP1252)
+        return newStringCp1252(env, str);
 
-        if ((*env)->EnsureLocalCapacity(env, 2) < 0)
-            return NULL;
+    if ((*env)->EnsureLocalCapacity(env, 2) < 0)
+        return NULL;
 
-        len = (int)strlen(str);
-        hab = (*env)->NewByteArray(env, len);
-        if (hab != 0) {
-            jclass strClazz = JNU_ClassString(env);
-            CHECK_NULL_RETURN(strClazz, 0);
-            (*env)->SetByteArrayRegion(env, hab, 0, len, (jbyte *)str);
-            if (jnuEncodingSupported(env)) {
-                result = (*env)->NewObject(env, strClazz,
-                                           String_init_ID, hab, jnuEncoding);
-            } else {
-                /*If the encoding specified in sun.jnu.encoding is not endorsed
-                  by "Charset.isSupported" we have to fall back to use String(byte[])
-                  explicitly here without specifying the encoding name, in which the
-                  StringCoding class will pickup the iso-8859-1 as the fallback
-                  converter for us.
-                 */
-                jmethodID mid = (*env)->GetMethodID(env, strClazz,
-                                                    "<init>", "([B)V");
-                if (mid != NULL) {
-                    result = (*env)->NewObject(env, strClazz, mid, hab);
-                }
+    len = (int)strlen(str);
+    hab = (*env)->NewByteArray(env, len);
+    if (hab != 0) {
+        jclass strClazz = JNU_ClassString(env);
+        CHECK_NULL_RETURN(strClazz, 0);
+        (*env)->SetByteArrayRegion(env, hab, 0, len, (jbyte *)str);
+        if (jnuEncodingSupported(env)) {
+            result = (*env)->NewObject(env, strClazz,
+                                       String_init_ID, hab, jnuEncoding);
+        } else {
+            /*If the encoding specified in sun.jnu.encoding is not endorsed
+              by "Charset.isSupported" we have to fall back to use String(byte[])
+              explicitly here without specifying the encoding name, in which the
+              StringCoding class will pickup the iso-8859-1 as the fallback
+              converter for us.
+             */
+            jmethodID mid = (*env)->GetMethodID(env, strClazz,
+                                                "<init>", "([B)V");
+            if (mid != NULL) {
+                result = (*env)->NewObject(env, strClazz, mid, hab);
             }
-            (*env)->DeleteLocalRef(env, hab);
-            return result;
         }
+        (*env)->DeleteLocalRef(env, hab);
+        return result;
     }
     return NULL;
 }
@@ -778,56 +775,53 @@ GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy)
 JNIEXPORT const char * JNICALL
 JNU_GetStringPlatformChars(JNIEnv *env, jstring jstr, jboolean *isCopy)
 {
-    char *result = nativeGetStringPlatformChars(env, jstr, isCopy);
-    if (result == NULL) {
+    char *result = NULL;
+    jbyteArray hab = 0;
 
-        jbyteArray hab = 0;
+    if (isCopy)
+        *isCopy = JNI_TRUE;
 
-        if (isCopy)
-            *isCopy = JNI_TRUE;
-
-        if (fastEncoding == NO_ENCODING_YET) {
-            initializeEncoding(env);
-            JNU_CHECK_EXCEPTION_RETURN(env, 0);
-        }
-
-        if ((fastEncoding == FAST_8859_1) || (fastEncoding == NO_ENCODING_YET))
-            return getString8859_1Chars(env, jstr);
-        if (fastEncoding == FAST_646_US)
-            return getString646_USChars(env, jstr);
-        if (fastEncoding == FAST_CP1252)
-            return getStringCp1252Chars(env, jstr);
-
-        if ((*env)->EnsureLocalCapacity(env, 2) < 0)
-            return 0;
-
-        if (jnuEncodingSupported(env)) {
-            hab = (*env)->CallObjectMethod(env, jstr, String_getBytes_ID, jnuEncoding);
-        } else {
-            jmethodID mid;
-            jclass strClazz = JNU_ClassString(env);
-            CHECK_NULL_RETURN(strClazz, 0);
-            mid = (*env)->GetMethodID(env, strClazz,
-                                           "getBytes", "()[B");
-            if (mid != NULL) {
-                hab = (*env)->CallObjectMethod(env, jstr, mid);
-            }
-        }
-
-        if (!(*env)->ExceptionCheck(env)) {
-            jint len = (*env)->GetArrayLength(env, hab);
-            result = MALLOC_MIN4(len);
-            if (result == 0) {
-                JNU_ThrowOutOfMemoryError(env, 0);
-                (*env)->DeleteLocalRef(env, hab);
-                return 0;
-            }
-            (*env)->GetByteArrayRegion(env, hab, 0, len, (jbyte *)result);
-            result[len] = 0; /* NULL-terminate */
-        }
-
-        (*env)->DeleteLocalRef(env, hab);
+    if (fastEncoding == NO_ENCODING_YET) {
+        initializeEncoding(env);
+        JNU_CHECK_EXCEPTION_RETURN(env, 0);
     }
+
+    if ((fastEncoding == FAST_8859_1) || (fastEncoding == NO_ENCODING_YET))
+        return getString8859_1Chars(env, jstr);
+    if (fastEncoding == FAST_646_US)
+        return getString646_USChars(env, jstr);
+    if (fastEncoding == FAST_CP1252)
+        return getStringCp1252Chars(env, jstr);
+
+    if ((*env)->EnsureLocalCapacity(env, 2) < 0)
+        return 0;
+
+    if (jnuEncodingSupported(env)) {
+        hab = (*env)->CallObjectMethod(env, jstr, String_getBytes_ID, jnuEncoding);
+    } else {
+        jmethodID mid;
+        jclass strClazz = JNU_ClassString(env);
+        CHECK_NULL_RETURN(strClazz, 0);
+        mid = (*env)->GetMethodID(env, strClazz,
+                                       "getBytes", "()[B");
+        if (mid != NULL) {
+            hab = (*env)->CallObjectMethod(env, jstr, mid);
+        }
+    }
+
+    if (!(*env)->ExceptionCheck(env)) {
+        jint len = (*env)->GetArrayLength(env, hab);
+        result = MALLOC_MIN4(len);
+        if (result == 0) {
+            JNU_ThrowOutOfMemoryError(env, 0);
+            (*env)->DeleteLocalRef(env, hab);
+            return 0;
+        }
+        (*env)->GetByteArrayRegion(env, hab, 0, len, (jbyte *)result);
+        result[len] = 0; /* NULL-terminate */
+    }
+
+    (*env)->DeleteLocalRef(env, hab);
     return result;
 }
 

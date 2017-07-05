@@ -651,7 +651,12 @@ class MacroAssembler: public Assembler {
                            Label& done, Label* slow_case = NULL,
                            BiasedLockingCounters* counters = NULL);
   void biased_locking_exit (Register obj_reg, Register temp_reg, Label& done);
-
+#ifdef COMPILER2
+  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
+  // See full desription in macroAssembler_x86.cpp.
+  void fast_lock(Register obj, Register box, Register tmp, Register scr, BiasedLockingCounters* counters);
+  void fast_unlock(Register obj, Register box, Register tmp);
+#endif
 
   Condition negate_condition(Condition cond);
 

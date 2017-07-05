@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -147,13 +147,13 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 endif
 
 install_saproc: $(BULDLIBSAPROC)
-	$(QUIETLY) if [ -f $(LIBSAPROC) ] ; then             \
-	  echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)";     \
-	  test -f $(LIBSAPROC_DEBUGINFO) &&             \
+	$(QUIETLY) if [ -f $(LIBSAPROC) ] ; then                   \
+	  echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)";           \
+	  test ! -f $(LIBSAPROC_DEBUGINFO) ||                      \
 	    cp -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO); \
-	  test -f $(LIBSAPROC_DIZ) &&             \
-	    cp -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ); \
-	  cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";  \
+	  test ! -f $(LIBSAPROC_DIZ) ||                            \
+	    cp -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ);             \
+	  cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";        \
 	fi
 
 .PHONY: install_saproc

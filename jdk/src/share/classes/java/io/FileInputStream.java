@@ -51,6 +51,12 @@ class FileInputStream extends InputStream
     /* File Descriptor - handle to the open file */
     private final FileDescriptor fd;
 
+    /**
+     * The path of the referenced file
+     * (null if the stream is created with a file descriptor)
+     */
+    private final String path;
+
     private FileChannel channel = null;
 
     private final Object closeLock = new Object();
@@ -128,6 +134,7 @@ class FileInputStream extends InputStream
         }
         fd = new FileDescriptor();
         fd.attach(this);
+        path = name;
         open(name);
     }
 
@@ -164,6 +171,7 @@ class FileInputStream extends InputStream
             security.checkRead(fdObj);
         }
         fd = fdObj;
+        path = null;
 
         /*
          * FileDescriptor is being shared by streams.
@@ -186,7 +194,11 @@ class FileInputStream extends InputStream
      *             file is reached.
      * @exception  IOException  if an I/O error occurs.
      */
-    public native int read() throws IOException;
+    public int read() throws IOException {
+        return read0();
+    }
+
+    private native int read0() throws IOException;
 
     /**
      * Reads a subarray as a sequence of bytes.
@@ -345,7 +357,7 @@ class FileInputStream extends InputStream
     public FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, true, false, this);
+                channel = FileChannelImpl.open(fd, path, true, false, this);
             }
             return channel;
         }

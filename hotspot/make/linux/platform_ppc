@@ -2,11 +2,11 @@ os_family = linux
 
 arch = ppc
 
-arch_model = ppc
+arch_model = ppc_32
 
 os_arch = linux_ppc
 
-os_arch_model = linux_ppc
+os_arch_model = linux_ppc_32
 
 lib_arch = ppc
 
@@ -14,4 +14,4 @@ compiler = gcc
 
 gnu_dis_arch = ppc
 
-sysdefs = -DLINUX -D_GNU_SOURCE -DPPC
+sysdefs = -DLINUX -D_GNU_SOURCE -DPPC32

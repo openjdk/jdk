@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -861,4 +861,18 @@ import jdk.internal.org.objectweb.asm.Type;
      * All subclasses must provide such a value describing their type signature.
      */
     static final SpeciesData SPECIES_DATA = SpeciesData.EMPTY;
+
+    private static final SpeciesData[] SPECIES_DATA_CACHE = new SpeciesData[5];
+    private static SpeciesData checkCache(int size, String types) {
+        int idx = size - 1;
+        SpeciesData data = SPECIES_DATA_CACHE[idx];
+        if (data != null)  return data;
+        SPECIES_DATA_CACHE[idx] = data = getSpeciesData(types);
+        return data;
+    }
+    static SpeciesData speciesData_L()     { return checkCache(1, "L"); }
+    static SpeciesData speciesData_LL()    { return checkCache(2, "LL"); }
+    static SpeciesData speciesData_LLL()   { return checkCache(3, "LLL"); }
+    static SpeciesData speciesData_LLLL()  { return checkCache(4, "LLLL"); }
+    static SpeciesData speciesData_LLLLL() { return checkCache(5, "LLLLL"); }
 }

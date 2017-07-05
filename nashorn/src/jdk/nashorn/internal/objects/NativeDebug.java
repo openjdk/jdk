@@ -34,7 +34,7 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.PropertyListenerManager;
+import jdk.nashorn.internal.runtime.PropertyListeners;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -186,7 +186,7 @@ public final class NativeDebug extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object getListenerCount(final Object self, final Object obj) {
-        return (obj instanceof ScriptObject)? ((ScriptObject)obj).getListenerCount() : 0;
+        return (obj instanceof ScriptObject) ? PropertyListeners.getListenerCount((ScriptObject) obj) : 0;
     }
 
     /**
@@ -203,14 +203,13 @@ public final class NativeDebug extends ScriptObject {
 
         out.println("ScriptObject count " + ScriptObject.getCount());
         out.println("Scope count " + ScriptObject.getScopeCount());
-        out.println("ScriptObject listeners added " + PropertyListenerManager.getListenersAdded());
-        out.println("ScriptObject listeners removed " + PropertyListenerManager.getListenersRemoved());
+        out.println("ScriptObject listeners added " + PropertyListeners.getListenersAdded());
+        out.println("ScriptObject listeners removed " + PropertyListeners.getListenersRemoved());
         out.println("ScriptFunction constructor calls " + ScriptFunction.getConstructorCount());
         out.println("ScriptFunction invokes " + ScriptFunction.getInvokes());
         out.println("ScriptFunction allocations " + ScriptFunction.getAllocations());
         out.println("PropertyMap count " + PropertyMap.getCount());
         out.println("PropertyMap cloned " + PropertyMap.getClonedCount());
-        out.println("PropertyMap shared " + PropertyMap.getSharedCount());
         out.println("PropertyMap duplicated " + PropertyMap.getDuplicatedCount());
         out.println("PropertyMap history hit " + PropertyMap.getHistoryHit());
         out.println("PropertyMap proto invalidations " + PropertyMap.getProtoInvalidations());

@@ -64,7 +64,7 @@ public class CannotProceedException extends NamingException {
     /**
      * Contains the remaining unresolved part of the second
      * "name" argument to Context.rename().
-     * This information necessary for
+     * This information is necessary for
      * continuing the Context.rename() operation.
      * <p>
      * This field is initialized to null.

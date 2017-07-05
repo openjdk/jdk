@@ -22,12 +22,14 @@
  */
 
 /*
+ * @ignore 8032222
  * @test CdsWriteError
  * @summary Test how VM handles situation when it is impossible to write the
  *          CDS archive. VM is expected to exit gracefully and display the
  *          correct reason for the error.
  * @library /testlibrary
  * @run main CdsWriteError
+ * @bug 8032222
  */
 
 import com.oracle.java.testlibrary.*;

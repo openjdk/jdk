@@ -78,7 +78,7 @@ public final class NativeRangeError extends ScriptObject {
     }
 
     NativeRangeError(final Object msg, final Global global) {
-        this(msg, global.getRangeErrorPrototype(), global.getRangeErrorMap());
+        this(msg, global.getRangeErrorPrototype(), getInitialMap());
     }
 
     private NativeRangeError(final Object msg) {

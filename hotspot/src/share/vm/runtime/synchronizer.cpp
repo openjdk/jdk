@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@
 # include "os_bsd.inline.hpp"
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(PPC64)
   // Need to inhibit inlining for older versions of GCC to avoid build-time failures
   #define ATTR __attribute__((noinline))
 #else
@@ -84,32 +84,6 @@
     len = klassname->utf8_length();                                        \
   }
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL5(hotspot, monitor__wait,
-  jlong, uintptr_t, char*, int, long);
-HS_DTRACE_PROBE_DECL4(hotspot, monitor__waited,
-  jlong, uintptr_t, char*, int);
-
-#define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)            \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
-      HS_DTRACE_PROBE5(hotspot, monitor__wait, jtid,                       \
-                       (monitor), bytes, len, (millis));                   \
-    }                                                                      \
-  }
-
-#define DTRACE_MONITOR_PROBE(probe, monitor, obj, thread)                  \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
-      HS_DTRACE_PROBE4(hotspot, monitor__##probe, jtid,                    \
-                       (uintptr_t)(monitor), bytes, len);                  \
-    }                                                                      \
-  }
-
-#else /* USDT2 */
-
 #define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)            \
   {                                                                        \
     if (DTraceMonitorProbes) {                                            \
@@ -130,7 +104,6 @@ HS_DTRACE_PROBE_DECL4(hotspot, monitor__waited,
     }                                                                      \
   }
 
-#endif /* USDT2 */
 #else //  ndef DTRACE_ENABLED
 
 #define DTRACE_MONITOR_WAIT_PROBE(obj, thread, millis, mon)    {;}
@@ -373,23 +346,24 @@ ObjectLocker::~ObjectLocker() {
 // -----------------------------------------------------------------------------
 //  Wait/Notify/NotifyAll
 // NOTE: must use heavy weight monitor to handle wait()
-void ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
+int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   if (UseBiasedLocking) {
     BiasedLocking::revoke_and_rebias(obj, false, THREAD);
     assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
   }
   if (millis < 0) {
     TEVENT (wait - throw IAX) ;
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
   }
   ObjectMonitor* monitor = ObjectSynchronizer::inflate(THREAD, obj());
   DTRACE_MONITOR_WAIT_PROBE(monitor, obj(), THREAD, millis);
   monitor->wait(millis, true, THREAD);
 
-  /* This dummy call is in place to get around dtrace bug 6254741.  Once
-     that's fixed we can uncomment the following line and remove the call */
+  // This dummy call is in place to get around dtrace bug 6254741.  Once
+  // that's fixed we can uncomment the following line, remove the call
+  // and change this function back into a "void" func.
   // DTRACE_MONITOR_PROBE(waited, monitor, obj(), THREAD);
-  dtrace_waited_probe(monitor, obj, THREAD);
+  return dtrace_waited_probe(monitor, obj, THREAD);
 }
 
 void ObjectSynchronizer::waitUninterruptibly (Handle obj, jlong millis, TRAPS) {

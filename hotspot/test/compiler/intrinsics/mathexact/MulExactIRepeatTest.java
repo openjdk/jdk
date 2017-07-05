@@ -26,7 +26,7 @@
  * @bug 8026844
  * @summary Test repeating multiplyExact
  * @compile MulExactIRepeatTest.java Verify.java
- * @run main MulExactIRepeatTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main MulExactIRepeatTest
  *
  */
 
