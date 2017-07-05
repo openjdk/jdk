@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,15 +154,19 @@ public class TestLibrary {
         return false;
     }
 
-    public static String getProperty(String property, String defaultVal) {
-        final String prop = property;
-        final String def = defaultVal;
-        return java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty(prop, def);
-                }
-            });
+    public static String getProperty(final String property,
+                                     final String defaultVal) {
+        try {
+            return java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<String>() {
+                    public String run() {
+                        return System.getProperty(property, defaultVal);
+                    }
+                });
+        } catch (Exception ex) {
+            bomb("Exception getting property " + property, ex);
+            throw new AssertionError("this should be unreachable");
+        }
     }
 
     /**

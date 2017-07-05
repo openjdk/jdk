@@ -31,6 +31,7 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -58,6 +59,7 @@ import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 import jdk.nashorn.internal.runtime.linker.NashornBeansLinker;
@@ -99,6 +101,27 @@ public final class NativeObject {
     private static ECMAException notAnObject(final Object obj) {
         return typeError("not.an.object", ScriptRuntime.safeToString(obj));
     }
+
+    /**
+     * Nashorn extension: setIndexedPropertiesToExternalArrayData
+     *
+     * @param self self reference
+     * @param obj object whose index properties are backed by buffer
+     * @param buf external buffer - should be a nio ByteBuffer
+     * @return the 'obj' object
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object setIndexedPropertiesToExternalArrayData(final Object self, final Object obj, final Object buf) {
+        Global.checkObject(obj);
+        final ScriptObject sobj = (ScriptObject)obj;
+        if (buf instanceof ByteBuffer) {
+            sobj.setArray(ArrayData.allocate((ByteBuffer)buf));
+        } else {
+            throw typeError("not.a.bytebuffer", "setIndexedPropertiesToExternalArrayData's buf argument");
+        }
+        return sobj;
+    }
+
 
     /**
      * ECMA 15.2.3.2 Object.getPrototypeOf ( O )

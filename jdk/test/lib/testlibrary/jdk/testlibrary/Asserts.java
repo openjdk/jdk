@@ -23,16 +23,17 @@
 
 package jdk.testlibrary;
 
+import java.util.Objects;
+
 /**
  * Asserts that can be used for verifying assumptions in tests.
  *
- * An assertion will throw a {@link RuntimeException} if the assertion isn't
- * valid.  All the asserts can be imported into a test by using a static
- * import:
+ * An assertion will throw a {@link RuntimeException} if the assertion isn't true.
+ * All the asserts can be imported into a test by using a static import:
  *
  * <pre>
  * {@code
- * import static com.oracle.java.testlibrary.Asserts.*;
+ * import static jdk.testlibrary.Asserts.*;
  * }
  *
  * Always provide a message describing the assumption if the line number of the
@@ -45,111 +46,147 @@ package jdk.testlibrary;
 public class Asserts {
 
     /**
-     * Shorthand for {@link #assertLessThan(T, T)}.
+     * Shorthand for {@link #assertLessThan(Comparable, Comparable)}.
      *
-     * @see #assertLessThan(T, T)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertLessThan(Comparable, Comparable)
      */
     public static <T extends Comparable<T>> void assertLT(T lhs, T rhs) {
         assertLessThan(lhs, rhs);
     }
 
     /**
-     * Shorthand for {@link #assertLessThan(T, T, String)}.
+     * Shorthand for {@link #assertLessThan(Comparable, Comparable, String)}.
      *
-     * @see #assertLessThan(T, T, String)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @see #assertLessThan(Comparable, Comparable, String)
      */
     public static <T extends Comparable<T>> void assertLT(T lhs, T rhs, String msg) {
         assertLessThan(lhs, rhs, msg);
     }
 
     /**
-     * Calls {@link #assertLessThan(T, T, String)} with a default message.
+     * Calls {@link #assertLessThan(Comparable, Comparable, String)} with a default message.
      *
-     * @see #assertLessThan(T, T, String)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertLessThan(Comparable, Comparable, String)
      */
     public static <T extends Comparable<T>> void assertLessThan(T lhs, T rhs) {
-        String msg = "Expected that " + format(lhs) + " < " + format(rhs);
-        assertLessThan(lhs, rhs, msg);
+        assertLessThan(lhs, rhs, null);
     }
 
     /**
      * Asserts that {@code lhs} is less than {@code rhs}.
      *
+     * @param <T> a type
      * @param lhs The left hand side of the comparison.
      * @param rhs The right hand side of the comparison.
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static <T extends Comparable<T>>void assertLessThan(T lhs, T rhs, String msg) {
-        assertTrue(compare(lhs, rhs, msg) < 0, msg);
+        if (!(compare(lhs, rhs, msg) < 0)) {
+            msg = Objects.toString(msg, "assertLessThan")
+                    + ": expected that " + Objects.toString(lhs)
+                    + " < " + Objects.toString(rhs);
+            fail(msg);
+        }
     }
 
     /**
-     * Shorthand for {@link #assertLessThanOrEqual(T, T)}.
+     * Shorthand for {@link #assertLessThanOrEqual(Comparable, Comparable)}.
      *
-     * @see #assertLessThanOrEqual(T, T)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertLessThanOrEqual(Comparable, Comparable)
      */
     public static <T extends Comparable<T>> void assertLTE(T lhs, T rhs) {
         assertLessThanOrEqual(lhs, rhs);
     }
 
     /**
-     * Shorthand for {@link #assertLessThanOrEqual(T, T, String)}.
+     * Shorthand for {@link #assertLessThanOrEqual(Comparable, Comparable, String)}.
      *
-     * @see #assertLessThanOrEqual(T, T, String)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @see #assertLessThanOrEqual(Comparable, Comparable, String)
      */
     public static <T extends Comparable<T>> void assertLTE(T lhs, T rhs, String msg) {
         assertLessThanOrEqual(lhs, rhs, msg);
     }
 
     /**
-     * Calls {@link #assertLessThanOrEqual(T, T, String)} with a default message.
+     * Calls {@link #assertLessThanOrEqual(Comparable, Comparable, String)} with a default message.
      *
-     * @see #assertLessThanOrEqual(T, T, String)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertLessThanOrEqual(Comparable, Comparable, String)
      */
     public static <T extends Comparable<T>> void assertLessThanOrEqual(T lhs, T rhs) {
-        String msg = "Expected that " + format(lhs) + " <= " + format(rhs);
-        assertLessThanOrEqual(lhs, rhs, msg);
+        assertLessThanOrEqual(lhs, rhs, null);
     }
 
     /**
      * Asserts that {@code lhs} is less than or equal to {@code rhs}.
      *
+     * @param <T> a type
      * @param lhs The left hand side of the comparison.
      * @param rhs The right hand side of the comparison.
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static <T extends Comparable<T>> void assertLessThanOrEqual(T lhs, T rhs, String msg) {
-        assertTrue(compare(lhs, rhs, msg) <= 0, msg);
+        if (!(compare(lhs, rhs, msg) <= 0)) {
+            msg = Objects.toString(msg, "assertLessThanOrEqual")
+                    + ": expected that " + Objects.toString(lhs)
+                    + " <= " + Objects.toString(rhs);
+            fail(msg);
+        }
     }
 
     /**
-     * Shorthand for {@link #assertEquals(T, T)}.
+     * Shorthand for {@link #assertEquals(Object, Object)}.
      *
-     * @see #assertEquals(T, T)
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertEquals(Object, Object)
      */
     public static void assertEQ(Object lhs, Object rhs) {
         assertEquals(lhs, rhs);
     }
 
     /**
-     * Shorthand for {@link #assertEquals(T, T, String)}.
+     * Shorthand for {@link #assertEquals(Object, Object, String)}.
      *
-     * @see #assertEquals(T, T, String)
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @see #assertEquals(Object, Object, String)
      */
     public static void assertEQ(Object lhs, Object rhs, String msg) {
         assertEquals(lhs, rhs, msg);
     }
 
     /**
-     * Calls {@link #assertEquals(T, T, String)} with a default message.
+     * Calls {@link #assertEquals(java.lang.Object, java.lang.Object, java.lang.String)} with a default message.
      *
-     * @see #assertEquals(T, T, String)
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertEquals(Object, Object, String)
      */
     public static void assertEquals(Object lhs, Object rhs) {
-        String msg = "Expected " + format(lhs) + " to equal " + format(rhs);
-        assertEquals(lhs, rhs, msg);
+        assertEquals(lhs, rhs, null);
     }
 
     /**
@@ -157,125 +194,160 @@ public class Asserts {
      *
      * @param lhs The left hand side of the comparison.
      * @param rhs The right hand side of the comparison.
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static void assertEquals(Object lhs, Object rhs, String msg) {
-        if (lhs == null) {
-            if (rhs != null) {
-                error(msg);
-            }
-        } else {
-            assertTrue(lhs.equals(rhs), msg);
+        if ((lhs != rhs) && ((lhs == null) || !(lhs.equals(rhs)))) {
+            msg = Objects.toString(msg, "assertEquals")
+                    + ": expected " + Objects.toString(lhs)
+                    + " to equal " + Objects.toString(rhs);
+            fail(msg);
         }
     }
 
     /**
-     * Shorthand for {@link #assertGreaterThanOrEqual(T, T)}.
+     * Shorthand for {@link #assertGreaterThanOrEqual(Comparable, Comparable)}.
      *
-     * @see #assertGreaterThanOrEqual(T, T)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertGreaterThanOrEqual(Comparable, Comparable)
      */
     public static <T extends Comparable<T>> void assertGTE(T lhs, T rhs) {
         assertGreaterThanOrEqual(lhs, rhs);
     }
 
     /**
-     * Shorthand for {@link #assertGreaterThanOrEqual(T, T, String)}.
+     * Shorthand for {@link #assertGreaterThanOrEqual(Comparable, Comparable, String)}.
      *
-     * @see #assertGreaterThanOrEqual(T, T, String)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @see #assertGreaterThanOrEqual(Comparable, Comparable, String)
      */
     public static <T extends Comparable<T>> void assertGTE(T lhs, T rhs, String msg) {
         assertGreaterThanOrEqual(lhs, rhs, msg);
     }
 
     /**
-     * Calls {@link #assertGreaterThanOrEqual(T, T, String)} with a default message.
+     * Calls {@link #assertGreaterThanOrEqual(Comparable, Comparable, String)} with a default message.
      *
-     * @see #assertGreaterThanOrEqual(T, T, String)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertGreaterThanOrEqual(Comparable, Comparable, String)
      */
     public static <T extends Comparable<T>> void assertGreaterThanOrEqual(T lhs, T rhs) {
-        String msg = "Expected that " + format(lhs) + " >= " + format(rhs);
-        assertGreaterThanOrEqual(lhs, rhs, msg);
+        assertGreaterThanOrEqual(lhs, rhs, null);
     }
 
     /**
      * Asserts that {@code lhs} is greater than or equal to {@code rhs}.
      *
+     * @param <T> a type
      * @param lhs The left hand side of the comparison.
      * @param rhs The right hand side of the comparison.
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static <T extends Comparable<T>> void assertGreaterThanOrEqual(T lhs, T rhs, String msg) {
-        assertTrue(compare(lhs, rhs, msg) >= 0, msg);
+        if (!(compare(lhs, rhs, msg) >= 0)) {
+            msg = Objects.toString(msg, "assertGreaterThanOrEqual")
+                    + ": expected " + Objects.toString(lhs)
+                    + " >= " + Objects.toString(rhs);
+            fail(msg);
+        }
     }
 
     /**
-     * Shorthand for {@link #assertGreaterThan(T, T)}.
+     * Shorthand for {@link #assertGreaterThan(Comparable, Comparable)}.
      *
-     * @see #assertGreaterThan(T, T)
+     * @param <T> a type
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertGreaterThan(Comparable, Comparable)
      */
     public static <T extends Comparable<T>> void assertGT(T lhs, T rhs) {
         assertGreaterThan(lhs, rhs);
     }
 
     /**
-     * Shorthand for {@link #assertGreaterThan(T, T, String)}.
+     * Shorthand for {@link #assertGreaterThan(Comparable, Comparable, String)}.
      *
-     * @see #assertGreaterThan(T, T, String)
+     * @param <T> a type
+     * @param lhs the left hand value
+     * @param rhs the right hand value
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @see #assertGreaterThan(Comparable, Comparable, String)
      */
     public static <T extends Comparable<T>> void assertGT(T lhs, T rhs, String msg) {
         assertGreaterThan(lhs, rhs, msg);
     }
 
     /**
-     * Calls {@link #assertGreaterThan(T, T, String)} with a default message.
+     * Calls {@link #assertGreaterThan(Comparable, Comparable, String)} with a default message.
      *
-     * @see #assertGreaterThan(T, T, String)
+     * @param <T> a type
+     * @param lhs the left hand value
+     * @param rhs the right hand value
+     * @see #assertGreaterThan(Comparable, Comparable, String)
      */
     public static <T extends Comparable<T>> void assertGreaterThan(T lhs, T rhs) {
-        String msg = "Expected that " + format(lhs) + " > " + format(rhs);
-        assertGreaterThan(lhs, rhs, msg);
+        assertGreaterThan(lhs, rhs, null);
     }
 
     /**
      * Asserts that {@code lhs} is greater than {@code rhs}.
      *
+     * @param <T> a type
      * @param lhs The left hand side of the comparison.
      * @param rhs The right hand side of the comparison.
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static <T extends Comparable<T>> void assertGreaterThan(T lhs, T rhs, String msg) {
-        assertTrue(compare(lhs, rhs, msg) > 0, msg);
+        if (!(compare(lhs, rhs, msg) > 0)) {
+            msg = Objects.toString(msg, "assertGreaterThan")
+                    + ": expected " + Objects.toString(lhs)
+                    + " > " + Objects.toString(rhs);
+            fail(msg);
+        }
     }
 
     /**
-     * Shorthand for {@link #assertNotEquals(T, T)}.
+     * Shorthand for {@link #assertNotEquals(Object, Object)}.
      *
-     * @see #assertNotEquals(T, T)
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertNotEquals(Object, Object)
      */
     public static void assertNE(Object lhs, Object rhs) {
         assertNotEquals(lhs, rhs);
     }
 
     /**
-     * Shorthand for {@link #assertNotEquals(T, T, String)}.
+     * Shorthand for {@link #assertNotEquals(Object, Object, String)}.
      *
-     * @see #assertNotEquals(T, T, String)
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @see #assertNotEquals(Object, Object, String)
      */
     public static void assertNE(Object lhs, Object rhs, String msg) {
         assertNotEquals(lhs, rhs, msg);
     }
 
     /**
-     * Calls {@link #assertNotEquals(T, T, String)} with a default message.
+     * Calls {@link #assertNotEquals(Object, Object, String)} with a default message.
      *
-     * @see #assertNotEquals(T, T, String)
+     * @param lhs The left hand side of the comparison.
+     * @param rhs The right hand side of the comparison.
+     * @see #assertNotEquals(Object, Object, String)
      */
     public static void assertNotEquals(Object lhs, Object rhs) {
-        String msg = "Expected " + format(lhs) + " to not equal " + format(rhs);
-        assertNotEquals(lhs, rhs, msg);
+        assertNotEquals(lhs, rhs, null);
     }
 
     /**
@@ -283,34 +355,34 @@ public class Asserts {
      *
      * @param lhs The left hand side of the comparison.
      * @param rhs The right hand side of the comparison.
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static void assertNotEquals(Object lhs, Object rhs, String msg) {
-        if (lhs == null) {
-            if (rhs == null) {
-                error(msg);
-            }
-        } else {
-            assertFalse(lhs.equals(rhs), msg);
+        if ((lhs == rhs) || (lhs != null && lhs.equals(rhs))) {
+            msg = Objects.toString(msg, "assertNotEquals")
+                    + ": expected " + Objects.toString(lhs)
+                    + " to not equal " + Objects.toString(rhs);
+            fail(msg);
         }
     }
 
     /**
      * Calls {@link #assertNull(Object, String)} with a default message.
      *
+     * @param o The reference assumed to be null.
      * @see #assertNull(Object, String)
      */
     public static void assertNull(Object o) {
-        assertNull(o, "Expected " + format(o) + " to be null");
+        assertNull(o, null);
     }
 
     /**
      * Asserts that {@code o} is null.
      *
      * @param o The reference assumed to be null.
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static void assertNull(Object o, String msg) {
         assertEquals(o, null, msg);
@@ -319,18 +391,19 @@ public class Asserts {
     /**
      * Calls {@link #assertNotNull(Object, String)} with a default message.
      *
+     * @param o The reference assumed <i>not</i> to be null,
      * @see #assertNotNull(Object, String)
      */
     public static void assertNotNull(Object o) {
-        assertNotNull(o, "Expected non null reference");
+        assertNotNull(o, null);
     }
 
     /**
      * Asserts that {@code o} is <i>not</i> null.
      *
      * @param o The reference assumed <i>not</i> to be null,
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static void assertNotNull(Object o, String msg) {
         assertNotEquals(o, null, msg);
@@ -339,57 +412,123 @@ public class Asserts {
     /**
      * Calls {@link #assertFalse(boolean, String)} with a default message.
      *
+     * @param value The value assumed to be false.
      * @see #assertFalse(boolean, String)
      */
     public static void assertFalse(boolean value) {
-        assertFalse(value, "Expected value to be false");
+        assertFalse(value, null);
     }
 
     /**
      * Asserts that {@code value} is {@code false}.
      *
      * @param value The value assumed to be false.
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static void assertFalse(boolean value, String msg) {
-        assertTrue(!value, msg);
+        if (value) {
+            msg = Objects.toString(msg, "assertFalse")
+                    + ": expected false, was true";
+            fail(msg);
+        }
     }
 
     /**
      * Calls {@link #assertTrue(boolean, String)} with a default message.
      *
+     * @param value The value assumed to be true.
      * @see #assertTrue(boolean, String)
      */
     public static void assertTrue(boolean value) {
-        assertTrue(value, "Expected value to be true");
+        assertTrue(value, null);
     }
 
     /**
      * Asserts that {@code value} is {@code true}.
      *
      * @param value The value assumed to be true.
-     * @param msg A description of the assumption.
-     * @throws RuntimeException if the assertion isn't valid.
+     * @param msg A description of the assumption; {@code null} for a default message.
+     * @throws RuntimeException if the assertion is not true.
      */
     public static void assertTrue(boolean value, String msg) {
         if (!value) {
-            error(msg);
+            msg = Objects.toString(msg, "assertTrue")
+                    + ": expected true, was false";
+            fail(msg);
         }
     }
 
     private static <T extends Comparable<T>> int compare(T lhs, T rhs, String msg) {
-        assertNotNull(lhs, msg);
-        assertNotNull(rhs, msg);
+        if (lhs == null || rhs == null) {
+            fail(lhs, rhs, msg + ": values must be non-null:", ",");
+        }
         return lhs.compareTo(rhs);
     }
 
-    private static String format(Object o) {
-        return o == null? "null" : o.toString();
+    /**
+     * Returns a string formatted with a message and expected and actual values.
+     * @param lhs the actual value
+     * @param rhs  the expected value
+     * @param message the actual value
+     * @param relation the asserted relationship between lhs and rhs
+     * @return a formatted string
+     */
+    public static String format(Object lhs, Object rhs, String message, String relation) {
+        StringBuilder sb = new StringBuilder(80);
+        if (message != null) {
+            sb.append(message);
+            sb.append(' ');
+        }
+        sb.append("<");
+        sb.append(Objects.toString(lhs));
+        sb.append("> ");
+        sb.append(Objects.toString(relation, ","));
+        sb.append(" <");
+        sb.append(Objects.toString(rhs));
+        sb.append(">");
+        return sb.toString();
     }
 
-    private static void error(String msg) {
-        throw new RuntimeException(msg);
+    /**
+     * Fail reports a failure with message fail.
+     *
+     * @throws RuntimeException always
+     */
+    public static void fail() {
+        fail("fail");
+    }
+
+    /**
+     * Fail reports a failure with a message.
+     * @param message for the failure
+     * @throws RuntimeException always
+     */
+    public static void fail(String message) {
+        throw new RuntimeException(message);
+    }
+
+    /**
+     * Fail reports a failure with a formatted message.
+     *
+     * @param lhs the actual value
+     * @param rhs the expected value
+     * @param message to be format before the expected and actual values
+     * @param relation the asserted relationship between lhs and rhs
+     * @throws RuntimeException always
+     */
+    public static void fail(Object lhs, Object rhs, String message, String relation) {
+        throw new RuntimeException(format(lhs, rhs, message, relation));
+    }
+
+    /**
+     * Fail reports a failure with a message and a cause.
+     * @param message to be format before the expected and actual values
+     * @param cause the exception that caused this failure
+     * @throws RuntimeException always
+     */
+    public static void fail(String message, Throwable cause) {
+        throw new RuntimeException(message, cause);
     }
 
 }

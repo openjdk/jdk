@@ -35,6 +35,9 @@
 #ifdef TARGET_ARCH_arm
 # include "c2_globals_arm.hpp"
 #endif
+#ifdef TARGET_ARCH_ppc
+# include "c2_globals_ppc.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "c2_globals_linux.hpp"
 #endif
@@ -43,6 +46,9 @@
 #endif
 #ifdef TARGET_OS_FAMILY_windows
 # include "c2_globals_windows.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "c2_globals_aix.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "c2_globals_bsd.hpp"
@@ -223,7 +229,8 @@
   diagnostic(bool, UnrollLimitCheck, true,                                  \
           "Additional overflow checks during loop unroll")                  \
                                                                             \
-  product(bool, OptimizeFill, true,                                         \
+  /* OptimizeFill not yet supported on PowerPC. */                          \
+  product(bool, OptimizeFill, true PPC64_ONLY(&& false),                    \
           "convert fill/copy loops into intrinsic")                         \
                                                                             \
   develop(bool, TraceOptimizeFill, false,                                   \
@@ -350,9 +357,6 @@
           "File to dump ideal graph to.  If set overrides the "             \
           "use of the network")                                             \
                                                                             \
-  product(bool, UseOldInlining, true,                                       \
-          "Enable the 1.3 inlining strategy")                               \
-                                                                            \
   product(bool, UseBimorphicInlining, true,                                 \
           "Profiling based inlining for two receivers")                     \
                                                                             \
@@ -456,6 +460,9 @@
                                                                             \
   experimental(bool, AggressiveUnboxing, false,                             \
           "Control optimizations for aggressive boxing elimination")        \
+                                                                            \
+  develop(bool, TracePostallocExpand, false, "Trace expanding nodes after"  \
+          " register allocation.")                                          \
                                                                             \
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \
@@ -637,14 +644,22 @@
   diagnostic(bool, OptimizeExpensiveOps, true,                              \
           "Find best control for expensive operations")                     \
                                                                             \
-  experimental(bool, UseMathExactIntrinsics, false,                         \
+  product(bool, UseMathExactIntrinsics, true,                               \
           "Enables intrinsification of various java.lang.Math functions")   \
                                                                             \
   experimental(bool, ReplaceInParentMaps, false,                            \
           "Propagate type improvements in callers of inlinee if possible")  \
                                                                             \
   experimental(bool, UseTypeSpeculation, false,                             \
-          "Speculatively propagate types from profiles")
+          "Speculatively propagate types from profiles")                    \
+                                                                            \
+  diagnostic(bool, UseInlineDepthForSpeculativeTypes, true,                 \
+          "Carry inline depth of profile point with speculative type "      \
+          "and give priority to profiling from lower inline depth")         \
+                                                                            \
+  product_pd(bool, TrapBasedRangeChecks,                                    \
+          "Generate code for range checks that uses a cmp and trap "        \
+          "instruction raising SIGTRAP. Used on PPC64.")                    \
 
 C2_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG)
 

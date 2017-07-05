@@ -91,7 +91,7 @@ public class ObjectStreamField
         this.name = name;
         this.type = type;
         this.unshared = unshared;
-        signature = getClassSignature(type).intern();
+        signature = ObjectStreamClass.getClassSignature(type).intern();
         field = null;
     }
 
@@ -137,7 +137,7 @@ public class ObjectStreamField
         name = field.getName();
         Class<?> ftype = field.getType();
         type = (showType || ftype.isPrimitive()) ? ftype : Object.class;
-        signature = getClassSignature(ftype).intern();
+        signature = ObjectStreamClass.getClassSignature(ftype).intern();
     }
 
     /**
@@ -285,42 +285,5 @@ public class ObjectStreamField
      */
     String getSignature() {
         return signature;
-    }
-
-    /**
-     * Returns JVM type signature for given class.
-     */
-    private static String getClassSignature(Class<?> cl) {
-        StringBuilder sbuf = new StringBuilder();
-        while (cl.isArray()) {
-            sbuf.append('[');
-            cl = cl.getComponentType();
-        }
-        if (cl.isPrimitive()) {
-            if (cl == Integer.TYPE) {
-                sbuf.append('I');
-            } else if (cl == Byte.TYPE) {
-                sbuf.append('B');
-            } else if (cl == Long.TYPE) {
-                sbuf.append('J');
-            } else if (cl == Float.TYPE) {
-                sbuf.append('F');
-            } else if (cl == Double.TYPE) {
-                sbuf.append('D');
-            } else if (cl == Short.TYPE) {
-                sbuf.append('S');
-            } else if (cl == Character.TYPE) {
-                sbuf.append('C');
-            } else if (cl == Boolean.TYPE) {
-                sbuf.append('Z');
-            } else if (cl == Void.TYPE) {
-                sbuf.append('V');
-            } else {
-                throw new InternalError();
-            }
-        } else {
-            sbuf.append('L' + cl.getName().replace('.', '/') + ';');
-        }
-        return sbuf.toString();
     }
 }

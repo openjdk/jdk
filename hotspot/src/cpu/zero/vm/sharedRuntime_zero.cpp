@@ -135,6 +135,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
+                                         VMRegPair *regs2,
                                          int total_args_passed) {
   ShouldNotCallThis();
   return 0;

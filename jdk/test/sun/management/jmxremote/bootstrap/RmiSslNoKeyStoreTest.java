@@ -45,8 +45,6 @@ import javax.management.*;
 
 import sun.management.AgentConfigurationError;
 
-import util.TestLogger;
-
 /**
  * <p>This class implements unit test for RMI Bootstrap.
  * When called with no arguments main() looks in the directory indicated

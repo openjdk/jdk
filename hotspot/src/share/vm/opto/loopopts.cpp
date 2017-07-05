@@ -43,12 +43,6 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
     return NULL;
   }
 
-  if (n->is_MathExact()) {
-    // MathExact has projections that are not correctly handled in the code
-    // below.
-    return NULL;
-  }
-
   int wins = 0;
   assert(!n->is_CFG(), "");
   assert(region->is_Region(), "");
@@ -1115,8 +1109,8 @@ BoolNode *PhaseIdealLoop::clone_iff( PhiNode *phi, IdealLoopTree *loop ) {
     Node *n2 = phi->in(i)->in(1)->in(2);
     phi1->set_req( i, n1 );
     phi2->set_req( i, n2 );
-    phi1->set_type( phi1->type()->meet(n1->bottom_type()) );
-    phi2->set_type( phi2->type()->meet(n2->bottom_type()) );
+    phi1->set_type( phi1->type()->meet_speculative(n1->bottom_type()));
+    phi2->set_type( phi2->type()->meet_speculative(n2->bottom_type()));
   }
   // See if these Phis have been made before.
   // Register with optimizer
@@ -1189,8 +1183,8 @@ CmpNode *PhaseIdealLoop::clone_bool( PhiNode *phi, IdealLoopTree *loop ) {
     }
     phi1->set_req( j, n1 );
     phi2->set_req( j, n2 );
-    phi1->set_type( phi1->type()->meet(n1->bottom_type()) );
-    phi2->set_type( phi2->type()->meet(n2->bottom_type()) );
+    phi1->set_type(phi1->type()->meet_speculative(n1->bottom_type()));
+    phi2->set_type(phi2->type()->meet_speculative(n2->bottom_type()));
   }
 
   // See if these Phis have been made before.
@@ -2362,8 +2356,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
         opc == Op_Catch     ||
         opc == Op_CatchProj ||
         opc == Op_Jump      ||
-        opc == Op_JumpProj  ||
-        opc == Op_FlagsProj) {
+        opc == Op_JumpProj) {
 #if !defined(PRODUCT)
       if (TracePartialPeeling) {
         tty->print_cr("\nExit control too complex: lp: %d", head->_idx);

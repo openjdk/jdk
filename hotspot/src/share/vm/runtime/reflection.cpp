@@ -36,6 +36,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "prims/jvm.h"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -941,6 +942,11 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
           // Method resolution threw an exception; wrap it in an InvocationTargetException
             oop resolution_exception = PENDING_EXCEPTION;
             CLEAR_PENDING_EXCEPTION;
+            // JVMTI has already reported the pending exception
+            // JVMTI internal flag reset is needed in order to report InvocationTargetException
+            if (THREAD->is_Java_thread()) {
+              JvmtiExport::clear_detected_exception((JavaThread*) THREAD);
+            }
             JavaCallArguments args(Handle(THREAD, resolution_exception));
             THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
                 vmSymbols::throwable_void_signature(),
@@ -1073,6 +1079,12 @@ oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
     // Method threw an exception; wrap it in an InvocationTargetException
     oop target_exception = PENDING_EXCEPTION;
     CLEAR_PENDING_EXCEPTION;
+    // JVMTI has already reported the pending exception
+    // JVMTI internal flag reset is needed in order to report InvocationTargetException
+    if (THREAD->is_Java_thread()) {
+      JvmtiExport::clear_detected_exception((JavaThread*) THREAD);
+    }
+
     JavaCallArguments args(Handle(THREAD, target_exception));
     THROW_ARG_0(vmSymbols::java_lang_reflect_InvocationTargetException(),
                 vmSymbols::throwable_void_signature(),

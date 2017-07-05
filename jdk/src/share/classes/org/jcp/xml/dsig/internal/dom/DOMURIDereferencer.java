@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMURIDereferencer.java 1231033 2012-01-13 12:12:12Z coheigea $
