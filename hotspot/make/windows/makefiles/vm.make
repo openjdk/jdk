@@ -32,12 +32,12 @@ ALTSRC=$(WorkSpace)\src\closed
 
 !ifdef RELEASE
 !ifdef DEVELOP
-CPP_FLAGS=$(CPP_FLAGS) /D "DEBUG"
+CXX_FLAGS=$(CXX_FLAGS) /D "DEBUG"
 !else
-CPP_FLAGS=$(CPP_FLAGS) /D "PRODUCT"
+CXX_FLAGS=$(CXX_FLAGS) /D "PRODUCT"
 !endif
 !else
-CPP_FLAGS=$(CPP_FLAGS) /D "ASSERT"
+CXX_FLAGS=$(CXX_FLAGS) /D "ASSERT"
 !endif
 
 !if "$(Variant)" == "core"
@@ -45,19 +45,19 @@ CPP_FLAGS=$(CPP_FLAGS) /D "ASSERT"
 !endif
 
 !if "$(Variant)" == "kernel"
-CPP_FLAGS=$(CPP_FLAGS) /D "KERNEL"
+CXX_FLAGS=$(CXX_FLAGS) /D "KERNEL"
 !endif
 
 !if "$(Variant)" == "compiler1"
-CPP_FLAGS=$(CPP_FLAGS) /D "COMPILER1"
+CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER1"
 !endif
 
 !if "$(Variant)" == "compiler2"
-CPP_FLAGS=$(CPP_FLAGS) /D "COMPILER2"
+CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER2"
 !endif
 
 !if "$(Variant)" == "tiered"
-CPP_FLAGS=$(CPP_FLAGS) /D "COMPILER1" /D "COMPILER2"
+CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER1" /D "COMPILER2"
 !endif
 
 !if "$(BUILDARCH)" == "i486"
@@ -67,21 +67,21 @@ HOTSPOT_LIB_ARCH=$(BUILDARCH)
 !endif
 
 # The following variables are defined in the generated local.make file.
-CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_RELEASE_VERSION=\"$(HS_BUILD_VER)\""
-CPP_FLAGS=$(CPP_FLAGS) /D "JRE_RELEASE_VERSION=\"$(JRE_RELEASE_VER)\""
-CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_LIB_ARCH=\"$(HOTSPOT_LIB_ARCH)\""
-CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_BUILD_TARGET=\"$(BUILD_FLAVOR)\""
-CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_BUILD_USER=\"$(BuildUser)\""
-CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_VM_DISTRO=\"$(HOTSPOT_VM_DISTRO)\""
+CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_RELEASE_VERSION=\"$(HS_BUILD_VER)\""
+CXX_FLAGS=$(CXX_FLAGS) /D "JRE_RELEASE_VERSION=\"$(JRE_RELEASE_VER)\""
+CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_LIB_ARCH=\"$(HOTSPOT_LIB_ARCH)\""
+CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_BUILD_TARGET=\"$(BUILD_FLAVOR)\""
+CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_BUILD_USER=\"$(BuildUser)\""
+CXX_FLAGS=$(CXX_FLAGS) /D "HOTSPOT_VM_DISTRO=\"$(HOTSPOT_VM_DISTRO)\""
 
 !ifndef JAVASE_EMBEDDED
-CPP_FLAGS=$(CPP_FLAGS) /D "INCLUDE_TRACE"
+CXX_FLAGS=$(CXX_FLAGS) /D "INCLUDE_TRACE"
 !endif
 
-CPP_FLAGS=$(CPP_FLAGS) $(CPP_INCLUDE_DIRS)
+CXX_FLAGS=$(CXX_FLAGS) $(CXX_INCLUDE_DIRS)
 
 # Define that so jni.h is on correct side
-CPP_FLAGS=$(CPP_FLAGS) /D "_JNI_IMPLEMENTATION_"
+CXX_FLAGS=$(CXX_FLAGS) /D "_JNI_IMPLEMENTATION_"
 
 !if "$(BUILDARCH)" == "ia64"
 STACK_SIZE="/STACK:1048576,262144"
@@ -102,7 +102,7 @@ AGCT_EXPORT=/export:AsyncGetCallTrace
 
 # If you modify exports below please do the corresponding changes in
 # src/share/tools/ProjectCreator/WinGammaPlatformVC7.java
-LINK_FLAGS=$(LINK_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
+LD_FLAGS=$(LD_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
   /export:JNI_GetDefaultJavaVMInitArgs       \
   /export:JNI_CreateJavaVM                   \
   /export:JVM_FindClassFromBootLoader        \
@@ -118,25 +118,25 @@ LINK_FLAGS=$(LINK_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
   /export:JVM_GetThreadStateValues           \
   /export:JVM_InitAgentProperties
 
-CPP_INCLUDE_DIRS=/I "..\generated"
+CXX_INCLUDE_DIRS=/I "..\generated"
 
 !if exists($(ALTSRC)\share\vm)
-CPP_INCLUDE_DIRS=$(CPP_INCLUDE_DIRS) /I "$(ALTSRC)\share\vm"
+CXX_INCLUDE_DIRS=$(CXX_INCLUDE_DIRS) /I "$(ALTSRC)\share\vm"
 !endif
 
 !if exists($(ALTSRC)\os\windows\vm)
-CPP_INCLUDE_DIRS=$(CPP_INCLUDE_DIRS) /I "$(ALTSRC)\os\windows\vm"
+CXX_INCLUDE_DIRS=$(CXX_INCLUDE_DIRS) /I "$(ALTSRC)\os\windows\vm"
 !endif
 
 !if exists($(ALTSRC)\os_cpu\windows_$(Platform_arch)\vm)
-CPP_INCLUDE_DIRS=$(CPP_INCLUDE_DIRS) /I "$(ALTSRC)\os_cpu\windows_$(Platform_arch)\vm"
+CXX_INCLUDE_DIRS=$(CXX_INCLUDE_DIRS) /I "$(ALTSRC)\os_cpu\windows_$(Platform_arch)\vm"
 !endif
 
 !if exists($(ALTSRC)\cpu\$(Platform_arch)\vm)
-CPP_INCLUDE_DIRS=$(CPP_INCLUDE_DIRS) /I "$(ALTSRC)\cpu\$(Platform_arch)\vm"
+CXX_INCLUDE_DIRS=$(CXX_INCLUDE_DIRS) /I "$(ALTSRC)\cpu\$(Platform_arch)\vm"
 !endif
 
-CPP_INCLUDE_DIRS=$(CPP_INCLUDE_DIRS) \
+CXX_INCLUDE_DIRS=$(CXX_INCLUDE_DIRS) \
   /I "$(COMMONSRC)\share\vm" \
   /I "$(COMMONSRC)\share\vm\precompiled" \
   /I "$(COMMONSRC)\share\vm\prims" \
@@ -144,12 +144,12 @@ CPP_INCLUDE_DIRS=$(CPP_INCLUDE_DIRS) \
   /I "$(COMMONSRC)\os_cpu\windows_$(Platform_arch)\vm" \
   /I "$(COMMONSRC)\cpu\$(Platform_arch)\vm"
 
-CPP_DONT_USE_PCH=/D DONT_USE_PRECOMPILED_HEADER
+CXX_DONT_USE_PCH=/D DONT_USE_PRECOMPILED_HEADER
 
 !if "$(USE_PRECOMPILED_HEADER)" != "0"
-CPP_USE_PCH=/Fp"vm.pch" /Yu"precompiled.hpp"
+CXX_USE_PCH=/Fp"vm.pch" /Yu"precompiled.hpp"
 !else
-CPP_USE_PCH=$(CPP_DONT_USE_PCH)
+CXX_USE_PCH=$(CXX_DONT_USE_PCH)
 !endif
 
 # Where to find the source code for the virtual machine (is this used?)
@@ -194,101 +194,101 @@ VM_PATH={$(VM_PATH)}
 # Special case files not using precompiled header files.
 
 c1_RInfo_$(Platform_arch).obj: $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp 
-	 $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp
+	 $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c $(WorkSpace)\src\cpu\$(Platform_arch)\vm\c1_RInfo_$(Platform_arch).cpp
 
 os_windows.obj: $(WorkSpace)\src\os\windows\vm\os_windows.cpp
-        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\os_windows.cpp
+        $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\os_windows.cpp
 
 os_windows_$(Platform_arch).obj: $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
-        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
+        $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\os_windows_$(Platform_arch).cpp
 
 osThread_windows.obj: $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
-        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
+        $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\osThread_windows.cpp
 
 conditionVar_windows.obj: $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
-        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
+        $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c $(WorkSpace)\src\os\windows\vm\conditionVar_windows.cpp
 
 getThread_windows_$(Platform_arch).obj: $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
-        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
+        $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c $(WorkSpace)\src\os_cpu\windows_$(Platform_arch)\vm\getThread_windows_$(Platform_arch).cpp
 
 opcodes.obj: $(WorkSpace)\src\share\vm\opto\opcodes.cpp
-        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\share\vm\opto\opcodes.cpp
+        $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c $(WorkSpace)\src\share\vm\opto\opcodes.cpp
 
 bytecodeInterpreter.obj: $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
-        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
+        $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c $(WorkSpace)\src\share\vm\interpreter\bytecodeInterpreter.cpp
 
 bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
-        $(CPP) $(CPP_FLAGS) $(CPP_DONT_USE_PCH) /c ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
+        $(CXX) $(CXX_FLAGS) $(CXX_DONT_USE_PCH) /c ..\generated\jvmtifiles\bytecodeInterpreterWithChecks.cpp
 
 # Default rules for the Virtual Machine
 {$(COMMONSRC)\share\vm\c1}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\compiler}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\code}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\interpreter}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\ci}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\classfile}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\gc_implementation\parallelScavenge}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\gc_implementation\shared}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\gc_implementation\parNew}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\gc_implementation\concurrentMarkSweep}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\gc_implementation\g1}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\gc_interface}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\asm}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\memory}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\oops}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\prims}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\runtime}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\services}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\trace}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\utilities}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\libadt}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\opto}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\os\windows\vm}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 # This guy should remain a single colon rule because
 # otherwise we can't specify the output filename.
@@ -296,113 +296,113 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
         @$(RC) $(RC_FLAGS) /fo"$@" $<
 
 {$(COMMONSRC)\cpu\$(Platform_arch)\vm}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\os_cpu\windows_$(Platform_arch)\vm}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\c1}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\compiler}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\code}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\interpreter}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\ci}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\classfile}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\gc_implementation\parallelScavenge}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\gc_implementation\shared}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\gc_implementation\parNew}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\gc_implementation\concurrentMarkSweep}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\gc_implementation\g1}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\gc_interface}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\asm}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\memory}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\oops}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\prims}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\runtime}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\services}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\trace}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\utilities}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\libadt}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\opto}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\os\windows\vm}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 # otherwise we can't specify the output filename.
 {$(ALTSRC)\os\windows\vm}.rc.res:
         @$(RC) $(RC_FLAGS) /fo"$@" $<
 
 {$(ALTSRC)\cpu\$(Platform_arch)\vm}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\os_cpu\windows_$(Platform_arch)\vm}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {..\generated\incls}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {..\generated\adfiles}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {..\generated\jvmtifiles}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\jfr}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\jfr\agent}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\jfr\agent\isolated_deps\util}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(ALTSRC)\share\vm\jfr\jvm}.cpp.obj::
-        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 default::
 
 _build_pch_file.obj:
         @echo #include "precompiled.hpp" > ../generated/_build_pch_file.cpp
-        $(CPP) $(CPP_FLAGS) /Fp"vm.pch" /Yc"precompiled.hpp" /c ../generated/_build_pch_file.cpp
+        $(CXX) $(CXX_FLAGS) /Fp"vm.pch" /Yc"precompiled.hpp" /c ../generated/_build_pch_file.cpp
