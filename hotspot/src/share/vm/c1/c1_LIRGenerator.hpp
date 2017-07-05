@@ -436,6 +436,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 #endif
   ciKlass* profile_arg_type(ciMethodData* md, int md_first_offset, int md_offset, intptr_t profiled_k, Value arg, LIR_Opr& mdp, bool not_null, ciKlass* signature_k);
   void profile_arguments(ProfileCall* x);
+  void profile_parameters(Base* x);
+  void profile_parameters_at_call(ProfileCall* x);
 
  public:
   Compilation*  compilation() const              { return _compilation; }

@@ -187,19 +187,23 @@ public:
   size_t code_root_elems() const { return _code_root_elems; }
 
   void print_rs_mem_info_on(outputStream * out, size_t total) {
-    out->print_cr("    %8dK (%5.1f%%) by %zd %s regions", round_to_K(rs_mem_size()), rs_mem_size_percent_of(total), amount(), _name);
+    out->print_cr("    "SIZE_FORMAT_W(8)"K (%5.1f%%) by "SIZE_FORMAT" %s regions",
+        round_to_K(rs_mem_size()), rs_mem_size_percent_of(total), amount(), _name);
   }
 
   void print_cards_occupied_info_on(outputStream * out, size_t total) {
-    out->print_cr("     %8d (%5.1f%%) entries by %zd %s regions", cards_occupied(), cards_occupied_percent_of(total), amount(), _name);
+    out->print_cr("     "SIZE_FORMAT_W(8)" (%5.1f%%) entries by "SIZE_FORMAT" %s regions",
+        cards_occupied(), cards_occupied_percent_of(total), amount(), _name);
   }
 
   void print_code_root_mem_info_on(outputStream * out, size_t total) {
-    out->print_cr("    %8dK (%5.1f%%) by %zd %s regions", round_to_K(code_root_mem_size()), code_root_mem_size_percent_of(total), amount(), _name);
+    out->print_cr("    "SIZE_FORMAT_W(8)"K (%5.1f%%) by "SIZE_FORMAT" %s regions",
+        round_to_K(code_root_mem_size()), code_root_mem_size_percent_of(total), amount(), _name);
   }
 
   void print_code_root_elems_info_on(outputStream * out, size_t total) {
-    out->print_cr("     %8d (%5.1f%%) elements by %zd %s regions", code_root_elems(), code_root_elems_percent_of(total), amount(), _name);
+    out->print_cr("     "SIZE_FORMAT_W(8)" (%5.1f%%) elements by "SIZE_FORMAT" %s regions",
+        code_root_elems(), code_root_elems_percent_of(total), amount(), _name);
   }
 };
 
@@ -327,14 +331,14 @@ void G1RemSetSummary::print_on(outputStream* out) {
   out->print_cr("\n Recent concurrent refinement statistics");
   out->print_cr("  Processed "SIZE_FORMAT" cards",
                 num_concurrent_refined_cards());
-  out->print_cr("  Of %d completed buffers:", num_processed_buf_total());
-  out->print_cr("     %8d (%5.1f%%) by concurrent RS threads.",
+  out->print_cr("  Of "SIZE_FORMAT" completed buffers:", num_processed_buf_total());
+  out->print_cr("     "SIZE_FORMAT_W(8)" (%5.1f%%) by concurrent RS threads.",
                 num_processed_buf_total(),
                 percent_of(num_processed_buf_rs_threads(), num_processed_buf_total()));
-  out->print_cr("     %8d (%5.1f%%) by mutator threads.",
+  out->print_cr("     "SIZE_FORMAT_W(8)" (%5.1f%%) by mutator threads.",
                 num_processed_buf_mutator(),
                 percent_of(num_processed_buf_mutator(), num_processed_buf_total()));
-  out->print_cr("  Did %d coarsenings.", num_coarsenings());
+  out->print_cr("  Did "SIZE_FORMAT" coarsenings.", num_coarsenings());
   out->print_cr("  Concurrent RS threads times (s)");
   out->print("     ");
   for (uint i = 0; i < _num_vtimes; i++) {

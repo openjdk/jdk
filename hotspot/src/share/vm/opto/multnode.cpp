@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/multnode.hpp"
@@ -149,4 +150,60 @@ const RegMask &ProjNode::out_RegMask() const {
 //------------------------------ideal_reg--------------------------------------
 uint ProjNode::ideal_reg() const {
   return bottom_type()->ideal_reg();
+}
+
+//-------------------------------is_uncommon_trap_proj----------------------------
+// Return true if proj is the form of "proj->[region->..]call_uct"
+bool ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason reason) {
+  int path_limit = 10;
+  Node* out = this;
+  for (int ct = 0; ct < path_limit; ct++) {
+    out = out->unique_ctrl_out();
+    if (out == NULL)
+      return false;
+    if (out->is_CallStaticJava()) {
+      int req = out->as_CallStaticJava()->uncommon_trap_request();
+      if (req != 0) {
+        Deoptimization::DeoptReason trap_reason = Deoptimization::trap_request_reason(req);
+        if (trap_reason == reason || reason == Deoptimization::Reason_none) {
+           return true;
+        }
+      }
+      return false; // don't do further after call
+    }
+    if (out->Opcode() != Op_Region)
+      return false;
+  }
+  return false;
+}
+
+//-------------------------------is_uncommon_trap_if_pattern-------------------------
+// Return true  for "if(test)-> proj -> ...
+//                          |
+//                          V
+//                      other_proj->[region->..]call_uct"
+//
+// "must_reason_predicate" means the uct reason must be Reason_predicate
+bool ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason) {
+  Node *in0 = in(0);
+  if (!in0->is_If()) return false;
+  // Variation of a dead If node.
+  if (in0->outcnt() < 2)  return false;
+  IfNode* iff = in0->as_If();
+
+  // we need "If(Conv2B(Opaque1(...)))" pattern for reason_predicate
+  if (reason != Deoptimization::Reason_none) {
+    if (iff->in(1)->Opcode() != Op_Conv2B ||
+       iff->in(1)->in(1)->Opcode() != Op_Opaque1) {
+      return false;
+    }
+  }
+
+  ProjNode* other_proj = iff->proj_out(1-_con)->as_Proj();
+  if (other_proj->is_uncommon_trap_proj(reason)) {
+    assert(reason == Deoptimization::Reason_none ||
+           Compile::current()->is_predicate_opaq(iff->in(1)->in(1)), "should be on the list");
+    return true;
+  }
+  return false;
 }

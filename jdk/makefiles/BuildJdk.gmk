@@ -80,7 +80,11 @@ genclasses-only:
         # to execute launchers.
 	+$(MAKE) -f GenerateClasses.gmk
 
-jdk: genclasses
+securityjars: genclasses securityjars-only
+securityjars-only:
+	+$(MAKE) -f CreateSecurityJars.gmk
+
+jdk: securityjars
         # Now we have a complete jdk, which you can run.
         # It is not yet wrapped up as an installed image.
 

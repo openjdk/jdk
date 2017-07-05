@@ -1019,7 +1019,7 @@ void IfNode::dominated_by( Node *prev_dom, PhaseIterGVN *igvn ) {
   // be skipped. For example, range check predicate has two checks
   // for lower and upper bounds.
   ProjNode* unc_proj = proj_out(1 - prev_dom->as_Proj()->_con)->as_Proj();
-  if (PhaseIdealLoop::is_uncommon_trap_proj(unc_proj, Deoptimization::Reason_predicate))
+  if (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate))
     prev_dom = idom;
 
   // Now walk the current IfNode's projections.

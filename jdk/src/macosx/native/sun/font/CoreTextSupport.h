@@ -24,7 +24,7 @@
  */
 
 #import <Cocoa/Cocoa.h>
-#import <JavaVM/jni.h>
+#import <jni.h>
 #import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #include "AWTFont.h"
