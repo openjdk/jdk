@@ -33,7 +33,7 @@ import jdk.testlibrary.Utils;
  * @modules java.management
  * @run build jdk.testlibrary.* DummyMain
  * @run shell ../MakeJAR3.sh ZeroArgPremainAgent
- * @run main ZeroArgPremainAgentTest
+ * @run main/othervm -XX:-CreateCoredumpOnCrash ZeroArgPremainAgentTest
  */
 public class ZeroArgPremainAgentTest {
     // Use a javaagent with a zero argument premain() function.

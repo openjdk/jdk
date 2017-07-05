@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8003948
+ * @modules java.base/sun.net.www
  * @run main MessageHeaderTest
  */
 import java.io.*;

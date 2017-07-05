@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @modules java.base/sun.net.www
  * @summary Tests for HeaderParser and MessageHeader
  *
  * Test of HeaderParser, MessageHeader changes
@@ -31,7 +32,6 @@
 
 import sun.net.www.HeaderParser;
 import sun.net.www.MessageHeader;
-import sun.net.www.protocol.http.AuthenticationHeader;
 import java.io.*;
 import java.util.Iterator;
 

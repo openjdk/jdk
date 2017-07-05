@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,8 @@ import java.util.*;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.compiler.*;
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.gc_implementation.parallelScavenge.*;
-import sun.jvm.hotspot.gc_interface.*;
+import sun.jvm.hotspot.gc.parallel.*;
+import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
@@ -927,7 +927,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
             if (curVFrame.isCompiledFrame()) {
               CodeBlob cb = VM.getVM().getCodeCache().findBlob(curFrame.getPC());
               ImmutableOopMapSet maps = cb.getOopMaps();
-              if ((maps == null) || (maps.getSize() == 0)) {
+              if ((maps == null) || (maps.getCount() == 0)) {
                 shouldSkipOopMaps = true;
               }
             }

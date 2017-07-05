@@ -33,7 +33,7 @@
 #include "utilities/macros.hpp"
 #include "vmreg_sparc.inline.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif // INCLUDE_ALL_GCS
 
 #define __ ce->masm()->

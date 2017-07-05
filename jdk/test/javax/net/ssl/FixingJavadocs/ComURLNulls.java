@@ -27,6 +27,8 @@
  * @summary Need to revisit the javadocs for JSSE, especially the
  *      promoted classes, and HttpsURLConnection.getCipherSuite throws
  *      NullPointerException
+ * @modules java.base/com.sun.net.ssl
+ *          java.base/com.sun.net.ssl.internal.www.protocol.https
  * @run main/othervm ComURLNulls
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use

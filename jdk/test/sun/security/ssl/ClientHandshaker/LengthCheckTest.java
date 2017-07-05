@@ -26,6 +26,7 @@
  * @bug 8044860
  * @summary Vectors and fixed length fields should be verified
  *          for allowed sizes.
+ * @modules java.base/sun.security.ssl
  * @run main/othervm LengthCheckTest
  * @key randomness
  */

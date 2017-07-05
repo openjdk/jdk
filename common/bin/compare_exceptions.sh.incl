@@ -94,7 +94,6 @@ ACCEPTED_BIN_DIFF="
 ./bin/jstat
 ./bin/jstatd
 ./bin/keytool
-./bin/native2ascii
 ./bin/orbd
 ./bin/pack200
 ./bin/policytool
@@ -173,7 +172,6 @@ ACCEPTED_BIN_DIFF="
 ./bin/jstat
 ./bin/jstatd
 ./bin/keytool
-./bin/native2ascii
 ./bin/orbd
 ./bin/pack200
 ./bin/policytool
@@ -293,7 +291,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/jstat
 ./bin/jstatd
 ./bin/keytool
-./bin/native2ascii
 ./bin/orbd
 ./bin/pack200
 ./bin/policytool
@@ -428,7 +425,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/jstat
 ./bin/jstatd
 ./bin/keytool
-./bin/native2ascii
 ./bin/orbd
 ./bin/pack200
 ./bin/policytool
@@ -509,7 +505,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/kinit.exe
 ./bin/klist.exe
 ./bin/ktab.exe
-./bin/native2ascii.exe
 ./bin/orbd.exe
 ./bin/pack200.exe
 ./bin/policytool.exe
@@ -585,7 +580,6 @@ ACCEPTED_BIN_DIFF="
 ./bin/jstat
 ./bin/jstatd
 ./bin/keytool
-./bin/native2ascii
 ./bin/orbd
 ./bin/pack200
 ./bin/policytool

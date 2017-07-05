@@ -490,6 +490,16 @@ public final class HijrahChronology extends AbstractChronology implements Serial
         return yearOfEra;
     }
 
+    /**
+     * Creates the HijrahEra object from the numeric value.
+     * The Hijrah calendar system has only one era covering the
+     * proleptic years greater than zero.
+     * This method returns the singleton HijrahEra for the value 1.
+     *
+     * @param eraValue  the era value
+     * @return the calendar system era, not null
+     * @throws DateTimeException if unable to create the era
+     */
     @Override
     public HijrahEra eraOf(int eraValue) {
         switch (eraValue) {

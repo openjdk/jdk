@@ -24,6 +24,7 @@
 /* @test
  * @bug 8057919
  * @summary Class.getSimpleName() should work for non-JLS compliant class names
+ * @modules java.base/jdk.internal.org.objectweb.asm
  */
 import jdk.internal.org.objectweb.asm.*;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;

@@ -25,6 +25,7 @@
  * @test
  * @bug 4671598
  * @summary PermissionCollection is not properly synchronized
+ * @modules java.rmi/com.sun.rmi.rmid
  */
 
 import java.security.*; // AllPermission, BasicPermission, Permissions

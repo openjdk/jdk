@@ -24,9 +24,10 @@
 /*
  * @test
  * @bug 6901992
+ * @summary InvalidJarIndexException due to bug in sun.misc.JarIndex.merge()
+ * @modules java.base/sun.misc
  * @compile -XDignore.symbol.file JarIndexMergeTest.java
  * @run main JarIndexMergeTest
- * @summary InvalidJarIndexException due to bug in sun.misc.JarIndex.merge()
  * @author  Diego Belfer
  */
 

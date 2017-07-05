@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4512200
+ * @modules java.base/sun.net.www
  * @run main/othervm -Dhttp.agent=foo UserAgent
  * @summary  HTTP header "User-Agent" format incorrect
  */

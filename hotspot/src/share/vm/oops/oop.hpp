@@ -25,9 +25,9 @@
 #ifndef SHARE_VM_OOPS_OOP_HPP
 #define SHARE_VM_OOPS_OOP_HPP
 
+#include "gc/shared/specialized_oop_closures.hpp"
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/specialized_oop_closures.hpp"
 #include "oops/metadata.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/top.hpp"
@@ -149,7 +149,6 @@ class oopDesc {
 
   static bool is_null(oop obj);
   static bool is_null(narrowOop obj);
-  static bool is_null(Klass* obj);
 
   // Decode an oop pointer from a narrowOop if compressed.
   // These are overloaded for oop and narrowOop as are the other functions

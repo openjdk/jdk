@@ -67,9 +67,9 @@ public class ISO2022_CN_CNS extends ISO2022 implements HistoricallyNamedCharset
         public Encoder(Charset cs)
         {
             super(cs);
-            SODesig = "$)G";
-            SS2Desig = "$*H";
-            SS3Desig = "$+I";
+            SODesig =  new byte[] {'$', ')', 'G' };
+            SS2Desig = new byte[] {'$', '*', 'H' };
+            SS3Desig = new byte[] {'$', '+', 'I' };
 
             try {
                 Charset cset = Charset.forName("EUC_TW"); // CNS11643

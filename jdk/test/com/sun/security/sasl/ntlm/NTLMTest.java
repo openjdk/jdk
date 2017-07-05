@@ -25,6 +25,8 @@
  * @test
  * @bug 6911951 7150092
  * @summary NTLM should be a supported Java SASL mechanism
+ * @modules java.base/sun.misc
+ *          java.security.sasl
  */
 import java.io.IOException;
 import javax.security.sasl.*;
