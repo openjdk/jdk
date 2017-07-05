@@ -5380,7 +5380,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
     }
   }
 
-  TRACE_INIT_ID(ik);
+  TRACE_INIT_KLASS_ID(ik);
 
   // If we reach here, all is well.
   // Now remove the InstanceKlass* from the _klass_to_deallocate field

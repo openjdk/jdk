@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_JVMCI_COMMANDLINEFLAGCONSTRAINTSJVMCI_HPP
-#define SHARE_VM_JVMCI_COMMANDLINEFLAGCONSTRAINTSJVMCI_HPP
-
-#include "runtime/globals.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-/*
- * Here we have JVMCI arguments constraints functions, which are called automatically
- * whenever flag's value changes. If the constraint fails the function should return
- * an appropriate error value.
+/* @test
+ * @run main/native TestDirtyInt
  */
+public class TestDirtyInt {
+    static {
+        System.loadLibrary("TestDirtyInt");
+    }
 
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(bool value, bool verbose);
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(intx value, bool verbose);
+    native static int test(int v);
 
-#endif /* SHARE_VM_JVMCI_COMMANDLINEFLAGCONSTRAINTSJVMCI_HPP */
+    static int compiled(int v) {
+        return test(v<<2);
+    }
+
+    static public void main(String[] args) {
+        for (int i = 0; i < 20000; i++) {
+            int res = compiled(Integer.MAX_VALUE);
+            if (res != 0x42) {
+                throw new RuntimeException("Test failed");
+            }
+        }
+    }
+}

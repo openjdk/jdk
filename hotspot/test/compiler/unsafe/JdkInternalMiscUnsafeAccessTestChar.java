@@ -157,6 +157,20 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         }
 
 
+        // Lazy
+        {
+            UNSAFE.putCharRelease(base, offset, 'a');
+            char x = UNSAFE.getCharAcquire(base, offset);
+            assertEquals(x, 'a', "putRelease char value");
+        }
+
+        // Opaque
+        {
+            UNSAFE.putCharOpaque(base, offset, 'b');
+            char x = UNSAFE.getCharOpaque(base, offset);
+            assertEquals(x, 'b', "putOpaque char value");
+        }
+
         // Unaligned
         {
             UNSAFE.putCharUnaligned(base, offset, 'b');

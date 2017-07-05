@@ -1349,9 +1349,12 @@ static void move32_64(MacroAssembler* masm, VMRegPair src, VMRegPair dst) {
     }
   } else if (dst.first()->is_stack()) {
     // reg to stack
-    __ st_ptr(src.first()->as_Register(), SP, reg2offset(dst.first()) + STACK_BIAS);
+    // Some compilers (gcc) expect a clean 32 bit value on function entry
+    __ signx(src.first()->as_Register(), L5);
+    __ st_ptr(L5, SP, reg2offset(dst.first()) + STACK_BIAS);
   } else {
-    __ mov(src.first()->as_Register(), dst.first()->as_Register());
+    // Some compilers (gcc) expect a clean 32 bit value on function entry
+    __ signx(src.first()->as_Register(), dst.first()->as_Register());
   }
 }
 

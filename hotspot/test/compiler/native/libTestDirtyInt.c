@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,33 +19,15 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "jvmci/commandLineFlagConstraintsJVMCI.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/globals.hpp"
-#include "utilities/defaultStream.hpp"
+#include "jni.h"
+#include <stdio.h>
 
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(bool value, bool verbose) {
-  if (!EnableJVMCI) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(), "EnableJVMCI must be enabled\n");
-    }
-    return Flag::VIOLATES_CONSTRAINT;
-  } else {
-    return Flag::SUCCESS;
-  }
-}
+static int array = 0x42;
 
-Flag::Error EnableJVMCIMustBeEnabledConstraintFunc(intx value, bool verbose) {
-  if (!EnableJVMCI) {
-    if (verbose == true) {
-      jio_fprintf(defaultStream::error_stream(), "EnableJVMCI must be enabled\n");
-    }
-    return Flag::VIOLATES_CONSTRAINT;
-  } else {
-    return Flag::SUCCESS;
-  }
+JNIEXPORT jint JNICALL Java_TestDirtyInt_test(JNIEnv* env, jclass jclazz, jint v)
+{
+  int* ptr = &array + v + 4;
+  return *ptr;
 }

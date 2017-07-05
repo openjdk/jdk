@@ -180,7 +180,10 @@ public class InvokeTest {
     static void testInterface() {
         System.out.println("linkToInterface");
 
-        // Monomorphic case (optimized virtual call)
+        // Monomorphic case (optimized virtual call), concrete target method
+        run(() -> linkToInterface(new P1(), P1.class));
+
+        // Monomorphic case (optimized virtual call), default target method
         run(() -> linkToInterface(new T(), I.class));
 
         // Megamorphic case (virtual call)
