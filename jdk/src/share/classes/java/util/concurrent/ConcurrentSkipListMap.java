@@ -507,13 +507,24 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             return new AbstractMap.SimpleImmutableEntry<K,V>(key, v);
         }
 
-        // Unsafe mechanics
-        private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-        private static final long valueOffset =
-            objectFieldOffset(UNSAFE, "value", Node.class);
-        private static final long nextOffset =
-            objectFieldOffset(UNSAFE, "next", Node.class);
+        // UNSAFE mechanics
 
+        private static final sun.misc.Unsafe UNSAFE;
+        private static final long valueOffset;
+        private static final long nextOffset;
+
+        static {
+            try {
+                UNSAFE = sun.misc.Unsafe.getUnsafe();
+                Class k = Node.class;
+                valueOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("value"));
+                nextOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("next"));
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
     }
 
     /* ---------------- Indexing -------------- */
@@ -580,10 +591,18 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         }
 
         // Unsafe mechanics
-        private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-        private static final long rightOffset =
-            objectFieldOffset(UNSAFE, "right", Index.class);
-
+        private static final sun.misc.Unsafe UNSAFE;
+        private static final long rightOffset;
+        static {
+            try {
+                UNSAFE = sun.misc.Unsafe.getUnsafe();
+                Class k = Index.class;
+                rightOffset = UNSAFE.objectFieldOffset
+                    (k.getDeclaredField("right"));
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
     }
 
     /* ---------------- Head nodes -------------- */
@@ -3082,20 +3101,16 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     }
 
     // Unsafe mechanics
-    private static final sun.misc.Unsafe UNSAFE = sun.misc.Unsafe.getUnsafe();
-    private static final long headOffset =
-        objectFieldOffset(UNSAFE, "head", ConcurrentSkipListMap.class);
-
-    static long objectFieldOffset(sun.misc.Unsafe UNSAFE,
-                                  String field, Class<?> klazz) {
+    private static final sun.misc.Unsafe UNSAFE;
+    private static final long headOffset;
+    static {
         try {
-            return UNSAFE.objectFieldOffset(klazz.getDeclaredField(field));
-        } catch (NoSuchFieldException e) {
-            // Convert Exception to corresponding Error
-            NoSuchFieldError error = new NoSuchFieldError(field);
-            error.initCause(e);
-            throw error;
+            UNSAFE = sun.misc.Unsafe.getUnsafe();
+            Class k = ConcurrentSkipListMap.class;
+            headOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField("head"));
+        } catch (Exception e) {
+            throw new Error(e);
         }
     }
-
 }

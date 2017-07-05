@@ -24,7 +24,6 @@
 #
 
 BUILDDIR = ../../..
-MODULE  = security-tools
 PACKAGE = sun.security.tools
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

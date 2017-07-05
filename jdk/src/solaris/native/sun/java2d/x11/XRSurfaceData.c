@@ -114,3 +114,26 @@ Java_sun_java2d_xr_XRSurfaceData_XRInitSurface(JNIEnv *env, jclass xsd,
     XShared_initSurface(env, xsdo, depth, width, height, drawable);
 #endif /* !HEADLESS */
 }
+
+
+
+JNIEXPORT void JNICALL
+Java_sun_java2d_xr_XRSurfaceData_freeXSDOPicture(JNIEnv *env, jobject xsd,
+                                                  jlong pXSData)
+{
+#ifndef HEADLESS
+    X11SDOps *xsdo;
+
+    J2dTraceLn(J2D_TRACE_INFO, "in XRSurfaceData_freeXSDOPicture");
+
+    xsdo = X11SurfaceData_GetOps(env, xsd);
+    if (xsdo == NULL) {
+        return;
+    }
+
+    if(xsdo->xrPic != None) {
+       XRenderFreePicture(awt_display, xsdo->xrPic);
+       xsdo->xrPic = None;
+    }
+#endif /* !HEADLESS */
+}

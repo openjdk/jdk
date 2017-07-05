@@ -55,10 +55,10 @@ public class ManyEntries {
         File zipFile = new File(++uniquifier + ".zip");
         try {
             zipFile.delete();
-            ZipOutputStream zos = new ZipOutputStream(
-                new BufferedOutputStream(
-                    new FileOutputStream(zipFile)));
-            try {
+            try (FileOutputStream fos = new FileOutputStream(zipFile);
+                 BufferedOutputStream bos = new BufferedOutputStream(fos);
+                 ZipOutputStream zos = new ZipOutputStream(bos))
+            {
                 for (int i = 0; i < N; i++) {
                     ZipEntry e = new ZipEntry("DIR/"+i);
                     e.setMethod(method);
@@ -75,13 +75,9 @@ public class ManyEntries {
                     zos.putNextEntry(e);
                     zos.write(i);
                 }
-            } finally {
-                zos.close();
-                zos = null;
             }
 
-            ZipFile zip = zip = new ZipFile(zipFile);
-            try {
+            try (ZipFile zip = new ZipFile(zipFile)) {
                 if (! (zip.size() == N))
                     throw new Exception("Bad ZipFile size: " + zip.size());
                 Enumeration entries = zip.entries();
@@ -104,11 +100,8 @@ public class ManyEntries {
                 }
                 if (entries.hasMoreElements())
                     throw new Exception("too many elements");
-            } finally {
-                zip.close();
             }
-        }
-        finally {
+        } finally {
             zipFile.delete();
         }
     }

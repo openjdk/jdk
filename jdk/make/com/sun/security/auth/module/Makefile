@@ -26,7 +26,6 @@
 # Makefile for building auth modules.
 
 BUILDDIR = ../../../../..
-MODULE  = security-auth
 PACKAGE = com.sun.security.auth.module
 PRODUCT = sun
 

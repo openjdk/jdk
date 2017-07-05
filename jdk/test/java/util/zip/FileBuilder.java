@@ -53,25 +53,24 @@ public class FileBuilder {
                filetype.equals("SlightlyCompressible")))
             usageError();
 
-        RandomAccessFile raf = new RandomAccessFile(filename, "rw");
-
-        if (filetype.equals("SlightlyCompressible")) {
-            byte[] randomBytes = new byte[16384];
-            byte[] nullBytes   = new byte[randomBytes.length/10];
-            Random rand = new Random();
-            for (int i = 0; raf.length() < filesize; ++i) {
-                rand.nextBytes(randomBytes);
-                raf.write(nullBytes);
-                raf.write(randomBytes);
+        try (RandomAccessFile raf = new RandomAccessFile(filename, "rw")) {
+            if (filetype.equals("SlightlyCompressible")) {
+                byte[] randomBytes = new byte[16384];
+                byte[] nullBytes   = new byte[randomBytes.length/10];
+                Random rand = new Random();
+                for (int i = 0; raf.length() < filesize; ++i) {
+                    rand.nextBytes(randomBytes);
+                    raf.write(nullBytes);
+                    raf.write(randomBytes);
+                }
             }
-        }
 
-        // Make sure file is exactly the requested size, and that
-        // a unique identifying trailer is written.
-        byte[] filenameBytes = filename.getBytes("UTF8");
-        raf.seek(filesize-filenameBytes.length);
-        raf.write(filenameBytes);
-        raf.setLength(filesize);
-        raf.close();
+            // Make sure file is exactly the requested size, and that
+            // a unique identifying trailer is written.
+            byte[] filenameBytes = filename.getBytes("UTF8");
+            raf.seek(filesize-filenameBytes.length);
+            raf.write(filenameBytes);
+            raf.setLength(filesize);
+        }
     }
 }
