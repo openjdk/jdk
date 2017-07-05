@@ -39,6 +39,7 @@
  * @modules java.management
  * @build *
  * @run junit/othervm/timeout=1000 -Djsr166.testImplementationDetails=true JSR166TestCase
+ * @run junit/othervm/timeout=1000 -Djava.util.concurrent.ForkJoinPool.common.parallelism=0 -Djsr166.testImplementationDetails=true JSR166TestCase
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -85,6 +86,7 @@ import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
@@ -546,7 +548,7 @@ public class JSR166TestCase extends TestCase {
         // Java9+ test classes
         if (atLeastJava9()) {
             String[] java9TestClassNames = {
-                // Currently empty, but expecting varhandle tests
+                "ExecutorCompletionService9Test",
             };
             addNamedTestClasses(suite, java9TestClassNames);
         }
@@ -1860,4 +1862,19 @@ public class JSR166TestCase extends TestCase {
         } catch (NoSuchElementException success) {}
         assertFalse(it.hasNext());
     }
+
+    public <T> Callable<T> callableThrowing(final Exception ex) {
+        return new Callable<T>() { public T call() throws Exception { throw ex; }};
+    }
+
+    public Runnable runnableThrowing(final RuntimeException ex) {
+        return new Runnable() { public void run() { throw ex; }};
+    }
+
+    /** A reusable thread pool to be shared by tests. */
+    static final ExecutorService cachedThreadPool =
+        new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                               1000L, MILLISECONDS,
+                               new SynchronousQueue<Runnable>());
+
 }

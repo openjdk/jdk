@@ -46,7 +46,7 @@ package java.lang.annotation;
  * {@code @Target(ElementType.FIELD)} may only be written as a modifier for a
  * field declaration.
  *
- * <p>The constant {@link #TYPE_USE} corresponds to the 15 type contexts in JLS
+ * <p>The constant {@link #TYPE_USE} corresponds to the type contexts in JLS
  * 4.11, as well as to two declaration contexts: type declarations (including
  * annotation type declarations) and type parameter declarations.
  *
