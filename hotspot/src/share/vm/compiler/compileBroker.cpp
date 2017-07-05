@@ -1642,42 +1642,37 @@ void CompileBroker::compiler_thread_loop() {
 // Set up state required by +LogCompilation.
 void CompileBroker::init_compiler_thread_log() {
     CompilerThread* thread = CompilerThread::current();
-    char  fileBuf[4*K];
+    char  file_name[4*K];
     FILE* fp = NULL;
-    char* file = NULL;
     intx thread_id = os::current_thread_id();
     for (int try_temp_dir = 1; try_temp_dir >= 0; try_temp_dir--) {
       const char* dir = (try_temp_dir ? os::get_temp_directory() : NULL);
       if (dir == NULL) {
-        jio_snprintf(fileBuf, sizeof(fileBuf), "hs_c" UINTX_FORMAT "_pid%u.log",
+        jio_snprintf(file_name, sizeof(file_name), "hs_c" UINTX_FORMAT "_pid%u.log",
                      thread_id, os::current_process_id());
       } else {
-        jio_snprintf(fileBuf, sizeof(fileBuf),
+        jio_snprintf(file_name, sizeof(file_name),
                      "%s%shs_c" UINTX_FORMAT "_pid%u.log", dir,
                      os::file_separator(), thread_id, os::current_process_id());
       }
-      fp = fopen(fileBuf, "at");
+
+      fp = fopen(file_name, "at");
       if (fp != NULL) {
-        file = NEW_C_HEAP_ARRAY(char, strlen(fileBuf)+1, mtCompiler);
-        strcpy(file, fileBuf);
-        break;
+        if (LogCompilation && Verbose) {
+          tty->print_cr("Opening compilation log %s", file_name);
+        }
+        CompileLog* log = new(ResourceObj::C_HEAP, mtCompiler) CompileLog(file_name, fp, thread_id);
+        thread->init_log(log);
+
+        if (xtty != NULL) {
+          ttyLocker ttyl;
+          // Record any per thread log files
+          xtty->elem("thread_logfile thread='%d' filename='%s'", thread_id, file_name);
+        }
+        return;
       }
     }
-    if (fp == NULL) {
-      warning("Cannot open log file: %s", fileBuf);
-    } else {
-      if (LogCompilation && Verbose)
-        tty->print_cr("Opening compilation log %s", file);
-      CompileLog* log = new(ResourceObj::C_HEAP, mtCompiler) CompileLog(file, fp, thread_id);
-      thread->init_log(log);
-
-      if (xtty != NULL) {
-        ttyLocker ttyl;
-
-        // Record any per thread log files
-        xtty->elem("thread_logfile thread='%d' filename='%s'", thread_id, file);
-      }
-    }
+    warning("Cannot open log file: %s", file_name);
 }
 
 // ------------------------------------------------------------------
