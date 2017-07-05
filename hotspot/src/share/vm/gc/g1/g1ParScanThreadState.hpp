@@ -46,7 +46,7 @@ class G1ParScanThreadState : public StackObj {
   G1SATBCardTableModRefBS* _ct_bs;
   G1RemSet* _g1_rem;
 
-  G1ParGCAllocator* _g1_par_allocator;
+  G1PLABAllocator*  _plab_allocator;
 
   ageTable          _age_table;
   InCSetState       _dest[InCSetState::Num];
@@ -55,7 +55,7 @@ class G1ParScanThreadState : public StackObj {
   G1ParScanClosure  _scanner;
 
   int  _hash_seed;
-  uint _queue_num;
+  uint _worker_id;
 
   size_t _term_attempts;
 
@@ -85,7 +85,7 @@ class G1ParScanThreadState : public StackObj {
   }
 
  public:
-  G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp);
+  G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id, ReferenceProcessor* rp);
   ~G1ParScanThreadState();
 
   ageTable*         age_table()       { return &_age_table;       }
@@ -112,8 +112,7 @@ class G1ParScanThreadState : public StackObj {
     }
   }
 
-  int* hash_seed() { return &_hash_seed; }
-  uint queue_num() { return _queue_num; }
+  uint worker_id() { return _worker_id; }
 
   size_t term_attempts() const  { return _term_attempts; }
   void note_term_attempt() { _term_attempts++; }
@@ -139,8 +138,11 @@ class G1ParScanThreadState : public StackObj {
     return os::elapsedTime() - _start;
   }
 
+  // Print the header for the per-thread termination statistics.
   static void print_termination_stats_hdr(outputStream* const st = gclog_or_tty);
-  void print_termination_stats(int i, outputStream* const st = gclog_or_tty) const;
+
+  // Print actual per-thread termination statistics.
+  void print_termination_stats(outputStream* const st = gclog_or_tty) const;
 
   size_t* surviving_young_words() {
     // We add on to hide entry 0 which accumulates surviving words for

@@ -206,7 +206,7 @@ public class InetSocketAddress
      * @param   hostname the Host name
      * @param   port    The port number
      * @throws IllegalArgumentException if the port parameter is outside the range
-     * of valid port values, or if the hostname parameter is <TT>null</TT>.
+     * of valid port values, or if the hostname parameter is {@code null}.
      * @throws SecurityException if a security manager is present and
      *                           permission to resolve the host name is
      *                           denied.
@@ -244,7 +244,7 @@ public class InetSocketAddress
      * @param   port    The port number
      * @throws IllegalArgumentException if the port parameter is outside
      *                  the range of valid port values, or if the hostname
-     *                  parameter is <TT>null</TT>.
+     *                  parameter is {@code null}.
      * @see     #isUnresolved()
      * @return  a {@code InetSocketAddress} representing the unresolved
      *          socket address

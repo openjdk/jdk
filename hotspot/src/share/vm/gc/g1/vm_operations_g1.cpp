@@ -94,8 +94,9 @@ void VM_G1IncCollectionPause::doit() {
 
   if (_word_size > 0) {
     // An allocation has been requested. So, try to do that first.
-    _result = g1h->attempt_allocation_at_safepoint(_word_size, allocation_context(),
-                                     false /* expect_null_cur_alloc_region */);
+    _result = g1h->attempt_allocation_at_safepoint(_word_size,
+                                                   allocation_context(),
+                                                   false /* expect_null_cur_alloc_region */);
     if (_result != NULL) {
       // If we can successfully allocate before we actually do the
       // pause then we will consider this pause successful.
@@ -147,8 +148,9 @@ void VM_G1IncCollectionPause::doit() {
     g1h->do_collection_pause_at_safepoint(_target_pause_time_ms);
   if (_pause_succeeded && _word_size > 0) {
     // An allocation had been requested.
-    _result = g1h->attempt_allocation_at_safepoint(_word_size, allocation_context(),
-                                      true /* expect_null_cur_alloc_region */);
+    _result = g1h->attempt_allocation_at_safepoint(_word_size,
+                                                   allocation_context(),
+                                                   true /* expect_null_cur_alloc_region */);
   } else {
     assert(_result == NULL, "invariant");
     if (!_pause_succeeded) {

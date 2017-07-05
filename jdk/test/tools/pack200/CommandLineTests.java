@@ -110,7 +110,6 @@ public class CommandLineTests {
             ps.println("pack.pass.file.2=java/lang/Object.class");
             ps.println("pack.pass.file.3=java/lang/Throwable.class");
             ps.println("pack.pass.file.4=java/lang/VerifyError.class");
-            ps.println("pack.pass.file.5=com/sun/demo/jvmti/hprof/Tracker.class");
         } finally {
             Utils.close(ps);
             Utils.close(fos);
