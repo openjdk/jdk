@@ -38,8 +38,8 @@ package java.net;
  * @since 1.7
  */
 
-public final class StandardSocketOption {
-    private StandardSocketOption() { }
+public final class StandardSocketOptions {
+    private StandardSocketOptions() { }
 
     // -- SOL_SOCKET --
 

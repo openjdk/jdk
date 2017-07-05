@@ -132,17 +132,22 @@ void InstructionPrinter::print_object(Value obj) {
     if (value->is_null_object()) {
       output()->print("null");
     } else if (!value->is_loaded()) {
-      output()->print("<unloaded object 0x%x>", value);
+      output()->print("<unloaded object " PTR_FORMAT ">", value);
     } else if (value->is_method()) {
       ciMethod* m = (ciMethod*)value;
       output()->print("<method %s.%s>", m->holder()->name()->as_utf8(), m->name()->as_utf8());
     } else {
-      output()->print("<object 0x%x>", value->constant_encoding());
+      output()->print("<object " PTR_FORMAT ">", value->constant_encoding());
     }
   } else if (type->as_InstanceConstant() != NULL) {
-    output()->print("<instance 0x%x>", type->as_InstanceConstant()->value()->constant_encoding());
+    ciInstance* value = type->as_InstanceConstant()->value();
+    if (value->is_loaded()) {
+      output()->print("<instance " PTR_FORMAT ">", value->constant_encoding());
+    } else {
+      output()->print("<unloaded instance " PTR_FORMAT ">", value);
+    }
   } else if (type->as_ArrayConstant() != NULL) {
-    output()->print("<array 0x%x>", type->as_ArrayConstant()->value()->constant_encoding());
+    output()->print("<array " PTR_FORMAT ">", type->as_ArrayConstant()->value()->constant_encoding());
   } else if (type->as_ClassConstant() != NULL) {
     ciInstanceKlass* klass = type->as_ClassConstant()->value();
     if (!klass->is_loaded()) {

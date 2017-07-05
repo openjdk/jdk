@@ -46,6 +46,7 @@ class MethodTypeForm {
     final long argCounts;               // packed slot & value counts
     final long primCounts;              // packed prim & double counts
     final int vmslots;                  // total number of parameter slots
+    private Object vmlayout;            // vm-specific information for calls
     final MethodType erasedType;        // the canonical erasure
 
     /*lazy*/ MethodType primsAsBoxes;   // replace prims by wrappers
@@ -59,7 +60,7 @@ class MethodTypeForm {
     /*lazy*/ FromGeneric fromGeneric;   // convert cs. w/o prims to with
     /*lazy*/ SpreadGeneric[] spreadGeneric; // expand one argument to many
     /*lazy*/ FilterGeneric filterGeneric; // convert argument(s) on the fly
-    /*lazy*/ MethodHandle genericInvoker; // hook for invokeGeneric
+    /*lazy*/ MethodHandle genericInvoker; // hook for inexact invoke
 
     public MethodType erasedType() {
         return erasedType;
@@ -460,9 +461,9 @@ class MethodTypeForm {
         if (genericInvoker != null)  return;
         try {
             // Trigger adapter creation.
-            genericInvoker = InvokeGeneric.genericInvokerOf(erasedType);
+            genericInvoker = InvokeGeneric.generalInvokerOf(erasedType);
         } catch (Exception ex) {
-            Error err = new InternalError("Exception while resolving invokeGeneric");
+            Error err = new InternalError("Exception while resolving inexact invoke");
             err.initCause(ex);
             throw err;
         }

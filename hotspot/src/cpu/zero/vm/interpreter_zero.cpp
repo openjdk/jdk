@@ -82,24 +82,6 @@ bool AbstractInterpreter::can_be_compiled(methodHandle m) {
   return true;
 }
 
-int AbstractInterpreter::size_activation(methodOop method,
-                                         int tempcount,
-                                         int popframe_extra_args,
-                                         int moncount,
-                                         int callee_param_count,
-                                         int callee_locals,
-                                         bool is_top_frame) {
-  return layout_activation(method,
-                           tempcount,
-                           popframe_extra_args,
-                           moncount,
-                           callee_param_count,
-                           callee_locals,
-                           (frame*) NULL,
-                           (frame*) NULL,
-                           is_top_frame);
-}
-
 void Deoptimization::unwind_callee_save_values(frame* f,
                                                vframeArray* vframe_array) {
 }

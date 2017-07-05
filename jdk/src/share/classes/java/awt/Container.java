@@ -41,6 +41,8 @@ import java.io.ObjectStreamField;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
+import java.security.AccessController;
+
 import java.util.Arrays;
 import java.util.EventListener;
 import java.util.HashSet;
@@ -59,6 +61,8 @@ import sun.awt.SunToolkit;
 import sun.awt.dnd.SunDropTargetEvent;
 
 import sun.java2d.pipe.Region;
+
+import sun.security.action.GetBooleanAction;
 
 /**
  * A generic Abstract Window Toolkit(AWT) container object is a component
@@ -1506,12 +1510,18 @@ public class Container extends Component {
      * Layout-related changes, such as bounds of the validate root descendants,
      * do not affect the layout of the validate root parent. This peculiarity
      * enables the {@code invalidate()} method to stop invalidating the
-     * component hierarchy when the method encounters a validate root.
+     * component hierarchy when the method encounters a validate root. However,
+     * to preserve backward compatibility this new optimized behavior is
+     * enabled only when the {@code java.awt.smartInvalidate} system property
+     * value is set to {@code true}.
      * <p>
-     * If a component hierarchy contains validate roots, the {@code validate()}
-     * method must be invoked on the validate root of a previously invalidated
-     * component, rather than on the top-level container (such as a {@code
-     * Frame} object) to restore the validity of the hierarchy later.
+     * If a component hierarchy contains validate roots and the new optimized
+     * {@code invalidate()} behavior is enabled, the {@code validate()} method
+     * must be invoked on the validate root of a previously invalidated
+     * component to restore the validity of the hierarchy later. Otherwise,
+     * calling the {@code validate()} method on the top-level container (such
+     * as a {@code Frame} object) should be used to restore the validity of the
+     * component hierarchy.
      * <p>
      * The {@code Window} class and the {@code Applet} class are the validate
      * roots in AWT.  Swing introduces more validate roots.
@@ -1527,13 +1537,20 @@ public class Container extends Component {
         return false;
     }
 
+    private static final boolean isJavaAwtSmartInvalidate;
+    static {
+        // Don't lazy-read because every app uses invalidate()
+        isJavaAwtSmartInvalidate = AccessController.doPrivileged(
+                new GetBooleanAction("java.awt.smartInvalidate"));
+    }
+
     /**
      * Invalidates the parent of the container unless the container
      * is a validate root.
      */
     @Override
     void invalidateParent() {
-        if (!isValidateRoot()) {
+        if (!isJavaAwtSmartInvalidate || !isValidateRoot()) {
             super.invalidateParent();
         }
     }
@@ -1572,9 +1589,8 @@ public class Container extends Component {
      * automatically.  Note that the ancestors of the container may be
      * invalidated also (see {@link Component#invalidate} for details.)
      * Therefore, to restore the validity of the hierarchy, the {@code
-     * validate()} method should be invoked on a validate root of an
-     * invalidated component, or on the top-most container if the hierarchy
-     * does not contain validate roots.
+     * validate()} method should be invoked on the top-most invalid
+     * container of the hierarchy.
      * <p>
      * Validating the container may be a quite time-consuming operation. For
      * performance reasons a developer may postpone the validation of the

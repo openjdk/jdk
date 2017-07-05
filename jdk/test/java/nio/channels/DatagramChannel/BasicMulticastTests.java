@@ -52,7 +52,7 @@ public class BasicMulticastTests {
             StandardProtocolFamily.INET : StandardProtocolFamily.INET6;
 
         DatagramChannel dc = DatagramChannel.open(family)
-            .setOption(StandardSocketOption.SO_REUSEADDR, true)
+            .setOption(StandardSocketOptions.SO_REUSEADDR, true)
             .bind(new InetSocketAddress(source, 0));
 
         // check existing key is returned
@@ -115,7 +115,7 @@ public class BasicMulticastTests {
         System.out.println("Exception Tests");
 
         DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)
-            .setOption(StandardSocketOption.SO_REUSEADDR, true)
+            .setOption(StandardSocketOptions.SO_REUSEADDR, true)
             .bind(new InetSocketAddress(0));
 
         InetAddress group = InetAddress.getByName("225.4.5.6");

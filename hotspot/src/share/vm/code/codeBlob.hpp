@@ -35,6 +35,7 @@
 // Suptypes are:
 //   nmethod            : Compiled Java methods (include method that calls to native code)
 //   RuntimeStub        : Call to VM runtime methods
+//   RicochetBlob       : Used for blocking MethodHandle adapters
 //   DeoptimizationBlob : Used for deoptimizatation
 //   ExceptionBlob      : Used for stack unrolling
 //   SafepointBlob      : Used to handle illegal instruction exceptions
@@ -95,12 +96,13 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   void flush();
 
   // Typing
-  virtual bool is_buffer_blob() const                 { return false; }
-  virtual bool is_nmethod() const                     { return false; }
-  virtual bool is_runtime_stub() const                { return false; }
-  virtual bool is_deoptimization_stub() const         { return false; }
-  virtual bool is_uncommon_trap_stub() const          { return false; }
-  virtual bool is_exception_stub() const              { return false; }
+  virtual bool is_buffer_blob() const            { return false; }
+  virtual bool is_nmethod() const                { return false; }
+  virtual bool is_runtime_stub() const           { return false; }
+  virtual bool is_ricochet_stub() const          { return false; }
+  virtual bool is_deoptimization_stub() const    { return false; }
+  virtual bool is_uncommon_trap_stub() const     { return false; }
+  virtual bool is_exception_stub() const         { return false; }
   virtual bool is_safepoint_stub() const              { return false; }
   virtual bool is_adapter_blob() const                { return false; }
   virtual bool is_method_handles_adapter_blob() const { return false; }
@@ -181,6 +183,9 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   void print() const                             { print_on(tty); }
   virtual void print_on(outputStream* st) const;
   virtual void print_value_on(outputStream* st) const;
+
+  // Deal with Disassembler, VTune, Forte, JvmtiExport, MemoryService.
+  static void trace_new_stub(CodeBlob* blob, const char* name1, const char* name2 = "");
 
   // Print the comment associated with offset on stream, if there is one
   virtual void print_block_comment(outputStream* stream, address block_begin) {
@@ -318,7 +323,11 @@ class RuntimeStub: public CodeBlob {
 
 class SingletonBlob: public CodeBlob {
   friend class VMStructs;
-  public:
+
+ protected:
+  void* operator new(size_t s, unsigned size);
+
+ public:
    SingletonBlob(
      const char* name,
      CodeBuffer* cb,
@@ -337,6 +346,50 @@ class SingletonBlob: public CodeBlob {
   void verify(); // does nothing
   void print_on(outputStream* st) const;
   void print_value_on(outputStream* st) const;
+};
+
+
+//----------------------------------------------------------------------------------------------------
+// RicochetBlob
+// Holds an arbitrary argument list indefinitely while Java code executes recursively.
+
+class RicochetBlob: public SingletonBlob {
+  friend class VMStructs;
+ private:
+
+  int _bounce_offset;
+  int _exception_offset;
+
+  // Creation support
+  RicochetBlob(
+    CodeBuffer* cb,
+    int         size,
+    int         bounce_offset,
+    int         exception_offset,
+    int         frame_size
+  );
+
+ public:
+  // Creation
+  static RicochetBlob* create(
+    CodeBuffer* cb,
+    int         bounce_offset,
+    int         exception_offset,
+    int         frame_size
+  );
+
+  // Typing
+  bool is_ricochet_stub() const { return true; }
+
+  // GC for args
+  void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) { /* Nothing to do */ }
+
+  address bounce_addr() const           { return code_begin() + _bounce_offset; }
+  address exception_addr() const        { return code_begin() + _exception_offset; }
+  bool returns_to_bounce_addr(address pc) const {
+    address bounce_pc = bounce_addr();
+    return (pc == bounce_pc || (pc + frame::pc_return_offset) == bounce_pc);
+  }
 };
 
 
@@ -363,8 +416,6 @@ class DeoptimizationBlob: public SingletonBlob {
     int         frame_size
   );
 
-  void* operator new(size_t s, unsigned size);
-
  public:
   // Creation
   static DeoptimizationBlob* create(
@@ -378,7 +429,6 @@ class DeoptimizationBlob: public SingletonBlob {
 
   // Typing
   bool is_deoptimization_stub() const { return true; }
-  const DeoptimizationBlob *as_deoptimization_stub() const { return this; }
   bool exception_address_is_unpack_entry(address pc) const {
     address unpack_pc = unpack();
     return (pc == unpack_pc || (pc + frame::pc_return_offset) == unpack_pc);
@@ -426,8 +476,6 @@ class UncommonTrapBlob: public SingletonBlob {
     int         frame_size
   );
 
-  void* operator new(size_t s, unsigned size);
-
  public:
   // Creation
   static UncommonTrapBlob* create(
@@ -457,8 +505,6 @@ class ExceptionBlob: public SingletonBlob {
     OopMapSet*  oop_maps,
     int         frame_size
   );
-
-  void* operator new(size_t s, unsigned size);
 
  public:
   // Creation
@@ -490,8 +536,6 @@ class SafepointBlob: public SingletonBlob {
     OopMapSet*  oop_maps,
     int         frame_size
   );
-
-  void* operator new(size_t s, unsigned size);
 
  public:
   // Creation
