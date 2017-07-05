@@ -120,6 +120,7 @@ oop Universe::_out_of_memory_error_metaspace          = NULL;
 oop Universe::_out_of_memory_error_class_metaspace    = NULL;
 oop Universe::_out_of_memory_error_array_size         = NULL;
 oop Universe::_out_of_memory_error_gc_overhead_limit  = NULL;
+oop Universe::_out_of_memory_error_realloc_objects    = NULL;
 objArrayOop Universe::_preallocated_out_of_memory_error_array = NULL;
 volatile jint Universe::_preallocated_out_of_memory_error_avail_count = 0;
 bool Universe::_verify_in_progress                    = false;
@@ -191,6 +192,7 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_out_of_memory_error_class_metaspace);
   f->do_oop((oop*)&_out_of_memory_error_array_size);
   f->do_oop((oop*)&_out_of_memory_error_gc_overhead_limit);
+  f->do_oop((oop*)&_out_of_memory_error_realloc_objects);
     f->do_oop((oop*)&_preallocated_out_of_memory_error_array);
   f->do_oop((oop*)&_null_ptr_exception_instance);
   f->do_oop((oop*)&_arithmetic_exception_instance);
@@ -575,7 +577,8 @@ bool Universe::should_fill_in_stack_trace(Handle throwable) {
           (throwable() != Universe::_out_of_memory_error_metaspace)  &&
           (throwable() != Universe::_out_of_memory_error_class_metaspace)  &&
           (throwable() != Universe::_out_of_memory_error_array_size) &&
-          (throwable() != Universe::_out_of_memory_error_gc_overhead_limit));
+          (throwable() != Universe::_out_of_memory_error_gc_overhead_limit) &&
+          (throwable() != Universe::_out_of_memory_error_realloc_objects));
 }
 
 
@@ -1039,6 +1042,7 @@ bool universe_post_init() {
     Universe::_out_of_memory_error_array_size = k_h->allocate_instance(CHECK_false);
     Universe::_out_of_memory_error_gc_overhead_limit =
       k_h->allocate_instance(CHECK_false);
+    Universe::_out_of_memory_error_realloc_objects = k_h->allocate_instance(CHECK_false);
 
     // Setup preallocated NullPointerException
     // (this is currently used for a cheap & dirty solution in compiler exception handling)
@@ -1077,6 +1081,9 @@ bool universe_post_init() {
 
     msg = java_lang_String::create_from_str("GC overhead limit exceeded", CHECK_false);
     java_lang_Throwable::set_message(Universe::_out_of_memory_error_gc_overhead_limit, msg());
+
+    msg = java_lang_String::create_from_str("Java heap space: failed reallocation of scalar replaced objects", CHECK_false);
+    java_lang_Throwable::set_message(Universe::_out_of_memory_error_realloc_objects, msg());
 
     msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
     java_lang_Throwable::set_message(Universe::_arithmetic_exception_instance, msg());
