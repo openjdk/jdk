@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4364671
- *  @summary Creating a StepRequest on a nonexistant thread fails
+ * @test
+ * @bug 4364671
+ * @summary Creating a StepRequest on a nonexistant thread fails
+ * @author jjh
  *
- *  @author jjh
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g AfterThreadDeathTest.java
- *  @run driver AfterThreadDeathTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g AfterThreadDeathTest.java
+ * @run driver AfterThreadDeathTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

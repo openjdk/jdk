@@ -38,6 +38,7 @@ import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.ConstructorScope;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
+import java.util.StringJoiner;
 
 /**
  * {@code Constructor} provides information about, and access to, a single
@@ -168,6 +169,12 @@ public final class Constructor<T> extends Executable {
      * is true. </p>
      *
      * @param flag {@inheritDoc}
+     *
+     * @throws InaccessibleObjectException {@inheritDoc}
+     * @throws SecurityException if the request is denied by the security manager
+     *         or this is a constructor for {@code java.lang.Class}
+     *
+     * @spec JPMS
      */
     @Override
     @CallerSensitive
@@ -351,6 +358,20 @@ public final class Constructor<T> extends Executable {
     @Override
     void specificToStringHeader(StringBuilder sb) {
         sb.append(getDeclaringClass().getTypeName());
+    }
+
+    @Override
+    String toShortString() {
+        StringBuilder sb = new StringBuilder("constructor ");
+        sb.append(getDeclaringClass().getTypeName());
+        sb.append('(');
+        StringJoiner sj = new StringJoiner(",");
+        for (Class<?> parameterType : getParameterTypes()) {
+            sj.add(parameterType.getTypeName());
+        }
+        sb.append(sj);
+        sb.append(')');
+        return sb.toString();
     }
 
     /**

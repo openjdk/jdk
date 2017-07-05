@@ -66,15 +66,6 @@ public class SelectorLimit {
     static final int MIN_KEYS = 100;
 
     public static void main(String[] args) throws Exception {
-        // win9X can't handle many connections at once
-        String osName = System.getProperty("os.name");
-        if (osName.toLowerCase().startsWith("win")) {
-            if (!(osName.equals("Windows NT")
-                  || osName.equals("Windows 2000")
-                  || osName.equals("Windows XP")))
-                return;
-        }
-
         ServerSocketChannel ssc = ServerSocketChannel.open();
         TestUtil.bind(ssc);
         Listener lth = new Listener(ssc);
