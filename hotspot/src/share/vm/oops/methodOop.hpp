@@ -129,6 +129,10 @@ class methodOopDesc : public oopDesc {
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
  public:
+
+  static const bool IsUnsafeConc         = false;
+  static const bool IsSafeConc           = true;
+
   // accessors for instance variables
   constMethodOop constMethod() const             { return _constMethod; }
   void set_constMethod(constMethodOop xconst)    { oop_store_without_check((oop*)&_constMethod, (oop)xconst); }

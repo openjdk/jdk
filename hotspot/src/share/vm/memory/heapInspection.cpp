@@ -263,6 +263,9 @@ void HeapInspection::heap_inspection(outputStream* st) {
   if (!cit.allocation_failed()) {
     // Iterate over objects in the heap
     RecordInstanceClosure ric(&cit);
+    // If this operation encounters a bad object when using CMS,
+    // consider using safe_object_iterate() which avoids perm gen
+    // objects that may contain bad references.
     Universe::heap()->object_iterate(&ric);
 
     // Report if certain classes are not counted because of
@@ -317,5 +320,8 @@ void HeapInspection::find_instances_at_safepoint(klassOop k, GrowableArray<oop>*
 
   // Iterate over objects in the heap
   FindInstanceClosure fic(k, result);
+  // If this operation encounters a bad object when using CMS,
+  // consider using safe_object_iterate() which avoids perm gen
+  // objects that may contain bad references.
   Universe::heap()->object_iterate(&fic);
 }

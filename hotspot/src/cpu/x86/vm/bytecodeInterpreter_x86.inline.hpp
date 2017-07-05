@@ -213,7 +213,7 @@ inline jint BytecodeInterpreter::VMintAnd(jint op1, jint op2) {
 
 inline jint BytecodeInterpreter::VMintDiv(jint op1, jint op2) {
   /* it's possible we could catch this special case implicitly */
-  if (op1 == 0x80000000 && op2 == -1) return op1;
+  if ((juint)op1 == 0x80000000 && op2 == -1) return op1;
   else return op1 / op2;
 }
 
@@ -231,7 +231,7 @@ inline jint BytecodeInterpreter::VMintOr(jint op1, jint op2) {
 
 inline jint BytecodeInterpreter::VMintRem(jint op1, jint op2) {
   /* it's possible we could catch this special case implicitly */
-  if (op1 == 0x80000000 && op2 == -1) return 0;
+  if ((juint)op1 == 0x80000000 && op2 == -1) return 0;
   else return op1 % op2;
 }
 

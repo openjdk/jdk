@@ -215,6 +215,7 @@ public:
   void oop_iterate(OopClosure* cl);
   void oop_iterate(MemRegion mr, OopClosure* cl);
   void object_iterate(ObjectClosure* cl);
+  void safe_object_iterate(ObjectClosure* cl);
   void object_iterate_since_last_GC(ObjectClosure* cl);
   Space* space_containing(const void* addr) const;
 

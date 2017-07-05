@@ -28,7 +28,7 @@
 
 #define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw) \
                                                                             \
-  product(intx, ParallelGCG1AllocBufferSize, 4*K,                           \
+  product(intx, ParallelGCG1AllocBufferSize, 8*K,                           \
           "Size of parallel G1 allocation buffers in to-space.")            \
                                                                             \
   product(intx, G1TimeSliceMS, 500,                                         \

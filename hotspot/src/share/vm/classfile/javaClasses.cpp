@@ -441,6 +441,7 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
 
 bool java_lang_Class::offsets_computed = false;
 int  java_lang_Class::classRedefinedCount_offset = -1;
+int  java_lang_Class::parallelCapable_offset = -1;
 
 void java_lang_Class::compute_offsets() {
   assert(!offsets_computed, "offsets should be initialized only once");
@@ -451,6 +452,23 @@ void java_lang_Class::compute_offsets() {
   // so don't go fatal.
   compute_optional_offset(classRedefinedCount_offset,
     k, vmSymbols::classRedefinedCount_name(), vmSymbols::int_signature());
+
+  // The field indicating parallelCapable (parallelLockMap) is only present starting in 7,
+  klassOop k1 = SystemDictionary::classloader_klass();
+  compute_optional_offset(parallelCapable_offset,
+    k1, vmSymbols::parallelCapable_name(), vmSymbols::concurrenthashmap_signature());
+}
+
+// For class loader classes, parallelCapable defined
+// based on non-null field
+// Written to by java.lang.ClassLoader, vm only reads this field, doesn't set it
+bool java_lang_Class::parallelCapable(oop class_loader) {
+  if (!JDK_Version::is_gte_jdk17x_version()
+     || parallelCapable_offset == -1) {
+     // Default for backward compatibility is false
+     return false;
+  }
+  return (class_loader->obj_field(parallelCapable_offset) != NULL);
 }
 
 int java_lang_Class::classRedefinedCount(oop the_class_mirror) {
@@ -866,7 +884,7 @@ char* java_lang_Throwable::print_stack_element_to_buffer(methodOop method, int b
     }
     nmethod* nm = method->code();
     if (WizardMode && nm != NULL) {
-      sprintf(buf + (int)strlen(buf), "(nmethod %#x)", nm);
+      sprintf(buf + (int)strlen(buf), "(nmethod " PTR_FORMAT ")", (intptr_t)nm);
     }
   }
 

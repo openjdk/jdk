@@ -730,7 +730,7 @@ void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason
   if (DieOnSafepointTimeout) {
     char msg[1024];
     VM_Operation *op = VMThread::vm_operation();
-    sprintf(msg, "Safepoint sync time longer than %d ms detected when executing %s.",
+    sprintf(msg, "Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
             SafepointTimeoutDelay,
             op != NULL ? op->name() : "no vm operation");
     fatal(msg);
