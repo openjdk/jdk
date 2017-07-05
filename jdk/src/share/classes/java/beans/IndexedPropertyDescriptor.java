@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,6 +274,11 @@ perty.
             }
             indexedWriteMethod = Introspector.findMethod(cls, indexedWriteMethodName,
                          2, (type == null) ? null : new Class[] { int.class, type });
+            if (indexedWriteMethod != null) {
+                if (!indexedWriteMethod.getReturnType().equals(void.class)) {
+                    indexedWriteMethod = null;
+                }
+            }
             setIndexedWriteMethod0(indexedWriteMethod);
         }
         return indexedWriteMethod;

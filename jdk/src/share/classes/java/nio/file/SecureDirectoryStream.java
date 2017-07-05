@@ -166,12 +166,13 @@ public abstract class SecureDirectoryStream<T>
     /**
      * Deletes a file.
      *
-     * <p> Unlike the {@link Path#delete delete()} method, this method
-     * does not first examine the file to determine if the file is a directory.
+     * <p> Unlike the {@link Path#delete delete()} method, this method does
+     * not first examine the file to determine if the file is a directory.
      * Whether a directory is deleted by this method is system dependent and
-     * therefore not specified. If the file is a symbolic-link then the link is
-     * deleted (not the final target of the link). When the parameter is a
-     * relative path then the file to delete is relative to this open directory.
+     * therefore not specified. If the file is a symbolic link, then the link
+     * itself, not the final target of the link, is deleted. When the
+     * parameter is a relative path then the file to delete is relative to
+     * this open directory.
      *
      * @param   path
      *          the path of the file to delete

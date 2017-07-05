@@ -48,9 +48,9 @@ public final class Attributes {
      * symbolic links are followed and the file attributes of the final target
      * of the link are read. If the option {@link LinkOption#NOFOLLOW_LINKS
      * NOFOLLOW_LINKS} is present then symbolic links are not followed and so
-     * the method returns the file attributes of the symbolic link. This option
-     * should be used where there is a need to determine if a file is a
-     * symbolic link:
+     * the method returns the file attributes of the symbolic link itself.
+     * This option should be used where there is a need to determine if a
+     * file is a symbolic link:
      * <pre>
      *    boolean isSymbolicLink = Attributes.readBasicFileAttributes(file, NOFOLLOW_LINKS).isSymbolicLink();
      * </pre>
@@ -98,7 +98,7 @@ public final class Attributes {
      * symbolic links are followed and the file attributes of the final target
      * of the link are read. If the option {@link LinkOption#NOFOLLOW_LINKS
      * NOFOLLOW_LINKS} is present then symbolic links are not followed and so
-     * the method returns the file attributes of the symbolic link.
+     * the method returns the file attributes of the symbolic link itself.
      *
      * @param   file
      *          A file reference that locates the file
@@ -145,7 +145,7 @@ public final class Attributes {
      * symbolic links are followed and the file attributes of the final target
      * of the link are read. If the option {@link LinkOption#NOFOLLOW_LINKS
      * NOFOLLOW_LINKS} is present then symbolic links are not followed and so
-     * the method returns the file attributes of the symbolic link.
+     * the method returns the file attributes of the symbolic link itself.
      *
      * @param   file
      *          A file reference that locates the file

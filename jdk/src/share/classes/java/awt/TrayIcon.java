@@ -143,6 +143,9 @@ public class TrayIcon {
      */
     public TrayIcon(Image image) {
         this();
+        if (image == null) {
+            throw new IllegalArgumentException("creating TrayIcon with null Image");
+        }
         setImage(image);
     }
 

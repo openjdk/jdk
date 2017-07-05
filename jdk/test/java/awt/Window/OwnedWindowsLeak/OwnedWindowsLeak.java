@@ -65,6 +65,7 @@ public class OwnedWindowsLeak
                 break;
             }
         }
+        garbage = null;
 
         // Third, make sure all the weak references are null
         for (WeakReference<Window> ref : children)
