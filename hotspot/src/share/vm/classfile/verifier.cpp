@@ -98,6 +98,14 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   HandleMark hm;
   ResourceMark rm(THREAD);
 
+  if (!is_eligible_for_verification(klass, should_verify_class)) {
+    return true;
+  }
+
+  // If the class should be verified, first see if we can use the split
+  // verifier.  If not, or if verification fails and FailOverToOldVerifier
+  // is set, then call the inference verifier.
+
   Symbol* exception_name = NULL;
   const size_t message_buffer_len = klass->name()->utf8_length() + 1024;
   char* message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
@@ -105,47 +113,42 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
 
   const char* klassName = klass->external_name();
   bool can_failover = FailOverToOldVerifier &&
-      klass->major_version() < NOFAILOVER_MAJOR_VERSION;
+     klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
-  // If the class should be verified, first see if we can use the split
-  // verifier.  If not, or if verification fails and FailOverToOldVerifier
-  // is set, then call the inference verifier.
-  if (is_eligible_for_verification(klass, should_verify_class)) {
-    if (TraceClassInitialization) {
-      tty->print_cr("Start class verification for: %s", klassName);
-    }
-    if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
-      ClassVerifier split_verifier(klass, THREAD);
-      split_verifier.verify_class(THREAD);
-      exception_name = split_verifier.result();
-      if (can_failover && !HAS_PENDING_EXCEPTION &&
-          (exception_name == vmSymbols::java_lang_VerifyError() ||
-           exception_name == vmSymbols::java_lang_ClassFormatError())) {
-        if (TraceClassInitialization || VerboseVerification) {
-          tty->print_cr(
-            "Fail over class verification to old verifier for: %s", klassName);
-        }
-        exception_name = inference_verify(
-          klass, message_buffer, message_buffer_len, THREAD);
+  if (TraceClassInitialization) {
+    tty->print_cr("Start class verification for: %s", klassName);
+  }
+  if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
+    ClassVerifier split_verifier(klass, THREAD);
+    split_verifier.verify_class(THREAD);
+    exception_name = split_verifier.result();
+    if (can_failover && !HAS_PENDING_EXCEPTION &&
+        (exception_name == vmSymbols::java_lang_VerifyError() ||
+         exception_name == vmSymbols::java_lang_ClassFormatError())) {
+      if (TraceClassInitialization || VerboseVerification) {
+        tty->print_cr(
+          "Fail over class verification to old verifier for: %s", klassName);
       }
-      if (exception_name != NULL) {
-        exception_message = split_verifier.exception_message();
-      }
-    } else {
       exception_name = inference_verify(
-          klass, message_buffer, message_buffer_len, THREAD);
+        klass, message_buffer, message_buffer_len, THREAD);
     }
+    if (exception_name != NULL) {
+      exception_message = split_verifier.exception_message();
+    }
+  } else {
+    exception_name = inference_verify(
+        klass, message_buffer, message_buffer_len, THREAD);
+  }
 
-    if (TraceClassInitialization || VerboseVerification) {
-      if (HAS_PENDING_EXCEPTION) {
-        tty->print("Verification for %s has", klassName);
-        tty->print_cr(" exception pending %s ",
-          InstanceKlass::cast(PENDING_EXCEPTION->klass())->external_name());
-      } else if (exception_name != NULL) {
-        tty->print_cr("Verification for %s failed", klassName);
-      }
-      tty->print_cr("End class verification for: %s", klassName);
+  if (TraceClassInitialization || VerboseVerification) {
+    if (HAS_PENDING_EXCEPTION) {
+      tty->print("Verification for %s has", klassName);
+      tty->print_cr(" exception pending %s ",
+        InstanceKlass::cast(PENDING_EXCEPTION->klass())->external_name());
+    } else if (exception_name != NULL) {
+      tty->print_cr("Verification for %s failed", klassName);
     }
+    tty->print_cr("End class verification for: %s", klassName);
   }
 
   if (HAS_PENDING_EXCEPTION) {
@@ -1718,7 +1721,7 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
       VerificationType throwable =
         VerificationType::reference_type(vmSymbols::java_lang_Throwable());
       bool is_subclass = throwable.is_assignable_from(
-        catch_type, this, CHECK_VERIFY(this));
+        catch_type, this, false, CHECK_VERIFY(this));
       if (!is_subclass) {
         // 4286534: should throw VerifyError according to recent spec change
         verify_error(ErrorContext::bad_type(handler_pc,
@@ -2171,7 +2174,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         stack_object_type = current_type();
       }
       is_assignable = target_class_type.is_assignable_from(
-        stack_object_type, this, CHECK_VERIFY(this));
+        stack_object_type, this, false, CHECK_VERIFY(this));
       if (!is_assignable) {
         verify_error(ErrorContext::bad_type(bci,
             current_frame->stack_top_ctx(),
@@ -2198,7 +2201,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         // It's protected access, check if stack object is assignable to
         // current class.
         is_assignable = current_type().is_assignable_from(
-          stack_object_type, this, CHECK_VERIFY(this));
+          stack_object_type, this, true, CHECK_VERIFY(this));
         if (!is_assignable) {
           verify_error(ErrorContext::bad_type(bci,
               current_frame->stack_top_ctx(),
@@ -2472,7 +2475,7 @@ void ClassVerifier::verify_invoke_init(
         instanceKlassHandle mh(THREAD, m->method_holder());
         if (m->is_protected() && !mh->is_same_class_package(_klass())) {
           bool assignable = current_type().is_assignable_from(
-            objectref_type, this, CHECK_VERIFY(this));
+            objectref_type, this, true, CHECK_VERIFY(this));
           if (!assignable) {
             verify_error(ErrorContext::bad_type(bci,
                 TypeOrigin::cp(new_class_index, objectref_type),
@@ -2643,11 +2646,11 @@ void ClassVerifier::verify_invoke_instructions(
     bool have_imr_indirect = cp->tag_at(index).value() == JVM_CONSTANT_InterfaceMethodref;
     if (!current_class()->is_anonymous()) {
       subtype = ref_class_type.is_assignable_from(
-                 current_type(), this, CHECK_VERIFY(this));
+                 current_type(), this, false, CHECK_VERIFY(this));
     } else {
       VerificationType host_klass_type =
                         VerificationType::reference_type(current_class()->host_klass()->name());
-      subtype = ref_class_type.is_assignable_from(host_klass_type, this, CHECK_VERIFY(this));
+      subtype = ref_class_type.is_assignable_from(host_klass_type, this, false, CHECK_VERIFY(this));
 
       // If invokespecial of IMR, need to recheck for same or
       // direct interface relative to the host class
@@ -2691,7 +2694,7 @@ void ClassVerifier::verify_invoke_instructions(
           VerificationType top = current_frame->pop_stack(CHECK_VERIFY(this));
           VerificationType hosttype =
             VerificationType::reference_type(current_class()->host_klass()->name());
-          bool subtype = hosttype.is_assignable_from(top, this, CHECK_VERIFY(this));
+          bool subtype = hosttype.is_assignable_from(top, this, false, CHECK_VERIFY(this));
           if (!subtype) {
             verify_error( ErrorContext::bad_type(current_frame->offset(),
               current_frame->stack_top_ctx(),
@@ -2716,7 +2719,7 @@ void ClassVerifier::verify_invoke_instructions(
               // It's protected access, check if stack object is
               // assignable to current class.
               bool is_assignable = current_type().is_assignable_from(
-                stack_object_type, this, CHECK_VERIFY(this));
+                stack_object_type, this, true, CHECK_VERIFY(this));
               if (!is_assignable) {
                 if (ref_class_type.name() == vmSymbols::java_lang_Object()
                     && stack_object_type.is_array()
@@ -2899,7 +2902,7 @@ void ClassVerifier::verify_return_value(
         "Method expects a return value");
     return;
   }
-  bool match = return_type.is_assignable_from(type, this, CHECK_VERIFY(this));
+  bool match = return_type.is_assignable_from(type, this, false, CHECK_VERIFY(this));
   if (!match) {
     verify_error(ErrorContext::bad_type(bci,
         current_frame->stack_top_ctx(), TypeOrigin::signature(return_type)),
