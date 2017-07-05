@@ -284,6 +284,8 @@ class CodeEmitInfo: public CompilationResourceObj {
 
   bool     is_method_handle_invoke() const { return _is_method_handle_invoke;     }
   void set_is_method_handle_invoke(bool x) {        _is_method_handle_invoke = x; }
+
+  int interpreter_frame_size() const;
 };
 
 

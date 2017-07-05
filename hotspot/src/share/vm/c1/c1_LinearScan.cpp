@@ -2451,6 +2451,9 @@ void LinearScan::compute_oop_map(IntervalWalker* iw, const LIR_OpVisitState &vis
     CodeEmitInfo* info = visitor.info_at(i);
     OopMap* oop_map = first_oop_map;
 
+    // compute worst case interpreter size in case of a deoptimization
+    _compilation->update_interpreter_frame_size(info->interpreter_frame_size());
+
     if (info->stack()->locks_size() != first_info->stack()->locks_size()) {
       // this info has a different number of locks then the precomputed oop map
       // (possible for lock and unlock instructions) -> compute oop map with

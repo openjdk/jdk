@@ -2420,7 +2420,7 @@ JNI_END
 
 DEFINE_SETSTATICFIELD(jboolean, bool,   Boolean, 'Z', z
                       , HOTSPOT_JNI_SETSTATICBOOLEANFIELD_ENTRY(env, clazz, (uintptr_t)fieldID, value),
-                      HOTSPOT_JNI_SETBOOLEANFIELD_RETURN())
+                      HOTSPOT_JNI_SETSTATICBOOLEANFIELD_RETURN())
 DEFINE_SETSTATICFIELD(jbyte,    byte,   Byte,    'B', b
                       , HOTSPOT_JNI_SETSTATICBYTEFIELD_ENTRY(env, clazz, (uintptr_t) fieldID, value),
                       HOTSPOT_JNI_SETSTATICBYTEFIELD_RETURN())

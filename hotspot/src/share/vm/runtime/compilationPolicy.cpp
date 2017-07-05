@@ -182,6 +182,7 @@ void NonTieredCompPolicy::initialize() {
     // max(log2(8)-1,1) = 2 compiler threads on an 8-way machine.
     // May help big-app startup time.
     _compiler_count = MAX2(log2_intptr(os::active_processor_count())-1,1);
+    FLAG_SET_ERGO(intx, CICompilerCount, _compiler_count);
   } else {
     _compiler_count = CICompilerCount;
   }

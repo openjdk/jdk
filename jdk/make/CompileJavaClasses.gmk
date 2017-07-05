@@ -326,7 +326,7 @@ JDK_USER_DEFINED_FILTER := $(strip $(subst $(COMMA),$(SPACE), $(JDK_FILTER)))
 ifeq ($(ENABLE_SJAVAC),yes)
   # With sjavac enabled, excluded sources are not even considered for linking. 
   # Explicitly add the security sources to sourcepath for linking.
-  BUILD_JDK_SOURCEPATH:=$(patsubst %,-i$(SPACE)%.*,$(subst /,.,$(SECURITY_PKGS))) \
+  BUILD_JDK_SOURCEPATH:=$(patsubst %,-i$(SPACE)%/*,$(SECURITY_PKGS)) \
       -sourcepath $(JDK_TOPDIR)/src/share/classes
 endif
 
