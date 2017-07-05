@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,8 +136,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * in which the file is to be opened.  The permitted values and their
      * meanings are:
      *
-     * <table summary="Access mode permitted values and meanings">
+     * <table class="striped">
+     * <caption style="display:none">Access mode permitted values and meanings</caption>
+     * <thead>
      * <tr><th style="text-align:left">Value</th><th style="text-align:left">Meaning</th></tr>
+     * </thead>
+     * <tbody>
      * <tr><td style="vertical-align:top">{@code "r"}</td>
      *     <td> Open for reading only. Invoking any of the {@code write}
      *     methods of the resulting object will cause an
@@ -153,6 +157,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      *     <td> Open for reading and writing, as with {@code "rw"}, and also
      *     require that every update to the file's content be written
      *     synchronously to the underlying storage device.</td></tr>
+     * </tbody>
      * </table>
      *
      * The {@code "rws"} and {@code "rwd"} modes work much like the {@link

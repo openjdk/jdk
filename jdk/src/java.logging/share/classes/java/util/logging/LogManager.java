@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1887,7 +1887,7 @@ public class LogManager {
      * The registered {@linkplain #addConfigurationListener configuration
      * listeners} will be invoked after the configuration is successfully updated.
      * <br><br>
-     * <table summary="Updating configuration properties">
+     * <table><caption style="display:none">Updating configuration properties</caption>
      * <tr>
      * <th>Property</th>
      * <th>Resulting Behavior</th>

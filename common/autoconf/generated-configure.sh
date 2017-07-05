@@ -5186,7 +5186,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1494615666
+DATE_WHEN_GENERATED=1494858828
 
 ###############################################################################
 #
@@ -48811,173 +48811,63 @@ $as_echo "yes" >&6; }
 # Check whether --with-jtreg was given.
 if test "${with_jtreg+set}" = set; then :
   withval=$with_jtreg;
-else
-  with_jtreg=no
 fi
 
 
   if test "x$with_jtreg" = xno; then
     # jtreg disabled
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jtreg" >&5
-$as_echo_n "checking for jtreg... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jtreg test harness" >&5
+$as_echo_n "checking for jtreg test harness... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, disabled" >&5
+$as_echo "no, disabled" >&6; }
+  elif test "x$with_jtreg" != xyes && test "x$with_jtreg" != x; then
+    # An explicit path is specified, use it.
+    JT_HOME="$with_jtreg"
+    if test ! -d "$JT_HOME"; then
+      as_fn_error $? "jtreg home directory from --with-jtreg=$with_jtreg does not exist" "$LINENO" 5
+    fi
+
+    if test ! -e "$JT_HOME/lib/jtreg.jar"; then
+      as_fn_error $? "jtreg home directory from --with-jtreg=$with_jtreg is not a valid jtreg home" "$LINENO" 5
+    fi
+
+    JTREGEXE="$JT_HOME/bin/jtreg"
+    if test ! -x "$JTREGEXE"; then
+      as_fn_error $? "jtreg home directory from --with-jtreg=$with_jtreg does not contain valid jtreg executable" "$LINENO" 5
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jtreg test harness" >&5
+$as_echo_n "checking for jtreg test harness... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JT_HOME" >&5
+$as_echo "$JT_HOME" >&6; }
   else
-    if test "x$with_jtreg" != xyes; then
-      # with path specified.
-      JT_HOME="$with_jtreg"
-    fi
-
+    # Try to locate jtreg
     if test "x$JT_HOME" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jtreg" >&5
-$as_echo_n "checking for jtreg... " >&6; }
-
-      # use JT_HOME enviroment var.
-
-  # Only process if variable expands to non-empty
-
-  if test "x$JT_HOME" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$JT_HOME"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JT_HOME, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of JT_HOME" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    JT_HOME="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting JT_HOME to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting JT_HOME to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$JT_HOME"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    JT_HOME="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting JT_HOME to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting JT_HOME to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$JT_HOME"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JT_HOME, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of JT_HOME, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      if test -d "$path"; then
-        JT_HOME="`cd "$path"; $THEPWDCMD -L`"
+      # JT_HOME set in environment, use it
+      if test ! -d "$JT_HOME"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring JT_HOME pointing to invalid directory: $JT_HOME" >&5
+$as_echo "$as_me: WARNING: Ignoring JT_HOME pointing to invalid directory: $JT_HOME" >&2;}
+        JT_HOME=
       else
-        dir="`$DIRNAME "$path"`"
-        base="`$BASENAME "$path"`"
-        JT_HOME="`cd "$dir"; $THEPWDCMD -L`/$base"
+        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring JT_HOME which is not a valid jtreg home: $JT_HOME" >&5
+$as_echo "$as_me: WARNING: Ignoring JT_HOME which is not a valid jtreg home: $JT_HOME" >&2;}
+          JT_HOME=
+        elif test ! -x "$JT_HOME/bin/jtreg"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring JT_HOME which does not contain valid jtreg executable: $JT_HOME" >&5
+$as_echo "$as_me: WARNING: Ignoring JT_HOME which does not contain valid jtreg executable: $JT_HOME" >&2;}
+          JT_HOME=
+        else
+          JTREGEXE="$JT_HOME/bin/jtreg"
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Located jtreg using JT_HOME from environment" >&5
+$as_echo "$as_me: Located jtreg using JT_HOME from environment" >&6;}
+        fi
       fi
     fi
-  fi
 
-
-      # jtreg win32 script works for everybody
-      JTREGEXE="$JT_HOME/bin/jtreg"
-
-      if test ! -f "$JTREGEXE"; then
-        as_fn_error $? "JTReg executable does not exist: $JTREGEXE" "$LINENO" 5
-      fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JTREGEXE" >&5
-$as_echo "$JTREGEXE" >&6; }
-    else
-      # try to find jtreg on path
-
+    if test "x$JT_HOME" = x; then
+      # JT_HOME is not set in environment, or was deemed invalid.
+      # Try to find jtreg on path
 
 
   # Publish this variable in the help.
@@ -49175,13 +49065,451 @@ $as_echo "$tool_specified" >&6; }
   fi
 
 
+      if test "x$JTREGEXE" != x; then
+        # That's good, now try to derive JT_HOME
+        JT_HOME=`(cd $($DIRNAME $JTREGEXE)/.. && pwd)`
+        if test ! -e "$JT_HOME/lib/jtreg.jar"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring jtreg from path since a valid jtreg home cannot be found" >&5
+$as_echo "$as_me: WARNING: Ignoring jtreg from path since a valid jtreg home cannot be found" >&2;}
+          JT_HOME=
+          JTREGEXE=
+        else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Located jtreg using jtreg executable in path" >&5
+$as_echo "$as_me: Located jtreg using jtreg executable in path" >&6;}
+        fi
+      fi
+    fi
 
-  if test "x$JTREGEXE" = x; then
-    as_fn_error $? "Could not find required tool for JTREGEXE" "$LINENO" 5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jtreg test harness" >&5
+$as_echo_n "checking for jtreg test harness... " >&6; }
+    if test "x$JT_HOME" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JT_HOME" >&5
+$as_echo "$JT_HOME" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, not found" >&5
+$as_echo "no, not found" >&6; }
+
+      if test "x$with_jtreg" = xyes; then
+        as_fn_error $? "--with-jtreg was specified, but no jtreg found." "$LINENO" 5
+      fi
+    fi
   fi
 
 
-      JT_HOME="`$DIRNAME $JTREGEXE`"
+  # Only process if variable expands to non-empty
+
+  if test "x$JTREGEXE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$JTREGEXE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path=`$CYGPATH -u "$path"`
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path=`$CYGPATH -u "$path"`
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JTREGEXE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of JTREGEXE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of JTREGEXE" "$LINENO" 5
+    fi
+  fi
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    # Short path failed, file does not exist as specified.
+    # Try adding .exe or .cmd
+    if test -f "${new_path}.exe"; then
+      input_to_shortpath="${new_path}.exe"
+    elif test -f "${new_path}.cmd"; then
+      input_to_shortpath="${new_path}.cmd"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JTREGEXE, which resolves as \"$new_path\", is invalid." >&5
+$as_echo "$as_me: The path of JTREGEXE, which resolves as \"$new_path\", is invalid." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
+$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
+      as_fn_error $? "Cannot locate the the path of JTREGEXE" "$LINENO" 5
+    fi
+  else
+    input_to_shortpath="$new_path"
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+  new_path="$input_to_shortpath"
+
+  input_path="$input_to_shortpath"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+  # remove trailing .exe if any
+  new_path="${new_path/%.exe/}"
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$JTREGEXE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in MSYS causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    fi
+
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JTREGEXE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of JTREGEXE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of JTREGEXE" "$LINENO" 5
+    fi
+  fi
+
+  # Now new_path has a complete unix path to the binary
+  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
+    # Keep paths in /bin as-is, but remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+    # Do not save /bin paths to all_fixpath_prefixes!
+  else
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $new_path`
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+    # Output is in $new_path
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    # remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+
+    # Save the first 10 bytes of this path to the storage, so fixpath can work.
+    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+  fi
+
+    else
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$JTREGEXE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
+
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
+      fi
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JTREGEXE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of JTREGEXE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of JTREGEXE" "$LINENO" 5
+      fi
+    fi
+
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
+
+    if test "x$complete" != "x$new_complete"; then
+      JTREGEXE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting JTREGEXE to \"$new_complete\"" >&5
+$as_echo "$as_me: Rewriting JTREGEXE to \"$new_complete\"" >&6;}
+    fi
+  fi
+
+
+  # Only process if variable expands to non-empty
+
+  if test "x$JT_HOME" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$JT_HOME"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JT_HOME, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of JT_HOME" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    JT_HOME="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting JT_HOME to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting JT_HOME to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$JT_HOME"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    JT_HOME="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting JT_HOME to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting JT_HOME to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$JT_HOME"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of JT_HOME, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of JT_HOME, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        JT_HOME="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        JT_HOME="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 

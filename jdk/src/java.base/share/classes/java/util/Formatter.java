@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,12 +290,14 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <pre>
  *    out.toUpperCase(Locale.getDefault(Locale.Category.FORMAT)) </pre>
  *
- * <table cellpadding=5 summary="genConv">
- *
+ * <table class="striped">
+ * <caption style="display:none">genConv</caption>
+ * <thead>
  * <tr><th style="vertical-align:bottom"> Conversion
  *     <th style="vertical-align:bottom"> Argument Category
  *     <th style="vertical-align:bottom"> Description
- *
+ * </thead>
+ * <tbody>
  * <tr><td style="vertical-align:top"> {@code 'b'}, {@code 'B'}
  *     <td style="vertical-align:top"> general
  *     <td> If the argument <i>arg</i> is {@code null}, then the result is
@@ -365,6 +367,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <td style="vertical-align:top"> line separator
  *     <td> The result is the platform-specific line separator
  *
+ * </tbody>
  * </table>
  *
  * <p> Any characters not explicitly defined as conversions are illegal and are
@@ -381,8 +384,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <p> The following conversion characters are used for formatting times:
  *
- * <table cellpadding=5 summary="time">
- *
+ * <table class="striped">
+ * <caption style="display:none">time</caption>
+ * <tbody>
  * <tr><td style="vertical-align:top"> {@code 'H'}
  *     <td> Hour of the day for the 24-hour clock, formatted as two digits with
  *     a leading zero as necessary i.e. {@code 00 - 23}.
@@ -446,11 +450,14 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     1970 {@code 00:00:00} UTC, i.e. {@code Long.MIN_VALUE} to
  *     {@code Long.MAX_VALUE}.
  *
+ * </tbody>
  * </table>
  *
  * <p> The following conversion characters are used for formatting dates:
  *
- * <table cellpadding=5 summary="date">
+ * <table class="striped">
+ * <caption style="display:none">date</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top">{@code 'B'}
  *     <td> Locale-specific {@linkplain java.text.DateFormatSymbols#getMonths
@@ -502,12 +509,15 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <tr><td style="vertical-align:top">{@code 'e'}
  *     <td> Day of month, formatted as two digits, i.e. {@code 1 - 31}.
  *
+ * </tbody>
  * </table>
  *
  * <p> The following conversion characters are used for formatting common
  * date/time compositions.
  *
- * <table cellpadding=5 summary="composites">
+ * <table class="striped">
+ * <caption style="display:none">composites</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top">{@code 'R'}
  *     <td> Time formatted for the 24-hour clock as {@code "%tH:%tM"}
@@ -531,6 +541,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
  *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
  *
+ * </tbody>
  * </table>
  *
  * <p> Any characters not explicitly defined as date/time conversion suffixes
@@ -541,14 +552,16 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The following table summarizes the supported flags.  <i>y</i> means the
  * flag is supported for the indicated argument types.
  *
- * <table cellpadding=5 summary="genConv">
- *
+ * <table class="striped">
+ * <caption style="display:none">genConv</caption>
+ * <thead>
  * <tr><th style="vertical-align:bottom"> Flag <th style="vertical-align:bottom"> General
  *     <th style="vertical-align:bottom"> Character <th style="vertical-align:bottom"> Integral
  *     <th style="vertical-align:bottom"> Floating Point
  *     <th style="vertical-align:bottom"> Date/Time
  *     <th style="vertical-align:bottom"> Description
- *
+ * </thead>
+ * <tbody>
  * <tr><td> '-' <td style="text-align:center; vertical-align:top"> y
  *     <td style="text-align:center; vertical-align:top"> y
  *     <td style="text-align:center; vertical-align:top"> y
@@ -599,6 +612,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <td style="text-align:center"> -
  *     <td> The result will enclose negative numbers in parentheses
  *
+ * </tbody>
  * </table>
  *
  * <p> <sup>1</sup> Depends on the definition of {@link Formattable}.
@@ -705,7 +719,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <p> The following general conversions may be applied to any argument type:
  *
- * <table cellpadding=5 summary="dgConv">
+ * <table class="striped">
+ * <caption style="display:none">dgConv</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code 'b'}
  *     <td style="vertical-align:top"> <code>'&#92;u0062'</code>
@@ -756,11 +772,14 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <td style="vertical-align:top"> <code>'&#92;u0053'</code>
  *     <td> The upper-case variant of {@code 's'}.
  *
+ * </tbody>
  * </table>
  *
  * <p> The following <a id="dFlags">flags</a> apply to general conversions:
  *
- * <table cellpadding=5 summary="dFlags">
+ * <table class="striped">
+ * <caption style="display:none">dFlags</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code '-'}
  *     <td style="vertical-align:top"> <code>'&#92;u002d'</code>
@@ -775,6 +794,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <td> Requires the output use an alternate form.  The definition of the
  *     form is specified by the conversion.
  *
+ * </tbody>
  * </table>
  *
  * <p> The <a id="genWidth">width</a> is the minimum number of characters to
@@ -801,7 +821,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * {@code false} then an {@link IllegalFormatCodePointException} will be
  * thrown.
  *
- * <table cellpadding=5 summary="charConv">
+ * <table class="striped">
+ * <caption style="display:none">charConv</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code 'c'}
  *     <td style="vertical-align:top"> <code>'&#92;u0063'</code>
@@ -817,6 +839,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <td style="vertical-align:top"> <code>'&#92;u0043'</code>
  *     <td> The upper-case variant of {@code 'c'}.
  *
+ * </tbody>
  * </table>
  *
  * <p> The {@code '-'} flag defined for <a href="#dFlags">General
@@ -902,7 +925,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * {@code short}, {@link Short}, {@code int} and {@link Integer},
  * {@code long}, and {@link Long}.
  *
- * <table cellpadding=5 summary="IntConv">
+ * <table class="striped">
+ * <caption style="display:none">IntConv</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code 'd'}
  *     <td style="vertical-align:top"> <code>'&#92;u0064'</code>
@@ -968,6 +993,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     all hexadecimal digits {@code 'a'} - {@code 'f'}
  *     (<code>'&#92;u0061'</code> -  <code>'&#92;u0066'</code>).
  *
+ * </tbody>
  * </table>
  *
  * <p> If the conversion is {@code 'o'}, {@code 'x'}, or {@code 'X'} and
@@ -982,7 +1008,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The following <a id="intFlags">flags</a> apply to numeric integral
  * conversions:
  *
- * <table cellpadding=5 summary="intFlags">
+ * <table class="striped">
+ * <caption style="display:none">intFlags</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code '+'}
  *     <td style="vertical-align:top"> <code>'&#92;u002b'</code>
@@ -1025,6 +1053,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     (<code>'&#92;u0028'</code>) and append a {@code ')'}
  *     (<code>'&#92;u0029'</code>) to negative values.
  *
+ * </tbody>
  * </table>
  *
  * <p> If no <a id="intdFlags">flags</a> are given the default formatting is
@@ -1060,7 +1089,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The following conversions may be applied to {@link
  * java.math.BigInteger}.
  *
- * <table cellpadding=5 summary="BIntConv">
+ * <table class="striped">
+ * <caption style="display:none">bIntConv</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code 'd'}
  *     <td style="vertical-align:top"> <code>'&#92;u0064'</code>
@@ -1125,6 +1156,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     all hexadecimal digits {@code 'a'} - {@code 'f'}
  *     (<code>'&#92;u0061'</code> - <code>'&#92;u0066'</code>).
  *
+ * </tbody>
  * </table>
  *
  * <p> If the conversion is {@code 'o'}, {@code 'x'}, or {@code 'X'} and
@@ -1154,7 +1186,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The following conversions may be applied to {@code float}, {@link
  * Float}, {@code double} and {@link Double}.
  *
- * <table cellpadding=5 summary="floatConv">
+ * <table class="striped">
+ * <caption style="display:none">floatConv</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code 'e'}
  *     <td style="vertical-align:top"> <code>'&#92;u0065'</code>
@@ -1331,6 +1365,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     (<code>'&#92;u0070'</code> and all hexadecimal digits {@code 'a'} -
  *     {@code 'f'} (<code>'&#92;u0061'</code> - <code>'&#92;u0066'</code>).
  *
+ * </tbody>
  * </table>
  *
  * <p> All <a href="#intFlags">flags</a> defined for Byte, Short, Integer, and
@@ -1388,7 +1423,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The following conversions may be applied {@link java.math.BigDecimal
  * BigDecimal}.
  *
- * <table cellpadding=5 summary="floatConv">
+ * <table class="striped">
+ * <caption style="display:none">floatConv</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code 'e'}
  *     <td style="vertical-align:top"> <code>'&#92;u0065'</code>
@@ -1492,6 +1529,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     For a canonical representation of the value, use {@link
  *     BigDecimal#toString()}.
  *
+ * </tbody>
  * </table>
  *
  * <p> All <a href="#intFlags">flags</a> defined for Byte, Short, Integer, and
@@ -1512,7 +1550,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> This conversion may be applied to {@code long}, {@link Long}, {@link
  * Calendar}, {@link Date} and {@link TemporalAccessor TemporalAccessor}
  *
- * <table cellpadding=5 summary="DTConv">
+ * <table class="striped">
+ * <caption style="display:none">DTConv</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code 't'}
  *     <td style="vertical-align:top"> <code>'&#92;u0074'</code>
@@ -1521,6 +1561,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <td style="vertical-align:top"> <code>'&#92;u0054'</code>
  *     <td> The upper-case variant of {@code 't'}.
  *
+ * </tbody>
  * </table>
  *
  * <p> The following date and time conversion character suffixes are defined
@@ -1532,7 +1573,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <p> The following conversion characters are used for formatting times:
  *
- * <table cellpadding=5 summary="time">
+ * <table class="striped">
+ * <caption style="display:none">time</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top"> {@code 'H'}
  *     <td style="vertical-align:top"> <code>'&#92;u0048'</code>
@@ -1620,11 +1663,14 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     {@code Long.MAX_VALUE}. The precision of this value is limited by
  *     the resolution of the underlying operating system or hardware.
  *
+ * </tbody>
  * </table>
  *
  * <p> The following conversion characters are used for formatting dates:
  *
- * <table cellpadding=5 summary="date">
+ * <table class="striped">
+ * <caption style="display:none">date</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top">{@code 'B'}
  *     <td style="vertical-align:top"> <code>'&#92;u0042'</code>
@@ -1692,12 +1738,15 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <td> Day of month, formatted as two digits, i.e. {@code 1 - 31} where
  *     "{@code 1}" is the first day of the month.
  *
+ * </tbody>
  * </table>
  *
  * <p> The following conversion characters are used for formatting common
  * date/time compositions.
  *
- * <table cellpadding=5 summary="composites">
+ * <table class="striped">
+ * <caption style="display:none">composites</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top">{@code 'R'}
  *     <td style="vertical-align:top"> <code>'&#92;u0052'</code>
@@ -1727,6 +1776,7 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
  *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
  *
+ * </tbody>
  * </table>
  *
  * <p> The {@code '-'} flag defined for <a href="#dFlags">General
@@ -1748,7 +1798,9 @@ import jdk.internal.math.FormattedFloatingDecimal;
  *
  * <p> The conversion does not correspond to any argument.
  *
- * <table cellpadding=5 summary="DTConv">
+ * <table class="striped">
+ * <caption style="display:none">DTConv</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top">{@code '%'}
  *     <td> The result is a literal {@code '%'} (<code>'&#92;u0025'</code>)
@@ -1767,18 +1819,22 @@ import jdk.internal.math.FormattedFloatingDecimal;
  * <p> The precision is not applicable.  If the precision is specified an
  * {@link IllegalFormatPrecisionException} will be thrown.
  *
+ * </tbody>
  * </table>
  *
  * <h4><a id="dls">Line Separator</a></h4>
  *
  * <p> The conversion does not correspond to any argument.
  *
- * <table cellpadding=5 summary="DTConv">
+ * <table class="striped">
+ * <caption style="display:none">DTConv</caption>
+ * <tbody>
  *
  * <tr><td style="vertical-align:top">{@code 'n'}
  *     <td> the platform-specific line separator as returned by {@link
  *     System#lineSeparator()}.
  *
+ * </tbody>
  * </table>
  *
  * <p> Flags, width, and precision are not applicable.  If any are provided an
