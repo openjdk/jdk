@@ -33,7 +33,8 @@ import java.io.OutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import com.sun.security.jgss.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 /**
  * This class represents the JGSS security context and its associated
@@ -87,10 +88,10 @@ import com.sun.security.jgss.*;
  * per-message operations are returned in an instance of the MessageProp
  * class, which is used as an argument in these calls.</dl>
  */
-class GSSContextImpl implements ExtendedGSSContext {
+public class GSSContextImpl implements GSSContext {
 
-    private final GSSManagerImpl gssManager;
-    private final boolean initiator;
+    private GSSManagerImpl gssManager;
+    private boolean initiator;
 
     // private flags for the context state
     private static final int PRE_INIT = 1;
@@ -122,6 +123,22 @@ class GSSContextImpl implements ExtendedGSSContext {
     private boolean reqAnonState = false;
     private boolean reqDelegPolicyState = false;
 
+    public GSSContextImpl() {
+        // Useless
+    }
+
+    // Used by new ExtendedGSSContext.ExtendedGSSContextImpl(ctxt)
+    protected GSSContextImpl(GSSContextImpl src) {
+        for (Field f: GSSContextImpl.class.getDeclaredFields()) {
+            if (!Modifier.isStatic(f.getModifiers())) {
+                try {
+                    f.set(this, f.get(src));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
     /**
      * Creates a GSSContextImp on the context initiator's side.
      */
@@ -613,7 +630,7 @@ class GSSContextImpl implements ExtendedGSSContext {
                                    "No mechanism context yet!");
         GSSCredentialSpi delCredElement = mechCtxt.getDelegCred();
         return (delCredElement == null ?
-            null : new GSSCredentialImpl(gssManager, delCredElement));
+            null : GSSManagerImpl.wrap(new GSSCredentialImpl(gssManager, delCredElement)));
     }
 
     public boolean isInitiator() throws GSSException {
@@ -633,25 +650,18 @@ class GSSContextImpl implements ExtendedGSSContext {
 
     // ExtendedGSSContext methods:
 
-    @Override
-    public Object inquireSecContext(InquireType type) throws GSSException {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(new InquireSecContextPermission(type.toString()));
-        }
+    public Object inquireSecContext(String type) throws GSSException {
         if (mechCtxt == null) {
             throw new GSSException(GSSException.NO_CONTEXT);
         }
         return mechCtxt.inquireSecContext(type);
     }
 
-    @Override
     public void requestDelegPolicy(boolean state) throws GSSException {
         if (mechCtxt == null && initiator)
             reqDelegPolicyState = state;
     }
 
-    @Override
     public boolean getDelegPolicyState() {
         if (mechCtxt != null)
             return mechCtxt.getDelegPolicyState();

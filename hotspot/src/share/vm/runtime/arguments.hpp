@@ -590,7 +590,9 @@ class Arguments : AllStatic {
   static void  fix_appclasspath();
 
   // Operation modi
-  static Mode mode()                        { return _mode; }
+  static Mode mode()                { return _mode; }
+  static bool is_interpreter_only() { return mode() == _int; }
+
 
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);

@@ -27,6 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import sun.misc.SharedSecrets;
+import sun.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around a millisecond value that allows
@@ -41,6 +43,8 @@ import java.time.LocalDate;
  * time zone with which the instance is associated.
  */
 public class Date extends java.util.Date {
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a <code>Date</code> object initialized with the given
@@ -108,31 +112,27 @@ public class Date extends java.util.Date {
      *         JDBC date escape format (yyyy-[m]m-[d]d)
      */
     public static Date valueOf(String s) {
+        if (s == null) {
+            throw new java.lang.IllegalArgumentException();
+        }
         final int YEAR_LENGTH = 4;
         final int MONTH_LENGTH = 2;
         final int DAY_LENGTH = 2;
         final int MAX_MONTH = 12;
         final int MAX_DAY = 31;
-        int firstDash;
-        int secondDash;
         Date d = null;
-        if (s == null) {
-            throw new java.lang.IllegalArgumentException();
-        }
 
-        firstDash = s.indexOf('-');
-        secondDash = s.indexOf('-', firstDash + 1);
+        int firstDash = s.indexOf('-');
+        int secondDash = s.indexOf('-', firstDash + 1);
+        int len = s.length();
 
-        if ((firstDash > 0) && (secondDash > 0) && (secondDash < s.length() - 1)) {
-            String yyyy = s.substring(0, firstDash);
-            String mm = s.substring(firstDash + 1, secondDash);
-            String dd = s.substring(secondDash + 1);
-            if (yyyy.length() == YEAR_LENGTH &&
-                    (mm.length() >= 1 && mm.length() <= MONTH_LENGTH) &&
-                    (dd.length() >= 1 && dd.length() <= DAY_LENGTH)) {
-                int year = Integer.parseInt(yyyy);
-                int month = Integer.parseInt(mm);
-                int day = Integer.parseInt(dd);
+        if ((firstDash > 0) && (secondDash > 0) && (secondDash < len - 1)) {
+            if (firstDash == YEAR_LENGTH &&
+                    (secondDash - firstDash > 1 && secondDash - firstDash <= MONTH_LENGTH + 1) &&
+                    (len - secondDash > 1 && len - secondDash <= DAY_LENGTH + 1)) {
+                int year = Integer.parseInt(s, 0, firstDash, 10);
+                int month = Integer.parseInt(s, firstDash + 1, secondDash, 10);
+                int day = Integer.parseInt(s, secondDash + 1, len, 10);
 
                 if ((month >= 1 && month <= MAX_MONTH) && (day >= 1 && day <= MAX_DAY)) {
                     d = new Date(year - 1900, month - 1, day);
@@ -159,17 +159,34 @@ public class Date extends java.util.Date {
         int month = super.getMonth() + 1;
         int day = super.getDate();
 
-        char buf[] = "2000-00-00".toCharArray();
-        buf[0] = Character.forDigit(year/1000,10);
-        buf[1] = Character.forDigit((year/100)%10,10);
-        buf[2] = Character.forDigit((year/10)%10,10);
-        buf[3] = Character.forDigit(year%10,10);
-        buf[5] = Character.forDigit(month/10,10);
-        buf[6] = Character.forDigit(month%10,10);
-        buf[8] = Character.forDigit(day/10,10);
-        buf[9] = Character.forDigit(day%10,10);
+        char buf[] = new char[10];
+        formatDecimalInt(year, buf, 0, 4);
+        buf[4] = '-';
+        Date.formatDecimalInt(month, buf, 5, 2);
+        buf[7] = '-';
+        Date.formatDecimalInt(day, buf, 8, 2);
 
-        return new String(buf);
+        return jla.newStringUnsafe(buf);
+    }
+
+    /**
+     * Formats an unsigned integer into a char array in decimal output format.
+     * Numbers will be zero-padded or truncated if the string representation
+     * of the integer is smaller than or exceeds len, respectively.
+     *
+     * Should consider moving this to Integer and expose it through
+     * JavaLangAccess similar to Integer::formatUnsignedInt
+     * @param val  Value to convert
+     * @param buf  Array containing converted value
+     * @param offset Starting pos in buf
+     * @param len  length of output value
+     */
+    static void formatDecimalInt(int val, char[] buf, int offset, int len) {
+        int charPos = offset + len;
+        do {
+            buf[--charPos] = (char)('0' + (val % 10));
+            val /= 10;
+        } while (charPos > offset);
     }
 
     // Override all the time operations inherited from java.util.Date;
