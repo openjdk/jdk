@@ -49,6 +49,7 @@
 #define RUNTIME_PRODUCT_FLAG_MEMBER(type, name, value, doc)      FLAG_MEMBER(name),
 #define RUNTIME_PD_PRODUCT_FLAG_MEMBER(type, name, doc)          FLAG_MEMBER(name),
 #define RUNTIME_DIAGNOSTIC_FLAG_MEMBER(type, name, value, doc)   FLAG_MEMBER(name),
+#define RUNTIME_PD_DIAGNOSTIC_FLAG_MEMBER(type, name, doc)       FLAG_MEMBER(name),
 #define RUNTIME_EXPERIMENTAL_FLAG_MEMBER(type, name, value, doc) FLAG_MEMBER(name),
 #define RUNTIME_MANAGEABLE_FLAG_MEMBER(type, name, value, doc)   FLAG_MEMBER(name),
 #define RUNTIME_PRODUCT_RW_FLAG_MEMBER(type, name, value, doc)   FLAG_MEMBER(name),
@@ -61,6 +62,7 @@
 #define JVMCI_DEVELOP_FLAG_MEMBER(type, name, value, doc)        FLAG_MEMBER(name),
 #define JVMCI_PD_DEVELOP_FLAG_MEMBER(type, name, doc)            FLAG_MEMBER(name),
 #define JVMCI_DIAGNOSTIC_FLAG_MEMBER(type, name, value, doc)     FLAG_MEMBER(name),
+#define JVMCI_PD_DIAGNOSTIC_FLAG_MEMBER(type, name, doc)         FLAG_MEMBER(name),
 #define JVMCI_EXPERIMENTAL_FLAG_MEMBER(type, name, value, doc)   FLAG_MEMBER(name),
 #define JVMCI_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc)     FLAG_MEMBER(name),
 
@@ -73,6 +75,7 @@
 #define C1_PRODUCT_FLAG_MEMBER(type, name, value, doc)           FLAG_MEMBER(name),
 #define C1_PD_PRODUCT_FLAG_MEMBER(type, name, doc)               FLAG_MEMBER(name),
 #define C1_DIAGNOSTIC_FLAG_MEMBER(type, name, value, doc)        FLAG_MEMBER(name),
+#define C1_PD_DIAGNOSTIC_FLAG_MEMBER(type, name, doc)            FLAG_MEMBER(name),
 #define C1_DEVELOP_FLAG_MEMBER(type, name, value, doc)           FLAG_MEMBER(name),
 #define C1_PD_DEVELOP_FLAG_MEMBER(type, name, doc)               FLAG_MEMBER(name),
 #define C1_NOTPRODUCT_FLAG_MEMBER(type, name, value, doc)        FLAG_MEMBER(name),
@@ -80,6 +83,7 @@
 #define C2_PRODUCT_FLAG_MEMBER(type, name, value, doc)           FLAG_MEMBER(name),
 #define C2_PD_PRODUCT_FLAG_MEMBER(type, name, doc)               FLAG_MEMBER(name),
 #define C2_DIAGNOSTIC_FLAG_MEMBER(type, name, value, doc)        FLAG_MEMBER(name),
+#define C2_PD_DIAGNOSTIC_FLAG_MEMBER(type, name, doc)            FLAG_MEMBER(name),
 #define C2_EXPERIMENTAL_FLAG_MEMBER(type, name, value, doc)      FLAG_MEMBER(name),
 #define C2_DEVELOP_FLAG_MEMBER(type, name, value, doc)           FLAG_MEMBER(name),
 #define C2_PD_DEVELOP_FLAG_MEMBER(type, name, doc)               FLAG_MEMBER(name),
@@ -97,6 +101,7 @@ typedef enum {
                RUNTIME_PRODUCT_FLAG_MEMBER, \
                RUNTIME_PD_PRODUCT_FLAG_MEMBER, \
                RUNTIME_DIAGNOSTIC_FLAG_MEMBER, \
+               RUNTIME_PD_DIAGNOSTIC_FLAG_MEMBER, \
                RUNTIME_EXPERIMENTAL_FLAG_MEMBER, \
                RUNTIME_NOTPRODUCT_FLAG_MEMBER, \
                RUNTIME_MANAGEABLE_FLAG_MEMBER, \
@@ -110,6 +115,7 @@ typedef enum {
                   RUNTIME_PRODUCT_FLAG_MEMBER, \
                   RUNTIME_PD_PRODUCT_FLAG_MEMBER, \
                   RUNTIME_DIAGNOSTIC_FLAG_MEMBER, \
+                  RUNTIME_PD_DIAGNOSTIC_FLAG_MEMBER, \
                   RUNTIME_NOTPRODUCT_FLAG_MEMBER, \
                   IGNORE_RANGE, \
                   IGNORE_CONSTRAINT, \
@@ -120,6 +126,7 @@ typedef enum {
           RUNTIME_PRODUCT_FLAG_MEMBER, \
           RUNTIME_PD_PRODUCT_FLAG_MEMBER, \
           RUNTIME_DIAGNOSTIC_FLAG_MEMBER, \
+          RUNTIME_PD_DIAGNOSTIC_FLAG_MEMBER, \
           RUNTIME_EXPERIMENTAL_FLAG_MEMBER, \
           RUNTIME_NOTPRODUCT_FLAG_MEMBER, \
           RUNTIME_MANAGEABLE_FLAG_MEMBER, \
@@ -134,6 +141,7 @@ typedef enum {
              JVMCI_PRODUCT_FLAG_MEMBER, \
              JVMCI_PD_PRODUCT_FLAG_MEMBER, \
              JVMCI_DIAGNOSTIC_FLAG_MEMBER, \
+             JVMCI_PD_DIAGNOSTIC_FLAG_MEMBER, \
              JVMCI_EXPERIMENTAL_FLAG_MEMBER, \
              JVMCI_NOTPRODUCT_FLAG_MEMBER, \
              IGNORE_RANGE, \
@@ -146,6 +154,7 @@ typedef enum {
           C1_PRODUCT_FLAG_MEMBER, \
           C1_PD_PRODUCT_FLAG_MEMBER, \
           C1_DIAGNOSTIC_FLAG_MEMBER, \
+          C1_PD_DIAGNOSTIC_FLAG_MEMBER, \
           C1_NOTPRODUCT_FLAG_MEMBER, \
           IGNORE_RANGE, \
           IGNORE_CONSTRAINT, \
@@ -157,6 +166,7 @@ typedef enum {
           C2_PRODUCT_FLAG_MEMBER, \
           C2_PD_PRODUCT_FLAG_MEMBER, \
           C2_DIAGNOSTIC_FLAG_MEMBER, \
+          C2_PD_DIAGNOSTIC_FLAG_MEMBER, \
           C2_EXPERIMENTAL_FLAG_MEMBER, \
           C2_NOTPRODUCT_FLAG_MEMBER, \
           IGNORE_RANGE, \
@@ -182,6 +192,7 @@ typedef enum {
 #define RUNTIME_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)      FLAG_MEMBER_WITH_TYPE(name,type),
 #define RUNTIME_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, doc)          FLAG_MEMBER_WITH_TYPE(name,type),
 #define RUNTIME_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)   FLAG_MEMBER_WITH_TYPE(name,type),
+#define RUNTIME_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, doc)       FLAG_MEMBER_WITH_TYPE(name,type),
 #define RUNTIME_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE(type, name, value, doc) FLAG_MEMBER_WITH_TYPE(name,type),
 #define RUNTIME_MANAGEABLE_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)   FLAG_MEMBER_WITH_TYPE(name,type),
 #define RUNTIME_PRODUCT_RW_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)   FLAG_MEMBER_WITH_TYPE(name,type),
@@ -194,12 +205,14 @@ typedef enum {
 #define JVMCI_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)        FLAG_MEMBER_WITH_TYPE(name,type),
 #define JVMCI_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, doc)            FLAG_MEMBER_WITH_TYPE(name,type),
 #define JVMCI_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)     FLAG_MEMBER_WITH_TYPE(name,type),
+#define JVMCI_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, doc)         FLAG_MEMBER_WITH_TYPE(name,type),
 #define JVMCI_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)   FLAG_MEMBER_WITH_TYPE(name,type),
 #define JVMCI_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)     FLAG_MEMBER_WITH_TYPE(name,type),
 
 #define C1_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)           FLAG_MEMBER_WITH_TYPE(name,type),
 #define C1_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, doc)               FLAG_MEMBER_WITH_TYPE(name,type),
 #define C1_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)        FLAG_MEMBER_WITH_TYPE(name,type),
+#define C1_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, doc)            FLAG_MEMBER_WITH_TYPE(name,type),
 #define C1_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)           FLAG_MEMBER_WITH_TYPE(name,type),
 #define C1_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, doc)               FLAG_MEMBER_WITH_TYPE(name,type),
 #define C1_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)        FLAG_MEMBER_WITH_TYPE(name,type),
@@ -213,6 +226,7 @@ typedef enum {
 #define C2_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)           FLAG_MEMBER_WITH_TYPE(name,type),
 #define C2_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE(type, name, doc)               FLAG_MEMBER_WITH_TYPE(name,type),
 #define C2_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)        FLAG_MEMBER_WITH_TYPE(name,type),
+#define C2_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE(type, name, doc)            FLAG_MEMBER_WITH_TYPE(name,type),
 #define C2_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)      FLAG_MEMBER_WITH_TYPE(name,type),
 #define C2_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, value, doc)           FLAG_MEMBER_WITH_TYPE(name,type),
 #define C2_PD_DEVELOP_FLAG_MEMBER_WITH_TYPE(type, name, doc)               FLAG_MEMBER_WITH_TYPE(name,type),
@@ -230,6 +244,7 @@ typedef enum {
                RUNTIME_PRODUCT_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
+               RUNTIME_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
                RUNTIME_MANAGEABLE_FLAG_MEMBER_WITH_TYPE,
@@ -243,6 +258,7 @@ typedef enum {
                   RUNTIME_PRODUCT_FLAG_MEMBER_WITH_TYPE,
                   RUNTIME_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
                   RUNTIME_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
+                  RUNTIME_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
                   RUNTIME_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
                   IGNORE_RANGE,
                   IGNORE_CONSTRAINT,
@@ -253,6 +269,7 @@ typedef enum {
           RUNTIME_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           RUNTIME_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           RUNTIME_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
+          RUNTIME_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
           RUNTIME_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
           RUNTIME_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
           RUNTIME_MANAGEABLE_FLAG_MEMBER_WITH_TYPE,
@@ -267,6 +284,7 @@ typedef enum {
              JVMCI_PRODUCT_FLAG_MEMBER_WITH_TYPE,
              JVMCI_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
              JVMCI_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
+             JVMCI_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
              JVMCI_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
              JVMCI_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
              IGNORE_RANGE,
@@ -279,6 +297,7 @@ typedef enum {
           C1_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           C1_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           C1_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
+          C1_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
           C1_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
           IGNORE_RANGE,
           IGNORE_CONSTRAINT,
@@ -290,6 +309,7 @@ typedef enum {
           C2_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           C2_PD_PRODUCT_FLAG_MEMBER_WITH_TYPE,
           C2_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
+          C2_PD_DIAGNOSTIC_FLAG_MEMBER_WITH_TYPE,
           C2_EXPERIMENTAL_FLAG_MEMBER_WITH_TYPE,
           C2_NOTPRODUCT_FLAG_MEMBER_WITH_TYPE,
           IGNORE_RANGE,
