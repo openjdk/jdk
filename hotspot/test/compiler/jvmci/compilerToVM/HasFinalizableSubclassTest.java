@@ -28,10 +28,11 @@
  * @library / /test/lib
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
- * @modules jdk.vm.ci/jdk.vm.ci.hotspot
- * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                  compiler.jvmci.compilerToVM.HasFinalizableSubclassTest
+ *                   -Djvmci.Compiler=null
+ *                   compiler.jvmci.compilerToVM.HasFinalizableSubclassTest
  */
 
 package compiler.jvmci.compilerToVM;
