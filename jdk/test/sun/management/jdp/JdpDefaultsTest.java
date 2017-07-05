@@ -25,6 +25,9 @@
  * A JVM with JDP on should send multicast JDP packets regularly.
  *
  * @author Alex Schenkman
+ */
+
+/*
  * @test JdpDefaultsTest
  * @summary Assert that we can read JDP packets from a multicast socket connection, on default IP and port.
  * @library /lib/testlibrary

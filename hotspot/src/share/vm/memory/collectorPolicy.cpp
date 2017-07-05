@@ -817,7 +817,11 @@ MetaWord* CollectorPolicy::satisfy_failed_metadata_allocation(
   assert(!Heap_lock->owned_by_self(), "Should not be holding the Heap_lock");
 
   do {
-    MetaWord* result = NULL;
+    MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
+    if (result != NULL) {
+      return result;
+    }
+
     if (GC_locker::is_active_and_needs_gc()) {
       // If the GC_locker is active, just expand and allocate.
       // If that does not succeed, wait if this thread is not

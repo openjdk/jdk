@@ -179,7 +179,7 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
         for (final String str : forkJVMOptions) {
             if(!str.isEmpty()) {
                 cmd.add(str);
-            }
+        }
         }
         cmd.add(Shell.class.getName());
         // now add the rest of the "in process" runtime arguments

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package java.security.cert;
 
 /**
  * The CRLReason enumeration specifies the reason that a certificate
- * is revoked, as defined in <a href="http://www.ietf.org/rfc/rfc3280.txt">
- * RFC 3280: Internet X.509 Public Key Infrastructure Certificate and CRL
+ * is revoked, as defined in <a href="http://tools.ietf.org/html/rfc5280">
+ * RFC 5280: Internet X.509 Public Key Infrastructure Certificate and CRL
  * Profile</a>.
  *
  * @author Sean Mullan

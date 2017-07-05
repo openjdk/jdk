@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Enumeration;
 import sun.security.util.*;
 
 /**
- * From RFC 3280:
+ * From RFC 5280:
  * <p>
  * The invalidity date is a non-critical CRL entry extension that
  * provides the date on which it is known or suspected that the private

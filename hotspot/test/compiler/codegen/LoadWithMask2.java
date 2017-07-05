@@ -25,7 +25,7 @@
  * @test
  * @bug 8031743
  * @summary loadI2L_immI broken for negative memory values
- * @run main/othervm -server -Xbatch -XX:-TieredCompilation -XX:CompileCommand=compileonly,*.foo* LoadWithMask2
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,*.foo* LoadWithMask2
  *
  */
 public class LoadWithMask2 {
