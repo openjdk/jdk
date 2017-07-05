@@ -971,6 +971,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * Parse the given stream and drive the given callback
          * with the results of the parse.  This method should
          * be implemented to be thread-safe.
+         *
+         * @throws IOException if an I/O exception occurs
          */
         public abstract void parse(Reader r, ParserCallback cb, boolean ignoreCharSet) throws IOException;
 
@@ -1025,6 +1027,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * <code>flush</code>. <code>eol</code> will be one of \n, \r
          * or \r\n, which ever is encountered the most in parsing the
          * stream.
+         *
+         * @param eol value of eol
          *
          * @since 1.3
          */
@@ -1490,6 +1494,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         /**
+         * @param e the JEditorPane
          * @return HTMLDocument of <code>e</code>.
          */
         protected HTMLDocument getHTMLDocument(JEditorPane e) {
@@ -1501,6 +1506,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         }
 
         /**
+         * @param e the JEditorPane
          * @return HTMLEditorKit for <code>e</code>.
          */
         protected HTMLEditorKit getHTMLEditorKit(JEditorPane e) {
@@ -1514,6 +1520,10 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         /**
          * Returns an array of the Elements that contain <code>offset</code>.
          * The first elements corresponds to the root.
+         *
+         * @param doc an instance of HTMLDocument
+         * @param offset value of offset
+         * @return an array of the Elements that contain <code>offset</code>
          */
         protected Element[] getElementsAt(HTMLDocument doc, int offset) {
             return getElementsAt(doc.getDefaultRootElement(), offset, 0);
@@ -1541,6 +1551,11 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * return -1 if no elements is found representing <code>tag</code>,
          * or 0 if the parent of the leaf at <code>offset</code> represents
          * <code>tag</code>.
+         *
+         * @param doc an instance of HTMLDocument
+         * @param offset an offset to start from
+         * @param tag tag to represent
+         * @return number of elements
          */
         protected int elementCountToTag(HTMLDocument doc, int offset,
                                         HTML.Tag tag) {

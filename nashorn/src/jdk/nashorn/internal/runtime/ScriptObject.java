@@ -91,7 +91,7 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
  */
 
 public abstract class ScriptObject implements PropertyAccess {
-    /** __proto__ special property name */
+    /** __proto__ special property name inside object literals. ES6 draft. */
     public static final String PROTO_PROPERTY_NAME   = "__proto__";
 
     /** Search fall back routine name for "no such method" */
@@ -130,8 +130,10 @@ public abstract class ScriptObject implements PropertyAccess {
     /** Indexed array data. */
     private ArrayData arrayData;
 
-    static final MethodHandle GETPROTO           = findOwnMH("getProto", ScriptObject.class);
-    static final MethodHandle SETPROTOCHECK      = findOwnMH("setProtoCheck", void.class, Object.class);
+    /** Method handle to retrive prototype of this object */
+    public static final MethodHandle GETPROTO           = findOwnMH("getProto", ScriptObject.class);
+    /** Method handle to set prototype of this object */
+    public static final MethodHandle SETPROTOCHECK      = findOwnMH("setProtoCheck", void.class, Object.class);
     static final MethodHandle MEGAMORPHIC_GET    = findOwnMH("megamorphicGet", Object.class, String.class, boolean.class, boolean.class);
     static final MethodHandle GLOBALFILTER       = findOwnMH("globalFilter", Object.class, Object.class);
 
@@ -1732,10 +1734,6 @@ public abstract class ScriptObject implements PropertyAccess {
         MethodHandle methodHandle;
 
         if (find == null) {
-            if (PROTO_PROPERTY_NAME.equals(name)) {
-                return new GuardedInvocation(GETPROTO, NashornGuards.getScriptObjectGuard());
-            }
-
             if ("getProp".equals(operator)) {
                 return noSuchProperty(desc, request);
             } else if ("getMethod".equals(operator)) {
@@ -1890,9 +1888,7 @@ public abstract class ScriptObject implements PropertyAccess {
                 return createEmptySetMethod(desc, "property.not.writable", true);
             }
         } else {
-            if (PROTO_PROPERTY_NAME.equals(name)) {
-                return new GuardedInvocation(SETPROTOCHECK, NashornGuards.getScriptObjectGuard());
-            } else if (! isExtensible()) {
+            if (! isExtensible()) {
                 return createEmptySetMethod(desc, "object.non.extensible", false);
             }
         }

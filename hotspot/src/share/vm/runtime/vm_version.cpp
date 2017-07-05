@@ -55,6 +55,20 @@ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
 #ifndef HOTSPOT_RELEASE_VERSION
   #error HOTSPOT_RELEASE_VERSION must be defined
 #endif
+
+#ifndef JDK_MAJOR_VERSION
+  #error JDK_MAJOR_VERSION must be defined
+#endif
+#ifndef JDK_MINOR_VERSION
+  #error JDK_MINOR_VERSION must be defined
+#endif
+#ifndef JDK_MICRO_VERSION
+  #error JDK_MICRO_VERSION must be defined
+#endif
+#ifndef JDK_BUILD_NUMBER
+  #error JDK_BUILD_NUMBER must be defined
+#endif
+
 #ifndef JRE_RELEASE_VERSION
   #error JRE_RELEASE_VERSION must be defined
 #endif
@@ -68,39 +82,44 @@ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
   #define VM_RELEASE HOTSPOT_RELEASE_VERSION "-" HOTSPOT_BUILD_TARGET
 #endif
 
-// HOTSPOT_RELEASE_VERSION must follow the release version naming convention
-// <major_ver>.<minor_ver>-b<nn>[-<identifier>][-<debug_target>]
+// HOTSPOT_RELEASE_VERSION follows the JDK release version naming convention
+// <major_ver>.<minor_ver>.<micro_ver>[-<identifier>][-<debug_target>][-b<nn>]
 int Abstract_VM_Version::_vm_major_version = 0;
 int Abstract_VM_Version::_vm_minor_version = 0;
+int Abstract_VM_Version::_vm_micro_version = 0;
 int Abstract_VM_Version::_vm_build_number = 0;
 bool Abstract_VM_Version::_initialized = false;
 int Abstract_VM_Version::_parallel_worker_threads = 0;
 bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
 
+#ifdef ASSERT
+static void assert_digits(const char * s, const char * message) {
+  for (int i = 0; s[i] != '\0'; i++) {
+    assert(isdigit(s[i]), message);
+  }
+}
+#endif
+
+static void set_version_field(int * version_field, const char * version_str,
+                              const char * const assert_msg) {
+  if (version_str != NULL && *version_str != '\0') {
+    DEBUG_ONLY(assert_digits(version_str, assert_msg));
+    *version_field = atoi(version_str);
+  }
+}
+
 void Abstract_VM_Version::initialize() {
   if (_initialized) {
     return;
   }
-  char* vm_version = os::strdup(HOTSPOT_RELEASE_VERSION);
 
-  // Expecting the next vm_version format:
-  // <major_ver>.<minor_ver>-b<nn>[-<identifier>]
-  char* vm_major_ver = vm_version;
-  assert(isdigit(vm_major_ver[0]),"wrong vm major version number");
-  char* vm_minor_ver = strchr(vm_major_ver, '.');
-  assert(vm_minor_ver != NULL && isdigit(vm_minor_ver[1]),"wrong vm minor version number");
-  vm_minor_ver[0] = '\0'; // terminate vm_major_ver
-  vm_minor_ver += 1;
-  char* vm_build_num = strchr(vm_minor_ver, '-');
-  assert(vm_build_num != NULL && vm_build_num[1] == 'b' && isdigit(vm_build_num[2]),"wrong vm build number");
-  vm_build_num[0] = '\0'; // terminate vm_minor_ver
-  vm_build_num += 2;
+  set_version_field(&_vm_major_version, JDK_MAJOR_VERSION, "bad major version");
+  set_version_field(&_vm_minor_version, JDK_MINOR_VERSION, "bad minor version");
+  set_version_field(&_vm_micro_version, JDK_MICRO_VERSION, "bad micro version");
+  int offset = (JDK_BUILD_NUMBER != NULL && JDK_BUILD_NUMBER[0] == 'b') ? 1 : 0;
+  set_version_field(&_vm_build_number, JDK_BUILD_NUMBER + offset,
+                    "bad build number");
 
-  _vm_major_version = atoi(vm_major_ver);
-  _vm_minor_version = atoi(vm_minor_ver);
-  _vm_build_number  = atoi(vm_build_num);
-
-  os::free(vm_version);
   _initialized = true;
 }
 
@@ -276,6 +295,7 @@ const char *Abstract_VM_Version::vm_build_user() {
 unsigned int Abstract_VM_Version::jvm_version() {
   return ((Abstract_VM_Version::vm_major_version() & 0xFF) << 24) |
          ((Abstract_VM_Version::vm_minor_version() & 0xFF) << 16) |
+         ((Abstract_VM_Version::vm_micro_version() & 0xFF) << 8) |
          (Abstract_VM_Version::vm_build_number() & 0xFF);
 }
 

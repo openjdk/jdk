@@ -249,8 +249,8 @@ public interface ChronoLocalDate
      * This allows dates in different calendar systems to be compared based
      * on the position of the date on the local time-line.
      * The underlying comparison is equivalent to comparing the epoch-day.
-     * @return a comparator that compares in time-line order ignoring the chronology
      *
+     * @return a comparator that compares in time-line order ignoring the chronology
      * @see #isAfter
      * @see #isBefore
      * @see #isEqual

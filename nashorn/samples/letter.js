@@ -1,3 +1,5 @@
+#// Usage: jjs -scripting letter.js -- <sender> <recipient>
+
 /*
  * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * 
