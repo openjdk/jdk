@@ -2156,6 +2156,20 @@ void Compile::Optimize() {
   // so keep only the actual candidates for optimizations.
   cleanup_expensive_nodes(igvn);
 
+  if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
+    Compile::TracePhase tp("", &timers[_t_renumberLive]);
+    initial_gvn()->replace_with(&igvn);
+    for_igvn()->clear();
+    Unique_Node_List new_worklist(C->comp_arena());
+    {
+      ResourceMark rm;
+      PhaseRenumberLive prl = PhaseRenumberLive(initial_gvn(), for_igvn(), &new_worklist);
+    }
+    set_for_igvn(&new_worklist);
+    igvn = PhaseIterGVN(initial_gvn());
+    igvn.optimize();
+  }
+
   // Perform escape analysis
   if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {

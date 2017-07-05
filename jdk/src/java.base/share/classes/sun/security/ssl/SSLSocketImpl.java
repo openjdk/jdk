@@ -766,16 +766,26 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         // records, so this also increases robustness.
         //
         if (length > 0) {
+            IOException ioe = null;
+            byte description = 0;    // 0: never used, make the compiler happy
             writeLock.lock();
             try {
                 outputRecord.deliver(source, offset, length);
             } catch (SSLHandshakeException she) {
                 // may be record sequence number overflow
-                fatal(Alerts.alert_handshake_failure, she);
+                description = Alerts.alert_handshake_failure;
+                ioe = she;
             } catch (IOException e) {
-                fatal(Alerts.alert_unexpected_message, e);
+                description = Alerts.alert_unexpected_message;
+                ioe = e;
             } finally {
                 writeLock.unlock();
+            }
+
+            // Be care of deadlock. Please don't place the call to fatal()
+            // into the writeLock locked block.
+            if (ioe != null) {
+                fatal(description, ioe);
             }
         }
 

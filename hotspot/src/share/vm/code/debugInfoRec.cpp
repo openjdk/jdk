@@ -33,13 +33,16 @@
 // We keep track of these chunks in order to detect
 // repetition and enable sharing.
 class DIR_Chunk {
-  friend class DebugInformationRecorder;
+private:
   int  _offset; // location in the stream of this scope
   int  _length; // number of bytes in the stream
   int  _hash;   // hash of stream bytes (for quicker reuse)
 #if INCLUDE_JVMCI
   DebugInformationRecorder* _DIR;
 #endif
+
+public:
+  int offset() { return _offset; }
 
   void* operator new(size_t ignore, DebugInformationRecorder* dir) throw() {
     assert(ignore == sizeof(DIR_Chunk), "");
@@ -284,7 +287,7 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
     NOT_PRODUCT(++dir_stats.chunks_shared);
     assert(ns+1 == _next_chunk, "");
     _next_chunk = ns;
-    return match->_offset;
+    return match->offset();
   } else {
     // Inserted this chunk, so nothing to do
     return serialized_null;
@@ -296,7 +299,7 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
     NOT_PRODUCT(++dir_stats.chunks_reshared);
     assert(ns+1 == _next_chunk, "");
     _next_chunk = ns;
-    return ms->_offset;
+    return ms->offset();
   }
 
   // Look in recently encountered scopes next:
@@ -311,7 +314,7 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
     _shared_chunks->append(ms);
     assert(ns+1 == _next_chunk, "");
     _next_chunk = ns;
-    return ms->_offset;
+    return ms->offset();
   }
 
   // No match.  Add this guy to the list, in hopes of future shares.
