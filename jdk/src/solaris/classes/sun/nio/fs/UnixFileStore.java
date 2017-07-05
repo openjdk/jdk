@@ -78,7 +78,7 @@ abstract class UnixFileStore
 
     /**
      * Returns true if this file store represents a loopback file system that
-     * will have the same device ID as undelrying file system.
+     * will have the same device ID as underlying file system.
      */
     abstract boolean isLoopback();
 
@@ -111,22 +111,33 @@ abstract class UnixFileStore
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> viewType)
+    public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> view)
     {
-        if (viewType == FileStoreSpaceAttributeView.class)
+        if (view == null)
+            throw new NullPointerException();
+        if (view == FileStoreSpaceAttributeView.class)
             return (V) new UnixFileStoreSpaceAttributeView(this);
         return (V) null;
     }
 
     @Override
-    public FileStoreAttributeView getFileStoreAttributeView(String name) {
-        if (name.equals("space"))
-            return new UnixFileStoreSpaceAttributeView(this);
-        return  null;
+    public Object getAttribute(String attribute) throws IOException {
+        if (attribute.equals("space:totalSpace"))
+            return new UnixFileStoreSpaceAttributeView(this)
+                .readAttributes().totalSpace();
+        if (attribute.equals("space:usableSpace"))
+            return new UnixFileStoreSpaceAttributeView(this)
+                 .readAttributes().usableSpace();
+        if (attribute.equals("space:unallocatedSpace"))
+            return new UnixFileStoreSpaceAttributeView(this)
+                 .readAttributes().unallocatedSpace();
+        throw new UnsupportedOperationException("'" + attribute + "' not recognized");
     }
 
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
+        if (type == null)
+            throw new NullPointerException();
         if (type == BasicFileAttributeView.class)
             return true;
         if (type == PosixFileAttributeView.class ||
@@ -187,12 +198,17 @@ abstract class UnixFileStore
     }
 
     private static class UnixFileStoreSpaceAttributeView
-        extends AbstractFileStoreSpaceAttributeView
+        implements FileStoreSpaceAttributeView
     {
         private final UnixFileStore fs;
 
         UnixFileStoreSpaceAttributeView(UnixFileStore fs) {
             this.fs = fs;
+        }
+
+        @Override
+        public String name() {
+            return "space";
         }
 
         @Override
@@ -275,7 +291,7 @@ abstract class UnixFileStore
     private static Properties loadProperties() {
         Properties result = new Properties();
         String fstypes = System.getProperty("java.home") + "/lib/fstypes.properties";
-        FileRef file = Paths.get(fstypes);
+        Path file = Paths.get(fstypes);
         try {
             ReadableByteChannel rbc = file.newByteChannel();
             try {

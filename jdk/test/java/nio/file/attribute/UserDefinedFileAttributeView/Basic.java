@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.attribute.UserDefinedFileAttributeView
  * @library ../..
  */
@@ -129,23 +129,24 @@ public class Basic {
             throw new RuntimeException("Attribute name in list");
 
         // Test: dynamic access
+        String name = "user:" + ATTR_NAME;
         byte[] valueAsBytes = ATTR_VALUE.getBytes();
-        view.setAttribute(ATTR_NAME, valueAsBytes);
-        byte[] actualAsBytes = (byte[])view.getAttribute(ATTR_NAME);
+        file.setAttribute(name, valueAsBytes);
+        byte[] actualAsBytes = (byte[])file.getAttribute(name);
         if (!Arrays.equals(valueAsBytes, actualAsBytes))
             throw new RuntimeException("Unexpected attribute value");
-        Map<String,?> map = view.readAttributes(ATTR_NAME);
+        Map<String,?> map = file.readAttributes(name);
         if (!Arrays.equals(valueAsBytes, (byte[])map.get(ATTR_NAME)))
             throw new RuntimeException("Unexpected attribute value");
-        map = view.readAttributes(ATTR_NAME, "*");
+        map = file.readAttributes("user:*");
         if (!Arrays.equals(valueAsBytes, (byte[])map.get(ATTR_NAME)))
             throw new RuntimeException("Unexpected attribute value");
-        map = view.readAttributes("DoesNotExist");
+        map = file.readAttributes("user:DoesNotExist");
         if (!map.isEmpty())
             throw new RuntimeException("Map expected to be empty");
     }
 
-    static void miscTests(Path file) throws IOException {
+    static void miscTests(final Path file) throws IOException {
         final UserDefinedFileAttributeView view = file
             .getFileAttributeView(UserDefinedFileAttributeView.class);
         view.write(ATTR_NAME, ByteBuffer.wrap(ATTR_VALUE.getBytes()));
@@ -179,27 +180,31 @@ public class Basic {
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                view.getAttribute(null);
+                file.getAttribute(null);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                view.setAttribute(ATTR_NAME, null);
+                file.getAttribute("user:" + ATTR_NAME, (LinkOption[])null);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                view.setAttribute(null, new byte[0]);
-            }});
-         expectNullPointerException(new Task() {
-            public void run() throws IOException {
-               view.readAttributes(null);
+                file.setAttribute("user:" + ATTR_NAME, null);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                view.readAttributes("*", (String[])null);
+                file.setAttribute(null, new byte[0]);
             }});
         expectNullPointerException(new Task() {
             public void run() throws IOException {
-                view.readAttributes("*", ATTR_NAME, null);
+                file.setAttribute("user: " + ATTR_NAME, new byte[0], (LinkOption[])null);
+            }});
+        expectNullPointerException(new Task() {
+            public void run() throws IOException {
+                file.readAttributes((String)null);
+            }});
+        expectNullPointerException(new Task() {
+            public void run() throws IOException {
+                file.readAttributes("*", (LinkOption[])null);
             }});
 
         // Read-only buffer
@@ -224,7 +229,7 @@ public class Basic {
         // create temporary directory to run tests
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            if (!dir.getFileStore().supportsFileAttributeView("xattr")) {
+            if (!dir.getFileStore().supportsFileAttributeView("user")) {
                 System.out.println("UserDefinedFileAttributeView not supported - skip test");
                 return;
             }

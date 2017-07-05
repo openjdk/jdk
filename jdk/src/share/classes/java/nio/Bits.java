@@ -26,11 +26,8 @@
 package java.nio;
 
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import sun.misc.Unsafe;
 import sun.misc.VM;
-import javax.management.ObjectName;
-import javax.management.MalformedObjectNameException;
 
 /**
  * Access to bits, native and otherwise.
@@ -676,55 +673,34 @@ class Bits {                            // package-private
         }
     }
 
-    // -- Management interface for monitoring of direct buffer usage --
+    // -- Monitoring of direct buffer usage --
 
     static {
         // setup access to this package in SharedSecrets
         sun.misc.SharedSecrets.setJavaNioAccess(
             new sun.misc.JavaNioAccess() {
                 @Override
-                public BufferPoolMXBean getDirectBufferPoolMXBean() {
-                    return LazyInitialization.directBufferPoolMXBean;
+                public sun.misc.JavaNioAccess.BufferPool getDirectBufferPool() {
+                    return new sun.misc.JavaNioAccess.BufferPool() {
+                        @Override
+                        public String getName() {
+                            return "direct";
+                        }
+                        @Override
+                        public long getCount() {
+                            return Bits.count;
+                        }
+                        @Override
+                        public long getTotalCapacity() {
+                            return Bits.usedMemory;
+                        }
+                        @Override
+                        public long getMemoryUsed() {
+                            return Bits.reservedMemory;
+                        }
+                    };
                 }
-            }
-        );
-    }
-
-    // Lazy initialization of management interface
-    private static class LazyInitialization {
-        static final BufferPoolMXBean directBufferPoolMXBean = directBufferPoolMXBean();
-
-        private static BufferPoolMXBean directBufferPoolMXBean() {
-            final String pool = "direct";
-            final ObjectName obj;
-            try {
-                obj = new ObjectName("java.nio:type=BufferPool,name=" + pool);
-            } catch (MalformedObjectNameException x) {
-                throw new AssertionError(x);
-            }
-            return new BufferPoolMXBean() {
-                @Override
-                public ObjectName getObjectName() {
-                    return obj;
-                }
-                @Override
-                public String getName() {
-                    return pool;
-                }
-                @Override
-                public long getCount() {
-                    return Bits.count;
-                }
-                @Override
-                public long getTotalCapacity() {
-                    return Bits.usedMemory;
-                }
-                @Override
-                public long getMemoryUsed() {
-                    return Bits.reservedMemory;
-                }
-            };
-        }
+        });
     }
 
     // -- Bulk get/put acceleration --

@@ -153,6 +153,20 @@ ifdef OPENJDK
   endif
   SKIP_OPENJDK_BUILD = true
 else
+  
+  # Various non-OPENJDK reasons to NOT build the deploy repository
+  ifeq ($(ARCH), ia64)
+    BUILD_DEPLOY=false
+  endif
+  ifeq ($(ARCH), sparcv9)
+    BUILD_DEPLOY=false
+  endif
+  ifeq ($(ARCH), amd64)
+    ifeq ($(PLATFORM), solaris)
+      BUILD_DEPLOY=false
+    endif
+  endif
+
   ifndef SKIP_OPENJDK_BUILD
     #SKIP_OPENJDK_BUILD = false
     # Until 6675289 is resolved, or this feature is removed.

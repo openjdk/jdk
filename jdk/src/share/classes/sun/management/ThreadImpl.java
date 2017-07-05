@@ -419,4 +419,3 @@ class ThreadImpl implements ThreadMXBean {
     }
 
 }
-

@@ -26,6 +26,7 @@ package sun.nio.ch;
 
 import java.net.InetAddress;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.InetSocketAddress;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -122,6 +123,8 @@ public class SctpChannelImpl extends SctpChannel
 
     private Association association;
 
+    private Set<SocketAddress> remoteAddresses = Collections.EMPTY_SET;
+
     /* -- End of fields protected by stateLock -- */
 
     private SctpResultContainer commUpResultContainer;  /* null */
@@ -142,18 +145,32 @@ public class SctpChannelImpl extends SctpChannel
      */
     public SctpChannelImpl(SelectorProvider provider, FileDescriptor fd)
          throws IOException {
+        this(provider, fd, null);
+    }
+
+    /**
+     * Constructor for sockets obtained from branching
+     */
+    public SctpChannelImpl(SelectorProvider provider,
+                           FileDescriptor fd,
+                           Association association)
+            throws IOException {
         super(provider);
         this.fd = fd;
         this.fdVal = IOUtil.fdVal(fd);
         this.state = ChannelState.CONNECTED;
         port = (Net.localAddress(fd)).getPort();
 
-        /* Receive COMM_UP */
-        ByteBuffer buf = Util.getTemporaryDirectBuffer(50);
-        try {
-            receive(buf, null, null, true);
-        } finally {
-            Util.releaseTemporaryDirectBuffer(buf);
+        if (association != null) { /* branched */
+            this.association = association;
+        } else { /* obtained from server channel */
+            /* Receive COMM_UP */
+            ByteBuffer buf = Util.getTemporaryDirectBuffer(50);
+            try {
+                receive(buf, null, null, true);
+            } finally {
+                Util.releaseTemporaryDirectBuffer(buf);
+            }
         }
     }
 
@@ -391,6 +408,12 @@ public class SctpChannelImpl extends SctpChannel
                             } finally {
                                 Util.releaseTemporaryDirectBuffer(buf);
                             }
+
+                            /* cache remote addresses */
+                            try {
+                                remoteAddresses = getRemoteAddresses();
+                            } catch (IOException unused) { /* swallow exception */ }
+
                             return true;
                         }
                     } else  {
@@ -414,6 +437,7 @@ public class SctpChannelImpl extends SctpChannel
                            int maxOutStreams,
                            int maxInStreams)
             throws IOException {
+        ensureOpenAndUnconnected();
         return setOption(SCTP_INIT_MAXSTREAMS, InitMaxStreams.
                 create(maxInStreams, maxOutStreams)).connect(endpoint);
 
@@ -512,6 +536,12 @@ public class SctpChannelImpl extends SctpChannel
                         } finally {
                             Util.releaseTemporaryDirectBuffer(buf);
                         }
+
+                        /* cache remote addresses */
+                        try {
+                            remoteAddresses = getRemoteAddresses();
+                        } catch (IOException unused) { /* swallow exception */ }
+
                         return true;
                     }
                 }
@@ -966,7 +996,7 @@ public class SctpChannelImpl extends SctpChannel
         int pos = src.position();
         int lim = src.limit();
 
-        assert (pos <= lim && streamNumber > 0);
+        assert (pos <= lim && streamNumber >= 0);
         int rem = (pos <= lim ? lim - pos : 0);
 
         if (src instanceof DirectBuffer)
@@ -1043,10 +1073,15 @@ public class SctpChannelImpl extends SctpChannel
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
-            if (!isConnected())
+            if (!isConnected() || isShutdown)
                 return Collections.EMPTY_SET;
 
-            return SctpNet.getRemoteAddresses(fdVal, 0/*unused*/);
+            try {
+                return SctpNet.getRemoteAddresses(fdVal, 0/*unused*/);
+            } catch (SocketException unused) {
+                /* an open connected channel should always have remote addresses */
+                return remoteAddresses;
+            }
         }
     }
 

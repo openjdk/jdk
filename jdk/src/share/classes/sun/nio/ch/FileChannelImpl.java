@@ -29,13 +29,10 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
-import java.nio.BufferPoolMXBean;
 import java.nio.channels.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.security.AccessController;
-import javax.management.ObjectName;
-import javax.management.MalformedObjectNameException;
 import sun.misc.Cleaner;
 import sun.security.action.GetPropertyAction;
 
@@ -805,47 +802,28 @@ public class FileChannelImpl
     }
 
     /**
-     * Returns the management interface for mapped buffers
+     * Invoked by sun.management.ManagementFactoryHelper to create the management
+     * interface for mapped buffers.
      */
-    public static BufferPoolMXBean getMappedBufferPoolMXBean() {
-        return LazyInitialization.mappedBufferPoolMXBean;
-    }
-
-    // Lazy initialization of management interface
-    private static class LazyInitialization {
-        static final BufferPoolMXBean mappedBufferPoolMXBean = mappedBufferPoolMXBean();
-
-        private static BufferPoolMXBean mappedBufferPoolMXBean() {
-            final String pool = "mapped";
-            final ObjectName obj;
-            try {
-                obj = new ObjectName("java.nio:type=BufferPool,name=" + pool);
-            } catch (MalformedObjectNameException x) {
-                throw new AssertionError(x);
+    public static sun.misc.JavaNioAccess.BufferPool getMappedBufferPool() {
+        return new sun.misc.JavaNioAccess.BufferPool() {
+            @Override
+            public String getName() {
+                return "mapped";
             }
-            return new BufferPoolMXBean() {
-                @Override
-                public ObjectName getObjectName() {
-                    return obj;
-                }
-                @Override
-                public String getName() {
-                    return pool;
-                }
-                @Override
-                public long getCount() {
-                    return Unmapper.count;
-                }
-                @Override
-                public long getTotalCapacity() {
-                    return Unmapper.totalCapacity;
-                }
-                @Override
-                public long getMemoryUsed() {
-                    return Unmapper.totalSize;
-                }
-            };
-        }
+            @Override
+            public long getCount() {
+                return Unmapper.count;
+            }
+            @Override
+            public long getTotalCapacity() {
+                return Unmapper.totalCapacity;
+            }
+            @Override
+            public long getMemoryUsed() {
+                return Unmapper.totalSize;
+            }
+        };
     }
 
     // -- Locks --

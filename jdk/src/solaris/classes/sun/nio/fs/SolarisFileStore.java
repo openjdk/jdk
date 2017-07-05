@@ -83,7 +83,7 @@ class SolarisFileStore
             // AclFileAttributeView available on ZFS
             return (type().equals("zfs"));
         }
-        if (name.equals("xattr")) {
+        if (name.equals("user")) {
             // lookup fstypes.properties
             FeatureStatus status = checkIfFeaturePresent("xattr");
             if (status == FeatureStatus.PRESENT)

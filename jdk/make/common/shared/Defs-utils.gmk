@@ -72,6 +72,7 @@ ADB            = $(UTILS_COMMAND_PATH)adb
 AR             = $(UTILS_CCS_BIN_PATH)ar
 AS             = $(UTILS_CCS_BIN_PATH)as
 BASENAME       = $(UTILS_COMMAND_PATH)basename
+BZIP2          = $(UTILS_COMMAND_PATH)bzip2
 CAT            = $(UTILS_COMMAND_PATH)cat
 CHMOD          = $(UTILS_COMMAND_PATH)chmod
 CMP            = $(UTILS_USR_BIN_PATH)cmp
@@ -157,6 +158,7 @@ ifeq ($(PLATFORM),windows)
   endif
   # Re-define some utilities
   LEX            =# override GNU Make intrinsic: no lex on windows
+  SHA1SUM        = $(UNIXCOMMAND_PATH)openssl sha1
 endif
 
 # Linux specific

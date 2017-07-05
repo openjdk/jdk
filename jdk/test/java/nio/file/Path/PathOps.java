@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.Path path operations
  */
 
@@ -687,7 +687,17 @@ public class PathOps {
             .normalize("/foo");
 
         // invalid
-        test("foo\u0000\bar")
+        test("foo\u0000bar")
+            .invalid();
+        test("\u0000foo")
+            .invalid();
+        test("bar\u0000")
+            .invalid();
+        test("//foo\u0000bar")
+            .invalid();
+        test("//\u0000foo")
+            .invalid();
+        test("//bar\u0000")
             .invalid();
 
         // normalization

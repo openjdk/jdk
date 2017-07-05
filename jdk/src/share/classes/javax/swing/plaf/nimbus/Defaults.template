@@ -278,7 +278,7 @@ ${UI_DEFAULT_INIT}
      * offset (if any), and whether it is to be bold, italic, or left in its
      * default form.</p>
      */
-    public static final class DerivedFont implements UIDefaults.ActiveValue {
+    static final class DerivedFont implements UIDefaults.ActiveValue {
         private float sizeOffset;
         private Boolean bold;
         private Boolean italic;

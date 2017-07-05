@@ -31,7 +31,7 @@ package java.nio.file;
  * @since 1.7
  */
 
-public class StandardWatchEventKind {
+public final class StandardWatchEventKind {
     private StandardWatchEventKind() { }
 
     /**

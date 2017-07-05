@@ -21,21 +21,30 @@
  * have any questions.
  */
 
+/* @test
+ * @bug 4313887 6838333
+ * @summary Unit test for File.createTemporaryXXX (to be be moved to test/java/io/File)
+ * @library ..
+ */
+
 import java.nio.file.*;
 import static java.nio.file.StandardOpenOption.*;
 import java.nio.file.attribute.*;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Set;
 
 public class TemporaryFiles {
 
-    static void checkFile(Path file) throws IOException {
-        // check file is in temporary directory
+    static void checkInTempDirectory(Path file) {
         Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
         if (!file.getParent().equals(tmpdir))
             throw new RuntimeException("Not in temporary directory");
+    }
+
+    static void checkFile(Path file) throws IOException {
+        // check file is in temporary directory
+        checkInTempDirectory(file);
 
         // check that file can be opened for reading and writing
         file.newByteChannel(READ).close();
@@ -53,24 +62,37 @@ public class TemporaryFiles {
         }
     }
 
+    static void checkDirectory(Path dir) throws IOException {
+        // check directory is in temporary directory
+        checkInTempDirectory(dir);
+
+        // check directory is empty
+        DirectoryStream<Path> stream = dir.newDirectoryStream();
+        try {
+            if (stream.iterator().hasNext())
+                throw new RuntimeException("Tempory directory not empty");
+        } finally {
+            stream.close();
+        }
+
+        // check file permissions are 0700 or more secure
+        if (dir.getFileStore().supportsFileAttributeView("posix")) {
+            Set<PosixFilePermission> perms = Attributes
+                .readPosixFileAttributes(dir).permissions();
+            perms.remove(PosixFilePermission.OWNER_READ);
+            perms.remove(PosixFilePermission.OWNER_WRITE);
+            perms.remove(PosixFilePermission.OWNER_EXECUTE);
+            if (!perms.isEmpty())
+                throw new RuntimeException("Temporary directory is not secure");
+        }
+    }
+
     public static void main(String[] args) throws IOException {
-        Path file = File.createTempFile("blah", null, false).toPath();
+        Path file = File.createTemporaryFile("blah", null).toPath();
         try {
             checkFile(file);
         } finally {
             TestUtil.deleteUnchecked(file);
-        }
-
-        // temporary file with deleteOnExit
-        file = File.createTempFile("blah", "tmp", true).toPath();
-        checkFile(file);
-        // write path to temporary file to file so that calling script can
-        // check that it is deleted
-        OutputStream out = Paths.get(args[0]).newOutputStream();
-        try {
-            out.write(file.toString().getBytes());
-        } finally {
-            out.close();
         }
     }
 }

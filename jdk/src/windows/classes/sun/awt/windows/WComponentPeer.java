@@ -417,6 +417,15 @@ public abstract class WComponentPeer extends WObjectPeer
         replaceSurfaceData(this.numBackBuffers, this.backBufferCaps);
     }
 
+    public void createScreenSurface(boolean isResize)
+    {
+        Win32GraphicsConfig gc = (Win32GraphicsConfig)getGraphicsConfiguration();
+        ScreenUpdateManager mgr = ScreenUpdateManager.getInstance();
+
+        surfaceData = mgr.createScreenSurface(gc, this, numBackBuffers, isResize);
+    }
+
+
     /**
      * Multi-buffer version of replaceSurfaceData.  This version is called
      * by createBuffers(), which needs to acquire the same locks in the same
@@ -434,13 +443,10 @@ public abstract class WComponentPeer extends WObjectPeer
                     return;
                 }
                 numBackBuffers = newNumBackBuffers;
-                Win32GraphicsConfig gc =
-                        (Win32GraphicsConfig)getGraphicsConfiguration();
                 ScreenUpdateManager mgr = ScreenUpdateManager.getInstance();
                 oldData = surfaceData;
                 mgr.dropScreenSurface(oldData);
-                surfaceData =
-                    mgr.createScreenSurface(gc, this, numBackBuffers, true);
+                createScreenSurface(true);
                 if (oldData != null) {
                     oldData.invalidate();
                 }
@@ -449,6 +455,8 @@ public abstract class WComponentPeer extends WObjectPeer
                 if (numBackBuffers > 0) {
                     // set the caps first, they're used when creating the bb
                     backBufferCaps = caps;
+                    Win32GraphicsConfig gc =
+                        (Win32GraphicsConfig)getGraphicsConfiguration();
                     backBuffer = gc.createBackBuffer(this);
                 } else if (backBuffer != null) {
                     backBufferCaps = null;
@@ -711,11 +719,8 @@ public abstract class WComponentPeer extends WObjectPeer
         create(parentPeer);
         // fix for 5088782: check if window object is created successfully
         checkCreation();
-        this.winGraphicsConfig =
-            (Win32GraphicsConfig)getGraphicsConfiguration();
-        ScreenUpdateManager mgr = ScreenUpdateManager.getInstance();
-        this.surfaceData = mgr.createScreenSurface(winGraphicsConfig, this,
-                                                   numBackBuffers, false);
+
+        createScreenSurface(false);
         initialize();
         start();  // Initialize enable/disable state, turn on callbacks
     }

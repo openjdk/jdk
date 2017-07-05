@@ -36,7 +36,7 @@ import java.io.IOException;
  * traverse file trees or otherwise operate on directories in a race-free manner.
  * Race conditions can arise when a sequence of file operations cannot be
  * carried out in isolation. Each of the file operations defined by this
- * interface specify a relative {@link Path}. All access to the file is relative
+ * interface specify a relative path. All access to the file is relative
  * to the open directory irrespective of if the directory is moved or replaced
  * by an attacker while the directory is open. A {@code SecureDirectoryStream}
  * may also be used as a virtual <em>working directory</em>.
@@ -65,8 +65,8 @@ import java.io.IOException;
  * @since   1.7
  */
 
-public abstract class SecureDirectoryStream
-    implements DirectoryStream<Path>
+public abstract class SecureDirectoryStream<T>
+    implements DirectoryStream<T>
 {
     /**
      * Initialize a new instance of this class.
@@ -78,13 +78,12 @@ public abstract class SecureDirectoryStream
      * SecureDirectoryStream} to iterate over the entries in the directory.
      *
      * <p> This method works in exactly the manner specified by the {@link
-     * Path#newDirectoryStream newDirectoryStream} method for the case that
+     * Path#newDirectoryStream() newDirectoryStream} method for the case that
      * the {@code path} parameter is an {@link Path#isAbsolute absolute} path.
      * When the parameter is a relative path then the directory to open is
-     * relative to this open directory. The {@code followLinks} parameter
-     * determines if links should be followed. If this parameter is {@code
-     * false} and the file is a symbolic link then this method fails (by
-     * throwing an I/O exception).
+     * relative to this open directory. The {@link
+     * LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} option may be used to
+     * ensure that this method fails if the file is a symbolic link.
      *
      * <p> The new directory stream, once created, is not dependent upon the
      * directory stream used to create it. Closing this directory stream has no
@@ -92,10 +91,8 @@ public abstract class SecureDirectoryStream
      *
      * @param   path
      *          the path to the directory to open
-     * @param   followLinks
-     *          {@code true} if the links should be followed
-     * @param   filter
-     *          the directory stream filter or {@code null}.
+     * @param   options
+     *          options indicating how symbolic links are handled
      *
      * @return  a new and open {@code SecureDirectoryStream} object
      *
@@ -111,9 +108,8 @@ public abstract class SecureDirectoryStream
      *          installed, the {@link SecurityManager#checkRead(String) checkRead}
      *          method is invoked to check read access to the directory.
      */
-    public abstract SecureDirectoryStream newDirectoryStream(Path path,
-                                                             boolean followLinks,
-                                                             DirectoryStream.Filter<? super Path> filter)
+    public abstract SecureDirectoryStream<T> newDirectoryStream(T path,
+                                                                LinkOption... options)
         throws IOException;
 
     /**
@@ -162,7 +158,7 @@ public abstract class SecureDirectoryStream
      *          checkWrite} method is invoked to check write access to the path
      *          if the file is opened for writing.
      */
-    public abstract SeekableByteChannel newByteChannel(Path path,
+    public abstract SeekableByteChannel newByteChannel(T path,
                                                        Set<? extends OpenOption> options,
                                                        FileAttribute<?>... attrs)
         throws IOException;
@@ -170,7 +166,7 @@ public abstract class SecureDirectoryStream
     /**
      * Deletes a file.
      *
-     * <p> Unlike the {@link FileRef#delete delete()} method, this method
+     * <p> Unlike the {@link Path#delete delete()} method, this method
      * does not first examine the file to determine if the file is a directory.
      * Whether a directory is deleted by this method is system dependent and
      * therefore not specified. If the file is a symbolic-link then the link is
@@ -191,12 +187,12 @@ public abstract class SecureDirectoryStream
      *          installed, the {@link SecurityManager#checkDelete(String) checkDelete}
      *          method is invoked to check delete access to the file
      */
-    public abstract void deleteFile(Path path) throws IOException;
+    public abstract void deleteFile(T path) throws IOException;
 
     /**
      * Deletes a directory.
      *
-     * <p> Unlike the {@link FileRef#delete delete()} method, this method
+     * <p> Unlike the {@link Path#delete delete()} method, this method
      * does not first examine the file to determine if the file is a directory.
      * Whether non-directories are deleted by this method is system dependent and
      * therefore not specified. When the parameter is a relative path then the
@@ -219,7 +215,7 @@ public abstract class SecureDirectoryStream
      *          installed, the {@link SecurityManager#checkDelete(String) checkDelete}
      *          method is invoked to check delete access to the directory
      */
-    public abstract void deleteDirectory(Path path) throws IOException;
+    public abstract void deleteDirectory(T path) throws IOException;
 
     /**
      * Move a file from this directory to another directory.
@@ -259,7 +255,7 @@ public abstract class SecureDirectoryStream
      *          method is invoked to check write access to both the source and
      *          target file.
      */
-    public abstract void move(Path srcpath, SecureDirectoryStream targetdir, Path targetpath)
+    public abstract void move(T srcpath, SecureDirectoryStream<T> targetdir, T targetpath)
         throws IOException;
 
     /**
@@ -318,7 +314,7 @@ public abstract class SecureDirectoryStream
      *          type is not available
      *
      */
-    public abstract <V extends FileAttributeView> V getFileAttributeView(Path path,
+    public abstract <V extends FileAttributeView> V getFileAttributeView(T path,
                                                                          Class<V> type,
                                                                          LinkOption... options);
 }

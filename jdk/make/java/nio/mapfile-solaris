@@ -120,7 +120,7 @@ SUNWprivate_1.1 {
 		Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGio;
 		Java_sun_nio_fs_GnomeFileTypeDetector_initializeGnomeVfs;
 		Java_sun_nio_fs_GnomeFileTypeDetector_probeUsingGnomeVfs;
-		Java_sun_nio_fs_UnixNativeDispatcher_initIDs;
+		Java_sun_nio_fs_UnixNativeDispatcher_init;
 		Java_sun_nio_fs_UnixNativeDispatcher_getcwd;
 		Java_sun_nio_fs_UnixNativeDispatcher_strerror;
 		Java_sun_nio_fs_UnixNativeDispatcher_dup;

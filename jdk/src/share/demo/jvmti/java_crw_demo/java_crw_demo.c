@@ -2227,7 +2227,8 @@ inject_class(struct CrwClassImage *ci,
     CrwCpoolIndex               this_class;
     CrwCpoolIndex               super_class;
     unsigned                    magic;
-    unsigned                    classfileVersion;
+    unsigned                    classfileMajorVersion;
+    unsigned                    classfileMinorVersion;
     unsigned                    interface_count;
 
     CRW_ASSERT_CI(ci);
@@ -2258,10 +2259,12 @@ inject_class(struct CrwClassImage *ci,
     }
 
     /* minor version number not used */
-    (void)copyU2(ci);
+    classfileMinorVersion = copyU2(ci);
     /* major version number not used */
-    classfileVersion = copyU2(ci);
-    CRW_ASSERT(ci, classfileVersion <= 50); /* Mustang class files or less */
+    classfileMajorVersion = copyU2(ci);
+    CRW_ASSERT(ci,  (classfileMajorVersion <= JVM_CLASSFILE_MAJOR_VERSION) ||
+                   ((classfileMajorVersion == JVM_CLASSFILE_MAJOR_VERSION) &&
+                    (classfileMinorVersion <= JVM_CLASSFILE_MINOR_VERSION)));
 
     cpool_setup(ci);
 

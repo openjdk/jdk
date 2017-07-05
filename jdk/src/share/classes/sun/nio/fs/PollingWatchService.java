@@ -265,7 +265,7 @@ class PollingWatchService
                     // don't follow links
                     long lastModified = Attributes
                         .readBasicFileAttributes(entry, LinkOption.NOFOLLOW_LINKS)
-                        .lastModifiedTime();
+                        .lastModifiedTime().toMillis();
                     entries.put(entry.getName(),
                                 new CacheEntry(lastModified, tickCount));
                 }
@@ -357,7 +357,7 @@ class PollingWatchService
                     try {
                         lastModified = Attributes
                             .readBasicFileAttributes(entry, LinkOption.NOFOLLOW_LINKS)
-                            .lastModifiedTime();
+                            .lastModifiedTime().toMillis();
                     } catch (IOException x) {
                         // unable to get attributes of entry. If file has just
                         // been deleted then we'll report it as deleted on the

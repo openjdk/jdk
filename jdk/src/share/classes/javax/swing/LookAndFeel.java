@@ -32,6 +32,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.SystemColor;
 import java.awt.Toolkit;
+import sun.awt.SunToolkit;
 
 import javax.swing.text.*;
 import javax.swing.border.*;
@@ -271,7 +272,7 @@ public abstract class LookAndFeel
         // this is a special case because the JPasswordField's ancestor heirarchy
         // includes a class outside of javax.swing, thus we cannot call setUIProperty
         // directly.
-        if (c instanceof JPasswordField) {
+        if (SunToolkit.isInstanceOf(c, "javax.swing.JPasswordField")) {
             if (!((JPasswordField)c).customSetUIProperty(propertyName, propertyValue)) {
                 c.setUIProperty(propertyName, propertyValue);
             }
