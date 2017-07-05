@@ -139,19 +139,22 @@ public class WinGammaPlatformVC7 extends WinGammaPlatform {
 
       tagV("Tool", cfg.getV("LinkerFlags"));
 
-      tag("Tool",
-            new String[] {
-            "Name",
-            "VCPostBuildEventTool",
-            "Description",
-            BuildConfig
-            .getFieldString(null, "PostbuildDescription"),
-            // Caution: String.replace(String,String) is available
-            // from JDK5 onwards only
-            "CommandLine",
-            cfg.expandFormat(BuildConfig.getFieldString(null,
-                  "PostbuildCommand").replace("\t",
-                        "&#x0D;&#x0A;")) });
+      String postBuildCmd = BuildConfig.getFieldString(null,
+            "PostbuildCommand");
+      if (postBuildCmd != null) {
+         tag("Tool",
+               new String[] {
+               "Name",
+               "VCPostBuildEventTool",
+               "Description",
+               BuildConfig
+               .getFieldString(null, "PostbuildDescription"),
+               // Caution: String.replace(String,String) is available
+               // from JDK5 onwards only
+               "CommandLine",
+                   cfg.expandFormat(postBuildCmd.replace("\t",
+                           "&#x0D;&#x0A;")) });
+      }
 
       tag("Tool", new String[] { "Name", "VCPreBuildEventTool" });
 

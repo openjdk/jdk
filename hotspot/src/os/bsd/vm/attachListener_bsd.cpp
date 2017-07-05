@@ -445,14 +445,14 @@ AttachOperation* AttachListener::dequeue() {
 
 void AttachListener::vm_start() {
   char fn[UNIX_PATH_MAX];
-  struct stat64 st;
+  struct stat st;
   int ret;
 
   int n = snprintf(fn, UNIX_PATH_MAX, "%s/.java_pid%d",
            os::get_temp_directory(), os::current_process_id());
   assert(n < (int)UNIX_PATH_MAX, "java_pid file name buffer overflow");
 
-  RESTARTABLE(::stat64(fn, &st), ret);
+  RESTARTABLE(::stat(fn, &st), ret);
   if (ret == 0) {
     ret = ::unlink(fn);
     if (ret == -1) {
