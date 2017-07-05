@@ -109,7 +109,7 @@ public class StringWriter extends Writer {
      * @param  len  Number of characters to write
      */
     public void write(String str, int off, int len)  {
-        buf.append(str.substring(off, off + len));
+        buf.append(str, off, off + len);
     }
 
     /**

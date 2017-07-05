@@ -31,15 +31,10 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   TARGETS += $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgeCallbacks.h \
       $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgeCalls.h \
       $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgePackages.h \
-      $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgeCalls.c \
-      $(CONF_DST_DIR)/accessibility.properties
+      $(INCLUDE_DST_OS_DIR)/bridge/AccessBridgeCalls.c
 
   $(INCLUDE_DST_OS_DIR)/bridge/%: \
       $(JDK_TOPDIR)/src/jdk.accessibility/windows/native/include/bridge/%
-		$(install-file)
-
-  $(CONF_DST_DIR)/accessibility.properties: \
-      $(JDK_TOPDIR)/src/jdk.accessibility/windows/conf/accessibility.properties
 		$(install-file)
 
 endif

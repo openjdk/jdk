@@ -184,7 +184,7 @@ void VM_GenCollectFull::doit() {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   GCCauseSetter gccs(gch, _gc_cause);
-  gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_level);
+  gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_generation);
 }
 
 // Returns true iff concurrent GCs unloads metadata.
@@ -197,7 +197,7 @@ bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
 
   if (UseG1GC && ClassUnloadingWithConcurrentMark) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    g1h->g1_policy()->set_initiate_conc_mark_if_possible();
+    g1h->g1_policy()->collector_state()->set_initiate_conc_mark_if_possible(true);
 
     GCCauseSetter x(g1h, _gc_cause);
 

@@ -38,6 +38,7 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
+#include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #endif
@@ -87,10 +88,12 @@ class StableMemoryChecker : public StackObj {
 
 // --------------------------------------------------------------------------
 StringTable* StringTable::_the_table = NULL;
-
+bool StringTable::_ignore_shared_strings = false;
 bool StringTable::_needs_rehashing = false;
 
 volatile int StringTable::_parallel_claimed_idx = 0;
+
+CompactHashtable<oop, char> StringTable::_shared_table;
 
 // Pick hashing algorithm
 unsigned int StringTable::hash_string(const jchar* s, int len) {
@@ -98,8 +101,15 @@ unsigned int StringTable::hash_string(const jchar* s, int len) {
                                     java_lang_String::hash_code(s, len);
 }
 
-oop StringTable::lookup(int index, jchar* name,
-                        int len, unsigned int hash) {
+oop StringTable::lookup_shared(jchar* name, int len) {
+  // java_lang_String::hash_code() was used to compute hash values in the shared table. Don't
+  // use the hash value from StringTable::hash_string() as it might use alternate hashcode.
+  return _shared_table.lookup((const char*)name,
+                              java_lang_String::hash_code(name, len), len);
+}
+
+oop StringTable::lookup_in_main_table(int index, jchar* name,
+                                int len, unsigned int hash) {
   int count = 0;
   for (HashtableEntry<oop, mtSymbol>* l = bucket(index); l != NULL; l = l->next()) {
     count++;
@@ -140,7 +150,8 @@ oop StringTable::basic_add(int index_arg, Handle string, jchar* name,
   // Since look-up was done lock-free, we need to check if another
   // thread beat us in the race to insert the symbol.
 
-  oop test = lookup(index, name, len, hashValue); // calls lookup(u1*, int)
+  // No need to lookup the shared table from here since the caller (intern()) already did
+  oop test = lookup_in_main_table(index, name, len, hashValue); // calls lookup(u1*, int)
   if (test != NULL) {
     // Entry already added
     return test;
@@ -172,9 +183,14 @@ static void ensure_string_alive(oop string) {
 }
 
 oop StringTable::lookup(jchar* name, int len) {
+  oop string = lookup_shared(name, len);
+  if (string != NULL) {
+    return string;
+  }
+
   unsigned int hash = hash_string(name, len);
   int index = the_table()->hash_to_index(hash);
-  oop string = the_table()->lookup(index, name, len, hash);
+  string = the_table()->lookup_in_main_table(index, name, len, hash);
 
   ensure_string_alive(string);
 
@@ -184,9 +200,14 @@ oop StringTable::lookup(jchar* name, int len) {
 
 oop StringTable::intern(Handle string_or_null, jchar* name,
                         int len, TRAPS) {
+  oop found_string = lookup_shared(name, len);
+  if (found_string != NULL) {
+    return found_string;
+  }
+
   unsigned int hashValue = hash_string(name, len);
   int index = the_table()->hash_to_index(hashValue);
-  oop found_string = the_table()->lookup(index, name, len, hashValue);
+  found_string = the_table()->lookup_in_main_table(index, name, len, hashValue);
 
   // Found
   if (found_string != NULL) {
@@ -610,4 +631,132 @@ int StringtableDCmd::num_arguments() {
   } else {
     return 0;
   }
+}
+
+// Sharing
+bool StringTable::copy_shared_string(GrowableArray<MemRegion> *string_space,
+                                     CompactHashtableWriter* ch_table) {
+#if INCLUDE_CDS && INCLUDE_ALL_GCS && defined(_LP64) && !defined(_WINDOWS)
+  assert(UseG1GC, "Only support G1 GC");
+  assert(UseCompressedOops && UseCompressedClassPointers,
+         "Only support UseCompressedOops and UseCompressedClassPointers enabled");
+
+  Thread* THREAD = Thread::current();
+  G1CollectedHeap::heap()->begin_archive_alloc_range();
+  for (int i = 0; i < the_table()->table_size(); ++i) {
+    HashtableEntry<oop, mtSymbol>* bucket = the_table()->bucket(i);
+    for ( ; bucket != NULL; bucket = bucket->next()) {
+      oop s = bucket->literal();
+      unsigned int hash = java_lang_String::hash_code(s);
+      if (hash == 0) {
+        continue;
+      }
+
+      // allocate the new 'value' array first
+      typeArrayOop v = java_lang_String::value(s);
+      int v_len = v->size();
+      typeArrayOop new_v;
+      if (G1CollectedHeap::heap()->is_archive_alloc_too_large(v_len)) {
+        continue; // skip the current String. The 'value' array is too large to handle
+      } else {
+        new_v = (typeArrayOop)G1CollectedHeap::heap()->archive_mem_allocate(v_len);
+        if (new_v == NULL) {
+          return false; // allocation failed
+        }
+      }
+      // now allocate the new String object
+      int s_len = s->size();
+      oop new_s = (oop)G1CollectedHeap::heap()->archive_mem_allocate(s_len);
+      if (new_s == NULL) {
+        return false;
+      }
+
+      s->identity_hash();
+      v->identity_hash();
+
+      // copy the objects' data
+      Copy::aligned_disjoint_words((HeapWord*)s, (HeapWord*)new_s, s_len);
+      Copy::aligned_disjoint_words((HeapWord*)v, (HeapWord*)new_v, v_len);
+
+      // adjust the pointer to the 'value' field in the new String oop. Also pre-compute and set the
+      // 'hash' field. That avoids "write" to the shared strings at runtime by the deduplication process.
+      java_lang_String::set_value_raw(new_s, new_v);
+      if (java_lang_String::hash(new_s) == 0) {
+        java_lang_String::set_hash(new_s, hash);
+      }
+
+      // add to the compact table
+      ch_table->add(hash, new_s);
+    }
+  }
+
+  G1CollectedHeap::heap()->end_archive_alloc_range(string_space, os::vm_allocation_granularity());
+  assert(string_space->length() <= 2, "sanity");
+#endif
+  return true;
+}
+
+bool StringTable::copy_compact_table(char** top, char *end, GrowableArray<MemRegion> *string_space,
+                                     size_t* space_size) {
+#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
+  if (!(UseG1GC && UseCompressedOops && UseCompressedClassPointers)) {
+    if (PrintSharedSpaces) {
+      tty->print_cr("Shared strings are excluded from the archive as UseG1GC, "
+                    "UseCompressedOops and UseCompressedClassPointers are required.");
+    }
+    return true;
+  }
+
+  CompactHashtableWriter ch_table(CompactHashtable<oop, char>::_string_table,
+                                  the_table()->number_of_entries(),
+                                  &MetaspaceShared::stats()->string);
+
+  // Copy the interned strings into the "string space" within the java heap
+  if (!copy_shared_string(string_space, &ch_table)) {
+    return false;
+  }
+
+  for (int i = 0; i < string_space->length(); i++) {
+    *space_size += string_space->at(i).byte_size();
+  }
+
+  // Now dump the compact table
+  if (*top + ch_table.get_required_bytes() > end) {
+    // not enough space left
+    return false;
+  }
+  ch_table.dump(top, end);
+  *top = (char*)align_pointer_up(*top, sizeof(void*));
+
+#endif
+  return true;
+}
+
+void StringTable::shared_oops_do(OopClosure* f) {
+#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
+  _shared_table.oops_do(f);
+#endif
+}
+
+const char* StringTable::init_shared_table(FileMapInfo *mapinfo, char *buffer) {
+#if INCLUDE_CDS && defined(_LP64) && !defined(_WINDOWS)
+  if (mapinfo->space_capacity(MetaspaceShared::first_string) == 0) {
+    // no shared string data
+    return buffer;
+  }
+
+  // initialize the shared table
+  juint *p = (juint*)buffer;
+  const char* end = _shared_table.init(
+          CompactHashtable<oop, char>::_string_table, (char*)p);
+  const char* aligned_end = (const char*)align_pointer_up(end, sizeof(void*));
+
+  if (_ignore_shared_strings) {
+    _shared_table.reset();
+  }
+
+  return aligned_end;
+#endif
+
+  return buffer;
 }

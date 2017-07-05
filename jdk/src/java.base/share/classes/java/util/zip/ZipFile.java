@@ -526,6 +526,10 @@ class ZipFile implements ZipConstants, Closeable {
                 return ze;
             }
         }
+
+        public Iterator<ZipEntry> asIterator() {
+            return this;
+        }
     }
 
     /**

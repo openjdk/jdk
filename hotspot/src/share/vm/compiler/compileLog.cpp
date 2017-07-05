@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,13 +58,15 @@ CompileLog::CompileLog(const char* file_name, FILE* fp, intx thread_id)
 CompileLog::~CompileLog() {
   delete _out; // Close fd in fileStream::~fileStream()
   _out = NULL;
+  // Remove partial file after merging in CompileLog::finish_log_on_error
+  unlink(_file);
   FREE_C_HEAP_ARRAY(char, _identities);
   FREE_C_HEAP_ARRAY(char, _file);
 }
 
 
 // see_tag, pop_tag:  Override the default do-nothing methods on xmlStream.
-// These methods provide a hook for managing the the extra context markup.
+// These methods provide a hook for managing the extra context markup.
 void CompileLog::see_tag(const char* tag, bool push) {
   if (_context.size() > 0 && _out != NULL) {
     _out->write(_context.base(), _context.size());

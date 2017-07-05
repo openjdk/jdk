@@ -121,22 +121,7 @@ public class ObjectFactory {
     public static Object newInstance(String className, boolean doFallback)
         throws ConfigurationError
     {
-        if (System.getSecurityManager()!=null) {
-            return newInstance(className, null, doFallback);
-        } else {
-            return newInstance(className,
-                findClassLoader (), doFallback);
-        }
-    }
-
-    /**
-     * Create an instance of a class using the specified ClassLoader
-     */
-    static Object newInstance(String className, ClassLoader cl,
-                                      boolean doFallback)
-        throws ConfigurationError
-    {
-        // assert(className != null);
+        ClassLoader cl = System.getSecurityManager()!=null ? null : findClassLoader();
         try{
             Class providerClass = findProviderClass(className, cl, doFallback);
             Object instance = providerClass.newInstance();
