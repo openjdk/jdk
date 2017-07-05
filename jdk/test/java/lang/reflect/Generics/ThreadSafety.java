@@ -28,8 +28,11 @@
  * @run testng ThreadSafety
  */
 
+import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.Callable;
@@ -71,9 +74,13 @@ public class ThreadSafety {
     /** published via data race */
     private Class<?> racyClass = Object.class;
 
-    private URL[] urls = ((URLClassLoader) ThreadSafety.class.getClassLoader()).getURLs();
-
     private Class<?> createNewEmptyGenericSubclassClass() throws Exception {
+        String[] cpaths = System.getProperty("test.classes", ".")
+                                .split(File.pathSeparator);
+        URL[] urls = new URL[cpaths.length];
+        for (int i=0; i < cpaths.length; i++) {
+            urls[i] = Paths.get(cpaths[i]).toUri().toURL();
+        }
         URLClassLoader ucl = new URLClassLoader(urls, null);
         return Class.forName("ThreadSafety$EmptyClass$EmptyGenericSubclass", true, ucl);
     }

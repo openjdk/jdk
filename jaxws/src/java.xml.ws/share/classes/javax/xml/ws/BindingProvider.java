@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.Map;
 import javax.xml.ws.wsaddressing.W3CEndpointReference;
 
 /**
- * The <code>BindingProvider</code> interface provides access to the
+ * The {@code BindingProvider} interface provides access to the
  * protocol binding and associated context objects for request and
  * response message processing.
  *
@@ -40,14 +40,14 @@ import javax.xml.ws.wsaddressing.W3CEndpointReference;
 public interface BindingProvider {
     /**
      * Standard property: User name for authentication.
-     * <p>Type: <code>java.lang.String</code>
+     * <p>Type: {@code java.lang.String}
      **/
     public static final String USERNAME_PROPERTY =
             "javax.xml.ws.security.auth.username";
 
     /**
      * Standard property: Password for authentication.
-     * <p>Type: <code>java.lang.String</code>
+     * <p>Type: {@code java.lang.String}
      **/
     public static final String PASSWORD_PROPERTY =
             "javax.xml.ws.security.auth.password";
@@ -57,7 +57,7 @@ public interface BindingProvider {
      * URI scheme for the endpoint address specification MUST
      * correspond to the protocol/transport binding for the
      * binding in use.
-     * <p>Type: <code>java.lang.String</code>
+     * <p>Type: {@code java.lang.String}
      **/
     public static final String ENDPOINT_ADDRESS_PROPERTY =
             "javax.xml.ws.service.endpoint.address";
@@ -66,10 +66,10 @@ public interface BindingProvider {
      * Standard property: This boolean property is used by a service
      * client to indicate whether or not it wants to participate in
      * a session with a service endpoint. If this property is set to
-     * <code>true</code>, the service client indicates that it wants the session
-     * to be maintained. If set to <code>false</code>, the session is not maintained.
-     * The default value for this property is <code>false</code>.
-     * <p>Type: <code>java.lang.Boolean</code>
+     * {@code true}, the service client indicates that it wants the session
+     * to be maintained. If set to {@code false}, the session is not maintained.
+     * The default value for this property is {@code false}.
+     * <p>Type: {@code java.lang.Boolean}
      **/
     public static final String SESSION_MAINTAIN_PROPERTY =
             "javax.xml.ws.session.maintain";
@@ -77,29 +77,29 @@ public interface BindingProvider {
     /**
      * Standard property for SOAPAction. This boolean property
      * indicates whether or not the value of the
-     * <code>javax.xml.ws.soap.http.soapaction.uri</code> property
+     * {@code javax.xml.ws.soap.http.soapaction.uri} property
      * is used for the value of the SOAPAction. The
-     * default value of this property is <code>false</code> indicating
+     * default value of this property is {@code false} indicating
      * that the
-     * <code>javax.xml.ws.soap.http.soapaction.uri</code> property
+     * {@code javax.xml.ws.soap.http.soapaction.uri} property
      * is not used for the value of the SOAPAction, however,
      * if WS-Addressing is enabled, the default value is
-     * <code>true</code>.
+     * {@code true}.
      *
-     * <p>Type: <code>java.lang.Boolean</code>
+     * <p>Type: {@code java.lang.Boolean}
      **/
     public static final String SOAPACTION_USE_PROPERTY =
             "javax.xml.ws.soap.http.soapaction.use";
 
     /**
      * Standard property for SOAPAction. Indicates the SOAPAction
-     * URI if the <code>javax.xml.ws.soap.http.soapaction.use</code>
-     * property is set to <code>true</code>. If WS-Addressing
+     * URI if the {@code javax.xml.ws.soap.http.soapaction.use}
+     * property is set to {@code true}. If WS-Addressing
      * is enabled, this value will also be used for the value of the
      * WS-Addressing Action header.  If this property is not set,
      * the default SOAPAction and WS-Addressing Action will be sent.
      *
-     * <p>Type: <code>java.lang.String</code>
+     * <p>Type: {@code java.lang.String}
      **/
     public static final String SOAPACTION_URI_PROPERTY =
             "javax.xml.ws.soap.http.soapaction.uri";
@@ -139,18 +139,18 @@ public interface BindingProvider {
 
 
     /**
-     * Returns the <code>EndpointReference</code> associated with
-     * this <code>BindingProvider</code> instance.
+     * Returns the {@code EndpointReference} associated with
+     * this {@code BindingProvider} instance.
      * <p>
-     * If the Binding for this <code>bindingProvider</code> is
+     * If the Binding for this {@code bindingProvider} is
      * either SOAP1.1/HTTP or SOAP1.2/HTTP, then a
-     * <code>W3CEndpointReference</code> MUST be returned.
+     * {@code W3CEndpointReference} MUST be returned.
      *
      * @return EndpointReference of the target endpoint associated with this
-     * <code>BindingProvider</code> instance.
+     * {@code BindingProvider} instance.
      *
      * @throws java.lang.UnsupportedOperationException If this
-     * <code>BindingProvider</code> uses the XML/HTTP binding.
+     * {@code BindingProvider} uses the XML/HTTP binding.
      *
      * @see W3CEndpointReference
      *
@@ -160,21 +160,21 @@ public interface BindingProvider {
 
 
     /**
-     * Returns the <code>EndpointReference</code> associated with
-     * this <code>BindingProvider</code> instance.  The instance
-     * returned will be of type <code>clazz</code>.
+     * Returns the {@code EndpointReference} associated with
+     * this {@code BindingProvider} instance.  The instance
+     * returned will be of type {@code clazz}.
      *
-     * @param clazz Specifies the type of <code>EndpointReference</code>
+     * @param clazz Specifies the type of {@code EndpointReference}
      * that MUST be returned.
 
      * @return EndpointReference of the target endpoint associated with this
-     * <code>BindingProvider</code> instance. MUST be of type
-     * <code>clazz</code>.
+     * {@code BindingProvider} instance. MUST be of type
+     * {@code clazz}.
 
-     * @throws WebServiceException If the Class <code>clazz</code>
+     * @throws WebServiceException If the Class {@code clazz}
      * is not supported by this implementation.
      * @throws java.lang.UnsupportedOperationException If this
-     * <code>BindingProvider</code> uses the XML/HTTP binding.
+     * {@code BindingProvider} uses the XML/HTTP binding.
      *
      * @since 1.6, JAX-WS 2.1
      */

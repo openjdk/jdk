@@ -295,17 +295,17 @@ PERF_END
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 #define BB "Ljava/nio/ByteBuffer;"
 #define JLS "Ljava/lang/String;"
-#define CL_ARGS     CC"("JLS"IIJ)"BB
-#define CBA_ARGS    CC"("JLS"II[BI)"BB
+#define CL_ARGS     CC "(" JLS "IIJ)" BB
+#define CBA_ARGS    CC "(" JLS "II[BI)" BB
 
 static JNINativeMethod perfmethods[] = {
 
-  {CC"attach",              CC"("JLS"II)"BB,  FN_PTR(Perf_Attach)},
-  {CC"detach",              CC"("BB")V",      FN_PTR(Perf_Detach)},
-  {CC"createLong",          CL_ARGS,          FN_PTR(Perf_CreateLong)},
-  {CC"createByteArray",     CBA_ARGS,         FN_PTR(Perf_CreateByteArray)},
-  {CC"highResCounter",      CC"()J",          FN_PTR(Perf_HighResCounter)},
-  {CC"highResFrequency",    CC"()J",          FN_PTR(Perf_HighResFrequency)}
+  {CC "attach",              CC "(" JLS "II)" BB, FN_PTR(Perf_Attach)},
+  {CC "detach",              CC "(" BB ")V",      FN_PTR(Perf_Detach)},
+  {CC "createLong",          CL_ARGS,             FN_PTR(Perf_CreateLong)},
+  {CC "createByteArray",     CBA_ARGS,            FN_PTR(Perf_CreateByteArray)},
+  {CC "highResCounter",      CC "()J",            FN_PTR(Perf_HighResCounter)},
+  {CC "highResFrequency",    CC "()J",            FN_PTR(Perf_HighResFrequency)}
 };
 
 #undef CBA_ARGS

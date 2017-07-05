@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ package javax.xml.ws;
  * JAX-WS implementors are free to define additional features if
  * necessary.  Vendor specific features may not be portable so
  * caution should be used when using them. Each Feature definition
- * MUST define a <code>public static final String ID</code>
+ * MUST define a {@code public static final String ID}
  * that can be used in the Feature annotation to refer
  * to the feature. This ID MUST be unique across all features
  * of all vendors.  When defining a vendor specific feature ID,
@@ -71,9 +71,9 @@ public abstract class WebServiceFeature {
 
 
    /**
-    * Returns <code>true</code> if this feature is enabled.
+    * Returns {@code true} if this feature is enabled.
     *
-    * @return <code>true</code> if and only if the feature is enabled .
+    * @return {@code true} if and only if the feature is enabled .
     */
    public boolean isEnabled() {
        return enabled;

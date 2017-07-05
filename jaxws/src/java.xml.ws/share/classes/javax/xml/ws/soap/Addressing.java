@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,12 @@ import javax.xml.ws.spi.WebServiceFeatureAnnotation;
  * This annotation MUST only be used in conjunction with the
  * {@link javax.jws.WebService}, {@link WebServiceProvider},
  *  and {@link WebServiceRef} annotations.
- * When used with a <code>javax.jws.WebService</code> annotation, this
+ * When used with a {@code javax.jws.WebService} annotation, this
  * annotation MUST only be used on the service endpoint implementation
  * class.
- * When used with a <code>WebServiceRef</code> annotation, this annotation
+ * When used with a {@code WebServiceRef} annotation, this annotation
  * MUST only be used when a proxy instance is created. The injected SEI
- * proxy, and endpoint MUST honor the values of the <code>Addressing</code>
+ * proxy, and endpoint MUST honor the values of the {@code Addressing}
  * annotation.
  * <p>
  * This annotation's behaviour is defined by the corresponding feature

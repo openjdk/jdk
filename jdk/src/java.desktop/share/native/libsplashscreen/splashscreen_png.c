@@ -48,8 +48,8 @@ SplashDecodePng(Splash * splash, png_rw_ptr read_func, void *io_ptr)
     int stride;
     ImageFormat srcFormat;
     png_uint_32 i, rowbytes;
-    png_bytepp row_pointers = NULL;
-    png_bytep image_data = NULL;
+    volatile png_bytepp row_pointers = NULL;
+    volatile png_bytep image_data = NULL;
     int success = 0;
     double gamma;
 

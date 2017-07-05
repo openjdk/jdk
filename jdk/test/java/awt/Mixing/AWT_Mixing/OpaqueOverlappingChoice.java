@@ -33,6 +33,7 @@
 @summary Opaque overlapping test for Choice AWT component
 @library ../../regtesthelpers
 @modules java.desktop/com.sun.awt
+         java.desktop/java.awt.peer
          java.desktop/sun.awt
 @build Util
 @run main OpaqueOverlappingChoice

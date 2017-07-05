@@ -23,7 +23,7 @@
 
 /**
  * @test TestShrinkDefragmentedHeap
- * @bug 8038423
+ * @bug 8038423 8129590
  * @summary Verify that heap shrinks after GC in the presence of fragmentation due to humongous objects
  *     1. allocate small objects mixed with humongous ones
  *        "ssssHssssHssssHssssHssssHssssHssssH"
@@ -51,12 +51,14 @@ public class TestShrinkDefragmentedHeap {
     // To avoid this the Eden needs to be big enough to fit all the small objects.
     private static final int INITIAL_HEAP_SIZE  = 200 * 1024 * 1024;
     private static final int MINIMAL_YOUNG_SIZE = 190 * 1024 * 1024;
+    private static final int MAXIMUM_HEAP_SIZE  = 256 * 1024 * 1024;
     private static final int REGION_SIZE        = 1 * 1024 * 1024;
 
     public static void main(String[] args) throws Exception, Throwable {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:InitialHeapSize=" + INITIAL_HEAP_SIZE,
                 "-Xmn" + MINIMAL_YOUNG_SIZE,
+                "-Xmx" + MAXIMUM_HEAP_SIZE,
                 "-XX:MinHeapFreeRatio=10",
                 "-XX:MaxHeapFreeRatio=11",
                 "-XX:+UseG1GC",

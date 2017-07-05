@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 7037261 7070436 7198195
+ * @bug 7037261 7070436 7198195 8032446
  * @summary  Check j.l.Character.isLowerCase/isUppercase/isAlphabetic/isIdeographic
  */
 

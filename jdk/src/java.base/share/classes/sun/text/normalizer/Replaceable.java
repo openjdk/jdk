@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ package sun.text.normalizer;
  * @author Alan Liu
  * @stable ICU 2.0
  */
-public interface Replaceable {
+interface Replaceable {
     /**
      * Returns the number of 16-bit code units in the text.
      * @return number of 16-bit code units in text
@@ -99,7 +99,6 @@ public interface Replaceable {
      */
     char charAt(int offset);
 
-    //// for StringPrep
     /**
      * Copies characters from this object into the destination
      * character array.  The first character to be copied is at index

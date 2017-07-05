@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.xml.ws;
 import javax.xml.ws.soap.AddressingFeature;
 
 /**
- * This feature clarifies the use of the <code>wsdl:binding</code>
+ * This feature clarifies the use of the {@code wsdl:binding}
  * in a JAX-WS runtime.
  *
  * This feature can be used during the creation of SEI proxy, and
@@ -38,26 +38,26 @@ import javax.xml.ws.soap.AddressingFeature;
  * <p>
  * This feature is only useful with web services that have an
  * associated WSDL. Enabling this feature requires that a JAX-WS
- * implementation inspect the <code>wsdl:binding</code> for an
- * endpoint at runtime to make sure that all <code>wsdl:extensions</code>
- * that have the <code>required</code> attribute set to <code>true</code>
+ * implementation inspect the {@code wsdl:binding} for an
+ * endpoint at runtime to make sure that all {@code wsdl:extensions}
+ * that have the {@code required} attribute set to {@code true}
  * are understood and are being used.
  * <p>
  * The following describes the affects of this feature with respect
  * to be enabled or disabled:
  * <ul>
  *  <li> ENABLED: In this Mode, a JAX-WS runtime MUST assure that all
- *  required <code>wsdl:binding</code> extensions(including policies) are
+ *  required {@code wsdl:binding} extensions(including policies) are
  *  either understood and used by the runtime, or explicitly disabled by the
  *  web service application. A web service can disable a particular
  *  extension if there is a corresponding {@link WebServiceFeature} or annotation.
  *  Similarly, a web service client can disable
- *  particular extension using the corresponding <code>WebServiceFeature</code> while
+ *  particular extension using the corresponding {@code WebServiceFeature} while
  *  creating a proxy or Dispatch instance.
  *  The runtime MUST also make sure that binding of
- *  SEI parameters/return values respect the <code>wsdl:binding</code>.
- *  With this feature enabled, if a required (<code>wsdl:required="true"</code>)
- *  <code>wsdl:binding</code> extension is in the WSDL and it is not
+ *  SEI parameters/return values respect the {@code wsdl:binding}.
+ *  With this feature enabled, if a required ({@code wsdl:required="true"})
+ *  {@code wsdl:binding} extension is in the WSDL and it is not
  *  supported by a JAX-WS runtime and it has not
  *  been explicitly turned off by the web service developer, then
  *  that JAX-WS runtime MUST behave appropriately based on whether it is
@@ -71,8 +71,8 @@ import javax.xml.ws.soap.AddressingFeature;
  *  </ul>
  *
  *  <li> DISABLED: In this Mode, an implementation may choose whether
- *  to inspect the <code>wsdl:binding</code> or not and to what degree
- *  the <code>wsdl:binding</code> will be inspected.  For example,
+ *  to inspect the {@code wsdl:binding} or not and to what degree
+ *  the {@code wsdl:binding} will be inspected.  For example,
  *  one implementation may choose to behave as if this feature is enabled,
  *  another implementation may only choose to verify the SEI's
  *  parameter/return type bindings.
@@ -91,7 +91,7 @@ public final class RespectBindingFeature extends WebServiceFeature {
 
 
     /**
-     * Creates an <code>RespectBindingFeature</code>.
+     * Creates an {@code RespectBindingFeature}.
      * The instance created will be enabled.
      */
     public RespectBindingFeature() {

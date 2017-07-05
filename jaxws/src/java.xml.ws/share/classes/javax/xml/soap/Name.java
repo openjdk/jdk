@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,17 +55,17 @@ package javax.xml.soap;
  * The following line of
  * code, in which <i>se</i> is a {@code SOAPEnvelope} object, creates a new
  * {@code Name} object with all three.
- * <PRE>
+ * <pre>{@code
  *     Name name = se.createName("GetLastTradePrice", "WOMBAT",
  *                                "http://www.wombat.org/trader");
- * </PRE>
+ * }</pre>
  * The following line of code gives an example of how a {@code Name} object
  * can be used. The variable <i>element</i> is a {@code SOAPElement} object.
  * This code creates a new {@code SOAPElement} object with the given name and
  * adds it to <i>element</i>.
- * <PRE>
+ * <pre>{@code
  *     element.addChildElement(name);
- * </PRE>
+ * }</pre>
  * <P>
  * The {@code Name} interface may be deprecated in a future release of SAAJ
  * in favor of {@code javax.xml.namespace.QName}

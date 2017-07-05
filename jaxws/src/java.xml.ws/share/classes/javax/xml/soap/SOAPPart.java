@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,9 @@ import javax.xml.transform.Source;
  * calling the method {@code SOAPMessage.getSOAPPart}. The
  * following  line of code, in which {@code message} is a
  * {@code SOAPMessage} object, retrieves the SOAP part of a message.
- * <PRE>
+ * <pre>{@code
  *   SOAPPart soapPart = message.getSOAPPart();
- * </PRE>
+ * }</pre>
  * <P>
  * A {@code SOAPPart} object contains a {@code SOAPEnvelope} object,
  * which in turn contains a {@code SOAPBody} object and a

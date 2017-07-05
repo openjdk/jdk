@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         setScrollBarVisibility();
         // After this line we should not change the component's text
         firstChangeSkipped = true;
+        compAccessor.setPeer(textPane, this);
     }
 
     @Override
@@ -146,7 +147,6 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         // visible caret has a timer thread which must be stopped
         jtext.getCaret().setVisible(false);
         jtext.removeNotify();
-        textPane.removeNotify();
         super.dispose();
     }
 

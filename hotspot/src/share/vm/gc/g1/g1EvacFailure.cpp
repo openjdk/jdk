@@ -40,8 +40,8 @@ private:
   G1SATBCardTableModRefBS* _ct_bs;
 
 public:
-  UpdateRSetDeferred(G1CollectedHeap* g1, DirtyCardQueue* dcq) :
-    _g1(g1), _ct_bs(_g1->g1_barrier_set()), _dcq(dcq) {}
+  UpdateRSetDeferred(DirtyCardQueue* dcq) :
+    _g1(G1CollectedHeap::heap()), _ct_bs(_g1->g1_barrier_set()), _dcq(dcq) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
@@ -65,60 +65,41 @@ private:
   size_t _marked_bytes;
   OopsInHeapRegionClosure *_update_rset_cl;
   bool _during_initial_mark;
-  bool _during_conc_mark;
   uint _worker_id;
-  HeapWord* _end_of_last_gap;
-  HeapWord* _last_gap_threshold;
-  HeapWord* _last_obj_threshold;
+  HeapWord* _last_forwarded_object_end;
 
 public:
-  RemoveSelfForwardPtrObjClosure(G1CollectedHeap* g1, ConcurrentMark* cm,
-                                 HeapRegion* hr,
+  RemoveSelfForwardPtrObjClosure(HeapRegion* hr,
                                  OopsInHeapRegionClosure* update_rset_cl,
                                  bool during_initial_mark,
-                                 bool during_conc_mark,
                                  uint worker_id) :
-    _g1(g1), _cm(cm), _hr(hr), _marked_bytes(0),
+    _g1(G1CollectedHeap::heap()),
+    _cm(_g1->concurrent_mark()),
+    _hr(hr),
+    _marked_bytes(0),
     _update_rset_cl(update_rset_cl),
     _during_initial_mark(during_initial_mark),
-    _during_conc_mark(during_conc_mark),
     _worker_id(worker_id),
-    _end_of_last_gap(hr->bottom()),
-    _last_gap_threshold(hr->bottom()),
-    _last_obj_threshold(hr->bottom()) { }
+    _last_forwarded_object_end(hr->bottom()) { }
 
   size_t marked_bytes() { return _marked_bytes; }
 
-  // <original comment>
-  // The original idea here was to coalesce evacuated and dead objects.
-  // However that caused complications with the block offset table (BOT).
-  // In particular if there were two TLABs, one of them partially refined.
-  // |----- TLAB_1--------|----TLAB_2-~~~(partially refined part)~~~|
-  // The BOT entries of the unrefined part of TLAB_2 point to the start
-  // of TLAB_2. If the last object of the TLAB_1 and the first object
-  // of TLAB_2 are coalesced, then the cards of the unrefined part
-  // would point into middle of the filler object.
-  // The current approach is to not coalesce and leave the BOT contents intact.
-  // </original comment>
-  //
-  // We now reset the BOT when we start the object iteration over the
-  // region and refine its entries for every object we come across. So
-  // the above comment is not really relevant and we should be able
-  // to coalesce dead objects if we want to.
+  // Iterate over the live objects in the region to find self-forwarded objects
+  // that need to be kept live. We need to update the remembered sets of these
+  // objects. Further update the BOT and marks.
+  // We can coalesce and overwrite the remaining heap contents with dummy objects
+  // as they have either been dead or evacuated (which are unreferenced now, i.e.
+  // dead too) already.
   void do_object(oop obj) {
     HeapWord* obj_addr = (HeapWord*) obj;
     assert(_hr->is_in(obj_addr), "sanity");
     size_t obj_size = obj->size();
     HeapWord* obj_end = obj_addr + obj_size;
 
-    if (_end_of_last_gap != obj_addr) {
-      // there was a gap before obj_addr
-      _last_gap_threshold = _hr->cross_threshold(_end_of_last_gap, obj_addr);
-    }
-
     if (obj->is_forwarded() && obj->forwardee() == obj) {
       // The object failed to move.
 
+      zap_dead_objects(_last_forwarded_object_end, obj_addr);
       // We consider all objects that we find self-forwarded to be
       // live. What we'll do is that we'll update the prev marking
       // info so that they are all under PTAMS and explicitly marked.
@@ -154,24 +135,52 @@ public:
       // remembered set entries missing given that we skipped cards on
       // the collection set. So, we'll recreate such entries now.
       obj->oop_iterate(_update_rset_cl);
-    } else {
 
-      // The object has been either evacuated or is dead. Fill it with a
-      // dummy object.
-      MemRegion mr(obj_addr, obj_size);
-      CollectedHeap::fill_with_object(mr);
-
-      // must nuke all dead objects which we skipped when iterating over the region
-      _cm->clearRangePrevBitmap(MemRegion(_end_of_last_gap, obj_end));
+      _last_forwarded_object_end = obj_end;
+      _hr->cross_threshold(obj_addr, obj_end);
     }
-    _end_of_last_gap = obj_end;
-    _last_obj_threshold = _hr->cross_threshold(obj_addr, obj_end);
+  }
+
+  // Fill the memory area from start to end with filler objects, and update the BOT
+  // and the mark bitmap accordingly.
+  void zap_dead_objects(HeapWord* start, HeapWord* end) {
+    if (start == end) {
+      return;
+    }
+
+    size_t gap_size = pointer_delta(end, start);
+    MemRegion mr(start, gap_size);
+    if (gap_size >= CollectedHeap::min_fill_size()) {
+      CollectedHeap::fill_with_objects(start, gap_size);
+
+      HeapWord* end_first_obj = start + ((oop)start)->size();
+      _hr->cross_threshold(start, end_first_obj);
+      // Fill_with_objects() may have created multiple (i.e. two)
+      // objects, as the max_fill_size() is half a region.
+      // After updating the BOT for the first object, also update the
+      // BOT for the second object to make the BOT complete.
+      if (end_first_obj != end) {
+        _hr->cross_threshold(end_first_obj, end);
+#ifdef ASSERT
+        size_t size_second_obj = ((oop)end_first_obj)->size();
+        HeapWord* end_of_second_obj = end_first_obj + size_second_obj;
+        assert(end == end_of_second_obj,
+               err_msg("More than two objects were used to fill the area from " PTR_FORMAT " to " PTR_FORMAT ", "
+                       "second objects size " SIZE_FORMAT " ends at " PTR_FORMAT,
+                       p2i(start), p2i(end), size_second_obj, p2i(end_of_second_obj)));
+#endif
+      }
+    }
+    _cm->clearRangePrevBitmap(mr);
+  }
+
+  void zap_remainder() {
+    zap_dead_objects(_last_forwarded_object_end, _hr->top());
   }
 };
 
 class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
-  ConcurrentMark* _cm;
   uint _worker_id;
   HeapRegionClaimer* _hrclaimer;
 
@@ -179,11 +188,27 @@ class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   UpdateRSetDeferred _update_rset_cl;
 
 public:
-  RemoveSelfForwardPtrHRClosure(G1CollectedHeap* g1h,
-                                uint worker_id,
+  RemoveSelfForwardPtrHRClosure(uint worker_id,
                                 HeapRegionClaimer* hrclaimer) :
-      _g1h(g1h), _dcq(&g1h->dirty_card_queue_set()), _update_rset_cl(g1h, &_dcq),
-      _worker_id(worker_id), _cm(_g1h->concurrent_mark()), _hrclaimer(hrclaimer) {
+    _g1h(G1CollectedHeap::heap()),
+    _dcq(&_g1h->dirty_card_queue_set()),
+    _update_rset_cl(&_dcq),
+    _worker_id(worker_id),
+    _hrclaimer(hrclaimer) {
+  }
+
+  size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,
+                                               bool during_initial_mark) {
+    RemoveSelfForwardPtrObjClosure rspc(hr,
+                                        &_update_rset_cl,
+                                        during_initial_mark,
+                                        _worker_id);
+    _update_rset_cl.set_region(hr);
+    hr->object_iterate(&rspc);
+    // Need to zap the remainder area of the processed region.
+    rspc.zap_remainder();
+
+    return rspc.marked_bytes();
   }
 
   bool doHeapRegion(HeapRegion *hr) {
@@ -195,11 +220,6 @@ public:
 
     if (_hrclaimer->claim_region(hr->hrm_index())) {
       if (hr->evacuation_failed()) {
-        RemoveSelfForwardPtrObjClosure rspc(_g1h, _cm, hr, &_update_rset_cl,
-                                            during_initial_mark,
-                                            during_conc_mark,
-                                            _worker_id);
-
         hr->note_self_forwarding_removal_start(during_initial_mark,
                                                during_conc_mark);
         _g1h->check_bitmaps("Self-Forwarding Ptr Removal", hr);
@@ -214,26 +234,27 @@ public:
         // whenever this might be required in the future.
         hr->rem_set()->reset_for_par_iteration();
         hr->reset_bot();
-        _update_rset_cl.set_region(hr);
-        hr->object_iterate(&rspc);
+
+        size_t live_bytes = remove_self_forward_ptr_by_walking_hr(hr, during_initial_mark);
 
         hr->rem_set()->clean_strong_code_roots(hr);
 
         hr->note_self_forwarding_removal_end(during_initial_mark,
                                              during_conc_mark,
-                                             rspc.marked_bytes());
+                                             live_bytes);
       }
     }
     return false;
   }
 };
 
-G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask(G1CollectedHeap* g1h) :
-    AbstractGangTask("G1 Remove Self-forwarding Pointers"), _g1h(g1h),
-    _hrclaimer(g1h->workers()->active_workers()) {}
+G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask() :
+  AbstractGangTask("G1 Remove Self-forwarding Pointers"),
+  _g1h(G1CollectedHeap::heap()),
+  _hrclaimer(_g1h->workers()->active_workers()) { }
 
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
-  RemoveSelfForwardPtrHRClosure rsfp_cl(_g1h, worker_id, &_hrclaimer);
+  RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, &_hrclaimer);
 
   HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_id);
   _g1h->collection_set_iterate_from(hr, &rsfp_cl);

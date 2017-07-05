@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@ import java.util.Iterator;
 import java.util.Vector;
 
 /**
- * A container for <code>MimeHeader</code> objects, which represent
+ * A container for {@code MimeHeader} objects, which represent
  * the MIME headers present in a MIME part of a message.
  *
  * <p>This class is used primarily when an application wants to
  * retrieve specific attachments based on certain MIME headers and
  * values. This class will most likely be used by implementations of
- * <code>AttachmentPart</code> and other MIME dependent parts of the SAAJ
+ * {@code AttachmentPart} and other MIME dependent parts of the SAAJ
  * API.
  * @see SOAPMessage#getAttachments
  * @see AttachmentPart
@@ -45,8 +45,8 @@ public class MimeHeaders {
     private Vector headers;
 
    /**
-    * Constructs a default <code>MimeHeaders</code> object initialized with
-    * an empty <code>Vector</code> object.
+    * Constructs a default {@code MimeHeaders} object initialized with
+    * an empty {@code Vector} object.
     */
     public MimeHeaders() {
         headers = new Vector();
@@ -54,10 +54,10 @@ public class MimeHeaders {
 
     /**
      * Returns all of the values for the specified header as an array of
-     * <code>String</code> objects.
+     * {@code String} objects.
      *
      * @param   name the name of the header for which values will be returned
-     * @return a <code>String</code> array with all of the values for the
+     * @return a {@code String} array with all of the values for the
      *         specified header
      * @see #setHeader
      */
@@ -86,9 +86,9 @@ public class MimeHeaders {
      * <P>
      * Note that RFC822 headers can contain only US-ASCII characters.
      *
-     * @param   name a <code>String</code> with the name of the header for
+     * @param   name a {@code String} with the name of the header for
      *          which to search
-     * @param   value a <code>String</code> with the value that will replace the
+     * @param   value a {@code String} with the value that will replace the
      *          current value of the specified header
      *
      * @exception IllegalArgumentException if there was a problem in the
@@ -120,14 +120,14 @@ public class MimeHeaders {
     }
 
     /**
-     * Adds a <code>MimeHeader</code> object with the specified name and value
-     * to this <code>MimeHeaders</code> object's list of headers.
+     * Adds a {@code MimeHeader} object with the specified name and value
+     * to this {@code MimeHeaders} object's list of headers.
      * <P>
      * Note that RFC822 headers can contain only US-ASCII characters.
      *
-     * @param   name a <code>String</code> with the name of the header to
+     * @param   name a {@code String} with the name of the header to
      *          be added
-     * @param   value a <code>String</code> with the value of the header to
+     * @param   value a {@code String} with the value of the header to
      *          be added
      *
      * @exception IllegalArgumentException if there was a problem in the
@@ -152,10 +152,10 @@ public class MimeHeaders {
     }
 
     /**
-     * Remove all <code>MimeHeader</code> objects whose name matches the
+     * Remove all {@code MimeHeader} objects whose name matches the
      * given name.
      *
-     * @param   name a <code>String</code> with the name of the header for
+     * @param   name a {@code String} with the name of the header for
      *          which to search
      */
     public void removeHeader(String name) {
@@ -167,7 +167,7 @@ public class MimeHeaders {
     }
 
     /**
-     * Removes all the header entries from this <code>MimeHeaders</code> object.
+     * Removes all the header entries from this {@code MimeHeaders} object.
      */
     public void removeAllHeaders() {
         headers.removeAllElements();
@@ -175,10 +175,10 @@ public class MimeHeaders {
 
 
     /**
-     * Returns all the <code>MimeHeader</code>s in this <code>MimeHeaders</code> object.
+     * Returns all the {@code MimeHeader}s in this {@code MimeHeaders} object.
      *
-     * @return  an <code>Iterator</code> object over this <code>MimeHeaders</code>
-     *          object's list of <code>MimeHeader</code> objects
+     * @return  an {@code Iterator} object over this {@code MimeHeaders}
+     *          object's list of {@code MimeHeader} objects
      */
     public Iterator getAllHeaders() {
         return headers.iterator();
@@ -243,12 +243,12 @@ public class MimeHeaders {
 
 
     /**
-     * Returns all the <code>MimeHeader</code> objects whose name matches
+     * Returns all the {@code MimeHeader} objects whose name matches
      * a name in the given array of names.
      *
-     * @param names an array of <code>String</code> objects with the names
+     * @param names an array of {@code String} objects with the names
      *         for which to search
-     * @return  an <code>Iterator</code> object over the <code>MimeHeader</code>
+     * @return  an {@code Iterator} object over the {@code MimeHeader}
      *          objects whose name matches one of the names in the given list
      */
     public Iterator getMatchingHeaders(String[] names) {
@@ -256,12 +256,12 @@ public class MimeHeaders {
     }
 
     /**
-     * Returns all of the <code>MimeHeader</code> objects whose name does not
+     * Returns all of the {@code MimeHeader} objects whose name does not
      * match a name in the given array of names.
      *
-     * @param names an array of <code>String</code> objects with the names
+     * @param names an array of {@code String} objects with the names
      *         for which to search
-     * @return  an <code>Iterator</code> object over the <code>MimeHeader</code>
+     * @return  an {@code Iterator} object over the {@code MimeHeader}
      *          objects whose name does not match one of the names in the given list
      */
     public Iterator getNonMatchingHeaders(String[] names) {

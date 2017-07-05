@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ import java.lang.annotation.Inherited;
 @Documented
 public @interface ServiceMode {
   /**
-   * Service mode. <code>PAYLOAD</code> indicates that the <code>Provider</code> implementation
-   * wishes to work with protocol message payloads only. <code>MESSAGE</code> indicates
-   * that the <code>Provider</code> implementation wishes to work with entire protocol
+   * Service mode. {@code PAYLOAD} indicates that the {@code Provider} implementation
+   * wishes to work with protocol message payloads only. {@code MESSAGE} indicates
+   * that the {@code Provider} implementation wishes to work with entire protocol
    * messages.
   **/
   public Service.Mode value() default Service.Mode.PAYLOAD;
