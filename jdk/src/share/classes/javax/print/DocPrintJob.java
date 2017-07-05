@@ -25,7 +25,6 @@
 
 package javax.print;
 
-import javax.print.attribute.AttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.event.PrintJobAttributeListener;

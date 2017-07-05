@@ -37,7 +37,6 @@ import javax.management.InstanceAlreadyExistsException;
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.openmbean.OpenDataException;
 
@@ -225,7 +224,7 @@ public abstract class MXBeanLookup {
             String domain = prefix + name.getDomain();
             try {
                 name = name.withDomain(domain);
-            } catch (MalformedObjectNameException e) {
+            } catch (IllegalArgumentException e) {
                 throw EnvHelp.initCause(
                         new InvalidObjectException(e.getMessage()), e);
             }
@@ -239,12 +238,14 @@ public abstract class MXBeanLookup {
             String domain = name.getDomain();
             if (!domain.startsWith(prefix)) {
                 throw new OpenDataException(
-                        "Proxy's name does not start with " + prefix + ": " + name);
+                        "Proxy's name does not start with " +
+                        prefix + ": " + name);
             }
             try {
                 name = name.withDomain(domain.substring(prefix.length()));
-            } catch (MalformedObjectNameException e) {
-                throw EnvHelp.initCause(new OpenDataException(e.getMessage()), e);
+            } catch (IllegalArgumentException e) {
+                throw EnvHelp.initCause(
+                        new OpenDataException(e.getMessage()), e);
             }
             return name;
         }

@@ -76,6 +76,12 @@ public class JMX {
             "descriptionResourceKey";
 
     /**
+     * The name of the <a href="Descriptor.html#exceptions">{@code
+     * exceptions}</a> field.
+     */
+    public static final String EXCEPTIONS_FIELD = "exceptions";
+
+    /**
      * The name of the <a href="Descriptor.html#immutableInfo">{@code
      * immutableInfo}</a> field.
      */
@@ -136,6 +142,18 @@ public class JMX {
      * originalType}</a> field.
      */
     public static final String ORIGINAL_TYPE_FIELD = "originalType";
+
+    /**
+     * The name of the <a href="Descriptor.html#setExceptions">{@code
+     * setExceptions}</a> field.
+     */
+    public static final String SET_EXCEPTIONS_FIELD = "setExceptions";
+
+    /**
+     * The name of the <a href="Descriptor.html#objectNameTemplate">{@code
+     * objectNameTemplate}</a> field.
+     */
+    public static final String OBJECT_NAME_TEMPLATE = "objectNameTemplate";
 
     /**
      * <p>Options to apply to an MBean proxy or to an instance of {@link

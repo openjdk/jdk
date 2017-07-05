@@ -1102,10 +1102,7 @@ bool equivalent_predicates( const InstructForm *instr1, const InstructForm *inst
   }
   if( pred1 != NULL && pred2 != NULL ) {
     // compare the predicates
-    const char *str1 = pred1->_pred;
-    const char *str2 = pred2->_pred;
-    if( (str1 == NULL && str2 == NULL)
-        || (str1 != NULL && str2 != NULL && strcmp(str1,str2) == 0) ) {
+    if (ADLParser::equivalent_expressions(pred1->_pred, pred2->_pred)) {
       return true;
     }
   }

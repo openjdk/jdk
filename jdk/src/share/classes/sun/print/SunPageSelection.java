@@ -26,7 +26,6 @@
 package sun.print;
 
 import javax.print.attribute.PrintRequestAttribute;
-import javax.print.attribute.standard.Media;
 
 /*
  * A class used to determine the range of pages to be printed.
