@@ -26,6 +26,8 @@
  * @key gc
  * @summary Tests that all SoftReferences has been cleared at time of OOM.
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @ignore 8073669
  * @build TestSoftReferencesBehaviorOnOOME
  * @run main/othervm -Xmx128m TestSoftReferencesBehaviorOnOOME 512 2k

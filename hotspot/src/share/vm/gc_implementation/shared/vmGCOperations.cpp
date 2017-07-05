@@ -98,7 +98,7 @@ bool VM_GC_Operation::doit_prologue() {
   if (!is_init_completed()) {
     vm_exit_during_initialization(
       err_msg("GC triggered before VM initialization completed. Try increasing "
-              "NewSize, current value " UINTX_FORMAT "%s.",
+              "NewSize, current value " SIZE_FORMAT "%s.",
               byte_size_in_proper_unit(NewSize),
               proper_unit_for_byte_size(NewSize)));
   }

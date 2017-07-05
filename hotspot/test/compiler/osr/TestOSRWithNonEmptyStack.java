@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
  * @test
  * @bug 8051344
  * @summary Force OSR compilation with non-empty stack at the OSR entry point.
+ * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file TestOSRWithNonEmptyStack.java
  * @run main/othervm -XX:CompileOnly=TestCase.test TestOSRWithNonEmptyStack
  */

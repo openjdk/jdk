@@ -25,6 +25,8 @@
  * @test
  * @bug 8058897
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=100m Reallocate
  */
 

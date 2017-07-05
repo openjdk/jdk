@@ -25,6 +25,8 @@
  * @test
  * @summary Verifies the behaviour of Unsafe.allocateInstance
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main AllocateInstance
  */
 

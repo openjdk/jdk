@@ -184,9 +184,18 @@ class ZipConstants {
         return (LG(b, n)) | (LG(b, n + 4) << 32);
     }
 
-    static final long GETSIG(byte[] b) {
-        return LG(b, 0);
+    static long getSig(byte[] b, int n) { return LG(b, n); }
+
+    private static boolean pkSigAt(byte[] b, int n, int b1, int b2) {
+        return b[n] == 'P' & b[n + 1] == 'K' & b[n + 2] == b1 & b[n + 3] == b2;
     }
+
+    static boolean cenSigAt(byte[] b, int n) { return pkSigAt(b, n, 1, 2); }
+    static boolean locSigAt(byte[] b, int n) { return pkSigAt(b, n, 3, 4); }
+    static boolean endSigAt(byte[] b, int n) { return pkSigAt(b, n, 5, 6); }
+    static boolean extSigAt(byte[] b, int n) { return pkSigAt(b, n, 7, 8); }
+    static boolean end64SigAt(byte[] b, int n) { return pkSigAt(b, n, 6, 6); }
+    static boolean locator64SigAt(byte[] b, int n) { return pkSigAt(b, n, 6, 7); }
 
     // local file (LOC) header fields
     static final long LOCSIG(byte[] b) { return LG(b, 0); } // signature

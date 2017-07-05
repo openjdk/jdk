@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,8 +192,7 @@ public class TestDialogTypeAhead extends Applet
     }
     private void waitForIdle() {
         try {
-            Toolkit.getDefaultToolkit().sync();
-            sun.awt.SunToolkit.flushPendingEvents();
+            robot.waitForIdle();
             EventQueue.invokeAndWait( new Runnable() {
                                             public void run() {
                                                 // dummy implementation

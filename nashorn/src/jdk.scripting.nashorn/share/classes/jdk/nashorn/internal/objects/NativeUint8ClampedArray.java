@@ -133,18 +133,17 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
 
         private void setElem(final int index, final int elem) {
             try {
-                final byte clamped;
-                if ((elem & 0xffff_ff00) == 0) {
-                    clamped = (byte)elem;
-                } else {
-                    clamped = elem < 0 ? 0 : (byte)0xff;
+                if (index < nb.limit()) {
+                    final byte clamped;
+                    if ((elem & 0xffff_ff00) == 0) {
+                        clamped = (byte) elem;
+                    } else {
+                        clamped = elem < 0 ? 0 : (byte) 0xff;
+                    }
+                    nb.put(index, clamped);
                 }
-                nb.put(index, clamped);
             } catch (final IndexOutOfBoundsException e) {
-                //swallow valid array indexes. it's ok.
-                if (index < 0) {
-                    throw new ClassCastException();
-                }
+                throw new ClassCastException();
             }
         }
 

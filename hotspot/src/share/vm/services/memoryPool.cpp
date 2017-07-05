@@ -25,7 +25,9 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/defNewGeneration.hpp"
 #include "memory/metaspace.hpp"
+#include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -34,8 +36,11 @@
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
-#include "utilities/macros.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
+#endif
 
 MemoryPool::MemoryPool(const char* name,
                        PoolType type,
@@ -187,6 +192,10 @@ ContiguousSpacePool::ContiguousSpacePool(ContiguousSpace* space,
                       support_usage_threshold), _space(space) {
 }
 
+size_t ContiguousSpacePool::used_in_bytes() {
+  return space()->used();
+}
+
 MemoryUsage ContiguousSpacePool::get_memory_usage() {
   size_t maxSize   = (available_for_allocation() ? max_size() : 0);
   size_t used      = used_in_bytes();
@@ -202,6 +211,14 @@ SurvivorContiguousSpacePool::SurvivorContiguousSpacePool(DefNewGeneration* gen,
                                                          bool support_usage_threshold) :
   CollectedMemoryPool(name, type, gen->from()->capacity(), max_size,
                       support_usage_threshold), _gen(gen) {
+}
+
+size_t SurvivorContiguousSpacePool::used_in_bytes() {
+  return _gen->from()->used();
+}
+
+size_t SurvivorContiguousSpacePool::committed_in_bytes() {
+  return _gen->from()->capacity();
 }
 
 MemoryUsage SurvivorContiguousSpacePool::get_memory_usage() {
@@ -222,6 +239,10 @@ CompactibleFreeListSpacePool::CompactibleFreeListSpacePool(CompactibleFreeListSp
                       support_usage_threshold), _space(space) {
 }
 
+size_t CompactibleFreeListSpacePool::used_in_bytes() {
+  return _space->used();
+}
+
 MemoryUsage CompactibleFreeListSpacePool::get_memory_usage() {
   size_t maxSize   = (available_for_allocation() ? max_size() : 0);
   size_t used      = used_in_bytes();
@@ -237,6 +258,10 @@ GenerationPool::GenerationPool(Generation* gen,
                                bool support_usage_threshold) :
   CollectedMemoryPool(name, type, gen->capacity(), gen->max_capacity(),
                       support_usage_threshold), _gen(gen) {
+}
+
+size_t GenerationPool::used_in_bytes() {
+  return _gen->used();
 }
 
 MemoryUsage GenerationPool::get_memory_usage() {

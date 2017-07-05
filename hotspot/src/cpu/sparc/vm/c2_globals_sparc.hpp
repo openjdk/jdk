@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ define_pd_global(intx, FLOATPRESSURE,                52);  // C2 on V9 gets to u
 define_pd_global(intx, FreqInlineSize,               175);
 define_pd_global(intx, INTPRESSURE,                  48);  // large register set
 define_pd_global(intx, InteriorEntryAlignment,       16);  // = CodeEntryAlignment
-define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
+define_pd_global(size_t, NewSizeThreadIncrease,      ScaleForWordSize(4*K));
 define_pd_global(intx, RegisterCostAreaRatio,        12000);
 define_pd_global(bool, UseTLAB,                      true);
 define_pd_global(bool, ResizeTLAB,                   true);
@@ -90,7 +90,7 @@ define_pd_global(intx, ProfiledCodeHeapSize,         14*M);
 define_pd_global(intx, NonNMethodCodeHeapSize,       5*M );
 define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 // Ergonomics related flags
-define_pd_global(uint64_t,MaxRAM,                    4ULL*G);
+define_pd_global(uint64_t, MaxRAM,                   4ULL*G);
 #endif
 define_pd_global(uintx, CodeCacheMinBlockLength,     4);
 define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
@@ -98,7 +98,7 @@ define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
 define_pd_global(bool,  TrapBasedRangeChecks,        false); // Not needed on sparc.
 
 // Heap related flags
-define_pd_global(uintx,MetaspaceSize,    ScaleForWordSize(16*M));
+define_pd_global(size_t, MetaspaceSize,              ScaleForWordSize(16*M));
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);

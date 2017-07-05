@@ -25,6 +25,8 @@
  * @test
  * @key nmt jcmd
  * @library /testlibrary /../../test/lib
+ * @modules java.base/sun.misc
+ *          java.management
  * @build ThreadedVirtualAllocTestType
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

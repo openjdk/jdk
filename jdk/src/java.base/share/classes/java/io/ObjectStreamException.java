@@ -38,10 +38,10 @@ public abstract class ObjectStreamException extends IOException {
     /**
      * Create an ObjectStreamException with the specified argument.
      *
-     * @param classname the detailed message for the exception
+     * @param message the detailed message for the exception
      */
-    protected ObjectStreamException(String classname) {
-        super(classname);
+    protected ObjectStreamException(String message) {
+        super(message);
     }
 
     /**

@@ -106,7 +106,7 @@ void G1StringDedup::deduplicate(oop java_string) {
 
 void G1StringDedup::oops_do(OopClosure* keep_alive) {
   assert(is_enabled(), "String deduplication not enabled");
-  unlink_or_oops_do(NULL, keep_alive);
+  unlink_or_oops_do(NULL, keep_alive, true /* allow_resize_and_rehash */);
 }
 
 void G1StringDedup::unlink(BoolObjectClosure* is_alive) {
@@ -123,45 +123,39 @@ void G1StringDedup::unlink(BoolObjectClosure* is_alive) {
 class G1StringDedupUnlinkOrOopsDoTask : public AbstractGangTask {
 private:
   G1StringDedupUnlinkOrOopsDoClosure _cl;
+  G1GCPhaseTimes* _phase_times;
 
 public:
   G1StringDedupUnlinkOrOopsDoTask(BoolObjectClosure* is_alive,
                                   OopClosure* keep_alive,
-                                  bool allow_resize_and_rehash) :
+                                  bool allow_resize_and_rehash,
+                                  G1GCPhaseTimes* phase_times) :
     AbstractGangTask("G1StringDedupUnlinkOrOopsDoTask"),
-    _cl(is_alive, keep_alive, allow_resize_and_rehash) {
-  }
+    _cl(is_alive, keep_alive, allow_resize_and_rehash), _phase_times(phase_times) { }
 
   virtual void work(uint worker_id) {
-    double queue_fixup_start = os::elapsedTime();
-    G1StringDedupQueue::unlink_or_oops_do(&_cl);
-
-    double table_fixup_start = os::elapsedTime();
-    G1StringDedupTable::unlink_or_oops_do(&_cl, worker_id);
-
-    double queue_fixup_time_ms = (table_fixup_start - queue_fixup_start) * 1000.0;
-    double table_fixup_time_ms = (os::elapsedTime() - table_fixup_start) * 1000.0;
-    G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
-    g1p->phase_times()->record_string_dedup_queue_fixup_worker_time(worker_id, queue_fixup_time_ms);
-    g1p->phase_times()->record_string_dedup_table_fixup_worker_time(worker_id, table_fixup_time_ms);
+    {
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::StringDedupQueueFixup, worker_id);
+      G1StringDedupQueue::unlink_or_oops_do(&_cl);
+    }
+    {
+      G1GCParPhaseTimesTracker x(_phase_times, G1GCPhaseTimes::StringDedupTableFixup, worker_id);
+      G1StringDedupTable::unlink_or_oops_do(&_cl, worker_id);
+    }
   }
 };
 
-void G1StringDedup::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* keep_alive, bool allow_resize_and_rehash) {
+void G1StringDedup::unlink_or_oops_do(BoolObjectClosure* is_alive,
+                                      OopClosure* keep_alive,
+                                      bool allow_resize_and_rehash,
+                                      G1GCPhaseTimes* phase_times) {
   assert(is_enabled(), "String deduplication not enabled");
-  G1CollectorPolicy* g1p = G1CollectedHeap::heap()->g1_policy();
-  g1p->phase_times()->note_string_dedup_fixup_start();
-  double fixup_start = os::elapsedTime();
 
-  G1StringDedupUnlinkOrOopsDoTask task(is_alive, keep_alive, allow_resize_and_rehash);
+  G1StringDedupUnlinkOrOopsDoTask task(is_alive, keep_alive, allow_resize_and_rehash, phase_times);
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   g1h->set_par_threads();
   g1h->workers()->run_task(&task);
   g1h->set_par_threads(0);
-
-  double fixup_time_ms = (os::elapsedTime() - fixup_start) * 1000.0;
-  g1p->phase_times()->record_string_dedup_fixup_time(fixup_time_ms);
-  g1p->phase_times()->note_string_dedup_fixup_end();
 }
 
 void G1StringDedup::threads_do(ThreadClosure* tc) {
