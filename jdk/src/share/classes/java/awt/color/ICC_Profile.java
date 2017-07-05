@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ import java.util.StringTokenizer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * A representation of color profile data for device independent and
@@ -90,8 +89,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  */
 
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class ICC_Profile implements Serializable {
 
     private static final long serialVersionUID = -3938515861990936766L;

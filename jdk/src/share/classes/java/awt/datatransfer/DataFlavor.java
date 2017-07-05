@@ -25,7 +25,6 @@
 
 package java.awt.datatransfer;
 
-import java.awt.Toolkit;
 import java.io.*;
 import java.nio.*;
 import java.util.*;
@@ -162,6 +161,18 @@ public class DataFlavor implements Externalizable, Cloneable {
         }
     }
 
+    /*
+     * private initializer
+     */
+    static private DataFlavor initHtmlDataFlavor(String htmlFlavorType) {
+        try {
+            return new DataFlavor ("text/html; class=java.lang.String;document=" +
+                                       htmlFlavorType + ";charset=Unicode");
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /**
      * The <code>DataFlavor</code> representing a Java Unicode String class,
      * where:
@@ -244,6 +255,46 @@ public class DataFlavor implements Externalizable, Cloneable {
      * transferred.
      */
     public static final String javaRemoteObjectMimeType = "application/x-java-remote-object";
+
+    /**
+     * Represents a piece of an HTML markup. The markup consists of the part
+     * selected on the source side. Therefore some tags in the markup may be
+     * unpaired. If the flavor is used to represent the data in
+     * a {@link Transferable} instance, no additional changes will be made.
+     * This DataFlavor instance represents the same HTML markup as DataFlavor
+     * instances which content MIME type does not contain document parameter
+     * and representation class is the String class.
+     * <pre>
+     *     representationClass = String
+     *     mimeType           = "text/html"
+     * </pre>
+     */
+    public static DataFlavor selectionHtmlFlavor = initHtmlDataFlavor("selection");
+
+    /**
+     * Represents a piece of an HTML markup. If possible, the markup received
+     * from a native system is supplemented with pair tags to be
+     * a well-formed HTML markup. If the flavor is used to represent the data in
+     * a {@link Transferable} instance, no additional changes will be made.
+     * <pre>
+     *     representationClass = String
+     *     mimeType           = "text/html"
+     * </pre>
+     */
+    public static DataFlavor fragmentHtmlFlavor = initHtmlDataFlavor("fragment");
+
+    /**
+     * Represents a piece of an HTML markup. If possible, the markup
+     * received from a native system is supplemented with additional
+     * tags to make up a well-formed HTML document. If the flavor is used to
+     * represent the data in a {@link Transferable} instance,
+     * no additional changes will be made.
+     * <pre>
+     *     representationClass = String
+     *     mimeType           = "text/html"
+     * </pre>
+     */
+    public static  DataFlavor allHtmlFlavor = initHtmlDataFlavor("all");
 
     /**
      * Constructs a new <code>DataFlavor</code>.  This constructor is
@@ -949,24 +1000,35 @@ public class DataFlavor implements Externalizable, Cloneable {
                 return false;
             }
 
-            if ("text".equals(getPrimaryType()) &&
-                DataTransferer.doesSubtypeSupportCharset(this) &&
-                representationClass != null &&
-                !(isRepresentationClassReader() ||
-                  String.class.equals(representationClass) ||
-                  isRepresentationClassCharBuffer() ||
-                  DataTransferer.charArrayClass.equals(representationClass)))
-            {
-                String thisCharset =
-                    DataTransferer.canonicalName(getParameter("charset"));
-                String thatCharset =
-                    DataTransferer.canonicalName(that.getParameter("charset"));
-                if (thisCharset == null) {
-                    if (thatCharset != null) {
-                        return false;
+            if ("text".equals(getPrimaryType())) {
+                if (DataTransferer.doesSubtypeSupportCharset(this) &&
+                    representationClass != null &&
+                    !(isRepresentationClassReader() ||
+                        String.class.equals(representationClass) ||
+                        isRepresentationClassCharBuffer() ||
+                        DataTransferer.charArrayClass.equals(representationClass)))
+                {
+                    String thisCharset =
+                        DataTransferer.canonicalName(getParameter("charset"));
+                    String thatCharset =
+                        DataTransferer.canonicalName(that.getParameter("charset"));
+                    if (thisCharset == null) {
+                        if (thatCharset != null) {
+                            return false;
+                        }
+                    } else {
+                        if (!thisCharset.equals(thatCharset)) {
+                            return false;
+                        }
                     }
-                } else {
-                    if (!thisCharset.equals(thatCharset)) {
+                }
+
+                if ("html".equals(getSubType()) &&
+                        this.getParameter("document") != null )
+                {
+                   if (!this.getParameter("document").
+                            equals(that.getParameter("document")))
+                    {
                         return false;
                     }
                 }

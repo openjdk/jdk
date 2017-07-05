@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,20 @@
  */
 package sun.nio.ch.sctp;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * Wraps the actual message or notification so that it can be
  * set and returned from the native receive implementation.
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class ResultContainer {
     /* static final ints so that they can be referenced from native */
-    static final int NOTHING = 0;
-    static final int MESSAGE = 1;
-    static final int SEND_FAILED = 2;
-    static final int ASSOCIATION_CHANGED = 3;
-    static final int PEER_ADDRESS_CHANGED = 4;
-    static final int SHUTDOWN = 5;
+    @Native static final int NOTHING = 0;
+    @Native static final int MESSAGE = 1;
+    @Native static final int SEND_FAILED = 2;
+    @Native static final int ASSOCIATION_CHANGED = 3;
+    @Native static final int PEER_ADDRESS_CHANGED = 4;
+    @Native static final int SHUTDOWN = 5;
 
     private Object value;
     private int type;

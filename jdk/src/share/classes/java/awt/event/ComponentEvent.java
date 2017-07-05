@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.awt.event;
 import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.Rectangle;
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /**
  * A low-level event which indicates that a component moved, changed
@@ -65,8 +65,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @author Carl Quinn
  * @since 1.1
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class ComponentEvent extends AWTEvent {
 
     /**
@@ -82,22 +80,22 @@ public class ComponentEvent extends AWTEvent {
    /**
      * This event indicates that the component's position changed.
      */
-    public static final int COMPONENT_MOVED     = COMPONENT_FIRST;
+    @Native public static final int COMPONENT_MOVED     = COMPONENT_FIRST;
 
     /**
      * This event indicates that the component's size changed.
      */
-    public static final int COMPONENT_RESIZED   = 1 + COMPONENT_FIRST;
+    @Native public static final int COMPONENT_RESIZED   = 1 + COMPONENT_FIRST;
 
     /**
      * This event indicates that the component was made visible.
      */
-    public static final int COMPONENT_SHOWN     = 2 + COMPONENT_FIRST;
+    @Native public static final int COMPONENT_SHOWN     = 2 + COMPONENT_FIRST;
 
     /**
      * This event indicates that the component was rendered invisible.
      */
-    public static final int COMPONENT_HIDDEN    = 3 + COMPONENT_FIRST;
+    @Native public static final int COMPONENT_HIDDEN    = 3 + COMPONENT_FIRST;
 
     /*
      * JDK 1.1 serialVersionUID

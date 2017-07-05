@@ -4862,13 +4862,11 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @since  1.5
      */
     public static int codePointAt(CharSequence seq, int index) {
-        char c1 = seq.charAt(index++);
-        if (isHighSurrogate(c1)) {
-            if (index < seq.length()) {
-                char c2 = seq.charAt(index);
-                if (isLowSurrogate(c2)) {
-                    return toCodePoint(c1, c2);
-                }
+        char c1 = seq.charAt(index);
+        if (isHighSurrogate(c1) && ++index < seq.length()) {
+            char c2 = seq.charAt(index);
+            if (isLowSurrogate(c2)) {
+                return toCodePoint(c1, c2);
             }
         }
         return c1;
@@ -4931,15 +4929,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
         return codePointAtImpl(a, index, limit);
     }
 
-    // throws ArrayIndexOutofBoundsException if index out of bounds
+    // throws ArrayIndexOutOfBoundsException if index out of bounds
     static int codePointAtImpl(char[] a, int index, int limit) {
-        char c1 = a[index++];
-        if (isHighSurrogate(c1)) {
-            if (index < limit) {
-                char c2 = a[index];
-                if (isLowSurrogate(c2)) {
-                    return toCodePoint(c1, c2);
-                }
+        char c1 = a[index];
+        if (isHighSurrogate(c1) && ++index < limit) {
+            char c2 = a[index];
+            if (isLowSurrogate(c2)) {
+                return toCodePoint(c1, c2);
             }
         }
         return c1;
@@ -4968,12 +4964,10 @@ class Character implements java.io.Serializable, Comparable<Character> {
      */
     public static int codePointBefore(CharSequence seq, int index) {
         char c2 = seq.charAt(--index);
-        if (isLowSurrogate(c2)) {
-            if (index > 0) {
-                char c1 = seq.charAt(--index);
-                if (isHighSurrogate(c1)) {
-                    return toCodePoint(c1, c2);
-                }
+        if (isLowSurrogate(c2) && index > 0) {
+            char c1 = seq.charAt(--index);
+            if (isHighSurrogate(c1)) {
+                return toCodePoint(c1, c2);
             }
         }
         return c2;
@@ -5038,15 +5032,13 @@ class Character implements java.io.Serializable, Comparable<Character> {
         return codePointBeforeImpl(a, index, start);
     }
 
-    // throws ArrayIndexOutofBoundsException if index-1 out of bounds
+    // throws ArrayIndexOutOfBoundsException if index-1 out of bounds
     static int codePointBeforeImpl(char[] a, int index, int start) {
         char c2 = a[--index];
-        if (isLowSurrogate(c2)) {
-            if (index > start) {
-                char c1 = a[--index];
-                if (isHighSurrogate(c1)) {
-                    return toCodePoint(c1, c2);
-                }
+        if (isLowSurrogate(c2) && index > start) {
+            char c1 = a[--index];
+            if (isHighSurrogate(c1)) {
+                return toCodePoint(c1, c2);
             }
         }
         return c2;

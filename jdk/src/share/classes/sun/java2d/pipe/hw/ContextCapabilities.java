@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.java2d.pipe.hw;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * Represents a set of capabilities of a BufferedContext and associated
@@ -33,8 +32,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  *
  * @see AccelGraphicsConfig
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class ContextCapabilities {
     /** Indicates that the context has no capabilities. */
     public static final int CAPS_EMPTY             = (0 << 0);

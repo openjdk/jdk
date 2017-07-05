@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Modifier;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -131,9 +132,21 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
     }
 
     private static boolean isAutoConvertibleFromFunction(final Class<?> clazz) {
-        return JavaAdapterFactory.isAbstractClass(clazz) && !ScriptObject.class.isAssignableFrom(clazz) &&
+        return isAbstractClass(clazz) && !ScriptObject.class.isAssignableFrom(clazz) &&
                 JavaAdapterFactory.isAutoConvertibleFromFunction(clazz);
     }
+
+    /**
+     * Utility method used by few other places in the code. Tests if the class has the abstract modifier and is not an
+     * array class. For some reason, array classes have the abstract modifier set in HotSpot JVM, and we don't want to
+     * treat array classes as abstract.
+     * @param clazz the inspected class
+     * @return true if the class is abstract and is not an array type.
+     */
+    static boolean isAbstractClass(final Class<?> clazz) {
+        return Modifier.isAbstract(clazz.getModifiers()) && !clazz.isArray();
+    }
+
 
     @Override
     public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {

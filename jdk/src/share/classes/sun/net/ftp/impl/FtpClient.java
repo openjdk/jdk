@@ -1299,16 +1299,16 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      *         <code>null</code> if the command was unsuccessful.
      * @throws IOException if an error occured during the transmission.
      */
-    public OutputStream putFileStream(String name, boolean unique) throws sun.net.ftp.FtpProtocolException, IOException {
+    public OutputStream putFileStream(String name, boolean unique)
+        throws sun.net.ftp.FtpProtocolException, IOException
+    {
         String cmd = unique ? "STOU " : "STOR ";
         Socket s = openDataConnection(cmd + name);
         if (s == null) {
             return null;
         }
-        if (type == TransferType.BINARY) {
-            return s.getOutputStream();
-        }
-        return new sun.net.TelnetOutputStream(s.getOutputStream(), false);
+        boolean bm = (type == TransferType.BINARY);
+        return new sun.net.TelnetOutputStream(s.getOutputStream(), bm);
     }
 
     /**

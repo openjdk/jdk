@@ -34,12 +34,13 @@
 /*
  * Class:     sun_lwawt_macosx_CDragSourceContextPeer
  * Method:    createNativeDragSource
- * Signature: (Ljava/awt/Component;Ljava/awt/peer/ComponentPeer;JLjava/awt/datatransfer/Transferable;Ljava/awt/event/InputEvent;IIIIJLjava/awt/Cursor;IJIII[JLjava/util/Map;)J
+ * Signature: (Ljava/awt/Component;JLjava/awt/datatransfer/Transferable;
+               Ljava/awt/event/InputEvent;IIIIJIJIII[JLjava/util/Map;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_createNativeDragSource
-  (JNIEnv *env, jobject jthis, jobject jcomponent, jobject jpeer, jlong jnativepeer, jobject jtransferable,
+  (JNIEnv *env, jobject jthis, jobject jcomponent, jlong jnativepeer, jobject jtransferable,
    jobject jtrigger, jint jdragposx, jint jdragposy, jint jextmodifiers, jint jclickcount, jlong jtimestamp,
-   jobject jcursor, jobject jnsdragimage, jint jdragimageoffsetx, jint jdragimageoffsety,
+   jobject jnsdragimage, jint jdragimageoffsetx, jint jdragimageoffsety,
    jint jsourceactions, jlongArray jformats, jobject jformatmap)
 {
     id controlObj = (id) jlong_to_ptr(jnativepeer);
@@ -47,12 +48,22 @@ JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_createNativ
 
 JNF_COCOA_ENTER(env);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        dragSource = [[CDragSource alloc] init:jthis component:jcomponent peer:jpeer control:controlObj
-            transferable:jtransferable triggerEvent:jtrigger dragPosX:jdragposx
-            dragPosY:jdragposy modifiers:jextmodifiers clickCount:jclickcount timeStamp:jtimestamp
-            cursor:jcursor dragImage:jnsdragimage dragImageOffsetX:jdragimageoffsetx
-            dragImageOffsetY:jdragimageoffsety sourceActions:jsourceactions
-            formats:jformats formatMap:jformatmap];
+        dragSource = [[CDragSource alloc] init:jthis
+                                     component:jcomponent
+                                       control:controlObj
+                                  transferable:jtransferable
+                                  triggerEvent:jtrigger
+                                      dragPosX:jdragposx
+                                      dragPosY:jdragposy
+                                     modifiers:jextmodifiers
+                                    clickCount:jclickcount
+                                     timeStamp:jtimestamp
+                                     dragImage:jnsdragimage
+                              dragImageOffsetX:jdragimageoffsetx
+                              dragImageOffsetY:jdragimageoffsety
+                                 sourceActions:jsourceactions
+                                       formats:jformats
+                                     formatMap:jformatmap];
     }];
 JNF_COCOA_EXIT(env);
 
@@ -93,20 +104,4 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_releaseNativ
 JNF_COCOA_ENTER(env);
     [dragSource removeFromView:env];
 JNF_COCOA_EXIT(env);
-}
-
-/*
- * Class:     sun_lwawt_macosx_CDragSourceContextPeer
- * Method:    setNativeCursor
- * Signature: (JLjava/awt/Cursor;I)V
- */
-JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CDragSourceContextPeer_setNativeCursor
-  (JNIEnv *env, jobject jthis, jlong nativeDragSourceVal, jobject jcursor, jint jcursortype)
-{
-   //AWT_ASSERT_NOT_APPKIT_THREAD;
-
-//JNF_COCOA_ENTER(env);
-//    jobject gCursor = JNFNewGlobalRef(env, jcursor);
-//    [EventFactory setJavaCursor:gCursor withEnv:env];
-//JNF_COCOA_EXIT(env);
 }

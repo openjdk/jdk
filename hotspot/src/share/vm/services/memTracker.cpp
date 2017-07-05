@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,12 +127,15 @@ void MemTracker::start() {
   assert(_state == NMT_bootstrapping_multi_thread, "wrong state");
 
   _snapshot = new (std::nothrow)MemSnapshot();
-  if (_snapshot != NULL && !_snapshot->out_of_memory()) {
-    if (start_worker()) {
+  if (_snapshot != NULL) {
+    if (!_snapshot->out_of_memory() && start_worker()) {
       _state = NMT_started;
       NMT_track_callsite = (_tracking_level == NMT_detail && can_walk_stack());
       return;
     }
+
+    delete _snapshot;
+    _snapshot = NULL;
   }
 
   // fail to start native memory tracking, shut it down
@@ -544,7 +547,10 @@ bool MemTracker::start_worker() {
   assert(_worker_thread == NULL, "Just Check");
   _worker_thread = new (std::nothrow) MemTrackWorker();
   if (_worker_thread == NULL || _worker_thread->has_error()) {
-    shutdown(NMT_initialization);
+    if (_worker_thread != NULL) {
+      delete _worker_thread;
+      _worker_thread = NULL;
+    }
     return false;
   }
   _worker_thread->start();

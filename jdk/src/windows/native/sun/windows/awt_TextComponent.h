@@ -28,7 +28,6 @@
 
 #include "awt_Component.h"
 
-#include "java_awt_TextComponent.h"
 #include "sun_awt_windows_WTextComponentPeer.h"
 
 #include <ole2.h>

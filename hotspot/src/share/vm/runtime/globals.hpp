@@ -2123,6 +2123,10 @@ class CommandLineFlags {
   product(intx, PrefetchFieldsAhead, -1,                                    \
           "How many fields ahead to prefetch in oop scan (<= 0 means off)") \
                                                                             \
+  diagnostic(bool, VerifyDuringStartup, false,                              \
+          "Verify memory system before executing any Java code "            \
+          "during VM initialization")                                       \
+                                                                            \
   diagnostic(bool, VerifyBeforeExit, trueInDebug,                           \
           "Verify system before exiting")                                   \
                                                                             \
@@ -3664,8 +3668,13 @@ class CommandLineFlags {
   product(bool, PrintGCCause, true,                                         \
           "Include GC cause in GC logging")                                 \
                                                                             \
-  product(bool, AllowNonVirtualCalls, false,                                \
-          "Obey the ACC_SUPER flag and allow invokenonvirtual calls")
+  product(bool , AllowNonVirtualCalls, false,                               \
+          "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
+                                                                            \
+  experimental(uintx, ArrayAllocatorMallocLimit,                            \
+          SOLARIS_ONLY(64*K) NOT_SOLARIS(max_uintx),                        \
+          "Allocation less than this value will be allocated "              \
+          "using malloc. Larger allocations will use mmap.")
 
 /*
  *  Macros for factoring of globals

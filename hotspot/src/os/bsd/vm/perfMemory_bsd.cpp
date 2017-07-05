@@ -672,15 +672,15 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
   RESTARTABLE(::open(filename, oflags), result);
   if (result == OS_ERR) {
     if (errno == ENOENT) {
-      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                  "Process not found");
+      THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
+                  "Process not found", OS_ERR);
     }
     else if (errno == EACCES) {
-      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                  "Permission denied");
+      THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
+                  "Permission denied", OS_ERR);
     }
     else {
-      THROW_MSG_0(vmSymbols::java_io_IOException(), strerror(errno));
+      THROW_MSG_(vmSymbols::java_io_IOException(), strerror(errno), OS_ERR);
     }
   }
 
@@ -828,7 +828,7 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
   char* mapAddress;
   int result;
   int fd;
-  size_t size;
+  size_t size = 0;
   const char* luser = NULL;
 
   int mmap_prot;
@@ -899,8 +899,11 @@ static void mmap_attach_shared(const char* user, int vmid, PerfMemory::PerfMemor
 
   if (*sizep == 0) {
     size = sharedmem_filesize(fd, CHECK);
-    assert(size != 0, "unexpected size");
+  } else {
+    size = *sizep;
   }
+
+  assert(size > 0, "unexpected size <= 0");
 
   mapAddress = (char*)::mmap((char*)0, size, mmap_prot, MAP_SHARED, fd, 0);
 

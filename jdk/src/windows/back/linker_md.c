@@ -39,38 +39,27 @@
 #include "path_md.h"
 
 static void dll_build_name(char* buffer, size_t buflen,
-                           const char* pname, const char* fname) {
-    // Based on os_windows.cpp
+                           const char* paths, const char* fname) {
+    char *path, *paths_copy, *next_token;
 
-    char *path_sep = PATH_SEPARATOR;
-    char *pathname = (char *)pname;
-    *buffer = '\0';
-    while (strlen(pathname) > 0) {
-        char *p = strchr(pathname, *path_sep);
-        if (p == NULL) {
-            p = pathname + strlen(pathname);
-        }
-        /* check for NULL path */
-        if (p == pathname) {
-            continue;
-        }
-        if (*(p-1) == ':' || *(p-1) == '\\') {
-            (void)_snprintf(buffer, buflen, "%.*s%s.dll", (int)(p - pathname),
-                            pathname, fname);
-        } else {
-            (void)_snprintf(buffer, buflen, "%.*s\\%s.dll", (int)(p - pathname),
-                            pathname, fname);
-        }
+    paths_copy = strdup(paths);
+    if (paths_copy == NULL) {
+        return;
+    }
+
+    next_token = NULL;
+    path = strtok_s(paths_copy, PATH_SEPARATOR, &next_token);
+
+    while (path != NULL) {
+        _snprintf(buffer, buflen, "%s\\%s.dll", path, fname);
         if (_access(buffer, 0) == 0) {
             break;
         }
-        if (*p == '\0') {
-            pathname = p;
-        } else {
-            pathname = p + 1;
-        }
         *buffer = '\0';
+        path = strtok_s(NULL, PATH_SEPARATOR, &next_token);
     }
+
+    free(paths_copy);
 }
 
 /*
@@ -113,7 +102,7 @@ dbgsysGetLastErrorString(char *buf, int len)
  * Build a machine dependent library name out of a path and file name.
  */
 void
-dbgsysBuildLibName(char *holder, int holderlen, char *pname, char *fname)
+dbgsysBuildLibName(char *holder, int holderlen, const char *pname, const char *fname)
 {
     const int pnamelen = pname ? (int)strlen(pname) : 0;
 
