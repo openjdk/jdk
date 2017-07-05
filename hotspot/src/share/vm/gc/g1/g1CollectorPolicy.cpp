@@ -269,6 +269,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _reserve_regions = 0;
 
   _cset_chooser = new CollectionSetChooser();
+
+  _ihop_control = create_ihop_control();
 }
 
 G1CollectorPolicy::~G1CollectorPolicy() {
@@ -469,8 +471,6 @@ void G1CollectorPolicy::post_heap_initialize() {
   if (max_young_size != MaxNewSize) {
     FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
   }
-
-  _ihop_control = create_ihop_control();
 }
 
 void G1CollectorPolicy::initialize_flags() {
@@ -565,6 +565,8 @@ void G1CollectorPolicy::record_new_heap_size(uint new_number_of_regions) {
   _reserve_regions = (uint) ceil(reserve_regions_d);
 
   _young_gen_sizer->heap_size_changed(new_number_of_regions);
+
+  _ihop_control->update_target_occupancy(new_number_of_regions * HeapRegion::GrainBytes);
 }
 
 uint G1CollectorPolicy::calculate_young_list_desired_min_length(
@@ -1234,13 +1236,11 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
 G1IHOPControl* G1CollectorPolicy::create_ihop_control() const {
   if (G1UseAdaptiveIHOP) {
     return new G1AdaptiveIHOPControl(InitiatingHeapOccupancyPercent,
-                                     G1CollectedHeap::heap()->max_capacity(),
                                      &_predictor,
                                      G1ReservePercent,
                                      G1HeapWastePercent);
   } else {
-    return new G1StaticIHOPControl(InitiatingHeapOccupancyPercent,
-                                   G1CollectedHeap::heap()->max_capacity());
+    return new G1StaticIHOPControl(InitiatingHeapOccupancyPercent);
   }
 }
 
