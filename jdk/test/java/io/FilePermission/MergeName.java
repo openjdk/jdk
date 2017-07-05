@@ -37,6 +37,13 @@ import java.util.stream.IntStream;
  * @bug 8170364
  * @summary FilePermission path modified during merge
  * @library /test/lib
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
+ * @run main MergeName
  */
 
 public class MergeName {

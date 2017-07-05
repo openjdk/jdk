@@ -95,6 +95,7 @@ package java.text;
  * @see          Collator
  * @see          RuleBasedCollator
  * @author       Helena Shih
+ * @since 1.1
  */
 
 public abstract class CollationKey implements Comparable<CollationKey> {

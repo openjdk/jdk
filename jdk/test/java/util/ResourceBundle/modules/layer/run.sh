@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,9 @@
 #
 
 # @test
-# @build OtherResources
-# @run shell other_resources.sh
-# @summary Access a jrt:/ resource in an observable module that is not in
-#  the boot layer and hence not known to the built-in class loaders. This
-#  test is a shell test because the run tag doesn't support --limit-modules.
+# @bug 8180375
+# @summary Tests resource bundles are correctly loaded from
+#   modules through "<packageName>.spi.<simpleName>Provider" types.
 
 set -e
 
@@ -38,8 +36,17 @@ if [ -z "$TESTJAVA" ]; then
   TESTCLASSES="`pwd`"
 fi
 
-JAVA="$TESTJAVA/bin/java ${TESTVMOPTS}"
-$JAVA --limit-modules java.base -cp $TESTCLASSES OtherResources
+JAVAC="$COMPILEJAVA/bin/javac"
+JAVA="$TESTJAVA/bin/java"
 
-exit 0
+rm -rf mods
+$JAVAC --module-source-path $TESTSRC/src -d mods --module m1,m2
 
+mkdir -p mods/m1/p/resources mods/m2/p/resources
+cp $TESTSRC/src/m1/p/resources/*.properties mods/m1/p/resources
+cp $TESTSRC/src/m2/p/resources/*.properties mods/m2/p/resources
+
+mkdir classes
+$JAVAC -d classes $TESTSRC/src/Main.java
+
+$JAVA -cp classes Main

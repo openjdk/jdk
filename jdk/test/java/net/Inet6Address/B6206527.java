@@ -26,6 +26,8 @@
  * @bug 6206527
  * @summary "cannot assign address" when binding ServerSocket on Suse 9
  * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  * @run main B6206527
  */
 

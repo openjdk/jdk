@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@ package org.omg.CORBA;
  * what caused the exception, and a completion status. It may also contain
  * a string describing the exception.
  * <P>
- * See the section <A href="../../../../technotes/guides/idl/jidlExceptions.html#minorcodemeanings">meaning
- * of minor codes</A> to see the minor codes for this exception.
+ * See the section {@extLink jidlexception_minorcodes Minor Code Meanings}
+ * to see the minor codes for this exception.
  *
- * @see <A href="../../../../technotes/guides/idl/jidlExceptions.html#minorcodemeanings">meaning of
- * minor codes</A>
+ * <p>See also {@extLink jidlexception documentation on Java&nbsp;IDL exceptions}.
+ * </p>
  * @since       JDK1.2
  */
 

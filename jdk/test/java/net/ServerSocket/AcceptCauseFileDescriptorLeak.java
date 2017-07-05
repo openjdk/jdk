@@ -30,8 +30,12 @@
  *          can cause fd leak
  * @requires (os.family != "windows")
  * @library /test/lib
- * @build jdk.test.lib.JDKToolFinder
- *        jdk.test.lib.process.OutputAnalyzer
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  *        AcceptCauseFileDescriptorLeak
  * @run main/othervm AcceptCauseFileDescriptorLeak root
  */
