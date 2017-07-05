@@ -302,6 +302,7 @@ class JMXStartRemoteDCmd : public DCmdWithParser {
   DCmdArgument<char *> _jdp_source_addr;
   DCmdArgument<jlong>  _jdp_ttl;
   DCmdArgument<jlong>  _jdp_pause;
+  DCmdArgument<char *> _jdp_name;
 
 public:
   JMXStartRemoteDCmd(outputStream *output, bool heap_allocated);

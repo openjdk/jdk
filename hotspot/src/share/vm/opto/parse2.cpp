@@ -1366,6 +1366,56 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
   }
 }
 
+/**
+ * Use speculative type to optimize CmpP node: if comparison is
+ * against the low level class, cast the object to the speculative
+ * type if any. CmpP should then go away.
+ *
+ * @param c  expected CmpP node
+ * @return   result of CmpP on object casted to speculative type
+ *
+ */
+Node* Parse::optimize_cmp_with_klass(Node* c) {
+  // If this is transformed by the _gvn to a comparison with the low
+  // level klass then we may be able to use speculation
+  if (c->Opcode() == Op_CmpP &&
+      (c->in(1)->Opcode() == Op_LoadKlass || c->in(1)->Opcode() == Op_DecodeNKlass) &&
+      c->in(2)->is_Con()) {
+    Node* load_klass = NULL;
+    Node* decode = NULL;
+    if (c->in(1)->Opcode() == Op_DecodeNKlass) {
+      decode = c->in(1);
+      load_klass = c->in(1)->in(1);
+    } else {
+      load_klass = c->in(1);
+    }
+    if (load_klass->in(2)->is_AddP()) {
+      Node* addp = load_klass->in(2);
+      Node* obj = addp->in(AddPNode::Address);
+      const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
+      if (obj_type->speculative_type() != NULL) {
+        ciKlass* k = obj_type->speculative_type();
+        inc_sp(2);
+        obj = maybe_cast_profiled_obj(obj, k);
+        dec_sp(2);
+        // Make the CmpP use the casted obj
+        addp = basic_plus_adr(obj, addp->in(AddPNode::Offset));
+        load_klass = load_klass->clone();
+        load_klass->set_req(2, addp);
+        load_klass = _gvn.transform(load_klass);
+        if (decode != NULL) {
+          decode = decode->clone();
+          decode->set_req(1, load_klass);
+          load_klass = _gvn.transform(decode);
+        }
+        c = c->clone();
+        c->set_req(1, load_klass);
+        c = _gvn.transform(c);
+      }
+    }
+  }
+  return c;
+}
 
 //------------------------------do_one_bytecode--------------------------------
 // Parse this bytecode, and alter the Parsers JVM->Node mapping
@@ -2239,6 +2289,7 @@ void Parse::do_one_bytecode() {
     a = pop();
     b = pop();
     c = _gvn.transform( new (C) CmpPNode(b, a) );
+    c = optimize_cmp_with_klass(c);
     do_if(btest, c);
     break;
 
