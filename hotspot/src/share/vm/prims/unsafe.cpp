@@ -42,9 +42,11 @@
  *      Implementation of class sun.misc.Unsafe
  */
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL3(hotspot, thread__park__begin, uintptr_t, int, long long);
 HS_DTRACE_PROBE_DECL1(hotspot, thread__park__end, uintptr_t);
 HS_DTRACE_PROBE_DECL1(hotspot, thread__unpark, uintptr_t);
+#endif /* !USDT2 */
 
 #define MAX_OBJECT_SIZE \
   ( arrayOopDesc::header_size(T_DOUBLE) * HeapWordSize \
@@ -1187,10 +1189,20 @@ UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute, jlong time))
   UnsafeWrapper("Unsafe_Park");
+#ifndef USDT2
   HS_DTRACE_PROBE3(hotspot, thread__park__begin, thread->parker(), (int) isAbsolute, time);
+#else /* USDT2 */
+   HOTSPOT_THREAD_PARK_BEGIN(
+                             (uintptr_t) thread->parker(), (int) isAbsolute, time);
+#endif /* USDT2 */
   JavaThreadParkedState jtps(thread, time != 0);
   thread->parker()->park(isAbsolute != 0, time);
+#ifndef USDT2
   HS_DTRACE_PROBE1(hotspot, thread__park__end, thread->parker());
+#else /* USDT2 */
+  HOTSPOT_THREAD_PARK_END(
+                          (uintptr_t) thread->parker());
+#endif /* USDT2 */
 UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread))
@@ -1222,7 +1234,12 @@ UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread))
     }
   }
   if (p != NULL) {
+#ifndef USDT2
     HS_DTRACE_PROBE1(hotspot, thread__unpark, p);
+#else /* USDT2 */
+    HOTSPOT_THREAD_UNPARK(
+                          (uintptr_t) p);
+#endif /* USDT2 */
     p->unpark();
   }
 UNSAFE_END

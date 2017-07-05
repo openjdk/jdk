@@ -52,6 +52,8 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
     private boolean useGCC32ABI;
     private boolean attached;
     private long    p_ps_prochandle; // native debugger handle
+    private long    symbolicator; // macosx symbolicator handle
+    private long    task; // macosx task handle
     private boolean isCore;
 
     // CDebugger support

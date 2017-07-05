@@ -956,7 +956,7 @@ public class SPARCFrame extends Frame {
     map.makeIntegerRegsUnsaved();
     map.shiftWindow(sp, youngerSP);
     boolean thisFrameAdjustedStack = true;  // I5_savedSP is live in this RF
-    return new SPARCFrame(sp, youngerSP, thisFrameAdjustedStack);
+    return new SPARCFrame(biasSP(sp), biasSP(youngerSP), thisFrameAdjustedStack);
   }
 
   private Frame senderForEntryFrame(RegisterMap regMap) {

@@ -88,7 +88,7 @@ class ciMethod : public ciObject {
 #endif
 
   ciMethod(methodHandle h_m);
-  ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature);
+  ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature, ciInstanceKlass* accessor);
 
   methodOop get_methodOop() const {
     methodOop m = (methodOop)get_oop();
