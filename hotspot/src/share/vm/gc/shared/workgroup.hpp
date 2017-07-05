@@ -176,6 +176,9 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   // Return the Ith worker.
   AbstractGangWorker* worker(uint i) const;
 
+  // Base name (without worker id #) of threads.
+  const char* group_name() { return name(); }
+
   void threads_do(ThreadClosure* tc) const;
 
   // Create a GC worker and install it into the work gang.

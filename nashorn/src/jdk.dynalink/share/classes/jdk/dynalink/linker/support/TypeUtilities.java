@@ -138,7 +138,7 @@ public final class TypeUtilities {
      * Determines whether one type can be converted to another type using a method invocation conversion, as per JLS 5.3
      * "Method Invocation Conversion". This is basically all conversions allowed by subtyping (see
      * {@link #isSubtype(Class, Class)}) as well as boxing conversion (JLS 5.1.7) optionally followed by widening
-     * reference conversion and unboxing conversion (JLS 5.1.8) optionally followed by widening primitive conversion.
+     * reference conversion, and unboxing conversion (JLS 5.1.8) optionally followed by widening primitive conversion.
      *
      * @param sourceType the type being converted from (call site type for parameter types, method type for return types)
      * @param targetType the parameter type being converted to (method type for parameter types, call site type for return types)

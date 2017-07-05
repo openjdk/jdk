@@ -576,27 +576,27 @@ void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code byt
   // compute auxiliary field attributes
   TosState state  = as_TosState(info.field_type());
 
-  // We need to delay resolving put instructions on final fields
-  // until we actually invoke one. This is required so we throw
-  // exceptions at the correct place. If we do not resolve completely
-  // in the current pass, leaving the put_code set to zero will
-  // cause the next put instruction to reresolve.
-  Bytecodes::Code put_code = (Bytecodes::Code)0;
-
-  // We also need to delay resolving getstatic instructions until the
-  // class is intitialized.  This is required so that access to the static
+  // Put instructions on final fields are not resolved. This is required so we throw
+  // exceptions at the correct place (when the instruction is actually invoked).
+  // If we do not resolve an instruction in the current pass, leaving the put_code
+  // set to zero will cause the next put instruction to the same field to reresolve.
+  //
+  // Also, we need to delay resolving getstatic and putstatic instructions until the
+  // class is initialized.  This is required so that access to the static
   // field will call the initialization function every time until the class
   // is completely initialized ala. in 2.17.5 in JVM Specification.
   InstanceKlass* klass = InstanceKlass::cast(info.field_holder());
   bool uninitialized_static = ((bytecode == Bytecodes::_getstatic || bytecode == Bytecodes::_putstatic) &&
                                !klass->is_initialized());
-  Bytecodes::Code get_code = (Bytecodes::Code)0;
 
+  Bytecodes::Code put_code = (Bytecodes::Code)0;
+  if (is_put && !info.access_flags().is_final() && !uninitialized_static) {
+    put_code = ((is_static) ? Bytecodes::_putstatic : Bytecodes::_putfield);
+  }
+
+  Bytecodes::Code get_code = (Bytecodes::Code)0;
   if (!uninitialized_static) {
     get_code = ((is_static) ? Bytecodes::_getstatic : Bytecodes::_getfield);
-    if (is_put || !info.access_flags().is_final()) {
-      put_code = ((is_static) ? Bytecodes::_putstatic : Bytecodes::_putfield);
-    }
   }
 
   cp_cache_entry->set_field(

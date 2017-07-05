@@ -1049,7 +1049,7 @@ class LambdaForm {
             this.member = member;
             this.resolvedHandle = resolvedHandle;
              // The following assert is almost always correct, but will fail for corner cases, such as PrivateInvokeTest.
-             //assert(!isInvokeBasic());
+             //assert(!isInvokeBasic(member));
         }
         NamedFunction(MethodType basicInvokerType) {
             assert(basicInvokerType == basicInvokerType.basicType()) : basicInvokerType;
@@ -1060,13 +1060,13 @@ class LambdaForm {
                 // necessary to pass BigArityTest
                 this.member = Invokers.invokeBasicMethod(basicInvokerType);
             }
-            assert(isInvokeBasic());
+            assert(isInvokeBasic(member));
         }
 
-        private boolean isInvokeBasic() {
+        private static boolean isInvokeBasic(MemberName member) {
             return member != null &&
-                   member.isMethodHandleInvoke() &&
-                   "invokeBasic".equals(member.getName());
+                   member.getDeclaringClass() == MethodHandle.class &&
+                  "invokeBasic".equals(member.getName());
         }
 
         // The next 2 constructors are used to break circular dependencies on MH.invokeStatic, etc.
@@ -1204,7 +1204,7 @@ class LambdaForm {
             assert(mh.type().basicType() == MethodType.genericMethodType(arity).changeReturnType(rtype))
                     : Arrays.asList(mh, rtype, arity);
             MemberName member = mh.internalMemberName();
-            if (member != null && member.getName().equals("invokeBasic") && member.isMethodHandleInvoke()) {
+            if (isInvokeBasic(member)) {
                 assert(arity > 0);
                 assert(a[0] instanceof MethodHandle);
                 MethodHandle mh2 = (MethodHandle) a[0];

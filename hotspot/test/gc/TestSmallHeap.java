@@ -27,6 +27,7 @@
  * @requires vm.gc=="null"
  * @summary Verify that starting the VM with a small heap works
  * @library /testlibrary /test/lib /test/lib/share/classes
+ * @ignore 8161552
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management
  * @build TestSmallHeap

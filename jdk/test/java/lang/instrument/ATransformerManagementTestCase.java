@@ -302,6 +302,7 @@ ATransformerManagementTestCase
         public byte[]
         transform(
             Module module,
+            ClassLoader loader,
             String className,
             Class<?> classBeingRedefined,
             ProtectionDomain    protectionDomain,
@@ -311,6 +312,7 @@ ATransformerManagementTestCase
             if (classBeingRedefined != null) checkInTransformer(MyClassFileTransformer.this);
 
             return super.transform(     module,
+                                        loader,
                                         className,
                                         classBeingRedefined,
                                         protectionDomain,
