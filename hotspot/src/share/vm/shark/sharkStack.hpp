@@ -204,7 +204,7 @@ class SharkStack : public SharkCompileInvariants {
   // Addresses of things in the frame
  public:
   llvm::Value* slot_addr(int               offset,
-                         const llvm::Type* type = NULL,
+                         llvm::Type* type = NULL,
                          const char*       name = "") const;
 
   llvm::Value* monitor_addr(int index) const {

@@ -350,7 +350,7 @@ void Parse::do_call() {
   // Set frequently used booleans
   const bool is_virtual = bc() == Bytecodes::_invokevirtual;
   const bool is_virtual_or_interface = is_virtual || bc() == Bytecodes::_invokeinterface;
-  const bool has_receiver = is_virtual_or_interface || bc() == Bytecodes::_invokespecial;
+  const bool has_receiver = Bytecodes::has_receiver(bc());
 
   // Find target being called
   bool             will_link;
@@ -380,6 +380,8 @@ void Parse::do_call() {
   // Note:  In the absence of miranda methods, an abstract class K can perform
   // an invokevirtual directly on an interface method I.m if K implements I.
 
+  // orig_callee is the resolved callee which's signature includes the
+  // appendix argument.
   const int nargs = orig_callee->arg_size();
 
   // Push appendix argument (MethodType, CallSite, etc.), if one.
@@ -572,7 +574,7 @@ void Parse::do_call() {
       }
       // If there is going to be a trap, put it at the next bytecode:
       set_bci(iter().next_bci());
-      do_null_assert(peek(), T_OBJECT);
+      null_assert(peek());
       set_bci(iter().cur_bci()); // put it back
     }
   }

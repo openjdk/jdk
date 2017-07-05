@@ -573,7 +573,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
               (n2lidx(def) && !liveout.member(n2lidx(def)) ) ) {
             b->_nodes.remove(j - 1);
             if( lrgs(r)._def == n ) lrgs(r)._def = 0;
-            n->disconnect_inputs(NULL);
+            n->disconnect_inputs(NULL, C);
             _cfg._bbs.map(n->_idx,NULL);
             n->replace_by(C->top());
             // Since yanking a Node from block, high pressure moves up one

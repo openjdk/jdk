@@ -513,7 +513,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
           }
           adjust_block_start += diff;
           b->_nodes.map(idx, replacement);
-          mach->subsume_by(replacement);
+          mach->subsume_by(replacement, C);
           mach = replacement;
           progress = true;
 
@@ -1425,7 +1425,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
               jmp_rule[i]   = mach->rule();
 #endif
               b->_nodes.map(j, replacement);
-              mach->subsume_by(replacement);
+              mach->subsume_by(replacement, C);
               n    = replacement;
               mach = replacement;
             }
