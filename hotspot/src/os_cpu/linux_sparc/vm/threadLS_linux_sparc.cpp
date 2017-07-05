@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#include "thread_linux.inline.hpp"
 
 void ThreadLocalStorage::generate_code_for_get_thread() {
 }
