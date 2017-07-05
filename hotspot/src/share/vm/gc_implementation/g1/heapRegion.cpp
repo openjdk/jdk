@@ -290,7 +290,7 @@ void HeapRegion::setup_heap_region_size(uintx min_heap_size) {
   // Recalculate the region size to make sure it's a power of
   // 2. This means that region_size is the largest power of 2 that's
   // <= what we've calculated so far.
-  region_size = 1 << region_size_log;
+  region_size = ((uintx)1 << region_size_log);
 
   // Now make sure that we don't go over or under our limits.
   if (region_size < MIN_REGION_SIZE) {
