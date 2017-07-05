@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ package com.sun.jdi;
  * value hierarchy encompassing primitive values and object values.
  * <P>
  * Some examples of where values may be accessed:
- * <BLOCKQUOTE><TABLE SUMMARY="layout">
+ * <BLOCKQUOTE><TABLE><CAPTION style="display:none">layout</CAPTION>
  * <TR>
  *   <TD>{@link ObjectReference#getValue(com.sun.jdi.Field)
  *                 ObjectReference.getValue(Field)}
@@ -52,15 +52,16 @@ package com.sun.jdi;
  * <P>
  * The following table illustrates which subinterfaces of Value
  * are used to mirror values in the target VM --
- * <TABLE BORDER=1 SUMMARY="Maps each kind of value to a mirrored
- *  instance of a subinterface of Value">
- * <TR BGCOLOR="#EEEEFF">
+ * <TABLE BORDER="1">
+ * <CAPTION style="display:none">Maps each kind of value to a mirrored
+ *  instance of a subinterface of Value</CAPTION>
+ * <TR style="background-color:#EEEEFF">
  *   <TH id="primval" colspan=4>Subinterfaces of {@link PrimitiveValue}</TH>
- * <TR BGCOLOR="#EEEEFF">
- *   <TH id="kind"     align="left">Kind of value</TH>
- *   <TH id="example"  align="left">For example -<br>expression in target</TH>
- *   <TH id="mirrored" align="left">Is mirrored as an<br>instance of</TH>
- *   <TH id="type"     align="left">{@link Type} of value<br>{@link #type() Value.type()}</TH>
+ * <TR style="background-color:#EEEEFF">
+ *   <TH id="kind"     style="text-align:left">Kind of value</TH>
+ *   <TH id="example"  style="text-align:left">For example -<br>expression in target</TH>
+ *   <TH id="mirrored" style="text-align:left">Is mirrored as an<br>instance of</TH>
+ *   <TH id="type"     style="text-align:left">{@link Type} of value<br>{@link #type() Value.type()}</TH>
  * <TR>
  *   <TD headers="primval kind">     a boolean</TD>
  *   <TD headers="primval example">  {@code true}</TD>
@@ -106,13 +107,13 @@ package com.sun.jdi;
  *   <TD headers="primval example">  </TD>
  *   <TD headers="primval mirrored"> {@link VoidValue}</TD>
  *   <TD headers="primval type">     {@link VoidType}</TD>
- * <TR BGCOLOR="#EEEEFF">
+ * <TR style="background-color:#EEEEFF">
  *   <TH id="objref" colspan=4>Subinterfaces of {@link ObjectReference}</TH>
- * <TR BGCOLOR="#EEEEFF">
- *   <TH id="kind2"     align="left">Kind of value</TH>
- *   <TH id="example2"  align="left">For example -<br>expression in target</TH>
- *   <TH id="mirrored2" align="left">Is mirrored as an<br>instance of</TH>
- *   <TH id="type2"     align="left">{@link Type} of value<br>{@link #type() Value.type()}</TH>
+ * <TR style="background-color:#EEEEFF">
+ *   <TH id="kind2"     style="text-align:left">Kind of value</TH>
+ *   <TH id="example2"  style="text-align:left">For example -<br>expression in target</TH>
+ *   <TH id="mirrored2" style="text-align:left">Is mirrored as an<br>instance of</TH>
+ *   <TH id="type2"     style="text-align:left">{@link Type} of value<br>{@link #type() Value.type()}</TH>
  * <TR>
  *   <TD headers="objref kind2">     a class instance</TD>
  *   <TD headers="objref example2">  {@code this}</TD>
@@ -148,13 +149,13 @@ package com.sun.jdi;
  *   <TD headers="objref example2">  {@code this.getClass()}<br>&nbsp;&nbsp;{@code .getClassLoader()}</TD>
  *   <TD headers="objref mirrored2"> {@link ClassLoaderReference}</TD>
  *   <TD headers="objref type2">     {@link ClassType}</TD>
- * <TR BGCOLOR="#EEEEFF">
+ * <TR style="background-color:#EEEEFF">
  *   <TH id="other" colspan=4>Other</TH>
- * <TR BGCOLOR="#EEEEFF">
- *   <TD id="kind3"     align="left">Kind of value</TD>
- *   <TD id="example3"  align="left">For example -<br>expression in target</TD>
- *   <TD id="mirrored3" align="left">Is mirrored as</TD>
- *   <TD id="type3"     align="left">{@link Type} of value</TD>
+ * <TR style="background-color:#EEEEFF">
+ *   <TD id="kind3"     style="text-align:left">Kind of value</TD>
+ *   <TD id="example3"  style="text-align:left">For example -<br>expression in target</TD>
+ *   <TD id="mirrored3" style="text-align:left">Is mirrored as</TD>
+ *   <TD id="type3"     style="text-align:left">{@link Type} of value</TD>
  * <TR>
  *   <TD headers="other kind3">     null</TD>
  *   <TD headers="other example3">  {@code null}</TD>

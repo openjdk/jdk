@@ -478,13 +478,13 @@ public class Basic {
             "--file=" + modularJar.toString())
             .assertSuccess()
             .resultChecker(r -> {
-                // Expect similar output: "bar, requires mandated foo, ...
+                // Expect "bar jar:file:/.../!module-info.class"
                 // conceals jdk.test.foo, conceals jdk.test.foo.internal"
-                Pattern p = Pattern.compile("module bar \\(module-info.class\\)\\s+requires\\s++foo");
-                assertTrue(p.matcher(r.output).find(),
-                           "Expecting to find \"bar, requires foo,...\"",
+                String uri = "jar:" + modularJar.toUri().toString() + "/!module-info.class";
+                assertTrue(r.output.contains("bar " + uri),
+                           "Expecting to find \"bar " + uri + "\"",
                            "in output, but did not: [" + r.output + "]");
-                p = Pattern.compile(
+                Pattern p = Pattern.compile(
                         "contains\\s+jdk.test.foo\\s+contains\\s+jdk.test.foo.internal");
                 assertTrue(p.matcher(r.output).find(),
                            "Expecting to find \"contains jdk.test.foo,...\"",
@@ -758,14 +758,15 @@ public class Basic {
         for (String option : new String[]  {"--describe-module", "-d" }) {
 
             jar(option,
-                "--file=" + modularJar.toString())
+                "--file=" + modularJar.toString(),
+                "--release", "9")
                 .assertSuccess()
                 .resultChecker(r ->
                     assertTrue(r.output.contains("main-class jdk.test.baz.Baz"),
                               "Expected to find ", "main-class jdk.test.baz.Baz",
                                " in [", r.output, "]"));
 
-            jarWithStdin(modularJar.toFile(),  option)
+            jarWithStdin(modularJar.toFile(), option, "--release", "9")
                 .assertSuccess()
                 .resultChecker(r ->
                     assertTrue(r.output.contains("main-class jdk.test.baz.Baz"),
@@ -773,7 +774,7 @@ public class Basic {
                                " in [", r.output, "]"));
 
         }
-        // run module maain class
+        // run module main class
         java(mp, "baz/jdk.test.baz.Baz")
             .assertSuccess()
             .resultChecker(r ->
@@ -900,7 +901,7 @@ public class Basic {
                 .resultChecker(r -> {
                     assertTrue(r.output.contains("No module descriptor found"));
                     assertTrue(r.output.contains("Derived automatic module"));
-                    assertTrue(r.output.contains("module " + mid),
+                    assertTrue(r.output.contains(mid + " automatic"),
                                "Expected [", "module " + mid,"] in [", r.output, "]");
                     }
                 );

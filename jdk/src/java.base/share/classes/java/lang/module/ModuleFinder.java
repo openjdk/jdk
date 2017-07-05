@@ -286,8 +286,9 @@ public interface ModuleFinder {
      *     class names of provider classes. </p></li>
      *
      *     <li><p> If the JAR file has a {@code Main-Class} attribute in its
-     *     main manifest then its value is the module {@link
-     *     ModuleDescriptor#mainClass() main class}. </p></li>
+     *     main manifest, its value is a legal class name, and its package is
+     *     in the set of packages derived for the module, then the value is the
+     *     module {@linkplain ModuleDescriptor#mainClass() main class}. </p></li>
      *
      * </ul>
      *
@@ -298,8 +299,7 @@ public interface ModuleFinder {
      * file, where the JAR file contains a {@code .class} in the top-level
      * directory of the JAR file, where an entry in a service configuration
      * file is not a legal class name or its package name is not in the set of
-     * packages derived for the module, or where the module main class is not
-     * a legal class name or its package is not in the module. </p>
+     * packages derived for the module. </p>
      *
      * <p> In addition to JAR files, an implementation may also support modules
      * that are packaged in other implementation specific module formats. If

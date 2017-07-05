@@ -58,7 +58,7 @@ public class Sequence {
      *
      * @see #Sequence(float, int)
      */
-    public static final float PPQ                                                       = 0.0f;
+    public static final float PPQ = 0.0f;
 
     /**
      * The SMPTE-based timing type with 24 frames per second (resolution is
@@ -66,7 +66,7 @@ public class Sequence {
      *
      * @see #Sequence(float, int)
      */
-    public static final float SMPTE_24                                          = 24.0f;
+    public static final float SMPTE_24 = 24.0f;
 
     /**
      * The SMPTE-based timing type with 25 frames per second (resolution is
@@ -74,7 +74,7 @@ public class Sequence {
      *
      * @see #Sequence(float, int)
      */
-    public static final float SMPTE_25                                          = 25.0f;
+    public static final float SMPTE_25 = 25.0f;
 
     /**
      * The SMPTE-based timing type with 29.97 frames per second (resolution is
@@ -82,7 +82,7 @@ public class Sequence {
      *
      * @see #Sequence(float, int)
      */
-    public static final float SMPTE_30DROP                                      = 29.97f;
+    public static final float SMPTE_30DROP = 29.97f;
 
     /**
      * The SMPTE-based timing type with 30 frames per second (resolution is
@@ -90,7 +90,7 @@ public class Sequence {
      *
      * @see #Sequence(float, int)
      */
-    public static final float SMPTE_30                                          = 30.0f;
+    public static final float SMPTE_30 = 30.0f;
 
     // Variables
 

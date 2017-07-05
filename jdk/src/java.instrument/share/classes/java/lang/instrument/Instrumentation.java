@@ -729,7 +729,8 @@ public interface Instrumentation {
      * Tests whether a module can be modified with {@link #redefineModule
      * redefineModule}. If a module is modifiable then this method returns
      * {@code true}. If a module is not modifiable then this method returns
-     * {@code false}.
+     * {@code false}. This method always returns {@code true} when the module
+     * is an unnamed module (as redefining an unnamed module is a no-op).
      *
      * @param module the module to test if it can be modified
      * @return {@code true} if the module is modifiable, otherwise {@code false}

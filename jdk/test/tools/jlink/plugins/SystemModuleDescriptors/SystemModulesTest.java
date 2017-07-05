@@ -113,12 +113,13 @@ public class SystemModulesTest {
         try {
             if (modRef.descriptor().name().equals("java.base")) {
                 ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.read(modRef);
-                assertTrue(checkOSName(mt.osName()));
-                assertTrue(checkOSArch(mt.osArch()));
+                String[] values = mt.targetPlatform().split("-");
+                assertTrue(checkOSName(values[0]));
+                assertTrue(checkOSArch(values[1]));
             } else {
                 // target platform attribute is dropped by jlink plugin for other modules
                 ModuleTargetHelper.ModuleTarget mt = ModuleTargetHelper.read(modRef);
-                assertTrue(mt == null || (mt.osName() == null && mt.osArch() == null));
+                assertTrue(mt == null || mt.targetPlatform() == null);
             }
         } catch (IOException exp) {
             throw new UncheckedIOException(exp);

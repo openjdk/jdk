@@ -65,8 +65,8 @@ import static org.testng.Assert.*;
 @Test
 public class ModuleDescriptorTest {
 
-    @DataProvider(name = "invalidjavaidentifiers")
-    public Object[][] invalidJavaIdentifiers() {
+    @DataProvider(name = "invalidNames")
+    public Object[][] invalidNames() {
         return new Object[][]{
 
             { null,             null },
@@ -83,6 +83,32 @@ public class ModuleDescriptorTest {
             { "foo.bar.1",      null },
             { "foo.bar.1gus",   null },
             { "foo.bar.[gus]",  null },
+
+            { "class",          null },
+            { "interface",      null },
+            { "true",           null },
+            { "false",          null },
+            { "null",           null },
+
+            { "x.class",        null },
+            { "x.interface",    null },
+            { "x.true",         null },
+            { "x.false",        null },
+            { "x.null",         null },
+
+            { "class.x",        null },
+            { "interface.x",    null },
+            { "true.x",         null },
+            { "false.x",        null },
+            { "null.x",         null },
+
+            { "x.class.x",      null },
+            { "x.interface.x",  null },
+            { "x.true.x",       null },
+            { "x.false.x",      null },
+            { "x.null.x",       null },
+
+            { "_",              null },
 
         };
     }
@@ -199,7 +225,7 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.newModule("m").requires(EnumSet.allOf(Modifier.class), "m");
     }
 
-    @Test(dataProvider = "invalidjavaidentifiers",
+    @Test(dataProvider = "invalidNames",
           expectedExceptions = IllegalArgumentException.class )
     public void testRequiresWithBadModuleName(String mn, String ignore) {
         requires(EnumSet.noneOf(Modifier.class), mn);
@@ -406,7 +432,7 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.newModule("foo").exports("p", Collections.emptySet());
     }
 
-    @Test(dataProvider = "invalidjavaidentifiers",
+    @Test(dataProvider = "invalidNames",
           expectedExceptions = IllegalArgumentException.class )
     public void testExportsWithBadName(String pn, String ignore) {
         ModuleDescriptor.newModule("foo").exports(pn);
@@ -568,7 +594,7 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.newModule("foo").opens("p", Collections.emptySet());
     }
 
-    @Test(dataProvider = "invalidjavaidentifiers",
+    @Test(dataProvider = "invalidNames",
             expectedExceptions = IllegalArgumentException.class )
     public void testOpensWithBadName(String pn, String ignore) {
         ModuleDescriptor.newModule("foo").opens(pn);
@@ -664,7 +690,7 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.newModule("foo").uses("S");
     }
 
-    @Test(dataProvider = "invalidjavaidentifiers",
+    @Test(dataProvider = "invalidNames",
           expectedExceptions = IllegalArgumentException.class )
     public void testUsesWithBadName(String service, String ignore) {
         ModuleDescriptor.newModule("foo").uses(service);
@@ -737,13 +763,13 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.newModule("foo").provides("p.S", List.of("P"));
     }
 
-    @Test(dataProvider = "invalidjavaidentifiers",
+    @Test(dataProvider = "invalidNames",
           expectedExceptions = IllegalArgumentException.class )
     public void testProvidesWithBadService(String service, String ignore) {
         ModuleDescriptor.newModule("foo").provides(service, List.of("p.Provider"));
     }
 
-    @Test(dataProvider = "invalidjavaidentifiers",
+    @Test(dataProvider = "invalidNames",
           expectedExceptions = IllegalArgumentException.class )
     public void testProvidesWithBadProvider(String provider, String ignore) {
         List<String> names = new ArrayList<>(); // allows nulls
@@ -928,7 +954,7 @@ public class ModuleDescriptorTest {
         assertTrue(Objects.equals(packages, Set.of("p1", "p2", "p3", "p4", "p5")));
     }
 
-    @Test(dataProvider = "invalidjavaidentifiers",
+    @Test(dataProvider = "invalidNames",
           expectedExceptions = IllegalArgumentException.class )
     public void testPackagesWithBadName(String pn, String ignore) {
         Set<String> pkgs = new HashSet<>();  // allows nulls
@@ -943,7 +969,7 @@ public class ModuleDescriptorTest {
         assertEquals(mn, "foo");
     }
 
-    @Test(dataProvider = "invalidjavaidentifiers",
+    @Test(dataProvider = "invalidNames",
           expectedExceptions = IllegalArgumentException.class )
     public void testBadModuleName(String mn, String ignore) {
         ModuleDescriptor.newModule(mn);
@@ -1264,7 +1290,7 @@ public class ModuleDescriptorTest {
         ModuleDescriptor.newModule("foo").mainClass("Main");
     }
 
-    @Test(dataProvider = "invalidjavaidentifiers",
+    @Test(dataProvider = "invalidNames",
           expectedExceptions = IllegalArgumentException.class )
     public void testMainClassWithBadName(String mainClass, String ignore) {
         Builder builder = ModuleDescriptor.newModule("foo");
