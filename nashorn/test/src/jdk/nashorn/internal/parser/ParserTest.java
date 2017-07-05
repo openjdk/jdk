@@ -28,10 +28,11 @@ package jdk.nashorn.internal.parser;
 import java.io.File;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
-import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.options.Options;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 /**
@@ -54,9 +55,9 @@ public class ParserTest {
     }
 
     private Context context;
-    private ScriptObject global;
 
-    public ParserTest() {
+    @BeforeClass
+    public void setupTest() {
         final Options options = new Options("nashorn");
         options.set("anon.functions", true);
         options.set("parse.only", true);
@@ -64,7 +65,11 @@ public class ParserTest {
 
         ErrorManager errors = new ErrorManager();
         this.context = new Context(options, errors, Thread.currentThread().getContextClassLoader());
-        this.global = context.createGlobal();
+    }
+
+    @AfterClass
+    public void tearDownTest() {
+        this.context = null;
     }
 
     @Test
@@ -125,8 +130,6 @@ public class ParserTest {
             log("Begin parsing " + file.getAbsolutePath());
         }
 
-        final ScriptObject oldGlobal = Context.getGlobal();
-        final boolean globalChanged = (oldGlobal != global);
         try {
             final char[] buffer = Source.readFully(file);
             boolean excluded = false;
@@ -150,9 +153,6 @@ public class ParserTest {
                 }
             };
             errors.setLimit(0);
-            if (globalChanged) {
-                Context.setGlobal(global);
-            }
             final Source   source   = new Source(file.getAbsolutePath(), buffer);
             new Parser(context.getEnv(), source, errors).parse();
             if (errors.getNumberOfErrors() > 0) {
@@ -167,10 +167,6 @@ public class ParserTest {
                 exp.printStackTrace(System.out);
             }
             failed++;
-        } finally {
-            if (globalChanged) {
-                Context.setGlobal(oldGlobal);
-            }
         }
 
         if (VERBOSE) {

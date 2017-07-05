@@ -49,6 +49,7 @@ import java.util.function.Predicate;
 
 /**
  * @test
+ * @bug 8023367
  * @library testlibrary
  * @build CollectionAsserts CollectionSupplier
  * @run testng ListDefaults
@@ -100,6 +101,7 @@ public class ListDefaults {
     @DataProvider(name="listProvider", parallel=true)
     public static Object[][] listCases() {
         final List<Object[]> cases = new LinkedList<>();
+        cases.add(new Object[] { Collections.emptyList() });
         cases.add(new Object[] { new ArrayList<>() });
         cases.add(new Object[] { new LinkedList<>() });
         cases.add(new Object[] { new Vector<>() });
@@ -128,6 +130,11 @@ public class ListDefaults {
             list.removeIf(null);
             fail("expected NPE not thrown");
         } catch (NullPointerException npe) {}
+        try {
+            list.sort(null);
+        } catch (Throwable t) {
+            fail("Exception not expected: " + t);
+        }
     }
 
     @Test

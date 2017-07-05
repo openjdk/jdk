@@ -412,32 +412,21 @@ class PhaseChaitin : public PhaseRegAlloc {
   uint split_DEF( Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
   uint split_USE( Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
 
-  bool clone_projs(Block *b, uint idx, Node *con, Node *copy, LiveRangeMap &lrg_map) {
-    bool found_projs = clone_projs_shared(b, idx, con, copy, lrg_map.max_lrg_id());
-
-    if(found_projs) {
-      uint max_lrg_id = lrg_map.max_lrg_id();
-      lrg_map.set_max_lrg_id(max_lrg_id + 1);
-    }
-
-    return found_projs;
-  }
-
   //------------------------------clone_projs------------------------------------
   // After cloning some rematerialized instruction, clone any MachProj's that
   // follow it.  Example: Intel zero is XOR, kills flags.  Sparc FP constants
   // use G3 as an address temp.
-  bool clone_projs(Block *b, uint idx, Node *con, Node *copy, uint &max_lrg_id) {
-    bool found_projs = clone_projs_shared(b, idx, con, copy, max_lrg_id);
+  int clone_projs(Block* b, uint idx, Node* orig, Node* copy, uint& max_lrg_id);
 
-    if(found_projs) {
-      max_lrg_id++;
+  int clone_projs(Block* b, uint idx, Node* orig, Node* copy, LiveRangeMap& lrg_map) {
+    uint max_lrg_id = lrg_map.max_lrg_id();
+    int found_projs = clone_projs(b, idx, orig, copy, max_lrg_id);
+    if (found_projs > 0) {
+      // max_lrg_id is updated during call above
+      lrg_map.set_max_lrg_id(max_lrg_id);
     }
-
     return found_projs;
   }
-
-  bool clone_projs_shared(Block *b, uint idx, Node *con, Node *copy, uint max_lrg_id);
 
   Node *split_Rematerialize(Node *def, Block *b, uint insidx, uint &maxlrg, GrowableArray<uint> splits,
                             int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru);

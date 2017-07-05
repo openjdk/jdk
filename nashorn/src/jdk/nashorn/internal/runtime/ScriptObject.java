@@ -138,10 +138,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     private static final MethodHandle KNOWNFUNCPROPGUARD = findOwnMH("knownFunctionPropertyGuard", boolean.class, Object.class, PropertyMap.class, MethodHandle.class, Object.class, ScriptFunction.class);
 
     /** Method handle for getting a function argument at a given index. Used from MapCreator */
-    public static final Call GET_ARGUMENT       = virtualCall(ScriptObject.class, "getArgument", Object.class, int.class);
+    public static final Call GET_ARGUMENT       = virtualCall(MethodHandles.lookup(), ScriptObject.class, "getArgument", Object.class, int.class);
 
     /** Method handle for setting a function argument at a given index. Used from MapCreator */
-    public static final Call SET_ARGUMENT       = virtualCall(ScriptObject.class, "setArgument", void.class, int.class, Object.class);
+    public static final Call SET_ARGUMENT       = virtualCall(MethodHandles.lookup(), ScriptObject.class, "setArgument", void.class, int.class, Object.class);
 
     /** Method handle for getting the proto of a ScriptObject */
     public static final Call GET_PROTO          = virtualCallNoLookup(ScriptObject.class, "getProto", ScriptObject.class);
@@ -150,7 +150,7 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
     public static final Call SET_PROTO          = virtualCallNoLookup(ScriptObject.class, "setProto", void.class, ScriptObject.class);
 
     /** Method handle for setting the user accessors of a ScriptObject */
-    public static final Call SET_USER_ACCESSORS = virtualCall(ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
+    public static final Call SET_USER_ACCESSORS = virtualCall(MethodHandles.lookup(), ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
 
     /**
      * Constructor
@@ -2012,9 +2012,10 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         final boolean scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
         if (find != null) {
-            final Object value = getObjectValue(find);
-            ScriptFunction func = null;
-            MethodHandle methodHandle = null;
+            final Object   value        = getObjectValue(find);
+            ScriptFunction func         = null;
+            MethodHandle   methodHandle = null;
+
             if (value instanceof ScriptFunction) {
                 func = (ScriptFunction)value;
                 methodHandle = getCallMethodHandle(func, desc.getMethodType(), name);
@@ -3219,6 +3220,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         return property;
     }
 
+    /**
+     * Write a value to a spill slot
+     * @param slot  the slot index
+     * @param value the value
+     */
     protected final void setSpill(final int slot, final Object value) {
         if (spill == null) {
             // create new spill.
@@ -3233,6 +3239,11 @@ public abstract class ScriptObject extends PropertyListenerManager implements Pr
         spill[slot] = value;
     }
 
+    /**
+     * Get a value from a spill slot
+     * @param slot the slot index
+     * @return the value in the spill slot with the given index
+     */
     protected Object getSpill(final int slot) {
         return spill != null && slot < spill.length ? spill[slot] : null;
     }

@@ -36,6 +36,7 @@ import com.sun.org.apache.xerces.internal.util.FeatureState;
 import com.sun.org.apache.xerces.internal.util.PropertyState;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XMLLocator;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
@@ -156,6 +157,10 @@ public class NonValidatingConfiguration
     /** Property identifier: locale. */
     protected static final String LOCALE =
         Constants.XERCES_PROPERTY_PREFIX + Constants.LOCALE_PROPERTY;
+
+    /** Property identifier: Security property manager. */
+    protected static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
     // debugging
 
@@ -310,7 +315,8 @@ public class NonValidatingConfiguration
             XMLGRAMMAR_POOL,
             DATATYPE_VALIDATOR_FACTORY,
             VALIDATION_MANAGER,
-            LOCALE
+            LOCALE,
+            XML_SECURITY_PROPERTY_MANAGER
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -367,6 +373,7 @@ public class NonValidatingConfiguration
             // REVISIT: What is the right thing to do? -Ac
         }
 
+        setProperty(XML_SECURITY_PROPERTY_MANAGER, new XMLSecurityPropertyManager());
     } // <init>(SymbolTable,XMLGrammarPool)
 
     //

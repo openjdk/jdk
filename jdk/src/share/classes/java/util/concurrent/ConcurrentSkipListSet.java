@@ -57,12 +57,12 @@ import java.util.Spliterator;
  * cost for the {@code contains}, {@code add}, and {@code remove}
  * operations and their variants.  Insertion, removal, and access
  * operations safely execute concurrently by multiple threads.
- * Iterators are <i>weakly consistent</i>, returning elements
- * reflecting the state of the set at some point at or since the
- * creation of the iterator.  They do <em>not</em> throw {@link
- * java.util.ConcurrentModificationException}, and may proceed
- * concurrently with other operations.  Ascending ordered views and
- * their iterators are faster than descending ones.
+ *
+ * <p>Iterators and spliterators are
+ * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
+ *
+ * <p>Ascending ordered views and their iterators are faster than
+ * descending ones.
  *
  * <p>Beware that, unlike in most collections, the {@code size}
  * method is <em>not</em> a constant-time operation. Because of the
@@ -480,6 +480,24 @@ public class ConcurrentSkipListSet<E>
         return new ConcurrentSkipListSet<E>(m.descendingMap());
     }
 
+    /**
+     * Returns a {@link Spliterator} over the elements in this set.
+     *
+     * <p>The {@code Spliterator} reports {@link Spliterator#CONCURRENT},
+     * {@link Spliterator#NONNULL}, {@link Spliterator#DISTINCT},
+     * {@link Spliterator#SORTED} and {@link Spliterator#ORDERED}, with an
+     * encounter order that is ascending order.  Overriding implementations
+     * should document the reporting of additional characteristic values.
+     *
+     * <p>The spliterator's comparator (see
+     * {@link java.util.Spliterator#getComparator()}) is {@code null} if
+     * the set's comparator (see {@link #comparator()}) is {@code null}.
+     * Otherwise, the spliterator's comparator is the same as or imposes the
+     * same total ordering as the set's comparator.
+     *
+     * @return a {@code Spliterator} over the elements in this set
+     * @since 1.8
+     */
     @SuppressWarnings("unchecked")
     public Spliterator<E> spliterator() {
         if (m instanceof ConcurrentSkipListMap)

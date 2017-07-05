@@ -118,6 +118,14 @@ void CollectedHeap::print_heap_after_gc() {
   }
 }
 
+void CollectedHeap::register_nmethod(nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+}
+
+void CollectedHeap::unregister_nmethod(nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+}
+
 void CollectedHeap::trace_heap(GCWhen::Type when, GCTracer* gc_tracer) {
   const GCHeapSummary& heap_summary = create_heap_summary();
   const MetaspaceSummary& metaspace_summary = create_metaspace_summary();

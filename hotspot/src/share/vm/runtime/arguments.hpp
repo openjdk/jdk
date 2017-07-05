@@ -309,6 +309,7 @@ class Arguments : AllStatic {
   static void set_g1_gc_flags();
   // GC ergonomics
   static void set_use_compressed_oops();
+  static void set_use_compressed_klass_ptrs();
   static void set_ergonomics_flags();
   static void set_shared_spaces_flags();
   // limits the given memory size by the maximum amount of memory this process is

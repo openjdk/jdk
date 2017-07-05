@@ -1,39 +1,37 @@
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#  
+#
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
 # published by the Free Software Foundation.  Oracle designates this
 # particular file as subject to the "Classpath" exception as provided
 # by Oracle in the LICENSE file that accompanied this code.
-#  
+#
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 # version 2 for more details (a copy is included in the LICENSE file that
 # accompanied this code).
-#  
+#
 # You should have received a copy of the GNU General Public License version
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#  
+#
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# <pre>
-# This file is in the public domain, so clarified as of
-# 2009-05-17 by Arthur David Olson.
 # ISO 3166 alpha-2 country codes
 #
-# From Paul Eggert (2006-09-27):
+# This file is in the public domain, so clarified as of
+# 2009-05-17 by Arthur David Olson.
+#
+# From Paul Eggert (2013-05-27):
 #
 # This file contains a table with the following columns:
 # 1.  ISO 3166-1 alpha-2 country code, current as of
-#     ISO 3166-1 Newsletter VI-1 (2007-09-21).  See:
-#     <a href="http://www.iso.org/iso/en/prods-services/iso3166ma/index.html">
-#     ISO 3166 Maintenance agency (ISO 3166/MA)
-#     </a>.
+#     ISO 3166-1 Newsletter VI-15 (2013-05-10).  See: Updates on ISO 3166
+#   http://www.iso.org/iso/home/standards/country_codes/updates_on_iso_3166.htm
 # 2.  The usual English name for the country,
 #     chosen so that alphabetic sorting of subsets produces helpful lists.
 #     This is not the same as the English name in the ISO 3166 tables.
@@ -43,8 +41,9 @@
 #
 # Lines beginning with `#' are comments.
 #
-# From Arthur David Olson (2011-08-17):
-# Resynchronized today with the ISO 3166 site (adding SS for South Sudan).
+# This table is intended as an aid for users, to help them select time
+# zone data appropriate for their practical needs.  It is not intended
+# to take or endorse any position on legal or territorial claims.
 #
 #country-
 #code	country name
@@ -77,7 +76,7 @@ BL	St Barthelemy
 BM	Bermuda
 BN	Brunei
 BO	Bolivia
-BQ	Bonaire Sint Eustatius & Saba
+BQ	Bonaire, St Eustatius & Saba
 BR	Brazil
 BS	Bahamas
 BT	Bhutan
@@ -258,7 +257,7 @@ SR	Suriname
 SS	South Sudan
 ST	Sao Tome & Principe
 SV	El Salvador
-SX	Sint Maarten
+SX	St Maarten (Dutch part)
 SY	Syria
 SZ	Swaziland
 TC	Turks & Caicos Is

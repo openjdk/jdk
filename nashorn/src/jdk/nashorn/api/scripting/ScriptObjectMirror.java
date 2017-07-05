@@ -25,14 +25,17 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +52,14 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * netscape.javascript.JSObject interface.
  */
 public final class ScriptObjectMirror extends JSObject implements Bindings {
+    private static AccessControlContext getContextAccCtxt() {
+        final Permissions perms = new Permissions();
+        perms.add(new RuntimePermission(Context.NASHORN_GET_CONTEXT));
+        return new AccessControlContext(new ProtectionDomain[] { new ProtectionDomain(null, perms) });
+    }
+
+    private static final AccessControlContext GET_CONTEXT_ACC_CTXT = getContextAccCtxt();
+
     private final ScriptObject sobj;
     private final ScriptObject global;
 
@@ -144,7 +155,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
                             public Context run() {
                                 return Context.getContext();
                             }
-                        });
+                        }, GET_CONTEXT_ACC_CTXT);
                 return wrap(context.eval(global, s, null, null, false), global);
             }
         });

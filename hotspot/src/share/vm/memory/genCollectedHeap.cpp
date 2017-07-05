@@ -1211,6 +1211,7 @@ void GenCollectedHeap::gc_epilogue(bool full) {
   }
 
   MetaspaceCounters::update_performance_counters();
+  CompressedClassSpaceCounters::update_performance_counters();
 
   always_do_update_barrier = UseConcMarkSweepGC;
 };

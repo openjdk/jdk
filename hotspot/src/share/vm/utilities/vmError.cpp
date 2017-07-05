@@ -586,6 +586,13 @@ void VMError::report(outputStream* st) {
           while (count++ < StackPrintLimit) {
              fr.print_on_error(st, buf, sizeof(buf));
              st->cr();
+             // Compiled code may use EBP register on x86 so it looks like
+             // non-walkable C frame. Use frame.sender() for java frames.
+             if (_thread && _thread->is_Java_thread() && fr.is_java_frame()) {
+               RegisterMap map((JavaThread*)_thread, false); // No update
+               fr = fr.sender(&map);
+               continue;
+             }
              if (os::is_first_C_frame(&fr)) break;
              fr = os::get_sender_for_C_frame(&fr);
           }
