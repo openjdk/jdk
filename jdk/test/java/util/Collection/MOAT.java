@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,21 @@ import static java.util.Collections.*;
 import java.lang.reflect.*;
 
 public class MOAT {
+    // Collections under test must not be initialized to contain this value,
+    // and maps under test must not contain this value as a key.
+    // It's used as a sentinel for absent-element testing.
+    static final int ABSENT_VALUE = 778347983;
+
+    static final Integer[] integerArray;
+    static {
+        Integer[] ia = new Integer[20];
+        // fill with 1..20 inclusive
+        for (int i = 0; i < ia.length; i++) {
+            ia[i] = i + 1;
+        }
+        integerArray = ia;
+    }
+
     public static void realMain(String[] args) {
 
         testCollection(new NewAbstractCollection<Integer>());
@@ -178,6 +193,70 @@ public class MOAT {
         equal(singletonMap.size(), 1);
         testMap(singletonMap);
         testImmutableMap(singletonMap);
+
+        // Immutable List
+        testEmptyList(List.of());
+        for (List<Integer> list : Arrays.asList(
+                List.<Integer>of(),
+                List.of(1),
+                List.of(1, 2),
+                List.of(1, 2, 3),
+                List.of(1, 2, 3, 4),
+                List.of(1, 2, 3, 4, 5),
+                List.of(1, 2, 3, 4, 5, 6),
+                List.of(1, 2, 3, 4, 5, 6, 7),
+                List.of(1, 2, 3, 4, 5, 6, 7, 8),
+                List.of(1, 2, 3, 4, 5, 6, 7, 8, 9),
+                List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                List.of(integerArray))) {
+            testCollection(list);
+            testImmutableList(list);
+        }
+
+        // Immutable Set
+        testEmptySet(Set.of());
+        for (Set<Integer> set : Arrays.asList(
+                Set.<Integer>of(),
+                Set.of(1),
+                Set.of(1, 2),
+                Set.of(1, 2, 3),
+                Set.of(1, 2, 3, 4),
+                Set.of(1, 2, 3, 4, 5),
+                Set.of(1, 2, 3, 4, 5, 6),
+                Set.of(1, 2, 3, 4, 5, 6, 7),
+                Set.of(1, 2, 3, 4, 5, 6, 7, 8),
+                Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9),
+                Set.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+                Set.of(integerArray))) {
+            testCollection(set);
+            testImmutableSet(set);
+        }
+
+        // Immutable Map
+
+        @SuppressWarnings("unchecked")
+        Map.Entry<Integer,Integer>[] ea = (Map.Entry<Integer,Integer>[])new Map.Entry<?,?>[20];
+        for (int i = 0; i < ea.length; i++) {
+            ea[i] = Map.entry(i+1, i+101);
+        }
+
+        testEmptyMap(Map.of());
+        for (Map<Integer,Integer> map : Arrays.asList(
+                Map.<Integer,Integer>of(),
+                Map.of(1, 101),
+                Map.of(1, 101, 2, 202),
+                Map.of(1, 101, 2, 202, 3, 303),
+                Map.of(1, 101, 2, 202, 3, 303, 4, 404),
+                Map.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505),
+                Map.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606),
+                Map.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707),
+                Map.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707, 8, 808),
+                Map.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707, 8, 808, 9, 909),
+                Map.of(1, 101, 2, 202, 3, 303, 4, 404, 5, 505, 6, 606, 7, 707, 8, 808, 9, 909, 10, 1010),
+                Map.ofEntries(ea))) {
+            testMap(map);
+            testImmutableMap(map);
+        }
     }
 
     private static void checkContainsSelf(Collection<Integer> c) {
@@ -188,6 +267,17 @@ public class MOAT {
 
     private static void checkContainsEmpty(Collection<Integer> c) {
         check(c.containsAll(new ArrayList<Integer>()));
+    }
+
+    private static void checkUnique(Set<Integer> s) {
+        for (Integer i : s) {
+            int count = 0;
+            for (Integer j : s) {
+                if (Objects.equals(i,j))
+                    ++count;
+            }
+            check(count == 1);
+        }
     }
 
     private static <T> void testEmptyCollection(Collection<T> c) {
@@ -330,19 +420,19 @@ public class MOAT {
     }
 
     private static boolean supportsAdd(Collection<Integer> c) {
-        try { check(c.add(778347983)); }
+        try { check(c.add(ABSENT_VALUE)); }
         catch (UnsupportedOperationException t) { return false; }
         catch (Throwable t) { unexpected(t); }
 
         try {
-            check(c.contains(778347983));
-            check(c.remove(778347983));
+            check(c.contains(ABSENT_VALUE));
+            check(c.remove(ABSENT_VALUE));
         } catch (Throwable t) { unexpected(t); }
         return true;
     }
 
     private static boolean supportsRemove(Collection<Integer> c) {
-        try { check(! c.remove(19134032)); }
+        try { check(! c.remove(ABSENT_VALUE)); }
         catch (UnsupportedOperationException t) { return false; }
         catch (Throwable t) { unexpected(t); }
         return true;
@@ -359,11 +449,16 @@ public class MOAT {
             checkContainsSelf(c);
             checkContainsEmpty(c);
             check(c.size() != 0 ^ c.isEmpty());
+            check(! c.contains(ABSENT_VALUE));
 
             {
                 int size = 0;
                 for (Integer i : c) size++;
                 check(c.size() == size);
+            }
+
+            if (c instanceof Set) {
+                checkUnique((Set<Integer>)c);
             }
 
             check(c.toArray().length == c.size());
@@ -861,6 +956,20 @@ public class MOAT {
         checkFunctionalInvariants(m.keySet());
         checkFunctionalInvariants(m.values());
         check(m.size() != 0 ^ m.isEmpty());
+        check(! m.containsKey(ABSENT_VALUE));
+
+        if (m instanceof Serializable) {
+            //System.out.printf("Serializing %s%n", m.getClass().getName());
+            try {
+                Object clone = serialClone(m);
+                equal(m instanceof Serializable,
+                      clone instanceof Serializable);
+                equal(m, clone);
+            } catch (Error xxx) {
+                if (! (xxx.getCause() instanceof NotSerializableException))
+                    throw xxx;
+            }
+        }
     }
 
     private static void testMap(Map<Integer,Integer> m) {
@@ -910,13 +1019,13 @@ public class MOAT {
         // We're asking for .equals(...) semantics
         if (m instanceof IdentityHashMap) return false;
 
-        try { check(m.put(778347983,12735) == null); }
+        try { check(m.put(ABSENT_VALUE,12735) == null); }
         catch (UnsupportedOperationException t) { return false; }
         catch (Throwable t) { unexpected(t); }
 
         try {
-            check(m.containsKey(778347983));
-            check(m.remove(778347983) != null);
+            check(m.containsKey(ABSENT_VALUE));
+            check(m.remove(ABSENT_VALUE) != null);
         } catch (Throwable t) { unexpected(t); }
         return true;
     }
