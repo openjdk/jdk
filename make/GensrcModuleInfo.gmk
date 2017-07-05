@@ -60,8 +60,8 @@ TOOL_GENMODULEINFOSOURCE = $(JAVA_SMALL) \
 
 ################################################################################
 
-# Name of data file. Keep module-info.java.ext until javafx has changed.
-MOD_FILENAME := module-info.java.extra module-info.java.ext
+# Name of modification file.
+MOD_FILENAME := module-info.java.extra
 
 # Construct all possible src directories for the module.
 MODULE_CLASSES_DIRS := $(call FindModuleSrcDirs, $(MODULE))
@@ -74,74 +74,24 @@ ifneq ($(MOD_FILES), )
   # Only make this call if modification files are found for this module
   ALL_MODULES := $(call FindAllModules)
 
-  # Read the contents of all the files into a variable. Replace space with / to
-  # let space represent new lines in the variable as $(shell) normalizes all
-  # whitespace.
-  $(foreach f, $(MOD_FILES), \
-    $(eval MOD_FILE_CONTENTS += $(shell $(GREP) -v -e ".\*" -e "//" $f | $(TR) ' ' '/')))
-
-  # Separate the modifications into qualified exports and the rest
-  MODS_QUALIFIED_EXPORTS := $(call containing, /to/, $(MOD_FILE_CONTENTS))
-  MODS_REST := $(filter-out $(MODS_QUALIFIED_EXPORTS), $(MOD_FILE_CONTENTS))
-
-  # Filter the contents for modules that are actually being built
-  ALL_MODULES_FILTER := $(addprefix %/, $(addsuffix ;, $(ALL_MODULES)))
-  MODIFICATIONS := $(filter $(ALL_MODULES_FILTER), $(MODS_QUALIFIED_EXPORTS)) \
-      $(MODS_REST)
-
-  # Returns non empty if the package exists in the current module
-  # Param 1 - Name of package with dots
-  PackageExists = \
-      $(strip $(wildcard $(addsuffix $(subst .,/,/$(strip $1)), \
-          $(MODULE_CLASSES_DIRS) \
-          $(addsuffix /$(MODULE), $(IMPORT_MODULES_CLASSES)) \
-          $(JDK_OUTPUTDIR)/modules/$(MODULE) \
-      )))
-
-  # Convert the modification lines into arguments for the modification tool.
-  # Filter out modifications for non existing to-modules.
-  $(foreach line, $(MODIFICATIONS), \
-    $(eval split_line := $(subst /,$(SPACE),$(line))) \
-    $(eval command := $(word 1, $(split_line))) \
-    $(if $(filter $(command), exports), \
-      $(eval package := $(patsubst %;,%,$(word 2, $(split_line)))) \
-      $(if $(call PackageExists, $(package)), \
-        $(eval to_module := $(patsubst %;,%,$(word 4, $(split_line)))) \
-        $(if $(to_module), \
-          $(eval ARGS += -$(command) $(package)/$(to_module)) \
-        , \
-          $(eval ARGS += -$(command) $(package)) \
-        ) \
-      ) \
-    , \
-      $(if $(filter $(command), provides), \
-        $(eval provider := $(patsubst %;,%,$(word 2, $(split_line)))) \
-        $(eval class := $(patsubst %;,%,$(word 4, $(split_line)))) \
-        $(eval ARGS += -$(command) $(provider)/$(class)) \
-      , \
-        $(error A module-info.extra in $(MODULE) contains invalid command $(command)) \
-      ) \
-    ) \
-  )
-
-  ifneq ($(ARGS), )
-    $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java: \
-        $(firstword $(call FindAllModuleInfos, $(MODULE))) \
-        $(BUILD_TOOLS_JDK) \
-        $(call DependOnVariable, ARGS)
+  $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java: \
+      $(firstword $(call FindAllModuleInfos, $(MODULE))) \
+      $(BUILD_TOOLS_JDK) \
+      $(MOD_FILES) \
+      $(call DependOnVariable, ALL_MODULES)
 		$(MKDIR) -p $(@D)
 		$(RM) $@ $@.tmp
-		$(TOOL_GENMODULEINFOSOURCE) $(ARGS) -o $@.tmp $<
+		$(TOOL_GENMODULEINFOSOURCE) -o $@.tmp \
+		    --source-file $< \
+		    --modules $(call CommaList, $(ALL_MODULES)) \
+		    $(MOD_FILES)
 		$(MV) $@.tmp $@
 
-    TARGETS += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java
-  endif
+  TARGETS += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java
 
-endif
-
-# If no modifications are found for this module, remove any module-info.java
-# created by a previous build since that is no longer valid.
-ifeq ($(MODIFICATIONS), )
+else
+  # If no modifications are found for this module, remove any module-info.java
+  # created by a previous build since that is no longer valid.
   ifneq ($(wildcard $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java), )
     $(shell $(RM) $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java)
   endif

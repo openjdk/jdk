@@ -23,6 +23,7 @@
 
 /* @test
  * @bug 4313887 6881498
+ * @modules java.base/java.lang:open
  * @summary Miscellenous tests on exceptions in java.nio.file
  */
 

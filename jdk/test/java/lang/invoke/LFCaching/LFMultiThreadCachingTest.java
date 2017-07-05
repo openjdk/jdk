@@ -28,7 +28,9 @@
  * @summary Test verifies that lambda forms are cached when run with multiple threads
  * @author kshefov
  * @library /lib/testlibrary/jsr292 /lib/testlibrary
- * @modules jdk.management
+ * @modules java.base/java.lang.invoke:open
+ *          java.base/java.lang.ref:open
+ *          jdk.management
  * @build TestMethods
  * @build LambdaFormTestCase
  * @build LFCachingTestCase

@@ -40,8 +40,8 @@ import java.util.HashMap;
 import java.util.WeakHashMap;
 
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import javax.management.JMException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanAttributeInfo;
@@ -81,7 +81,7 @@ import sun.tools.jconsole.ProxyClient.SnapshotMBeanServerConnection;
 public class XMBeanAttributes extends XTable {
 
     final Logger LOGGER =
-            Logger.getLogger(XMBeanAttributes.class.getPackage().getName());
+            System.getLogger(XMBeanAttributes.class.getPackage().getName());
 
     private final static String[] columnNames =
     {Messages.NAME,
@@ -190,8 +190,8 @@ public class XMBeanAttributes extends XTable {
     }
 
     public void cancelCellEditing() {
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.finer("Cancel Editing Row: "+getEditingRow());
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Cancel Editing Row: "+getEditingRow());
         }
         final TableCellEditor tableCellEditor = getCellEditor();
         if (tableCellEditor != null) {
@@ -200,8 +200,8 @@ public class XMBeanAttributes extends XTable {
     }
 
     public void stopCellEditing() {
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.finer("Stop Editing Row: "+getEditingRow());
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Stop Editing Row: "+getEditingRow());
         }
         final TableCellEditor tableCellEditor = getCellEditor();
         if (tableCellEditor != null) {
@@ -211,8 +211,8 @@ public class XMBeanAttributes extends XTable {
 
     @Override
     public final boolean editCellAt(final int row, final int column, EventObject e) {
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.finer("editCellAt(row="+row+", col="+column+
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "editCellAt(row="+row+", col="+column+
                     ", e="+e+")");
         }
         if (JConsole.isDebug()) {
@@ -1002,8 +1002,9 @@ public class XMBeanAttributes extends XTable {
                 Object tableValue = model.getValueAt(e.getFirstRow(),
                                                  e.getColumn());
 
-                if (LOGGER.isLoggable(Level.FINER)) {
-                    LOGGER.finer("tableChanged: firstRow="+e.getFirstRow()+
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE,
+                        "tableChanged: firstRow="+e.getFirstRow()+
                         ", lastRow="+e.getLastRow()+", column="+e.getColumn()+
                         ", value="+tableValue);
                 }

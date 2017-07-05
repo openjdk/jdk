@@ -62,9 +62,11 @@ public class JLinkTest {
     // number of built-in plugins from jdk.jlink module
     private static int getNumJlinkPlugins() {
         ModuleDescriptor desc = Plugin.class.getModule().getDescriptor();
-        return desc.provides().
-                    get(Plugin.class.getName()).
-                    providers().size();
+        return desc.provides().stream()
+                .filter(p -> p.service().equals(Plugin.class.getName()))
+                .map(p -> p.providers().size())
+                .findAny()
+                .orElse(0);
     }
 
     private static boolean isOfJLinkModule(Plugin p) {

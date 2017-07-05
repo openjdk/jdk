@@ -65,7 +65,7 @@ public class AddPackagesAttribute {
                     String mn = entry.getFileName().toString();
                     Optional<ModuleReference> omref = finder.find(mn);
                     if (omref.isPresent()) {
-                        Set<String> packages = omref.get().descriptor().conceals();
+                        Set<String> packages = omref.get().descriptor().packages();
                         addPackagesAttribute(mi, packages);
                     }
                 }
@@ -77,7 +77,7 @@ public class AddPackagesAttribute {
         byte[] bytes;
         try (InputStream in = Files.newInputStream(mi)) {
             ModuleInfoExtender extender = ModuleInfoExtender.newExtender(in);
-            extender.conceals(packages);
+            extender.packages(packages);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             extender.write(baos);
             bytes = baos.toByteArray();

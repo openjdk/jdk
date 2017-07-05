@@ -77,7 +77,7 @@ public class DGCDeadLock implements Runnable {
                 TestParams.defaultPolicy +
                 " --add-exports java.rmi/sun.rmi.registry=ALL-UNNAMED" +
                 " --add-exports java.rmi/sun.rmi.server=ALL-UNNAMED" +
-                " --add-exports java.rmi/sun.rmi.transport=ALL-UNNAMED" +
+                " --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED" +
                 " --add-exports java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" +
                 " -Djava.rmi.dgc.leaseValue=500000" +
                 "  -Dsun.rmi.dgc.checkInterval=" +

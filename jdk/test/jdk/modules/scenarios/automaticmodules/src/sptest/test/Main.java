@@ -58,10 +58,10 @@ public class Main {
         assertTrue(requires.contains("java.base"));
 
         // uses ScriptEngineFactory
-        Map<String, Provides> provides = descriptor.provides();
+        Set<Provides> provides = descriptor.provides();
         assertTrue(provides.size() == 1);
         String sn = ScriptEngineFactory.class.getName();
-        assertTrue(provides.containsKey(sn));
+        assertTrue(provides.iterator().next().service().equals(sn));
 
         // Check that it is iterated over with ServiceLoader
         ServiceLoader<ScriptEngineFactory> sl

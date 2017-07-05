@@ -30,6 +30,7 @@ import java.math.BigInteger;
 import java.util.GregorianCalendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.sun.org.apache.xerces.internal.jaxp.datatype.DatatypeFactoryImpl;
 
 /**
  * Factory that creates new {@code javax.xml.datatype} {@code Object}s that map XML to/from Java {@code Object}s.
@@ -133,6 +134,20 @@ public abstract class DatatypeFactory {
      * <p>Use {@link #newInstance()} to create a {@code DatatypeFactory}.
      */
     protected DatatypeFactory() {
+    }
+
+    /**
+     * Creates a new instance of the {@code DatatypeFactory} {@linkplain
+     * #DATATYPEFACTORY_IMPLEMENTATION_CLASS builtin system-default
+     * implementation}.
+     *
+     * @return A new instance of the {@code DatatypeFactory} builtin
+     *         system-default implementation.
+     *
+     * @since 9
+     */
+    public static DatatypeFactory newDefaultInstance() {
+        return new DatatypeFactoryImpl();
     }
 
     /**

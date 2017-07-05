@@ -30,6 +30,12 @@ import javax.script.ScriptEngineFactory;
 
 public class PearScriptEngineFactory implements ScriptEngineFactory {
 
+    public PearScriptEngineFactory() { }
+
+    public static PearScriptEngineFactory provider() {
+        throw new RuntimeException("Should not be called");
+    }
+
     @Override
     public String getEngineName() {
         return "PearScriptEngine";

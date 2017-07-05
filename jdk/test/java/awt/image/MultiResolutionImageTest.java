@@ -48,7 +48,7 @@ import java.awt.image.MultiResolutionImage;
  * @requires (os.family == "mac")
  * @modules java.desktop/sun.awt
  *          java.desktop/sun.awt.image
- *          java.desktop/sun.lwawt.macosx
+ *          java.desktop/sun.lwawt.macosx:open
  * @run main MultiResolutionImageTest TOOLKIT_PREPARE
  * @run main MultiResolutionImageTest TOOLKIT_LOAD
  * @run main MultiResolutionImageTest TOOLKIT

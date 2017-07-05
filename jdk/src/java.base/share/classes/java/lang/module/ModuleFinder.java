@@ -233,10 +233,11 @@ public interface ModuleFinder {
      *         ModuleDescriptor.Version} and ignored if it cannot be parsed as
      *         a {@code Version}. </p></li>
      *
-     *         <li><p> For the module name, then all non-alphanumeric
-     *         characters ({@code [^A-Za-z0-9])} are replaced with a dot
-     *         ({@code "."}), all repeating dots are replaced with one dot,
-     *         and all leading and trailing dots are removed. </p></li>
+     *         <li><p> For the module name, then any trailing digits and dots
+     *         are removed, all non-alphanumeric characters ({@code [^A-Za-z0-9]})
+     *         are replaced with a dot ({@code "."}), all repeating dots are
+     *         replaced with one dot, and all leading and trailing dots are
+     *         removed. </p></li>
      *
      *         <li><p> As an example, a JAR file named {@code foo-bar.jar} will
      *         derive a module name {@code foo.bar} and no version. A JAR file

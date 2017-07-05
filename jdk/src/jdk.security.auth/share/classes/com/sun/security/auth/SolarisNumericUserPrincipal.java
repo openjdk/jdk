@@ -53,15 +53,7 @@ public class SolarisNumericUserPrincipal implements
     private static final long serialVersionUID = -3178578484679887104L;
 
     private static final java.util.ResourceBundle rb =
-          java.security.AccessController.doPrivileged
-          (new java.security.PrivilegedAction<java.util.ResourceBundle>() {
-              public java.util.ResourceBundle run() {
-                  return (java.util.ResourceBundle.getBundle
-                                ("sun.security.util.AuthResources",
-                                 sun.security.util.ResourcesMgr.class.getModule()));
-              }
-           });
-
+        java.util.ResourceBundle.getBundle("sun.security.util.AuthResources");
 
     /**
      * @serial

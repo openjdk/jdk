@@ -48,12 +48,18 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.SecureClassLoader;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
+import jdk.internal.misc.SharedSecrets;
 
 
 /**
@@ -119,7 +125,7 @@ public final class Loader extends SecureClassLoader {
             if (mref.location().isPresent()) {
                 try {
                     url = mref.location().get().toURL();
-                } catch (MalformedURLException e) { }
+                } catch (MalformedURLException | IllegalArgumentException e) { }
             }
             this.mref = mref;
             this.url = url;
@@ -141,7 +147,7 @@ public final class Loader extends SecureClassLoader {
                   LoaderPool pool,
                   ClassLoader parent)
     {
-        super(parent);
+        super("Loader-" + resolvedModule.name(), parent);
 
         this.pool = pool;
         this.parent = parent;
@@ -200,12 +206,12 @@ public final class Loader extends SecureClassLoader {
      * @param cf the Configuration containing at least modules to be defined to
      *           this class loader
      *
-     * @param parentLayer the parent Layer
+     * @param parentLayers the parent Layers
      */
-    public Loader initRemotePackageMap(Configuration cf, Layer parentLayer) {
-
+    public Loader initRemotePackageMap(Configuration cf,
+                                       List<Layer> parentLayers)
+    {
         for (String name : nameToModule.keySet()) {
-
             ResolvedModule resolvedModule = cf.findModule(name).get();
             assert resolvedModule.configuration() == cf;
 
@@ -228,17 +234,15 @@ public final class Loader extends SecureClassLoader {
 
                 } else {
 
-                    // find the layer contains the module that is read
-                    Layer layer = parentLayer;
-                    while (layer != null) {
-                        if (layer.configuration() == other.configuration()) {
-                            break;
-                        }
-                        layer = layer.parent().orElse(null);
-                    }
-                    assert layer != null;
+                    // find the layer for the target module
+                    Layer layer = parentLayers.stream()
+                        .map(parent -> findLayer(parent, other.configuration()))
+                        .flatMap(Optional::stream)
+                        .findAny()
+                        .orElseThrow(() ->
+                            new InternalError("Unable to find parent layer"));
 
-                    // find the class loader for the module in the layer
+                    // find the class loader for the module
                     // For now we use the platform loader for modules defined to the
                     // boot loader
                     assert layer.findModule(mn).isPresent();
@@ -268,7 +272,6 @@ public final class Loader extends SecureClassLoader {
                             throw new IllegalArgumentException("Package "
                                 + pn + " cannot be imported from multiple loaders");
                         }
-
                     }
                 }
             }
@@ -277,6 +280,17 @@ public final class Loader extends SecureClassLoader {
 
         return this;
     }
+
+    /**
+     * Find the layer corresponding to the given configuration in the tree
+     * of layers rooted at the given parent.
+     */
+    private Optional<Layer> findLayer(Layer parent, Configuration cf) {
+        return SharedSecrets.getJavaLangReflectModuleAccess().layers(parent)
+                .filter(l -> l.configuration() == cf)
+                .findAny();
+    }
+
 
     /**
      * Returns the loader pool that this loader is in or {@code null} if this
@@ -296,12 +310,14 @@ public final class Loader extends SecureClassLoader {
      */
     @Override
     protected URL findResource(String mn, String name) throws IOException {
-        ModuleReference mref = nameToModule.get(mn);
+        ModuleReference mref = (mn != null) ? nameToModule.get(mn) : null;
         if (mref == null)
             return null;   // not defined to this class loader
 
+        // locate resource
+        URL url = null;
         try {
-            return AccessController.doPrivileged(
+            url = AccessController.doPrivileged(
                 new PrivilegedExceptionAction<URL>() {
                     @Override
                     public URL run() throws IOException {
@@ -309,16 +325,89 @@ public final class Loader extends SecureClassLoader {
                         if (ouri.isPresent()) {
                             try {
                                 return ouri.get().toURL();
-                            } catch (MalformedURLException e) { }
+                            } catch (MalformedURLException |
+                                     IllegalArgumentException e) { }
                         }
                         return null;
                     }
-                }, acc);
+                });
         } catch (PrivilegedActionException pae) {
             throw (IOException) pae.getCause();
-        } catch (SecurityException se) {
-            return null;
         }
+
+        // check access with permissions restricted by ACC
+        if (url != null && System.getSecurityManager() != null) {
+            try {
+                URL urlToCheck = url;
+                url = AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<URL>() {
+                        @Override
+                        public URL run() throws IOException {
+                            return URLClassPath.checkURL(urlToCheck);
+                        }
+                    }, acc);
+            } catch (PrivilegedActionException pae) {
+                url = null;
+            }
+        }
+
+        return url;
+    }
+
+    @Override
+    public URL findResource(String name) {
+        URL url = null;
+        String pn = ResourceHelper.getPackageName(name);
+        LoadedModule module = localPackageToModule.get(pn);
+        if (module != null) {
+            if (name.endsWith(".class") || isOpen(module.mref(), pn)) {
+                try {
+                    url = findResource(module.name(), name);
+                } catch (IOException ioe) {
+                    // ignore
+                }
+            }
+        } else {
+            for (ModuleReference mref : nameToModule.values()) {
+                try {
+                    url = findResource(mref.descriptor().name(), name);
+                    if (url != null)
+                        break;
+                } catch (IOException ioe) {
+                    // ignore
+                }
+            }
+        }
+        return url;
+    }
+
+    @Override
+    public Enumeration<URL> findResources(String name) throws IOException {
+        List<URL> urls = new ArrayList<>();
+        String pn = ResourceHelper.getPackageName(name);
+        LoadedModule module = localPackageToModule.get(pn);
+        if (module != null) {
+            if (name.endsWith(".class") || isOpen(module.mref(), pn)) {
+                try {
+                    URL url = findResource(module.name(), name);
+                    if (url != null)
+                        urls.add(url);
+                } catch (IOException ioe) {
+                    // ignore
+                }
+            }
+        } else {
+            for (ModuleReference mref : nameToModule.values()) {
+                try {
+                    URL url = findResource(mref.descriptor().name(), name);
+                    if (url != null)
+                        urls.add(url);
+                } catch (IOException ioe) {
+                    // ignore
+                }
+            }
+        }
+        return Collections.enumeration(urls);
     }
 
 
@@ -544,4 +633,24 @@ public final class Loader extends SecureClassLoader {
         }
     }
 
+    /**
+     * Returns true if the given module opens the given package
+     * unconditionally.
+     *
+     * @implNote This method currently iterates over each of the open
+     * packages. This will be replaced once the ModuleDescriptor.Opens
+     * API is updated.
+     */
+    private boolean isOpen(ModuleReference mref, String pn) {
+        ModuleDescriptor descriptor = mref.descriptor();
+        if (descriptor.isOpen())
+            return true;
+        for (ModuleDescriptor.Opens opens : descriptor.opens()) {
+            String source = opens.source();
+            if (!opens.isQualified() && source.equals(pn)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

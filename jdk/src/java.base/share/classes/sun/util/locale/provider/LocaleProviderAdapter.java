@@ -47,6 +47,7 @@ import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
 import sun.security.action.GetPropertyAction;
+import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.spi.CalendarProvider;
 
 /**
@@ -427,6 +428,14 @@ public abstract class LocaleProviderAdapter {
      * @return a CalendarProvider
      */
     public abstract CalendarProvider getCalendarProvider();
+
+    /**
+     * Returns a JavaTimeDateTimePatternProvider for this LocaleProviderAdapter,
+     * or null if no JavaTimeDateTimePatternProvider is available.
+     *
+     * @return a JavaTimeDateTimePatternProvider
+     */
+    public abstract JavaTimeDateTimePatternProvider getJavaTimeDateTimePatternProvider();
 
     public abstract LocaleResources getLocaleResources(Locale locale);
 

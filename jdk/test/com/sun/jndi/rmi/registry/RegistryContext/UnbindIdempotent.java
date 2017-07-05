@@ -31,7 +31,7 @@
  *     jdk.naming.rmi
  * @library ../../../../../../java/rmi/testlibrary
  * @build TestLibrary
- * @run main UnbindIdempotent
+ * @run main/othervm UnbindIdempotent
  */
 
 import java.rmi.registry.Registry;
@@ -43,7 +43,7 @@ import javax.naming.NamingException;
 public class UnbindIdempotent {
 
     public static void main(String[] args) throws Exception {
-        Registry registry = TestLibrary.createRegistryOnUnusedPort();
+        Registry registry = TestLibrary.createRegistryOnEphemeralPort();
         int registryPort = TestLibrary.getRegistryPort(registry);
         InitialContext ictx = new InitialContext();
         Context rctx;

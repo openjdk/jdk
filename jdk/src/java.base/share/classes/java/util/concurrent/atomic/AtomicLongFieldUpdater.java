@@ -60,6 +60,10 @@ import jdk.internal.reflect.Reflection;
  * guarantee atomicity only with respect to other invocations of
  * {@code compareAndSet} and {@code set} on the same updater.
  *
+ * <p>Object arguments for parameters of type {@code T} that are not
+ * instances of the class passed to {@link #newUpdater} will result in
+ * a {@link ClassCastException} being thrown.
+ *
  * @since 1.5
  * @author Doug Lea
  * @param <T> The type of the object holding the updatable field
@@ -108,8 +112,6 @@ public abstract class AtomicLongFieldUpdater<T> {
      * @param expect the expected value
      * @param update the new value
      * @return {@code true} if successful
-     * @throws ClassCastException if {@code obj} is not an instance
-     * of the class possessing the field established in the constructor
      */
     public abstract boolean compareAndSet(T obj, long expect, long update);
 
@@ -128,8 +130,6 @@ public abstract class AtomicLongFieldUpdater<T> {
      * @param expect the expected value
      * @param update the new value
      * @return {@code true} if successful
-     * @throws ClassCastException if {@code obj} is not an instance
-     * of the class possessing the field established in the constructor
      */
     public abstract boolean weakCompareAndSet(T obj, long expect, long update);
 
@@ -510,8 +510,8 @@ public abstract class AtomicLongFieldUpdater<T> {
 
         LockedUpdater(final Class<T> tclass, final String fieldName,
                       final Class<?> caller) {
-            Field field = null;
-            int modifiers = 0;
+            final Field field;
+            final int modifiers;
             try {
                 field = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<Field>() {
