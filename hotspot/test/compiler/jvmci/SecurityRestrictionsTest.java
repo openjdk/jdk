@@ -27,25 +27,26 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library /testlibrary /test/lib /
- * @compile ./common/CompilerToVMHelper.java
- * @run main ClassFileInstaller jdk.vm.ci.hotspot.CompilerToVMHelper
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ * @library common/patches
+ * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -XX:+EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_SEC_MAN
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -XX:+EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_PERM
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -XX:+EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      ALL_PERM
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -XX:+EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_JVMCI_ACCESS_PERM
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -XX:-EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_JVMCI

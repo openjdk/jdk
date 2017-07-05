@@ -2258,10 +2258,8 @@ run:
               // Decrement counter at checkcast.
               BI_PROFILE_SUBTYPECHECK_FAILED(objKlass);
               ResourceMark rm(THREAD);
-              const char* objName = objKlass->external_name();
-              const char* klassName = klassOf->external_name();
               char* message = SharedRuntime::generate_class_cast_message(
-                objName, klassName);
+                objKlass, klassOf);
               VM_JAVA_ERROR(vmSymbols::java_lang_ClassCastException(), message, note_classCheck_trap);
             }
             // Profile checkcast with null_seen and receiver.

@@ -226,12 +226,21 @@ void FileMapInfo::allocate_classpath_entry_table() {
           SharedClassUtil::update_shared_classpath(cpe, ent, st.st_mtime, st.st_size, THREAD);
         } else {
           struct stat st;
-          if ((os::stat(name, &st) == 0) && ((st.st_mode & S_IFDIR) == S_IFDIR)) {
-            if (!os::dir_is_empty(name)) {
-              ClassLoader::exit_with_path_failure("Cannot have non-empty directory in archived classpaths", name);
+          if (os::stat(name, &st) == 0) {
+            if (cpe->is_jrt()) {
+              // it's the "modules" jimage
+              ent->_timestamp = st.st_mtime;
+              ent->_filesize = st.st_size;
+            } else if ((st.st_mode & S_IFDIR) == S_IFDIR) {
+              if (!os::dir_is_empty(name)) {
+                ClassLoader::exit_with_path_failure(
+                  "Cannot have non-empty directory in archived classpaths", name);
+              }
+              ent->_filesize = -1;
             }
-            ent->_filesize = -1;
-          } else {
+          }
+          if (ent->_filesize == 0) {
+            // unknown
             ent->_filesize = -2;
           }
         }
@@ -282,7 +291,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
         fail_continue("directory is not empty: %s", name);
         ok = false;
       }
-    } else if (ent->is_jar()) {
+    } else if (ent->is_jar_or_bootimage()) {
       if (ent->_timestamp != st.st_mtime ||
           ent->_filesize != st.st_size) {
         ok = false;
@@ -291,7 +300,7 @@ bool FileMapInfo::validate_classpath_entry_table() {
                         "Timestamp mismatch" :
                         "File size mismatch");
         } else {
-          fail_continue("A jar file is not the one used while building"
+          fail_continue("A jar/jimage file is not the one used while building"
                         " the shared archive file: %s", name);
         }
       }
@@ -868,6 +877,11 @@ int FileMapInfo::FileMapHeader::compute_crc() {
 bool FileMapInfo::FileMapHeader::validate() {
   if (VerifySharedSpaces && compute_crc() != _crc) {
     fail_continue("Header checksum verification failed.");
+    return false;
+  }
+
+  if (Arguments::patch_dirs() != NULL) {
+    FileMapInfo::fail_continue("The shared archive file cannot be used with -Xpatch.");
     return false;
   }
 

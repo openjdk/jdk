@@ -27,8 +27,9 @@ package sun.jvm.hotspot.tools;
 import sun.jvm.hotspot.debugger.JVMDebugger;
 import sun.jvm.hotspot.runtime.Arguments;
 import sun.jvm.hotspot.runtime.VM;
+import jdk.internal.vm.agent.spi.ToolProvider;
 
-public class JInfo extends Tool {
+public class JInfo extends Tool implements ToolProvider {
     public JInfo() {
         super();
     }
@@ -94,13 +95,14 @@ public class JInfo extends Tool {
         tool.run();
     }
 
-    public static void main(String[] args) {
+    @Override
+    public void run(String... args) {
         int mode = -1;
         switch (args.length) {
         case 1:
             if (args[0].charAt(0) == '-') {
                 // -h or -help or some invalid flag
-                new JInfo(mode).usage();
+                usage();
             } else {
                 mode = MODE_BOTH;
             }
@@ -114,7 +116,7 @@ public class JInfo extends Tool {
                 mode = MODE_SYSPROPS;
             } else if (modeFlag.charAt(0) == '-') {
                 // -h or -help or some invalid flag
-                new JInfo(mode).usage();
+                usage();
             } else {
                 mode = MODE_BOTH;
             }
@@ -131,11 +133,16 @@ public class JInfo extends Tool {
         }
 
         default:
-            new JInfo(mode).usage();
+            usage();
         }
 
-        JInfo jinfo = new JInfo(mode);
-        jinfo.execute(args);
+        this.mode = mode;
+        execute(args);
+    }
+
+    public static void main(String[] args) {
+        JInfo jinfo = new JInfo();
+        jinfo.run(args);
     }
 
     private void printVMFlags() {

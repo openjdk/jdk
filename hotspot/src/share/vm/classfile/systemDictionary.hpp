@@ -135,6 +135,7 @@ class SymbolPropertyTable;
   do_klass(Properties_klass,                            java_util_Properties,                      Pre                 ) \
   do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject,        Pre                 ) \
   do_klass(reflect_Field_klass,                         java_lang_reflect_Field,                   Pre                 ) \
+  do_klass(reflect_Module_klass,                        java_lang_reflect_Module,                  Pre                 ) \
   do_klass(reflect_Parameter_klass,                     java_lang_reflect_Parameter,               Opt                 ) \
   do_klass(reflect_Method_klass,                        java_lang_reflect_Method,                  Pre                 ) \
   do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor,             Pre                 ) \
@@ -167,15 +168,17 @@ class SymbolPropertyTable;
   do_klass(StringBuffer_klass,                          java_lang_StringBuffer,                    Pre                 ) \
   do_klass(StringBuilder_klass,                         java_lang_StringBuilder,                   Pre                 ) \
   do_klass(internal_Unsafe_klass,                       jdk_internal_misc_Unsafe,                  Pre                 ) \
+  do_klass(module_Modules_klass,                        jdk_internal_module_Modules,               Pre                 ) \
                                                                                                                          \
   /* support for CDS */                                                                                                  \
   do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream,              Pre                 ) \
   do_klass(File_klass,                                  java_io_File,                              Pre                 ) \
-  do_klass(URLClassLoader_klass,                        java_net_URLClassLoader,                   Pre                 ) \
   do_klass(URL_klass,                                   java_net_URL,                              Pre                 ) \
   do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest,                    Pre                 ) \
-  do_klass(sun_misc_Launcher_klass,                     sun_misc_Launcher,                         Pre                 ) \
+  do_klass(jdk_internal_loader_ClassLoaders_AppClassLoader_klass,      jdk_internal_loader_ClassLoaders_AppClassLoader,       Pre ) \
+  do_klass(jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass, jdk_internal_loader_ClassLoaders_PlatformClassLoader,  Pre ) \
   do_klass(CodeSource_klass,                            java_security_CodeSource,                  Pre                 ) \
+  do_klass(ParseUtil_klass,                             sun_net_www_ParseUtil,                     Pre                 ) \
                                                                                                                          \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement,               Opt                 ) \
                                                                                                                          \
@@ -639,6 +642,8 @@ protected:
   static instanceKlassHandle find_or_define_instance_class(Symbol* class_name,
                                                 Handle class_loader,
                                                 instanceKlassHandle k, TRAPS);
+  static bool is_shared_class_visible(Symbol* class_name, instanceKlassHandle ik,
+                                      Handle class_loader, TRAPS);
   static instanceKlassHandle load_shared_class(instanceKlassHandle ik,
                                                Handle class_loader,
                                                Handle protection_domain,
@@ -653,7 +658,7 @@ public:
   static instanceKlassHandle load_shared_class(Symbol* class_name,
                                                Handle class_loader,
                                                TRAPS);
-  static bool is_ext_class_loader(Handle class_loader);
+  static bool is_platform_class_loader(Handle class_loader);
 
 protected:
   static Klass* find_shared_class(Symbol* class_name);

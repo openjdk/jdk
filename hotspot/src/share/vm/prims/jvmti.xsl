@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -1801,7 +1801,7 @@ typedef struct {
             <xsl:text>) (jvmtiEnv* env</xsl:text>
             <xsl:apply-templates select="$thisFunction/parameters" mode="signature">
               <xsl:with-param name="comma">
-                <xsl:text>, &#xA;                       </xsl:text>
+                <xsl:text>,&#xA;                       </xsl:text>
               </xsl:with-param>
             </xsl:apply-templates>
             <xsl:text>);</xsl:text>
