@@ -158,9 +158,21 @@ void Symbol::print_utf8_on(outputStream* st) const {
 }
 
 void Symbol::print_symbol_on(outputStream* st) const {
-  ResourceMark rm;
+  char *s;
   st = st ? st : tty;
-  st->print("%s", as_quoted_ascii());
+  {
+    // ResourceMark may not affect st->print(). If st is a string
+    // stream it could resize, using the same resource arena.
+    ResourceMark rm;
+    s = as_quoted_ascii();
+    s = os::strdup(s);
+  }
+  if (s == NULL) {
+    st->print("(null)");
+  } else {
+    st->print("%s", s);
+    os::free(s);
+  }
 }
 
 char* Symbol::as_quoted_ascii() const {

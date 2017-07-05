@@ -23,19 +23,15 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.loader;
 
 import java.net.URL;
 import java.io.File;
 import sun.net.www.ParseUtil;
 
 /**
- * (Solaris) platform specific handling for file: URLs .
- * urls must not contain a hostname in the authority field
- * other than "localhost".
- *
- * This implementation could be updated to map such URLs
- * on to /net/host/...
+ * (Windows) Platform specific handling for file: URLs . In particular deals
+ * with network paths mapping them to UNCs.
  *
  * @author      Michael McMahon
  */
@@ -43,39 +39,37 @@ import sun.net.www.ParseUtil;
 public class FileURLMapper {
 
     URL url;
-    String path;
+    String file;
 
     public FileURLMapper (URL url) {
         this.url = url;
     }
 
     /**
-     * @return the platform specific path corresponding to the URL
-     *  so long as the URL does not contain a hostname in the authority field.
+     * @return the platform specific path corresponding to the URL, and in particular
+     *  returns a UNC when the authority contains a hostname
      */
 
     public String getPath () {
-        if (path != null) {
-            return path;
+        if (file != null) {
+            return file;
         }
         String host = url.getHost();
-        if (host == null || "".equals(host) || "localhost".equalsIgnoreCase (host)) {
-            path = url.getFile();
-            path = ParseUtil.decode (path);
+        if (host != null && !host.equals("") &&
+            !"localhost".equalsIgnoreCase(host)) {
+            String rest = url.getFile();
+            String s = host + ParseUtil.decode (url.getFile());
+            file = "\\\\"+ s.replace('/', '\\');
+            return file;
         }
-        return path;
+        String path = url.getFile().replace('/', '\\');
+        file = ParseUtil.decode(path);
+        return file;
     }
 
-    /**
-     * Checks whether the file identified by the URL exists.
-     */
-    public boolean exists () {
-        String s = getPath ();
-        if (s == null) {
-            return false;
-        } else {
-            File f = new File (s);
-            return f.exists();
-        }
+    public boolean exists() {
+        String path = getPath();
+        File f = new File (path);
+        return f.exists();
     }
 }
