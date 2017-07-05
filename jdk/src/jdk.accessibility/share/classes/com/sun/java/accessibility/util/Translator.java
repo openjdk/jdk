@@ -121,6 +121,7 @@ public class Translator extends AccessibleContext
             Class<?> translatorClass = getTranslatorClass(o.getClass());
             if (translatorClass != null) {
                 try {
+                    @SuppressWarnings("deprecation")
                     Translator t = (Translator)translatorClass.newInstance();
                     t.setSource(o);
                     a = t;

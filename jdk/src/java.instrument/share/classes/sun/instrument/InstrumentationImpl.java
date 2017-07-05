@@ -436,7 +436,8 @@ public class InstrumentationImpl implements Instrumentation {
             if (classBeingRedefined != null) {
                 module = classBeingRedefined.getModule();
             } else {
-                module = loader.getUnnamedModule();
+                module = (loader == null) ? jdk.internal.loader.BootLoader.getUnnamedModule()
+                                          : loader.getUnnamedModule();
             }
         }
         if (mgr == null) {

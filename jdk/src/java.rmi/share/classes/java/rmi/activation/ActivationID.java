@@ -272,6 +272,7 @@ public class ActivationID implements Serializable {
             Class<? extends RemoteRef> refClass =
                 Class.forName(RemoteRef.packagePrefix + "." + in.readUTF())
                 .asSubclass(RemoteRef.class);
+            @SuppressWarnings("deprecation")
             RemoteRef ref = refClass.newInstance();
             ref.readExternal(in);
             activator = (Activator)

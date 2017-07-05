@@ -181,6 +181,8 @@ java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-
 
 java/nio/charset/coders/BashStreams.java                        8149712 generic-all
 
+java/nio/file/WatchService/DeleteInterference.java              8156511 linux-all
+
 ############################################################################
 
 # jdk_rmi

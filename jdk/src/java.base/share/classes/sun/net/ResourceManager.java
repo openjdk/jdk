@@ -53,8 +53,8 @@ public class ResourceManager {
     private static final AtomicInteger numSockets;
 
     static {
-        String prop =
-                GetPropertyAction.getProperty("sun.net.maxDatagramSockets");
+        String prop = GetPropertyAction
+                .privilegedGetProperty("sun.net.maxDatagramSockets");
         int defmax = DEFAULT_MAX_SOCKETS;
         try {
             if (prop != null) {

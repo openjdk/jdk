@@ -140,9 +140,8 @@ public class PropertyResourceBundle extends ResourceBundle {
 
     // Check whether the strict encoding is specified.
     // The possible encoding is either "ISO-8859-1" or "UTF-8".
-    private static final String encoding =
-        GetPropertyAction
-                .getProperty("java.util.PropertyResourceBundle.encoding", "")
+    private static final String encoding = GetPropertyAction
+        .privilegedGetProperty("java.util.PropertyResourceBundle.encoding", "")
         .toUpperCase(Locale.ROOT);
 
     /**

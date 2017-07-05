@@ -113,7 +113,7 @@ for where in app; do
 		     av="$av -Djava.security.manager -Djava.security.policy==$TESTSRC/default-pol";;
       cp-policy)     css="$CSS FOO";
 		     av="$av -Djava.security.manager
-		         -Djava.security.policy==$TESTSRC/charsetProvider.sp";;
+		         -Djava.security.policy=$TESTSRC/charsetProvider.sp";;
     esac
     if (set -x; $JAVA ${TESTVMOPTS} $av Test $css) 2>&1; then
       continue;

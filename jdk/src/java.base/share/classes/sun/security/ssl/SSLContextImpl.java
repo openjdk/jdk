@@ -656,7 +656,8 @@ public abstract class SSLContextImpl extends SSLContextSpi {
         // the provider service. Instead, please handle the initialization
         // exception in the caller's constructor.
         static {
-            String property = GetPropertyAction.getProperty(PROPERTY_NAME);
+            String property = GetPropertyAction
+                    .privilegedGetProperty(PROPERTY_NAME);
             if (property != null && property.length() != 0) {
                 // remove double quote marks from beginning/end of the property
                 if (property.length() > 1 && property.charAt(0) == '"' &&

@@ -241,7 +241,7 @@ public class IntegrationTest {
             lst.add(new MyPostProcessor());
         }
         // Image builder
-        DefaultImageBuilder builder = new DefaultImageBuilder(true, output);
+        DefaultImageBuilder builder = new DefaultImageBuilder(output);
         PluginsConfiguration plugins
                 = new Jlink.PluginsConfiguration(lst, builder, null);
 
@@ -253,10 +253,6 @@ public class IntegrationTest {
         File jimage = new File(output.toString(), "lib" + File.separator + "modules");
         if (!jimage.exists()) {
             throw new AssertionError("jimage not generated");
-        }
-        File bom = new File(output.toString(), "bom");
-        if (!bom.exists()) {
-            throw new AssertionError("bom not generated");
         }
         File release = new File(output.toString(), "release");
         if (!release.exists()) {
@@ -311,7 +307,7 @@ public class IntegrationTest {
         }
 
         // Image builder
-        DefaultImageBuilder builder = new DefaultImageBuilder(false, output);
+        DefaultImageBuilder builder = new DefaultImageBuilder(output);
         PluginsConfiguration plugins
                 = new Jlink.PluginsConfiguration(lst, builder, null);
 
@@ -359,7 +355,7 @@ public class IntegrationTest {
         }
 
         // Image builder
-        DefaultImageBuilder builder = new DefaultImageBuilder(false, output);
+        DefaultImageBuilder builder = new DefaultImageBuilder(output);
         PluginsConfiguration plugins
                 = new Jlink.PluginsConfiguration(lst, builder, null);
         boolean failed = false;

@@ -104,7 +104,7 @@ public class BuiltinClassLoader
      * A module defined/loaded by a built-in class loader.
      *
      * A LoadedModule encapsulates a ModuleReference along with its CodeSource
-     * URL to avoid needing to create this URL when define classes.
+     * URL to avoid needing to create this URL when defining classes.
      */
     private static class LoadedModule {
         private final BuiltinClassLoader loader;

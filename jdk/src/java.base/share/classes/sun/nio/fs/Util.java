@@ -38,7 +38,7 @@ class Util {
     private Util() { }
 
     private static final Charset jnuEncoding = Charset.forName(
-        GetPropertyAction.getProperty("sun.jnu.encoding"));
+        GetPropertyAction.privilegedGetProperty("sun.jnu.encoding"));
 
     /**
      * Returns {@code Charset} corresponding to the sun.jnu.encoding property

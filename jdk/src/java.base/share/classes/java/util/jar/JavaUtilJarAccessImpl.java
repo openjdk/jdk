@@ -60,4 +60,8 @@ class JavaUtilJarAccessImpl implements JavaUtilJarAccess {
     public List<Object> getManifestDigests(JarFile jar) {
         return jar.getManifestDigests();
     }
+
+    public String getRealName(JarFile jar, JarEntry entry) {
+        return jar.getRealName(entry);
+    }
 }

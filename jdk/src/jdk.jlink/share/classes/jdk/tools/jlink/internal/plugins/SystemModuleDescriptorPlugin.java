@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jdk.internal.misc.JavaLangModuleAccess;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleInfoExtender;
 import jdk.internal.module.SystemModules;
@@ -50,6 +52,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.Pool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin.Builder.*;
 
 /**
  * Jlink plugin to reconstitute module descriptors for installed modules.
@@ -63,6 +66,8 @@ import jdk.tools.jlink.plugin.TransformerPlugin;
  * @see SystemModules
  */
 public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
+    private static final JavaLangModuleAccess JLMA = SharedSecrets.getJavaLangModuleAccess();
+
     // TODO: packager has the dependency on the plugin name
     // Keep it as "--installed-modules" until packager removes such
     // dependency (should not need to specify this plugin since it
@@ -118,7 +123,8 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
             Pool.ModuleData data = module.get("module-info.class");
             if (data == null) {
                 // automatic module not supported yet
-                throw new PluginException("module-info.class not found for " + module.getName() + " module");
+                throw new PluginException("module-info.class not found for " +
+                                          module.getName() + " module");
             }
             assert module.getName().equals(data.getModule());
             try {
@@ -126,15 +132,20 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                 ModuleDescriptor md = ModuleDescriptor.read(bain);
                 validateNames(md);
 
-                Builder.ModuleDescriptorBuilder mbuilder = builder.module(md, module.getAllPackages());
+                ModuleDescriptorBuilder mbuilder = builder.module(md, module.getAllPackages());
+                int packages = md.exports().size() + md.conceals().size();
                 if (md.conceals().isEmpty() &&
-                        (md.exports().size() + md.conceals().size()) != module.getAllPackages().size()) {
+                        packages != module.getAllPackages().size()) {
                     // add ConcealedPackages attribute if not exist
                     bain.reset();
-                    ModuleInfoRewriter minfoWriter = new ModuleInfoRewriter(bain, mbuilder.conceals());
+                    ModuleInfoRewriter minfoWriter =
+                        new ModuleInfoRewriter(bain, mbuilder.conceals());
                     // replace with the overridden version
-                    data = new Pool.ModuleData(data.getModule(), data.getPath(), data.getType(),
-                                               minfoWriter.stream(), minfoWriter.size());
+                    data = new Pool.ModuleData(data.getModule(),
+                                               data.getPath(),
+                                               data.getType(),
+                                               minfoWriter.stream(),
+                                               minfoWriter.size());
                 }
                 out.add(data);
             } catch (IOException e) {
@@ -151,8 +162,12 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
 
             if (builder.isOverriddenClass(data.getPath())) {
                 byte[] bytes = cwriter.toByteArray();
-                Pool.ModuleData ndata = new Pool.ModuleData(data.getModule(), data.getPath(), data.getType(),
-                                                            new ByteArrayInputStream(bytes), bytes.length);
+                Pool.ModuleData ndata =
+                    new Pool.ModuleData(data.getModule(),
+                                        data.getPath(),
+                                        data.getType(),
+                                        new ByteArrayInputStream(bytes),
+                                        bytes.length);
                 out.add(ndata);
             } else {
                 out.add(data);
@@ -230,6 +245,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
 
         // static variables in SystemModules class
         private static final String MODULE_NAMES = "MODULE_NAMES";
+        private static final String MODULES_TO_HASH = "MODULES_TO_HASH";
         private static final String PACKAGE_COUNT = "PACKAGES_IN_BOOT_LAYER";
 
         private static final int BUILDER_VAR    = 0;
@@ -245,6 +261,9 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
 
         // list of all ModuleDescriptorBuilders, invoked in turn when building.
         private final List<ModuleDescriptorBuilder> builders = new ArrayList<>();
+
+        // module name to hash
+        private final Map<String, String> modulesToHash = new HashMap<>();
 
         // map Set<String> to a specialized builder to allow them to be
         // deduplicated as they are requested
@@ -268,6 +287,11 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                     "[Ljava/lang/String;", null, null)
                     .visitEnd();
 
+            // public static String[] MODULES_TO_HASH = new String[] {....};
+            cw.visitField(ACC_PUBLIC+ACC_FINAL+ACC_STATIC, MODULES_TO_HASH,
+                "[Ljava/lang/String;", null, null)
+                .visitEnd();
+
             // public static int PACKAGES_IN_BOOT_LAYER;
             cw.visitField(ACC_PUBLIC+ACC_FINAL+ACC_STATIC, PACKAGE_COUNT,
                     "I", null, numPackages)
@@ -283,13 +307,33 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
 
             int index = 0;
             for (ModuleDescriptorBuilder builder : builders) {
-                mv.visitInsn(DUP);       // arrayref
+                mv.visitInsn(DUP);                  // arrayref
                 pushInt(index++);
-                mv.visitLdcInsn(builder.md.name());      // value
+                mv.visitLdcInsn(builder.md.name()); // value
                 mv.visitInsn(AASTORE);
             }
 
             mv.visitFieldInsn(PUTSTATIC, CLASSNAME, MODULE_NAMES,
+                    "[Ljava/lang/String;");
+
+            // create the MODULES_TO_HASH array
+            pushInt(numModules);
+            mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+
+            index = 0;
+            for (ModuleDescriptorBuilder builder : builders) {
+                String mn = builder.md.name();
+                String recordedHash = modulesToHash.get(mn);
+                if (recordedHash != null) {
+                    mv.visitInsn(DUP);              // arrayref
+                    pushInt(index);
+                    mv.visitLdcInsn(recordedHash);  // value
+                    mv.visitInsn(AASTORE);
+                }
+                index++;
+            }
+
+            mv.visitFieldInsn(PUTSTATIC, CLASSNAME, MODULES_TO_HASH,
                     "[Ljava/lang/String;");
 
             mv.visitInsn(RETURN);
@@ -315,15 +359,19 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                 }
             }
 
-            // provides
+            // provides (preserve iteration order)
             for (ModuleDescriptor.Provides p : md.provides().values()) {
-                stringSets.computeIfAbsent(p.providers(), s -> new StringSetBuilder(s))
+                stringSets.computeIfAbsent(p.providers(), s -> new StringSetBuilder(s, true))
                           .increment();
             }
 
             // uses
             stringSets.computeIfAbsent(md.uses(), s -> new StringSetBuilder(s))
                       .increment();
+
+            // hashes
+            JLMA.hashes(md).ifPresent(mh -> modulesToHash.putAll(mh.hashes()));
+
             return builder;
         }
 
@@ -484,13 +532,17 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                     conceals(pn);
                 }
 
-                if (md.version().isPresent()) {
-                    version(md.version().get());
-                }
+                // version
+                md.version().ifPresent(this::version);
 
-                if (md.mainClass().isPresent()) {
-                    mainClass(md.mainClass().get());
-                }
+                // main class
+                md.mainClass().ifPresent(this::mainClass);
+
+                // hashes
+                JLMA.hashes(md).ifPresent(mh -> {
+                    algorithm(mh.algorithm());
+                    mh.names().forEach(mn -> moduleHash(mn, mh.hashFor(mn)));
+                });
 
                 putModuleDescriptor();
             }
@@ -603,7 +655,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
             /*
              * Invoke Builder.provides(String service, Set<String> providers)
              *
-             * Set<String> providers = new HashSet<>();
+             * Set<String> providers = new LinkedHashSet<>();
              * providers.add(impl);
              * :
              * :
@@ -652,6 +704,22 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                 mv.visitInsn(POP);
             }
 
+            void algorithm(String alg) {
+                mv.visitVarInsn(ALOAD, BUILDER_VAR);
+                mv.visitLdcInsn(alg);
+                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
+                    "algorithm", STRING_SIG, false);
+                mv.visitInsn(POP);
+            }
+
+            void moduleHash(String name, String hashString) {
+                mv.visitVarInsn(ALOAD, BUILDER_VAR);
+                mv.visitLdcInsn(name);
+                mv.visitLdcInsn(hashString);
+                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
+                    "moduleHash", STRING_STRING_SIG, false);
+                mv.visitInsn(POP);
+            }
         }
 
         /*
@@ -663,10 +731,17 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
          */
         class StringSetBuilder {
             final Set<String> names;
+            final boolean linked;
             int refCount;
             int localVarIndex;
-            StringSetBuilder(Set<String> names) {
+
+            StringSetBuilder(Set<String> names, boolean linked) {
                 this.names = names;
+                this.linked = linked;
+            }
+
+            StringSetBuilder(Set<String> names) {
+                this(names, false);
             }
 
             void increment() {
@@ -704,11 +779,11 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                                 "singleton", "(Ljava/lang/Object;)Ljava/util/Set;", false);
                         mv.visitVarInsn(ASTORE, index);
                     } else {
-                        mv.visitTypeInsn(NEW, "java/util/HashSet");
+                        String cn = linked ? "java/util/LinkedHashSet" : "java/util/HashSet";
+                        mv.visitTypeInsn(NEW, cn);
                         mv.visitInsn(DUP);
                         pushInt(initialCapacity(names.size()));
-                        mv.visitMethodInsn(INVOKESPECIAL, "java/util/HashSet",
-                                "<init>", "(I)V", false);
+                        mv.visitMethodInsn(INVOKESPECIAL, cn, "<init>", "(I)V", false);
 
                         mv.visitVarInsn(ASTORE, index);
                         for (String t : names) {

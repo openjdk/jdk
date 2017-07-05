@@ -655,7 +655,9 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             final Object[] openArray = (Object[]) openValue;
             final Collection<Object> valueCollection;
             try {
-                valueCollection = cast(collectionClass.newInstance());
+                @SuppressWarnings("deprecation")
+                Collection<?> tmp = collectionClass.newInstance();
+                valueCollection = cast(tmp);
             } catch (Exception e) {
                 throw invalidObjectException("Cannot create collection", e);
             }
@@ -1114,7 +1116,9 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             try {
                 final Class<?> targetClass = getTargetClass();
                 ReflectUtil.checkPackageAccess(targetClass);
-                o = targetClass.newInstance();
+                @SuppressWarnings("deprecation")
+                Object tmp = targetClass.newInstance();
+                o = tmp;
                 for (int i = 0; i < itemNames.length; i++) {
                     if (cd.containsKey(itemNames[i])) {
                         Object openItem = cd.get(itemNames[i]);

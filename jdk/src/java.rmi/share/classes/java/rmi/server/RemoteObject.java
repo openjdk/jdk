@@ -439,18 +439,16 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
                 RemoteRef.packagePrefix + "." + refClassName;
             Class<?> refClass = Class.forName(internalRefClassName);
             try {
-                ref = (RemoteRef) refClass.newInstance();
+                @SuppressWarnings("deprecation")
+                Object tmp = refClass.newInstance();
+                ref = (RemoteRef) tmp;
 
                 /*
                  * If this step fails, assume we found an internal
                  * class that is not meant to be a serializable ref
                  * type.
                  */
-            } catch (InstantiationException e) {
-                throw new ClassNotFoundException(internalRefClassName, e);
-            } catch (IllegalAccessException e) {
-                throw new ClassNotFoundException(internalRefClassName, e);
-            } catch (ClassCastException e) {
+            } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
                 throw new ClassNotFoundException(internalRefClassName, e);
             }
             ref.readExternal(in);

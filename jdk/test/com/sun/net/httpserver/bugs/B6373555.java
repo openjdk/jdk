@@ -29,7 +29,6 @@
 
 import java.net.*;
 import java.io.*;
-import javax.xml.soap.*;
 import java.util.*;
 import com.sun.net.httpserver.*;
 import java.util.concurrent.*;
