@@ -5043,7 +5043,7 @@ TOOLCHAIN_MINIMUM_VERSION_xlc=""
 #
 # $1 = compiler to test (CC or CXX)
 # $2 = human readable name of compiler (C or C++)
-# $3 = list of compiler names to search for
+# $3 = compiler name to search for
 
 
 # Detect the core components of the toolchain, i.e. the compilers (CC and CXX),
@@ -5170,7 +5170,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1486175373
+DATE_WHEN_GENERATED=1488400074
 
 ###############################################################################
 #
@@ -16200,8 +16200,8 @@ $as_echo "$as_me: Your cygwin is too old. You are running $CYGWIN_VERSION, but a
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking cygwin root directory as unix-style path" >&5
 $as_echo_n "checking cygwin root directory as unix-style path... " >&6; }
-    # The cmd output ends with Windows line endings (CR/LF), the grep command will strip that away
-    cygwin_winpath_root=`cd / ; cmd /c cd | $GREP ".*"`
+    # The cmd output ends with Windows line endings (CR/LF)
+    cygwin_winpath_root=`cd / ; cmd /c cd | $TR -d '\r\n'`
     # Force cygpath to report the proper root by including a trailing space, and then stripping it off again.
     CYGWIN_ROOT_PATH=`$CYGPATH -u "$cygwin_winpath_root " | $CUT -f 1 -d " "`
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CYGWIN_ROOT_PATH" >&5
@@ -24091,6 +24091,20 @@ $as_echo "$tool_specified" >&6; }
 
   fi
 
+
+  # Check bash version
+  # Extra [ ] to stop m4 mangling
+   BASH_VER=`$BASH --version | $SED -n  -e 's/^.*bash.*ersion *\([0-9.]*\).*$/\1/ p'`
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking bash version" >&5
+$as_echo_n "checking bash version... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BASH_VER" >&5
+$as_echo "$BASH_VER" >&6; }
+
+  BASH_MAJOR=`$ECHO $BASH_VER | $CUT -d . -f 1`
+  BASH_MINOR=`$ECHO $BASH_VER | $CUT -d . -f 2`
+  if test $BASH_MAJOR -lt 3 || (test $BASH_MAJOR -eq 3 && test $BASH_MINOR -lt 2); then
+    as_fn_error $? "bash version 3.2 or better is required" "$LINENO" 5
+  fi
 
   # Test if bash supports pipefail.
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if bash supports pipefail" >&5
@@ -33124,10 +33138,9 @@ done
     if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
       PATH="$TOOLCHAIN_PATH"
-      for ac_prog in $SEARCH_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}$SEARCH_LIST", so it can be a program name with args.
+set dummy ${ac_tool_prefix}$SEARCH_LIST; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_TOOLCHAIN_PATH_CC+:} false; then :
@@ -33166,20 +33179,73 @@ $as_echo "no" >&6; }
 fi
 
 
-  test -n "$TOOLCHAIN_PATH_CC" && break
+fi
+if test -z "$ac_cv_path_TOOLCHAIN_PATH_CC"; then
+  ac_pt_TOOLCHAIN_PATH_CC=$TOOLCHAIN_PATH_CC
+  # Extract the first word of "$SEARCH_LIST", so it can be a program name with args.
+set dummy $SEARCH_LIST; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_TOOLCHAIN_PATH_CC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_TOOLCHAIN_PATH_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_TOOLCHAIN_PATH_CC="$ac_pt_TOOLCHAIN_PATH_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_TOOLCHAIN_PATH_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_TOOLCHAIN_PATH_CC=$ac_cv_path_ac_pt_TOOLCHAIN_PATH_CC
+if test -n "$ac_pt_TOOLCHAIN_PATH_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_TOOLCHAIN_PATH_CC" >&5
+$as_echo "$ac_pt_TOOLCHAIN_PATH_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_TOOLCHAIN_PATH_CC" = x; then
+    TOOLCHAIN_PATH_CC=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    TOOLCHAIN_PATH_CC=$ac_pt_TOOLCHAIN_PATH_CC
+  fi
+else
+  TOOLCHAIN_PATH_CC="$ac_cv_path_TOOLCHAIN_PATH_CC"
+fi
 
       CC=$TOOLCHAIN_PATH_CC
       PATH="$PATH_save"
     fi
 
-    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # AC_PATH_TOOL can't be run multiple times with the same variable,
     # so create a new name for this run.
     if test "x$CC" = x; then
-      for ac_prog in $SEARCH_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}$SEARCH_LIST", so it can be a program name with args.
+set dummy ${ac_tool_prefix}$SEARCH_LIST; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_POTENTIAL_CC+:} false; then :
@@ -33218,8 +33284,62 @@ $as_echo "no" >&6; }
 fi
 
 
-  test -n "$POTENTIAL_CC" && break
+fi
+if test -z "$ac_cv_path_POTENTIAL_CC"; then
+  ac_pt_POTENTIAL_CC=$POTENTIAL_CC
+  # Extract the first word of "$SEARCH_LIST", so it can be a program name with args.
+set dummy $SEARCH_LIST; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_POTENTIAL_CC+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_POTENTIAL_CC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_POTENTIAL_CC="$ac_pt_POTENTIAL_CC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_POTENTIAL_CC="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_POTENTIAL_CC=$ac_cv_path_ac_pt_POTENTIAL_CC
+if test -n "$ac_pt_POTENTIAL_CC"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_POTENTIAL_CC" >&5
+$as_echo "$ac_pt_POTENTIAL_CC" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_POTENTIAL_CC" = x; then
+    POTENTIAL_CC=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    POTENTIAL_CC=$ac_pt_POTENTIAL_CC
+  fi
+else
+  POTENTIAL_CC="$ac_cv_path_POTENTIAL_CC"
+fi
 
       CC=$POTENTIAL_CC
     fi
@@ -34425,10 +34545,9 @@ done
     if test -n "$TOOLCHAIN_PATH"; then
       PATH_save="$PATH"
       PATH="$TOOLCHAIN_PATH"
-      for ac_prog in $SEARCH_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}$SEARCH_LIST", so it can be a program name with args.
+set dummy ${ac_tool_prefix}$SEARCH_LIST; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_TOOLCHAIN_PATH_CXX+:} false; then :
@@ -34467,20 +34586,73 @@ $as_echo "no" >&6; }
 fi
 
 
-  test -n "$TOOLCHAIN_PATH_CXX" && break
+fi
+if test -z "$ac_cv_path_TOOLCHAIN_PATH_CXX"; then
+  ac_pt_TOOLCHAIN_PATH_CXX=$TOOLCHAIN_PATH_CXX
+  # Extract the first word of "$SEARCH_LIST", so it can be a program name with args.
+set dummy $SEARCH_LIST; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_TOOLCHAIN_PATH_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_TOOLCHAIN_PATH_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_TOOLCHAIN_PATH_CXX="$ac_pt_TOOLCHAIN_PATH_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_TOOLCHAIN_PATH_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_TOOLCHAIN_PATH_CXX=$ac_cv_path_ac_pt_TOOLCHAIN_PATH_CXX
+if test -n "$ac_pt_TOOLCHAIN_PATH_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_TOOLCHAIN_PATH_CXX" >&5
+$as_echo "$ac_pt_TOOLCHAIN_PATH_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_TOOLCHAIN_PATH_CXX" = x; then
+    TOOLCHAIN_PATH_CXX=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    TOOLCHAIN_PATH_CXX=$ac_pt_TOOLCHAIN_PATH_CXX
+  fi
+else
+  TOOLCHAIN_PATH_CXX="$ac_cv_path_TOOLCHAIN_PATH_CXX"
+fi
 
       CXX=$TOOLCHAIN_PATH_CXX
       PATH="$PATH_save"
     fi
 
-    # AC_PATH_PROGS can't be run multiple times with the same variable,
+    # AC_PATH_TOOL can't be run multiple times with the same variable,
     # so create a new name for this run.
     if test "x$CXX" = x; then
-      for ac_prog in $SEARCH_LIST
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}$SEARCH_LIST", so it can be a program name with args.
+set dummy ${ac_tool_prefix}$SEARCH_LIST; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_POTENTIAL_CXX+:} false; then :
@@ -34519,8 +34691,62 @@ $as_echo "no" >&6; }
 fi
 
 
-  test -n "$POTENTIAL_CXX" && break
+fi
+if test -z "$ac_cv_path_POTENTIAL_CXX"; then
+  ac_pt_POTENTIAL_CXX=$POTENTIAL_CXX
+  # Extract the first word of "$SEARCH_LIST", so it can be a program name with args.
+set dummy $SEARCH_LIST; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_POTENTIAL_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_POTENTIAL_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_POTENTIAL_CXX="$ac_pt_POTENTIAL_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_POTENTIAL_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
 done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_POTENTIAL_CXX=$ac_cv_path_ac_pt_POTENTIAL_CXX
+if test -n "$ac_pt_POTENTIAL_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_POTENTIAL_CXX" >&5
+$as_echo "$ac_pt_POTENTIAL_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_POTENTIAL_CXX" = x; then
+    POTENTIAL_CXX=""
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    POTENTIAL_CXX=$ac_pt_POTENTIAL_CXX
+  fi
+else
+  POTENTIAL_CXX="$ac_cv_path_POTENTIAL_CXX"
+fi
 
       CXX=$POTENTIAL_CXX
     fi
@@ -52629,12 +52855,12 @@ $as_echo "no, forced" >&6; }
     # Only enable AOT on linux-X64.
     if test "x$OPENJDK_TARGET_OS-$OPENJDK_TARGET_CPU" = "xlinux-x86_64"; then
       if test -e "$HOTSPOT_TOPDIR/src/jdk.aot"; then
-        if test -e "$HOTSPOT_TOPDIR/src/jdk.vm.compiler"; then
+        if test -e "$HOTSPOT_TOPDIR/src/jdk.internal.vm.compiler"; then
           ENABLE_AOT="true"
         else
           ENABLE_AOT="false"
           if test "x$enable_aot" = "xyes"; then
-            as_fn_error $? "Cannot build AOT without hotspot/src/jdk.vm.compiler sources. Remove --enable-aot." "$LINENO" 5
+            as_fn_error $? "Cannot build AOT without hotspot/src/jdk.internal.vm.compiler sources. Remove --enable-aot." "$LINENO" 5
           fi
         fi
       else
@@ -64365,8 +64591,8 @@ $as_echo "$JVM_FEATURES" >&6; }
     JVM_FEATURES_jvmci=""
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jdk.vm.compiler should be built" >&5
-$as_echo_n "checking if jdk.vm.compiler should be built... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jdk.internal.vm.compiler should be built" >&5
+$as_echo_n "checking if jdk.internal.vm.compiler should be built... " >&6; }
   if   [[ " $JVM_FEATURES " =~ " graal " ]]  ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes, forced" >&5
 $as_echo "yes, forced" >&6; }
