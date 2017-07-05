@@ -181,7 +181,7 @@ public:
 
   void scrub(CardTableModRefBS* ctbs, BitMap* card_bm) {
     HeapWord* hr_bot = hr()->bottom();
-    int hr_first_card_index = ctbs->index_for(hr_bot);
+    size_t hr_first_card_index = ctbs->index_for(hr_bot);
     bm()->set_intersection_at_offset(*card_bm, hr_first_card_index);
 #if PRT_COUNT_OCCUPIED
     recount_occupied();
