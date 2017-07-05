@@ -414,9 +414,9 @@ Java_java_io_UnixFileSystem_getSpace(JNIEnv *env, jobject this,
     jlong rv = 0L;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct statvfs fsstat;
-        memset(&fsstat, 0, sizeof(struct statvfs));
-        if (statvfs(path, &fsstat) == 0) {
+        struct statvfs64 fsstat;
+        memset(&fsstat, 0, sizeof(fsstat));
+        if (statvfs64(path, &fsstat) == 0) {
             switch(t) {
             case java_io_FileSystem_SPACE_TOTAL:
                 rv = jlong_mul(long_to_jlong(fsstat.f_frsize),

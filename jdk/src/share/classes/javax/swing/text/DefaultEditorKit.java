@@ -1461,13 +1461,17 @@ public class DefaultEditorKit extends EditorKit {
                             // Make sure the new visible location contains
                             // the location of dot, otherwise Caret will
                             // cause an additional scroll.
-                            adjustScrollIfNecessary(target, newVis, initialY,
-                                                    newIndex);
-                            if (select) {
-                                target.moveCaretPosition(newIndex);
-                            }
-                            else {
-                                target.setCaretPosition(newIndex);
+                            int newY = getAdjustedY(target, newVis, newIndex);
+
+                            if (direction == -1 && newY <= initialY || direction == 1 && newY >= initialY) {
+                                // Change index and correct newVis.y only if won't cause scrolling upward
+                                newVis.y = newY;
+
+                                if (select) {
+                                    target.moveCaretPosition(newIndex);
+                                } else {
+                                    target.setCaretPosition(newIndex);
+                                }
                             }
                         }
                     } catch (BadLocationException ble) { }
@@ -1513,34 +1517,27 @@ public class DefaultEditorKit extends EditorKit {
         }
 
         /**
-         * Adjusts the rectangle that indicates the location to scroll to
+         * Returns adjustsed {@code y} position that indicates the location to scroll to
          * after selecting <code>index</code>.
          */
-        private void adjustScrollIfNecessary(JTextComponent text,
-                                             Rectangle visible, int initialY,
-                                             int index) {
+        private int getAdjustedY(JTextComponent text, Rectangle visible, int index) {
+            int result = visible.y;
+
             try {
                 Rectangle dotBounds = text.modelToView(index);
 
-                if (dotBounds.y < visible.y ||
-                       (dotBounds.y > (visible.y + visible.height)) ||
-                       (dotBounds.y + dotBounds.height) >
-                       (visible.y + visible.height)) {
-                    int y;
-
-                    if (dotBounds.y < visible.y) {
-                        y = dotBounds.y;
-                    }
-                    else {
-                        y = dotBounds.y + dotBounds.height - visible.height;
-                    }
-                    if ((direction == -1 && y < initialY) ||
-                                        (direction == 1 && y > initialY)) {
-                        // Only adjust if won't cause scrolling upward.
-                        visible.y = y;
+                if (dotBounds.y < visible.y) {
+                    result = dotBounds.y;
+                } else {
+                    if ((dotBounds.y > visible.y + visible.height) ||
+                            (dotBounds.y + dotBounds.height > visible.y + visible.height)) {
+                        result = dotBounds.y + dotBounds.height - visible.height;
                     }
                 }
-            } catch (BadLocationException ble) {}
+            } catch (BadLocationException ble) {
+            }
+
+            return result;
         }
 
         /**
