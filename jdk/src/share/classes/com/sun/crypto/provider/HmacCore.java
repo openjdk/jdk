@@ -36,7 +36,7 @@ import java.security.spec.*;
 
 /**
  * This class constitutes the core of HMAC-<MD> algorithms, where
- * <MD> can be SHA1 or MD5, etc.
+ * <MD> can be SHA1 or MD5, etc. See RFC 2104 for spec.
  *
  * It also contains the implementation classes for the SHA-256,
  * SHA-384, and SHA-512 HMACs.
@@ -116,7 +116,7 @@ final class HmacCore implements Cloneable {
         }
 
         byte[] secret = key.getEncoded();
-        if (secret == null || secret.length == 0) {
+        if (secret == null) {
             throw new InvalidKeyException("Missing key data");
         }
 

@@ -26,9 +26,6 @@
  * @bug     4919105
  * @summary Generified basic unit test of Thread.getAllStackTraces()
  * @author  Mandy Chung
- *
- * @compile -source 1.5 GenerifyStackTraces.java
- * @run main GenerifyStackTraces
  */
 
 import java.util.*;

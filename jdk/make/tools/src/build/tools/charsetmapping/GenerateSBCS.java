@@ -55,7 +55,7 @@ public class GenerateSBCS {
             String pkgName  = fields[4];
             System.out.printf("%s,%s,%s,%b,%s%n", clzName, csName, hisName, isASCII, pkgName);
 
-            genClass(args[0], args[1], "SingleByte-X.java",
+            genClass(args[0], args[1], "SingleByte-X.java.template",
                      clzName, csName, hisName, pkgName, isASCII);
         }
     }

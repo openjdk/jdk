@@ -69,6 +69,8 @@ public class XKeysym {
     static Hashtable<Integer, Long> javaKeycode2KeysymHash = new Hashtable<Integer, Long>();
     static long keysym_lowercase = unsafe.allocateMemory(Native.getLongSize());
     static long keysym_uppercase = unsafe.allocateMemory(Native.getLongSize());
+    static Keysym2JavaKeycode kanaLock = new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_KANA_LOCK,
+                                                                java.awt.event.KeyEvent.KEY_LOCATION_STANDARD);
     private static PlatformLogger keyEventLog = PlatformLogger.getLogger("sun.awt.X11.kye.XKeysym");
     public static char convertKeysym( long ks, int state ) {
 
@@ -214,12 +216,35 @@ public class XKeysym {
         }
         return keysym;
     }
+
+    /**
+        Return java.awt.KeyEvent constant meaning (Java) keycode, derived from X keysym.
+        Some keysyms maps to more than one keycode, these would require extra processing.
+    */
+    static Keysym2JavaKeycode getJavaKeycode( long keysym ) {
+        if(keysym == XKeySymConstants.XK_Mode_switch){
+           /* XK_Mode_switch on solaris maps either to VK_ALT_GRAPH (default) or VK_KANA_LOCK */
+           if( XToolkit.isKanaKeyboard() ) {
+               return kanaLock;
+           }
+        }else if(keysym == XKeySymConstants.XK_L1){
+           /* if it is Sun keyboard, trick hash to return VK_STOP else VK_F11 (default) */
+           if( XToolkit.isSunKeyboard() ) {
+               keysym = XKeySymConstants.SunXK_Stop;
+           }
+        }else if(keysym == XKeySymConstants.XK_L2) {
+           /* if it is Sun keyboard, trick hash to return VK_AGAIN else VK_F12 (default) */
+           if( XToolkit.isSunKeyboard() ) {
+               keysym = XKeySymConstants.SunXK_Again;
+           }
+        }
+
+        return  keysym2JavaKeycodeHash.get( keysym );
+    }
     /**
         Return java.awt.KeyEvent constant meaning (Java) keycode, derived from X Window KeyEvent.
         Algorithm is, extract via XKeycodeToKeysym  a proper keysym according to Xlib spec rules and
         err exceptions, then search a java keycode in a table.
-        Some keysyms maps to more than one keycode, these would require extra processing. If someone
-        points me to such a keysym.
     */
     static Keysym2JavaKeycode getJavaKeycode( XKeyEvent ev ) {
         // get from keysym2JavaKeycodeHash.
@@ -234,7 +259,7 @@ public class XKeysym {
             keysym = xkeycode2keysym(ev, ndx);
         }
 
-        Keysym2JavaKeycode jkc = keysym2JavaKeycodeHash.get( keysym );
+        Keysym2JavaKeycode jkc = getJavaKeycode( keysym );
         return jkc;
     }
     static int getJavaKeycodeOnly( XKeyEvent ev ) {
@@ -259,7 +284,7 @@ public class XKeysym {
             ndx = 0;
             keysym = xkeycode2keysym_noxkb(ev, ndx);
         }
-        Keysym2JavaKeycode jkc = keysym2JavaKeycodeHash.get( keysym );
+        Keysym2JavaKeycode jkc = getJavaKeycode( keysym );
         return jkc == null ? java.awt.event.KeyEvent.VK_UNDEFINED : jkc.getJavaKeycode();
     }
     static long javaKeycode2Keysym( int jkey ) {

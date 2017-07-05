@@ -35,7 +35,7 @@ import java.util.ResourceBundle;
 import java.util.MissingResourceException;
 import java.util.Vector;
 import sun.awt.AppContext;
-import sun.awt.ComponentAccessor;
+import sun.awt.AWTAccessor;
 
 public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
@@ -187,7 +187,7 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
 
     public void blockWindows(java.util.List<Window> toBlock) {
         for (Window w : toBlock) {
-            WWindowPeer wp = (WWindowPeer)ComponentAccessor.getPeer(w);
+            WWindowPeer wp = (WWindowPeer)AWTAccessor.getComponentAccessor().getPeer(w);
             if (wp != null) {
                 blockWindow(wp);
             }

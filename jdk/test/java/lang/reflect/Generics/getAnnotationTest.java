@@ -26,8 +26,6 @@
  * @bug 4979440
  * @summary Test for signature parsing corner case
  * @author Joseph D. Darcy
- * @compile -source 1.5 getAnnotationTest.java
- * @run main getAnnotationTest
  */
 
 import java.lang.reflect.*;

@@ -68,7 +68,7 @@ NonEuro_Resources_properties := $(FILES_compiled_properties)
 FILES_java := $(FILES_java_orig)
 FILES_compiled_properties := $(FILES_compiled_properties_orig)
 
-LocaleDataMetaInfo_Src=$(SHARE_SRC)/classes/sun/util/LocaleDataMetaInfo-XLocales.java
+LocaleDataMetaInfo_Src=$(SHARE_SRC)/classes/sun/util/LocaleDataMetaInfo-XLocales.java.template
 LocaleDataMetaInfo_Dest=$(GENSRCDIR)/sun/util/LocaleDataMetaInfo.java
 LOCALEGEN_SH=localegen.sh
 RESOURCE_NAMES="FormatData CollationData TimeZoneNames LocaleNames CurrencyNames CalendarData"

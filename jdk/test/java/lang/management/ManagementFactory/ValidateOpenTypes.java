@@ -28,7 +28,7 @@
  *          MBeanServer.
  * @author  Mandy Chung
  *
- * @compile -source 1.5 ValidateOpenTypes.java
+ * @compile ValidateOpenTypes.java
  * @run main/othervm -verbose:gc ValidateOpenTypes
  */
 import java.lang.management.*;

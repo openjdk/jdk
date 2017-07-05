@@ -26,7 +26,7 @@
  * @bug 5097131 6299047
  * @summary Test jvmti hprof
  *
- * @compile -source 1.5 -g HelloWorld.java DefineClass.java ../DemoRun.java
+ * @compile -g HelloWorld.java DefineClass.java ../DemoRun.java
  * @build CpuTimesDefineClassTest
  * @run main CpuTimesDefineClassTest DefineClass
  *

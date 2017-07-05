@@ -28,9 +28,6 @@
  * @author  Josh Bloch
  * @author  Neal Gafter
  * @author  Yo Ma Ma
- *
- * @compile -source 1.5 EnumSetBash.java
- * @run main EnumSetBash
  */
 
 import java.util.*;

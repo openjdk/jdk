@@ -27,7 +27,7 @@
  * @summary Generic framework to test Method.equals.
  *
  * @clean A
- * @compile -source 1.5 Equals.java
+ * @compile Equals.java
  * @run main Equals
  */
 

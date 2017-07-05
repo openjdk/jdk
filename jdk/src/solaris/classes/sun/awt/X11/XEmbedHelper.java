@@ -216,7 +216,12 @@ public class XEmbedHelper {
 
         XToolkit.awtLock();
         try {
-            keycode = XWindow.getAWTKeyCodeForKeySym((int)keysym);
+            XKeysym.Keysym2JavaKeycode kc = XKeysym.getJavaKeycode( keysym );
+            if(kc == null) {
+                keycode = java.awt.event.KeyEvent.VK_UNDEFINED;
+            }else{
+                keycode = kc.getJavaKeycode();
+            }
         } finally {
             XToolkit.awtUnlock();
         }
