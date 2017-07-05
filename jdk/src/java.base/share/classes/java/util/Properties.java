@@ -60,12 +60,12 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * object that contains a non-{@code String} key.
  *
  * <p>
- * The {@link #load(java.io.Reader) load(Reader)} <tt>/</tt>
+ * The {@link #load(java.io.Reader) load(Reader)} {@code /}
  * {@link #store(java.io.Writer, java.lang.String) store(Writer, String)}
  * methods load and store properties from and to a character based stream
  * in a simple line-oriented format specified below.
  *
- * The {@link #load(java.io.InputStream) load(InputStream)} <tt>/</tt>
+ * The {@link #load(java.io.InputStream) load(InputStream)} {@code /}
  * {@link #store(java.io.OutputStream, java.lang.String) store(OutputStream, String)}
  * methods work the same way as the load(Reader)/store(Writer, String) pair, except
  * the input/output stream is encoded in ISO 8859-1 character encoding.
@@ -105,7 +105,7 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * </pre>
  *
  * <p>This class is thread-safe: multiple threads can share a single
- * <tt>Properties</tt> object without the need for external synchronization.
+ * {@code Properties} object without the need for external synchronization.
  *
  * @author  Arthur van Hoff
  * @author  Michael McCloskey
@@ -144,13 +144,13 @@ class Properties extends Hashtable<Object,Object> {
     }
 
     /**
-     * Calls the <tt>Hashtable</tt> method {@code put}. Provided for
-     * parallelism with the <tt>getProperty</tt> method. Enforces use of
+     * Calls the {@code Hashtable} method {@code put}. Provided for
+     * parallelism with the {@code getProperty} method. Enforces use of
      * strings for property keys and values. The value returned is the
-     * result of the <tt>Hashtable</tt> call to {@code put}.
+     * result of the {@code Hashtable} call to {@code put}.
      *
      * @param key the key to be placed into this property list.
-     * @param value the value corresponding to <tt>key</tt>.
+     * @param value the value corresponding to {@code key}.
      * @return     the previous value of the specified key in this property
      *             list, or {@code null} if it did not have one.
      * @see #getProperty
@@ -756,7 +756,7 @@ class Properties extends Hashtable<Object,Object> {
      * @param   writer      an output character stream writer.
      * @param   comments   a description of the property list.
      * @exception  IOException if writing this property list to the specified
-     *             output stream throws an <tt>IOException</tt>.
+     *             output stream throws an {@code IOException}.
      * @exception  ClassCastException  if this {@code Properties} object
      *             contains any keys or values that are not {@code Strings}.
      * @exception  NullPointerException  if {@code writer} is null.
@@ -803,7 +803,7 @@ class Properties extends Hashtable<Object,Object> {
      * @param   out      an output stream.
      * @param   comments   a description of the property list.
      * @exception  IOException if writing this property list to the specified
-     *             output stream throws an <tt>IOException</tt>.
+     *             output stream throws an {@code IOException}.
      * @exception  ClassCastException  if this {@code Properties} object
      *             contains any keys or values that are not {@code Strings}.
      * @exception  NullPointerException  if {@code out} is null.
@@ -860,7 +860,7 @@ class Properties extends Hashtable<Object,Object> {
      *
      * @param in the input stream from which to read the XML document.
      * @throws IOException if reading from the specified input stream
-     *         results in an <tt>IOException</tt>.
+     *         results in an {@code IOException}.
      * @throws java.io.UnsupportedEncodingException if the document's encoding
      *         declaration can be read and it specifies an encoding that is not
      *         supported
@@ -885,15 +885,15 @@ class Properties extends Hashtable<Object,Object> {
      * Emits an XML document representing all of the properties contained
      * in this table.
      *
-     * <p> An invocation of this method of the form <tt>props.storeToXML(os,
-     * comment)</tt> behaves in exactly the same way as the invocation
-     * <tt>props.storeToXML(os, comment, "UTF-8");</tt>.
+     * <p> An invocation of this method of the form {@code props.storeToXML(os,
+     * comment)} behaves in exactly the same way as the invocation
+     * {@code props.storeToXML(os, comment, "UTF-8");}.
      *
      * @param os the output stream on which to emit the XML document.
      * @param comment a description of the property list, or {@code null}
      *        if no comment is desired.
      * @throws IOException if writing to the specified output stream
-     *         results in an <tt>IOException</tt>.
+     *         results in an {@code IOException}.
      * @throws NullPointerException if {@code os} is null.
      * @throws ClassCastException  if this {@code Properties} object
      *         contains any keys or values that are not
@@ -933,7 +933,7 @@ class Properties extends Hashtable<Object,Object> {
      *                  character encoding</a>
      *
      * @throws IOException if writing to the specified output stream
-     *         results in an <tt>IOException</tt>.
+     *         results in an {@code IOException}.
      * @throws java.io.UnsupportedEncodingException if the encoding is not
      *         supported by the implementation.
      * @throws NullPointerException if {@code os} is {@code null},
@@ -1016,10 +1016,10 @@ class Properties extends Hashtable<Object,Object> {
      * including distinct keys in the default property list if a key
      * of the same name has not already been found from the main
      * properties list.  Properties whose key or value is not
-     * of type <tt>String</tt> are omitted.
+     * of type {@code String} are omitted.
      * <p>
-     * The returned set is not backed by the <tt>Properties</tt> object.
-     * Changes to this <tt>Properties</tt> are not reflected in the set,
+     * The returned set is not backed by the {@code Properties} object.
+     * Changes to this {@code Properties} are not reflected in the set,
      * or vice versa.
      *
      * @return  a set of keys in this property list where

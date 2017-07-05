@@ -89,7 +89,7 @@ public interface UserDefinedFileAttributeView
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, and it denies {@link
-     *          RuntimePermission}<tt>("accessUserDefinedAttributes")</tt>
+     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
      *          or its {@link SecurityManager#checkRead(String) checkRead} method
      *          denies read access to the file.
      */
@@ -110,7 +110,7 @@ public interface UserDefinedFileAttributeView
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, and it denies {@link
-     *          RuntimePermission}<tt>("accessUserDefinedAttributes")</tt>
+     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
      *          or its {@link SecurityManager#checkRead(String) checkRead} method
      *          denies read access to the file.
      */
@@ -156,7 +156,7 @@ public interface UserDefinedFileAttributeView
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, and it denies {@link
-     *          RuntimePermission}<tt>("accessUserDefinedAttributes")</tt>
+     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
      *          or its {@link SecurityManager#checkRead(String) checkRead} method
      *          denies read access to the file.
      *
@@ -206,7 +206,7 @@ public interface UserDefinedFileAttributeView
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, and it denies {@link
-     *          RuntimePermission}<tt>("accessUserDefinedAttributes")</tt>
+     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the file.
      */
@@ -223,7 +223,7 @@ public interface UserDefinedFileAttributeView
      * @throws  SecurityException
      *          In the case of the default provider, a security manager is
      *          installed, and it denies {@link
-     *          RuntimePermission}<tt>("accessUserDefinedAttributes")</tt>
+     *          RuntimePermission}{@code ("accessUserDefinedAttributes")}
      *          or its {@link SecurityManager#checkWrite(String) checkWrite}
      *          method denies write access to the file.
      */

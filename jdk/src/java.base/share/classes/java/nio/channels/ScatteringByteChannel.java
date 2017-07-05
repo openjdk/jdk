@@ -66,11 +66,11 @@ public interface ScatteringByteChannel
      * at the moment that this method is invoked.
      *
      * <p> Suppose that a byte sequence of length <i>n</i> is read, where
-     * <tt>0</tt>&nbsp;<tt>&lt;=</tt>&nbsp;<i>n</i>&nbsp;<tt>&lt;=</tt>&nbsp;<i>r</i>.
-     * Up to the first <tt>dsts[offset].remaining()</tt> bytes of this sequence
-     * are transferred into buffer <tt>dsts[offset]</tt>, up to the next
-     * <tt>dsts[offset+1].remaining()</tt> bytes are transferred into buffer
-     * <tt>dsts[offset+1]</tt>, and so forth, until the entire byte sequence
+     * {@code 0}&nbsp;{@code <=}&nbsp;<i>n</i>&nbsp;{@code <=}&nbsp;<i>r</i>.
+     * Up to the first {@code dsts[offset].remaining()} bytes of this sequence
+     * are transferred into buffer {@code dsts[offset]}, up to the next
+     * {@code dsts[offset+1].remaining()} bytes are transferred into buffer
+     * {@code dsts[offset+1]}, and so forth, until the entire byte sequence
      * is transferred into the given buffers.  As many bytes as possible are
      * transferred into each buffer, hence the final position of each updated
      * buffer, except the last updated buffer, is guaranteed to be equal to
@@ -87,18 +87,18 @@ public interface ScatteringByteChannel
      * @param  offset
      *         The offset within the buffer array of the first buffer into
      *         which bytes are to be transferred; must be non-negative and no
-     *         larger than <tt>dsts.length</tt>
+     *         larger than {@code dsts.length}
      *
      * @param  length
      *         The maximum number of buffers to be accessed; must be
      *         non-negative and no larger than
-     *         <tt>dsts.length</tt>&nbsp;-&nbsp;<tt>offset</tt>
+     *         {@code dsts.length}&nbsp;-&nbsp;{@code offset}
      *
      * @return The number of bytes read, possibly zero,
-     *         or <tt>-1</tt> if the channel has reached end-of-stream
+     *         or {@code -1} if the channel has reached end-of-stream
      *
      * @throws  IndexOutOfBoundsException
-     *          If the preconditions on the <tt>offset</tt> and <tt>length</tt>
+     *          If the preconditions on the {@code offset} and {@code length}
      *          parameters do not hold
      *
      * @throws  NonReadableChannelException
@@ -126,7 +126,7 @@ public interface ScatteringByteChannel
     /**
      * Reads a sequence of bytes from this channel into the given buffers.
      *
-     * <p> An invocation of this method of the form <tt>c.read(dsts)</tt>
+     * <p> An invocation of this method of the form {@code c.read(dsts)}
      * behaves in exactly the same manner as the invocation
      *
      * <blockquote><pre>
@@ -136,7 +136,7 @@ public interface ScatteringByteChannel
      *         The buffers into which bytes are to be transferred
      *
      * @return The number of bytes read, possibly zero,
-     *         or <tt>-1</tt> if the channel has reached end-of-stream
+     *         or {@code -1} if the channel has reached end-of-stream
      *
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading

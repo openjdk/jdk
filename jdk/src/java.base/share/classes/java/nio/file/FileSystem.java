@@ -202,7 +202,7 @@ public abstract class FileSystem
      *
      * <p> In the case of the default provider, and a security manager is
      * installed, the security manager is invoked to check {@link
-     * RuntimePermission}<tt>("getFileStoreAttributes")</tt>. If denied, then
+     * RuntimePermission}{@code ("getFileStoreAttributes")}. If denied, then
      * no file stores are returned by the iterator. In addition, the security
      * manager's {@link SecurityManager#checkRead(String)} method is invoked to
      * check read access to the file store's <em>top-most</em> directory. If
@@ -334,19 +334,19 @@ public abstract class FileSystem
      *   character extension</td>
      * </tr>
      * <tr>
-     *   <td><tt>&#47;home&#47;*&#47;*</tt>
-     *   <td>Matches <tt>&#47;home&#47;gus&#47;data</tt> on UNIX platforms</td>
+     *   <td><code>&#47;home&#47;*&#47;*</code>
+     *   <td>Matches <code>&#47;home&#47;gus&#47;data</code> on UNIX platforms</td>
      * </tr>
      * <tr>
-     *   <td><tt>&#47;home&#47;**</tt>
-     *   <td>Matches <tt>&#47;home&#47;gus</tt> and
-     *   <tt>&#47;home&#47;gus&#47;data</tt> on UNIX platforms</td>
+     *   <td><code>&#47;home&#47;**</code>
+     *   <td>Matches <code>&#47;home&#47;gus</code> and
+     *   <code>&#47;home&#47;gus&#47;data</code> on UNIX platforms</td>
      * </tr>
      * <tr>
-     *   <td><tt>C:&#92;&#92;*</tt>
-     *   <td>Matches <tt>C:&#92;foo</tt> and <tt>C:&#92;bar</tt> on the Windows
+     *   <td><code>C:&#92;&#92;*</code>
+     *   <td>Matches <code>C:&#92;foo</code> and <code>C:&#92;bar</code> on the Windows
      *   platform (note that the backslash is escaped; as a string literal in the
-     *   Java Language the pattern would be <tt>"C:&#92;&#92;&#92;&#92;*"</tt>) </td>
+     *   Java Language the pattern would be <code>"C:&#92;&#92;&#92;&#92;*"</code>) </td>
      * </tr>
      *
      * </table>
@@ -390,7 +390,7 @@ public abstract class FileSystem
      *   character is used to separate the subpatterns. Groups cannot be nested.
      *   </p></li>
      *
-     *   <li><p> Leading period<tt>&#47;</tt>dot characters in file name are
+     *   <li><p> Leading period<code>&#47;</code>dot characters in file name are
      *   treated as regular characters in match operations. For example,
      *   the {@code "*"} glob pattern matches file name {@code ".login"}.
      *   The {@link Files#isHidden} method may be used to test whether a file

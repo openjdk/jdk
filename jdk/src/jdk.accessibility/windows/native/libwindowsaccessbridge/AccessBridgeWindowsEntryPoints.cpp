@@ -51,7 +51,6 @@ extern "C" {
         // open our window
         if (theWindowsAccessBridge != (WinAccessBridge *) 0) {
             theWindowsAccessBridge->initWindow();
-            DEBUG_CODE(SetDlgItemText(theDialogWindow, cInvokedByText, "Windows"));
         }
     }
 

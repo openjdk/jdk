@@ -25,6 +25,7 @@
 
 SUNWprivate_1.1 {
 	global:
+                JNI_OnLoad;
                 Java_java_nio_MappedByteBuffer_force0;
                 Java_java_nio_MappedByteBuffer_isLoaded0;
                 Java_java_nio_MappedByteBuffer_load0;
