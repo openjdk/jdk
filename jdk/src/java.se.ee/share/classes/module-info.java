@@ -34,6 +34,7 @@
  */
 @SuppressWarnings({"deprecation",
                    "removal"}) // java.corba and other modules
+@Deprecated(since="9", forRemoval=true)
 module java.se.ee {
 
     requires transitive java.se;

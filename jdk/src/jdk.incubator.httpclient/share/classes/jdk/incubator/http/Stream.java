@@ -803,7 +803,9 @@ class Stream<T> extends ExchangeImpl<T> {
         completeResponseExceptionally(e);
         try {
             // will send a RST_STREAM frame
-            connection.resetStream(streamid, ResetFrame.CANCEL);
+            if (streamid != 0) {
+                connection.resetStream(streamid, ResetFrame.CANCEL);
+            }
         } catch (IOException ex) {
             Log.logError(ex);
         }

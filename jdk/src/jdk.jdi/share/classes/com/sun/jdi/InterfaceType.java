@@ -44,6 +44,7 @@ import java.util.List;
  * @since  1.3
  */
 public interface InterfaceType extends ReferenceType {
+
     /**
      * Gets the interfaces directly extended by this interface.
      * The returned list contains only those interfaces this
@@ -187,11 +188,12 @@ public interface InterfaceType extends ReferenceType {
      * @since 1.8
      */
     default Value invokeMethod(ThreadReference thread, Method method,
-                       List<? extends Value> arguments, int options)
+                               List<? extends Value> arguments, int options)
             throws InvalidTypeException,
-            ClassNotLoadedException,
-            IncompatibleThreadStateException,
-            InvocationException {
+                   ClassNotLoadedException,
+                   IncompatibleThreadStateException,
+                   InvocationException
+    {
         throw new UnsupportedOperationException();
     }
 }

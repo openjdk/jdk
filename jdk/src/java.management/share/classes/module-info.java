@@ -29,6 +29,9 @@
  * The JMX API consists of interfaces for monitoring and management of the
  * JVM and other components in the Java runtime.
  *
+ * @uses javax.management.remote.JMXConnectorProvider
+ * @uses javax.management.remote.JMXConnectorServerProvider
+ *
  * @moduleGraph
  * @since 9
  */
