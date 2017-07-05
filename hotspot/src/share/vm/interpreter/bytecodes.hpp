@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,7 +353,7 @@ class Bytecodes: AllStatic {
 
   // Verify that bcp points into method
 #ifdef ASSERT
-  static bool        check_method(const methodOopDesc* method, address bcp);
+  static bool        check_method(const Method* method, address bcp);
 #endif
   static bool check_must_rewrite(Bytecodes::Code bc);
 
@@ -368,26 +368,26 @@ class Bytecodes: AllStatic {
   // argument is used for conversion of breakpoints into the original
   // bytecode.  The CI uses these methods but guarantees that
   // breakpoints are hidden so the method argument should be passed as
-  // NULL since in that case the bcp and methodOop are unrelated
+  // NULL since in that case the bcp and Method* are unrelated
   // memory.
-  static Code       code_at(const methodOopDesc* method, address bcp) {
+  static Code       code_at(const Method* method, address bcp) {
     assert(method == NULL || check_method(method, bcp), "bcp must point into method");
     Code code = cast(*bcp);
-    assert(code != _breakpoint || method != NULL, "need methodOop to decode breakpoint");
+    assert(code != _breakpoint || method != NULL, "need Method* to decode breakpoint");
     return (code != _breakpoint) ? code : non_breakpoint_code_at(method, bcp);
   }
-  static Code       java_code_at(const methodOopDesc* method, address bcp) {
+  static Code       java_code_at(const Method* method, address bcp) {
     return java_code(code_at(method, bcp));
   }
 
   // Fetch a bytecode or a breakpoint:
   static Code       code_or_bp_at(address bcp)    { return (Code)cast(*bcp); }
 
-  static Code       code_at(methodOop method, int bci);
+  static Code       code_at(Method* method, int bci);
   static bool       is_active_breakpoint_at(address bcp) { return (Code)*bcp == _breakpoint; }
 
   // find a bytecode, behind a breakpoint if necessary:
-  static Code       non_breakpoint_code_at(const methodOopDesc* method, address bcp);
+  static Code       non_breakpoint_code_at(const Method* method, address bcp);
 
   // Bytecode attributes
   static bool        is_defined     (int  code)    { return 0 <= code && code < number_of_codes && flags(code, false) != 0; }
@@ -408,11 +408,11 @@ class Bytecodes: AllStatic {
   // if 'end' is provided, it indicates the end of the code buffer which
   // should not be read past when parsing.
   static int         special_length_at(Bytecodes::Code code, address bcp, address end = NULL);
-  static int         special_length_at(methodOop method, address bcp, address end = NULL) { return special_length_at(code_at(method, bcp), bcp, end); }
+  static int         special_length_at(Method* method, address bcp, address end = NULL) { return special_length_at(code_at(method, bcp), bcp, end); }
   static int         raw_special_length_at(address bcp, address end = NULL);
   static int         length_for_code_at(Bytecodes::Code code, address bcp)  { int l = length_for(code); return l > 0 ? l : special_length_at(code, bcp); }
-  static int         length_at      (methodOop method, address bcp)  { return length_for_code_at(code_at(method, bcp), bcp); }
-  static int         java_length_at (methodOop method, address bcp)  { return length_for_code_at(java_code_at(method, bcp), bcp); }
+  static int         length_at      (Method* method, address bcp)  { return length_for_code_at(code_at(method, bcp), bcp); }
+  static int         java_length_at (Method* method, address bcp)  { return length_for_code_at(java_code_at(method, bcp), bcp); }
   static bool        is_java_code   (Code code)    { return 0 <= code && code < number_of_java_codes; }
 
   static bool        is_aload       (Code code)    { return (code == _aload  || code == _aload_0  || code == _aload_1

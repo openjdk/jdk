@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
 
-public class ciMethodData extends ciObject {
+public class ciMethodData extends ciMetadata {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -54,7 +54,7 @@ public class ciMethodData extends ciObject {
     extraDataSizeField = new CIntField(type.getCIntegerField("_extra_data_size"), 0);
     dataSizeField = new CIntField(type.getCIntegerField("_data_size"), 0);
     stateField = new CIntField(type.getCIntegerField("_state"), 0);
-    sizeofMethodDataOopDesc = (int)db.lookupType("methodDataOopDesc").getSize();;
+    sizeofMethodDataOopDesc = (int)db.lookupType("MethodData").getSize();;
   }
 
   private static AddressField origField;
@@ -83,7 +83,7 @@ public class ciMethodData extends ciObject {
   }
 
   public byte[] orig() {
-    // fetch the orig methodDataOopDesc data between header and dataSize
+    // fetch the orig MethodData data between header and dataSize
     Address base = getAddress().addOffsetTo(origField.getOffset());
     byte[] result = new byte[MethodData.sizeofMethodDataOopDesc];
     for (int i = 0; i < MethodData.sizeofMethodDataOopDesc; i++) {

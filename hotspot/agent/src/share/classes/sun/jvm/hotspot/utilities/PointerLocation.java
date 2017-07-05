@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ public class PointerLocation {
 
   CollectedHeap heap;
   Generation gen;
-  Generation permGen;
 
   // If UseTLAB was enabled and the pointer was found in a
   // currently-active TLAB, these will be set
@@ -81,7 +80,7 @@ public class PointerLocation {
   }
 
   public boolean isInHeap() {
-    return (heap != null || (gen != null) || (permGen != null));
+    return (heap != null || (gen != null));
   }
 
   public boolean isInNewGen() {
@@ -92,21 +91,13 @@ public class PointerLocation {
     return ((gen != null) && (gen.level() == 1));
   }
 
-  public boolean isInPermGen() {
-    return (permGen != null);
-  }
-
   public boolean inOtherGen() {
-    return (!isInNewGen() && !isInOldGen() && !isInPermGen());
+    return (!isInNewGen() && !isInOldGen());
   }
 
   /** Only valid if isInHeap() */
   public Generation getGeneration() {
-    if (gen != null) {
       return gen;
-    } else {
-      return permGen;
-    }
   }
 
   /** This may be true if isInNewGen is also true */
@@ -216,8 +207,6 @@ public class PointerLocation {
           tty.print("In new generation ");
         } else if (isInOldGen()) {
           tty.print("In old generation ");
-        } else if (isInPermGen()) {
-          tty.print("In perm generation ");
         } else if (gen != null) {
           tty.print("In Generation " + getGeneration().level());
         } else {

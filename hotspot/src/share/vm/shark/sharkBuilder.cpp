@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "runtime/os.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"

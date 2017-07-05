@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
-//  ConstantPoolCache : A constant pool cache (constantPoolCacheOopDesc).
-//  See cpCacheOop.hpp for details about this class.
+//  ConstantPoolCache : A constant pool cache (ConstantPoolCache).
+//  See cpCache.hpp for details about this class.
 //
-public class ConstantPoolCache extends Oop {
+public class ConstantPoolCache extends Metadata {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -44,31 +44,33 @@ public class ConstantPoolCache extends Oop {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("constantPoolCacheOopDesc");
-    constants      = new OopField(type.getOopField("_constant_pool"), 0);
+    Type type      = db.lookupType("ConstantPoolCache");
+    constants      = new MetadataField(type.getAddressField("_constant_pool"), 0);
     baseOffset     = type.getSize();
     Type elType    = db.lookupType("ConstantPoolCacheEntry");
     elementSize    = elType.getSize();
     length         = new CIntField(type.getCIntegerField("_length"), 0);
+    intSize        = VM.getVM().getObjectHeap().getIntSize();
   }
 
-  ConstantPoolCache(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public ConstantPoolCache(Address addr) {
+    super(addr);
   }
 
   public boolean isConstantPoolCache() { return true; }
 
-  private static OopField constants;
+  private static MetadataField constants;
 
   private static long baseOffset;
   private static long elementSize;
   private static CIntField length;
+  private static long intSize;
 
 
   public ConstantPool getConstants() { return (ConstantPool) constants.getValue(this); }
 
-  public long getObjectSize() {
-    return alignObjectSize(baseOffset + getLength() * elementSize);
+  public long getSize() {
+    return Oop.alignObjectSize(baseOffset + getLength() * elementSize);
   }
 
   public ConstantPoolCacheEntry getEntryAt(int i) {
@@ -76,41 +78,10 @@ public class ConstantPoolCache extends Oop {
     return new ConstantPoolCacheEntry(this, i);
   }
 
-  public static boolean isSecondaryIndex(int i)     { return (i < 0); }
-  public static int     decodeSecondaryIndex(int i) { return  isSecondaryIndex(i) ? ~i : i; }
-  public static int     encodeSecondaryIndex(int i) { return !isSecondaryIndex(i) ? ~i : i; }
-
-  // secondary entries hold invokedynamic call site bindings
-  public ConstantPoolCacheEntry getSecondaryEntryAt(int i) {
-    int rawIndex = i;
-    if (isSecondaryIndex(i)) {
-      rawIndex = decodeSecondaryIndex(i);
-    }
-    ConstantPoolCacheEntry e = getEntryAt(rawIndex);
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(e.isSecondaryEntry(), "must be a secondary entry:" + rawIndex);
-    }
-    return e;
-  }
-
-  public ConstantPoolCacheEntry getMainEntryAt(int i) {
-    int primaryIndex = i;
-    if (isSecondaryIndex(i)) {
-      // run through an extra level of indirection:
-      int rawIndex = decodeSecondaryIndex(i);
-      primaryIndex = getEntryAt(rawIndex).getMainEntryIndex();
-    }
-    ConstantPoolCacheEntry e = getEntryAt(primaryIndex);
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(!e.isSecondaryEntry(), "must not be a secondary entry:" + primaryIndex);
-    }
-    return e;
-  }
-
   public int getIntAt(int entry, int fld) {
     //alignObjectSize ?
-    long offset = baseOffset + /*alignObjectSize*/entry * elementSize + fld* getHeap().getIntSize();
-    return (int) getHandle().getCIntegerAt(offset, getHeap().getIntSize(), true );
+    long offset = baseOffset + /*alignObjectSize*/entry * elementSize + fld * intSize;
+    return (int) getAddress().getCIntegerAt(offset, intSize, true );
   }
 
 
@@ -119,17 +90,15 @@ public class ConstantPoolCache extends Oop {
   }
 
   public int getLength() {
-    return (int) length.getValue(this);
+    return (int) length.getValue(getAddress());
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
-      visitor.doOop(constants, true);
+  public void iterateFields(MetadataVisitor visitor) {
+    super.iterateFields(visitor);
+    visitor.doMetadata(constants, true);
       for (int i = 0; i < getLength(); i++) {
         ConstantPoolCacheEntry entry = getEntryAt(i);
         entry.iterateFields(visitor);
       }
     }
-  }
 };

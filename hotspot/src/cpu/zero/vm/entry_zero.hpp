@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,21 +44,21 @@ class ZeroEntry {
   }
 
  private:
-  typedef int (*NormalEntryFunc)(methodOop method,
+  typedef int (*NormalEntryFunc)(Method* method,
                                  intptr_t  base_pc,
                                  TRAPS);
-  typedef int (*OSREntryFunc)(methodOop method,
+  typedef int (*OSREntryFunc)(Method* method,
                               address   osr_buf,
                               intptr_t  base_pc,
                               TRAPS);
 
  public:
-  void invoke(methodOop method, TRAPS) const {
+  void invoke(Method* method, TRAPS) const {
     maybe_deoptimize(
       ((NormalEntryFunc) entry_point())(method, (intptr_t) this, THREAD),
       THREAD);
   }
-  void invoke_osr(methodOop method, address osr_buf, TRAPS) const {
+  void invoke_osr(Method* method, address osr_buf, TRAPS) const {
     maybe_deoptimize(
       ((OSREntryFunc) entry_point())(method, osr_buf, (intptr_t) this, THREAD),
       THREAD);

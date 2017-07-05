@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,10 +53,10 @@ bool SimpleThresholdPolicy::loop_predicate_helper(int i, int b, double scale) {
 
 // Simple methods are as good being compiled with C1 as C2.
 // Determine if a given method is such a case.
-bool SimpleThresholdPolicy::is_trivial(methodOop method) {
+bool SimpleThresholdPolicy::is_trivial(Method* method) {
   if (method->is_accessor()) return true;
   if (method->code() != NULL) {
-    methodDataOop mdo = method->method_data();
+    MethodData* mdo = method->method_data();
     if (mdo != NULL && mdo->num_loops() == 0 &&
         (method->code_size() < 5  || (mdo->num_blocks() < 4) && (method->code_size() < 15))) {
       return !mdo->would_profile();

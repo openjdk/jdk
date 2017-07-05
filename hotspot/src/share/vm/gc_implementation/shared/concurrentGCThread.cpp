@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,7 +175,7 @@ SurrogateLockerThread::SurrogateLockerThread() :
 {}
 
 SurrogateLockerThread* SurrogateLockerThread::make(TRAPS) {
-  klassOop k =
+  Klass* k =
     SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(),
                                       true, CHECK_NULL);
   instanceKlassHandle klass (THREAD, k);
@@ -255,13 +255,13 @@ void SurrogateLockerThread::loop() {
     }
     switch(msg) {
       case acquirePLL: {
-        instanceRefKlass::acquire_pending_list_lock(&pll_basic_lock);
+        InstanceRefKlass::acquire_pending_list_lock(&pll_basic_lock);
         debug_only(owned++;)
         break;
       }
       case releaseAndNotifyPLL: {
         assert(owned > 0, "Don't have PLL");
-        instanceRefKlass::release_and_notify_pending_list_lock(&pll_basic_lock);
+        InstanceRefKlass::release_and_notify_pending_list_lock(&pll_basic_lock);
         debug_only(owned--;)
         break;
       }

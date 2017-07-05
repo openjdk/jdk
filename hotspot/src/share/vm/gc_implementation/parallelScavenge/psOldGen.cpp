@@ -57,9 +57,12 @@ void PSOldGen::initialize(ReservedSpace rs, size_t alignment,
                           const char* perf_data_name, int level) {
   initialize_virtual_space(rs, alignment);
   initialize_work(perf_data_name, level);
+
   // The old gen can grow to gen_size_limit().  _reserve reflects only
   // the current maximum that can be committed.
   assert(_reserved.byte_size() <= gen_size_limit(), "Consistency check");
+
+  initialize_performance_counters(perf_data_name, level);
 }
 
 void PSOldGen::initialize_virtual_space(ReservedSpace rs, size_t alignment) {
@@ -140,7 +143,9 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
 
   // Update the start_array
   start_array()->set_covered_region(cmr);
+}
 
+void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
   // Generation Counters, generation 'level', 1 subspace
   _gen_counters = new PSGenerationCounters(perf_data_name, level, 1,
                                            virtual_space());

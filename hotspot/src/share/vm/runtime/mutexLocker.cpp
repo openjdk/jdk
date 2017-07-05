@@ -225,7 +225,7 @@ void mutex_init() {
   def(ExpandHeap_lock              , Mutex  , leaf,        true ); // Used during compilation by VM thread
   def(JNIHandleBlockFreeList_lock  , Mutex  , leaf,        true ); // handles are used by VM thread
   def(SignatureHandlerLibrary_lock , Mutex  , leaf,        false);
-  def(SymbolTable_lock             , Mutex  , leaf,        true );
+  def(SymbolTable_lock             , Mutex  , leaf+2,      true );
   def(StringTable_lock             , Mutex  , leaf,        true );
   def(ProfilePrint_lock            , Mutex  , leaf,        false); // serial profile printing
   def(ExceptionCache_lock          , Mutex  , leaf,        false); // serial profile printing

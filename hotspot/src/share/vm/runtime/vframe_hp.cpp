@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
   // Natives has no scope
   if (scope() == NULL) {
     nmethod* nm = code();
-    methodOop method = nm->method();
+    Method* method = nm->method();
     assert(method->is_native(), "");
     if (!method->is_synchronized()) {
       return new GrowableArray<MonitorInfo*>(0);
@@ -226,8 +226,9 @@ GrowableArray<MonitorInfo*>* compiledVFrame::monitors() const {
       // Put klass for scalar replaced object.
       ScopeValue* kv = ((ObjectValue *)ov)->klass();
       assert(kv->is_constant_oop(), "klass should be oop constant for scalar replaced object");
-      KlassHandle k(((ConstantOopReadValue*)kv)->value()());
-      result->push(new MonitorInfo(k->as_klassOop(), resolve_monitor_lock(mv->basic_lock()),
+      Handle k(((ConstantOopReadValue*)kv)->value()());
+      assert(java_lang_Class::is_instance(k()), "must be");
+      result->push(new MonitorInfo(k(), resolve_monitor_lock(mv->basic_lock()),
                                    mv->eliminated(), true));
     } else {
       result->push(new MonitorInfo(owner_sv->get_obj()(), resolve_monitor_lock(mv->basic_lock()),
@@ -267,14 +268,14 @@ nmethod* compiledVFrame::code() const {
 }
 
 
-methodOop compiledVFrame::method() const {
+Method* compiledVFrame::method() const {
   if (scope() == NULL) {
     // native nmethods have no scope the method is implied
     nmethod* nm = code();
     assert(nm->is_native_method(), "must be native");
     return nm->method();
   }
-  return scope()->method()();
+  return scope()->method();
 }
 
 
@@ -318,7 +319,7 @@ vframe* compiledVFrame::sender() const {
   }
 }
 
-jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(methodOop method, int bci, intptr_t* id) {
+jvmtiDeferredLocalVariableSet::jvmtiDeferredLocalVariableSet(Method* method, int bci, intptr_t* id) {
   _method = method;
   _bci = bci;
   _id = id;
@@ -353,8 +354,8 @@ void jvmtiDeferredLocalVariableSet::set_local_at(int idx, BasicType type, jvalue
 }
 
 void jvmtiDeferredLocalVariableSet::oops_do(OopClosure* f) {
-
-  f->do_oop((oop*) &_method);
+  // The Method* is on the stack so a live activation keeps it alive
+  // either by mirror in interpreter or code in compiled code.
   for ( int i = 0; i < locals()->length(); i++ ) {
     if ( locals()->at(i)->type() == T_OBJECT) {
       f->do_oop(locals()->at(i)->oop_addr());

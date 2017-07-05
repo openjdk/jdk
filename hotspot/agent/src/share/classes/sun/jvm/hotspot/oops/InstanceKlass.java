@@ -26,6 +26,7 @@ package sun.jvm.hotspot.oops;
 
 import java.io.*;
 import java.util.*;
+import sun.jvm.hotspot.classfile.ClassLoaderData;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
@@ -53,7 +54,6 @@ public class InstanceKlass extends Klass {
   private static int FIELD_SLOTS;
 
   // ClassState constants
-  private static int CLASS_STATE_UNPARSABLE_BY_GC;
   private static int CLASS_STATE_ALLOCATED;
   private static int CLASS_STATE_LOADED;
   private static int CLASS_STATE_LINKED;
@@ -62,34 +62,34 @@ public class InstanceKlass extends Klass {
   private static int CLASS_STATE_INITIALIZATION_ERROR;
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type            = db.lookupType("instanceKlass");
-    arrayKlasses         = new OopField(type.getOopField("_array_klasses"), Oop.getHeaderSize());
-    methods              = new OopField(type.getOopField("_methods"), Oop.getHeaderSize());
-    methodOrdering       = new OopField(type.getOopField("_method_ordering"), Oop.getHeaderSize());
-    localInterfaces      = new OopField(type.getOopField("_local_interfaces"), Oop.getHeaderSize());
-    transitiveInterfaces = new OopField(type.getOopField("_transitive_interfaces"), Oop.getHeaderSize());
-    fields               = new OopField(type.getOopField("_fields"), Oop.getHeaderSize());
-    javaFieldsCount      = new CIntField(type.getCIntegerField("_java_fields_count"), Oop.getHeaderSize());
-    constants            = new OopField(type.getOopField("_constants"), Oop.getHeaderSize());
-    classLoader          = new OopField(type.getOopField("_class_loader"), Oop.getHeaderSize());
-    protectionDomain     = new OopField(type.getOopField("_protection_domain"), Oop.getHeaderSize());
-    signers              = new OopField(type.getOopField("_signers"), Oop.getHeaderSize());
+    Type type            = db.lookupType("InstanceKlass");
+    arrayKlasses         = new MetadataField(type.getAddressField("_array_klasses"), 0);
+    methods              = type.getAddressField("_methods");
+    methodOrdering       = type.getAddressField("_method_ordering");
+    localInterfaces      = type.getAddressField("_local_interfaces");
+    transitiveInterfaces = type.getAddressField("_transitive_interfaces");
+    fields               = type.getAddressField("_fields");
+    javaFieldsCount      = new CIntField(type.getCIntegerField("_java_fields_count"), 0);
+    constants            = new MetadataField(type.getAddressField("_constants"), 0);
+    classLoaderData      = type.getAddressField("_class_loader_data");
+    protectionDomain     = new OopField(type.getOopField("_protection_domain"), 0);
+    signers              = new OopField(type.getOopField("_signers"), 0);
     sourceFileName       = type.getAddressField("_source_file_name");
     sourceDebugExtension = type.getAddressField("_source_debug_extension");
-    innerClasses         = new OopField(type.getOopField("_inner_classes"), Oop.getHeaderSize());
-    nonstaticFieldSize   = new CIntField(type.getCIntegerField("_nonstatic_field_size"), Oop.getHeaderSize());
-    staticFieldSize      = new CIntField(type.getCIntegerField("_static_field_size"), Oop.getHeaderSize());
-    staticOopFieldCount   = new CIntField(type.getCIntegerField("_static_oop_field_count"), Oop.getHeaderSize());
-    nonstaticOopMapSize  = new CIntField(type.getCIntegerField("_nonstatic_oop_map_size"), Oop.getHeaderSize());
-    isMarkedDependent    = new CIntField(type.getCIntegerField("_is_marked_dependent"), Oop.getHeaderSize());
-    initState            = new CIntField(type.getCIntegerField("_init_state"), Oop.getHeaderSize());
-    vtableLen            = new CIntField(type.getCIntegerField("_vtable_len"), Oop.getHeaderSize());
-    itableLen            = new CIntField(type.getCIntegerField("_itable_len"), Oop.getHeaderSize());
+    innerClasses         = type.getAddressField("_inner_classes");
+    nonstaticFieldSize   = new CIntField(type.getCIntegerField("_nonstatic_field_size"), 0);
+    staticFieldSize      = new CIntField(type.getCIntegerField("_static_field_size"), 0);
+    staticOopFieldCount   = new CIntField(type.getCIntegerField("_static_oop_field_count"), 0);
+    nonstaticOopMapSize  = new CIntField(type.getCIntegerField("_nonstatic_oop_map_size"), 0);
+    isMarkedDependent    = new CIntField(type.getCIntegerField("_is_marked_dependent"), 0);
+    initState            = new CIntField(type.getCIntegerField("_init_state"), 0);
+    vtableLen            = new CIntField(type.getCIntegerField("_vtable_len"), 0);
+    itableLen            = new CIntField(type.getCIntegerField("_itable_len"), 0);
     breakpoints          = type.getAddressField("_breakpoints");
     genericSignature     = type.getAddressField("_generic_signature");
-    majorVersion         = new CIntField(type.getCIntegerField("_major_version"), Oop.getHeaderSize());
-    minorVersion         = new CIntField(type.getCIntegerField("_minor_version"), Oop.getHeaderSize());
-    headerSize           = alignObjectOffset(Oop.getHeaderSize() + type.getSize());
+    majorVersion         = new CIntField(type.getCIntegerField("_major_version"), 0);
+    minorVersion         = new CIntField(type.getCIntegerField("_minor_version"), 0);
+    headerSize           = Oop.alignObjectOffset(type.getSize());
 
     // read field offset constants
     ACCESS_FLAGS_OFFSET            = db.lookupIntConstant("FieldInfo::access_flags_offset").intValue();
@@ -100,18 +100,17 @@ public class InstanceKlass extends Klass {
     HIGH_OFFSET                    = db.lookupIntConstant("FieldInfo::high_offset").intValue();
     FIELD_SLOTS                    = db.lookupIntConstant("FieldInfo::field_slots").intValue();
     // read ClassState constants
-    CLASS_STATE_UNPARSABLE_BY_GC = db.lookupIntConstant("instanceKlass::unparsable_by_gc").intValue();
-    CLASS_STATE_ALLOCATED = db.lookupIntConstant("instanceKlass::allocated").intValue();
-    CLASS_STATE_LOADED = db.lookupIntConstant("instanceKlass::loaded").intValue();
-    CLASS_STATE_LINKED = db.lookupIntConstant("instanceKlass::linked").intValue();
-    CLASS_STATE_BEING_INITIALIZED = db.lookupIntConstant("instanceKlass::being_initialized").intValue();
-    CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("instanceKlass::fully_initialized").intValue();
-    CLASS_STATE_INITIALIZATION_ERROR = db.lookupIntConstant("instanceKlass::initialization_error").intValue();
+    CLASS_STATE_ALLOCATED = db.lookupIntConstant("InstanceKlass::allocated").intValue();
+    CLASS_STATE_LOADED = db.lookupIntConstant("InstanceKlass::loaded").intValue();
+    CLASS_STATE_LINKED = db.lookupIntConstant("InstanceKlass::linked").intValue();
+    CLASS_STATE_BEING_INITIALIZED = db.lookupIntConstant("InstanceKlass::being_initialized").intValue();
+    CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("InstanceKlass::fully_initialized").intValue();
+    CLASS_STATE_INITIALIZATION_ERROR = db.lookupIntConstant("InstanceKlass::initialization_error").intValue();
 
   }
 
-  InstanceKlass(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public InstanceKlass(Address addr) {
+    super(addr);
     if (getJavaFieldsCount() != getAllFieldsCount()) {
       // Exercise the injected field logic
       for (int i = getJavaFieldsCount(); i < getAllFieldsCount(); i++) {
@@ -121,20 +120,20 @@ public class InstanceKlass extends Klass {
     }
   }
 
-  private static OopField  arrayKlasses;
-  private static OopField  methods;
-  private static OopField  methodOrdering;
-  private static OopField  localInterfaces;
-  private static OopField  transitiveInterfaces;
-  private static OopField  fields;
+  private static MetadataField arrayKlasses;
+  private static AddressField  methods;
+  private static AddressField  methodOrdering;
+  private static AddressField  localInterfaces;
+  private static AddressField  transitiveInterfaces;
+  private static AddressField fields;
   private static CIntField javaFieldsCount;
-  private static OopField  constants;
-  private static OopField  classLoader;
+  private static MetadataField constants;
+  private static AddressField  classLoaderData;
   private static OopField  protectionDomain;
   private static OopField  signers;
   private static AddressField  sourceFileName;
   private static AddressField  sourceDebugExtension;
-  private static OopField  innerClasses;
+  private static AddressField  innerClasses;
   private static CIntField nonstaticFieldSize;
   private static CIntField staticFieldSize;
   private static CIntField staticOopFieldCount;
@@ -150,7 +149,6 @@ public class InstanceKlass extends Klass {
 
   // type safe enum for ClassState from instanceKlass.hpp
   public static class ClassState {
-     public static final ClassState UNPARSABLE_BY_GC = new ClassState("unparsable_by_gc");
      public static final ClassState ALLOCATED    = new ClassState("allocated");
      public static final ClassState LOADED       = new ClassState("loaded");
      public static final ClassState LINKED       = new ClassState("linked");
@@ -172,9 +170,7 @@ public class InstanceKlass extends Klass {
   public int  getInitStateAsInt() { return (int) initState.getValue(this); }
   public ClassState getInitState() {
      int state = getInitStateAsInt();
-     if (state == CLASS_STATE_UNPARSABLE_BY_GC) {
-        return ClassState.UNPARSABLE_BY_GC;
-     } else if (state == CLASS_STATE_ALLOCATED) {
+     if (state == CLASS_STATE_ALLOCATED) {
         return ClassState.ALLOCATED;
      } else if (state == CLASS_STATE_LOADED) {
         return ClassState.LOADED;
@@ -242,19 +238,24 @@ public class InstanceKlass extends Klass {
     return getSizeHelper() * VM.getVM().getAddressSize();
   }
 
+  public long getSize() {
+    return Oop.alignObjectSize(getHeaderSize() + Oop.alignObjectOffset(getVtableLen()) +
+                               Oop.alignObjectOffset(getItableLen()) + Oop.alignObjectOffset(getNonstaticOopMapSize()));
+  }
+
   public static long getHeaderSize() { return headerSize; }
 
   public short getFieldAccessFlags(int index) {
-    return getFields().getShortAt(index * FIELD_SLOTS + ACCESS_FLAGS_OFFSET);
+    return getFields().at(index * FIELD_SLOTS + ACCESS_FLAGS_OFFSET);
   }
 
   public short getFieldNameIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return getFields().getShortAt(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
+    return getFields().at(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
   }
 
   public Symbol getFieldName(int index) {
-    int nameIndex = getFields().getShortAt(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
+    int nameIndex = getFields().at(index * FIELD_SLOTS + NAME_INDEX_OFFSET);
     if (index < getJavaFieldsCount()) {
       return getConstants().getSymbolAt(nameIndex);
     } else {
@@ -264,11 +265,11 @@ public class InstanceKlass extends Klass {
 
   public short getFieldSignatureIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return getFields().getShortAt(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
+    return getFields().at(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
   }
 
   public Symbol getFieldSignature(int index) {
-    int signatureIndex = getFields().getShortAt(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
+    int signatureIndex = getFields().at(index * FIELD_SLOTS + SIGNATURE_INDEX_OFFSET);
     if (index < getJavaFieldsCount()) {
       return getConstants().getSymbolAt(signatureIndex);
     } else {
@@ -277,7 +278,7 @@ public class InstanceKlass extends Klass {
   }
 
   public short getFieldGenericSignatureIndex(int index) {
-    int len = (int)getFields().getLength();
+     int len = getFields().length();
     int allFieldsCount = getAllFieldsCount();
     int generic_signature_slot = allFieldsCount * FIELD_SLOTS;
     for (int i = 0; i < allFieldsCount; i++) {
@@ -285,7 +286,7 @@ public class InstanceKlass extends Klass {
       AccessFlags access = new AccessFlags(flags);
       if (i == index) {
         if (access.fieldHasGenericSignature()) {
-          return getFields().getShortAt(generic_signature_slot);
+           return getFields().at(generic_signature_slot);
         } else {
           return 0;
         }
@@ -308,25 +309,23 @@ public class InstanceKlass extends Klass {
 
   public short getFieldInitialValueIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    return getFields().getShortAt(index * FIELD_SLOTS + INITVAL_INDEX_OFFSET);
+    return getFields().at(index * FIELD_SLOTS + INITVAL_INDEX_OFFSET);
   }
 
   public int getFieldOffset(int index) {
-    TypeArray fields = getFields();
-    return VM.getVM().buildIntFromShorts(fields.getShortAt(index * FIELD_SLOTS + LOW_OFFSET),
-                                         fields.getShortAt(index * FIELD_SLOTS + HIGH_OFFSET));
+    U2Array fields = getFields();
+    return VM.getVM().buildIntFromShorts(fields.at(index * FIELD_SLOTS + LOW_OFFSET),
+                                         fields.at(index * FIELD_SLOTS + HIGH_OFFSET));
   }
 
   // Accessors for declared fields
   public Klass     getArrayKlasses()        { return (Klass)        arrayKlasses.getValue(this); }
-  public ObjArray  getMethods()             { return (ObjArray)     methods.getValue(this); }
-  public TypeArray getMethodOrdering()      { return (TypeArray)    methodOrdering.getValue(this); }
-  public ObjArray  getLocalInterfaces()     { return (ObjArray)     localInterfaces.getValue(this); }
-  public ObjArray  getTransitiveInterfaces() { return (ObjArray)     transitiveInterfaces.getValue(this); }
-  public TypeArray getFields()              { return (TypeArray)    fields.getValue(this); }
+  public MethodArray  getMethods()              { return new MethodArray(methods.getValue(getAddress())); }
+  public KlassArray   getLocalInterfaces()      { return new KlassArray(localInterfaces.getValue(getAddress())); }
+  public KlassArray   getTransitiveInterfaces() { return new KlassArray(transitiveInterfaces.getValue(getAddress())); }
   public int       getJavaFieldsCount()     { return                (int) javaFieldsCount.getValue(this); }
   public int       getAllFieldsCount()      {
-    int len = (int)getFields().getLength();
+     int len = getFields().length();
     int allFieldsCount = 0;
     for (; allFieldsCount*FIELD_SLOTS < len; allFieldsCount++) {
       short flags = getFieldAccessFlags(allFieldsCount);
@@ -338,12 +337,12 @@ public class InstanceKlass extends Klass {
     return allFieldsCount;
   }
   public ConstantPool getConstants()        { return (ConstantPool) constants.getValue(this); }
-  public Oop       getClassLoader()         { return                classLoader.getValue(this); }
+  public ClassLoaderData getClassLoaderData() { return                ClassLoaderData.instantiateWrapperFor(classLoaderData.getValue(getAddress())); }
+  public Oop       getClassLoader()         { return                getClassLoaderData().getClassLoader(); }
   public Oop       getProtectionDomain()    { return                protectionDomain.getValue(this); }
   public ObjArray  getSigners()             { return (ObjArray)     signers.getValue(this); }
   public Symbol    getSourceFileName()      { return getSymbol(sourceFileName); }
-  public String    getSourceDebugExtension(){ return                CStringUtilities.getString(sourceDebugExtension.getValue(getHandle())); }
-  public TypeArray getInnerClasses()        { return (TypeArray)    innerClasses.getValue(this); }
+  public String    getSourceDebugExtension(){ return                CStringUtilities.getString(sourceDebugExtension.getValue(getAddress())); }
   public long      getNonstaticFieldSize()  { return                nonstaticFieldSize.getValue(this); }
   public long      getStaticOopFieldCount() { return                staticOopFieldCount.getValue(this); }
   public long      getNonstaticOopMapSize() { return                nonstaticOopMapSize.getValue(this); }
@@ -383,8 +382,8 @@ public class InstanceKlass extends Klass {
   public long computeModifierFlags() {
     long access = getAccessFlags();
     // But check if it happens to be member class.
-    TypeArray innerClassList = getInnerClasses();
-    int length = ( innerClassList == null)? 0 : (int) innerClassList.getLength();
+    U2Array innerClassList = getInnerClasses();
+    int length = (innerClassList == null)? 0 : (int) innerClassList.length();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
           Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
@@ -395,7 +394,7 @@ public class InstanceKlass extends Klass {
           if (i == length - EnclosingMethodAttributeOffset.enclosing_method_attribute_size) {
               break;
           }
-          int ioff = innerClassList.getShortAt(i +
+          int ioff = innerClassList.at(i +
                          InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
           // 'ioff' can be zero.
           // refer to JVM spec. section 4.7.5.
@@ -404,9 +403,9 @@ public class InstanceKlass extends Klass {
              // since we are looking for the flags for our self.
              ConstantPool.CPSlot classInfo = getConstants().getSlotAt(ioff);
              Symbol name = null;
-             if (classInfo.isOop()) {
-               name = ((Klass) classInfo.getOop()).getName();
-             } else if (classInfo.isMetaData()) {
+             if (classInfo.isResolved()) {
+               name = classInfo.getKlass().getName();
+             } else if (classInfo.isUnresolved()) {
                name = classInfo.getSymbol();
              } else {
                 throw new RuntimeException("should not reach here");
@@ -414,7 +413,7 @@ public class InstanceKlass extends Klass {
 
              if (name.equals(getName())) {
                 // This is really a member class
-                access = innerClassList.getShortAt(i +
+                access = innerClassList.at(i +
                         InnerClassAttributeOffset.innerClassAccessFlagsOffset);
                 break;
              }
@@ -440,8 +439,8 @@ public class InstanceKlass extends Klass {
   }
 
   private boolean isInInnerClasses(Symbol sym, boolean includeLocals) {
-    TypeArray innerClassList = getInnerClasses();
-    int length = ( innerClassList == null)? 0 : (int) innerClassList.getLength();
+    U2Array innerClassList = getInnerClasses();
+    int length = ( innerClassList == null)? 0 : (int) innerClassList.length();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
@@ -452,27 +451,19 @@ public class InstanceKlass extends Klass {
          if (i == length - EnclosingMethodAttributeOffset.enclosing_method_attribute_size) {
              break;
          }
-         int ioff = innerClassList.getShortAt(i +
+         int ioff = innerClassList.at(i +
                         InnerClassAttributeOffset.innerClassInnerClassInfoOffset);
          // 'ioff' can be zero.
          // refer to JVM spec. section 4.7.5.
          if (ioff != 0) {
             ConstantPool.CPSlot iclassInfo = getConstants().getSlotAt(ioff);
-            Symbol innerName = null;
-            if (iclassInfo.isOop()) {
-              innerName = ((Klass) iclassInfo.getOop()).getName();
-            } else if (iclassInfo.isMetaData()) {
-              innerName = iclassInfo.getSymbol();
-            } else {
-               throw new RuntimeException("should not reach here");
-            }
-
+            Symbol innerName = getConstants().getKlassNameAt(ioff);
             Symbol myname = getName();
-            int ooff = innerClassList.getShortAt(i +
+            int ooff = innerClassList.at(i +
                         InnerClassAttributeOffset.innerClassOuterClassInfoOffset);
             // for anonymous classes inner_name_index of InnerClasses
             // attribute is zero.
-            int innerNameIndex = innerClassList.getShortAt(i +
+            int innerNameIndex = innerClassList.at(i +
                         InnerClassAttributeOffset.innerClassInnerNameOffset);
             // if this is not a member (anonymous, local etc.), 'ooff' will be zero
             // refer to JVM spec. section 4.7.5.
@@ -488,9 +479,9 @@ public class InstanceKlass extends Klass {
             } else {
                ConstantPool.CPSlot oclassInfo = getConstants().getSlotAt(ooff);
                Symbol outerName = null;
-               if (oclassInfo.isOop()) {
-                 outerName = ((Klass) oclassInfo.getOop()).getName();
-               } else if (oclassInfo.isMetaData()) {
+               if (oclassInfo.isResolved()) {
+                 outerName = oclassInfo.getKlass().getName();
+               } else if (oclassInfo.isUnresolved()) {
                  outerName = oclassInfo.getSymbol();
                } else {
                   throw new RuntimeException("should not reach here");
@@ -513,10 +504,10 @@ public class InstanceKlass extends Klass {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(k.isInterface(), "should not reach here");
     }
-    ObjArray interfaces =  getTransitiveInterfaces();
-    final int len = (int) interfaces.getLength();
+    KlassArray interfaces =  getTransitiveInterfaces();
+    final int len = interfaces.length();
     for (int i = 0; i < len; i++) {
-      if (interfaces.getObjAt(i).equals(k)) return true;
+      if (interfaces.getAt(i).equals(k)) return true;
     }
     return false;
   }
@@ -533,20 +524,14 @@ public class InstanceKlass extends Klass {
     tty.print("InstanceKlass for " + getName().asString());
   }
 
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
-      visitor.doOop(arrayKlasses, true);
-      visitor.doOop(methods, true);
-      visitor.doOop(methodOrdering, true);
-      visitor.doOop(localInterfaces, true);
-      visitor.doOop(transitiveInterfaces, true);
-      visitor.doOop(fields, true);
-      visitor.doOop(constants, true);
-      visitor.doOop(classLoader, true);
+  public void iterateFields(MetadataVisitor visitor) {
+    super.iterateFields(visitor);
+    visitor.doMetadata(arrayKlasses, true);
+    // visitor.doOop(methods, true);
+    // visitor.doOop(localInterfaces, true);
+    // visitor.doOop(transitiveInterfaces, true);
       visitor.doOop(protectionDomain, true);
       visitor.doOop(signers, true);
-      visitor.doOop(innerClasses, true);
       visitor.doCInt(nonstaticFieldSize, true);
       visitor.doCInt(staticFieldSize, true);
       visitor.doCInt(staticOopFieldCount, true);
@@ -556,7 +541,6 @@ public class InstanceKlass extends Klass {
       visitor.doCInt(vtableLen, true);
       visitor.doCInt(itableLen, true);
     }
-  }
 
   /*
    *  Visit the static fields of this InstanceKlass with the obj of
@@ -628,10 +612,10 @@ public class InstanceKlass extends Klass {
 
   /** Find field in direct superinterfaces. */
   public Field findInterfaceField(Symbol name, Symbol sig) {
-    ObjArray interfaces = getLocalInterfaces();
-    int n = (int) interfaces.getLength();
+    KlassArray interfaces = getLocalInterfaces();
+    int n = interfaces.length();
     for (int i = 0; i < n; i++) {
-      InstanceKlass intf1 = (InstanceKlass) interfaces.getObjAt(i);
+      InstanceKlass intf1 = (InstanceKlass) interfaces.getAt(i);
       if (Assert.ASSERTS_ENABLED) {
         Assert.that(intf1.isInterface(), "just checking type");
       }
@@ -727,10 +711,10 @@ public class InstanceKlass extends Klass {
         // transitiveInterfaces contains all interfaces implemented
         // by this class and its superclass chain with no duplicates.
 
-        ObjArray interfaces = getTransitiveInterfaces();
-        int n = (int) interfaces.getLength();
+        KlassArray interfaces = getTransitiveInterfaces();
+        int n = interfaces.length();
         for (int i = 0; i < n; i++) {
-            InstanceKlass intf1 = (InstanceKlass) interfaces.getObjAt(i);
+            InstanceKlass intf1 = (InstanceKlass) interfaces.getAt(i);
             if (Assert.ASSERTS_ENABLED) {
                 Assert.that(intf1.isInterface(), "just checking type");
             }
@@ -759,20 +743,20 @@ public class InstanceKlass extends Klass {
       // Contains a Method for each method declared in this class/interface
       // not including inherited methods.
 
-      ObjArray methods = getMethods();
-      int length = (int)methods.getLength();
+      MethodArray methods = getMethods();
+      int length = methods.length();
       Object[] tmp = new Object[length];
 
-      TypeArray methodOrdering = getMethodOrdering();
-      if (methodOrdering.getLength() != length) {
+      IntArray methodOrdering = getMethodOrdering();
+      if (methodOrdering.length() != length) {
          // no ordering info present
          for (int index = 0; index < length; index++) {
-            tmp[index] = methods.getObjAt(index);
+            tmp[index] = methods.at(index);
          }
       } else {
          for (int index = 0; index < length; index++) {
-            int originalIndex = getMethodOrdering().getIntAt(index);
-            tmp[originalIndex] = methods.getObjAt(index);
+            int originalIndex = methodOrdering.at(index);
+            tmp[originalIndex] = methods.at(index);
          }
       }
 
@@ -786,24 +770,16 @@ public class InstanceKlass extends Klass {
         // Contains an InstanceKlass for each interface in this classes
         // 'implements' clause.
 
-        ObjArray interfaces = getLocalInterfaces();
-        int length = (int) interfaces.getLength();
+        KlassArray interfaces = getLocalInterfaces();
+        int length = interfaces.length();
         List directImplementedInterfaces = new ArrayList(length);
 
         for (int index = 0; index < length; index ++) {
-            directImplementedInterfaces.add(interfaces.getObjAt(index));
+            directImplementedInterfaces.add(interfaces.getAt(index));
         }
 
         return directImplementedInterfaces;
     }
-
-
-  public long getObjectSize() {
-    long bodySize =    alignObjectOffset(getVtableLen() * getHeap().getOopSize())
-                     + alignObjectOffset(getItableLen() * getHeap().getOopSize())
-                     + (getNonstaticOopMapSize()) * getHeap().getOopSize();
-    return alignObjectSize(headerSize + bodySize);
-  }
 
   public Klass arrayKlassImpl(boolean orNull, int n) {
     // FIXME: in reflective system this would need to change to
@@ -841,11 +817,27 @@ public class InstanceKlass extends Klass {
     return findMethod(getMethods(), name, sig);
   }
 
-  /** Breakpoint support (see methods on methodOop for details) */
+  /** Breakpoint support (see methods on Method* for details) */
   public BreakpointInfo getBreakpoints() {
-    Address addr = getHandle().getAddressAt(Oop.getHeaderSize() + breakpoints.getOffset());
+    Address addr = getAddress().getAddressAt(breakpoints.getOffset());
     return (BreakpointInfo) VMObjectFactory.newObject(BreakpointInfo.class, addr);
   }
+
+  public IntArray  getMethodOrdering() {
+    Address addr = getAddress().getAddressAt(methodOrdering.getOffset());
+    return (IntArray) VMObjectFactory.newObject(IntArray.class, addr);
+  }
+
+  public U2Array getFields() {
+    Address addr = getAddress().getAddressAt(fields.getOffset());
+    return (U2Array) VMObjectFactory.newObject(U2Array.class, addr);
+  }
+
+  public U2Array getInnerClasses() {
+    Address addr = getAddress().getAddressAt(innerClasses.getOffset());
+    return (U2Array) VMObjectFactory.newObject(U2Array.class, addr);
+  }
+
 
   //----------------------------------------------------------------------
   // Internals only below this point
@@ -928,14 +920,14 @@ public class InstanceKlass extends Klass {
     throw new RuntimeException("Illegal field type at index " + index);
   }
 
-  private static Method findMethod(ObjArray methods, Symbol name, Symbol signature) {
-    int len = (int) methods.getLength();
+  private static Method findMethod(MethodArray methods, Symbol name, Symbol signature) {
+    int len = methods.length();
     // methods are sorted, so do binary search
     int l = 0;
     int h = len - 1;
     while (l <= h) {
       int mid = (l + h) >> 1;
-      Method m = (Method) methods.getObjAt(mid);
+      Method m = methods.at(mid);
       int res = m.getName().fastCompare(name);
       if (res == 0) {
         // found matching name; do linear search to find matching signature
@@ -944,13 +936,13 @@ public class InstanceKlass extends Klass {
         // search downwards through overloaded methods
         int i;
         for (i = mid - 1; i >= l; i--) {
-          Method m1 = (Method) methods.getObjAt(i);
+          Method m1 = methods.at(i);
           if (!m1.getName().equals(name)) break;
           if (m1.getSignature().equals(signature)) return m1;
         }
         // search upwards
         for (i = mid + 1; i <= h; i++) {
-          Method m1 = (Method) methods.getObjAt(i);
+          Method m1 = methods.at(i);
           if (!m1.getName().equals(name)) break;
           if (m1.getSignature().equals(signature)) return m1;
         }
@@ -977,10 +969,10 @@ public class InstanceKlass extends Klass {
     return null;
   }
 
-  private static int linearSearch(ObjArray methods, Symbol name, Symbol signature) {
-    int len = (int) methods.getLength();
+  private static int linearSearch(MethodArray methods, Symbol name, Symbol signature) {
+    int len = (int) methods.length();
     for (int index = 0; index < len; index++) {
-      Method m = (Method) methods.getObjAt(index);
+      Method m = methods.at(index);
       if (m.getSignature().equals(signature) && m.getName().equals(name)) {
         return index;
       }

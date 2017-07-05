@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,12 @@ public class OopPrinter implements OopVisitor {
 
   private void printField(Field field) {
     field.printOn(tty);
+  }
+
+  public void doMetadata(MetadataField field, boolean isVMField) {
+    printField(field);
+    field.getValue(getObj()).printValueOn(tty);
+    tty.println();
   }
 
   public void doOop(OopField field, boolean isVMField) {

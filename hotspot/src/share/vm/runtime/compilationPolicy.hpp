@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,15 +71,15 @@ public:
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr) = 0;
   // delay_compilation(method) can be called by any component of the runtime to notify the policy
   // that it's recommended to delay the complation of this method.
-  virtual void delay_compilation(methodOop method) = 0;
+  virtual void delay_compilation(Method* method) = 0;
   // disable_compilation() is called whenever the runtime decides to disable compilation of the
   // specified method.
-  virtual void disable_compilation(methodOop method) = 0;
+  virtual void disable_compilation(Method* method) = 0;
   // Select task is called by CompileBroker. The queue is guaranteed to have at least one
   // element and is locked. The function should select one and return it.
   virtual CompileTask* select_task(CompileQueue* compile_queue) = 0;
   // Tell the runtime if we think a given method is adequately profiled.
-  virtual bool is_mature(methodOop method) = 0;
+  virtual bool is_mature(Method* method) = 0;
   // Do policy initialization
   virtual void initialize() = 0;
   virtual bool should_not_inline(ciEnv* env, ciMethod* method) { return false; }
@@ -100,9 +100,9 @@ public:
   virtual int compiler_count(CompLevel comp_level);
   virtual void do_safepoint_work();
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);
-  virtual void delay_compilation(methodOop method);
-  virtual void disable_compilation(methodOop method);
-  virtual bool is_mature(methodOop method);
+  virtual void delay_compilation(Method* method);
+  virtual void disable_compilation(Method* method);
+  virtual bool is_mature(Method* method);
   virtual void initialize();
   virtual CompileTask* select_task(CompileQueue* compile_queue);
   virtual nmethod* event(methodHandle method, methodHandle inlinee, int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);

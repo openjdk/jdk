@@ -613,7 +613,7 @@ public class GenerateOopMap {
         tty.print(" idx " + idx);
         /*
           int idx = currentBC.getIndexU2();
-          constantPoolOop cp    = method().constants();
+          ConstantPool* cp    = method().constants();
           int nameAndTypeIdx    = cp.name_and_type_ref_index_at(idx);
           int signatureIdx      = cp.signature_ref_index_at(nameAndTypeIdx);
           Symbol* signature     = cp.symbol_at(signatureIdx);

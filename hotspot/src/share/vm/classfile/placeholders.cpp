@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,13 @@
 // Placeholder methods
 
 PlaceholderEntry* PlaceholderTable::new_entry(int hash, Symbol* name,
-                                              oop loader, bool havesupername,
+                                              ClassLoaderData* loader_data,
+                                              bool havesupername,
                                               Symbol* supername) {
   PlaceholderEntry* entry = (PlaceholderEntry*)Hashtable<Symbol*, mtClass>::new_entry(hash, name);
   // Hashtable with Symbol* literal must increment and decrement refcount.
   name->increment_refcount();
-  entry->set_loader(loader);
+  entry->set_loader_data(loader_data);
   entry->set_havesupername(havesupername);
   entry->set_supername(supername);
   entry->set_superThreadQ(NULL);
@@ -61,14 +62,14 @@ void PlaceholderTable::free_entry(PlaceholderEntry* entry) {
 // SystemDictionary_lock, so we don't need special precautions
 // on store ordering here.
 void PlaceholderTable::add_entry(int index, unsigned int hash,
-                                 Symbol* class_name, Handle class_loader,
+                                 Symbol* class_name, ClassLoaderData* loader_data,
                                  bool havesupername, Symbol* supername){
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(class_name != NULL, "adding NULL obj");
 
   // Both readers and writers are locked so it's safe to just
   // create the placeholder and insert it in the list without a membar.
-  PlaceholderEntry* entry = new_entry(hash, class_name, class_loader(), havesupername, supername);
+  PlaceholderEntry* entry = new_entry(hash, class_name, loader_data, havesupername, supername);
   add_entry(index, entry);
 }
 
@@ -76,12 +77,12 @@ void PlaceholderTable::add_entry(int index, unsigned int hash,
 // Remove a placeholder object.
 void PlaceholderTable::remove_entry(int index, unsigned int hash,
                                     Symbol* class_name,
-                                    Handle class_loader) {
+                                    ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   PlaceholderEntry** p = bucket_addr(index);
   while (*p) {
     PlaceholderEntry *probe = *p;
-    if (probe->hash() == hash && probe->equals(class_name, class_loader())) {
+    if (probe->hash() == hash && probe->equals(class_name, loader_data)) {
       // Delete entry
       *p = probe->next();
       free_entry(probe);
@@ -93,16 +94,14 @@ void PlaceholderTable::remove_entry(int index, unsigned int hash,
 
 PlaceholderEntry* PlaceholderTable::get_entry(int index, unsigned int hash,
                                        Symbol* class_name,
-                                       Handle class_loader) {
+                                       ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
-
-  oop class_loader_ = class_loader();
 
   for (PlaceholderEntry *place_probe = bucket(index);
                          place_probe != NULL;
                          place_probe = place_probe->next()) {
     if (place_probe->hash() == hash &&
-        place_probe->equals(class_name, class_loader_)) {
+        place_probe->equals(class_name, loader_data)) {
       return place_probe;
     }
   }
@@ -111,8 +110,8 @@ PlaceholderEntry* PlaceholderTable::get_entry(int index, unsigned int hash,
 
 Symbol* PlaceholderTable::find_entry(int index, unsigned int hash,
                                        Symbol* class_name,
-                                       Handle class_loader) {
-  PlaceholderEntry* probe = get_entry(index, hash, class_name, class_loader);
+                                       ClassLoaderData* loader_data) {
+  PlaceholderEntry* probe = get_entry(index, hash, class_name, loader_data);
   return (probe? probe->klassname(): (Symbol*)NULL);
 }
 
@@ -121,12 +120,17 @@ Symbol* PlaceholderTable::find_entry(int index, unsigned int hash,
   // If entry exists, reuse entry
   // For both, push SeenThread for classloadAction
   // if havesupername: this is used for circularity for instanceklass loading
-PlaceholderEntry* PlaceholderTable::find_and_add(int index, unsigned int hash, Symbol* name, Handle loader, classloadAction action, Symbol* supername, Thread* thread) {
-  PlaceholderEntry* probe = get_entry(index, hash, name, loader);
+PlaceholderEntry* PlaceholderTable::find_and_add(int index, unsigned int hash,
+                                                 Symbol* name,
+                                                 ClassLoaderData* loader_data,
+                                                 classloadAction action,
+                                                 Symbol* supername,
+                                                 Thread* thread) {
+  PlaceholderEntry* probe = get_entry(index, hash, name, loader_data);
   if (probe == NULL) {
     // Nothing found, add place holder
-    add_entry(index, hash, name, loader, (action == LOAD_SUPER), supername);
-    probe = get_entry(index, hash, name, loader);
+    add_entry(index, hash, name, loader_data, (action == LOAD_SUPER), supername);
+    probe = get_entry(index, hash, name, loader_data);
   } else {
     if (action == LOAD_SUPER) {
       probe->set_havesupername(true);
@@ -153,14 +157,14 @@ PlaceholderEntry* PlaceholderTable::find_and_add(int index, unsigned int hash, S
 // Therefore - must always check SD first
 // Ignores the case where entry is not found
 void PlaceholderTable::find_and_remove(int index, unsigned int hash,
-                       Symbol* name, Handle loader, Thread* thread) {
+                       Symbol* name, ClassLoaderData* loader_data, Thread* thread) {
     assert_locked_or_safepoint(SystemDictionary_lock);
-    PlaceholderEntry *probe = get_entry(index, hash, name, loader);
+    PlaceholderEntry *probe = get_entry(index, hash, name, loader_data);
     if (probe != NULL) {
        // No other threads using this entry
        if ((probe->superThreadQ() == NULL) && (probe->loadInstanceThreadQ() == NULL)
           && (probe->defineThreadQ() == NULL) && (probe->definer() == NULL)) {
-         remove_entry(index, hash, name, loader);
+         remove_entry(index, hash, name, loader_data);
        }
     }
   }
@@ -170,34 +174,31 @@ PlaceholderTable::PlaceholderTable(int table_size)
 }
 
 
-void PlaceholderTable::oops_do(OopClosure* f) {
+void PlaceholderTable::classes_do(KlassClosure* f) {
   for (int index = 0; index < table_size(); index++) {
     for (PlaceholderEntry* probe = bucket(index);
                            probe != NULL;
                            probe = probe->next()) {
-      probe->oops_do(f);
+      probe->classes_do(f);
     }
   }
 }
 
 
-void PlaceholderEntry::oops_do(OopClosure* blk) {
+void PlaceholderEntry::classes_do(KlassClosure* closure) {
   assert(klassname() != NULL, "should have a non-null klass");
-  if (_loader != NULL) {
-    blk->do_oop(loader_addr());
-  }
   if (_instanceKlass != NULL) {
-    blk->do_oop((oop*)instanceKlass_addr());
+    closure->do_klass(InstanceKlass());
   }
 }
 
 // do all entries in the placeholder table
-void PlaceholderTable::entries_do(void f(Symbol*, oop)) {
+void PlaceholderTable::entries_do(void f(Symbol*)) {
   for (int index = 0; index < table_size(); index++) {
     for (PlaceholderEntry* probe = bucket(index);
                            probe != NULL;
                            probe = probe->next()) {
-      f(probe->klassname(), probe->loader());
+      f(probe->klassname());
     }
   }
 }
@@ -207,9 +208,9 @@ void PlaceholderTable::entries_do(void f(Symbol*, oop)) {
 // Note, doesn't append a cr
 void PlaceholderEntry::print() const {
   klassname()->print_value();
-  if (loader() != NULL) {
+  if (loader_data() != NULL) {
     tty->print(", loader ");
-    loader()->print_value();
+    loader_data()->print_value();
   }
   if (supername() != NULL) {
     tty->print(", supername ");
@@ -219,9 +220,9 @@ void PlaceholderEntry::print() const {
     tty->print(", definer ");
     definer()->print_value();
   }
-  if (instanceKlass() != NULL) {
-    tty->print(", instanceKlass ");
-    instanceKlass()->print_value();
+  if (InstanceKlass() != NULL) {
+    tty->print(", InstanceKlass ");
+    InstanceKlass()->print_value();
   }
   tty->print("\n");
   tty->print("loadInstanceThreadQ threads:");
@@ -237,11 +238,12 @@ void PlaceholderEntry::print() const {
 #endif
 
 void PlaceholderEntry::verify() const {
-  guarantee(loader() == NULL || loader()->is_instance(),
+  guarantee(loader_data() != NULL, "Must have been setup.");
+  guarantee(loader_data()->class_loader() == NULL || loader_data()->class_loader()->is_instance(),
             "checking type of _loader");
-  guarantee(instanceKlass() == NULL
-            || Klass::cast(instanceKlass())->oop_is_instance(),
-            "checking type of instanceKlass result");
+  guarantee(InstanceKlass() == NULL
+            || Klass::cast(InstanceKlass())->oop_is_instance(),
+            "checking type of InstanceKlass result");
 }
 
 void PlaceholderTable::verify() {

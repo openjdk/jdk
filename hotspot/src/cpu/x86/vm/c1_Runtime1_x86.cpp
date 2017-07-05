@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_x86.hpp"
-#include "oops/compiledICHolderOop.hpp"
+#include "oops/compiledICHolder.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "register_x86.hpp"
@@ -41,11 +41,11 @@
 
 // Implementation of StubAssembler
 
-int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address entry, int args_size) {
+int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry, int args_size) {
   // setup registers
   const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread); // is callee-saved register (Visual C++ calling conventions)
-  assert(!(oop_result1->is_valid() || oop_result2->is_valid()) || oop_result1 != oop_result2, "registers must be different");
-  assert(oop_result1 != thread && oop_result2 != thread, "registers must be different");
+  assert(!(oop_result1->is_valid() || metadata_result->is_valid()) || oop_result1 != metadata_result, "registers must be different");
+  assert(oop_result1 != thread && metadata_result != thread, "registers must be different");
   assert(args_size >= 0, "illegal args_size");
   bool align_stack = false;
 #ifdef _LP64
@@ -109,7 +109,7 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
     if (oop_result1->is_valid()) {
       movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
     }
-    if (oop_result2->is_valid()) {
+    if (metadata_result->is_valid()) {
       movptr(Address(thread, JavaThread::vm_result_2_offset()), NULL_WORD);
     }
     if (frame_size() == no_frame_size) {
@@ -124,30 +124,26 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   }
   // get oop results if there are any and reset the values in the thread
   if (oop_result1->is_valid()) {
-    movptr(oop_result1, Address(thread, JavaThread::vm_result_offset()));
-    movptr(Address(thread, JavaThread::vm_result_offset()), NULL_WORD);
-    verify_oop(oop_result1);
+    get_vm_result(oop_result1, thread);
   }
-  if (oop_result2->is_valid()) {
-    movptr(oop_result2, Address(thread, JavaThread::vm_result_2_offset()));
-    movptr(Address(thread, JavaThread::vm_result_2_offset()), NULL_WORD);
-    verify_oop(oop_result2);
+  if (metadata_result->is_valid()) {
+    get_vm_result_2(metadata_result, thread);
   }
   return call_offset;
 }
 
 
-int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address entry, Register arg1) {
+int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1) {
 #ifdef _LP64
   mov(c_rarg1, arg1);
 #else
   push(arg1);
 #endif // _LP64
-  return call_RT(oop_result1, oop_result2, entry, 1);
+  return call_RT(oop_result1, metadata_result, entry, 1);
 }
 
 
-int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address entry, Register arg1, Register arg2) {
+int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1, Register arg2) {
 #ifdef _LP64
   if (c_rarg1 == arg2) {
     if (c_rarg2 == arg1) {
@@ -164,11 +160,11 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   push(arg2);
   push(arg1);
 #endif // _LP64
-  return call_RT(oop_result1, oop_result2, entry, 2);
+  return call_RT(oop_result1, metadata_result, entry, 2);
 }
 
 
-int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address entry, Register arg1, Register arg2, Register arg3) {
+int StubAssembler::call_RT(Register oop_result1, Register metadata_result, address entry, Register arg1, Register arg2, Register arg3) {
 #ifdef _LP64
   // if there is any conflict use the stack
   if (arg1 == c_rarg2 || arg1 == c_rarg3 ||
@@ -190,7 +186,7 @@ int StubAssembler::call_RT(Register oop_result1, Register oop_result2, address e
   push(arg2);
   push(arg1);
 #endif // _LP64
-  return call_RT(oop_result1, oop_result2, entry, 3);
+  return call_RT(oop_result1, metadata_result, entry, 3);
 }
 
 
@@ -1027,7 +1023,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           if (id == fast_new_instance_init_check_id) {
             // make sure the klass is initialized
-            __ cmpb(Address(klass, instanceKlass::init_state_offset()), instanceKlass::fully_initialized);
+            __ cmpb(Address(klass, InstanceKlass::init_state_offset()), InstanceKlass::fully_initialized);
             __ jcc(Assembler::notEqual, slow_path);
           }
 
@@ -1106,7 +1102,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         OopMap* map = save_live_registers(sasm, 3);
         // Retrieve bci
         __ movl(bci, Address(rbp, 2*BytesPerWord));
-        // And a pointer to the methodOop
+        // And a pointer to the Method*
         __ movptr(method, Address(rbp, 3*BytesPerWord));
         int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, counter_overflow), bci, method);
         oop_maps = new OopMapSet();
@@ -1291,8 +1287,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ bind(register_finalizer);
         __ enter();
         OopMap* oop_map = save_live_registers(sasm, 2 /*num_rt_args */);
-        int call_offset = __ call_RT(noreg, noreg,
-                                     CAST_FROM_FN_PTR(address, SharedRuntime::register_finalizer), rax);
+        int call_offset = __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, SharedRuntime::register_finalizer), rax);
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, oop_map);
 
@@ -1493,6 +1488,13 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       { StubFrame f(sasm, "load_klass_patching", dont_gc_arguments);
         // we should set up register map
         oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_klass_patching));
+      }
+      break;
+
+    case load_mirror_patching_id:
+      { StubFrame f(sasm, "load_mirror_patching", dont_gc_arguments);
+        // we should set up register map
+        oop_maps = generate_patching(sasm, CAST_FROM_FN_PTR(address, move_mirror_patching));
       }
       break;
 

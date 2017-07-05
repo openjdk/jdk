@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,36 +27,38 @@ package sun.jvm.hotspot.ui.tree;
 import java.io.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.oops.*;
+import sun.jvm.hotspot.runtime.VM;
 
 /** Simple wrapper for displaying bad addresses in the Inspector */
 
 public class BadAddressTreeNodeAdapter extends FieldTreeNodeAdapter {
-  private boolean usingAddress;
-  private Address addr;
-  private long    addrValue;
+  private String message;
 
-  public BadAddressTreeNodeAdapter(Address addr, FieldIdentifier id) {
-    this(addr, id, false);
+  private static String generateMessage(long addr, String kind) {
+    return "** BAD " + kind + " " + Long.toHexString(addr) + " **";
+  }
+
+  public BadAddressTreeNodeAdapter(Address addr, MetadataField field, boolean treeTableMode) {
+    super(field.getID(), treeTableMode);
+    message = generateMessage(addr.minus(null), "METADATA");
+  }
+
+  public BadAddressTreeNodeAdapter(Address addr, OopField field, boolean treeTableMode) {
+    super(field.getID(), treeTableMode);
+    message = generateMessage(addr.minus(null), "OOP");
+  }
+
+  public BadAddressTreeNodeAdapter(OopHandle addr, FieldIdentifier id, boolean treeTableMode) {
+    super(id, treeTableMode);
+    message = generateMessage(addr.minus(null), "OOP");
   }
 
   /** The address may be null (for address fields of structures which
       are null); the FieldIdentifier may also be null (for the root
       node). */
-  public BadAddressTreeNodeAdapter(Address addr, FieldIdentifier id, boolean treeTableMode) {
+  public BadAddressTreeNodeAdapter(long addr, FieldIdentifier id, boolean treeTableMode) {
     super(id, treeTableMode);
-    this.addr = addr;
-    usingAddress = true;
-  }
-
-  public BadAddressTreeNodeAdapter(long addr, FieldIdentifier id) {
-    this(addr, id, false);
-  }
-
-  /** He FieldIdentifier may be null (for the root node). */
-  public BadAddressTreeNodeAdapter(long addrValue, FieldIdentifier id, boolean treeTableMode) {
-    super(id, treeTableMode);
-    this.addrValue = addrValue;
-    usingAddress = false;
+    message = generateMessage(addr, "ADDRESS");
   }
 
   public int getChildCount() {
@@ -76,17 +78,6 @@ public class BadAddressTreeNodeAdapter extends FieldTreeNodeAdapter {
   }
 
   public String getValue() {
-    // FIXME: should have this better factored to not have to replicate this code
-    String addrString = null;
-    if (usingAddress) {
-      if (addr == null) {
-        addrString = "0x0";
-      } else {
-        addrString = addr.toString();
+    return message;
       }
-    } else {
-      addrString = "0x" + Long.toHexString(addrValue);
     }
-    return "** BAD ADDRESS " + addrString + " **";
-  }
-}

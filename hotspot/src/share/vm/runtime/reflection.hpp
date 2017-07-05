@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,11 @@ class FieldStream;
 class Reflection: public AllStatic {
  private:
   // Access checking
-  static bool reflect_check_access(klassOop field_class, AccessFlags acc, klassOop target_class, bool is_method_invoke, TRAPS);
+  static bool reflect_check_access(Klass* field_class, AccessFlags acc, Klass* target_class, bool is_method_invoke, TRAPS);
 
   // Conversion
-  static klassOop basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS);
-  static oop      basic_type_arrayklass_to_mirror(klassOop basic_type_arrayklass, TRAPS);
+  static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS);
+  static oop      basic_type_arrayklass_to_mirror(Klass* basic_type_arrayklass, TRAPS);
 
   static objArrayHandle get_parameter_types(methodHandle method, int parameter_count, oop* return_type, TRAPS);
   static objArrayHandle get_exception_types(methodHandle method, TRAPS);
@@ -86,19 +86,19 @@ class Reflection: public AllStatic {
   static arrayOop reflect_new_multi_array(oop element_mirror, typeArrayOop dimensions, TRAPS);
 
   // Verification
-  static bool     verify_class_access(klassOop current_class, klassOop new_class, bool classloader_only);
+  static bool     verify_class_access(Klass* current_class, Klass* new_class, bool classloader_only);
 
-  static bool     verify_field_access(klassOop current_class,
-                                      klassOop resolved_class,
-                                      klassOop field_class,
+  static bool     verify_field_access(Klass* current_class,
+                                      Klass* resolved_class,
+                                      Klass* field_class,
                                       AccessFlags access,
                                       bool classloader_only,
                                       bool protected_restriction = false);
-  static bool     is_same_class_package(klassOop class1, klassOop class2);
-  static bool     is_same_package_member(klassOop class1, klassOop class2, TRAPS);
+  static bool     is_same_class_package(Klass* class1, Klass* class2);
+  static bool     is_same_package_member(Klass* class1, Klass* class2, TRAPS);
 
   static bool can_relax_access_check_for(
-    klassOop accessor, klassOop accesee, bool classloader_only);
+    Klass* accessor, Klass* accesee, bool classloader_only);
 
   // inner class reflection
   // raise an ICCE unless the required relationship can be proven to hold

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
 #ifndef SHARE_VM_OOPS_FIELDINFO_HPP
 #define SHARE_VM_OOPS_FIELDINFO_HPP
 
+#include "oops/constantPool.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "classfile/vmSymbols.hpp"
 
 // This class represents the field information contained in the fields
-// array of an instanceKlass.  Currently it's laid on top an array of
+// array of an InstanceKlass.  Currently it's laid on top an array of
 // Java shorts but in the future it could simply be used as a real
 // array type.  FieldInfo generally shouldn't be used directly.
-// Fields should be queried either through instanceKlass or through
+// Fields should be queried either through InstanceKlass or through
 // the various FieldStreams.
 class FieldInfo VALUE_OBJ_CLASS_SPEC {
   friend class fieldDescriptor;
@@ -65,8 +66,8 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
   u2 initval_index() const                       { return _shorts[initval_index_offset];     }
 
  public:
-  static FieldInfo* from_field_array(typeArrayOop fields, int index) {
-    return ((FieldInfo*)fields->short_at_addr(index * field_slots));
+  static FieldInfo* from_field_array(Array<u2>* fields, int index) {
+    return ((FieldInfo*)fields->adr_at(index * field_slots));
   }
   static FieldInfo* from_field_array(u2* fields, int index) {
     return ((FieldInfo*)(fields + index * field_slots));

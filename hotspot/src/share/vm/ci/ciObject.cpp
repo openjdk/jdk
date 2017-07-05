@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@
 //
 // Within the VM, the oop and klass hierarchies are separate.
 // The compiler interface does not preserve this separation --
-// the distinction between `klassOop' and `Klass' are not
+// the distinction between `Klass*' and `Klass' are not
 // reflected in the interface and instead the Klass hierarchy
 // is directly modeled as the subclasses of ciKlass.
 
@@ -57,7 +57,6 @@ ciObject::ciObject(oop o) {
     _handle = JNIHandles::make_global(o);
   }
   _klass = NULL;
-  _ident = 0;
   init_flags_from(o);
 }
 
@@ -72,7 +71,6 @@ ciObject::ciObject(Handle h) {
     _handle = JNIHandles::make_global(h);
   }
   _klass = NULL;
-  _ident = 0;
   init_flags_from(h());
 }
 
@@ -86,7 +84,6 @@ ciObject::ciObject(ciKlass* klass) {
   assert(klass != NULL, "must supply klass");
   _handle = NULL;
   _klass = klass;
-  _ident = 0;
 }
 
 // ------------------------------------------------------------------
@@ -97,7 +94,6 @@ ciObject::ciObject() {
   ASSERT_IN_VM;
   _handle = NULL;
   _klass = NULL;
-  _ident = 0;
 }
 
 // ------------------------------------------------------------------
@@ -117,30 +113,10 @@ ciKlass* ciObject::klass() {
 
     GUARDED_VM_ENTRY(
       oop o = get_oop();
-      _klass = CURRENT_ENV->get_object(o->klass())->as_klass();
+      _klass = CURRENT_ENV->get_klass(o->klass());
     );
   }
   return _klass;
-}
-
-// ------------------------------------------------------------------
-// ciObject::set_ident
-//
-// Set the unique identity number of a ciObject.
-void ciObject::set_ident(uint id) {
-  assert((_ident >> FLAG_BITS) == 0, "must only initialize once");
-  assert( id < ((uint)1 << (BitsPerInt-FLAG_BITS)), "id too big");
-  _ident = _ident + (id << FLAG_BITS);
-}
-
-// ------------------------------------------------------------------
-// ciObject::ident
-//
-// Report the unique identity number of a ciObject.
-uint ciObject::ident() {
-  uint id = _ident >> FLAG_BITS;
-  assert(id != 0, "must be initialized");
-  return id;
 }
 
 // ------------------------------------------------------------------
@@ -187,7 +163,7 @@ jobject ciObject::constant_encoding() {
 // ciObject::can_be_constant
 bool ciObject::can_be_constant() {
   if (ScavengeRootsInCode >= 1)  return true;  // now everybody can encode as a constant
-  return handle() == NULL || is_perm();
+  return handle() == NULL;
 }
 
 // ------------------------------------------------------------------
@@ -197,7 +173,7 @@ bool ciObject::should_be_constant() {
   if (is_null_object()) return true;
 
   ciEnv* env = CURRENT_ENV;
-  if (!JavaObjectsInPerm) {
+
     // We want Strings and Classes to be embeddable by default since
     // they used to be in the perm world.  Not all Strings used to be
     // embeddable but there's no easy way to distinguish the interned
@@ -205,7 +181,6 @@ bool ciObject::should_be_constant() {
     if (klass() == env->String_klass() || klass() == env->Class_klass()) {
       return true;
     }
-  }
   if (EnableInvokeDynamic &&
       (klass()->is_subclass_of(env->MethodHandle_klass()) ||
        klass()->is_subclass_of(env->CallSite_klass()))) {
@@ -214,9 +189,20 @@ bool ciObject::should_be_constant() {
     return true;
   }
 
-  return handle() == NULL || is_perm();
+  return handle() == NULL;
 }
 
+// ------------------------------------------------------------------
+// ciObject::should_be_constant()
+void ciObject::init_flags_from(oop x) {
+  int flags = 0;
+  if (x != NULL) {
+    assert(Universe::heap()->is_in_reserved(x), "must be");
+    if (x->is_scavengable())
+      flags |= SCAVENGABLE_FLAG;
+  }
+  _ident |= flags;
+}
 
 // ------------------------------------------------------------------
 // ciObject::print
@@ -228,8 +214,7 @@ bool ciObject::should_be_constant() {
 void ciObject::print(outputStream* st) {
   st->print("<%s", type_string());
   GUARDED_VM_ENTRY(print_impl(st);)
-  st->print(" ident=%d %s%s address=0x%x>", ident(),
-        is_perm() ? "PERM" : "",
+  st->print(" ident=%d %s address=0x%x>", ident(),
         is_scavengable() ? "SCAVENGABLE" : "",
         (address)this);
 }

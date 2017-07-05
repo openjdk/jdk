@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CI_CISYMBOL_HPP
 #define SHARE_VM_CI_CISYMBOL_HPP
 
+#include "ci/ciBaseObject.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciObjectFactory.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -34,9 +35,8 @@
 //
 // This class represents a Symbol* in the HotSpot virtual
 // machine.
-class ciSymbol : public ResourceObj {
+class ciSymbol : public ciBaseObject {
   Symbol* _symbol;
-  uint _ident;
 
   CI_PACKAGE_ACCESS
   // These friends all make direct use of get_symbol:
@@ -65,11 +65,7 @@ private:
   // Make a ciSymbol from a C string (implementation).
   static ciSymbol* make_impl(const char* s);
 
-  void set_ident(uint id) { _ident = id; }
 public:
-  // A number unique to this object.
-  uint ident() { return _ident; }
-
   // The enumeration ID from vmSymbols, or vmSymbols::NO_SID if none.
   vmSymbols::SID sid() const { return _sid; }
 
@@ -104,6 +100,8 @@ public:
   void print() {
     _symbol->print();
   }
+
+  virtual bool is_symbol() const       { return true; }
 
   // Are two ciSymbols equal?
   bool equals(ciSymbol* obj) { return this->_symbol == obj->get_symbol(); }

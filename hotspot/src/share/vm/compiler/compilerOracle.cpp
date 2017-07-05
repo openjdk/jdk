@@ -28,7 +28,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
@@ -455,7 +455,7 @@ void CompilerOracle::parse_from_line(char* line) {
     //      exclude java/lang/String indexOf
     //      exclude,java/lang/String,indexOf
     // For easy cut-and-paste of method names, allow VM output format
-    // as produced by methodOopDesc::print_short_name:
+    // as produced by Method::print_short_name:
     //      exclude java.lang.String::indexOf
     // For simple implementation convenience here, convert them all to space.
     if (have_colon) {

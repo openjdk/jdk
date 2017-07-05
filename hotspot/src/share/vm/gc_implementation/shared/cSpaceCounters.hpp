@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ class CSpaceCounters: public CHeapObj<mtGC> {
  private:
   PerfVariable*      _capacity;
   PerfVariable*      _used;
+  PerfVariable*      _max_capacity;
 
   // Constant PerfData types don't need to retain a reference.
   // However, it's a good idea to document them here.
@@ -55,15 +56,15 @@ class CSpaceCounters: public CHeapObj<mtGC> {
       if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space, mtInternal);
   }
 
-  inline void update_capacity() {
+  virtual inline void update_capacity() {
     _capacity->set_value(_space->capacity());
   }
 
-  inline void update_used() {
+  virtual inline void update_used() {
     _used->set_value(_space->used());
   }
 
-  inline void update_all() {
+  virtual inline void update_all() {
     update_used();
     update_capacity();
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,17 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/privilegedStack.hpp"
 #include "runtime/vframe.hpp"
 
 
 void PrivilegedElement::initialize(vframeStream* vfst, oop context, PrivilegedElement* next, TRAPS) {
-  methodOop method      = vfst->method();
+  Method* method        = vfst->method();
   _klass                = method->method_holder();
   _privileged_context   = context;
 #ifdef CHECK_UNHANDLED_OOPS
-  THREAD->allow_unhandled_oop(&_klass);
   THREAD->allow_unhandled_oop(&_privileged_context);
 #endif // CHECK_UNHANDLED_OOPS
   _frame_id             = vfst->frame_id();
@@ -48,8 +47,15 @@ void PrivilegedElement::initialize(vframeStream* vfst, oop context, PrivilegedEl
 void PrivilegedElement::oops_do(OopClosure* f) {
   PrivilegedElement *cur = this;
   do {
-    f->do_oop((oop*) &cur->_klass);
     f->do_oop((oop*) &cur->_privileged_context);
+    cur = cur->_next;
+  } while(cur != NULL);
+}
+
+void PrivilegedElement::classes_do(KlassClosure* f) {
+  PrivilegedElement *cur = this;
+  do {
+    f->do_klass(cur->_klass);
     cur = cur->_next;
   } while(cur != NULL);
 }

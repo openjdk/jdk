@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/stackMapTableFormat.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -155,11 +156,16 @@ methodHandle Relocator::insert_space_at(int bci, int size, u_char inst_buffer[],
   if (!handle_code_changes()) return methodHandle();
 
     // Construct the new method
-  methodHandle new_method = methodOopDesc::clone_with_new_data(method(),
+  methodHandle new_method = Method::clone_with_new_data(method(),
                               code_array(), code_length(),
                               compressed_line_number_table(),
                               compressed_line_number_table_size(),
                               CHECK_(methodHandle()));
+
+  // Deallocate the old Method* from metadata
+  ClassLoaderData* loader_data = method()->method_holder()->class_loader_data();
+  loader_data->add_to_deallocate_list(method()());
+
     set_method(new_method);
 
   if (TraceRelocator) {
@@ -443,16 +449,14 @@ void Relocator::adjust_local_var_table(int bci, int delta) {
 
 // Create a new array, copying the src array but adding a hole at
 // the specified location
-static typeArrayOop insert_hole_at(
-    size_t where, int hole_sz, typeArrayOop src) {
+static Array<u1>* insert_hole_at(ClassLoaderData* loader_data,
+    size_t where, int hole_sz, Array<u1>* src) {
   Thread* THREAD = Thread::current();
-  Handle src_hnd(THREAD, src);
-  typeArrayOop dst =
-      oopFactory::new_permanent_byteArray(src->length() + hole_sz, CHECK_NULL);
-  src = (typeArrayOop)src_hnd();
+  Array<u1>* dst =
+      MetadataFactory::new_array<u1>(loader_data, src->length() + hole_sz, 0, CHECK_NULL);
 
-  address src_addr = (address)src->byte_at_addr(0);
-  address dst_addr = (address)dst->byte_at_addr(0);
+  address src_addr = (address)src->adr_at(0);
+  address dst_addr = (address)dst->adr_at(0);
 
   memcpy(dst_addr, src_addr, where);
   memcpy(dst_addr + where + hole_sz,
@@ -464,10 +468,10 @@ static typeArrayOop insert_hole_at(
 // map frames.
 void Relocator::adjust_stack_map_table(int bci, int delta) {
   if (method()->has_stackmap_table()) {
-    typeArrayOop data = method()->stackmap_data();
+    Array<u1>* data = method()->stackmap_data();
     // The data in the array is a classfile representation of the stackmap table
     stack_map_table* sm_table =
-        stack_map_table::at((address)data->byte_at_addr(0));
+        stack_map_table::at((address)data->adr_at(0));
 
     int count = sm_table->number_of_entries();
     stack_map_frame* frame = sm_table->entries();
@@ -497,14 +501,18 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
           // We can safely ignore the reverse situation as a small delta
           // can still be used in an extended version of the frame.
 
-          size_t frame_offset = (address)frame - (address)data->byte_at_addr(0);
+          size_t frame_offset = (address)frame - (address)data->adr_at(0);
 
-          data = insert_hole_at(frame_offset + 1, 2, data);
-          if (data == NULL) {
+          ClassLoaderData* loader_data = method()->method_holder()->class_loader_data();
+          Array<u1>* new_data = insert_hole_at(loader_data, frame_offset + 1, 2, data);
+          if (new_data == NULL) {
             return; // out-of-memory?
           }
+          // Deallocate old data
+          MetadataFactory::free_array<u1>(loader_data, data);
+          data = new_data;
 
-          address frame_addr = (address)(data->byte_at_addr(0) + frame_offset);
+          address frame_addr = (address)(data->adr_at(0) + frame_offset);
           frame = stack_map_frame::at(frame_addr);
 
 
@@ -573,7 +581,7 @@ bool Relocator::expand_code_array(int delta) {
   if (code_array() != NULL) {
     memcpy(new_code_array, code_array(), code_length());
   } else {
-    // Initial copy. Copy directly from methodOop
+    // Initial copy. Copy directly from Method*
     memcpy(new_code_array, method()->code_base(), code_length());
   }
 

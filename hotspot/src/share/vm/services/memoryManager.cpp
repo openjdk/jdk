@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ instanceOop MemoryManager::get_memory_manager_instance(TRAPS) {
   if (mgr_obj == NULL) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra manager instances will just be gc'ed.
-    klassOop k = Management::sun_management_ManagementFactory_klass(CHECK_0);
+    Klass* k = Management::sun_management_ManagementFactory_klass(CHECK_0);
     instanceKlassHandle ik(THREAD, k);
 
     Handle mgr_name = java_lang_String::create_from_str(name(), CHECK_0);

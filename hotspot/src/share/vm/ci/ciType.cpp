@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciEnv.hpp"
 #include "ci/ciType.hpp"
 #include "ci/ciUtilities.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -38,18 +39,13 @@ ciType* ciType::_basic_types[T_CONFLICT+1];
 // ------------------------------------------------------------------
 // ciType::ciType
 //
-ciType::ciType(BasicType basic_type) : ciObject() {
+ciType::ciType(BasicType basic_type) : ciMetadata() {
   assert(basic_type >= T_BOOLEAN && basic_type <= T_CONFLICT, "range check");
-  assert(basic_type != T_OBJECT && basic_type != T_ARRAY, "not a reference type");
   _basic_type = basic_type;
 }
 
-ciType::ciType(KlassHandle k) : ciObject(k) {
+ciType::ciType(KlassHandle k) : ciMetadata(k()) {
   _basic_type = Klass::cast(k())->oop_is_array() ? T_ARRAY : T_OBJECT;
-}
-
-ciType::ciType(ciKlass* klass) : ciObject(klass) {
-  _basic_type = klass->is_array_klass_klass() ? T_ARRAY : T_OBJECT;
 }
 
 
@@ -87,7 +83,7 @@ void ciType::print_name_on(outputStream* st) {
 //
 ciInstance* ciType::java_mirror() {
   VM_ENTRY_MARK;
-  return CURRENT_THREAD_ENV->get_object(Universe::java_mirror(basic_type()))->as_instance();
+  return CURRENT_THREAD_ENV->get_instance(Universe::java_mirror(basic_type()));
 }
 
 // ------------------------------------------------------------------
@@ -100,7 +96,7 @@ ciKlass* ciType::box_klass() {
   if (basic_type() == T_VOID)  return NULL;
 
   VM_ENTRY_MARK;
-  return CURRENT_THREAD_ENV->get_object(SystemDictionary::box_klass(basic_type()))->as_instance_klass();
+  return CURRENT_THREAD_ENV->get_instance_klass(SystemDictionary::box_klass(basic_type()));
 }
 
 
