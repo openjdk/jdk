@@ -154,7 +154,6 @@ class FrameMap : public CompilationResourceObj {
   static LIR_Opr method_handle_invoke_SP_save_opr();
 
   static BasicTypeArray*     signature_type_array_for(const ciMethod* method);
-  static BasicTypeArray*     signature_type_array_for(const char * signature);
 
   // for outgoing calls, these also update the reserved area to
   // include space for arguments and any ABI area.

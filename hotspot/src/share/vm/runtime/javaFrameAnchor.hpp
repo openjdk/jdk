@@ -76,7 +76,6 @@ public:
   JavaFrameAnchor()                              { clear(); }
   JavaFrameAnchor(JavaFrameAnchor *src)          { copy(src); }
 
-  address last_Java_pc(void)                     { return _last_Java_pc; }
   void set_last_Java_pc(address pc)              { _last_Java_pc = pc; }
 
   // Assembly stub generation helpers

@@ -252,7 +252,7 @@ ciMethodBlocks::ciMethodBlocks(Arena *arena, ciMethod *meth): _method(meth),
                           _arena(arena), _num_blocks(0), _code_size(meth->code_size()) {
   int block_estimate = _code_size / 8;
 
-  _blocks =  new(_arena) GrowableArray<ciBlock *>(block_estimate);
+  _blocks =  new(_arena) GrowableArray<ciBlock *>(_arena, block_estimate, 0, NULL);
   int b2bsize = _code_size * sizeof(ciBlock **);
   _bci_to_block = (ciBlock **) arena->Amalloc(b2bsize);
   Copy::zero_to_words((HeapWord*) _bci_to_block, b2bsize / sizeof(HeapWord));

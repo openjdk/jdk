@@ -144,7 +144,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
 #ifndef TIERED
     case counter_overflow_id: // Not generated outside the tiered world
 #endif
-#ifdef SPARC
+#if defined(SPARC) || defined(PPC)
     case handle_exception_nofpu_id:  // Unused on sparc
 #endif
       break;
@@ -240,7 +240,8 @@ const char* Runtime1::name_for_address(address entry) {
 
 #undef FUNCTION_CASE
 
-  return "<unknown function>";
+  // Soft float adds more runtime names.
+  return pd_name_for_address(entry);
 }
 
 
@@ -896,7 +897,10 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           } else {
             // patch the instruction <move reg, klass>
             NativeMovConstReg* n_copy = nativeMovConstReg_at(copy_buff);
-            assert(n_copy->data() == 0, "illegal init value");
+
+            assert(n_copy->data() == 0 ||
+                   n_copy->data() == (int)Universe::non_oop_word(),
+                   "illegal init value");
             assert(load_klass() != NULL, "klass not set");
             n_copy->set_data((intx) (load_klass()));
 
@@ -904,7 +908,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
               Disassembler::decode(copy_buff, copy_buff + *byte_count, tty);
             }
 
-#ifdef SPARC
+#if defined(SPARC) || defined(PPC)
             // Update the oop location in the nmethod with the proper
             // oop.  When the code was generated, a NULL was stuffed
             // in the oop table and that table needs to be update to
@@ -934,6 +938,14 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         if (do_patch) {
           // replace instructions
           // first replace the tail, then the call
+#ifdef ARM
+          if(stub_id == Runtime1::load_klass_patching_id && !VM_Version::supports_movw()) {
+            copy_buff -= *byte_count;
+            NativeMovConstReg* n_copy2 = nativeMovConstReg_at(copy_buff);
+            n_copy2->set_data((intx) (load_klass()), instr_pc);
+          }
+#endif
+
           for (int i = NativeCall::instruction_size; i < *byte_count; i++) {
             address ptr = copy_buff + i;
             int a_byte = (*ptr) & 0xFF;
@@ -960,6 +972,12 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
             RelocIterator iter2(nm, instr_pc2, instr_pc2 + 1);
             relocInfo::change_reloc_info_for_address(&iter2, (address) instr_pc2,
                                                      relocInfo::none, relocInfo::oop_type);
+#endif
+#ifdef PPC
+          { address instr_pc2 = instr_pc + NativeMovConstReg::lo_offset;
+            RelocIterator iter2(nm, instr_pc2, instr_pc2 + 1);
+            relocInfo::change_reloc_info_for_address(&iter2, (address) instr_pc2, relocInfo::none, relocInfo::oop_type);
+          }
 #endif
           }
 

@@ -254,6 +254,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   }
 
+#ifndef SHARK
   // Compute the caller frame based on the sender sp of stub_frame and stored frame sizes info.
   CodeBlob* cb = stub_frame.cb();
   // Verify we have the right vframeArray
@@ -270,6 +271,10 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   assert(cb->is_deoptimization_stub() || cb->is_uncommon_trap_stub(), "just checking");
   Events::log("fetch unroll sp " INTPTR_FORMAT, unpack_sp);
 #endif
+#else
+  intptr_t* unpack_sp = stub_frame.sender(&dummy_map).unextended_sp();
+#endif // !SHARK
+
   // This is a guarantee instead of an assert because if vframe doesn't match
   // we will unpack the wrong deoptimized frame and wind up in strange places
   // where it will be very difficult to figure out what went wrong. Better
@@ -380,7 +385,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   frame_pcs[0] = deopt_sender.raw_pc();
 
+#ifndef SHARK
   assert(CodeCache::find_blob_unsafe(frame_pcs[0]) != NULL, "bad pc");
+#endif // SHARK
 
   UnrollBlock* info = new UnrollBlock(array->frame_size() * BytesPerWord,
                                       caller_adjustment * BytesPerWord,
@@ -1073,7 +1080,7 @@ JRT_LEAF(void, Deoptimization::popframe_preserve_args(JavaThread* thread, int by
 JRT_END
 
 
-#ifdef COMPILER2
+#if defined(COMPILER2) || defined(SHARK)
 void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int index, TRAPS) {
   // in case of an unresolved klass entry, load the class.
   if (constant_pool->tag_at(index).is_unresolved_klass()) {
@@ -1835,7 +1842,7 @@ void Deoptimization::print_statistics() {
     if (xtty != NULL)  xtty->tail("statistics");
   }
 }
-#else // COMPILER2
+#else // COMPILER2 || SHARK
 
 
 // Stubs for C1 only system.
@@ -1871,4 +1878,4 @@ const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
   return buf;
 }
 
-#endif // COMPILER2
+#endif // COMPILER2 || SHARK

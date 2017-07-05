@@ -2591,7 +2591,7 @@ void ciTypeFlow::df_flow_types(Block* start,
                                StateVector* temp_vector,
                                JsrSet* temp_set) {
   int dft_len = 100;
-  GrowableArray<Block*> stk(arena(), dft_len, 0, NULL);
+  GrowableArray<Block*> stk(dft_len);
 
   ciBlock* dummy = _methodBlocks->make_dummy_block();
   JsrSet* root_set = new JsrSet(NULL, 0);
