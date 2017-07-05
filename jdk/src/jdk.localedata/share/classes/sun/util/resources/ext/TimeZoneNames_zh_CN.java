@@ -189,6 +189,9 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
         String MHT[] = new String[] {"\u9a6c\u7ecd\u5c14\u7fa4\u5c9b\u65f6\u95f4", "MHT",
                                      "\u9a6c\u7ecd\u5c14\u7fa4\u5c9b\u590f\u4ee4\u65f6", "MHST",
                                      "\u9A6C\u7ECD\u5C14\u7FA4\u5C9B\u65F6\u95F4", "MHT"};
+        String MMT[] = new String[] {"\u7f05\u7538\u65f6\u95f4", "MMT",
+                                     "\u7f05\u7538\u590f\u4ee4\u65f6", "MMST",
+                                     "\u7F05\u7538\u65F6\u95F4", "MMT"};
         String MSK[] = new String[] {"\u83ab\u65af\u79d1\u6807\u51c6\u65f6\u95f4", "MSK",
                                      "\u83ab\u65af\u79d1\u590f\u4ee4\u65f6", "MSD",
                                      "\u83AB\u65AF\u79D1\u65F6\u95F4", "MT"};
@@ -684,9 +687,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
             {"Asia/Qyzylorda", new String[] {"Qyzylorda \u65f6\u95f4", "QYZT",
                                              "Qyzylorda \u590f\u4ee4\u65f6", "QYZST",
                                              "Qyzylorda \u65F6\u95F4", "QYZT"}},
-            {"Asia/Rangoon", new String[] {"\u7f05\u7538\u65f6\u95f4", "MMT",
-                                           "\u7f05\u7538\u590f\u4ee4\u65f6", "MMST",
-                                           "\u7F05\u7538\u65F6\u95F4", "MMT"}},
+            {"Asia/Rangoon", MMT},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"\u5e93\u9875\u5c9b\u65f6\u95f4", "SAKT",
@@ -719,6 +720,7 @@ public final class TimeZoneNames_zh_CN extends TimeZoneNamesBundle {
                                                "\u6d77\u53c2\u5d34\u590f\u4ee4\u65f6", "VLAST",
                                                "\u6D77\u53C2\u5D34\u65F6\u95F4", "VLAT"}},
             {"Asia/Yakutsk", YAKT},
+            {"Asia/Yangon", MMT},
             {"Asia/Yekaterinburg", new String[] {"Yekaterinburg \u65f6\u95f4", "YEKT",
                                                  "Yekaterinburg \u590f\u4ee4\u65f6", "YEKST",
                                                  "Yekaterinburg \u65F6\u95F4", "YEKT"}},

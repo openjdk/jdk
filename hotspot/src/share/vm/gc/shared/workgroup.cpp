@@ -472,23 +472,21 @@ bool SequentialSubTasksDone::valid() {
 }
 
 bool SequentialSubTasksDone::is_task_claimed(uint& t) {
-  uint* n_claimed_ptr = &_n_claimed;
-  t = *n_claimed_ptr;
+  t = _n_claimed;
   while (t < _n_tasks) {
-    jint res = Atomic::cmpxchg(t+1, n_claimed_ptr, t);
+    jint res = Atomic::cmpxchg(t+1, &_n_claimed, t);
     if (res == (jint)t) {
       return false;
     }
-    t = *n_claimed_ptr;
+    t = res;
   }
   return true;
 }
 
 bool SequentialSubTasksDone::all_tasks_completed() {
-  uint* n_completed_ptr = &_n_completed;
-  uint  complete        = *n_completed_ptr;
+  uint complete = _n_completed;
   while (true) {
-    uint res = Atomic::cmpxchg(complete+1, n_completed_ptr, complete);
+    uint res = Atomic::cmpxchg(complete+1, &_n_completed, complete);
     if (res == complete) {
       break;
     }

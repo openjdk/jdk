@@ -668,21 +668,21 @@ void dumpAddr (char *str, void *addr) {
  */
 
 JNIEXPORT int JNICALL
-NET_BindV6(struct ipv6bind* b, jboolean exclBind) {
+NET_BindV6(struct ipv6bind *b, jboolean exclBind) {
     int fd=-1, ofd=-1, rv, len;
     /* need to defer close until new sockets created */
     int close_fd=-1, close_ofd=-1;
     SOCKETADDRESS oaddr; /* other address to bind */
-    int family = b->addr->him.sa_family;
+    int family = b->addr->sa.sa_family;
     int ofamily;
     u_short port; /* requested port parameter */
     u_short bound_port;
 
-    if (family == AF_INET && (b->addr->him4.sin_addr.s_addr != INADDR_ANY)) {
+    if (family == AF_INET && (b->addr->sa4.sin_addr.s_addr != INADDR_ANY)) {
         /* bind to v4 only */
         int ret;
-        ret = NET_WinBind ((int)b->ipv4_fd, (struct sockaddr *)b->addr,
-                                sizeof (struct sockaddr_in), exclBind);
+        ret = NET_WinBind((int)b->ipv4_fd, (struct sockaddr *)b->addr,
+                                sizeof(SOCKETADDRESS), exclBind);
         if (ret == SOCKET_ERROR) {
             CLOSE_SOCKETS_AND_RETURN;
         }
@@ -690,11 +690,11 @@ NET_BindV6(struct ipv6bind* b, jboolean exclBind) {
         b->ipv6_fd = -1;
         return 0;
     }
-    if (family == AF_INET6 && (!IN6_IS_ADDR_ANY(&b->addr->him6.sin6_addr))) {
+    if (family == AF_INET6 && (!IN6_IS_ADDR_ANY(&b->addr->sa6.sin6_addr))) {
         /* bind to v6 only */
         int ret;
-        ret = NET_WinBind ((int)b->ipv6_fd, (struct sockaddr *)b->addr,
-                                sizeof (struct SOCKADDR_IN6), exclBind);
+        ret = NET_WinBind((int)b->ipv6_fd, (struct sockaddr *)b->addr,
+                          sizeof(SOCKETADDRESS), exclBind);
         if (ret == SOCKET_ERROR) {
             CLOSE_SOCKETS_AND_RETURN;
         }
@@ -711,32 +711,32 @@ NET_BindV6(struct ipv6bind* b, jboolean exclBind) {
         fd = (int)b->ipv4_fd;
         ofd = (int)b->ipv6_fd;
         port = (u_short)GET_PORT (b->addr);
-        IN6ADDR_SETANY (&oaddr.him6);
-        oaddr.him6.sin6_port = port;
+        IN6ADDR_SETANY(&oaddr.sa6);
+        oaddr.sa6.sin6_port = port;
     } else {
         ofamily = AF_INET;
         ofd = (int)b->ipv4_fd;
         fd = (int)b->ipv6_fd;
         port = (u_short)GET_PORT (b->addr);
-        oaddr.him4.sin_family = AF_INET;
-        oaddr.him4.sin_port = port;
-        oaddr.him4.sin_addr.s_addr = INADDR_ANY;
+        oaddr.sa4.sin_family = AF_INET;
+        oaddr.sa4.sin_port = port;
+        oaddr.sa4.sin_addr.s_addr = INADDR_ANY;
     }
 
-    rv = NET_WinBind(fd, (struct sockaddr *)b->addr, SOCKETADDRESS_LEN(b->addr), exclBind);
+    rv = NET_WinBind(fd, (struct sockaddr *)b->addr, sizeof(SOCKETADDRESS), exclBind);
     if (rv == SOCKET_ERROR) {
         CLOSE_SOCKETS_AND_RETURN;
     }
 
     /* get the port and set it in the other address */
-    len = SOCKETADDRESS_LEN(b->addr);
+    len = sizeof(SOCKETADDRESS);
     if (getsockname(fd, (struct sockaddr *)b->addr, &len) == -1) {
         CLOSE_SOCKETS_AND_RETURN;
     }
     bound_port = GET_PORT (b->addr);
     SET_PORT (&oaddr, bound_port);
-    if ((rv=NET_WinBind (ofd, (struct sockaddr *) &oaddr,
-                         SOCKETADDRESS_LEN (&oaddr), exclBind)) == SOCKET_ERROR) {
+    if ((rv = NET_WinBind(ofd, &oaddr.sa,
+                          sizeof(SOCKETADDRESS), exclBind)) == SOCKET_ERROR) {
         int retries;
         int sotype, arglen=sizeof(sotype);
 
@@ -772,8 +772,7 @@ NET_BindV6(struct ipv6bind* b, jboolean exclBind) {
 
             /* bind random port on first socket */
             SET_PORT (&oaddr, 0);
-            rv = NET_WinBind (ofd, (struct sockaddr *)&oaddr, SOCKETADDRESS_LEN(&oaddr),
-                              exclBind);
+            rv = NET_WinBind(ofd, &oaddr.sa, sizeof(SOCKETADDRESS), exclBind);
             if (rv == SOCKET_ERROR) {
                 CLOSE_SOCKETS_AND_RETURN;
             }
@@ -783,14 +782,14 @@ NET_BindV6(struct ipv6bind* b, jboolean exclBind) {
             close_fd = close_ofd = -1;
 
             /* bind new port on second socket */
-            len = SOCKETADDRESS_LEN(&oaddr);
-            if (getsockname(ofd, (struct sockaddr *)&oaddr, &len) == -1) {
+            len = sizeof(SOCKETADDRESS);
+            if (getsockname(ofd, &oaddr.sa, &len) == -1) {
                 CLOSE_SOCKETS_AND_RETURN;
             }
             bound_port = GET_PORT (&oaddr);
             SET_PORT (b->addr, bound_port);
-            rv = NET_WinBind (fd, (struct sockaddr *)b->addr, SOCKETADDRESS_LEN(b->addr),
-                              exclBind);
+            rv = NET_WinBind(fd, (struct sockaddr *)b->addr,
+                             sizeof(SOCKETADDRESS), exclBind);
 
             if (rv != SOCKET_ERROR) {
                 if (family == AF_INET) {
@@ -826,9 +825,9 @@ jint getDefaultIPv6Interface(JNIEnv *env, struct SOCKADDR_IN6 *target_addr)
     }
 
     ret = WSAIoctl(fd, SIO_ROUTING_INTERFACE_QUERY,
-                    (void *)target_addr, sizeof(struct sockaddr_in6),
-                    (void *)&route, sizeof(struct sockaddr_in6),
-                    &b, 0, 0);
+                   (void *)target_addr, sizeof(struct sockaddr_in6),
+                   (void *)&route, sizeof(struct sockaddr_in6),
+                   &b, 0, 0);
     if (ret == SOCKET_ERROR) {
         // error
         closesocket(fd);
@@ -909,13 +908,13 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
         him6->sin6_scope_id = scopeid != 0 ? scopeid : cached_scope_id;
         *len = sizeof(struct SOCKADDR_IN6) ;
     } else {
-        struct sockaddr_in *him4 = (struct sockaddr_in*)him;
+        struct sockaddr_in *him4 = (struct sockaddr_in *)him;
         jint address;
         if (family != AF_INET) {
           JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Protocol family unavailable");
           return -1;
         }
-        memset((char *) him4, 0, sizeof(struct sockaddr_in));
+        memset((char *)him4, 0, sizeof(struct sockaddr_in));
         address = getInetAddress_addr(env, iaObj);
         him4->sin_port = htons((short) port);
         him4->sin_addr.s_addr = (u_long) htonl(address);
@@ -928,9 +927,9 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
 JNIEXPORT jint JNICALL
 NET_GetPortFromSockaddr(struct sockaddr *him) {
     if (him->sa_family == AF_INET6) {
-        return ntohs(((struct sockaddr_in6*)him)->sin6_port);
+        return ntohs(((struct sockaddr_in6 *)him)->sin6_port);
     } else {
-        return ntohs(((struct sockaddr_in*)him)->sin_port);
+        return ntohs(((struct sockaddr_in *)him)->sin_port);
     }
 }
 
@@ -966,12 +965,12 @@ NET_IsEqual(jbyte* caddr1, jbyte* caddr2) {
     return 1;
 }
 
-int getScopeID (struct sockaddr *him) {
+int getScopeID(struct sockaddr *him) {
     struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
     return him6->sin6_scope_id;
 }
 
-int cmpScopeID (unsigned int scope, struct sockaddr *him) {
+int cmpScopeID(unsigned int scope, struct sockaddr *him) {
     struct SOCKADDR_IN6 *him6 = (struct SOCKADDR_IN6 *)him;
     return him6->sin6_scope_id == scope;
 }

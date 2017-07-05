@@ -179,14 +179,13 @@ public class Taskbar {
 
     /**
      *  Calls to the security manager's {@code checkPermission} method with
-     *  an {@code AWTPermission("showWindowWithoutWarningBanner")}
-     *  permission.
+     *  an {@code RuntimePermission("canProcessApplicationEvents")} permissions.
      */
-    private void checkAWTPermission(){
+    private void checkEventsProcessingPermission(){
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            sm.checkPermission(new AWTPermission(
-                    "showWindowWithoutWarningBanner"));
+            sm.checkPermission(new RuntimePermission(
+                    "canProcessApplicationEvents"));
         }
     }
 
@@ -262,12 +261,12 @@ public class Taskbar {
      * @param enabled disables this request if false
      * @param critical if this is an important request
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#USER_ATTENTION} feature
      */
     public void requestUserAttention(final boolean enabled, final boolean critical) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.USER_ATTENTION);
         peer.requestUserAttention(enabled, critical);
     }
@@ -277,12 +276,12 @@ public class Taskbar {
      *
      * @param w window
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#USER_ATTENTION_WINDOW} feature
      */
     public void requestWindowUserAttention(Window w) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.USER_ATTENTION_WINDOW);
         peer.requestWindowUserAttention(w);
     }
@@ -293,12 +292,12 @@ public class Taskbar {
      *
      * @param menu the PopupMenu to attach to this application
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#MENU} feature
      */
     public void setMenu(final PopupMenu menu) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.MENU);
         peer.setMenu(menu);
     }
@@ -308,12 +307,12 @@ public class Taskbar {
      *
      * @return the PopupMenu
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#MENU} feature
      */
     public PopupMenu getMenu() {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.MENU);
         return peer.getMenu();
     }
@@ -323,12 +322,12 @@ public class Taskbar {
      *
      * @param image to change
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#ICON_IMAGE} feature
      */
     public void setIconImage(final Image image) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.ICON_IMAGE);
         peer.setIconImage(image);
     }
@@ -338,12 +337,12 @@ public class Taskbar {
      *
      * @return an image of this application's icon
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#ICON_IMAGE} feature
      */
     public Image getIconImage() {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.ICON_IMAGE);
         return peer.getIconImage();
     }
@@ -360,13 +359,13 @@ public class Taskbar {
      * Passing {@code null} as parameter hides the badge.
      * @param badge label to affix to the icon
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#ICON_BADGE_NUMBER}
      * or {@link Taskbar.Feature#ICON_BADGE_TEXT} feature
      */
     public void setIconBadge(final String badge) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.ICON_BADGE_NUMBER);
         peer.setIconBadge(badge);
     }
@@ -379,12 +378,12 @@ public class Taskbar {
      * @param w window to update
      * @param badge image to affix to the icon
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#ICON_BADGE_IMAGE_WINDOW} feature
      */
     public void setWindowIconBadge(Window w, final Image badge) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.ICON_BADGE_IMAGE_WINDOW);
         if (w != null) {
             peer.setWindowIconBadge(w, badge);
@@ -396,11 +395,13 @@ public class Taskbar {
      * Affixes a small system-provided progress bar to this application's icon.
      *
      * @param value from 0 to 100, other to disable progress indication
+     * @throws SecurityException if a security manager exists and it denies the
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#PROGRESS_VALUE} feature
      */
     public void setProgressValue(int value) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.PROGRESS_VALUE);
         peer.setProgressValue(value);
     }
@@ -411,12 +412,12 @@ public class Taskbar {
      * @param w window to update
      * @param value from 0 to 100, other to disable progress indication
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#PROGRESS_VALUE_WINDOW} feature
      */
     public void setWindowProgressValue(Window w, int value) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.PROGRESS_VALUE_WINDOW);
         if (w != null) {
             peer.setWindowProgressValue(w, value);
@@ -434,12 +435,12 @@ public class Taskbar {
      * @see State#INDETERMINATE
      * @see State#ERROR
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission.
+     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Taskbar.Feature#PROGRESS_STATE_WINDOW} feature
      */
     public void setWindowProgressState(Window w, State state) {
-        checkAWTPermission();
+        checkEventsProcessingPermission();
         checkFeatureSupport(Feature.PROGRESS_STATE_WINDOW);
         if (w != null) {
             peer.setWindowProgressState(w, state);

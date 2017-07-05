@@ -86,6 +86,15 @@ class CAccessibility implements PropertyChangeListener {
         return null;
     }
 
+    static <T> T invokeAndWait(final Callable<T> callable, final Component c, final T defValue) {
+        T value = null;
+        try {
+            value = LWCToolkit.invokeAndWait(callable, c);
+        } catch (final Exception e) { e.printStackTrace(); }
+
+        return value != null ? value : defValue;
+    }
+
     static void invokeLater(final Runnable runnable, final Component c) {
         try {
             LWCToolkit.invokeLater(runnable, c);
@@ -181,7 +190,7 @@ class CAccessibility implements PropertyChangeListener {
 
                 return as.isAccessibleChildSelected(index);
             }
-        }, c);
+        }, c, false);
     }
 
     public static AccessibleStateSet getAccessibleStateSet(final AccessibleContext ac, final Component c) {
@@ -203,7 +212,7 @@ class CAccessibility implements PropertyChangeListener {
                 if (ass == null) return null;
                 return ass.contains(as);
             }
-        }, c);
+        }, c, false);
     }
 
     static String getAccessibleRoleFor(final Accessible a) {
@@ -248,7 +257,7 @@ class CAccessibility implements PropertyChangeListener {
             public Integer call() throws Exception {
                 return at.getCharCount();
             }
-        }, c);
+        }, c, 0);
     }
 
     // Accessibility Threadsafety for JavaComponentAccessibility.m
@@ -273,7 +282,7 @@ class CAccessibility implements PropertyChangeListener {
                 if (ac == null) return null;
                 return ac.getAccessibleIndexInParent();
             }
-        }, c);
+        }, c, -1);
     }
 
     public static AccessibleComponent getAccessibleComponent(final Accessible a, final Component c) {
@@ -369,7 +378,7 @@ class CAccessibility implements PropertyChangeListener {
 
                 return aComp.isFocusTraversable();
             }
-        }, c);
+        }, c, false);
     }
 
     public static Accessible accessibilityHitTest(final Container parent, final float hitPointX, final float hitPointY) {
@@ -428,7 +437,7 @@ class CAccessibility implements PropertyChangeListener {
 
                 return aComp.isEnabled();
             }
-        }, c);
+        }, c, false);
     }
 
     // KCH - can we make this a postEvent instead?

@@ -95,7 +95,7 @@ final class ScriptLoader extends NashornLoader {
     }
 
     @Override
-    protected Class<?> findClass(String name) throws ClassNotFoundException {
+    protected Class<?> findClass(final String name) throws ClassNotFoundException {
         final ClassLoader appLoader = context.getAppLoader();
 
         /*

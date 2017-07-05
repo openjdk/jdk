@@ -535,6 +535,67 @@ else
 endif
 
 ################################################################################
+# Take two paths and return the path of the last common directory.
+# Ex: /foo/bar/baz, /foo/bar/banan -> /foo/bar
+#     foo/bar/baz, /foo/bar -> <empty>
+#
+# The x prefix is used to preserve the presence of the initial slash
+#
+# $1 - Path to compare
+# $2 - Other path to compare
+FindCommonPathPrefix = \
+    $(patsubst x%,%,$(subst $(SPACE),/,$(strip \
+        $(call FindCommonPathPrefixHelper, \
+            $(subst /,$(SPACE),x$(strip $1)), $(subst /,$(SPACE),x$(strip $2))) \
+    )))
+
+FindCommonPathPrefixHelper = \
+    $(if $(call equals, $(firstword $1), $(firstword $2)), \
+      $(firstword $1) \
+      $(call FindCommonPathPrefixHelper, \
+          $(wordlist 2, $(words $1), $1), $(wordlist 2, $(words $2), $2) \
+      ) \
+    )
+
+# Convert a partial path into as many directory levels of ../, removing
+# leading and following /.
+# Ex: foo/bar/baz/ -> ../../..
+#     foo/bar -> ../..
+#     /foo -> ..
+DirToDotDot = \
+    $(subst $(SPACE),/,$(foreach d, $(subst /,$(SPACE),$1),..))
+
+# Computes the relative path from a directory to a file
+# $1 - File to compute the relative path to
+# $2 - Directory to compute the relative path from
+RelativePath = \
+    $(eval $1_prefix := $(call FindCommonPathPrefix, $1, $2)) \
+    $(eval $1_dotdots := $(call DirToDotDot, $(patsubst $($(strip $1)_prefix)/%, %, $2))) \
+    $(eval $1_suffix := $(patsubst $($(strip $1)_prefix)/%, %, $1)) \
+    $($(strip $1)_dotdots)/$($(strip $1)_suffix)
+
+################################################################################
+# link-file-* works similarly to install file but creates a symlink instead on
+# platforms that support it. There are two versions, either creating a relative
+# or an absolute link.
+ifeq ($(OPENJDK_BUILD_OS), windows)
+  link-file-absolute = $(install-file)
+  link-file-relative = $(install-file)
+else
+  define link-file-relative
+	$(call MakeDir, $(@D))
+	$(RM) $@
+	$(LN) -s $(call RelativePath, $<, $(@D)) $@
+  endef
+
+  define link-file-absolute
+	$(call MakeDir, $(@D))
+	$(RM) $@
+	$(LN) -s $< $@
+  endef
+endif
+
+################################################################################
 # Filter out duplicate sub strings while preserving order. Keeps the first occurance.
 uniq = \
     $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))

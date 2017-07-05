@@ -258,16 +258,15 @@ class PushOrMarkClosure: public MetadataAwareOopClosure {
 // the closure ParMarkFromRootsClosure.
 class ParPushOrMarkClosure: public MetadataAwareOopClosure {
  private:
-  CMSCollector*    _collector;
-  MemRegion        _whole_span;
-  MemRegion        _span;        // local chunk
-  CMSBitMap*       _bit_map;
-  OopTaskQueue*    _work_queue;
-  CMSMarkStack*    _overflow_stack;
-  HeapWord*  const _finger;
-  HeapWord** const _global_finger_addr;
-  ParMarkFromRootsClosure* const
-                   _parent;
+  CMSCollector*                  _collector;
+  MemRegion                      _whole_span;
+  MemRegion                      _span;       // local chunk
+  CMSBitMap*                     _bit_map;
+  OopTaskQueue*                  _work_queue;
+  CMSMarkStack*                  _overflow_stack;
+  HeapWord*  const               _finger;
+  HeapWord* volatile* const      _global_finger_addr;
+  ParMarkFromRootsClosure* const _parent;
  protected:
   DO_OOP_WORK_DEFN
  public:
@@ -277,7 +276,7 @@ class ParPushOrMarkClosure: public MetadataAwareOopClosure {
                        OopTaskQueue* work_queue,
                        CMSMarkStack* mark_stack,
                        HeapWord* finger,
-                       HeapWord** global_finger_addr,
+                       HeapWord* volatile* global_finger_addr,
                        ParMarkFromRootsClosure* parent);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);

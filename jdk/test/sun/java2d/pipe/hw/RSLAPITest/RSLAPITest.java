@@ -47,7 +47,6 @@ import sun.java2d.DestSurfaceProvider;
 import sun.java2d.Surface;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.RenderQueue;
-import sun.java2d.pipe.hw.AccelDeviceEventListener;
 import sun.java2d.pipe.hw.AccelGraphicsConfig;
 import sun.java2d.pipe.hw.AccelSurface;
 import static java.awt.Transparency.*;
@@ -254,16 +253,6 @@ public class RSLAPITest {
 
     private static void testContext(final AccelGraphicsConfig agc) {
         BufferedContext c = agc.getContext();
-        final AccelDeviceEventListener l = new AccelDeviceEventListener() {
-            public void onDeviceDispose() {
-                System.out.println("onDeviceDispose invoked");
-                agc.removeDeviceEventListener(this);
-            }
-            public void onDeviceReset() {
-                System.out.println("onDeviceReset invoked");
-            }
-        };
-        agc.addDeviceEventListener(l);
 
         RenderQueue rq = c.getRenderQueue();
         rq.lock();
