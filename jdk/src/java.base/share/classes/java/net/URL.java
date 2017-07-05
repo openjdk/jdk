@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import java.util.NoSuchElementException;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
+import jdk.internal.misc.JavaNetURLAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.security.util.SecurityConstants;
 import sun.security.action.GetPropertyAction;
 
@@ -1613,6 +1615,17 @@ public final class URL implements java.io.Serializable {
 
     private void setSerializedHashCode(int hc) {
         this.hashCode = hc;
+    }
+
+    static {
+        SharedSecrets.setJavaNetURLAccess(
+                new JavaNetURLAccess() {
+                    @Override
+                    public URLStreamHandler getHandler(URL u) {
+                        return u.handler;
+                    }
+                }
+        );
     }
 }
 
