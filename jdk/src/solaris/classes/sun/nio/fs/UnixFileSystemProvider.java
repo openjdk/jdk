@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,20 +105,6 @@ public abstract class UnixFileSystemProvider
         return (UnixPath)obj;
     }
 
-    boolean followLinks(LinkOption... options) {
-        boolean followLinks = true;
-        for (LinkOption option: options) {
-            if (option == LinkOption.NOFOLLOW_LINKS) {
-                followLinks = false;
-                continue;
-            }
-            if (option == null)
-                throw new NullPointerException();
-            throw new AssertionError("Should not get here");
-        }
-        return followLinks;
-    }
-
     @Override
     @SuppressWarnings("unchecked")
     public <V extends FileAttributeView> V getFileAttributeView(Path obj,
@@ -126,7 +112,7 @@ public abstract class UnixFileSystemProvider
                                                                 LinkOption... options)
     {
         UnixPath file = UnixPath.toUnixPath(obj);
-        boolean followLinks =  followLinks(options);
+        boolean followLinks = Util.followLinks(options);
         if (type == BasicFileAttributeView.class)
             return (V) UnixFileAttributeViews.createBasicView(file, followLinks);
         if (type == PosixFileAttributeView.class)
@@ -163,7 +149,7 @@ public abstract class UnixFileSystemProvider
                                                             LinkOption... options)
     {
         UnixPath file = UnixPath.toUnixPath(obj);
-        boolean followLinks = followLinks(options);
+        boolean followLinks = Util.followLinks(options);
         if (name.equals("basic"))
             return UnixFileAttributeViews.createBasicView(file, followLinks);
         if (name.equals("posix"))

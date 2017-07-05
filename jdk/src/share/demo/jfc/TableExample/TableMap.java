@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,8 +29,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 /**
  * In a chain of data manipulators some behaviour is common. TableMap
@@ -41,32 +39,34 @@
  * a TableMap which has not been subclassed into a chain of table filters
  * should have no effect.
  *
- * @author Philip Milne */
-
+ * @author Philip Milne
+ */
 import javax.swing.table.*;
 import javax.swing.event.TableModelListener;
 import javax.swing.event.TableModelEvent;
 
-public class TableMap extends AbstractTableModel implements TableModelListener
-{
+
+@SuppressWarnings("serial")
+public class TableMap extends AbstractTableModel implements TableModelListener {
+
     protected TableModel model;
 
-    public TableModel  getModel() {
+    public TableModel getModel() {
         return model;
     }
 
-    public void  setModel(TableModel model) {
+    public void setModel(TableModel model) {
         this.model = model;
         model.addTableModelListener(this);
     }
 
     // By default, Implement TableModel by forwarding all messages
     // to the model.
-
     public Object getValueAt(int aRow, int aColumn) {
         return model.getValueAt(aRow, aColumn);
     }
 
+    @Override
     public void setValueAt(Object aValue, int aRow, int aColumn) {
         model.setValueAt(aValue, aRow, aColumn);
     }
@@ -79,16 +79,19 @@ public class TableMap extends AbstractTableModel implements TableModelListener
         return (model == null) ? 0 : model.getColumnCount();
     }
 
+    @Override
     public String getColumnName(int aColumn) {
         return model.getColumnName(aColumn);
     }
 
+    @Override
     public Class getColumnClass(int aColumn) {
         return model.getColumnClass(aColumn);
     }
 
+    @Override
     public boolean isCellEditable(int row, int column) {
-         return model.isCellEditable(row, column);
+        return model.isCellEditable(row, column);
     }
 //
 // Implementation of the TableModelListener interface,

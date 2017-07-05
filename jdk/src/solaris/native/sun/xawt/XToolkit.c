@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,21 @@ Java_sun_awt_X11_XToolkit_initIDs
     DTRACE_PRINTLN1("awt_NumLockMask = %u", awt_NumLockMask);
     fid = (*env)->GetStaticFieldID(env, clazz, "modLockIsShiftLock", "I");
     awt_ModLockIsShiftLock = (*env)->GetStaticIntField(env, clazz, fid) != 0 ? True : False;
+}
+
+/*
+ * Class:     sun_awt_X11_XToolkit
+ * Method:    getTrayIconDisplayTimeout
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_sun_awt_X11_XToolkit_getTrayIconDisplayTimeout
+  (JNIEnv *env, jclass clazz)
+{
+#ifndef JAVASE_EMBEDDED
+    return (jlong) 2000;
+#else
+    return (jlong) 10000;
+#endif
 }
 
 /*
@@ -340,14 +355,33 @@ static uint32_t get_poll_timeout(jlong nextTaskTime);
 #define AWT_READPIPE            (awt_pipe_fds[0])
 #define AWT_WRITEPIPE           (awt_pipe_fds[1])
 
-#define DEF_AWT_MAX_POLL_TIMEOUT ((uint32_t)500) /* milliseconds */
+#ifdef JAVASE_EMBEDDED
+  #define DEF_AWT_MAX_POLL_TIMEOUT ((uint32_t)4000000000) /* milliseconds */
+#else
+  #define DEF_AWT_MAX_POLL_TIMEOUT ((uint32_t)500) /* milliseconds */
+#endif
+
 #define DEF_AWT_FLUSH_TIMEOUT ((uint32_t)100) /* milliseconds */
 #define AWT_MIN_POLL_TIMEOUT ((uint32_t)0) /* milliseconds */
 
 #define TIMEOUT_TIMEDOUT 0
 #define TIMEOUT_EVENTS 1
 
+/* awt_poll_alg - AWT Poll Events Aging Algorithms */
+#define AWT_POLL_FALSE        1
+#define AWT_POLL_AGING_SLOW   2
+#define AWT_POLL_AGING_FAST   3
+
+#define AWT_POLL_THRESHOLD 1000  // msec, Block if delay is larger
+#define AWT_POLL_BLOCK       -1  // cause poll() block
+
 // Static fields
+
+#ifdef JAVASE_EMBEDDED
+  static int          awt_poll_alg = AWT_POLL_AGING_FAST;
+#else
+  static int          awt_poll_alg = AWT_POLL_AGING_SLOW;
+#endif
 
 static uint32_t AWT_FLUSH_TIMEOUT  =  DEF_AWT_FLUSH_TIMEOUT; /* milliseconds */
 static uint32_t AWT_MAX_POLL_TIMEOUT = DEF_AWT_MAX_POLL_TIMEOUT; /* milliseconds */
@@ -417,6 +451,7 @@ awt_pipe_init() {
  */
 static void readEnv() {
     char * value;
+    int tmp_poll_alg;
     static Boolean env_read = False;
     if (env_read) return;
 
@@ -451,6 +486,23 @@ static void readEnv() {
     if (static_poll_timeout != 0) {
         curPollTimeout = static_poll_timeout;
     }
+
+    // non-blocking poll()
+    value = getenv("_AWT_POLL_ALG");
+    if (value != NULL) {
+        tmp_poll_alg = atoi(value);
+        switch(tmp_poll_alg) {
+        case AWT_POLL_FALSE:
+        case AWT_POLL_AGING_SLOW:
+        case AWT_POLL_AGING_FAST:
+            awt_poll_alg = tmp_poll_alg;
+            break;
+        default:
+            PRINT("Unknown value of _AWT_POLL_ALG, assuming Slow Aging Algorithm by default");
+            awt_poll_alg = AWT_POLL_AGING_SLOW;
+            break;
+        }
+    }
 }
 
 /**
@@ -478,14 +530,29 @@ static void update_poll_timeout(int timeout_control) {
     if (static_poll_timeout != 0) return;
 
     // Update it otherwise
-    if (timeout_control == TIMEOUT_TIMEDOUT) {
-        /* add 1/4 (plus 1, in case the division truncates to 0) */
-        curPollTimeout += ((curPollTimeout>>2) + 1);
-        curPollTimeout = min(AWT_MAX_POLL_TIMEOUT, curPollTimeout);
-    } else if (timeout_control == TIMEOUT_EVENTS) {
-        /* subtract 1/4 (plus 1, in case the division truncates to 0) */
-        curPollTimeout -= ((curPollTimeout>>2) + 1);
-        curPollTimeout = max(AWT_MIN_POLL_TIMEOUT, curPollTimeout);
+
+    switch(awt_poll_alg) {
+    case AWT_POLL_AGING_SLOW:
+        if (timeout_control == TIMEOUT_TIMEDOUT) {
+            /* add 1/4 (plus 1, in case the division truncates to 0) */
+            curPollTimeout += ((curPollTimeout>>2) + 1);
+            curPollTimeout = min(AWT_MAX_POLL_TIMEOUT, curPollTimeout);
+        } else if (timeout_control == TIMEOUT_EVENTS) {
+            /* subtract 1/4 (plus 1, in case the division truncates to 0) */
+            curPollTimeout -= ((curPollTimeout>>2) + 1);
+            curPollTimeout = max(AWT_MIN_POLL_TIMEOUT, curPollTimeout);
+        }
+        break;
+    case AWT_POLL_AGING_FAST:
+        if (timeout_control == TIMEOUT_TIMEDOUT) {
+            curPollTimeout += ((curPollTimeout>>2) + 1);
+            curPollTimeout = min(AWT_MAX_POLL_TIMEOUT, curPollTimeout);
+            if((int)curPollTimeout > AWT_POLL_THRESHOLD || (int)curPollTimeout == AWT_POLL_BLOCK)
+                curPollTimeout = AWT_POLL_BLOCK;
+        } else if (timeout_control == TIMEOUT_EVENTS) {
+            curPollTimeout = max(AWT_MIN_POLL_TIMEOUT, 1);
+        }
+        break;
     }
 }
 
@@ -497,16 +564,37 @@ static void update_poll_timeout(int timeout_control) {
  */
 static uint32_t get_poll_timeout(jlong nextTaskTime)
 {
+    uint32_t ret_timeout;
+    uint32_t timeout;
+    uint32_t taskTimeout;
+    uint32_t flushTimeout;
+
     jlong curTime = awtJNI_TimeMillis();
-    uint32_t timeout = curPollTimeout;
-    uint32_t taskTimeout = (nextTaskTime == -1) ? AWT_MAX_POLL_TIMEOUT : (uint32_t)max(0, (int32_t)(nextTaskTime - curTime));
-    uint32_t flushTimeout = (awt_next_flush_time > 0) ? (uint32_t)max(0, (int32_t)(awt_next_flush_time - curTime)) : AWT_MAX_POLL_TIMEOUT;
+    timeout = curPollTimeout;
+    switch(awt_poll_alg) {
+    case AWT_POLL_AGING_SLOW:
+    case AWT_POLL_AGING_FAST:
+        taskTimeout = (nextTaskTime == -1) ? AWT_MAX_POLL_TIMEOUT : (uint32_t)max(0, (int32_t)(nextTaskTime - curTime));
+        flushTimeout = (awt_next_flush_time > 0) ? (uint32_t)max(0, (int32_t)(awt_next_flush_time - curTime)) : AWT_MAX_POLL_TIMEOUT;
 
-    PRINT2("to: %d, ft: %d, to: %d, tt: %d, mil: %d\n", taskTimeout, flushTimeout, timeout, (int)nextTaskTime, (int)curTime);
+        PRINT2("to: %d, ft: %d, to: %d, tt: %d, mil: %d\n", taskTimeout, flushTimeout, timeout, (int)nextTaskTime, (int)curTime);
 
-    // Adjust timeout to flush_time and task_time
-    return min(flushTimeout, min(taskTimeout, timeout));
-} /* awt_get_poll_timeout() */
+        // Adjust timeout to flush_time and task_time
+        ret_timeout = min(flushTimeout, min(taskTimeout, timeout));
+        if((int)curPollTimeout == AWT_POLL_BLOCK)
+           ret_timeout = AWT_POLL_BLOCK;
+        break;
+
+    case AWT_POLL_FALSE:
+        ret_timeout = (nextTaskTime > curTime) ?
+            (nextTaskTime - curTime) :
+            ((nextTaskTime == -1) ? -1 : 0);
+        break;
+    }
+
+    return ret_timeout;
+
+} /* get_poll_timeout() */
 
 /*
  * Waits for X/Xt events to appear on the pipe. Returns only when
@@ -598,6 +686,8 @@ performPoll(JNIEnv *env, jlong nextTaskTime) {
     if (result == 0) {
         /* poll() timed out -- update timeout value */
         update_poll_timeout(TIMEOUT_TIMEDOUT);
+        PRINT2("%s(): TIMEOUT_TIMEDOUT curPollTimeout = %d \n",
+              performPoll, curPollTimeout);
     }
     if (pollFds[1].revents) {
         int count;
@@ -606,10 +696,14 @@ performPoll(JNIEnv *env, jlong nextTaskTime) {
         do {
             count = read(AWT_READPIPE, read_buf, AWT_POLL_BUFSIZE );
         } while (count == AWT_POLL_BUFSIZE );
+        PRINT2("%s():  data on the AWT pipe: curPollTimeout = %d \n",
+               performPoll, curPollTimeout);
     }
     if (pollFds[0].revents) {
         // Events in X pipe
         update_poll_timeout(TIMEOUT_EVENTS);
+        PRINT2("%s(): TIMEOUT_EVENTS curPollTimeout = %ld \n",
+               performPoll, curPollTimeout);
     }
     return;
 

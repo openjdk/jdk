@@ -43,7 +43,7 @@ import java.awt.geom.Rectangle2D;
  * object that describes the trajectory path of the <code>Shape</code>
  * outline.
  * <p>
- * <b>Definition of insideness:</b>
+ * <a name="def_insideness"><b>Definition of insideness:</b></a>
  * A point is considered to lie inside a
  * <code>Shape</code> if and only if:
  * <ul>
@@ -88,6 +88,32 @@ public interface Shape {
      * <code>getBounds2D</code> method generally returns a
      * tighter bounding box due to its greater flexibility in
      * representation.
+     *
+     * <p>
+     * Note that the <a href="{@docRoot}/java/awt/Shape.html#def_insideness">
+     * definition of insideness</a> can lead to situations where points
+     * on the defining outline of the {@code shape} may not be considered
+     * contained in the returned {@code bounds} object, but only in cases
+     * where those points are also not considered contained in the original
+     * {@code shape}.
+     * </p>
+     * <p>
+     * If a {@code point} is inside the {@code shape} according to the
+     * {@link #contains(double x, double y) contains(point)} method, then
+     * it must be inside the returned {@code Rectangle} bounds object
+     * according to the {@link #contains(double x, double y) contains(point)}
+     * method of the {@code bounds}. Specifically:
+     * </p>
+     * <p>
+     *  {@code shape.contains(x,y)} requires {@code bounds.contains(x,y)}
+     * </p>
+     * <p>
+     * If a {@code point} is not inside the {@code shape}, then it might
+     * still be contained in the {@code bounds} object:
+     * </p>
+     * <p>
+     *  {@code bounds.contains(x,y)} does not imply {@code shape.contains(x,y)}
+     * </p>
      * @return an integer <code>Rectangle</code> that completely encloses
      *                 the <code>Shape</code>.
      * @see #getBounds2D
@@ -107,6 +133,32 @@ public interface Shape {
      * to overflow problems since the return value can be an instance of
      * the <code>Rectangle2D</code> that uses double precision values to
      * store the dimensions.
+     *
+     * <p>
+     * Note that the <a href="{@docRoot}/java/awt/Shape.html#def_insideness">
+     * definition of insideness</a> can lead to situations where points
+     * on the defining outline of the {@code shape} may not be considered
+     * contained in the returned {@code bounds} object, but only in cases
+     * where those points are also not considered contained in the original
+     * {@code shape}.
+     * </p>
+     * <p>
+     * If a {@code point} is inside the {@code shape} according to the
+     * {@link #contains(Point2D p) contains(point)} method, then it must
+     * be inside the returned {@code Rectangle2D} bounds object according
+     * to the {@link #contains(Point2D p) contains(point)} method of the
+     * {@code bounds}. Specifically:
+     * </p>
+     * <p>
+     *  {@code shape.contains(p)} requires {@code bounds.contains(p)}
+     * </p>
+     * <p>
+     * If a {@code point} is not inside the {@code shape}, then it might
+     * still be contained in the {@code bounds} object:
+     * </p>
+     * <p>
+     *  {@code bounds.contains(p)} does not imply {@code shape.contains(p)}
+     * </p>
      * @return an instance of <code>Rectangle2D</code> that is a
      *                 high-precision bounding box of the <code>Shape</code>.
      * @see #getBounds
@@ -116,7 +168,9 @@ public interface Shape {
 
     /**
      * Tests if the specified coordinates are inside the boundary of the
-     * <code>Shape</code>.
+     * <code>Shape</code>, as described by the
+     * <a href="{@docRoot}/java/awt/Shape.html#def_insideness">
+     * definition of insideness</a>.
      * @param x the specified X coordinate to be tested
      * @param y the specified Y coordinate to be tested
      * @return <code>true</code> if the specified coordinates are inside
@@ -128,7 +182,9 @@ public interface Shape {
 
     /**
      * Tests if a specified {@link Point2D} is inside the boundary
-     * of the <code>Shape</code>.
+     * of the <code>Shape</code>, as described by the
+     * <a href="{@docRoot}/java/awt/Shape.html#def_insideness">
+     * definition of insideness</a>.
      * @param p the specified <code>Point2D</code> to be tested
      * @return <code>true</code> if the specified <code>Point2D</code> is
      *          inside the boundary of the <code>Shape</code>;

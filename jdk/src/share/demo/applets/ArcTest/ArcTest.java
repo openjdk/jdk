@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,22 +29,24 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 import java.awt.*;
 import java.awt.event.*;
 import java.applet.*;
+
 
 /**
  * An interactive test of the Graphics.drawArc and Graphics.fillArc
  * routines. Can be run either as a standalone application by
  * typing "java ArcTest" or as an applet in the AppletViewer.
  */
+@SuppressWarnings("serial")
 public class ArcTest extends Applet {
+
     ArcControls controls;   // The controls for marking and filling arcs
     ArcCanvas canvas;       // The drawing area to display arcs
 
+    @Override
     public void init() {
         setLayout(new BorderLayout());
         canvas = new ArcCanvas();
@@ -52,19 +54,23 @@ public class ArcTest extends Applet {
         add("South", controls = new ArcControls(canvas));
     }
 
+    @Override
     public void destroy() {
         remove(controls);
         remove(canvas);
     }
 
+    @Override
     public void start() {
         controls.setEnabled(true);
     }
 
+    @Override
     public void stop() {
         controls.setEnabled(false);
     }
 
+    @Override
     public void processEvent(AWTEvent e) {
         if (e.getID() == Event.WINDOW_DESTROY) {
             System.exit(0);
@@ -80,20 +86,28 @@ public class ArcTest extends Applet {
 
         f.add("Center", arcTest);
         f.setSize(300, 300);
-        f.show();
+        f.setVisible(true);
     }
 
+    @Override
     public String getAppletInfo() {
-        return "An interactive test of the Graphics.drawArc and \nGraphics.fillArc routines. Can be run \neither as a standalone application by typing 'java ArcTest' \nor as an applet in the AppletViewer.";
+        return "An interactive test of the Graphics.drawArc and \nGraphics."
+                + "fillArc routines. Can be run \neither as a standalone "
+                + "application by typing 'java ArcTest' \nor as an applet in "
+                + "the AppletViewer.";
     }
 }
 
-class ArcCanvas extends Canvas {
-    int         startAngle = 0;
-    int         extent = 45;
-    boolean     filled = false;
-    Font        font = new java.awt.Font("SansSerif", Font.PLAIN, 12);
 
+@SuppressWarnings("serial")
+class ArcCanvas extends Canvas {
+
+    int startAngle = 0;
+    int extent = 45;
+    boolean filled = false;
+    Font font = new java.awt.Font("SansSerif", Font.PLAIN, 12);
+
+    @Override
     public void paint(Graphics g) {
         Rectangle r = getBounds();
         int hlines = r.height / 10;
@@ -134,12 +148,16 @@ class ArcCanvas extends Canvas {
     }
 }
 
+
+@SuppressWarnings("serial")
 class ArcControls extends Panel
-                  implements ActionListener {
+        implements ActionListener {
+
     TextField startTF;
     TextField extentTF;
     ArcCanvas canvas;
 
+    @SuppressWarnings("LeakingThisInConstructor")
     public ArcControls(ArcCanvas canvas) {
         Button b = null;
 
@@ -154,18 +172,19 @@ class ArcControls extends Panel
         add(b);
     }
 
+    @Override
     public void actionPerformed(ActionEvent ev) {
         String label = ev.getActionCommand();
 
         int start, extent;
         try {
             start = Integer.parseInt(startTF.getText().trim());
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException ignored) {
             start = 0;
         }
         try {
             extent = Integer.parseInt(extentTF.getText().trim());
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException ignored) {
             extent = 0;
         }
 
@@ -173,6 +192,8 @@ class ArcControls extends Panel
     }
 }
 
+
+@SuppressWarnings("serial")
 class IntegerTextField extends TextField {
 
     String oldText = null;
@@ -188,6 +209,7 @@ class IntegerTextField extends TextField {
     // function, but this is neater, since ideally, it would prevent
     // the text from appearing at all.  Sigh.  See bugid 4100317/4114565.
     //
+    @Override
     protected void processEvent(AWTEvent evt) {
         int id = evt.getID();
         if (id != KeyEvent.KEY_TYPED) {
@@ -200,8 +222,8 @@ class IntegerTextField extends TextField {
 
         // Digits, backspace, and delete are okay
         // Note that the minus sign is allowed, but not the decimal
-        if (Character.isDigit(c) || (c == '\b') || (c == '\u007f') ||
-            (c == '\u002d')) {
+        if (Character.isDigit(c) || (c == '\b') || (c == '\u007f') || (c
+                == '\u002d')) {
             super.processEvent(evt);
             return;
         }
@@ -215,6 +237,7 @@ class IntegerTextField extends TextField {
     // so we can revert to it on a TextEvent (paste, or
     // legal key in the wrong location) with bad text
     //
+    @Override
     protected void processTextEvent(TextEvent te) {
         // The empty string is okay, too
         String newText = getText();
@@ -233,12 +256,11 @@ class IntegerTextField extends TextField {
     // Note that the empty string is not allowed.
     //
     private boolean textIsInteger(String textToCheck) {
-        int value = -1;
 
         try {
-            value = Integer.parseInt(textToCheck, 10);
+            Integer.parseInt(textToCheck, 10);
             return true;
-        } catch (NumberFormatException nfe) {
+        } catch (NumberFormatException ignored) {
             return false;
         }
     }
