@@ -5530,7 +5530,7 @@ public class Collections {
      * @since  1.6
      */
     public static <T> Queue<T> asLifoQueue(Deque<T> deque) {
-        return new AsLIFOQueue<>(deque);
+        return new AsLIFOQueue<>(Objects.requireNonNull(deque));
     }
 
     /**

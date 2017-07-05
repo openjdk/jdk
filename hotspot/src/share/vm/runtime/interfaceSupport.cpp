@@ -32,7 +32,6 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/threadLocalStorage.hpp"
 #include "runtime/vframe.hpp"
 #include "utilities/preserveException.hpp"
 

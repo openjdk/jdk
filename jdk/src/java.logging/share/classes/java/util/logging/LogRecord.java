@@ -29,10 +29,12 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.io.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.time.Clock;
 import java.util.function.Predicate;
 
-import static jdk.internal.logger.SimpleConsoleLogger.skipLoggingFrame;
+import static jdk.internal.logger.SimpleConsoleLogger.isFilteredFrame;
 
 /**
  * LogRecord objects are used to pass logging requests between
@@ -685,7 +687,12 @@ public class LogRecord implements java.io.Serializable {
      * CallerFinder is a stateful predicate.
      */
     static final class CallerFinder implements Predicate<StackWalker.StackFrame> {
-        static final StackWalker WALKER = StackWalker.getInstance();
+        private static final StackWalker WALKER;
+        static {
+            final PrivilegedAction<StackWalker> action =
+                    () -> StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            WALKER = AccessController.doPrivileged(action);
+        }
 
         /**
          * Returns StackFrame of the caller's frame.
@@ -715,8 +722,9 @@ public class LogRecord implements java.io.Serializable {
                 lookingForLogger = !isLoggerImplFrame(cname);
                 return false;
             }
-            // skip logging/logger infrastructure and reflection calls
-            return !skipLoggingFrame(cname);
+            // Continue walking until we've found the relevant calling frame.
+            // Skips logging/logger infrastructure.
+            return !isFilteredFrame(t);
         }
 
         private boolean isLoggerImplFrame(String cname) {

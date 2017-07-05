@@ -141,8 +141,9 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
     }
 
     /**
-     * Main part of the implementation of {@link GuardingTypeConverterFactory#convertToType(Class, Class)} that doesn't
-     * care about adapting the method signature; that's done by the invoking method. Returns conversion from Object to String/number/boolean (JS primitive types).
+     * Main part of the implementation of {@link GuardingTypeConverterFactory#convertToType} that doesn't
+     * care about adapting the method signature; that's done by the invoking method. Returns conversion
+     * from Object to String/number/boolean (JS primitive types).
      * @param sourceType the source type
      * @param targetType the target type
      * @return a guarded invocation that converts from the source type to the target type.

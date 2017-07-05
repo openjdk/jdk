@@ -128,13 +128,6 @@ final class UndefinedArrayFilter extends ArrayFilter {
     }
 
     @Override
-    public ArrayData set(final int index, final long value, final boolean strict) {
-        undefined.clear(index);
-
-        return super.set(index, value, strict);
-    }
-
-    @Override
     public ArrayData set(final int index, final double value, final boolean strict) {
         undefined.clear(index);
 
@@ -157,24 +150,6 @@ final class UndefinedArrayFilter extends ArrayFilter {
         }
 
         return super.getIntOptimistic(index, programPoint);
-    }
-
-    @Override
-    public long getLong(final int index) {
-        if (undefined.isSet(index)) {
-            return 0L;
-        }
-
-        return super.getLong(index);
-    }
-
-    @Override
-    public long getLongOptimistic(final int index, final int programPoint) {
-        if (undefined.isSet(index)) {
-            throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
-        }
-
-        return super.getLongOptimistic(index, programPoint);
     }
 
     @Override

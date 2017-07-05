@@ -100,6 +100,9 @@ class AccessFlags VALUE_OBJ_CLASS_SPEC {
   jint _flags;
 
  public:
+  AccessFlags() : _flags(0) {}
+  explicit AccessFlags(jint flags) : _flags(flags) {}
+
   // Java access flags
   bool is_public      () const         { return (_flags & JVM_ACC_PUBLIC      ) != 0; }
   bool is_private     () const         { return (_flags & JVM_ACC_PRIVATE     ) != 0; }

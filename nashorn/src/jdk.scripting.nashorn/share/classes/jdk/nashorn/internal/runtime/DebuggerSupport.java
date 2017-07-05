@@ -239,7 +239,7 @@ final class DebuggerSupport {
 
         if (ScriptObject.isArray(object)) {
             sb.append('[');
-            final long length = object.getLong("length", INVALID_PROGRAM_POINT);
+            final long length = (long) object.getDouble("length", INVALID_PROGRAM_POINT);
 
             for (long i = 0; i < length; i++) {
                 if (object.has(i)) {

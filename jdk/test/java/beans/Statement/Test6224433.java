@@ -36,7 +36,7 @@ public class Test6224433 {
             System.setSecurityManager(new SecurityManager());
             Class target = Test6224433.class;
             String method = "forName";
-            String[] params = {"sun.misc.BASE64Encoder"};
+            String[] params = {"sun.security.x509.X509CertInfo"};
             if (null != new Expression(target, method, params).getValue())
                 throw new Error("failure: bug exists");
 

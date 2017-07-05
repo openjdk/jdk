@@ -43,6 +43,6 @@ class DefaultMethods : AllStatic {
   // default method.  Overpass methods are added to the methods lists for
   // the class.
   static void generate_default_methods(
-      InstanceKlass* klass, GrowableArray<Method*>* mirandas, TRAPS);
+      InstanceKlass* klass, const GrowableArray<Method*>* mirandas, TRAPS);
 };
 #endif // SHARE_VM_CLASSFILE_DEFAULTMETHODS_HPP

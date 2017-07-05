@@ -306,7 +306,7 @@ public class PAData {
                             } else if (s2kparams.length == 0) {
                                 sb.append("empty\n");
                             } else {
-                                sb.append(new sun.misc.HexDumpEncoder()
+                                sb.append(new sun.security.util.HexDumpEncoder()
                                         .encodeBuffer(s2kparams));
                             }
                         }

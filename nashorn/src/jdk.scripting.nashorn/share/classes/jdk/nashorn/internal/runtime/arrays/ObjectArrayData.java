@@ -150,13 +150,6 @@ final class ObjectArrayData extends ContinuousArrayData implements AnyElements {
     }
 
     @Override
-    public ArrayData set(final int index, final long value, final boolean strict) {
-        array[index] = value;
-        setLength(Math.max(index + 1, length()));
-        return this;
-    }
-
-    @Override
     public ArrayData set(final int index, final double value, final boolean strict) {
         array[index] = value;
         setLength(Math.max(index + 1, length()));
@@ -213,11 +206,6 @@ final class ObjectArrayData extends ContinuousArrayData implements AnyElements {
     @Override
     public int getInt(final int index) {
         return JSType.toInt32(array[index]);
-    }
-
-    @Override
-    public long getLong(final int index) {
-        return JSType.toLong(array[index]);
     }
 
     @Override

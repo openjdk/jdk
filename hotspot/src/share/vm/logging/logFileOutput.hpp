@@ -58,13 +58,13 @@ class LogFileOutput : public LogFileStreamOutput {
   size_t  _current_size;
 
   void archive();
-  void rotate();
   bool configure_rotation(const char* options);
   char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
   static size_t parse_value(const char* value_str);
 
-  bool should_rotate() const {
-    return _file_count > 0 && _rotate_size > 0 && _current_size >= _rotate_size;
+  bool should_rotate(bool force) {
+    return is_rotatable() &&
+             (force || (_rotate_size > 0 && _current_size >= _rotate_size));
   }
 
  public:
@@ -72,6 +72,12 @@ class LogFileOutput : public LogFileStreamOutput {
   virtual ~LogFileOutput();
   virtual bool initialize(const char* options);
   virtual int write(const LogDecorations& decorations, const char* msg);
+
+  virtual bool is_rotatable() {
+    return LogConfiguration::is_post_initialized() && (_file_count > 0);
+  }
+
+  virtual void rotate(bool force);
 
   virtual const char* name() const {
     return _name;

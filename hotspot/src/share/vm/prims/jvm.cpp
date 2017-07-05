@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -965,7 +966,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
   }
 
   ResourceMark rm(THREAD);
-  ClassFileStream st((u1*) buf, len, (char *)source);
+  ClassFileStream st((u1*)buf, len, source, ClassFileStream::verify);
   Handle class_loader (THREAD, JNIHandles::resolve(loader));
   if (UsePerfData) {
     is_lock_held_by_thread(class_loader,
@@ -973,9 +974,11 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
                            THREAD);
   }
   Handle protection_domain (THREAD, JNIHandles::resolve(pd));
-  Klass* k = SystemDictionary::resolve_from_stream(class_name, class_loader,
-                                                     protection_domain, &st,
-                                                     true, CHECK_NULL);
+  Klass* k = SystemDictionary::resolve_from_stream(class_name,
+                                                   class_loader,
+                                                   protection_domain,
+                                                   &st,
+                                                   CHECK_NULL);
 
   if (TraceClassResolution && k != NULL) {
     trace_class_resolution(k);
@@ -3718,4 +3721,8 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   // counter defined in runtimeService.cpp.
   info->is_attachable = AttachListener::is_attach_supported();
 }
+JVM_END
+
+JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
+  return os::get_signal_number(name);
 JVM_END

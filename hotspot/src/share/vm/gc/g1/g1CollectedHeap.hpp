@@ -245,9 +245,11 @@ private:
   // instead of doing a STW GC. Currently, a concurrent cycle is
   // explicitly started if:
   // (a) cause == _gc_locker and +GCLockerInvokesConcurrent, or
-  // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
-  // (c) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent.
-  // (d) cause == _g1_humongous_allocation
+  // (b) cause == _g1_humongous_allocation
+  // (c) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
+  // (d) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent.
+  // (e) cause == _update_allocation_context_stats_inc
+  // (f) cause == _wb_conc_mark
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   // indicates whether we are in young or mixed GC mode
@@ -578,6 +580,8 @@ public:
   void clear_cset_fast_test() {
     _in_cset_fast_test.clear();
   }
+
+  bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
   // This is called at the start of either a concurrent cycle or a Full
   // GC to update the number of old marking cycles started.

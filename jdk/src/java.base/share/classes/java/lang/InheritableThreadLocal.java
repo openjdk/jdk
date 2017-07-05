@@ -40,6 +40,11 @@ import java.lang.ref.*;
  * maintained in the variable (e.g., User ID, Transaction ID) must be
  * automatically transmitted to any child threads that are created.
  *
+ * <p>Note: During the creation of a new {@link
+ * Thread#Thread(ThreadGroup,Runnable,String,long,boolean) thread}, it is
+ * possible to <i>opt out</i> of receiving initial values for inheritable
+ * thread-local variables.
+ *
  * @author  Josh Bloch and Doug Lea
  * @see     ThreadLocal
  * @since   1.2

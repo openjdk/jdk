@@ -174,28 +174,31 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
      * Function used by {@link NashornTextifier} to represent call site flags in
      * human readable form
      * @param flags call site flags
-     * @return human readable form of this callsite descriptor
+     * @param sb the string builder
      */
-    public static String toString(final int flags) {
-        final StringBuilder sb = new StringBuilder();
+    public static void appendFlags(final int flags, final StringBuilder sb) {
+        final int pp = flags >> CALLSITE_PROGRAM_POINT_SHIFT;
+        if (pp != 0) {
+            sb.append(" pp=").append(pp);
+        }
         if ((flags & CALLSITE_SCOPE) != 0) {
             if ((flags & CALLSITE_FAST_SCOPE) != 0) {
-                sb.append("fastscope ");
+                sb.append(" fastscope");
             } else {
-                assert (flags & CALLSITE_FAST_SCOPE) == 0 : "can't be fastscope without scope";
-                sb.append("scope ");
+                sb.append(" scope");
             }
             if ((flags & CALLSITE_DECLARE) != 0) {
-                sb.append("declare ");
+                sb.append(" declare");
             }
+        } else {
+            assert (flags & CALLSITE_FAST_SCOPE) == 0 : "can't be fastscope without scope";
         }
         if ((flags & CALLSITE_APPLY_TO_CALL) != 0) {
-            sb.append("apply2call ");
+            sb.append(" apply2call");
         }
         if ((flags & CALLSITE_STRICT) != 0) {
-            sb.append("strict ");
+            sb.append(" strict");
         }
-        return sb.length() == 0 ? "" : " " + sb.toString().trim();
     }
 
     /**

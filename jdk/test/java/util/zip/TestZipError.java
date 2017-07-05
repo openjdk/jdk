@@ -84,9 +84,10 @@ public class TestZipError {
         try {
             while (entries.hasMoreElements()) {
                 ze = entries.nextElement();
+                zf.getInputStream(ze).readAllBytes();
             }
             fail("Did not get expected exception");
-        } catch (ZipError e) {
+        } catch (ZipException e) {
             pass();
         } catch (InternalError e) {
             fail("Caught InternalError instead of expected ZipError");

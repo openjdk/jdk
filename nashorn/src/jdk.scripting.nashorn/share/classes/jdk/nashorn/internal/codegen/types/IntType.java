@@ -72,7 +72,7 @@ class IntType extends BitwiseType {
 
     @Override
     public Type nextWider() {
-        return LONG;
+        return NUMBER;
     }
 
     @Override

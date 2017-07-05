@@ -62,7 +62,7 @@ public final class AnnotatedTypeFactory {
                     decl);
         if (type instanceof Class) {
             return new AnnotatedTypeBaseImpl(type,
-                    addNesting(type, currentLoc),
+                    currentLoc,
                     actualTypeAnnos,
                     allOnSameTarget,
                     decl);
@@ -74,7 +74,7 @@ public final class AnnotatedTypeFactory {
                     decl);
         } else if (type instanceof ParameterizedType) {
             return new AnnotatedParameterizedTypeImpl((ParameterizedType)type,
-                    addNesting(type, currentLoc),
+                    currentLoc,
                     actualTypeAnnos,
                     allOnSameTarget,
                     decl);
@@ -88,7 +88,7 @@ public final class AnnotatedTypeFactory {
         throw new AssertionError("Unknown instance of Type: " + type + "\nThis should not happen.");
     }
 
-    private static LocationInfo addNesting(Type type, LocationInfo addTo) {
+    public static LocationInfo nestingForType(Type type, LocationInfo addTo) {
         if (isArray(type))
             return addTo;
         if (type instanceof Class) {
@@ -96,13 +96,13 @@ public final class AnnotatedTypeFactory {
             if (clz.getEnclosingClass() == null)
                 return addTo;
             if (Modifier.isStatic(clz.getModifiers()))
-                return addNesting(clz.getEnclosingClass(), addTo);
-            return addNesting(clz.getEnclosingClass(), addTo.pushInner());
+                return nestingForType(clz.getEnclosingClass(), addTo);
+            return nestingForType(clz.getEnclosingClass(), addTo.pushInner());
         } else if (type instanceof ParameterizedType) {
             ParameterizedType t = (ParameterizedType)type;
             if (t.getOwnerType() == null)
                 return addTo;
-            return addNesting(t.getOwnerType(), addTo.pushInner());
+            return nestingForType(t.getOwnerType(), addTo.pushInner());
         }
         return addTo;
     }
@@ -118,8 +118,9 @@ public final class AnnotatedTypeFactory {
         return false;
     }
 
+    static final TypeAnnotation[] EMPTY_TYPE_ANNOTATION_ARRAY = new TypeAnnotation[0];
     static final AnnotatedType EMPTY_ANNOTATED_TYPE = new AnnotatedTypeBaseImpl(null, LocationInfo.BASE_LOCATION,
-                                                            new TypeAnnotation[0], new TypeAnnotation[0], null);
+            EMPTY_TYPE_ANNOTATION_ARRAY, EMPTY_TYPE_ANNOTATION_ARRAY, null);
     static final AnnotatedType[] EMPTY_ANNOTATED_TYPE_ARRAY = new AnnotatedType[0];
 
     private static class AnnotatedTypeBaseImpl implements AnnotatedType {
@@ -177,6 +178,30 @@ public final class AnnotatedTypeFactory {
             return type;
         }
 
+        @Override
+        public AnnotatedType getAnnotatedOwnerType() {
+            if (!(type instanceof Class<?>))
+                throw new IllegalStateException("Can't compute owner");
+
+            Class<?> inner = (Class<?>)type;
+            Class<?> owner = inner.getDeclaringClass();
+            if (owner == null) // top-level, local or anonymous
+                return null;
+            if (inner.isPrimitive() || inner == Void.TYPE)
+                return null;
+
+            LocationInfo outerLoc = nestingForType(owner, getLocation().popAllLocations((byte)1));
+            TypeAnnotation[]all = getTypeAnnotations();
+            List<TypeAnnotation> l = new ArrayList<>(all.length);
+
+            for (TypeAnnotation t : all)
+                if (t.getLocationInfo().isSameLocationInfo(outerLoc))
+                    l.add(t);
+
+            return buildAnnotatedType(owner, outerLoc, l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY), all, getDecl());
+
+        }
+
         // Implementation details
         final LocationInfo getLocation() {
             return location;
@@ -198,11 +223,17 @@ public final class AnnotatedTypeFactory {
 
         @Override
         public AnnotatedType getAnnotatedGenericComponentType() {
-            return AnnotatedTypeFactory.buildAnnotatedType(getComponentType(),
-                                                           getLocation().pushArray(),
-                                                           getTypeAnnotations(),
-                                                           getTypeAnnotations(),
-                                                           getDecl());
+            Type t = getComponentType();
+            return AnnotatedTypeFactory.buildAnnotatedType(t,
+                    nestingForType(t, getLocation().pushArray()),
+                    getTypeAnnotations(),
+                    getTypeAnnotations(),
+                    getDecl());
+        }
+
+        @Override
+        public AnnotatedType getAnnotatedOwnerType() {
+            return null;
         }
 
         private Type getComponentType() {
@@ -227,6 +258,11 @@ public final class AnnotatedTypeFactory {
             return getTypeVariable().getAnnotatedBounds();
         }
 
+        @Override
+        public AnnotatedType getAnnotatedOwnerType() {
+            return null;
+        }
+
         private TypeVariable<?> getTypeVariable() {
             return (TypeVariable)getType();
         }
@@ -248,17 +284,33 @@ public final class AnnotatedTypeFactory {
             int initialCapacity = getTypeAnnotations().length;
             for (int i = 0; i < res.length; i++) {
                 List<TypeAnnotation> l = new ArrayList<>(initialCapacity);
-                LocationInfo newLoc = getLocation().pushTypeArg((byte)i);
+                LocationInfo newLoc = nestingForType(arguments[i], getLocation().pushTypeArg((byte)i));
                 for (TypeAnnotation t : getTypeAnnotations())
                     if (t.getLocationInfo().isSameLocationInfo(newLoc))
                         l.add(t);
                 res[i] = buildAnnotatedType(arguments[i],
-                                            newLoc,
-                                            l.toArray(new TypeAnnotation[0]),
-                                            getTypeAnnotations(),
-                                            getDecl());
+                        newLoc,
+                        l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
+                        getTypeAnnotations(),
+                        getDecl());
             }
             return res;
+        }
+
+        @Override
+        public AnnotatedType getAnnotatedOwnerType() {
+            Type owner = getParameterizedType().getOwnerType();
+            if (owner == null)
+                return null;
+            LocationInfo outerLoc = nestingForType(owner, getLocation().popAllLocations((byte)1));
+            TypeAnnotation[]all = getTypeAnnotations();
+            List<TypeAnnotation> l = new ArrayList<>(all.length);
+
+            for (TypeAnnotation t : all)
+                if (t.getLocationInfo().isSameLocationInfo(outerLoc))
+                    l.add(t);
+
+            return buildAnnotatedType(owner, outerLoc, l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY), all, getDecl());
         }
 
         private ParameterizedType getParameterizedType() {
@@ -279,11 +331,11 @@ public final class AnnotatedTypeFactory {
         public AnnotatedType[] getAnnotatedUpperBounds() {
             if (!hasUpperBounds()) {
                 return new AnnotatedType[] { buildAnnotatedType(Object.class,
-                                                                LocationInfo.BASE_LOCATION,
-                                                                new TypeAnnotation[0],
-                                                                new TypeAnnotation[0],
-                                                                null)
-                                           };
+                        LocationInfo.BASE_LOCATION,
+                        EMPTY_TYPE_ANNOTATION_ARRAY,
+                        EMPTY_TYPE_ANNOTATION_ARRAY,
+                        null)
+                };
             }
             return getAnnotatedBounds(getWildcardType().getUpperBounds());
         }
@@ -295,21 +347,26 @@ public final class AnnotatedTypeFactory {
             return getAnnotatedBounds(getWildcardType().getLowerBounds());
         }
 
+        @Override
+        public AnnotatedType getAnnotatedOwnerType() {
+            return null;
+        }
+
         private AnnotatedType[] getAnnotatedBounds(Type[] bounds) {
             AnnotatedType[] res = new AnnotatedType[bounds.length];
             Arrays.fill(res, EMPTY_ANNOTATED_TYPE);
-            LocationInfo newLoc = getLocation().pushWildcard();
             int initialCapacity = getTypeAnnotations().length;
             for (int i = 0; i < res.length; i++) {
+                LocationInfo newLoc = nestingForType(bounds[i], getLocation().pushWildcard());
                 List<TypeAnnotation> l = new ArrayList<>(initialCapacity);
                 for (TypeAnnotation t : getTypeAnnotations())
                     if (t.getLocationInfo().isSameLocationInfo(newLoc))
                         l.add(t);
                 res[i] = buildAnnotatedType(bounds[i],
-                                            newLoc,
-                                            l.toArray(new TypeAnnotation[0]),
-                                            getTypeAnnotations(),
-                                            getDecl());
+                        newLoc,
+                        l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
+                        getTypeAnnotations(),
+                        getDecl());
             }
             return res;
         }
