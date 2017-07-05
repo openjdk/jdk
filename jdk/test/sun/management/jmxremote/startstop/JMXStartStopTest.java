@@ -90,7 +90,6 @@ public class JMXStartStopTest {
                         }
                     }
                 }
-                System.err.println("*** port = " + port);
                 ports[i] = port;
             }
             return ports;

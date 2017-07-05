@@ -31,7 +31,7 @@ import javax.management.DynamicMBean;
 /**
  * Management interface for the diagnostic commands for the HotSpot Virtual Machine.
  *
- * <p>The {code DiagnosticCommandMBean} is registered to the
+ * <p>The {@code DiagnosticCommandMBean} is registered to the
  * {@linkplain java.lang.management.ManagementFactory#getPlatformMBeanServer
  * platform MBeanServer} as are other platform MBeans.
  *

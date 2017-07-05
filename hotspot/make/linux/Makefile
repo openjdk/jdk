@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,7 @@ checks: check_os_version check_j2se_version
 # Solaris 2.5.1, 2.6).
 # Disable this check by setting DISABLE_HOTSPOT_OS_VERSION_CHECK=ok.
 
-SUPPORTED_OS_VERSION = 2.4% 2.5% 2.6% 3%
+SUPPORTED_OS_VERSION = 2.4% 2.5% 2.6% 3% 4%
 OS_VERSION := $(shell uname -r)
 EMPTY_IF_NOT_SUPPORTED = $(filter $(SUPPORTED_OS_VERSION),$(OS_VERSION))
 

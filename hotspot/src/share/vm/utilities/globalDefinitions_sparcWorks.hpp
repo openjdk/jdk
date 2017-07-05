@@ -48,15 +48,6 @@
 # include <ieeefp.h>
 #endif
 # include <math.h>
-#ifdef LINUX
-#ifndef FP_PZERO
-  // Linux doesn't have positive/negative zero
-  #define FP_PZERO FP_ZERO
-#endif
-#ifndef fpclass
-  #define fpclass fpclassify
-#endif
-#endif
 # include <time.h>
 # include <fcntl.h>
 # include <dlfcn.h>
