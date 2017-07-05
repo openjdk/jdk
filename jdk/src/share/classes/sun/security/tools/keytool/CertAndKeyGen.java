@@ -258,10 +258,10 @@ public final class CertAndKeyGen {
             AlgorithmId algID = AlgorithmId.get(sigAlg);
             info.set(X509CertInfo.ALGORITHM_ID,
                      new CertificateAlgorithmId(algID));
-            info.set(X509CertInfo.SUBJECT, new CertificateSubjectName(myname));
+            info.set(X509CertInfo.SUBJECT, myname);
             info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
             info.set(X509CertInfo.VALIDITY, interval);
-            info.set(X509CertInfo.ISSUER, new CertificateIssuerName(myname));
+            info.set(X509CertInfo.ISSUER, myname);
             if (ext != null) info.set(X509CertInfo.EXTENSIONS, ext);
 
             cert = new X509CertImpl(info);

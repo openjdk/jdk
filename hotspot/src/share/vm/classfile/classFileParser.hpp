@@ -151,6 +151,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                   ClassLoaderData* loader_data,
                                   Handle protection_domain,
                                   Symbol* class_name,
+                                  bool* has_default_methods,
                                   TRAPS);
   void record_defined_class_dependencies(instanceKlassHandle defined_klass, TRAPS);
 
@@ -188,6 +189,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                                 Array<AnnotationArray*>** methods_annotations,
                                 Array<AnnotationArray*>** methods_parameter_annotations,
                                 Array<AnnotationArray*>** methods_default_annotations,
+                                bool* has_default_method,
                                 TRAPS);
   Array<int>* sort_methods(ClassLoaderData* loader_data,
                            Array<Method*>* methods,

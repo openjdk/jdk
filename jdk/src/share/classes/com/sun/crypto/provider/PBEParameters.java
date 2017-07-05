@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,9 @@ public final class PBEParameters extends AlgorithmParametersSpi {
     // the iteration count
     private int iCount = 0;
 
+    // the cipher parameter
+    private AlgorithmParameterSpec cipherParam = null;
+
     protected void engineInit(AlgorithmParameterSpec paramSpec)
         throws InvalidParameterSpecException
    {
@@ -66,6 +69,7 @@ public final class PBEParameters extends AlgorithmParametersSpi {
        }
        this.salt = ((PBEParameterSpec)paramSpec).getSalt().clone();
        this.iCount = ((PBEParameterSpec)paramSpec).getIterationCount();
+       this.cipherParam = ((PBEParameterSpec)paramSpec).getParameterSpec();
     }
 
     protected void engineInit(byte[] encoded)
@@ -102,7 +106,8 @@ public final class PBEParameters extends AlgorithmParametersSpi {
         throws InvalidParameterSpecException
     {
         if (PBEParameterSpec.class.isAssignableFrom(paramSpec)) {
-            return paramSpec.cast(new PBEParameterSpec(this.salt, this.iCount));
+            return paramSpec.cast(
+                new PBEParameterSpec(this.salt, this.iCount, this.cipherParam));
         } else {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");

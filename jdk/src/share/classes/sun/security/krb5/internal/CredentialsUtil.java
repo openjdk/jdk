@@ -32,17 +32,7 @@
 package sun.security.krb5.internal;
 
 import sun.security.krb5.*;
-import sun.security.krb5.internal.ccache.CredentialsCache;
-import java.util.StringTokenizer;
-import sun.security.krb5.internal.ktab.*;
-import java.io.File;
 import java.io.IOException;
-import java.util.Date;
-import java.util.Vector;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
 
 /**
  * This class is a utility that contains much of the TGS-Exchange
@@ -53,77 +43,158 @@ public class CredentialsUtil {
 
     private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
-   /**
-    * Acquires credentials for a specified service using initial credential. Wh
-en the service has a different realm
-    * from the initial credential, we do cross-realm authentication - first, we
- use the current credential to get
-    * a cross-realm credential from the local KDC, then use that cross-realm cr
-edential to request service credential
-    * from the foreigh KDC.
-    *
-    * @param service the name of service principal using format components@real
-m
-    * @param ccreds client's initial credential.
-    * @exception Exception general exception will be thrown when any error occu
-rs.
-    * @return a <code>Credentials</code> object.
-    */
+    /**
+     * Used by a middle server to acquire credentials on behalf of a
+     * client to itself using the S4U2self extension.
+     * @param client the client to impersonate
+     * @param ccreds the TGT of the middle service
+     * @return the new creds (cname=client, sname=middle)
+     */
+    public static Credentials acquireS4U2selfCreds(PrincipalName client,
+            Credentials ccreds) throws KrbException, IOException {
+        String uRealm = client.getRealmString();
+        String localRealm = ccreds.getClient().getRealmString();
+        if (!uRealm.equals(localRealm)) {
+            // TODO: we do not support kerberos referral now
+            throw new KrbException("Cross realm impersonation not supported");
+        }
+        KrbTgsReq req = new KrbTgsReq(
+                ccreds,
+                ccreds.getClient(),
+                new PAData(Krb5.PA_FOR_USER,
+                    new PAForUserEnc(client,
+                        ccreds.getSessionKey()).asn1Encode()));
+        Credentials creds = req.sendAndGetCreds();
+        if (!creds.getClient().equals(client)) {
+            throw new KrbException("S4U2self request not honored by KDC");
+        }
+        return creds;
+    }
+
+    /**
+     * Used by a middle server to acquire a service ticket to a backend
+     * server using the S4U2proxy extension.
+     * @param backend the name of the backend service
+     * @param second the client's service ticket to the middle server
+     * @param ccreds the TGT of the middle server
+     * @return the creds (cname=client, sname=backend)
+     */
+    public static Credentials acquireS4U2proxyCreds(
+                String backend, Ticket second,
+                PrincipalName client, Credentials ccreds)
+            throws KrbException, IOException {
+        KrbTgsReq req = new KrbTgsReq(
+                ccreds,
+                second,
+                new PrincipalName(backend));
+        Credentials creds = req.sendAndGetCreds();
+        if (!creds.getClient().equals(client)) {
+            throw new KrbException("S4U2proxy request not honored by KDC");
+        }
+        return creds;
+    }
+
+    /**
+     * Acquires credentials for a specified service using initial
+     * credential. When the service has a different realm from the initial
+     * credential, we do cross-realm authentication - first, we use the
+     * current credential to get a cross-realm credential from the local KDC,
+     * then use that cross-realm credential to request service credential
+     * from the foreign KDC.
+     *
+     * @param service the name of service principal
+     * @param ccreds client's initial credential
+     */
     public static Credentials acquireServiceCreds(
                 String service, Credentials ccreds)
-    throws KrbException, IOException {
+            throws KrbException, IOException {
         PrincipalName sname = new PrincipalName(service);
         String serviceRealm = sname.getRealmString();
         String localRealm = ccreds.getClient().getRealmString();
 
-        /*
-          if (!localRealm.equalsIgnoreCase(serviceRealm)) { //do cross-realm auth entication
-          if (DEBUG) {
-          System.out.println(">>>DEBUG: Credentails request cross realm ticket for " + "krbtgt/" + serviceRealm + "@" + localRealm);
-          }
-          Credentials crossCreds = serviceCreds(new ServiceName("krbtgt/" + serviceRealm + "@" + localRealm), ccreds);
-          if (DEBUG) {
-          printDebug(crossCreds);
-          }
-          Credentials result = serviceCreds(sname, crossCreds);
-          if (DEBUG) {
-          printDebug(result);
-          }
-          return result;
-          }
-          else return serviceCreds(sname, ccreds);
-        */
-
-        if (localRealm.equals(serviceRealm))
-        {
-            if (DEBUG)
-                System.out.println(">>> Credentials acquireServiceCreds: same realm");
+        if (localRealm.equals(serviceRealm)) {
+            if (DEBUG) {
+                System.out.println(
+                        ">>> Credentials acquireServiceCreds: same realm");
+            }
             return serviceCreds(sname, ccreds);
         }
+        Credentials theCreds = null;
+
+        boolean[] okAsDelegate = new boolean[1];
+        Credentials theTgt = getTGTforRealm(localRealm, serviceRealm,
+                ccreds, okAsDelegate);
+        if (theTgt != null) {
+            if (DEBUG) {
+                System.out.println(">>> Credentials acquireServiceCreds: "
+                        + "got right tgt");
+                System.out.println(">>> Credentials acquireServiceCreds: "
+                        + "obtaining service creds for " + sname);
+            }
+
+            try {
+                theCreds = serviceCreds(sname, theTgt);
+            } catch (Exception exc) {
+                if (DEBUG) {
+                    System.out.println(exc);
+                }
+                theCreds = null;
+            }
+        }
+
+        if (theCreds != null) {
+            if (DEBUG) {
+                System.out.println(">>> Credentials acquireServiceCreds: "
+                        + "returning creds:");
+                Credentials.printDebug(theCreds);
+            }
+            if (!okAsDelegate[0]) {
+                theCreds.resetDelegate();
+            }
+            return theCreds;
+        }
+        throw new KrbApErrException(Krb5.KRB_AP_ERR_GEN_CRED,
+                                    "No service creds");
+    }
+
+    /**
+     * Gets a TGT to another realm
+     * @param localRealm this realm
+     * @param serviceRealm the other realm
+     * @param ccreds TGT in this realm
+     * @param okAsDelegate an [out] argument to receive the okAsDelegate
+     * property. True only if all realms allow delegation.
+     * @return the TGT for the other realm, null if cannot find a path
+     * @throws KrbException if something goes wrong
+     */
+    private static Credentials getTGTforRealm(String localRealm,
+            String serviceRealm, Credentials ccreds, boolean[] okAsDelegate)
+            throws KrbException {
 
         // Get a list of realms to traverse
         String[] realms = Realm.getRealmsList(localRealm, serviceRealm);
-        boolean okAsDelegate = true;
 
-        if (realms == null || realms.length == 0)
-        {
-            if (DEBUG)
-                System.out.println(">>> Credentials acquireServiceCreds: no realms list");
+        if (realms == null || realms.length == 0) {
+            if (DEBUG) {
+                System.out.println(
+                        ">>> Credentials acquireServiceCreds: no realms list");
+            }
             return null;
         }
 
         int i = 0, k = 0;
         Credentials cTgt = null, newTgt = null, theTgt = null;
         PrincipalName tempService = null;
-        String realm = null, newTgtRealm = null, theTgtRealm = null;
+        String newTgtRealm = null;
 
-        for (cTgt = ccreds, i = 0; i < realms.length;)
-        {
+        okAsDelegate[0] = true;
+        for (cTgt = ccreds, i = 0; i < realms.length;) {
             tempService = PrincipalName.tgsService(serviceRealm, realms[i]);
 
-            if (DEBUG)
-            {
-                System.out.println(">>> Credentials acquireServiceCreds: main loop: [" + i +"] tempService=" + tempService);
+            if (DEBUG) {
+                System.out.println(
+                        ">>> Credentials acquireServiceCreds: main loop: ["
+                        + i +"] tempService=" + tempService);
             }
 
             try {
@@ -132,11 +203,10 @@ rs.
                 newTgt = null;
             }
 
-            if (newTgt == null)
-            {
-                if (DEBUG)
-                {
-                    System.out.println(">>> Credentials acquireServiceCreds: no tgt; searching backwards");
+            if (newTgt == null) {
+                if (DEBUG) {
+                    System.out.println(">>> Credentials acquireServiceCreds: "
+                            + "no tgt; searching backwards");
                 }
 
                 /*
@@ -144,17 +214,15 @@ rs.
                  * realm as close to the target as possible.
                  * That means traversing the realms list backwards.
                  */
-
                 for (newTgt = null, k = realms.length - 1;
-                     newTgt == null && k > i; k--)
-                {
-
+                        newTgt == null && k > i; k--) {
                     tempService = PrincipalName.tgsService(realms[k], realms[i]);
-                    if (DEBUG)
-                    {
-                        System.out.println(">>> Credentials acquireServiceCreds: inner loop: [" + k +"] tempService=" + tempService);
+                    if (DEBUG) {
+                        System.out.println(
+                                ">>> Credentials acquireServiceCreds: "
+                                + "inner loop: [" + k
+                                + "] tempService=" + tempService);
                     }
-
                     try {
                         newTgt = serviceCreds(tempService, cTgt);
                     } catch (Exception exc) {
@@ -163,11 +231,10 @@ rs.
                 }
             } // Ends 'if (newTgt == null)'
 
-            if (newTgt == null)
-            {
-                if (DEBUG)
-                {
-                    System.out.println(">>> Credentials acquireServiceCreds: no tgt; cannot get creds");
+            if (newTgt == null) {
+                if (DEBUG) {
+                    System.out.println(">>> Credentials acquireServiceCreds: "
+                            + "no tgt; cannot get creds");
                 }
                 break;
             }
@@ -176,29 +243,24 @@ rs.
              * We have a tgt. It may or may not be for the target.
              * If it's for the target realm, we're done looking for a tgt.
              */
-
             newTgtRealm = newTgt.getServer().getInstanceComponent();
-            if (okAsDelegate && !newTgt.checkDelegate()) {
-                if (DEBUG)
-                {
+            if (okAsDelegate[0] && !newTgt.checkDelegate()) {
+                if (DEBUG) {
                     System.out.println(">>> Credentials acquireServiceCreds: " +
                             "global OK-AS-DELEGATE turned off at " +
                             newTgt.getServer());
                 }
-                okAsDelegate = false;
+                okAsDelegate[0] = false;
             }
 
-            if (DEBUG)
-            {
-                System.out.println(">>> Credentials acquireServiceCreds: got tgt");
-                //printDebug(newTgt);
+            if (DEBUG) {
+                System.out.println(">>> Credentials acquireServiceCreds: "
+                        + "got tgt");
             }
 
-            if (newTgtRealm.equals(serviceRealm))
-            {
+            if (newTgtRealm.equals(serviceRealm)) {
                 /* We got the right tgt */
                 theTgt = newTgt;
-                theTgtRealm = newTgtRealm;
                 break;
             }
 
@@ -207,17 +269,13 @@ rs.
              * See if the realm of the new tgt is in the list of realms
              * and continue looking from there.
              */
-
-            for (k = i+1; k < realms.length; k++)
-            {
-                if (newTgtRealm.equals(realms[k]))
-                {
+            for (k = i+1; k < realms.length; k++) {
+                if (newTgtRealm.equals(realms[k])) {
                     break;
                 }
             }
 
-            if (k < realms.length)
-            {
+            if (k < realms.length) {
                 /*
                  * (re)set the counter so we start looking
                  * from the realm we just obtained a tgt for.
@@ -225,64 +283,24 @@ rs.
                 i = k;
                 cTgt = newTgt;
 
-                if (DEBUG)
-                {
-                    System.out.println(">>> Credentials acquireServiceCreds: continuing with main loop counter reset to " + i);
+                if (DEBUG) {
+                    System.out.println(">>> Credentials acquireServiceCreds: "
+                            + "continuing with main loop counter reset to " + i);
                 }
-
                 continue;
             }
-            else
-            {
+            else {
                 /*
                  * The new tgt's realm is not in the heirarchy of realms.
                  * It's probably not safe to get a tgt from
                  * a tgs that is outside the known list of realms.
                  * Give up now.
                  */
-
                 break;
             }
         } // Ends outermost/main 'for' loop
 
-        Credentials theCreds = null;
-
-        if (theTgt != null)
-        {
-            /* We have the right tgt. Let's get the service creds */
-
-            if (DEBUG)
-            {
-                System.out.println(">>> Credentials acquireServiceCreds: got right tgt");
-
-                //printDebug(theTgt);
-
-                System.out.println(">>> Credentials acquireServiceCreds: obtaining service creds for " + sname);
-            }
-
-            try {
-                theCreds = serviceCreds(sname, theTgt);
-            } catch (Exception exc) {
-              if (DEBUG)
-                System.out.println(exc);
-              theCreds = null;
-            }
-        }
-
-        if (theCreds != null)
-        {
-            if (DEBUG)
-            {
-                System.out.println(">>> Credentials acquireServiceCreds: returning creds:");
-                Credentials.printDebug(theCreds);
-            }
-            if (!okAsDelegate) {
-                theCreds.resetDelegate();
-            }
-            return theCreds;
-        }
-        throw new KrbApErrException(Krb5.KRB_AP_ERR_GEN_CRED,
-                                    "No service creds");
+        return theTgt;
     }
 
    /*

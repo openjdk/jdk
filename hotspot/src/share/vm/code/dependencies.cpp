@@ -829,7 +829,7 @@ class ClassHierarchyWalker {
       }
       if (   !Dependencies::is_concrete_method(lm)
           && !Dependencies::is_concrete_method(m)
-          && Klass::cast(lm->method_holder())->is_subtype_of(m->method_holder()))
+          && lm->method_holder()->is_subtype_of(m->method_holder()))
         // Method m is overridden by lm, but both are non-concrete.
         return true;
     }
@@ -1160,7 +1160,11 @@ bool Dependencies::is_concrete_method(Method* m) {
 
   // We could also return false if m does not yet appear to be
   // executed, if the VM version supports this distinction also.
-  return !m->is_abstract();
+  return !m->is_abstract() &&
+         !InstanceKlass::cast(m->method_holder())->is_interface();
+         // TODO: investigate whether default methods should be
+         // considered as "concrete" in this situation.  For now they
+         // are not.
 }
 
 

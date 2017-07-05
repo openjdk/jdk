@@ -108,12 +108,17 @@ class ExceptionTableElement VALUE_OBJ_CLASS_SPEC {
 
 class ConstMethod : public MetaspaceObj {
   friend class VMStructs;
+
+public:
+  typedef enum { NORMAL, OVERPASS } MethodType;
+
 private:
   enum {
     _has_linenumber_table = 1,
     _has_checked_exceptions = 2,
     _has_localvariable_table = 4,
-    _has_exception_table = 8
+    _has_exception_table = 8,
+    _is_overpass = 16
   };
 
   // Bit vector of signature
@@ -145,19 +150,22 @@ private:
 
   // Constructor
   ConstMethod(int byte_code_size,
-                     int compressed_line_number_size,
-                     int localvariable_table_length,
-                     int exception_table_length,
-                     int checked_exceptions_length,
-                     int size);
+              int compressed_line_number_size,
+              int localvariable_table_length,
+              int exception_table_length,
+              int checked_exceptions_length,
+              MethodType is_overpass,
+              int size);
 public:
+
   static ConstMethod* allocate(ClassLoaderData* loader_data,
-                                 int byte_code_size,
-                                 int compressed_line_number_size,
-                                 int localvariable_table_length,
-                                 int exception_table_length,
-                                 int checked_exceptions_length,
-                                 TRAPS);
+                               int byte_code_size,
+                               int compressed_line_number_size,
+                               int localvariable_table_length,
+                               int exception_table_length,
+                               int checked_exceptions_length,
+                               MethodType mt,
+                               TRAPS);
 
   bool is_constMethod() const { return true; }
 
@@ -178,6 +186,19 @@ public:
 
   bool has_exception_handler() const
     { return (_flags & _has_exception_table) != 0; }
+
+  MethodType method_type() const {
+    return ((_flags & _is_overpass) == 0) ? NORMAL : OVERPASS;
+  }
+
+  void set_method_type(MethodType mt) {
+    if (mt == NORMAL) {
+      _flags &= ~(_is_overpass);
+    } else {
+      _flags |= _is_overpass;
+    }
+  }
+
 
   void set_interpreter_kind(int kind)      { _interpreter_kind = kind; }
   int  interpreter_kind(void) const        { return _interpreter_kind; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ public class GenKeyStore {
         certInfo.set(X509CertInfo.VERSION, new CertificateVersion(CertificateVersion.V1));
         certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(1));
         certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(algID));
-        certInfo.set(X509CertInfo.SUBJECT, new CertificateSubjectName(name));
-        certInfo.set(X509CertInfo.ISSUER, new CertificateIssuerName(name));
+        certInfo.set(X509CertInfo.SUBJECT, name);
+        certInfo.set(X509CertInfo.ISSUER, name);
         certInfo.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
         certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(date, date));
 
