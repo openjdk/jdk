@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,8 +99,15 @@ public:
   void set_mask_size( int size ) {
     assert((size == 65535) || (size == (int)_mask.Size()), "");
     _mask_size = size;
-    debug_only(_msize_valid=1;)
-    debug_only( if( _num_regs == 2 && !_fat_proj ) _mask.VerifyPairs(); )
+#ifdef ASSERT
+    _msize_valid=1;
+    if (_is_vector) {
+      assert(!_fat_proj, "sanity");
+      _mask.verify_sets(_num_regs);
+    } else if (_num_regs == 2 && !_fat_proj) {
+      _mask.verify_pairs();
+    }
+#endif
   }
   void compute_set_mask_size() { set_mask_size(compute_mask_size()); }
   int mask_size() const { assert( _msize_valid, "mask size not valid" );
@@ -116,7 +123,8 @@ public:
   void Set_All() { _mask.Set_All(); debug_only(_msize_valid=1); _mask_size = RegMask::CHUNK_SIZE; }
   void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  debug_only(_msize_valid=0;) }
   void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  debug_only(_msize_valid=0;) }
-  void ClearToPairs() { _mask.ClearToPairs(); debug_only(_msize_valid=0;) }
+  void clear_to_pairs() { _mask.clear_to_pairs(); debug_only(_msize_valid=0;) }
+  void clear_to_sets()  { _mask.clear_to_sets(_num_regs); debug_only(_msize_valid=0;) }
 
   // Number of registers this live range uses when it colors
 private:
@@ -150,6 +158,7 @@ public:
 
   uint   _is_oop:1,             // Live-range holds an oop
          _is_float:1,           // True if in float registers
+         _is_vector:1,          // True if in vector registers
          _was_spilled1:1,       // True if prior spilling on def
          _was_spilled2:1,       // True if twice prior spilling on def
          _is_bound:1,           // live range starts life with no

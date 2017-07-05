@@ -1944,14 +1944,12 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_c2_type(ReverseBytesLNode, Node)                                \
   declare_c2_type(VectorNode, Node)                                       \
   declare_c2_type(AddVBNode, VectorNode)                                  \
-  declare_c2_type(AddVCNode, VectorNode)                                  \
   declare_c2_type(AddVSNode, VectorNode)                                  \
   declare_c2_type(AddVINode, VectorNode)                                  \
   declare_c2_type(AddVLNode, VectorNode)                                  \
   declare_c2_type(AddVFNode, VectorNode)                                  \
   declare_c2_type(AddVDNode, VectorNode)                                  \
   declare_c2_type(SubVBNode, VectorNode)                                  \
-  declare_c2_type(SubVCNode, VectorNode)                                  \
   declare_c2_type(SubVSNode, VectorNode)                                  \
   declare_c2_type(SubVINode, VectorNode)                                  \
   declare_c2_type(SubVLNode, VectorNode)                                  \
@@ -1962,73 +1960,33 @@ static inline uint64_t cast_uint64_t(size_t x)
   declare_c2_type(DivVFNode, VectorNode)                                  \
   declare_c2_type(DivVDNode, VectorNode)                                  \
   declare_c2_type(LShiftVBNode, VectorNode)                               \
-  declare_c2_type(LShiftVCNode, VectorNode)                               \
   declare_c2_type(LShiftVSNode, VectorNode)                               \
   declare_c2_type(LShiftVINode, VectorNode)                               \
-  declare_c2_type(URShiftVBNode, VectorNode)                              \
-  declare_c2_type(URShiftVCNode, VectorNode)                              \
-  declare_c2_type(URShiftVSNode, VectorNode)                              \
-  declare_c2_type(URShiftVINode, VectorNode)                              \
+  declare_c2_type(RShiftVBNode, VectorNode)                               \
+  declare_c2_type(RShiftVSNode, VectorNode)                               \
+  declare_c2_type(RShiftVINode, VectorNode)                               \
   declare_c2_type(AndVNode, VectorNode)                                   \
   declare_c2_type(OrVNode, VectorNode)                                    \
   declare_c2_type(XorVNode, VectorNode)                                   \
-  declare_c2_type(VectorLoadNode, LoadNode)                               \
-  declare_c2_type(Load16BNode, VectorLoadNode)                            \
-  declare_c2_type(Load8BNode, VectorLoadNode)                             \
-  declare_c2_type(Load4BNode, VectorLoadNode)                             \
-  declare_c2_type(Load8CNode, VectorLoadNode)                             \
-  declare_c2_type(Load4CNode, VectorLoadNode)                             \
-  declare_c2_type(Load2CNode, VectorLoadNode)                             \
-  declare_c2_type(Load8SNode, VectorLoadNode)                             \
-  declare_c2_type(Load4SNode, VectorLoadNode)                             \
-  declare_c2_type(Load2SNode, VectorLoadNode)                             \
-  declare_c2_type(Load4INode, VectorLoadNode)                             \
-  declare_c2_type(Load2INode, VectorLoadNode)                             \
-  declare_c2_type(Load2LNode, VectorLoadNode)                             \
-  declare_c2_type(Load4FNode, VectorLoadNode)                             \
-  declare_c2_type(Load2FNode, VectorLoadNode)                             \
-  declare_c2_type(Load2DNode, VectorLoadNode)                             \
-  declare_c2_type(VectorStoreNode, StoreNode)                             \
-  declare_c2_type(Store16BNode, VectorStoreNode)                          \
-  declare_c2_type(Store8BNode, VectorStoreNode)                           \
-  declare_c2_type(Store4BNode, VectorStoreNode)                           \
-  declare_c2_type(Store8CNode, VectorStoreNode)                           \
-  declare_c2_type(Store4CNode, VectorStoreNode)                           \
-  declare_c2_type(Store2CNode, VectorStoreNode)                           \
-  declare_c2_type(Store4INode, VectorStoreNode)                           \
-  declare_c2_type(Store2INode, VectorStoreNode)                           \
-  declare_c2_type(Store2LNode, VectorStoreNode)                           \
-  declare_c2_type(Store4FNode, VectorStoreNode)                           \
-  declare_c2_type(Store2FNode, VectorStoreNode)                           \
-  declare_c2_type(Store2DNode, VectorStoreNode)                           \
-  declare_c2_type(Replicate16BNode, VectorNode)                           \
-  declare_c2_type(Replicate8BNode, VectorNode)                            \
-  declare_c2_type(Replicate4BNode, VectorNode)                            \
-  declare_c2_type(Replicate8CNode, VectorNode)                            \
-  declare_c2_type(Replicate4CNode, VectorNode)                            \
-  declare_c2_type(Replicate2CNode, VectorNode)                            \
-  declare_c2_type(Replicate8SNode, VectorNode)                            \
-  declare_c2_type(Replicate4SNode, VectorNode)                            \
-  declare_c2_type(Replicate2SNode, VectorNode)                            \
-  declare_c2_type(Replicate4INode, VectorNode)                            \
-  declare_c2_type(Replicate2INode, VectorNode)                            \
-  declare_c2_type(Replicate2LNode, VectorNode)                            \
-  declare_c2_type(Replicate4FNode, VectorNode)                            \
-  declare_c2_type(Replicate2FNode, VectorNode)                            \
-  declare_c2_type(Replicate2DNode, VectorNode)                            \
+  declare_c2_type(LoadVectorNode, LoadNode)                               \
+  declare_c2_type(StoreVectorNode, StoreNode)                             \
+  declare_c2_type(ReplicateBNode, VectorNode)                             \
+  declare_c2_type(ReplicateSNode, VectorNode)                             \
+  declare_c2_type(ReplicateINode, VectorNode)                             \
+  declare_c2_type(ReplicateLNode, VectorNode)                             \
+  declare_c2_type(ReplicateFNode, VectorNode)                             \
+  declare_c2_type(ReplicateDNode, VectorNode)                             \
   declare_c2_type(PackNode, VectorNode)                                   \
   declare_c2_type(PackBNode, PackNode)                                    \
-  declare_c2_type(PackCNode, PackNode)                                    \
   declare_c2_type(PackSNode, PackNode)                                    \
   declare_c2_type(PackINode, PackNode)                                    \
   declare_c2_type(PackLNode, PackNode)                                    \
   declare_c2_type(PackFNode, PackNode)                                    \
   declare_c2_type(PackDNode, PackNode)                                    \
-  declare_c2_type(Pack2x1BNode, PackNode)                                 \
-  declare_c2_type(Pack2x2BNode, PackNode)                                 \
+  declare_c2_type(Pack2LNode, PackNode)                                   \
+  declare_c2_type(Pack2DNode, PackNode)                                   \
   declare_c2_type(ExtractNode, Node)                                      \
   declare_c2_type(ExtractBNode, ExtractNode)                              \
-  declare_c2_type(ExtractCNode, ExtractNode)                              \
   declare_c2_type(ExtractSNode, ExtractNode)                              \
   declare_c2_type(ExtractINode, ExtractNode)                              \
   declare_c2_type(ExtractLNode, ExtractNode)                              \

@@ -100,6 +100,7 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   bool is_field_access_watched() const    { return access_flags().is_field_access_watched(); }
   bool is_field_modification_watched() const
                                           { return access_flags().is_field_modification_watched(); }
+  bool has_generic_signature() const      { return access_flags().field_has_generic_signature(); }
 
   void set_is_field_access_watched(const bool value) {
     _access_flags.set_is_field_access_watched(value);

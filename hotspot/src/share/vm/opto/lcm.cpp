@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     int iop = mach->ideal_Opcode();
     switch( iop ) {
     case Op_LoadB:
+    case Op_LoadUB:
     case Op_LoadUS:
     case Op_LoadD:
     case Op_LoadF:
@@ -443,6 +444,11 @@ Node *Block::select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &read
 
     // Memory op for an implicit null check has to be at the end of the block
     if( e->is_MachNullCheck() && e->in(1) == n )
+      continue;
+
+    // Schedule IV increment last.
+    if (e->is_Mach() && e->as_Mach()->ideal_Opcode() == Op_CountedLoopEnd &&
+        e->in(1)->in(1) == n && n->is_iteratively_computed())
       continue;
 
     uint n_choice  = 2;
