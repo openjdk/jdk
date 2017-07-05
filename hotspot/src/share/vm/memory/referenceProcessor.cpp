@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -987,7 +987,7 @@ inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt)
       id = next_id();
     }
   }
-  assert(0 <= id && id < _max_num_q, "Id is out-of-bounds (call Freud?)");
+  assert(id < _max_num_q, "Id is out-of-bounds (call Freud?)");
 
   // Get the discovered queue to which we will add
   DiscoveredList* list = NULL;
@@ -1345,7 +1345,7 @@ ReferenceProcessor::preclean_discovered_reflist(DiscoveredList&    refs_list,
 }
 
 const char* ReferenceProcessor::list_name(uint i) {
-   assert(i >= 0 && i <= _max_num_q * number_of_subclasses_of_ref(),
+   assert(i <= _max_num_q * number_of_subclasses_of_ref(),
           "Out of bounds index");
 
    int j = i / _max_num_q;

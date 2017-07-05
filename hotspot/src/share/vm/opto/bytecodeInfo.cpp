@@ -33,6 +33,7 @@
 #include "opto/callGenerator.hpp"
 #include "opto/parse.hpp"
 #include "runtime/handles.inline.hpp"
+#include "utilities/events.hpp"
 
 //=============================================================================
 //------------------------------InlineTree-------------------------------------
@@ -490,7 +491,7 @@ const char* InlineTree::check_can_parse(ciMethod* callee) {
 
 //------------------------------print_inlining---------------------------------
 void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
-                                bool success) const {
+                                ciMethod* caller_method, bool success) const {
   const char* inline_msg = msg();
   assert(inline_msg != NULL, "just checking");
   if (C->log() != NULL) {
@@ -509,6 +510,18 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
       //tty->print("  bcs: %d+%d  invoked: %d", top->count_inline_bcs(), callee_method->code_size(), callee_method->interpreter_invocation_count());
     }
   }
+#if INCLUDE_TRACE
+  EventCompilerInlining event;
+  if (event.should_commit()) {
+    event.set_compileID(C->compile_id());
+    event.set_message(inline_msg);
+    event.set_succeeded(success);
+    event.set_bci(caller_bci);
+    event.set_caller(caller_method->get_Method());
+    event.set_callee(callee_method->to_trace_struct());
+    event.commit();
+  }
+#endif // INCLUDE_TRACE
 }
 
 //------------------------------ok_to_inline-----------------------------------
@@ -531,14 +544,14 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
   // Do some initial checks.
   if (!pass_initial_checks(caller_method, caller_bci, callee_method)) {
     set_msg("failed initial checks");
-    print_inlining(callee_method, caller_bci, false /* !success */);
+    print_inlining(callee_method, caller_bci, caller_method, false /* !success */);
     return NULL;
   }
 
   // Do some parse checks.
   set_msg(check_can_parse(callee_method));
   if (msg() != NULL) {
-    print_inlining(callee_method, caller_bci, false /* !success */);
+    print_inlining(callee_method, caller_bci, caller_method, false /* !success */);
     return NULL;
   }
 
@@ -580,10 +593,11 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
     if (msg() == NULL) {
       set_msg("inline (hot)");
     }
-    print_inlining(callee_method, caller_bci, true /* success */);
+    print_inlining(callee_method, caller_bci, caller_method, true /* success */);
     build_inline_tree_for_callee(callee_method, jvms, caller_bci);
-    if (InlineWarmCalls && !wci.is_hot())
+    if (InlineWarmCalls && !wci.is_hot()) {
       return new (C) WarmCallInfo(wci);  // copy to heap
+    }
     return WarmCallInfo::always_hot();
   }
 
@@ -591,7 +605,7 @@ WarmCallInfo* InlineTree::ok_to_inline(ciMethod* callee_method, JVMState* jvms, 
   if (msg() == NULL) {
     set_msg("too cold to inline");
   }
-  print_inlining(callee_method, caller_bci, false /* !success */ );
+  print_inlining(callee_method, caller_bci, caller_method, false /* !success */ );
   return NULL;
 }
 

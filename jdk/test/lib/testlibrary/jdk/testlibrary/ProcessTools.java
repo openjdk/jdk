@@ -24,6 +24,8 @@
 package jdk.testlibrary;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -34,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -188,8 +191,8 @@ public final class ProcessTools {
         } else {
             latch.countDown();
         }
-        Future<Void> stdoutTask = stdout.process();
-        Future<Void> stderrTask = stderr.process();
+        final Future<Void> stdoutTask = stdout.process();
+        final Future<Void> stderrTask = stderr.process();
 
         try {
             if (timeout > -1) {
@@ -216,7 +219,7 @@ public final class ProcessTools {
             throw e;
         }
 
-        return p;
+        return new ProcessImpl(p, stdoutTask, stderrTask);
     }
 
     /**
@@ -435,5 +438,85 @@ public final class ProcessTools {
         OutputAnalyzer analyzer = ProcessTools.executeProcess(pb);
         System.out.println(analyzer.getOutput());
         return analyzer;
+    }
+
+    private static class ProcessImpl extends Process {
+
+        private final Process p;
+        private final Future<Void> stdoutTask;
+        private final Future<Void> stderrTask;
+
+        public ProcessImpl(Process p, Future<Void> stdoutTask, Future<Void> stderrTask) {
+            this.p = p;
+            this.stdoutTask = stdoutTask;
+            this.stderrTask = stderrTask;
+        }
+
+        @Override
+        public OutputStream getOutputStream() {
+            return p.getOutputStream();
+        }
+
+        @Override
+        public InputStream getInputStream() {
+            return p.getInputStream();
+        }
+
+        @Override
+        public InputStream getErrorStream() {
+            return p.getErrorStream();
+        }
+
+        @Override
+        public int waitFor() throws InterruptedException {
+            int rslt = p.waitFor();
+            waitForStreams();
+            return rslt;
+        }
+
+        @Override
+        public int exitValue() {
+            return p.exitValue();
+        }
+
+        @Override
+        public void destroy() {
+            p.destroy();
+        }
+
+        @Override
+        public long getPid() {
+            return p.getPid();
+        }
+
+        @Override
+        public boolean isAlive() {
+            return p.isAlive();
+        }
+
+        @Override
+        public Process destroyForcibly() {
+            return p.destroyForcibly();
+        }
+
+        @Override
+        public boolean waitFor(long timeout, TimeUnit unit) throws InterruptedException {
+            boolean rslt = p.waitFor(timeout, unit);
+            if (rslt) {
+                waitForStreams();
+            }
+            return rslt;
+        }
+
+        private void waitForStreams() throws InterruptedException {
+            try {
+                stdoutTask.get();
+            } catch (ExecutionException e) {
+            }
+            try {
+                stderrTask.get();
+            } catch (ExecutionException e) {
+            }
+        }
     }
 }

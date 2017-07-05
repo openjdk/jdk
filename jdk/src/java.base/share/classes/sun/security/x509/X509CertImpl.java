@@ -271,7 +271,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
                         der = new DerValue(decstream.toByteArray());
                         break;
                     } else {
-                        decstream.write(Base64.getMimeDecoder().decode(line));
+                        decstream.write(Pem.decode(line));
                     }
                 }
             } catch (IOException ioe2) {

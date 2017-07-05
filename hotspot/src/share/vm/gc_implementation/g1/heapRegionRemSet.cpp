@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,7 +541,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
 PerRegionTable*
 OtherRegionsTable::find_region_table(size_t ind, HeapRegion* hr) const {
-  assert(0 <= ind && ind < _max_fine_entries, "Preconditions.");
+  assert(ind < _max_fine_entries, "Preconditions.");
   PerRegionTable* prt = _fine_grain_regions[ind];
   while (prt != NULL && prt->hr() != hr) {
     prt = prt->collision_list_next();

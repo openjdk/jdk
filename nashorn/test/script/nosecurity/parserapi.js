@@ -97,7 +97,7 @@ function processFiles(subdir) {
            var parser = new Parser();
            var tree = parser.parse(subdir + "/" + file.name, script,
                function(diagnostic) {
-                   print(JSON.stringify(parser.convert(diagnostic), null, 2));
+                   print(JSON.stringify(parser.convert(diagnostic), null, 2).replace(/\\r/g, ''));
                    print(",");
                });
 

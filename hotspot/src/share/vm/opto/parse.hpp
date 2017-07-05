@@ -87,7 +87,7 @@ protected:
                                 JVMState* jvms,
                                 WarmCallInfo* wci_result);
   void        print_inlining(ciMethod* callee_method, int caller_bci,
-                             bool success) const;
+                             ciMethod* caller_method, bool success) const;
 
   InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;

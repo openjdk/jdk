@@ -107,6 +107,10 @@ address os::Bsd::ucontext_get_pc(ucontext_t* uc) {
   return NULL;
 }
 
+void os::Bsd::ucontext_set_pc(ucontext_t * uc, address pc) {
+  ShouldNotCallThis();
+}
+
 ExtendedPC os::fetch_frame_from_context(void* ucVoid,
                                         intptr_t** ret_sp,
                                         intptr_t** ret_fp) {
