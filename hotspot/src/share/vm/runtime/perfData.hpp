@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_PERFDATA_HPP
+#define SHARE_VM_RUNTIME_PERFDATA_HPP
+
+#include "memory/allocation.inline.hpp"
+#include "runtime/perfMemory.hpp"
+#include "runtime/timer.hpp"
+#include "utilities/growableArray.hpp"
 
 /* jvmstat global and subsystem counter name space - enumeration value
  * serve as an index into the PerfDataManager::_name_space[] array
@@ -957,3 +965,5 @@ class PerfTraceTimedEvent : public PerfTraceTime {
       _eventp->inc();
     }
 };
+
+#endif // SHARE_VM_RUNTIME_PERFDATA_HPP

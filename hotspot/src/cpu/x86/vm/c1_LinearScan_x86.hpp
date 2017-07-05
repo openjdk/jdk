@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,26 @@
  *
  */
 
+#ifndef CPU_X86_VM_C1_LINEARSCAN_X86_HPP
+#define CPU_X86_VM_C1_LINEARSCAN_X86_HPP
+
 inline bool LinearScan::is_processed_reg_num(int reg_num) {
 #ifndef _LP64
   // rsp and rbp (numbers 6 ancd 7) are ignored
   assert(FrameMap::rsp_opr->cpu_regnr() == 6, "wrong assumption below");
   assert(FrameMap::rbp_opr->cpu_regnr() == 7, "wrong assumption below");
   assert(reg_num >= 0, "invalid reg_num");
-
-  return reg_num < 6 || reg_num > 7;
 #else
-  // rsp and rbp, r10, r15 (numbers 6 ancd 7) are ignored
+  // rsp and rbp, r10, r15 (numbers [12,15]) are ignored
+  // r12 (number 11) is conditional on compressed oops.
+  assert(FrameMap::r12_opr->cpu_regnr() == 11, "wrong assumption below");
   assert(FrameMap::r10_opr->cpu_regnr() == 12, "wrong assumption below");
   assert(FrameMap::r15_opr->cpu_regnr() == 13, "wrong assumption below");
   assert(FrameMap::rsp_opr->cpu_regnrLo() == 14, "wrong assumption below");
   assert(FrameMap::rbp_opr->cpu_regnrLo() == 15, "wrong assumption below");
   assert(reg_num >= 0, "invalid reg_num");
-
-  return reg_num < 12 || reg_num > 15;
 #endif // _LP64
+  return reg_num <= FrameMap::last_cpu_reg() || reg_num >= pd_nof_cpu_regs_frame_map;
 }
 
 inline int LinearScan::num_physical_regs(BasicType type) {
@@ -101,7 +103,7 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
   if (allocator()->gen()->is_vreg_flag_set(cur->reg_num(), LIRGenerator::byte_reg)) {
     assert(cur->type() != T_FLOAT && cur->type() != T_DOUBLE, "cpu regs only");
     _first_reg = pd_first_byte_reg;
-    _last_reg = pd_last_byte_reg;
+    _last_reg = FrameMap::last_byte_reg();
     return true;
   } else if ((UseSSE >= 1 && cur->type() == T_FLOAT) || (UseSSE >= 2 && cur->type() == T_DOUBLE)) {
     _first_reg = pd_first_xmm_reg;
@@ -185,3 +187,5 @@ class FpuStackAllocator VALUE_OBJ_CLASS_SPEC {
   FpuStackAllocator(Compilation* compilation, LinearScan* allocator);
   void allocate();
 };
+
+#endif // CPU_X86_VM_C1_LINEARSCAN_X86_HPP

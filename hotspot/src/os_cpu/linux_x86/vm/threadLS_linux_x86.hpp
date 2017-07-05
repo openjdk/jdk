@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_LINUX_X86_VM_THREADLS_LINUX_X86_HPP
+#define OS_CPU_LINUX_X86_VM_THREADLS_LINUX_X86_HPP
 
   // Processor dependent parts of ThreadLocalStorage
 
@@ -47,3 +50,5 @@ public:
     return _sp_map[sp >> PAGE_SHIFT];
 #endif // AMD64
   }
+
+#endif // OS_CPU_LINUX_X86_VM_THREADLS_LINUX_X86_HPP

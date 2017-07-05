@@ -22,12 +22,25 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/subnode.hpp"
+#include "runtime/sharedRuntime.hpp"
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
 
-#include "incls/_precompiled.incl"
-#include "incls/_subnode.cpp.incl"
 #include "math.h"
 
 //=============================================================================

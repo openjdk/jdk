@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,15 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#include "thread_solaris.inline.hpp"
+
 // Provides an entry point we can link against and
 // a buffer we can emit code into. The buffer is
 // filled by ThreadLocalStorage::generate_code_for_get_thread
 // and called from ThreadLocalStorage::thread()
 
-#include "incls/_precompiled.incl"
-#include "incls/_threadLS_solaris_sparc.cpp.incl"
 #include <sys/systeminfo.h>
 
 // The portable TLS mechanism (get_thread_via_cache) is enough on SPARC.

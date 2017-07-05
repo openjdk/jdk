@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,37 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_OOP_INLINE_HPP
+#define SHARE_VM_OOPS_OOP_INLINE_HPP
+
+#include "gc_implementation/shared/ageTable.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/barrierSet.inline.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/compactingPermGenGen.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generation.hpp"
+#include "memory/permGen.hpp"
+#include "memory/specialized_oop_closures.hpp"
+#include "oops/arrayKlass.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/klass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/markOop.inline.hpp"
+#include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
@@ -746,3 +777,5 @@ inline bool oopDesc::is_shared_readonly() const {
 inline bool oopDesc::is_shared_readwrite() const {
   return CompactingPermGenGen::is_shared_readwrite(this);
 }
+
+#endif // SHARE_VM_OOPS_OOP_INLINE_HPP

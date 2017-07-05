@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_GRAPHBUILDER_HPP
+#define SHARE_VM_C1_C1_GRAPHBUILDER_HPP
+
+#include "c1/c1_IR.hpp"
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_ValueMap.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "ci/ciMethodData.hpp"
+#include "ci/ciStreams.hpp"
+
 class MemoryBuffer;
 
 class GraphBuilder VALUE_OBJ_CLASS_SPEC {
@@ -378,3 +388,5 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
 
   BlockBegin* start() const                      { return _start; }
 };
+
+#endif // SHARE_VM_C1_C1_GRAPHBUILDER_HPP

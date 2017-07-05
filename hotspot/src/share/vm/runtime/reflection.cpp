@@ -22,8 +22,28 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_reflection.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/verifier.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "prims/jvm.h"
+#include "prims/methodHandleWalk.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/reflection.hpp"
+#include "runtime/reflectionUtils.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vframe.hpp"
 
 #define JAVA_1_5_VERSION                  49
 

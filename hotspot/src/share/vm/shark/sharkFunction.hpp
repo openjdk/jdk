@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,20 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKFUNCTION_HPP
+#define SHARE_VM_SHARK_SHARKFUNCTION_HPP
+
+#include "ci/ciEnv.hpp"
+#include "ci/ciStreams.hpp"
+#include "ci/ciTypeFlow.hpp"
+#include "memory/allocation.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/llvmValue.hpp"
+#include "shark/sharkBuilder.hpp"
+#include "shark/sharkContext.hpp"
+#include "shark/sharkInvariants.hpp"
+#include "shark/sharkStack.hpp"
 
 class SharkTopLevelBlock;
 class DeferredZeroCheck;
@@ -109,3 +123,5 @@ class SharkFunction : public SharkTargetInvariants {
  private:
   void do_deferred_zero_checks();
 };
+
+#endif // SHARE_VM_SHARK_SHARKFUNCTION_HPP

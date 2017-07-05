@@ -22,8 +22,13 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_stackMapTable.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/stackMapTable.hpp"
+#include "classfile/verifier.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/fieldType.hpp"
+#include "runtime/handles.inline.hpp"
 
 StackMapTable::StackMapTable(StackMapReader* reader, StackMapFrame* init_frame,
                              u2 max_locals, u2 max_stack,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_SOLARIS_VM_OS_SOLARIS_HPP
+#define OS_SOLARIS_VM_OS_SOLARIS_HPP
 
 // Solaris_OS defines the interface to Solaris operating systems
 
@@ -394,3 +397,5 @@ class PlatformParker : public CHeapObj {
       assert_status(status == 0, status, "mutex_init");
     }
 } ;
+
+#endif // OS_SOLARIS_VM_OS_SOLARIS_HPP

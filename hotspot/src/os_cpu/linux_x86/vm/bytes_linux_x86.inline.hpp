@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_LINUX_X86_VM_BYTES_LINUX_X86_INLINE_HPP
+#define OS_CPU_LINUX_X86_VM_BYTES_LINUX_X86_INLINE_HPP
 
 #include <byteswap.h>
 
@@ -83,3 +86,5 @@ inline u8 Bytes::swap_u8(u8 x) {
   return swap_u8_base(*(u4*)&x, *(((u4*)&x)+1));
 }
 #endif // !AMD64
+
+#endif // OS_CPU_LINUX_X86_VM_BYTES_LINUX_X86_INLINE_HPP

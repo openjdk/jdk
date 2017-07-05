@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_JAVA_HPP
+#define SHARE_VM_RUNTIME_JAVA_HPP
+
+#include "runtime/os.hpp"
 
 // Register function to be called by before_exit
 extern "C" { void register_on_exit_function(void (*func)(void)) ;}
@@ -208,3 +213,5 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
     return current().compare_major(7) >= 0;
   }
 };
+
+#endif // SHARE_VM_RUNTIME_JAVA_HPP

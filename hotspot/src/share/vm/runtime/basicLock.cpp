@@ -22,8 +22,9 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_basicLock.cpp.incl"
+#include "precompiled.hpp"
+#include "runtime/basicLock.hpp"
+#include "runtime/synchronizer.hpp"
 
 void BasicLock::print_on(outputStream* st) const {
   st->print("monitor");

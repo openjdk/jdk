@@ -22,8 +22,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_concurrentG1Refine.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/concurrentG1Refine.hpp"
+#include "gc_implementation/g1/concurrentG1RefineThread.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "memory/space.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/copy.hpp"
 
 // Possible sizes for the card counts cache: odd primes that roughly double in size.
 // (See jvmtiTagMap.cpp).

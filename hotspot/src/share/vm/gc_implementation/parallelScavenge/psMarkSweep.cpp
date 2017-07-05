@@ -22,8 +22,34 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_psMarkSweep.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "gc_implementation/parallelScavenge/generationSizer.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psAdaptiveSizePolicy.hpp"
+#include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
+#include "gc_implementation/parallelScavenge/psMarkSweepDecorator.hpp"
+#include "gc_implementation/parallelScavenge/psOldGen.hpp"
+#include "gc_implementation/parallelScavenge/psPermGen.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "gc_implementation/parallelScavenge/psYoungGen.hpp"
+#include "gc_implementation/shared/isGCActiveMark.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "gc_interface/gcCause.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/referencePolicy.hpp"
+#include "memory/referenceProcessor.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/vmThread.hpp"
+#include "services/management.hpp"
+#include "services/memoryService.hpp"
+#include "utilities/events.hpp"
+#include "utilities/stack.inline.hpp"
 
 elapsedTimer        PSMarkSweep::_accumulated_time;
 unsigned int        PSMarkSweep::_total_invocations = 0;

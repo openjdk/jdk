@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_INLINE_HPP
+
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psMarkSweep.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
 
 inline size_t ParallelScavengeHeap::total_invocations()
 {
@@ -49,3 +57,5 @@ inline bool ParallelScavengeHeap::is_in_young(oop p) {
 inline bool ParallelScavengeHeap::is_in_old_or_perm(oop p) {
   return old_gen()->is_in_reserved(p) || perm_gen()->is_in_reserved(p);
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_INLINE_HPP

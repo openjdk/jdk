@@ -60,10 +60,7 @@ public class ConstantPool extends Oop implements ClassConstants {
     headerSize  = type.getSize();
     elementSize = 0;
     // fetch constants:
-    MULTI_OPERAND_COUNT_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_multi_operand_count_offset").intValue();
-    MULTI_OPERAND_BASE_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_multi_operand_base_offset").intValue();
     INDY_BSM_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_bsm_offset").intValue();
-    INDY_NT_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_nt_offset").intValue();
     INDY_ARGC_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_argc_offset").intValue();
     INDY_ARGV_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_argv_offset").intValue();
   }
@@ -83,10 +80,7 @@ public class ConstantPool extends Oop implements ClassConstants {
   private static long headerSize;
   private static long elementSize;
 
-  private static int MULTI_OPERAND_COUNT_OFFSET;
-  private static int MULTI_OPERAND_BASE_OFFSET;
   private static int INDY_BSM_OFFSET;
-  private static int INDY_NT_OFFSET;
   private static int INDY_ARGC_OFFSET;
   private static int INDY_ARGV_OFFSET;
 
@@ -296,20 +290,23 @@ public class ConstantPool extends Oop implements ClassConstants {
   }
 
   /** Lookup for multi-operand (InvokeDynamic) entries. */
-  public int[] getMultiOperandsAt(int i) {
+  public short[] getBootstrapSpecifierAt(int i) {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(getTagAt(i).isInvokeDynamic(), "Corrupted constant pool");
     }
-    int pos = this.getIntAt(i);
-    int countPos = pos + MULTI_OPERAND_COUNT_OFFSET;  // == pos-1
-    int basePos  = pos + MULTI_OPERAND_BASE_OFFSET;   // == pos
-    if (countPos < 0)  return null;  // safety first
+    if (getTagAt(i).value() == JVM_CONSTANT_InvokeDynamicTrans)
+        return null;
+    int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
     TypeArray operands = getOperands();
     if (operands == null)  return null;  // safety first
-    int length = operands.getIntAt(countPos);
-    int[] values = new int[length];
-    for (int j = 0; j < length; j++) {
-        values[j] = operands.getIntAt(basePos+j);
+    int basePos = VM.getVM().buildIntFromShorts(operands.getShortAt(bsmSpec * 2 + 0),
+                                                operands.getShortAt(bsmSpec * 2 + 1));
+    int argv = basePos + INDY_ARGV_OFFSET;
+    int argc = operands.getShortAt(basePos + INDY_ARGC_OFFSET);
+    int endPos = argv + argc;
+    short[] values = new short[endPos - basePos];
+    for (int j = 0; j < values.length; j++) {
+        values[j] = operands.getShortAt(basePos+j);
     }
     return values;
   }
@@ -334,6 +331,7 @@ public class ConstantPool extends Oop implements ClassConstants {
     case JVM_CONSTANT_MethodHandle:       return "JVM_CONSTANT_MethodHandle";
     case JVM_CONSTANT_MethodType:         return "JVM_CONSTANT_MethodType";
     case JVM_CONSTANT_InvokeDynamic:      return "JVM_CONSTANT_InvokeDynamic";
+    case JVM_CONSTANT_InvokeDynamicTrans: return "JVM_CONSTANT_InvokeDynamic/transitional";
     case JVM_CONSTANT_Invalid:            return "JVM_CONSTANT_Invalid";
     case JVM_CONSTANT_UnresolvedClass:    return "JVM_CONSTANT_UnresolvedClass";
     case JVM_CONSTANT_UnresolvedClassInError:    return "JVM_CONSTANT_UnresolvedClassInError";
@@ -393,6 +391,7 @@ public class ConstantPool extends Oop implements ClassConstants {
         case JVM_CONSTANT_MethodHandle:
         case JVM_CONSTANT_MethodType:
         case JVM_CONSTANT_InvokeDynamic:
+        case JVM_CONSTANT_InvokeDynamicTrans:
           visitor.doInt(new IntField(new NamedFieldIdentifier(nameForTag(ctag)), indexOffset(index), true), true);
           break;
         }
@@ -556,19 +555,16 @@ public class ConstantPool extends Oop implements ClassConstants {
                   break;
               }
 
+              case JVM_CONSTANT_InvokeDynamicTrans:
               case JVM_CONSTANT_InvokeDynamic: {
                   dos.writeByte(cpConstType);
-                  int[] values = getMultiOperandsAt(ci);
-                  for (int vn = 0; vn < values.length; vn++) {
-                      dos.writeShort(values[vn]);
-                  }
-                  int bootstrapMethodIndex = values[INDY_BSM_OFFSET];
-                  int nameAndTypeIndex = values[INDY_NT_OFFSET];
-                  int argumentCount = values[INDY_ARGC_OFFSET];
-                  assert(INDY_ARGV_OFFSET + argumentCount == values.length);
-                  if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " + bootstrapMethodIndex
-                                          + ", N&T = " + nameAndTypeIndex
-                                          + ", argc = " + argumentCount);
+                  int value = getIntAt(ci);
+                  short bsmIndex = (short) extractLowShortFromInt(value);
+                  short nameAndTypeIndex = (short) extractHighShortFromInt(value);
+                  dos.writeShort(bsmIndex);
+                  dos.writeShort(nameAndTypeIndex);
+                  if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " + bsmIndex
+                                          + ", N&T = " + nameAndTypeIndex);
                   break;
               }
 

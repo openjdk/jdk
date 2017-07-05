@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_CPPINTERPRETER_SPARC_HPP
+#define CPU_SPARC_VM_CPPINTERPRETER_SPARC_HPP
+
   // Size of interpreter code.  Increase if too small.  Interpreter will
   // fail with a guarantee ("not enough space for interpreter generation");
   // if too small.
@@ -37,3 +40,5 @@
 #else
   const static int InterpreterCodeSize = 180 * K;
 #endif
+
+#endif // CPU_SPARC_VM_CPPINTERPRETER_SPARC_HPP

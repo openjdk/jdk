@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,24 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_cpCacheKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/genOopClosures.inline.hpp"
+#include "memory/permGen.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/cpCacheKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.inline.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parNew/parOopClosures.inline.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#endif
 
 
 int constantPoolCacheKlass::oop_size(oop obj) const {

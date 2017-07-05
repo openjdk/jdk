@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,16 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKNATIVEWRAPPER_HPP
+#define SHARE_VM_SHARK_SHARKNATIVEWRAPPER_HPP
+
+#include "runtime/handles.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkBuilder.hpp"
+#include "shark/sharkContext.hpp"
+#include "shark/sharkInvariants.hpp"
+#include "shark/sharkStack.hpp"
 
 class SharkNativeWrapper : public SharkCompileInvariants {
   friend class SharkStackWithNativeFrame;
@@ -180,3 +190,5 @@ class SharkNativeWrapper : public SharkCompileInvariants {
       pending_exception_address(), "pending_exception");
   }
 };
+
+#endif // SHARE_VM_SHARK_SHARKNATIVEWRAPPER_HPP

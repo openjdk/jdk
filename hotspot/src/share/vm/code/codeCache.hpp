@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_CODE_CODECACHE_HPP
+#define SHARE_VM_CODE_CODECACHE_HPP
+
+#include "code/codeBlob.hpp"
+#include "memory/allocation.hpp"
+#include "memory/heap.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oopsHierarchy.hpp"
+
 // The CodeCache implements the code cache for various pieces of generated
 // code, e.g., compiled java methods, runtime stubs, transition frames, etc.
 // The entries in the CodeCache are all CodeBlob's.
@@ -173,3 +182,5 @@ class CodeCache : AllStatic {
     // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();
 };
+
+#endif // SHARE_VM_CODE_CODECACHE_HPP

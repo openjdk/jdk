@@ -22,8 +22,79 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_java.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "interpreter/bytecodeHistogram.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/generateOopMap.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlassKlass.hpp"
+#include "oops/instanceOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "runtime/aprofiler.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/memprofiler.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/statSampler.hpp"
+#include "runtime/task.hpp"
+#include "runtime/timer.hpp"
+#include "runtime/vm_operations.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/histogram.hpp"
+#include "utilities/vmError.hpp"
+#ifdef TARGET_ARCH_x86
+# include "vm_version_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vm_version_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vm_version_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+#ifndef SERIALGC
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.hpp"
+#include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_Compiler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#endif
+#ifdef COMPILER2
+#include "code/compiledIC.hpp"
+#include "compiler/methodLiveness.hpp"
+#include "opto/compile.hpp"
+#include "opto/indexSet.hpp"
+#include "opto/runtime.hpp"
+#endif
 
 HS_DTRACE_PROBE_DECL(hotspot, vm__shutdown);
 

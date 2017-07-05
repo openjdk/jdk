@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,27 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "ci/ciTypeFlow.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "compiler/compileLog.hpp"
+#include "libadt/dict.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klassKlass.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "opto/matcher.hpp"
+#include "opto/node.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/type.hpp"
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
-
-#include "incls/_precompiled.incl"
-#include "incls/_type.cpp.incl"
 
 // Dictionary of types shared among compilations.
 Dict* Type::_shared_type_dict = NULL;

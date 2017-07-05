@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_COMPILATIONPOLICY_HPP
+#define SHARE_VM_RUNTIME_COMPILATIONPOLICY_HPP
+
+#include "code/nmethod.hpp"
+#include "compiler/compileBroker.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/vm_operations.hpp"
+#include "utilities/growableArray.hpp"
+
 // The CompilationPolicy selects which method (if any) should be compiled.
 // It also decides which methods must always be compiled (i.e., are never
 // interpreted).
@@ -126,3 +135,5 @@ class StackWalkCompPolicy : public NonTieredCompPolicy {
 
 };
 #endif
+
+#endif // SHARE_VM_RUNTIME_COMPILATIONPOLICY_HPP

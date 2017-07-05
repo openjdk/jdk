@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
+#ifndef CPU_X86_VM_CODEBUFFER_X86_HPP
+#define CPU_X86_VM_CODEBUFFER_X86_HPP
+
 private:
   void pd_initialize() {}
 
 public:
   void flush_bundle(bool start_new_bundle) {}
+
+#endif // CPU_X86_VM_CODEBUFFER_X86_HPP

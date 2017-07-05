@@ -22,8 +22,21 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_parse1.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "interpreter/linkResolver.hpp"
+#include "oops/methodOop.hpp"
+#include "opto/addnode.hpp"
+#include "opto/idealGraphPrinter.hpp"
+#include "opto/locknode.hpp"
+#include "opto/memnode.hpp"
+#include "opto/parse.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "utilities/copy.hpp"
 
 // Static array so we can figure out which bytecodes stop us from compiling
 // the most. Some of the non-static variables are needed in bytecodeInfo.cpp

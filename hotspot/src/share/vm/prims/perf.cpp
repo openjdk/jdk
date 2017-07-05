@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,20 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jni.h"
+#include "prims/jvm.h"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/perfMemory.hpp"
+
 /*
  *      Implementation of class sun.misc.Perf
  */
-
-#include "incls/_precompiled.incl"
-#include "incls/_perf.cpp.incl"
 
 
 #define PERF_ENTRY(result_type, header) \

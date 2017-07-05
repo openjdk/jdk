@@ -22,8 +22,37 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_systemDictionary.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/dictionary.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/loaderConstraints.hpp"
+#include "classfile/placeholders.hpp"
+#include "classfile/resolutionErrors.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/oopFactory.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/klass.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "prims/jvmtiEnvBase.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/fieldType.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/signature.hpp"
+#include "services/classLoadingService.hpp"
+#include "services/threadService.hpp"
 
 
 Dictionary*            SystemDictionary::_dictionary          = NULL;
@@ -1981,7 +2010,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
     scan = WKID(meth_group_end+1);
   }
   WKID indy_group_start = WK_KLASS_ENUM_NAME(Linkage_klass);
-  WKID indy_group_end   = WK_KLASS_ENUM_NAME(InvokeDynamic_klass);
+  WKID indy_group_end   = WK_KLASS_ENUM_NAME(CallSite_klass);
   initialize_wk_klasses_until(indy_group_start, scan, CHECK);
   if (EnableInvokeDynamic) {
     initialize_wk_klasses_through(indy_group_end, scan, CHECK);

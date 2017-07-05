@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_BYTES_X86_HPP
+#define CPU_X86_VM_BYTES_X86_HPP
+
+#include "memory/allocation.hpp"
 
 class Bytes: AllStatic {
  private:
@@ -67,4 +72,15 @@ class Bytes: AllStatic {
 
 
 // The following header contains the implementations of swap_u2, swap_u4, and swap_u8[_base]
-#include "incls/_bytes_pd.inline.hpp.incl"
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "bytes_linux_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "bytes_solaris_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "bytes_windows_x86.inline.hpp"
+#endif
+
+
+#endif // CPU_X86_VM_BYTES_X86_HPP

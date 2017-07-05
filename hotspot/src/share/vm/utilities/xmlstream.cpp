@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_xmlstream.cpp.incl"
+#include "precompiled.hpp"
+#include "code/nmethod.hpp"
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/deoptimization.hpp"
+#include "runtime/vmThread.hpp"
+#include "utilities/xmlstream.hpp"
 
 void xmlStream::initialize(outputStream* out) {
   _out = out;

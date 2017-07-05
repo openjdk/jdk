@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,12 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_SHARKFRAME_ZERO_HPP
+#define CPU_ZERO_VM_SHARKFRAME_ZERO_HPP
+
+#include "oops/methodOop.hpp"
+#include "stack_zero.hpp"
 
 // |  ...               |
 // +--------------------+  ------------------
@@ -77,3 +83,5 @@ class SharkFrame : public ZeroFrame {
                      char* valuebuf,
                      int   buflen) const;
 };
+
+#endif // CPU_ZERO_VM_SHARKFRAME_ZERO_HPP

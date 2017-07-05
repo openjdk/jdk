@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_C1_DEFS_SPARC_HPP
+#define CPU_SPARC_VM_C1_DEFS_SPARC_HPP
 
 // native word offsets from memory address (big endian)
 enum {
@@ -65,3 +68,5 @@ enum {
 enum {
   pd_float_saved_as_double = false
 };
+
+#endif // CPU_SPARC_VM_C1_DEFS_SPARC_HPP

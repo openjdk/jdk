@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_UTILITIES_YIELDINGWORKGROUP_HPP
+#define SHARE_VM_UTILITIES_YIELDINGWORKGROUP_HPP
+
+#ifndef SERIALGC
+#include "utilities/workgroup.hpp"
+#endif
+
 
 // Forward declarations
 class YieldingFlexibleWorkGang;
@@ -211,3 +218,5 @@ private:
   friend class YieldingFlexibleGangWorker;
   void reset(); // NYI
 };
+
+#endif // SHARE_VM_UTILITIES_YIELDINGWORKGROUP_HPP

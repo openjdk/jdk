@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,18 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_accessFlags.cpp.incl"
+#include "precompiled.hpp"
+#include "oops/oop.inline.hpp"
+#include "utilities/accessFlags.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
 
 
 void AccessFlags::atomic_set_bits(jint bits) {

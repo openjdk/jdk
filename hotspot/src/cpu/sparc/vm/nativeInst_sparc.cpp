@@ -22,8 +22,18 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_nativeInst_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_sparc.inline.hpp"
+#include "memory/resourceArea.hpp"
+#include "nativeInst_sparc.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "utilities/ostream.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 
 bool NativeInstruction::is_dtrace_trap() {
