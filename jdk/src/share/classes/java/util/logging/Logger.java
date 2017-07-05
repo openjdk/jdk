@@ -42,7 +42,10 @@ import java.lang.ref.WeakReference;
  * <p>
  * Logger objects may be obtained by calls on one of the getLogger
  * factory methods.  These will either create a new Logger or
- * return a suitable existing Logger.
+ * return a suitable existing Logger. It is important to note that
+ * the Logger returned by one of the {@code getLogger} factory methods
+ * may be garbage collected at any time if a strong reference to the
+ * Logger is not kept.
  * <p>
  * Logging messages will be forwarded to registered Handler
  * objects, which can forward the messages to a variety of
@@ -210,7 +213,9 @@ public class Logger {
      * who are making serious use of the logging package (for example
      * in products) should create and use their own Logger objects,
      * with appropriate names, so that logging can be controlled on a
-     * suitable per-Logger granularity.
+     * suitable per-Logger granularity. Developers also need to keep a
+     * strong reference to their Logger objects to prevent them from
+     * being garbage collected.
      * <p>
      * @deprecated Initialization of this field is prone to deadlocks.
      * The field must be initialized by the Logger class initialization
@@ -287,6 +292,15 @@ public class Logger {
      * based on the LogManager configuration and it will configured
      * to also send logging output to its parent's Handlers.  It will
      * be registered in the LogManager global namespace.
+     * <p>
+     * Note: The LogManager may only retain a weak reference to the newly
+     * created Logger. It is important to understand that a previously
+     * created Logger with the given name may be garbage collected at any
+     * time if there is no strong reference to the Logger. In particular,
+     * this means that two back-to-back calls like
+     * {@code getLogger("MyLogger").log(...)} may use different Logger
+     * objects named "MyLogger" if there is no strong reference to the
+     * Logger named "MyLogger" elsewhere in the program.
      *
      * @param   name            A name for the logger.  This should
      *                          be a dot-separated name and should normally
@@ -310,6 +324,15 @@ public class Logger {
      * based on the LogManager and it will configured to also send logging
      * output to its parent's Handlers.  It will be registered in
      * the LogManager global namespace.
+     * <p>
+     * Note: The LogManager may only retain a weak reference to the newly
+     * created Logger. It is important to understand that a previously
+     * created Logger with the given name may be garbage collected at any
+     * time if there is no strong reference to the Logger. In particular,
+     * this means that two back-to-back calls like
+     * {@code getLogger("MyLogger", ...).log(...)} may use different Logger
+     * objects named "MyLogger" if there is no strong reference to the
+     * Logger named "MyLogger" elsewhere in the program.
      * <p>
      * If the named Logger already exists and does not yet have a
      * localization resource bundle then the given resource bundle

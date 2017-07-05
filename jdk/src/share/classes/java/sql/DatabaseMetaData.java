@@ -3643,7 +3643,7 @@ public interface DatabaseMetaData extends Wrapper {
 
     /**
      * Retrieves whether a generated key will always be returned if the column
-     * name(s) or indexe(s) specified for the auto generated key column(s)
+     * name(s) or index(es) specified for the auto generated key column(s)
      * are valid and the statement succeeds.  The key that is returned may or
      * may not be based on the column(s) for the auto generated key.
      * Consult your JDBC driver documentation for additional details.

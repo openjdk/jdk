@@ -558,9 +558,12 @@ endif
 # rule to test
 ################################################################
 
-.NOTPARALLEL: test
+.NOTPARALLEL: test_run
 
-test: test_clean test_start test_summary
+test:
+	$(MAKE) test_run
+
+test_run: test_clean test_start test_summary
 
 test_start:
 	@$(ECHO) "Tests started at `$(DATE)`"
@@ -586,7 +589,7 @@ test_summary: $(OUTPUTDIR)/test_failures.txt
 # Get failure list from log
 $(OUTPUTDIR)/test_failures.txt: $(OUTPUTDIR)/test_log.txt
 	@$(RM) $@
-	@( $(EGREP) '^FAILED:' $< || $(ECHO) "" ) > $@
+	@( $(EGREP) '^FAILED:' $< || $(ECHO) "" ) | $(NAWK) 'length>0' > $@
 
 # Get log file of all tests run
 JDK_TO_TEST := $(shell 							\
@@ -598,10 +601,11 @@ JDK_TO_TEST := $(shell 							\
     $(ECHO) "$(PRODUCT_HOME)"; 						\
   fi 									\
 )
+TEST_TARGETS=all
 $(OUTPUTDIR)/test_log.txt:
 	$(RM) $@
-	( $(CD) test &&                                     \
-          $(MAKE) NO_STOPPING=- PRODUCT_HOME=$(JDK_TO_TEST) \
+	( $(CD) test &&                                                     \
+          $(MAKE) NO_STOPPING=- PRODUCT_HOME=$(JDK_TO_TEST) $(TEST_TARGETS) \
         ) | tee $@
 
 ################################################################
@@ -614,7 +618,7 @@ include ./make/jprt.gmk
 #  PHONY
 ################################################################
 
-.PHONY: all  test test_start test_summary test_clean \
+.PHONY: all  test test_run test_start test_summary test_clean \
 	generic_build_repo_series \
 	what clobber insane \
         dev dev-build dev-sanity dev-clobber \

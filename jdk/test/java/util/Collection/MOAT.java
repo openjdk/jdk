@@ -75,6 +75,7 @@ public class MOAT {
         testCollection(new ArrayBlockingQueue<Integer>(20));
         testCollection(new LinkedBlockingQueue<Integer>(20));
         testCollection(new LinkedBlockingDeque<Integer>(20));
+        testCollection(new ConcurrentLinkedDeque<Integer>());
         testCollection(new ConcurrentLinkedQueue<Integer>());
         testCollection(new LinkedTransferQueue<Integer>());
         testCollection(new ConcurrentSkipListSet<Integer>());
@@ -431,8 +432,9 @@ public class MOAT {
         q.poll();
         equal(q.size(), 4);
         checkFunctionalInvariants(q);
-        if ((q instanceof LinkedBlockingQueue) ||
-            (q instanceof LinkedBlockingDeque) ||
+        if ((q instanceof LinkedBlockingQueue)   ||
+            (q instanceof LinkedBlockingDeque)   ||
+            (q instanceof ConcurrentLinkedDeque) ||
             (q instanceof ConcurrentLinkedQueue)) {
             testQueueIteratorRemove(q);
         }

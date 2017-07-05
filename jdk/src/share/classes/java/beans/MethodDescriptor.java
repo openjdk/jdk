@@ -90,13 +90,13 @@ public class MethodDescriptor extends FeatureDescriptor {
                         // Find methods for up to 2 params. We are guessing here.
                         // This block should never execute unless the classloader
                         // that loaded the argument classes disappears.
-                        method = Introspector.findMethod(cls, name, i);
+                        method = Introspector.findMethod(cls, name, i, null);
                         if (method != null) {
                             break;
                         }
                     }
                 } else {
-                    method = Statement.getMethod(cls, name, params);
+                    method = Introspector.findMethod(cls, name, params.length, params);
                 }
                 setMethod(method);
             }
