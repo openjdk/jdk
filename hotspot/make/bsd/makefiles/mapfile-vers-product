@@ -221,7 +221,6 @@
                 _JVM_SetLength
                 _JVM_SetNativeThreadName
                 _JVM_SetPrimitiveArrayElement
-                _JVM_SetProtectionDomain
                 _JVM_SetSockOpt
                 _JVM_SetThreadPriority
                 _JVM_Sleep
