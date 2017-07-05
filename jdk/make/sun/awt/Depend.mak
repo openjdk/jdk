@@ -71,6 +71,7 @@ STUBFILES = \
 	$(STUBDIR)/Ole2.h \
 	$(STUBDIR)/Zmouse.h \
 	$(STUBDIR)/cderr.h \
+	$(STUBDIR)/commctrl.h \
 	$(STUBDIR)/commdlg.h \
 	$(STUBDIR)/direct.h \
 	$(STUBDIR)/d3dcom.h \

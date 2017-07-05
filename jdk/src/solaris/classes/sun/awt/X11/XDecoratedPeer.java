@@ -383,7 +383,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             dimensions.setInsets(getRealInsets());
             insets_corrected = true;
 
-            if (isMaximized() || isNull(correction)) {
+            if (isMaximized()) {
                 return;
             }
 
@@ -451,7 +451,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
     public Insets getInsets() {
         Insets in = copy(getRealInsets());
-        in.top += getMenuBarHeight() + getWarningWindowHeight();
+        in.top += getMenuBarHeight();
         if (insLog.isLoggable(Level.FINEST)) {
             insLog.log(Level.FINEST, "Get insets returns {0}", new Object[] {in});
         }
@@ -802,6 +802,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
         }
         reconfigureContentWindow(newDimensions);
         updateChildrenSizes();
+
+        repositionSecurityWarning();
     }
 
     private void checkShellRectSize(Rectangle shellRect) {

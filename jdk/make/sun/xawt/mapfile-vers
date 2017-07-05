@@ -1,5 +1,5 @@
 #
-# Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,9 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XlibWrapper_XGetWMHints;
         Java_sun_awt_X11_XlibWrapper_XShapeQueryExtension;
         Java_sun_awt_X11_XlibWrapper_SetRectangularShape;
+        Java_sun_awt_X11_XlibWrapper_SetBitmapShape;
+        Java_sun_awt_X11_XlibWrapper_XConfigureWindow;
+        Java_sun_awt_X11_XlibWrapper_SetZOrder;
         Java_sun_awt_X11_XToolkit_initIDs;
         Java_sun_awt_X11_XWindow_getNativeColor;
         Java_sun_awt_X11_XWindow_getWMInsets;
@@ -217,6 +220,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11GraphicsConfig_createBackBuffer;
 	Java_sun_awt_X11GraphicsConfig_destroyBackBuffer;
 	Java_sun_awt_X11GraphicsConfig_swapBuffers;
+	Java_sun_awt_X11GraphicsConfig_isTranslucencyCapable;
         Java_java_awt_Insets_initIDs;
         Java_java_awt_KeyboardFocusManager_initIDs;
         Java_java_awt_Font_initIDs;
@@ -289,16 +293,26 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11_XlibWrapper_XGetIconSizes;
         Java_sun_awt_X11_XlibWrapper_XKeycodeToKeysym;
         Java_sun_awt_X11_XlibWrapper_XKeysymToKeycode;
-        Java_sun_awt_X11_XlibWrapper_XQueryKeymap;
+	Java_sun_awt_X11_XlibWrapper_XQueryKeymap;
+        Java_sun_awt_X11_XlibWrapper_XkbGetEffectiveGroup;
+        Java_sun_awt_X11_XlibWrapper_XkbSelectEvents;
+        Java_sun_awt_X11_XlibWrapper_XkbSelectEventDetails;
+        Java_sun_awt_X11_XlibWrapper_XkbKeycodeToKeysym;
+        Java_sun_awt_X11_XlibWrapper_XkbLibraryVersion;
+        Java_sun_awt_X11_XlibWrapper_XkbQueryExtension;
+        Java_sun_awt_X11_XlibWrapper_XkbGetMap;
+        Java_sun_awt_X11_XlibWrapper_XkbGetUpdatedMap;
+        Java_sun_awt_X11_XlibWrapper_XkbFreeKeyboard;
+        Java_sun_awt_X11_XlibWrapper_XkbTranslateKeyCode;
         Java_sun_awt_X11_XlibWrapper_XGetModifierMapping;
-        Java_sun_awt_X11_XlibWrapper_XFreeModifiermap;        
+        Java_sun_awt_X11_XlibWrapper_XFreeModifiermap;
         Java_sun_awt_X11_XlibWrapper_XChangeActivePointerGrab;
         Java_sun_awt_X11_XlibWrapper_XNextSecondaryLoopEvent;
         Java_sun_awt_X11_XlibWrapper_ExitSecondaryLoop;
         Java_sun_awt_X11_XlibWrapper_XTextPropertyToStringList;
         Java_sun_awt_X11_XlibWrapper_XGrabServer;
         Java_sun_awt_X11_XlibWrapper_XUngrabServer;
-        Java_sun_awt_X11_XlibWrapper_XPutBackEvent;        
+        Java_sun_awt_X11_XlibWrapper_XPutBackEvent;
         Java_sun_awt_X11_XlibWrapper_XConvertCase;
         Java_sun_awt_X11_XlibWrapper_XSynchronize;
         Java_java_awt_FileDialog_initIDs;

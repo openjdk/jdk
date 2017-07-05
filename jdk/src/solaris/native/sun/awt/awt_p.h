@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,7 @@ typedef struct _AwtGraphicsConfigData  {
     int         pixelStride;     /* Used in X11SurfaceData.c */
     ColorData      *color_data;
     struct _GLXGraphicsConfigInfo *glxInfo;
+    int         isTranslucencySupported; /* Uses Xrender to find this out. */
 } AwtGraphicsConfigData;
 
 typedef AwtGraphicsConfigData* AwtGraphicsConfigDataPtr;

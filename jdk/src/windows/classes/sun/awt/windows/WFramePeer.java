@@ -25,26 +25,45 @@
 package sun.awt.windows;
 
 import java.util.Vector;
+
 import java.awt.*;
 import java.awt.peer.*;
 import java.awt.image.ImageObserver;
-import sun.awt.image.ImageRepresentation;
-import sun.awt.image.IntegerComponentRaster;
-import sun.awt.image.ToolkitImage;
+
 import java.awt.image.Raster;
 import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.awt.image.BufferedImage;
-import sun.awt.im.*;
-import sun.awt.Win32GraphicsDevice;
+
 import java.awt.image.ColorModel;
 
+import sun.awt.image.ImageRepresentation;
+import sun.awt.image.IntegerComponentRaster;
+import sun.awt.image.ToolkitImage;
+import sun.awt.im.*;
+import sun.awt.Win32GraphicsDevice;
+import sun.awt.AWTAccessor;
 
 class WFramePeer extends WWindowPeer implements FramePeer {
+
+    static {
+        initIDs();
+    }
+
+    // initialize JNI field and method IDs
+    private static native void initIDs();
 
     // FramePeer implementation
     public native void setState(int state);
     public native int getState();
+
+    // sync target and peer
+    public void setExtendedState(int state) {
+        AWTAccessor.getFrameAccessor().setExtendedState((Frame)target, state);
+    }
+    public int getExtendedState() {
+        return AWTAccessor.getFrameAccessor().getExtendedState((Frame)target);
+    }
 
     // Convenience methods to save us from trouble of extracting
     // Rectangle fields in native code.
