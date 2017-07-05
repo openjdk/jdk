@@ -29,7 +29,6 @@
  *      the GlobalMemoryStatus function can return incorrect information,
  *      reporting a value of -1 to indicate an overflow.
  *
- * @modules jdk.management
  * @run main MemoryStatusOverflow
  */
 

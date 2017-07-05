@@ -1026,6 +1026,7 @@ public class BasicMenuItemUI extends MenuItemUI
                 manager.processMouseEvent(e);
             }
         }
+        @SuppressWarnings("deprecation")
         public void mouseEntered(MouseEvent e) {
             MenuSelectionManager manager = MenuSelectionManager.defaultManager();
             int modifiers = e.getModifiers();
@@ -1037,6 +1038,7 @@ public class BasicMenuItemUI extends MenuItemUI
             manager.setSelectedPath(getPath());
              }
         }
+        @SuppressWarnings("deprecation")
         public void mouseExited(MouseEvent e) {
             MenuSelectionManager manager = MenuSelectionManager.defaultManager();
 

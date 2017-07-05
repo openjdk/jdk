@@ -22,16 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4419453
- *  @summary Test that Method.location() returns the right values
+ * @test
+ * @bug 4419453
+ * @summary Test that Method.location() returns the right values
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g LocationTest.java
- *  @run driver LocationTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g LocationTest.java
+ * @run driver LocationTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
