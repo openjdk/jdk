@@ -44,6 +44,7 @@ public class TTYResources extends java.util.ListResourceBundle {
      *
      * @return the contents of this <code>ResourceBundle</code>.
      */
+    @Override
     public Object[][] getContents() {
         Object[][] temp = new Object[][] {
         // NOTE: The value strings in this file containing "{0}" are

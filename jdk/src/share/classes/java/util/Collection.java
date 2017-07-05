@@ -60,7 +60,8 @@ package java.util;
  * but is not required to, throw the exception if the collection to be added
  * is empty.
  *
- * <p>Some collection implementations have restrictions on the elements that
+ * <p><a name="optional-restrictions"/>
+ * Some collection implementations have restrictions on the elements that
  * they may contain.  For example, some implementations prohibit null elements,
  * and some have restrictions on the types of their elements.  Attempting to
  * add an ineligible element throws an unchecked exception, typically
@@ -152,9 +153,11 @@ public interface Collection<E> extends Iterable<E> {
      * @return <tt>true</tt> if this collection contains the specified
      *         element
      * @throws ClassCastException if the type of the specified element
-     *         is incompatible with this collection (optional)
+     *         is incompatible with this collection
+     *         (<a href="#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
-     *         collection does not permit null elements (optional)
+     *         collection does not permit null elements
+     *         (<a href="#optional-restrictions">optional</a>)
      */
     boolean contains(Object o);
 
@@ -279,9 +282,11 @@ public interface Collection<E> extends Iterable<E> {
      * @param o element to be removed from this collection, if present
      * @return <tt>true</tt> if an element was removed as a result of this call
      * @throws ClassCastException if the type of the specified element
-     *         is incompatible with this collection (optional)
+     *         is incompatible with this collection
+     *         (<a href="#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
-     *         collection does not permit null elements (optional)
+     *         collection does not permit null elements
+     *         (<a href="#optional-restrictions">optional</a>)
      * @throws UnsupportedOperationException if the <tt>remove</tt> operation
      *         is not supported by this collection
      */
@@ -299,10 +304,13 @@ public interface Collection<E> extends Iterable<E> {
      *         in the specified collection
      * @throws ClassCastException if the types of one or more elements
      *         in the specified collection are incompatible with this
-     *         collection (optional)
+     *         collection
+     *         (<a href="#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified collection contains one
      *         or more null elements and this collection does not permit null
-     *         elements (optional), or if the specified collection is null
+     *         elements
+     *         (<a href="#optional-restrictions">optional</a>),
+     *         or if the specified collection is null.
      * @see    #contains(Object)
      */
     boolean containsAll(Collection<?> c);
@@ -346,10 +354,13 @@ public interface Collection<E> extends Iterable<E> {
      *         is not supported by this collection
      * @throws ClassCastException if the types of one or more elements
      *         in this collection are incompatible with the specified
-     *         collection (optional)
+     *         collection
+     *         (<a href="#optional-restrictions">optional</a>)
      * @throws NullPointerException if this collection contains one or more
      *         null elements and the specified collection does not support
-     *         null elements (optional), or if the specified collection is null
+     *         null elements
+     *         (<a href="#optional-restrictions">optional</a>),
+     *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)
      */
@@ -367,10 +378,13 @@ public interface Collection<E> extends Iterable<E> {
      *         is not supported by this collection
      * @throws ClassCastException if the types of one or more elements
      *         in this collection are incompatible with the specified
-     *         collection (optional)
+     *         collection
+     *         (<a href="#optional-restrictions">optional</a>)
      * @throws NullPointerException if this collection contains one or more
      *         null elements and the specified collection does not permit null
-     *         elements (optional), or if the specified collection is null
+     *         elements
+     *         (<a href="#optional-restrictions">optional</a>),
+     *         or if the specified collection is null
      * @see #remove(Object)
      * @see #contains(Object)
      */

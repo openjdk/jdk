@@ -2154,6 +2154,11 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       debug_only(int old_macro_count = C->macro_count(););
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
+      } else if (n->Opcode() == Op_LoopLimit) {
+        // Remove it from macro list and put on IGVN worklist to optimize.
+        C->remove_macro_node(n);
+        _igvn._worklist.push(n);
+        success = true;
       } else if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
         _igvn.replace_node(n, n->in(1));
         success = true;

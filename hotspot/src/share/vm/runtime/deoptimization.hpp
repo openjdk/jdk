@@ -56,6 +56,7 @@ class Deoptimization : AllStatic {
     Reason_div0_check,            // a null_check due to division by zero
     Reason_age,                   // nmethod too old; tier threshold reached
     Reason_predicate,             // compiler generated predicate failed
+    Reason_loop_limit_check,      // compiler generated loop limits check failed
     Reason_LIMIT,
     // Note:  Keep this enum in sync. with _trap_reason_name.
     Reason_RECORDED_LIMIT = Reason_bimorphic  // some are not recorded per bc
@@ -78,7 +79,7 @@ class Deoptimization : AllStatic {
 
   enum {
     _action_bits = 3,
-    _reason_bits = 4,
+    _reason_bits = 5,
     _action_shift = 0,
     _reason_shift = _action_shift+_action_bits,
     BC_CASE_LIMIT = PRODUCT_ONLY(1) NOT_PRODUCT(4) // for _deoptimization_hist

@@ -32,14 +32,10 @@
 package com.sun.demo.scripting.jconsole;
 
 import com.sun.tools.jconsole.*;
-import java.awt.*;
-import java.awt.event.*;
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.concurrent.CountDownLatch;
 import javax.script.*;
 import javax.swing.*;
-import javax.swing.event.*;
 import java.util.*;
 
 /**
@@ -86,6 +82,7 @@ public class ScriptJConsolePlugin extends JConsolePlugin
         tabs.put("Script Shell", window);
 
         new Thread(new Runnable() {
+            @Override
             public void run() {
                 // initialize the script engine
                 initScriptEngine();
@@ -103,10 +100,12 @@ public class ScriptJConsolePlugin extends JConsolePlugin
         window.dispose();
     }
 
+    @Override
     public String getPrompt() {
         return prompt;
     }
 
+    @Override
     public String executeCommand(String cmd) {
         String res;
         try {
@@ -176,7 +175,7 @@ public class ScriptJConsolePlugin extends JConsolePlugin
         String oldFilename = (String) engine.get(ScriptEngine.FILENAME);
         engine.put(ScriptEngine.FILENAME, "<built-in jconsole." + extension + ">");
         try {
-            Class myClass = this.getClass();
+            Class<? extends ScriptJConsolePlugin> myClass = this.getClass();
             InputStream stream = myClass.getResourceAsStream("/resources/jconsole." +
                                        extension);
             if (stream != null) {

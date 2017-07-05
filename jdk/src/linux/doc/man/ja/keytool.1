@@ -1,4 +1,4 @@
-." Copyright (c) 1998-2010 keytool tool, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1998-2011 keytool tool, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH keytool 1 "14 Apr 2011"
+.TH keytool 1 "07 May 2011"
 
 .LP
 .SH "名前"
@@ -1087,9 +1087,9 @@ http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.ht
 .fl
     keytool \-genkeypair \-dname "cn=Mark Jones, ou=Java, o=Oracle, c=US"
 .fl
-      \-alias business \-keypass kpi135 \-keystore /working/mykeystore
+      \-alias business \-keypass \fP\f4<非公開鍵の新しいパスワード>\fP\f3 \-keystore /working/mykeystore
 .fl
-      \-storepass ab987c \-validity 180
+      \-storepass \fP\f4<キーストアの新しいパスワード>\fP\f3 \-validity 180
 .fl
 \fP
 .fi
@@ -1099,10 +1099,10 @@ http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.ht
 注: このコマンドは 1 行に入力しなければなりません。例で複数行に入力しているのは読みやすくするためです。
 .LP
 .LP
-この例では、working ディレクトリに mykeystore という名前のキーストアを作成し (キーストアはまだ存在していないと仮定する)、作成したキーストアにパスワード ab987c を割り当てます。生成する公開鍵と非公開鍵のペアに対応するエンティティーの「識別名」は、通称が「Mark Jones」、組織単位が「Java」、組織が「Oracle」、2 文字の国番号が「US」です。公開鍵と非公開鍵のサイズはどちらも 1024 ビットで、鍵の作成にはデフォルトの DSA 鍵生成アルゴリズムを使用します。
+この例では、working ディレクトリに mykeystore という名前のキーストアを作成し (キーストアはまだ存在していないと仮定する)、作成したキーストアに、\f2<キーストアの新しいパスワード>\fP で指定したパスワード を割り当てます。生成する公開鍵と非公開鍵のペアに対応するエンティティーの「識別名」は、通称が「Mark Jones」、組織単位が「Java」、組織が「Oracle」、2 文字の国番号が「US」です。公開鍵と非公開鍵のサイズはどちらも 1024 ビットで、鍵の作成にはデフォルトの DSA 鍵生成アルゴリズムを使用します。
 .LP
 .LP
-このコマンドは、公開鍵と識別名情報を含む自己署名証明書 (デフォルトの SHA1withDSA 署名アルゴリズムを使用) を作成します。証明書の有効期間は 180 日です。 証明書は、別名「business」で特定されるキーストアエントリ内の非公開鍵に関連付けられます。非公開鍵にはパスワード「kpi135」が割り当てられます。
+このコマンドは、公開鍵と識別名情報を含む自己署名証明書 (デフォルトの SHA1withDSA 署名アルゴリズムを使用) を作成します。証明書の有効期間は 180 日です。 証明書は、別名「business」で特定されるキーストアエントリ内の非公開鍵に関連付けられます。非公開鍵には、\f2<非公開鍵の新しいパスワード>\fP で指定したパスワードが割り当てられます。
 .LP
 .LP
 オプションのデフォルト値を使う場合は、上に示したコマンドを大幅に短くすることができます。実際には、オプションを 1 つも指定せずにコマンドを実行することも可能です。 デフォルト値を持つオプションでは、オプションを指定しなければデフォルト値が使われ、必要な値については入力を求められます。たとえば、単に次のように入力することもできます。
@@ -1120,7 +1120,7 @@ http://java.sun.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.ht
 この場合は、mykey という別名でキーストアエントリが作成され、新しく生成された鍵のペア、および 90 日間有効な証明書がこのエントリに格納されます。このエントリは、ホームディレクトリ内の .keystore という名前のキーストアに置かれます。このキーストアがまだ存在していない場合は、作成されます。識別名情報、キーストアのパスワード、および非公開鍵のパスワードについては、入力を求められます。
 .LP
 .LP
-以下では、オプションを指定しないで \f2\-genkeypair\fP コマンドを実行したものとして例を示します。情報の入力を求められた場合は、最初に示した \f2\-genkeypair\fP コマンドの値を入力したものとします (たとえば、非公開鍵のパスワードには kpi135 と指定)。
+以下では、オプションを指定しないで \f2\-genkeypair\fP コマンドを実行したものとして例を示します。情報の入力を求められた場合は、最初に示した \f2\-genkeypair\fP コマンドの値を入力したものとします (たとえば、識別名には cn=Mark Jones, ou=Java, o=Oracle, c=US と指定)。
 .LP
 .SS 
 証明書発行局に対する署名付き証明書の要求
@@ -1240,14 +1240,14 @@ CA からの証明応答のインポート
 .fl
     \-srcstoretype JKS \-deststoretype PKCS11
 .fl
-    \-srcstorepass changeit \-deststorepass topsecret
+    \-srcstorepass \fP\f4<ソースキーストアのパスワード>\fP\f3 \-deststorepass \fP\f4<ターゲットキーストアのパスワード>\fP\f3
 .fl
 \fP
 .fi
 
 .LP
 .LP
-また、importkeystore コマンドを使えば、あるソースキーストア内の単一のエントリをターゲットキーストアにインポートすることもできます。この場合、上記の例で示したオプションに加え、インポート対象となる別名を指定する必要があります。srcalias オプションを指定する場合には、ターゲット別名もコマンド行から指定できるほか、秘密/非公開鍵の保護用パスワードやターゲット保護用パスワードも指定できます。そうすれば、プロンプトのまったく表示されない \f3keytool\fP コマンドを発行できます。これは、\f3keytool\fP コマンドをスクリプトファイルに含める際に非常に便利です。次に例を示します。
+また、importkeystore コマンドを使えば、あるソースキーストア内の単一のエントリをターゲットキーストアにインポートすることもできます。この場合、上記の例で示したオプションに加え、インポート対象となる別名を指定する必要があります。srcalias オプションを指定する場合には、ターゲット別名もコマンド行から指定できるほか、秘密/非公開鍵の保護用パスワードやターゲット保護用パスワードも指定できます。その方法を示すコマンドを次に示します。
 .LP
 .nf
 \f3
@@ -1258,11 +1258,11 @@ CA からの証明応答のインポート
 .fl
     \-srcstoretype JKS \-deststoretype PKCS11
 .fl
-    \-srcstorepass changeit \-deststorepass topsecret
+    \-srcstorepass \fP\f4<ソースキーストアのパスワード>\fP\f3 \-deststorepass \fP\f4<ターゲットキーストアのパスワード>\fP\f3
 .fl
     \-srcalias myprivatekey \-destalias myoldprivatekey
 .fl
-    \-srckeypass oldkeypass \-destkeypass mynewkeypass
+    \-srckeypass \fP\f4<ソースエントリのパスワード>\fP\f3 \-destkeypass \fP\f4<ターゲットエントリのパスワード>\fP\f3
 .fl
     \-noprompt
 .fl
@@ -1711,7 +1711,7 @@ CN=Steve Meier, OU=Java, O=Oracle, C=US
 重要: 信頼できる証明書として証明書をインポートする前に、証明書の内容を慎重に調べてください。
 .LP
 .LP
-まず、証明書の内容を表示し (\-printcert コマンドを使用するか、または \-noprompt オプションを指定しないで \-importcert コマンドを使用)、 表示された証明書のフィンガープリントが、期待されるフィンガープリントと一致するかどうかを確認します。たとえば、あるユーザーから証明書が送られてきて、この証明書を /tmp/cert という名前でファイルに格納しているとします。 この場合は、信頼できる証明書のリストにこの証明書を追加する前に、 \f2\-printcert\fP コマンドを実行してフィンガープリントを表示できます。たとえば、次のようにします。
+まず、証明書の内容を表示し (\-printcert コマンドを使用するか、または \-noprompt オプションを指定しないで \-importcert コマンドを使用)、 コマンドを使用し、 表示された証明書のフィンガープリントが、期待されるフィンガープリントと一致するかどうかを確認します。たとえば、あるユーザーから証明書が送られてきて、この証明書を /tmp/cert という名前でファイルに格納しているとします。 この場合は、信頼できる証明書のリストにこの証明書を追加する前に、 \f2\-printcert\fP コマンドを実行してフィンガープリントを表示できます。たとえば、次のようにします。
 .LP
 .nf
 \f3
@@ -1744,7 +1744,7 @@ CN=Steve Meier, OU=Java, O=Oracle, C=US
 次に、証明書を送信した人物に連絡し、この人物が提示したフィンガープリントと、上のコマンドで表示されたフィンガープリントとを比較します。フィンガープリントが一致すれば、送信途中でほかの何者か (攻撃者など) による証明書のすり替えが行われていないことを確認できます。送信途中でこの種の攻撃が行われていた場合、チェックを行わずに証明書をインポートすると、攻撃者によって署名されたすべてのもの (攻撃的意図を持つクラスファイルを含んだ JAR ファイルなど) を信頼することになります。
 .LP
 .LP
-注: 証明書をインポートする前に必ず \f2\-printcert\fP コマンドを実行しなければならないわけではありません。キーストア内の信頼できる証明書のリストに証明書を追加する前に \f2\-importcert\fP コマンドを実行すると、証明書の情報が表示され、確認を求めるメッセージが表示されます。インポート操作は、この時点で中止できます。ただし、確認メッセージが表示されるのは、\-importcert コマンドを \-noprompt オプションを指定せずに実行した場合だけです。 \f2\-noprompt\fP オプションが指定されている場合、ユーザーとの対話は行われません。
+注: 証明書をインポートする前に必ず \f2\-printcert\fP コマンドを実行しなければならないわけではありません。キーストア内の信頼できる証明書のリストに証明書を追加する前に \f2\-importcert\fP コマンドを実行すると、証明書の情報が表示され、確認を求めるメッセージが表示されます。インポート操作は、この時点で中止できます。ただし、確認メッセージが表示されるのは、\-importcert コマンドを \-noprompt オプションを指定せずに実行した場合だけです。 コマンドを使用し、 \f2\-noprompt\fP オプションが指定されている場合、ユーザーとの対話は行われません。
 .LP
 .SS 
 パスワードに関する注意事項

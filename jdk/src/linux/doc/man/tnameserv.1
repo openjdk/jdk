@@ -1,4 +1,4 @@
-." Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH tnameserv 1 "02 Jun 2010"
+.TH tnameserv 1 "10 May 2011"
 
 .LP
 .SH "Name"
@@ -30,7 +30,7 @@ This document discusses using the Java IDL Transient Naming Service, \f2tnameser
 .na
 \f2Java IDL Naming Service Included with ORBD\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html topic.
+http://download.oracle.com/javase/7/docs/technotes/guides/idl/jidlNaming.html topic.
 .LP
 .LP
 Topics in this section include:
@@ -120,11 +120,11 @@ For the client and server to find the Naming Service, they must be made aware of
 .na
 \f2The Hello World Example Using RMI\-IIOP\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/rmi\-iiop/rmiiiopexample.html. You could also use the command line options \f2\-ORBInitialPort\fP \f2nameserverport#\fP and \f2\-ORBInitialHost\fP \f2nameserverhostname\fP to tell the client and server where to find the Naming Service. 
+http://download.oracle.com/javase/7/docs/technotes/guides/rmi\-iiop/rmiiiopexample.html. You could also use the command line options \f2\-ORBInitialPort\fP \f2nameserverport#\fP and \f2\-ORBInitialHost\fP \f2nameserverhostname\fP to tell the client and server where to find the Naming Service. 
 .na
 \f2Java IDL: Running the Hello World Example on TWO Machines\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/idl/tutorial/jidl2machines.html shows one way of doing this using the command line option.
+http://download.oracle.com/javase/7/docs/technotes/guides/idl/tutorial/jidl2machines.html shows one way of doing this using the command line option.
 .LP
 .LP
 For example, suppose the Transient Naming Service, \f2tnameserv\fP is running on port 1050 on host \f2nameserverhost\fP. The client is running on host \f2clienthost\fP and the server is running on host \f2serverhost\fP.
@@ -170,16 +170,12 @@ The \-J option
 .LP
 This command\-line option is available for use with \f2tnameserve\fP: 
 .RS 3
-
-.LP
-.RS 3
 .TP 3
 \-Joption 
 Pass \f2option\fP to the Java virtual machine, where \f2option\fP is one of the options described on the reference page for java(1). For example, \f3\-J\-Xms48m\fP sets the startup memory to 48 megabytes. It is a common convention for \f3\-J\fP to pass options to the underlying virtual machine. 
 .RE
 
 .LP
-.RE
 .SH "Stopping the Java\ IDL Transient Naming Service"
 .LP
 .LP
@@ -190,28 +186,27 @@ To stop the Java\ IDL naming service, use the relevant operating system command,
 .LP
 The following sample program illustrates how to add names to the namespace. It is a self\-contained Transient Naming Service client that creates the following simple tree.
 .LP
-.nf
-\f3
-.fl
-\fP\f3
-.fl
-                  \fP\f4Initial\fP\f3
-.fl
-               \fP\f4Naming Context\fP\f3
-.fl
-                  /      \\ 
-.fl
-                 /        \\ 
-.fl
-              plans     \fP\f4Personal\fP\f3
-.fl
-                         /   \\ 
-.fl
-                        /     \\ 
-.fl
-                   calendar  schedule\fP
-.fl
-.fi
+.RS 3
+.TP 2
+o
+\f4Initial Naming Context\fP 
+.RS 3
+.TP 2
+*
+\f3plans\fP 
+.TP 2
+*
+\f4Personal\fP 
+.RS 3
+.TP 2
+-
+\f3calendar\fP 
+.TP 2
+-
+\f3schedule\fP 
+.RE
+.RE
+.RE
 
 .LP
 .LP

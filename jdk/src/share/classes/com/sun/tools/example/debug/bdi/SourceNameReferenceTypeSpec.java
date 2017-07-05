@@ -39,6 +39,7 @@ class SourceNameReferenceTypeSpec implements ReferenceTypeSpec {
     /**
      * Does the specified ReferenceType match this spec.
      */
+    @Override
     public boolean matches(ReferenceType refType) {
         try {
             if (refType.sourceName().equals(sourceName)) {
@@ -48,9 +49,6 @@ class SourceNameReferenceTypeSpec implements ReferenceTypeSpec {
                     return true;
                 } catch(AbsentInformationException exc) {
                 } catch(ObjectCollectedException  exc) {
-                } catch(InvalidLineNumberException  exc) {
-//          } catch(ClassNotPreparedException  exc) {
-//               -- should not happen, so don't catch this ---
                 }
             }
         } catch(AbsentInformationException exc) {
@@ -59,10 +57,12 @@ class SourceNameReferenceTypeSpec implements ReferenceTypeSpec {
         return false;
     }
 
+    @Override
     public int hashCode() {
         return sourceName.hashCode() + linenumber;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof SourceNameReferenceTypeSpec) {
             SourceNameReferenceTypeSpec spec = (SourceNameReferenceTypeSpec)obj;
@@ -74,6 +74,7 @@ class SourceNameReferenceTypeSpec implements ReferenceTypeSpec {
         }
     }
 
+    @Override
     public String toString() {
         return sourceName + "@" + linenumber;
     }
