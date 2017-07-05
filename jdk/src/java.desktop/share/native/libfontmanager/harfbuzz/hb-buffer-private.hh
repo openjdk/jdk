@@ -134,7 +134,7 @@ struct hb_buffer_t {
 #ifndef HB_NDEBUG
     unsigned int end = start + count;
     assert (end <= 8);
-    unsigned int bits = (1<<end) - (1<<start);
+    unsigned int bits = (1u<<end) - (1u<<start);
     assert (0 == (allocated_var_bits & bits));
     allocated_var_bits |= bits;
 #endif
@@ -144,7 +144,7 @@ struct hb_buffer_t {
 #ifndef HB_NDEBUG
     unsigned int end = start + count;
     assert (end <= 8);
-    unsigned int bits = (1<<end) - (1<<start);
+    unsigned int bits = (1u<<end) - (1u<<start);
     assert (bits == (allocated_var_bits & bits));
     allocated_var_bits &= ~bits;
 #endif
@@ -154,7 +154,7 @@ struct hb_buffer_t {
 #ifndef HB_NDEBUG
     unsigned int end = start + count;
     assert (end <= 8);
-    unsigned int bits = (1<<end) - (1<<start);
+    unsigned int bits = (1u<<end) - (1u<<start);
     assert (bits == (allocated_var_bits & bits));
 #endif
   }

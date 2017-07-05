@@ -61,9 +61,8 @@ public class UnixPrincipal implements Principal, java.io.Serializable {
     public UnixPrincipal(String name) {
         if (name == null) {
             java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                        ("invalid.null.input.value",
-                        "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                        ("invalid.null.input.value"));
             Object[] source = {"name"};
             throw new NullPointerException(form.format(source));
         }
@@ -87,9 +86,8 @@ public class UnixPrincipal implements Principal, java.io.Serializable {
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
-                (sun.security.util.ResourcesMgr.getString
-                        ("UnixPrincipal.name",
-                        "sun.security.util.AuthResources"));
+                (sun.security.util.ResourcesMgr.getAuthResourceString
+                        ("UnixPrincipal.name"));
         Object[] source = {name};
         return form.format(source);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package com.sun.jmx.mbeanserver;
 
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -244,10 +244,8 @@ final class MBeanServerDelegateImpl
             } catch (Exception x) {
                 // Skip the attribute that couldn't be obtained.
                 //
-                if (MBEANSERVER_LOGGER.isLoggable(Level.FINEST)) {
-                    MBEANSERVER_LOGGER.logp(Level.FINEST,
-                            MBeanServerDelegateImpl.class.getName(),
-                            "getAttributes",
+                if (MBEANSERVER_LOGGER.isLoggable(Level.TRACE)) {
+                    MBEANSERVER_LOGGER.log(Level.TRACE,
                             "Attribute " + attn[i] + " not found");
                 }
             }

@@ -45,11 +45,11 @@ struct hb_cache_t
 
   inline bool get (unsigned int key, unsigned int *value)
   {
-    unsigned int k = key & ((1<<cache_bits)-1);
+    unsigned int k = key & ((1u<<cache_bits)-1);
     unsigned int v = values[k];
     if ((v >> value_bits) != (key >> cache_bits))
       return false;
-    *value = v & ((1<<value_bits)-1);
+    *value = v & ((1u<<value_bits)-1);
     return true;
   }
 
@@ -57,14 +57,14 @@ struct hb_cache_t
   {
     if (unlikely ((key >> key_bits) || (value >> value_bits)))
       return false; /* Overflows */
-    unsigned int k = key & ((1<<cache_bits)-1);
+    unsigned int k = key & ((1u<<cache_bits)-1);
     unsigned int v = ((key>>cache_bits)<<value_bits) | value;
     values[k] = v;
     return true;
   }
 
   private:
-  unsigned int values[1<<cache_bits];
+  unsigned int values[1u<<cache_bits];
 };
 
 typedef hb_cache_t<21, 16, 8> hb_cmap_cache_t;

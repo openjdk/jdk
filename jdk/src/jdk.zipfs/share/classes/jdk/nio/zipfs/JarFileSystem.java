@@ -135,7 +135,7 @@ class JarFileSystem extends ZipFileSystem {
         TreeMap<Integer,IndexNode> map = new TreeMap<>();
         IndexNode child = metaInfVersions.child;
         while (child != null) {
-            Integer key = getVersion(child.name, metaInfVersions.name.length);
+            Integer key = getVersion(child.name, metaInfVersions.name.length + 1);
             if (key != null && key <= version) {
                 map.put(key, child);
             }
@@ -149,7 +149,7 @@ class JarFileSystem extends ZipFileSystem {
      */
     private Integer getVersion(byte[] name, int offset) {
         try {
-            return Integer.parseInt(getString(Arrays.copyOfRange(name, offset, name.length-1)));
+            return Integer.parseInt(getString(Arrays.copyOfRange(name, offset, name.length)));
         } catch (NumberFormatException x) {
             // ignore this even though it might indicate issues with the JAR structure
             return null;
@@ -176,7 +176,7 @@ class JarFileSystem extends ZipFileSystem {
      *   returns foo/bar.class
      */
     private byte[] getRootName(IndexNode prefix, IndexNode inode) {
-        int offset = prefix.name.length - 1;
+        int offset = prefix.name.length;
         byte[] fullName = inode.name;
         return Arrays.copyOfRange(fullName, offset, fullName.length);
     }

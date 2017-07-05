@@ -73,7 +73,6 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
@@ -395,23 +394,28 @@ public class JmodTask {
         // create jmod with temporary name to avoid it being examined
         // when scanning the module path
         Path target = options.jmodFile;
-        Path tempTarget = Files.createTempFile(target.getFileName().toString(), ".tmp");
+        Path tempTarget = jmodTempFilePath(target);
         try {
             try (JmodOutputStream jos = JmodOutputStream.newOutputStream(tempTarget)) {
                 jmod.write(jos);
             }
             Files.move(tempTarget, target);
         } catch (Exception e) {
-            if (Files.exists(tempTarget)) {
-                try {
-                    Files.delete(tempTarget);
-                } catch (IOException ioe) {
-                    e.addSuppressed(ioe);
-                }
+            try {
+                Files.deleteIfExists(tempTarget);
+            } catch (IOException ioe) {
+                e.addSuppressed(ioe);
             }
             throw e;
         }
         return true;
+    }
+
+    /*
+     * Create a JMOD .tmp file for the given target JMOD file
+     */
+    private static Path jmodTempFilePath(Path target) throws IOException {
+        return target.resolveSibling("." + target.getFileName() + ".tmp");
     }
 
     private class JmodFileWriter {
@@ -908,7 +912,7 @@ public class JmodTask {
             throws IOException
         {
             Path target = moduleToPath(name);
-            Path tempTarget = Files.createTempFile(target.getFileName().toString(), ".tmp");
+            Path tempTarget = jmodTempFilePath(target);
             try {
                 if (target.getFileName().toString().endsWith(".jmod")) {
                     updateJmodFile(target, tempTarget, moduleHashes);
@@ -916,12 +920,10 @@ public class JmodTask {
                     updateModularJar(target, tempTarget, moduleHashes);
                 }
             } catch (IOException|RuntimeException e) {
-                if (Files.exists(tempTarget)) {
-                    try {
-                        Files.delete(tempTarget);
-                    } catch (IOException ioe) {
-                        e.addSuppressed(ioe);
-                    }
+                try {
+                    Files.deleteIfExists(tempTarget);
+                } catch (IOException ioe) {
+                    e.addSuppressed(ioe);
                 }
                 throw e;
             }

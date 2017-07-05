@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,11 @@
 
 @implementation CMenuItem
 
-- (id) initWithPeer:(jobject)peer asSeparator: (NSNumber *) asSeparator{
+- (id) initWithPeer:(jobject)peer asSeparator: (BOOL) asSeparator{
     AWT_ASSERT_APPKIT_THREAD;
     self = [super initWithPeer:peer];
     if (self) {
-        if ([asSeparator boolValue]) {
+        if (asSeparator) {
             fMenuItem = (NSMenuItem*)[NSMenuItem separatorItem];
             [fMenuItem retain];
         } else {
@@ -204,12 +204,9 @@
     }];
 }
 
-- (void)cleanup {
+- (void)dealloc {
     [fMenuItem setAction:NULL];
     [fMenuItem setTarget:nil];
-}
-
-- (void)dealloc {
     [fMenuItem release];
     fMenuItem = nil;
     
@@ -226,14 +223,6 @@
 
 - (void)setIsCheckbox {
     fIsCheckbox = YES;
-}
-
-- (void) _createMenuItem_OnAppKitThread: (NSMutableArray *)argValue {
-    jobject cPeerObjGlobal = (jobject)[[argValue objectAtIndex: 0] pointerValue];
-    NSNumber * asSeparator = (NSNumber *)[argValue objectAtIndex: 1];
-    CMenuItem *aCMenuItem = [self initWithPeer: cPeerObjGlobal asSeparator: asSeparator];
-    [argValue removeAllObjects];
-    [argValue addObject: aCMenuItem];
 }
 
 - (NSString *)description {
@@ -397,24 +386,18 @@ Java_sun_lwawt_macosx_CMenuItem_nativeCreate
 (JNIEnv *env, jobject peer, jlong parentCMenuObj, jboolean isSeparator)
 {
     
-    CMenuItem *aCMenuItem = nil;
+    __block CMenuItem *aCMenuItem = nil;
+    BOOL asSeparator = (isSeparator == JNI_TRUE) ? YES: NO;
     CMenu *parentCMenu = (CMenu *)jlong_to_ptr(parentCMenuObj);
     JNF_COCOA_ENTER(env);
     
     jobject cPeerObjGlobal = (*env)->NewGlobalRef(env, peer);
-    
-    NSMutableArray *args = nil;
-    
-    // Create a new item....
-    if (isSeparator == JNI_TRUE) {
-        args = [[NSMutableArray alloc] initWithObjects:[NSValue valueWithBytes:&cPeerObjGlobal objCType:@encode(jobject)], [NSNumber numberWithBool:YES],  nil];
-    } else {
-        args = [[NSMutableArray alloc] initWithObjects:[NSValue valueWithBytes:&cPeerObjGlobal objCType:@encode(jobject)], [NSNumber numberWithBool:NO],  nil];
-    }
-    
-    [ThreadUtilities performOnMainThread:@selector(_createMenuItem_OnAppKitThread:) on:[CMenuItem alloc] withObject:args waitUntilDone:YES];
-    
-    aCMenuItem = (CMenuItem *)[args objectAtIndex: 0];
+
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        aCMenuItem = [[CMenuItem alloc] initWithPeer: cPeerObjGlobal
+                                         asSeparator: asSeparator];
+        // the CMenuItem is released in CMenuComponent.dispose()
+    }];
     
     if (aCMenuItem == nil) {
         return 0L;

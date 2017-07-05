@@ -34,7 +34,7 @@
  *   Dr Vipul Gupta <vipul.gupta@sun.com> and
  *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
  *
- * Last Modified Date from the Original Code: Nov 2016
+ * Last Modified Date from the Original Code: November 2016
  *********************************************************************** */
 
 #include "mplogic.h"
@@ -713,6 +713,16 @@ ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
         PORT_SetError(SEC_ERROR_NEED_RANDOM);
         goto cleanup;
     }
+
+    /*
+     * Using an equivalent exponent of fixed length (same as n or 1 bit less
+     * than n) to keep the kG timing relatively constant.
+     *
+     * Note that this is an extra step on top of the approach defined in
+     * ANSI X9.62 so as to make a fixed length K.
+     */
+    CHECK_MPI_OK( mp_add(&k, &n, &k) );
+    CHECK_MPI_OK( mp_div_2(&k, &k) );
 
     /*
     ** ANSI X9.62, Section 5.3.2, Step 2

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8072452
  * @summary Support DHE sizes up to 8192-bits and DSA sizes up to 3072-bits
  * @library ..
- * @modules jdk.crypto.token
+ * @modules jdk.crypto.cryptoki
  * @run main/othervm SupportedDHKeys
  * @run main/othervm SupportedDHKeys sm
  */

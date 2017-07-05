@@ -37,6 +37,5 @@ $(eval $(call SetupJavaCompilation,BUILD_JIGSAW_TOOLS, \
                 build/tools/jigsaw, \
     BIN := $(TOOLS_CLASSES_DIR), \
     ADD_JAVAC_FLAGS := \
-        --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
 ))

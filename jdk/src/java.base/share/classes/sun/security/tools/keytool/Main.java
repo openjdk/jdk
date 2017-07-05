@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3522,7 +3522,8 @@ public final class Main {
             System.err.flush();
             reply = (new BufferedReader(new InputStreamReader
                                         (System.in))).readLine();
-            if (collator.compare(reply, "") == 0 ||
+            if (reply == null ||
+                collator.compare(reply, "") == 0 ||
                 collator.compare(reply, rb.getString("n")) == 0 ||
                 collator.compare(reply, rb.getString("no")) == 0) {
                 reply = "NO";

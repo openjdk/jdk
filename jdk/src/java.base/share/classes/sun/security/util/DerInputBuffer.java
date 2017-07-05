@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,6 +146,11 @@ class DerInputBuffer extends ByteArrayInputStream implements Cloneable {
 
         System.arraycopy(buf, pos, bytes, 0, len);
         skip(len);
+
+        // check to make sure no extra leading 0s for DER
+        if (len >= 2 && (bytes[0] == 0) && (bytes[1] >= 0)) {
+            throw new IOException("Invalid encoding: redundant leading 0s");
+        }
 
         if (makePositive) {
             return new BigInteger(1, bytes);

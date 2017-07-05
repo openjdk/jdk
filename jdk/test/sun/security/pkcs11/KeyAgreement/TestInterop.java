@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 7146728
  * @summary Interop test for DH with secret that has a leading 0x00 byte
  * @library ..
- * @modules jdk.crypto.token
+ * @modules jdk.crypto.cryptoki
  * @run main/othervm TestInterop
  * @run main/othervm TestInterop sm
  */

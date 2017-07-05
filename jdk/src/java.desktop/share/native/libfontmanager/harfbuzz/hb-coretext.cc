@@ -145,6 +145,22 @@ create_ct_font (CGFontRef cg_font, CGFloat font_size)
     DEBUG_MSG (CORETEXT, cg_font, "Font CTFontCreateWithGraphicsFont() failed");
     return NULL;
   }
+
+  /* crbug.com/576941 and crbug.com/625902 and the investigation in the latter
+   * bug indicate that the cascade list reconfiguration occasionally causes
+   * crashes in CoreText on OS X 10.9, thus let's skip this step on older
+   * operating system versions. Except for the emoji font, where _not_
+   * reconfiguring the cascade list causes CoreText crashes. For details, see
+   * crbug.com/549610 */
+  // 0x00070000 stands for "kCTVersionNumber10_10", see CoreText.h
+  if (&CTGetCoreTextVersion != NULL && CTGetCoreTextVersion() < 0x00070000) {
+    CFStringRef fontName = CTFontCopyPostScriptName (ct_font);
+    bool isEmojiFont = CFStringCompare (fontName, CFSTR("AppleColorEmoji"), 0) == kCFCompareEqualTo;
+    CFRelease (fontName);
+    if (!isEmojiFont)
+      return ct_font;
+  }
+
   CFURLRef original_url = (CFURLRef)CTFontCopyAttribute(ct_font, kCTFontURLAttribute);
 
   /* Create font copy with cascade list that has LastResort first; this speeds up CoreText
@@ -272,7 +288,9 @@ struct hb_coretext_shaper_shape_plan_data_t {};
 hb_coretext_shaper_shape_plan_data_t *
 _hb_coretext_shaper_shape_plan_data_create (hb_shape_plan_t    *shape_plan HB_UNUSED,
                                              const hb_feature_t *user_features HB_UNUSED,
-                                             unsigned int        num_user_features HB_UNUSED)
+                                             unsigned int        num_user_features HB_UNUSED,
+                                             const int          *coords HB_UNUSED,
+                                             unsigned int        num_coords HB_UNUSED)
 {
   return (hb_coretext_shaper_shape_plan_data_t *) HB_SHAPER_DATA_SUCCEEDED;
 }
@@ -717,7 +735,7 @@ _hb_coretext_shape (hb_shape_plan_t    *shape_plan,
       pchars[chars_len++] = 0xFFFDu;
     else {
       pchars[chars_len++] = 0xD800u + ((c - 0x10000u) >> 10);
-      pchars[chars_len++] = 0xDC00u + ((c - 0x10000u) & ((1 << 10) - 1));
+      pchars[chars_len++] = 0xDC00u + ((c - 0x10000u) & ((1u << 10) - 1));
     }
   }
 
@@ -1264,7 +1282,9 @@ struct hb_coretext_aat_shaper_shape_plan_data_t {};
 hb_coretext_aat_shaper_shape_plan_data_t *
 _hb_coretext_aat_shaper_shape_plan_data_create (hb_shape_plan_t    *shape_plan HB_UNUSED,
                                              const hb_feature_t *user_features HB_UNUSED,
-                                             unsigned int        num_user_features HB_UNUSED)
+                                             unsigned int        num_user_features HB_UNUSED,
+                                             const int          *coords HB_UNUSED,
+                                             unsigned int        num_coords HB_UNUSED)
 {
   return (hb_coretext_aat_shaper_shape_plan_data_t *) HB_SHAPER_DATA_SUCCEEDED;
 }
