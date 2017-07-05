@@ -178,7 +178,6 @@ public class ConstructorGenerator extends ClassGenerator {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void callSuper(final MethodGenerator mi) {
         String superClass, superDesc;
         mi.loadThis();
@@ -192,7 +191,7 @@ public class ConstructorGenerator extends ClassGenerator {
             superClass = SCRIPTFUNCTION_TYPE;
             superDesc = (memberCount > 0) ? SCRIPTFUNCTION_INIT_DESC4 : SCRIPTFUNCTION_INIT_DESC3;
             mi.loadLiteral(constructor.getName());
-            mi.visitLdcInsn(new Handle(H_INVOKESTATIC, scriptClassInfo.getJavaName(), constructor.getJavaName(), constructor.getJavaDesc()));
+            mi.visitLdcInsn(new Handle(H_INVOKESTATIC, scriptClassInfo.getJavaName(), constructor.getJavaName(), constructor.getJavaDesc(), false));
             loadMap(mi);
             mi.memberInfoArray(scriptClassInfo.getJavaName(), specs); //pushes null if specs empty
         }

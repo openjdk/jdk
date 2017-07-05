@@ -128,6 +128,7 @@ class PlainHttpConnection extends HttpConnection implements AsyncConnection {
             this.chan = SocketChannel.open();
             int bufsize = client.getReceiveBufferSize();
             chan.setOption(StandardSocketOptions.SO_RCVBUF, bufsize);
+            chan.setOption(StandardSocketOptions.TCP_NODELAY, true);
         } catch (IOException e) {
             throw new InternalError(e);
         }

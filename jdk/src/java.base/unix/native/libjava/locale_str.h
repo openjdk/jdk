@@ -135,6 +135,16 @@
     "sr_SP", "sr_YU",
     "tchinese", "zh_TW",
 #endif
+#ifdef MACOSX
+    "sr-Latn", "sr_CS",   // Mappings as done by old Apple JRS code
+    "tk", "tk-Cyrl",
+    "tt-Latn", "tt-Cyrl",
+    "uz", "uz_UZ",
+    "uz-Arab", "uz_UZ",
+    "uz-Latn", "uz_UZ",
+    "zh-Hans", "zh_CN",
+    "zh-Hant", "zh_TW",
+#endif
     "", "",
  };
 

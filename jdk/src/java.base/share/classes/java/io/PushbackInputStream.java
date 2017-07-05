@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,10 +291,10 @@ class PushbackInputStream extends FilterInputStream {
      *
      * @param      n  {@inheritDoc}
      * @return     {@inheritDoc}
-     * @exception  IOException  if the stream does not support seek,
-     *            or the stream has been closed by
-     *            invoking its {@link #close()} method,
-     *            or an I/O error occurs.
+     * @throws     IOException  if the stream has been closed by
+     *             invoking its {@link #close()} method,
+     *             {@code in.skip(n)} throws an IOException,
+     *             or an I/O error occurs.
      * @see        java.io.FilterInputStream#in
      * @see        java.io.InputStream#skip(long n)
      * @since      1.2
