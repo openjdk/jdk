@@ -53,9 +53,7 @@ import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.spi.CalendarDataProvider;
 import sun.util.BuddhistCalendar;
-import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.calendar.ZoneInfo;
 import sun.util.locale.provider.CalendarDataUtility;
 
@@ -742,6 +740,32 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @since 1.6
      */
     public static final int LONG = 2;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a narrow name used for format. Narrow names
+     * are typically single character strings, such as "M" for Monday.
+     *
+     * @see #NARROW_STANDALONE
+     * @see #SHORT_FORMAT
+     * @see #LONG_FOTMAT
+     * @since 1.8
+     */
+    public static final int NARROW_FORMAT = 4;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a narrow name independently. Narrow names
+     * are typically single character strings, such as "M" for Monday.
+     *
+     * @see #NARROW_FORMAT
+     * @see #SHORT_STANDALONE
+     * @see #LONG_STANDALONE
+     * @since 1.8
+     */
+    public static final int NARROW_STANDALONE = NARROW_FORMAT | STANDALONE_MASK;
 
     /**
      * A style specifier for {@link #getDisplayName(int, int, Locale)
@@ -1472,30 +1496,31 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param style
      *        the style applied to the string representation; one of {@link
      *        #SHORT_FORMAT} ({@link #SHORT}), {@link #SHORT_STANDALONE},
-     *        {@link #LONG_FORMAT} ({@link #LONG}) or {@link #LONG_STANDALONE}.
+     *        {@link #LONG_FORMAT} ({@link #LONG}), {@link #LONG_STANDALONE},
+     *        {@link #NARROW_FORMAT}, or {@link #NARROW_STANDALONE}.
      * @param locale
      *        the locale for the string representation
      *        (any calendar types specified by {@code locale} are ignored)
      * @return the string representation of the given
-     *        <code>field</code> in the given <code>style</code>, or
-     *        <code>null</code> if no string representation is
+     *        {@code field} in the given {@code style}, or
+     *        {@code null} if no string representation is
      *        applicable.
      * @exception IllegalArgumentException
-     *        if <code>field</code> or <code>style</code> is invalid,
-     *        or if this <code>Calendar</code> is non-lenient and any
+     *        if {@code field} or {@code style} is invalid,
+     *        or if this {@code Calendar} is non-lenient and any
      *        of the calendar fields have invalid values
      * @exception NullPointerException
-     *        if <code>locale</code> is null
+     *        if {@code locale} is null
      * @since 1.6
      */
     public String getDisplayName(int field, int style, Locale locale) {
-        if (!checkDisplayNameParams(field, style, SHORT, LONG, locale,
+        if (!checkDisplayNameParams(field, style, SHORT, NARROW_FORMAT, locale,
                             ERA_MASK|MONTH_MASK|DAY_OF_WEEK_MASK|AM_PM_MASK)) {
             return null;
         }
 
-        // the standalone styles are supported only through CalendarDataProviders.
-        if (isStandaloneStyle(style)) {
+        // the standalone and narrow styles are supported only through CalendarDataProviders.
+        if (isStandaloneStyle(style) || isNarrowStyle(style)) {
             return CalendarDataUtility.retrieveFieldValueName(getCalendarType(),
                                                               field, get(field),
                                                               style, locale);
@@ -1513,26 +1538,30 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     /**
-     * Returns a <code>Map</code> containing all names of the calendar
-     * <code>field</code> in the given <code>style</code> and
-     * <code>locale</code> and their corresponding field values. For
-     * example, if this <code>Calendar</code> is a {@link
+     * Returns a {@code Map} containing all names of the calendar
+     * {@code field} in the given {@code style} and
+     * {@code locale} and their corresponding field values. For
+     * example, if this {@code Calendar} is a {@link
      * GregorianCalendar}, the returned map would contain "Jan" to
      * {@link #JANUARY}, "Feb" to {@link #FEBRUARY}, and so on, in the
      * {@linkplain #SHORT short} style in an English locale.
      *
+     * <p>Narrow names may not be unique due to use of single characters,
+     * such as "S" for Sunday and Saturday. In that case narrow names are not
+     * included in the returned {@code Map}.
+     *
      * <p>The values of other calendar fields may be taken into
      * account to determine a set of display names. For example, if
-     * this <code>Calendar</code> is a lunisolar calendar system and
+     * this {@code Calendar} is a lunisolar calendar system and
      * the year value given by the {@link #YEAR} field has a leap
      * month, this method would return month names containing the leap
      * month name, and month names are mapped to their values specific
      * for the year.
      *
      * <p>The default implementation supports display names contained in
-     * a {@link DateFormatSymbols}. For example, if <code>field</code>
-     * is {@link #MONTH} and <code>style</code> is {@link
-     * #ALL_STYLES}, this method returns a <code>Map</code> containing
+     * a {@link DateFormatSymbols}. For example, if {@code field}
+     * is {@link #MONTH} and {@code style} is {@link
+     * #ALL_STYLES}, this method returns a {@code Map} containing
      * all strings returned by {@link DateFormatSymbols#getShortMonths()}
      * and {@link DateFormatSymbols#getMonths()}.
      *
@@ -1541,30 +1570,31 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param style
      *        the style applied to the string representation; one of {@link
      *        #SHORT_FORMAT} ({@link #SHORT}), {@link #SHORT_STANDALONE},
-     *        {@link #LONG_FORMAT} ({@link #LONG}) or {@link #LONG_STANDALONE}.
+     *        {@link #LONG_FORMAT} ({@link #LONG}), {@link #LONG_STANDALONE},
+     *        {@link #NARROW_FORMAT}, or {@link #NARROW_STANDALONE}
      * @param locale
      *        the locale for the display names
-     * @return a <code>Map</code> containing all display names in
-     *        <code>style</code> and <code>locale</code> and their
-     *        field values, or <code>null</code> if no display names
-     *        are defined for <code>field</code>
+     * @return a {@code Map} containing all display names in
+     *        {@code style} and {@code locale} and their
+     *        field values, or {@code null} if no display names
+     *        are defined for {@code field}
      * @exception IllegalArgumentException
-     *        if <code>field</code> or <code>style</code> is invalid,
-     *        or if this <code>Calendar</code> is non-lenient and any
+     *        if {@code field} or {@code style} is invalid,
+     *        or if this {@code Calendar} is non-lenient and any
      *        of the calendar fields have invalid values
      * @exception NullPointerException
-     *        if <code>locale</code> is null
+     *        if {@code locale} is null
      * @since 1.6
      */
     public Map<String, Integer> getDisplayNames(int field, int style, Locale locale) {
-        if (!checkDisplayNameParams(field, style, ALL_STYLES, LONG, locale,
+        if (!checkDisplayNameParams(field, style, ALL_STYLES, NARROW_FORMAT, locale,
                                     ERA_MASK|MONTH_MASK|DAY_OF_WEEK_MASK|AM_PM_MASK)) {
             return null;
         }
         if (style == ALL_STYLES || isStandaloneStyle(style)) {
             return CalendarDataUtility.retrieveFieldValueNames(getCalendarType(), field, style, locale);
         }
-        // SHORT or LONG
+        // SHORT, LONG, or NARROW
         return getDisplayNamesImpl(field, style, locale);
     }
 
@@ -1599,6 +1629,12 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     private String[] getFieldStrings(int field, int style, DateFormatSymbols symbols) {
         int baseStyle = getBaseStyle(style); // ignore the standalone mask
+
+        // DateFormatSymbols doesn't support any narrow names.
+        if (baseStyle == NARROW_FORMAT) {
+            return null;
+        }
+
         String[] strings = null;
         switch (field) {
         case ERA:
@@ -1946,6 +1982,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     boolean isStandaloneStyle(int style) {
         return (style & STANDALONE_MASK) != 0;
+    }
+
+    boolean isNarrowStyle(int style) {
+        return style == NARROW_FORMAT || style == NARROW_STANDALONE;
     }
 
     /**

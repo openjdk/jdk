@@ -39,7 +39,7 @@ if [ -z "$TESTJAVA" ]; then
   TESTCLASSES=`pwd`
 fi
 
-if $TESTJAVA/bin/java -cp $TESTCLASSES ExitOnThrow; then
+if $TESTJAVA/bin/java ${TESTVMOPTS} -cp $TESTCLASSES ExitOnThrow; then
   echo Failed: VM exited normally
   exit 1
 else

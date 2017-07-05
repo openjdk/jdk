@@ -23,16 +23,12 @@
 
 /* @test
  * @bug 4115331
-
  * @summary synopsis: activatable object fails to go inactive after
  * unregister/inactive sequence.
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID ActivationLibrary
- * @build ActivateMe
- * @build UnregisterInactive
- * @build UnregisterInactive_Stub
+ * @build TestLibrary RMID ActivationLibrary ActivateMe UnregisterInactive_Stub
  * @run main/othervm/policy=security.policy/timeout=240 UnregisterInactive
  */
 

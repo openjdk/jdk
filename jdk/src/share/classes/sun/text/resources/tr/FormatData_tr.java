@@ -82,6 +82,23 @@ public class FormatData_tr extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "O",
+                    "\u015e",
+                    "M",
+                    "N",
+                    "M",
+                    "H",
+                    "T",
+                    "A",
+                    "E",
+                    "E",
+                    "K",
+                    "A",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "Pazar", // Sunday
@@ -102,6 +119,17 @@ public class FormatData_tr extends ListResourceBundle {
                     "Per", // abb Thursday
                     "Cum", // abb Friday
                     "Cmt" // abb Saturday
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "P",
+                    "P",
+                    "S",
+                    "\u00c7",
+                    "P",
+                    "C",
+                    "C",
                 }
             },
             { "NumberPatterns",

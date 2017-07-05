@@ -43,7 +43,7 @@ runOne()
 { 
    echo "runOne $@"
    $TESTJAVA/bin/javac -d $TESTCLASSES $TESTSRC/$@.java || exit 2
-   $TESTJAVA/bin/java -classpath $TESTCLASSES $@        || exit 3
+   $TESTJAVA/bin/java ${TESTVMOPTS} -classpath $TESTCLASSES $@        || exit 3
 }
 
 # Test GetOpenFileDescriptorCount if we are running on Unix

@@ -51,7 +51,7 @@ expectPass() {
 }
 
 
-JAVA="${TESTJAVA}/bin/java -cp ${TESTCLASSES}"
+JAVA="${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${TESTCLASSES}"
 runTest() {
   echo "Testing:" ${1}
   LC_ALL="$1" ; export LC_ALL

@@ -85,6 +85,23 @@ public class FormatData_be extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "\u0441",
+                    "\u043b",
+                    "\u0441",
+                    "\u043a",
+                    "\u043c",
+                    "\u0447",
+                    "\u043b",
+                    "\u0436",
+                    "\u0432",
+                    "\u043a",
+                    "\u043b",
+                    "\u0441",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "\u043d\u044f\u0434\u0437\u0435\u043b\u044f", // Sunday
@@ -105,6 +122,17 @@ public class FormatData_be extends ListResourceBundle {
                     "\u0447\u0446", // abb Thursday
                     "\u043f\u0442", // abb Friday
                     "\u0441\u0431" // abb Saturday
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "\u043d",
+                    "\u043f",
+                    "\u0430",
+                    "\u0441",
+                    "\u0447",
+                    "\u043f",
+                    "\u0441",
                 }
             },
             { "Eras",

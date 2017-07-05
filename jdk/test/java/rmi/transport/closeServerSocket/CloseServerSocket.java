@@ -31,7 +31,7 @@
  * @author Peter Jones
  *
  * @library ../../testlibrary
- * @build CloseServerSocket TestLibrary
+ * @build TestLibrary
  * @run main/othervm CloseServerSocket
  */
 

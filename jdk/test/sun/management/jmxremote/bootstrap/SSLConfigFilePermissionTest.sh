@@ -101,18 +101,18 @@ pp=-Dcom.sun.management.jmxremote.port=4999
 
 go() {
     echo ''
-    sh -xc "$JAVA $1 $2 $3 $4 $5 $6 $7 $8" 2>&1
+    sh -xc "$JAVA ${TESTVMOPTS} $1 $2 $3 $4 $5 $6 $7 $8" 2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 
 # Test 1 - SSL config file is secure - VM should start
 chmod 700 ${SSL}
-sh -xc "$JAVA $mp $pp Dummy" 2>&1
+sh -xc "$JAVA ${TESTVMOPTS} $mp $pp Dummy" 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # Test 2 - SSL config file is not secure - VM should fail to start
 chmod o+rx ${SSL}
-sh -xc "$JAVA $mp $pp Dummy" 2>&1
+sh -xc "$JAVA ${TESTVMOPTS} $mp $pp Dummy" 2>&1
 if [ $? = 0 ]; then failures=`expr $failures + 1`; fi
 
 # Reset the file permissions on the generated SSL config file

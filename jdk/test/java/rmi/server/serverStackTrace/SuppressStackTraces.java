@@ -36,10 +36,7 @@
  * for reasons of performance or confidentiality requirements.
  * @author Peter Jones
  *
- * @build SuppressStackTraces
- * @build Impl2_Stub
- * @build Impl1_Stub
- * @build Impl1_Skel
+ * @build SuppressStackTraces Impl2_Stub Impl1_Stub Impl1_Skel
  * @run main/othervm SuppressStackTraces
  */
 

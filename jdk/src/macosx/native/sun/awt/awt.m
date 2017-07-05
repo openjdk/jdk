@@ -95,7 +95,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
     CFRelease(busyObserver);
     CFRelease(notBusyObserver);
-
+    
     if (!headless) setBusy(YES);
 
     // Set the java name of the AppKit main thread appropriately.
@@ -367,7 +367,8 @@ AWT_ASSERT_APPKIT_THREAD;
             CFRunLoopRef runLoop = [[NSRunLoop currentRunLoop] getCFRunLoop];
             CFRunLoopRemoveObserver(runLoop, busyObserver, kCFRunLoopDefaultMode);
             CFRunLoopRemoveObserver(runLoop, notBusyObserver, kCFRunLoopDefaultMode);
-
+            // We don't track if the runloop is busy, so set it free to let AWT finish when it needs
+            setBusy(NO);
             busyObserver = NULL;
             notBusyObserver = NULL;
         } else {

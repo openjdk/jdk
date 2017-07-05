@@ -82,7 +82,7 @@ rm -rf com edu
 # This is the only thing we really care about as far as
 # test status goes.
 #
-${TESTJAVA}${FILESEP}bin${FILESEP}java \
+${TESTJAVA}${FILESEP}bin${FILESEP}java ${TESTVMOPTS} \
     -Dtest.src=${TESTSRC} \
     -classpath "com.jar${PATHSEP}edu.jar" \
     -Djava.security.manager \

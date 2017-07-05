@@ -289,8 +289,8 @@ public class Base64 {
          *
          * <p> This method first encodes all input bytes into a base64 encoded
          * byte array and then constructs a new String by using the encoded byte
-         * array and the {@link java.nio.charset.StandardCharsets.ISO_8859_1 ISO-8859-1}
-         * charset.
+         * array and the {@link java.nio.charset.StandardCharsets#ISO_8859_1
+         * ISO-8859-1} charset.
          *
          * <p> In other words, an invocation of this method has exactly the same
          * effect as invoking
@@ -358,9 +358,9 @@ public class Base64 {
          * to encode any more input bytes. The encoding operation can be
          * continued, if there is more bytes in input buffer to be encoded,
          * by invoking this method again with an output buffer that has more
-         * {@linkplain Buffer#remaining remaining} bytes. This is typically
-         * done by draining any encoded bytes from the output buffer. The
-         * value returned from last invocation needs to be passed in as the
+         * {@linkplain java.nio.Buffer#remaining remaining} bytes. This is
+         * typically done by draining any encoded bytes from the output buffer.
+         * The value returned from last invocation needs to be passed in as the
          * third parameter {@code bytesOut} if it is to continue an unfinished
          * encoding, 0 otherwise.
          *
@@ -806,9 +806,9 @@ public class Base64 {
          * buffer has insufficient space to decode any more input bytes.
          * The decoding operation can be continued, if there is more bytes
          * in input buffer to be decoded, by invoking this method again with
-         * an output buffer that has more {@linkplain Buffer#remaining remaining}
-         * bytes.This is typically done by draining any decoded bytes from the
-         * output buffer.
+         * an output buffer that has more {@linkplain java.nio.Buffer#remaining
+         * remaining} bytes. This is typically done by draining any decoded
+         * bytes from the output buffer.
          *
          * <p><b>Recommended Usage Example</b>
          * <pre>

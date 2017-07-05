@@ -29,8 +29,7 @@
  * serialized with the Throwable from the server.
  * @author Peter Jones
  *
- * @build ServerStackTrace
- * @build ServerStackTrace_Stub
+ * @build ServerStackTrace ServerStackTrace_Stub
  * @run main/othervm ServerStackTrace
  */
 

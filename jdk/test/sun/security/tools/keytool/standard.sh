@@ -58,7 +58,7 @@ esac
 
 ${TESTJAVA}${FS}bin${FS}javac -d . -XDignore.symbol.file ${TESTSRC}${FS}KeyToolTest.java || exit 10
 
-echo | ${TESTJAVA}${FS}bin${FS}java -Dfile KeyToolTest
+echo | ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dfile KeyToolTest
 status=$?
 
 rm HumanInputStream*.class

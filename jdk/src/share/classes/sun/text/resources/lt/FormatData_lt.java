@@ -99,6 +99,23 @@ public class FormatData_lt extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "S",
+                    "V",
+                    "K",
+                    "B",
+                    "G",
+                    "B",
+                    "L",
+                    "R",
+                    "R",
+                    "S",
+                    "L",
+                    "G",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "Sekmadienis", // Sunday
@@ -119,6 +136,28 @@ public class FormatData_lt extends ListResourceBundle {
                     "Kt", // abb Thursday
                     "Pn", // abb Friday
                     "\u0160t" // abb Saturday
+                }
+            },
+            { "DayNarrows",
+                new String[] {
+                    "S",
+                    "P",
+                    "A",
+                    "T",
+                    "K",
+                    "P",
+                    "\u0160",
+                }
+            },
+            { "standalone.DayNarrows",
+                new String[] {
+                    "S",
+                    "P",
+                    "A",
+                    "T",
+                    "K",
+                    "P",
+                    "\u0160",
                 }
             },
             { "Eras",
