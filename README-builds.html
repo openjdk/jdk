@@ -183,13 +183,13 @@
                     <tr>
                         <td>Windows X86 (32-bit)</td>
                         <td>Windows XP</td>
-                        <td>Microsoft Visual Studio C++ 2008 Standard Edition</td>
+                        <td>Microsoft Visual Studio C++ 2010 Professional Edition</td>
                         <td>JDK 6u14 FCS </td>
                     </tr>
                     <tr>
                         <td>Windows X64 (64-bit)</td>
                         <td>Windows Server 2003 - Enterprise x64 Edition</td>
-                        <td>Microsoft Platform SDK - April 2005</td>
+                        <td>Microsoft Visual Studio C++ 2010 Professional Edition</td>
                         <td>JDK 6u14 FCS </td>
                     </tr>
                 </tbody>
@@ -789,11 +789,7 @@
                 </li>
                 <li>
                     Install the
-                    <a href="#msvc">Microsoft Visual Studio Compilers</a> (32-bit).
-                </li>
-                <li>
-                    Install the
-                    <a href="#mssdk">Microsoft Platform SDK</a>.
+                    <a href="#msvc">Microsoft Visual Studio Compilers</a>).
                 </li>
                 <li>
                     Setup all environment variables for compilers 
@@ -964,13 +960,28 @@
                 </blockquote>
                 <strong><a name="msvc">Windows i586: Microsoft Visual Studio Compilers</a></strong>
                 <blockquote>
+<p>
+<b>BEGIN WARNING</b>: At this time (Spring/Summer 2010) JDK 7 is starting a transition to
+use the newest VS2010 Microsoft compilers. These build instructions are updated
+to show where we are going. We have a QA process to go through before
+official builds actually use VS2010. So for now, official builds are
+still using VS2003. No other compilers are known to build the entire JDK,
+including non-open portions.
+So for now you should be able to build with either VS2003 or VS2010.
+We do not guarantee that VS2008 will work, although there is sufficient
+makefile support to make at least basic JDK builds plausible.
+Visual Studio 2010 Express compilers are likely to be able to build all the
+"open" sources, with only small adjustments, but this has yet to be made
+to work. Also we have not yet seen the 7.1 Windows SDK with the 64 bit
+compilers. <b>END WARNING.</b>
+<p>
                     The 32-bit OpenJDK Windows build
                     requires 
-                    Microsoft Visual Studio C++ 2008 (VS2008) Standard
+                    Microsoft Visual Studio C++ 2010 (VS2010) Professional
                     Edition compiler. 
                     The compiler and other tools are expected to reside
                     in the location defined by the variable 
-                    <tt>VS90COMNTOOLS</tt> which
+                    <tt>VS100COMNTOOLS</tt> which
                     is set by the Microsoft Visual Studio installer.
                     <p> 
                     Once the compiler is installed, 
@@ -982,36 +993,21 @@
                     prior to building the 
                     OpenJDK.
                     The above environment variables <b>MUST</b> be set.
+                    This compiler also contains the Windows SDK v 7.0a,
+                    which is an update to the Windows 7 SDK.
                     <p>
                     <b>WARNING:</b> Make sure you check out the
                     <a href="#cygwin">CYGWIN link.exe WARNING</a>.
                     The path <tt>/usr/bin</tt> must be after the path to the
                     Visual Studio product.
                 </blockquote>
-                <strong><a name="mssdk">Windows: Microsoft Platform SDK</a></strong>
+                <strong><a name="mssdk">Windows x64: Microsoft Visual Studio Compilers</a></strong>
                 <blockquote>
-                    On <b>X64</b>, the Microsoft Platform Software
-                    Development Kit (SDK), April 2005 Edition compiler,
-                    is required for building the OpenJDK
-                    because it contains the C/C++ compiler. 
-                    You will need to minimally install the Core SDK and
-                    the MDAC SDK features of this compiler.
-                    <p>
-                    Once the Platform SDK is installed,
-                    it is recommended that you run <tt>SetEnv.Cmd /X64</tt> 
-                    to set the compiler environment variables
-                    <tt>MSSDK</tt>, 
-                    <tt>MSTOOLS</tt>,
-                    <tt>INCLUDE</tt>,
-                    <tt>LIB</tt>, and
-                    <tt>PATH</tt> 
-                    prior to building the 
-                    OpenJDK.
-                    The above environment variables <b>MUST</b> be set.
-                    <p>
-                    This Platform SDK compiler is only used on X64 builds
-                    but other parts of the Platform SDK may be used 
-                    for the X86 builds.
+                    On <b>X64</b>, the set up is much the same in VS2010
+                    except that you run <tt>amd64\VCVARS64.BAT</tt>
+                    to set the compiler environment variables.
+                    Previously 64 builds had used the 64 bit compiler in
+                    an unbundled Windows SDK but this is no longer necessary.
                 </blockquote>
             </blockquote>
             <!-- ------------------------------------------------------ --> 
@@ -1314,40 +1310,16 @@
                 but it's normally found via the DirectX environment variable
                 <tt>DXSDK_DIR</tt>.
             </blockquote>
-            <strong><a name="msvcrt"><tt>MSVCRT.DLL</tt></a></strong>
+            <strong><a name="msvcrt"><tt>MSVCR100.DLL</tt></a></strong>
             <blockquote> 
-                <strong>i586 only:</strong>
-                The OpenJDK 32-bit build requires access to a redistributable
-                <tt>MSVCRT.DLL</tt>.
-                If the <tt>MSVCRT.DLL</tt> is not installed in 
-                the system32 directory set the 
+                The OpenJDK build requires access to a redistributable
+                <tt>MSVCR100.DLL</tt>.
+                This is usually picked up automatically from the redist
+                directories of Visual Studio 2010.
+                If this cannot be found set the 
                 <a href="#ALT_MSVCRT_DLL_PATH"><tt>ALT_MSVCRT_DLL_PATH</tt></a>
                 variable to the location of this file.
                 <p> 
-                <strong>X64 only:</strong>
-                The OpenJDK 64-bit build requires access to a redistributable
-                <tt>MSVCRT.DLL</tt>, which is
-                usually supplied by the
-                <a href="#mssdk">Platform SDK</a>.
-                If it is not available from the Platform SDK,
-                set the 
-                <a href="#ALT_MSVCRT_DLL_PATH"><tt>ALT_MSVCRT_DLL_PATH</tt></a>
-                variable to the location of this file.
-            </blockquote>
-            <strong><tt><a name="msvcr90">MSVCR90.DLL</a></tt></strong>
-            <blockquote>
-                <strong>i586 only:</strong>
-                The 
-                OpenJDK
-                build requires access to a redistributable
-                <tt>MSVCR90.DLL</tt> which should be
-                supplied by the
-                <a href="#msvc">Visual Studio product</a>.
-                If the <tt>MSVCR90.DLL</tt> is not available from the
-                Visual Studio product
-                set the 
-                <a href="#ALT_MSVCR90_DLL_PATH"><tt>ALT_MSVCR90_DLL_PATH</tt></a>
-                variable to the location of this file.
             </blockquote>
         </blockquote>
         <!-- ------------------------------------------------------ -->
@@ -1623,11 +1595,10 @@
                             The location of the 
                             <a href="#msvcrt"><tt>MSVCRT.DLL</tt></a>. 
                         </dd>
-                        <dt><tt><a name="ALT_MSVCR90_DLL_PATH">ALT_MSVCR90_DLL_PATH</a></tt> </dt>
+                        <dt><tt><a name="ALT_MSVCRNN_DLL_PATH">ALT_MSVCRNN_DLL_PATH</a></tt> </dt>
                         <dd>
-                            <strong>i586 only:</strong>
                             The location of the 
-                            <a href="#msvcr90"><tt>MSVCR90.DLL</tt></a>. 
+                            <a href="#msvcrt"><tt>MSVCR100.DLL</tt></a>. 
                         </dd>
                     </dl>
                 </dd>
