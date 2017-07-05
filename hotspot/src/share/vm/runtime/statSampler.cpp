@@ -217,6 +217,7 @@ static const char* property_counters_ss[] = {
   "java.class.path",
   "java.endorsed.dirs",
   "java.ext.dirs",
+  "java.version",
   "java.home",
   NULL
 };

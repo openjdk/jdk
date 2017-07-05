@@ -94,14 +94,19 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
   if (tinst == NULL || !tinst->is_known_instance_field())
     return mchain;  // don't try to optimize non-instance types
   uint instance_id = tinst->instance_id();
+  Node *start_mem = phase->C->start()->proj_out(TypeFunc::Memory);
   Node *prev = NULL;
   Node *result = mchain;
   while (prev != result) {
     prev = result;
+    if (result == start_mem)
+      break;  // hit one of our sentinals
     // skip over a call which does not affect this memory slice
     if (result->is_Proj() && result->as_Proj()->_con == TypeFunc::Memory) {
       Node *proj_in = result->in(0);
-      if (proj_in->is_Call()) {
+      if (proj_in->is_Allocate() && proj_in->_idx == instance_id) {
+        break;  // hit one of our sentinals
+      } else if (proj_in->is_Call()) {
         CallNode *call = proj_in->as_Call();
         if (!call->may_modify(t_adr, phase)) {
           result = call->in(TypeFunc::Memory);
@@ -115,6 +120,8 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypePtr *t_adr, 
         }
       } else if (proj_in->is_MemBar()) {
         result = proj_in->in(TypeFunc::Memory);
+      } else {
+        assert(false, "unexpected projection");
       }
     } else if (result->is_MergeMem()) {
       result = step_through_mergemem(phase, result->as_MergeMem(), t_adr, NULL, tty);
@@ -135,7 +142,9 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, PhaseGV
     const TypePtr *t = mphi->adr_type();
     if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
         t->isa_oopptr() && !t->is_oopptr()->is_known_instance() &&
-        t->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop) {
+        t->is_oopptr()->cast_to_exactness(true)
+         ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
+         ->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop) {
       // clone the Phi with our address type
       result = mphi->split_out_instance(t_adr, igvn);
     } else {

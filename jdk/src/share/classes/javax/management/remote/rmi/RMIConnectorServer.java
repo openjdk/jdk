@@ -230,6 +230,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
 
         this.address = url;
         this.rmiServerImpl = rmiServerImpl;
+
+        installStandardForwarders(this.attributes);
     }
 
     /**
@@ -380,8 +382,8 @@ public class RMIConnectorServer extends JMXConnectorServer {
 
         try {
             if (tracing) logger.trace("start", "setting default class loader");
-            defaultClassLoader =
-                EnvHelp.resolveServerClassLoader(attributes, getMBeanServer());
+            defaultClassLoader = EnvHelp.resolveServerClassLoader(
+                    attributes, getSystemMBeanServer());
         } catch (InstanceNotFoundException infc) {
             IllegalArgumentException x = new
                 IllegalArgumentException("ClassLoader not found: "+infc);
@@ -396,7 +398,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
         else
             rmiServer = newServer();
 
-        rmiServer.setMBeanServer(getMBeanServer());
+        rmiServer.setMBeanServer(getSystemMBeanServer());
         rmiServer.setDefaultClassLoader(defaultClassLoader);
         rmiServer.setRMIConnectorServer(this);
         rmiServer.export();
@@ -413,7 +415,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
 
                 final boolean rebind = EnvHelp.computeBooleanFromString(
                     attributes,
-                    JNDI_REBIND_ATTRIBUTE);
+                    JNDI_REBIND_ATTRIBUTE,false);
 
                 if (tracing)
                     logger.trace("start", JNDI_REBIND_ATTRIBUTE + "=" + rebind);
@@ -590,11 +592,39 @@ public class RMIConnectorServer extends JMXConnectorServer {
         return Collections.unmodifiableMap(map);
     }
 
-    public synchronized
-        void setMBeanServerForwarder(MBeanServerForwarder mbsf) {
+    @Override
+    public synchronized void setMBeanServerForwarder(MBeanServerForwarder mbsf) {
+        MBeanServer oldSMBS = getSystemMBeanServer();
         super.setMBeanServerForwarder(mbsf);
+        if (oldSMBS != getSystemMBeanServer())
+            updateMBeanServer();
+        // If the system chain of MBeanServerForwarders is not empty, then
+        // there is no need to call rmiServerImpl.setMBeanServer, because
+        // it is pointing to the head of the system chain and that has not
+        // changed.  (The *end* of the system chain will have been changed
+        // to point to mbsf.)
+    }
+
+    private void updateMBeanServer() {
         if (rmiServerImpl != null)
-            rmiServerImpl.setMBeanServer(getMBeanServer());
+            rmiServerImpl.setMBeanServer(getSystemMBeanServer());
+    }
+
+    @Override
+    public synchronized void setSystemMBeanServerForwarder(
+            MBeanServerForwarder mbsf) {
+        super.setSystemMBeanServerForwarder(mbsf);
+        updateMBeanServer();
+    }
+
+    /**
+     * {@inheritDoc}
+     * @return true, since this connector server does support a system chain
+     * of forwarders.
+     */
+    @Override
+    public boolean supportsSystemMBeanServerForwarder() {
+        return true;
     }
 
     /* We repeat the definitions of connection{Opened,Closed,Failed}
