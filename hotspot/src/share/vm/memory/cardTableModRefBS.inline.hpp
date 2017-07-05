@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,21 @@
  *
  */
 
-#ifndef SHARE_VM_OOPS_OOP_INLINE2_HPP
-#define SHARE_VM_OOPS_OOP_INLINE2_HPP
+#ifndef SHARE_VM_MEMORY_CARDTABLEMODREFBS_INLINE_HPP
+#define SHARE_VM_MEMORY_CARDTABLEMODREFBS_INLINE_HPP
 
-#include "gc_interface/collectedHeap.hpp"
-#include "memory/generation.hpp"
-#include "memory/universe.hpp"
-#include "oops/oop.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/orderAccess.inline.hpp"
 
-// Implementation of all inlined member functions defined in oop.hpp
-// We need a separate file to avoid circular references
-
-inline bool oopDesc::is_scavengable() const {
-  return Universe::heap()->is_scavengable(this);
+template <class T> inline void CardTableModRefBS::inline_write_ref_field(T* field, oop newVal, bool release) {
+  jbyte* byte = byte_for((void*)field);
+  if (release) {
+    // Perform a releasing store if requested.
+    OrderAccess::release_store((volatile jbyte*) byte, dirty_card);
+  } else {
+    *byte = dirty_card;
+  }
 }
-#endif // SHARE_VM_OOPS_OOP_INLINE2_HPP
+
+#endif // SHARE_VM_MEMORY_CARDTABLEMODREFBS_INLINE_HPP
