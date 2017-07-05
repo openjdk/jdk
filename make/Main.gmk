@@ -237,7 +237,7 @@ ALL_TARGETS += $(LAUNCHER_TARGETS)
 # Build hotspot target
 
 ifeq ($(BUILD_HOTSPOT),true)
-hotspot:
+  hotspot:
 	+($(CD) $(HOTSPOT_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildHotspot.gmk)
 endif
 
@@ -548,7 +548,7 @@ else
   # The demos are currently linking to libjvm and libjava, just like all other
   # jdk libs, even though they don't need to. To avoid warnings, make sure they
   # aren't built until after libjava and libjvm are available to link to.
-  demos-jdk: $(JAVA_TARGETS)
+  demos-jdk: java.base-libs exploded-image-optimize
 
   # Declare dependency from <module>-java to <module>-gensrc
   $(foreach m, $(GENSRC_MODULES), $(eval $m-java: $m-gensrc))
@@ -698,7 +698,7 @@ else
 
   test-make: clean-test-make
 
-  build-test-lib: java
+  build-test-lib: exploded-image-optimize
 
   build-test-failure-handler: interim-langtools
 

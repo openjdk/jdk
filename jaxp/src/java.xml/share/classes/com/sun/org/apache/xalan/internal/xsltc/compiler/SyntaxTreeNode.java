@@ -524,6 +524,24 @@ public abstract class SyntaxTreeNode implements Constants {
     }
 
     /**
+     * Checks whether any children of this node is not of the specified type.
+     *
+     * @param type the type to be checked against
+     * @return true if there is at least one child that is not of the specified
+     * type, false otherwise.
+     */
+    public boolean notTypeOf(Class<?> type) {
+        if (_contents.size() > 0) {
+            for (SyntaxTreeNode item : _contents) {
+                if (!item.getClass().isAssignableFrom(type)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Return true if the node represents a simple RTF.
      *
      * A node is a simple RTF if all children only produce Text value.
