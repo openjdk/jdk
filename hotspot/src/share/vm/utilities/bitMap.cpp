@@ -516,6 +516,10 @@ BitMap::idx_t BitMap::count_one_bits() const {
   return sum;
 }
 
+void BitMap::print_on_error(outputStream* st, const char* prefix) const {
+  st->print_cr("%s[" PTR_FORMAT ", " PTR_FORMAT ")",
+      prefix, map(), (char*)map() + (size() >> LogBitsPerByte));
+}
 
 #ifndef PRODUCT
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,19 @@
 package sun.nio.ch.sctp;
 
 import com.sun.nio.sctp.SctpSocketOption;
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class SctpStdSocketOption<T>
     implements SctpSocketOption<T>
 {
     /* for native mapping of int options */
-    public static final int SCTP_DISABLE_FRAGMENTS = 1;
-    public static final int SCTP_EXPLICIT_COMPLETE = 2;
-    public static final int SCTP_FRAGMENT_INTERLEAVE = 3;
-    public static final int SCTP_NODELAY = 4;
-    public static final int SO_SNDBUF = 5;
-    public static final int SO_RCVBUF = 6;
-    public static final int SO_LINGER = 7;
+    @Native public static final int SCTP_DISABLE_FRAGMENTS = 1;
+    @Native public static final int SCTP_EXPLICIT_COMPLETE = 2;
+    @Native public static final int SCTP_FRAGMENT_INTERLEAVE = 3;
+    @Native public static final int SCTP_NODELAY = 4;
+    @Native public static final int SO_SNDBUF = 5;
+    @Native public static final int SO_RCVBUF = 6;
+    @Native public static final int SO_LINGER = 7;
 
     private final String name;
     private final Class<T> type;

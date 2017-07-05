@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,7 @@ import com.apple.jobjc.Coder.PrimitivePointerCoder;
 import com.apple.jobjc.Coder.VoidCoder;
 import com.apple.jobjc.Invoke.MsgSend;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 final class Subclassing {
     static native long allocateClassPair(long superClass, String name);
     static native boolean addIVarForJObj(long clazz);

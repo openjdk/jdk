@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 package com.apple.jobjc;
 
 
-import javax.tools.annotation.GenerateNativeHeader;
 
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public class MacOSXFramework {
     private static native long retainFramework(final String frameworkName);
     private static native void releaseFramework(final long frameworkPtr);

@@ -819,12 +819,13 @@ bool GenCollectedHeap::is_in_young(oop p) {
 // Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool GenCollectedHeap::is_in(const void* p) const {
   #ifndef ASSERT
-  guarantee(VerifyBeforeGC   ||
-            VerifyDuringGC   ||
-            VerifyBeforeExit ||
-            PrintAssembly    ||
-            tty->count() != 0 ||   // already printing
-            VerifyAfterGC    ||
+  guarantee(VerifyBeforeGC      ||
+            VerifyDuringGC      ||
+            VerifyBeforeExit    ||
+            VerifyDuringStartup ||
+            PrintAssembly       ||
+            tty->count() != 0   ||   // already printing
+            VerifyAfterGC       ||
     VMError::fatal_error_in_progress(), "too expensive");
 
   #endif
@@ -1128,6 +1129,17 @@ void GenCollectedHeap::print_gc_threads_on(outputStream* st) const {
   }
   if (UseConcMarkSweepGC) {
     ConcurrentMarkSweepThread::print_all_on(st);
+  }
+#endif // INCLUDE_ALL_GCS
+}
+
+void GenCollectedHeap::print_on_error(outputStream* st) const {
+  this->CollectedHeap::print_on_error(st);
+
+#if INCLUDE_ALL_GCS
+  if (UseConcMarkSweepGC) {
+    st->cr();
+    CMSCollector::print_on_error(st);
   }
 #endif // INCLUDE_ALL_GCS
 }

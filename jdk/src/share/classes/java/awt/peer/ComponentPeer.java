@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.awt.image.ImageObserver;
 import java.awt.image.ColorModel;
 import java.awt.image.VolatileImage;
 import java.awt.GraphicsConfiguration;
-import javax.tools.annotation.GenerateNativeHeader;
 import sun.awt.CausedFocusEvent;
 import sun.java2d.pipe.Region;
 
@@ -50,8 +49,6 @@ import sun.java2d.pipe.Region;
  * nor invoke any of the peer methods directly on the peer
  * instances.
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public interface ComponentPeer {
 
     /**

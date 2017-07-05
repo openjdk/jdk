@@ -30,6 +30,7 @@ import java.awt.peer.ComponentPeer;
 import java.awt.dnd.DropTarget;
 
 import sun.lwawt.LWComponentPeer;
+import sun.lwawt.PlatformWindow;
 
 
 public final class CDropTarget {
@@ -50,21 +51,11 @@ public final class CDropTarget {
         fComponent = component;
         fPeer = peer;
 
-        // Make sure the drop target is a ComponentModel:
-        if (!(peer instanceof LWComponentPeer))
-            throw new IllegalArgumentException("CDropTarget's peer must be a LWComponentPeer.");
-
-        // Get model pointer (CButton.m and such) and its native peer:
-        LWComponentPeer model = (LWComponentPeer) peer;
-        if (model.getPlatformWindow() instanceof CPlatformWindow) {
-            CPlatformWindow platformWindow = (CPlatformWindow) model.getPlatformWindow();
-            long nativePeer = platformWindow.getNSWindowPtr();
-
-            // Create native dragging destination:
-            fNativeDropTarget = this.createNativeDropTarget(dropTarget, component, peer, nativePeer);
-            if (fNativeDropTarget == 0) {
-                throw new IllegalStateException("CDropTarget.createNativeDropTarget() failed.");
-            }
+        long nativePeer = CPlatformWindow.getNativeViewPtr(((LWComponentPeer) peer).getPlatformWindow());
+        // Create native dragging destination:
+        fNativeDropTarget = this.createNativeDropTarget(dropTarget, component, peer, nativePeer);
+        if (fNativeDropTarget == 0) {
+            throw new IllegalStateException("CDropTarget.createNativeDropTarget() failed.");
         }
     }
 

@@ -41,7 +41,6 @@
 #include <jni.h>
 #include <jni_util.h>
 #include <jvm_md.h>
-#include <sun_font_FontManager.h>
 #ifndef HEADLESS
 #include <X11/Xlib.h>
 #include <awt.h>

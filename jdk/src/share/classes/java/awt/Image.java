@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.awt.image.ReplicateScaleFilter;
 
 import sun.awt.image.SurfaceManager;
 
-import javax.tools.annotation.GenerateNativeHeader;
 
 /**
  * The abstract class <code>Image</code> is the superclass of all
@@ -44,8 +43,6 @@ import javax.tools.annotation.GenerateNativeHeader;
  * @author      Arthur van Hoff
  * @since       JDK1.0
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public abstract class Image {
 
     /**

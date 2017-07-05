@@ -110,21 +110,19 @@ public final class Parameter implements AnnotatedElement {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         final Type type = getParameterizedType();
-        final String typename = (type instanceof Class)?
-            Field.getTypeName((Class)type):
-            (type.toString());
+        final String typename = type.getTypeName();
 
         sb.append(Modifier.toString(getModifiers()));
 
         if(0 != modifiers)
-            sb.append(" ");
+            sb.append(' ');
 
         if(isVarArgs())
             sb.append(typename.replaceFirst("\\[\\]$", "..."));
         else
             sb.append(typename);
 
-        sb.append(" ");
+        sb.append(' ');
         sb.append(getName());
 
         return sb.toString();
