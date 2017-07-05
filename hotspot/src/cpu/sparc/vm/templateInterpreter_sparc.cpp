@@ -366,7 +366,7 @@ void InterpreterGenerator::lock_method(void) {
 
   // get synchronization object to O0
   { Label done;
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ btst(JVM_ACC_STATIC, O0);
     __ br( Assembler::zero, true, Assembler::pt, done);
     __ delayed()->ld_ptr(Llocals, Interpreter::local_offset_in_bytes(0), O0); // get receiver for not-static case
@@ -396,7 +396,6 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
                                                          Register Rscratch,
                                                          Register Rscratch2) {
   const int page_size = os::vm_page_size();
-  Address saved_exception_pc(G2_thread, JavaThread::saved_exception_pc_offset());
   Label after_frame_check;
 
   assert_different_registers(Rframe_size, Rscratch, Rscratch2);
@@ -436,11 +435,19 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
   // the bottom of the stack
   __ cmp_and_brx_short(SP, Rscratch, Assembler::greater, Assembler::pt, after_frame_check);
 
-  // Save the return address as the exception pc
-  __ st_ptr(O7, saved_exception_pc);
-
   // the stack will overflow, throw an exception
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_StackOverflowError));
+
+  // Note that SP is restored to sender's sp (in the delay slot). This
+  // is necessary if the sender's frame is an extended compiled frame
+  // (see gen_c2i_adapter()) and safer anyway in case of JSR292
+  // adaptations.
+
+  // Note also that the restored frame is not necessarily interpreted.
+  // Use the shared runtime version of the StackOverflowError.
+  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "stub not yet generated");
+  AddressLiteral stub(StubRoutines::throw_StackOverflowError_entry());
+  __ jump_to(stub, Rscratch);
+  __ delayed()->mov(O5_savedSP, SP);
 
   // if you get to here, then there is enough stack space
   __ bind( after_frame_check );
@@ -984,7 +991,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     // get native function entry point(O0 is a good temp until the very end)
     __ delayed()->ld_ptr(Lmethod, in_bytes(methodOopDesc::native_function_offset()), O0);
     // for static methods insert the mirror argument
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
 
     __ ld_ptr(Lmethod, methodOopDesc:: constants_offset(), O1);
     __ ld_ptr(O1, constantPoolOopDesc::pool_holder_offset_in_bytes(), O1);

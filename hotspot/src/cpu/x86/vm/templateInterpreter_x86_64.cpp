@@ -467,8 +467,18 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ cmpptr(rsp, rax);
   __ jcc(Assembler::above, after_frame_check);
 
-  __ pop(rax); // get return address
-  __ jump(ExternalAddress(Interpreter::throw_StackOverflowError_entry()));
+  // Restore sender's sp as SP. This is necessary if the sender's
+  // frame is an extended compiled frame (see gen_c2i_adapter())
+  // and safer anyway in case of JSR292 adaptations.
+
+  __ pop(rax); // return address must be moved if SP is changed
+  __ mov(rsp, r13);
+  __ push(rax);
+
+  // Note: the restored frame is not necessarily interpreted.
+  // Use the shared runtime version of the StackOverflowError.
+  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "stub not yet generated");
+  __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
 
   // all done with frame size check
   __ bind(after_frame_check);
@@ -505,8 +515,7 @@ void InterpreterGenerator::lock_method(void) {
 
   // get synchronization object
   {
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() +
-                              Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     Label done;
     __ movl(rax, access_flags);
     __ testl(rax, JVM_ACC_STATIC);
@@ -1006,8 +1015,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass mirror handle if static call
   {
     Label L;
-    const int mirror_offset = klassOopDesc::klass_part_offset_in_bytes() +
-                              Klass::java_mirror_offset_in_bytes();
+    const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ movl(t, Address(method, methodOopDesc::access_flags_offset()));
     __ testl(t, JVM_ACC_STATIC);
     __ jcc(Assembler::zero, L);

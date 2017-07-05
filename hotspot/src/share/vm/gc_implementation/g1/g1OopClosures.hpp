@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,17 +121,25 @@ public:
 class G1ParCopyHelper : public G1ParClosureSuper {
   G1ParScanClosure *_scanner;
 protected:
-  template <class T> void mark_object(T* p);
-  oop copy_to_survivor_space(oop obj, bool should_mark_root,
-                                      bool should_mark_copy);
+  // Mark the object if it's not already marked. This is used to mark
+  // objects pointed to by roots that are guaranteed not to move
+  // during the GC (i.e., non-CSet objects). It is MT-safe.
+  void mark_object(oop obj);
+
+  // Mark the object if it's not already marked. This is used to mark
+  // objects pointed to by roots that have been forwarded during a
+  // GC. It is MT-safe.
+  void mark_forwarded_object(oop from_obj, oop to_obj);
+
+  oop copy_to_survivor_space(oop obj);
+
 public:
   G1ParCopyHelper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                   G1ParScanClosure *scanner) :
     G1ParClosureSuper(g1, par_scan_state), _scanner(scanner) { }
 };
 
-template<bool do_gen_barrier, G1Barrier barrier,
-         bool do_mark_object>
+template <bool do_gen_barrier, G1Barrier barrier, bool do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
   G1ParScanClosure _scanner;
 
@@ -140,9 +148,8 @@ class G1ParCopyClosure : public G1ParCopyHelper {
 public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                    ReferenceProcessor* rp) :
-    _scanner(g1, par_scan_state, rp),
-    G1ParCopyHelper(g1, par_scan_state, &_scanner)
-  {
+      _scanner(g1, par_scan_state, rp),
+      G1ParCopyHelper(g1, par_scan_state, &_scanner) {
     assert(_ref_processor == NULL, "sanity");
   }
 

@@ -296,6 +296,7 @@
   template(finalize_method_name,                      "finalize")                                 \
   template(reference_lock_name,                       "lock")                                     \
   template(reference_discovered_name,                 "discovered")                               \
+  template(run_finalization_name,                     "runFinalization")                          \
   template(run_finalizers_on_exit_name,               "runFinalizersOnExit")                      \
   template(uncaughtException_name,                    "uncaughtException")                        \
   template(dispatchUncaughtException_name,            "dispatchUncaughtException")                \

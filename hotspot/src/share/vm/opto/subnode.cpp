@@ -91,7 +91,7 @@ const Type *SubNode::Value( PhaseTransform *phase ) const {
 
   // Not correct for SubFnode and AddFNode (must check for infinity)
   // Equal?  Subtract is zero
-  if (phase->eqv_uncast(in1, in2))  return add_id();
+  if (in1->eqv_uncast(in2))  return add_id();
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
   if( t1 == Type::BOTTOM || t2 == Type::BOTTOM )

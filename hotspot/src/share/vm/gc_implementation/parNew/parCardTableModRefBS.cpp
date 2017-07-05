@@ -56,14 +56,14 @@ void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegio
                           lowest_non_clean_base_chunk_index,
                           lowest_non_clean_chunk_size);
 
-  int n_strides = n_threads * ParGCStridesPerThread;
+  uint n_strides = n_threads * ParGCStridesPerThread;
   SequentialSubTasksDone* pst = sp->par_seq_tasks();
   // Sets the condition for completion of the subtask (how many threads
   // need to finish in order to be done).
   pst->set_n_threads(n_threads);
   pst->set_n_tasks(n_strides);
 
-  int stride = 0;
+  uint stride = 0;
   while (!pst->is_task_claimed(/* reference */ stride)) {
     process_stride(sp, mr, stride, n_strides, cl, ct,
                    lowest_non_clean,
