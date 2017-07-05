@@ -72,10 +72,10 @@ public final class SCDBasedBindingSet {
         /**
          * SCDs can be specified via multiple steps, like:
          *
-         * <xmp>
+         * <pre>{@code
          * <bindings scd="foo/bar">
          *   <bindings scd="zot/xyz">
-         * </xmp>
+         * }</pre>
          *
          * This field and {@link #nextSibling} form a single-linked list that
          * represent the children that shall be evaluated within this target.

@@ -74,14 +74,14 @@ public abstract class NGCCInterleaveFilter implements NGCCEventSource, NGCCEvent
 //
     /**
      * Receiver that is being locked and therefore receives all the events.
-     * <pre><xmp>
+     * <pre>{@code
      * <interleave>
      *   <element name="foo"/>
      *   <element name="bar">
      *     <element name="foo"/>
      *   </element>
      * </interlaeve>
-     * </xmp></pre>
+     * }</pre>
      * When processing inside the bar element, this receiver is
      * "locked" so that it can correctly receive its child foo element.
      */

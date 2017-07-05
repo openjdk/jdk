@@ -164,7 +164,7 @@ public abstract class BindingID {
      *
      * <p>
      * For example, {@link BindingID} for
-     * <tt>"{@value SOAPBinding#SOAP11HTTP_MTOM_BINDING}"</tt>
+     * {@code "{@value SOAPBinding#SOAP11HTTP_MTOM_BINDING}"}
      * would always return a list that has {@link MTOMFeature} enabled.
      */
     public WebServiceFeatureList createBuiltinFeatureList() {
@@ -189,7 +189,7 @@ public abstract class BindingID {
      *
      * <p>
      * Some binding ID, such as those for SOAP/HTTP, uses the URL
-     * query syntax (like <tt>?mtom=true</tt>) to control
+     * query syntax (like {@code ?mtom=true}) to control
      * the optional part of the binding. This method obtains
      * the value for such optional parts.
      *

@@ -141,7 +141,7 @@ public class SOAPException extends Exception {
      * @param  cause the {@code Throwable} object that caused this
      *         {@code SOAPException} object to be thrown.  The value of this
      *         parameter is saved for later retrieval by the
-     *         {@link #getCause()} method.  A <tt>null</tt> value is
+     *         {@link #getCause()} method.  A {@code null} value is
      *         permitted and indicates that the cause is nonexistent or
      *         unknown.
      * @return  a reference to this {@code SOAPException} instance

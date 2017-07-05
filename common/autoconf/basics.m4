@@ -445,6 +445,15 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
   # Save the current directory this script was started from
   CURDIR="$PWD"
 
+  # We might need to rewrite ORIGINAL_PATH, if it includes "#", to quote them
+  # for make. We couldn't do this when we retrieved ORIGINAL_PATH, since SED
+  # was not available at that time.
+  REWRITTEN_PATH=`$ECHO "$ORIGINAL_PATH" | $SED -e 's/#/\\\\#/g'`
+  if test "x$REWRITTEN_PATH" != "x$ORIGINAL_PATH"; then
+    ORIGINAL_PATH="$REWRITTEN_PATH"
+    AC_MSG_NOTICE([Rewriting ORIGINAL_PATH to $REWRITTEN_PATH])
+  fi
+
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
     PATH_SEP=";"
     BASIC_CHECK_PATHS_WINDOWS
@@ -935,6 +944,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
   BASIC_PATH_PROGS(HG, hg)
   BASIC_PATH_PROGS(STAT, stat)
   BASIC_PATH_PROGS(TIME, time)
+  BASIC_PATH_PROGS(PATCH, [gpatch patch])
   # Check if it's GNU time
   IS_GNU_TIME=`$TIME --version 2>&1 | $GREP 'GNU time'`
   if test "x$IS_GNU_TIME" != x; then

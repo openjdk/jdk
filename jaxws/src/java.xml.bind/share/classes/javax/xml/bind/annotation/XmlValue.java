@@ -39,7 +39,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * <p>
  * <b> Usage: </b>
  * <p>
- * The <tt>@XmlValue</tt> annotation can be used with the following program
+ * The {@code @XmlValue} annotation can be used with the following program
  * elements:
  * <ul>
  *   <li> a JavaBean property.</li>
@@ -52,9 +52,9 @@ import static java.lang.annotation.RetentionPolicy.*;
  * The usage is subject to the following usage constraints:
  * <ul>
  *   <li>At most one field or property can be annotated with the
- *       <tt>@XmlValue</tt> annotation. </li>
+ *       {@code @XmlValue} annotation. </li>
  *
- *   <li><tt>@XmlValue</tt> can be used with the following
+ *   <li>{@code @XmlValue} can be used with the following
  *   annotations: {@link XmlList}. However this is redundant since
  *   {@link XmlList} maps a type to a simple schema type that derives by
  *   list just as {@link XmlValue} would. </li>
@@ -73,7 +73,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * simple type.
  *
  * If there are additional JavaBean properties (other than the
- * JavaBean property annotated with <tt>@XmlValue</tt> annotation)
+ * JavaBean property annotated with {@code @XmlValue} annotation)
  * that are mapped to XML attributes, then the class is mapped to a
  * complex type with simpleContent.
  * </p>

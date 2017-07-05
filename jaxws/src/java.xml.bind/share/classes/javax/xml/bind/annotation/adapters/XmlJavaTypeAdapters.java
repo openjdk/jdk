@@ -42,7 +42,7 @@ import java.lang.annotation.Target;
  * &#64;XmlJavaTypeAdapters ({ @XmlJavaTypeAdapter(...),@XmlJavaTypeAdapter(...) })
  * </pre>
  *
- * <p>The <tt>@XmlJavaTypeAdapters</tt> annotation is useful for
+ * <p>The {@code @XmlJavaTypeAdapters} annotation is useful for
  * defining {@link XmlJavaTypeAdapter} annotations for different types
  * at the package level.
  *

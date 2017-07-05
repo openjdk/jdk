@@ -98,7 +98,7 @@ public interface FieldAccessor {
     FieldOutline owner();
 
     /**
-     * Short for <tt>owner().getPropertyInfo()</tt>
+     * Short for {@code owner().getPropertyInfo()}
      */
     CPropertyInfo getPropertyInfo();
 }

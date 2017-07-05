@@ -28,7 +28,7 @@ package javax.xml.bind.annotation.adapters;
 
 
 /**
- * Built-in {@link XmlAdapter} to handle <tt>xs:token</tt> and its derived types.
+ * Built-in {@link XmlAdapter} to handle {@code xs:token} and its derived types.
  *
  * <p>
  * This adapter removes leading and trailing whitespaces, then truncate any

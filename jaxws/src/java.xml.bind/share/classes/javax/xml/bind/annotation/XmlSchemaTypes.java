@@ -41,7 +41,7 @@ import java.lang.annotation.Target;
  * <pre>
  * &#64;XmlSchemaTypes({ @XmlSchemaType(...), @XmlSchemaType(...) })
  * </pre>
- * <p>The <tt>@XmlSchemaTypes</tt> annnotation can be used to
+ * <p>The {@code @XmlSchemaTypes} annnotation can be used to
  * define {@link XmlSchemaType} for different types at the
  * package level.
  *

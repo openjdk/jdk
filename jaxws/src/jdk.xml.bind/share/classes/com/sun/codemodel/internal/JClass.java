@@ -51,7 +51,7 @@ public abstract class JClass extends JType
      * @return
      *  name of this class, without any qualification.
      *  For example, this method returns "String" for
-     *  <code>java.lang.String</code>.
+     *  {@code java.lang.String}.
      */
     abstract public String name();
 
@@ -62,7 +62,7 @@ public abstract class JClass extends JType
     abstract public JPackage _package();
 
     /**
-     * Returns the class in which this class is nested, or <tt>null</tt> if
+     * Returns the class in which this class is nested, or {@code null} if
      * this is a top-level class.
      */
     public JClass outer() {
@@ -102,7 +102,7 @@ public abstract class JClass extends JType
      *
      * <p>
      * For example, if this {@link JClass} represents
-     * <code>Set&lt;T></code>, this method returns an array
+     * {@code Set<T>}, this method returns an array
      * that contains single {@link JTypeVar} for 'T'.
      */
     public JTypeVar[] typeParams() {
@@ -134,7 +134,7 @@ public abstract class JClass extends JType
     /**
      * @deprecated calling this method from {@link JClass}
      * would be meaningless, since it's always guaranteed to
-     * return <tt>this</tt>.
+     * return {@code this}.
      */
     public JClass boxify() { return this; }
 
@@ -184,17 +184,17 @@ public abstract class JClass extends JType
      *
      * <p>
      * For example, given the following
-     * <pre><xmp>
+     * <pre>{@code
      * interface Foo<T> extends List<List<T>> {}
      * interface Bar extends Foo<String> {}
-     * </xmp></pre>
+     * }</pre>
      * This method works like this:
-     * <pre><xmp>
+     * <pre>{@code
      * getBaseClass( Bar, List ) = List<List<String>
      * getBaseClass( Bar, Foo  ) = Foo<String>
      * getBaseClass( Foo<? extends Number>, Collection ) = Collection<List<? extends Number>>
      * getBaseClass( ArrayList<? extends BigInteger>, List ) = List<? extends BigInteger>
-     * </xmp></pre>
+     * }</pre>
      *
      * @param baseType
      *      The class whose parameterization we are interested in.
@@ -241,7 +241,7 @@ public abstract class JClass extends JType
      * a type argument.
      *
      * <p>
-     * <code>.narrow(X)</code> builds <code>Set&lt;X></code> from <code>Set</code>.
+     * {@code .narrow(X)} builds {@code Set<X>} from {@code Set}.
      */
     public JClass narrow( Class<?> clazz ) {
         return narrow(owner().ref(clazz));
@@ -259,7 +259,7 @@ public abstract class JClass extends JType
      * a type argument.
      *
      * <p>
-     * <code>.narrow(X)</code> builds <code>Set&lt;X></code> from <code>Set</code>.
+     * {@code .narrow(X)} builds {@code Set<X>} from {@code Set}.
      */
     public JClass narrow( JClass clazz ) {
         return new JNarrowedClass(this,clazz);
@@ -307,7 +307,7 @@ public abstract class JClass extends JType
      * For example, when this class is Map&lt;String,Map&lt;V>>,
      * (where V then doing
      * substituteParams( V, Integer ) returns a {@link JClass}
-     * for <code>Map&lt;String,Map&lt;Integer>></code>.
+     * for {@code Map<String,Map<Integer>>}.
      *
      * <p>
      * This method needs to work recursively.

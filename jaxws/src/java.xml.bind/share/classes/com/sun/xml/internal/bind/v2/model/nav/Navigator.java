@@ -70,17 +70,17 @@ public interface Navigator<T,C,F,M> {
      *
      * <p>
      * For example, given the following
-     * <pre><xmp>
+     * <pre>{@code
      * interface Foo<T> extends List<List<T>> {}
      * interface Bar extends Foo<String> {}
-     * </xmp></pre>
+     * }</pre>
      * This method works like this:
-     * <pre><xmp>
-     * getBaseClass( Bar, List ) = List<List<String>
+     * <pre>{@code
+     * getBaseClass( Bar, List ) = List<List<String>>
      * getBaseClass( Bar, Foo  ) = Foo<String>
      * getBaseClass( Foo<? extends Number>, Collection ) = Collection<List<? extends Number>>
      * getBaseClass( ArrayList<? extends BigInteger>, List ) = List<? extends BigInteger>
-     * </xmp></pre>
+     * }</pre>
      *
      * @param type
      *      The type that derives from {@code baseType}

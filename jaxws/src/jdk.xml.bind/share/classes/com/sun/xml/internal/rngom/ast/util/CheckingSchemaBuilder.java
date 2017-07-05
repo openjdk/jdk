@@ -72,7 +72,7 @@ import org.xml.sax.ErrorHandler;
  * </pre>
  *
  * <p>
- * The checking is done by using the <tt>rngom.binary</tt> package, so if you are using
+ * The checking is done by using the {@code rngom.binary} package, so if you are using
  * that package for parsing schemas, then there's no need to use this.
  *
  * @author

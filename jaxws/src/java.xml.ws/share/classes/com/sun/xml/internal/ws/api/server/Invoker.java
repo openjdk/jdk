@@ -39,7 +39,7 @@ import java.lang.reflect.Method;
  * <p>
  * Typical host of the JAX-WS RI would want to use
  * {@link InstanceResolver#createDefault(Class)} and then
- * use <tt>{@link InstanceResolver#createInvoker()} to obtain
+ * use {@link InstanceResolver#createInvoker()} to obtain
  * the default invoker implementation.
  *
  *

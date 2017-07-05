@@ -473,7 +473,7 @@ public abstract class WSEndpoint<T> implements ComponentRegistry {
      * This method works like the following:
      * <ol>
      * <li>{@link ServiceDefinition} is modeleed from the given SEI type.
-     * <li>{@link Invoker} that always serves <tt>implementationObject</tt> will be used.
+     * <li>{@link Invoker} that always serves {@code implementationObject} will be used.
      * </ol>
      * @param implType
      *      Endpoint class(not SEI). Enpoint class must have @WebService or @WebServiceProvider
@@ -521,7 +521,7 @@ public abstract class WSEndpoint<T> implements ComponentRegistry {
      *      WSDL. Must be null if the {@code url} is null.
      * @param isTransportSynchronous
      *      If the caller knows that the returned {@link WSEndpoint} is going to be
-     *      used by a synchronous-only transport, then it may pass in <tt>true</tt>
+     *      used by a synchronous-only transport, then it may pass in {@code true}
      *      to allow the callee to perform an optimization based on that knowledge
      *      (since often synchronous version is cheaper than an asynchronous version.)
      *      This value is visible from {@link ServerTubeAssemblerContext#isSynchronous()}.
@@ -583,7 +583,7 @@ public abstract class WSEndpoint<T> implements ComponentRegistry {
     }
 
     /**
-     * Deprecated version that assumes <tt>isTransportSynchronous==false</tt>
+     * Deprecated version that assumes {@code isTransportSynchronous==false}
      */
     @Deprecated
     public static <T> WSEndpoint<T> create(
@@ -604,7 +604,7 @@ public abstract class WSEndpoint<T> implements ComponentRegistry {
     /**
      * The same as
      * {@link #create(Class, boolean, Invoker, QName, QName, Container, WSBinding, SDDocumentSource, Collection, EntityResolver)}
-     * except that this version takes an url of the <tt>jax-ws-catalog.xml</tt>.
+     * except that this version takes an url of the {@code jax-ws-catalog.xml}.
      *
      * @param catalogUrl
      *      if not null, an {@link EntityResolver} is created from it and used.

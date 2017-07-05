@@ -60,7 +60,7 @@ import com.sun.istack.internal.Nullable;
  * <p>
  * When an {@link Unmarshaller} encounters (i) an unknown root element or (ii) unknown
  * elements where unmarshaller is trying to unmarshal into {@link XmlAnyElement} with
- * <tt>lax=true</tt>, unmarshaller calls {@link #resolveElementName(String, String)}
+ * {@code lax=true}, unmarshaller calls {@link #resolveElementName(String, String)}
  * method to see if the application may be able to supply a class that corresponds
  * to that class.
  *

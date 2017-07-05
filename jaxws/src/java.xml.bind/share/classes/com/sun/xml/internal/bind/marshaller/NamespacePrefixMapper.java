@@ -125,7 +125,7 @@ public abstract class NamespacePrefixMapper {
      * they are necessary, only at where they are used. Because of this
      * lack of look-ahead, sometimes the marshaller produces a lot of
      * namespace declarations that look redundant to human eyes. For example,
-     * <pre><xmp>
+     * <pre>{@code
      * <?xml version="1.0"?>
      * <root>
      *   <ns1:child xmlns:ns1="urn:foo"> ... </ns1:child>
@@ -133,7 +133,7 @@ public abstract class NamespacePrefixMapper {
      *   <ns3:child xmlns:ns3="urn:foo"> ... </ns3:child>
      *   ...
      * </root>
-     * </xmp></pre>
+     * }</pre>
      *
      * <p>
      * The JAXB RI 2.x mostly doesn't exhibit this behavior any more,
@@ -152,7 +152,7 @@ public abstract class NamespacePrefixMapper {
      * <p>
      * For example, by returning <code>new String[]{"urn:foo"}</code>,
      * the marshaller will produce:
-     * <pre><xmp>
+     * <pre>{@code
      * <?xml version="1.0"?>
      * <root xmlns:ns1="urn:foo">
      *   <ns1:child> ... </ns1:child>
@@ -160,7 +160,7 @@ public abstract class NamespacePrefixMapper {
      *   <ns1:child> ... </ns1:child>
      *   ...
      * </root>
-     * </xmp></pre>
+     * }</pre>
      * <p>
      * To control prefixes assigned to those namespace URIs, use the
      * {@link #getPreferredPrefix(String, String, boolean)} method.
@@ -232,7 +232,7 @@ public abstract class NamespacePrefixMapper {
      * the receiver a conflicting binding information.
      * It's a responsibility of the caller to make sure that this doesn't happen
      * even if the ancestor elements look like:
-     * <pre><xmp>
+     * <pre>{@code
      *   <foo:abc xmlns:foo="abc">
      *     <foo:abc xmlns:foo="def">
      *       <foo:abc xmlns:foo="abc">
@@ -240,7 +240,7 @@ public abstract class NamespacePrefixMapper {
      *       </foo:abc>
      *     </foo:abc>
      *   </foo:abc>
-     * </xmp></pre>
+     * }</pre>
      *
      * @return
      *      always return a non-null (but possibly empty) array. The array stores

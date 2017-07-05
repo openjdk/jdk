@@ -174,7 +174,7 @@ public class TypeConstraintException extends java.lang.RuntimeException {
 
     /**
      * Prints this TypeConstraintException and its stack trace (including the stack trace
-     * of the linkedException if it is non-null) to <tt>System.err</tt>.
+     * of the linkedException if it is non-null) to {@code System.err}.
      *
      */
     public void printStackTrace() {

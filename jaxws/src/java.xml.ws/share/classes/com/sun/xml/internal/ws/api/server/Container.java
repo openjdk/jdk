@@ -50,12 +50,12 @@ import com.sun.xml.internal.ws.api.ComponentRegistry;
  * from a container, they can do the following:
  * <ol>
  *  <li>Negotiate an interface with the container and define it.
- *      (let's call it <tt>ContainerSecuritySPI</tt>.)
- *  <li>The container will implement <tt>ContainerSecuritySPI</tt>.
+ *      (let's call it {@code ContainerSecuritySPI}.)
+ *  <li>The container will implement {@code ContainerSecuritySPI}.
  *  <li>At the runtime, a security pipe gets
  *      {@link WSEndpoint} and then to {@link Container}.
- *  <li>It calls <tt>container.getSPI(ContainerSecuritySPI.class)</tt>
- *  <li>The container returns an instance of <tt>ContainerSecuritySPI</tt>.
+ *  <li>It calls {@code container.getSPI(ContainerSecuritySPI.class)}
+ *  <li>The container returns an instance of {@code ContainerSecuritySPI}.
  *  <li>The security pipe talks to the container through this SPI.
  * </ol>
  *

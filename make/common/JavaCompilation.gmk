@@ -155,6 +155,7 @@ define SetupArchiveBody
   # When this macro is run in the same makefile as the java compilation, dependencies are
   # transfered in make variables. When the macro is run in a different makefile than the
   # java compilation, the dependencies need to be found in the filesystem.
+  $1_ORIG_DEPS := $$($1_DEPENDENCIES)
   ifeq ($$($1_DEPENDENCIES), )
     # Add all source roots to the find cache since we are likely going to run find
     # on these more than once. The cache will only be updated if necessary.
@@ -266,7 +267,8 @@ define SetupArchiveBody
 
   # Include all variables of significance in the vardeps file
   $1_VARDEPS := $(JAR) $$($1_JAR_CREATE_OPTIONS) $$($1_MANIFEST) \
-      $$($1_JARMAIN) $$($1_EXTRA_MANIFEST_ATTR)
+      $$($1_JARMAIN) $$($1_EXTRA_MANIFEST_ATTR) $$($1_ORIG_DEPS) $$($1_SRCS) \
+      $$($1_INCLUDES) $$($1_EXCLUDES) $$($1_EXCLUDE_FILES) $$($1_EXTRA_FILES)
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$(dir $$($1_JAR))_the.$$($1_JARNAME).vardeps)
 
   # Here is the rule that creates/updates the jar file.
@@ -280,7 +282,7 @@ define SetupArchiveBody
         # potential changes.
 	$$(if $$(filter $$($1_VARDEPS_FILE) $$($1_MANIFEST), $$?), \
 	  $$(if $$($1_MANIFEST), \
-	    $(CP) $$($1_MANIFEST) $$($1_MANIFEST_FILE) $$(NEWLINE) \
+	    $(SED) -e '$(DOLLAR)$(DOLLAR)a\' $$($1_MANIFEST) > $$($1_MANIFEST_FILE) $$(NEWLINE) \
 	  , \
 	    $(RM) $$($1_MANIFEST_FILE) && $(TOUCH) $$($1_MANIFEST_FILE) $$(NEWLINE)) \
 	  $$(if $$($1_JARMAIN), \
@@ -417,6 +419,7 @@ endef
 #   HEADERS:=path to directory where all generated c-headers are written.
 #   DEPENDS:=Extra dependecy
 #   DISABLE_SJAVAC:=Explicitly disable the use of sjavac for this compilation unit.
+#   KEEP_DUPS:=Do not remove duplicate file names from different source roots.
 SetupJavaCompilation = $(NamedParamsMacroTemplate)
 define SetupJavaCompilationBody
 
@@ -469,19 +472,27 @@ define SetupJavaCompilationBody
     $1_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_SRCS))
   endif
 
-  # Remove duplicate source files by keeping the first found of each duplicate.
-  # This allows for automatic overrides with custom or platform specific versions
-  # source files.
-  #
-  # For the smart javac wrapper case, add each removed file to an extra exclude
-  # file list to prevent sjavac from finding duplicate sources.
-  $1_SRCS := $$(strip $$(foreach s, $$($1_SRCS), \
-      $$(eval relative_src := $$(call remove-prefixes, $$($1_SRC), $$(s))) \
-      $$(if $$($1_$$(relative_src)), \
-        $$(eval $1_SJAVAC_EXCLUDE_FILES += $$(s)), \
-        $$(eval $1_$$(relative_src) := 1) $$(s))))
+  ifneq ($$($1_KEEP_DUPS), true)
+    # Remove duplicate source files by keeping the first found of each duplicate.
+    # This allows for automatic overrides with custom or platform specific versions
+    # source files.
+    #
+    # For the smart javac wrapper case, add each removed file to an extra exclude
+    # file list to prevent sjavac from finding duplicate sources.
+    $1_SRCS := $$(strip $$(foreach s, $$($1_SRCS), \
+        $$(eval relative_src := $$(call remove-prefixes, $$($1_SRC), $$(s))) \
+        $$(if $$($1_$$(relative_src)), \
+          $$(eval $1_SJAVAC_EXCLUDE_FILES += $$(s)), \
+          $$(eval $1_$$(relative_src) := 1) $$(s))))
+  endif
 
- # Create the corresponding smart javac wrapper command line.
+  ifeq ($$(strip $$($1_SRCS)), )
+    $$(error No source files found for $1)
+  endif
+
+  $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
+
+  # Create the corresponding smart javac wrapper command line.
   $1_SJAVAC_ARGS:=$$(addprefix -x ,$$(addsuffix /*,$$($1_EXCLUDES))) \
       $$(addprefix -i ,$$(addsuffix /*,$$($1_INCLUDES))) \
       $$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES) $$($1_SJAVAC_EXCLUDE_FILES))) \
@@ -560,14 +571,15 @@ define SetupJavaCompilationBody
         $$(SPACE),%20,$$(subst $$(COMMA),%2C,$$(strip $$($1_SERVER_JVM) $$($1_SJAVAC))))
 
     $1_VARDEPS := $$($1_JVM) $$($1_SJAVAC) $$($1_SJAVAC_ARGS) $$($1_FLAGS) \
-        $$($1_HEADERS_ARG) $$($1_BIN)
+        $$($1_HEADERS_ARG) $$($1_BIN) $$($1_EXCLUDES) $$($1_INCLUDES) \
+        $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_BIN)/_the.$1.vardeps)
 
     $$($1_BIN)/_the.$1_batch: $$($1_SRCS) $$($1_DEPENDS) $$($1_VARDEPS_FILE)
 	$(MKDIR) -p $$(@D) $$(dir $$($1_SJAVAC_PORTFILE))
 	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
 	$(ECHO) Compiling $1
-	$(call LogFailures, $$($1_BIN)/_the.$1_batch.log, $1, \
+	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_SJAVAC) \
 	        $$($1_REMOTE) \
 	        -j 1 \
@@ -575,6 +587,7 @@ define SetupJavaCompilationBody
 	        --permit-sources-without-package \
 	        --compare-found-sources $$($1_BIN)/_the.$1_batch.tmp \
 	        --log=$(LOG_LEVEL) \
+	        --state-dir=$$($1_BIN) \
 	        $$($1_SJAVAC_ARGS) \
 	        $$($1_FLAGS) \
 	        $$($1_HEADERS_ARG) \
@@ -615,7 +628,9 @@ define SetupJavaCompilationBody
       $1_HEADER_TARGETS := $$($1_HEADERS)/_the.$1_headers
     endif
 
-    $1_VARDEPS := $$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) $$($1_BIN) $$($1_HEADERS_ARG)
+    $1_VARDEPS := $$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) $$($1_BIN) \
+        $$($1_HEADERS_ARG) $$($1_EXCLUDES) $$($1_INCLUDES) \
+        $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, $$($1_BIN)/_the.$1.vardeps)
 
     # When not using sjavac, pass along all sources to javac using an @file.
@@ -624,7 +639,7 @@ define SetupJavaCompilationBody
 	$(RM) $$($1_BIN)/_the.$1_batch $$($1_BIN)/_the.$1_batch.tmp
 	$$(call ListPathsSafely,$1_SRCS,\n, >> $$($1_BIN)/_the.$1_batch.tmp)
 	$(ECHO) Compiling `$(WC) $$($1_BIN)/_the.$1_batch.tmp | $(TR) -s ' ' | $(CUT) -f 2 -d ' '` files for $1
-	$(call LogFailures, $$($1_BIN)/_the.$1_batch.log, $1, \
+	$(call LogFailures, $$($1_BIN)/_the.$$($1_SAFE_NAME)_batch.log, $$($1_SAFE_NAME), \
 	    $$($1_JVM) $$($1_JAVAC) $$($1_FLAGS) \
 	        -implicit:none \
 	        -d $$($1_BIN) $$($1_HEADERS_ARG) @$$($1_BIN)/_the.$1_batch.tmp) && \

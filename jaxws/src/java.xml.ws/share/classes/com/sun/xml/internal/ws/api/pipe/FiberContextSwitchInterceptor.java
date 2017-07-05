@@ -44,7 +44,7 @@ import java.security.PrivilegedAction;
  * <p>
  * The design also encapsulates the entire fiber execution in a single
  * opaque method invocation {@link Work#execute}, allowing the use of
- * <tt>finally</tt> block.
+ * {@code finally} block.
  *
  *
  * @author Kohsuke Kawaguchi

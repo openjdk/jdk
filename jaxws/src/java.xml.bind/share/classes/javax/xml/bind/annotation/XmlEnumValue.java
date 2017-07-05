@@ -35,7 +35,7 @@ import static java.lang.annotation.ElementType.FIELD;
  *
  * <p> <b>Usage</b> </p>
  *
- * <p> The <tt>@XmlEnumValue</tt> annotation can be used with the
+ * <p> The {@code @XmlEnumValue} annotation can be used with the
  *     following program elements:
  * <ul>
  *   <li>enum constant</li>
@@ -49,9 +49,9 @@ import static java.lang.annotation.ElementType.FIELD;
  *
  * <p>An enum type is mapped to a schema simple type with enumeration
  * facets. The schema type is derived from the Java type specified in
- * <tt>@XmlEnum.value()</tt>. Each enum constant <tt>@XmlEnumValue</tt>
+ * {@code @XmlEnum.value()}. Each enum constant {@code @XmlEnumValue}
  * must have a valid lexical representation for the type
- * <tt>@XmlEnum.value()</tt>
+ * {@code @XmlEnum.value()}
  *
  * <p> In the absence of this annotation, {@link Enum#name()} is used
  * as the XML representation.

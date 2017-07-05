@@ -57,7 +57,7 @@ import org.xml.sax.InputSource;
  * <p>
  * The caller can feed the following synthesized schema
  * to achive the namespace URI -> Java package customization:
- * <pre><xmp>
+ * <pre>{@code
  * <schema targetNamespace="xml.namespace.uri"
  *   xmlns="http://www.w3.org/2001/XMLSchema"
  *   xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
@@ -68,7 +68,7 @@ import org.xml.sax.InputSource;
  *     </jaxb:schemaBindings>
  *   </appinfo></annotation>
  * </schema>
- * </xmp></pre>
+ * }</pre>
  * Feed this synthesized schema document for each namespace URI
  * you need to map.
  *

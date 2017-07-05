@@ -56,9 +56,9 @@ public interface ElementPropertyInfo<T,C> extends PropertyInfo<T,C> {
      * &#64;XmlElements({
      *   &#64;XmlElement(name="a",type=String.class),
      *   &#64;XmlElement(name="b",type=Integer.class),
-     * })
-     * List&lt;Object> abc;
-     * </pre>
+     * }) {@code
+     * List<Object> abc;
+     * }</pre>
      * <p>
      * In this case this method returns a list of two {@link TypeRef}s.
      *
@@ -107,7 +107,7 @@ public interface ElementPropertyInfo<T,C> extends PropertyInfo<T,C> {
      * If {@link #isCollection()}==false, this property is always false.
      *
      * <p>
-     * When this flag is true, <tt>getTypes().size()==1</tt> always holds.
+     * When this flag is true, {@code getTypes().size()==1} always holds.
      */
     boolean isValueList();
 

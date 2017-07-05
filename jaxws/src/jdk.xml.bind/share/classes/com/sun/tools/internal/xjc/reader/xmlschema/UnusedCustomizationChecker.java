@@ -65,7 +65,8 @@ import com.sun.xml.internal.xsom.visitor.XSVisitor;
  *
  * <p>
  * Since we scan the whole content tree, we use this to check for unused
- * <tt>xmime:expectedContentTypes</tt> attributes. TODO: if we find this kind of error checks more
+ * {@code xmime:expectedContentTypes} attributes.
+ * TODO: if we find this kind of error checks more
  * common, use the visitors so that we don't have to mix everything in one class.
  *
  * @author

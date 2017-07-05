@@ -52,7 +52,7 @@ public interface XSAnnotation
      * @param o
      *      can be null.
      * @return
-     *      old value that was replaced by the <tt>o</tt>.
+     *      old value that was replaced by the {@code o}.
      */
     Object setAnnotation(Object o);
 

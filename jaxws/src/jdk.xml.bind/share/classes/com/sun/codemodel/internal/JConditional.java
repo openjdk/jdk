@@ -76,7 +76,7 @@ public class JConditional implements JStatement {
     }
 
     /**
-     * Creates <tt>... else if(...) ...</tt> code.
+     * Creates {@code ... else if(...) ...} code.
      */
     public JConditional _elseif(JExpression boolExp) {
         return _else()._if(boolExp);

@@ -50,13 +50,13 @@ import static java.lang.annotation.ElementType.METHOD;
  * The method signature has to match one of the following patterns.
  *
  * <dl>
- *  <dt>Child writer: <tt>TW foo()</tt></dt>
+ *  <dt>Child writer: {@code TW foo()}</dt>
  *  <dd>TW must be an interface derived from {@link TypedXmlWriter}.
  *      When this method is called, a new child element is started,
- *      and its content can be written by using the returned <tt>TW</tt>
+ *      and its content can be written by using the returned {@code TW}
  *      object. This child element will be ended when its _commit method
  *      is called.
- *  <dt>Leaf element: <tt>void foo(DT1,DT2,...)</tt></dt>
+ *  <dt>Leaf element: {@code void foo(DT1,DT2,...)}</dt>
  *  <dd>DTi must be datatype objects.
  *      When this method is called, a new child element is started,
  *      followed by the whitespace-separated text data from each of
