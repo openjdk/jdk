@@ -76,7 +76,7 @@ abstract class AsynchronousChannelGroupImpl
         this.pool = pool;
 
         if (pool.isFixedThreadPool()) {
-            taskQueue = new ConcurrentLinkedQueue<Runnable>();
+            taskQueue = new ConcurrentLinkedQueue<>();
         } else {
             taskQueue = null;   // not used
         }
@@ -115,7 +115,7 @@ abstract class AsynchronousChannelGroupImpl
     }
 
     private void startInternalThread(final Runnable task) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
                 // internal threads should not be visible to application so
@@ -246,7 +246,7 @@ abstract class AsynchronousChannelGroupImpl
     abstract void shutdownHandlerTasks();
 
     private void shutdownExecutors() {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             public Void run() {
                 pool.executor().shutdown();
                 timeoutExecutor.shutdown();
@@ -323,7 +323,7 @@ abstract class AsynchronousChannelGroupImpl
             task = new Runnable() {
                 @Override
                 public void run() {
-                    AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                    AccessController.doPrivileged(new PrivilegedAction<>() {
                         @Override
                         public Void run() {
                             delegate.run();

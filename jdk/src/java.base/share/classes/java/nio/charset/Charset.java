@@ -335,7 +335,7 @@ public abstract class Charset
     // thrown.  Should be invoked with full privileges.
     //
     private static Iterator<CharsetProvider> providers() {
-        return new Iterator<CharsetProvider>() {
+        return new Iterator<>() {
 
                 ClassLoader cl = ClassLoader.getSystemClassLoader();
                 ServiceLoader<CharsetProvider> sl =
@@ -404,7 +404,7 @@ public abstract class Charset
             gate.set(gate);
 
             return AccessController.doPrivileged(
-                new PrivilegedAction<Charset>() {
+                new PrivilegedAction<>() {
                     public Charset run() {
                         for (Iterator<CharsetProvider> i = providers();
                              i.hasNext();) {
@@ -428,7 +428,7 @@ public abstract class Charset
         // returns ExtendedProvider, if installed
         private static CharsetProvider extendedProvider() {
             return AccessController.doPrivileged(
-                       new PrivilegedAction<CharsetProvider>() {
+                       new PrivilegedAction<>() {
                            public CharsetProvider run() {
                                 try {
                                     Class<?> epc
@@ -570,10 +570,10 @@ public abstract class Charset
      */
     public static SortedMap<String,Charset> availableCharsets() {
         return AccessController.doPrivileged(
-            new PrivilegedAction<SortedMap<String,Charset>>() {
+            new PrivilegedAction<>() {
                 public SortedMap<String,Charset> run() {
                     TreeMap<String,Charset> m =
-                        new TreeMap<String,Charset>(
+                        new TreeMap<>(
                             ASCIICaseInsensitiveComparator.CASE_INSENSITIVE_ORDER);
                     put(standardProvider.charsets(), m);
                     CharsetProvider ecp = ExtendedProviderHolder.extendedProvider;
@@ -663,7 +663,7 @@ public abstract class Charset
         if (aliasSet != null)
             return aliasSet;
         int n = aliases.length;
-        HashSet<String> hs = new HashSet<String>(n);
+        HashSet<String> hs = new HashSet<>(n);
         for (int i = 0; i < n; i++)
             hs.add(aliases[i]);
         aliasSet = Collections.unmodifiableSet(hs);

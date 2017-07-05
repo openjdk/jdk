@@ -99,7 +99,7 @@ final class ProcessEnvironment
 
     /* Only for use by Runtime.exec(...String[]envp...) */
     static Map<String,String> emptyEnvironment(int capacity) {
-        return new StringEnvironment(new HashMap<Variable,Value>(capacity));
+        return new StringEnvironment(new HashMap<>(capacity));
     }
 
     private static native byte[][] environ();

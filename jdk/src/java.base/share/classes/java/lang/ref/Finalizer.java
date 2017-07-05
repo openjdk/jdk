@@ -121,7 +121,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
      */
     private static void forkSecondaryFinalizer(final Runnable proc) {
         AccessController.doPrivileged(
-            new PrivilegedAction<Void>() {
+            new PrivilegedAction<>() {
                 public Void run() {
                     ThreadGroup tg = Thread.currentThread().getThreadGroup();
                     for (ThreadGroup tgn = tg;
