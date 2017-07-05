@@ -27,13 +27,21 @@
  * @library /java/text/testlib
  * @build DFSSerialization IntlTest HexDumpReader
  * @run main DFSSerialization
- * @summary Three different tests are done. 1.read from the object created using jdk1.4.2  2.create a valid DecimalFormatSymbols object with current JDK, then read the object 3.Try to create an valid DecimalFormatSymbols object by passing null to set null for the exponent separator symbol. Expect the NullPointerException.
+ * @summary Three different tests are done.
+ *    1. read from the object created using jdk1.4.2
+ *    2. create a valid DecimalFormatSymbols object with current JDK, then read the object
+ *    3. Try to create an valid DecimalFormatSymbols object by passing null to set null
+ *       for the exponent separator symbol. Expect the NullPointerException.
  */
 
-import java.awt.*;
-import java.text.*;
-import java.util.*;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 public class DFSSerialization extends IntlTest{
     public static void main(String[] args) throws Exception {

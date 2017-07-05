@@ -353,35 +353,6 @@ void HeapRegion::note_self_forwarding_removal_end(bool during_initial_mark,
 }
 
 HeapWord*
-HeapRegion::object_iterate_mem_careful(MemRegion mr,
-                                                 ObjectClosure* cl) {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  // We used to use "block_start_careful" here.  But we're actually happy
-  // to update the BOT while we do this...
-  HeapWord* cur = block_start(mr.start());
-  mr = mr.intersection(used_region());
-  if (mr.is_empty()) return NULL;
-  // Otherwise, find the obj that extends onto mr.start().
-
-  assert(cur <= mr.start()
-         && (oop(cur)->klass_or_null() == NULL ||
-             cur + oop(cur)->size() > mr.start()),
-         "postcondition of block_start");
-  oop obj;
-  while (cur < mr.end()) {
-    obj = oop(cur);
-    if (obj->klass_or_null() == NULL) {
-      // Ran into an unparseable point.
-      return cur;
-    } else if (!g1h->is_obj_dead(obj)) {
-      cl->do_object(obj);
-    }
-    cur += block_size(cur);
-  }
-  return NULL;
-}
-
-HeapWord*
 HeapRegion::
 oops_on_card_seq_iterate_careful(MemRegion mr,
                                  FilterOutOfRegionClosure* cl,
