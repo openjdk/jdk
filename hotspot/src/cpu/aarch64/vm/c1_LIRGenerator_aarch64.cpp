@@ -1221,12 +1221,19 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   obj.load_item();
 
   // info for exceptions
-  CodeEmitInfo* info_for_exception = state_for(x);
+  CodeEmitInfo* info_for_exception =
+      (x->needs_exception_state() ? state_for(x) :
+                                    state_for(x, x->state_before(), true /*ignore_xhandler*/));
 
   CodeStub* stub;
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == NULL, "can't patch this");
     stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
+  } else if (x->is_invokespecial_receiver_check()) {
+    assert(patching_info == NULL, "can't patch this");
+    stub = new DeoptimizeStub(info_for_exception,
+                              Deoptimization::Reason_class_check,
+                              Deoptimization::Action_none);
   } else {
     stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
@@ -1340,6 +1347,16 @@ void LIRGenerator::volatile_field_store(LIR_Opr value, LIR_Address* address,
 
 void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
                                        CodeEmitInfo* info) {
+  // 8179954: We need to make sure that the code generated for
+  // volatile accesses forms a sequentially-consistent set of
+  // operations when combined with STLR and LDAR.  Without a leading
+  // membar it's possible for a simple Dekker test to fail if loads
+  // use LD;DMB but stores use STLR.  This can happen if C2 compiles
+  // the stores in one method and C1 compiles the loads in another.
+  if (! UseBarriersForVolatile) {
+    __ membar();
+  }
+
   __ volatile_load_mem_reg(address, result, info);
 }
 

@@ -57,6 +57,8 @@ import java.io.PrintWriter;
 import java.util.Hashtable;
 import java.util.Locale;
 
+import static java.lang.Math.abs;
+
 import org.netbeans.jemmy.CharBindingMap;
 import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.ComponentSearcher;
@@ -1132,6 +1134,87 @@ public class ComponentOperator extends Operator
             @Override
             public String toString() {
                 return "ComponentOperator.waitComponentShowing.ComponentChooser{description = " + getDescription() + '}';
+            }
+        });
+    }
+
+    /**
+     * Wait till the Size of the component becomes as expected.
+     *
+     * @param exactSize the exact expected size.
+     */
+    public void waitComponentSize(Dimension exactSize) {
+        waitComponentSize(exactSize, exactSize);
+    }
+
+    /**
+     * Wait till the Size of the component becomes between minSize and maxSize.
+     *
+     * @param minSize the minimum allowed size.
+     * @param maxSize the maximum allowed size.
+     */
+    public void waitComponentSize(Dimension minSize, Dimension maxSize) {
+        waitState(new ComponentChooser() {
+            @Override
+            public boolean checkComponent(Component comp) {
+                Dimension componentSize = comp.getSize();
+                return componentSize.height >= minSize.height
+                        && componentSize.height <= maxSize.height
+                        && componentSize.width >= minSize.width
+                        && componentSize.width <= maxSize.width;
+            }
+
+            @Override
+            public String getDescription() {
+                return "Component Size becomes between: " + minSize
+                        + "and " + maxSize;
+            }
+
+            @Override
+            public String toString() {
+                return "ComponentOperator.waitComponentSize"
+                        + ".Waitable{description = " + getDescription() + '}';
+            }
+        });
+    }
+
+    /**
+     * Wait till the component reaches exact location.
+     *
+     * @param exactlocation exact expected location.
+     */
+    public void waitComponentLocation(Point exactlocation) {
+        waitComponentLocation(exactlocation, exactlocation);
+    }
+
+    /**
+     * Wait till the component reaches location between minLocation and
+     * maxLocation
+     *
+     * @param minLocation minimum expected location.
+     * @param maxLocation maximum expected location.
+     */
+    public void waitComponentLocation(Point minLocation, Point maxLocation) {
+        waitState(new ComponentChooser() {
+            @Override
+            public boolean checkComponent(Component comp) {
+                Point componentLocation = comp.getLocation();
+                return componentLocation.x >= minLocation.x
+                        && componentLocation.x <= maxLocation.x
+                        && componentLocation.y >= minLocation.y
+                        && componentLocation.y <= maxLocation.y;
+            }
+
+            @Override
+            public String getDescription() {
+                return "Component reaches location between :" + minLocation
+                        + "and " + maxLocation;
+            }
+
+            @Override
+            public String toString() {
+                return "ComponentOperator.waitComponentLocation"
+                        + ".Waitable{description = " + getDescription() + '}';
             }
         });
     }

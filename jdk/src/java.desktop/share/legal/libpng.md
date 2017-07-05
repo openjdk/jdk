@@ -1,6 +1,6 @@
-## Libpng v 1.6.23
+## libpng v1.6.23
 
-### Libpng License
+### libpng License
 <pre>
 
 This copy of the libpng notices is provided for your convenience.  In case of

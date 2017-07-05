@@ -31,7 +31,7 @@
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.frame
  *          jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
  *          java.security.jgss
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=ssl,errors ErrorTest
+ * @run testng/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
  * @summary check exception thrown when bad TLS parameters selected
  */
 
@@ -76,10 +76,13 @@ public class ErrorTest {
 
         Http2TestServer httpsServer = null;
         try {
+            SSLContext serverContext = (new SimpleSSLContext()).get();
+            SSLParameters p = serverContext.getSupportedSSLParameters();
+            p.setApplicationProtocols(new String[]{"h2"});
             httpsServer = new Http2TestServer(true,
                                               0,
                                               exec,
-                                              sslContext);
+                                              serverContext);
             httpsServer.addHandler(new EchoHandler(), "/");
             int httpsPort = httpsServer.getAddress().getPort();
             String httpsURIString = "https://127.0.0.1:" + httpsPort + "/bar/";
