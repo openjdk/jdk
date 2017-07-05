@@ -923,7 +923,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
      * @param fc a {@code JFileChooser}
      * @return a new instance of {@code DirectoryComboBoxRenderer}
      */
-    protected DirectoryComboBoxRenderer createDirectoryComboBoxRenderer(JFileChooser fc) {
+    private DefaultListCellRenderer createDirectoryComboBoxRenderer(JFileChooser fc) {
         return new DirectoryComboBoxRenderer();
     }
 

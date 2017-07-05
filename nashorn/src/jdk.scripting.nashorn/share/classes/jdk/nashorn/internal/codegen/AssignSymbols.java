@@ -343,7 +343,7 @@ final class AssignSymbols extends SimpleNodeVisitor implements Loggable {
                     symbol = null;
                 } else if (symbol.isParam()) {
                     // Duplicate parameter. Null return will force an error.
-                    throw new AssertionError("duplicate parameter");
+                    throwParserException(ECMAErrors.getMessage("syntax.error.duplicate.parameter", name), origin);
                 }
             } else if (isVar) {
                 if (isBlockScope) {

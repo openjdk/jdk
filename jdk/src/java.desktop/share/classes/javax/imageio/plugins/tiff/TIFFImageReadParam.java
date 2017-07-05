@@ -48,7 +48,7 @@ import javax.imageio.ImageReadParam;
  *
  * @since 9
  */
-public class TIFFImageReadParam extends ImageReadParam {
+public final class TIFFImageReadParam extends ImageReadParam {
 
     private List<TIFFTagSet> allowedTagSets = new ArrayList<TIFFTagSet>(4);
 
