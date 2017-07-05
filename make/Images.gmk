@@ -248,38 +248,38 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
   endif
 
   $(JRE_IMAGE_DIR)/man/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/%
-	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
 
   $(JDK_IMAGE_DIR)/man/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/%
-	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
 
   $(JRE_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
 
   $(JDK_IMAGE_DIR)/man/ja_JP.UTF-8/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
 
   ifeq ($(OPENJDK_TARGET_OS), solaris)
     $(JRE_IMAGE_DIR)/man/ja/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
 
     $(JDK_IMAGE_DIR)/man/ja/man1/%: $(MAN_SRC_DIR)/$(MAN1_SUBDIR)/ja/%
-	$(ECHO) $(LOG_INFO) Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Converting $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
   endif
 
   ifneq ($(findstring $(OPENJDK_TARGET_OS), linux macosx), )
     $(JRE_IMAGE_DIR)/man/ja:
-	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
 
     $(JDK_IMAGE_DIR)/man/ja:
-	$(ECHO) $(LOG_INFO) Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Creating $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(CD) $(@D) && $(RM) ja && $(LN) -s ja_JP.UTF-8 ja
   endif
 
@@ -333,7 +333,7 @@ JDK_DOC_TARGETS := $(addprefix $(JDK_IMAGE_DIR)/, $(JDK_DOC_FILES))
 # Processing license files from source area to image area
 # These are modified to have the platform specific EOL chars.
 define process-doc-file
-	$(ECHO) $(LOG_INFO) Processing $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Processing $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	LC_ALL=C $(SED) 's/$$//g' $< > $@
@@ -378,7 +378,7 @@ endef
 
 # Param 1 - The file containing the MODULES list
 define prepare-info-file
-  $(ECHO) $(LOG_INFO) Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+  $(call LogInfo, Generating $(patsubst $(OUTPUT_ROOT)/%,%,$@))
   $(MKDIR) -p $(@D)
   $(RM) $@
 endef
@@ -426,38 +426,30 @@ JRE_COMPACT3_TARGETS += $(JRE_COMPACT3_INFO_FILE)
 # src.zip
 
 $(JDK_IMAGE_DIR)/src.zip: $(SUPPORT_OUTPUTDIR)/src.zip
-	$(ECHO) $(LOG_INFO) Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@)
+	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(install-file)
 
 JDK_TARGETS += $(JDK_IMAGE_DIR)/src.zip
 
 ################################################################################
 # /demo dir
-
-# The db demo contains an empty dir that needs to be copied. The other
-# directories will always trigger the rule for recompile since
-# _the.list_of_packages files are touched.
 ifneq ($(findstring images, $(MAKECMDGOALS)), )
-  $(JDK_IMAGE_DIR)/demo/%: $(SUPPORT_OUTPUTDIR)/demos/image/%
-	if [ ! -d "$@" ]; then \
-	  $(ECHO) $(LOG_INFO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'; \
-	  $(MKDIR) -p $(@D); \
-	  if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) '$<' '$@'; fi \
-	fi
+  $(eval $(call SetupCopyFiles, JDK_COPY_DEMOS, \
+      SRC := $(SUPPORT_OUTPUTDIR)/demos/image, \
+      DEST := $(JDK_IMAGE_DIR)/demo, \
+      FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/demos/image), \
+          $(call DoubleDollar, $(call DoubleDollar, \
+          $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/demos/image \
+          -type f -a ! \( -name "_the*" -o -name "javac_state" \) )))), \
+  ))
 
-  # Find all files including directories
-  JDK_DEMO_TARGETS := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/demos/image), \
-      $(patsubst $(SUPPORT_OUTPUTDIR)/demos/image/%, $(JDK_IMAGE_DIR)/demo/%, \
-      $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/demos/image \
-          ! \( -name "_the*" -o -name "javac_state" \) )))
-
-  JDK_TARGETS += $(JDK_DEMO_TARGETS)
+  JDK_TARGETS += $(JDK_COPY_DEMOS)
 endif
 
 ################################################################################
 # /sample dir
 
-$(eval $(call SetupCopyFiles,COPY_SAMPLES, \
+$(eval $(call SetupCopyFiles, COPY_SAMPLES, \
     SRC := $(SUPPORT_OUTPUTDIR)/sample/image, \
     DEST := $(JDK_IMAGE_DIR)/sample, \
     FILES := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/sample/image), \

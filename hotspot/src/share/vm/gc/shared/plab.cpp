@@ -26,6 +26,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "logging/log.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -149,18 +150,8 @@ void PLABStats::adjust_desired_plab_sz() {
   new_plab_sz = MIN2(max_size(), new_plab_sz);
   new_plab_sz = align_object_size(new_plab_sz);
   // Latch the result
-  if (PrintPLAB) {
-    gclog_or_tty->print(" (plab_sz = " SIZE_FORMAT " desired_net_plab_sz = " SIZE_FORMAT ") ", recent_plab_sz, new_plab_sz);
-  }
+  log_trace(gc, plab)("plab_size = " SIZE_FORMAT " desired_net_plab_sz = " SIZE_FORMAT ") ", recent_plab_sz, new_plab_sz);
   _desired_net_plab_sz = new_plab_sz;
 
   reset();
 }
-
-#ifndef PRODUCT
-void PLAB::print() {
-  gclog_or_tty->print_cr("PLAB: _bottom: " PTR_FORMAT "  _top: " PTR_FORMAT
-    "  _end: " PTR_FORMAT "  _hard_end: " PTR_FORMAT ")",
-    p2i(_bottom), p2i(_top), p2i(_end), p2i(_hard_end));
-}
-#endif // !PRODUCT

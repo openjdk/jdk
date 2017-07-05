@@ -3322,7 +3322,13 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Co
 
   // method handle invokes
   if (callee->is_method_handle_intrinsic()) {
-    return try_method_handle_inline(callee);
+    if (try_method_handle_inline(callee)) {
+      if (callee->has_reserved_stack_access()) {
+        compilation()->set_has_reserved_stack_access(true);
+      }
+      return true;
+    }
+    return false;
   }
 
   // handle intrinsics
@@ -3330,6 +3336,9 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Co
       (CheckIntrinsics ? callee->intrinsic_candidate() : true)) {
     if (try_inline_intrinsics(callee)) {
       print_inlining(callee, "intrinsic");
+      if (callee->has_reserved_stack_access()) {
+        compilation()->set_has_reserved_stack_access(true);
+      }
       return true;
     }
     // try normal inlining
@@ -3346,8 +3355,12 @@ bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, Bytecodes::Co
   if (bc == Bytecodes::_illegal) {
     bc = code();
   }
-  if (try_inline_full(callee, holder_known, bc, receiver))
+  if (try_inline_full(callee, holder_known, bc, receiver)) {
+    if (callee->has_reserved_stack_access()) {
+      compilation()->set_has_reserved_stack_access(true);
+    }
     return true;
+  }
 
   // Entire compilation could fail during try_inline_full call.
   // In that case printing inlining decision info is useless.

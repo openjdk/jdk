@@ -31,7 +31,7 @@ import java.util.List;
  * A class representing the extra tags found in a
  * <a href="http://tools.ietf.org/html/rfc2306"> TIFF-F</a> (RFC 2036) file.
  *
- * @since 1.9
+ * @since 9
  */
 public class FaxTIFFTagSet extends TIFFTagSet {
 

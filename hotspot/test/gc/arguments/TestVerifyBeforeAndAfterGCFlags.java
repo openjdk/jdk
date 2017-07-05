@@ -43,18 +43,18 @@ import jdk.test.lib.ProcessTools;
 public class TestVerifyBeforeAndAfterGCFlags {
 
     // VerifyBeforeGC:[Verifying threads heap tenured eden syms strs zone dict metaspace chunks hand C-heap code cache ]
-    public static final String VERIFY_BEFORE_GC_PATTERN = "VerifyBeforeGC:\\[Verifying\\s+([^]\\s]+\\s+)+\\]";
+    public static final String VERIFY_BEFORE_GC_PATTERN = "Verifying Before GC";
     // VerifyBeforeGC: VerifyBeforeGC: VerifyBeforeGC:
     public static final String VERIFY_BEFORE_GC_CORRUPTED_PATTERN = "VerifyBeforeGC:(?!\\[Verifying[^]]+\\])";
 
     // VerifyAfterGC:[Verifying threads heap tenured eden syms strs zone dict metaspace chunks hand C-heap code cache ]
-    public static final String VERIFY_AFTER_GC_PATTERN = "VerifyAfterGC:\\[Verifying\\s+([^]\\s]+\\s+)+\\]";
+    public static final String VERIFY_AFTER_GC_PATTERN = "Verifying After GC";
     // VerifyAfterGC: VerifyAfterGC: VerifyAfterGC:
     public static final String VERIFY_AFTER_GC_CORRUPTED_PATTERN = "VerifyAfterGC:(?!\\[Verifying[^]]+\\])";
 
     public static void main(String args[]) throws Exception {
         String[] filteredOpts = Utils.getFilteredTestJavaOpts(
-                                    new String[] { "-Xloggc:",
+                                    new String[] { "-Xlog:gc+verify=debug",
                                                    "-XX:+UseGCLogFileRotation",
                                                    "-XX:-DisplayVMOutput",
                                                    "VerifyBeforeGC",
@@ -74,6 +74,7 @@ public class TestVerifyBeforeAndAfterGCFlags {
         }
 
         Collections.addAll(vmOpts, new String[] {
+                                       "-Xlog:gc+verify=debug",
                                        "-Xmx5m",
                                        "-Xms5m",
                                        "-Xmn3m",

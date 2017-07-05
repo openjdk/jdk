@@ -40,6 +40,7 @@ import jdk.internal.logger.LazyLoggers;
  * @summary Cover the logXX and LogEvent.valueOf APIs of BootstrapLogger
  *          and logXX APIs of SimpleConsoleLogger.
  * @modules java.base/jdk.internal.logger
+ *          java.base/sun.util.logging
  * @build BootstrapLoggerUtils LogStream
  * @run main/othervm BootstrapLoggerAPIsTest
  */

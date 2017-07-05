@@ -339,7 +339,6 @@ protected:
   virtual const char* name() const;
   virtual const char* short_name() const { return "DefNew"; }
 
-  // PrintHeapAtGC support.
   void print_on(outputStream* st) const;
 
   void verify();

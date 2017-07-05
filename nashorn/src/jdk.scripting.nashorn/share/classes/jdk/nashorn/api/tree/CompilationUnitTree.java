@@ -31,7 +31,7 @@ import java.util.List;
  * Represents the abstract syntax tree for compilation units (source
  * files)
  *
- * @since 1.9
+ * @since 9
  */
 public interface CompilationUnitTree extends Tree {
     /**

@@ -515,11 +515,6 @@ void SafepointSynchronize::do_cleanup_tasks() {
     StringTable::rehash_table();
   }
 
-  // rotate log files?
-  if (UseGCLogFileRotation) {
-    gclog_or_tty->rotate_log(false);
-  }
-
   {
     // CMS delays purging the CLDG until the beginning of the next safepoint and to
     // make sure concurrent sweep is done

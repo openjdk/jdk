@@ -213,6 +213,9 @@
   notproduct(bool, TraceProfileTripCount, false,                            \
           "Trace profile loop trip count information")                      \
                                                                             \
+  product(bool, UseCountedLoopSafepoints, false,                            \
+          "Force counted loops to keep a safepoint")                        \
+                                                                            \
   product(bool, UseLoopPredicate, true,                                     \
           "Generate a predicate to select fast/slow loop versions")         \
                                                                             \

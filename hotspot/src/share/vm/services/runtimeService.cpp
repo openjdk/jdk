@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
+#include "logging/log.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
@@ -87,11 +88,8 @@ void RuntimeService::record_safepoint_begin() {
   HS_PRIVATE_SAFEPOINT_BEGIN();
 
   // Print the time interval in which the app was executing
-  if (PrintGCApplicationConcurrentTime && _app_timer.is_updated()) {
-    gclog_or_tty->date_stamp(PrintGCDateStamps);
-    gclog_or_tty->stamp(PrintGCTimeStamps);
-    gclog_or_tty->print_cr("Application time: %3.7f seconds",
-                                last_application_time_sec());
+  if (_app_timer.is_updated()) {
+    log_info(safepoint)("Application time: %3.7f seconds", last_application_time_sec());
   }
 
   // update the time stamp to begin recording safepoint time
@@ -109,7 +107,7 @@ void RuntimeService::record_safepoint_synchronized() {
   if (UsePerfData) {
     _sync_time_ticks->inc(_safepoint_timer.ticks_since_update());
   }
-  if (PrintGCApplicationStoppedTime) {
+  if (log_is_enabled(Info, safepoint)) {
     _last_safepoint_sync_time_sec = last_safepoint_time_sec();
   }
 }
@@ -119,15 +117,8 @@ void RuntimeService::record_safepoint_end() {
 
   // Print the time interval for which the app was stopped
   // during the current safepoint operation.
-  if (PrintGCApplicationStoppedTime) {
-    gclog_or_tty->date_stamp(PrintGCDateStamps);
-    gclog_or_tty->stamp(PrintGCTimeStamps);
-    gclog_or_tty->print_cr("Total time for which application threads "
-                           "were stopped: %3.7f seconds, "
-                           "Stopping threads took: %3.7f seconds",
-                           last_safepoint_time_sec(),
-                           _last_safepoint_sync_time_sec);
-  }
+  log_info(safepoint)("Total time for which application threads were stopped: %3.7f seconds, Stopping threads took: %3.7f seconds",
+                      last_safepoint_time_sec(), _last_safepoint_sync_time_sec);
 
   // update the time stamp to begin recording app time
   _app_timer.update();

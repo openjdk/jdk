@@ -30,7 +30,7 @@ import java.util.HashMap;
 /**
  * Enum for representing the ucrypto mechanisms.
  *
- * @since 1.9
+ * @since 9
  */
 // Check /usr/include/libsoftcrypto.h for updates
 public enum UcryptoMech {

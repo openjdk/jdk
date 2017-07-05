@@ -60,6 +60,7 @@ class fieldDescriptor;
 
 class Klass : public Metadata {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
  protected:
   // note: put frequently-used fields together at start of klass structure
   // for better cache behavior (may not make much of a difference but sure won't hurt)

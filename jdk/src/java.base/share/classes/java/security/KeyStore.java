@@ -1666,7 +1666,7 @@ public class KeyStore {
      *
      * @see Provider
      *
-     * @since 1.9
+     * @since 9
      */
     public static final KeyStore getInstance(File file, char[] password)
         throws KeyStoreException, IOException, NoSuchAlgorithmException,
@@ -1722,7 +1722,7 @@ public class KeyStore {
      *
      * @see Provider
      *
-     * @since 1.9
+     * @since 9
      */
     public static final KeyStore getInstance(File file,
         LoadStoreParameter param) throws KeyStoreException, IOException,
@@ -2006,7 +2006,7 @@ public class KeyStore {
          *   of either PasswordProtection or CallbackHandlerProtection; or
          *   if file does not exist or does not refer to a normal file
          *
-         * @since 1.9
+         * @since 9
          */
         public static Builder newInstance(File file,
             ProtectionParameter protection) {

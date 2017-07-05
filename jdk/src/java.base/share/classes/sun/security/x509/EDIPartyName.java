@@ -197,7 +197,7 @@ public class EDIPartyName implements GeneralNameInterface {
      */
     public int hashCode() {
         if (myhash == -1) {
-            myhash = 37 + party.hashCode();
+            myhash = 37 + (party == null ? 1 : party.hashCode());
             if (assigner != null) {
                 myhash = 37 * myhash + assigner.hashCode();
             }

@@ -37,7 +37,7 @@ import org.w3c.dom.Node;
  * @see <a href="http://www.w3.org/TR/xpath">XML Path Language (XPath) Version
  * 1.0</a>
  *
- * @since 1.9
+ * @since 9
  */
 public interface XPathEvaluationResult<T> {
 

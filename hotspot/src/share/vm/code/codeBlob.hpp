@@ -64,6 +64,7 @@ class DeoptimizationBlob;
 class CodeBlob VALUE_OBJ_CLASS_SPEC {
 
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class CodeCacheDumper;
 
  private:
@@ -374,6 +375,7 @@ class SingletonBlob: public CodeBlob {
 
 class DeoptimizationBlob: public SingletonBlob {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
  private:
   int _unpack_offset;
   int _unpack_with_exception;

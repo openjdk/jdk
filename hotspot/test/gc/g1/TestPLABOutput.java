@@ -54,8 +54,7 @@ public class TestPLABOutput {
             "-XX:+WhiteBoxAPI",
             "-XX:+UseG1GC",
             "-Xmx10M",
-            "-XX:+PrintGC",
-            "-XX:+PrintPLAB",
+            "-Xlog:gc+plab=debug",
             GCTest.class.getName()
             };
 
@@ -66,7 +65,7 @@ public class TestPLABOutput {
 
         System.out.println(output.getStdout());
 
-        String pattern = "#0:.*allocated = (\\d+).*";
+        String pattern = ".*GC\\(0\\) .*allocated = (\\d+).*";
         Pattern r = Pattern.compile(pattern);
         Matcher m = r.matcher(output.getStdout());
 

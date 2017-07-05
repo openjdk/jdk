@@ -33,7 +33,7 @@ package jdk.nashorn.api.tree;
  *   <em>var</em> <em>name</em> <em>initializer</em> ;
  * </pre>
  *
- * @since 1.9
+ * @since 9
  */
 public interface VariableTree extends StatementTree {
     /**

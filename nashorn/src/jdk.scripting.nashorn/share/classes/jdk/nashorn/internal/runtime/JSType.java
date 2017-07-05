@@ -791,6 +791,15 @@ public enum JSType {
         return Double.NaN;
     }
 
+    /**
+     * Convert a long to the narrowest JavaScript Number type. This returns either a
+     * {@link Integer} or {@link Double} depending on the magnitude of {@code l}.
+     * @param l a long value
+     * @return the value converted to Integer or Double
+     */
+    public static Number toNarrowestNumber(final long l) {
+        return isRepresentableAsInt(l) ? Integer.valueOf((int) l) : Double.valueOf((double) l);
+    }
 
     /**
      * JavaScript compliant conversion of Boolean to number
@@ -1724,21 +1733,6 @@ public enum JSType {
         } catch (final Throwable t) {
             throw new RuntimeException(t);
         }
-    }
-
-    /**
-     * Returns the boxed version of a primitive class
-     * @param clazz the class
-     * @return the boxed type of clazz, or unchanged if not primitive
-     */
-    public static Class<?> getBoxedClass(final Class<?> clazz) {
-        if (clazz == int.class) {
-            return Integer.class;
-        } else if (clazz == double.class) {
-            return Double.class;
-        }
-        assert !clazz.isPrimitive();
-        return clazz;
     }
 
     /**

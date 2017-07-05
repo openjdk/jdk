@@ -76,7 +76,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   // We might implicit NULL fault here.
   address npe_addr = __ pc(); // npe = null pointer exception
-  __ load_klass_with_trap_null_check(rcvr_klass, R3);
+  __ null_check(R3, oopDesc::klass_offset_in_bytes(), /*implicit only*/NULL);
+  __ load_klass(rcvr_klass, R3);
 
  // Set method (in case of interpreted method), and destination address.
   int entry_offset = InstanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
@@ -111,8 +112,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   // If the vtable entry is null, the method is abstract.
   address ame_addr = __ pc(); // ame = abstract method error
-
-  __ load_with_trap_null_check(R12_scratch2, in_bytes(Method::from_compiled_offset()), R19_method);
+  __ null_check(R19_method, in_bytes(Method::from_compiled_offset()), /*implicit only*/NULL);
+  __ ld(R12_scratch2, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(R12_scratch2);
   __ bctr();
   masm->flush();
@@ -158,7 +159,8 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 
   // We might implicit NULL fault here.
   address npe_addr = __ pc(); // npe = null pointer exception
-  __ load_klass_with_trap_null_check(rcvr_klass, R3_ARG1);
+  __ null_check(R3_ARG1, oopDesc::klass_offset_in_bytes(), /*implicit only*/NULL);
+  __ load_klass(rcvr_klass, R3_ARG1);
 
   BLOCK_COMMENT("Load start of itable entries into itable_entry.");
   __ lwz(vtable_len, InstanceKlass::vtable_length_offset() * wordSize, rcvr_klass);
@@ -217,15 +219,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   address ame_addr = __ pc(); // ame = abstract method error
 
   // Must do an explicit check if implicit checks are disabled.
-  assert(!MacroAssembler::needs_explicit_null_check(in_bytes(Method::from_compiled_offset())), "sanity");
-  if (!ImplicitNullChecks || !os::zero_page_read_protected()) {
-    if (TrapBasedNullChecks) {
-      __ trap_null_check(R19_method);
-    } else {
-      __ cmpdi(CCR0, R19_method, 0);
-      __ beq(CCR0, throw_icce);
-    }
-  }
+  __ null_check(R19_method, in_bytes(Method::from_compiled_offset()), &throw_icce);
   __ ld(R12_scratch2, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(R12_scratch2);
   __ bctr();

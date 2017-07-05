@@ -2365,6 +2365,17 @@ void Node_List::dump() const {
 #endif
 }
 
+void Node_List::dump_simple() const {
+#ifndef PRODUCT
+  for( uint i = 0; i < _cnt; i++ )
+    if( _nodes[i] ) {
+      tty->print(" %d", _nodes[i]->_idx);
+    } else {
+      tty->print(" NULL");
+    }
+#endif
+}
+
 //=============================================================================
 //------------------------------remove-----------------------------------------
 void Unique_Node_List::remove( Node *n ) {

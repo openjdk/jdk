@@ -53,9 +53,6 @@ int AbstractAssembler::code_fill_byte() {
   return 0x00;                  // illegal instruction 0x00000000
 }
 
-void Assembler::print_instruction(int inst) {
-  Unimplemented();
-}
 
 // Patch instruction `inst' at offset `inst_pos' to refer to
 // `dest_pos' and return the resulting instruction.  We should have
@@ -484,7 +481,7 @@ int Assembler::add_const_optimized(Register d, Register s, long x, Register tmp,
       if (d != s) { mr(d, s); }
       return 0;
     }
-    if (return_simm16_rest) {
+    if (return_simm16_rest && (d == s)) {
       return xd;
     }
     addi(d, s, xd);

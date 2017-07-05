@@ -351,58 +351,12 @@ void OtherRegionsTable::unlink_from_all(PerRegionTable* prt) {
          "just checking");
 }
 
-int**  FromCardCache::_cache = NULL;
-uint   FromCardCache::_max_regions = 0;
-size_t FromCardCache::_static_mem_size = 0;
-
-void FromCardCache::initialize(uint n_par_rs, uint max_num_regions) {
-  guarantee(_cache == NULL, "Should not call this multiple times");
-
-  _max_regions = max_num_regions;
-  _cache = Padded2DArray<int, mtGC>::create_unfreeable(n_par_rs,
-                                                       _max_regions,
-                                                       &_static_mem_size);
-
-  invalidate(0, _max_regions);
-}
-
-void FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
-  guarantee((size_t)start_idx + new_num_regions <= max_uintx,
-            "Trying to invalidate beyond maximum region, from %u size " SIZE_FORMAT,
-            start_idx, new_num_regions);
-  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
-    uint end_idx = (start_idx + (uint)new_num_regions);
-    assert(end_idx <= _max_regions, "Must be within max.");
-    for (uint j = start_idx; j < end_idx; j++) {
-      set(i, j, InvalidCard);
-    }
-  }
-}
-
-#ifndef PRODUCT
-void FromCardCache::print(outputStream* out) {
-  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
-    for (uint j = 0; j < _max_regions; j++) {
-      out->print_cr("_from_card_cache[%u][%u] = %d.",
-                    i, j, at(i, j));
-    }
-  }
-}
-#endif
-
-void FromCardCache::clear(uint region_idx) {
-  uint num_par_remsets = HeapRegionRemSet::num_par_rem_sets();
-  for (uint i = 0; i < num_par_remsets; i++) {
-    set(i, region_idx, InvalidCard);
-  }
-}
-
 void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   uint cur_hrm_ind = _hr->hrm_index();
 
   int from_card = (int)(uintptr_t(from) >> CardTableModRefBS::card_shift);
 
-  if (FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
+  if (G1FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
     assert(contains_reference(from), "We just added it!");
     return;
   }
@@ -560,20 +514,13 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
 void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
                               BitMap* region_bm, BitMap* card_bm) {
   // First eliminated garbage regions from the coarse map.
-  if (G1RSScrubVerbose) {
-    gclog_or_tty->print_cr("Scrubbing region %u:", _hr->hrm_index());
-  }
+  log_develop_trace(gc, remset, scrub)("Scrubbing region %u:", _hr->hrm_index());
 
   assert(_coarse_map.size() == region_bm->size(), "Precondition");
-  if (G1RSScrubVerbose) {
-    gclog_or_tty->print("   Coarse map: before = " SIZE_FORMAT "...",
-                        _n_coarse_entries);
-  }
+  log_develop_trace(gc, remset, scrub)("   Coarse map: before = " SIZE_FORMAT "...", _n_coarse_entries);
   _coarse_map.set_intersection(*region_bm);
   _n_coarse_entries = _coarse_map.count_one_bits();
-  if (G1RSScrubVerbose) {
-    gclog_or_tty->print_cr("   after = " SIZE_FORMAT ".", _n_coarse_entries);
-  }
+  log_develop_trace(gc, remset, scrub)("   after = " SIZE_FORMAT ".", _n_coarse_entries);
 
   // Now do the fine-grained maps.
   for (size_t i = 0; i < _max_fine_entries; i++) {
@@ -582,28 +529,19 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
     while (cur != NULL) {
       PerRegionTable* nxt = cur->collision_list_next();
       // If the entire region is dead, eliminate.
-      if (G1RSScrubVerbose) {
-        gclog_or_tty->print_cr("     For other region %u:",
-                               cur->hr()->hrm_index());
-      }
+      log_develop_trace(gc, remset, scrub)("     For other region %u:", cur->hr()->hrm_index());
       if (!region_bm->at((size_t) cur->hr()->hrm_index())) {
         *prev = nxt;
         cur->set_collision_list_next(NULL);
         _n_fine_entries--;
-        if (G1RSScrubVerbose) {
-          gclog_or_tty->print_cr("          deleted via region map.");
-        }
+        log_develop_trace(gc, remset, scrub)("          deleted via region map.");
         unlink_from_all(cur);
         PerRegionTable::free(cur);
       } else {
         // Do fine-grain elimination.
-        if (G1RSScrubVerbose) {
-          gclog_or_tty->print("          occ: before = %4d.", cur->occupied());
-        }
+        log_develop_trace(gc, remset, scrub)("          occ: before = %4d.", cur->occupied());
         cur->scrub(ctbs, card_bm);
-        if (G1RSScrubVerbose) {
-          gclog_or_tty->print_cr("          after = %4d.", cur->occupied());
-        }
+        log_develop_trace(gc, remset, scrub)("          after = %4d.", cur->occupied());
         // Did that empty the table completely?
         if (cur->occupied() == 0) {
           *prev = nxt;
@@ -684,7 +622,7 @@ size_t OtherRegionsTable::mem_size() const {
 }
 
 size_t OtherRegionsTable::static_mem_size() {
-  return FromCardCache::static_mem_size();
+  return G1FromCardCache::static_mem_size();
 }
 
 size_t OtherRegionsTable::fl_mem_size() {
@@ -692,7 +630,7 @@ size_t OtherRegionsTable::fl_mem_size() {
 }
 
 void OtherRegionsTable::clear_fcc() {
-  FromCardCache::clear(_hr->hrm_index());
+  G1FromCardCache::clear(_hr->hrm_index());
 }
 
 void OtherRegionsTable::clear() {
@@ -749,13 +687,6 @@ OtherRegionsTable::do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task) {
   _sparse_table.do_cleanup_work(hrrs_cleanup_task);
 }
 
-// Determines how many threads can add records to an rset in parallel.
-// This can be done by either mutator threads together with the
-// concurrent refinement threads or GC threads.
-uint HeapRegionRemSet::num_par_rem_sets() {
-  return MAX2(DirtyCardQueueSet::num_par_ids() + ConcurrentG1Refine::thread_num(), ParallelGCThreads);
-}
-
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
                                    HeapRegion* hr)
   : _bosa(bosa),
@@ -799,15 +730,15 @@ void HeapRegionRemSet::print() {
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
       G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
-    gclog_or_tty->print_cr("  Card " PTR_FORMAT, p2i(card_start));
+    tty->print_cr("  Card " PTR_FORMAT, p2i(card_start));
   }
   if (iter.n_yielded() != occupied()) {
-    gclog_or_tty->print_cr("Yielded disagrees with occupied:");
-    gclog_or_tty->print_cr("  " SIZE_FORMAT_W(6) " yielded (" SIZE_FORMAT_W(6)
+    tty->print_cr("Yielded disagrees with occupied:");
+    tty->print_cr("  " SIZE_FORMAT_W(6) " yielded (" SIZE_FORMAT_W(6)
                   " coarse, " SIZE_FORMAT_W(6) " fine).",
                   iter.n_yielded(),
                   iter.n_yielded_coarse(), iter.n_yielded_fine());
-    gclog_or_tty->print_cr("  " SIZE_FORMAT_W(6) " occ     (" SIZE_FORMAT_W(6)
+    tty->print_cr("  " SIZE_FORMAT_W(6) " occ     (" SIZE_FORMAT_W(6)
                            " coarse, " SIZE_FORMAT_W(6) " fine).",
                   occupied(), occ_coarse(), occ_fine());
   }
@@ -1071,7 +1002,7 @@ void HeapRegionRemSet::test() {
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
       G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
-    gclog_or_tty->print_cr("  Card " PTR_FORMAT ".", p2i(card_start));
+    tty->print_cr("  Card " PTR_FORMAT ".", p2i(card_start));
     sum++;
   }
   guarantee(sum == 11 - 3 + 2048, "Failure");

@@ -31,6 +31,10 @@
 
 const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release();
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();
+
+uint64_t Abstract_VM_Version::_features = 0;
+const char* Abstract_VM_Version::_features_string = "";
+
 bool Abstract_VM_Version::_supports_cx8 = false;
 bool Abstract_VM_Version::_supports_atomic_getset4 = false;
 bool Abstract_VM_Version::_supports_atomic_getset8 = false;
@@ -68,16 +72,7 @@ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
   #error DEBUG_LEVEL must be defined
 #endif
 
-// NOTE: Builds within Visual Studio do not define the build target in
-//       HOTSPOT_VERSION_STRING, so it must be done here
-#if defined(VISUAL_STUDIO_BUILD) && !defined(PRODUCT)
-  #ifndef HOTSPOT_BUILD_TARGET
-    #error HOTSPOT_BUILD_TARGET must be defined
-  #endif
-  #define VM_RELEASE HOTSPOT_VERSION_STRING "-" HOTSPOT_BUILD_TARGET
-#else
-  #define VM_RELEASE HOTSPOT_VERSION_STRING
-#endif
+#define VM_RELEASE HOTSPOT_VERSION_STRING
 
 // HOTSPOT_VERSION_STRING equals the JDK VERSION_STRING (unless overridden
 // in a standalone build).
@@ -170,14 +165,19 @@ const char* Abstract_VM_Version::jre_release_version() {
 #ifndef CPU
 #ifdef ZERO
 #define CPU      ZERO_LIBARCH
+#elif defined(PPC64)
+#if defined(VM_LITTLE_ENDIAN)
+#define CPU      "ppc64le"
+#else
+#define CPU      "ppc64"
+#endif
 #else
 #define CPU      IA32_ONLY("x86")                \
                  IA64_ONLY("ia64")               \
                  AMD64_ONLY("amd64")             \
-                 PPC64_ONLY("ppc64")             \
                  AARCH64_ONLY("aarch64")         \
                  SPARC_ONLY("sparc")
-#endif // ZERO
+#endif //
 #endif
 
 const char *Abstract_VM_Version::vm_platform_string() {

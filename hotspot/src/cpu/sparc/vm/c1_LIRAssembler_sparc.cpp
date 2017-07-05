@@ -1453,6 +1453,9 @@ void LIR_Assembler::reg2mem(LIR_Opr from_reg, LIR_Opr dest, BasicType type,
 
 
 void LIR_Assembler::return_op(LIR_Opr result) {
+  if (StackReservedPages > 0 && compilation()->has_reserved_stack_access()) {
+    __ reserved_stack_check();
+  }
   // the poll may need a register so just pick one that isn't the return register
 #if defined(TIERED) && !defined(_LP64)
   if (result->type_field() == LIR_OprDesc::long_type) {

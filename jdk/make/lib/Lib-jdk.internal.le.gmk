@@ -51,7 +51,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           -D "JDK_INTERNAL_NAME=le" \
           -D "JDK_FTYPE=0x2L", \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/lible, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBLE)
 

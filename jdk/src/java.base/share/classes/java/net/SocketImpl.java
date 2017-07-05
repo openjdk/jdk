@@ -373,7 +373,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @throws IOException if an I/O error occurs, or if the socket is closed.
      *
-     * @since 1.9
+     * @since 9
      */
     protected <T> void setOption(SocketOption<T> name, T value) throws IOException {
         if (name == StandardSocketOptions.SO_KEEPALIVE &&
@@ -412,7 +412,7 @@ public abstract class SocketImpl implements SocketOptions {
      *
      * @throws IOException if an I/O error occurs, or if the socket is closed.
      *
-     * @since 1.9
+     * @since 9
      */
     @SuppressWarnings("unchecked")
     protected <T> T getOption(SocketOption<T> name) throws IOException {

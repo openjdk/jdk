@@ -54,6 +54,7 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.linker.AdaptationResult.Outcome;
 
 /**
  * A factory class that generates adapter classes. Adapter classes allow
@@ -211,7 +212,7 @@ public final class JavaAdapterFactory {
      *         be generated from a ScriptFunction.
      */
     static boolean isAutoConvertibleFromFunction(final Class<?> clazz) {
-        return getAdapterInfo(new Class<?>[] { clazz }).autoConvertibleFromFunction;
+        return getAdapterInfo(new Class<?>[] { clazz }).isAutoConvertibleFromFunction();
     }
 
     private static AdapterInfo getAdapterInfo(final Class<?>[] types) {
@@ -273,7 +274,7 @@ public final class JavaAdapterFactory {
                 } catch (final AdaptationException e) {
                     return new AdapterInfo(e.getAdaptationResult());
                 } catch (final RuntimeException e) {
-                    return new AdapterInfo(new AdaptationResult(AdaptationResult.Outcome.ERROR_OTHER, Arrays.toString(types), e.toString()));
+                    return new AdapterInfo(new AdaptationResult(Outcome.ERROR_OTHER, e, Arrays.toString(types), e.toString()));
                 }
             }
         }, CREATE_ADAPTER_INFO_ACC_CTXT);
@@ -317,6 +318,13 @@ public final class JavaAdapterFactory {
             }
             return classOverrides == null ? getInstanceAdapterClass(protectionDomain) :
                 getClassAdapterClass(classOverrides, protectionDomain);
+        }
+
+        boolean isAutoConvertibleFromFunction() {
+            if(adaptationResult.getOutcome() == AdaptationResult.Outcome.ERROR_OTHER) {
+                throw adaptationResult.typeError();
+            }
+            return autoConvertibleFromFunction;
         }
 
         private StaticClass getInstanceAdapterClass(final ProtectionDomain protectionDomain) {

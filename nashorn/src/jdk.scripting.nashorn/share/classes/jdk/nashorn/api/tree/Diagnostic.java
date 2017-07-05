@@ -40,7 +40,7 @@ package jdk.nashorn.api.tree;
  * <p>Line terminator is as defined in ECMAScript specification which is one
  * of { &#92;u000A, &#92;u000B, &#92;u2028, &#92;u2029 }.
  *
- * @since 1.9
+ * @since 9
  */
 public interface Diagnostic {
 
