@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,6 +311,8 @@ public class HotSpotAgent {
                 setupDebuggerLinux();
             } else if (os.equals("bsd")) {
                 setupDebuggerBsd();
+            } else if (os.equals("darwin")) {
+                setupDebuggerDarwin();
             } else {
                 // Add support for more operating systems here
                 throw new DebuggerException("Operating system " + os + " not yet supported");
@@ -367,6 +369,10 @@ public class HotSpotAgent {
                 new LinuxVtblAccess(debugger, jvmLibNames),
                 debugger, jvmLibNames);
             } else if (os.equals("bsd")) {
+                db = new HotSpotTypeDataBase(machDesc,
+                new BsdVtblAccess(debugger, jvmLibNames),
+                debugger, jvmLibNames);
+            } else if (os.equals("darwin")) {
                 db = new HotSpotTypeDataBase(machDesc,
                 new BsdVtblAccess(debugger, jvmLibNames),
                 debugger, jvmLibNames);
@@ -459,6 +465,8 @@ public class HotSpotAgent {
             setupJVMLibNamesLinux();
         } else if (os.equals("bsd")) {
             setupJVMLibNamesBsd();
+        } else if (os.equals("darwin")) {
+            setupJVMLibNamesDarwin();
         } else {
             throw new RuntimeException("Unknown OS type");
         }
@@ -565,6 +573,29 @@ public class HotSpotAgent {
 
     private void setupJVMLibNamesBsd() {
         jvmLibNames = new String[] { "libjvm.so", "libjvm_g.so" };
+    }
+
+    //
+    // Darwin
+    //
+
+    private void setupDebuggerDarwin() {
+        setupJVMLibNamesDarwin();
+
+        if (cpu.equals("amd64") || cpu.equals("x86_64")) {
+            machDesc = new MachineDescriptionAMD64();
+        } else {
+            throw new DebuggerException("Darwin only supported on x86_64. Current arch: " + cpu);
+        }
+
+        BsdDebuggerLocal dbg = new BsdDebuggerLocal(machDesc, !isServer);
+        debugger = dbg;
+
+        attachDebugger();
+    }
+
+    private void setupJVMLibNamesDarwin() {
+        jvmLibNames = new String[] { "libjvm.dylib", "libjvm_g.dylib" };
     }
 
     /** Convenience routine which should be called by per-platform
