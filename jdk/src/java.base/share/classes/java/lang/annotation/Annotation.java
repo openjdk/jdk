@@ -50,28 +50,28 @@ public interface Annotation {
      * to the corresponding member of this annotation, as defined below:
      * <ul>
      *    <li>Two corresponding primitive typed members whose values are
-     *    <tt>x</tt> and <tt>y</tt> are considered equal if <tt>x == y</tt>,
-     *    unless their type is <tt>float</tt> or <tt>double</tt>.
+     *    {@code x} and {@code y} are considered equal if {@code x == y},
+     *    unless their type is {@code float} or {@code double}.
      *
-     *    <li>Two corresponding <tt>float</tt> members whose values
-     *    are <tt>x</tt> and <tt>y</tt> are considered equal if
-     *    <tt>Float.valueOf(x).equals(Float.valueOf(y))</tt>.
-     *    (Unlike the <tt>==</tt> operator, NaN is considered equal
-     *    to itself, and <tt>0.0f</tt> unequal to <tt>-0.0f</tt>.)
+     *    <li>Two corresponding {@code float} members whose values
+     *    are {@code x} and {@code y} are considered equal if
+     *    {@code Float.valueOf(x).equals(Float.valueOf(y))}.
+     *    (Unlike the {@code ==} operator, NaN is considered equal
+     *    to itself, and {@code 0.0f} unequal to {@code -0.0f}.)
      *
-     *    <li>Two corresponding <tt>double</tt> members whose values
-     *    are <tt>x</tt> and <tt>y</tt> are considered equal if
-     *    <tt>Double.valueOf(x).equals(Double.valueOf(y))</tt>.
-     *    (Unlike the <tt>==</tt> operator, NaN is considered equal
-     *    to itself, and <tt>0.0</tt> unequal to <tt>-0.0</tt>.)
+     *    <li>Two corresponding {@code double} members whose values
+     *    are {@code x} and {@code y} are considered equal if
+     *    {@code Double.valueOf(x).equals(Double.valueOf(y))}.
+     *    (Unlike the {@code ==} operator, NaN is considered equal
+     *    to itself, and {@code 0.0} unequal to {@code -0.0}.)
      *
-     *    <li>Two corresponding <tt>String</tt>, <tt>Class</tt>, enum, or
-     *    annotation typed members whose values are <tt>x</tt> and <tt>y</tt>
-     *    are considered equal if <tt>x.equals(y)</tt>.  (Note that this
+     *    <li>Two corresponding {@code String}, {@code Class}, enum, or
+     *    annotation typed members whose values are {@code x} and {@code y}
+     *    are considered equal if {@code x.equals(y)}.  (Note that this
      *    definition is recursive for annotation typed members.)
      *
-     *    <li>Two corresponding array typed members <tt>x</tt> and <tt>y</tt>
-     *    are considered equal if <tt>Arrays.equals(x, y)</tt>, for the
+     *    <li>Two corresponding array typed members {@code x} and {@code y}
+     *    are considered equal if {@code Arrays.equals(x, y)}, for the
      *    appropriate overloading of {@link java.util.Arrays#equals}.
      * </ul>
      *
@@ -93,16 +93,16 @@ public interface Annotation {
      *
      * <p>The hash code of a member-value depends on its type:
      * <ul>
-     * <li>The hash code of a primitive value <tt><i>v</i></tt> is equal to
-     *     <tt><i>WrapperType</i>.valueOf(<i>v</i>).hashCode()</tt>, where
-     *     <tt><i>WrapperType</i></tt> is the wrapper type corresponding
-     *     to the primitive type of <tt><i>v</i></tt> ({@link Byte},
+     * <li>The hash code of a primitive value <i>{@code v}</i> is equal to
+     *     <code><i>WrapperType</i>.valueOf(<i>v</i>).hashCode()</code>, where
+     *     <i>{@code WrapperType}</i> is the wrapper type corresponding
+     *     to the primitive type of <i>{@code v}</i> ({@link Byte},
      *     {@link Character}, {@link Double}, {@link Float}, {@link Integer},
      *     {@link Long}, {@link Short}, or {@link Boolean}).
      *
      * <li>The hash code of a string, enum, class, or annotation member-value
-     I     <tt><i>v</i></tt> is computed as by calling
-     *     <tt><i>v</i>.hashCode()</tt>.  (In the case of annotation
+     I     <i>{@code v}</i> is computed as by calling
+     *     <code><i>v</i>.hashCode()</code>.  (In the case of annotation
      *     member values, this is a recursive definition.)
      *
      * <li>The hash code of an array member-value is computed by calling

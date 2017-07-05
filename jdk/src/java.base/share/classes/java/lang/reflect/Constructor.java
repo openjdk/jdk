@@ -286,9 +286,9 @@ public final class Constructor<T> extends Executable {
      * followed by the fully-qualified name of the declaring class,
      * followed by a parenthesized, comma-separated list of the
      * constructor's formal parameter types.  For example:
-     * <pre>
+     * <pre>{@code
      *    public java.util.Hashtable(int,float)
-     * </pre>
+     * }</pre>
      *
      * <p>The only possible modifiers for constructors are the access
      * modifiers {@code public}, {@code protected} or
@@ -322,8 +322,8 @@ public final class Constructor<T> extends Executable {
      *
      * If this constructor was declared to take a variable number of
      * arguments, instead of denoting the last parameter as
-     * "<tt><i>Type</i>[]</tt>", it is denoted as
-     * "<tt><i>Type</i>...</tt>".
+     * "<code><i>Type</i>[]</code>", it is denoted as
+     * "<code><i>Type</i>...</code>".
      *
      * A space is used to separate access modifiers from one another
      * and from the type parameters or return type.  If there are no

@@ -223,6 +223,15 @@ inline bool CMBitMap::parClear(HeapWord* addr) {
 
 #undef check_mark
 
+template<typename Fn>
+inline void CMMarkStack::iterate(Fn fn) {
+  assert(_saved_index == _index,
+         err_msg("saved index: %d index: %d", _saved_index, _index));
+  for (int i = 0; i < _index; ++i) {
+    fn(_base[i]);
+  }
+}
+
 inline void CMTask::push(oop obj) {
   HeapWord* objAddr = (HeapWord*) obj;
   assert(_g1h->is_in_g1_reserved(objAddr), "invariant");

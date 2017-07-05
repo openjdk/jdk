@@ -34,8 +34,6 @@ package sun.security.krb5;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.KeyUsage;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import sun.security.util.DerValue;
 
@@ -65,7 +63,6 @@ public class KrbCred {
 
         PrincipalName client = tgt.getClient();
         PrincipalName tgService = tgt.getServer();
-        PrincipalName server = serviceTicket.getServer();
         if (!serviceTicket.getClient().equals(client))
             throw new KrbException(Krb5.KRB_ERR_GENERIC,
                                 "Client principal does not match");
@@ -78,28 +75,10 @@ public class KrbCred {
         options.set(KDCOptions.FORWARDED, true);
         options.set(KDCOptions.FORWARDABLE, true);
 
-        HostAddresses sAddrs = null;
-
-        // GSSName.NT_HOSTBASED_SERVICE should display with KRB_NT_SRV_HST
-        if (server.getNameType() == PrincipalName.KRB_NT_SRV_HST) {
-            sAddrs = new HostAddresses(server);
-        } else if (server.getNameType() == PrincipalName.KRB_NT_UNKNOWN) {
-            // Sometimes this is also a server
-            if (server.getNameStrings().length >= 2) {
-                String host = server.getNameStrings()[1];
-                try {
-                    InetAddress[] addr = InetAddress.getAllByName(host);
-                    if (addr != null && addr.length > 0) {
-                        sAddrs = new HostAddresses(addr);
-                    }
-                } catch (UnknownHostException ioe) {
-                    // maybe we guessed wrong, let sAddrs be null
-                }
-            }
-        }
-
         KrbTgsReq tgsReq = new KrbTgsReq(options, tgt, tgService,
-                                         null, null, null, null, sAddrs, null, null, null);
+                null, null, null, null,
+                null,   // No easy way to get addresses right
+                null, null, null);
         credMessg = createMessage(tgsReq.sendAndGetCreds(), key);
 
         obuf = credMessg.asn1Encode();
@@ -111,7 +90,6 @@ public class KrbCred {
         EncryptionKey sessionKey
             = delegatedCreds.getSessionKey();
         PrincipalName princ = delegatedCreds.getClient();
-        Realm realm = princ.getRealm();
         PrincipalName tgService = delegatedCreds.getServer();
 
         KrbCredInfo credInfo = new KrbCredInfo(sessionKey,

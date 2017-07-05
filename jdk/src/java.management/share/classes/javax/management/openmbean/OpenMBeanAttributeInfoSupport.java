@@ -114,7 +114,7 @@ public class OpenMBeanAttributeInfoSupport
      * exposed for management.
      *
      * @param isIs {@code true} if the attribute's getter is of the
-     * form <tt>is<i>XXX</i></tt>.
+     * form <code>is<i>XXX</i></code>.
      *
      * @throws IllegalArgumentException if {@code name} or {@code
      * description} are null or empty string, or {@code openType} is
@@ -154,7 +154,7 @@ public class OpenMBeanAttributeInfoSupport
      * exposed for management.
      *
      * @param isIs {@code true} if the attribute's getter is of the
-     * form <tt>is<i>XXX</i></tt>.
+     * form <code>is<i>XXX</i></code>.
      *
      * @param descriptor The descriptor for the attribute.  This may be null
      * which is equivalent to an empty descriptor.
@@ -221,7 +221,7 @@ public class OpenMBeanAttributeInfoSupport
      * exposed for management.
      *
      * @param isIs {@code true} if the attribute's getter is of the
-     * form <tt>is<i>XXX</i></tt>.
+     * form <code>is<i>XXX</i></code>.
      *
      * @param defaultValue must be a valid value for the {@code
      * openType} specified for this attribute; default value not
@@ -278,7 +278,7 @@ public class OpenMBeanAttributeInfoSupport
      * exposed for management.
      *
      * @param isIs {@code true} if the attribute's getter is of the
-     * form <tt>is<i>XXX</i></tt>.
+     * form <code>is<i>XXX</i></code>.
      *
      * @param defaultValue must be a valid value
      * for the {@code
@@ -345,7 +345,7 @@ public class OpenMBeanAttributeInfoSupport
      * exposed for management.
      *
      * @param isIs {@code true} if the attribute's getter is of the
-     * form <tt>is<i>XXX</i></tt>.
+     * form <code>is<i>XXX</i></code>.
      *
      * @param defaultValue must be a valid value for the {@code
      * openType} specified for this attribute; default value not

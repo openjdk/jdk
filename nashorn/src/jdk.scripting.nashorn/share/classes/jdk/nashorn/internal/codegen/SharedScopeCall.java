@@ -169,7 +169,7 @@ class SharedScopeCall {
                 slot += type.getSlots();
             }
             // Shared scope calls disabled in optimistic world. TODO is this right?
-            method.dynamicCall(returnType, 2 + paramTypes.length, flags);
+            method.dynamicCall(returnType, 2 + paramTypes.length, flags, symbol.getName());
         }
 
         method._return(returnType);

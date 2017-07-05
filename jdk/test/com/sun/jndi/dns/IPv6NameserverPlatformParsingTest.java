@@ -31,25 +31,12 @@ import javax.naming.spi.NamingManager;
 import com.sun.jndi.dns.DnsContext;
 
 /**
- * @test
  * @bug 6991580
  * @summary IPv6 Nameservers in resolv.conf throws NumberFormatException
- * @run main/manual IPv6NameserverPlatformParsingTest
- *
- * In order to run this test be sure to place, for example, the following
- * snippet into your platform's {@code /etc/resolv.conf}:
- * <pre>
- * nameserver 127.0.0.1
- * nameserver 2001:4860:4860::8888
- * nameserver [::1]:5353
- * nameserver 127.0.0.1:5353
- * </pre>
- *
- * Then, run this test as manual jtreg test.
  *
  * @author Severin Gehwolf
- *
  */
+
 public class IPv6NameserverPlatformParsingTest {
 
     private static boolean foundIPv6 = false;

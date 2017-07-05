@@ -50,7 +50,7 @@ public class MBeanParameterInfo extends MBeanFeatureInfo implements Cloneable {
 
 
     /**
-     * Constructs an <CODE>MBeanParameterInfo</CODE> object.
+     * Constructs an {@code MBeanParameterInfo} object.
      *
      * @param name The name of the data
      * @param type The type or class name of the data
@@ -63,7 +63,7 @@ public class MBeanParameterInfo extends MBeanFeatureInfo implements Cloneable {
     }
 
     /**
-     * Constructs an <CODE>MBeanParameterInfo</CODE> object.
+     * Constructs an {@code MBeanParameterInfo} object.
      *
      * @param name The name of the data
      * @param type The type or class name of the data
@@ -85,9 +85,9 @@ public class MBeanParameterInfo extends MBeanFeatureInfo implements Cloneable {
 
     /**
      * <p>Returns a shallow clone of this instance.
-     * The clone is obtained by simply calling <tt>super.clone()</tt>,
+     * The clone is obtained by simply calling {@code super.clone()},
      * thus calling the default native shallow cloning mechanism
-     * implemented by <tt>Object.clone()</tt>.
+     * implemented by {@code Object.clone()}.
      * No deeper cloning of any internal field is made.</p>
      *
      * <p>Since this class is immutable, cloning is chiefly of
@@ -126,7 +126,7 @@ public class MBeanParameterInfo extends MBeanFeatureInfo implements Cloneable {
      *
      * @param o the object to compare to.
      *
-     * @return true if and only if <code>o</code> is an MBeanParameterInfo such
+     * @return true if and only if {@code o} is an MBeanParameterInfo such
      * that its {@link #getName()}, {@link #getType()},
      * {@link #getDescriptor()}, and {@link
      * #getDescription()} values are equal (not necessarily identical)

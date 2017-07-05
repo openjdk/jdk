@@ -235,7 +235,8 @@ public abstract class Validator {
     public final X509Certificate[] validate(X509Certificate[] chain,
             Collection<X509Certificate> otherCerts, Object parameter)
             throws CertificateException {
-        return validate(chain, otherCerts, null, parameter);
+        return validate(chain, otherCerts, Collections.emptyList(), null,
+                parameter);
     }
 
     /**
@@ -244,6 +245,13 @@ public abstract class Validator {
      * @param chain the target certificate chain
      * @param otherCerts a Collection of additional X509Certificates that
      *        could be helpful for path building (or null)
+     * @param responseList a List of zero or more byte arrays, each
+     *        one being a DER-encoded OCSP response (per RFC 6960).  Entries
+     *        in the List must match the order of the certificates in the
+     *        chain parameter.  It is possible that fewer responses may be
+     *        in the list than are elements in {@code chain} and a missing
+     *        response for a matching element in {@code chain} can be
+     *        represented with a zero-length byte array.
      * @param constraints algorithm constraints for certification path
      *        processing
      * @param parameter an additional parameter with variant specific meaning.
@@ -257,9 +265,11 @@ public abstract class Validator {
      */
     public final X509Certificate[] validate(X509Certificate[] chain,
                 Collection<X509Certificate> otherCerts,
+                List<byte[]> responseList,
                 AlgorithmConstraints constraints,
                 Object parameter) throws CertificateException {
-        chain = engineValidate(chain, otherCerts, constraints, parameter);
+        chain = engineValidate(chain, otherCerts, responseList, constraints,
+                parameter);
 
         // omit EE extension check if EE cert is also trust anchor
         if (chain.length > 1) {
@@ -280,6 +290,7 @@ public abstract class Validator {
 
     abstract X509Certificate[] engineValidate(X509Certificate[] chain,
                 Collection<X509Certificate> otherCerts,
+                List<byte[]> responseList,
                 AlgorithmConstraints constraints,
                 Object parameter) throws CertificateException;
 

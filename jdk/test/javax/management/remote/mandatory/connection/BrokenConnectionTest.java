@@ -26,6 +26,7 @@
  * @bug 4940957 8025205
  * @summary Tests behaviour when connections break
  * @author Eamonn McManus
+ * @key intermittent
  * @modules java.management
  * @run clean BrokenConnectionTest
  * @run build BrokenConnectionTest

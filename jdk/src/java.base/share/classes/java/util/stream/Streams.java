@@ -156,10 +156,9 @@ final class Streams {
          * than a balanced tree at the expense of a higher-depth for the right
          * side of the range.
          *
-         * <p>This is optimized for cases such as IntStream.ints() that is
-         * implemented as range of 0 to Integer.MAX_VALUE but is likely to be
-         * augmented with a limit operation that limits the number of elements
-         * to a count lower than this threshold.
+         * <p>This is optimized for cases such as IntStream.range(0, Integer.MAX_VALUE)
+         * that is likely to be augmented with a limit operation that limits the
+         * number of elements to a count lower than this threshold.
          */
         private static final int BALANCED_SPLIT_THRESHOLD = 1 << 24;
 
@@ -280,10 +279,9 @@ final class Streams {
          * than a balanced tree at the expense of a higher-depth for the right
          * side of the range.
          *
-         * <p>This is optimized for cases such as LongStream.longs() that is
-         * implemented as range of 0 to Long.MAX_VALUE but is likely to be
-         * augmented with a limit operation that limits the number of elements
-         * to a count lower than this threshold.
+         * <p>This is optimized for cases such as LongStream.range(0, Long.MAX_VALUE)
+         * that is likely to be augmented with a limit operation that limits the
+         * number of elements to a count lower than this threshold.
          */
         private static final long BALANCED_SPLIT_THRESHOLD = 1 << 24;
 

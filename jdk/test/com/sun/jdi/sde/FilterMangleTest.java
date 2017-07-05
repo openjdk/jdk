@@ -5,6 +5,7 @@
  *
  *  @author Robert Field / Jim Holmlund
  *
+ *  @key intermittent
  *  @library ..
  *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE

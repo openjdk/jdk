@@ -297,6 +297,26 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
     }
   }
 
+  // Check to see if one array component type is assignable to another.
+  // Same as is_assignable_from() except int primitives must be identical.
+  bool is_component_assignable_from(
+      const VerificationType& from, ClassVerifier* context,
+      bool from_field_is_protected, TRAPS) const {
+    if (equals(from) || is_bogus()) {
+      return true;
+    } else {
+      switch(_u._data) {
+        case Boolean:
+        case Byte:
+        case Char:
+        case Short:
+          return false;
+        default:
+          return is_assignable_from(from, context, from_field_is_protected, CHECK_false);
+      }
+    }
+  }
+
   VerificationType get_component(ClassVerifier* context, TRAPS) const;
 
   int dimensions() const {

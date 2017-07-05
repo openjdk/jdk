@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.security.auth.x500.X500Principal;
 
 import sun.misc.HexDumpEncoder;
@@ -129,7 +130,7 @@ public final class OCSPResponse {
         SIG_REQUIRED,          // Must sign the request
         UNAUTHORIZED           // Request unauthorized
     };
-    private static ResponseStatus[] rsvalues = ResponseStatus.values();
+    private static final ResponseStatus[] rsvalues = ResponseStatus.values();
 
     private static final Debug debug = Debug.getInstance("certpath");
     private static final boolean dump = debug != null && Debug.isOn("ocsp");
@@ -173,7 +174,7 @@ public final class OCSPResponse {
     }
 
     // an array of all of the CRLReasons (used in SingleResponse)
-    private static CRLReason[] values = CRLReason.values();
+    private static final CRLReason[] values = CRLReason.values();
 
     private final ResponseStatus responseStatus;
     private final Map<CertId, SingleResponse> singleResponseMap;
@@ -183,13 +184,16 @@ public final class OCSPResponse {
     private final byte[] responseNonce;
     private List<X509CertImpl> certs;
     private X509CertImpl signerCert = null;
-    private X500Principal responderName = null;
-    private KeyIdentifier responderKeyId = null;
+    private final ResponderId respId;
+    private Date producedAtDate = null;
+    private final Map<String, java.security.cert.Extension> responseExtensions;
 
     /*
      * Create an OCSP response from its ASN.1 DER encoding.
+     *
+     * @param bytes The DER-encoded bytes for an OCSP response
      */
-    OCSPResponse(byte[] bytes) throws IOException {
+    public OCSPResponse(byte[] bytes) throws IOException {
         if (dump) {
             HexDumpEncoder hexEnc = new HexDumpEncoder();
             debug.println("OCSPResponse bytes...\n\n" +
@@ -221,6 +225,8 @@ public final class OCSPResponse {
             signature = null;
             tbsResponseData = null;
             responseNonce = null;
+            responseExtensions = Collections.emptyMap();
+            respId = null;
             return;
         }
 
@@ -239,7 +245,7 @@ public final class OCSPResponse {
         // responseType
         derIn = tmp.data;
         ObjectIdentifier responseType = derIn.getOID();
-        if (responseType.equals(OCSP_BASIC_RESPONSE_OID)) {
+        if (responseType.equals((Object)OCSP_BASIC_RESPONSE_OID)) {
             if (debug != null) {
                 debug.println("OCSP response type: basic");
             }
@@ -289,27 +295,15 @@ public final class OCSPResponse {
         }
 
         // responderID
-        short tag = (byte)(seq.tag & 0x1f);
-        if (tag == NAME_TAG) {
-            responderName = new X500Principal(seq.getData().toByteArray());
-            if (debug != null) {
-                debug.println("Responder's name: " + responderName);
-            }
-        } else if (tag == KEY_TAG) {
-            responderKeyId = new KeyIdentifier(seq.getData().getOctetString());
-            if (debug != null) {
-                debug.println("Responder's key ID: " +
-                    Debug.toString(responderKeyId.getIdentifier()));
-            }
-        } else {
-            throw new IOException("Bad encoding in responderID element of " +
-                "OCSP response: expected ASN.1 context specific tag 0 or 1");
+        respId = new ResponderId(seq.toByteArray());
+        if (debug != null) {
+            debug.println("Responder ID: " + respId);
         }
 
         // producedAt
         seq = seqDerIn.getDerValue();
+        producedAtDate = seq.getGeneralizedTime();
         if (debug != null) {
-            Date producedAtDate = seq.getGeneralizedTime();
             debug.println("OCSP response produced at: " + producedAtDate);
         }
 
@@ -320,36 +314,29 @@ public final class OCSPResponse {
             debug.println("OCSP number of SingleResponses: "
                           + singleResponseDer.length);
         }
-        for (int i = 0; i < singleResponseDer.length; i++) {
-            SingleResponse singleResponse =
-                new SingleResponse(singleResponseDer[i]);
+        for (DerValue srDer : singleResponseDer) {
+            SingleResponse singleResponse = new SingleResponse(srDer);
             singleResponseMap.put(singleResponse.getCertId(), singleResponse);
         }
 
         // responseExtensions
-        byte[] nonce = null;
+        Map<String, java.security.cert.Extension> tmpExtMap = new HashMap<>();
         if (seqDerIn.available() > 0) {
             seq = seqDerIn.getDerValue();
             if (seq.isContextSpecific((byte)1)) {
-                DerValue[] responseExtDer = seq.data.getSequence(3);
-                for (int i = 0; i < responseExtDer.length; i++) {
-                    Extension ext = new Extension(responseExtDer[i]);
-                    if (debug != null) {
-                        debug.println("OCSP extension: " + ext);
-                    }
-                    // Only the NONCE extension is recognized
-                    if (ext.getExtensionId().equals(OCSP.NONCE_EXTENSION_OID))
-                    {
-                        nonce = ext.getExtensionValue();
-                    } else if (ext.isCritical())  {
-                        throw new IOException(
-                            "Unsupported OCSP critical extension: " +
-                            ext.getExtensionId());
-                    }
-                }
+                tmpExtMap = parseExtensions(seq);
             }
         }
-        responseNonce = nonce;
+        responseExtensions = tmpExtMap;
+
+        // Attach the nonce value if found in the extension map
+        Extension nonceExt = (Extension)tmpExtMap.get(
+                PKIXExtensions.OCSPNonce_Id.toString());
+        responseNonce = (nonceExt != null) ?
+                nonceExt.getExtensionValue() : null;
+        if (debug != null && responseNonce != null) {
+            debug.println("Response nonce: " + Arrays.toString(responseNonce));
+        }
 
         // signatureAlgorithmId
         sigAlgId = AlgorithmId.parse(seqTmp[1]);
@@ -436,20 +423,22 @@ public final class OCSPResponse {
                     "Invalid issuer or trusted responder certificate", ce);
             }
 
-            if (responderName != null) {
+            if (respId.getType() == ResponderId.Type.BY_NAME) {
+                X500Principal rName = respId.getResponderName();
                 for (X509CertImpl cert : certs) {
-                    if (cert.getSubjectX500Principal().equals(responderName)) {
+                    if (cert.getSubjectX500Principal().equals(rName)) {
                         signerCert = cert;
                         break;
                     }
                 }
-            } else if (responderKeyId != null) {
+            } else if (respId.getType() == ResponderId.Type.BY_KEY) {
+                KeyIdentifier ridKeyId = respId.getKeyIdentifier();
                 for (X509CertImpl cert : certs) {
                     // Match responder's key identifier against the cert's SKID
                     // This will match if the SKID is encoded using the 160-bit
                     // SHA-1 hash method as defined in RFC 5280.
                     KeyIdentifier certKeyId = cert.getSubjectKeyId();
-                    if (certKeyId != null && responderKeyId.equals(certKeyId)) {
+                    if (certKeyId != null && ridKeyId.equals(certKeyId)) {
                         signerCert = cert;
                         break;
                     } else {
@@ -463,7 +452,7 @@ public final class OCSPResponse {
                         } catch (IOException e) {
                             // ignore
                         }
-                        if (responderKeyId.equals(certKeyId)) {
+                        if (ridKeyId.equals(certKeyId)) {
                             signerCert = cert;
                             break;
                         }
@@ -592,7 +581,6 @@ public final class OCSPResponse {
         }
 
         // Check freshness of OCSPResponse
-
         long now = (date == null) ? System.currentTimeMillis() : date.getTime();
         Date nowPlusSkew = new Date(now + MAX_CLOCK_SKEW);
         Date nowMinusSkew = new Date(now - MAX_CLOCK_SKEW);
@@ -603,16 +591,16 @@ public final class OCSPResponse {
                     until = " until " + sr.nextUpdate;
                 }
                 debug.println("OCSP response validity interval is from " +
-                              sr.thisUpdate + until);
+                        sr.thisUpdate + until);
                 debug.println("Checking validity of OCSP response on: " +
-                    new Date(now));
+                        new Date(now));
             }
 
             // Check that the test date is within the validity interval:
             //   [ thisUpdate - MAX_CLOCK_SKEW,
             //     MAX(thisUpdate, nextUpdate) + MAX_CLOCK_SKEW ]
             if (nowPlusSkew.before(sr.thisUpdate) ||
-                nowMinusSkew.after(
+                    nowMinusSkew.after(
                     sr.nextUpdate != null ? sr.nextUpdate : sr.thisUpdate))
             {
                 throw new CertPathValidatorException(
@@ -624,8 +612,10 @@ public final class OCSPResponse {
 
     /**
      * Returns the OCSP ResponseStatus.
+     *
+     * @return the {@code ResponseStatus} for this OCSP response
      */
-    ResponseStatus getResponseStatus() {
+    public ResponseStatus getResponseStatus() {
         return responseStatus;
     }
 
@@ -663,9 +653,25 @@ public final class OCSPResponse {
     /**
      * Returns the SingleResponse of the specified CertId, or null if
      * there is no response for that CertId.
+     *
+     * @param certId the {@code CertId} for a {@code SingleResponse} to be
+     * searched for in the OCSP response.
+     *
+     * @return the {@code SingleResponse} for the provided {@code CertId},
+     * or {@code null} if it is not found.
      */
-    SingleResponse getSingleResponse(CertId certId) {
+    public SingleResponse getSingleResponse(CertId certId) {
         return singleResponseMap.get(certId);
+    }
+
+    /**
+     * Return a set of all CertIds in this {@code OCSPResponse}
+     *
+     * @return an unmodifiable set containing every {@code CertId} in this
+     *      response.
+     */
+    public Set<CertId> getCertIds() {
+        return Collections.unmodifiableSet(singleResponseMap.keySet());
     }
 
     /*
@@ -676,11 +682,52 @@ public final class OCSPResponse {
     }
 
     /**
+     * Get the {@code ResponderId} from this {@code OCSPResponse}
+     *
+     * @return the {@code ResponderId} from this response or {@code null}
+     *      if no responder ID is in the body of the response (e.g. a
+     *      response with a status other than SUCCESS.
+     */
+    public ResponderId getResponderId() {
+        return respId;
+    }
+
+    /**
+     * Provide a String representation of an OCSPResponse
+     *
+     * @return a human-readable representation of the OCSPResponse
+     */
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("OCSP Response:\n");
+        sb.append("Response Status: ").append(responseStatus).append("\n");
+        sb.append("Responder ID: ").append(respId).append("\n");
+        sb.append("Produced at: ").append(producedAtDate).append("\n");
+        int count = singleResponseMap.size();
+        sb.append(count).append(count == 1 ?
+                " response:\n" : " responses:\n");
+        for (SingleResponse sr : singleResponseMap.values()) {
+            sb.append(sr).append("\n");
+        }
+        if (responseExtensions != null && responseExtensions.size() > 0) {
+            count = responseExtensions.size();
+            sb.append(count).append(count == 1 ?
+                    " extension:\n" : " extensions:\n");
+            for (String extId : responseExtensions.keySet()) {
+                sb.append(responseExtensions.get(extId)).append("\n");
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
      * Build a String-Extension map from DER encoded data.
      * @param derVal A {@code DerValue} object built from a SEQUENCE of
      *      extensions
      *
-     * @return A {@code Map} using the OID in string form as the keys.  If no
+     * @return a {@code Map} using the OID in string form as the keys.  If no
      *      extensions are found or an empty SEQUENCE is passed in, then
      *      an empty {@code Map} will be returned.
      *
@@ -694,6 +741,9 @@ public final class OCSPResponse {
 
         for (DerValue extDerVal : extDer) {
             Extension ext = new Extension(extDerVal);
+            if (debug != null) {
+                debug.println("Extension: " + ext);
+            }
             // We don't support any extensions yet. Therefore, if it
             // is critical we must throw an exception because we
             // don't know how to process it.
@@ -710,7 +760,7 @@ public final class OCSPResponse {
     /*
      * A class representing a single OCSP response.
      */
-    final static class SingleResponse implements OCSP.RevocationStatus {
+    public final static class SingleResponse implements OCSP.RevocationStatus {
         private final CertId certId;
         private final CertStatus certStatus;
         private final Date thisUpdate;
@@ -825,23 +875,72 @@ public final class OCSPResponse {
         /*
          * Return the certificate's revocation status code
          */
-        @Override public CertStatus getCertStatus() {
+        @Override
+        public CertStatus getCertStatus() {
             return certStatus;
         }
 
-        private CertId getCertId() {
+        /**
+         * Get the Cert ID that this SingleResponse is for.
+         *
+         * @return the {@code CertId} for this {@code SingleResponse}
+         */
+        public CertId getCertId() {
             return certId;
         }
 
-        @Override public Date getRevocationTime() {
+        /**
+         * Get the {@code thisUpdate} field from this {@code SingleResponse}.
+         *
+         * @return a {@link Date} object containing the thisUpdate date
+         */
+        public Date getThisUpdate() {
+            return (thisUpdate != null ? (Date) thisUpdate.clone() : null);
+        }
+
+        /**
+         * Get the {@code nextUpdate} field from this {@code SingleResponse}.
+         *
+         * @return a {@link Date} object containing the nexUpdate date or
+         * {@code null} if a nextUpdate field is not present in the response.
+         */
+        public Date getNextUpdate() {
+            return (nextUpdate != null ? (Date) nextUpdate.clone() : null);
+        }
+
+        /**
+         * Get the {@code revocationTime} field from this
+         * {@code SingleResponse}.
+         *
+         * @return a {@link Date} object containing the revocationTime date or
+         * {@code null} if the {@code SingleResponse} does not have a status
+         * of {@code REVOKED}.
+         */
+        @Override
+        public Date getRevocationTime() {
             return (revocationTime != null ? (Date) revocationTime.clone() :
                     null);
         }
 
-        @Override public CRLReason getRevocationReason() {
+        /**
+         * Get the {@code revocationReason} field for the
+         * {@code SingleResponse}.
+         *
+         * @return a {@link CRLReason} containing the revocation reason, or
+         * {@code null} if a revocation reason was not provided or the
+         * response status is not {@code REVOKED}.
+         */
+        @Override
+        public CRLReason getRevocationReason() {
             return revocationReason;
         }
 
+        /**
+         * Get the {@code singleExtensions} for this {@code SingleResponse}.
+         *
+         * @return a {@link Map} of {@link Extension} objects, keyed by
+         * their OID value in string form.
+         */
         @Override
         public Map<String, java.security.cert.Extension> getSingleExtensions() {
             return Collections.unmodifiableMap(singleExtensions);
@@ -852,19 +951,22 @@ public final class OCSPResponse {
          */
         @Override public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("SingleResponse:  \n");
+            sb.append("SingleResponse:\n");
             sb.append(certId);
-            sb.append("\nCertStatus: "+ certStatus + "\n");
+            sb.append("\nCertStatus: ").append(certStatus).append("\n");
             if (certStatus == CertStatus.REVOKED) {
-                sb.append("revocationTime is " + revocationTime + "\n");
-                sb.append("revocationReason is " + revocationReason + "\n");
+                sb.append("revocationTime is ");
+                sb.append(revocationTime).append("\n");
+                sb.append("revocationReason is ");
+                sb.append(revocationReason).append("\n");
             }
-            sb.append("thisUpdate is " + thisUpdate + "\n");
+            sb.append("thisUpdate is ").append(thisUpdate).append("\n");
             if (nextUpdate != null) {
-                sb.append("nextUpdate is " + nextUpdate + "\n");
+                sb.append("nextUpdate is ").append(nextUpdate).append("\n");
             }
             for (java.security.cert.Extension ext : singleExtensions.values()) {
-                sb.append("singleExtension: " + ext + "\n");
+                sb.append("singleExtension: ");
+                sb.append(ext.toString()).append("\n");
             }
             return sb.toString();
         }

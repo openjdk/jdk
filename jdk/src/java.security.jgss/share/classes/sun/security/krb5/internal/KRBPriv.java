@@ -39,14 +39,14 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 KRB-PRIV type.
  *
- * <xmp>
+ * <pre>{@code
  * KRB-PRIV        ::= [APPLICATION 21] SEQUENCE {
  *         pvno            [0] INTEGER (5),
  *         msg-type        [1] INTEGER (21),
  *                           -- NOTE: there is no [2] tag
  *         enc-part        [3] EncryptedData -- EncKrbPrivPart
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

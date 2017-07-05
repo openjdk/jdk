@@ -39,16 +39,17 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.UnknownHostException;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Implements the ASN.1 HostAddress type.
  *
- * <xmp>
+ * <pre>{@code
  * HostAddress     ::= SEQUENCE  {
  *         addr-type       [0] Int32,
  *         address         [1] OCTET STRING
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120
@@ -131,7 +132,7 @@ public class HostAddress implements Cloneable {
     /**
      * Gets the InetAddress of this HostAddress.
      * @return the IP address for this specified host.
-     * @exception if no IP address for the host could be found.
+     * @exception UnknownHostException if no IP address for the host could be found.
      *
      */
     public InetAddress getInetAddress() throws UnknownHostException {
@@ -295,4 +296,11 @@ public class HostAddress implements Cloneable {
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Arrays.toString(address));
+        sb.append('(').append(addrType).append(')');
+        return sb.toString();
+    }
 }

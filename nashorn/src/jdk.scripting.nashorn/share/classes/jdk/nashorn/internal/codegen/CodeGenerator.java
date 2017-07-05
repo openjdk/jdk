@@ -1480,7 +1480,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     }
                     @Override
                     void consumeStack() {
-                        dynamicCall(2 + argsCount, flags);
+                        dynamicCall(2 + argsCount, flags, ident.getName());
                     }
                 }.emit();
             }
@@ -1538,7 +1538,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     @Override
                     void consumeStack() {
                         // Ordinary call
-                        dynamicCall(2 + argsCount, flags);
+                        dynamicCall(2 + argsCount, flags, "eval");
                         method._goto(eval_done);
 
                         method.label(invoke_direct_eval);
@@ -1610,7 +1610,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     }
                     @Override
                     void consumeStack() {
-                        dynamicCall(2 + argCount, flags);
+                        dynamicCall(2 + argCount, flags, node.toString(false));
                     }
                 }.emit();
 
@@ -1635,9 +1635,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                     @Override
                     void consumeStack() {
-                        final int flags = getCallSiteFlags();
-                        //assert callNodeType.equals(callee.getReturnType()) : callNodeType + " != " + callee.getReturnType();
-                        dynamicCall(2 + argsCount, flags);
+                        dynamicCall(2 + argsCount, getCallSiteFlags(), origCallee.getName());
                     }
                 }.emit();
                 return false;
@@ -1666,8 +1664,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     }
                     @Override
                     void consumeStack() {
-                        final int flags = getCallSiteFlags();
-                        dynamicCall(2 + argsCount, flags);
+                        dynamicCall(2 + argsCount, getCallSiteFlags(), node.toString(false));
                     }
                 }.emit();
                 return false;
@@ -1687,7 +1684,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         @Override
                         void consumeStack() {
                             final int flags = getCallSiteFlags() | CALLSITE_SCOPE;
-                            dynamicCall(2 + argsCount, flags);
+                            dynamicCall(2 + argsCount, flags, node.toString(false));
                         }
                 }.emit();
                 return false;
@@ -3707,10 +3704,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final CallNode callNode = (CallNode)unaryNode.getExpression();
         final List<Expression> args   = callNode.getArgs();
 
+        final Expression func = callNode.getFunction();
         // Load function reference.
-        loadExpressionAsObject(callNode.getFunction()); // must detect type error
+        loadExpressionAsObject(func); // must detect type error
 
-        method.dynamicNew(1 + loadArgs(args), getCallSiteFlags());
+        method.dynamicNew(1 + loadArgs(args), getCallSiteFlags(), func.toString(false));
     }
 
     private void loadNOT(final UnaryNode unaryNode) {
@@ -4818,11 +4816,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return method.dynamicGetIndex(resultBounds.within(expression.getType()), nonOptimisticFlags(flags), isMethod);
         }
 
-        MethodEmitter dynamicCall(final int argCount, final int flags) {
+        MethodEmitter dynamicCall(final int argCount, final int flags, final String msg) {
             if (isOptimistic) {
-                return method.dynamicCall(getOptimisticCoercedType(), argCount, getOptimisticFlags(flags));
+                return method.dynamicCall(getOptimisticCoercedType(), argCount, getOptimisticFlags(flags), msg);
             }
-            return method.dynamicCall(resultBounds.within(expression.getType()), argCount, nonOptimisticFlags(flags));
+            return method.dynamicCall(resultBounds.within(expression.getType()), argCount, nonOptimisticFlags(flags), msg);
         }
 
         int getOptimisticFlags(final int flags) {
