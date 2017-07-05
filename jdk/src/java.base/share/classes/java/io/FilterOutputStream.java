@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,8 +91,8 @@ public class FilterOutputStream extends OutputStream {
      * <code>b.length</code>.
      * <p>
      * Note that this method does not call the one-argument
-     * <code>write</code> method of its underlying stream with the single
-     * argument <code>b</code>.
+     * <code>write</code> method of its underlying output stream with
+     * the single argument <code>b</code>.
      *
      * @param      b   the data to be written.
      * @exception  IOException  if an I/O error occurs.
@@ -113,7 +113,7 @@ public class FilterOutputStream extends OutputStream {
      * <code>byte</code> to output.
      * <p>
      * Note that this method does not call the <code>write</code> method
-     * of its underlying input stream with the same arguments. Subclasses
+     * of its underlying output stream with the same arguments. Subclasses
      * of <code>FilterOutputStream</code> should provide a more efficient
      * implementation of this method.
      *
