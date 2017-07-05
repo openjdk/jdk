@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
@@ -68,9 +69,7 @@ bool CppInterpreter::contains(address pc) {
 #define STATE(field_name) Lstate, in_bytes(byte_offset_of(BytecodeInterpreter, field_name))
 #define __ _masm->
 
-Label frame_manager_entry;
-Label fast_accessor_slow_entry_path;  // fast accessor methods need to be able to jmp to unsynchronized
-                                      // c++ interpreter entry point this holds that entry point label.
+Label frame_manager_entry; // c++ interpreter entry point this holds that entry point label.
 
 static address unctrap_frame_manager_entry  = NULL;
 
@@ -452,110 +451,6 @@ address InterpreterGenerator::generate_empty_entry(void) {
   return NULL;
 }
 
-// Call an accessor method (assuming it is resolved, otherwise drop into
-// vanilla (slow path) entry
-
-// Generates code to elide accessor methods
-// Uses G3_scratch and G1_scratch as scratch
-address InterpreterGenerator::generate_accessor_entry(void) {
-
-  // Code: _aload_0, _(i|a)getfield, _(i|a)return or any rewrites thereof;
-  // parameter size = 1
-  // Note: We can only use this code if the getfield has been resolved
-  //       and if we don't have a null-pointer exception => check for
-  //       these conditions first and use slow path if necessary.
-  address entry = __ pc();
-  Label slow_path;
-
-  if ( UseFastAccessorMethods) {
-    // Check if we need to reach a safepoint and generate full interpreter
-    // frame if so.
-    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
-    __ load_contents(sync_state, G3_scratch);
-    __ cmp(G3_scratch, SafepointSynchronize::_not_synchronized);
-    __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
-    __ delayed()->nop();
-
-    // Check if local 0 != NULL
-    __ ld_ptr(Gargs, G0, Otos_i ); // get local 0
-    __ tst(Otos_i);  // check if local 0 == NULL and go the slow path
-    __ brx(Assembler::zero, false, Assembler::pn, slow_path);
-    __ delayed()->nop();
-
-
-    // read first instruction word and extract bytecode @ 1 and index @ 2
-    // get first 4 bytes of the bytecodes (big endian!)
-    __ ld_ptr(Address(G5_method, in_bytes(Method::const_offset())), G1_scratch);
-    __ ld(Address(G1_scratch, in_bytes(ConstMethod::codes_offset())), G1_scratch);
-
-    // move index @ 2 far left then to the right most two bytes.
-    __ sll(G1_scratch, 2*BitsPerByte, G1_scratch);
-    __ srl(G1_scratch, 2*BitsPerByte - exact_log2(in_words(
-                      ConstantPoolCacheEntry::size()) * BytesPerWord), G1_scratch);
-
-    // get constant pool cache
-    __ ld_ptr(G5_method, in_bytes(Method::const_offset()), G3_scratch);
-    __ ld_ptr(G3_scratch, in_bytes(ConstMethod::constants_offset()), G3_scratch);
-    __ ld_ptr(G3_scratch, ConstantPool::cache_offset_in_bytes(), G3_scratch);
-
-    // get specific constant pool cache entry
-    __ add(G3_scratch, G1_scratch, G3_scratch);
-
-    // Check the constant Pool cache entry to see if it has been resolved.
-    // If not, need the slow path.
-    ByteSize cp_base_offset = ConstantPoolCache::base_offset();
-    __ ld_ptr(G3_scratch, in_bytes(cp_base_offset + ConstantPoolCacheEntry::indices_offset()), G1_scratch);
-    __ srl(G1_scratch, 2*BitsPerByte, G1_scratch);
-    __ and3(G1_scratch, 0xFF, G1_scratch);
-    __ cmp(G1_scratch, Bytecodes::_getfield);
-    __ br(Assembler::notEqual, false, Assembler::pn, slow_path);
-    __ delayed()->nop();
-
-    // Get the type and return field offset from the constant pool cache
-    __ ld_ptr(G3_scratch, in_bytes(cp_base_offset + ConstantPoolCacheEntry::flags_offset()), G1_scratch);
-    __ ld_ptr(G3_scratch, in_bytes(cp_base_offset + ConstantPoolCacheEntry::f2_offset()), G3_scratch);
-
-    Label xreturn_path;
-    // Need to differentiate between igetfield, agetfield, bgetfield etc.
-    // because they are different sizes.
-    // Get the type from the constant pool cache
-    __ srl(G1_scratch, ConstantPoolCacheEntry::tos_state_shift, G1_scratch);
-    // Make sure we don't need to mask G1_scratch after the above shift
-    ConstantPoolCacheEntry::verify_tos_state_shift();
-    __ cmp(G1_scratch, atos );
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->ld_ptr(Otos_i, G3_scratch, Otos_i);
-    __ cmp(G1_scratch, itos);
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->ld(Otos_i, G3_scratch, Otos_i);
-    __ cmp(G1_scratch, stos);
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->ldsh(Otos_i, G3_scratch, Otos_i);
-    __ cmp(G1_scratch, ctos);
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->lduh(Otos_i, G3_scratch, Otos_i);
-#ifdef ASSERT
-    __ cmp(G1_scratch, btos);
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->ldsb(Otos_i, G3_scratch, Otos_i);
-    __ should_not_reach_here();
-#endif
-    __ ldsb(Otos_i, G3_scratch, Otos_i);
-    __ bind(xreturn_path);
-
-    // _ireturn/_areturn
-    __ retl();                      // return from leaf routine
-    __ delayed()->mov(O5_savedSP, SP);
-
-    // Generate regular method entry
-    __ bind(slow_path);
-    __ ba(fast_accessor_slow_entry_path);
-    __ delayed()->nop();
-    return entry;
-  }
-  return NULL;
-}
-
 address InterpreterGenerator::generate_Reference_get_entry(void) {
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
@@ -573,7 +468,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_accessor_entry();
+  return generate_jump_to_normal_entry();
 }
 
 //
@@ -1869,23 +1764,6 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   __ st(L1_scratch, STATE(_msg));
   __ ba(call_interpreter_2);
   __ delayed()->st_ptr(O1, STATE(_stack));
-
-
-  // Fast accessor methods share this entry point.
-  // This works because frame manager is in the same codelet
-  // This can either be an entry via call_stub/c1/c2 or a recursive interpreter call
-  // we need to do a little register fixup here once we distinguish the two of them
-  if (UseFastAccessorMethods && !synchronized) {
-  // Call stub_return address still in O7
-    __ bind(fast_accessor_slow_entry_path);
-    __ set((intptr_t)return_from_native_method - 8, Gtmp1);
-    __ cmp(Gtmp1, O7);                                                // returning to interpreter?
-    __ brx(Assembler::equal, true, Assembler::pt, re_dispatch);       // yep
-    __ delayed()->nop();
-    __ ba(re_dispatch);
-    __ delayed()->mov(G0, prevState);                                 // initial entry
-
-  }
 
   // interpreter returning to native code (call_stub/c1/c2)
   // convert result and unwind initial activation

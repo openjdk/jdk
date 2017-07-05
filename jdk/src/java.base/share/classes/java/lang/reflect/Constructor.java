@@ -544,15 +544,33 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public AnnotatedType getAnnotatedReceiverType() {
-        if (getDeclaringClass().getEnclosingClass() == null)
-            return super.getAnnotatedReceiverType();
+        Class<?> thisDeclClass = getDeclaringClass();
+        Class<?> enclosingClass = thisDeclClass.getEnclosingClass();
 
+        if (enclosingClass == null) {
+            // A Constructor for a top-level class
+            return null;
+        }
+
+        Class<?> outerDeclaringClass = thisDeclClass.getDeclaringClass();
+        if (outerDeclaringClass == null) {
+            // A constructor for a local or anonymous class
+            return null;
+        }
+
+        // Either static nested or inner class
+        if (Modifier.isStatic(thisDeclClass.getModifiers())) {
+            // static nested
+            return null;
+        }
+
+        // A Constructor for an inner class
         return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes0(),
                 sun.misc.SharedSecrets.getJavaLangAccess().
-                        getConstantPool(getDeclaringClass()),
+                    getConstantPool(thisDeclClass),
                 this,
-                getDeclaringClass(),
-                getDeclaringClass().getEnclosingClass(),
+                thisDeclClass,
+                enclosingClass,
                 TypeAnnotation.TypeAnnotationTarget.METHOD_RECEIVER);
     }
 }

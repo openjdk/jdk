@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8023651
+ * @bug 8023651 8044629
  * @summary Test that the receiver annotations and the return annotations of
  *          constructors behave correctly.
  * @run testng ConstructorReceiverTest
@@ -38,11 +38,16 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class ConstructorReceiverTest {
+    public static final Integer EMPTY_ANNOTATED_TYPE =  Integer.valueOf(-1);
+
     // Format is {
     //   { Class to get ctor for,
     //       ctor param class,
     //       value of anno of return type,
-    //       value of anno for receiver or null if there should be no receiver anno
+    //       value of anno for receiver,
+    //              or null if there should be no receiver,
+    //              or EMPTY_ANNOTATED_TYPE of there should be a receiver but
+    //              no annotation
     //    },
     //    ...
     // }
@@ -51,12 +56,14 @@ public class ConstructorReceiverTest {
         { ConstructorReceiverTest.Middle.class, ConstructorReceiverTest.class, Integer.valueOf(10), Integer.valueOf(15) },
         { ConstructorReceiverTest.Middle.Inner.class, ConstructorReceiverTest.Middle.class, Integer.valueOf(100), Integer.valueOf(150) },
         { ConstructorReceiverTest.Middle.Inner.Innermost.class, ConstructorReceiverTest.Middle.Inner.class, Integer.valueOf(1000), Integer.valueOf(1500) },
-        { ConstructorReceiverTest.Middle.InnerNoReceiver.class, ConstructorReceiverTest.Middle.class, Integer.valueOf(300), null },
+        { ConstructorReceiverTest.Middle.InnerNoReceiver.class, ConstructorReceiverTest.Middle.class, Integer.valueOf(300), EMPTY_ANNOTATED_TYPE },
         { ConstructorReceiverTest.Nested.class, null, Integer.valueOf(20), null },
         { ConstructorReceiverTest.Nested.NestedMiddle.class, ConstructorReceiverTest.Nested.class, Integer.valueOf(200), Integer.valueOf(250)},
         { ConstructorReceiverTest.Nested.NestedMiddle.NestedInner.class, ConstructorReceiverTest.Nested.NestedMiddle.class, Integer.valueOf(2000), Integer.valueOf(2500)},
-        { ConstructorReceiverTest.Nested.NestedMiddle.NestedInnerNoReceiver.class, ConstructorReceiverTest.Nested.NestedMiddle.class, Integer.valueOf(4000), null},
+        { ConstructorReceiverTest.Nested.NestedMiddle.NestedInnerNoReceiver.class, ConstructorReceiverTest.Nested.NestedMiddle.class, Integer.valueOf(4000), EMPTY_ANNOTATED_TYPE},
+        { ConstructorReceiverTest.Nested.NestedMiddle.SecondNestedInnerNoReceiver.class, ConstructorReceiverTest.Nested.NestedMiddle.class, Integer.valueOf(5000), EMPTY_ANNOTATED_TYPE},
     };
+
 
     @DataProvider
     public Object[][] data() { return TESTS; }
@@ -71,14 +78,27 @@ public class ConstructorReceiverTest {
             c = toTest.getDeclaredConstructor(ctorParamType);
 
         AnnotatedType annotatedReceiverType = c.getAnnotatedReceiverType();
-        Annotation[] receiverAnnotations = annotatedReceiverType.getAnnotations();
 
+        // Some Constructors doesn't conceptually have a receiver, they should return null
         if (receiverVal == null) {
-            assertEquals(receiverAnnotations.length, 0, Arrays.asList(receiverAnnotations).toString() +
-                    " should be empty. Looking at 'length': ");
+            assertNull(annotatedReceiverType, "getAnnotatedReciverType  should return null for Constructor: " + c);
             return;
         }
 
+        // check that getType() matches the receiver
+        assertEquals(annotatedReceiverType.getType(),
+                ctorParamType,
+                "getType() doesn't match receiver type: " + ctorParamType);
+
+        Annotation[] receiverAnnotations = annotatedReceiverType.getAnnotations();
+
+        // Some Constructors have no annotations on but in theory can have a receiver
+        if (receiverVal.equals(EMPTY_ANNOTATED_TYPE)) {
+            assertEquals(receiverAnnotations.length, 0, "expecting an empty annotated type for: " + c);
+            return;
+        }
+
+        // The rest should have annotations
         assertEquals(receiverAnnotations.length, 1, "expecting a 1 element array. Looking at 'length': ");
         assertEquals(((Annot)receiverAnnotations[0]).value(), receiverVal.intValue(), " wrong annotation found. Found " +
                 receiverAnnotations[0] +
@@ -135,6 +155,10 @@ public class ConstructorReceiverTest {
 
             class NestedInnerNoReceiver {
                 @Annot(4000) public NestedInnerNoReceiver() {}
+            }
+
+            class SecondNestedInnerNoReceiver {
+                @Annot(5000) public SecondNestedInnerNoReceiver(NestedMiddle NestedMiddle.this) {}
             }
         }
     }

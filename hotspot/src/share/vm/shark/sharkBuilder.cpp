@@ -413,7 +413,7 @@ CallInst* SharkBuilder::CreateDump(Value* value) {
   const char *name;
   if (value->hasName())
     // XXX this leaks, but it's only debug code
-    name = strdup(value->getName().str().c_str());
+    name = os::strdup(value->getName().str().c_str());
   else
     name = "unnamed_value";
 

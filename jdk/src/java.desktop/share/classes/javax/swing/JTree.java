@@ -1216,10 +1216,14 @@ public class JTree extends JComponent implements Scrollable, Accessible
      *        bound: false
      */
     public void setDragEnabled(boolean b) {
+        checkDragEnabled(b);
+        dragEnabled = b;
+    }
+
+    private static void checkDragEnabled(boolean b) {
         if (b && GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
-        dragEnabled = b;
     }
 
     /**
@@ -1262,18 +1266,23 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * @since 1.6
      */
     public final void setDropMode(DropMode dropMode) {
+        checkDropMode(dropMode);
+        this.dropMode = dropMode;
+    }
+
+    private static void checkDropMode(DropMode dropMode) {
         if (dropMode != null) {
             switch (dropMode) {
                 case USE_SELECTION:
                 case ON:
                 case INSERT:
                 case ON_OR_INSERT:
-                    this.dropMode = dropMode;
                     return;
             }
         }
 
-        throw new IllegalArgumentException(dropMode + ": Unsupported drop mode for tree");
+        throw new IllegalArgumentException(dropMode +
+                ": Unsupported drop mode for tree");
     }
 
     /**
@@ -3089,7 +3098,34 @@ public class JTree extends JComponent implements Scrollable, Accessible
 
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        rootVisible = f.get("rootVisible", false);
+        rowHeight = f.get("rowHeight", 0);
+        rowHeightSet = f.get("rowHeightSet", false);
+        showsRootHandles = f.get("showsRootHandles", false);
+        showsRootHandlesSet = f.get("showsRootHandlesSet", false);
+        editable = f.get("editable", false);
+        largeModel = f.get("largeModel", false);
+        visibleRowCount = f.get("visibleRowCount", 0);
+        invokesStopCellEditing = f.get("invokesStopCellEditing", false);
+        scrollsOnExpand = f.get("scrollsOnExpand", false);
+        scrollsOnExpandSet = f.get("scrollsOnExpandSet", false);
+        toggleClickCount = f.get("toggleClickCount", 0);
+        leadPath = (TreePath) f.get("leadPath", null);
+        anchorPath = (TreePath) f.get("anchorPath", null);
+        expandsSelectedPaths = f.get("expandsSelectedPaths", false);
+        settingUI = f.get("settingUI", false);
+        boolean newDragEnabled = f.get("dragEnabled", false);
+        checkDragEnabled(newDragEnabled);
+        dragEnabled = newDragEnabled;
+        DropMode newDropMode = (DropMode) f.get("dropMode",
+                DropMode.USE_SELECTION);
+        checkDropMode(newDropMode);
+        dropMode = newDropMode;
+
+        expandRow = f.get("expandRow", -1);
+        dropTimer = (TreeTimer) f.get("dropTimer", null);
 
         // Create an instance of expanded state.
 

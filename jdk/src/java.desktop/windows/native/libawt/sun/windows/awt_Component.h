@@ -908,11 +908,6 @@ public:
 void ReleaseDCList(HWND hwnd, DCList &list);
 void MoveDCToPassiveList(HDC hDC);
 
-namespace TimeHelper{
-    jlong getMessageTimeUTC();
-    jlong windowsToUTC(DWORD event_offset);
-}
-
 #include "ObjectList.h"
 
 #endif /* AWT_COMPONENT_H */

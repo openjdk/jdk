@@ -495,16 +495,21 @@ public class JTabbedPane extends JComponent
      *
      */
     public void setTabPlacement(int tabPlacement) {
-        if (tabPlacement != TOP && tabPlacement != LEFT &&
-            tabPlacement != BOTTOM && tabPlacement != RIGHT) {
-            throw new IllegalArgumentException("illegal tab placement: must be TOP, BOTTOM, LEFT, or RIGHT");
-        }
+        checkTabPlacement(tabPlacement);
         if (this.tabPlacement != tabPlacement) {
             int oldValue = this.tabPlacement;
             this.tabPlacement = tabPlacement;
             firePropertyChange("tabPlacement", oldValue, tabPlacement);
             revalidate();
             repaint();
+        }
+    }
+
+    private static void checkTabPlacement(int tabPlacement) {
+        if (tabPlacement != TOP && tabPlacement != LEFT &&
+            tabPlacement != BOTTOM && tabPlacement != RIGHT) {
+            throw new IllegalArgumentException("illegal tab placement:"
+                    + " must be TOP, BOTTOM, LEFT, or RIGHT");
         }
     }
 
@@ -551,15 +556,21 @@ public class JTabbedPane extends JComponent
      *
      */
     public void setTabLayoutPolicy(int tabLayoutPolicy) {
-        if (tabLayoutPolicy != WRAP_TAB_LAYOUT && tabLayoutPolicy != SCROLL_TAB_LAYOUT) {
-            throw new IllegalArgumentException("illegal tab layout policy: must be WRAP_TAB_LAYOUT or SCROLL_TAB_LAYOUT");
-        }
+        checkTabLayoutPolicy(tabLayoutPolicy);
         if (this.tabLayoutPolicy != tabLayoutPolicy) {
             int oldValue = this.tabLayoutPolicy;
             this.tabLayoutPolicy = tabLayoutPolicy;
             firePropertyChange("tabLayoutPolicy", oldValue, tabLayoutPolicy);
             revalidate();
             repaint();
+        }
+    }
+
+    private static void checkTabLayoutPolicy(int tabLayoutPolicy) {
+        if (tabLayoutPolicy != WRAP_TAB_LAYOUT
+                && tabLayoutPolicy != SCROLL_TAB_LAYOUT) {
+            throw new IllegalArgumentException("illegal tab layout policy:"
+                    + " must be WRAP_TAB_LAYOUT or SCROLL_TAB_LAYOUT");
         }
     }
 
@@ -1816,7 +1827,19 @@ public class JTabbedPane extends JComponent
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        int newTabPlacement = f.get("tabPlacement", TOP);
+        checkTabPlacement(newTabPlacement);
+        tabPlacement = newTabPlacement;
+        int newTabLayoutPolicy = f.get("tabLayoutPolicy", 0);
+        checkTabLayoutPolicy(newTabLayoutPolicy);
+        tabLayoutPolicy = newTabLayoutPolicy;
+        model = (SingleSelectionModel) f.get("model", null);
+        haveRegistered = f.get("haveRegistered", false);
+        changeListener = (ChangeListener) f.get("changeListener", null);
+        visComp = (Component) f.get("visComp", null);
+
         if ((ui != null) && (getUIClassID().equals(uiClassID))) {
             ui.installUI(this);
         }

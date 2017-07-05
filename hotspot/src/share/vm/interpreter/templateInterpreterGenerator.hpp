@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,6 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_deopt_entry_for(TosState state, int step);
   address generate_safept_entry_for(TosState state, address runtime_entry);
   void    generate_throw_exception();
-
-  // entry point generator
-//   address generate_method_entry(AbstractInterpreter::MethodKind kind);
 
   // Instruction generation
   void generate_and_dispatch (Template* t, TosState tos_out = ilgl);

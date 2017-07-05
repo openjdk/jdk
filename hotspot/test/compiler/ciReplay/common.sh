@@ -22,6 +22,7 @@
 # questions.
 # 
 # 
+set -x
 
 # $1 - error code
 # $2 - test name
@@ -56,7 +57,7 @@ positive_test() {
     shift
     name=$1
     shift
-    VMOPTS="${TESTVMOPTS} $@"
+    VMOPTS="${TESTOPTS} $@"
     echo "POSITIVE TEST [$name]"
     start_test ${VMOPTS}
     exit_code=$?
@@ -75,7 +76,7 @@ negative_test() {
     shift
     name=$1
     shift
-    VMOPTS="${TESTVMOPTS} $@"
+    VMOPTS="${TESTOPTS} $@"
     echo "NEGATIVE TEST [$name]"
     start_test ${VMOPTS}
     exit_code=$?
@@ -149,7 +150,7 @@ JAVA=${TESTJAVA}${FS}bin${FS}java
 
 replay_data=test_replay.txt
 
-${JAVA} ${TESTVMOPTS} -Xinternalversion 2>&1 | grep debug
+${JAVA} ${TESTOPTS} -Xinternalversion 2>&1 | grep debug
 
 # Only test fastdebug 
 if [ $? -ne 0 ]
@@ -158,7 +159,7 @@ then
     exit 0
 fi
 
-is_int=`${JAVA} ${TESTVMOPTS} -version 2>&1 | grep -c "interpreted mode"`
+is_int=`${JAVA} ${TESTOPTS} -version 2>&1 | grep -c "interpreted mode"`
 # Not applicable for Xint
 if [ $is_int -ne 0 ]
 then
@@ -168,14 +169,14 @@ fi
 
 cleanup
 
-client_available=`${JAVA} ${TESTVMOPTS} -client -Xinternalversion 2>&1 | \
+client_available=`${JAVA} ${TESTOPTS} -client -Xinternalversion 2>&1 | \
         grep -c Client`
-server_available=`${JAVA} ${TESTVMOPTS} -server -Xinternalversion 2>&1 | \
+server_available=`${JAVA} ${TESTOPTS} -server -Xinternalversion 2>&1 | \
         grep -c Server`
-tiered_available=`${JAVA} ${TESTVMOPTS} -XX:+TieredCompilation -XX:+PrintFlagsFinal -version | \
+tiered_available=`${JAVA} ${TESTOPTS} -XX:+TieredCompilation -XX:+PrintFlagsFinal -version | \
         grep TieredCompilation | \
         grep -c true`
-is_tiered=`${JAVA} ${TESTVMOPTS} -XX:+PrintFlagsFinal -version | \
+is_tiered=`${JAVA} ${TESTOPTS} -XX:+PrintFlagsFinal -version | \
         grep TieredCompilation | \
         grep -c true`
 # CompLevel_simple -- C1
@@ -207,7 +208,7 @@ generate_replay() {
         fi
     fi
 
-    cmd="${JAVA} ${TESTVMOPTS} $@ \
+    cmd="${JAVA} ${TESTOPTS} $@ \
             -Xms8m \
             -Xmx32m \
             -XX:MetaspaceSize=4m \

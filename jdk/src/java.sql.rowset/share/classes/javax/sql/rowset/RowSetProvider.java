@@ -97,7 +97,7 @@ public class RowSetProvider {
      * The {@link ServiceLoader} API. The {@code ServiceLoader} API will look
      * for a class name in the file
      * {@code META-INF/services/javax.sql.rowset.RowSetFactory}
-     * in jars available to the runtime. For example, to have the the RowSetFactory
+     * in jars available to the runtime. For example, to have the RowSetFactory
      * implementation {@code com.sun.rowset.RowSetFactoryImpl } loaded, the
      * entry in {@code META-INF/services/javax.sql.rowset.RowSetFactory} would be:
      *  <ul>

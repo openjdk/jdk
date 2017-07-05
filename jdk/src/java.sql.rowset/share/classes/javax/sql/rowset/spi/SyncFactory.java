@@ -259,7 +259,7 @@ public class SyncFactory {
     private static Hashtable<String, SyncProvider> implementations;
 
     /**
-     * Adds the the given synchronization provider to the factory register. Guidelines
+     * Adds the given synchronization provider to the factory register. Guidelines
      * are provided in the <code>SyncProvider</code> specification for the
      * required naming conventions for <code>SyncProvider</code>
      * implementations.
@@ -462,7 +462,7 @@ public class SyncFactory {
 
     /**
      * Internal handler for all standard property parsing. Parses standard
-     * ROWSET properties and stores lazy references into the the internal registry.
+     * ROWSET properties and stores lazy references into the internal registry.
      */
     private static void parseProperties(Properties p) {
 

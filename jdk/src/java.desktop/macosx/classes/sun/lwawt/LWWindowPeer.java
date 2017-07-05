@@ -105,6 +105,8 @@ public class LWWindowPeer
 
     private final SecurityWarningWindow warningWindow;
 
+    private volatile boolean targetFocusable;
+
     /**
      * Current modal blocker or null.
      *
@@ -240,13 +242,12 @@ public class LWWindowPeer
         if (!visible && warningWindow != null) {
             warningWindow.setVisible(false, false);
         }
-
+        updateFocusableWindowState();
         super.setVisibleImpl(visible);
         // TODO: update graphicsConfig, see 4868278
         platformWindow.setVisible(visible);
         if (isSimpleWindow()) {
             KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
-
             if (visible) {
                 if (!getTarget().isAutoRequestFocus()) {
                     return;
@@ -397,6 +398,7 @@ public class LWWindowPeer
 
     @Override
     public void updateFocusableWindowState() {
+        targetFocusable = getTarget().isFocusableWindow();
         platformWindow.updateFocusableWindowState();
     }
 
@@ -1220,13 +1222,13 @@ public class LWWindowPeer
     }
 
     private boolean isFocusableWindow() {
-        boolean focusable = getTarget().isFocusableWindow();
+        boolean focusable  = targetFocusable;
         if (isSimpleWindow()) {
             LWWindowPeer ownerPeer = getOwnerFrameDialog(this);
             if (ownerPeer == null) {
                 return false;
             }
-            return focusable && ownerPeer.getTarget().isFocusableWindow();
+            return focusable && ownerPeer.targetFocusable;
         }
         return focusable;
     }

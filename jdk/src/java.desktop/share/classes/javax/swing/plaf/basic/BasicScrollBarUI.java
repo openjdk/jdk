@@ -93,8 +93,10 @@ public class BasicScrollBarUI
 
     private final static int scrollSpeedThrottle = 60; // delay in milli seconds
 
-    /** True indicates a middle click will absolutely position the
-     * scrollbar. */
+    /**
+     * True indicates a middle click will absolutely position the
+     * scrollbar.
+     */
     private boolean supportsAbsolutePositioning;
 
     /**
@@ -877,6 +879,10 @@ public class BasicScrollBarUI
      * Set the bounds of the thumb and force a repaint that includes
      * the old thumbBounds and the new one.
      *
+     * @param x set the x location of the thumb
+     * @param y set the y location of the thumb
+     * @param width set the width of the thumb
+     * @param height set the height of the thumb
      * @see #getThumbBounds
      */
     protected void setThumbBounds(int x, int y, int width, int height)
