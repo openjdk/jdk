@@ -154,7 +154,7 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 # Timezone Law (which never was effectively applied) will (would?) be
 # in effect.... The article is at
 # http://ar.clarin.com/diario/2001-06-06/e-01701.htm
-# ... The Law itself is "Ley No 25155", sanctioned on 1999-08-25, enacted
+# ... The Law itself is "Ley No. 25155", sanctioned on 1999-08-25, enacted
 # 1999-09-17, and published 1999-09-21.  The official publication is at:
 # http://www.boletin.jus.gov.ar/BON/Primera/1999/09-Septiembre/21/PDF/BO21-09-99LEG.PDF
 # Regretfully, you have to subscribe (and pay) for the on-line version....
@@ -198,15 +198,11 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 # http://www.worldtimezone.com/dst_news/dst_news_argentina03.html
 # http://www.impulsobaires.com.ar/nota.php?id=57832 (in spanish)
 
-# From Rodrigo Severo (2008-10-06):
-# Here is some info available at a Gentoo bug related to TZ on Argentina's DST:
-# ...
-# ------- Comment #1 from [jmdocile]  2008-10-06 16:28 0000 -------
-# Hi, there is a problem with timezone-data-2008e and maybe with
-# timezone-data-2008f
-# Argentinian law [Number] 25.155 is no longer valid.
+# From Juan Manuel Docile in https://bugs.gentoo.org/240339 (2008-10-07)
+# via Rodrigo Severo:
+# Argentinian law No. 25.155 is no longer valid.
 # http://www.infoleg.gov.ar/infolegInternet/anexos/60000-64999/60036/norma.htm
-# The new one is law [Number] 26.350
+# The new one is law No. 26.350
 # http://www.infoleg.gov.ar/infolegInternet/anexos/135000-139999/136191/norma.htm
 # So there is no summer time in Argentina for now.
 
@@ -794,7 +790,7 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 #	 [ and in a second message (same day): ]
 # I found the decree.
 #
-# DECRETO No- 7.584, DE 13 DE OUTUBRO DE 2011
+# DECRETO No. 7.584, DE 13 DE OUTUBRO DE 2011
 # Link :
 # http://www.in.gov.br/visualiza/index.jsp?data=13/10/2011&jornal=1000&pagina=6&totalArquivos=6
 
@@ -1148,7 +1144,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # Conflicts between [1] and [2] were resolved as follows:
 #
 #  - [1] says the 1910 transition was Jan 1, [2] says Jan 10 and cites
-#    Boletín Nº 1, Aviso Nº 1 (1910).  Go with [2].
+#    Boletín No. 1, Aviso No. 1 (1910).  Go with [2].
 #
 #  - [1] says SMT was -4:42:45, [2] says Chile's official time from
 #    1916 to 1919 was -4:42:46.3, the meridian of Chile's National
@@ -1156,7 +1152,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 #    Quinta Normal in Santiago.  Go with [2], rounding it to -4:42:46.
 #
 #  - [1] says the 1918 transition was Sep 1, [2] says Sep 10 and cites
-#    Boletín Nº 22, Aviso Nº 129/1918 (1918-08-23).  Go with [2].
+#    Boletín No. 22, Aviso No. 129/1918 (1918-08-23).  Go with [2].
 #
 #  - [1] does not give times for transitions; assume they occur
 #    at midnight mainland time, the current common practice.  However,
@@ -1556,7 +1552,7 @@ Rule	Para	1997	only	-	Feb	lastSun	0:00	0	-
 # (1999-09) reports no date; go with above sources and Gerd Knops (2001-02-27).
 Rule	Para	1998	2001	-	Mar	Sun>=1	0:00	0	-
 # From Rives McDow (2002-02-28):
-# A decree was issued in Paraguay (no. 16350) on 2002-02-26 that changed the
+# A decree was issued in Paraguay (No. 16350) on 2002-02-26 that changed the
 # dst method to be from the first Sunday in September to the first Sunday in
 # April.
 Rule	Para	2002	2004	-	Apr	Sun>=1	0:00	0	-
@@ -1736,8 +1732,19 @@ Rule	Uruguay	2005	only	-	Oct	 9	 2:00	1:00	S
 Rule	Uruguay	2006	only	-	Mar	12	 2:00	0	-
 # From Jesper Nørgaard Welen (2006-09-06):
 # http://www.presidencia.gub.uy/_web/decretos/2006/09/CM%20210_08%2006%202006_00001.PDF
-Rule	Uruguay	2006	max	-	Oct	Sun>=1	 2:00	1:00	S
-Rule	Uruguay	2007	max	-	Mar	Sun>=8	 2:00	0	-
+#
+# From Steffen Thorsen (2015-06-30):
+# ... it looks like they will not be using DST the coming summer:
+# http://www.elobservador.com.uy/gobierno-resolvio-que-no-habra-cambio-horario-verano-n656787
+# http://www.republica.com.uy/este-ano-no-se-modificara-el-huso-horario-en-uruguay/523760/
+# From Paul Eggert (2015-06-30):
+# Apparently restaurateurs complained that DST caused people to go to the beach
+# instead of out to dinner.
+# From Pablo Camargo (2015-07-13):
+# http://archivo.presidencia.gub.uy/sci/decretos/2015/06/cons_min_201.pdf
+# [dated 2015-06-29; repeals Decree 311/006 dated 2006-09-04]
+Rule	Uruguay	2006	2014	-	Oct	Sun>=1	 2:00	1:00	S
+Rule	Uruguay	2007	2015	-	Mar	Sun>=8	 2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Montevideo	-3:44:44 -	LMT	1898 Jun 28
 			-3:44:44 -	MMT	1920 May  1 # Montevideo MT
@@ -1745,6 +1752,10 @@ Zone America/Montevideo	-3:44:44 -	LMT	1898 Jun 28
 			-3:00	Uruguay	UY%sT
 
 # Venezuela
+#
+# From Paul Eggert (2015-07-28):
+# For the 1965 transition see Gaceta Oficial No. 27.619 (1964-12-15), p 205.533
+# http://www.pgr.gob.ve/dmdocuments/1964/27619.pdf
 #
 # From John Stainforth (2007-11-28):
 # ... the change for Venezuela originally expected for 2007-12-31 has
@@ -1757,6 +1768,6 @@ Zone America/Montevideo	-3:44:44 -	LMT	1898 Jun 28
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Caracas	-4:27:44 -	LMT	1890
 			-4:27:40 -	CMT	1912 Feb 12 # Caracas Mean Time?
-			-4:30	-	VET	1965        # Venezuela Time
+			-4:30	-	VET	1965 Jan  1  0:00 # Venezuela T.
 			-4:00	-	VET	2007 Dec  9  3:00
 			-4:30	-	VET

@@ -497,20 +497,10 @@ class HeapRegion: public G1OffsetTableContigSpace {
     return _rem_set;
   }
 
-  bool in_collection_set() const;
+  inline bool in_collection_set() const;
 
-  HeapRegion* next_in_collection_set() {
-    assert(in_collection_set(), "should only invoke on member of CS.");
-    assert(_next_in_special_set == NULL ||
-           _next_in_special_set->in_collection_set(),
-           "Malformed CS.");
-    return _next_in_special_set;
-  }
-  void set_next_in_collection_set(HeapRegion* r) {
-    assert(in_collection_set(), "should only invoke on member of CS.");
-    assert(r == NULL || r->in_collection_set(), "Malformed CS.");
-    _next_in_special_set = r;
-  }
+  inline HeapRegion* next_in_collection_set() const;
+  inline void set_next_in_collection_set(HeapRegion* r);
 
   void set_allocation_context(AllocationContext_t context) {
     _allocation_context = context;

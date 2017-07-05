@@ -26,20 +26,21 @@
 package jdk.nashorn.tools.jjs;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.prefs.Preferences;
+import jdk.internal.jline.console.completer.Completer;
+import jdk.internal.jline.console.UserInterruptException;
+import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.tools.Shell;
-import jdk.internal.jline.console.UserInterruptException;
 
 /**
  * Interactive command line Shell for Nashorn.
@@ -47,7 +48,8 @@ import jdk.internal.jline.console.UserInterruptException;
 public final class Main extends Shell {
     private Main() {}
 
-    static final Preferences PREFS = Preferences.userRoot().node("tool/jjs");
+    // file where history is persisted.
+    private static final File HIST_FILE = new File(new File(System.getProperty("user.home")), ".jjs.history");
 
     /**
      * Main entry point with the default input, output and error streams.
@@ -83,6 +85,7 @@ public final class Main extends Shell {
         return new Main().run(in, out, err, args);
     }
 
+
     /**
      * read-eval-print loop for Nashorn shell.
      *
@@ -96,13 +99,16 @@ public final class Main extends Shell {
         final PrintWriter err = context.getErr();
         final Global oldGlobal = Context.getGlobal();
         final boolean globalChanged = (oldGlobal != global);
+        final Completer completer = new NashornCompleter(context, global, this);
 
-        try (final Console in = new Console(System.in, System.out, PREFS)) {
+        try (final Console in = new Console(System.in, System.out, HIST_FILE, completer)) {
             if (globalChanged) {
                 Context.setGlobal(global);
             }
 
             global.addShellBuiltins();
+            // expose history object for reflecting on command line history
+            global.put("history", new HistoryObject(in.getHistory()), false);
 
             while (true) {
                 String source = "";

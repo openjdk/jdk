@@ -25,6 +25,7 @@
 
 package jdk.nashorn.tools.jjs;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -33,71 +34,41 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.Preferences;
 import jdk.internal.jline.console.ConsoleReader;
-import jdk.internal.jline.console.history.History.Entry;
-import jdk.internal.jline.console.history.MemoryHistory;
+import jdk.internal.jline.console.completer.Completer;
+import jdk.internal.jline.console.history.FileHistory;
 
 class Console implements AutoCloseable {
     private final ConsoleReader in;
-    private final PersistentHistory history;
+    private final FileHistory history;
 
-    Console(InputStream cmdin, PrintStream cmdout, Preferences prefs) throws IOException {
+    Console(final InputStream cmdin, final PrintStream cmdout, final File historyFile,
+            final Completer completer) throws IOException {
         in = new ConsoleReader(cmdin, cmdout);
         in.setExpandEvents(false);
         in.setHandleUserInterrupt(true);
-        in.setHistory(history = new PersistentHistory(prefs));
-        Runtime.getRuntime().addShutdownHook(new Thread(()->close()));
+        in.setBellEnabled(true);
+        in.setHistory(history = new FileHistory(historyFile));
+        in.addCompleter(completer);
+        Runtime.getRuntime().addShutdownHook(new Thread((Runnable)this::saveHistory));
     }
 
-    String readLine(String prompt) throws IOException {
+    String readLine(final String prompt) throws IOException {
         return in.readLine(prompt);
     }
 
-
     @Override
     public void close() {
-        history.save();
+        saveHistory();
     }
 
-    public static class PersistentHistory extends MemoryHistory {
+    private void saveHistory() {
+        try {
+            getHistory().flush();
+        } catch (final IOException exp) {}
+    }
 
-        private final Preferences prefs;
-
-        protected PersistentHistory(Preferences prefs) {
-            this.prefs = prefs;
-            load();
-        }
-
-        private static final String HISTORY_LINE_PREFIX = "HISTORY_LINE_";
-
-        public final void load() {
-            try {
-                List<String> keys = new ArrayList<>(Arrays.asList(prefs.keys()));
-                Collections.sort(keys);
-                for (String key : keys) {
-                    if (!key.startsWith(HISTORY_LINE_PREFIX))
-                        continue;
-                    CharSequence line = prefs.get(key, "");
-                    add(line);
-                }
-            } catch (BackingStoreException ex) {
-                throw new IllegalStateException(ex);
-            }
-        }
-
-        public void save() {
-            Iterator<Entry> entries = iterator();
-            if (entries.hasNext()) {
-                int len = (int) Math.ceil(Math.log10(size()+1));
-                String format = HISTORY_LINE_PREFIX + "%0" + len + "d";
-                while (entries.hasNext()) {
-                    Entry entry = entries.next();
-                    prefs.put(String.format(format, entry.index()), entry.value().toString());
-                }
-            }
-        }
-
+    FileHistory getHistory() {
+        return (FileHistory) in.getHistory();
     }
 }

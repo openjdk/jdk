@@ -45,6 +45,9 @@ static void procToUser(JNIEnv *env, HANDLE handle, jobject jinfo);
 /* Field id for jString 'command' in java.lang.ProcessHandle.Info */
 static jfieldID ProcessHandleImpl_Info_commandID;
 
+/* Field id for jString 'commandLine' in java.lang.ProcessHandleImpl.Info */
+static jfieldID ProcessHandleImpl_Info_commandLineID;
+
 /* Field id for jString[] 'arguments' in java.lang.ProcessHandle.Info */
 static jfieldID ProcessHandleImpl_Info_argumentsID;
 
@@ -69,6 +72,8 @@ Java_java_lang_ProcessHandleImpl_00024Info_initIDs(JNIEnv *env, jclass clazz) {
 
     CHECK_NULL(ProcessHandleImpl_Info_commandID = (*env)->GetFieldID(env,
         clazz, "command", "Ljava/lang/String;"));
+    CHECK_NULL(ProcessHandleImpl_Info_commandLineID = (*env)->GetFieldID(env,
+        clazz, "commandLine", "Ljava/lang/String;"));
     CHECK_NULL(ProcessHandleImpl_Info_argumentsID = (*env)->GetFieldID(env,
         clazz, "arguments", "[Ljava/lang/String;"));
     CHECK_NULL(ProcessHandleImpl_Info_totalTimeID = (*env)->GetFieldID(env,

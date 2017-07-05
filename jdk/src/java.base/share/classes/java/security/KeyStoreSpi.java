@@ -618,9 +618,12 @@ public abstract class KeyStoreSpi {
      * @throws IOException if there is an I/O problem with the keystore data.
      * @throws NullPointerException if stream is {@code null}.
      *
-     * @since 1.9
+     * @since 9
      */
     public boolean engineProbe(InputStream stream) throws IOException {
+        if (stream == null) {
+            throw new NullPointerException("input stream must not be null");
+        }
         return false;
     }
 }

@@ -98,8 +98,8 @@ public class AnnotationType {
      * Sole constructor.
      *
      * @param annotationClass the class object for the annotation type
-     * @throw IllegalArgumentException if the specified class object for
-     *     does not represent a valid annotation type
+     * @throws IllegalArgumentException if the specified class object for
+     *         does not represent a valid annotation type
      */
     private AnnotationType(final Class<? extends Annotation> annotationClass) {
         if (!annotationClass.isAnnotation())
