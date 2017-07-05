@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,15 +50,9 @@ Java_java_lang_Throwable_fillInStackTrace(JNIEnv *env, jobject throwable, jint d
     return throwable;
 }
 
-JNIEXPORT jint JNICALL
-Java_java_lang_Throwable_getStackTraceDepth(JNIEnv *env, jobject throwable)
+JNIEXPORT void JNICALL
+Java_java_lang_Throwable_getStackTraceElements(JNIEnv *env,
+                                               jobject throwable, jobjectArray elements)
 {
-    return JVM_GetStackTraceDepth(env, throwable);
-}
-
-JNIEXPORT jobject JNICALL
-Java_java_lang_Throwable_getStackTraceElement(JNIEnv *env,
-                                              jobject throwable, jint index)
-{
-    return JVM_GetStackTraceElement(env, throwable, index);
+    JVM_GetStackTraceElements(env, throwable, elements);
 }

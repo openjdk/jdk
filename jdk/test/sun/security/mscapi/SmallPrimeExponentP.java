@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,18 @@
  * questions.
  */
 
+ /*
+ * @test
+ * @bug 8023546 8151834
+ * @modules java.base/sun.security.x509
+ *          java.base/sun.security.tools.keytool
+ * @summary Test prime exponent (p) lengths 63 and 65 bytes with SunMSCAPI.
+ *         The seed 76 has the fastest test execution now (only 5 rounds) and is
+ *         hard-coded in run tag. This number might change if algorithms for
+ *         RSA key pair generation or BigInteger prime searching gets updated.
+ * @requires os.family == "windows"
+ * @run main SmallPrimeExponentP 76
+ */
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.x509.X500Name;
 
@@ -28,50 +40,63 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateCrtKey;
+import java.util.Random;
 
-/*
- * @test
- * @bug 8023546
- * @key intermittent
- * @modules java.base/sun.security.x509
- *          java.base/sun.security.tools.keytool
- * @summary sun/security/mscapi/ShortRSAKey1024.sh fails intermittently
- * @requires os.family == "windows"
- */
 public class SmallPrimeExponentP {
 
     public static void main(String argv[]) throws Exception {
 
-        String osName = System.getProperty("os.name");
-        if (!osName.startsWith("Windows")) {
-            System.out.println("Not windows");
-            return;
-        }
+        long seed = Long.parseLong(argv[0]);
+        System.out.println("Seed for SecureRandom = " + seed + "L");
+
         KeyStore ks = KeyStore.getInstance("Windows-MY");
         ks.load(null, null);
+
         CertAndKeyGen ckg = new CertAndKeyGen("RSA", "SHA1withRSA");
-        ckg.setRandom(new SecureRandom());
-        boolean see63 = false, see65 = false;
+        ckg.setRandom(new MySecureRandom(seed));
+
+        boolean see63 = false;
+        boolean see65 = false;
         while (!see63 || !see65) {
             ckg.generate(1024);
             RSAPrivateCrtKey k = (RSAPrivateCrtKey) ckg.getPrivateKey();
+
             int len = k.getPrimeExponentP().toByteArray().length;
+            System.out.println("Length of P = " + len);
             if (len == 63 || len == 65) {
                 if (len == 63) {
-                    if (see63) continue;
-                    else see63 = true;
+                    if (see63) {
+                        continue;
+                    } else {
+                        see63 = true;
+                    }
                 }
                 if (len == 65) {
-                    if (see65) continue;
-                    else see65 = true;
+                    if (see65) {
+                        continue;
+                    } else {
+                        see65 = true;
+                    }
                 }
-                System.err.print(len);
                 ks.setKeyEntry("anything", k, null, new X509Certificate[]{
-                        ckg.getSelfCertificate(new X500Name("CN=Me"), 1000)
+                    ckg.getSelfCertificate(new X500Name("CN=Me"), 1000)
                 });
             }
-            System.err.print('.');
         }
         ks.store(null, null);
+    }
+
+    static class MySecureRandom extends SecureRandom {
+
+        final Random random;
+
+        public MySecureRandom(long seed) {
+            random = new Random(seed);
+        }
+
+        @Override
+        public void nextBytes(byte[] bytes) {
+            random.nextBytes(bytes);
+        }
     }
 }

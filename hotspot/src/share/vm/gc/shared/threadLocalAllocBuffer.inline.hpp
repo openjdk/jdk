@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
   // unsafe_max_tlab_alloc is just a hint.
   const size_t available_size = Universe::heap()->unsafe_max_tlab_alloc(myThread()) /
                                                   HeapWordSize;
-  size_t new_tlab_size = MIN2(available_size, desired_size() + aligned_obj_size);
+  size_t new_tlab_size = MIN3(available_size, desired_size() + aligned_obj_size, max_size());
 
   // Make sure there's enough room for object and filler int[].
   const size_t obj_plus_filler_size = aligned_obj_size + alignment_reserve();

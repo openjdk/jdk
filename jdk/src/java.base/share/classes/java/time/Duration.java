@@ -1350,6 +1350,48 @@ public final class Duration
         return nanos;
     }
 
+
+    //-----------------------------------------------------------------------
+    /**
+     * Returns a copy of this {@code Duration} truncated to the specified unit.
+     * <p>
+     * Truncating the duration returns a copy of the original with conceptual fields
+     * smaller than the specified unit set to zero.
+     * For example, truncating with the {@link ChronoUnit#MINUTES MINUTES} unit will
+     * round down to the nearest minute, setting the seconds and nanoseconds to zero.
+     * <p>
+     * The unit must have a {@linkplain TemporalUnit#getDuration() duration}
+     * that divides into the length of a standard day without remainder.
+     * This includes all supplied time units on {@link ChronoUnit} and
+     * {@link ChronoUnit#DAYS DAYS}. Other ChronoUnits throw an exception.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @param unit the unit to truncate to, not null
+     * @return a {@code Duration} based on this duration with the time truncated, not null
+     * @throws DateTimeException if the unit is invalid for truncation
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
+     */
+    public Duration truncatedTo(TemporalUnit unit) {
+        Objects.requireNonNull(unit, "unit");
+        if (unit == ChronoUnit.SECONDS && (seconds >= 0 || nanos == 0)) {
+            return new Duration(seconds, 0);
+        } else if (unit == ChronoUnit.NANOS) {
+            return this;
+        }
+        Duration unitDur = unit.getDuration();
+        if (unitDur.getSeconds() > LocalTime.SECONDS_PER_DAY) {
+            throw new UnsupportedTemporalTypeException("Unit is too large to be used for truncation");
+        }
+        long dur = unitDur.toNanos();
+        if ((LocalTime.NANOS_PER_DAY % dur) != 0) {
+            throw new UnsupportedTemporalTypeException("Unit must divide into a standard day without remainder");
+        }
+        long nod = (seconds % LocalTime.SECONDS_PER_DAY) * LocalTime.NANOS_PER_SECOND + nanos;
+        long result = (nod / dur) * dur ;
+        return plusNanos(result - nod);
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Compares this duration to the specified {@code Duration}.

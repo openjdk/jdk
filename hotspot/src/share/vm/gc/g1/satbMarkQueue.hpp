@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,9 +115,8 @@ public:
 
   // If there exists some completed buffer, pop and process it, and
   // return true.  Otherwise return false.  Processing a buffer
-  // consists of applying the closure to the buffer range starting
-  // with the first non-NULL entry to the end of the buffer; the
-  // leading entries may be NULL due to filtering.
+  // consists of applying the closure to the active range of the
+  // buffer; the leading entries may be excluded due to filtering.
   bool apply_closure_to_completed_buffer(SATBBufferClosure* cl);
 
 #ifndef PRODUCT

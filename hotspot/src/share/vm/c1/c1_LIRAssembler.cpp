@@ -556,17 +556,16 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       leal(op->in_opr(), op->result_opr());
       break;
 
-    case lir_null_check:
-      if (GenerateCompilerNullChecks) {
-        ImplicitNullCheckStub* stub = add_debug_info_for_null_check_here(op->info());
+    case lir_null_check: {
+      ImplicitNullCheckStub* stub = add_debug_info_for_null_check_here(op->info());
 
-        if (op->in_opr()->is_single_cpu()) {
-          _masm->null_check(op->in_opr()->as_register(), stub->entry());
-        } else {
-          Unimplemented();
-        }
+      if (op->in_opr()->is_single_cpu()) {
+        _masm->null_check(op->in_opr()->as_register(), stub->entry());
+      } else {
+        Unimplemented();
       }
       break;
+    }
 
     case lir_monaddr:
       monitor_address(op->in_opr()->as_constant_ptr()->as_jint(), op->result_opr());

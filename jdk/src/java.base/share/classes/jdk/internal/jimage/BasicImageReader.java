@@ -288,22 +288,24 @@ public class BasicImageReader implements AutoCloseable {
 
             return buffer;
         } else {
+            if (channel == null) {
+                throw new InternalError("Image file channel not open");
+            }
+
             ByteBuffer buffer = ImageBufferCache.getBuffer(size);
-            int read = 0;
-
+            int read;
             try {
-                if (channel == null) {
-                    throw new InternalError("Image file channel not open");
-                }
-
                 read = channel.read(buffer, offset);
                 buffer.rewind();
             } catch (IOException ex) {
+                ImageBufferCache.releaseBuffer(buffer);
                 throw new RuntimeException(ex);
             }
 
             if (read != size) {
                 ImageBufferCache.releaseBuffer(buffer);
+                throw new RuntimeException("Short read: " + read +
+                                           " instead of " + size + " bytes");
             }
 
             return buffer;

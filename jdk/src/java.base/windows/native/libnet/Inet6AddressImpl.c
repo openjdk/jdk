@@ -326,6 +326,109 @@ Java_java_net_Inet6AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
 
 #ifdef AF_INET6
 
+/**
+ * ping implementation using tcp port 7 (echo)
+ */
+static jboolean
+tcp_ping6(JNIEnv *env,
+          jint timeout,
+          jint ttl,
+          struct sockaddr_in6 him6,
+          struct sockaddr_in6* netif,
+          int len)
+{
+    jint fd;
+    WSAEVENT hEvent;
+    int connect_rv = -1;
+
+    fd = NET_Socket(AF_INET6, SOCK_STREAM, 0);
+    if (fd == SOCKET_ERROR) {
+        /* note: if you run out of fds, you may not be able to load
+         * the exception class, and get a NoClassDefFoundError
+         * instead.
+         */
+        NET_ThrowNew(env, errno, "Can't create socket");
+        return JNI_FALSE;
+    }
+
+    /**
+     * A TTL was specified, let's set the socket option.
+     */
+    if (ttl > 0) {
+      setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_HOPS, (const char *)&ttl, sizeof(ttl));
+    }
+
+    /**
+     * A network interface was specified, let's bind to it.
+     */
+    if (netif != NULL) {
+      if (NET_Bind(fd, (struct sockaddr*)netif, sizeof(struct sockaddr_in6)) < 0) {
+        NET_ThrowNew(env, WSAGetLastError(), "Can't bind socket to interface");
+        closesocket(fd);
+        return JNI_FALSE;
+      }
+    }
+
+    /**
+     * Make the socket non blocking.
+     */
+    hEvent = WSACreateEvent();
+    WSAEventSelect(fd, hEvent, FD_READ|FD_CONNECT|FD_CLOSE);
+
+    /* no need to use NET_Connect as non-blocking */
+    him6.sin6_port = htons((short) 7); /* Echo port */
+    connect_rv = connect(fd, (struct sockaddr *)&him6, len);
+
+    /**
+     * connection established or refused immediately, either way it means
+     * we were able to reach the host!
+     */
+    if (connect_rv == 0 || WSAGetLastError() == WSAECONNREFUSED) {
+        WSACloseEvent(hEvent);
+        closesocket(fd);
+        return JNI_TRUE;
+    } else {
+        int optlen;
+
+        switch (WSAGetLastError()) {
+        case WSAEHOSTUNREACH:   /* Host Unreachable */
+        case WSAENETUNREACH:    /* Network Unreachable */
+        case WSAENETDOWN:       /* Network is down */
+        case WSAEPFNOSUPPORT:   /* Protocol Family unsupported */
+          WSACloseEvent(hEvent);
+          closesocket(fd);
+          return JNI_FALSE;
+        }
+
+        if (WSAGetLastError() != WSAEWOULDBLOCK) {
+            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "ConnectException",
+                                         "connect failed");
+            WSACloseEvent(hEvent);
+            closesocket(fd);
+            return JNI_FALSE;
+        }
+
+        timeout = NET_Wait(env, fd, NET_WAIT_CONNECT, timeout);
+
+        if (timeout >= 0) {
+          /* has connection been established? */
+          optlen = sizeof(connect_rv);
+          if (getsockopt(fd, SOL_SOCKET, SO_ERROR, (void*)&connect_rv,
+                         &optlen) <0) {
+            connect_rv = WSAGetLastError();
+          }
+
+          if (connect_rv == 0 || connect_rv == WSAECONNREFUSED) {
+            WSACloseEvent(hEvent);
+            closesocket(fd);
+            return JNI_TRUE;
+          }
+        }
+    }
+    WSACloseEvent(hEvent);
+    closesocket(fd);
+    return JNI_FALSE;
+}
 
 /**
  * ping implementation.
@@ -337,21 +440,15 @@ static jboolean
 ping6(JNIEnv *env,
       struct sockaddr_in6* src,
       struct sockaddr_in6* dest,
-      jint timeout)
+      jint timeout,
+      HANDLE hIcmpFile)
 {
-    HANDLE hIcmpFile;
     DWORD dwRetVal = 0;
     char SendData[32] = {0};
     LPVOID ReplyBuffer = NULL;
     DWORD ReplySize = 0;
     IP_OPTION_INFORMATION ipInfo = {255, 0, 0, 0, NULL};
     struct sockaddr_in6 sa6Source;
-
-    hIcmpFile = Icmp6CreateFile();
-    if (hIcmpFile == INVALID_HANDLE_VALUE) {
-        NET_ThrowNew(env, WSAGetLastError(), "Unable to open handle");
-        return JNI_FALSE;
-    }
 
     ReplySize = sizeof(ICMPV6_ECHO_REPLY) + sizeof(SendData);
     ReplyBuffer = (VOID*) malloc(ReplySize);
@@ -411,7 +508,7 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
     struct sockaddr_in6* netif = NULL;
     struct sockaddr_in6 inf6;
     int len = 0;
-    int connect_rv = -1;
+    HANDLE hIcmpFile;
 
     /*
      * If IPv6 is not enable, then we can't reach an IPv6 address, can we?
@@ -456,7 +553,19 @@ Java_java_net_Inet6AddressImpl_isReachable0(JNIEnv *env, jobject this,
       netif = &inf6;
     }
 
-    return ping6(env, netif, &him6, timeout);
+    hIcmpFile = Icmp6CreateFile();
+    if (hIcmpFile == INVALID_HANDLE_VALUE) {
+        int err = WSAGetLastError();
+        if (err == ERROR_ACCESS_DENIED) {
+            // fall back to TCP echo if access is denied to ICMP
+            return tcp_ping6(env, timeout, ttl, him6, netif, len);
+        } else {
+            NET_ThrowNew(env, err, "Unable to create ICMP file handle");
+            return JNI_FALSE;
+        }
+    } else {
+        return ping6(env, netif, &him6, timeout, hIcmpFile);
+    }
 
 #endif /* AF_INET6 */
     return JNI_FALSE;

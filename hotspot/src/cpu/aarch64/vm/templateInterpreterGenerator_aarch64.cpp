@@ -32,6 +32,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "interpreter/bytecodeTracer.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
@@ -1967,7 +1968,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   __ push(RegSet::range(r0, r15), sp);
   __ mov(c_rarg2, r0);  // Pass itos
   __ call_VM(noreg,
-             CAST_FROM_FN_PTR(address, SharedRuntime::trace_bytecode),
+             CAST_FROM_FN_PTR(address, InterpreterRuntime::trace_bytecode),
              c_rarg1, c_rarg2, c_rarg3);
   __ pop(RegSet::range(r0, r15), sp);
   __ pop(state);
@@ -1982,14 +1983,8 @@ void TemplateInterpreterGenerator::count_bytecode() {
   __ push(rscratch1);
   __ push(rscratch2);
   __ push(rscratch3);
-  Label L;
-  __ mov(rscratch2, (address) &BytecodeCounter::_counter_value);
-  __ prfm(Address(rscratch2), PSTL1STRM);
-  __ bind(L);
-  __ ldxr(rscratch1, rscratch2);
-  __ add(rscratch1, rscratch1, 1);
-  __ stxr(rscratch3, rscratch1, rscratch2);
-  __ cbnzw(rscratch3, L);
+  __ mov(rscratch3, (address) &BytecodeCounter::_counter_value);
+  __ atomic_add(noreg, 1, rscratch3);
   __ pop(rscratch3);
   __ pop(rscratch2);
   __ pop(rscratch1);

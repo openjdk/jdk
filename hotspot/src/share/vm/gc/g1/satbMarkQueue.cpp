@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,10 @@ inline bool requires_marking(const void* entry, G1CollectedHeap* heap) {
   return true;
 }
 
+inline bool retain_entry(const void* entry, G1CollectedHeap* heap) {
+  return requires_marking(entry, heap) && !heap->isMarkedNext((oop)entry);
+}
+
 // This method removes entries from a SATB buffer that will not be
 // useful to the concurrent marking threads.  Entries are retained if
 // they require marking and are not already marked. Retained entries
@@ -114,43 +118,28 @@ void SATBMarkQueue::filter() {
     return;
   }
 
-  // Used for sanity checking at the end of the loop.
-  DEBUG_ONLY(size_t entries = 0; size_t retained = 0;)
-
   assert(_index <= _sz, "invariant");
-  void** limit = &buf[byte_index_to_index(_index)];
-  void** src = &buf[byte_index_to_index(_sz)];
-  void** dst = src;
 
-  while (limit < src) {
-    DEBUG_ONLY(entries += 1;)
-    --src;
+  // Two-fingered compaction toward the end.
+  void** src = &buf[byte_index_to_index(_index)];
+  void** dst = &buf[byte_index_to_index(_sz)];
+  for ( ; src < dst; ++src) {
+    // Search low to high for an entry to keep.
     void* entry = *src;
-    // NULL the entry so that unused parts of the buffer contain NULLs
-    // at the end. If we are going to retain it we will copy it to its
-    // final place. If we have retained all entries we have visited so
-    // far, we'll just end up copying it to the same place.
-    *src = NULL;
-
-    if (requires_marking(entry, g1h) && !g1h->isMarkedNext((oop)entry)) {
-      --dst;
-      assert(*dst == NULL, "filtering destination should be clear");
-      *dst = entry;
-      DEBUG_ONLY(retained += 1;);
+    if (retain_entry(entry, g1h)) {
+      // Found keeper.  Search high to low for an entry to discard.
+      while (src < --dst) {
+        if (!retain_entry(*dst, g1h)) {
+          *dst = entry;         // Replace discard with keeper.
+          break;
+        }
+      }
+      // If discard search failed (src == dst), the outer loop will also end.
     }
   }
-  size_t new_index = pointer_delta(dst, buf, 1);
-
-#ifdef ASSERT
-  size_t entries_calc = (_sz - _index) / sizeof(void*);
-  assert(entries == entries_calc, "the number of entries we counted "
-         "should match the number of entries we calculated");
-  size_t retained_calc = (_sz - new_index) / sizeof(void*);
-  assert(retained == retained_calc, "the number of retained entries we counted "
-         "should match the number of retained entries we calculated");
-#endif // ASSERT
-
-  _index = new_index;
+  // dst points to the lowest retained entry, or the end of the buffer
+  // if all the entries were filtered out.
+  _index = pointer_delta(dst, buf, 1);
 }
 
 // This method will first apply the above filtering to the buffer. If
@@ -286,19 +275,11 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
   }
   if (nd != NULL) {
     void **buf = BufferNode::make_buffer_from_node(nd);
-    // Skip over NULL entries at beginning (e.g. push end) of buffer.
-    // Filtering can result in non-full completed buffers; see
-    // should_enqueue_buffer.
-    assert(_sz % sizeof(void*) == 0, "invariant");
-    size_t limit = SATBMarkQueue::byte_index_to_index(_sz);
-    for (size_t i = 0; i < limit; ++i) {
-      if (buf[i] != NULL) {
-        // Found the end of the block of NULLs; process the remainder.
-        cl->do_buffer(buf + i, limit - i);
-        break;
-      }
-    }
-    deallocate_buffer(buf);
+    size_t index = SATBMarkQueue::byte_index_to_index(nd->index());
+    size_t size = SATBMarkQueue::byte_index_to_index(_sz);
+    assert(index <= size, "invariant");
+    cl->do_buffer(buf + index, size - index);
+    deallocate_buffer(nd);
     return true;
   } else {
     return false;
@@ -355,7 +336,7 @@ void SATBMarkQueueSet::abandon_partial_marking() {
   while (buffers_to_delete != NULL) {
     BufferNode* nd = buffers_to_delete;
     buffers_to_delete = nd->next();
-    deallocate_buffer(BufferNode::make_buffer_from_node(nd));
+    deallocate_buffer(nd);
   }
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   // So we can safely manipulate these queues.

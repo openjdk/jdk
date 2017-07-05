@@ -159,6 +159,24 @@ ifdef TESTNATIVE_DIR
   JTREG_NATIVE_PATH = -nativepath:$(shell $(GETMIXEDPATH) "$(TESTNATIVE_DIR)/hotspot/jtreg/native")
 endif
 
+# jtreg failure handler config
+ifeq ($(FAILURE_HANDLER_DIR), )
+  ifneq ($(TESTNATIVE_DIR), )
+    FAILURE_HANDLER_DIR := $(TESTNATIVE_DIR)/failure_handler
+  endif
+endif
+ifneq ($(FAILURE_HANDLER_DIR), )
+  FAILURE_HANDLER_DIR_MIXED := $(shell $(GETMIXEDPATH) "$(FAILURE_HANDLER_DIR)")
+  JTREG_FAILURE_HANDLER_OPTIONS := \
+      -timeoutHandlerDir:$(FAILURE_HANDLER_DIR_MIXED)/jtregFailureHandler.jar \
+      -observerDir:$(FAILURE_HANDLER_DIR_MIXED)/jtregFailureHandler.jar \
+      -timeoutHandler:jdk.test.failurehandler.jtreg.GatherProcessInfoTimeoutHandler \
+      -observer:jdk.test.failurehandler.jtreg.GatherDiagnosticInfoObserver
+  ifeq ($(PLATFORM), windows)
+    JTREG_FAILURE_HANDLER_OPTIONS += -J-Djava.library.path="$(FAILURE_HANDLER_DIR_MIXED)"
+  endif
+endif
+
 # Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
 ARCHIVE_BUNDLE = $(ABS_TEST_OUTPUT_DIR)/ARCHIVE_BUNDLE.zip
 ifdef JPRT_ARCHIVE_BUNDLE
@@ -322,6 +340,7 @@ jtreg_tests: prep $(PRODUCT_HOME) $(JTREG)
               -w:$(shell $(GETMIXEDPATH) "$(ABS_TEST_OUTPUT_DIR)/JTwork")    \
               -jdk:$(shell $(GETMIXEDPATH) "$(PRODUCT_HOME)")                \
               $(JTREG_NATIVE_PATH)                                           \
+              $(JTREG_FAILURE_HANDLER_OPTIONS)                               \
               $(JTREG_EXCLUSIONS)                                            \
               $(JTREG_TEST_OPTIONS)                                          \
               $(TEST_SELECTION)                                              \

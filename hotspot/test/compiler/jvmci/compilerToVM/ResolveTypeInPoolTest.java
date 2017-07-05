@@ -30,6 +30,7 @@
  * @library /testlibrary /test/lib /
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.org.objectweb.asm
  *          jdk.vm.ci/jdk.vm.ci.hotspot
  *          jdk.vm.ci/jdk.vm.ci.meta

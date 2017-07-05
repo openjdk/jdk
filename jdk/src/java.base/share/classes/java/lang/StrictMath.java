@@ -1135,6 +1135,110 @@ public final class StrictMath {
     }
 
     /**
+     * Returns the fused multiply add of the three arguments; that is,
+     * returns the exact product of the first two arguments summed
+     * with the third argument and then rounded once to the nearest
+     * {@code double}.
+     *
+     * The rounding is done using the {@linkplain
+     * java.math.RoundingMode#HALF_EVEN round to nearest even
+     * rounding mode}.
+     *
+     * In contrast, if {@code a * b + c} is evaluated as a regular
+     * floating-point expression, two rounding errors are involved,
+     * the first for the multiply operation, the second for the
+     * addition operation.
+     *
+     * <p>Special cases:
+     * <ul>
+     * <li> If any argument is NaN, the result is NaN.
+     *
+     * <li> If one of the first two arguments is infinite and the
+     * other is zero, the result is NaN.
+     *
+     * <li> If the exact product of the first two arguments is infinite
+     * (in other words, at least one of the arguments is infinite and
+     * the other is neither zero nor NaN) and the third argument is an
+     * infinity of the opposite sign, the result is NaN.
+     *
+     * </ul>
+     *
+     * <p>Note that {@code fusedMac(a, 1.0, c)} returns the same
+     * result as ({@code a + c}).  However,
+     * {@code fusedMac(a, b, +0.0)} does <em>not</em> always return the
+     * same result as ({@code a * b}) since
+     * {@code fusedMac(-0.0, +0.0, +0.0)} is {@code +0.0} while
+     * ({@code -0.0 * +0.0}) is {@code -0.0}; {@code fusedMac(a, b, -0.0)} is
+     * equivalent to ({@code a * b}) however.
+     *
+     * @apiNote This method corresponds to the fusedMultiplyAdd
+     * operation defined in IEEE 754-2008.
+     *
+     * @param a a value
+     * @param b a value
+     * @param c a value
+     *
+     * @return (<i>a</i>&nbsp;&times;&nbsp;<i>b</i>&nbsp;+&nbsp;<i>c</i>)
+     * computed, as if with unlimited range and precision, and rounded
+     * once to the nearest {@code double} value
+     */
+    public static double fma(double a, double b, double c) {
+        return Math.fma(a, b, c);
+    }
+
+    /**
+     * Returns the fused multiply add of the three arguments; that is,
+     * returns the exact product of the first two arguments summed
+     * with the third argument and then rounded once to the nearest
+     * {@code float}.
+     *
+     * The rounding is done using the {@linkplain
+     * java.math.RoundingMode#HALF_EVEN round to nearest even
+     * rounding mode}.
+     *
+     * In contrast, if {@code a * b + c} is evaluated as a regular
+     * floating-point expression, two rounding errors are involved,
+     * the first for the multiply operation, the second for the
+     * addition operation.
+     *
+     * <p>Special cases:
+     * <ul>
+     * <li> If any argument is NaN, the result is NaN.
+     *
+     * <li> If one of the first two arguments is infinite and the
+     * other is zero, the result is NaN.
+     *
+     * <li> If the exact product of the first two arguments is infinite
+     * (in other words, at least one of the arguments is infinite and
+     * the other is neither zero nor NaN) and the third argument is an
+     * infinity of the opposite sign, the result is NaN.
+     *
+     * </ul>
+     *
+     * <p>Note that {@code fma(a, 1.0f, c)} returns the same
+     * result as ({@code a + c}).  However,
+     * {@code fma(a, b, +0.0f)} does <em>not</em> always return the
+     * same result as ({@code a * b}) since
+     * {@code fma(-0.0f, +0.0f, +0.0f)} is {@code +0.0f} while
+     * ({@code -0.0f * +0.0f}) is {@code -0.0f}; {@code fma(a, b, -0.0f)} is
+     * equivalent to ({@code a * b}) however.
+     *
+     * @apiNote This method corresponds to the fusedMultiplyAdd
+     * operation defined in IEEE 754-2008.
+     *
+     * @param a a value
+     * @param b a value
+     * @param c a value
+     *
+     * @return (<i>a</i>&nbsp;&times;&nbsp;<i>b</i>&nbsp;+&nbsp;<i>c</i>)
+     * computed, as if with unlimited range and precision, and rounded
+     * once to the nearest {@code float} value
+     */
+    public static float fma(float a, float b, float c) {
+        return Math.fma(a, b, c);
+    }
+
+    /**
      * Returns the size of an ulp of the argument.  An ulp, unit in
      * the last place, of a {@code double} value is the positive
      * distance between this floating-point value and the {@code

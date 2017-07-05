@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,11 @@
 // a per-region and per-thread basis.
 class G1FromCardCache : public AllStatic {
  private:
-  // Array of card indices. Indexed by thread X and heap region to minimize
+  // Array of card indices. Indexed by heap region (rows) and thread (columns) to minimize
   // thread contention.
+  // This order minimizes the time to clear all entries for a given region during region
+  // freeing. I.e. a single clear of a single memory area instead of multiple separate
+  // accesses with a large stride per region.
   static int** _cache;
   static uint _max_regions;
   static size_t _static_mem_size;
@@ -58,11 +61,11 @@ class G1FromCardCache : public AllStatic {
   }
 
   static int at(uint worker_id, uint region_idx) {
-    return _cache[worker_id][region_idx];
+    return _cache[region_idx][worker_id];
   }
 
   static void set(uint worker_id, uint region_idx, int val) {
-    _cache[worker_id][region_idx] = val;
+    _cache[region_idx][worker_id] = val;
   }
 
   static void initialize(uint num_par_rem_sets, uint max_num_regions);

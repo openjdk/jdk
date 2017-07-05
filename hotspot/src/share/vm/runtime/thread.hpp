@@ -509,9 +509,6 @@ class Thread: public ThreadShadow {
     }
   }
 
-  // Sweeper support
-  void nmethods_do(CodeBlobClosure* cf);
-
   // jvmtiRedefineClasses support
   void metadata_handles_do(void f(Metadata*));
 
@@ -1649,7 +1646,7 @@ class JavaThread: public Thread {
   void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
 
   // Sweeper operations
-  void nmethods_do(CodeBlobClosure* cf);
+  virtual void nmethods_do(CodeBlobClosure* cf);
 
   // RedefineClasses Support
   void metadata_do(void f(Metadata*));
@@ -1997,10 +1994,10 @@ class CodeCacheSweeperThread : public JavaThread {
   bool is_hidden_from_external_view() const { return true; }
 
   bool is_Code_cache_sweeper_thread() const { return true; }
-  // GC support
-  // Apply "f->do_oop" to all root oops in "this".
-  // Apply "cf->do_code_blob" (if !NULL) to all code blobs active in frames
+
+  // Prevent GC from unloading _scanned_nmethod
   void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
+  void nmethods_do(CodeBlobClosure* cf);
 };
 
 // A thread used for Compilation.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,8 +461,6 @@ void ObjArrayKlass::oop_print_on(oop obj, outputStream* st) {
 
 #endif //PRODUCT
 
-static int max_objArray_print_length = 4;
-
 void ObjArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_objArray(), "must be objArray");
   st->print("a ");
@@ -470,16 +468,6 @@ void ObjArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
   int len = objArrayOop(obj)->length();
   st->print("[%d] ", len);
   obj->print_address_on(st);
-  if (NOT_PRODUCT(PrintOopAddress ||) PrintMiscellaneous && (WizardMode || Verbose)) {
-    st->print("{");
-    for (int i = 0; i < len; i++) {
-      if (i > max_objArray_print_length) {
-        st->print("..."); break;
-      }
-      st->print(" " INTPTR_FORMAT, (intptr_t)(void*)objArrayOop(obj)->obj_at(i));
-    }
-    st->print(" }");
-  }
 }
 
 const char* ObjArrayKlass::internal_name() const {
