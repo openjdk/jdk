@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,8 @@ import sun.security.ssl.SunJSSE;
  * Main class for the SunJSSE provider. The actual code was moved to the
  * class sun.security.ssl.SunJSSE, but for backward compatibility we
  * continue to use this class as the main Provider class.
- *
- * @deprecated This class is subject to removal in a future version of JDK.
  */
-@Deprecated(since="9", forRemoval=true)
+@Deprecated(since="9")
 public final class Provider extends SunJSSE {
 
     private static final long serialVersionUID = 3231825739635378733L;

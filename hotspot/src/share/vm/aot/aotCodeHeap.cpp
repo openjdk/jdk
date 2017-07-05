@@ -25,6 +25,7 @@
 
 #include "aot/aotCodeHeap.hpp"
 #include "aot/aotLoader.hpp"
+#include "classfile/javaAssertions.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/abstractInterpreter.hpp"
@@ -294,6 +295,8 @@ void AOTCodeHeap::publish_aot(const methodHandle& mh, AOTMethodData* method_data
     // When the AOT compiler compiles something big we fail to generate metadata
     // in CodeInstaller::gather_metadata. In that case the scopes_pcs_begin == scopes_pcs_end.
     // In all successful cases we always have 2 entries of scope pcs.
+    log_info(aot, class, resolve)("Failed to load %s (no metadata available)", mh->name_and_sig_as_C_string());
+    _code_to_aot[code_id]._state = invalid;
     return;
   }
 
@@ -536,6 +539,7 @@ void AOTCodeHeap::link_global_lib_symbols() {
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_heap_end_address", address, (heap->supports_inline_contig_alloc() ? heap->end_addr() : NULL));
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_polling_page", address, os::get_polling_page());
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_narrow_klass_base_address", address, Universe::narrow_klass_base());
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_narrow_oop_base_address", address, Universe::narrow_oop_base());
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_log_of_heap_region_grain_bytes", int, HeapRegion::LogOfHRGrainBytes);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_inline_contiguous_allocation_supported", bool, heap->supports_inline_contig_alloc());
     link_shared_runtime_symbols();
@@ -706,6 +710,12 @@ bool AOTCodeHeap::load_klass_data(instanceKlassHandle kh, Thread* thread) {
     return false;
   }
 
+  if (_lib->config()->_omitAssertions && JavaAssertions::enabled(kh->name()->as_C_string(), kh->class_loader() == NULL)) {
+    log_trace(aot, class, load)("class  %s  in  %s does not have java assertions in compiled code, but assertions are enabled for this execution.", kh->internal_name(), _lib->name());
+    sweep_dependent_methods(klass_data);
+    return false;
+  }
+
   NOT_PRODUCT( aot_klasses_found++; )
 
   log_trace(aot, class, load)("found  %s  in  %s for classloader %p tid=" INTPTR_FORMAT, kh->internal_name(), _lib->name(), kh->class_loader_data(), p2i(thread));
@@ -714,7 +724,7 @@ bool AOTCodeHeap::load_klass_data(instanceKlassHandle kh, Thread* thread) {
   // Set klass's Resolve (second) got cell.
   _metaspace_got[klass_data->_got_index] = kh();
 
-  // Initialize global symbols of the DSO to the correspondingVM symbol values.
+  // Initialize global symbols of the DSO to the corresponding VM symbol values.
   link_global_lib_symbols();
 
   int methods_offset = klass_data->_compiled_methods_offset;

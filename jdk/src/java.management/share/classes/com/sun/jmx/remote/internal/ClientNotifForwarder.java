@@ -52,7 +52,6 @@ import javax.management.remote.TargetedNotification;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.rmi.UnmarshalException;
 import java.util.concurrent.RejectedExecutionException;
 
 
@@ -633,7 +632,7 @@ public abstract class ClientNotifForwarder {
                 }
 
                 return nr;
-            } catch (ClassNotFoundException | NotSerializableException | UnmarshalException e) {
+            } catch (ClassNotFoundException | NotSerializableException e) {
                 logger.trace("NotifFetcher.fetchNotifs", e);
                 return fetchOneNotif();
             } catch (IOException ioe) {
@@ -705,7 +704,7 @@ public abstract class ClientNotifForwarder {
                 try {
                     // 1 notif to skip possible missing class
                     result = cnf.fetchNotifs(startSequenceNumber, 1, 0L);
-                } catch (ClassNotFoundException | NotSerializableException | UnmarshalException e) {
+                } catch (ClassNotFoundException | NotSerializableException e) {
                     logger.warning("NotifFetcher.fetchOneNotif",
                                    "Failed to deserialize a notification: "+e.toString());
                     if (logger.traceOn()) {

@@ -65,7 +65,11 @@ public class TestVMNoCompLevel extends CiReplayBase {
             throw new Error("Failed to read/write replay data: " + ioe, ioe);
         }
         if (CLIENT_VM_AVAILABLE) {
-            negativeTest(CLIENT_VM_OPTION);
+            if (SERVER_VM_AVAILABLE) {
+                negativeTest(CLIENT_VM_OPTION);
+            } else {
+                positiveTest(CLIENT_VM_OPTION);
+            }
         }
         if (SERVER_VM_AVAILABLE) {
             positiveTest(TIERED_DISABLED_VM_OPTION, SERVER_VM_OPTION);

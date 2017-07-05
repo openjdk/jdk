@@ -72,7 +72,6 @@ public class CodeCacheOverflowProcessor {
         if (t != null) {
             System.err.printf("%nNon-critical exception caught becuse of"
                     + " code cache size is not enough to run all test cases.%n%n");
-            t.printStackTrace();
         }
         return t;
     }

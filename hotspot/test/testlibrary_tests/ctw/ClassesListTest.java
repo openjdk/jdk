@@ -30,11 +30,11 @@
  *          java.base/jdk.internal.reflect
  *          java.management
  * @build sun.hotspot.WhiteBox Foo Bar
- * @run main ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main ClassesListTest prepare
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Dsun.hotspot.tools.ctw.logfile=ctw.log sun.hotspot.tools.ctw.CompileTheWorld classes.lst
- * @run main ClassesListTest check ctw.log
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox Foo Bar
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassesListTest prepare
+ * @run driver/timeout=600 ClassesListTest compile classes.lst
+ * @run driver ClassesListTest check
  * @summary testing of CompileTheWorld :: list of classes in file
  * @author igor.ignatyev@oracle.com
  */

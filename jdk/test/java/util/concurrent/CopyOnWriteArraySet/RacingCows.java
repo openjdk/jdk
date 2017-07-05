@@ -40,8 +40,8 @@ public class RacingCows {
         final Integer three = Integer.valueOf(3);
 
         //------------ CopyOnWriteArraySet -------------------------------
-        final Set<Integer> s1 = new CopyOnWriteArraySet<Integer>();
-        final Set<Integer> s2 = new CopyOnWriteArraySet<Integer>();
+        final Set<Integer> s1 = new CopyOnWriteArraySet<>();
+        final Set<Integer> s2 = new CopyOnWriteArraySet<>();
         s1.add(1);
 
         final Thread t1 = new CheckedThread() { public void realRun() {
@@ -58,9 +58,9 @@ public class RacingCows {
         t1.join();
 
         //------------ CopyOnWriteArrayList ------------------------------
-        final List<Integer> l1 = new CopyOnWriteArrayList<Integer>();
-        final List<Integer> l2 = new CopyOnWriteArrayList<Integer>();
-        final List<Integer> l3 = new CopyOnWriteArrayList<Integer>();
+        final List<Integer> l1 = new CopyOnWriteArrayList<>();
+        final List<Integer> l2 = new CopyOnWriteArrayList<>();
+        final List<Integer> l3 = new CopyOnWriteArrayList<>();
         l1.add(1);
 
         final Thread t2 = new CheckedThread() { public void realRun() {

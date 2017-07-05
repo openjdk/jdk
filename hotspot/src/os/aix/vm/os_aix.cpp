@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -632,7 +632,6 @@ void os::Aix::signal_sets_init() {
   sigaddset(&unblocked_sigs, SIGBUS);
   sigaddset(&unblocked_sigs, SIGFPE);
   sigaddset(&unblocked_sigs, SIGTRAP);
-  sigaddset(&unblocked_sigs, SIGDANGER);
   sigaddset(&unblocked_sigs, SR_signum);
 
   if (!ReduceSignalUsage) {
@@ -1553,6 +1552,8 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   print_signal_handler(st, SHUTDOWN3_SIGNAL , buf, buflen);
   print_signal_handler(st, BREAK_SIGNAL, buf, buflen);
   print_signal_handler(st, SIGTRAP, buf, buflen);
+  // We also want to know if someone else adds a SIGDANGER handler because
+  // that will interfere with OOM killling.
   print_signal_handler(st, SIGDANGER, buf, buflen);
 }
 
@@ -3156,7 +3157,6 @@ void os::Aix::install_signal_handlers() {
     set_signal_handler(SIGFPE, true);
     set_signal_handler(SIGTRAP, true);
     set_signal_handler(SIGXFSZ, true);
-    set_signal_handler(SIGDANGER, true);
 
     if (libjsig_is_loaded) {
       // Tell libjsig jvm finishes setting signal handlers.
@@ -3273,7 +3273,6 @@ void os::run_periodic_checks() {
   if (UseSIGTRAP) {
     DO_SIGNAL_CHECK(SIGTRAP);
   }
-  DO_SIGNAL_CHECK(SIGDANGER);
 
   // ReduceSignalUsage allows the user to override these handlers
   // see comments at the very top and jvm_solaris.h

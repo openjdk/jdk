@@ -153,9 +153,7 @@ public class SimplifyingGraphDecoder extends GraphDecoder {
         }
 
         for (Node node : methodScope.graph.getNewNodes(methodScope.methodStartMark)) {
-            if (!(node instanceof FixedNode) && node.hasNoUsages()) {
-                GraphUtil.killCFG(node);
-            }
+            GraphUtil.tryKillUnused(node);
         }
     }
 

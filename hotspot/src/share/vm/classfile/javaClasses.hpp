@@ -81,15 +81,6 @@ class java_lang_String : AllStatic {
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
   static Handle char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS);
 
-  static bool has_hash_field()  {
-    assert(initialized, "Must be initialized");
-    return (hash_offset > 0);
-  }
-  static bool has_coder_field()  {
-    assert(initialized, "Must be initialized");
-    return (coder_offset > 0);
-  }
-
   static void set_compact_strings(bool value);
 
   static int value_offset_in_bytes()  {
