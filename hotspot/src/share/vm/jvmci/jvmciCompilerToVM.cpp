@@ -203,6 +203,40 @@ void CompilerToVM::Data::initialize() {
 #undef SET_TRIGFUNC
 }
 
+objArrayHandle CompilerToVM::initialize_intrinsics(TRAPS) {
+  objArrayHandle vmIntrinsics = oopFactory::new_objArray(VMIntrinsicMethod::klass(), (vmIntrinsics::ID_LIMIT - 1), CHECK_(objArrayHandle()));
+  int index = 0;
+  // The intrinsics for a class are usually adjacent to each other.
+  // When they are, the string for the class name can be reused.
+  vmSymbols::SID kls_sid = vmSymbols::NO_SID;
+  Handle kls_str;
+#define SID_ENUM(n) vmSymbols::VM_SYMBOL_ENUM_NAME(n)
+#define VM_SYMBOL_TO_STRING(s) \
+  java_lang_String::create_from_symbol(vmSymbols::symbol_at(SID_ENUM(s)), CHECK_(objArrayHandle()))
+#define VM_INTRINSIC_INFO(id, kls, name, sig, ignore_fcode) {             \
+    instanceHandle vmIntrinsicMethod = InstanceKlass::cast(VMIntrinsicMethod::klass())->allocate_instance_handle(CHECK_(objArrayHandle())); \
+    if (kls_sid != SID_ENUM(kls)) {                                       \
+      kls_str = VM_SYMBOL_TO_STRING(kls);                                 \
+      kls_sid = SID_ENUM(kls);                                            \
+    }                                                                     \
+    Handle name_str = VM_SYMBOL_TO_STRING(name);                          \
+    Handle sig_str = VM_SYMBOL_TO_STRING(sig);                            \
+    VMIntrinsicMethod::set_declaringClass(vmIntrinsicMethod, kls_str());  \
+    VMIntrinsicMethod::set_name(vmIntrinsicMethod, name_str());           \
+    VMIntrinsicMethod::set_descriptor(vmIntrinsicMethod, sig_str());      \
+    VMIntrinsicMethod::set_id(vmIntrinsicMethod, vmIntrinsics::id);       \
+      vmIntrinsics->obj_at_put(index++, vmIntrinsicMethod());             \
+  }
+
+  VM_INTRINSICS_DO(VM_INTRINSIC_INFO, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE)
+#undef SID_ENUM
+#undef VM_SYMBOL_TO_STRING
+#undef VM_INTRINSIC_INFO
+  assert(index == vmIntrinsics::ID_LIMIT - 1, "must be");
+
+  return vmIntrinsics;
+}
+
 C2V_VMENTRY(jobjectArray, readConfiguration, (JNIEnv *env))
 #define BOXED_LONG(name, value) oop name; do { jvalue p; p.j = (jlong) (value); name = java_lang_boxing_object::create(T_LONG, &p, CHECK_NULL);} while(0)
 #define BOXED_DOUBLE(name, value) oop name; do { jvalue p; p.d = (jdouble) (value); name = java_lang_boxing_object::create(T_DOUBLE, &p, CHECK_NULL);} while(0)
@@ -211,8 +245,9 @@ C2V_VMENTRY(jobjectArray, readConfiguration, (JNIEnv *env))
 
   CompilerToVM::Data::initialize();
 
-  VMField::klass()->initialize(thread);
-  VMFlag::klass()->initialize(thread);
+  VMField::klass()->initialize(CHECK_NULL);
+  VMFlag::klass()->initialize(CHECK_NULL);
+  VMIntrinsicMethod::klass()->initialize(CHECK_NULL);
 
   int len = JVMCIVMStructs::localHotSpotVMStructs_count();
   objArrayHandle vmFields = oopFactory::new_objArray(VMField::klass(), len, CHECK_NULL);
@@ -220,7 +255,7 @@ C2V_VMENTRY(jobjectArray, readConfiguration, (JNIEnv *env))
     VMStructEntry vmField = JVMCIVMStructs::localHotSpotVMStructs[i];
     instanceHandle vmFieldObj = InstanceKlass::cast(VMField::klass())->allocate_instance_handle(CHECK_NULL);
     size_t name_buf_len = strlen(vmField.typeName) + strlen(vmField.fieldName) + 2 /* "::" */;
-    char* name_buf = NEW_RESOURCE_ARRAY(char, name_buf_len + 1);
+    char* name_buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, name_buf_len + 1);
     sprintf(name_buf, "%s::%s", vmField.typeName, vmField.fieldName);
     Handle name = java_lang_String::create_from_str(name_buf, CHECK_NULL);
     Handle type = java_lang_String::create_from_str(vmField.typeString, CHECK_NULL);
@@ -338,12 +373,15 @@ C2V_VMENTRY(jobjectArray, readConfiguration, (JNIEnv *env))
     vmFlags->obj_at_put(i, vmFlagObj());
   }
 
-  objArrayOop data = oopFactory::new_objArray(SystemDictionary::Object_klass(), 5, CHECK_NULL);
+  objArrayHandle vmIntrinsics = CompilerToVM::initialize_intrinsics(CHECK_NULL);
+
+  objArrayOop data = oopFactory::new_objArray(SystemDictionary::Object_klass(), 6, CHECK_NULL);
   data->obj_at_put(0, vmFields());
   data->obj_at_put(1, vmTypes());
   data->obj_at_put(2, vmConstants());
   data->obj_at_put(3, vmAddresses());
   data->obj_at_put(4, vmFlags());
+  data->obj_at_put(5, vmIntrinsics());
 
   return (jobjectArray) JNIHandles::make_local(THREAD, data);
 #undef BOXED_LONG
@@ -1266,10 +1304,23 @@ C2V_END
 
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index))
   constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
-  CallInfo callInfo;
-  LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokehandle, CHECK);
-  ConstantPoolCacheEntry* cp_cache_entry = cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-  cp_cache_entry->set_method_handle(cp, callInfo);
+  KlassHandle holder = cp->klass_ref_at(index, CHECK);
+  Symbol* name = cp->name_ref_at(index);
+  if (MethodHandles::is_signature_polymorphic_name(holder(), name)) {
+    CallInfo callInfo;
+    LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokehandle, CHECK);
+    ConstantPoolCacheEntry* cp_cache_entry = cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
+    cp_cache_entry->set_method_handle(cp, callInfo);
+  }
+C2V_END
+
+C2V_VMENTRY(jobject, getSignaturePolymorphicHolders, (JNIEnv*, jobject))
+  objArrayHandle holders = oopFactory::new_objArray(SystemDictionary::String_klass(), 2, CHECK_NULL);
+  Handle mh = java_lang_String::create_from_str("Ljava/lang/invoke/MethodHandle;", CHECK_NULL);
+  Handle vh = java_lang_String::create_from_str("Ljava/lang/invoke/VarHandle;", CHECK_NULL);
+  holders->obj_at_put(0, mh());
+  holders->obj_at_put(1, vh());
+  return JNIHandles::make_local(THREAD, holders());
 C2V_END
 
 C2V_VMENTRY(jboolean, shouldDebugNonSafepoints, (JNIEnv*, jobject))
@@ -1511,6 +1562,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "resolveInvokeDynamicInPool",                   CC "(" HS_CONSTANT_POOL "I)V",                                                        FN_PTR(resolveInvokeDynamicInPool)},
   {CC "resolveInvokeHandleInPool",                    CC "(" HS_CONSTANT_POOL "I)V",                                                        FN_PTR(resolveInvokeHandleInPool)},
   {CC "resolveMethod",                                CC "(" HS_RESOLVED_KLASS HS_RESOLVED_METHOD HS_RESOLVED_KLASS ")" HS_RESOLVED_METHOD, FN_PTR(resolveMethod)},
+  {CC "getSignaturePolymorphicHolders",               CC "()[" STRING,                                                                      FN_PTR(getSignaturePolymorphicHolders)},
   {CC "getVtableIndexForInterfaceMethod",             CC "(" HS_RESOLVED_KLASS HS_RESOLVED_METHOD ")I",                                     FN_PTR(getVtableIndexForInterfaceMethod)},
   {CC "getClassInitializer",                          CC "(" HS_RESOLVED_KLASS ")" HS_RESOLVED_METHOD,                                      FN_PTR(getClassInitializer)},
   {CC "hasFinalizableSubclass",                       CC "(" HS_RESOLVED_KLASS ")Z",                                                        FN_PTR(hasFinalizableSubclass)},

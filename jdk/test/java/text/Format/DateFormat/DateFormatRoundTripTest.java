@@ -104,7 +104,7 @@ public class DateFormatRoundTripTest extends IntlTest {
         String pat = null;
         Date date = null;
 
-        Vector newArgs = new Vector();
+        List<String> newArgs = new ArrayList<>();
         for (int i=0; i<args.length; ++i) {
             if (args[i].equals("-locale")
                 && (i+1) < args.length) {
@@ -131,13 +131,13 @@ public class DateFormatRoundTripTest extends IntlTest {
                 seed = Long.parseLong(args[i+1]);
                 ++i;
             } else {
-                newArgs.addElement(args[i]);
+                newArgs.add(args[i]);
             }
         }
 
         if (newArgs.size() != args.length) {
             args = new String[newArgs.size()];
-            newArgs.copyInto(args);
+            newArgs.addAll(Arrays.asList(args));
         }
 
         new DateFormatRoundTripTest(random, seed, infinite, date, pat, loc).run(args);
@@ -193,6 +193,7 @@ public class DateFormatRoundTripTest extends IntlTest {
          * Return the Date of this test case; must be called with the default
          * zone set to this TestCase's zone.
          */
+        @SuppressWarnings("deprecation")
         Date getDate() {
             if (_date == null) {
                 // Date constructor will work right iff we are in the target zone

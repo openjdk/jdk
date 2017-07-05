@@ -112,6 +112,9 @@ GetXUsagePath(char *buf, jint bufsize);
 jboolean
 GetApplicationHome(char *buf, jint bufsize);
 
+jboolean
+GetApplicationHomeFromDll(char *buf, jint bufsize);
+
 #define GetArch() GetArchPath(CURRENT_DATA_MODEL)
 
 /*

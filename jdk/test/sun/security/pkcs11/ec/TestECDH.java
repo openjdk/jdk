@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6405536
  * @summary Basic known answer test for ECDH
  * @author Andreas Sterbenz
  * @library ..
  * @library ../../../../java/security/testlibrary
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestECDH
  * @run main/othervm TestECDH sm policy
  */

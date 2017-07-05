@@ -2504,13 +2504,15 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // It write enables the page immediately after protecting it
   // so just return.
   if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    JavaThread* thread = (JavaThread*) t;
-    PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-    address addr = (address) exceptionRecord->ExceptionInformation[1];
-    if (os::is_memory_serialize_page(thread, addr)) {
-      // Block current thread until the memory serialize page permission restored.
-      os::block_on_serialize_page_trap();
-      return EXCEPTION_CONTINUE_EXECUTION;
+    if (t != NULL && t->is_Java_thread()) {
+      JavaThread* thread = (JavaThread*) t;
+      PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+      address addr = (address) exceptionRecord->ExceptionInformation[1];
+      if (os::is_memory_serialize_page(thread, addr)) {
+        // Block current thread until the memory serialize page permission restored.
+        os::block_on_serialize_page_trap();
+        return EXCEPTION_CONTINUE_EXECUTION;
+      }
     }
   }
 
@@ -2564,7 +2566,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 #endif
       if (thread->stack_guards_enabled()) {
-        if (_thread_in_Java) {
+        if (in_java) {
           frame fr;
           PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
           address addr = (address) exceptionRecord->ExceptionInformation[1];
@@ -2576,6 +2578,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Yellow zone violation.  The o/s has unprotected the first yellow
         // zone page for us.  Note:  must call disable_stack_yellow_zone to
         // update the enabled status, even if the zone contains only one page.
+        assert(thread->thread_state() != _thread_in_vm, "Undersized StackShadowPages");
         thread->disable_stack_yellow_reserved_zone();
         // If not in java code, return and hope for the best.
         return in_java
@@ -3792,6 +3795,11 @@ void os::win32::initialize_system_info() {
   // dwMemoryLoad (% of memory in use)
   GlobalMemoryStatusEx(&ms);
   _physical_memory = ms.ullTotalPhys;
+
+  if (FLAG_IS_DEFAULT(MaxRAM)) {
+    // Adjust MaxRAM according to the maximum virtual address space available.
+    FLAG_SET_DEFAULT(MaxRAM, MIN2(MaxRAM, (uint64_t) ms.ullTotalVirtual));
+  }
 
   OSVERSIONINFOEX oi;
   oi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);

@@ -187,6 +187,7 @@ public class LWWindowPeer
 
         updateAlwaysOnTopState();
         updateMinimumSize();
+        updateFocusableWindowState();
 
         final Shape shape = getTarget().getShape();
         if (shape != null) {

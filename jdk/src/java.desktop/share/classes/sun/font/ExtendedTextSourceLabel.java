@@ -550,13 +550,16 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     return charinfo;
   }
 
+  private static final boolean DEBUG = FontUtilities.debugFonts();
 /*
 * This takes the glyph info record obtained from the glyph vector and converts it into a similar record
 * adjusted to represent character data instead.  For economy we don't use glyph info records in this processing.
 *
 * Here are some constraints:
 * - there can be more glyphs than characters (glyph insertion, perhaps based on normalization, has taken place)
-* - there can not be fewer glyphs than characters (0xffff glyphs are inserted for characters ligaturized away)
+* - there can be fewer glyphs than characters
+*   Some layout engines may insert 0xffff glyphs for characters ligaturized away, but
+*   not all do, and it cannot be relied upon.
 * - each glyph maps to a single character, when multiple glyphs exist for a character they all map to it, but
 *   no two characters map to the same glyph
 * - multiple glyphs mapping to the same character need not be in sequence (thai, tamil have split characters)
@@ -578,7 +581,8 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 *
 * The algorithm works in the following way:
 * 1) we scan the glyphs ltr or rtl based on the bidi run direction
-* 2) we can work in place, since we always consume a glyph for each char we write
+* 2) Since the may be fewer glyphs than chars we cannot work in place.
+*    A new array is allocated for output.
 *    a) if the line is ltr, we start writing at position 0 until we finish, there may be leftver space
 *    b) if the line is rtl and 1-1, we start writing at position numChars/glyphs - 1 until we finish at 0
 *    c) otherwise if we don't finish at 0, we have to copy the data down
@@ -594,7 +598,7 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 *       iii) the x advance is the distance to the maximum x + adv of all glyphs whose advance is not zero
 *       iv) the y advance is the baseline
 *       v) vis x,y,w,h tightly encloses the vis x,y,w,h of all the glyphs with nonzero w and h
-* 4) we can make some simple optimizations if we know some things:
+* 4) In the future, we can make some simple optimizations to avoid copying if we know some things:
 *    a) if the mapping is 1-1, unidirectional, and there are no zero-adv glyphs, we just return the glyphinfo
 *    b) if the mapping is 1-1, unidirectional, we just adjust the remaining glyphs to originate at right/left of the base
 *    c) if the mapping is 1-1, we compute the base position and advance as we go, then go back to adjust the remaining glyphs
@@ -625,23 +629,20 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
         System.out.println(source);
     }
 
-    /*
-    if ((gv.getDescriptionFlags() & 0x7) == 0) {
-        return glyphinfo;
-    }
-    */
-
     int numGlyphs = gv.getNumGlyphs();
     if (numGlyphs == 0) {
         return glyphinfo;
     }
     int[] indices = gv.getGlyphCharIndices(0, numGlyphs, null);
+    float[] charInfo = new float[source.getLength() * numvals];
 
-    boolean DEBUG = false;
     if (DEBUG) {
       System.err.println("number of glyphs: " + numGlyphs);
+      System.err.println("glyphinfo.len: " + glyphinfo.length);
+      System.err.println("indices.len: " + indices.length);
       for (int i = 0; i < numGlyphs; ++i) {
         System.err.println("g: " + i +
+            "  v: " + gv.getGlyphCode(i) +
             ", x: " + glyphinfo[i*numvals+posx] +
             ", a: " + glyphinfo[i*numvals+advx] +
             ", n: " + indices[i]);
@@ -650,22 +651,19 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
 
     int minIndex = indices[0];  // smallest index seen this cluster
     int maxIndex = minIndex;    // largest index seen this cluster
-    int nextMin = 0;            // expected smallest index for this cluster
     int cp = 0;                 // character position
-    int cx = 0;                 // character index (logical)
+    int cc = 0;
     int gp = 0;                 // glyph position
     int gx = 0;                 // glyph index (visual)
     int gxlimit = numGlyphs;    // limit of gx, when we reach this we're done
     int pdelta = numvals;       // delta for incrementing positions
     int xdelta = 1;             // delta for incrementing indices
 
-    boolean ltr = (source.getLayoutFlags() & 0x1) == 0;
-    if (!ltr) {
+    boolean rtl = (source.getLayoutFlags() & 0x1) == 1;
+    if (rtl) {
         minIndex = indices[numGlyphs - 1];
         maxIndex = minIndex;
-        nextMin  = 0; // still logical
-        cp = glyphinfo.length - numvals;
-        cx = 0; // still logical
+        cp = charInfo.length - numvals;
         gp = glyphinfo.length - numvals;
         gx = numGlyphs - 1;
         gxlimit = -1;
@@ -693,46 +691,35 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     float cposl = 0, cposr = 0, cvisl = 0, cvist = 0, cvisr = 0, cvisb = 0;
     float baseline = 0;
 
-    // record if we have to copy data even when no cluster
-    boolean mustCopy = false;
-
     while (gx != gxlimit) {
         // start of new cluster
-        boolean haveCopy = false;
         int clusterExtraGlyphs = 0;
 
         minIndex = indices[gx];
         maxIndex = minIndex;
 
+        cposl = glyphinfo[gp + posx];
+        cposr = cposl + glyphinfo[gp + advx];
+        cvisl = glyphinfo[gp + visx];
+        cvist = glyphinfo[gp + visy];
+        cvisr = cvisl + glyphinfo[gp + visw];
+        cvisb = cvist + glyphinfo[gp + vish];
+
         // advance to next glyph
         gx += xdelta;
         gp += pdelta;
 
- /*
-        while (gx != gxlimit && (glyphinfo[gp + advx] == 0 ||
-                           minIndex != nextMin || indices[gx] <= maxIndex)) {
-  */
         while (gx != gxlimit &&
                ((glyphinfo[gp + advx] == 0) ||
-               (minIndex != nextMin) ||
                (indices[gx] <= maxIndex) ||
                (maxIndex - minIndex > clusterExtraGlyphs))) {
-            // initialize base data first time through, using base glyph
-            if (!haveCopy) {
-                int gps = gp - pdelta;
 
-                cposl = glyphinfo[gps + posx];
-                cposr = cposl + glyphinfo[gps + advx];
-                cvisl = glyphinfo[gps + visx];
-                cvist = glyphinfo[gps + visy];
-                cvisr = cvisl + glyphinfo[gps + visw];
-                cvisb = cvist + glyphinfo[gps + vish];
-
-                haveCopy = true;
+            ++clusterExtraGlyphs; // have an extra glyph in this cluster
+            if (DEBUG) {
+                System.err.println("gp=" +gp +" adv=" + glyphinfo[gp + advx] +
+                                   " gx="+ gx+ " i[gx]="+indices[gx] +
+                                   " clusterExtraGlyphs="+clusterExtraGlyphs);
             }
-
-            // have an extra glyph in this cluster
-            ++clusterExtraGlyphs;
 
             // adjust advance only if new glyph has non-zero advance
             float radvx = glyphinfo[gp + advx];
@@ -764,110 +751,90 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
         // done with cluster, gx and gp are set for next glyph
 
         if (DEBUG) {
-            System.out.println("minIndex = " + minIndex + ", maxIndex = " + maxIndex);
+            System.err.println("minIndex = " + minIndex + ", maxIndex = " + maxIndex);
         }
 
-        nextMin = maxIndex + 1;
+        // save adjustments to the base character and do common adjustments.
+        charInfo[cp + posx] = cposl;
+        charInfo[cp + posy] = baseline;
+        charInfo[cp + advx] = cposr - cposl;
+        charInfo[cp + advy] = 0;
+        charInfo[cp + visx] = cvisl;
+        charInfo[cp + visy] = cvist;
+        charInfo[cp + visw] = cvisr - cvisl;
+        charInfo[cp + vish] = cvisb - cvist;
+        cc++;
 
-        // do common character adjustments
-        glyphinfo[cp + posy] = baseline;
-        glyphinfo[cp + advy] = 0;
-
-        if (haveCopy) {
-            // save adjustments to the base character
-            glyphinfo[cp + posx] = cposl;
-            glyphinfo[cp + advx] = cposr - cposl;
-            glyphinfo[cp + visx] = cvisl;
-            glyphinfo[cp + visy] = cvist;
-            glyphinfo[cp + visw] = cvisr - cvisl;
-            glyphinfo[cp + vish] = cvisb - cvist;
-
-            // compare number of chars read with number of glyphs read.
-            // if more glyphs than chars, set mustCopy to true, as we'll always have
-            // to copy the data from here on out.
-            if (maxIndex - minIndex < clusterExtraGlyphs) {
-                mustCopy = true;
-            }
-
-            // Fix the characters that follow the base character.
-            // New values are all the same.  Note we fix the number of characters
-            // we saw, not the number of glyphs we saw.
-            if (minIndex < maxIndex) {
-                if (!ltr) {
-                    // if rtl, characters to left of base, else to right.  reuse cposr.
-                    cposr = cposl;
-                }
-                cvisr -= cvisl; // reuse, convert to deltas.
-                cvisb -= cvist;
-
-                int iMinIndex = minIndex, icp = cp / 8;
-
-                while (minIndex < maxIndex) {
-                    ++minIndex;
-                    cx += xdelta;
-                    cp += pdelta;
-
-                    if (cp < 0 || cp >= glyphinfo.length) {
-                        if (DEBUG) System.out.println("minIndex = " + iMinIndex + ", maxIndex = " + maxIndex + ", cp = " + icp);
-                    }
-
-                    glyphinfo[cp + posx] = cposr;
-                    glyphinfo[cp + posy] = baseline;
-                    glyphinfo[cp + advx] = 0;
-                    glyphinfo[cp + advy] = 0;
-                    glyphinfo[cp + visx] = cvisl;
-                    glyphinfo[cp + visy] = cvist;
-                    glyphinfo[cp + visw] = cvisr;
-                    glyphinfo[cp + vish] = cvisb;
-                }
-            }
-
-            // no longer using this copy
-            haveCopy = false;
-        } else if (mustCopy) {
-            // out of synch, so we have to copy all the time now
-            int gpr = gp - pdelta;
-
-            glyphinfo[cp + posx] = glyphinfo[gpr + posx];
-            glyphinfo[cp + advx] = glyphinfo[gpr + advx];
-            glyphinfo[cp + visx] = glyphinfo[gpr + visx];
-            glyphinfo[cp + visy] = glyphinfo[gpr + visy];
-            glyphinfo[cp + visw] = glyphinfo[gpr + visw];
-            glyphinfo[cp + vish] = glyphinfo[gpr + vish];
+        /* We may have consumed multiple glyphs for this char position.
+         * Map those extra consumed glyphs to char positions that would follow
+         * up to the index prior to that which begins the next cluster.
+         * If we have reached the last glyph (reached gxlimit) then we need to
+         * map remaining unmapped chars to the same location as the last one.
+         */
+        int tgt;
+        if (gx == gxlimit) {
+           tgt = charInfo.length / numvals;
+        } else {
+           tgt = indices[gx]-1;
         }
-        // else glyphinfo is already at the correct character position, and is unchanged, so just leave it
+        if (DEBUG) {
+           System.err.println("gx=" + gx + " gxlimit=" + gxlimit +
+                              " charInfo.len=" + charInfo.length +
+                              " tgt=" + tgt + " cc=" + cc + " cp=" + cp);
+        }
+        while (cc < tgt) {
+            if (rtl) {
+                // if rtl, characters to left of base, else to right.  reuse cposr.
+                cposr = cposl;
+            }
+            cvisr -= cvisl; // reuse, convert to deltas.
+            cvisb -= cvist;
 
-        // reset for new cluster
-        cp += pdelta;
-        cx += xdelta;
-    }
+            cp += pdelta;
 
-    if (mustCopy && !ltr) {
-        // data written to wrong end of array, need to shift down
+            if (cp < 0 || cp >= charInfo.length) {
+                if (DEBUG)  {
+                    System.err.println("Error : cp=" + cp +
+                                       " charInfo.length=" + charInfo.length);
+                }
+                break;
+            }
 
-        cp -= pdelta; // undo last increment, get start of valid character data in array
-        System.arraycopy(glyphinfo, cp, glyphinfo, 0, glyphinfo.length - cp);
+            if (DEBUG) {
+                System.err.println("Insert charIndex " + cc + " at pos="+cp);
+            }
+            charInfo[cp + posx] = cposr;
+            charInfo[cp + posy] = baseline;
+            charInfo[cp + advx] = 0;
+            charInfo[cp + advy] = 0;
+            charInfo[cp + visx] = cvisl;
+            charInfo[cp + visy] = cvist;
+            charInfo[cp + visw] = cvisr;
+            charInfo[cp + vish] = cvisb;
+            cc++;
+        }
+        cp += pdelta; // reset for new cluster
     }
 
     if (DEBUG) {
-      char[] chars = source.getChars();
-      int start = source.getStart();
-      int length = source.getLength();
-      System.out.println("char info for " + length + " characters");
-      for(int i = 0; i < length * numvals;) {
-        System.out.println(" ch: " + Integer.toHexString(chars[start + v2l(i / numvals)]) +
-                           " x: " + glyphinfo[i++] +
-                           " y: " + glyphinfo[i++] +
-                           " xa: " + glyphinfo[i++] +
-                           " ya: " + glyphinfo[i++] +
-                           " l: " + glyphinfo[i++] +
-                           " t: " + glyphinfo[i++] +
-                           " w: " + glyphinfo[i++] +
-                           " h: " + glyphinfo[i++]);
+        char[] chars = source.getChars();
+        int start = source.getStart();
+        int length = source.getLength();
+        System.err.println("char info for " + length + " characters");
+
+        for (int i = 0; i < length * numvals;) {
+            System.err.println(" ch: " + Integer.toHexString(chars[start + v2l(i / numvals)]) +
+                               " x: " + charInfo[i++] +
+                               " y: " + charInfo[i++] +
+                               " xa: " + charInfo[i++] +
+                               " ya: " + charInfo[i++] +
+                               " l: " + charInfo[i++] +
+                               " t: " + charInfo[i++] +
+                               " w: " + charInfo[i++] +
+                               " h: " + charInfo[i++]);
       }
     }
-
-    return glyphinfo;
+    return charInfo;
   }
 
   /**

@@ -50,12 +50,14 @@ class ClassFileStream;
 
 class ClassPathEntry : public CHeapObj<mtClass> {
 private:
-  ClassPathEntry* _next;
+  ClassPathEntry* volatile _next;
 public:
   // Next entry in class path
-  ClassPathEntry* next() const { return _next; }
+  ClassPathEntry* next() const {
+    return (ClassPathEntry*) OrderAccess::load_ptr_acquire(&_next);
+  }
   void set_next(ClassPathEntry* next) {
-    // may have unlocked readers, so write atomically.
+    // may have unlocked readers, so ensure visibility.
     OrderAccess::release_store_ptr(&_next, next);
   }
   virtual bool is_jrt() = 0;

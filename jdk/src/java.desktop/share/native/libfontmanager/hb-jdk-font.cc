@@ -55,10 +55,6 @@ hb_jdk_get_glyph (hb_font_t *font HB_UNUSED,
     return (*glyph != 0);
 }
 
-// This is also define in freetypescaler.c and similar macros are
-// in fontscalerdefs.h. Consider tidying this up.
-#define FloatToF26Dot6(x) ((unsigned int) ((x)*64))
-
 static hb_position_t
 hb_jdk_get_glyph_h_advance (hb_font_t *font HB_UNUSED,
 			   void *font_data,
@@ -84,7 +80,7 @@ hb_jdk_get_glyph_h_advance (hb_font_t *font HB_UNUSED,
     fadv *= jdkFontInfo->devScale;
     env->DeleteLocalRef(pt);
 
-    return FloatToF26Dot6(fadv); // should this round ?
+    return HBFloatToFixed(fadv);
 }
 
 static hb_position_t
@@ -111,7 +107,7 @@ hb_jdk_get_glyph_v_advance (hb_font_t *font HB_UNUSED,
     fadv = env->GetFloatField(pt, sunFontIDs.yFID);
     env->DeleteLocalRef(pt);
 
-    return FloatToF26Dot6(fadv); // should this round ?
+    return HBFloatToFixed(fadv);
   
 }
 
@@ -205,8 +201,8 @@ hb_jdk_get_glyph_contour_point (hb_font_t *font HB_UNUSED,
         *x = 0; *y = 0;
         return true;
     }
-    *x = FloatToF26Dot6(env->GetFloatField(pt, sunFontIDs.xFID));
-    *y = FloatToF26Dot6(env->GetFloatField(pt, sunFontIDs.yFID));
+    *x = HBFloatToFixed(env->GetFloatField(pt, sunFontIDs.xFID));
+    *y = HBFloatToFixed(env->GetFloatField(pt, sunFontIDs.yFID));
     env->DeleteLocalRef(pt);
 
   return true;
@@ -325,8 +321,8 @@ static hb_font_t* _hb_jdk_font_create(JDKFontInfo *jdkFontInfo,
                        _hb_jdk_get_font_funcs (),
                        jdkFontInfo, (hb_destroy_func_t) _do_nothing);
     hb_font_set_scale (font,
-                      FloatToF26Dot6(jdkFontInfo->ptSize*jdkFontInfo->devScale),
-                      FloatToF26Dot6(jdkFontInfo->ptSize*jdkFontInfo->devScale));
+                      HBFloatToFixed(jdkFontInfo->ptSize*jdkFontInfo->devScale),
+                      HBFloatToFixed(jdkFontInfo->ptSize*jdkFontInfo->devScale));
   return font;
 }
 
@@ -343,8 +339,8 @@ static hb_font_t* _hb_jdk_ct_font_create(JDKFontInfo *jdkFontInfo) {
     hb_face_destroy(face);
 
     hb_font_set_scale(font,
-                     FloatToF26Dot6(jdkFontInfo->ptSize),
-                     FloatToF26Dot6(jdkFontInfo->ptSize));
+                     HBFloatToFixed(jdkFontInfo->ptSize),
+                     HBFloatToFixed(jdkFontInfo->ptSize));
     return font;
 }
 #endif

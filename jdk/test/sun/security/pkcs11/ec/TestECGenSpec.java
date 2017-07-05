@@ -21,12 +21,13 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6405536
  * @summary Verify that we can use ECGenParameterSpec
  * @author Andreas Sterbenz
  * @library ..
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestECGenSpec
  * @run main/othervm TestECGenSpec sm
  */

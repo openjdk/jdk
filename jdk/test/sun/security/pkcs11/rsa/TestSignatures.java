@@ -21,13 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4856966
  * @summary Test signing/verifying using all the signature algorithms
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @modules jdk.crypto.pkcs11
  * @run main/othervm TestSignatures
  * @run main/othervm TestSignatures sm rsakeys.ks.policy
  */

@@ -45,7 +45,7 @@ package compiler.jvmci.compilerToVM;
 
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
+import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
@@ -114,7 +114,7 @@ public class GetResolvedJavaMethodTest {
         abstract HotSpotResolvedJavaMethod getResolvedJavaMethod();
     }
 
-    private static final Unsafe UNSAFE = Utils.getUnsafe();
+    private static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final Field METASPACE_METHOD_FIELD;
     private static final Class<?> TEST_CLASS = GetResolvedJavaMethodTest.class;
