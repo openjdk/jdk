@@ -196,20 +196,35 @@
     </jar>
   </target>
 
-  <target name="javadoc" depends="prepare">
-    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="src/overview.html" windowtitle="${nashorn.product.name} ${nashorn.version}" additionalparam="-quiet" failonerror="true">
+  <target name="javadoc" depends="jar">
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="src/overview.html" 
+        extdirs="${nashorn.ext.path}" windowtitle="${nashorn.product.name} ${nashorn.version}"
+        additionalparam="-quiet" failonerror="true">
       <classpath>
         <pathelement location="${build.classes.dir}"/>
       </classpath>
       <fileset dir="${src.dir}" includes="**/*.java"/>
       <fileset dir="${jdk.asm.src.dir}" includes="**/*.java"/>
-      <link href="http://docs.oracle.com/javase/7/docs/api/"/>
+      <link href="http://docs.oracle.com/javase/8/docs/api/"/>
       <!-- The following tags are used only in ASM sources - just ignore these -->
       <tag name="label" description="label tag in ASM sources" enabled="false"/>
       <tag name="linked" description="linked tag in ASM sources" enabled="false"/>
       <tag name="associates" description="associates tag in ASM sources" enabled="false"/>
     </javadoc>
   </target>
+
+  <!-- generate javadoc only for nashorn extension api classes -->
+  <target name="javadocapi" depends="jar">
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" extdirs="${nashorn.ext.path}" 
+        windowtitle="${nashorn.product.name}" additionalparam="-quiet" failonerror="true">
+      <classpath>
+        <pathelement location="${build.classes.dir}"/>
+      </classpath>
+      <fileset dir="${src.dir}" includes="jdk/nashorn/api/**/*.java"/>
+      <link href="http://docs.oracle.com/javase/8/docs/api/"/>
+    </javadoc>
+  </target>
+
 
   <!-- generate shell.html for shell tool documentation -->
   <target name="shelldoc" depends="jar">

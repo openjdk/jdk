@@ -93,9 +93,9 @@ public class ServerSocketAdaptor                        // package-private
 
     public Socket accept() throws IOException {
         synchronized (ssc.blockingLock()) {
-            if (!ssc.isBound())
-                throw new IllegalBlockingModeException();
             try {
+                if (!ssc.isBound())
+                    throw new NotYetBoundException();
                 if (timeout == 0) {
                     SocketChannel sc = ssc.accept();
                     if (sc == null && !ssc.isBlocking())
