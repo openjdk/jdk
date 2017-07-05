@@ -52,15 +52,20 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from
   // set, due to (benign) races in the claim mechanism during RSet scanning more
   // than one thread might claim the same card. So the same card may be
   // processed multiple times. So redo this check.
-  if (_g1h->in_cset_fast_test(obj)) {
+  G1CollectedHeap::in_cset_state_t in_cset_state = _g1h->in_cset_state(obj);
+  if (in_cset_state == G1CollectedHeap::InCSet) {
     oop forwardee;
     if (obj->is_forwarded()) {
       forwardee = obj->forwardee();
     } else {
       forwardee = copy_to_survivor_space(obj);
     }
-    assert(forwardee != NULL, "forwardee should not be NULL");
     oopDesc::encode_store_heap_oop(p, forwardee);
+  } else if (in_cset_state == G1CollectedHeap::IsHumongous) {
+    _g1h->set_humongous_is_live(obj);
+  } else {
+    assert(in_cset_state == G1CollectedHeap::InNeither,
+           err_msg("In_cset_state must be InNeither here, but is %d", in_cset_state));
   }
 
   assert(obj != NULL, "Must be");

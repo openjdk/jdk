@@ -50,55 +50,55 @@ public final class FontLineMetrics extends LineMetrics implements Cloneable {
         this.frc = frc;
     }
 
-    public final int getNumChars() {
+    public int getNumChars() {
         return numchars;
     }
 
-    public final float getAscent() {
+    public float getAscent() {
         return cm.ascent;
     }
 
-    public final float getDescent() {
+    public float getDescent() {
         return cm.descent;
     }
 
-    public final float getLeading() {
+    public float getLeading() {
         return cm.leading;
     }
 
-    public final float getHeight() {
+    public float getHeight() {
         return cm.height;
     }
 
-    public final int getBaselineIndex() {
+    public int getBaselineIndex() {
         return cm.baselineIndex;
     }
 
-    public final float[] getBaselineOffsets() {
+    public float[] getBaselineOffsets() {
         return cm.baselineOffsets.clone();
     }
 
-    public final float getStrikethroughOffset() {
+    public float getStrikethroughOffset() {
         return cm.strikethroughOffset;
     }
 
-    public final float getStrikethroughThickness() {
+    public float getStrikethroughThickness() {
         return cm.strikethroughThickness;
     }
 
-    public final float getUnderlineOffset() {
+    public float getUnderlineOffset() {
         return cm.underlineOffset;
     }
 
-    public final float getUnderlineThickness() {
+    public float getUnderlineThickness() {
         return cm.underlineThickness;
     }
 
-    public final int hashCode() {
+    public int hashCode() {
         return cm.hashCode();
     }
 
-    public final boolean equals(Object rhs) {
+    public boolean equals(Object rhs) {
         try {
             return cm.equals(((FontLineMetrics)rhs).cm);
         }
@@ -107,7 +107,7 @@ public final class FontLineMetrics extends LineMetrics implements Cloneable {
         }
     }
 
-    public final Object clone() {
+    public Object clone() {
         // frc, cm do not need deep clone
         try {
             return super.clone();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,7 +173,8 @@ public abstract class ComponentUI {
      *          this argument is often ignored,
      *          but might be used if the UI object is stateless
      *          and shared by multiple components
-     *
+     * @return a {@code Dimension} object containing given component's preferred
+     *         size appropriate for the look and feel
      * @see javax.swing.JComponent#getPreferredSize
      * @see java.awt.LayoutManager#preferredLayoutSize
      */
@@ -240,7 +241,8 @@ public abstract class ComponentUI {
      *          and shared by multiple components
      * @param x the <i>x</i> coordinate of the point
      * @param y the <i>y</i> coordinate of the point
-     *
+     * @return {@code true} if the specified {@code x,y} location is contained
+     *         within the look and feel's defined shape for the given component
      * @see javax.swing.JComponent#contains
      * @see java.awt.Component#contains
      */
@@ -258,6 +260,9 @@ public abstract class ComponentUI {
      * stateful, then it should return a new instance per component.
      * The default implementation of this method throws an error, as it
      * should never be invoked.
+     *
+     * @param c a {@code JComponent} for which to create a UI delegate
+     * @return a {@code ComponentUI} object for {@code c}
      */
     public static ComponentUI createUI(JComponent c) {
         throw new Error("ComponentUI.createUI not implemented.");
@@ -332,8 +337,9 @@ public abstract class ComponentUI {
      * <code>Component.AccessibleAWTComponent.getAccessibleChildrenCount()</code> instead
      * of this method.
      *
-     * @see #getAccessibleChild
+     * @param c {@code JComponent} for which to get count of accessible children
      * @return the number of accessible children in the object
+     * @see #getAccessibleChild
      */
     public int getAccessibleChildrenCount(JComponent c) {
         return SwingUtilities.getAccessibleChildrenCount(c);
@@ -351,9 +357,10 @@ public abstract class ComponentUI {
      * <code>Component.AccessibleAWTComponent.getAccessibleChild()</code> instead of
      * this method.
      *
-     * @see #getAccessibleChildrenCount
+     * @param c a {@code JComponent} for which to get a child object
      * @param i zero-based index of child
      * @return the <code>i</code>th <code>Accessible</code> child of the object
+     * @see #getAccessibleChildrenCount
      */
     public Accessible getAccessibleChild(JComponent c, int i) {
         return SwingUtilities.getAccessibleChild(c, i);

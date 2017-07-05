@@ -790,7 +790,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
 
   // Try allocating obj in to-space (unless too old)
   if (old->age() < tenuring_threshold()) {
-    obj = (oop) to()->allocate(s);
+    obj = (oop) to()->allocate_aligned(s);
   }
 
   // Otherwise try allocating obj tenured

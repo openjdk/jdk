@@ -30,6 +30,7 @@
  * @build CorrectnessTest
  * @build OffTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/timeout=1200 OffTest
  */
 

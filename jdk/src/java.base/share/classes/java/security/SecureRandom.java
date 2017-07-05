@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,16 @@ import sun.security.jca.GetInstance.Instance;
  *
  * <p>A cryptographically strong random number
  * minimally complies with the statistical random number generator tests
- * specified in <a href="http://csrc.nist.gov/cryptval/140-2.htm">
+ * specified in
+ * <a href="http://csrc.nist.gov/publications/fips/fips140-2/fips1402.pdf">
  * <i>FIPS 140-2, Security Requirements for Cryptographic Modules</i></a>,
  * section 4.9.1.
  * Additionally, SecureRandom must produce non-deterministic output.
  * Therefore any seed material passed to a SecureRandom object must be
  * unpredictable, and all SecureRandom output sequences must be
  * cryptographically strong, as described in
- * <a href="http://www.ietf.org/rfc/rfc1750.txt">
- * <i>RFC 1750: Randomness Recommendations for Security</i></a>.
+ * <a href="http://tools.ietf.org/html/rfc4086">
+ * <i>RFC 4086: Randomness Requirements for Security</i></a>.
  *
  * <p>A caller obtains a SecureRandom instance via the
  * no-argument constructor or one of the {@code getInstance} methods:

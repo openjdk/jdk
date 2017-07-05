@@ -938,7 +938,11 @@ public class AquaInternalFrameUI extends BasicInternalFrameUI implements SwingCo
             final Point pt = new Point();
             final Component c = getComponentToForwardTo(e, pt);
             if (c == null) return;
-            c.dispatchEvent(new MouseWheelEvent(c, e.getID(), e.getWhen(), e.getModifiers(), pt.x, pt.y, e.getClickCount(), e.isPopupTrigger(), e.getScrollType(), e.getScrollAmount(), e.getWheelRotation()));
+            c.dispatchEvent(new MouseWheelEvent(c, e.getID(), e.getWhen(),
+                    e.getModifiers(), pt.x, pt.y, e.getXOnScreen(), e.getYOnScreen(),
+                    e.getClickCount(), e.isPopupTrigger(), e.getScrollType(),
+                    e.getScrollAmount(), e.getWheelRotation(),
+                    e.getPreciseWheelRotation()));
         }
 
         public void componentResized(final ComponentEvent e) {

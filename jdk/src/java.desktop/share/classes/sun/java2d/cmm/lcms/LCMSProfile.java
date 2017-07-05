@@ -43,7 +43,7 @@ final class LCMSProfile extends Profile {
         tagCache = new TagCache(this);
     }
 
-    final long getLcmsPtr() {
+    long getLcmsPtr() {
         return this.getNativePtr();
     }
 

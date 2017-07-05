@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,7 @@
 
 package sun.util.calendar;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.StringTokenizer;
+import java.security.AccessController;
 import java.util.TimeZone;
 
 /**
@@ -39,6 +35,28 @@ import java.util.TimeZone;
  */
 
 public class LocalGregorianCalendar extends BaseCalendar {
+    private static final Era[] JAPANESE_ERAS = {
+        new Era("Meiji",  "M", -3218832000000L, true),
+        new Era("Taisho", "T", -1812153600000L, true),
+        new Era("Showa",  "S", -1357603200000L, true),
+        new Era("Heisei", "H",   600220800000L, true),
+    };
+
+    private static boolean isValidEra(Era newEra, Era[] eras) {
+        Era last = eras[eras.length - 1];
+        if (last.getSinceDate().getYear() >= newEra.getSinceDate().getYear()) {
+            return false;
+        }
+        // The new era name should be unique. Its abbr may not.
+        String newName = newEra.getName();
+        for (Era era : eras) {
+            if (era.getName().equals(newName)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private String name;
     private Era[] eras;
 
@@ -118,58 +136,70 @@ public class LocalGregorianCalendar extends BaseCalendar {
     }
 
     static LocalGregorianCalendar getLocalGregorianCalendar(String name) {
-        Properties calendarProps;
-        try {
-            calendarProps = CalendarSystem.getCalendarProperties();
-        } catch (IOException | IllegalArgumentException e) {
-            throw new InternalError(e);
-        }
-        // Parse calendar.*.eras
-        String props = calendarProps.getProperty("calendar." + name + ".eras");
-        if (props == null) {
+        // Only the Japanese calendar is supported.
+        if (!"japanese".equals(name)) {
             return null;
         }
-        List<Era> eras = new ArrayList<>();
-        StringTokenizer eraTokens = new StringTokenizer(props, ";");
-        while (eraTokens.hasMoreTokens()) {
-            String items = eraTokens.nextToken().trim();
-            StringTokenizer itemTokens = new StringTokenizer(items, ",");
-            String eraName = null;
-            boolean localTime = true;
-            long since = 0;
-            String abbr = null;
 
-            while (itemTokens.hasMoreTokens()) {
-                String item = itemTokens.nextToken();
-                int index = item.indexOf('=');
-                // it must be in the key=value form.
-                if (index == -1) {
-                    return null;
-                }
-                String key = item.substring(0, index);
-                String value = item.substring(index + 1);
-                if ("name".equals(key)) {
-                    eraName = value;
-                } else if ("since".equals(key)) {
-                    if (value.endsWith("u")) {
-                        localTime = false;
-                        since = Long.parseLong(value.substring(0, value.length() - 1));
-                    } else {
-                        since = Long.parseLong(value);
-                    }
-                } else if ("abbr".equals(key)) {
-                    abbr = value;
-                } else {
-                    throw new RuntimeException("Unknown key word: " + key);
+        // Append an era to the predefined eras if it's given by the property.
+        String prop = AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction("jdk.calendar.japanese.supplemental.era"));
+        if (prop != null) {
+            Era era = parseEraEntry(prop);
+            if (era != null) {
+                if (isValidEra(era, JAPANESE_ERAS)) {
+                    int length = JAPANESE_ERAS.length;
+                    Era[] eras = new Era[length + 1];
+                    System.arraycopy(JAPANESE_ERAS, 0, eras, 0, length);
+                    eras[length] = era;
+                    return new LocalGregorianCalendar(name, eras);
                 }
             }
-            Era era = new Era(eraName, abbr, since, localTime);
-            eras.add(era);
         }
-        Era[] eraArray = new Era[eras.size()];
-        eras.toArray(eraArray);
+        return new LocalGregorianCalendar(name, JAPANESE_ERAS);
+    }
 
-        return new LocalGregorianCalendar(name, eraArray);
+    private static Era parseEraEntry(String entry) {
+        String[] keyValuePairs = entry.split(",");
+        String eraName = null;
+        boolean localTime = true;
+        long since = 0;
+        String abbr = null;
+
+        for (String item : keyValuePairs) {
+            String[] keyvalue = item.split("=");
+            if (keyvalue.length != 2) {
+                return null;
+            }
+            String key = keyvalue[0].trim();
+            String value = keyvalue[1].trim();
+            switch (key) {
+            case "name":
+                eraName = value;
+                break;
+            case "since":
+                if (value.endsWith("u")) {
+                    localTime = false;
+                    value = value.substring(0, value.length() - 1);
+                }
+                try {
+                    since = Long.parseLong(value);
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+                break;
+            case "abbr":
+                abbr = value;
+                break;
+            default:
+                return null;
+            }
+        }
+        if (eraName == null || eraName.isEmpty()
+                || abbr == null || abbr.isEmpty()) {
+            return null;
+        }
+        return new Era(eraName, abbr, since, localTime);
     }
 
     private LocalGregorianCalendar(String name, Era[] eras) {
@@ -262,9 +292,8 @@ public class LocalGregorianCalendar extends BaseCalendar {
     }
 
     private boolean validateEra(Era era) {
-        // Validate the era
-        for (int i = 0; i < eras.length; i++) {
-            if (era == eras[i]) {
+        for (Era era1 : eras) {
+            if (era == era1) {
                 return true;
             }
         }
@@ -333,6 +362,7 @@ public class LocalGregorianCalendar extends BaseCalendar {
         }
         if (i >= 0) {
             ldate.setLocalEra(era);
+            @SuppressWarnings("null")
             int y = ldate.getNormalizedYear() - era.getSinceDate().getYear() + 1;
             ldate.setLocalYear(y);
         } else {

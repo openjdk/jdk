@@ -73,7 +73,7 @@ public class ScriptClassInstrumentor extends ClassVisitor {
     private boolean staticInitFound;
 
     ScriptClassInstrumentor(final ClassVisitor visitor, final ScriptClassInfo sci) {
-        super(Opcodes.ASM4, visitor);
+        super(Main.ASM_VERSION, visitor);
         if (sci == null) {
             throw new IllegalArgumentException("Null ScriptClassInfo, is the class annotated?");
         }
@@ -103,7 +103,7 @@ public class ScriptClassInstrumentor extends ClassVisitor {
 
         final FieldVisitor delegateFV = super.visitField(fieldAccess, fieldName, fieldDesc,
                 signature, value);
-        return new FieldVisitor(Opcodes.ASM4, delegateFV) {
+        return new FieldVisitor(Main.ASM_VERSION, delegateFV) {
             @Override
             public AnnotationVisitor visitAnnotation(final String desc, final boolean visible) {
                 if (ScriptClassInfo.annotations.containsKey(desc)) {
@@ -140,7 +140,7 @@ public class ScriptClassInstrumentor extends ClassVisitor {
         final MethodGenerator delegateMV = new MethodGenerator(super.visitMethod(methodAccess, methodName, methodDesc,
                 signature, exceptions), methodAccess, methodName, methodDesc);
 
-        return new MethodVisitor(Opcodes.ASM4, delegateMV) {
+        return new MethodVisitor(Main.ASM_VERSION, delegateMV) {
             @Override
             public void visitInsn(final int opcode) {
                 // call $clinit$ just before return from <clinit>

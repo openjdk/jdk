@@ -91,9 +91,6 @@ public abstract class AbstractParser {
     /** What should line numbers be counted from? */
     protected final int lineOffset;
 
-    /** //@ sourceURL or //# sourceURL */
-    protected String sourceURL;
-
     /**
      * Construct a parser.
      *
@@ -182,7 +179,7 @@ public abstract class AbstractParser {
     // currently only @sourceURL=foo supported
     private void checkDirectiveComment() {
         // if already set, ignore this one
-        if (sourceURL != null) {
+        if (source.getExplicitURL() != null) {
             return;
         }
 
@@ -190,7 +187,7 @@ public abstract class AbstractParser {
         final int len = comment.length();
         // 4 characters for directive comment marker //@\s or //#\s
         if (len > 4 && comment.substring(4).startsWith(SOURCE_URL_PREFIX)) {
-            sourceURL = comment.substring(4 + SOURCE_URL_PREFIX.length());
+            source.setExplicitURL(comment.substring(4 + SOURCE_URL_PREFIX.length()));
         }
     }
 

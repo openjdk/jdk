@@ -938,8 +938,9 @@ void CppInterpreterGenerator::generate_counter_incr(Label& overflow) {
 // Interpreter stub for calling a native method. (C++ interpreter)
 // This sets up a somewhat different looking stack for calling the native method
 // than the typical interpreter frame setup.
+// The synchronized parameter is ignored.
 //
-address CppInterpreterGenerator::generate_native_entry(void) {
+address CppInterpreterGenerator::generate_native_entry(bool synchronized) {
   if (native_entry != NULL) return native_entry;
   address entry = __ pc();
 
@@ -1729,7 +1730,8 @@ void CppInterpreterGenerator::generate_more_monitors() {
   __ std(R0, BasicObjectLock::obj_offset_in_bytes(), stack_base);  // Mark lock as unused
 }
 
-address CppInterpreterGenerator::generate_normal_entry(void) {
+// The synchronized parameter is ignored
+address CppInterpreterGenerator::generate_normal_entry(bool synchronized) {
   if (interpreter_frame_manager != NULL) return interpreter_frame_manager;
 
   address entry = __ pc();
@@ -2789,38 +2791,6 @@ address CppInterpreterGenerator::generate_normal_entry(void) {
   return interpreter_frame_manager;
 }
 
-// Generate code for various sorts of method entries
-//
-address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter::MethodKind kind) {
-  address entry_point = NULL;
-
-  switch (kind) {
-    case Interpreter::zerolocals                 :                                                                              break;
-    case Interpreter::zerolocals_synchronized    :                                                                              break;
-    case Interpreter::native                     : // Fall thru
-    case Interpreter::native_synchronized        : entry_point = ((CppInterpreterGenerator*)this)->generate_native_entry();     break;
-    case Interpreter::empty                      :                                                                              break;
-    case Interpreter::accessor                   : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();      break;
-    case Interpreter::abstract                   : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();      break;
-    // These are special interpreter intrinsics which we don't support so far.
-    case Interpreter::java_lang_math_sin         :                                                                              break;
-    case Interpreter::java_lang_math_cos         :                                                                              break;
-    case Interpreter::java_lang_math_tan         :                                                                              break;
-    case Interpreter::java_lang_math_abs         :                                                                              break;
-    case Interpreter::java_lang_math_log         :                                                                              break;
-    case Interpreter::java_lang_math_log10       :                                                                              break;
-    case Interpreter::java_lang_math_sqrt        :                                                                              break;
-    case Interpreter::java_lang_math_pow         :                                                                              break;
-    case Interpreter::java_lang_math_exp         :                                                                              break;
-    case Interpreter::java_lang_ref_reference_get: entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
-    default                                      : ShouldNotReachHere();                                                        break;
-  }
-
-  if (entry_point) {
-    return entry_point;
-  }
-  return ((InterpreterGenerator*)this)->generate_normal_entry();
-}
 
 InterpreterGenerator::InterpreterGenerator(StubQueue* code)
  : CppInterpreterGenerator(code) {

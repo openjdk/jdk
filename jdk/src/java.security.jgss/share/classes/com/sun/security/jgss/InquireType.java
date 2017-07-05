@@ -43,7 +43,7 @@ public enum InquireType {
      *    </ul>
      * @deprecated as of 1.9, replaced by {@link #KRB5_GET_SESSION_KEY_EX}
      * which returns an instance of
-     * {@link sun.security.jgss.krb5.Krb5Context.EncryptionKey}
+     * {@link javax.security.auth.kerberos.EncryptionKey}
      * that implements the {@link javax.crypto.SecretKey} interface and
      * has similar methods with {@link javax.security.auth.kerberos.KerberosKey}.
      */

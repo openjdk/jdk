@@ -31,7 +31,7 @@
  * @author  Mandy Chung
  *
  * @build MemoryManagement MemoryUtil
- * @run main/othervm/timeout=600 MemoryManagement
+ * @run main/othervm/timeout=600 -Xmn8m MemoryManagement
  */
 
 import java.lang.management.*;
@@ -49,6 +49,8 @@ public class MemoryManagement {
     private static volatile boolean trace = false;
     private static volatile boolean testFailed = false;
     private static final int NUM_CHUNKS = 2;
+    // Must match -Xmn set on the @run line
+    private static final int YOUNG_GEN_SIZE = 8 * 1024 * 1024;
     private static volatile long chunkSize;
     private static volatile int listenerInvoked = 0;
 
@@ -111,6 +113,16 @@ public class MemoryManagement {
             chunkSize = Runtime.getRuntime().freeMemory()/20;
         }
         newThreshold = mu.getUsed() + (chunkSize * NUM_CHUNKS);
+
+        // Sanity check. Make sure the chunkSize is large than the YOUNG_GEN_SIZE
+        // If the chunkSize are lower than the YOUNG_GEN_SIZE, we will get intermittent
+        // failures when objects end up in the young gen instead of the old gen.
+        // Tweak the test if this fails.
+        if (chunkSize < YOUNG_GEN_SIZE) {
+            throw new RuntimeException("TEST FAILED: " +
+                    " chunkSize: " + chunkSize + " is less than YOUNG_GEN_SIZE: " + YOUNG_GEN_SIZE +
+                    " max: " + mu.getMax() + " used: " + mu.getUsed() + " newThreshold: " + newThreshold);
+        }
 
         System.out.println("Setting threshold for " + mpool.getName() +
             " from " + mpool.getUsageThreshold() + " to " + newThreshold +

@@ -286,7 +286,7 @@ import javax.sql.rowset.spi.*;
  * <code>setSyncProvider</code>.
  * <P>
  * In order to use the optimistic concurrency control routine, the
- * <code>RIOptismisticProvider</code> maintains both its current
+ * <code>RIOptimisticProvider</code> maintains both its current
  * value and its original value (the value it had immediately preceding the
  * current value). Note that if no changes have been made to the data in a
  * <code>RowSet</code> object, its current values and its original values are the same,
@@ -351,7 +351,7 @@ import javax.sql.rowset.spi.*;
  * <code>CachedRowSet</code> object can be used to augment the
  * capabilities of a JDBC technology-enabled driver (hereafter called a
  * "JDBC driver") when the DBMS does not provide full support for scrolling and
- * updating. To achieve the effect of making a non-scrollble and read-only
+ * updating. To achieve the effect of making a non-scrollable and read-only
  * <code>ResultSet</code> object scrollable and updatable, a programmer
  * simply needs to create a <code>CachedRowSet</code> object populated
  * with that <code>ResultSet</code> object's data.  This is demonstrated
@@ -732,7 +732,7 @@ public interface CachedRowSet extends RowSet, Joinable {
     * Note: The <code>acceptChanges()</code> method will determine if the
     * <code>COMMIT_ON_ACCEPT_CHANGES</code> is set to true or not. If it is set
     * to true, all updates in the synchronization are committed to the data
-    * source. Otherwise, the application <b>must</b> explicity call the
+    * source. Otherwise, the application <b>must</b> explicitly call the
     * <code>commit()</code> or <code>rollback()</code> methods as appropriate.
     *
     * @throws SyncProviderException if the underlying
@@ -801,7 +801,7 @@ public interface CachedRowSet extends RowSet, Joinable {
     * Note: The <code>acceptChanges()</code> method will determine if the
     * <code>COMMIT_ON_ACCEPT_CHANGES</code> is set to true or not. If it is set
     * to true, all updates in the synchronization are committed to the data
-    * source. Otherwise, the application <b>must</b> explicity call the
+    * source. Otherwise, the application <b>must</b> explicitly call the
     * <code>commit</code> or <code>rollback</code> methods as appropriate.
     *
     * @param con a standard JDBC <code>Connection</code> object
@@ -850,7 +850,7 @@ public interface CachedRowSet extends RowSet, Joinable {
     * associated updates are fully cleared, thus preventing 'dirty' reads by
     * other components that hold a reference to this <code>RowSet</code> object.
     * In addition, the contents cannot be released
-    * until all all components reading this <code>CachedRowSet</code> object
+    * until all components reading this <code>CachedRowSet</code> object
     * have completed their reads. This <code>CachedRowSet</code> object
     * should be returned to normal behavior after firing the
     * <code>rowSetChanged</code> event.
@@ -934,7 +934,7 @@ public interface CachedRowSet extends RowSet, Joinable {
     * effect until further modification to the rowset data has occurred.
     *
     * @throws SQLException if the cursor is before the first row or after the last
-    *     row in in this <code>CachedRowSet</code> object
+    *     row in this <code>CachedRowSet</code> object
     * @see #undoDelete
     * @see #undoInsert
     * @see java.sql.ResultSet#cancelRowUpdates
@@ -1071,7 +1071,7 @@ public interface CachedRowSet extends RowSet, Joinable {
     * <code>CachedRowSet</code> object. Internally, this method is used by a rowset
     * to trigger read or write actions between the rowset
     * and the data source. For example, a rowset may need to get a handle
-    * on the the rowset reader (<code>RowSetReader</code> object) from the
+    * on the rowset reader (<code>RowSetReader</code> object) from the
     * <code>SyncProvider</code> to allow the rowset to be populated.
     * <pre>
     *     RowSetReader rowsetReader = null;
@@ -1096,7 +1096,7 @@ public interface CachedRowSet extends RowSet, Joinable {
     * it currently has set.
     *
     * @return the <code>SyncProvider</code> object that was set when the rowset
-    *      was instantiated, or if none was was set, the default provider
+    *      was instantiated, or if none was set, the default provider
     * @throws SQLException if an error occurs while returning the
     * <code>SyncProvider</code> object
     * @see #setSyncProvider

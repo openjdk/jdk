@@ -388,19 +388,21 @@ public final class Duration
         Matcher matcher = PATTERN.matcher(text);
         if (matcher.matches()) {
             // check for letter T but no time sections
-            if ("T".equals(matcher.group(3)) == false) {
-                boolean negate = "-".equals(matcher.group(1));
-                String dayMatch = matcher.group(2);
-                String hourMatch = matcher.group(4);
-                String minuteMatch = matcher.group(5);
-                String secondMatch = matcher.group(6);
-                String fractionMatch = matcher.group(7);
-                if (dayMatch != null || hourMatch != null || minuteMatch != null || secondMatch != null) {
-                    long daysAsSecs = parseNumber(text, dayMatch, SECONDS_PER_DAY, "days");
-                    long hoursAsSecs = parseNumber(text, hourMatch, SECONDS_PER_HOUR, "hours");
-                    long minsAsSecs = parseNumber(text, minuteMatch, SECONDS_PER_MINUTE, "minutes");
-                    long seconds = parseNumber(text, secondMatch, 1, "seconds");
-                    int nanos = parseFraction(text,  fractionMatch, seconds < 0 ? -1 : 1);
+            if (!charMatch(text, matcher.start(3), matcher.end(3), 'T')) {
+                boolean negate = charMatch(text, matcher.start(1), matcher.end(1), '-');
+
+                int dayStart = matcher.start(2), dayEnd = matcher.end(2);
+                int hourStart = matcher.start(4), hourEnd = matcher.end(4);
+                int minuteStart = matcher.start(5), minuteEnd = matcher.end(5);
+                int secondStart = matcher.start(6), secondEnd = matcher.end(6);
+                int fractionStart = matcher.start(7), fractionEnd = matcher.end(7);
+
+                if (dayStart >= 0 || hourStart >= 0 || minuteStart >= 0 || secondStart >= 0) {
+                    long daysAsSecs = parseNumber(text, dayStart, dayEnd, SECONDS_PER_DAY, "days");
+                    long hoursAsSecs = parseNumber(text, hourStart, hourEnd, SECONDS_PER_HOUR, "hours");
+                    long minsAsSecs = parseNumber(text, minuteStart, minuteEnd, SECONDS_PER_MINUTE, "minutes");
+                    long seconds = parseNumber(text, secondStart, secondEnd, 1, "seconds");
+                    int nanos = parseFraction(text, fractionStart, fractionEnd, seconds < 0 ? -1 : 1);
                     try {
                         return create(negate, daysAsSecs, hoursAsSecs, minsAsSecs, seconds, nanos);
                     } catch (ArithmeticException ex) {
@@ -412,27 +414,37 @@ public final class Duration
         throw new DateTimeParseException("Text cannot be parsed to a Duration", text, 0);
     }
 
-    private static long parseNumber(CharSequence text, String parsed, int multiplier, String errorText) {
+    private static boolean charMatch(CharSequence text, int start, int end, char c) {
+        return (start >= 0 && end == start + 1 && text.charAt(start) == c);
+    }
+
+    private static long parseNumber(CharSequence text, int start, int end, int multiplier, String errorText) {
         // regex limits to [-+]?[0-9]+
-        if (parsed == null) {
+        if (start < 0 || end < 0) {
             return 0;
         }
         try {
-            long val = Long.parseLong(parsed);
+            long val = Long.parseLong(text, 10, start, end);
             return Math.multiplyExact(val, multiplier);
         } catch (NumberFormatException | ArithmeticException ex) {
             throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: " + errorText, text, 0).initCause(ex);
         }
     }
 
-    private static int parseFraction(CharSequence text, String parsed, int negate) {
+    private static int parseFraction(CharSequence text, int start, int end, int negate) {
         // regex limits to [0-9]{0,9}
-        if (parsed == null || parsed.length() == 0) {
+        if (start < 0 || end < 0 || end - start == 0) {
             return 0;
         }
         try {
-            parsed = (parsed + "000000000").substring(0, 9);
-            return Integer.parseInt(parsed) * negate;
+            int fraction = Integer.parseInt(text, 10, start, end);
+
+            // for number strings smaller than 9 digits, interpret as if there
+            // were trailing zeros
+            for (int i = end - start; i < 9; i++) {
+                fraction *= 10;
+            }
+            return fraction * negate;
         } catch (NumberFormatException | ArithmeticException ex) {
             throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: fraction", text, 0).initCause(ex);
         }

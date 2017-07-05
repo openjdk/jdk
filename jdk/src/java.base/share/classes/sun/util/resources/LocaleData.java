@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.Set;
+import sun.util.locale.provider.JRELocaleProviderAdapter;
 import sun.util.locale.provider.LocaleDataMetaInfo;
 import sun.util.locale.provider.LocaleProviderAdapter;
+import static sun.util.locale.provider.LocaleProviderAdapter.Type.CLDR;
 import static sun.util.locale.provider.LocaleProviderAdapter.Type.JRE;
 
 /**
@@ -204,35 +207,23 @@ public class LocaleData {
         @Override
          public List<Locale> getCandidateLocales(String baseName, Locale locale) {
             List<Locale> candidates = super.getCandidateLocales(baseName, locale);
-            /* Get the locale string list from LocaleDataMetaInfo class. */
-            String localeString = LocaleDataMetaInfo.getSupportedLocaleString(baseName);
-
-            if (localeString != null && localeString.length() != 0) {
-                for (Iterator<Locale> l = candidates.iterator(); l.hasNext();) {
-                    Locale loc = l.next();
-                    String lstr;
-                    if (loc.getScript().length() > 0) {
-                        lstr = loc.toLanguageTag().replace('-', '_');
-                    } else {
-                        lstr = loc.toString();
-                        int idx = lstr.indexOf("_#");
-                        if (idx >= 0) {
-                            lstr = lstr.substring(0, idx);
-                        }
-                    }
-                    /* Every locale string in the locale string list returned from
-                     the above getSupportedLocaleString is enclosed
-                     within two white spaces so that we could check some locale
-                     such as "en".
-                     */
-                    if (lstr.length() != 0 && localeString.indexOf(" " + lstr + " ") == -1) {
-                        l.remove();
+            // Weed out Locales which are known to have no resource bundles
+            int lastDot = baseName.lastIndexOf('.');
+            String category = (lastDot >= 0) ? baseName.substring(lastDot + 1) : baseName;
+            LocaleProviderAdapter.Type type = baseName.contains(DOTCLDR) ? CLDR : JRE;
+            LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
+            Set<String> langtags = ((JRELocaleProviderAdapter)adapter).getLanguageTagSet(category);
+            if (!langtags.isEmpty()) {
+                for (Iterator<Locale> itr = candidates.iterator(); itr.hasNext();) {
+                    if (!LocaleProviderAdapter.isSupportedLocale(itr.next(), type, langtags)) {
+                        itr.remove();
                     }
                 }
             }
+
             // Force fallback to Locale.ENGLISH for CLDR time zone names support
             if (locale.getLanguage() != "en"
-                    && baseName.contains(CLDR) && baseName.endsWith("TimeZoneNames")) {
+                    && type == CLDR && category.equals("TimeZoneNames")) {
                 candidates.add(candidates.size() - 1, Locale.ENGLISH);
             }
             return candidates;
@@ -254,7 +245,7 @@ public class LocaleData {
             return null;
         }
 
-        private static final String CLDR      = ".cldr";
+        private static final String DOTCLDR      = ".cldr";
 
         /**
          * Changes baseName to its per-language package name and
@@ -275,8 +266,8 @@ public class LocaleData {
                     assert JRE.getUtilResourcesPackage().length()
                         == JRE.getTextResourcesPackage().length();
                     int index = JRE.getUtilResourcesPackage().length();
-                    if (baseName.indexOf(CLDR, index) > 0) {
-                        index += CLDR.length();
+                    if (baseName.indexOf(DOTCLDR, index) > 0) {
+                        index += DOTCLDR.length();
                     }
                     newBaseName = baseName.substring(0, index + 1) + lang
                                       + baseName.substring(index);

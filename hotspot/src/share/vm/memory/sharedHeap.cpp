@@ -159,9 +159,9 @@ SharedHeap::StrongRootsScope::~StrongRootsScope() {
 Monitor* SharedHeap::StrongRootsScope::_lock = new Monitor(Mutex::leaf, "StrongRootsScope lock", false);
 
 void SharedHeap::StrongRootsScope::mark_worker_done_with_threads(uint n_workers) {
-  // The Thread work barrier is only needed by G1.
+  // The Thread work barrier is only needed by G1 Class Unloading.
   // No need to use the barrier if this is single-threaded code.
-  if (UseG1GC && n_workers > 0) {
+  if (UseG1GC && ClassUnloadingWithConcurrentMark && n_workers > 0) {
     uint new_value = (uint)Atomic::add(1, &_n_workers_done_with_threads);
     if (new_value == n_workers) {
       // This thread is last. Notify the others.
@@ -172,6 +172,9 @@ void SharedHeap::StrongRootsScope::mark_worker_done_with_threads(uint n_workers)
 }
 
 void SharedHeap::StrongRootsScope::wait_until_all_workers_done_with_threads(uint n_workers) {
+  assert(UseG1GC,                          "Currently only used by G1");
+  assert(ClassUnloadingWithConcurrentMark, "Currently only needed when doing G1 Class Unloading");
+
   // No need to use the barrier if this is single-threaded code.
   if (n_workers > 0 && (uint)_n_workers_done_with_threads != n_workers) {
     MonitorLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);

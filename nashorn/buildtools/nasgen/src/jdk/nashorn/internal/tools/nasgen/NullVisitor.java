@@ -29,7 +29,6 @@ import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
 
 /**
  * A visitor that does nothing on visitXXX calls.
@@ -37,7 +36,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
  */
 public class NullVisitor extends ClassVisitor {
     NullVisitor() {
-        super(Opcodes.ASM4);
+        super(Main.ASM_VERSION);
     }
 
     @Override
@@ -47,7 +46,7 @@ public class NullVisitor extends ClassVisitor {
         final String desc,
         final String signature,
         final String[] exceptions) {
-        return new MethodVisitor(Opcodes.ASM4) {
+        return new MethodVisitor(Main.ASM_VERSION) {
             @Override
             public AnnotationVisitor visitAnnotationDefault() {
                 return new NullAnnotationVisitor();
@@ -67,7 +66,7 @@ public class NullVisitor extends ClassVisitor {
         final String desc,
         final String signature,
         final Object value) {
-        return new FieldVisitor(Opcodes.ASM4) {
+        return new FieldVisitor(Main.ASM_VERSION) {
             @Override
             public AnnotationVisitor visitAnnotation(final String descriptor, final boolean visible) {
                 return new NullAnnotationVisitor();
@@ -82,7 +81,7 @@ public class NullVisitor extends ClassVisitor {
 
     private static class NullAnnotationVisitor extends AnnotationVisitor {
         NullAnnotationVisitor() {
-            super(Opcodes.ASM4);
+            super(Main.ASM_VERSION);
         }
     }
 }

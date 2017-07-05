@@ -58,8 +58,8 @@ function checkIt(func) {
 }
 
 // constructor of a non-existent class
-checkIt(function() new (java.lang["NonExistent(String)"])());  
- 
+checkIt(function() new (java.lang["NonExistent(String)"])());
+
 // non-existent constructor of an existing class
 checkIt(function() new (java.lang["Object(String)"])());
 

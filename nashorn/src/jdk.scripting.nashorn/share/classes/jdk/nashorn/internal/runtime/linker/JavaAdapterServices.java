@@ -47,6 +47,7 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
+import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -214,12 +215,12 @@ public final class JavaAdapterServices {
 
     /**
      * Invoked when returning Object from an adapted method to filter out internal Nashorn objects that must not be seen
-     * by the callers. Currently only transforms {@code ConsString} into {@code String}.
+     * by the callers. Currently only transforms {@code ConsString} into {@code String} and transforms {@code ScriptObject} into {@code ScriptObjectMirror}.
      * @param obj the return value
      * @return the filtered return value.
      */
     public static Object exportReturnValue(final Object obj) {
-        return NashornBeansLinker.exportArgument(obj);
+        return ScriptUtils.wrap(NashornBeansLinker.exportArgument(obj));
     }
 
     /**

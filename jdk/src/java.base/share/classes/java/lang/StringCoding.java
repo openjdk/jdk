@@ -196,19 +196,19 @@ class StringCoding {
     static char[] decode(Charset cs, byte[] ba, int off, int len) {
         // (1)We never cache the "external" cs, the only benefit of creating
         // an additional StringDe/Encoder object to wrap it is to share the
-        // de/encode() method. These SD/E objects are short-lifed, the young-gen
-        // gc should be able to take care of them well. But the best approash
+        // de/encode() method. These SD/E objects are short-lived, the young-gen
+        // gc should be able to take care of them well. But the best approach
         // is still not to generate them if not really necessary.
         // (2)The defensive copy of the input byte/char[] has a big performance
         // impact, as well as the outgoing result byte/char[]. Need to do the
         // optimization check of (sm==null && classLoader0==null) for both.
         // (3)getClass().getClassLoader0() is expensive
         // (4)There might be a timing gap in isTrusted setting. getClassLoader0()
-        // is only chcked (and then isTrusted gets set) when (SM==null). It is
+        // is only checked (and then isTrusted gets set) when (SM==null). It is
         // possible that the SM==null for now but then SM is NOT null later
         // when safeTrim() is invoked...the "safe" way to do is to redundant
         // check (... && (isTrusted || SM == null || getClassLoader0())) in trim
-        // but it then can be argued that the SM is null when the opertaion
+        // but it then can be argued that the SM is null when the operation
         // is started...
         CharsetDecoder cd = cs.newDecoder();
         int en = scale(len, cd.maxCharsPerByte());
