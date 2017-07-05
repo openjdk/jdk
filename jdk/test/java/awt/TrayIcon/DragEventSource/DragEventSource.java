@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
   @test
-  @bug 6565779
-  @library ../../../regtesthelpers
+  @bug 6565779 8168292
+  @library ../../regtesthelpers
   @compile DragEventSource.java
   @summary Exception if source of some event is TrayIcon
   @author Andrei Dmitriev: area=awt.tray
@@ -38,9 +38,19 @@
  * instance as source.
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
+import java.awt.Button;
+import java.awt.Dialog;
+import java.awt.FileDialog;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Image;
+import java.awt.Panel;
+import java.awt.SystemTray;
+import java.awt.TextArea;
+import java.awt.TrayIcon;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 
 public class DragEventSource
 {
@@ -81,11 +91,10 @@ public class DragEventSource
 
         String[] instructions =
         {
-            "Use see a Frame with a button in it.",
-            "Press the button. FileDialog should appear.",
-            "Drag the mouse from the Tray icon to FileDialog ",
-            "using left mouse button.",
-            "If exception happens, the test fails.",
+            "Click 'Open file dialog' button. FileDialog should appear.",
+            "Using left mouse button,",
+            "Drag the mouse from the Tray icon to FileDialog.",
+            "If exception is thrown, the test fails.",
             "Otherwise, pass."
         };
 

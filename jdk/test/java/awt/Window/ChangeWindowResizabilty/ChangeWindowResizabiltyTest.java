@@ -21,12 +21,19 @@
  * questions.
  */
 
-/* @bug      8166897
+/* @test
+   @key headful
+   @bug      8166897
    @summary  Some font overlap in the Optionpane dialog.
    @run      main ChangeWindowResizabiltyTest
 */
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.Panel;
+import java.awt.Robot;
 
 public class ChangeWindowResizabiltyTest {
     public static void main(String[] args) throws Exception {

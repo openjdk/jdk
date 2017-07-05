@@ -280,7 +280,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$$$ORIGIN[$]1'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1'
       SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=[$]1'
@@ -305,7 +305,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
       # Default works for linux, might work on other platforms as well.
       PICFLAG='-fPIC'
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$$$ORIGIN[$]1'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1'
       SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=[$]1'
@@ -315,7 +315,7 @@ AC_DEFUN([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
     C_FLAG_REORDER='-xF'
     CXX_FLAG_REORDER='-xF'
     SHARED_LIBRARY_FLAGS="-G"
-    SET_EXECUTABLE_ORIGIN='-R\$$$$ORIGIN[$]1'
+    SET_EXECUTABLE_ORIGIN='-R\$$ORIGIN[$]1'
     SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
     SET_SHARED_LIBRARY_NAME='-h [$]1'
     SET_SHARED_LIBRARY_MAPFILE='-M[$]1'
