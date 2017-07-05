@@ -126,7 +126,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     /**
      * Place the component centered along the edge of its display area
      * associated with the start of a page for the current
-     * <code>ComponentOrienation</code>.  Equal to NORTH for horizontal
+     * {@code ComponentOrientation}.  Equal to NORTH for horizontal
      * orientations.
      */
     public static final int PAGE_START = 19;
@@ -134,7 +134,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     /**
      * Place the component centered along the edge of its display area
      * associated with the end of a page for the current
-     * <code>ComponentOrienation</code>.  Equal to SOUTH for horizontal
+     * {@code ComponentOrientation}.  Equal to SOUTH for horizontal
      * orientations.
      */
     public static final int PAGE_END = 20;
@@ -142,7 +142,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     /**
      * Place the component centered along the edge of its display area where
      * lines of text would normally begin for the current
-     * <code>ComponentOrienation</code>.  Equal to WEST for horizontal,
+     * {@code ComponentOrientation}.  Equal to WEST for horizontal,
      * left-to-right orientations and EAST for horizontal, right-to-left
      * orientations.
      */
@@ -151,7 +151,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     /**
      * Place the component centered along the edge of its display area where
      * lines of text would normally end for the current
-     * <code>ComponentOrienation</code>.  Equal to EAST for horizontal,
+     * {@code ComponentOrientation}.  Equal to EAST for horizontal,
      * left-to-right orientations and WEST for horizontal, right-to-left
      * orientations.
      */
@@ -160,7 +160,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     /**
      * Place the component in the corner of its display area where
      * the first line of text on a page would normally begin for the current
-     * <code>ComponentOrienation</code>.  Equal to NORTHWEST for horizontal,
+     * {@code ComponentOrientation}.  Equal to NORTHWEST for horizontal,
      * left-to-right orientations and NORTHEAST for horizontal, right-to-left
      * orientations.
      */
@@ -169,7 +169,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     /**
      * Place the component in the corner of its display area where
      * the first line of text on a page would normally end for the current
-     * <code>ComponentOrienation</code>.  Equal to NORTHEAST for horizontal,
+     * {@code ComponentOrientation}.  Equal to NORTHEAST for horizontal,
      * left-to-right orientations and NORTHWEST for horizontal, right-to-left
      * orientations.
      */
@@ -178,7 +178,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     /**
      * Place the component in the corner of its display area where
      * the last line of text on a page would normally start for the current
-     * <code>ComponentOrienation</code>.  Equal to SOUTHWEST for horizontal,
+     * {@code ComponentOrientation}.  Equal to SOUTHWEST for horizontal,
      * left-to-right orientations and SOUTHEAST for horizontal, right-to-left
      * orientations.
      */
@@ -187,7 +187,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     /**
      * Place the component in the corner of its display area where
      * the last line of text on a page would normally end for the current
-     * <code>ComponentOrienation</code>.  Equal to SOUTHEAST for horizontal,
+     * {@code ComponentOrientation}.  Equal to SOUTHEAST for horizontal,
      * left-to-right orientations and SOUTHWEST for horizontal, right-to-left
      * orientations.
      */
@@ -437,7 +437,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * <code>LINE_START</code>, <code>LINE_END</code>,
      * <code>FIRST_LINE_START</code>, <code>FIRST_LINE_END</code>,
      * <code>LAST_LINE_START</code> and <code>LAST_LINE_END</code>.  The
-     * baseline relvative values are:
+     * baseline relative values are:
      * <code>BASELINE</code>, <code>BASELINE_LEADING</code>,
      * <code>BASELINE_TRAILING</code>,
      * <code>ABOVE_BASELINE</code>, <code>ABOVE_BASELINE_LEADING</code>,

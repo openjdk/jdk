@@ -43,10 +43,13 @@
 #endif
 
 typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
-static void SetupI18nProps(LCID lcid, char** language, char** country,
+static void SetupI18nProps(LCID lcid, char** language, char** script, char** country,
                char** variant, char** encoding);
 
 #define SHELL_KEY "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders"
+
+#define PROPSIZE 9      // eight-letter + null terminator
+#define SNAMESIZE 86    // max number of chars for LOCALE_SNAME is 85
 
 static char *
 getEncodingInternal(LCID lcid)
@@ -127,30 +130,31 @@ getEncodingFromLangID(LANGID langID)
     return getEncodingInternal(MAKELCID(langID, SORT_DEFAULT));
 }
 
+// Returns BCP47 Language Tag
 DllExport const char *
 getJavaIDFromLangID(LANGID langID)
 {
-    char * lang;
-    char * ctry;
-    char * vrnt;
-    char * enc;
-    char * ret = malloc(16);
+    char * elems[5]; // lang, script, ctry, variant, encoding
+    char * ret = malloc(SNAMESIZE);
+    int index;
 
-    SetupI18nProps(MAKELCID(langID, SORT_DEFAULT), &lang, &ctry, &vrnt, &enc);
-    if (ctry[0] != '\0') {
-        if (vrnt[0] != '\0') {
-            sprintf(ret, "%s_%s_%s", lang, ctry, vrnt);
-        } else {
-            sprintf(ret, "%s_%s", lang, ctry);
+    SetupI18nProps(MAKELCID(langID, SORT_DEFAULT),
+                   &(elems[0]), &(elems[1]), &(elems[2]), &(elems[3]), &(elems[4]));
+
+    // there always is the "language" tag
+    strcpy(ret, elems[0]);
+
+    // append other elements, if any
+    for (index = 1; index < 4; index++) {
+        if ((elems[index])[0] != '\0') {
+            strcat(ret, "-");
+            strcat(ret, elems[index]);
         }
-    } else {
-        strcpy(ret, lang);
     }
 
-    free(lang);
-    free(ctry);
-    free(vrnt);
-    free(enc);
+    for (index = 0; index < 5; index++) {
+        free(elems[index]);
+    }
 
     return ret;
 }
@@ -289,39 +293,38 @@ cpu_isalist(void)
     return NULL;
 }
 
-#define PROPSIZE 3      // two-letter + null terminator
 static void
-SetupI18nProps(LCID lcid, char** language, char** country,
+SetupI18nProps(LCID lcid, char** language, char** script, char** country,
                char** variant, char** encoding) {
+    /* script */
+    char tmp[SNAMESIZE];
+    *script = malloc(PROPSIZE);
+    if (GetLocaleInfo(lcid,
+                      LOCALE_SNAME, tmp, SNAMESIZE) == 0 ||
+        sscanf(tmp, "%*[a-z\\-]%1[A-Z]%[a-z]", *script, &((*script)[1])) == 0 ||
+        strlen(*script) != 4) {
+        (*script)[0] = '\0';
+    }
+
     /* country */
     *country = malloc(PROPSIZE);
     if (GetLocaleInfo(lcid,
-                      LOCALE_SISO3166CTRYNAME, *country, PROPSIZE) == 0) {
+                      LOCALE_SISO3166CTRYNAME, *country, PROPSIZE) == 0 &&
+        GetLocaleInfo(lcid,
+                      LOCALE_SISO3166CTRYNAME2, *country, PROPSIZE) == 0) {
         (*country)[0] = '\0';
     }
 
     /* language */
     *language = malloc(PROPSIZE);
-    if (lcid == 0x46c) {
-        /* Windows returns non-existent language code "ns" for Northern Sotho.
-         * Defaults to en_US
-         */
-        strcpy(*language, "en");
-        strcpy(*country, "US");
-    } else if (GetLocaleInfo(lcid,
-                      LOCALE_SISO639LANGNAME, *language, PROPSIZE) == 0) {
-        if (lcid == 0x465) {
-            /* for some reason, Windows returns "div" for this Divehi LCID, even though
-             * there is a two letter language code "dv".  Tweak it here.
-             */
-            strcpy(*language, "dv");
-            strcpy(*country, "MV");
-        } else {
+    if (GetLocaleInfo(lcid,
+                      LOCALE_SISO639LANGNAME, *language, PROPSIZE) == 0 &&
+        GetLocaleInfo(lcid,
+                      LOCALE_SISO639LANGNAME2, *language, PROPSIZE) == 0) {
             /* defaults to en_US */
             strcpy(*language, "en");
             strcpy(*country, "US");
         }
-    }
 
     /* variant */
     *variant = malloc(PROPSIZE);
@@ -564,7 +567,7 @@ GetJavaProperties(JNIEnv* env)
 
     /*
      *  user.language
-     *  user.country, user.variant (if user's environment specifies them)
+     *  user.script, user.country, user.variant (if user's environment specifies them)
      *  file.encoding
      *  file.encoding.pkg
      */
@@ -582,16 +585,19 @@ GetJavaProperties(JNIEnv* env)
 
             SetupI18nProps(userDefaultUILang,
                            &sprops.language,
+                           &sprops.script,
                            &sprops.country,
                            &sprops.variant,
                            &display_encoding);
             SetupI18nProps(userDefaultLCID,
                            &sprops.format_language,
+                           &sprops.format_script,
                            &sprops.format_country,
                            &sprops.format_variant,
                            &sprops.encoding);
             SetupI18nProps(userDefaultUILang,
                            &sprops.display_language,
+                           &sprops.display_script,
                            &sprops.display_country,
                            &sprops.display_variant,
                            &display_encoding);

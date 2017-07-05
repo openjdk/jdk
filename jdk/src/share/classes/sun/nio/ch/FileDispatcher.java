@@ -45,4 +45,12 @@ abstract class FileDispatcher extends NativeDispatcher {
 
     abstract void release(FileDescriptor fd, long pos, long size)
         throws IOException;
+
+    /**
+     * Returns a dup of fd if a file descriptor is required for
+     * memory-mapping operations, otherwise returns an invalid
+     * FileDescriptor (meaning a newly allocated FileDescriptor)
+     */
+    abstract FileDescriptor duplicateForMapping(FileDescriptor fd)
+        throws IOException;
 }

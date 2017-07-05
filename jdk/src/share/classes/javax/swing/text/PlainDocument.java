@@ -25,7 +25,6 @@
 package javax.swing.text;
 
 import java.util.Vector;
-import javax.swing.event.*;
 
 /**
  * A plain document that maintains no character attributes.  The
@@ -118,7 +117,7 @@ public class PlainDocument extends AbstractDocument {
         Object filterNewlines = getProperty("filterNewlines");
         if ((filterNewlines instanceof Boolean) && filterNewlines.equals(Boolean.TRUE)) {
             if ((str != null) && (str.indexOf('\n') >= 0)) {
-                StringBuffer filtered = new StringBuffer(str);
+                StringBuilder filtered = new StringBuilder(str);
                 int n = filtered.length();
                 for (int i = 0; i < n; i++) {
                     if (filtered.charAt(i) == '\n') {
@@ -204,11 +203,9 @@ public class PlainDocument extends AbstractDocument {
                 }
             }
             if (hasBreaks) {
-                int rmCount = 1;
                 removed.addElement(rmCandidate);
                 if ((offset + length == rmOffs1) && (lastOffset != rmOffs1) &&
                     ((index+1) < lineMap.getElementCount())) {
-                    rmCount += 1;
                     Element e = lineMap.getElement(index+1);
                     removed.addElement(e);
                     rmOffs1 = e.getEndOffset();

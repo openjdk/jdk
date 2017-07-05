@@ -83,7 +83,7 @@ public class FormatData_fr_CH extends ListResourceBundle {
                     "{1} {0}" // date-time pattern
                 }
             },
-            { "DateTimePatternChars", "GaMjkHmsSEDFwWahKzZ" },
+            { "DateTimePatternChars", "GaMjkHmsSEDFwWxhKzZ" },
         };
     }
 }

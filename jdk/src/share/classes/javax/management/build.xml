@@ -35,18 +35,18 @@
      . Please also read the important comment on basedir definition below.
  -->
 
-<project name="JMX API Version 1.4 - Java SE 6 implementation" 
-	 default="jar" 
-	 basedir="../../../../.." 
+<project name="JMX API Version 1.4 - Java SE 6 implementation"
+	 default="jar"
+	 basedir="../../../../.."
 	 >
 
-    <!-- IMPORTANT: BASEDIR DEFINITION  
-         This file is assumed to be in: 
-         <src_bundle_dir>/j2se/src/share/classes/javax/management 
-         Thus the basedir for this project is defined above as: 
-         basedir="../../../../.."  
+    <!-- IMPORTANT: BASEDIR DEFINITION
+         This file is assumed to be in:
+         <src_bundle_dir>/j2se/src/share/classes/javax/management
+         Thus the basedir for this project is defined above as:
+         basedir="../../../../.."
          in order to be the parent dir of src subdir.
-	 Result of the build will be placed in ${basedir}/build_jmx 
+	 Result of the build will be placed in ${basedir}/build_jmx
 	 as defined by ${dir.build} property below.
      -->
 
@@ -163,14 +163,14 @@
         <echo message="   BUILD_DATE                  = ${BUILD_DATE}" />
 
     </target>
-    
+
 
 
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <!-- Call classes subtargets and rmic stubs generation -->
 
-    <target name="classes" depends="init,classes-javac,classes-rmic" 
-	    description="Call classes subtargets and rmic stubs generation" 
+    <target name="classes" depends="init,classes-javac,classes-rmic"
+	    description="Call classes subtargets and rmic stubs generation"
     />
 
 
@@ -183,13 +183,13 @@
         <mkdir dir="${dir.build.classes}" />
 
 	<javac 	srcdir="${dir.src}"
-		destdir="${dir.build.classes}" 
+		destdir="${dir.build.classes}"
 		source="${flag.javac.source}"
 		debug="${flag.debug}"
 		debuglevel="${flag.debug.level}"
 		optimize="${flag.optimize}"
 		includeAntRuntime="no"
-		includeJavaRuntime="no"	
+		includeJavaRuntime="no"
 	        >
 	    <include name="javax/management/**"/>
 	    <include name="com/sun/jmx/**"/>
@@ -253,7 +253,7 @@
 
        <mkdir dir="${dir.build.lib}" />
 
-       <jar jarfile="${dir.build.lib}/jmx.jar" 
+       <jar jarfile="${dir.build.lib}/jmx.jar"
 	    update="true"
 	    >
 
@@ -269,10 +269,10 @@
 		    <attribute name="Sealed"                 value="true" />
 		    <attribute name="Specification-Title"    value="JMX(TM) API" />
 		    <attribute name="Specification-Version"  value="1.4" />
-		    <attribute name="Specification-Vendor"   value="Sun Microsystems, Inc." />
+		    <attribute name="Specification-Vendor"   value="Oracle Corporation" />
 		    <attribute name="Implementation-Title"   value="JMX(TM) API, Java SE 6 implementation" />
-		    <attribute name="Implementation-Version" value="${BUILD_DATE} rebuild of Mustang JMX sources" /> 
-		    <attribute name="Implementation-Vendor"  value="Source bundle from Sun Microsystems, Inc. - Customer rebuilt" />
+		    <attribute name="Implementation-Version" value="${BUILD_DATE} rebuild of Java SE JMX sources" />
+		    <attribute name="Implementation-Vendor"  value="Source bundle from Oracle Corporation - Customer rebuilt" />
 		</section>
 	    </manifest>
        </jar>
@@ -295,16 +295,16 @@
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <!-- Delete build directory and all its contents -->
 
-    <target name="clean-all" 
+    <target name="clean-all"
             description="Delete build directory and all its contents" >
         <delete dir="${dir.build}" />
-    </target>               
-        
-  
+    </target>
+
+
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <!-- Clean all and build everything -->
 
-    <target name="all" depends="clean-all,jar" 
+    <target name="all" depends="clean-all,jar"
 	    description="Clean all and build everything" />
 
 

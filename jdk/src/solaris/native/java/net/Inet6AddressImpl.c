@@ -506,7 +506,16 @@ ping6(JNIEnv *env, jint fd, struct sockaddr_in6* him, jint timeout,
       plen = sizeof(struct icmp6_hdr) + sizeof(tv);
       n = sendto(fd, sendbuf, plen, 0, (struct sockaddr*) him, sizeof(struct sockaddr_in6));
       if (n < 0 && errno != EINPROGRESS) {
+#ifdef __linux__
+        if (errno != EINVAL)
+          /*
+           * On some Linuxes, when bound to the loopback interface, sendto
+           * will fail and errno will be set to EINVAL. When that happens,
+           * don't throw an exception, just return false.
+           */
+#endif /*__linux__ */
         NET_ThrowNew(env, errno, "Can't send ICMP packet");
+        close(fd);
         return JNI_FALSE;
       }
 

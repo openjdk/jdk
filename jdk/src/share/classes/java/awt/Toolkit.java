@@ -1831,7 +1831,11 @@ public abstract class Toolkit {
             desktopProperties.put(name, newValue);
         }
 
-        desktopPropsSupport.firePropertyChange(name, oldValue, newValue);
+        // Don't fire change event if old and new values are null.
+        // It helps to avoid recursive resending of WM_THEMECHANGED
+        if (oldValue != null || newValue != null) {
+            desktopPropsSupport.firePropertyChange(name, oldValue, newValue);
+        }
     }
 
     /**

@@ -120,6 +120,13 @@ public class CipherTest {
                 return false;
             }
 
+            // ignore exportable cipher suite for TLSv1.1
+            if (protocol.equals("TLSv1.1")) {
+                if(cipherSuite.indexOf("_EXPORT_") != -1) {
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -149,18 +156,14 @@ public class CipherTest {
             cipherSuites.length * protocols.length * clientAuths.length);
         for (int i = 0; i < cipherSuites.length; i++) {
             String cipherSuite = cipherSuites[i];
-            if (peerFactory.isSupported(cipherSuite) == false) {
-                continue;
-            }
-            // skip kerberos cipher suites
-            if (cipherSuite.startsWith("TLS_KRB5")) {
-                continue;
-            }
+
             for (int j = 0; j < protocols.length; j++) {
                 String protocol = protocols[j];
-                if (protocol.equals("SSLv2Hello")) {
+
+                if (!peerFactory.isSupported(cipherSuite, protocol)) {
                     continue;
                 }
+
                 for (int k = 0; k < clientAuths.length; k++) {
                     String clientAuth = clientAuths[k];
                     if ((clientAuth != null) &&
@@ -297,7 +300,7 @@ public class CipherTest {
             throws Exception {
         long time = System.currentTimeMillis();
         String relPath;
-        if ((args.length > 0) && args[0].equals("sh")) {
+        if ((args != null) && (args.length > 0) && args[0].equals("sh")) {
             relPath = pathToStoresSH;
         } else {
             relPath = pathToStores;
@@ -336,7 +339,36 @@ public class CipherTest {
 
         abstract Server newServer(CipherTest cipherTest) throws Exception;
 
-        boolean isSupported(String cipherSuite) {
+        boolean isSupported(String cipherSuite, String protocol) {
+            // skip kerberos cipher suites
+            if (cipherSuite.startsWith("TLS_KRB5")) {
+                System.out.println("Skipping unsupported test for " +
+                                    cipherSuite + " of " + protocol);
+                return false;
+            }
+
+            // skip SSLv2Hello protocol
+            if (protocol.equals("SSLv2Hello")) {
+                System.out.println("Skipping unsupported test for " +
+                                    cipherSuite + " of " + protocol);
+                return false;
+            }
+
+            // ignore exportable cipher suite for TLSv1.1
+            if (protocol.equals("TLSv1.1")) {
+                if (cipherSuite.indexOf("_EXPORT_WITH") != -1) {
+                    System.out.println("Skipping obsoleted test for " +
+                                        cipherSuite + " of " + protocol);
+                    return false;
+                }
+            }
+
+            // ignore obsoleted cipher suite for the specified protocol
+            // TODO
+
+            // ignore unsupported cipher suite for the specified protocol
+            // TODO
+
             return true;
         }
     }

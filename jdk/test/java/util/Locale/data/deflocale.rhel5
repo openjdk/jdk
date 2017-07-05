@@ -465,15 +465,15 @@ format locale: ID: be_BY, Name: Belarusian (Belarus)
 default charset: UTF-8
 
 OS Locale:  be_BY.utf8@latin
-default locale: ID: be_BY, Name: Belarusian (Belarus)
-display locale: ID: be_BY, Name: Belarusian (Belarus)
-format locale: ID: be_BY, Name: Belarusian (Belarus)
+default locale: ID: be_BY_#Latn, Name: Belarusian (Latin,Belarus)
+display locale: ID: be_BY_#Latn, Name: Belarusian (Latin,Belarus)
+format locale: ID: be_BY_#Latn, Name: Belarusian (Latin,Belarus)
 default charset: UTF-8
 
 OS Locale:  be_BY@latin
-default locale: ID: be_BY, Name: Belarusian (Belarus)
-display locale: ID: be_BY, Name: Belarusian (Belarus)
-format locale: ID: be_BY, Name: Belarusian (Belarus)
+default locale: ID: be_BY_#Latn, Name: Belarusian (Latin,Belarus)
+display locale: ID: be_BY_#Latn, Name: Belarusian (Latin,Belarus)
+format locale: ID: be_BY_#Latn, Name: Belarusian (Latin,Belarus)
 default charset: UTF-8
 
 OS Locale:  bg_BG
@@ -518,13 +518,13 @@ display locale: ID: bn_IN, Name: Bengali (India)
 format locale: ID: bn_IN, Name: Bengali (India)
 default charset: UTF-8
 
-OS Locale:  bokmål
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+OS Locale:  bokmal
+default locale: ID: nb_NO, Name: Norwegian Bokmål (Norway)
+display locale: ID: nb_NO, Name: Norwegian Bokmål (Norway)
+format locale: ID: nb_NO, Name: Norwegian Bokmål (Norway)
 default charset: ISO-8859-1
 
-OS Locale:  bokmal
+OS Locale:  bokmål
 default locale: ID: en, Name: English
 display locale: ID: en, Name: English
 format locale: ID: en, Name: English
@@ -579,15 +579,15 @@ format locale: ID: bs_BA, Name: Bosnian (Bosnia and Herzegovina)
 default charset: UTF-8
 
 OS Locale:  byn_ER
-default locale: ID: en_ER, Name: English (Eritrea)
-display locale: ID: en_ER, Name: English (Eritrea)
-format locale: ID: en_ER, Name: English (Eritrea)
+default locale: ID: byn_ER, Name: Blin (Eritrea)
+display locale: ID: byn_ER, Name: Blin (Eritrea)
+format locale: ID: byn_ER, Name: Blin (Eritrea)
 default charset: UTF-8
 
 OS Locale:  byn_ER.utf8
-default locale: ID: en_ER, Name: English (Eritrea)
-display locale: ID: en_ER, Name: English (Eritrea)
-format locale: ID: en_ER, Name: English (Eritrea)
+default locale: ID: byn_ER, Name: Blin (Eritrea)
+display locale: ID: byn_ER, Name: Blin (Eritrea)
+format locale: ID: byn_ER, Name: Blin (Eritrea)
 default charset: UTF-8
 
 OS Locale:  ca_AD
@@ -705,15 +705,15 @@ format locale: ID: cs_CZ, Name: Czech (Czech Republic)
 default charset: UTF-8
 
 OS Locale:  csb_PL
-default locale: ID: en_PL, Name: English (Poland)
-display locale: ID: en_PL, Name: English (Poland)
-format locale: ID: en_PL, Name: English (Poland)
+default locale: ID: csb_PL, Name: Kashubian (Poland)
+display locale: ID: csb_PL, Name: Kashubian (Poland)
+format locale: ID: csb_PL, Name: Kashubian (Poland)
 default charset: UTF-8
 
 OS Locale:  csb_PL.utf8
-default locale: ID: en_PL, Name: English (Poland)
-display locale: ID: en_PL, Name: English (Poland)
-format locale: ID: en_PL, Name: English (Poland)
+default locale: ID: csb_PL, Name: Kashubian (Poland)
+display locale: ID: csb_PL, Name: Kashubian (Poland)
+format locale: ID: csb_PL, Name: Kashubian (Poland)
 default charset: UTF-8
 
 OS Locale:  cy_GB
@@ -939,9 +939,9 @@ format locale: ID: dz_BT, Name: Dzongkha (Bhutan)
 default charset: UTF-8
 
 OS Locale:  eesti
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+default locale: ID: et_EE, Name: Estonian (Estonia)
+display locale: ID: et_EE, Name: Estonian (Estonia)
+format locale: ID: et_EE, Name: Estonian (Estonia)
 default charset: ISO-8859-1
 
 OS Locale:  el_CY
@@ -1623,9 +1623,9 @@ format locale: ID: es_VE, Name: Spanish (Venezuela)
 default charset: UTF-8
 
 OS Locale:  estonian
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+default locale: ID: et_EE, Name: Estonian (Estonia)
+display locale: ID: et_EE, Name: Estonian (Estonia)
+format locale: ID: et_EE, Name: Estonian (Estonia)
 default charset: ISO-8859-1
 
 OS Locale:  et_EE
@@ -1929,15 +1929,15 @@ format locale: ID: ga_IE, Name: Irish (Ireland)
 default charset: ISO-8859-15
 
 OS Locale:  galego
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+default locale: ID: gl_ES, Name: Gallegan (Spain)
+display locale: ID: gl_ES, Name: Gallegan (Spain)
+format locale: ID: gl_ES, Name: Gallegan (Spain)
 default charset: ISO-8859-1
 
 OS Locale:  galician
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+default locale: ID: gl_ES, Name: Gallegan (Spain)
+display locale: ID: gl_ES, Name: Gallegan (Spain)
+format locale: ID: gl_ES, Name: Gallegan (Spain)
 default charset: ISO-8859-1
 
 OS Locale:  gd_GB
@@ -1965,51 +1965,51 @@ format locale: ID: de_DE, Name: German (Germany)
 default charset: ISO-8859-1
 
 OS Locale:  gez_ER
-default locale: ID: en_ER, Name: English (Eritrea)
-display locale: ID: en_ER, Name: English (Eritrea)
-format locale: ID: en_ER, Name: English (Eritrea)
+default locale: ID: gez_ER, Name: Geez (Eritrea)
+display locale: ID: gez_ER, Name: Geez (Eritrea)
+format locale: ID: gez_ER, Name: Geez (Eritrea)
 default charset: UTF-8
 
 OS Locale:  gez_ER.utf8
-default locale: ID: en_ER, Name: English (Eritrea)
-display locale: ID: en_ER, Name: English (Eritrea)
-format locale: ID: en_ER, Name: English (Eritrea)
+default locale: ID: gez_ER, Name: Geez (Eritrea)
+display locale: ID: gez_ER, Name: Geez (Eritrea)
+format locale: ID: gez_ER, Name: Geez (Eritrea)
 default charset: UTF-8
 
 OS Locale:  gez_ER.utf8@abegede
-default locale: ID: en_ER, Name: English (Eritrea)
-display locale: ID: en_ER, Name: English (Eritrea)
-format locale: ID: en_ER, Name: English (Eritrea)
+default locale: ID: gez_ER, Name: Geez (Eritrea)
+display locale: ID: gez_ER, Name: Geez (Eritrea)
+format locale: ID: gez_ER, Name: Geez (Eritrea)
 default charset: UTF-8
 
 OS Locale:  gez_ER@abegede
-default locale: ID: en_ER, Name: English (Eritrea)
-display locale: ID: en_ER, Name: English (Eritrea)
-format locale: ID: en_ER, Name: English (Eritrea)
+default locale: ID: gez_ER, Name: Geez (Eritrea)
+display locale: ID: gez_ER, Name: Geez (Eritrea)
+format locale: ID: gez_ER, Name: Geez (Eritrea)
 default charset: UTF-8
 
 OS Locale:  gez_ET
-default locale: ID: en_ET, Name: English (Ethiopia)
-display locale: ID: en_ET, Name: English (Ethiopia)
-format locale: ID: en_ET, Name: English (Ethiopia)
+default locale: ID: gez_ET, Name: Geez (Ethiopia)
+display locale: ID: gez_ET, Name: Geez (Ethiopia)
+format locale: ID: gez_ET, Name: Geez (Ethiopia)
 default charset: UTF-8
 
 OS Locale:  gez_ET.utf8
-default locale: ID: en_ET, Name: English (Ethiopia)
-display locale: ID: en_ET, Name: English (Ethiopia)
-format locale: ID: en_ET, Name: English (Ethiopia)
+default locale: ID: gez_ET, Name: Geez (Ethiopia)
+display locale: ID: gez_ET, Name: Geez (Ethiopia)
+format locale: ID: gez_ET, Name: Geez (Ethiopia)
 default charset: UTF-8
 
 OS Locale:  gez_ET.utf8@abegede
-default locale: ID: en_ET, Name: English (Ethiopia)
-display locale: ID: en_ET, Name: English (Ethiopia)
-format locale: ID: en_ET, Name: English (Ethiopia)
+default locale: ID: gez_ET, Name: Geez (Ethiopia)
+display locale: ID: gez_ET, Name: Geez (Ethiopia)
+format locale: ID: gez_ET, Name: Geez (Ethiopia)
 default charset: UTF-8
 
 OS Locale:  gez_ET@abegede
-default locale: ID: en_ET, Name: English (Ethiopia)
-display locale: ID: en_ET, Name: English (Ethiopia)
-format locale: ID: en_ET, Name: English (Ethiopia)
+default locale: ID: gez_ET, Name: Geez (Ethiopia)
+display locale: ID: gez_ET, Name: Geez (Ethiopia)
+format locale: ID: gez_ET, Name: Geez (Ethiopia)
 default charset: UTF-8
 
 OS Locale:  gl_ES
@@ -2139,21 +2139,21 @@ format locale: ID: hr_HR, Name: Croatian (Croatia)
 default charset: ISO-8859-2
 
 OS Locale:  hsb_DE
-default locale: ID: en_DE, Name: English (Germany)
-display locale: ID: en_DE, Name: English (Germany)
-format locale: ID: en_DE, Name: English (Germany)
+default locale: ID: hsb_DE, Name: Upper Sorbian (Germany)
+display locale: ID: hsb_DE, Name: Upper Sorbian (Germany)
+format locale: ID: hsb_DE, Name: Upper Sorbian (Germany)
 default charset: ISO-8859-2
 
 OS Locale:  hsb_DE.iso88592
-default locale: ID: en_DE, Name: English (Germany)
-display locale: ID: en_DE, Name: English (Germany)
-format locale: ID: en_DE, Name: English (Germany)
+default locale: ID: hsb_DE, Name: Upper Sorbian (Germany)
+display locale: ID: hsb_DE, Name: Upper Sorbian (Germany)
+format locale: ID: hsb_DE, Name: Upper Sorbian (Germany)
 default charset: ISO-8859-2
 
 OS Locale:  hsb_DE.utf8
-default locale: ID: en_DE, Name: English (Germany)
-display locale: ID: en_DE, Name: English (Germany)
-format locale: ID: en_DE, Name: English (Germany)
+default locale: ID: hsb_DE, Name: Upper Sorbian (Germany)
+display locale: ID: hsb_DE, Name: Upper Sorbian (Germany)
+format locale: ID: hsb_DE, Name: Upper Sorbian (Germany)
 default charset: UTF-8
 
 OS Locale:  hu_HU
@@ -2445,15 +2445,15 @@ format locale: ID: ko_KR, Name: Korean (South Korea)
 default charset: UTF-8
 
 OS Locale:  korean
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+default locale: ID: ko_KR, Name: Korean (South Korea)
+display locale: ID: ko_KR, Name: Korean (South Korea)
+format locale: ID: ko_KR, Name: Korean (South Korea)
 default charset: EUC-KR
 
 OS Locale:  korean.euc
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+default locale: ID: ko_KR, Name: Korean (South Korea)
+display locale: ID: ko_KR, Name: Korean (South Korea)
+format locale: ID: ko_KR, Name: Korean (South Korea)
 default charset: EUC-KR
 
 OS Locale:  ku_TR
@@ -2523,9 +2523,9 @@ format locale: ID: lg_UG, Name: Ganda (Uganda)
 default charset: UTF-8
 
 OS Locale:  lithuanian
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+default locale: ID: lt_LT, Name: Lithuanian (Lithuania)
+display locale: ID: lt_LT, Name: Lithuanian (Lithuania)
+format locale: ID: lt_LT, Name: Lithuanian (Lithuania)
 default charset: ISO-8859-13
 
 OS Locale:  lo_LA
@@ -2577,15 +2577,15 @@ format locale: ID: lv_LV, Name: Latvian (Latvia)
 default charset: UTF-8
 
 OS Locale:  mai_IN
-default locale: ID: en_IN, Name: English (India)
-display locale: ID: en_IN, Name: English (India)
-format locale: ID: en_IN, Name: English (India)
+default locale: ID: mai_IN, Name: Maithili (India)
+display locale: ID: mai_IN, Name: Maithili (India)
+format locale: ID: mai_IN, Name: Maithili (India)
 default charset: UTF-8
 
 OS Locale:  mai_IN.utf8
-default locale: ID: en_IN, Name: English (India)
-display locale: ID: en_IN, Name: English (India)
-format locale: ID: en_IN, Name: English (India)
+default locale: ID: mai_IN, Name: Maithili (India)
+display locale: ID: mai_IN, Name: Maithili (India)
+format locale: ID: mai_IN, Name: Maithili (India)
 default charset: UTF-8
 
 OS Locale:  mg_MG
@@ -2859,21 +2859,21 @@ format locale: ID: nr_ZA, Name: South Ndebele (South Africa)
 default charset: UTF-8
 
 OS Locale:  nso_ZA
-default locale: ID: en_ZA, Name: English (South Africa)
-display locale: ID: en_ZA, Name: English (South Africa)
-format locale: ID: en_ZA, Name: English (South Africa)
+default locale: ID: nso_ZA, Name: Pedi (South Africa)
+display locale: ID: nso_ZA, Name: Pedi (South Africa)
+format locale: ID: nso_ZA, Name: Pedi (South Africa)
 default charset: UTF-8
 
 OS Locale:  nso_ZA.utf8
-default locale: ID: en_ZA, Name: English (South Africa)
-display locale: ID: en_ZA, Name: English (South Africa)
-format locale: ID: en_ZA, Name: English (South Africa)
+default locale: ID: nso_ZA, Name: Pedi (South Africa)
+display locale: ID: nso_ZA, Name: Pedi (South Africa)
+format locale: ID: nso_ZA, Name: Pedi (South Africa)
 default charset: UTF-8
 
 OS Locale:  nynorsk
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+default locale: ID: nn_NO, Name: Norwegian Nynorsk (Norway)
+display locale: ID: nn_NO, Name: Norwegian Nynorsk (Norway)
+format locale: ID: nn_NO, Name: Norwegian Nynorsk (Norway)
 default charset: ISO-8859-1
 
 OS Locale:  oc_FR
@@ -3147,15 +3147,15 @@ format locale: ID: si_LK, Name: Sinhalese (Sri Lanka)
 default charset: UTF-8
 
 OS Locale:  sid_ET
-default locale: ID: en_ET, Name: English (Ethiopia)
-display locale: ID: en_ET, Name: English (Ethiopia)
-format locale: ID: en_ET, Name: English (Ethiopia)
+default locale: ID: sid_ET, Name: Sidamo (Ethiopia)
+display locale: ID: sid_ET, Name: Sidamo (Ethiopia)
+format locale: ID: sid_ET, Name: Sidamo (Ethiopia)
 default charset: UTF-8
 
 OS Locale:  sid_ET.utf8
-default locale: ID: en_ET, Name: English (Ethiopia)
-display locale: ID: en_ET, Name: English (Ethiopia)
-format locale: ID: en_ET, Name: English (Ethiopia)
+default locale: ID: sid_ET, Name: Sidamo (Ethiopia)
+display locale: ID: sid_ET, Name: Sidamo (Ethiopia)
+format locale: ID: sid_ET, Name: Sidamo (Ethiopia)
 default charset: UTF-8
 
 OS Locale:  sk_SK
@@ -3321,39 +3321,39 @@ format locale: ID: sr_CS, Name: Serbian (Serbia and Montenegro)
 default charset: UTF-8
 
 OS Locale:  sr_ME
-default locale: ID: sr, Name: Serbian
-display locale: ID: sr, Name: Serbian
-format locale: ID: sr, Name: Serbian
+default locale: ID: sr_ME, Name: Serbian (Montenegro)
+display locale: ID: sr_ME, Name: Serbian (Montenegro)
+format locale: ID: sr_ME, Name: Serbian (Montenegro)
 default charset: UTF-8
 
 OS Locale:  sr_ME.utf8
-default locale: ID: sr, Name: Serbian
-display locale: ID: sr, Name: Serbian
-format locale: ID: sr, Name: Serbian
+default locale: ID: sr_ME, Name: Serbian (Montenegro)
+display locale: ID: sr_ME, Name: Serbian (Montenegro)
+format locale: ID: sr_ME, Name: Serbian (Montenegro)
 default charset: UTF-8
 
 OS Locale:  sr_RS
-default locale: ID: sr, Name: Serbian
-display locale: ID: sr, Name: Serbian
-format locale: ID: sr, Name: Serbian
+default locale: ID: sr_RS, Name: Serbian (Serbia)
+display locale: ID: sr_RS, Name: Serbian (Serbia)
+format locale: ID: sr_RS, Name: Serbian (Serbia)
 default charset: UTF-8
 
 OS Locale:  sr_RS.utf8
-default locale: ID: sr, Name: Serbian
-display locale: ID: sr, Name: Serbian
-format locale: ID: sr, Name: Serbian
+default locale: ID: sr_RS, Name: Serbian (Serbia)
+display locale: ID: sr_RS, Name: Serbian (Serbia)
+format locale: ID: sr_RS, Name: Serbian (Serbia)
 default charset: UTF-8
 
 OS Locale:  sr_RS.utf8@latin
-default locale: ID: sr, Name: Serbian
-display locale: ID: sr, Name: Serbian
-format locale: ID: sr, Name: Serbian
+default locale: ID: sr_RS_#Latn, Name: Serbian (Latin,Serbia)
+display locale: ID: sr_RS_#Latn, Name: Serbian (Latin,Serbia)
+format locale: ID: sr_RS_#Latn, Name: Serbian (Latin,Serbia)
 default charset: UTF-8
 
 OS Locale:  sr_RS@latin
-default locale: ID: sr, Name: Serbian
-display locale: ID: sr, Name: Serbian
-format locale: ID: sr, Name: Serbian
+default locale: ID: sr_RS_#Latn, Name: Serbian (Latin,Serbia)
+display locale: ID: sr_RS_#Latn, Name: Serbian (Latin,Serbia)
+format locale: ID: sr_RS_#Latn, Name: Serbian (Latin,Serbia)
 default charset: UTF-8
 
 OS Locale:  ss_ZA
@@ -3507,9 +3507,9 @@ format locale: ID: th_TH, Name: Thai (Thailand)
 default charset: UTF-8
 
 OS Locale:  thai
-default locale: ID: en, Name: English
-display locale: ID: en, Name: English
-format locale: ID: en, Name: English
+default locale: ID: th_TH, Name: Thai (Thailand)
+display locale: ID: th_TH, Name: Thai (Thailand)
+format locale: ID: th_TH, Name: Thai (Thailand)
 default charset: TIS-620
 
 OS Locale:  ti_ER
@@ -3537,15 +3537,15 @@ format locale: ID: ti_ET, Name: Tigrinya (Ethiopia)
 default charset: UTF-8
 
 OS Locale:  tig_ER
-default locale: ID: en_ER, Name: English (Eritrea)
-display locale: ID: en_ER, Name: English (Eritrea)
-format locale: ID: en_ER, Name: English (Eritrea)
+default locale: ID: tig_ER, Name: Tigre (Eritrea)
+display locale: ID: tig_ER, Name: Tigre (Eritrea)
+format locale: ID: tig_ER, Name: Tigre (Eritrea)
 default charset: UTF-8
 
 OS Locale:  tig_ER.utf8
-default locale: ID: en_ER, Name: English (Eritrea)
-display locale: ID: en_ER, Name: English (Eritrea)
-format locale: ID: en_ER, Name: English (Eritrea)
+default locale: ID: tig_ER, Name: Tigre (Eritrea)
+display locale: ID: tig_ER, Name: Tigre (Eritrea)
+format locale: ID: tig_ER, Name: Tigre (Eritrea)
 default charset: UTF-8
 
 OS Locale:  tl_PH
@@ -3681,15 +3681,15 @@ format locale: ID: uz_UZ, Name: Uzbek (Uzbekistan)
 default charset: ISO-8859-1
 
 OS Locale:  uz_UZ.utf8@cyrillic
-default locale: ID: uz_UZ, Name: Uzbek (Uzbekistan)
-display locale: ID: uz_UZ, Name: Uzbek (Uzbekistan)
-format locale: ID: uz_UZ, Name: Uzbek (Uzbekistan)
+default locale: ID: uz_UZ_#Cyrl, Name: Uzbek (Cyrillic,Uzbekistan)
+display locale: ID: uz_UZ_#Cyrl, Name: Uzbek (Cyrillic,Uzbekistan)
+format locale: ID: uz_UZ_#Cyrl, Name: Uzbek (Cyrillic,Uzbekistan)
 default charset: UTF-8
 
 OS Locale:  uz_UZ@cyrillic
-default locale: ID: uz_UZ, Name: Uzbek (Uzbekistan)
-display locale: ID: uz_UZ, Name: Uzbek (Uzbekistan)
-format locale: ID: uz_UZ, Name: Uzbek (Uzbekistan)
+default locale: ID: uz_UZ_#Cyrl, Name: Uzbek (Cyrillic,Uzbekistan)
+display locale: ID: uz_UZ_#Cyrl, Name: Uzbek (Cyrillic,Uzbekistan)
+format locale: ID: uz_UZ_#Cyrl, Name: Uzbek (Cyrillic,Uzbekistan)
 default charset: UTF-8
 
 OS Locale:  ve_ZA

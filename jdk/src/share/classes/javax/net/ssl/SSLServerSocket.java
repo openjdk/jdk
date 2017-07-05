@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ import java.net.*;
  * @since 1.4
  * @author David Brownell
  */
-public abstract class SSLServerSocket extends ServerSocket
-{
+public abstract class SSLServerSocket extends ServerSocket {
+
     /**
      * Used only by subclasses.
      * <P>
@@ -449,8 +449,79 @@ public abstract class SSLServerSocket extends ServerSocket
      *
      * @return true indicates that sessions may be created; this
      *          is the default.  false indicates that an existing
-     *          session must be resumed.
+     *          session must be resumed
      * @see #setEnableSessionCreation(boolean)
      */
     public abstract boolean getEnableSessionCreation();
+
+    /**
+     * Returns the SSLParameters in effect for newly accepted connections.
+     * The ciphersuites and protocols of the returned SSLParameters
+     * are always non-null.
+     *
+     * @return the SSLParameters in effect for newly accepted connections
+     *
+     * @see #setSSLParameters(SSLParameters)
+     *
+     * @since 1.7
+     */
+    public SSLParameters getSSLParameters() {
+        SSLParameters parameters = new SSLParameters();
+
+        parameters.setCipherSuites(getEnabledCipherSuites());
+        parameters.setProtocols(getEnabledProtocols());
+        if (getNeedClientAuth()) {
+            parameters.setNeedClientAuth(true);
+        } else if (getWantClientAuth()) {
+            parameters.setWantClientAuth(true);
+        }
+
+        return parameters;
+    }
+
+    /**
+     * Applies SSLParameters to newly accepted connections.
+     *
+     * <p>This means:
+     * <ul>
+     * <li>if <code>params.getCipherSuites()</code> is non-null,
+     *   <code>setEnabledCipherSuites()</code> is called with that value
+     * <li>if <code>params.getProtocols()</code> is non-null,
+     *   <code>setEnabledProtocols()</code> is called with that value
+     * <li>if <code>params.getNeedClientAuth()</code> or
+     *   <code>params.getWantClientAuth()</code> return <code>true</code>,
+     *   <code>setNeedClientAuth(true)</code> and
+     *   <code>setWantClientAuth(true)</code> are called, respectively;
+     *   otherwise <code>setWantClientAuth(false)</code> is called.
+     * </ul>
+     *
+     * @param params the parameters
+     * @throws IllegalArgumentException if the setEnabledCipherSuites() or
+     *    the setEnabledProtocols() call fails
+     *
+     * @see #getSSLParameters()
+     *
+     * @since 1.7
+     */
+    public void setSSLParameters(SSLParameters params) {
+        String[] s;
+        s = params.getCipherSuites();
+        if (s != null) {
+            setEnabledCipherSuites(s);
+        }
+
+        s = params.getProtocols();
+        if (s != null) {
+            setEnabledProtocols(s);
+        }
+
+        if (params.getNeedClientAuth()) {
+            setNeedClientAuth(true);
+        } else if (params.getWantClientAuth()) {
+            setWantClientAuth(true);
+        } else {
+            setWantClientAuth(false);
+        }
+    }
+
 }

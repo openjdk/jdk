@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,9 @@ class ReverseState implements State {
 
     /* the checker used for revocation status */
     public CrlRevocationChecker crlChecker;
+
+    /* the algorithm checker */
+    AlgorithmChecker algorithmChecker;
 
     /* the trust anchor used to validate the path */
     TrustAnchor trustAnchor;
@@ -239,6 +242,14 @@ class ReverseState implements State {
         } else {
             X500Principal caName = anchor.getCA();
             updateState(anchor.getCAPublicKey(), caName);
+        }
+
+        // The user specified AlgorithmChecker may not be
+        // able to set the trust anchor until now.
+        for (PKIXCertPathChecker checker : userCheckers) {
+            if (checker instanceof AlgorithmChecker) {
+                ((AlgorithmChecker)checker).trySetTrustAnchor(anchor);
+            }
         }
 
         init = false;

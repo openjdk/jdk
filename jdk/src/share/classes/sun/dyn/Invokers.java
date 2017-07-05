@@ -25,10 +25,7 @@
 
 package sun.dyn;
 
-import java.dyn.MethodHandle;
-import java.dyn.MethodHandles;
-import java.dyn.MethodType;
-
+import java.dyn.*;
 
 /**
  * Construction and caching of often-used invokers.
@@ -63,8 +60,11 @@ public class Invokers {
     public MethodHandle exactInvoker() {
         MethodHandle invoker = exactInvoker;
         if (invoker != null)  return invoker;
-        invoker = MethodHandleImpl.IMPL_LOOKUP.findVirtual(MethodHandle.class, "invoke", targetType);
-        if (invoker == null)  throw new InternalError("JVM cannot find invoker for "+targetType);
+        try {
+            invoker = MethodHandleImpl.IMPL_LOOKUP.findVirtual(MethodHandle.class, "invoke", targetType);
+        } catch (NoAccessException ex) {
+            throw new InternalError("JVM cannot find invoker for "+targetType);
+        }
         assert(invokerType(targetType) == invoker.type());
         exactInvoker = invoker;
         return invoker;
