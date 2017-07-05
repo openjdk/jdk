@@ -2704,11 +2704,11 @@ do
         rm -f $WDIR/$DIR/$F.html
 
 	its_a_jar=
-	if expr $F : '.*\.jar' >/dev/null; then
+	if expr $F : '.*\.jar' \| $F : '.*\.zip' >/dev/null; then
 	    its_a_jar=1
-	    # It's a JAR file, let's do it differntly
+	    # It's a JAR or ZIP file, let's do it differently
 	    if [[ -z $JAR ]]; then
-		print "No access to jar, so can't produce diffs for jar files"
+		print "No access to jar, so can't produce diffs for jar or zip files"
 	    else
 		if [ -f $ofile ]; then
 		    $JAR -tvf $ofile >"$ofile".lst

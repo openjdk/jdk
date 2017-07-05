@@ -220,7 +220,7 @@ class G1PrepareCompactClosure: public HeapRegionClosure {
 public:
   G1PrepareCompactClosure(CompactibleSpace* cs)
   : _g1h(G1CollectedHeap::heap()),
-    _mrbs(G1CollectedHeap::heap()->mr_bs()),
+    _mrbs(_g1h->g1_barrier_set()),
     _cp(NULL, cs, cs->initialize_threshold()),
     _humongous_proxy_set("G1MarkSweep Humongous Proxy Set") { }
 

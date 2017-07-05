@@ -208,7 +208,7 @@ WARNINGS_ARE_ERRORS = -Werror
 
 ifeq ($(USE_CLANG), true)
   # However we need to clean the code up before we can unrestrictedly enable this option with Clang
-  WARNINGS_ARE_ERRORS += -Wno-unused-value -Wno-logical-op-parentheses -Wno-parentheses-equality -Wno-parentheses
+  WARNINGS_ARE_ERRORS += -Wno-logical-op-parentheses -Wno-parentheses-equality -Wno-parentheses
   WARNINGS_ARE_ERRORS += -Wno-switch -Wno-tautological-constant-out-of-range-compare -Wno-tautological-compare
   WARNINGS_ARE_ERRORS += -Wno-delete-non-virtual-dtor -Wno-deprecated -Wno-format -Wno-dynamic-class-memaccess
   WARNINGS_ARE_ERRORS += -Wno-return-type -Wno-empty-body
