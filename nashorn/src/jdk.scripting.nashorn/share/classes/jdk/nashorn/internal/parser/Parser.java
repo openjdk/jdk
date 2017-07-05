@@ -127,6 +127,7 @@ import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
+import jdk.nashorn.internal.ir.TemplateLiteral;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.ThrowNode;
 import jdk.nashorn.internal.ir.TryNode;
@@ -545,7 +546,7 @@ public class Parser extends AbstractParser implements Loggable {
         sb.append(ident.getName());
 
         final String name = namespace.uniqueName(sb.toString());
-        assert parentFunction != null || name.equals(PROGRAM.symbolName()) : "name = " + name;
+        assert parentFunction != null || kind == FunctionNode.Kind.MODULE || name.equals(PROGRAM.symbolName()) : "name = " + name;
 
         int flags = 0;
         if (isStrictMode) {
@@ -575,6 +576,7 @@ public class Parser extends AbstractParser implements Loggable {
                 ident,
                 function.getName(),
                 parameters,
+                function.getParameterExpressions(),
                 kind,
                 function.getFlags(),
                 body,
@@ -620,19 +622,6 @@ public class Parser extends AbstractParser implements Loggable {
 
         final int flags = newBlock.getFlags() | (needsBraces ? 0 : Block.IS_SYNTHETIC);
         return new Block(blockToken, finish, flags, newBlock.getStatements());
-    }
-
-    /**
-     * Get the statements in a case clause.
-     */
-    private List<Statement> caseStatementList() {
-        final ParserContextBlockNode newBlock = newBlock();
-        try {
-            statementList();
-        } finally {
-            restoreBlock(newBlock);
-        }
-        return newBlock.getStatements();
     }
 
     /**
@@ -854,17 +843,6 @@ public class Parser extends AbstractParser implements Loggable {
             }
         });
     }
-
-    private static Expression newBinaryExpression(final long op, final Expression lhs, final Expression rhs) {
-        final TokenType opType = Token.descType(op);
-
-        // Build up node.
-        if (BinaryNode.isLogical(opType)) {
-            return new BinaryNode(op, new JoinPredecessorExpression(lhs), new JoinPredecessorExpression(rhs));
-        }
-        return new BinaryNode(op, lhs, rhs);
-    }
-
 
     /**
      * Reduce increment/decrement to simpler operations.
@@ -1268,7 +1246,7 @@ public class Parser extends AbstractParser implements Loggable {
             className = getIdent();
         }
 
-        return classTail(classLineNumber, classToken, className);
+        return classTail(classLineNumber, classToken, className, isStatement);
     }
 
     private static final class ClassElementKey {
@@ -1317,7 +1295,8 @@ public class Parser extends AbstractParser implements Loggable {
      *   static MethodDefinition[?Yield]
      *   ;
      */
-    private ClassNode classTail(final int classLineNumber, final long classToken, final IdentNode className) {
+    private ClassNode classTail(final int classLineNumber, final long classToken,
+            final IdentNode className, final boolean isStatement) {
         final boolean oldStrictMode = isStrictMode;
         isStrictMode = true;
         try {
@@ -1399,7 +1378,7 @@ public class Parser extends AbstractParser implements Loggable {
             }
 
             classElements.trimToSize();
-            return new ClassNode(classLineNumber, classToken, finish, className, classHeritage, constructor, classElements);
+            return new ClassNode(classLineNumber, classToken, finish, className, classHeritage, constructor, classElements, isStatement);
         } finally {
             isStrictMode = oldStrictMode;
         }
@@ -1601,6 +1580,9 @@ public class Parser extends AbstractParser implements Loggable {
     private List<Expression> variableDeclarationList(final TokenType varType, final boolean isStatement, final int sourceOrder) {
         // VAR tested in caller.
         assert varType == VAR || varType == LET || varType == CONST;
+        final int varLine = line;
+        final long varToken = token;
+
         next();
 
         final List<Expression> bindings = new ArrayList<>();
@@ -1613,9 +1595,6 @@ public class Parser extends AbstractParser implements Loggable {
 
         Expression missingAssignment = null;
         while (true) {
-            // Get starting token.
-            final int  varLine  = line;
-            final long varToken = token;
             // Get name of var.
             if (type == YIELD && inGeneratorFunction()) {
                 expect(IDENT);
@@ -1627,10 +1606,14 @@ public class Parser extends AbstractParser implements Loggable {
             if (isDestructuring) {
                 final int finalVarFlags = varFlags;
                 verifyDestructuringBindingPattern(binding, new Consumer<IdentNode>() {
+                    @Override
                     public void accept(final IdentNode identNode) {
                         verifyIdent(identNode, contextString);
-                        final VarNode var = new VarNode(varLine, varToken, sourceOrder, identNode.getFinish(), identNode.setIsDeclaredHere(), null, finalVarFlags);
-                        appendStatement(var);
+                        if (!env._parse_only) {
+                            // don't bother adding a variable if we are just parsing!
+                            final VarNode var = new VarNode(varLine, varToken, sourceOrder, identNode.getFinish(), identNode.setIsDeclaredHere(), null, finalVarFlags);
+                            appendStatement(var);
+                        }
                     }
                 });
             }
@@ -1682,7 +1665,7 @@ public class Parser extends AbstractParser implements Loggable {
                 assert init != null || !isStatement;
                 binding = init == null ? binding : verifyAssignment(Token.recast(varToken, ASSIGN), binding, init);
                 if (isStatement) {
-                    appendStatement(new ExpressionStatement(varLine, binding.getToken(), finish, binding));
+                    appendStatement(new ExpressionStatement(varLine, binding.getToken(), finish, binding, varType));
                 } else if (init == null) {
                     if (missingAssignment == null) {
                         missingAssignment = binding;
@@ -1748,7 +1731,8 @@ public class Parser extends AbstractParser implements Loggable {
      * Verify destructuring variable declaration binding pattern and extract bound variable declarations.
      */
     private void verifyDestructuringBindingPattern(final Expression pattern, final Consumer<IdentNode> identifierCallback) {
-        assert pattern instanceof ObjectNode || pattern instanceof LiteralNode.ArrayLiteralNode;
+        assert (pattern instanceof BinaryNode && ((BinaryNode)pattern).isTokenType(ASSIGN)) ||
+                pattern instanceof ObjectNode || pattern instanceof LiteralNode.ArrayLiteralNode;
         pattern.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public boolean enterLiteralNode(final LiteralNode<?> literalNode) {
@@ -1857,9 +1841,8 @@ public class Parser extends AbstractParser implements Loggable {
         // Get expression and add as statement.
         final Expression expression = expression();
 
-        ExpressionStatement expressionStatement = null;
         if (expression != null) {
-            expressionStatement = new ExpressionStatement(expressionLine, expressionToken, finish, expression);
+            ExpressionStatement expressionStatement = new ExpressionStatement(expressionLine, expressionToken, finish, expression);
             appendStatement(expressionStatement);
         } else {
             expect(null);
@@ -2625,6 +2608,10 @@ public class Parser extends AbstractParser implements Loggable {
                 final long catchToken = token;
                 next();
                 expect(LPAREN);
+
+                // FIXME: ES6 catch parameter can be a BindingIdentifier or a BindingPattern
+                // We need to generalize this here!
+                // http://www.ecma-international.org/ecma-262/6.0/
                 final IdentNode exception = getIdent();
 
                 // ECMA 12.4.1 strict mode restrictions
@@ -4021,12 +4008,18 @@ public class Parser extends AbstractParser implements Loggable {
 
                     ParserContextFunctionNode currentFunction = lc.getCurrentFunction();
                     if (currentFunction != null) {
-                        // desugar to: param = (param === undefined) ? initializer : param;
-                        // possible alternative: if (param === undefined) param = initializer;
-                        BinaryNode test = new BinaryNode(Token.recast(paramToken, EQ_STRICT), ident, newUndefinedLiteral(paramToken, finish));
-                        TernaryNode value = new TernaryNode(Token.recast(paramToken, TERNARY), test, new JoinPredecessorExpression(initializer), new JoinPredecessorExpression(ident));
-                        BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), ident, value);
-                        lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                        if (env._parse_only) {
+                            // keep what is seen in source "as is" and save it as parameter expression
+                            BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), ident, initializer);
+                            currentFunction.addParameterExpression(ident, assignment);
+                        } else {
+                            // desugar to: param = (param === undefined) ? initializer : param;
+                            // possible alternative: if (param === undefined) param = initializer;
+                            BinaryNode test = new BinaryNode(Token.recast(paramToken, EQ_STRICT), ident, newUndefinedLiteral(paramToken, finish));
+                            TernaryNode value = new TernaryNode(Token.recast(paramToken, TERNARY), test, new JoinPredecessorExpression(initializer), new JoinPredecessorExpression(ident));
+                            BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), ident, value);
+                            lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                        }
                     }
                 }
 
@@ -4050,16 +4043,31 @@ public class Parser extends AbstractParser implements Loggable {
 
                     // binding pattern with initializer. desugar to: (param === undefined) ? initializer : param
                     Expression initializer = assignmentExpression(false);
-                    // TODO initializer must not contain yield expression if yield=true (i.e. this is generator function's parameter list)
-                    BinaryNode test = new BinaryNode(Token.recast(paramToken, EQ_STRICT), ident, newUndefinedLiteral(paramToken, finish));
-                    value = new TernaryNode(Token.recast(paramToken, TERNARY), test, new JoinPredecessorExpression(initializer), new JoinPredecessorExpression(ident));
+
+                    if (env._parse_only) {
+                        // we don't want the synthetic identifier in parse only mode
+                        value = initializer;
+                    } else {
+                        // TODO initializer must not contain yield expression if yield=true (i.e. this is generator function's parameter list)
+                        BinaryNode test = new BinaryNode(Token.recast(paramToken, EQ_STRICT), ident, newUndefinedLiteral(paramToken, finish));
+                        value = new TernaryNode(Token.recast(paramToken, TERNARY), test, new JoinPredecessorExpression(initializer), new JoinPredecessorExpression(ident));
+                    }
                 }
 
                 ParserContextFunctionNode currentFunction = lc.getCurrentFunction();
                 if (currentFunction != null) {
                     // destructuring assignment
                     BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), pattern, value);
-                    lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                    if (env._parse_only) {
+                        // in parse-only mode, represent source tree "as is"
+                        if (ident.isDefaultParameter()) {
+                            currentFunction.addParameterExpression(ident, assignment);
+                        } else {
+                            currentFunction.addParameterExpression(ident, pattern);
+                        }
+                    } else {
+                        lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                    }
                 }
             }
             parameters.add(ident);
@@ -4077,7 +4085,9 @@ public class Parser extends AbstractParser implements Loggable {
                 ParserContextFunctionNode currentFunction = lc.getCurrentFunction();
                 if (currentFunction != null) {
                     // declare function-scope variables for destructuring bindings
-                    lc.getFunctionBody(currentFunction).appendStatement(new VarNode(paramLine, Token.recast(paramToken, VAR), pattern.getFinish(), identNode, null));
+                    if (!env._parse_only) {
+                        lc.getFunctionBody(currentFunction).appendStatement(new VarNode(paramLine, Token.recast(paramToken, VAR), pattern.getFinish(), identNode, null));
+                    }
                     // detect duplicate bounds names in parameter list
                     currentFunction.addParameterBinding(identNode);
                     currentFunction.setSimpleParameterList(false);
@@ -4136,6 +4146,7 @@ public class Parser extends AbstractParser implements Loggable {
                 // the note below for reasoning on skipping happening before instead of after RBRACE for
                 // details).
                 if (parseBody) {
+                    functionNode.setFlag(FunctionNode.HAS_EXPRESSION_BODY);
                     final ReturnNode returnNode = new ReturnNode(functionNode.getLineNumber(), expr.getToken(), lastFinish, expr);
                     appendStatement(returnNode);
                 }
@@ -4305,7 +4316,7 @@ public class Parser extends AbstractParser implements Loggable {
     }
 
     private RuntimeNode referenceError(final Expression lhs, final Expression rhs, final boolean earlyError) {
-        if (earlyError) {
+        if (env._parse_only || earlyError) {
             throw error(JSErrorType.REFERENCE_ERROR, AbstractParser.message("invalid.lvalue"), lhs.getToken());
         }
         final ArrayList<Expression> args = new ArrayList<>();
@@ -4838,10 +4849,14 @@ public class Parser extends AbstractParser implements Loggable {
 
                 ParserContextFunctionNode currentFunction = lc.getCurrentFunction();
                 if (currentFunction != null) {
-                    BinaryNode test = new BinaryNode(Token.recast(paramToken, EQ_STRICT), ident, newUndefinedLiteral(paramToken, finish));
-                    TernaryNode value = new TernaryNode(Token.recast(paramToken, TERNARY), test, new JoinPredecessorExpression(initializer), new JoinPredecessorExpression(ident));
-                    BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), ident, value);
-                    lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                    if (env._parse_only) {
+                        currentFunction.addParameterExpression(ident, param);
+                    } else {
+                        BinaryNode test = new BinaryNode(Token.recast(paramToken, EQ_STRICT), ident, newUndefinedLiteral(paramToken, finish));
+                        TernaryNode value = new TernaryNode(Token.recast(paramToken, TERNARY), test, new JoinPredecessorExpression(initializer), new JoinPredecessorExpression(ident));
+                        BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), ident, value);
+                        lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                    }
 
                     currentFunction.addParameterBinding(ident);
                     currentFunction.setSimpleParameterList(false);
@@ -4855,10 +4870,14 @@ public class Parser extends AbstractParser implements Loggable {
 
                 ParserContextFunctionNode currentFunction = lc.getCurrentFunction();
                 if (currentFunction != null) {
-                    BinaryNode test = new BinaryNode(Token.recast(paramToken, EQ_STRICT), ident, newUndefinedLiteral(paramToken, finish));
-                    TernaryNode value = new TernaryNode(Token.recast(paramToken, TERNARY), test, new JoinPredecessorExpression(initializer), new JoinPredecessorExpression(ident));
-                    BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), param, value);
-                    lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                    if (env._parse_only) {
+                        currentFunction.addParameterExpression(ident, param);
+                    } else {
+                        BinaryNode test = new BinaryNode(Token.recast(paramToken, EQ_STRICT), ident, newUndefinedLiteral(paramToken, finish));
+                        TernaryNode value = new TernaryNode(Token.recast(paramToken, TERNARY), test, new JoinPredecessorExpression(initializer), new JoinPredecessorExpression(ident));
+                        BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), param, value);
+                        lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                    }
                 }
                 return ident;
             }
@@ -4872,8 +4891,12 @@ public class Parser extends AbstractParser implements Loggable {
 
             ParserContextFunctionNode currentFunction = lc.getCurrentFunction();
             if (currentFunction != null) {
-                BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), param, ident);
-                lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                if (env._parse_only) {
+                    currentFunction.addParameterExpression(ident, param);
+                } else {
+                    BinaryNode assignment = new BinaryNode(Token.recast(paramToken, ASSIGN), param, ident);
+                    lc.getFunctionBody(currentFunction).appendStatement(new ExpressionStatement(paramLine, assignment.getToken(), assignment.getFinish(), assignment));
+                }
             }
             return ident;
         }
@@ -4982,20 +5005,37 @@ public class Parser extends AbstractParser implements Loggable {
             return literal;
         }
 
-        Expression concat = literal;
-        TokenType lastLiteralType;
-        do {
-            final Expression expression = expression();
-            if (type != TEMPLATE_MIDDLE && type != TEMPLATE_TAIL) {
-                throw error(AbstractParser.message("unterminated.template.expression"), token);
-            }
-            concat = new BinaryNode(Token.recast(lastLiteralToken, TokenType.ADD), concat, expression);
-            lastLiteralType = type;
-            lastLiteralToken = token;
-            literal = getLiteral();
-            concat = new BinaryNode(Token.recast(lastLiteralToken, TokenType.ADD), concat, literal);
-        } while (lastLiteralType == TEMPLATE_MIDDLE);
-        return concat;
+        if (env._parse_only) {
+            List<Expression> exprs = new ArrayList<>();
+            exprs.add(literal);
+            TokenType lastLiteralType;
+            do {
+                final Expression expression = expression();
+                if (type != TEMPLATE_MIDDLE && type != TEMPLATE_TAIL) {
+                    throw error(AbstractParser.message("unterminated.template.expression"), token);
+                }
+                exprs.add(expression);
+                lastLiteralType = type;
+                literal = getLiteral();
+                exprs.add(literal);
+            } while (lastLiteralType == TEMPLATE_MIDDLE);
+            return new TemplateLiteral(exprs);
+        } else {
+            Expression concat = literal;
+            TokenType lastLiteralType;
+            do {
+                final Expression expression = expression();
+                if (type != TEMPLATE_MIDDLE && type != TEMPLATE_TAIL) {
+                    throw error(AbstractParser.message("unterminated.template.expression"), token);
+                }
+                concat = new BinaryNode(Token.recast(lastLiteralToken, TokenType.ADD), concat, expression);
+                lastLiteralType = type;
+                lastLiteralToken = token;
+                literal = getLiteral();
+                concat = new BinaryNode(Token.recast(lastLiteralToken, TokenType.ADD), concat, literal);
+            } while (lastLiteralType == TEMPLATE_MIDDLE);
+            return concat;
+        }
     }
 
     /**

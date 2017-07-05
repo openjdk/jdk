@@ -44,6 +44,6 @@ var ast = parser.parse("test.js", code, print);
 var stats = ast.sourceElements;
 
 Assert.assertTrue(stats[0] instanceof VariableTree);
-Assert.assertEquals(stats[0].name, "i");
+Assert.assertEquals(stats[0].binding.name, "i");
 Assert.assertTrue(stats[1] instanceof ForLoopTree);
 

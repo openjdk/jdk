@@ -213,9 +213,9 @@ java/rmi/transport/dgcDeadLock/DGCDeadLock.java                 8029360 macosx-a
 
 # jdk_security
 
-sun/security/pkcs11/ec/TestKeyFactory.java                      7157786 generic-all
+sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
 
-sun/security/krb5/auto/Unreachable.java                         7164518 macosx-all no PortUnreachableException on Mac
+sun/security/krb5/auto/Unreachable.java                         7164518 macosx-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
@@ -284,6 +284,7 @@ sun/security/pkcs11/tls/TestPremaster.java                      8077138,8023434 
 sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-all
 
 sun/security/tools/keytool/autotest.sh                          8130302 generic-all
+sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-all
 
 ############################################################################
 

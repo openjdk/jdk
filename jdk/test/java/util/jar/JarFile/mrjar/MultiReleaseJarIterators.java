@@ -43,8 +43,6 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
-import static java.util.jar.JarFile.Release;
-
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -111,17 +109,17 @@ public class MultiReleaseJarIterators {
             testStream(jf, mrEntries);
         }
 
-        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Release.BASE)) {
+        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, JarFile.baseVersion())) {
             testEnumeration(jf, baseEntries);
             testStream(jf, baseEntries);
         }
 
-        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Release.VERSION_9)) {
+        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Runtime.Version.parse("9"))) {
             testEnumeration(jf, v9Entries);
             testStream(jf, v9Entries);
         }
 
-        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Release.RUNTIME)) {
+        try (JarFile jf = new JarFile(multirelease, true, ZipFile.OPEN_READ, Runtime.version())) {
             Map<String,JarEntry> expectedEntries;
             switch (MAJOR_VERSION) {
                 case 9:
@@ -147,17 +145,17 @@ public class MultiReleaseJarIterators {
             testStream(jf, uvEntries);
         }
 
-        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, Release.BASE)) {
+        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, JarFile.baseVersion())) {
             testEnumeration(jf, uvEntries);
             testStream(jf, uvEntries);
         }
 
-        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, Release.VERSION_9)) {
+        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, Runtime.Version.parse("9"))) {
             testEnumeration(jf, uvEntries);
             testStream(jf, uvEntries);
         }
 
-        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, Release.RUNTIME)) {
+        try (JarFile jf = new JarFile(unversioned, true, ZipFile.OPEN_READ, Runtime.version())) {
             testEnumeration(jf, uvEntries);
             testStream(jf, uvEntries);
         }

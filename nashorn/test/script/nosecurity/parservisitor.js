@@ -202,7 +202,7 @@ parse("funccall.js", "func()",
 parse("funcdecl.js", "function func() {}", 
     new (Java.extend(SimpleTreeVisitor))() {
         visitFunctionDeclaration: function(fd) {
-            print("in visitFunctionDeclaration " + fd.name);
+            print("in visitFunctionDeclaration " + fd.name.name);
         }
     });
 
@@ -361,7 +361,7 @@ unaryExpr("void.js", "void x");
 parse("var.js", "var x = 34;", 
     new (Java.extend(SimpleTreeVisitor))() {
         visitVariable: function(vn) {
-            print("in visitVariable " + vn.name + " = " + vn.initializer.value);
+            print("in visitVariable " + vn.binding.name + " = " + vn.initializer.value);
         }
     });
 
