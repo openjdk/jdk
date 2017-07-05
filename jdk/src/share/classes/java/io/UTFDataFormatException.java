@@ -40,7 +40,7 @@ package java.io;
  * @see     java.io.DataInput
  * @see     java.io.DataInputStream#readUTF(java.io.DataInput)
  * @see     java.io.IOException
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class UTFDataFormatException extends IOException {

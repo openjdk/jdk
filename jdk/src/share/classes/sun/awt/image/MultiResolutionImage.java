@@ -69,7 +69,7 @@ public interface MultiResolutionImage {
      * @param height the desired image resolution height.
      * @return image resolution variant.
      *
-     * @since JDK1.8
+     * @since 1.8
      */
     public Image getResolutionVariant(int width, int height);
 
@@ -77,7 +77,7 @@ public interface MultiResolutionImage {
      * Gets list of all resolution variants including the base image
      *
      * @return list of resolution variants.
-     * @since JDK1.8
+     * @since 1.8
      */
     public List<Image> getResolutionVariants();
 }

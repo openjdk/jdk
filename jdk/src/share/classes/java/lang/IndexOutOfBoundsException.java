@@ -32,7 +32,7 @@ package java.lang;
  * Applications can subclass this class to indicate similar exceptions.
  *
  * @author  Frank Yellin
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class IndexOutOfBoundsException extends RuntimeException {

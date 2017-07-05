@@ -116,7 +116,7 @@ import jdk.internal.util.xml.PropertiesDefaultHandler;
  * @author  Arthur van Hoff
  * @author  Michael McCloskey
  * @author  Xueming Shen
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class Properties extends Hashtable<Object,Object> {
@@ -1065,7 +1065,7 @@ class Properties extends Hashtable<Object,Object> {
      * @param   out   an output stream.
      * @throws  ClassCastException if any key in this property list
      *          is not a string.
-     * @since   JDK1.1
+     * @since   1.1
      */
     /*
      * Rather than use an anonymous inner class to share common code, this

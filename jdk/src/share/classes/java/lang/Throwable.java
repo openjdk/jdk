@@ -109,7 +109,7 @@ import  java.util.*;
  * @author  Josh Bloch (Added exception chaining and programmatic access to
  *          stack trace in 1.4.)
  * @jls 11.2 Compile-Time Checking of Exceptions
- * @since JDK1.0
+ * @since 1.0
  */
 public class Throwable implements Serializable {
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
@@ -385,7 +385,7 @@ public class Throwable implements Serializable {
      * {@code getMessage()}.
      *
      * @return  The localized description of this throwable.
-     * @since   JDK1.1
+     * @since   1.1
      */
     public String getLocalizedMessage() {
         return getMessage();
@@ -714,7 +714,7 @@ public class Throwable implements Serializable {
      * print writer.
      *
      * @param s {@code PrintWriter} to use for output
-     * @since   JDK1.1
+     * @since   1.1
      */
     public void printStackTrace(PrintWriter s) {
         printStackTrace(new WrappedPrintWriter(s));

@@ -41,7 +41,7 @@ package java.io;
  * method, as well as the aforementioned "legacy field."
  *
  * @author  unascribed
- * @since   JDK1.1
+ * @since   1.1
  */
 public class WriteAbortedException extends ObjectStreamException {
     private static final long serialVersionUID = -3326426625597282442L;

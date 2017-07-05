@@ -41,7 +41,7 @@ import java.io.*;
  *
  * @author  James Gosling
  * @see     java.io.PipedInputStream
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class PipedOutputStream extends OutputStream {

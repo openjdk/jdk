@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,8 @@
  */
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -47,19 +42,12 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 
 import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.Utils;
 
 public class LocalManagementTest {
     private static final String TEST_CLASSPATH = System.getProperty("test.class.path");
     private static final String TEST_JDK = System.getProperty("test.jdk");
-    private static int MAX_GET_FREE_PORT_TRIES = 10;
 
     public static void main(String[] args) throws Exception {
-        try {
-            MAX_GET_FREE_PORT_TRIES = Integer.parseInt(System.getProperty("test.getfreeport.max.tries", "10"));
-        } catch (NumberFormatException ex) {
-        }
-
         int failures = 0;
         for(Method m : LocalManagementTest.class.getDeclaredMethods()) {
             if (Modifier.isStatic(m.getModifiers()) &&
@@ -84,108 +72,25 @@ public class LocalManagementTest {
         }
     }
 
+    @SuppressWarnings("unused")
     private static boolean test1() throws Exception {
         return doTest("1", "-Dcom.sun.management.jmxremote");
-    }
-
-    private static boolean test2() throws Exception {
-        Path agentPath = findAgent();
-        if (agentPath != null) {
-            String agent = agentPath.toString();
-            return doTest("2", "-javaagent:" + agent);
-        } else {
-            return false;
-        }
     }
 
     /**
      * no args (blank) - manager should attach and start agent
      */
+    @SuppressWarnings("unused")
     private static boolean test3() throws Exception {
         return doTest("3", null);
     }
 
     /**
-     * sanity check arguments to management-agent.jar
-     */
-    private static boolean test4() throws Exception {
-        Path agentPath = findAgent();
-        if (agentPath != null) {
-
-            for (int i = 0; i < MAX_GET_FREE_PORT_TRIES; ++i) {
-                ProcessBuilder builder = ProcessTools.createJavaProcessBuilder(
-                        "-javaagent:" + agentPath.toString() +
-                                "=com.sun.management.jmxremote.port=" + Utils.getFreePort() + "," +
-                                "com.sun.management.jmxremote.authenticate=false," +
-                                "com.sun.management.jmxremote.ssl=false",
-                        "-cp",
-                        TEST_CLASSPATH,
-                        "TestApplication",
-                        "-exit"
-                );
-
-                Process prc = null;
-                final AtomicReference<Boolean> isBindExceptionThrown = new AtomicReference<>();
-                isBindExceptionThrown.set(new Boolean(false));
-                try {
-                    prc = ProcessTools.startProcess(
-                            "TestApplication",
-                            builder,
-                            (String line) -> {
-                                if (line.contains("Exception thrown by the agent : " +
-                                        "java.rmi.server.ExportException: Port already in use")) {
-                                    isBindExceptionThrown.set(new Boolean(true));
-                                }
-                            });
-
-                    prc.waitFor();
-
-                    if (prc.exitValue() == 0) {
-                        return true;
-                    }
-
-                    if (isBindExceptionThrown.get().booleanValue()) {
-                        System.out.println("'Port already in use' error detected. Try again");
-                    } else {
-                        return false;
-                    }
-                } finally {
-                    if (prc != null) {
-                        prc.destroy();
-                        prc.waitFor();
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
      * use DNS-only name service
      */
+    @SuppressWarnings("unused")
     private static boolean test5() throws Exception {
         return doTest("5", "-Dsun.net.spi.namservice.provider.1=\"dns,sun\"");
-    }
-
-    private static Path findAgent() {
-        FileSystem FS = FileSystems.getDefault();
-        Path agentPath = FS.getPath(
-            TEST_JDK, "jre", "lib", "management-agent.jar"
-        );
-        if (!isFileOk(agentPath)) {
-            agentPath = FS.getPath(
-                TEST_JDK, "lib", "management-agent.jar"
-            );
-        }
-        if (!isFileOk(agentPath)) {
-            System.err.println("Can not locate management-agent.jar");
-            return null;
-        }
-        return agentPath;
-    }
-
-    private static boolean isFileOk(Path path) {
-        return Files.isRegularFile(path) && Files.isReadable(path);
     }
 
     private static boolean doTest(String testId, String arg) throws Exception {

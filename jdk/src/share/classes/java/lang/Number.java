@@ -50,7 +50,7 @@ package java.lang;
  * @author      Arthur van Hoff
  * @jls 5.1.2 Widening Primitive Conversions
  * @jls 5.1.3 Narrowing Primitive Conversions
- * @since   JDK1.0
+ * @since   1.0
  */
 public abstract class Number implements java.io.Serializable {
     /**
@@ -98,7 +98,7 @@ public abstract class Number implements java.io.Serializable {
      *
      * @return  the numeric value represented by this object after conversion
      *          to type {@code byte}.
-     * @since   JDK1.1
+     * @since   1.1
      */
     public byte byteValue() {
         return (byte)intValue();
@@ -113,7 +113,7 @@ public abstract class Number implements java.io.Serializable {
      *
      * @return  the numeric value represented by this object after conversion
      *          to type {@code short}.
-     * @since   JDK1.1
+     * @since   1.1
      */
     public short shortValue() {
         return (short)intValue();

@@ -30,7 +30,7 @@ package java.util;
  *
  * @author  Chris Warth
  * @see     java.util.Observable
- * @since   JDK1.0
+ * @since   1.0
  */
 public interface Observer {
     /**

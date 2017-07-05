@@ -28,6 +28,6 @@
  * superseded by classes in the java.security package.
  * See that package and, for example, java.security.Permission for details.
  *
- * @since JDK1.1
+ * @since 1.1
  */
 package java.security.acl;

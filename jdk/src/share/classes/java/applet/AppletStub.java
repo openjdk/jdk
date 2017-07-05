@@ -35,7 +35,7 @@ import java.net.URL;
  *
  * @author      Arthur van Hoff
  * @see         java.applet.Applet#setStub(java.applet.AppletStub)
- * @since       JDK1.0
+ * @since       1.0
  */
 public interface AppletStub {
     /**

@@ -37,7 +37,7 @@ import java.util.Arrays;
  * without generating an IOException.
  *
  * @author      Herb Jellinek
- * @since       JDK1.1
+ * @since       1.1
  */
 public
 class CharArrayWriter extends Writer {

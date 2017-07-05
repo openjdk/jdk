@@ -310,10 +310,10 @@ public class MBeanServerFileAccessController
                     }
                 });
         if (s == null) return; /* security has not been enabled */
-        final Set principals = s.getPrincipals();
+        final Set<Principal> principals = s.getPrincipals();
         String newPropertyValue = null;
-        for (Iterator i = principals.iterator(); i.hasNext(); ) {
-            final Principal p = (Principal) i.next();
+        for (Iterator<Principal> i = principals.iterator(); i.hasNext(); ) {
+            final Principal p = i.next();
             Access access = accessMap.get(p.getName());
             if (access != null) {
                 boolean ok;

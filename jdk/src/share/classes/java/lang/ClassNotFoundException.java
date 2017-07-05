@@ -48,7 +48,7 @@ package java.lang;
  * @see     java.lang.Class#forName(java.lang.String)
  * @see     java.lang.ClassLoader#findSystemClass(java.lang.String)
  * @see     java.lang.ClassLoader#loadClass(java.lang.String, boolean)
- * @since   JDK1.0
+ * @since   1.0
  */
 public class ClassNotFoundException extends ReflectiveOperationException {
     /**

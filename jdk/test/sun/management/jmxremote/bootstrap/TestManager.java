@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.lang.management.RuntimeMXBean;
 import static java.lang.management.ManagementFactory.*;
 import java.net.Socket;
 import java.net.InetSocketAddress;
-import java.io.File;
 import java.io.IOException;
 
 // Sun specific
@@ -55,28 +54,8 @@ public class TestManager {
      * Starts the management agent in the target VM
      */
     private static void startManagementAgent(String pid) throws IOException {
-        /*
-         * JAR file normally in ${java.home}/jre/lib but may be in ${java.home}/lib
-         * with development/non-images builds
-         */
-        String home = System.getProperty("java.home");
-        String agent = home + File.separator + "jre" + File.separator + "lib"
-                + File.separator + "management-agent.jar";
-        File f = new File(agent);
-        if (!f.exists()) {
-            agent = home + File.separator + "lib" + File.separator +
-                "management-agent.jar";
-            f = new File(agent);
-            if (!f.exists()) {
-                throw new RuntimeException("management-agent.jar missing");
-            }
-        }
-        agent = f.getCanonicalPath();
-
-        System.out.println("Loading " + agent + " into target VM ...");
-
         try {
-            VirtualMachine.attach(pid).loadAgent(agent);
+            VirtualMachine.attach(pid).startLocalManagementAgent();
         } catch (Exception x) {
             throw new IOException(x.getMessage());
         }
@@ -122,8 +101,7 @@ public class TestManager {
 
         if (agentPropLocalConnectorAddress == null &&
             jvmstatLocalConnectorAddress == null) {
-            // No JMX Connector address so attach to VM, and load
-            // management-agent.jar
+            // No JMX Connector address so attach to VM, and start local agent
             startManagementAgent(pid);
             agentPropLocalConnectorAddress = (String)
                 vm.getAgentProperties().get(LOCAL_CONNECTOR_ADDRESS_PROP);

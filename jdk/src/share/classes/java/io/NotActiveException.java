@@ -29,7 +29,7 @@ package java.io;
  * Thrown when serialization or deserialization is not active.
  *
  * @author  unascribed
- * @since   JDK1.1
+ * @since   1.1
  */
 public class NotActiveException extends ObjectStreamException {
 
