@@ -44,14 +44,11 @@ HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  CardTableModRefBS::PrecisionStyle precision,
                                  FilterKind fk) :
   ContiguousSpaceDCTOC(hr, cl, precision, NULL),
-  _hr(hr), _fk(fk), _g1(g1)
-{ }
+  _hr(hr), _fk(fk), _g1(g1) { }
 
 FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
                                                    OopClosure* oc) :
-  _r_bottom(r->bottom()), _r_end(r->end()),
-  _oc(oc), _out_of_region(0)
-{}
+  _r_bottom(r->bottom()), _r_end(r->end()), _oc(oc) { }
 
 class VerifyLiveClosure: public OopClosure {
 private:
@@ -512,35 +509,19 @@ HeapRegion::HeapRegion(uint hrs_index,
   assert(HeapRegionRemSet::num_par_rem_sets() > 0, "Invariant.");
 }
 
-class NextCompactionHeapRegionClosure: public HeapRegionClosure {
-  const HeapRegion* _target;
-  bool _target_seen;
-  HeapRegion* _last;
-  CompactibleSpace* _res;
-public:
-  NextCompactionHeapRegionClosure(const HeapRegion* target) :
-    _target(target), _target_seen(false), _res(NULL) {}
-  bool doHeapRegion(HeapRegion* cur) {
-    if (_target_seen) {
-      if (!cur->isHumongous()) {
-        _res = cur;
-        return true;
-      }
-    } else if (cur == _target) {
-      _target_seen = true;
-    }
-    return false;
-  }
-  CompactibleSpace* result() { return _res; }
-};
-
 CompactibleSpace* HeapRegion::next_compaction_space() const {
+  // We're not using an iterator given that it will wrap around when
+  // it reaches the last region and this is not what we want here.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  // cast away const-ness
-  HeapRegion* r = (HeapRegion*) this;
-  NextCompactionHeapRegionClosure blk(r);
-  g1h->heap_region_iterate_from(r, &blk);
-  return blk.result();
+  uint index = hrs_index() + 1;
+  while (index < g1h->n_regions()) {
+    HeapRegion* hr = g1h->region_at(index);
+    if (!hr->isHumongous()) {
+      return hr;
+    }
+    index += 1;
+  }
+  return NULL;
 }
 
 void HeapRegion::save_marks() {

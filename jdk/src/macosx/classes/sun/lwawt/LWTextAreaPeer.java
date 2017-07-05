@@ -129,16 +129,6 @@ final class LWTextAreaPeer
     }
 
     @Override
-    public void setText(final String l) {
-        // Please note that we do not want to post an event
-        // if TextArea.setText() replaces an empty text by an empty text,
-        // that is, if component's text remains unchanged.
-        if (!l.isEmpty() || getTextComponent().getDocument().getLength() != 0) {
-            super.setText(l);
-        }
-    }
-
-    @Override
     public void replaceRange(final String text, final int start,
                              final int end) {
         synchronized (getDelegateLock()) {

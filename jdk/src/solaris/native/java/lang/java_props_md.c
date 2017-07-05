@@ -398,15 +398,13 @@ GetJavaProperties(JNIEnv *env)
     PreferredToolkit prefToolkit = getPreferredToolkit();
     switch (prefToolkit) {
         case CToolkit:
+        case HToolkit:
             sprops.graphics_env = "sun.awt.CGraphicsEnvironment";
             break;
         case XToolkit:
 #endif
     sprops.graphics_env = "sun.awt.X11GraphicsEnvironment";
 #ifdef MACOSX
-            break;
-        default:
-            sprops.graphics_env = "sun.java2d.HeadlessGraphicsEnvironment";
             break;
     }
 #endif

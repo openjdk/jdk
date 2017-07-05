@@ -33,7 +33,7 @@ import java.security.PrivilegedAction;
  */
 
 class BsdNativeDispatcher extends UnixNativeDispatcher {
-    private BsdNativeDispatcher() { }
+    protected BsdNativeDispatcher() { }
 
    /**
     * struct fsstat_iter *getfsstat();
@@ -55,11 +55,6 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
     private static native void initIDs();
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                System.loadLibrary("nio");
-                return null;
-        }});
-        initIDs();
+         initIDs();
     }
 }

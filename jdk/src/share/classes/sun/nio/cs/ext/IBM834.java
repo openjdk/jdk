@@ -49,8 +49,8 @@ public class IBM834 extends Charset
 
     public CharsetDecoder newDecoder() {
         IBM933.initb2c();
-        return new DoubleByte.Decoder_EBCDIC_DBCSONLY(
-            this, IBM933.b2c, 0x40, 0xfe);  // hardcode the b2min/max
+        return new DoubleByte.Decoder_DBCSONLY(
+            this, IBM933.b2c, null, 0x40, 0xfe);  // hardcode the b2min/max
     }
 
     public CharsetEncoder newEncoder() {
@@ -58,7 +58,7 @@ public class IBM834 extends Charset
         return new Encoder(this);
     }
 
-    protected static class Encoder extends DoubleByte.Encoder_EBCDIC_DBCSONLY {
+    protected static class Encoder extends DoubleByte.Encoder_DBCSONLY {
         public Encoder(Charset cs) {
             super(cs, new byte[] {(byte)0xfe, (byte)0xfe},
                   IBM933.c2b, IBM933.c2bIndex);
