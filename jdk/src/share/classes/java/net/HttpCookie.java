@@ -72,6 +72,10 @@ public final class HttpCookie implements Cloneable {
     private boolean httpOnly;   // HttpOnly ... i.e. not accessible to scripts
     private int version = 1;    // Version=1 ... RFC 2965 style
 
+    // The original header this cookie was consructed from, if it was
+    // constructed by parsing a header, otherwise null.
+    private final String header;
+
     // Hold the creation time (in seconds) of the http cookie for later
     // expiration calculation
     private final long whenCreated;
@@ -128,6 +132,10 @@ public final class HttpCookie implements Cloneable {
      * @see #setVersion
      */
     public HttpCookie(String name, String value) {
+        this(name, value, null /*header*/);
+    }
+
+    private HttpCookie(String name, String value, String header) {
         name = name.trim();
         if (name.length() == 0 || !isToken(name) || isReserved(name)) {
             throw new IllegalArgumentException("Illegal cookie name");
@@ -140,6 +148,7 @@ public final class HttpCookie implements Cloneable {
 
         whenCreated = System.currentTimeMillis();
         portlist = null;
+        this.header = header;
     }
 
     /**
@@ -163,6 +172,15 @@ public final class HttpCookie implements Cloneable {
      *          if the header string is {@code null}
      */
     public static List<HttpCookie> parse(String header) {
+        return parse(header, false);
+    }
+
+    // Private version of parse() that will store the original header used to
+    // create the cookie, in the cookie itself. This can be useful for filtering
+    // Set-Cookie[2] headers, using the internal parsing logic defined in this
+    // class.
+    private static List<HttpCookie> parse(String header, boolean retainHeader) {
+
         int version = guessCookieVersion(header);
 
         // if header start with set-cookie or set-cookie2, strip it off
@@ -178,7 +196,7 @@ public final class HttpCookie implements Cloneable {
         // so the parse logic is slightly different
         if (version == 0) {
             // Netscape draft cookie
-            HttpCookie cookie = parseInternal(header);
+            HttpCookie cookie = parseInternal(header, retainHeader);
             cookie.setVersion(0);
             cookies.add(cookie);
         } else {
@@ -187,7 +205,7 @@ public final class HttpCookie implements Cloneable {
             // it'll separate them with comma
             List<String> cookieStrings = splitMultiCookies(header);
             for (String cookieStr : cookieStrings) {
-                HttpCookie cookie = parseInternal(cookieStr);
+                HttpCookie cookie = parseInternal(cookieStr, retainHeader);
                 cookie.setVersion(1);
                 cookies.add(cookie);
             }
@@ -804,7 +822,8 @@ public final class HttpCookie implements Cloneable {
      * @throws  IllegalArgumentException
      *          if header string violates the cookie specification
      */
-    private static HttpCookie parseInternal(String header)
+    private static HttpCookie parseInternal(String header,
+                                            boolean retainHeader)
     {
         HttpCookie cookie = null;
         String namevaluePair = null;
@@ -819,7 +838,13 @@ public final class HttpCookie implements Cloneable {
             if (index != -1) {
                 String name = namevaluePair.substring(0, index).trim();
                 String value = namevaluePair.substring(index + 1).trim();
-                cookie = new HttpCookie(name, stripOffSurroundingQuote(value));
+                if (retainHeader)
+                    cookie = new HttpCookie(name,
+                                            stripOffSurroundingQuote(value),
+                                            header);
+                else
+                    cookie = new HttpCookie(name,
+                                            stripOffSurroundingQuote(value));
             } else {
                 // no "=" in name-value pair; it's an error
                 throw new IllegalArgumentException("Invalid cookie name-value pair");
@@ -970,6 +995,28 @@ public final class HttpCookie implements Cloneable {
         } else {
             // Ignore the attribute as per RFC 2965
         }
+    }
+
+    static {
+        sun.misc.SharedSecrets.setJavaNetHttpCookieAccess(
+            new sun.misc.JavaNetHttpCookieAccess() {
+                public List<HttpCookie> parse(String header) {
+                    return HttpCookie.parse(header, true);
+                }
+
+                public String header(HttpCookie cookie) {
+                    return cookie.header;
+                }
+            }
+        );
+    }
+
+    /*
+     * Returns the original header this cookie was consructed from, if it was
+     * constructed by parsing a header, otherwise null.
+     */
+    private String header() {
+        return header;
     }
 
     /*

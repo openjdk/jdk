@@ -50,7 +50,7 @@ static double cost_per_card_ms_defaults[] = {
 };
 
 // all the same
-static double fully_young_cards_per_entry_ratio_defaults[] = {
+static double young_cards_per_entry_ratio_defaults[] = {
   1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
 };
 
@@ -168,11 +168,10 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _pending_card_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
   _rs_length_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
   _cost_per_card_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _fully_young_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _partially_young_cards_per_entry_ratio_seq(
-                                         new TruncatedSeq(TruncatedSeqLength)),
+  _young_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
+  _mixed_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
   _cost_per_entry_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
-  _partially_young_cost_per_entry_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+  _mixed_cost_per_entry_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
   _cost_per_byte_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
   _cost_per_byte_ms_during_cm_seq(new TruncatedSeq(TruncatedSeqLength)),
   _constant_other_time_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
@@ -185,9 +184,9 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _pause_time_target_ms((double) MaxGCPauseMillis),
 
-  _full_young_gcs(true),
-  _full_young_pause_num(0),
-  _partial_young_pause_num(0),
+  _gcs_are_young(true),
+  _young_pause_num(0),
+  _mixed_pause_num(0),
 
   _during_marking(false),
   _in_marking_window(false),
@@ -198,7 +197,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _young_gc_eff_seq(new TruncatedSeq(TruncatedSeqLength)),
 
-   _recent_prev_end_times_for_all_gcs_sec(new TruncatedSeq(NumPrevPausesForHeuristics)),
+  _recent_prev_end_times_for_all_gcs_sec(
+                                new TruncatedSeq(NumPrevPausesForHeuristics)),
 
   _recent_avg_pause_time_ratio(0.0),
 
@@ -206,8 +206,9 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _initiate_conc_mark_if_possible(false),
   _during_initial_mark_pause(false),
-  _should_revert_to_full_young_gcs(false),
-  _last_full_young_gc(false),
+  _should_revert_to_young_gcs(false),
+  _last_young_gc(false),
+  _last_gc_was_young(false),
 
   _eden_bytes_before_gc(0),
   _survivor_bytes_before_gc(0),
@@ -308,8 +309,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _pending_card_diff_seq->add(0.0);
   _rs_length_diff_seq->add(rs_length_diff_defaults[index]);
   _cost_per_card_ms_seq->add(cost_per_card_ms_defaults[index]);
-  _fully_young_cards_per_entry_ratio_seq->add(
-                            fully_young_cards_per_entry_ratio_defaults[index]);
+  _young_cards_per_entry_ratio_seq->add(
+                                  young_cards_per_entry_ratio_defaults[index]);
   _cost_per_entry_ms_seq->add(cost_per_entry_ms_defaults[index]);
   _cost_per_byte_ms_seq->add(cost_per_byte_ms_defaults[index]);
   _constant_other_time_ms_seq->add(constant_other_time_ms_defaults[index]);
@@ -606,7 +607,7 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
 
   size_t young_list_target_length = 0;
   if (adaptive_young_list_length()) {
-    if (full_young_gcs()) {
+    if (gcs_are_young()) {
       young_list_target_length =
                         calculate_young_list_target_length(rs_lengths,
                                                            base_min_length,
@@ -619,10 +620,10 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
       // possible to maximize how many old regions we can add to it.
     }
   } else {
-    if (full_young_gcs()) {
+    if (gcs_are_young()) {
       young_list_target_length = _young_list_fixed_length;
     } else {
-      // A bit arbitrary: during partially-young GCs we allocate half
+      // A bit arbitrary: during mixed GCs we allocate half
       // the young regions to try to add old regions to the CSet.
       young_list_target_length = _young_list_fixed_length / 2;
       // We choose to accept that we might go under the desired min
@@ -655,7 +656,7 @@ G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
                                                    size_t desired_min_length,
                                                    size_t desired_max_length) {
   assert(adaptive_young_list_length(), "pre-condition");
-  assert(full_young_gcs(), "only call this for fully-young GCs");
+  assert(gcs_are_young(), "only call this for young GCs");
 
   // In case some edge-condition makes the desired max length too small...
   if (desired_max_length <= desired_min_length) {
@@ -858,12 +859,11 @@ void G1CollectorPolicy::record_full_collection_end() {
 
   _g1->clear_full_collection();
 
-  // "Nuke" the heuristics that control the fully/partially young GC
-  // transitions and make sure we start with fully young GCs after the
-  // Full GC.
-  set_full_young_gcs(true);
-  _last_full_young_gc = false;
-  _should_revert_to_full_young_gcs = false;
+  // "Nuke" the heuristics that control the young/mixed GC
+  // transitions and make sure we start with young GCs after the Full GC.
+  set_gcs_are_young(true);
+  _last_young_gc = false;
+  _should_revert_to_young_gcs = false;
   clear_initiate_conc_mark_if_possible();
   clear_during_initial_mark_pause();
   _known_garbage_bytes = 0;
@@ -892,7 +892,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   if (PrintGCDetails) {
     gclog_or_tty->stamp(PrintGCTimeStamps);
     gclog_or_tty->print("[GC pause");
-    gclog_or_tty->print(" (%s)", full_young_gcs() ? "young" : "partial");
+    gclog_or_tty->print(" (%s)", gcs_are_young() ? "young" : "mixed");
   }
 
   // We only need to do this here as the policy will only be applied
@@ -951,7 +951,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec,
   // the evacuation pause if marking is in progress.
   _cur_satb_drain_time_ms = 0.0;
 
-  _last_young_gc_full = false;
+  _last_gc_was_young = false;
 
   // do that for any other surv rate groups
   _short_lived_surv_rate_group->stop_adding_regions();
@@ -988,8 +988,8 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_start() {
 }
 
 void G1CollectorPolicy::record_concurrent_mark_cleanup_completed() {
-  _should_revert_to_full_young_gcs = false;
-  _last_full_young_gc = true;
+  _should_revert_to_young_gcs = false;
+  _last_young_gc = true;
   _in_marking_window = false;
 }
 
@@ -1153,7 +1153,7 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
   size_t marking_initiating_used_threshold =
     (_g1->capacity() / 100) * InitiatingHeapOccupancyPercent;
 
-  if (!_g1->mark_in_progress() && !_last_full_young_gc) {
+  if (!_g1->mark_in_progress() && !_last_young_gc) {
     assert(!last_pause_included_initial_mark, "invariant");
     if (cur_used_bytes > marking_initiating_used_threshold) {
       if (cur_used_bytes > _prev_collection_pause_used_at_end_bytes) {
@@ -1458,57 +1458,57 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     new_in_marking_window_im = true;
   }
 
-  if (_last_full_young_gc) {
+  if (_last_young_gc) {
     if (!last_pause_included_initial_mark) {
-      ergo_verbose2(ErgoPartiallyYoungGCs,
-                    "start partially-young GCs",
+      ergo_verbose2(ErgoMixedGCs,
+                    "start mixed GCs",
                     ergo_format_byte_perc("known garbage"),
                     _known_garbage_bytes, _known_garbage_ratio * 100.0);
-      set_full_young_gcs(false);
+      set_gcs_are_young(false);
     } else {
-      ergo_verbose0(ErgoPartiallyYoungGCs,
-                    "do not start partially-young GCs",
+      ergo_verbose0(ErgoMixedGCs,
+                    "do not start mixed GCs",
                     ergo_format_reason("concurrent cycle is about to start"));
     }
-    _last_full_young_gc = false;
+    _last_young_gc = false;
   }
 
-  if ( !_last_young_gc_full ) {
-    if (_should_revert_to_full_young_gcs) {
-      ergo_verbose2(ErgoPartiallyYoungGCs,
-                    "end partially-young GCs",
-                    ergo_format_reason("partially-young GCs end requested")
+  if (!_last_gc_was_young) {
+    if (_should_revert_to_young_gcs) {
+      ergo_verbose2(ErgoMixedGCs,
+                    "end mixed GCs",
+                    ergo_format_reason("mixed GCs end requested")
                     ergo_format_byte_perc("known garbage"),
                     _known_garbage_bytes, _known_garbage_ratio * 100.0);
-      set_full_young_gcs(true);
+      set_gcs_are_young(true);
     } else if (_known_garbage_ratio < 0.05) {
-      ergo_verbose3(ErgoPartiallyYoungGCs,
-               "end partially-young GCs",
+      ergo_verbose3(ErgoMixedGCs,
+               "end mixed GCs",
                ergo_format_reason("known garbage percent lower than threshold")
                ergo_format_byte_perc("known garbage")
                ergo_format_perc("threshold"),
                _known_garbage_bytes, _known_garbage_ratio * 100.0,
                0.05 * 100.0);
-      set_full_young_gcs(true);
+      set_gcs_are_young(true);
     } else if (adaptive_young_list_length() &&
               (get_gc_eff_factor() * cur_efficiency < predict_young_gc_eff())) {
-      ergo_verbose5(ErgoPartiallyYoungGCs,
-                    "end partially-young GCs",
+      ergo_verbose5(ErgoMixedGCs,
+                    "end mixed GCs",
                     ergo_format_reason("current GC efficiency lower than "
-                                       "predicted fully-young GC efficiency")
+                                       "predicted young GC efficiency")
                     ergo_format_double("GC efficiency factor")
                     ergo_format_double("current GC efficiency")
-                    ergo_format_double("predicted fully-young GC efficiency")
+                    ergo_format_double("predicted young GC efficiency")
                     ergo_format_byte_perc("known garbage"),
                     get_gc_eff_factor(), cur_efficiency,
                     predict_young_gc_eff(),
                     _known_garbage_bytes, _known_garbage_ratio * 100.0);
-      set_full_young_gcs(true);
+      set_gcs_are_young(true);
     }
   }
-  _should_revert_to_full_young_gcs = false;
+  _should_revert_to_young_gcs = false;
 
-  if (_last_young_gc_full && !_during_marking) {
+  if (_last_gc_was_young && !_during_marking) {
     _young_gc_eff_seq->add(cur_efficiency);
   }
 
@@ -1534,19 +1534,21 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
       cost_per_entry_ms = scan_rs_time / (double) cards_scanned;
-      if (_last_young_gc_full)
+      if (_last_gc_was_young) {
         _cost_per_entry_ms_seq->add(cost_per_entry_ms);
-      else
-        _partially_young_cost_per_entry_ms_seq->add(cost_per_entry_ms);
+      } else {
+        _mixed_cost_per_entry_ms_seq->add(cost_per_entry_ms);
+      }
     }
 
     if (_max_rs_lengths > 0) {
       double cards_per_entry_ratio =
         (double) cards_scanned / (double) _max_rs_lengths;
-      if (_last_young_gc_full)
-        _fully_young_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
-      else
-        _partially_young_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
+      if (_last_gc_was_young) {
+        _young_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
+      } else {
+        _mixed_cards_per_entry_ratio_seq->add(cards_per_entry_ratio);
+      }
     }
 
     // It turns out that, sometimes, _max_rs_lengths can get smaller
@@ -1563,10 +1565,11 @@ void G1CollectorPolicy::record_collection_pause_end(int no_of_gc_threads) {
     double cost_per_byte_ms = 0.0;
     if (copied_bytes > 0) {
       cost_per_byte_ms = obj_copy_time / (double) copied_bytes;
-      if (_in_marking_window)
+      if (_in_marking_window) {
         _cost_per_byte_ms_during_cm_seq->add(cost_per_byte_ms);
-      else
+      } else {
         _cost_per_byte_ms_seq->add(cost_per_byte_ms);
+      }
     }
 
     double all_other_time_ms = pause_time_ms -
@@ -1722,10 +1725,11 @@ predict_young_collection_elapsed_time_ms(size_t adjustment) {
   size_t rs_lengths = g1h->young_list()->sampled_rs_lengths() +
                       predict_rs_length_diff();
   size_t card_num;
-  if (full_young_gcs())
+  if (gcs_are_young()) {
     card_num = predict_young_card_num(rs_lengths);
-  else
+  } else {
     card_num = predict_non_young_card_num(rs_lengths);
+  }
   size_t young_byte_size = young_num * HeapRegion::GrainBytes;
   double accum_yg_surv_rate =
     _short_lived_surv_rate_group->accum_surv_rate(adjustment);
@@ -1745,10 +1749,11 @@ double
 G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) {
   size_t rs_length = predict_rs_length_diff();
   size_t card_num;
-  if (full_young_gcs())
+  if (gcs_are_young()) {
     card_num = predict_young_card_num(rs_length);
-  else
+  } else {
     card_num = predict_non_young_card_num(rs_length);
+  }
   return predict_base_elapsed_time_ms(pending_cards, card_num);
 }
 
@@ -1766,10 +1771,11 @@ G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
                                                   bool young) {
   size_t rs_length = hr->rem_set()->occupied();
   size_t card_num;
-  if (full_young_gcs())
+  if (gcs_are_young()) {
     card_num = predict_young_card_num(rs_length);
-  else
+  } else {
     card_num = predict_non_young_card_num(rs_length);
+  }
   size_t bytes_to_copy = predict_bytes_to_copy(hr);
 
   double region_elapsed_time_ms =
@@ -1817,14 +1823,14 @@ void G1CollectorPolicy::check_if_region_is_too_expensive(double
   // I don't think we need to do this when in young GC mode since
   // marking will be initiated next time we hit the soft limit anyway...
   if (predicted_time_ms > _expensive_region_limit_ms) {
-    ergo_verbose2(ErgoPartiallyYoungGCs,
-              "request partially-young GCs end",
+    ergo_verbose2(ErgoMixedGCs,
+              "request mixed GCs end",
               ergo_format_reason("predicted region time higher than threshold")
               ergo_format_ms("predicted region time")
               ergo_format_ms("threshold"),
               predicted_time_ms, _expensive_region_limit_ms);
-    // no point in doing another partial one
-    _should_revert_to_full_young_gcs = true;
+    // no point in doing another mixed GC
+    _should_revert_to_young_gcs = true;
   }
 }
 
@@ -2033,8 +2039,8 @@ void G1CollectorPolicy::print_tracing_info() const {
     print_summary_sd(0, "Total", _all_pause_times_ms);
     gclog_or_tty->print_cr("");
     gclog_or_tty->print_cr("");
-    gclog_or_tty->print_cr("   Full Young GC Pauses:    %8d", _full_young_pause_num);
-    gclog_or_tty->print_cr("   Partial Young GC Pauses: %8d", _partial_young_pause_num);
+    gclog_or_tty->print_cr("   Young GC Pauses: %8d", _young_pause_num);
+    gclog_or_tty->print_cr("   Mixed GC Pauses: %8d", _mixed_pause_num);
     gclog_or_tty->print_cr("");
 
     gclog_or_tty->print_cr("EVACUATION PAUSES");
@@ -2188,11 +2194,11 @@ G1CollectorPolicy::decide_on_conc_mark_initiation() {
       // initiate a new cycle.
 
       set_during_initial_mark_pause();
-      // We do not allow non-full young GCs during marking.
-      if (!full_young_gcs()) {
-        set_full_young_gcs(true);
-        ergo_verbose0(ErgoPartiallyYoungGCs,
-                      "end partially-young GCs",
+      // We do not allow mixed GCs during marking.
+      if (!gcs_are_young()) {
+        set_gcs_are_young(true);
+        ergo_verbose0(ErgoMixedGCs,
+                      "end mixed GCs",
                       ergo_format_reason("concurrent cycle is about to start"));
       }
 
@@ -2623,12 +2629,12 @@ void G1CollectorPolicy::choose_collection_set(double target_pause_time_ms) {
   double young_start_time_sec = os::elapsedTime();
 
   _collection_set_bytes_used_before = 0;
-  _last_young_gc_full = full_young_gcs() ? true : false;
+  _last_gc_was_young = gcs_are_young() ? true : false;
 
-  if (_last_young_gc_full) {
-    ++_full_young_pause_num;
+  if (_last_gc_was_young) {
+    ++_young_pause_num;
   } else {
-    ++_partial_young_pause_num;
+    ++_mixed_pause_num;
   }
 
   // The young list is laid with the survivor regions from the previous
@@ -2675,7 +2681,7 @@ void G1CollectorPolicy::choose_collection_set(double target_pause_time_ms) {
   // We are doing young collections so reset this.
   non_young_start_time_sec = young_end_time_sec;
 
-  if (!full_young_gcs()) {
+  if (!gcs_are_young()) {
     bool should_continue = true;
     NumberSeq seq;
     double avg_prediction = 100000000000000000.0; // something very large
@@ -2732,14 +2738,14 @@ void G1CollectorPolicy::choose_collection_set(double target_pause_time_ms) {
     } while (should_continue);
 
     if (!adaptive_young_list_length() &&
-                             cset_region_length() < _young_list_fixed_length) {
+        cset_region_length() < _young_list_fixed_length) {
       ergo_verbose2(ErgoCSetConstruction,
-                    "request partially-young GCs end",
+                    "request mixed GCs end",
                     ergo_format_reason("CSet length lower than target")
                     ergo_format_region("CSet")
                     ergo_format_region("young target"),
                     cset_region_length(), _young_list_fixed_length);
-      _should_revert_to_full_young_gcs  = true;
+      _should_revert_to_young_gcs  = true;
     }
 
     ergo_verbose2(ErgoCSetConstruction | ErgoHigh,

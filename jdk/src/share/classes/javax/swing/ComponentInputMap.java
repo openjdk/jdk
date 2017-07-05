@@ -35,6 +35,7 @@ package javax.swing;
  * @author Scott Violet
  * @since 1.3
  */
+@SuppressWarnings("serial")
 public class ComponentInputMap extends InputMap {
     /** Component binding is created for. */
     private JComponent          component;

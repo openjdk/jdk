@@ -46,7 +46,7 @@ import javax.xml.crypto.dsig.Transform;
  */
 public final class XPathFilter2ParameterSpec implements TransformParameterSpec {
 
-    private final List xPathList;
+    private final List<XPathType> xPathList;
 
     /**
      * Creates an <code>XPathFilter2ParameterSpec</code>.
@@ -59,11 +59,12 @@ public final class XPathFilter2ParameterSpec implements TransformParameterSpec {
      * @throws NullPointerException if <code>xPathList</code> is
      *    <code>null</code>
      */
+    @SuppressWarnings("rawtypes")
     public XPathFilter2ParameterSpec(List xPathList) {
         if (xPathList == null) {
             throw new NullPointerException("xPathList cannot be null");
         }
-        List xPathListCopy = new ArrayList(xPathList);
+        List<?> xPathListCopy = new ArrayList<>((List<?>)xPathList);
         if (xPathListCopy.isEmpty()) {
             throw new IllegalArgumentException("xPathList cannot be empty");
         }
@@ -74,7 +75,11 @@ public final class XPathFilter2ParameterSpec implements TransformParameterSpec {
                     ("xPathList["+i+"] is not a valid type");
             }
         }
-        this.xPathList = Collections.unmodifiableList(xPathListCopy);
+
+        @SuppressWarnings("unchecked")
+        List<XPathType> temp = (List<XPathType>)xPathListCopy;
+
+        this.xPathList = Collections.unmodifiableList(temp);
     }
 
     /**
@@ -86,6 +91,7 @@ public final class XPathFilter2ParameterSpec implements TransformParameterSpec {
      * @return a <code>List</code> of <code>XPathType</code> objects
      *    (never <code>null</code> or empty)
      */
+    @SuppressWarnings("rawtypes")
     public List getXPathList() {
         return xPathList;
     }

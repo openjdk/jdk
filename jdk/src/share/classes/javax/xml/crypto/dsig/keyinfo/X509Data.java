@@ -109,5 +109,6 @@ public interface X509Data extends XMLStructure {
      * @return an unmodifiable list of the content in this <code>X509Data</code>
      *    (never <code>null</code> or empty)
      */
+    @SuppressWarnings("rawtypes")
     List getContent();
 }

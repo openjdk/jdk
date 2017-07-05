@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef OS_WINDOWS_VM_JVM_WINDOWS_H
+#define OS_WINDOWS_VM_JVM_WINDOWS_H
+
 #ifndef _JAVASOFT_JVM_MD_H_
 #define _JAVASOFT_JVM_MD_H_
 
@@ -54,9 +57,9 @@ typedef struct _MODULEINFO {
 #include <Psapi.h>
 #endif
 
-
-
 #include <Tlhelp32.h>
+
+typedef unsigned int socklen_t;
 
 // #include "jni.h"
 
@@ -129,3 +132,5 @@ JVM_GetThreadInterruptEvent();
 #define SHUTDOWN2_SIGNAL SIGTERM
 
 #endif /* !_JAVASOFT_JVM_MD_H_ */
+
+#endif // OS_WINDOWS_VM_JVM_WINDOWS_H

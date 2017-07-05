@@ -330,8 +330,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *    of less-contended queues.  During spins threads check their
      *    interrupt status and generate a thread-local random number
      *    to decide to occasionally perform a Thread.yield. While
-     *    yield has underdefined specs, we assume that might it help,
-     *    and will not hurt in limiting impact of spinning on busy
+     *    yield has underdefined specs, we assume that it might help,
+     *    and will not hurt, in limiting impact of spinning on busy
      *    systems.  We also use smaller (1/2) spins for nodes that are
      *    not known to be front but whose predecessors have not
      *    blocked -- these "chained" spins avoid artifacts of
@@ -542,7 +542,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         static {
             try {
                 UNSAFE = sun.misc.Unsafe.getUnsafe();
-                Class k = Node.class;
+                Class<?> k = Node.class;
                 itemOffset = UNSAFE.objectFieldOffset
                     (k.getDeclaredField("item"));
                 nextOffset = UNSAFE.objectFieldOffset
@@ -627,7 +627,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                                 break;        // unless slack < 2
                         }
                         LockSupport.unpark(p.waiter);
-                        return this.<E>cast(item);
+                        return LinkedTransferQueue.<E>cast(item);
                     }
                 }
                 Node n = p.next;
@@ -705,7 +705,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             if (item != e) {                  // matched
                 // assert item != s;
                 s.forgetContents();           // avoid garbage
-                return this.<E>cast(item);
+                return LinkedTransferQueue.<E>cast(item);
             }
             if ((w.isInterrupted() || (timed && nanos <= 0)) &&
                     s.casItem(e, s)) {        // cancel
@@ -786,7 +786,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             Object item = p.item;
             if (p.isData) {
                 if (item != null && item != p)
-                    return this.<E>cast(item);
+                    return LinkedTransferQueue.<E>cast(item);
             }
             else if (item == null)
                 return null;
@@ -1008,7 +1008,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         return false;
     }
 
-
     /**
      * Creates an initially empty {@code LinkedTransferQueue}.
      */
@@ -1045,7 +1044,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * return {@code false}.
      *
      * @return {@code true} (as specified by
-     *  {@link BlockingQueue#offer(Object,long,TimeUnit) BlockingQueue.offer})
+     *  {@link java.util.concurrent.BlockingQueue#offer(Object,long,TimeUnit)
+     *  BlockingQueue.offer})
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e, long timeout, TimeUnit unit) {
@@ -1162,8 +1162,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         if (c == this)
             throw new IllegalArgumentException();
         int n = 0;
-        E e;
-        while ( (e = poll()) != null) {
+        for (E e; (e = poll()) != null;) {
             c.add(e);
             ++n;
         }
@@ -1180,8 +1179,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         if (c == this)
             throw new IllegalArgumentException();
         int n = 0;
-        E e;
-        while (n < maxElements && (e = poll()) != null) {
+        for (E e; n < maxElements && (e = poll()) != null;) {
             c.add(e);
             ++n;
         }
@@ -1288,7 +1286,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * {@code LinkedTransferQueue} is not capacity constrained.
      *
      * @return {@code Integer.MAX_VALUE} (as specified by
-     *         {@link BlockingQueue#remainingCapacity()})
+     *         {@link java.util.concurrent.BlockingQueue#remainingCapacity()
+     *         BlockingQueue.remainingCapacity})
      */
     public int remainingCapacity() {
         return Integer.MAX_VALUE;
@@ -1320,7 +1319,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();
         for (;;) {
-            @SuppressWarnings("unchecked") E item = (E) s.readObject();
+            @SuppressWarnings("unchecked")
+            E item = (E) s.readObject();
             if (item == null)
                 break;
             else
@@ -1337,7 +1337,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Class k = LinkedTransferQueue.class;
+            Class<?> k = LinkedTransferQueue.class;
             headOffset = UNSAFE.objectFieldOffset
                 (k.getDeclaredField("head"));
             tailOffset = UNSAFE.objectFieldOffset

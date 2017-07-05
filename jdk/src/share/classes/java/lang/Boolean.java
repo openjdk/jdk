@@ -60,7 +60,8 @@ public final class Boolean implements java.io.Serializable,
      *
      * @since   JDK1.1
      */
-    public static final Class<Boolean> TYPE = Class.getPrimitiveClass("boolean");
+    @SuppressWarnings("unchecked")
+    public static final Class<Boolean> TYPE = (Class<Boolean>) Class.getPrimitiveClass("boolean");
 
     /**
      * The value of the Boolean.

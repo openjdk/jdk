@@ -80,6 +80,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
      * 1) accepts focus on click (in general)
      * 2) may be a focus owner (in particular)
      */
+    @SuppressWarnings("deprecation")
     public static boolean shouldFocusOnClick(Component component) {
         boolean acceptFocusOnClick = false;
 
@@ -110,6 +111,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
     /*
      * Posts proper lost/gain focus events to the event queue.
      */
+    @SuppressWarnings("deprecation")
     public static boolean deliverFocus(Component lightweightChild,
                                        Component target,
                                        boolean temporary,
@@ -119,7 +121,7 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
                                        Component currentFocusOwner) // provided by the descendant peers
     {
         if (lightweightChild == null) {
-            lightweightChild = (Component)target;
+            lightweightChild = target;
         }
 
         Component currentOwner = currentFocusOwner;
