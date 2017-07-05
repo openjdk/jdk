@@ -76,14 +76,6 @@ case "$OS" in
     ;;
 esac
 
-# set classpath and extension directory variables
-if [ -d ${TESTJAVA}${FS}lib${FS}ext ]
-then
-    EXTDIRS="${TESTJAVA}${FS}lib${FS}ext${PS}${TESTCLASSES}"
-else
-    EXTDIRS="${TESTJAVA}${FS}jre${FS}lib${FS}ext${PS}${TESTCLASSES}"
-fi
-
 case "$1" in
   "foo" )
     cp ${TESTSRC}${FS}fooprovider.jar ${TESTCLASSES}
@@ -122,12 +114,7 @@ else
 fi
 
 # run
-if [ "$3" = "true" ]
-then
-  RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Djava.ext.dirs=${EXTDIRS} $2 "
-else
-  RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${CLASSPATHARG} $2 "
-fi
+RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -classpath ${CLASSPATHARG} $2 "
 
 echo ${RUNCMD}
 ${RUNCMD}

@@ -456,6 +456,7 @@ JRT_END
 
 address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
   assert(frame::verify_return_pc(return_address), err_msg("must be a return address: " INTPTR_FORMAT, return_address));
+  assert(thread->frames_to_pop_failed_realloc() == 0 || Interpreter::contains(return_address), "missed frames to pop?");
 
   // Reset method handle flag.
   thread->set_is_method_handle_return(false);

@@ -32,7 +32,6 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.table.*;
-import sun.awt.SunToolkit;
 
 public class bug6263446 {
 
@@ -43,7 +42,6 @@ public class bug6263446 {
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -55,63 +53,63 @@ public class bug6263446 {
         });
 
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         Point point = getClickPoint();
         robot.mouseMove(point.x, point.y);
-        toolkit.realSync();
+        robot.waitForIdle();
 
         click(1);
-        toolkit.realSync();
+        robot.waitForIdle();
         assertEditing(false);
 
         click(2);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(null);
 
         click(3);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(FIRST);
 
 
         click(4);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(ALL);
 
         setClickCountToStart(1);
 
         click(1);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(null);
 
         click(2);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(FIRST);
 
         click(3);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(ALL);
 
         setClickCountToStart(3);
 
         click(1);
-        toolkit.realSync();
+        robot.waitForIdle();
         assertEditing(false);
 
         click(2);
-        toolkit.realSync();
+        robot.waitForIdle();
         assertEditing(false);
 
         click(3);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(null);
 
         click(4);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(FIRST);
 
         click(5);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(ALL);
 
 
@@ -123,11 +121,11 @@ public class bug6263446 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
         assertEditing(true);
 
         click(2);
-        toolkit.realSync();
+        robot.waitForIdle();
         checkSelectedText(FIRST);
 
     }

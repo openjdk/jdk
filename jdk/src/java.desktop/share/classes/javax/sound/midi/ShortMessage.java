@@ -303,7 +303,7 @@ public class ShortMessage extends MidiMessage {
      * @param  status the MIDI status byte
      * @param  data1 the first data byte
      * @param  data2 the second data byte
-     * @throws InvalidMidiDataException if the the status byte, or all data
+     * @throws InvalidMidiDataException if the status byte, or all data
      *         bytes belonging to the message, do not specify a valid MIDI
      *         message
      * @see #setMessage(int, int, int, int)

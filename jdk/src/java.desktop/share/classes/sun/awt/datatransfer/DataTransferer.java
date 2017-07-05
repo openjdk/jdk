@@ -926,6 +926,15 @@ search:
         // bytes and dump them into a byte array. For text flavors, decode back
         // to a String and recur to reencode according to the requested format.
         } else if (flavor.isRepresentationClassInputStream()) {
+
+            // Workaround to JDK-8024061: Exception thrown when drag and drop
+            //      between two components is executed quickly.
+            // and JDK-8065098:  JColorChooser no longer supports drag and drop
+            //      between two JVM instances
+            if (!(obj instanceof InputStream)) {
+                return new byte[0];
+            }
+
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                 try (InputStream is = (InputStream)obj) {
                     boolean eof = false;

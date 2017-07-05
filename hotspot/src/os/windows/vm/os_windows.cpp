@@ -3074,7 +3074,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment) {
 char* os::pd_reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   assert((size_t)addr % os::vm_allocation_granularity() == 0,
          "reserve alignment");
-  assert(bytes % os::vm_allocation_granularity() == 0, "reserve block size");
+  assert(bytes % os::vm_page_size() == 0, "reserve page size");
   char* res;
   // note that if UseLargePages is on, all the areas that require interleaving
   // will go thru reserve_memory_special rather than thru here.

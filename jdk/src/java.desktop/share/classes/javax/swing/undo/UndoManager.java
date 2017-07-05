@@ -283,7 +283,7 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
 
 
     /**
-     * Returns the the next significant edit to be undone if <code>undo</code>
+     * Returns the next significant edit to be undone if <code>undo</code>
      * is invoked. This returns <code>null</code> if there are no edits
      * to be undone.
      *
@@ -302,7 +302,7 @@ public class UndoManager extends CompoundEdit implements UndoableEditListener {
     }
 
     /**
-     * Returns the the next significant edit to be redone if <code>redo</code>
+     * Returns the next significant edit to be redone if <code>redo</code>
      * is invoked. This returns <code>null</code> if there are no edits
      * to be redone.
      *

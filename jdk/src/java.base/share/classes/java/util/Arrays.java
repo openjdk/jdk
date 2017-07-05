@@ -1221,7 +1221,7 @@ public class Arrays {
      *
      * <p>The implementation takes equal advantage of ascending and
      * descending order in its input array, and can take advantage of
-     * ascending and descending order in different parts of the the same
+     * ascending and descending order in different parts of the same
      * input array.  It is well-suited to merging two or more sorted arrays:
      * simply concatenate the arrays and sort the resulting array.
      *
@@ -1280,7 +1280,7 @@ public class Arrays {
      *
      * <p>The implementation takes equal advantage of ascending and
      * descending order in its input array, and can take advantage of
-     * ascending and descending order in different parts of the the same
+     * ascending and descending order in different parts of the same
      * input array.  It is well-suited to merging two or more sorted arrays:
      * simply concatenate the arrays and sort the resulting array.
      *
@@ -1407,7 +1407,7 @@ public class Arrays {
      *
      * <p>The implementation takes equal advantage of ascending and
      * descending order in its input array, and can take advantage of
-     * ascending and descending order in different parts of the the same
+     * ascending and descending order in different parts of the same
      * input array.  It is well-suited to merging two or more sorted arrays:
      * simply concatenate the arrays and sort the resulting array.
      *
@@ -1473,7 +1473,7 @@ public class Arrays {
      *
      * <p>The implementation takes equal advantage of ascending and
      * descending order in its input array, and can take advantage of
-     * ascending and descending order in different parts of the the same
+     * ascending and descending order in different parts of the same
      * input array.  It is well-suited to merging two or more sorted arrays:
      * simply concatenate the arrays and sort the resulting array.
      *

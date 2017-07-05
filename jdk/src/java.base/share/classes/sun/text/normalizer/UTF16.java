@@ -94,7 +94,7 @@ package sun.text.normalizer;
  *   </li>
  *   <li>
  *    <strong>Exceptions:</strong> The error checking will throw an exception
- *   if indices are out of bounds. Other than than that, all methods will
+ *   if indices are out of bounds. Other than that, all methods will
  *   behave reasonably, even if unmatched surrogates or out-of-bounds UTF-32
  *   values are present. <code>UCharacter.isLegal()</code> can be used to check
  *   for validity if desired.

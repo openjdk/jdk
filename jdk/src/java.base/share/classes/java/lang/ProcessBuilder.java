@@ -750,7 +750,7 @@ public final class ProcessBuilder
      * {@link Process#getErrorStream()} will return a
      * <a href="#redirect-output">null input stream</a>.
      *
-     * <p>If the {@link #redirectErrorStream redirectErrorStream}
+     * <p>If the {@link #redirectErrorStream() redirectErrorStream}
      * attribute has been set {@code true}, then the redirection set
      * by this method has no effect.
      *

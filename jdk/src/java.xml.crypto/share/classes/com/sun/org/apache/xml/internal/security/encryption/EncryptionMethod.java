@@ -68,7 +68,7 @@ public interface EncryptionMethod {
     void setKeySize(int size);
 
     /**
-     * Returns the OAEP parameters of the algorithm applied applied to the
+     * Returns the OAEP parameters of the algorithm applied to the
      * cipher data.
      *
      * @return the OAEP parameters.
@@ -130,4 +130,3 @@ public interface EncryptionMethod {
      */
     void removeEncryptionMethodInformation(Element information);
 }
-

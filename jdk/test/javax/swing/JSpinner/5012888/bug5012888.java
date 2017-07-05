@@ -43,10 +43,10 @@ public class bug5012888 extends JFrame {
       pane.add(spinner2, BorderLayout.SOUTH);
     }
     public void doTest() throws Exception {
-        ((sun.awt.SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        Robot robot = new Robot();
+        robot.waitForIdle();
         Point p = spinner2.getLocationOnScreen();
         Rectangle rect = spinner2.getBounds();
-        Robot robot = new Robot();
         robot.mouseMove(p.x+rect.width-5, p.y+5);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         Thread.sleep(1000);

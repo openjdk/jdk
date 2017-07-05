@@ -225,7 +225,7 @@ import java.io.IOException;
  * file contains a provider configuration file named
  * <tt>com.sun.jdi.connect.spi.TransportService</tt> in the resource
  * directory <tt>META-INF/services</tt>, and the provider
- * configuration file lists the the full-qualified class name of the
+ * configuration file lists the full-qualified class name of the
  * TransportService implementation. A TransportService is a concrete
  * sub-class of {@link com.sun.jdi.connect.spi.TransportService
  * TransportService}. The format of the provider configuration file

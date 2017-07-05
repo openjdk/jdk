@@ -823,7 +823,7 @@ public class EventQueue {
     }
 
     /**
-     * Returns the the event currently being dispatched by the
+     * Returns the event currently being dispatched by the
      * <code>EventQueue</code> associated with the calling thread. This is
      * useful if a method needs access to the event, but was not designed to
      * receive a reference to it as an argument. Note that this method should

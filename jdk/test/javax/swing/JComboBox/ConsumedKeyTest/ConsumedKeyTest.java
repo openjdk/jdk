@@ -27,18 +27,24 @@ import java.awt.event.KeyEvent;
 
 /*
   @test
-  @bug 8031485
+  @bug 8031485 8058193
   @summary Combo box consuming escape and enter key events
   @author Petr Pchelko
   @library ../../../../lib/testlibrary/
   @build ExtendedRobot
-  @run main ConsumedEscTest
+  @run main ConsumedKeyTest
 */
-public class ConsumedEscTest {
+public class ConsumedKeyTest {
     private static volatile JFrame frame;
-    private static volatile boolean passed = false;
+    private static volatile boolean passed;
 
     public static void main(String... args) throws Exception {
+        test(KeyEvent.VK_ESCAPE);
+        test(KeyEvent.VK_ENTER);
+    }
+
+    private static void test(final int key) throws Exception {
+        passed = false;
         try {
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame();
@@ -47,27 +53,28 @@ public class ConsumedEscTest {
                 panel.add(combo);
                 combo.requestFocusInWindow();
                 frame.setBounds(100, 150, 300, 100);
-                addAction(panel);
+                addAction(panel, key);
                 frame.add(panel);
                 frame.setVisible(true);
             });
 
             ExtendedRobot robot = new ExtendedRobot();
             robot.waitForIdle();
-            robot.type(KeyEvent.VK_ESCAPE);
+            robot.type(key);
             robot.waitForIdle();
             if (!passed) {
-                throw new RuntimeException("FAILED: ESC was consumed by combo box");
+                throw new RuntimeException("FAILED: " + KeyEvent.getKeyText(key) + " was consumed by combo box");
             }
         } finally {
             if (frame != null) {
                 frame.dispose();
             }
         }
+
     }
 
-    private static void addAction(JComponent comp) {
-        KeyStroke k = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+    private static void addAction(JComponent comp, final int key) {
+        KeyStroke k = KeyStroke.getKeyStroke(key, 0);
         Object actionKey = "cancel";
         comp.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(k, actionKey);
         Action cancelAction = new AbstractAction() {

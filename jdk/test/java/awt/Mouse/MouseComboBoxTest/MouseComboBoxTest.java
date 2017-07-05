@@ -27,8 +27,6 @@
  * @summary Tests JComboBox selection via the mouse
  * @author Dmitry Markov
  */
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.plaf.basic.ComboPopup;
@@ -41,14 +39,12 @@ import java.awt.event.KeyEvent;
 public class MouseComboBoxTest {
     private static final String[] items = {"One", "Two", "Three", "Four", "Five"};
 
-    private static SunToolkit toolkit = null;
     private static Robot robot = null;
     private static JFrame frame = null;
     private static JComboBox comboBox = null;
     private static MyComboBoxUI comboBoxUI = null;
 
     public static void main(String[] args) throws Exception {
-        toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -59,19 +55,19 @@ public class MouseComboBoxTest {
                 createAndShowGUI();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         for (int i = 0; i < items.length; i++) {
             // Open popup
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
-            toolkit.realSync();
+            robot.waitForIdle();
 
             Point point = getItemPointToClick(i);
             robot.mouseMove(point.x, point.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            toolkit.realSync();
+            robot.waitForIdle();
 
             if (i != getSelectedIndex()) {
                 throw new RuntimeException("Test Failed! Incorrect value of selected index = " + getSelectedIndex() +

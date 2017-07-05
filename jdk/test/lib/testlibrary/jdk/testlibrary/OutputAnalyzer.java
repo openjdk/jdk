@@ -25,13 +25,9 @@ package jdk.testlibrary;
 
 import static jdk.testlibrary.Asserts.*;
 
-import java.io.ByteArrayOutputStream;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -414,8 +410,12 @@ public final class OutputAnalyzer {
      * @return Contents of the output buffer as list of strings
      */
     public List<String> asLines() {
+        return asLines(getOutput());
+    }
+
+    private List<String> asLines(String buffer) {
         List<String> l = new ArrayList<>();
-        String[] a = getOutput().split(Utils.NEW_LINE);
+        String[] a = buffer.split(Utils.NEW_LINE);
         for (String string : a) {
             l.add(string);
         }
@@ -442,6 +442,13 @@ public final class OutputAnalyzer {
      */
     public int shouldMatchByLine(String pattern) {
         return shouldMatchByLine(null, null, pattern);
+    }
+
+    /**
+     * @see #stdoutShouldMatchByLine(String, String, String)
+     */
+    public int stdoutShouldMatchByLine(String pattern) {
+        return stdoutShouldMatchByLine(null, null, pattern);
     }
 
     /**
@@ -474,7 +481,30 @@ public final class OutputAnalyzer {
      * @return Count of lines which match the {@code pattern}
      */
     public int shouldMatchByLine(String from, String to, String pattern) {
-        List<String> lines = asLines();
+        return shouldMatchByLine(getOutput(), from, to, pattern);
+    }
+
+    /**
+     * Verify that the stdout contents of output buffer matches the
+     * {@code pattern} line by line. The whole stdout could be matched or
+     * just a subset of it.
+     *
+     * @param from
+     *            The line from where stdout will be matched.
+     *            Set {@code from} to null for matching from the first line.
+     * @param to
+     *            The line until where stdout will be matched.
+     *            Set {@code to} to null for matching until the last line.
+     * @param pattern
+     *            Matching pattern
+     * @return Count of lines which match the {@code pattern}
+     */
+    public int stdoutShouldMatchByLine(String from, String to, String pattern) {
+        return shouldMatchByLine(getStdout(), from, to, pattern);
+    }
+
+    private int shouldMatchByLine(String buffer, String from, String to, String pattern) {
+        List<String> lines = asLines(buffer);
 
         int fromIndex = 0;
         if (from != null) {
@@ -500,4 +530,5 @@ public final class OutputAnalyzer {
 
         return matchedCount;
     }
+
 }

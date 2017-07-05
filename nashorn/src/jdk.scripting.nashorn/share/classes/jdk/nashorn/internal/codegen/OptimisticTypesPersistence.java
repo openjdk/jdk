@@ -67,7 +67,7 @@ import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
- * Static utility that encapsulates persistence of type information for functions compiled with optimistic
+ * <p>Static utility that encapsulates persistence of type information for functions compiled with optimistic
  * typing. With this feature enabled, when a JavaScript function is recompiled because it gets deoptimized,
  * the type information for deoptimization is stored in a cache file. If the same function is compiled in a
  * subsequent JVM invocation, the type information is used for initial compilation, thus allowing the system
@@ -83,6 +83,7 @@ import jdk.nashorn.internal.runtime.options.Options;
  * {@code nashorn.typeInfo.cleanupDelaySeconds} system property. You can also specify the word
  * {@code unlimited} as the value for {@code nashorn.typeInfo.maxFiles} in which case the type info cache is
  * allowed to grow without limits.
+ * </p>
  */
 public final class OptimisticTypesPersistence {
     // Default is 0, for disabling the feature when not specified. A reasonable default when enabled is

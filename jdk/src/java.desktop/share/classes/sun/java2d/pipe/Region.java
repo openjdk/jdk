@@ -30,6 +30,8 @@ import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.RectangularShape;
 
+import sun.java2d.loops.TransformHelper;
+
 /**
  * This class encapsulates a definition of a two dimensional region which
  * consists of a number of Y ranges each containing multiple X bands.
@@ -160,6 +162,15 @@ public class Region {
         this.hiy = hiy;
     }
 
+    private Region(int lox, int loy, int hix, int hiy, int[] bands, int end) {
+        this.lox = lox;
+        this.loy = loy;
+        this.hix = hix;
+        this.hiy = hiy;
+        this.bands = bands;
+        this.endIndex = end;
+    }
+
     /**
      * Returns a Region object covering the pixels which would be
      * touched by a fill or clip operation on a Graphics implementation
@@ -253,6 +264,44 @@ public class Region {
         } finally {
             sr.dispose();
         }
+    }
+
+    /**
+     * Returns a Region object with a rectangle of interest specified by the
+     * indicated rectangular area in lox, loy, hix, hiy and edges array, which
+     * is located relative to the rectangular area. Edges array - 0,1 are y
+     * range, 2N,2N+1 are x ranges, 1 per y range.
+     *
+     * @see TransformHelper
+     */
+    static Region getInstance(final int lox, final int loy, final int hix,
+                              final int hiy, final int[] edges) {
+        final int y1 = edges[0];
+        final int y2 = edges[1];
+        if (hiy <= loy || hix <= lox || y2 <= y1) {
+            return EMPTY_REGION;
+        }
+        // rowsNum * (3 + 1 * 2)
+        final int[] bands = new int[(y2 - y1) * 5];
+        int end = 0;
+        int index = 2;
+        for (int y = y1; y < y2; ++y) {
+            final int spanlox = Math.max(clipAdd(lox, edges[index++]), lox);
+            final int spanhix = Math.min(clipAdd(lox, edges[index++]), hix);
+            if (spanlox < spanhix) {
+                final int spanloy = Math.max(clipAdd(loy, y), loy);
+                final int spanhiy = Math.min(clipAdd(spanloy, 1), hiy);
+                if (spanloy < spanhiy) {
+                    bands[end++] = spanloy;
+                    bands[end++] = spanhiy;
+                    bands[end++] = 1; // 1 span per row
+                    bands[end++] = spanlox;
+                    bands[end++] = spanhix;
+                }
+            }
+        }
+        return end != 0 ? new Region(lox, loy, hix, hiy, bands, end)
+                        : EMPTY_REGION;
     }
 
     /**

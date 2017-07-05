@@ -35,7 +35,7 @@ import sun.rmi.runtime.Log;
  * ConnectionMultiplexer manages the transparent multiplexing of
  * multiple virtual connections from one endpoint to another through
  * one given real connection to that endpoint.  The input and output
- * streams for the the underlying real connection must be supplied.
+ * streams for the underlying real connection must be supplied.
  * A callback object is also supplied to be informed of new virtual
  * connections opened by the remote endpoint.  After creation, the
  * run() method must be called in a thread created for demultiplexing
