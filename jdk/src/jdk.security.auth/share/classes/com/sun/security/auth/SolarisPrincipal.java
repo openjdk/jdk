@@ -41,10 +41,11 @@ import java.security.Principal;
  * @deprecated As of JDK&nbsp;1.4, replaced by
  *             {@link UnixPrincipal}.
  *             This class is entirely deprecated.
+ * This class is subject to removal in a future version of Java SE.
  * @see java.security.Principal
  * @see javax.security.auth.Subject
  */
-@Deprecated
+@Deprecated(since="1.4", forRemoval=true)
 public class SolarisPrincipal implements Principal, java.io.Serializable {
 
     private static final long serialVersionUID = -7840670002439379038L;

@@ -24,17 +24,14 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
-import jdk.tools.jlink.internal.Utils;
 
 /**
  *
@@ -84,11 +81,6 @@ public final class ExcludePlugin implements TransformerPlugin {
 
     @Override
     public void configure(Map<String, String> config) {
-        try {
-            String val = config.get(NAME);
-            predicate = new ResourceFilter(Utils.listParser.apply(val), true);
-        } catch (IOException ex) {
-            throw new PluginException(ex);
-        }
+        predicate = ResourceFilter.excludeFilter(config.get(NAME));
     }
 }

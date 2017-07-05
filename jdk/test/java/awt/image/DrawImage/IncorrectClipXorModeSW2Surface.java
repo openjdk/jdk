@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import static java.awt.geom.Rectangle2D.Double;
 
 /**
  * @test
+ * @key headful
  * @bug 8061456
  * @summary Tests drawing BI to volatile image using different clips + xor mode.
  *          Results of the blit BI to compatibleImage is used for comparison.

@@ -24,14 +24,14 @@
 /**
  * @test
  * @library /lib/testlibrary
- * @build AutomaticModulesTest ModuleUtils
+ * @build AutomaticModulesTest ModuleUtils JarUtils
  * @run testng AutomaticModulesTest
  * @summary Basic tests for automatic modules
  */
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.module.Configuration;
+import java.lang.module.FindException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
@@ -46,11 +46,9 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.Set;
 import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -62,10 +60,8 @@ public class AutomaticModulesTest {
     private static final Path USER_DIR
          = Paths.get(System.getProperty("user.dir"));
 
-
     @DataProvider(name = "names")
     public Object[][] createNames() {
-
         return new Object[][] {
 
             // JAR file name                module-name[/version]
@@ -98,12 +94,22 @@ public class AutomaticModulesTest {
         };
     }
 
+    // JAR file names that do not map to a legal module name
+    @DataProvider(name = "badnames")
+    public Object[][] createBadNames() {
+        return new Object[][]{
+
+            { ".jar",     null },
+            { "_.jar",    null }
+
+        };
+    }
+
     /**
      * Test mapping of JAR file names to module names
      */
     @Test(dataProvider = "names")
     public void testNames(String fn, String mid) throws IOException {
-
         String[] s = mid.split("/");
         String mn = s[0];
         String vs = (s.length == 2) ? s[1] : null;
@@ -112,7 +118,7 @@ public class AutomaticModulesTest {
         Path jf = dir.resolve(fn);
 
         // create empty JAR file
-        createJarFile(jf);
+        createDummyJarFile(jf);
 
         // create a ModuleFinder to find modules in the directory
         ModuleFinder finder = ModuleFinder.of(dir);
@@ -128,17 +134,32 @@ public class AutomaticModulesTest {
         } else {
             assertEquals(descriptor.version().get().toString(), vs);
         }
+    }
 
+
+    /**
+     * Test impossible mapping of JAR files to modules names
+     */
+    @Test(dataProvider = "badnames", expectedExceptions = FindException.class)
+    public void testBadNames(String fn, String ignore) throws IOException {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        Path jf = dir.resolve(fn);
+
+        // create empty JAR file
+        createDummyJarFile(jf);
+
+        // should throw FindException
+        ModuleFinder.of(dir).findAll();
     }
 
 
     /**
      * Test all packages are exported
      */
-    public void testExports() throws IOException {
+    public void testPackages() throws IOException {
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        createJarFile(dir.resolve("m1.jar"),
-                      "p/C1.class", "p/C2.class", "q/C1.class");
+        createDummyJarFile(dir.resolve("m1.jar"),
+                           "p/C1.class", "p/C2.class", "q/C1.class");
 
         ModuleFinder finder = ModuleFinder.of(dir);
 
@@ -158,6 +179,84 @@ public class AutomaticModulesTest {
 
 
     /**
+     * Test class file in JAR file where the entry does not correspond to a
+     * legal package name.
+     */
+    @Test(expectedExceptions = FindException.class)
+    public void testBadPackage() throws IOException {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        createDummyJarFile(dir.resolve("m1.jar"), "p-/T.class");
+
+        // should throw FindException
+        ModuleFinder.of(dir).findAll();
+    }
+
+
+    /**
+     * Test JAR file with META-INF/services configuration file
+     */
+    public void testServicesConfiguration() throws IOException {
+        String service = "p.S";
+        String provider = "p.S1";
+
+        Path tmpdir = Files.createTempDirectory(USER_DIR, "tmp");
+        Path services = tmpdir.resolve("META-INF").resolve("services");
+        Files.createDirectories(services);
+        Files.write(services.resolve(service), Set.of(provider));
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        JarUtils.createJarFile(dir.resolve("m1.jar"), tmpdir);
+
+        ModuleFinder finder = ModuleFinder.of(dir);
+
+        Optional<ModuleReference> mref = finder.find("m1");
+        assertTrue(mref.isPresent(), "m1 not found");
+
+        ModuleDescriptor descriptor = mref.get().descriptor();
+        assertTrue(descriptor.provides().size() == 1);
+        assertTrue(descriptor.provides().containsKey(service));
+        ModuleDescriptor.Provides provides = descriptor.provides().get(service);
+        assertTrue(provides.providers().size() == 1);
+        assertTrue(provides.providers().contains((provider)));
+    }
+
+
+    // META-INF/services configuration file/entries that are not legal
+    @DataProvider(name = "badproviders")
+    public Object[][] createProviders() {
+        return new Object[][] {
+
+                // service type         provider type
+
+                { "p.S",                "-" },
+                { "p.S",                ".S1" },
+                { "p.S",                "S1." },
+
+                { "-",                  "p.S1" },
+                { ".S",                 "p.S1" },
+        };
+    }
+
+    /**
+     * Test JAR file with META-INF/services configuration file with bad
+     * values or names.
+     */
+    @Test(dataProvider = "badproviders", expectedExceptions = FindException.class)
+    public void testBadServicesConfiguration(String service, String provider)
+        throws IOException
+    {
+        Path tmpdir = Files.createTempDirectory(USER_DIR, "tmp");
+        Path services = tmpdir.resolve("META-INF").resolve("services");
+        Files.createDirectories(services);
+        Files.write(services.resolve(service), Set.of(provider));
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        JarUtils.createJarFile(dir.resolve("m1.jar"), tmpdir);
+
+        // should throw FindException
+        ModuleFinder.of(dir).findAll();
+    }
+
+
+    /**
      * Test that a JAR file with a Main-Class attribute results
      * in a module with a main class.
      */
@@ -170,7 +269,7 @@ public class AutomaticModulesTest {
         attrs.put(Attributes.Name.MAIN_CLASS, mainClass);
 
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        createJarFile(dir.resolve("m1.jar"), man);
+        createDummyJarFile(dir.resolve("m1.jar"), man);
 
         ModuleFinder finder = ModuleFinder.of(dir);
 
@@ -181,6 +280,36 @@ public class AutomaticModulesTest {
 
         assertTrue(m1.mainClass().isPresent());
         assertEquals(m1.mainClass().get(), mainClass);
+    }
+
+
+    // Main-Class files that do not map to a legal Java identifier
+    @DataProvider(name = "badmainclass")
+    public Object[][] createBadMainClass() {
+        return new Object[][]{
+
+            { "p-.Main",     null },
+            { ".Main",       null }
+
+        };
+    }
+
+    /**
+     * Test that a JAR file with a Main-Class attribute that is not a valid
+     * Java identifier
+     */
+    @Test(dataProvider = "badmainclass", expectedExceptions = FindException.class)
+    public void testBadMainClass(String mainClass, String ignore) throws IOException {
+        Manifest man = new Manifest();
+        Attributes attrs = man.getMainAttributes();
+        attrs.put(Attributes.Name.MANIFEST_VERSION, "1.0.0");
+        attrs.put(Attributes.Name.MAIN_CLASS, mainClass);
+
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        createDummyJarFile(dir.resolve("m1.jar"), man);
+
+        // should throw FindException
+        ModuleFinder.of(dir).findAll();
     }
 
 
@@ -201,8 +330,8 @@ public class AutomaticModulesTest {
 
         // m2 and m3 are automatic modules
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        createJarFile(dir.resolve("m2.jar"), "p/T.class");
-        createJarFile(dir.resolve("m3.jar"), "q/T.class");
+        createDummyJarFile(dir.resolve("m2.jar"), "p/T.class");
+        createDummyJarFile(dir.resolve("m3.jar"), "q/T.class");
 
         // module finder locates m1 and the modules in the directory
         ModuleFinder finder
@@ -252,7 +381,6 @@ public class AutomaticModulesTest {
      *   m4*
      */
     public void testInConfiguration2() throws IOException {
-
         ModuleDescriptor descriptor1
             =  new ModuleDescriptor.Builder("m1")
                 .requires("m2")
@@ -267,8 +395,8 @@ public class AutomaticModulesTest {
 
         // m3 and m4 are automatic modules
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        createJarFile(dir.resolve("m3.jar"), "p/T.class");
-        createJarFile(dir.resolve("m4.jar"), "q/T.class");
+        createDummyJarFile(dir.resolve("m3.jar"), "p/T.class");
+        createDummyJarFile(dir.resolve("m4.jar"), "q/T.class");
 
         // module finder locates m1 and the modules in the directory
         ModuleFinder finder
@@ -315,7 +443,6 @@ public class AutomaticModulesTest {
         assertTrue(m4.reads().contains(m2));
         assertTrue(m4.reads().contains(m3));
         testReadAllBootModules(cf, "m4");    // m4 reads all modules in boot layer
-
     }
 
 
@@ -327,7 +454,6 @@ public class AutomaticModulesTest {
      *   m4*
      */
     public void testInConfiguration3() throws IOException {
-
         ModuleDescriptor descriptor1
             =  new ModuleDescriptor.Builder("m1")
                 .requires("m2")
@@ -342,8 +468,8 @@ public class AutomaticModulesTest {
 
         // m3 and m4 are automatic modules
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        createJarFile(dir.resolve("m3.jar"), "p/T.class");
-        createJarFile(dir.resolve("m4.jar"), "q/T.class");
+        createDummyJarFile(dir.resolve("m3.jar"), "p/T.class");
+        createDummyJarFile(dir.resolve("m4.jar"), "q/T.class");
 
         // module finder locates m1 and the modules in the directory
         ModuleFinder finder
@@ -396,7 +522,6 @@ public class AutomaticModulesTest {
         assertTrue(m4.reads().contains(m2));
         assertTrue(m4.reads().contains(m3));
         testReadAllBootModules(cf, "m4");    // m4 reads all modules in boot layer
-
     }
 
 
@@ -412,8 +537,8 @@ public class AutomaticModulesTest {
 
         // m2 and m3 are simple JAR files
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        createJarFile(dir.resolve("m2.jar"), "p/T.class");
-        createJarFile(dir.resolve("m3.jar"), "q/T2.class");
+        createDummyJarFile(dir.resolve("m2.jar"), "p/T.class");
+        createDummyJarFile(dir.resolve("m3.jar"), "q/T2.class");
 
         // module finder locates m1 and the modules in the directory
         ModuleFinder finder
@@ -447,7 +572,7 @@ public class AutomaticModulesTest {
      */
     public void testMisc() throws IOException {
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
-        Path m1_jar = createJarFile(dir.resolve("m1.jar"), "p/T.class");
+        Path m1_jar = createDummyJarFile(dir.resolve("m1.jar"), "p/T.class");
 
         ModuleFinder finder = ModuleFinder.of(m1_jar);
 
@@ -535,38 +660,32 @@ public class AutomaticModulesTest {
      * Creates a JAR file, optionally with a manifest, and with the given
      * entries. The entries will be empty in the resulting JAR file.
      */
-    static Path createJarFile(Path file, Manifest man, String... entries)
+    static Path createDummyJarFile(Path jarfile, Manifest man, String... entries)
         throws IOException
     {
-        try (OutputStream out = Files.newOutputStream(file)) {
-            try (JarOutputStream jos = new JarOutputStream(out)) {
+        Path dir = Files.createTempDirectory(USER_DIR, "tmp");
 
-                if (man != null) {
-                    JarEntry je = new JarEntry(JarFile.MANIFEST_NAME);
-                    jos.putNextEntry(je);
-                    man.write(jos);
-                    jos.closeEntry();
-                }
-
-                for (String entry : entries) {
-                    JarEntry je = new JarEntry(entry);
-                    jos.putNextEntry(je);
-                    jos.closeEntry();
-                }
-
-            }
+        for (String entry : entries) {
+            Path file = dir.resolve(entry);
+            Path parent = file.getParent();
+            if (parent != null)
+                Files.createDirectories(parent);
+            Files.createFile(file);
         }
-        return file;
+
+        Path[] paths = Stream.of(entries).map(Paths::get).toArray(Path[]::new);
+        JarUtils.createJarFile(jarfile, man, dir, paths);
+        return jarfile;
     }
 
     /**
      * Creates a JAR file and with the given entries. The entries will be empty
      * in the resulting JAR file.
      */
-    static Path createJarFile(Path file, String... entries)
+    static Path createDummyJarFile(Path jarfile, String... entries)
         throws IOException
     {
-        return createJarFile(file, null, entries);
+        return createDummyJarFile(jarfile, null, entries);
     }
 
 }

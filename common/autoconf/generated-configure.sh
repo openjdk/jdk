@@ -953,6 +953,8 @@ ZIP
 UNZIP
 TAR_SUPPORTS_TRANSFORM
 TAR_INCLUDE_PARAM
+TAR_CREATE_EXTRA_PARAM
+TAR_TYPE
 FIND_DELETE
 OUTPUT_SYNC
 OUTPUT_SYNC_SUPPORTED
@@ -5092,7 +5094,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1465306933
+DATE_WHEN_GENERATED=1466007828
 
 ###############################################################################
 #
@@ -21172,13 +21174,21 @@ $as_echo_n "checking what type of tar was found... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAR_TYPE" >&5
 $as_echo "$TAR_TYPE" >&6; }
 
+  TAR_CREATE_FILE_PARAM=""
+
   if test "x$TAR_TYPE" = "xgnu"; then
     TAR_INCLUDE_PARAM="T"
     TAR_SUPPORTS_TRANSFORM="true"
+    if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
+      # When using gnu tar for Solaris targets, need to use compatibility mode
+      TAR_CREATE_EXTRA_PARAM="--format=ustar"
+    fi
   else
     TAR_INCLUDE_PARAM="I"
     TAR_SUPPORTS_TRANSFORM="false"
   fi
+
+
 
 
 

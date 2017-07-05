@@ -3,7 +3,7 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
+ * Copyright 1999-2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XPATHErrorResources_de.java,v 1.2.4.1 2005/09/15 00:39:22 jeffsuttor Exp $
+ * $Id: XPATHErrorResources_de.java /st_wptg_1.9.0.0.0jdk/2 2016/04/13 06:43:54 gmolloy Exp $
  */
 package com.sun.org.apache.xpath.internal.res;
 
@@ -486,7 +486,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
      "Fehler aufgetreten."},
 
   { ER_ILLEGAL_VARIABLE_REFERENCE,
-      "VariableReference au\u00DFerhalb des Kontextes oder ohne Definition f\u00FCr Variable angegeben. Name = {0}"},
+      "VariableReference au\u00DFerhalb des Kontexts oder ohne Definition f\u00FCr Variable angegeben. Name = {0}"},
 
   { ER_AXES_NOT_ALLOWED,
       "Nur \"child::\"- und \"attribute::\"-Achsen sind in Vergleichsmustern zul\u00E4ssig. Betreffende Achsen = {0}"},
@@ -625,10 +625,10 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
        "NodeSet kann nicht zu einem vorherigen Knoten iterieren."},
 
   { ER_NODESETDTM_CANNOT_INDEX,
-       "NodeSetDTM kann keine Indizierungs- oder Z\u00E4hlfunktionen ausf\u00FChren."},
+       "NodeSetDTM kann keine Indexierungs- oder Z\u00E4hlfunktionen ausf\u00FChren."},
 
   { ER_NODESET_CANNOT_INDEX,
-       "NodeSet kann keine Indizierungs- oder Z\u00E4hlfunktionen ausf\u00FChren."},
+       "NodeSet kann keine Indexierungs- oder Z\u00E4hlfunktionen ausf\u00FChren."},
 
   { ER_CANNOT_CALL_SETSHOULDCACHENODE,
        "setShouldCacheNodes kann nicht aufgerufen werden, nachdem nextNode aufgerufen wurde."},
@@ -858,7 +858,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
       "Option \"-E\" nicht unterst\u00FCtzt f\u00FCr DTM-Parser"},
 
   { WG_ILLEGAL_VARIABLE_REFERENCE,
-      "VariableReference au\u00DFerhalb des Kontextes oder ohne Definition f\u00FCr Variable angegeben. Name = {0}"},
+      "VariableReference au\u00DFerhalb des Kontexts oder ohne Definition f\u00FCr Variable angegeben. Name = {0}"},
 
   { WG_UNSUPPORTED_ENCODING,
      "Nicht unterst\u00FCtzte Codierung: {0}"},
@@ -881,7 +881,7 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { "optionIN", "   [-in inputXMLURL]"},
   { "optionSelect", "   [-select xpath expression]"},
   { "optionMatch", "   [-match match pattern (f\u00FCr Vergleichsdiagnose)]"},
-  { "optionAnyExpr", "Oder nur ein XPath-Ausdruck f\u00FChrt einen Diagnose-Dump aus"},
+  { "optionAnyExpr", "Oder nur ein XPath-Ausdruck f\u00FChrt einen Diagnosedump aus"},
   { "noParsermsg1", "XSL-Prozess war nicht erfolgreich."},
   { "noParsermsg2", "** Parser konnte nicht gefunden werden **"},
   { "noParsermsg3", "Pr\u00FCfen Sie den Classpath."},

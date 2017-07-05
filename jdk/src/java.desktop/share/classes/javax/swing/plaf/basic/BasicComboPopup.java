@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,17 +379,26 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     // PopupMenuListeners.
 
     protected void firePopupMenuWillBecomeVisible() {
+        if (scrollerMouseWheelListener != null) {
+            comboBox.addMouseWheelListener(scrollerMouseWheelListener);
+        }
         super.firePopupMenuWillBecomeVisible();
         // comboBox.firePopupMenuWillBecomeVisible() is called from BasicComboPopup.show() method
         // to let the user change the popup menu from the PopupMenuListener.popupMenuWillBecomeVisible()
     }
 
     protected void firePopupMenuWillBecomeInvisible() {
+        if (scrollerMouseWheelListener != null) {
+            comboBox.removeMouseWheelListener(scrollerMouseWheelListener);
+        }
         super.firePopupMenuWillBecomeInvisible();
         comboBox.firePopupMenuWillBecomeInvisible();
     }
 
     protected void firePopupMenuCanceled() {
+        if (scrollerMouseWheelListener != null) {
+            comboBox.removeMouseWheelListener(scrollerMouseWheelListener);
+        }
         super.firePopupMenuCanceled();
         comboBox.firePopupMenuCanceled();
     }

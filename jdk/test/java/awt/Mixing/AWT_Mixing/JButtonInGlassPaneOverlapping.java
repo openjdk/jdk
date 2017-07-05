@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,16 @@ import javax.swing.*;
  * <p>See base class for details.
  */
 /*
-@test
-@summary Simple Overlapping test for javax.swing.JButton
-@author sergey.grinev@oracle.com: area=awt.mixing
-@library /java/awt/patchlib  ../../regtesthelpers
-@modules java.desktop/sun.awt
-         java.desktop/java.awt.peer
-@build java.desktop/java.awt.Helper
-@build Util
-@run main JButtonInGlassPaneOverlapping
+ * @test
+ * @key headful
+ * @summary Simple Overlapping test for javax.swing.JButton
+ * @author sergey.grinev@oracle.com: area=awt.mixing
+ * @library /java/awt/patchlib  ../../regtesthelpers
+ * @modules java.desktop/sun.awt
+ *          java.desktop/java.awt.peer
+ * @build java.desktop/java.awt.Helper
+ * @build Util
+ * @run main JButtonInGlassPaneOverlapping
  */
 public class JButtonInGlassPaneOverlapping extends GlassPaneOverlappingTestBase {
 

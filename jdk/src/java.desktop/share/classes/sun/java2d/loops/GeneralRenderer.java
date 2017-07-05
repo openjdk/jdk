@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.awt.image.WritableRaster;
 import java.awt.image.DataBuffer;
 import java.awt.image.ColorModel;
 import java.awt.geom.Path2D;
-import java.awt.geom.PathIterator;
-import java.awt.geom.AffineTransform;
 import sun.java2d.pipe.Region;
 import sun.java2d.pipe.SpanIterator;
 import sun.java2d.SunGraphics2D;

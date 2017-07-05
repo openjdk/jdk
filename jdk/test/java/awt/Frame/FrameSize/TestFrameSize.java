@@ -1,6 +1,6 @@
 /*
  * Copyright 2009 Red Hat, Inc.  All Rights Reserved.
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 /*
   @test
+  @key headful
   @bug 6721088
   @summary X11 Window sizes should be what we set them to
   @author Omair Majid <omajid@redhat.com>: area=awt.toplevel

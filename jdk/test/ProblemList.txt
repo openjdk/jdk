@@ -116,9 +116,6 @@
 
 # jdk_beans
 
-java/beans/XMLDecoder/8028054/TestConstructorFinder.java        8156579 generic-all
-java/beans/XMLDecoder/8028054/TestMethodFinder.java             8156579 generic-all
-
 java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-all
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
 
@@ -275,8 +272,6 @@ sun/security/pkcs11/tls/TestMasterSecret.java                   8077138,8023434 
 sun/security/pkcs11/tls/TestPRF.java                            8077138,8023434 windows-all
 sun/security/pkcs11/tls/TestPremaster.java                      8077138,8023434 windows-all
 
-sun/security/provider/SecureRandom/StrongSecureRandom.java      8051770 macosx-10.10
-
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8074580 generic-all
 
 sun/security/krb5/auto/HttpNegotiateServer.java                 8038079 generic-all
@@ -285,13 +280,9 @@ sun/security/tools/keytool/autotest.sh                          8130302 generic-
 
 sun/security/x509/URICertStore/ExtensionsWithLDAP.java          8134577 generic-all
 
-sun/security/provider/SecureRandom/StrongSecureRandom.java      8157387 linux-all
-
 ############################################################################
 
 # jdk_sound
-
-javax/sound/sampled/DirectAudio/bug6400879.java                 8148915 linux-all
 
 ############################################################################
 
@@ -303,6 +294,8 @@ javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       8148454 generic-
 ############################################################################
 
 # jdk_swing
+
+sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java        8157338 generic-all
 
 ############################################################################
 
@@ -394,30 +387,8 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8141370 linux-i5
 
 # core_tools
 
-tools/jlink/plugins/IncludeLocalesPluginTest.java               8158272 generic-all
+tools/jlink/plugins/IncludeLocalesPluginTest.java               8159781 generic-all
 
-tools/jlink/basic/BasicTest.java                                8159206 generic-all
-
-tools/jlink/IntegrationTest.java                                8159206 generic-all
-
-tools/jlink/JLinkOptimTest.java                                 8159206 generic-all
-
-tools/jlink/JLinkTest.java                                      8159206 generic-all
-
-tools/jlink/plugins/CompressorPluginTest.java                   8159206 generic-all
-
-tools/jlink/plugins/ExcludeFilesPluginTest.java                 8159206 generic-all
-
-tools/jlink/plugins/ExcludePluginTest.java                      8159206 generic-all
-
-tools/jlink/plugins/ExcludeVMPluginTest.java                    8159206 generic-all
-
-tools/jlink/plugins/OrderResourcesPluginTest.java               8159206 generic-all
-
-tools/jlink/plugins/ResourceFilterTest.java                     8159206 generic-all
-
-tools/jlink/plugins/StringSharingPluginTest.java                8159206 generic-all
-
-tools/jmod/JmodTest.java                                        8159206 generic-all
+tools/jlink/JLinkOptimTest.java                                 8159264 generic-all
 
 ############################################################################

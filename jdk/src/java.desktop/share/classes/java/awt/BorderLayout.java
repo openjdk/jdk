@@ -76,7 +76,7 @@ import java.util.Hashtable;
  * orientation is {@code LEFT_TO_RIGHT}, only the
  * {@code PAGE_START} will be laid out.
  * <p>
- * NOTE: Currently (in the Java 2 platform v1.2),
+ * NOTE: Currently,
  * {@code BorderLayout} does not support vertical
  * orientations.  The {@code isVertical} setting on the container's
  * {@code ComponentOrientation} is not respected.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.beans.introspect;
 
 import com.sun.beans.TypeResolver;
@@ -31,7 +32,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 final class MethodInfo {
@@ -87,8 +90,60 @@ final class MethodInfo {
                 }
             }
         }
-        return (list != null)
-                ? Collections.unmodifiableList(list)
-                : Collections.emptyList();
+        if (list != null) {
+            list.sort(MethodOrder.instance);
+            return Collections.unmodifiableList(list);
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * A comparator that defines a total order so that methods have the same
+     * name and identical signatures appear next to each others. The methods are
+     * sorted in such a way that methods which override each other will sit next
+     * to each other, with the overridden method last - e.g. is Integer getFoo()
+     * placed before Object getFoo().
+     **/
+    private static final class MethodOrder implements Comparator<Method> {
+
+        /*
+         * Code particularly was copied from com.sun.jmx.mbeanserver.MethodOrder
+         */
+        @Override
+        public int compare(final Method a, final Method b) {
+            int cmp = a.getName().compareTo(b.getName());
+            if (cmp != 0) {
+                return cmp;
+            }
+            final Class<?>[] aparams = a.getParameterTypes();
+            final Class<?>[] bparams = b.getParameterTypes();
+            if (aparams.length != bparams.length) {
+                return aparams.length - bparams.length;
+            }
+            for (int i = 0; i < aparams.length; ++i) {
+                final Class<?> aparam = aparams[i];
+                final Class<?> bparam = bparams[i];
+                if (aparam == bparam) {
+                    continue;
+                }
+                cmp = aparam.getName().compareTo(bparam.getName());
+                if (cmp != 0) {
+                    return cmp;
+                }
+            }
+            final Class<?> aret = a.getReturnType();
+            final Class<?> bret = b.getReturnType();
+            if (aret == bret) {
+                return 0;
+            }
+
+            // Super type comes last: Integer, Number, Object
+            if (aret.isAssignableFrom(bret)) {
+                return 1;
+            }
+            return -1;
+        }
+
+        static final MethodOrder instance = new MethodOrder();
     }
 }

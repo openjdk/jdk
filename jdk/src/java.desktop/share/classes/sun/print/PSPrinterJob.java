@@ -1933,6 +1933,14 @@ public class PSPrinterJob extends RasterPrinterJob {
     protected void deviceFill(PathIterator pathIter, Color color,
                               AffineTransform tx, Shape clip) {
 
+        if (Double.isNaN(tx.getScaleX()) ||
+            Double.isNaN(tx.getScaleY()) ||
+            Double.isNaN(tx.getShearX()) ||
+            Double.isNaN(tx.getShearY()) ||
+            Double.isNaN(tx.getTranslateX()) ||
+            Double.isNaN(tx.getTranslateY())) {
+            return;
+        }
         setTransform(tx);
         setClip(clip);
         setColor(color);

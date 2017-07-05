@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -18,7 +20,7 @@
  * limitations under the License.
  */
 /*
- * $Id: SerializerMessages_sv.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 06:50:58 gmolloy Exp $
+ * $Id: SerializerMessages_sv.java /st_wptg_1.9.0.0.0jdk/2 2016/04/14 01:57:20 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.serializer.utils;
 
@@ -200,6 +202,97 @@ public class SerializerMessages_sv extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "Varning: Kodningen ''{0}'' st\u00F6ds inte av Java runtime." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "Parametern ''{0}'' k\u00E4nns inte igen."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "Parametern ''{0}'' k\u00E4nns igen men det beg\u00E4rda v\u00E4rdet kan inte anges."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "Resultatstr\u00E4ngen \u00E4r f\u00F6r l\u00E5ng och ryms inte i DOMString: ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "V\u00E4rdetypen f\u00F6r detta parameternamn \u00E4r inkompatibelt med f\u00F6rv\u00E4ntad v\u00E4rdetyp. "},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "Den utdatadestination som data ska skrivas till var null."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "En kodning som inte st\u00F6ds har p\u00E5tr\u00E4ffats."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "Noden kunde inte serialiseras."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "CDATA-sektionen inneh\u00E5ller en eller flera avslutningsmark\u00F6rer (']]>')."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "En instans av Well-Formedness-kontrollen kunde inte skapas. Parametern well-formed har angetts till sant men Well-Formedness-kontrollen kan inte utf\u00F6ras."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "Noden ''{0}'' inneh\u00E5ller ogiltiga XML-tecken."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "Ett ogiltigt XML-tecken (Unicode: 0x{0}) hittades i kommentaren."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "Ett ogiltigt XML-tecken (Unicode: 0x{0}) hittades i bearbetningsinstruktionsdata."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "Ett ogiltigt XML-tecken (Unicode: 0x{0}) hittades i inneh\u00E5llet i CDATASection."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "Ett ogiltigt XML-tecken (Unicode: 0x{0}) hittades i teckendatainneh\u00E5llet f\u00F6r noden."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "Ett ogiltigt XML-tecken/ogiltiga XML-tecken hittades i {0}-noden med namnet ''{1}''."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "Str\u00E4ngen \"--\" \u00E4r inte till\u00E5ten inom kommentarer."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "Attributv\u00E4rdet \"{1}\" som associeras med elementtyp \"{0}\" f\u00E5r inte inneh\u00E5lla n\u00E5got ''<''-tecken."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "Den otolkade enhetsreferensen \"&{0};\" \u00E4r inte till\u00E5ten."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "Den externa enhetsreferensen \"&{0};\" till\u00E5ts inte i ett attributv\u00E4rde."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "Prefixet \"{0}\" kan inte bindas till namnrymden \"{1}\"."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "Det lokala namnet p\u00E5 elementet \"{0}\" \u00E4r null."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "Det lokala namnet p\u00E5 attributet \"{0}\" \u00E4r null."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "Ers\u00E4ttningstexten f\u00F6r enhetsnoden \"{0}\" inneh\u00E5ller elementnoden \"{1}\" med ett obundet prefix, \"{2}\"."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "Ers\u00E4ttningstexten f\u00F6r enhetsnoden \"{0}\" inneh\u00E5ller attributnoden \"{1}\" med ett obundet prefix, \"{2}\"."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "Ett fel intr\u00E4ffade vid skrivning till den interna delm\u00E4ngden."
+             },
 
         };
 
