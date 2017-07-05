@@ -96,7 +96,7 @@ char * LogDecorations::create_pid_decoration(char* pos) {
 
 char * LogDecorations::create_tid_decoration(char* pos) {
   int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer),
-                             INTX_FORMAT, Thread::current()->osthread()->thread_id());
+                             INTX_FORMAT, os::current_thread_id());
   ASSERT_AND_RETURN(written, pos)
 }
 

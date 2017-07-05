@@ -155,12 +155,7 @@ int LogFileOutput::write(const LogDecorations& decorations, const char* msg) {
   int written = LogFileStreamOutput::write(decorations, msg);
   _current_size += written;
 
-  if (should_rotate()) {
-    MutexLockerEx ml(&_rotation_lock, true /* no safepoint check */);
-    if (should_rotate()) {
-      rotate();
-    }
-  }
+  rotate(false);
 
   return written;
 }
@@ -182,7 +177,14 @@ void LogFileOutput::archive() {
   }
 }
 
-void LogFileOutput::rotate() {
+void LogFileOutput::rotate(bool force) {
+
+  if (!should_rotate(force)) {
+    return;
+  }
+
+  MutexLockerEx ml(&_rotation_lock, true /* no safepoint check */);
+
   // Archive the current log file
   archive();
 

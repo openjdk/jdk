@@ -571,6 +571,23 @@ void Deoptimization::cleanup_deopt_info(JavaThread *thread,
   thread->dec_in_deopt_handler();
 }
 
+// Moved from cpu directories because none of the cpus has callee save values.
+// If a cpu implements callee save values, move this to deoptimization_<cpu>.cpp.
+void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_array) {
+
+  // This code is sort of the equivalent of C2IAdapter::setup_stack_frame back in
+  // the days we had adapter frames. When we deoptimize a situation where a
+  // compiled caller calls a compiled caller will have registers it expects
+  // to survive the call to the callee. If we deoptimize the callee the only
+  // way we can restore these registers is to have the oldest interpreter
+  // frame that we create restore these values. That is what this routine
+  // will accomplish.
+
+  // At the moment we have modified c2 to not have any callee save registers
+  // so this problem does not exist and this routine is just a place holder.
+
+  assert(f->is_interpreted_frame(), "must be interpreted");
+}
 
 // Return BasicType of value being returned
 JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_mode))

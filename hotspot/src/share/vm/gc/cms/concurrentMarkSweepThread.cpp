@@ -144,9 +144,6 @@ void ConcurrentMarkSweepThread::run() {
     _cmst = NULL;
     Terminator_lock->notify();
   }
-
-  // Thread destructor usually does this..
-  ThreadLocalStorage::set_thread(NULL);
 }
 
 #ifndef PRODUCT

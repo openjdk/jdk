@@ -41,6 +41,7 @@
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/thread.hpp"
 
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -4652,4 +4653,24 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
 
     BIND(DONE);
       sub(result, result, len); // Return index where we stopped
+}
+
+// get_thread() can be called anywhere inside generated code so we
+// need to save whatever non-callee save context might get clobbered
+// by the call to JavaThread::aarch64_get_thread_helper() or, indeed,
+// the call setup code.
+//
+// aarch64_get_thread_helper() clobbers only r0, r1, and flags.
+//
+void MacroAssembler::get_thread(Register dst) {
+  RegSet saved_regs = RegSet::range(r0, r1) + lr - dst;
+  push(saved_regs, sp);
+
+  mov(lr, CAST_FROM_FN_PTR(address, JavaThread::aarch64_get_thread_helper));
+  blrt(lr, 1, 0, 1);
+  if (dst != c_rarg0) {
+    mov(dst, c_rarg0);
+  }
+
+  pop(saved_regs, sp);
 }

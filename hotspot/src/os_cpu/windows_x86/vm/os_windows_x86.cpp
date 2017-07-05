@@ -85,14 +85,14 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
     //
     volatile Thread* wrapperthread = thread;
 
-    if ( ThreadLocalStorage::get_thread_ptr_offset() == 0 ) {
+    if (os::win32::get_thread_ptr_offset() == 0) {
       int thread_ptr_offset;
       __asm {
         lea eax, dword ptr wrapperthread;
         sub eax, dword ptr FS:[0H];
         mov thread_ptr_offset, eax
       };
-      ThreadLocalStorage::set_thread_ptr_offset(thread_ptr_offset);
+      os::win32::set_thread_ptr_offset(thread_ptr_offset);
     }
 #ifdef ASSERT
     // Verify that the offset hasn't changed since we initally captured
@@ -105,7 +105,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandl
         sub eax, dword ptr FS:[0H];
         mov test_thread_ptr_offset, eax
       };
-      assert(test_thread_ptr_offset == ThreadLocalStorage::get_thread_ptr_offset(),
+      assert(test_thread_ptr_offset == os::win32::get_thread_ptr_offset(),
              "thread pointer offset from SEH changed");
     }
 #endif // ASSERT
