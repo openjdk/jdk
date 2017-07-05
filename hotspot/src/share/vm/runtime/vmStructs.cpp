@@ -388,7 +388,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   volatile_nonstatic_field(constMethodOopDesc, _fingerprint,                                  uint64_t)                              \
   nonstatic_field(constMethodOopDesc,          _constants,                                    constantPoolOop)                       \
   nonstatic_field(constMethodOopDesc,          _stackmap_data,                                typeArrayOop)                          \
-  nonstatic_field(constMethodOopDesc,          _exception_table,                              typeArrayOop)                          \
   nonstatic_field(constMethodOopDesc,          _constMethod_size,                             int)                                   \
   nonstatic_field(constMethodOopDesc,          _interpreter_kind,                             jbyte)                                 \
   nonstatic_field(constMethodOopDesc,          _flags,                                        jbyte)                                 \
@@ -425,6 +424,10 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(LocalVariableTableElement,   descriptor_cp_index,                           u2)                                    \
   nonstatic_field(LocalVariableTableElement,   signature_cp_index,                            u2)                                    \
   nonstatic_field(LocalVariableTableElement,   slot,                                          u2)                                    \
+  nonstatic_field(ExceptionTableElement,       start_pc,                                      u2)                                    \
+  nonstatic_field(ExceptionTableElement,       end_pc,                                        u2)                                    \
+  nonstatic_field(ExceptionTableElement,       handler_pc,                                    u2)                                    \
+  nonstatic_field(ExceptionTableElement,       catch_type_index,                              u2)                                    \
   nonstatic_field(BreakpointInfo,              _orig_bytecode,                                Bytecodes::Code)                       \
   nonstatic_field(BreakpointInfo,              _bci,                                          int)                                   \
   nonstatic_field(BreakpointInfo,              _name_index,                                   u2)                                    \
@@ -1460,6 +1463,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
                                                                           \
   declare_toplevel_type(CheckedExceptionElement)                          \
   declare_toplevel_type(LocalVariableTableElement)                        \
+  declare_toplevel_type(ExceptionTableElement)                            \
                                                                           \
   /******************************************/                            \
   /* Generation and space hierarchies       */                            \
@@ -2301,6 +2305,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   declare_constant(constMethodOopDesc::_has_linenumber_table)             \
   declare_constant(constMethodOopDesc::_has_checked_exceptions)           \
   declare_constant(constMethodOopDesc::_has_localvariable_table)          \
+  declare_constant(constMethodOopDesc::_has_exception_table)              \
                                                                           \
   /*************************************/                                 \
   /* instanceKlass enum                */                                 \
