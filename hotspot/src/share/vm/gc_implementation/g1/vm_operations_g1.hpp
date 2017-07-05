@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_VM_OPERATIONS_G1_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_VM_OPERATIONS_G1_HPP
 
+#include "gc_implementation/g1/g1AllocationContext.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
 
 // VM_operations for the G1 collector.
@@ -40,6 +41,7 @@ protected:
   size_t    _word_size;
   HeapWord* _result;
   bool      _pause_succeeded;
+  AllocationContext_t _allocation_context;
 
 public:
   VM_G1OperationWithAllocRequest(unsigned int gc_count_before,
@@ -49,6 +51,8 @@ public:
       _word_size(word_size), _result(NULL), _pause_succeeded(false) { }
   HeapWord* result() { return _result; }
   bool pause_succeeded() { return _pause_succeeded; }
+  void set_allocation_context(AllocationContext_t context) { _allocation_context = context; }
+  AllocationContext_t  allocation_context() { return _allocation_context; }
 };
 
 class VM_G1CollectFull: public VM_GC_Operation {

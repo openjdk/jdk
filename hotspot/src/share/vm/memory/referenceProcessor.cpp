@@ -473,7 +473,7 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   _discovered_addr = java_lang_ref_Reference::discovered_addr(_ref);
   oop discovered = java_lang_ref_Reference::discovered(_ref);
   assert(_discovered_addr && discovered->is_oop_or_null(),
-         "discovered field is bad");
+         err_msg("Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered)));
   _next = discovered;
   _referent_addr = java_lang_ref_Reference::referent_addr(_ref);
   _referent = java_lang_ref_Reference::referent(_ref);
@@ -482,7 +482,9 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   assert(allow_null_referent ?
              _referent->is_oop_or_null()
            : _referent->is_oop(),
-         "bad referent");
+         err_msg("Expected an oop%s for referent field at " PTR_FORMAT,
+                 (allow_null_referent ? " or NULL" : ""),
+                 p2i(_referent)));
 }
 
 void DiscoveredListIterator::remove() {
@@ -630,7 +632,7 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
     oop next = java_lang_ref_Reference::next(iter.obj());
     if ((iter.referent() == NULL || iter.is_referent_alive() ||
          next != NULL)) {
-      assert(next->is_oop_or_null(), "bad next field");
+      assert(next->is_oop_or_null(), err_msg("Expected an oop or NULL for next field at " PTR_FORMAT, p2i(next)));
       // Remove Reference object from list
       iter.remove();
       // Trace the cohorts
@@ -979,7 +981,7 @@ void ReferenceProcessor::clean_up_discovered_reflist(DiscoveredList& refs_list) 
   while (iter.has_next()) {
     iter.load_ptrs(DEBUG_ONLY(true /* allow_null_referent */));
     oop next = java_lang_ref_Reference::next(iter.obj());
-    assert(next->is_oop_or_null(), "bad next field");
+    assert(next->is_oop_or_null(), err_msg("Expected an oop or NULL for next field at " PTR_FORMAT, p2i(next)));
     // If referent has been cleared or Reference is not active,
     // drop it.
     if (iter.referent() == NULL || next != NULL) {
@@ -1172,7 +1174,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
   HeapWord* const discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
   const oop  discovered = java_lang_ref_Reference::discovered(obj);
-  assert(discovered->is_oop_or_null(), "bad discovered field");
+  assert(discovered->is_oop_or_null(), err_msg("Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered)));
   if (discovered != NULL) {
     // The reference has already been discovered...
     if (TraceReferenceGC) {
