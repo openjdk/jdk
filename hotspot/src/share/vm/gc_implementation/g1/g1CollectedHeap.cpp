@@ -352,7 +352,7 @@ void YoungList::print() {
 }
 
 void G1RegionMappingChangedListener::reset_from_card_cache(uint start_idx, size_t num_regions) {
-  OtherRegionsTable::invalidate(start_idx, num_regions);
+  HeapRegionRemSet::invalidate_from_card_cache(start_idx, num_regions);
 }
 
 void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {

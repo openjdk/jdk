@@ -820,6 +820,11 @@ static Node *remove_useless_bool(IfNode *iff, PhaseGVN *phase) {
 
 static IfNode* idealize_test(PhaseGVN* phase, IfNode* iff);
 
+struct RangeCheck {
+  Node* ctl;
+  jint off;
+};
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
@@ -861,82 +866,140 @@ Node *IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   jint offset1;
   int flip1 = is_range_check(range1, index1, offset1);
   if( flip1 ) {
-    Node *first_prev_dom = NULL;
-
     // Try to remove extra range checks.  All 'up_one_dom' gives up at merges
     // so all checks we inspect post-dominate the top-most check we find.
     // If we are going to fail the current check and we reach the top check
     // then we are guaranteed to fail, so just start interpreting there.
-    // We 'expand' the top 2 range checks to include all post-dominating
+    // We 'expand' the top 3 range checks to include all post-dominating
     // checks.
 
-    // The top 2 range checks seen
-    Node *prev_chk1 = NULL;
-    Node *prev_chk2 = NULL;
+    // The top 3 range checks seen
+    const int NRC =3;
+    RangeCheck prev_checks[NRC];
+    int nb_checks = 0;
+
     // Low and high offsets seen so far
     jint off_lo = offset1;
     jint off_hi = offset1;
 
-    // Scan for the top 2 checks and collect range of offsets
-    for( int dist = 0; dist < 999; dist++ ) { // Range-Check scan limit
-      if( dom->Opcode() == Op_If &&  // Not same opcode?
-          prev_dom->in(0) == dom ) { // One path of test does dominate?
-        if( dom == this ) return NULL; // dead loop
+    bool found_immediate_dominator = false;
+
+    // Scan for the top checks and collect range of offsets
+    for (int dist = 0; dist < 999; dist++) { // Range-Check scan limit
+      if (dom->Opcode() == Op_If &&  // Not same opcode?
+          prev_dom->in(0) == dom) { // One path of test does dominate?
+        if (dom == this) return NULL; // dead loop
         // See if this is a range check
         Node *index2, *range2;
         jint offset2;
         int flip2 = dom->as_If()->is_range_check(range2, index2, offset2);
         // See if this is a _matching_ range check, checking against
         // the same array bounds.
-        if( flip2 == flip1 && range2 == range1 && index2 == index1 &&
-            dom->outcnt() == 2 ) {
+        if (flip2 == flip1 && range2 == range1 && index2 == index1 &&
+            dom->outcnt() == 2) {
+          if (nb_checks == 0 && dom->in(1) == in(1)) {
+            // Found an immediately dominating test at the same offset.
+            // This kind of back-to-back test can be eliminated locally,
+            // and there is no need to search further for dominating tests.
+            assert(offset2 == offset1, "Same test but different offsets");
+            found_immediate_dominator = true;
+            break;
+          }
           // Gather expanded bounds
           off_lo = MIN2(off_lo,offset2);
           off_hi = MAX2(off_hi,offset2);
-          // Record top 2 range checks
-          prev_chk2 = prev_chk1;
-          prev_chk1 = prev_dom;
-          // If we match the test exactly, then the top test covers
-          // both our lower and upper bounds.
-          if( dom->in(1) == in(1) )
-            prev_chk2 = prev_chk1;
+          // Record top NRC range checks
+          prev_checks[nb_checks%NRC].ctl = prev_dom;
+          prev_checks[nb_checks%NRC].off = offset2;
+          nb_checks++;
         }
       }
       prev_dom = dom;
-      dom = up_one_dom( dom );
-      if( !dom ) break;
+      dom = up_one_dom(dom);
+      if (!dom) break;
     }
 
+    if (!found_immediate_dominator) {
+      // Attempt to widen the dominating range check to cover some later
+      // ones.  Since range checks "fail" by uncommon-trapping to the
+      // interpreter, widening a check can make us speculatively enter
+      // the interpreter.  If we see range-check deopt's, do not widen!
+      if (!phase->C->allow_range_check_smearing())  return NULL;
 
-    // Attempt to widen the dominating range check to cover some later
-    // ones.  Since range checks "fail" by uncommon-trapping to the
-    // interpreter, widening a check can make us speculative enter the
-    // interpreter.  If we see range-check deopt's, do not widen!
-    if (!phase->C->allow_range_check_smearing())  return NULL;
-
-    // Constant indices only need to check the upper bound.
-    // Non-constance indices must check both low and high.
-    if( index1 ) {
-      // Didn't find 2 prior covering checks, so cannot remove anything.
-      if( !prev_chk2 ) return NULL;
-      // 'Widen' the offsets of the 1st and 2nd covering check
-      adjust_check( prev_chk1, range1, index1, flip1, off_lo, igvn );
-      // Do not call adjust_check twice on the same projection
-      // as the first call may have transformed the BoolNode to a ConI
-      if( prev_chk1 != prev_chk2 ) {
-        adjust_check( prev_chk2, range1, index1, flip1, off_hi, igvn );
-      }
-      // Test is now covered by prior checks, dominate it out
-      prev_dom = prev_chk2;
-    } else {
       // Didn't find prior covering check, so cannot remove anything.
-      if( !prev_chk1 ) return NULL;
-      // 'Widen' the offset of the 1st and only covering check
-      adjust_check( prev_chk1, range1, index1, flip1, off_hi, igvn );
-      // Test is now covered by prior checks, dominate it out
-      prev_dom = prev_chk1;
+      if (nb_checks == 0) {
+        return NULL;
+      }
+      // Constant indices only need to check the upper bound.
+      // Non-constant indices must check both low and high.
+      int chk0 = (nb_checks - 1) % NRC;
+      if (index1) {
+        if (nb_checks == 1) {
+          return NULL;
+        } else {
+          // If the top range check's constant is the min or max of
+          // all constants we widen the next one to cover the whole
+          // range of constants.
+          RangeCheck rc0 = prev_checks[chk0];
+          int chk1 = (nb_checks - 2) % NRC;
+          RangeCheck rc1 = prev_checks[chk1];
+          if (rc0.off == off_lo) {
+            adjust_check(rc1.ctl, range1, index1, flip1, off_hi, igvn);
+            prev_dom = rc1.ctl;
+          } else if (rc0.off == off_hi) {
+            adjust_check(rc1.ctl, range1, index1, flip1, off_lo, igvn);
+            prev_dom = rc1.ctl;
+          } else {
+            // If the top test's constant is not the min or max of all
+            // constants, we need 3 range checks. We must leave the
+            // top test unchanged because widening it would allow the
+            // accesses it protects to successfully read/write out of
+            // bounds.
+            if (nb_checks == 2) {
+              return NULL;
+            }
+            int chk2 = (nb_checks - 3) % NRC;
+            RangeCheck rc2 = prev_checks[chk2];
+            // The top range check a+i covers interval: -a <= i < length-a
+            // The second range check b+i covers interval: -b <= i < length-b
+            if (rc1.off <= rc0.off) {
+              // if b <= a, we change the second range check to:
+              // -min_of_all_constants <= i < length-min_of_all_constants
+              // Together top and second range checks now cover:
+              // -min_of_all_constants <= i < length-a
+              // which is more restrictive than -b <= i < length-b:
+              // -b <= -min_of_all_constants <= i < length-a <= length-b
+              // The third check is then changed to:
+              // -max_of_all_constants <= i < length-max_of_all_constants
+              // so 2nd and 3rd checks restrict allowed values of i to:
+              // -min_of_all_constants <= i < length-max_of_all_constants
+              adjust_check(rc1.ctl, range1, index1, flip1, off_lo, igvn);
+              adjust_check(rc2.ctl, range1, index1, flip1, off_hi, igvn);
+            } else {
+              // if b > a, we change the second range check to:
+              // -max_of_all_constants <= i < length-max_of_all_constants
+              // Together top and second range checks now cover:
+              // -a <= i < length-max_of_all_constants
+              // which is more restrictive than -b <= i < length-b:
+              // -b < -a <= i < length-max_of_all_constants <= length-b
+              // The third check is then changed to:
+              // -max_of_all_constants <= i < length-max_of_all_constants
+              // so 2nd and 3rd checks restrict allowed values of i to:
+              // -min_of_all_constants <= i < length-max_of_all_constants
+              adjust_check(rc1.ctl, range1, index1, flip1, off_hi, igvn);
+              adjust_check(rc2.ctl, range1, index1, flip1, off_lo, igvn);
+            }
+            prev_dom = rc2.ctl;
+          }
+        }
+      } else {
+        RangeCheck rc0 = prev_checks[chk0];
+        // 'Widen' the offset of the 1st and only covering check
+        adjust_check(rc0.ctl, range1, index1, flip1, off_hi, igvn);
+        // Test is now covered by prior checks, dominate it out
+        prev_dom = rc0.ctl;
+      }
     }
-
 
   } else {                      // Scan for an equivalent test
 
@@ -1019,7 +1082,7 @@ void IfNode::dominated_by( Node *prev_dom, PhaseIterGVN *igvn ) {
   // for lower and upper bounds.
   ProjNode* unc_proj = proj_out(1 - prev_dom->as_Proj()->_con)->as_Proj();
   if (unc_proj->is_uncommon_trap_proj(Deoptimization::Reason_predicate))
-    prev_dom = idom;
+   prev_dom = idom;
 
   // Now walk the current IfNode's projections.
   // Loop ends when 'this' has no more uses.
