@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,8 +149,12 @@ import java.util.Arrays;
  * capture argument (corresponding to the receiver) must be non-null.
  *
  * <p>A type Q is considered adaptable to S as follows:
- * <table summary="adaptable types">
+ * <table class="borderless">
+ *   <caption style="display:none">adaptable types</caption>
+ *   <thead>
  *     <tr><th>Q</th><th>S</th><th>Link-time checks</th><th>Invocation-time checks</th></tr>
+ *   </thead>
+ *   <tbody>
  *     <tr>
  *         <td>Primitive</td><td>Primitive</td>
  *         <td>Q can be converted to S via a primitive widening conversion</td>
@@ -176,6 +180,7 @@ import java.util.Arrays;
  *         <br>for return types: none</td>
  *         <td>Cast from Q to S</td>
  *     </tr>
+ *   </tbody>
  * </table>
  *
  * @apiNote These linkage methods are designed to support the evaluation
@@ -211,8 +216,11 @@ import java.util.Arrays;
  * theory, any method handle could be used. Currently supported are direct method
  * handles representing invocation of virtual, interface, constructor and static
  * methods.
+ * @since 1.8
  */
-public class LambdaMetafactory {
+public final class LambdaMetafactory {
+
+    private LambdaMetafactory() {}
 
     /** Flag for alternate metafactories indicating the lambda object
      * must be serializable */

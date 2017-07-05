@@ -51,6 +51,15 @@ class SSLDelegate {
     final SocketChannel chan;
     final HttpClientImpl client;
 
+    SSLDelegate(SSLEngine eng, SocketChannel chan, HttpClientImpl client)
+    {
+        this.engine = eng;
+        this.chan = chan;
+        this.client = client;
+        this.wrapper = new EngineWrapper(chan, engine);
+        this.sslParameters = engine.getSSLParameters();
+    }
+
     // alpn[] may be null
     SSLDelegate(SocketChannel chan, HttpClientImpl client, String[] alpn)
         throws IOException
@@ -63,9 +72,9 @@ class SSLDelegate {
         sslParameters = Utils.copySSLParameters(sslp);
         if (alpn != null) {
             sslParameters.setApplicationProtocols(alpn);
-            Log.logSSL(() -> "Setting application protocols: " + Arrays.toString(alpn));
+            Log.logSSL("SSLDelegate: Setting application protocols: {0}" + Arrays.toString(alpn));
         } else {
-            Log.logSSL("No application protocols proposed");
+            Log.logSSL("SSLDelegate: No application protocols proposed");
         }
         engine.setSSLParameters(sslParameters);
         wrapper = new EngineWrapper(chan, engine);
@@ -181,7 +190,7 @@ class SSLDelegate {
         boolean closed = false;
         int u_remaining; // the number of bytes left in unwrap_src after an unwrap()
 
-        EngineWrapper (SocketChannel chan, SSLEngine engine) throws IOException {
+        EngineWrapper (SocketChannel chan, SSLEngine engine) {
             this.chan = chan;
             this.engine = engine;
             wrapLock = new Object();
@@ -449,9 +458,11 @@ class SSLDelegate {
         for (String cipher : p.getCipherSuites()) {
                 System.out.printf("cipher: %s\n", cipher);
         }
+        // JDK 8 EXCL START
         for (String approto : p.getApplicationProtocols()) {
                 System.out.printf("application protocol: %s\n", approto);
         }
+        // JDK 8 EXCL END
         for (String protocol : p.getProtocols()) {
                 System.out.printf("protocol: %s\n", protocol);
         }

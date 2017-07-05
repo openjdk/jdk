@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ test-vardep:
 	test "some string value1" = "`$(CAT) $(VARDEP_DIR)/target-file`"
 	test -e $(VARDEP_FLAG_FILE)
         #
-        # Make the target file again and verify that the value is updated with 
+        # Make the target file again and verify that the value is updated with
         # the new value
         #
 	$(SLEEP_ON_MAC)
@@ -338,6 +338,61 @@ $(eval $(call assert-equals, \
     $(call RelativePath, /foo/bar/baz/banan/kung, /foo/bar/banan/kung/), \
     ../../baz/banan/kung, \
     RelativePath, \
+))
+
+################################################################################
+# Test ParseKeywordVariable
+
+KWBASE := APA=banan;GURKA=tomat;COUNT=1%202%203%204%205;SUM=1+2+3+4+5;MANY_WORDS=I have the best words.
+
+$(eval $(call ParseKeywordVariable, KWBASE, \
+    KEYWORDS := APA GURKA SUM, \
+    STRING_KEYWORDS := COUNT MANY_WORDS, \
+))
+
+$(eval $(call assert-equals, \
+    $(KWBASE_APA), \
+    banan, \
+    ParseKeywordVariable failed to parse APA, \
+))
+
+$(eval $(call assert-equals, \
+    $(KWBASE_COUNT), \
+    1 2 3 4 5, \
+    ParseKeywordVariable failed to parse COUNT, \
+))
+
+$(eval $(call assert-equals, \
+    $(KWBASE_SUM), \
+    1+2+3+4+5, \
+    ParseKeywordVariable failed to parse SUM, \
+))
+
+$(eval $(call assert-equals, \
+    $(KWBASE_MANY_WORDS), \
+    I have the best words., \
+    ParseKeywordVariable failed to parse MANY_WORDS, \
+))
+
+# Simulate variable set from command line by using "override"
+override KWBASE_WEIRD_GURKA := paprika
+KWBASE_WEIRD := ;;APA=banan;;;GURKA=apelsin;APA=skansen;;
+
+$(eval $(call ParseKeywordVariable, KWBASE_WEIRD, \
+    KEYWORDS := APA GURKA SUM, \
+    STRING_KEYWORDS := COUNT, \
+))
+
+$(eval $(call assert-equals, \
+    $(KWBASE_WEIRD_APA), \
+    skansen, \
+    ParseKeywordVariable failed to overwrite APA, \
+))
+
+$(eval $(call assert-equals, \
+    $(KWBASE_WEIRD_GURKA), \
+    paprika, \
+    ParseKeywordVariable failed to preserve GURKA, \
 ))
 
 ################################################################################
