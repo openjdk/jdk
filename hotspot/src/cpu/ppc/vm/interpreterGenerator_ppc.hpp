@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
   address generate_empty_entry(void) { return generate_jump_to_normal_entry(); }
   address generate_Reference_get_entry(void);
 
-  // Not supported
-  address generate_CRC32_update_entry() { return NULL; }
-  address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
+  address generate_CRC32_update_entry();
+  address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
+
 #endif // CPU_PPC_VM_INTERPRETERGENERATOR_PPC_HPP

@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: jmap
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: トラブルシューティング・ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "jmap" "1" "2013年11月21日" "JDK 8" "トラブルシューティング・ツール"
+.\" Title: jmap
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: �ȥ�֥륷�塼�ƥ��󥰡��ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "jmap" "1" "2013ǯ11��21��" "JDK 8" "�ȥ�֥륷�塼�ƥ��󥰡��ġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-jmap \- プロセスやコア・ファイルまたはリモート・デバッグ・サーバーの、共用オブジェクト・メモリー・マップまたはヒープ・メモリーの詳細を出力します。このコマンドは試験的なもので、サポートされていません。
-.SH "概要"
+.SH "̾��"
+jmap \- �ץ������䥳�����ե�����ޤ��ϥ�⡼�ȡ��ǥХå��������С��Ρ����ѥ��֥������ȡ����꡼���ޥåפޤ��ϥҡ��ס����꡼�ξܺ٤���Ϥ��ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ����ݡ��Ȥ���Ƥ��ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjmap\fR [ \fIoptions\fR ] \fIpid\fR
+\fBjmap\fR [ \fIoptions\fR ] \fIpid\fR
 .fi
 .if n \{\
 .RE
@@ -66,7 +68,7 @@ jmap \- プロセスやコア・ファイルまたはリモート・デバッグ
 .RS 4
 .\}
 .nf
-\fIjmap\fR [ \fIoptions\fR ] \fIexecutable\fR \fIcore\fR
+\fBjmap\fR [ \fIoptions\fR ] \fIexecutable\fR \fIcore\fR
 .fi
 .if n \{\
 .RE
@@ -76,7 +78,7 @@ jmap \- プロセスやコア・ファイルまたはリモート・デバッグ
 .RS 4
 .\}
 .nf
-\fIjmap\fR [ \fIoptions\fR ] [ \fIpid\fR ] \fIserver\-id\fR@ ] \fIremote\-hostname\-or\-IP\fR
+\fBjmap\fR [ \fIoptions\fR ] [ \fIpid\fR ] \fIserver\-id\fR@ ] \fIremote\-hostname\-or\-IP\fR
 .fi
 .if n \{\
 .RE
@@ -84,93 +86,93 @@ jmap \- プロセスやコア・ファイルまたはリモート・デバッグ
 .PP
 \fIoptions\fR
 .RS 4
-コマンドライン・オプション。オプションを参照してください。
+���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIpid\fR
 .RS 4
-出力するメモリー・マップのプロセスID。プロセスはJavaプロセスである必要があります。マシン上で実行しているJavaプロセスの一覧を取得するには、jps(1)コマンドを使用します。
+���Ϥ�����꡼���ޥåפΥץ�����ID���ץ�������Java�ץ������Ǥ���ɬ�פ�����ޤ����ޥ����Ǽ¹Ԥ��Ƥ���Java�ץ������ΰ������������ˤϡ�jps(1)���ޥ�ɤ���Ѥ��ޤ���
 .RE
 .PP
-\fI実行可能ファイル\fR
+\fI�¹Բ�ǽ�ե�����\fR
 .RS 4
-コア・ダンプの作成元のJava実行可能ファイル。
+����������פκ�������Java�¹Բ�ǽ�ե����롣
 .RE
 .PP
-\fIコア\fR
+\fI����\fR
 .RS 4
-出力するメモリー・マップのコア・ファイル。
+���Ϥ�����꡼���ޥåפΥ������ե����롣
 .RE
 .PP
 \fIremote\-hostname\-or\-IP\fR
 .RS 4
-リモート・デバッグ・サーバーの\fIホスト名\fRまたは\fIIP\fRアドレス。jsadebugd(1)を参照してください。
+��⡼�ȡ��ǥХå��������С���\fB�ۥ���̾\fR�ޤ���\fBIP\fR���ɥ쥹��jsadebugd(1)�򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIserver\-id\fR
 .RS 4
-複数のデバッグ・サーバーが同一のリモート・ホストで実行している場合の、オプション固有のID。
+ʣ���ΥǥХå��������С���Ʊ��Υ�⡼�ȡ��ۥ��ȤǼ¹Ԥ��Ƥ�����Ρ����ץ�����ͭ��ID��
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIjmap\fRコマンドは、指定されたプロセスやコア・ファイルまたはリモート・デバッグ・サーバーの、共用オブジェクト・メモリー・マップまたはヒープ・メモリーの詳細を出力します。指定されたプロセスが64ビットJava仮想マシン(JVM)上で実行されている場合、\fI\-J\-d64\fRオプションを指定する必要がある場合があります。次に例を示します。\fIjmap\fR
-\fI\-J\-d64 \-heap pid\fR。
+\fBjmap\fR���ޥ�ɤϡ����ꤵ�줿�ץ������䥳�����ե�����ޤ��ϥ�⡼�ȡ��ǥХå��������С��Ρ����ѥ��֥������ȡ����꡼���ޥåפޤ��ϥҡ��ס����꡼�ξܺ٤���Ϥ��ޤ������ꤵ�줿�ץ�������64�ӥå�Java Virtual Machine (JVM)��Ǽ¹Ԥ���Ƥ����硢\fB\-J\-d64\fR���ץ�������ꤹ��ɬ�פ������礬����ޤ���������򼨤��ޤ���\fBjmap\fR
+\fB\-J\-d64 \-heap pid\fR��
 .PP
-\fB注意:\fR
-このユーティリティはサポート対象外であり、将来のJDKのリリースでは利用できなくなる可能性があります。\fIdbgeng\&.dll\fRファイルが存在していないWindowsシステムでは、Debugging Tools For Windowsをインストールしないとこれらのツールが正常に動作しません。\fIPATH\fR環境変数には、ターゲット・プロセスによって使用される\fIjvm\&.dll\fRの場所、またはクラッシュ・ダンプ・ファイルが生成された場所が含まれるようにしてください。次に例を示します。\fIset PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fR。
-.SH "オプション"
+\fB����:\fR
+���Υ桼�ƥ���ƥ��ϥ��ݡ����оݳ��Ǥ��ꡢ�����JDK�Υ�꡼���Ǥ����ѤǤ��ʤ��ʤ��ǽ��������ޤ���\fBdbgeng\&.dll\fR�ե����뤬¸�ߤ��Ƥ��ʤ�Windows�����ƥ�Ǥϡ�Debugging Tools For Windows�򥤥󥹥ȡ��뤷�ʤ��Ȥ����Υġ��뤬�����ư��ޤ���\fBPATH\fR�Ķ��ѿ��ˤϡ��������åȡ��ץ������ˤ�äƻ��Ѥ����\fBjvm\&.dll\fR�ξ�ꡢ�ޤ��ϥ���å��塦����ס��ե����뤬�������줿��꤬�ޤޤ��褦�ˤ��Ƥ���������������򼨤��ޤ���\fBset PATH=%JDK_HOME%\ejre\ebin\eclient;%PATH%\fR��
+.SH "���ץ����"
 .PP
-<オプションなし>
+<no option>
 .RS 4
-オプションを使用しない場合、\fIjmap\fRコマンドは共用オブジェクト・マッピングを出力します。ターゲットJVMにロードされた共用オブジェクトごとに、開始アドレス、マッピングのサイズおよび共用オブジェクト・ファイルのフルパスが出力されます。この動作は、Oracle Solaris
-\fIpmap\fRユーティリティと類似しています。
+���ץ�������Ѥ��ʤ���硢\fBjmap\fR���ޥ�ɤ϶��ѥ��֥������ȡ��ޥåԥ󥰤���Ϥ��ޤ����������å�JVM�˥����ɤ��줿���ѥ��֥������Ȥ��Ȥˡ����ϥ��ɥ쥹���ޥåԥ󥰤Υ���������Ӷ��ѥ��֥������ȡ��ե�����Υե�ѥ������Ϥ���ޤ�������ư��ϡ�Oracle Solaris
+\fBpmap\fR�桼�ƥ���ƥ���������Ƥ��ޤ���
 .RE
 .PP
 \-dump:[live,] format=b, file=\fIfilename\fR
 .RS 4
-Javaヒープを\fIhprof\fRバイナリ形式で\fIfilename\fRにダンプします。\fIlive\fRサブオプションはオプションですが、指定した場合、ヒープ内のアクティブなオブジェクトのみがダンプされます。ヒープ・ダンプを参照するには、jhat(1)コマンドを使用して生成されたファイルを読み取ります。
+Java�ҡ��פ�\fBhprof\fR�Х��ʥ������\fBfilename\fR�˥���פ��ޤ���\fBlive\fR���֥��ץ����ϥ��ץ����Ǥ��������ꤷ����硢�ҡ�����Υ����ƥ��֤ʥ��֥������ȤΤߤ�����פ���ޤ����ҡ��ס�����פ򻲾Ȥ���ˤϡ�jhat(1)���ޥ�ɤ���Ѥ����������줿�ե�������ɤ߼��ޤ���
 .RE
 .PP
 \-finalizerinfo
 .RS 4
-ファイナライズを待っているオブジェクトに関する情報を出力します。
+�ե����ʥ饤�����ԤäƤ��륪�֥������Ȥ˴ؤ���������Ϥ��ޤ���
 .RE
 .PP
 \-heap
 .RS 4
-使用されているガベージ・コレクションのヒープ・サマリー、ヘッダー構成、および世代関連のヒープ使用状況を出力します。さらに、internされた文字列の数とサイズも出力されます。
+���Ѥ���Ƥ��륬�١��������쥯�����Υҡ��ס����ޥ꡼���إå�������������������Ϣ�Υҡ��׻��Ѿ�������Ϥ��ޤ�������ˡ�intern���줿ʸ����ο��ȥ���������Ϥ���ޤ���
 .RE
 .PP
 \-histo[:live]
 .RS 4
-ヒープのヒストグラムを出力します。Javaクラスごとに、オブジェクトの数、バイト単位でのメモリー・サイズ、および完全修飾クラス名が出力されます。JVMの内部クラス名はアスタリスク(*)の接頭辞を付けて出力されます。\fIlive\fRサブオプションが指定された場合、アクティブなオブジェクトのみがカウントされます。
+�ҡ��פΥҥ��ȥ�������Ϥ��ޤ���Java���饹���Ȥˡ����֥������Ȥο����Х���ñ�̤ǤΥ��꡼��������������Ӵ����������饹̾�����Ϥ���ޤ���JVM���������饹̾�ϥ������ꥹ��(*)����Ƭ�����դ��ƽ��Ϥ���ޤ���\fBlive\fR���֥��ץ���󤬻��ꤵ�줿��硢�����ƥ��֤ʥ��֥������ȤΤߤ�������Ȥ���ޤ���
 .RE
 .PP
 \-clstats
 .RS 4
-Javaヒープの、クラス・ローダー関連の統計データを出力します。クラス・ローダーごとに、その名前、状態、アドレス、親クラス・ローダー、およびクラス・ローダーがロードしたクラスの数とサイズが出力されます。
+Java�ҡ��פΡ����饹������������Ϣ�����ץǡ�������Ϥ��ޤ������饹�������������Ȥˡ�����̾�������֡����ɥ쥹���ƥ��饹����������������ӥ��饹�����������������ɤ������饹�ο��ȥ����������Ϥ���ޤ���
 .RE
 .PP
 \-F
 .RS 4
-強制します。PIDが応答しないときに、このオプションを\fIjmap \-dump\fRまたは\fIjmap \-histo\fRオプションとともに使用します。このモードでは、\fIlive\fRサブオプションはサポートされません。
+�������ޤ���PID���������ʤ��Ȥ��ˡ����Υ��ץ�����\fBjmap \-dump\fR�ޤ���\fBjmap \-histo\fR���ץ����ȤȤ�˻��Ѥ��ޤ������Υ⡼�ɤǤϡ�\fBlive\fR���֥��ץ����ϥ��ݡ��Ȥ���ޤ���
 .RE
 .PP
 \-h
 .RS 4
-ヘルプ・メッセージが出力されます。
+�إ�ס���å����������Ϥ���ޤ���
 .RE
 .PP
 \-help
 .RS 4
-ヘルプ・メッセージが出力されます。
+�إ�ס���å����������Ϥ���ޤ���
 .RE
 .PP
 \-J\fIflag\fR
 .RS 4
-\fIjmap\fRコマンドを実行しているJava仮想マシンに\fIflag\fRを渡します。
+\fBjmap\fR���ޥ�ɤ�¹Ԥ��Ƥ���Java Virtual Machine��\fBflag\fR���Ϥ��ޤ���
 .RE
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\

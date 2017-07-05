@@ -47,7 +47,7 @@ var WebView   = Java.type("javafx.scene.web.WebView");
 
 // JavaFX start method
 function start(stage) {
-    start.title = "Your System Properties";
+    stage.title = "Your System Properties";
     var wv = new WebView();
     var sysproprows = "";
     var sysprops = System.properties;

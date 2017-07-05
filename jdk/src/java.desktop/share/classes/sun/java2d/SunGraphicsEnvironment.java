@@ -84,6 +84,8 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
         java.security.AccessController.doPrivileged(
                                     new java.security.PrivilegedAction<Object>() {
             public Object run() {
+                String osName = System.getProperty("os.name");
+                if ("SunOS".equals(osName)) {
                     String version = System.getProperty("os.version", "0.0");
                     try {
                         float ver = Float.parseFloat(version);
@@ -117,7 +119,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
                         }
                     } catch (Exception e) {
                     }
-
+                }
                 /* Establish the default font to be used by SG2D etc */
                 defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
 

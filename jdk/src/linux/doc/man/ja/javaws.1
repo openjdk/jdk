@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: javaws
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: Java Web Startツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "javaws" "1" "2013年11月21日" "JDK 8" "Java Web Startツール"
+.\" Title: javaws
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: Java Web Start�ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "javaws" "1" "2013ǯ11��21��" "JDK 8" "Java Web Start�ġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-javaws \- Java Web Startを起動します。
-.SH "概要"
+.SH "̾��"
+javaws \- Java Web Start��ư���ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjavaws\fR [ \fIrun\-options\fR ] \fIjnlp\fR
+\fBjavaws\fR [ \fIrun\-options\fR ] \fIjnlp\fR
 .fi
 .if n \{\
 .RE
@@ -66,7 +68,7 @@ javaws \- Java Web Startを起動します。
 .RS 4
 .\}
 .nf
-\fIjavaws\fR [ \fIcontrol\-options\fR ]
+\fBjavaws\fR [ \fIcontrol\-options\fR ]
 .fi
 .if n \{\
 .RE
@@ -74,147 +76,147 @@ javaws \- Java Web Startを起動します。
 .PP
 \fIrun\-options\fR
 .RS 4
-コマンドライン\fI実行オプション\fR。\fI実行オプション\fRは任意の順序で指定できます。実行オプションを参照してください。
+���ޥ�ɹ�\fB�¹ԥ��ץ����\fR��\fB�¹ԥ��ץ����\fR��Ǥ�դν���ǻ���Ǥ��ޤ����¹ԥ��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIjnlp\fR
 .RS 4
-JNLP (Java Network Launching Protocol)ファイルのパスまたはURL (Uniform Resource Locator)のどちらか。
+JNLP (Java Network Launching Protocol)�ե�����Υѥ��ޤ���URL (Uniform Resource Locator)�Τɤ��餫��
 .RE
 .PP
-\fI制御オプション\fR
+\fI���楪�ץ����\fR
 .RS 4
-コマンドライン\fI制御オプション\fR。\fI制御オプション\fRは任意の順序で指定できます。制御オプションを参照してください。
+���ޥ�ɹ�\fB���楪�ץ����\fR��\fB���楪�ץ����\fR��Ǥ�դν���ǻ���Ǥ��ޤ������楪�ץ����򻲾Ȥ��Ƥ���������
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fB注意:\fR
-\fIjavaws\fRコマンドは、Oracle Solarisでは使用できません。
+\fB����:\fR
+\fBjavaws\fR���ޥ�ɤϡ�Oracle Solaris�Ǥϻ��ѤǤ��ޤ���
 .PP
-\fIjavaws\fRコマンドは、JNLPのリファレンス実装であるJava Web Startを起動します。Java Web Startは、ネットワーク上で動作するJavaアプリケーションおよびアプレットを起動します。
+\fBjavaws\fR���ޥ�ɤϡ�JNLP�Υ�ե���󥹼����Ǥ���Java Web Start��ư���ޤ���Java Web Start�ϡ��ͥåȥ�����ư���Java���ץꥱ������󤪤�ӥ��ץ�åȤ�ư���ޤ���
 .PP
-JNLPファイルが指定されると、\fIjavaws\fRコマンドはJNLPファイルで指定したJavaアプリケーションまたはアプレットを起動します。
+JNLP�ե����뤬���ꤵ���ȡ�\fBjavaws\fR���ޥ�ɤ�JNLP�ե�����ǻ��ꤷ��Java���ץꥱ�������ޤ��ϥ��ץ�åȤ�ư���ޤ���
 .PP
-\fIjavaws\fR起動ツールには、現在のリリースでサポートされている1組のオプションがあります。ただし、これらのオプションは将来のリリースでは削除される可能性があります。
-.SH "実行オプション"
+\fBjavaws\fR��ư�ġ���ˤϡ����ߤΥ�꡼���ǥ��ݡ��Ȥ���Ƥ���1�ȤΥ��ץ���󤬤���ޤ����������������Υ��ץ����Ͼ���Υ�꡼���ǤϺ��������ǽ��������ޤ���
+.SH "�¹ԥ��ץ����"
 .PP
 \-offline
 .RS 4
-Java Web Startをオフライン・モードで実行します。
+Java Web Start�򥪥ե饤�󡦥⡼�ɤǼ¹Ԥ��ޤ���
 .RE
 .PP
 \-Xnosplash
 .RS 4
-初期スプラッシュ画面を表示しません。
+������ץ�å�����̤�ɽ�����ޤ���
 .RE
 .PP
 \-open \fIarguments\fR
 .RS 4
-このオプションを指定すると、JNLPファイル内の引数が\fI\-open\fR
-\fIarguments\fRに置き換わります。
+���Υ��ץ�������ꤹ��ȡ�JNLP�ե�������ΰ�����\fB\-open\fR
+\fBarguments\fR���֤������ޤ���
 .RE
 .PP
 \-print \fIarguments\fR
 .RS 4
-このオプションを指定すると、JNLPファイル内の引数が\fI\-print\fR
-\fIarguments\fRに置き換わります。
+���Υ��ץ�������ꤹ��ȡ�JNLP�ե�������ΰ�����\fB\-print\fR
+\fBarguments\fR���֤������ޤ���
 .RE
 .PP
 \-online
 .RS 4
-オンライン・モードを使用します。これは、デフォルトの動作です。
+����饤�󡦥⡼�ɤ���Ѥ��ޤ�������ϡ��ǥե���Ȥ�ư��Ǥ���
 .RE
 .PP
 \-wait
 .RS 4
-\fIjavaws\fRプロセスは、アプリケーションが終了するまで終了しません。Windowsプラットフォーム上では、このオプションは説明したとおりに機能しません。
+\fBjavaws\fR�ץ������ϡ����ץꥱ������󤬽�λ����ޤǽ�λ���ޤ���Windows�ץ�åȥե������Ǥϡ����Υ��ץ��������������Ȥ���˵�ǽ���ޤ���
 .RE
 .PP
 \-verbose
 .RS 4
-追加の出力を表示します。
+�ɲäν��Ϥ�ɽ�����ޤ���
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-Java仮想マシンにoptionを渡します。\fIoption\fRには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+Java Virtual Machine��option���Ϥ��ޤ���\fBoption\fR�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ��륪�ץ�����1�Ļ��ꤷ�ޤ������Ȥ��С�\fB\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \-system
 .RS 4
-アプリケーションをシステム・キャッシュのみから実行します。
+���ץꥱ�������򥷥��ƥࡦ����å���Τߤ���¹Ԥ��ޤ���
 .RE
-.SH "制御オプション"
+.SH "���楪�ץ����"
 .PP
 \-viewer
 .RS 4
-Javaコントロール・パネルでキャッシュ・ビューアを表示します。
+Java����ȥ����롦�ѥͥ�ǥ���å��塦�ӥ塼����ɽ�����ޤ���
 .RE
 .PP
 \-clearcache
 .RS 4
-インストールされていないすべてのアプリケーションをキャッシュから削除します。
+���󥹥ȡ��뤵��Ƥ��ʤ����٤ƤΥ��ץꥱ�������򥭥�å��夫�������ޤ���
 .RE
 .PP
 \-userConfig \fIproperty\-name\fR
 .RS 4
-指定されたデプロイメント・プロパティをクリアします。
+���ꤵ�줿�ǥץ������ȡ��ץ��ѥƥ��򥯥ꥢ���ޤ���
 .RE
 .PP
 \-userConfig \fIproperty\-name property\-value\fR
 .RS 4
-指定されたデプロイメント・プロパティを指定された値に設定します。
+���ꤵ�줿�ǥץ������ȡ��ץ��ѥƥ�����ꤵ�줿�ͤ����ꤷ�ޤ���
 .RE
 .PP
 \-uninstall
 .RS 4
-キャッシュからすべてのアプリケーションを削除します。
+����å��夫�餹�٤ƤΥ��ץꥱ�������������ޤ���
 .RE
 .PP
 \-uninstall \fIjnlp\fR
 .RS 4
-キャッシュからアプリケーションを削除します。
+����å��夫�饢�ץꥱ�������������ޤ���
 .RE
 .PP
 \-print \fIimport\-options \fRjnlp
 .RS 4
-キャッシュにアプリケーションをインポートします。
+����å���˥��ץꥱ�������򥤥�ݡ��Ȥ��ޤ���
 .RE
-.SH "インポート・オプション"
+.SH "����ݡ��ȡ����ץ����"
 .PP
 \-silent
 .RS 4
-サイレント・モードでインポートします(ユーザー・インタフェースは表示されません)。
+�������ȡ��⡼�ɤǥ���ݡ��Ȥ��ޤ�(�桼���������󥿥ե�������ɽ������ޤ���)��
 .RE
 .PP
 \-system
 .RS 4
-システム・キャッシュにアプリケーションをインポートします。
+�����ƥࡦ����å���˥��ץꥱ�������򥤥�ݡ��Ȥ��ޤ���
 .RE
 .PP
 \-codebase \fIurl\fR
 .RS 4
-指定したコードベースからリソースを取得します。
+���ꤷ�������ɥ١�������꥽������������ޤ���
 .RE
 .PP
 \-shortcut
 .RS 4
-ユーザーがプロンプトを受け入れればショートカットをインストールします。このオプションは、
-\fI\-silent\fRオプションも使用しないと効果がありません。
+�桼�������ץ���ץȤ���������Х��硼�ȥ��åȤ򥤥󥹥ȡ��뤷�ޤ������Υ��ץ����ϡ�
+\fB\-silent\fR���ץ�������Ѥ��ʤ��ȸ��̤�����ޤ���
 .RE
 .PP
 \-association
 .RS 4
-ユーザーがプロンプトを受け入れればアソシエーションをインストールします。このオプションは、
-\fI\-silent\fRオプションも使用しないと効果がありません。
+�桼�������ץ���ץȤ���������Х��������������򥤥󥹥ȡ��뤷�ޤ������Υ��ץ����ϡ�
+\fB\-silent\fR���ץ�������Ѥ��ʤ��ȸ��̤�����ޤ���
 .RE
 .PP
-\fB注意:\fR\fIjavaws \-shortcut \-uninstall\fR
-.SH "ファイル"
+\fB����:\fR\fBjavaws \-shortcut \-uninstall\fR
+.SH "�ե�����"
 .PP
-ユーザーおよびシステム・キャッシュならびにdeployment\&.propertiesファイルの詳細は、構成ファイルおよびプロパティのデプロイメント
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/deployment/deployment\-guide/properties\&.html)を参照してください
-.SH "関連項目"
+�桼��������ӥ����ƥࡦ����å���ʤ�Ӥ�deployment\&.properties�ե�����ξܺ٤ϡ��ǥץ������ȹ����ե����뤪��ӥץ��ѥƥ�
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jweb/jcp/properties\&.html)�򻲾Ȥ��Ƥ�������
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\

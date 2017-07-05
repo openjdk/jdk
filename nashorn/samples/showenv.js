@@ -46,7 +46,7 @@ var WebView   = Java.type("javafx.scene.web.WebView");
 
 // JavaFX start method
 function start(stage) {
-    start.title = "Your Environment";
+    stage.title = "Your Environment";
     var wv = new WebView();
     var envrows = "";
     for (var i in $ENV) {
