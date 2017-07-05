@@ -35,7 +35,7 @@ package java.io;
  * provide additional methods and fields.
  *
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public abstract class FilterWriter extends Writer {

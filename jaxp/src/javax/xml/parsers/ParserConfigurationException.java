@@ -35,7 +35,7 @@ public class ParserConfigurationException extends Exception {
 
     /**
      * Create a new <code>ParserConfigurationException</code> with no
-     * detail mesage.
+     * detail message.
      */
 
     public ParserConfigurationException() {

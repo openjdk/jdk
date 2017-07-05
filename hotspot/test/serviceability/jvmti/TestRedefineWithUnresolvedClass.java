@@ -26,7 +26,7 @@
  * @summary Redefine a class with an UnresolvedClass reference in the constant pool.
  * @bug 8035150
  * @library /testlibrary
- * @build UnresolvedClassAgent com.oracle.java.testlibrary.ProcessTools com.oracle.java.testlibrary.OutputAnalyzer
+ * @build com.oracle.java.testlibrary.* UnresolvedClassAgent
  * @run main TestRedefineWithUnresolvedClass
  */
 

@@ -363,40 +363,32 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <echo message="WARNING: TestNG not available, will not run tests. Please copy testng.jar under test/lib directory."/>
   </target>
 
-  <target name="test" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
-    <delete dir="${build.dir}/nashorn_code_cache"/>
-    <fileset id="test.classes" dir="${build.test.classes.dir}">
-      <include name="**/api/javaaccess/*Test.class"/>
-      <include name="**/api/scripting/*Test.class"/>
-      <include name="**/codegen/*Test.class"/>
-      <include name="**/parser/*Test.class"/>
-      <include name="**/runtime/*Test.class"/>
-      <include name="**/runtime/regexp/*Test.class"/>
-      <include name="**/runtime/regexp/joni/*Test.class"/>
-      <include name="**/framework/*Test.class"/>
-    </fileset>
+  <!-- only to be invoked as dependency of "test" target -->
+  <target name="-test-classes-all" depends="jar" unless="test.class">
+      <fileset id="test.classes" dir="${build.test.classes.dir}">
+          <include name="**/api/javaaccess/*Test.class"/>
+          <include name="**/api/scripting/*Test.class"/>
+          <include name="**/codegen/*Test.class"/>
+          <include name="**/parser/*Test.class"/>
+          <include name="**/runtime/*Test.class"/>
+          <include name="**/runtime/regexp/*Test.class"/>
+          <include name="**/runtime/regexp/joni/*Test.class"/>
+          <include name="**/framework/*Test.class"/>
+     </fileset>
+  </target>
 
+  <!-- only to be invoked as dependency of "test" target -->
+  <target name="-test-classes-single" depends="jar" if="test.class">
+     <fileset id="test.classes" dir="${build.test.classes.dir}">
+         <include name="${test.class}*"/>
+     </fileset>
+  </target>
+
+  <!-- only to be invoked as dependency of "test" target -->
+  <target name="-test-nosecurity" unless="test.class">
     <fileset id="test.nosecurity.classes" dir="${build.test.classes.dir}">
       <include name="**/framework/ScriptTest.class"/>
     </fileset>
-
-    <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
-       verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
-      <propertyset>
-        <propertyref prefix="nashorn."/>
-      </propertyset>
-      <propertyset>
-        <propertyref prefix="test-sys-prop."/>
-        <mapper from="test-sys-prop.*" to="*" type="glob"/>
-      </propertyset>
-      <sysproperty key="test.js.excludes.file" value="${exclude.list}"/>
-      <classpath>
-          <pathelement path="${run.test.classpath}"/>
-      </classpath>
-    </testng>
-
     <testng outputdir="${build.nosecurity.test.results.dir}" classfilesetref="test.nosecurity.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
@@ -413,6 +405,31 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
       </classpath>
     </testng>
   </target>
+
+  <!-- only to be invoked as dependency of "test" target -->
+  <target name="-test-security">
+    <delete dir="${build.dir}/nashorn_code_cache"/>
+    <property name="debug.test.jvmargs" value=""/>
+    <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
+       verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
+      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
+      <jvmarg line="${debug.test.jvmargs}"/>
+      <propertyset>
+        <propertyref prefix="nashorn."/>
+      </propertyset>
+      <propertyset>
+        <propertyref prefix="test-sys-prop."/>
+        <mapper from="test-sys-prop.*" to="*" type="glob"/>
+      </propertyset>
+      <sysproperty key="test.js.excludes.file" value="${exclude.list}"/>
+      <classpath>
+          <pathelement path="${run.test.classpath}"/>
+      </classpath>
+    </testng>
+  </target>
+
+  <target name="test" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file, -test-security, -test-nosecurity" if="testng.available"/>
 
   <target name="check-jemmy.jfx.testng" unless="jemmy.jfx.testng.available">
     <echo message="WARNING: Jemmy or JavaFX or TestNG not available, will not run tests. Please copy testng.jar, JemmyCore.jar, JemmyFX.jar, JemmyAWTInput.jar under test${file.separator}lib directory. And make sure you have jfxrt.jar in ${java.home}${file.separator}lib${file.separator}ext dir."/>

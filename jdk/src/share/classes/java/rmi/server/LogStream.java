@@ -32,7 +32,7 @@ import java.util.*;
  * of possible interest to those monitoring a system.
  *
  * @author  Ann Wollrath (lots of code stolen from Ken Arnold)
- * @since   JDK1.1
+ * @since   1.1
  * @deprecated no replacement
  */
 @Deprecated
@@ -64,7 +64,7 @@ public class LogStream extends PrintStream {
      * method.
      * @param name string identifying messages from this log
      * @out output stream that log messages will be sent to
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -83,7 +83,7 @@ public class LogStream extends PrintStream {
      * the default stream is created.
      * @param name name identifying the desired LogStream
      * @return log associated with given name
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -103,7 +103,7 @@ public class LogStream extends PrintStream {
      * Return the current default stream for new logs.
      * @return default log stream
      * @see #setDefaultStream
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -115,7 +115,7 @@ public class LogStream extends PrintStream {
      * Set the default stream for new logs.
      * @param newDefault new default log stream
      * @see #getDefaultStream
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -134,7 +134,7 @@ public class LogStream extends PrintStream {
      * Return the current stream to which output from this log is sent.
      * @return output stream for this log
      * @see #setOutputStream
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -147,7 +147,7 @@ public class LogStream extends PrintStream {
      * Set the stream to which output from this log is sent.
      * @param out new output stream for this log
      * @see #getOutputStream
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -164,7 +164,7 @@ public class LogStream extends PrintStream {
      * the byte is appended to the internal buffer.  If it is a newline,
      * then the currently buffered line is sent to the log's output
      * stream, prefixed with the appropriate logging information.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -208,7 +208,7 @@ public class LogStream extends PrintStream {
 
     /**
      * Write a subarray of bytes.  Pass each through write byte method.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -223,7 +223,7 @@ public class LogStream extends PrintStream {
     /**
      * Return log name as string representation.
      * @return log name
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -244,7 +244,7 @@ public class LogStream extends PrintStream {
      * integer representation.
      * @param s name of logging level (e.g., 'SILENT', 'BRIEF', 'VERBOSE')
      * @return corresponding integer log level
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated

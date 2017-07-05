@@ -77,7 +77,7 @@ import java.util.Enumeration;
  * Currently applets are not allowed to use multicast sockets.
  *
  * @author Pavani Diwanji
- * @since  JDK1.1
+ * @since  1.1
  */
 public
 class MulticastSocket extends DatagramSocket {

@@ -32,7 +32,7 @@ package java.applet;
  * together to produce a composite.
  *
  * @author      Arthur van Hoff
- * @since       JDK1.0
+ * @since       1.0
  */
 public interface AudioClip {
     /**

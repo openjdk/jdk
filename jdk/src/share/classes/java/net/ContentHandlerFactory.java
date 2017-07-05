@@ -36,7 +36,7 @@ package java.net;
  * @author  James Gosling
  * @see     java.net.ContentHandler
  * @see     java.net.URLStreamHandler
- * @since   JDK1.0
+ * @since   1.0
  */
 public interface ContentHandlerFactory {
     /**

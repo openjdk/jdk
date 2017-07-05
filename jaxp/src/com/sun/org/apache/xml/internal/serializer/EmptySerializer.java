@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2003-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -27,7 +29,7 @@ import java.io.OutputStream;
 import java.io.Writer;
 import java.util.Hashtable;
 import java.util.Properties;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.xml.transform.SourceLocator;
 import javax.xml.transform.Transformer;
@@ -150,9 +152,9 @@ public class EmptySerializer implements SerializationHandler
         couldThrowIOException();
     }
     /**
-     * @see SerializationHandler#setCdataSectionElements(java.util.Vector)
+     * @see SerializationHandler#setCdataSectionElements(java.util.ArrayList<String>)
      */
-    public void setCdataSectionElements(Vector URI_and_localNames)
+    public void setCdataSectionElements(ArrayList<String> URI_and_localNames)
     {
         aMethodIsCalled();
     }
@@ -760,6 +762,27 @@ public class EmptySerializer implements SerializationHandler
      * @see SerializationHandler#setDTDEntityExpansion(boolean)
      */
     public void setDTDEntityExpansion(boolean expand) {
+        aMethodIsCalled();
+
+    }
+
+
+    public String getOutputProperty(String name) {
+        aMethodIsCalled();
+        return null;
+    }
+
+    public String getOutputPropertyDefault(String name) {
+        aMethodIsCalled();
+        return null;
+    }
+
+    public void setOutputProperty(String name, String val) {
+        aMethodIsCalled();
+
+    }
+
+    public void setOutputPropertyDefault(String name, String val) {
         aMethodIsCalled();
 
     }

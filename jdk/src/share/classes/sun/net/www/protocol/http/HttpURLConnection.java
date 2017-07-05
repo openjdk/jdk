@@ -552,7 +552,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
             requests.setIfNotSet("User-Agent", userAgent);
             int port = url.getPort();
-            String host = url.getHost();
+            String host = stripIPv6ZoneId(url.getHost());
             if (port != -1 && port != url.getDefaultPort()) {
                 host += ":" + String.valueOf(port);
             }
@@ -2659,7 +2659,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     requests.set(0, method + " " + getRequestURI()+" "  +
                                  httpVersion, null);
                     int port = url.getPort();
-                    String host = url.getHost();
+                    String host = stripIPv6ZoneId(url.getHost());
                     if (port != -1 && port != url.getDefaultPort()) {
                         host += ":" + String.valueOf(port);
                     }
@@ -3202,6 +3202,24 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             }
         }
         return headers;
+    }
+
+    /**
+     * Returns the given host, without the IPv6 Zone Id, if present.
+     * (e.g. [fe80::a00:27ff:aaaa:aaaa%eth0] -> [fe80::a00:27ff:aaaa:aaaa])
+     *
+     * @param host host address (not null, not empty)
+     * @return host address without Zone Id
+     */
+    static String stripIPv6ZoneId(String host) {
+        if (host.charAt(0) != '[') { // not an IPv6-literal
+            return host;
+        }
+        int i = host.lastIndexOf('%');
+        if (i == -1) { // doesn't contain zone_id
+            return host;
+        }
+        return host.substring(0, i) + "]";
     }
 
     /* The purpose of this wrapper is just to capture the close() call

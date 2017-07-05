@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import java.io.File;
 // Sun specific
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
-import com.sun.tools.attach.AgentInitializationException;
-import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 
 // Sun private
@@ -238,35 +236,7 @@ public class LocalVirtualMachine {
             throw ioe;
         }
 
-        String home = vm.getSystemProperties().getProperty("java.home");
-
-        // Normally in ${java.home}/jre/lib/management-agent.jar but might
-        // be in ${java.home}/lib in build environments.
-
-        String agent = home + File.separator + "jre" + File.separator +
-                           "lib" + File.separator + "management-agent.jar";
-        File f = new File(agent);
-        if (!f.exists()) {
-            agent = home + File.separator +  "lib" + File.separator +
-                        "management-agent.jar";
-            f = new File(agent);
-            if (!f.exists()) {
-                throw new IOException("Management agent not found");
-            }
-        }
-
-        agent = f.getCanonicalPath();
-        try {
-            vm.loadAgent(agent, "com.sun.management.jmxremote");
-        } catch (AgentLoadException x) {
-            IOException ioe = new IOException(x.getMessage());
-            ioe.initCause(x);
-            throw ioe;
-        } catch (AgentInitializationException x) {
-            IOException ioe = new IOException(x.getMessage());
-            ioe.initCause(x);
-            throw ioe;
-        }
+        vm.startLocalManagementAgent();
 
         // get the connector address
         Properties agentProps = vm.getAgentProperties();

@@ -1013,7 +1013,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
          *
          * @return  <code>true</code> if this enumeration contains more elements;
          *          <code>false</code> otherwise.
-         * @since   JDK1.0
+         * @since   1.0
          */
         public boolean hasMoreElements() {
             return i < attr.length;
@@ -1024,7 +1024,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
          *
          * @return     the next element of this enumeration.
          * @exception  NoSuchElementException  if no more elements exist.
-         * @since      JDK1.0
+         * @since      1.0
          */
         public Object nextElement() {
             if (i < attr.length) {

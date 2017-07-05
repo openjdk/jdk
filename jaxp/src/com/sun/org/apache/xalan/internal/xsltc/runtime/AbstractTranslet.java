@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -32,7 +34,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Vector;
 import javax.xml.transform.Templates;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
@@ -51,6 +52,7 @@ import com.sun.org.apache.xalan.internal.xsltc.dom.KeyIndex;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.output.TransletOutputHandlerFactory;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
+import com.sun.org.apache.xml.internal.serializer.ToStream;
 
 /**
  * @author Jacek Ambroziak
@@ -74,7 +76,7 @@ public abstract class AbstractTranslet implements Translet {
     public String  _doctypeSystem = null;
     public boolean _indent = false;
     public String  _mediaType = null;
-    public Vector _cdata = null;
+    public ArrayList<String> _cdata = null;
     public int _indentamount = -1;
 
     public static final int FIRST_TRANSLET_VERSION = 100;
@@ -642,7 +644,7 @@ public abstract class AbstractTranslet implements Translet {
      */
     public void addCdataElement(String name) {
         if (_cdata == null) {
-            _cdata = new Vector();
+            _cdata = new ArrayList<>();
         }
 
         int lastColon = name.lastIndexOf(':');
@@ -650,11 +652,11 @@ public abstract class AbstractTranslet implements Translet {
         if (lastColon > 0) {
             String uri = name.substring(0, lastColon);
             String localName = name.substring(lastColon+1);
-            _cdata.addElement(uri);
-            _cdata.addElement(localName);
+            _cdata.add(uri);
+            _cdata.add(localName);
         } else {
-            _cdata.addElement(null);
-            _cdata.addElement(name);
+            _cdata.add(null);
+            _cdata.add(name);
         }
     }
 

@@ -662,7 +662,7 @@ public abstract class Graphics2D extends Graphics {
      *         <code>null</code>
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawChars
-     * @since       JDK1.0
+     * @since       1.0
      */
     public abstract void drawString(String str, int x, int y);
 
@@ -968,7 +968,7 @@ public abstract class Graphics2D extends Graphics {
      * context are relative to this new origin.
      * @param  x the specified x coordinate
      * @param  y the specified y coordinate
-     * @since   JDK1.0
+     * @since   1.0
      */
     public abstract void translate(int x, int y);
 

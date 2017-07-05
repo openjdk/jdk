@@ -40,7 +40,7 @@ import sun.security.action.GetPropertyAction;
  * to enable selection and loading of that input method.
  * The input method itself is only loaded when it is actually used.
  *
- * @since JDK1.3
+ * @since 1.3
  */
 
 public abstract class X11InputMethodDescriptor implements InputMethodDescriptor {

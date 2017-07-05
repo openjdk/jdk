@@ -64,7 +64,7 @@ import java.util.stream.StreamSupport;
  * @see java.nio.file.Files#newBufferedReader
  *
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public class BufferedReader extends Reader {

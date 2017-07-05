@@ -72,7 +72,7 @@ import java.util.concurrent.TimeUnit;
  * <p>As of 1.5, {@link ProcessBuilder#start()} is the preferred way
  * to create a {@code Process}.
  *
- * @since   JDK1.0
+ * @since   1.0
  */
 public abstract class Process {
     /**

@@ -183,7 +183,7 @@ import sun.net.spi.nameservice.*;
  * @see     java.net.InetAddress#getAllByName(java.lang.String)
  * @see     java.net.InetAddress#getByName(java.lang.String)
  * @see     java.net.InetAddress#getLocalHost()
- * @since JDK1.0
+ * @since 1.0
  */
 public
 class InetAddress implements java.io.Serializable {
@@ -305,7 +305,7 @@ class InetAddress implements java.io.Serializable {
      * IP multicast address.
      * @return a {@code boolean} indicating if the InetAddress is
      * an IP multicast address
-     * @since   JDK1.1
+     * @since   1.1
      */
     public boolean isMulticastAddress() {
         return false;
@@ -654,7 +654,7 @@ class InetAddress implements java.io.Serializable {
      * Returns the IP address string in textual presentation.
      *
      * @return  the raw IP address in a string format.
-     * @since   JDK1.0.2
+     * @since   1.0.2
      */
     public String getHostAddress() {
         return null;

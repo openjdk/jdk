@@ -34,7 +34,7 @@ import java.util.HashSet;
 /**
  * Abstract datagram and multicast socket implementation base class.
  * @author Pavani Diwanji
- * @since  JDK1.1
+ * @since  1.1
  */
 
 public abstract class DatagramSocketImpl implements SocketOptions {

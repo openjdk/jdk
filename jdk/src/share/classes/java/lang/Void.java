@@ -31,7 +31,7 @@ package java.lang;
  * void.
  *
  * @author  unascribed
- * @since   JDK1.1
+ * @since   1.1
  */
 public final
 class Void {

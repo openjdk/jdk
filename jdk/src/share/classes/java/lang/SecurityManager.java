@@ -216,7 +216,7 @@ import sun.security.util.SecurityConstants;
  * @see     java.security.SecurityPermission SecurityPermission
  * @see     java.security.ProtectionDomain
  *
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class SecurityManager {
@@ -1179,7 +1179,7 @@ class SecurityManager {
      *  use (join/leave/send/receive) IP multicast.
      * @exception  NullPointerException if the address argument is
      *             <code>null</code>.
-     * @since      JDK1.1
+     * @since      1.1
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     public void checkMulticast(InetAddress maddr) {
@@ -1213,7 +1213,7 @@ class SecurityManager {
      *  use (join/leave/send/receive) IP multicast.
      * @exception  NullPointerException if the address argument is
      *             <code>null</code>.
-     * @since      JDK1.1
+     * @since      1.1
      * @deprecated Use #checkPermission(java.security.Permission) instead
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
@@ -1322,7 +1322,7 @@ class SecurityManager {
      *
      * @exception  SecurityException  if the calling thread does not have
      *             permission to initiate a print job request.
-     * @since   JDK1.1
+     * @since   1.1
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     public void checkPrintJobAccess() {
@@ -1333,7 +1333,7 @@ class SecurityManager {
      * Throws {@code SecurityException} if the calling thread does
      * not have {@code AllPermission}.
      *
-     * @since   JDK1.1
+     * @since   1.1
      * @exception  SecurityException  if the calling thread does not have
      *             {@code AllPermission}
      * @deprecated This method was originally used to check if the calling
@@ -1351,7 +1351,7 @@ class SecurityManager {
      * Throws {@code SecurityException} if the calling thread does
      * not have {@code AllPermission}.
      *
-     * @since   JDK1.1
+     * @since   1.1
      * @exception  SecurityException  if the calling thread does not have
      *             {@code AllPermission}
      * @deprecated This method was originally used to check if the calling
@@ -1610,7 +1610,7 @@ class SecurityManager {
      *             to check the permission {@code java.security.AllPermission}.
      *
      * @see java.lang.reflect.Member
-     * @since JDK1.1
+     * @since 1.1
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     @Deprecated
@@ -1666,7 +1666,7 @@ class SecurityManager {
      * @exception NullPointerException if <code>target</code> is null.
      * @exception IllegalArgumentException if <code>target</code> is empty.
      *
-     * @since   JDK1.1
+     * @since   1.1
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     public void checkSecurityAccess(String target) {
@@ -1683,7 +1683,7 @@ class SecurityManager {
      * manager to return the appropriate thread group.
      *
      * @return  ThreadGroup that new threads are instantiated into
-     * @since   JDK1.1
+     * @since   1.1
      * @see     java.lang.ThreadGroup
      */
     public ThreadGroup getThreadGroup() {

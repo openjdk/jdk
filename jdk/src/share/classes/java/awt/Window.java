@@ -143,7 +143,7 @@ import sun.util.logging.PlatformLogger;
  * @see WindowEvent
  * @see #addWindowListener
  * @see java.awt.BorderLayout
- * @since       JDK1.0
+ * @since       1.0
  */
 public class Window extends Container implements Accessible {
 
@@ -753,7 +753,7 @@ public class Window extends Container implements Accessible {
      * not be called directly by programs.
      * @see Component#isDisplayable
      * @see Container#removeNotify
-     * @since JDK1.0
+     * @since 1.0
      */
     public void addNotify() {
         synchronized (getTreeLock()) {
@@ -1405,7 +1405,7 @@ public class Window extends Container implements Accessible {
      * is returned.
      * @return    the locale that is set for this window.
      * @see       java.util.Locale
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Locale getLocale() {
       if (this.locale == null) {
@@ -1441,7 +1441,7 @@ public class Window extends Container implements Accessible {
      *            Cursor.DEFAULT_CURSOR.
      * @see       Component#getCursor
      * @see       Cursor
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void setCursor(Cursor cursor) {
         if (cursor == null) {
