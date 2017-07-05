@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.URIParameter;
 import javax.security.auth.login.Configuration;
 import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 import sun.security.jgss.LoginConfigImpl;
 
 public class DefaultGssConfig {
@@ -56,11 +57,11 @@ public class DefaultGssConfig {
         Configuration.getConfiguration();
 
         // 3. Make sure there're default entries for GSS krb5 client/server
-        LoginConfigImpl lc = new LoginConfigImpl(GSSUtil.CALLER_INITIATE, GSSUtil.GSS_KRB5_MECH_OID);
+        LoginConfigImpl lc = new LoginConfigImpl(GSSCaller.CALLER_INITIATE, GSSUtil.GSS_KRB5_MECH_OID);
         if (lc.getAppConfigurationEntry("").length == 0) {
             throw new Exception("No default config for GSS krb5 client");
         }
-        lc = new LoginConfigImpl(GSSUtil.CALLER_ACCEPT, GSSUtil.GSS_KRB5_MECH_OID);
+        lc = new LoginConfigImpl(GSSCaller.CALLER_ACCEPT, GSSUtil.GSS_KRB5_MECH_OID);
         if (lc.getAppConfigurationEntry("").length == 0) {
             throw new Exception("No default config for GSS krb5 server");
         }

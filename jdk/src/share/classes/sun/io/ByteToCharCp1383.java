@@ -24,31 +24,16 @@
  */
 package sun.io;
 
-import sun.nio.cs.ext.IBM1383;
+import sun.nio.cs.ext.*;
 
-/**
-* A table to convert Cp1383 to Unicode
-*
-* @author Malcolm Ayres, assisted by UniMap program
-*/
-public class ByteToCharCp1383
-        extends ByteToCharEUC
+public class ByteToCharCp1383 extends ByteToCharEUC2 {
 
-{
+    // Return the character set id
+    public String getCharacterEncoding() {
+        return "Cp1383";
+    }
 
-        private final static IBM1383 nioCoder = new IBM1383();
-
-        // Return the character set id
-        public String getCharacterEncoding()
-        {
-                return "Cp1383";
-        }
-
-        public ByteToCharCp1383()
-        {
-            // Set the correct mapping table
-            super();
-            super.byteToCharTable = nioCoder.getDecoderSingleByteMappings();
-            super.mappingTableG1 = nioCoder.getDecoderMappingTableG1();
-        }
+    public ByteToCharCp1383() {
+        super((DoubleByte.Decoder)new IBM1383().newDecoder());
+    }
 }

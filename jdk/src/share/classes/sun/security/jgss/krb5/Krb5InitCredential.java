@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.security.jgss.krb5;
 
 import org.ietf.jgss.*;
-import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 import sun.security.jgss.spi.*;
 import sun.security.krb5.*;
 import sun.security.krb5.Config;
@@ -138,7 +138,7 @@ public class Krb5InitCredential
         this.krb5Credentials = delegatedCred;
     }
 
-    static Krb5InitCredential getInstance(int caller, Krb5NameElement name,
+    static Krb5InitCredential getInstance(GSSCaller caller, Krb5NameElement name,
                                    int initLifetime)
         throws GSSException {
 
@@ -305,7 +305,7 @@ public class Krb5InitCredential
     // XXX call to this.destroy() should destroy the locally cached copy
     // of krb5Credentials and then call super.destroy().
 
-    private static KerberosTicket getTgt(int caller, Krb5NameElement name,
+    private static KerberosTicket getTgt(GSSCaller caller, Krb5NameElement name,
                                                  int initLifetime)
         throws GSSException {
 
@@ -337,8 +337,8 @@ public class Krb5InitCredential
         final AccessControlContext acc = AccessController.getContext();
 
         try {
-            final int realCaller = (caller == GSSUtil.CALLER_UNKNOWN)
-                                   ? GSSUtil.CALLER_INITIATE
+            final GSSCaller realCaller = (caller == GSSCaller.CALLER_UNKNOWN)
+                                   ? GSSCaller.CALLER_INITIATE
                                    : caller;
             return AccessController.doPrivileged(
                 new PrivilegedExceptionAction<KerberosTicket>() {

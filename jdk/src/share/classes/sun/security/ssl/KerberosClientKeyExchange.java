@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,19 +34,16 @@ import java.security.PrivilegedActionException;
 import java.security.SecureRandom;
 import java.net.InetAddress;
 
-import javax.net.ssl.SSLException;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.ServicePermission;
-import sun.security.jgss.GSSUtil;
+import sun.security.jgss.GSSCaller;
 
-import sun.security.krb5.Config;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.EncryptedData;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.Realm;
-import sun.security.krb5.KrbException;
 import sun.security.krb5.internal.Ticket;
 import sun.security.krb5.internal.EncTicketPart;
 import sun.security.krb5.internal.crypto.KeyUsage;
@@ -310,7 +307,7 @@ final class KerberosClientKeyExchange extends HandshakeMessage {
                 new PrivilegedExceptionAction<KerberosTicket>() {
                 public KerberosTicket run() throws Exception {
                     return Krb5Util.getTicketFromSubjectAndTgs(
-                        GSSUtil.CALLER_SSL_CLIENT,
+                        GSSCaller.CALLER_SSL_CLIENT,
                         clientPrincipal, serverPrincipal,
                         tgsPrincipal, acc);
                         }});

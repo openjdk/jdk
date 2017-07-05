@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,8 +148,12 @@ public class TextCallbackHandler implements CallbackHandler {
 
     /* Reads a line of input */
     private String readLine() throws IOException {
-        return new BufferedReader
+        String result = new BufferedReader
             (new InputStreamReader(System.in)).readLine();
+        if (result == null) {
+            throw new IOException("Cannot read from System.in");
+        }
+        return result;
     }
 
     private void doConfirmation(ConfirmationCallback confirmation)
