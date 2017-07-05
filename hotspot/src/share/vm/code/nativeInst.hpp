@@ -40,5 +40,8 @@
 #ifdef TARGET_ARCH_ppc
 # include "nativeInst_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "nativeInst_aarch64.hpp"
+#endif
 
 #endif // SHARE_VM_CODE_NATIVEINST_HPP
