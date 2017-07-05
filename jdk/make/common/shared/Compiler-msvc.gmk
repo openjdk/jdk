@@ -54,17 +54,10 @@ ifeq ($(PLATFORM), windows)
   ifeq ($(ARCH_DATA_MODEL), 32)
     LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
     CC_MAJORVER :=$(call MajorVersion,$(CC_VER))
-    REQUIRED_CC_VER = 13.10.3077
-    REQUIRED_LINK_VER = 7.10.3077
-    ifeq ($(CC_MAJORVER), 12)
-      # This should be: CC_VER=12.00.8168 LINK_VER=6.00.8447
-      COMPILER_NAME=Visual C++ 6.0 Professional + VC6-SP 3
-      COMPILER_VERSION=VC6
-      REBASE     = $(COMPILER_PATH)rebase
-      MTL        = $(COMPILER_PATH)midl
-    endif
     ifeq ($(CC_MAJORVER), 13)
       # This should be: CC_VER=13.10.3077 LINK_VER=7.10.3077
+      REQUIRED_CC_VER = 13.10.3077
+      REQUIRED_LINK_VER = 7.10.3077
       COMPILER_NAME=Visual Studio .NET 2003 Professional C++
       COMPILER_VERSION=VS2003
       REBASE     = $(COMPILER_PATH)../../Common7/Tools/Bin/rebase
@@ -74,17 +67,34 @@ ifeq ($(PLATFORM), windows)
       endif
     endif
     ifeq ($(CC_MAJORVER), 14)
-      # This should be: CC_VER=14.00.0000 LINK_VER=8.00.0000
-      # NOTE: This compiler has not been tried yet on 32bit systems
-      COMPILER_NAME=Visual Studio .NET 2005
+      # This should be: CC_VER=14.00.50727.42 LINK_VER=8.00.50727.42
+      REQUIRED_CC_VER = 14.00.50727.42
+      REQUIRED_LINK_VER = 8.00.50727.42
+      COMPILER_NAME=Visual Studio 8
       COMPILER_VERSION=VS2005
       REBASE     = $(COMPILER_PATH)../../Common8/Tools/Bin/rebase
       MTL        = $(COMPILER_PATH)../../Common8/Tools/Bin/midl
+      MT         = $(MSDEVTOOLS_PATH)mt
+      ifndef COMPILER_PATH
+	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
+      endif
+    endif
+    ifeq ($(CC_MAJORVER), 15)
+      # This should be: CC_VER=15.00.21022.08 LINK_VER=9.00.21022.08
+      REQUIRED_CC_VER = 15.00.21022.08
+      REQUIRED_LINK_VER = 9.00.21022.08
+      COMPILER_NAME=Visual Studio 9
+      COMPILER_VERSION=VS2008
+      #rebase and midl moved out of Visual Studio into the SDK:
+      REBASE     = $(MSDEVTOOLS_PATH)/rebase
+      MTL        = $(MSDEVTOOLS_PATH)/midl.exe
+      MT         = $(MSDEVTOOLS_PATH)mt
       ifndef COMPILER_PATH
 	COMPILER_PATH := $(error COMPILER_PATH cannot be empty here)
       endif
     endif
   else
+    # else ARCH_DATA_MODEL is 64
     LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
     CC_MAJORVER :=$(call MajorVersion,$(CC_VER))
     CC_MINORVER :=$(call MinorVersion,$(CC_VER))
