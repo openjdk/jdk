@@ -1655,7 +1655,6 @@
     <name>jdk.deploy.osx</name>
     <depend>java.base</depend>
     <depend>java.desktop</depend>
-    <depend>java.scripting</depend>
   </module>
   <module>
     <name>jdk.dev</name>

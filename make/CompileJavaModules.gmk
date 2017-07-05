@@ -556,7 +556,7 @@ CLASSPATH := $(foreach d, $(DEPS), $(if $($d_BIN), $($d_BIN), \
   ifneq ($(BUILD_CRYPTO), true)
   CLASSPATH += $(JDK_OUTPUTDIR)/modules/$(MODULE)
   endif
-JAVAC_FLAGS := -bootclasspath $(EMPTY_DIR) -extdirs $(EMPTY_DIR) \
+JAVAC_FLAGS_BOOTCLASSPATH := -bootclasspath $(EMPTY_DIR) -extdirs $(EMPTY_DIR) \
     -endorseddirs $(EMPTY_DIR) $($(MODULE)_ADD_JAVAC_FLAGS)
 
 $(eval $(call SetupJavaCompilation, $(MODULE), \
@@ -566,7 +566,7 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules/$(MODULE)), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers/$(MODULE), \
     CLASSPATH := $(CLASSPATH), \
-    ADD_JAVAC_FLAGS := $($(MODULE)_ADD_JAVAC_FLAGS) $(JAVAC_FLAGS) \
+    ADD_JAVAC_FLAGS := $($(MODULE)_ADD_JAVAC_FLAGS) $(JAVAC_FLAGS_BOOTCLASSPATH) \
 ))
 TARGETS += $($(MODULE)) $($(MODULE)_COPY_EXTRA)
 
