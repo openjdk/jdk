@@ -211,7 +211,9 @@ ifeq ($(ARCH_FAMILY),sparc)
   MAPFILE_EXCEPTIONS = \
     (libjdgaSUNWafb|libjdgaSUNWcg6|libjdgaSUNWffb|libjdgaSUNWm64|libxinerama)
 else
-  MAPFILE_EXCEPTIONS = ()
+  # At present there are no exceptions for non
+  # SPARC.  Use a harmless value.
+  MAPFILE_EXCEPTIONS = (NO_EXCEPTIONS)
 endif
 
 # Macro to check it's input file for banned dependencies and verify the
