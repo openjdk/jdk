@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mode version="2.1">
+    <name unique="customLeft" />
+    <kind type="view" />
+    <state type="joined" />
+    <constraints>
+        <path orientation="horizontal" number="0" weight="0.779245283018868"/>
+        <path orientation="vertical" number="0" weight="0.7511825922421949"/>
+        <path orientation="horizontal" number="0" weight="0.5"/>
+        <path orientation="vertical" number="20" weight="0.7"/>
+        <path orientation="horizontal" number="40" weight="0.55"/>
+        <path orientation="horizontal" number="0" weight="0.2711864406779661"/>
+    </constraints>
+    <bounds x="0" y="0" width="0" height="0" />
+    <frame state="0"/>
+    <active-tc id="OutlineTopComponent"/>
+    <empty-behavior permanent="false"/>
+</mode>

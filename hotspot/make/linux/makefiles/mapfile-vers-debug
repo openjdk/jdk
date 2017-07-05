@@ -89,6 +89,7 @@ SUNWprivate_1.1 {
                 JVM_FillInStackTrace;
                 JVM_FindClassFromClass;
                 JVM_FindClassFromClassLoader;
+                JVM_FindClassFromBootLoader;
                 JVM_FindLibraryEntry;
                 JVM_FindLoadedClass;
                 JVM_FindPrimitiveClass;

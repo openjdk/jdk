@@ -4755,6 +4755,7 @@ text: .text%__1cbCAbstractInterpreterGeneratorVgenerate_and_dispatch6MpnITemplat
 text: .text%__1cITemplateKinitialize6MinITosState_1pFi_vi_v_;
 text: .text%__1cNTemplateTableDdef6FnJBytecodesECode_inITosState_3pFi_vi_v_;
 text: .text%JVM_FindClassFromClassLoader;
+text: .text%JVM_FindClassFromBootLoader;
 text: .text%__1cPshrI_eReg_1NodeEsize6kMpnNPhaseRegAlloc__I_;
 text: .text%__1cHi2bNodeMideal_Opcode6kM_i_: ad_i486_misc.o;
 text: .text%__1cMmatch_option6FpknMJavaVMOption_pkcp4_i_: arguments.o;

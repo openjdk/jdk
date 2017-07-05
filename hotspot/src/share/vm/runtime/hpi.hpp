@@ -66,6 +66,8 @@ public:
   static inline int    socket_shutdown(int fd, int howto);
   static inline int    recv(int fd, char *buf, int nBytes, int flags);
   static inline int    send(int fd, char *buf, int nBytes, int flags);
+  // Variant of send that doesn't support interruptible I/O
+  static inline int    raw_send(int fd, char *buf, int nBytes, int flags);
   static inline int    timeout(int fd, long timeout);
   static inline int    listen(int fd, int count);
   static inline int    connect(int fd, struct sockaddr *him, int len);

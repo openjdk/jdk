@@ -390,6 +390,17 @@ JVM_FindClassFromClassLoader(JNIEnv *env, const char *name, jboolean init,
                              jobject loader, jboolean throwError);
 
 /*
+ * Find a class from a boot class loader. Throw ClassNotFoundException
+ * or NoClassDefFoundError depending on the value of the last
+ * argument. This is the same as FindClassFromClassLoader but provided
+ * as a convenience method exported correctly on all platforms for
+ * JSR 277 launcher class loading.
+ */
+JNIEXPORT jclass JNICALL
+JVM_FindClassFromBootLoader(JNIEnv *env, const char *name,
+                            jboolean throwError);
+
+/*
  * Find a class from a given class.
  */
 JNIEXPORT jclass JNICALL
