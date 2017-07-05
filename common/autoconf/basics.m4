@@ -288,7 +288,7 @@ AC_DEFUN([BASIC_SETUP_TOOL],
   # Publish this variable in the help.
   AC_ARG_VAR($1, [Override default value for $1])
 
-  if test "x[$]$1" = x; then
+  if [[ -z "${$1+x}" ]]; then
     # The variable is not set by user, try to locate tool using the code snippet
     $2
   else
@@ -312,25 +312,32 @@ AC_DEFUN([BASIC_SETUP_TOOL],
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="[$]$1"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        AC_MSG_NOTICE([Will search for user supplied tool $1=$tool_basename])
-        AC_PATH_PROG($1, $tool_basename)
-        if test "x[$]$1" = x; then
-          AC_MSG_ERROR([User supplied tool $tool_basename could not be found])
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        AC_MSG_NOTICE([Will use user supplied tool $1=$tool_specified])
+      # Check if we try to supply an empty value
+      if test "x[$]$1" = x; then
+        AC_MSG_NOTICE([Setting user supplied tool $1= (no value)])
         AC_MSG_CHECKING([for $1])
-        if test ! -x "$tool_specified"; then
-          AC_MSG_RESULT([not found])
-          AC_MSG_ERROR([User supplied tool $1=$tool_specified does not exist or is not executable])
+        AC_MSG_RESULT([disabled])
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="[$]$1"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          AC_MSG_NOTICE([Will search for user supplied tool $1=$tool_basename])
+          AC_PATH_PROG($1, $tool_basename)
+          if test "x[$]$1" = x; then
+            AC_MSG_ERROR([User supplied tool $tool_basename could not be found])
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          AC_MSG_NOTICE([Will use user supplied tool $1=$tool_specified])
+          AC_MSG_CHECKING([for $1])
+          if test ! -x "$tool_specified"; then
+            AC_MSG_RESULT([not found])
+            AC_MSG_ERROR([User supplied tool $1=$tool_specified does not exist or is not executable])
+          fi
+          AC_MSG_RESULT([$tool_specified])
         fi
-        AC_MSG_RESULT([$tool_specified])
       fi
     fi
   fi
@@ -376,9 +383,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
 [
   # Start with tools that do not need have cross compilation support
   # and can be expected to be found in the default PATH. These tools are
-  # used by configure. Nor are these tools expected to be found in the
-  # devkit from the builddeps server either, since they are
-  # needed to download the devkit.
+  # used by configure.
 
   # First are all the simple required tools.
   BASIC_REQUIRE_PROGS(BASENAME, basename)
@@ -437,6 +442,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_PATH_PROGS(READLINK, [greadlink readlink])
   BASIC_PATH_PROGS(DF, df)
   BASIC_PATH_PROGS(CPIO, [cpio bsdcpio])
+  BASIC_PATH_PROGS(NICE, nice)
 ])
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
