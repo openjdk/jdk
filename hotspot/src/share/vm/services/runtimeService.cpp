@@ -42,8 +42,6 @@ PerfCounter*  RuntimeService::_application_time_ticks = NULL;
 double RuntimeService::_last_safepoint_sync_time_sec = 0.0;
 
 void RuntimeService::init() {
-  // Make sure the VM version is initialized
-  Abstract_VM_Version::initialize();
 
   if (UsePerfData) {
     EXCEPTION_MARK;
