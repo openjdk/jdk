@@ -27,7 +27,6 @@ package sun.jvm.hotspot.tools;
 import java.io.PrintStream;
 import java.util.Hashtable;
 import sun.jvm.hotspot.*;
-import sun.jvm.hotspot.bugspot.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.debugger.*;
 
@@ -35,7 +34,7 @@ import sun.jvm.hotspot.debugger.*;
 // override run & code main as shown below.
 
 public abstract class Tool implements Runnable {
-   private BugSpotAgent agent;
+   private HotSpotAgent agent;
    private int debugeeType;
 
    // debugeeType is one of constants below
@@ -51,12 +50,7 @@ public abstract class Tool implements Runnable {
       return true;
    }
 
-   // whether this tool requires debuggee to be java process or core?
-   protected boolean requiresVM() {
-      return true;
-   }
-
-   protected void setAgent(BugSpotAgent a) {
+   protected void setAgent(HotSpotAgent a) {
       agent = a;
    }
 
@@ -64,7 +58,7 @@ public abstract class Tool implements Runnable {
       debugeeType = dt;
    }
 
-   protected BugSpotAgent getAgent() {
+   protected HotSpotAgent getAgent() {
       return agent;
    }
 
@@ -155,7 +149,7 @@ public abstract class Tool implements Runnable {
            usage();
       }
 
-      agent = new BugSpotAgent();
+      agent = new HotSpotAgent();
       try {
         switch (debugeeType) {
           case DEBUGEE_PID:
@@ -198,33 +192,24 @@ public abstract class Tool implements Runnable {
 
       err.println("Debugger attached successfully.");
 
-      boolean isJava = agent.isJavaMode();
-      if (isJava) {
-         VM vm = VM.getVM();
-         if (vm.isCore()) {
-           err.println("Core build detected.");
-         } else if (vm.isClientCompiler()) {
-           err.println("Client compiler detected.");
-         } else if (vm.isServerCompiler()) {
-           err.println("Server compiler detected.");
-         } else {
-           throw new RuntimeException("Fatal error: " +
-                                 "should have been able to detect core/C1/C2 build");
-         }
-
-         String version = vm.getVMRelease();
-         if (version != null) {
-            err.print("JVM version is ");
-            err.println(version);
-         }
-
-         run();
-      } else { // not a java process or core
-         if (requiresVM()) {
-            err.println(getName() + " requires a java VM process/core!");
-         } else {
-            run();
-         }
+      VM vm = VM.getVM();
+      if (vm.isCore()) {
+        err.println("Core build detected.");
+      } else if (vm.isClientCompiler()) {
+        err.println("Client compiler detected.");
+      } else if (vm.isServerCompiler()) {
+        err.println("Server compiler detected.");
+      } else {
+        throw new RuntimeException("Fatal error: "
+            + "should have been able to detect core/C1/C2 build");
       }
+
+      String version = vm.getVMRelease();
+      if (version != null) {
+        err.print("JVM version is ");
+        err.println(version);
+      }
+
+      run();
    }
 }

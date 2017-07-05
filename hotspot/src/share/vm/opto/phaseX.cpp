@@ -1197,6 +1197,18 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
                 assert(!(i < imax), "sanity");
               }
             }
+            if (ReduceFieldZeroing && dead->is_Load() && i == MemNode::Memory &&
+                in->is_Proj() && in->in(0) != NULL && in->in(0)->is_Initialize()) {
+              // A Load that directly follows an InitializeNode is
+              // going away. The Stores that follow are candidates
+              // again to be captured by the InitializeNode.
+              for (DUIterator_Fast jmax, j = in->fast_outs(jmax); j < jmax; j++) {
+                Node *n = in->fast_out(j);
+                if (n->is_Store()) {
+                  _worklist.push(n);
+                }
+              }
+            }
           }
         }
         C->record_dead_node(dead->_idx);

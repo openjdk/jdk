@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,16 +35,16 @@ import sun.jvm.hotspot.tools.*;
 import sun.jvm.hotspot.utilities.*;
 
 /**
-  A command line tool to print perm. generation statistics.
+  A command line tool to print class loader statistics.
 */
 
-public class PermStat extends Tool {
+public class ClassLoaderStats extends Tool {
    boolean verbose = true;
 
    public static void main(String[] args) {
-      PermStat ps = new PermStat();
-      ps.start(args);
-      ps.stop();
+      ClassLoaderStats cls = new ClassLoaderStats();
+      cls.start(args);
+      cls.stop();
    }
 
    private static class ClassData {
