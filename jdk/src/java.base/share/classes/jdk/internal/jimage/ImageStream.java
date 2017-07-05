@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,40 +29,47 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-class ImageStream {
+/**
+ * @implNote This class needs to maintain JDK 8 source compatibility.
+ *
+ * It is used internally in the JDK to implement jimage/jrtfs access,
+ * but also compiled and delivered as part of the jrtfs.jar to support access
+ * to the jimage file provided by the shipped JDK by tools running on JDK 8.
+ */
+public class ImageStream {
     private ByteBuffer buffer;
 
-    ImageStream() {
+    public ImageStream() {
         this(1024, ByteOrder.nativeOrder());
     }
 
-    ImageStream(int size) {
+    public ImageStream(int size) {
         this(size, ByteOrder.nativeOrder());
     }
 
-    ImageStream(byte[] bytes) {
+    public ImageStream(byte[] bytes) {
        this(bytes, ByteOrder.nativeOrder());
     }
 
-    ImageStream(ByteOrder byteOrder) {
+    public ImageStream(ByteOrder byteOrder) {
         this(1024, byteOrder);
     }
 
-    ImageStream(int size, ByteOrder byteOrder) {
+    public ImageStream(int size, ByteOrder byteOrder) {
         buffer = ByteBuffer.allocate(size);
         buffer.order(byteOrder);
     }
 
-    ImageStream(byte[] bytes, ByteOrder byteOrder) {
+    public ImageStream(byte[] bytes, ByteOrder byteOrder) {
         buffer = ByteBuffer.wrap(bytes);
         buffer.order(byteOrder);
     }
 
-    ImageStream(ByteBuffer buffer) {
+    public ImageStream(ByteBuffer buffer) {
         this.buffer = buffer;
     }
 
-    ImageStream align(int alignment) {
+    public ImageStream align(int alignment) {
         int padding = (getSize() - 1) & ((1 << alignment) - 1);
 
         for (int i = 0; i < padding; i++) {
@@ -72,8 +79,10 @@ class ImageStream {
         return this;
     }
 
-    void ensure(int needs) {
-        assert 0 <= needs : "Negative needs";
+    public void ensure(int needs) {
+        if (needs < 0) {
+            throw new IndexOutOfBoundsException("needs");
+        }
 
         if (needs > buffer.remaining()) {
             byte[] bytes = buffer.array();
@@ -86,109 +95,112 @@ class ImageStream {
         }
     }
 
-    boolean hasByte() {
+    public boolean hasByte() {
         return buffer.remaining() != 0;
     }
 
-    boolean hasBytes(int needs) {
+    public boolean hasBytes(int needs) {
         return needs <= buffer.remaining();
     }
 
-    void skip(int n) {
-        assert 0 <= n : "Negative offset";
+    public void skip(int n) {
+        if (n < 0) {
+            throw new IndexOutOfBoundsException("n");
+        }
+
         buffer.position(buffer.position() + n);
     }
 
-    int get() {
+    public int get() {
         return buffer.get() & 0xFF;
     }
 
-    void get(byte bytes[], int offset, int size) {
+    public void get(byte bytes[], int offset, int size) {
         buffer.get(bytes, offset, size);
     }
 
-    int getShort() {
+    public int getShort() {
         return buffer.getShort();
     }
 
-    int getInt() {
+    public int getInt() {
         return buffer.getInt();
     }
 
-    long getLong() {
+    public long getLong() {
         return buffer.getLong();
     }
 
-    ImageStream put(byte byt) {
+    public ImageStream put(byte byt) {
         ensure(1);
         buffer.put(byt);
 
         return this;
     }
 
-    ImageStream put(int byt) {
+    public ImageStream put(int byt) {
         return put((byte)byt);
     }
 
-    ImageStream put(byte bytes[], int offset, int size) {
+    public ImageStream put(byte bytes[], int offset, int size) {
         ensure(size);
         buffer.put(bytes, offset, size);
 
         return this;
     }
 
-    ImageStream put(ImageStream stream) {
+    public ImageStream put(ImageStream stream) {
         put(stream.buffer.array(), 0, stream.buffer.position());
 
         return this;
     }
 
-    ImageStream putShort(short value) {
+    public ImageStream putShort(short value) {
         ensure(2);
         buffer.putShort(value);
 
         return this;
     }
 
-    ImageStream putShort(int value) {
+    public ImageStream putShort(int value) {
         return putShort((short)value);
     }
 
-    ImageStream putInt(int value) {
+    public ImageStream putInt(int value) {
         ensure(4);
         buffer.putInt(value);
 
         return this;
     }
 
-    ImageStream putLong(long value) {
+    public ImageStream putLong(long value) {
         ensure(8);
         buffer.putLong(value);
 
         return this;
     }
 
-    ByteBuffer getBuffer() {
+    public ByteBuffer getBuffer() {
         return buffer;
     }
 
-    int getPosition() {
+    public int getPosition() {
         return buffer.position();
     }
 
-    int getSize() {
+    public int getSize() {
         return buffer.position();
     }
 
-    byte[] getBytes() {
+    public byte[] getBytes() {
         return buffer.array();
     }
 
-    void setPosition(int offset) {
+    public void setPosition(int offset) {
         buffer.position(offset);
     }
 
-    byte[] toArray() {
+    public byte[] toArray() {
         return Arrays.copyOf(buffer.array(), buffer.position());
     }
 }

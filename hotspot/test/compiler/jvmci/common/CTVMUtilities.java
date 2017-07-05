@@ -24,6 +24,7 @@
 package compiler.jvmci.common;
 
 import java.io.IOException;
+import java.lang.reflect.Module;
 import java.lang.reflect.Field;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Constructor;
@@ -88,20 +89,24 @@ public class CTVMUtilities {
     }
     public static Map<Integer, Integer> getBciToLineNumber(Executable method) {
         Map<Integer, Integer> lineNumbers = new TreeMap<>();
+        Class<?> aClass = method.getDeclaringClass();
+        ClassReader cr;
         try {
-            ClassReader cr = new ClassReader(method.getDeclaringClass()
-                    .getName());
-            ClassNode cn = new ClassNode();
-            cr.accept(cn, ClassReader.EXPAND_FRAMES);
-
-            Map<Label, Integer> labels = new HashMap<>();
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-            ClassVisitor cv = new ClassVisitorForLabels(cw, labels, method);
-            cr.accept(cv, ClassReader.EXPAND_FRAMES);
-            labels.forEach((k, v) -> lineNumbers.put(k.getOffset(), v));
+            Module aModule = aClass.getModule();
+            String name = aClass.getName();
+            cr = new ClassReader(aModule.getResourceAsStream(
+                    name.replace('.', '/') + ".class"));
         } catch (IOException e) {
-            throw new Error("TEST BUG " + e, e);
+                        throw new Error("TEST BUG: can read " + aClass.getName() + " : " + e, e);
         }
+        ClassNode cn = new ClassNode();
+        cr.accept(cn, ClassReader.EXPAND_FRAMES);
+
+        Map<Label, Integer> labels = new HashMap<>();
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        ClassVisitor cv = new ClassVisitorForLabels(cw, labels, method);
+        cr.accept(cv, ClassReader.EXPAND_FRAMES);
+        labels.forEach((k, v) -> lineNumbers.put(k.getOffset(), v));
         boolean isEmptyMethod = Modifier.isAbstract(method.getModifiers())
                 || Modifier.isNative(method.getModifiers());
         if (lineNumbers.isEmpty() && !isEmptyMethod) {

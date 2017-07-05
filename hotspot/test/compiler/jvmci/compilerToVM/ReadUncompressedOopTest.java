@@ -26,22 +26,24 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary /test/lib/
- * @compile ../common/CompilerToVMHelper.java
+ * @library ../common/patches
+ * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.compilerToVM.ReadUncompressedOopTest
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller
  *     sun.hotspot.WhiteBox
  *     sun.hotspot.WhiteBox$WhiteBoxPermission
- *     jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -Xbootclasspath/a:.
- *     -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:-UseCompressedOops
- *     compiler.jvmci.compilerToVM.ReadUncompressedOopTest
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:-UseCompressedOops
+ *                   compiler.jvmci.compilerToVM.ReadUncompressedOopTest
  * @run main/othervm -Xbootclasspath/a:.
- *     -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+UseCompressedOops
- *     compiler.jvmci.compilerToVM.ReadUncompressedOopTest
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:+UseCompressedOops
+ *                   compiler.jvmci.compilerToVM.ReadUncompressedOopTest
  */
 
 package compiler.jvmci.compilerToVM;

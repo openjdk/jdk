@@ -38,9 +38,7 @@ public class URItoURLTest {
 
     public static void main(String args[]) throws Exception {
 
-        URItoURLTest testClass = new URItoURLTest();
-        URL classUrl = testClass.getClass().
-                                    getResource("/java/lang/Object.class");
+        URL classUrl = new URL("jrt:/java.base/java/lang/Object.class");
 
         String[] uris = {
                         "mailto:xyz@abc.de",

@@ -96,12 +96,8 @@ class RuntimeImpl implements RuntimeMXBean {
     }
 
     public String getBootClassPath() {
-        if (!isBootClassPathSupported()) {
-            throw new UnsupportedOperationException(
-                "Boot class path mechanism is not supported");
-        }
-        Util.checkMonitorAccess();
-        return jvm.getBootClassPath();
+        throw new UnsupportedOperationException(
+            "Boot class path mechanism is not supported");
     }
 
     public List<String> getInputArguments() {
@@ -118,7 +114,7 @@ class RuntimeImpl implements RuntimeMXBean {
     }
 
     public boolean isBootClassPathSupported() {
-        return jvm.isBootClassPathSupported();
+        return false;
     }
 
     public Map<String,String> getSystemProperties() {

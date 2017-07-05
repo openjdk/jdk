@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@
            JDWP_InvokeOptions_INVOKE_ ## name
 #define JDWP_ERROR(name) \
            JDWP_Error_ ## name
-#define JDWP_HIGHEST_COMMAND_SET 17
+#define JDWP_HIGHEST_COMMAND_SET 18
 #define JDWP_REQUEST_NONE        -1
 
 /* This typedef helps keep the event and error types straight. */

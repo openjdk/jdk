@@ -51,6 +51,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Module;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -197,12 +198,8 @@ final class JavaAdapterBytecodeGenerator {
     private static final String GET_METHOD_PROPERTY_METHOD_DESCRIPTOR = Type.getMethodDescriptor(OBJECT_TYPE, SCRIPT_OBJECT_TYPE);
     private static final String VOID_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE);
 
-    // Package used when the adapter can't be defined in the adaptee's package (either because it's sealed, or because
-    // it's a java.* package.
-    private static final String ADAPTER_PACKAGE_PREFIX = "jdk/nashorn/javaadapters/";
-    // Class name suffix used to append to the adaptee class name, when it can be defined in the adaptee's package.
-    private static final String ADAPTER_CLASS_NAME_SUFFIX = "$$NashornJavaAdapter";
-    private static final String JAVA_PACKAGE_PREFIX = "java/";
+    static final String ADAPTER_PACKAGE_INTERNAL = "jdk/nashorn/javaadapters/";
+    static final String ADAPTER_PACKAGE = "jdk.nashorn.javaadapters";
     private static final int MAX_GENERATED_TYPE_NAME_LENGTH = 255;
 
     // Method name prefix for invoking super-methods
@@ -237,6 +234,7 @@ final class JavaAdapterBytecodeGenerator {
     private final Set<MethodInfo> methodInfos = new HashSet<>();
     private final boolean autoConvertibleFromFunction;
     private boolean hasExplicitFinalizer = false;
+    private final Set<Module> accessedModules = new HashSet<>();
 
     private final ClassWriter cw;
 
@@ -300,7 +298,7 @@ final class JavaAdapterBytecodeGenerator {
     }
 
     JavaAdapterClassLoader createAdapterClassLoader() {
-        return new JavaAdapterClassLoader(generatedClassName, cw.toByteArray());
+        return new JavaAdapterClassLoader(generatedClassName, cw.toByteArray(), accessedModules);
     }
 
     boolean isAutoConvertibleFromFunction() {
@@ -314,12 +312,7 @@ final class JavaAdapterBytecodeGenerator {
         final Package pkg = namingType.getPackage();
         final String namingTypeName = Type.getInternalName(namingType);
         final StringBuilder buf = new StringBuilder();
-        if (namingTypeName.startsWith(JAVA_PACKAGE_PREFIX) || pkg == null || pkg.isSealed()) {
-            // Can't define new classes in java.* packages
-            buf.append(ADAPTER_PACKAGE_PREFIX).append(namingTypeName);
-        } else {
-            buf.append(namingTypeName).append(ADAPTER_CLASS_NAME_SUFFIX);
-        }
+        buf.append(ADAPTER_PACKAGE_INTERNAL).append(namingTypeName.replace('/', '_'));
         final Iterator<Class<?>> it = interfaces.iterator();
         if(superType == Object.class && it.hasNext()) {
             it.next(); // Skip first interface, it was used to primarily name the adapter
@@ -359,7 +352,7 @@ final class JavaAdapterBytecodeGenerator {
             // If the class is a SAM, allow having ScriptFunction passed as class overrides
             mv.dup();
             mv.instanceOf(SCRIPT_FUNCTION_TYPE);
-            mv.dup();
+                    mv.dup();
             mv.putstatic(generatedClassName, IS_FUNCTION_FIELD_NAME, BOOLEAN_TYPE_DESCRIPTOR);
             final Label notFunction = new Label();
             mv.ifeq(notFunction);
@@ -379,9 +372,9 @@ final class JavaAdapterBytecodeGenerator {
     private void emitInitCallThis(final InstructionAdapter mv) {
         loadField(mv, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
         GET_CALL_THIS.invoke(mv);
-        if(classOverride) {
+            if(classOverride) {
             mv.putstatic(generatedClassName, CALL_THIS_FIELD_NAME, OBJECT_TYPE_DESCRIPTOR);
-        } else {
+            } else {
             // It is presumed ALOAD 0 was already executed
             mv.putfield(generatedClassName, CALL_THIS_FIELD_NAME, OBJECT_TYPE_DESCRIPTOR);
         }
@@ -404,6 +397,14 @@ final class JavaAdapterBytecodeGenerator {
     }
 
     private boolean generateConstructors(final Constructor<?> ctor) {
+        for (final Class<?> pt : ctor.getParameterTypes()) {
+            if (pt.isPrimitive()) continue;
+            final Module ptMod = pt.getModule();
+            if (ptMod != null) {
+                accessedModules.add(ptMod);
+            }
+        }
+
         if(classOverride) {
             // Generate a constructor that just delegates to ctor. This is used with class-level overrides, when we want
             // to create instances without further per-instance overrides.
@@ -411,16 +412,16 @@ final class JavaAdapterBytecodeGenerator {
             return false;
         }
 
-        // Generate a constructor that delegates to ctor, but takes an additional ScriptObject parameter at the
-        // beginning of its parameter list.
-        generateOverridingConstructor(ctor, false);
+            // Generate a constructor that delegates to ctor, but takes an additional ScriptObject parameter at the
+            // beginning of its parameter list.
+            generateOverridingConstructor(ctor, false);
 
         if (samName == null) {
             return false;
-        }
-        // If all our abstract methods have a single name, generate an additional constructor, one that takes a
-        // ScriptFunction as its first parameter and assigns it as the implementation for all abstract methods.
-        generateOverridingConstructor(ctor, true);
+                }
+                // If all our abstract methods have a single name, generate an additional constructor, one that takes a
+                // ScriptFunction as its first parameter and assigns it as the implementation for all abstract methods.
+                generateOverridingConstructor(ctor, true);
         // If the original type only has a single abstract method name, as well as a default ctor, then it can
         // be automatically converted from JS function.
         return ctor.getParameterTypes().length == 0;
@@ -499,7 +500,7 @@ final class JavaAdapterBytecodeGenerator {
             mv.iconst(1);
             mv.putfield(generatedClassName, IS_FUNCTION_FIELD_NAME, BOOLEAN_TYPE_DESCRIPTOR);
 
-            mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 0);
             mv.visitVarInsn(ALOAD, extraArgOffset);
             emitInitCallThis(mv);
         }
@@ -668,7 +669,7 @@ final class JavaAdapterBytecodeGenerator {
                 // stack: [callThis, delegate]
                 mv.goTo(callCallee);
                 mv.visitLabel(notFunction);
-            } else {
+        } else {
                 // If it's not a SAM method, and the delegate is a function,
                 // it'll fall back to default behavior
                 mv.ifne(defaultBehavior);
@@ -808,7 +809,7 @@ final class JavaAdapterBytecodeGenerator {
         if (isVarArgCall) {
             // Variable arity calls are always (Object callee, Object this, Object[] params)
             callParamTypes = new Class<?>[] { Object.class, Object.class, Object[].class };
-        } else {
+            } else {
             // Adjust invocation type signature for conversions we instituted in
             // convertParam; also, byte and short get passed as ints.
             final Class<?>[] origParamTypes = type.parameterArray();
@@ -858,13 +859,13 @@ final class JavaAdapterBytecodeGenerator {
 
 
     private void loadField(final InstructionAdapter mv, final String name, final String desc) {
-        if(classOverride) {
+                if(classOverride) {
             mv.getstatic(generatedClassName, name, desc);
-        } else {
-            mv.visitVarInsn(ALOAD, 0);
+                } else {
+                    mv.visitVarInsn(ALOAD, 0);
             mv.getfield(generatedClassName, name, desc);
-        }
-    }
+                }
+            }
 
     private static void convertReturnValue(final InstructionAdapter mv, final Class<?> origReturnType) {
         if (origReturnType == void.class) {
@@ -1082,6 +1083,11 @@ final class JavaAdapterBytecodeGenerator {
      */
     private void gatherMethods(final Class<?> type) throws AdaptationException {
         if (Modifier.isPublic(type.getModifiers())) {
+            final Module module = type.getModule();
+            if (module != null) {
+                accessedModules.add(module);
+            }
+
             final Method[] typeMethods = type.isInterface() ? type.getMethods() : type.getDeclaredMethods();
 
             for (final Method typeMethod: typeMethods) {
@@ -1106,12 +1112,26 @@ final class JavaAdapterBytecodeGenerator {
                         continue;
                     }
 
+                    for (final Class<?> pt : typeMethod.getParameterTypes()) {
+                        if (pt.isPrimitive()) continue;
+                        final Module ptMod = pt.getModule();
+                        if (ptMod != null) {
+                            accessedModules.add(ptMod);
+                        }
+                    }
+
+                    final Class<?> rt = typeMethod.getReturnType();
+                    if (!rt.isPrimitive()) {
+                        final Module rtMod = rt.getModule();
+                        if (rtMod != null) accessedModules.add(rtMod);
+                    }
+
                     final MethodInfo mi = new MethodInfo(typeMethod);
                     if (Modifier.isFinal(m) || isCallerSensitive(typeMethod)) {
                         finalMethods.add(mi);
                     } else if (!finalMethods.contains(mi) && methodInfos.add(mi) && Modifier.isAbstract(m)) {
-                        abstractMethodNames.add(mi.getName());
-                    }
+                            abstractMethodNames.add(mi.getName());
+                        }
                 }
             }
         }

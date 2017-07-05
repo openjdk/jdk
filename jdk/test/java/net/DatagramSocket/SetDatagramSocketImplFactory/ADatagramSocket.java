@@ -25,8 +25,8 @@
  * @bug 4132931
  * @summary DatagramSocket should use a factory for its impl
  *
- * @build ADatagramSocket
- * @run shell ADatagramSocket.sh
+ * @compile/module=java.base java/net/MyDatagramSocketImplFactory.java
+ * @run main ADatagramSocket
  */
 import java.io.*;
 import java.net.*;

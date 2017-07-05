@@ -143,7 +143,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
 
     /* Called by Runtime.runFinalization() */
     static void runFinalization() {
-        if (!VM.isBooted()) {
+        if (VM.initLevel() == 0) {
             return;
         }
 
@@ -166,7 +166,7 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
 
     /* Invoked by java.lang.Shutdown */
     static void runAllFinalizers() {
-        if (!VM.isBooted()) {
+        if (VM.initLevel() == 0) {
             return;
         }
 
@@ -201,10 +201,10 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
 
             // Finalizer thread starts before System.initializeSystemClass
             // is called.  Wait until JavaLangAccess is available
-            while (!VM.isBooted()) {
+            while (VM.initLevel() == 0) {
                 // delay until VM completes initialization
                 try {
-                    VM.awaitBooted();
+                    VM.awaitInitLevel(1);
                 } catch (InterruptedException x) {
                     // ignore and continue
                 }

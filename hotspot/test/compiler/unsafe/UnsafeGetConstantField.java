@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,38 +26,50 @@
 /*
  * @test
  * @summary tests on constant folding of unsafe get operations
- * @library /testlibrary /test/lib
+ * @library /testlibrary
  *
  * @requires vm.flavor != "client"
  *
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.misc
  * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
- *                   -Xbatch -XX:-TieredCompilation
- *                   -XX:+FoldStableValues
- *                   -XX:+UseUnalignedAccesses
- *                   java.lang.invoke.UnsafeGetConstantField
+ *                         -Xbatch -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
+ *                         -XX:CompileCommand=dontinline,*.test*
+ *                         -XX:+UseUnalignedAccesses
+ *                         compiler.unsafe.UnsafeGetConstantField
+ *
  * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
- *                   -Xbatch -XX:-TieredCompilation
- *                   -XX:+FoldStableValues
- *                   -XX:-UseUnalignedAccesses
- *                   java.lang.invoke.UnsafeGetConstantField
+ *                         -Xbatch -XX:-TieredCompilation
+ *                         -XX:+FoldStableValues
+ *                         -XX:CompileCommand=dontinline,UnsafeGetConstantField.checkGetAddress()
+ *                         -XX:CompileCommand=dontinline,*.test*
+ *                         -XX:-UseUnalignedAccesses
+ *                         compiler.unsafe.UnsafeGetConstantField
  */
-package java.lang.invoke;
+package compiler.unsafe;
 
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.vm.annotation.Stable;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.FieldVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
+import jdk.internal.vm.annotation.Stable;
 import jdk.test.lib.Asserts;
+import jdk.internal.misc.Unsafe;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 public class UnsafeGetConstantField {
     static final Class<?> THIS_CLASS = UnsafeGetConstantField.class;
-
     static final Unsafe U = Unsafe.getUnsafe();
 
     public static void main(String[] args) {
@@ -75,7 +87,7 @@ public class UnsafeGetConstantField {
             Asserts.assertEquals(checkGetAddress(), cookie);
         }
     }
-    @DontInline
+
     static long checkGetAddress() {
         return U.getAddress(nativeAddr);
     }
@@ -117,36 +129,65 @@ public class UnsafeGetConstantField {
     static void runTest(JavaType t, int flags, boolean stable, boolean hasDefaultValue, String postfix) {
         Generator g = new Generator(t, flags, stable, hasDefaultValue, postfix);
         Test test = g.generate();
-        System.out.printf("type=%s flags=%d stable=%b default=%b post=%s\n",
+        System.err.printf("type=%s flags=%d stable=%b default=%b post=%s\n",
                           t.typeName, flags, stable, hasDefaultValue, postfix);
-        // Trigger compilation
-        for (int i = 0; i < 20_000; i++) {
-            Asserts.assertEQ(test.testDirect(), test.testUnsafe());
+        try {
+            Object expected = hasDefaultValue ? t.defaultValue : t.value;
+            // Trigger compilation
+            for (int i = 0; i < 20_000; i++) {
+                Asserts.assertEQ(expected, test.testDirect(), "i = "+ i +" direct read returns wrong value");
+                Asserts.assertEQ(expected, test.testUnsafe(), "i = "+ i +" unsafe read returns wrong value");
+            }
+
+            test.changeToDefault();
+            if (!hasDefaultValue && (stable || g.isFinal())) {
+                Asserts.assertEQ(t.value, test.testDirect(),
+                        "direct read doesn't return prev value");
+                // fails for getCharUnaligned due to JDK-8148518
+                if (!(t == JavaType.C && "Unaligned".equals(postfix))) {
+                    Asserts.assertEQ(test.testDirect(), test.testUnsafe());
+                }
+            } else {
+                Asserts.assertEQ(t.defaultValue, test.testDirect(),
+                        "direct read doesn't return default value");
+                Asserts.assertEQ(test.testDirect(), test.testUnsafe(),
+                        "direct and unsafe reads return different values");
+            }
+        } catch (Throwable e) {
+            try {
+                g.dump();
+            } catch (IOException io) {
+                io.printStackTrace();
+            }
+            throw e;
         }
     }
 
-    interface Test {
+    public interface Test {
         Object testDirect();
         Object testUnsafe();
+        void changeToDefault();
     }
 
     enum JavaType {
-        Z("Boolean", true),
-        B("Byte", new Byte((byte)-1)),
-        S("Short", new Short((short)-1)),
-        C("Char", Character.MAX_VALUE),
-        I("Int", -1),
-        J("Long", -1L),
-        F("Float", -1F),
-        D("Double", -1D),
-        L("Object", new Object());
+        Z("Boolean", true, false),
+        B("Byte", new Byte((byte) -1), new Byte((byte) 0)),
+        S("Short", new Short((short) -1), new Short((short) 0)),
+        C("Char", Character.MAX_VALUE, '\0'),
+        I("Int", -1, 0),
+        J("Long", -1L, 0L),
+        F("Float", -1F, 0F),
+        D("Double", -1D, 0D),
+        L("Object", "", null);
 
         String typeName;
         Object value;
+        Object defaultValue;
         String wrapper;
-        JavaType(String name, Object value) {
+        JavaType(String name, Object value, Object defaultValue) {
             this.typeName = name;
             this.value = value;
+            this.defaultValue = defaultValue;
             this.wrapper = internalName(value.getClass());
         }
 
@@ -154,7 +195,7 @@ public class UnsafeGetConstantField {
             if (this == JavaType.L) {
                 return "Ljava/lang/Object;";
             } else {
-                return toString();
+                return name();
             }
         }
     }
@@ -177,6 +218,7 @@ public class UnsafeGetConstantField {
      *   }
      *   public Object testDirect()  { return t.f; }
      *   public Object testUnsafe()  { return U.getInt(t, FIELD_OFFSET); }
+     *   public void changeToDefault() { U.putInt(t, 0, FIELD_OFFSET); }
      * }
      */
     static class Generator {
@@ -190,9 +232,11 @@ public class UnsafeGetConstantField {
         final boolean hasDefaultValue;
         final String nameSuffix;
 
+        final String name;
         final String className;
         final String classDesc;
         final String fieldDesc;
+        final byte[] classFile;
 
         Generator(JavaType t, int flags, boolean stable, boolean hasDefaultValue, String suffix) {
             this.type = t;
@@ -202,9 +246,11 @@ public class UnsafeGetConstantField {
             this.nameSuffix = suffix;
 
             fieldDesc = type.desc();
-            className = String.format("%s$Test%s%s__f=%d__s=%b__d=%b", internalName(THIS_CLASS), type.typeName,
-                                      suffix, flags, stable, hasDefaultValue);
+            name = String.format("Test%s%s__f=%d__s=%b__d=%b",
+                    type.typeName, suffix, flags, stable, hasDefaultValue);
+            className = "java/lang/invoke/" + name;
             classDesc = String.format("L%s;", className);
+            classFile = generateClassFile();
         }
 
         byte[] generateClassFile() {
@@ -228,7 +274,7 @@ public class UnsafeGetConstantField {
 
             // Methods
             {   // <init>
-                MethodVisitor mv = cw.visitMethod(0, "<init>", "()V", null, null);
+                MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
                 mv.visitCode();
 
                 mv.visitVarInsn(ALOAD, 0);
@@ -261,6 +307,30 @@ public class UnsafeGetConstantField {
                 getFieldValueUnsafe(mv);
                 wrapResult(mv);
                 mv.visitInsn(ARETURN);
+
+                mv.visitMaxs(0, 0);
+                mv.visitEnd();
+            }
+
+            {   // public void changeToDefault() { U.putInt(t, FIELD_OFFSET, 0); }
+                MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "changeToDefault", "()V", null, null);
+                mv.visitCode();
+                getUnsafe(mv);
+                if (isStatic()) {
+                    mv.visitFieldInsn(GETSTATIC, className, "STATIC_BASE", "Ljava/lang/Object;");
+                } else {
+                    mv.visitFieldInsn(GETSTATIC, className, "t", classDesc);
+                }
+                mv.visitFieldInsn(GETSTATIC, className, "FIELD_OFFSET", "J");
+
+                if (type.defaultValue != null) {
+                    mv.visitLdcInsn(type.defaultValue);
+                } else {
+                    mv.visitInsn(ACONST_NULL);
+                }
+                String name = "put" + type.typeName + nameSuffix;
+                mv.visitMethodInsn(INVOKEVIRTUAL, UNSAFE_NAME, name, "(Ljava/lang/Object;J" + type.desc()+ ")V", false);
+                mv.visitInsn(RETURN);
 
                 mv.visitMaxs(0, 0);
                 mv.visitEnd();
@@ -305,7 +375,6 @@ public class UnsafeGetConstantField {
         }
 
         Test generate() {
-            byte[] classFile = generateClassFile();
             Class<?> c = U.defineClass(className, classFile, 0, classFile.length, THIS_CLASS.getClassLoader(), null);
             try {
                 return (Test) c.newInstance();
@@ -360,20 +429,14 @@ public class UnsafeGetConstantField {
             if (!isStatic()) {
                 mv.visitVarInsn(ALOAD, 0);
             }
-            switch (type) {
-                case L: {
-                    mv.visitTypeInsn(NEW, "java/lang/Object");
-                    mv.visitInsn(DUP);
-                    mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-
-                    break;
-                }
-                default: {
-                    mv.visitLdcInsn(type.value);
-                    break;
-                }
-            }
+            mv.visitLdcInsn(type.value);
             mv.visitFieldInsn((isStatic() ? PUTSTATIC : PUTFIELD), className, FIELD_NAME, fieldDesc);
+        }
+
+        public void dump() throws IOException {
+            Path path = Paths.get(".", name + ".class").toAbsolutePath();
+            System.err.println("dumping test class to " + path);
+            Files.write(path, classFile);
         }
     }
 }

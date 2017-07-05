@@ -29,21 +29,12 @@
 #
 # @run shell GetResource.sh
 
-if [ "${TESTSRC}" = "" ] ; then
-    TESTSRC=`pwd`
-fi
-if [ "${TESTCLASSES}" = "" ] ; then
-    TESTCLASSES=`pwd`
-fi
-
-if [ "${TESTJAVA}" = "" ] ; then
-    echo "TESTJAVA not set.  Test cannot execute."
-    echo "FAILED!!!"
-    exit 1
-fi
-
-if [ "${COMPILEJAVA}" = "" ] ; then
-    COMPILEJAVA="${TESTJAVA}"
+if [ -z "$TESTJAVA" ]; then
+  if [ $# -lt 1 ]; then exit 1; fi
+  TESTJAVA="$1"; shift
+  COMPILEJAVA="${TESTJAVA}"
+  TESTSRC="`pwd`"
+  TESTCLASSES="`pwd`"
 fi
 
 # set platform-specific variables
@@ -96,12 +87,7 @@ setup "b"
 cd ${TESTCLASSES}
 DIR=`pwd`
 
-#    Expected    -Xbootclasspath
-#    Location    or -classpath
-runTest "a"      "-Xbootclasspath/p:a"
-runTest "a"      "-Xbootclasspath/p:a${PS}b"
-runTest "b"      "-Xbootclasspath/p:b" 
-runTest "b"      "-Xbootclasspath/p:b${PS}a"
+#    Expected    -classpath
 runTest "a"      -cp a
 runTest "a"      -cp "a${PS}b"
 runTest "b"      -cp b
@@ -109,15 +95,9 @@ runTest "b"      -cp "b${PS}a"
 
 cd ${DIR}/a
 
-runTest "a"      "-Xbootclasspath/p:."
-runTest "b"      "-Xbootclasspath/p:../b" 
-
 # no -classpath
 runTest "a"      -cp "${PS}"                            
 runTest "b"      -cp "../b"                   
-
-# Test empty path in bootclasspath not default to current working directory
-runTest "b"      "-Xbootclasspath/p:${PS}../b" 
 
 # Test empty path in classpath default to current working directory
 runTest "a"      -cp "${PS}../b"

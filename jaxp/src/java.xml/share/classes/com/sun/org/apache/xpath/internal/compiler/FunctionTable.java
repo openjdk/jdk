@@ -24,7 +24,6 @@
  */
 package com.sun.org.apache.xpath.internal.compiler;
 
-import com.sun.org.apache.xpath.internal.Expression;
 import com.sun.org.apache.xpath.internal.functions.Function;
 import java.util.HashMap;
 import javax.xml.transform.TransformerException;
@@ -341,11 +340,12 @@ public class FunctionTable
           throws javax.xml.transform.TransformerException
   {
           try{
-              if (which < NUM_BUILT_IN_FUNCS)
+              if (which < NUM_BUILT_IN_FUNCS) {
                   return (Function) m_functions[which].newInstance();
-              else
-                  return (Function) m_functions_customer[
-                      which-NUM_BUILT_IN_FUNCS].newInstance();
+              } else {
+                  Class<?> c =  m_functions_customer[which-NUM_BUILT_IN_FUNCS];
+                  return (Function) c.newInstance();
+              }
           }catch (IllegalAccessException ex){
                   throw new TransformerException(ex.getMessage());
           }catch (InstantiationException ex){

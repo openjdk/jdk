@@ -231,7 +231,8 @@ public class TestStringPrep {
     }
 
     public static void TestNamePrepConformance() throws Exception {
-        InputStream stream = StringPrep.class.getResourceAsStream("uidna.spp");
+        InputStream stream = StringPrep.class.getModule()
+                                             .getResourceAsStream("sun/net/idn/uidna.spp");
         StringPrep namePrep = new StringPrep(stream);
         stream.close();
         int i;

@@ -28,6 +28,9 @@ package javax.imageio.spi;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Module;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Iterator;
 import javax.imageio.ImageReader;
@@ -587,8 +590,10 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
             throw new IllegalArgumentException("Unsupported format name");
         }
         try {
-            Class<?> cls = Class.forName(formatClassName, true,
-                                      ClassLoader.getSystemClassLoader());
+            // Try to load from the same location as the module of the SPI
+            final String className = formatClassName;
+            PrivilegedAction<Class<?>> pa = () -> { return getMetadataFormatClass(className); };
+            Class<?> cls = AccessController.doPrivileged(pa);
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);
         } catch (Exception e) {
@@ -597,5 +602,23 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
             ex.initCause(e);
             throw ex;
         }
+    }
+
+    private Class<?> getMetadataFormatClass(String formatClassName) {
+        Module thisModule = ImageReaderWriterSpi.class.getModule();
+        Module targetModule = this.getClass().getModule();
+        Class<?> c = Class.forName(targetModule, formatClassName);
+        if (thisModule.equals(targetModule) || c == null) {
+            return c;
+        }
+        if (thisModule.isNamed()) {
+            int i = formatClassName.lastIndexOf(".");
+            String pn = i > 0 ? formatClassName.substring(0, i) : "";
+            if (!targetModule.isExported(pn, thisModule)) {
+                throw new IllegalStateException("Class " +  formatClassName +
+                  " in named module must be exported to java.desktop module.");
+            }
+        }
+        return c;
     }
 }

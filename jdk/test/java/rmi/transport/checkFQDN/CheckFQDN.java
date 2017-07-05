@@ -123,6 +123,9 @@ public class CheckFQDN extends UnicastRemoteObject
                                     propOption + property +
                                     equal +
                                     propertyValue + extraProp +
+                                    " -XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED,"
+                                    + "java.rmi/sun.rmi.server=ALL-UNNAMED,java.rmi/sun.rmi.transport=ALL-UNNAMED,"
+                                    + "java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" +
                                     " -Drmi.registry.port=" +
                                     REGISTRY_PORT,
                                     "");

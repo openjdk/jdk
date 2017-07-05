@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -580,8 +580,7 @@ public class MailcapCommandMap extends CommandMap {
                 // if anything goes wrong, do it the old way
                 cl = Class.forName(name);
             }
-            if (cl != null)             // XXX - always true?
-                return (DataContentHandler)cl.newInstance();
+            return (DataContentHandler) cl.newInstance();
         } catch (IllegalAccessException e) {
             if (LogSupport.isLoggable())
                 LogSupport.log("Can't load DCH " + name, e);

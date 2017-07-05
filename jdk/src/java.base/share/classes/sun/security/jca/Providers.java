@@ -86,10 +86,7 @@ public class Providers {
         "SunRsaSign",
         // Note: when SunEC is in a signed JAR file, it's not signed
         // by EC algorithms. So it's still safe to be listed here.
-        // Need to use class name here, otherwise it cannot be loaded for
-        // jar verification. Only those providers in java.base are created
-        // directly by ProviderConfig class.
-        "sun.security.ec.SunEC",
+        "SunEC",
     };
 
     // Return Sun provider.

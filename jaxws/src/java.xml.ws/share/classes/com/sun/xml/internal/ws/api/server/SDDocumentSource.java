@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.xml.internal.ws.api.server;
 
 import com.sun.xml.internal.stream.buffer.XMLStreamBuffer;
+import com.sun.xml.internal.ws.server.ServerRtException;
 import com.sun.xml.internal.ws.streaming.TidyXMLStreamReader;
 import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
 
@@ -34,6 +35,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -108,6 +110,48 @@ public abstract class SDDocumentSource {
             public URL getSystemId() {
                 return systemId;
             }
+        };
+    }
+
+    /**
+     * Creates {@link SDDocumentSource} from resource path using resolvingClass to read the resource.
+     * Required for Jigsaw runtime.
+     *
+     * @param resolvingClass class used to read resource
+     * @param path resource path
+     */
+    public static SDDocumentSource create(final Class resolvingClass, final String path) {
+        return new SDDocumentSource() {
+
+            public XMLStreamReader read(XMLInputFactory xif) throws IOException, XMLStreamException {
+                InputStream is = inputStream();
+                return new TidyXMLStreamReader(xif.createXMLStreamReader(path,is), is);
+            }
+
+            public XMLStreamReader read() throws IOException, XMLStreamException {
+                InputStream is = inputStream();
+                return new TidyXMLStreamReader(XMLStreamReaderFactory.create(path,is,false), is);
+            }
+
+            public URL getSystemId() {
+                try {
+                    return new URL("file://" + path);
+                } catch (MalformedURLException e) {
+                    return null;
+                }
+            }
+
+            private InputStream inputStream() throws IOException {
+                java.lang.reflect.Module module = resolvingClass.getModule();
+                if (module != null) {
+                    InputStream stream = module.getResourceAsStream(path);
+                    if (stream != null) {
+                        return stream;
+                    }
+                }
+                throw new ServerRtException("cannot.load.wsdl", path);
+            }
+
         };
     }
 

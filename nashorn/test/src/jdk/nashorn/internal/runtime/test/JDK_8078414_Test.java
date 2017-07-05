@@ -47,6 +47,10 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8078414
  * @summary Test that arbitrary classes can't be converted to mirror's superclasses/interfaces.
+ * @modules jdk.scripting.nashorn/jdk.nashorn.internal.runtime
+ * @modules jdk.scripting.nashorn/jdk.nashorn.internal.runtime.linker
+ * @modules jdk.scripting.nashorn/jdk.nashorn.internal.runtime.options
+ * @modules jdk.scripting.nashorn/jdk.nashorn.internal.objects
  * @run testng jdk.nashorn.internal.runtime.test.JDK_8078414_Test
  */
 public class JDK_8078414_Test {

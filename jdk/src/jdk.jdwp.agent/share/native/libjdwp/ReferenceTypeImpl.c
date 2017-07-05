@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,26 @@ getClassLoader(PacketInputStream *in, PacketOutputStream *out)
     }
 
     (void)outStream_writeObjectRef(env, out, loader);
+    return JNI_TRUE;
+}
+
+static jboolean
+getModule(PacketInputStream *in, PacketOutputStream *out)
+{
+    jobject clazz;
+    jobject module;
+    JNIEnv *env;
+
+    env = getEnv();
+
+    clazz = inStream_readClassRef(env, in);
+    if (inStream_error(in)) {
+        return JNI_TRUE;
+    }
+
+    module = JNI_FUNC_PTR(env, GetModule)(env, clazz);
+
+    (void)outStream_writeModuleRef(env, out, module);
     return JNI_TRUE;
 }
 
@@ -605,7 +625,7 @@ classObject(PacketInputStream *in, PacketOutputStream *out)
     return JNI_TRUE;
 }
 
-void *ReferenceType_Cmds[] = { (void *)18
+void *ReferenceType_Cmds[] = { (void *)19
     ,(void *)signature
     ,(void *)getClassLoader
     ,(void *)modifiers
@@ -624,4 +644,5 @@ void *ReferenceType_Cmds[] = { (void *)18
     ,(void *)instances
     ,(void *)getClassVersion
     ,(void *)getConstantPool
+    ,(void *)getModule
 };

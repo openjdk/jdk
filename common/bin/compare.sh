@@ -290,9 +290,9 @@ compare_general_files() {
 
     GENERAL_FILES=$(cd $THIS_DIR && $FIND . -type f ! -name "*.so" ! -name "*.jar" \
         ! -name "*.zip" ! -name "*.debuginfo" ! -name "*.dylib" ! -name "jexec" \
-        ! -name "*.jimage" ! -name "ct.sym" ! -name "*.diz" ! -name "*.dll" \
+        ! -name "modules" ! -name "ct.sym" ! -name "*.diz" ! -name "*.dll" \
         ! -name "*.cpl" ! -name "*.pdb" ! -name "*.exp" ! -name "*.ilk" \
-        ! -name "*.lib" ! -name "*.war" ! -name "JavaControlPanel" \
+        ! -name "*.lib" ! -name "*.war" ! -name "JavaControlPanel" ! -name "*.jmod" \
         ! -name "*.obj" ! -name "*.o" ! -name "JavaControlPanelHelper" \
         ! -name "JavaUpdater" ! -name "JavaWSApplicationStub" \
         ! -name "jspawnhelper" ! -name "JavawsLauncher" ! -name "*.a" \
@@ -389,13 +389,13 @@ compare_zip_file() {
     $RM -rf $THIS_UNZIPDIR $OTHER_UNZIPDIR
     $MKDIR -p $THIS_UNZIPDIR
     $MKDIR -p $OTHER_UNZIPDIR
-    if [ "$TYPE" = "jimage" ]
+    if [ "$TYPE" = "jar" || "$TYPE" = "war" || "$TYPE" = "zip" || "$TYPE" = "jmod"]
     then
-        (cd $THIS_UNZIPDIR && $JIMAGE extract $THIS_ZIP)
-        (cd $OTHER_UNZIPDIR && $JIMAGE extract $OTHER_ZIP)
-    else
         (cd $THIS_UNZIPDIR && $UNARCHIVE $THIS_ZIP)
         (cd $OTHER_UNZIPDIR && $UNARCHIVE $OTHER_ZIP)
+    else
+        (cd $THIS_UNZIPDIR && $JIMAGE extract $THIS_ZIP)
+        (cd $OTHER_UNZIPDIR && $JIMAGE extract $OTHER_ZIP)
     fi
 
     # Find all archives inside and unzip them as well to compare the contents rather than
@@ -526,7 +526,7 @@ compare_all_jar_files() {
 
     # TODO filter?
     ZIPS=$(cd $THIS_DIR && $FIND . -type f -name "*.jar" -o -name "*.war" \
-        -o -name "*.jimage" | $SORT | $FILTER)
+        -o -name "modules" -o -name "*.jmod" | $SORT | $FILTER)
 
     if [ -n "$ZIPS" ]; then
         echo Jar files...

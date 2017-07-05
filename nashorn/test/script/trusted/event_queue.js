@@ -30,6 +30,7 @@
  * @option -Dnashorn.debug=true
  * @option --log=recompile:quiet
  * @option --optimistic-types=true
+ * @run
  */
 
 print(Debug);
