@@ -63,5 +63,3 @@ LE_VAR_ARRAY(CursiveAttachmentSubtable, entryExitRecords)
 
 U_NAMESPACE_END
 #endif
-
-

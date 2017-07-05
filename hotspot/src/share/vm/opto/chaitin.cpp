@@ -990,9 +990,13 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // FOUR registers!
 #ifdef ASSERT
         if (is_vect) {
-          assert(lrgmask.is_aligned_sets(lrg.num_regs()), "vector should be aligned");
-          assert(!lrg._fat_proj, "sanity");
-          assert(RegMask::num_registers(kreg) == lrg.num_regs(), "sanity");
+          if (lrg.num_regs() != 0) {
+            assert(lrgmask.is_aligned_sets(lrg.num_regs()), "vector should be aligned");
+            assert(!lrg._fat_proj, "sanity");
+            assert(RegMask::num_registers(kreg) == lrg.num_regs(), "sanity");
+          } else {
+            assert(n->is_Phi(), "not all inputs processed only if Phi");
+          }
         }
 #endif
         if (!is_vect && lrg.num_regs() == 2 && !lrg._fat_proj && rm.is_misaligned_pair()) {
