@@ -28,9 +28,10 @@
 #include "gc_implementation/shared/markSweep.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "utilities/stack.inline.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 inline void MarkSweep::mark_object(oop obj) {
   // some marks may contain information we need to preserve so we store them away

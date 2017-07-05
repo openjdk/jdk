@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,21 @@
 
 /*
  * @test
- * @bug 6657026
+ * @bug 6657026 7077259
  * @summary Tests shared MetalSliderUI in different application contexts
  * @author Sergey Malenkov
+ * @run main/othervm -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel Test6657026
  */
-
-import sun.awt.SunToolkit;
 
 import javax.swing.JSlider;
 import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.plaf.metal.MetalSliderUI;
+import sun.awt.SunToolkit;
 
 public class Test6657026 extends MetalSliderUI implements Runnable {
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel(new MetalLookAndFeel());
         JSlider slider = new JSlider();
         test(slider);
 

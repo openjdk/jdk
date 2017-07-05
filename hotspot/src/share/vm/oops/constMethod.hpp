@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,14 +122,10 @@ class ExceptionTableElement VALUE_OBJ_CLASS_SPEC {
 class MethodParametersElement VALUE_OBJ_CLASS_SPEC {
  public:
   u2 name_cp_index;
-  // This has to happen, otherwise it will cause SIGBUS from a
-  // misaligned u4 on some architectures (ie SPARC)
-  // because MethodParametersElements are only aligned mod 2
-  // within the ConstMethod container  u2 flags_hi;
-  u2 flags_hi;
-  u2 flags_lo;
+  u2 flags;
 };
 
+class KlassSizeStats;
 
 class ConstMethod : public MetaspaceObj {
   friend class VMStructs;
@@ -320,6 +316,9 @@ public:
 
   int size() const                    { return _constMethod_size;}
   void set_constMethod_size(int size)     { _constMethod_size = size; }
+#if INCLUDE_SERVICES
+  void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   // code size
   int code_size() const                          { return _code_size; }

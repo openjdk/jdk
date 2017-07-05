@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/debugInfoRec.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
@@ -33,6 +34,7 @@
 #include "interpreter/oopMapCache.hpp"
 #include "memory/gcLocker.hpp"
 #include "memory/generation.hpp"
+#include "memory/heapInspection.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/constMethod.hpp"
@@ -41,7 +43,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/arguments.hpp"
@@ -699,7 +700,7 @@ void Method::set_signature_handler(address handler) {
 }
 
 
-void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report) {
+void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report, const char* reason) {
   if (PrintCompilation && report) {
     ttyLocker ttyl;
     tty->print("made not %scompilable on ", is_osr ? "OSR " : "");
@@ -713,14 +714,21 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report)
     }
     this->print_short_name(tty);
     int size = this->code_size();
-    if (size > 0)
+    if (size > 0) {
       tty->print(" (%d bytes)", size);
+    }
+    if (reason != NULL) {
+      tty->print("   %s", reason);
+    }
     tty->cr();
   }
   if ((TraceDeoptimization || LogCompilation) && (xtty != NULL)) {
     ttyLocker ttyl;
     xtty->begin_elem("make_not_%scompilable thread='" UINTX_FORMAT "'",
                      is_osr ? "osr_" : "", os::current_thread_id());
+    if (reason != NULL) {
+      xtty->print(" reason=\'%s\'", reason);
+    }
     xtty->method(this);
     xtty->stamp();
     xtty->end_elem();
@@ -742,8 +750,8 @@ bool Method::is_not_compilable(int comp_level) const {
 }
 
 // call this when compiler finds that this method is not compilable
-void Method::set_not_compilable(int comp_level, bool report) {
-  print_made_not_compilable(comp_level, /*is_osr*/ false, report);
+void Method::set_not_compilable(int comp_level, bool report, const char* reason) {
+  print_made_not_compilable(comp_level, /*is_osr*/ false, report, reason);
   if (comp_level == CompLevel_all) {
     set_not_c1_compilable();
     set_not_c2_compilable();
@@ -768,8 +776,8 @@ bool Method::is_not_osr_compilable(int comp_level) const {
   return false;
 }
 
-void Method::set_not_osr_compilable(int comp_level, bool report) {
-  print_made_not_compilable(comp_level, /*is_osr*/ true, report);
+void Method::set_not_osr_compilable(int comp_level, bool report, const char* reason) {
+  print_made_not_compilable(comp_level, /*is_osr*/ true, report, reason);
   if (comp_level == CompLevel_all) {
     set_not_c1_osr_compilable();
     set_not_c2_osr_compilable();
@@ -1027,7 +1035,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
   cp->set_pool_holder(InstanceKlass::cast(holder()));
   cp->symbol_at_put(_imcp_invoke_name,       name);
   cp->symbol_at_put(_imcp_invoke_signature,  signature);
-  cp->set_preresolution();
+  cp->set_has_preresolution();
 
   // decide on access bits:  public or not?
   int flags_bits = (JVM_ACC_NATIVE | JVM_ACC_SYNTHETIC | JVM_ACC_FINAL);
@@ -1954,6 +1962,22 @@ void Method::print_value_on(outputStream* st) const {
   if (WizardMode && code() != NULL) st->print(" ((nmethod*)%p)", code());
 }
 
+#if INCLUDE_SERVICES
+// Size Statistics
+void Method::collect_statistics(KlassSizeStats *sz) const {
+  int mysize = sz->count(this);
+  sz->_method_bytes += mysize;
+  sz->_method_all_bytes += mysize;
+  sz->_rw_bytes += mysize;
+
+  if (constMethod()) {
+    constMethod()->collect_statistics(sz);
+  }
+  if (method_data()) {
+    method_data()->collect_statistics(sz);
+  }
+}
+#endif // INCLUDE_SERVICES
 
 // Verification
 

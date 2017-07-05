@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3824,6 +3824,12 @@ public class Container extends Component {
             return Container.this.getAccessibleAt(p);
         }
 
+        /**
+         * Number of PropertyChangeListener objects registered. It's used
+         * to add/remove ContainerListener to track target Container's state.
+         */
+        private volatile transient int propertyListenersCount = 0;
+
         protected ContainerListener accessibleContainerHandler = null;
 
         /**
@@ -3859,9 +3865,25 @@ public class Container extends Component {
         public void addPropertyChangeListener(PropertyChangeListener listener) {
             if (accessibleContainerHandler == null) {
                 accessibleContainerHandler = new AccessibleContainerHandler();
+            }
+            if (propertyListenersCount++ == 0) {
                 Container.this.addContainerListener(accessibleContainerHandler);
             }
             super.addPropertyChangeListener(listener);
+        }
+
+        /**
+         * Remove a PropertyChangeListener from the listener list.
+         * This removes a PropertyChangeListener that was registered
+         * for all properties.
+         *
+         * @param listener the PropertyChangeListener to be removed
+         */
+        public void removePropertyChangeListener(PropertyChangeListener listener) {
+            if (--propertyListenersCount == 0) {
+                Container.this.removeContainerListener(accessibleContainerHandler);
+            }
+            super.removePropertyChangeListener(listener);
         }
 
     } // inner class AccessibleAWTContainer

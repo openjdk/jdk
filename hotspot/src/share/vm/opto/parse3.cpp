@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,7 +487,8 @@ void Parse::do_multianewarray() {
                           fun, NULL, TypeRawPtr::BOTTOM,
                           makecon(TypeKlassPtr::make(array_klass)),
                           length[0], length[1], length[2],
-                          length[3], length[4]);
+                          (ndimensions > 2) ? length[3] : NULL,
+                          (ndimensions > 3) ? length[4] : NULL);
   } else {
     // Create a java array for dimension sizes
     Node* dims = NULL;

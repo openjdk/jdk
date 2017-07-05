@@ -23,11 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/shared/immutableSpace.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 void ImmutableSpace::initialize(MemRegion mr) {
   HeapWord* bottom = mr.start();

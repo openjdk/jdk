@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     7154390
+ * @bug     7154390 8005712
  * @summary Unit test for repeated annotation reflection
  *
  * @compile RepeatedUnitTest.java subpackage/package-info.java subpackage/Container.java subpackage/Containee.java subpackage/NonRepeated.java subpackage/InheritedContainee.java subpackage/InheritedContainer.java subpackage/InheritedNonRepeated.java
@@ -58,7 +58,7 @@ public class RepeatedUnitTest {
         checkMultiplier(Me1.class.getField("foo"), 1);
 
         // METHOD
-        checkMultiplier(Me1.class.getDeclaredMethod("mee", null), 100);
+        checkMultiplier(Me1.class.getDeclaredMethod("mee", (Class<?>[])null), 100);
 
         // INNER CLASS
         checkMultiplier(Me1.MiniMee.class, 1000);
@@ -84,8 +84,7 @@ public class RepeatedUnitTest {
 
     static void packageRepeated(AnnotatedElement e) {
         Containee c = e.getAnnotation(Containee.class);
-        check(c.value() == 1);
-
+        check(c == null);
         check(2 == countAnnotation(e, Containee.class));
 
         c = e.getAnnotations(Containee.class)[0];
@@ -93,7 +92,7 @@ public class RepeatedUnitTest {
         c = e.getAnnotations(Containee.class)[1];
         check(c.value() == 2);
 
-        check(2 == containsAnnotationOfType(e.getAnnotations(), Containee.class));
+        check(0 == containsAnnotationOfType(e.getAnnotations(), Containee.class));
     }
 
     static void packageContainer(AnnotatedElement e) {
@@ -161,14 +160,26 @@ public class RepeatedUnitTest {
     }
 
     static void checkMultiplier(AnnotatedElement e, int m) {
+        // Basic sanity of non-repeating getAnnotation(Class)
         check(e.getAnnotation(NonRepeated.class).value() == 5 * m);
 
+        // Check count of annotations returned from getAnnotations(Class)
         check(4 == countAnnotation(e, Containee.class));
         check(1 == countAnnotation(e, Container.class));
         check(1 == countAnnotation(e, NonRepeated.class));
 
+        // Check contents of array returned from getAnnotations(Class)
         check(e.getAnnotations(Containee.class)[2].value() == 3 * m);
         check(e.getAnnotations(NonRepeated.class)[0].value() == 5 * m);
+
+        // Check getAnnotation(Class)
+        check(e.getAnnotation(Containee.class) == null);
+        check(e.getAnnotation(Container.class) != null);
+
+        // Check count of annotations returned from getAnnotations()
+        check(0 == containsAnnotationOfType(e.getAnnotations(), Containee.class));
+        check(1 == containsAnnotationOfType(e.getAnnotations(), Container.class));
+        check(1 == containsAnnotationOfType(e.getAnnotations(), NonRepeated.class));
     }
 
     static void check(Boolean b) {

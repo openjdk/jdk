@@ -371,8 +371,8 @@ class ConcurrentMark: public CHeapObj<mtGC> {
   friend class CalcLiveObjectsClosure;
   friend class G1CMRefProcTaskProxy;
   friend class G1CMRefProcTaskExecutor;
-  friend class G1CMParKeepAliveAndDrainClosure;
-  friend class G1CMParDrainMarkingStackClosure;
+  friend class G1CMKeepAliveAndDrainClosure;
+  friend class G1CMDrainMarkingStackClosure;
 
 protected:
   ConcurrentMarkThread* _cmThread;   // the thread doing the work
@@ -499,17 +499,26 @@ protected:
   }
 
   // accessor methods
-  uint parallel_marking_threads() { return _parallel_marking_threads; }
-  uint max_parallel_marking_threads() { return _max_parallel_marking_threads;}
-  double sleep_factor()             { return _sleep_factor; }
-  double marking_task_overhead()    { return _marking_task_overhead;}
-  double cleanup_sleep_factor()     { return _cleanup_sleep_factor; }
-  double cleanup_task_overhead()    { return _cleanup_task_overhead;}
+  uint parallel_marking_threads() const     { return _parallel_marking_threads; }
+  uint max_parallel_marking_threads() const { return _max_parallel_marking_threads;}
+  double sleep_factor()                     { return _sleep_factor; }
+  double marking_task_overhead()            { return _marking_task_overhead;}
+  double cleanup_sleep_factor()             { return _cleanup_sleep_factor; }
+  double cleanup_task_overhead()            { return _cleanup_task_overhead;}
 
-  HeapWord*               finger()        { return _finger;   }
-  bool                    concurrent()    { return _concurrent; }
-  uint                    active_tasks()  { return _active_tasks; }
-  ParallelTaskTerminator* terminator()    { return &_terminator; }
+  bool use_parallel_marking_threads() const {
+    assert(parallel_marking_threads() <=
+           max_parallel_marking_threads(), "sanity");
+    assert((_parallel_workers == NULL && parallel_marking_threads() == 0) ||
+           parallel_marking_threads() > 0,
+           "parallel workers not set up correctly");
+    return _parallel_workers != NULL;
+  }
+
+  HeapWord*               finger()          { return _finger;   }
+  bool                    concurrent()      { return _concurrent; }
+  uint                    active_tasks()    { return _active_tasks; }
+  ParallelTaskTerminator* terminator()      { return &_terminator; }
 
   // It claims the next available region to be scanned by a marking
   // task/thread. It might return NULL if the next region is empty or
