@@ -95,7 +95,7 @@ java.datatransfer_COPY := flavormap.properties
 ################################################################################
 
 java.desktop_ADD_JAVAC_FLAGS := -Xdoclint:all/protected,-reference \
-    '-Xdoclint/package:java.*,javax.*' -Xlint:-deprecation,exports
+    '-Xdoclint/package:java.*,javax.*' -Xlint:exports
 java.desktop_COPY := .gif .png .wav .txt .xml .css .pf
 java.desktop_CLEAN := iio-plugin.properties cursors.properties
 
