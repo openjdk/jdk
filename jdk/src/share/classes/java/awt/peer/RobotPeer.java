@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,17 +39,93 @@ import java.awt.*;
  */
 public interface RobotPeer
 {
-    public void mouseMove(int x, int y);
-    public void mousePress(int buttons);
-    public void mouseRelease(int buttons);
+    /**
+     * Moves the mouse pointer to the specified screen location.
+     *
+     * @param x the X location on screen
+     * @param y the Y location on screen
+     *
+     * @see Robot#mouseMove(int, int)
+     */
+    void mouseMove(int x, int y);
 
-    public void mouseWheel(int wheelAmt);
+    /**
+     * Simulates a mouse press with the specified button(s).
+     *
+     * @param buttons the button mask
+     *
+     * @see Robot#mousePress(int)
+     */
+    void mousePress(int buttons);
 
-    public void keyPress(int keycode);
-    public void keyRelease(int keycode);
+    /**
+     * Simulates a mouse release with the specified button(s).
+     *
+     * @param buttons the button mask
+     *
+     * @see Robot#mouseRelease(int)
+     */
+    void mouseRelease(int buttons);
 
-    public int getRGBPixel(int x, int y);
-    public int [] getRGBPixels(Rectangle bounds);
+    /**
+     * Simulates mouse wheel action.
+     *
+     * @param wheelAmt number of notches to move the mouse wheel
+     *
+     * @see Robot#mouseWheel(int)
+     */
+    void mouseWheel(int wheelAmt);
 
-    public void dispose();
+    /**
+     * Simulates a key press of the specified key.
+     *
+     * @param keycode the key code to press
+     *
+     * @see Robot#keyPress(int)
+     */
+    void keyPress(int keycode);
+
+    /**
+     * Simulates a key release of the specified key.
+     *
+     * @param keycode the key code to release
+     *
+     * @see Robot#keyRelease(int)
+     */
+    void keyRelease(int keycode);
+
+    /**
+     * Gets the RGB value of the specified pixel on screen.
+     *
+     * @param x the X screen coordinate
+     * @param y the Y screen coordinate
+     *
+     * @return the RGB value of the specified pixel on screen
+     *
+     * @see Robot#getPixelColor(int, int)
+     */
+    int getRGBPixel(int x, int y);
+
+    /**
+     * Gets the RGB values of the specified screen area as an array.
+     *
+     * @param bounds the screen area to capture the RGB values from
+     *
+     * @return the RGB values of the specified screen area
+     *
+     * @see Robot#createScreenCapture(Rectangle)
+     */
+    int[] getRGBPixels(Rectangle bounds);
+
+    /**
+     * Disposes the robot peer when it is not needed anymore.
+     */
+    void dispose();
+
+    /**
+     * Returns the number of buttons that the robot simulates.
+     *
+     * @return the number of buttons that the robot simulates
+     */
+    int getNumberOfButtons();
 }

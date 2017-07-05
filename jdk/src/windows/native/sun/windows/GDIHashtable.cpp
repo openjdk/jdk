@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 #include "GDIHashtable.h"
 #include "awt_GDIObject.h"
-#include "awt_dlls.h"
 
 GDIHashtable::BatchDestructionManager GDIHashtable::manager;
 
@@ -46,7 +45,6 @@ void GDIHashtable::release(void* key) {
         DASSERT(value != NULL);
         m_deleteProc(value);
     }
-    manager.update();
 }
 
 void GDIHashtable::flush() {
@@ -128,9 +126,6 @@ void GDIHashtable::List::clear() {
     }
 }
 
-#undef GFSR_GDIRESOURCES
-#define GFSR_GDIRESOURCES     0x0001
-
 GDIHashtable::BatchDestructionManager::BatchDestructionManager(UINT nFirstThreshold,
                                                                UINT nSecondThreshold,
                                                                UINT nDestroyPeriod) :
@@ -138,48 +133,6 @@ GDIHashtable::BatchDestructionManager::BatchDestructionManager(UINT nFirstThresh
   m_nSecondThreshold(nSecondThreshold),
   m_nDestroyPeriod(nDestroyPeriod),
   m_nCounter(0),
-  m_bBatchingEnabled(TRUE) {
-    load_rsrc32_procs();
-}
-
-void GDIHashtable::BatchDestructionManager::update() {
-
-    if (get_free_system_resources != NULL) {
-
-        CriticalSection::Lock l(m_managerLock);
-
-        if (m_nCounter < 0) {
-            UINT nFreeResources = (*get_free_system_resources)(GFSR_GDIRESOURCES);
-            /*
-             * If m_bBatchingEnabled is FALSE there is no need
-             * to flush since we have been destroying all
-             * GDI resources as soon as they were released.
-             */
-            if (m_bBatchingEnabled) {
-                if (nFreeResources < m_nFirstThreshold) {
-                    flushAll();
-                    nFreeResources = (*get_free_system_resources)(GFSR_GDIRESOURCES);
-                }
-            }
-            if (nFreeResources < m_nSecondThreshold) {
-                m_bBatchingEnabled = FALSE;
-                m_nCounter = m_nDestroyPeriod;
-            } else {
-                m_bBatchingEnabled = TRUE;
-                /*
-                 * The frequency of checks must depend on the currect amount
-                 * of free space in GDI heaps. Otherwise we can run into the
-                 * Resource Meter warning dialog when GDI resources are low.
-                 * This is a heuristic rule that provides this dependency.
-                 * These numbers have been chosen because:
-                 * Resource Meter posts a warning dialog when less than 10%
-                 * of GDI resources are free.
-                 * 5 pens/brushes take 1%. So 3 is the upper bound.
-                 * When changing this rule you should check that performance
-                 * isn't affected (with Caffeine Mark and JMark).
-                 */
-                m_nCounter = (nFreeResources - 10) * 3;
-            }
-        }
-    }
+  m_bBatchingEnabled(TRUE)
+{
 }

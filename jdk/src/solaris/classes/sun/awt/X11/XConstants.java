@@ -197,12 +197,30 @@ final public class XConstants {
 
     /* button masks.  Used in same manner as Key masks above. Not to be confused
        with button names below. */
-
-    public static final int Button1Mask = (1<<8) ;
-    public static final int Button2Mask = (1<<9) ;
-    public static final int Button3Mask = (1<<10) ;
-    public static final int Button4Mask = (1<<11) ;
-    public static final int Button5Mask = (1<<12) ;
+    public static final int [] buttonsMask = new int []{ 1<<8,
+                                                         1<<9,
+                                                         1<<10,
+                                                         1<<11,
+                                                         1<<12,
+                                                         1<<13,
+                                                         1<<14,
+                                                         1<<15,
+                                                         1<<16,
+                                                         1<<17,
+                                                         1<<18,
+                                                         1<<19,
+                                                         1<<20,
+                                                         1<<21,
+                                                         1<<22,
+                                                         1<<23,
+                                                         1<<24,
+                                                         1<<25,
+                                                         1<<26,
+                                                         1<<27,
+                                                         1<<28,
+                                                         1<<29,
+                                                         1<<30,
+                                                         1<<31 };
 
     public static final int AnyModifier = (1<<15) ; /* used in GrabButton, GrabKey */
 
@@ -211,11 +229,7 @@ final public class XConstants {
        and ButtonRelease events.  Not to be confused with button masks above.
        Note that 0 is already defined above as "AnyButton".  */
 
-    public static final int Button1 = 1 ;
-    public static final int Button2 = 2 ;
-    public static final int Button3 = 3 ;
-    public static final int Button4 = 4 ;
-    public static final int Button5 = 5 ;
+    public static final int buttons [] = new int [] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24};
 
     /* Notify modes */
 

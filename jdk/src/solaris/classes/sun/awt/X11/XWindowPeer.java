@@ -1936,7 +1936,13 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                         new Object[] {xme, isGrabbed(), containsGlobal(xme.get_x_root(), xme.get_y_root())});
         }
         if (isGrabbed()) {
-            boolean dragging = (xme.get_state() & (XConstants.Button1Mask | XConstants.Button2Mask | XConstants.Button3Mask)) != 0;
+            boolean dragging = false;
+            for (int i = 0; i<XToolkit.getNumMouseButtons(); i++){
+                // here is the bug in WM: extra buttons doesn't have state!=0 as they should.
+                if ((i != 4) && (i != 5)){
+                    dragging = dragging || ((xme.get_state() & XConstants.buttonsMask[i]) != 0);
+                }
+            }
             // When window is grabbed, all events are dispatched to
             // it.  Retarget them to the corresponding windows (notice
             // that XBaseWindow.dispatchEvent does the opposite
@@ -1990,12 +1996,12 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
             try {
                 grabLog.log(Level.FINER, "  -  Grab event target {0} (press target {1})", new Object[] {target, pressTarget});
                 if (xbe.get_type() == XConstants.ButtonPress
-                    && xbe.get_button() == XConstants.Button1)
+                    && xbe.get_button() == XConstants.buttons[0])
                 {
                     // need to keep it to retarget mouse release
                     pressTarget = target;
                 } else if (xbe.get_type() == XConstants.ButtonRelease
-                           && xbe.get_button() == XConstants.Button1
+                           && xbe.get_button() == XConstants.buttons[0]
                            && pressTarget != target)
                 {
                     // during grab we do receive mouse release on different component (not on the source

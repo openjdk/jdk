@@ -80,6 +80,10 @@ public class WToolkit extends SunToolkit implements Runnable {
     // Dynamic Layout Resize client code setting
     protected boolean dynamicLayoutSetting = false;
 
+    //Is it allowed to generate events assigned to extra mouse buttons.
+    //Set to true by default.
+    private static boolean areExtraMouseButtonsEnabled = true;
+
     /**
      * Initialize JNI field and method IDs
      */
@@ -249,6 +253,11 @@ public class WToolkit extends SunToolkit implements Runnable {
         // Enabled "live resizing" by default.  It remains controlled
         // by the native system though.
         setDynamicLayout(true);
+
+        areExtraMouseButtonsEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableExtraMouseButtons", "true"));
+        //set system property if not yet assigned
+        System.setProperty("sun.awt.enableExtraMouseButtons", ""+areExtraMouseButtonsEnabled);
+        setExtraMouseButtonsEnabledNative(areExtraMouseButtonsEnabled);
     }
 
     public void run() {
@@ -961,4 +970,9 @@ public class WToolkit extends SunToolkit implements Runnable {
         return new WDesktopPeer();
     }
 
+    public static native void setExtraMouseButtonsEnabledNative(boolean enable);
+
+    public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
+        return areExtraMouseButtonsEnabled;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,20 @@
  * have any questions.
  */
 
+// copy from awt.h
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0600
+#endif
+
+// copy from awt.h
+#ifndef _WIN32_IE
+#define _WIN32_IE 0x0600
+#endif
+
 #include "splashscreen_impl.h"
 #include <windowsx.h>
 #include <windows.h>
 #include <winuser.h>
-
-/* layered windows api prototypes. wouldn't be needed if we could use an updated version of the MS PSDK. */
-
-typedef BOOL WINAPI UpdateLayeredWindowT(HWND hwnd,     // handle to layered window
-                                         HDC hdcDst,    // handle to screen DC
-                                         POINT * pptDst,        // new screen position
-                                         SIZE * psize,  // new size of the layered window
-                                         HDC hdcSrc,    // handle to surface DC
-                                         POINT * pptSrc,        // layer position
-                                         COLORREF crKey,        // color key
-                                         BLENDFUNCTION * pblend,        // blend function
-                                         DWORD dwFlags  // options
-    );
 
 #ifndef WS_EX_LAYERED
 #define WS_EX_LAYERED 0x80000
@@ -56,21 +53,6 @@ typedef BOOL WINAPI UpdateLayeredWindowT(HWND hwnd,     // handle to layered win
 #ifndef AC_SRC_ALPHA
 #define AC_SRC_ALPHA                0x01
 #endif
-
-static UpdateLayeredWindowT *UpdateLayeredWindow = NULL;
-
-/*      Get/SetWindowLongPtr prototypes, for the case we're compiling with old headers for a 32-bit platform
-        copied from Component.cpp
-        FIXME: remove this as soon as the build process is using up-to-date headers */
-#if !defined(__int3264)
-#define GetWindowLongPtr GetWindowLong
-#define SetWindowLongPtr SetWindowLong
-#define GWLP_USERDATA GWL_USERDATA
-#define GWLP_WNDPROC  GWL_WNDPROC
-typedef __int32 LONG_PTR;
-typedef unsigned __int32 ULONG_PTR;
-#endif // __int3264
-
 
 #define WM_SPLASHUPDATE         WM_USER+1
 #define WM_SPLASHRECONFIGURE    WM_USER+2
@@ -436,16 +418,11 @@ SplashUnlock(Splash * splash)
 void
 SplashInitPlatform(Splash * splash)
 {
-    HMODULE user32 = LoadLibrary("user32.dll");
     HDC hdc;
     int paletteMode;
 
     InitializeCriticalSection(&splash->lock);
     splash->isLayered = FALSE;
-    if (user32) {
-        UpdateLayeredWindow = (UpdateLayeredWindowT *)
-            GetProcAddress(user32, "UpdateLayeredWindow");
-    }
     hdc = GetDC(NULL);
     paletteMode = (GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE) != 0;
     if (UpdateLayeredWindow && !paletteMode) {

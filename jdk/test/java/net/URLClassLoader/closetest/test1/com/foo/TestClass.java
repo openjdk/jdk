@@ -1,12 +1,10 @@
 /*
- * Copyright 1996-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Sun designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Sun in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,24 +21,18 @@
  * have any questions.
  */
 
-#include "awt.h"
+package com.foo;
 
-LPWSTR J2WHelper1(LPWSTR lpw, LPWSTR lpj, int offset, int nChars) {
-    memcpy(lpw, lpj + offset, nChars*2);
-    lpw[nChars] = '\0';
-    return lpw;
+public class TestClass {
+    public int getValue () {
+        return 1;
+    }
 }
 
-LPWSTR JNI_J2WHelper1(JNIEnv *env, LPWSTR lpwstr, jstring jstr) {
-
-    int len = env->GetStringLength(jstr);
-
-    env->GetStringRegion(jstr, 0, len, lpwstr);
-    lpwstr[len] = '\0';
-
-    return lpwstr;
+/*
+public class TestClass {
+    public int getValue () {
+        return 2;
+    }
 }
-
-LPWSTR J2WHelper(LPWSTR lpw, LPWSTR lpj,  int nChars) {
-    return J2WHelper1(lpw, lpj, 0, nChars);
-}
+*/

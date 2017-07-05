@@ -378,7 +378,7 @@ public class List extends Component implements ItemSelectable, Accessible {
 
         ListPeer peer = (ListPeer)this.peer;
         if (peer != null) {
-            peer.addItem(item, index);
+            peer.add(item, index);
         }
     }
 
@@ -413,7 +413,7 @@ public class List extends Component implements ItemSelectable, Accessible {
     public synchronized void clear() {
         ListPeer peer = (ListPeer)this.peer;
         if (peer != null) {
-            peer.clear();
+            peer.removeAll();
         }
         items = new Vector();
         selected = new int[0];
@@ -718,7 +718,7 @@ public class List extends Component implements ItemSelectable, Accessible {
             multipleMode = b;
             ListPeer peer = (ListPeer)this.peer;
             if (peer != null) {
-                peer.setMultipleSelections(b);
+                peer.setMultipleMode(b);
             }
         }
     }
@@ -768,7 +768,7 @@ public class List extends Component implements ItemSelectable, Accessible {
         synchronized (getTreeLock()) {
             ListPeer peer = (ListPeer)this.peer;
             return (peer != null) ?
-                       peer.preferredSize(rows) :
+                       peer.getPreferredSize(rows) :
                        super.preferredSize();
         }
     }
@@ -818,7 +818,7 @@ public class List extends Component implements ItemSelectable, Accessible {
         synchronized (getTreeLock()) {
             ListPeer peer = (ListPeer)this.peer;
             return (peer != null) ?
-                       peer.minimumSize(rows) :
+                       peer.getMinimumSize(rows) :
                        super.minimumSize();
         }
     }

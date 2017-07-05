@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,10 @@ package java.lang.annotation;
  * interface that manually extends this one does <i>not</i> define
  * an annotation type.  Also note that this interface does not itself
  * define an annotation type.
+ *
+ * More information about annotation types can be found in <i>The
+ * Java&trade; Language Specification, Third Edition</i>, <a
+ * href="http://java.sun.com/docs/books/jls/third_edition/html/interfaces.html#9.6">&sect;9.6</a>.
  *
  * @author  Josh Bloch
  * @since   1.5
