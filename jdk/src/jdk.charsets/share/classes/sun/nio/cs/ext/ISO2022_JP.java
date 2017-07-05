@@ -32,9 +32,12 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
+import sun.nio.cs.DelegatableDecoder;
+import sun.nio.cs.DoubleByte;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.Surrogate;
 import sun.nio.cs.US_ASCII;
+import sun.nio.cs.*;
 import static sun.nio.cs.CharsetMapping.*;
 
 /*

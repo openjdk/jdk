@@ -72,8 +72,8 @@ private:
   //   Itsef: more than one implementors.
   ciInstanceKlass*       _implementor;
 
-  bool compute_injected_fields();
-  void compute_injected_fields_helper();
+  void compute_injected_fields();
+  bool compute_injected_fields_helper();
 
 protected:
   ciInstanceKlass(KlassHandle h_k);
@@ -193,7 +193,7 @@ public:
 
   bool has_injected_fields() {
     if (_has_injected_fields == -1) {
-      return compute_injected_fields();
+      compute_injected_fields();
     }
     return _has_injected_fields > 0 ? true : false;
   }

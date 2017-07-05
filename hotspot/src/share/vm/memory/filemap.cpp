@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,7 +388,8 @@ void FileMapInfo::open_for_write() {
   remove(_full_path);
   int fd = open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
   if (fd < 0) {
-    fail_stop("Unable to create shared archive file %s.", _full_path);
+    fail_stop("Unable to create shared archive file %s: (%s).", _full_path,
+              strerror(errno));
   }
   _fd = fd;
   _file_offset = 0;

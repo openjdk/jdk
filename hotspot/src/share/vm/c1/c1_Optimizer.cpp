@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -528,8 +528,6 @@ public:
   void do_UnsafeGetObject(UnsafeGetObject* x);
   void do_UnsafePutObject(UnsafePutObject* x);
   void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x);
-  void do_UnsafePrefetchRead (UnsafePrefetchRead*  x);
-  void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x);
   void do_ProfileCall    (ProfileCall*     x);
   void do_ProfileReturnType (ProfileReturnType*  x);
   void do_ProfileInvoke  (ProfileInvoke*   x);
@@ -716,8 +714,6 @@ void NullCheckVisitor::do_UnsafePutRaw   (UnsafePutRaw*    x) {}
 void NullCheckVisitor::do_UnsafeGetObject(UnsafeGetObject* x) {}
 void NullCheckVisitor::do_UnsafePutObject(UnsafePutObject* x) {}
 void NullCheckVisitor::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {}
-void NullCheckVisitor::do_UnsafePrefetchRead (UnsafePrefetchRead*  x) {}
-void NullCheckVisitor::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {}
 void NullCheckVisitor::do_ProfileCall    (ProfileCall*     x) { nce()->clear_last_explicit_null_check();
                                                                 nce()->handle_ProfileCall(x); }
 void NullCheckVisitor::do_ProfileReturnType (ProfileReturnType* x) { nce()->handle_ProfileReturnType(x); }
