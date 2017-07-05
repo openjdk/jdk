@@ -387,7 +387,7 @@ c1_ValueMap.hpp                         c1_ValueSet.hpp
 c1_ValueSet.cpp                         c1_ValueSet.hpp
 
 c1_ValueSet.hpp                         allocation.hpp
-c1_ValueSet.hpp                         bitMap.hpp
+c1_ValueSet.hpp                         bitMap.inline.hpp
 c1_ValueSet.hpp                         c1_Instruction.hpp
 
 c1_ValueStack.cpp                       c1_IR.hpp
