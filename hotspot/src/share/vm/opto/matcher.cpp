@@ -141,6 +141,10 @@ void Matcher::verify_new_nodes_only(Node* xroot) {
 
 //---------------------------match---------------------------------------------
 void Matcher::match( ) {
+  if( MaxLabelRootDepth < 100 ) { // Too small?
+    assert(false, "invalid MaxLabelRootDepth, increase it to 100 minimum");
+    MaxLabelRootDepth = 100;
+  }
   // One-time initialization of some register masks.
   init_spill_mask( C->root()->in(1) );
   _return_addr_mask = return_addr();

@@ -1367,11 +1367,11 @@ void ArchDesc::declareClasses(FILE *fp) {
         else if (!strcmp(oper->ideal_type(_globalNames), "ConN")) {
           // Access the locally stored constant
           fprintf(fp,"  virtual intptr_t       constant() const {");
-          fprintf(fp,   " return _c0->make_oopptr()->get_con();");
+          fprintf(fp,   " return _c0->get_ptrtype()->get_con();");
           fprintf(fp, " }\n");
           // Generate query to determine if this pointer is an oop
           fprintf(fp,"  virtual bool           constant_is_oop() const {");
-          fprintf(fp,   " return _c0->make_oopptr()->isa_oop_ptr();");
+          fprintf(fp,   " return _c0->get_ptrtype()->isa_oop_ptr();");
           fprintf(fp, " }\n");
         }
         else if (!strcmp(oper->ideal_type(_globalNames), "ConL")) {
