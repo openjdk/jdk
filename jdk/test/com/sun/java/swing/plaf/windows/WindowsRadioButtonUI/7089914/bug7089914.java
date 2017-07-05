@@ -26,9 +26,9 @@
  */
 
 /* @test
- * @bug 7089914
+ * @bug 7089914 8174720
  * @requires (os.family == "windows")
- * @modules java.desktop/com.sun.java.swing.plaf.windows
+ * @modules java.desktop/com.sun.java.swing.plaf.windows:open
  * @summary Focus on image icons are not visible in javaws cache with high contrast mode
  * @author Sean Chou
  */
