@@ -98,7 +98,8 @@ for i in ${repos} ; do
   (
     (
       if [ "${command}" = "clone" -o "${command}" = "fclone" ] ; then
-        cline="hg clone ${pull_default}/${i} ${i}"
+        pull_newrepo="`echo ${pull_default}/${i} | sed -e 's@\([^:]/\)//*@\1@g'`"
+        cline="hg clone ${pull_newrepo} ${i}"
         echo "# ${cline}"
         ( eval "${cline}" )
       else
@@ -121,7 +122,8 @@ if [ "${repos_extra}" != "" ] ; then
     n=`expr ${n} '+' 1`
     (
       (
-          cline="hg clone ${pull_extra}/${i} ${i}"
+          pull_newextrarepo="`echo ${pull_extra}/${i} | sed -e 's@\([^:]/\)//*@\1@g'`"
+          cline="hg clone ${pull_newextrarepo} ${i}"
           echo "# ${cline}"
           ( eval "${cline}" )
         echo "# exit code $?"

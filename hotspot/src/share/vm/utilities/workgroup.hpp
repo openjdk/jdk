@@ -123,7 +123,7 @@ class AbstractGangTaskWOopQueues : public AbstractGangTask {
 // Class AbstractWorkGang:
 // An abstract class representing a gang of workers.
 // You subclass this to supply an implementation of run_task().
-class AbstractWorkGang: public CHeapObj {
+class AbstractWorkGang: public CHeapObj<mtInternal> {
   // Here's the public interface to this class.
 public:
   // Constructor and destructor.
@@ -402,7 +402,7 @@ public:
 // subtasks will be identified by integer indices, usually elements of an
 // enumeration type.
 
-class SubTasksDone : public CHeapObj {
+class SubTasksDone: public CHeapObj<mtInternal> {
   uint* _tasks;
   uint _n_tasks;
   // _n_threads is used to determine when a sub task is done.

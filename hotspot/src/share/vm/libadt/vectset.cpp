@@ -362,7 +362,7 @@ public:
 };
 
 SetI_ *VectorSet::iterate(uint &elem) const {
-  return new(ResourceObj::C_HEAP) VSetI_(this, elem);
+  return new(ResourceObj::C_HEAP, mtInternal) VSetI_(this, elem);
 }
 
 //=============================================================================

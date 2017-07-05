@@ -77,7 +77,7 @@ class FreeBlock: public HeapBlock {
   void set_link(FreeBlock* link)             { _link = link; }
 };
 
-class CodeHeap : public CHeapObj {
+class CodeHeap : public CHeapObj<mtCode> {
   friend class VMStructs;
  private:
   VirtualSpace _memory;                          // the memory holding the blocks

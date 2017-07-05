@@ -37,7 +37,7 @@ const int free_list_size = 256;
 
 UnhandledOops::UnhandledOops(Thread* thread) {
   _thread = thread;
-  _oop_list = new (ResourceObj::C_HEAP)
+  _oop_list = new (ResourceObj::C_HEAP, mtInternal)
                     GrowableArray<UnhandledOopEntry>(free_list_size, true);
   _level = 0;
 }
