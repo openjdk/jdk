@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,12 +502,25 @@ void objArrayKlass::oop_print_on(oop obj, outputStream* st) {
   }
 }
 
+static int max_objArray_print_length = 4;
 
 void objArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_objArray(), "must be objArray");
+  st->print("a ");
   element_klass()->print_value_on(st);
-  st->print("a [%d] ", objArrayOop(obj)->length());
-  as_klassOop()->klass()->print_value_on(st);
+  int len = objArrayOop(obj)->length();
+  st->print("[%d] ", len);
+  obj->print_address_on(st);
+  if (PrintOopAddress || PrintMiscellaneous && (WizardMode || Verbose)) {
+    st->print("{");
+    for (int i = 0; i < len; i++) {
+      if (i > max_objArray_print_length) {
+        st->print("..."); break;
+      }
+      st->print(" "INTPTR_FORMAT, (intptr_t)(void*)objArrayOop(obj)->obj_at(i));
+    }
+    st->print(" }");
+  }
 }
 
 #endif // PRODUCT

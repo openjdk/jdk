@@ -580,9 +580,7 @@ public:
   virtual void do_oop(oop* p) {
     HeapRegion* to = _g1->heap_region_containing(*p);
     if (to->in_collection_set()) {
-      if (to->rem_set()->add_reference(p, 0)) {
-        _g1->schedule_popular_region_evac(to);
-      }
+      to->rem_set()->add_reference(p, 0);
     }
   }
 };
@@ -1024,9 +1022,8 @@ void HRInto_G1RemSet::print_summary_info() {
     gclog_or_tty->print_cr("    %d occupied cards represented.",
                            blk.occupied());
     gclog_or_tty->print_cr("    Max sz region = [" PTR_FORMAT ", " PTR_FORMAT " )"
-                           " %s, cap = " SIZE_FORMAT "K, occ = " SIZE_FORMAT "K.",
+                           ", cap = " SIZE_FORMAT "K, occ = " SIZE_FORMAT "K.",
                            blk.max_mem_sz_region()->bottom(), blk.max_mem_sz_region()->end(),
-                           (blk.max_mem_sz_region()->popular() ? "POP" : ""),
                            (blk.max_mem_sz_region()->rem_set()->mem_size() + K - 1)/K,
                            (blk.max_mem_sz_region()->rem_set()->occupied() + K - 1)/K);
     gclog_or_tty->print_cr("    Did %d coarsenings.",

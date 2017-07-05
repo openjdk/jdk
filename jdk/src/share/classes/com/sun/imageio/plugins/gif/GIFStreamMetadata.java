@@ -202,7 +202,7 @@ public class GIFStreamMetadata extends GIFMetadata {
         compression_node.appendChild(node);
 
         node = new IIOMetadataNode("Lossless");
-        node.setAttribute("value", "true");
+        node.setAttribute("value", "TRUE");
         compression_node.appendChild(node);
 
         // NumProgressiveScans not in stream

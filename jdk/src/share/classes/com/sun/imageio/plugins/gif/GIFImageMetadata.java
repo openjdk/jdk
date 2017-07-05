@@ -153,7 +153,7 @@ public class GIFImageMetadata extends GIFMetadata {
         node.setAttribute("imageWidth", Integer.toString(imageWidth));
         node.setAttribute("imageHeight", Integer.toString(imageHeight));
         node.setAttribute("interlaceFlag",
-                          interlaceFlag ? "true" : "false");
+                          interlaceFlag ? "TRUE" : "FALSE");
         root.appendChild(node);
 
         // Local color table
@@ -185,9 +185,9 @@ public class GIFImageMetadata extends GIFMetadata {
         node.setAttribute("disposalMethod",
                           disposalMethodNames[disposalMethod]);
         node.setAttribute("userInputFlag",
-                          userInputFlag ? "true" : "false");
+                          userInputFlag ? "TRUE" : "FALSE");
         node.setAttribute("transparentColorFlag",
-                          transparentColorFlag ? "true" : "false");
+                          transparentColorFlag ? "TRUE" : "FALSE");
         node.setAttribute("delayTime",
                           Integer.toString(delayTime));
         node.setAttribute("transparentColorIndex",

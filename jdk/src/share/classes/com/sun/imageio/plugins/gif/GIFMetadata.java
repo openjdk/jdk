@@ -158,13 +158,10 @@ abstract class GIFMetadata extends IIOMetadata {
             }
         }
         String value = attr.getNodeValue();
-        // XXX Should be able to use equals() here instead of
-        // equalsIgnoreCase() but some boolean attributes are incorrectly
-        // set to "true" or "false" by the J2SE core metadata classes
-        // getAsTree() method (which are duplicated above). See bug 5082756.
-        if (value.equalsIgnoreCase("TRUE")) {
+        // Allow lower case booleans for backward compatibility, #5082756
+        if (value.equals("TRUE") || value.equals("true")) {
             return true;
-        } else if (value.equalsIgnoreCase("FALSE")) {
+        } else if (value.equals("FALSE") || value.equals("false")) {
             return false;
         } else {
             fatal(node, "Attribute " + name + " must be 'TRUE' or 'FALSE'!");
