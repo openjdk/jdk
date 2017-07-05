@@ -25,7 +25,7 @@
  * @test
  * @summary Stress test for malloc tracking
  * @key nmt jcmd stress
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build MallocStressTest

@@ -355,36 +355,38 @@ class DefaultPlatformMBeanProvider extends PlatformMBeanProvider {
             }
         });
 
-        /**
-         * Logging facility.
-         */
-        initMBeanList.add(new PlatformComponent<PlatformLoggingMXBean>() {
-            private final Set<String> platformLoggingMXBeanInterfaceNames
+        if (ManagementFactoryHelper.isPlatformLoggingMXBeanAvailable()) {
+            /**
+             * Logging facility.
+             */
+            initMBeanList.add(new PlatformComponent<PlatformLoggingMXBean>() {
+                private final Set<String> platformLoggingMXBeanInterfaceNames
                     = Collections.unmodifiableSet(Collections.singleton(
                             "java.lang.management.PlatformLoggingMXBean"));
 
-            @Override
-            public Set<Class<? extends PlatformLoggingMXBean>> mbeanInterfaces() {
-                return Collections.singleton(PlatformLoggingMXBean.class);
-            }
+                @Override
+                public Set<Class<? extends PlatformLoggingMXBean>> mbeanInterfaces() {
+                    return Collections.singleton(PlatformLoggingMXBean.class);
+                }
 
-            @Override
-            public Set<String> mbeanInterfaceNames() {
-                return platformLoggingMXBeanInterfaceNames;
-            }
+                @Override
+                public Set<String> mbeanInterfaceNames() {
+                    return platformLoggingMXBeanInterfaceNames;
+                }
 
-            @Override
-            public String getObjectNamePattern() {
-                return "java.util.logging:type=Logging";
-            }
+                @Override
+                public String getObjectNamePattern() {
+                    return "java.util.logging:type=Logging";
+                }
 
-            @Override
-            public Map<String, PlatformLoggingMXBean> nameToMBeanMap() {
-                return Collections.singletonMap(
+                @Override
+                public Map<String, PlatformLoggingMXBean> nameToMBeanMap() {
+                    return Collections.singletonMap(
                         "java.util.logging:type=Logging",
                         ManagementFactoryHelper.getPlatformLoggingMXBean());
-            }
-        });
+                }
+            });
+        }
 
         /**
          * Buffer pools.

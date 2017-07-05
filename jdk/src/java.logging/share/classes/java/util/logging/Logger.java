@@ -447,8 +447,7 @@ public class Logger {
 
     private static Logger demandLogger(String name, String resourceBundleName, Class<?> caller) {
         LogManager manager = LogManager.getLogManager();
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null && !SystemLoggerHelper.disableCallerCheck) {
+        if (!SystemLoggerHelper.disableCallerCheck) {
             if (caller.getClassLoader() == null) {
                 return manager.demandSystemLogger(name, resourceBundleName, caller);
             }
@@ -1254,14 +1253,14 @@ public class Logger {
      * with an optional list of message parameters.
      * <p>
      * If the logger is currently enabled for the given message
-     * level then a corresponding LogRecord is created and forwarded
-     * to all the registered output Handler objects.
+     * {@code level} then a corresponding {@code LogRecord} is created and
+     * forwarded to all the registered output {@code Handler} objects.
      * <p>
      * The {@code msg} string is localized using the given resource bundle.
      * If the resource bundle is {@code null}, then the {@code msg} string is not
      * localized.
      *
-     * @param   level   One of the message level identifiers, e.g., SEVERE
+     * @param   level   One of the message level identifiers, e.g., {@code SEVERE}
      * @param   sourceClass    Name of the class that issued the logging request
      * @param   sourceMethod   Name of the method that issued the logging request
      * @param   bundle         Resource bundle to localize {@code msg},
@@ -1278,6 +1277,36 @@ public class Logger {
         LogRecord lr = new LogRecord(level, msg);
         lr.setSourceClassName(sourceClass);
         lr.setSourceMethodName(sourceMethod);
+        if (params != null && params.length != 0) {
+            lr.setParameters(params);
+        }
+        doLog(lr, bundle);
+    }
+
+    /**
+     * Log a message, specifying source class, method, and resource bundle,
+     * with an optional list of message parameters.
+     * <p>
+     * If the logger is currently enabled for the given message
+     * {@code level} then a corresponding {@code LogRecord} is created
+     * and forwarded to all the registered output {@code Handler} objects.
+     * <p>
+     * The {@code msg} string is localized using the given resource bundle.
+     * If the resource bundle is {@code null}, then the {@code msg} string is not
+     * localized.
+     * <p>
+     * @param   level   One of the message level identifiers, e.g., {@code SEVERE}
+     * @param   bundle  Resource bundle to localize {@code msg};
+     *                  can be {@code null}.
+     * @param   msg     The string message (or a key in the message catalog)
+     * @param   params  Parameters to the message (optional, may be none).
+     * @since 1.9
+     */
+    public void logrb(Level level, ResourceBundle bundle, String msg, Object... params) {
+        if (!isLoggable(level)) {
+            return;
+        }
+        LogRecord lr = new LogRecord(level, msg);
         if (params != null && params.length != 0) {
             lr.setParameters(params);
         }
@@ -1330,19 +1359,20 @@ public class Logger {
      * with associated Throwable information.
      * <p>
      * If the logger is currently enabled for the given message
-     * level then the given arguments are stored in a LogRecord
+     * {@code level} then the given arguments are stored in a {@code LogRecord}
      * which is forwarded to all registered output handlers.
      * <p>
      * The {@code msg} string is localized using the given resource bundle.
      * If the resource bundle is {@code null}, then the {@code msg} string is not
      * localized.
      * <p>
-     * Note that the thrown argument is stored in the LogRecord thrown
-     * property, rather than the LogRecord parameters property.  Thus it is
-     * processed specially by output Formatters and is not treated
-     * as a formatting parameter to the LogRecord message property.
+     * Note that the {@code thrown} argument is stored in the {@code LogRecord}
+     * {@code thrown} property, rather than the {@code LogRecord}
+     * {@code parameters} property.  Thus it is
+     * processed specially by output {@code Formatter} objects and is not treated
+     * as a formatting parameter to the {@code LogRecord} {@code message} property.
      *
-     * @param   level   One of the message level identifiers, e.g., SEVERE
+     * @param   level   One of the message level identifiers, e.g., {@code SEVERE}
      * @param   sourceClass    Name of the class that issued the logging request
      * @param   sourceMethod   Name of the method that issued the logging request
      * @param   bundle         Resource bundle to localize {@code msg},
@@ -1359,6 +1389,42 @@ public class Logger {
         LogRecord lr = new LogRecord(level, msg);
         lr.setSourceClassName(sourceClass);
         lr.setSourceMethodName(sourceMethod);
+        lr.setThrown(thrown);
+        doLog(lr, bundle);
+    }
+
+    /**
+     * Log a message, specifying source class, method, and resource bundle,
+     * with associated Throwable information.
+     * <p>
+     * If the logger is currently enabled for the given message
+     * {@code level} then the given arguments are stored in a {@code LogRecord}
+     * which is forwarded to all registered output handlers.
+     * <p>
+     * The {@code msg} string is localized using the given resource bundle.
+     * If the resource bundle is {@code null}, then the {@code msg} string is not
+     * localized.
+     * <p>
+     * Note that the {@code thrown} argument is stored in the {@code LogRecord}
+     * {@code thrown} property, rather than the {@code LogRecord}
+     * {@code parameters} property.  Thus it is
+     * processed specially by output {@code Formatter} objects and is not treated
+     * as a formatting parameter to the {@code LogRecord} {@code message}
+     * property.
+     * <p>
+     * @param   level   One of the message level identifiers, e.g., {@code SEVERE}
+     * @param   bundle  Resource bundle to localize {@code msg};
+     *                  can be {@code null}.
+     * @param   msg     The string message (or a key in the message catalog)
+     * @param   thrown  Throwable associated with the log message.
+     * @since 1.9
+     */
+    public void logrb(Level level, ResourceBundle bundle, String msg,
+            Throwable thrown) {
+        if (!isLoggable(level)) {
+            return;
+        }
+        LogRecord lr = new LogRecord(level, msg);
         lr.setThrown(thrown);
         doLog(lr, bundle);
     }

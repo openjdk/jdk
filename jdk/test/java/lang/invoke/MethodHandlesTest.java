@@ -32,6 +32,7 @@ package test.java.lang.invoke;
 
 import test.java.lang.invoke.remote.RemoteExample;
 import java.lang.invoke.*;
+import static java.lang.invoke.MethodType.methodType;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.*;
 import java.util.*;
@@ -448,6 +449,7 @@ public class MethodHandlesTest {
     }
     public static interface IntExample {
         public void            v0();
+        public default void    vd() { called("vd", this); }
         public static class Impl implements IntExample {
             public void        v0()     { called("Int/v0", this); }
             final String name;
@@ -719,9 +721,10 @@ public class MethodHandlesTest {
     public void testFindSpecial0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("findSpecial");
-        testFindSpecial(SubExample.class, Example.class, void.class, "v0");
-        testFindSpecial(SubExample.class, Example.class, void.class, "pkg_v0");
-        testFindSpecial(RemoteExample.class, PubExample.class, void.class, "Pub/pro_v0");
+        testFindSpecial(SubExample.class, Example.class, void.class, false, "v0");
+        testFindSpecial(SubExample.class, Example.class, void.class, false, "pkg_v0");
+        testFindSpecial(RemoteExample.class, PubExample.class, void.class, false, "Pub/pro_v0");
+        testFindSpecial(Example.class, IntExample.class, void.class, true, "vd");
         // Do some negative testing:
         for (Lookup lookup : new Lookup[]{ PRIVATE, EXAMPLE, PACKAGE, PUBLIC }) {
             testFindSpecial(false, lookup, Object.class, Example.class, void.class, "v0");
@@ -729,11 +732,12 @@ public class MethodHandlesTest {
             testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "<init>", int.class);
             testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "<init>", Void.class);
             testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "s0");
+            testFindSpecial(false, lookup, Example.class, IntExample.class, void.class, "v0");
         }
     }
 
     void testFindSpecial(Class<?> specialCaller,
-                         Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
+                         Class<?> defc, Class<?> ret, boolean dflt, String name, Class<?>... params) throws Throwable {
         if (specialCaller == RemoteExample.class) {
             testFindSpecial(false, EXAMPLE,  specialCaller, defc, ret, name, params);
             testFindSpecial(false, PRIVATE,  specialCaller, defc, ret, name, params);
@@ -742,11 +746,11 @@ public class MethodHandlesTest {
             testFindSpecial(false, PUBLIC,   specialCaller, defc, ret, name, params);
             return;
         }
-        testFindSpecial(true,  EXAMPLE,  specialCaller, defc, ret, name, params);
-        testFindSpecial(true,  PRIVATE,  specialCaller, defc, ret, name, params);
-        testFindSpecial(false, PACKAGE,  specialCaller, defc, ret, name, params);
-        testFindSpecial(false, SUBCLASS, specialCaller, defc, ret, name, params);
-        testFindSpecial(false, PUBLIC,   specialCaller, defc, ret, name, params);
+        testFindSpecial(true,          EXAMPLE,  specialCaller, defc, ret, name, params);
+        testFindSpecial(true,          PRIVATE,  specialCaller, defc, ret, name, params);
+        testFindSpecial(false || dflt, PACKAGE,  specialCaller, defc, ret, name, params);
+        testFindSpecial(false,         SUBCLASS, specialCaller, defc, ret, name, params);
+        testFindSpecial(false,         PUBLIC,   specialCaller, defc, ret, name, params);
     }
     void testFindSpecial(boolean positive, Lookup lookup, Class<?> specialCaller,
                          Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
@@ -1834,6 +1838,7 @@ public class MethodHandlesTest {
     @Test // SLOW
     public void testSpreadArguments() throws Throwable {
         CodeCacheOverflowProcessor.runMHTest(this::testSpreadArguments0);
+        CodeCacheOverflowProcessor.runMHTest(this::testSpreadArguments1);
     }
 
     public void testSpreadArguments0() throws Throwable {
@@ -1842,44 +1847,27 @@ public class MethodHandlesTest {
         for (Class<?> argType : new Class<?>[]{Object.class, Integer.class, int.class}) {
             if (verbosity >= 3)
                 System.out.println("spreadArguments "+argType);
+            Class<?> arrayType = java.lang.reflect.Array.newInstance(argType, 0).getClass();
             for (int nargs = 0; nargs < 50; nargs++) {
                 if (CAN_TEST_LIGHTLY && nargs > 11)  break;
                 for (int pos = 0; pos <= nargs; pos++) {
                     if (CAN_TEST_LIGHTLY && pos > 2 && pos < nargs-2)  continue;
                     if (nargs > 10 && pos > 4 && pos < nargs-4 && pos % 10 != 3)
                         continue;
-                    testSpreadArguments(argType, pos, nargs);
+                    testSpreadArguments(argType, arrayType, pos, nargs);
                 }
             }
         }
     }
-    public void testSpreadArguments(Class<?> argType, int pos, int nargs) throws Throwable {
+    public void testSpreadArguments(Class<?> argType, Class<?> arrayType, int pos, int nargs) throws Throwable {
         countTest();
-        Class<?> arrayType = java.lang.reflect.Array.newInstance(argType, 0).getClass();
         MethodHandle target2 = varargsArray(arrayType, nargs);
         MethodHandle target = target2.asType(target2.type().generic());
         if (verbosity >= 3)
             System.out.println("spread into "+target2+" ["+pos+".."+nargs+"]");
         Object[] args = randomArgs(target2.type().parameterArray());
         // make sure the target does what we think it does:
-        if (pos == 0 && nargs < 5 && !argType.isPrimitive()) {
-            Object[] check = (Object[]) target.invokeWithArguments(args);
-            assertArrayEquals(args, check);
-            switch (nargs) {
-                case 0:
-                    check = (Object[]) (Object) target.invokeExact();
-                    assertArrayEquals(args, check);
-                    break;
-                case 1:
-                    check = (Object[]) (Object) target.invokeExact(args[0]);
-                    assertArrayEquals(args, check);
-                    break;
-                case 2:
-                    check = (Object[]) (Object) target.invokeExact(args[0], args[1]);
-                    assertArrayEquals(args, check);
-                    break;
-            }
-        }
+        checkTarget(argType, pos, nargs, target, args);
         List<Class<?>> newParams = new ArrayList<>(target2.type().parameterList());
         {   // modify newParams in place
             List<Class<?>> spreadParams = newParams.subList(pos, nargs);
@@ -1898,6 +1886,78 @@ public class MethodHandlesTest {
             args1[pos] = ValueConversions.changeArrayType(arrayType, Arrays.copyOfRange(args, pos, args.length));
             returnValue = result.invokeWithArguments(args1);
         }
+        checkReturnValue(argType, args, result, returnValue);
+    }
+    public void testSpreadArguments1() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
+        startTest("spreadArguments/pos");
+        for (Class<?> argType : new Class<?>[]{Object.class, Integer.class, int.class}) {
+            if (verbosity >= 3)
+                System.out.println("spreadArguments "+argType);
+            Class<?> arrayType = java.lang.reflect.Array.newInstance(argType, 0).getClass();
+            for (int nargs = 0; nargs < 50; nargs++) {
+                if (CAN_TEST_LIGHTLY && nargs > 11)  break;
+                for (int pos = 0; pos <= nargs; pos++) {
+                    if (CAN_TEST_LIGHTLY && pos > 2 && pos < nargs-2)  continue;
+                    if (nargs > 10 && pos > 4 && pos < nargs-4 && pos % 10 != 3)
+                        continue;
+                    for (int spr = 1; spr < nargs - pos; ++spr) {
+                        if (spr > 4 && spr != 7 && spr != 11 && spr != 20 && spr < nargs - pos - 4) continue;
+                        testSpreadArguments(argType, arrayType, pos, spr, nargs);
+                    }
+                }
+            }
+        }
+    }
+    public void testSpreadArguments(Class<?> argType, Class<?> arrayType, int pos, int spread, int nargs) throws Throwable {
+        countTest();
+        MethodHandle target2 = varargsArray(arrayType, nargs);
+        MethodHandle target = target2.asType(target2.type().generic());
+        if (verbosity >= 3)
+            System.out.println("spread into " + target2 + " [" + pos + ".." + (pos + spread) + "[");
+        Object[] args = randomArgs(target2.type().parameterArray());
+        // make sure the target does what we think it does:
+        checkTarget(argType, pos, nargs, target, args);
+        List<Class<?>> newParams = new ArrayList<>(target2.type().parameterList());
+        {   // modify newParams in place
+            List<Class<?>> spreadParams = newParams.subList(pos, pos + spread);
+            spreadParams.clear();
+            spreadParams.add(arrayType);
+        }
+        MethodType newType = MethodType.methodType(arrayType, newParams);
+        MethodHandle result = target2.asSpreader(pos, arrayType, spread);
+        assert (result.type() == newType) : Arrays.asList(result, newType);
+        result = result.asType(newType.generic());
+        // args1 has nargs-spread entries, plus one for the to-be-spread array
+        int args1Length = nargs - (spread - 1);
+        Object[] args1 = new Object[args1Length];
+        System.arraycopy(args, 0, args1, 0, pos);
+        args1[pos] = ValueConversions.changeArrayType(arrayType, Arrays.copyOfRange(args, pos, pos + spread));
+        System.arraycopy(args, pos + spread, args1, pos + 1, nargs - spread - pos);
+        Object returnValue = result.invokeWithArguments(args1);
+        checkReturnValue(argType, args, result, returnValue);
+    }
+    private static void checkTarget(Class<?> argType, int pos, int nargs, MethodHandle target, Object[] args) throws Throwable {
+        if (pos == 0 && nargs < 5 && !argType.isPrimitive()) {
+            Object[] check = (Object[]) target.invokeWithArguments(args);
+            assertArrayEquals(args, check);
+            switch (nargs) {
+                case 0:
+                    check = (Object[]) (Object) target.invokeExact();
+                    assertArrayEquals(args, check);
+                    break;
+                case 1:
+                    check = (Object[]) (Object) target.invokeExact(args[0]);
+                    assertArrayEquals(args, check);
+                    break;
+                case 2:
+                    check = (Object[]) (Object) target.invokeExact(args[0], args[1]);
+                    assertArrayEquals(args, check);
+                    break;
+            }
+        }
+    }
+    private static void checkReturnValue(Class<?> argType, Object[] args, MethodHandle result, Object returnValue) {
         String argstr = Arrays.toString(args);
         if (!argType.isPrimitive()) {
             Object[] rv = (Object[]) returnValue;
@@ -1932,6 +1992,7 @@ public class MethodHandlesTest {
     @Test // SLOW
     public void testAsCollector() throws Throwable {
         CodeCacheOverflowProcessor.runMHTest(this::testAsCollector0);
+        CodeCacheOverflowProcessor.runMHTest(this::testAsCollector1);
     }
 
     public void testAsCollector0() throws Throwable {
@@ -1972,6 +2033,51 @@ public class MethodHandlesTest {
 //        assertTrue(returnValue.length == pos+1 && returnValue[pos] instanceof Object[]);
 //        returnValue[pos] = Arrays.asList((Object[]) returnValue[pos]);
 //        collectedArgs[pos] = Arrays.asList((Object[]) collectedArgs[pos]);
+        assertArrayEquals(collectedArgs, returnValue);
+    }
+    public void testAsCollector1() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
+        startTest("asCollector/pos");
+        for (Class<?> argType : new Class<?>[]{Object.class, Integer.class, int.class}) {
+            if (verbosity >= 3)
+                System.out.println("asCollector/pos "+argType);
+            for (int nargs = 0; nargs < 50; nargs++) {
+                if (CAN_TEST_LIGHTLY && nargs > 11)  break;
+                for (int pos = 0; pos <= nargs; pos++) {
+                    if (CAN_TEST_LIGHTLY && pos > 2 && pos < nargs-2)  continue;
+                    if (nargs > 10 && pos > 4 && pos < nargs-4 && pos % 10 != 3)
+                        continue;
+                    for (int coll = 1; coll < nargs - pos; ++coll) {
+                        if (coll > 4 && coll != 7 && coll != 11 && coll != 20 && coll < nargs - pos - 4) continue;
+                        testAsCollector(argType, pos, coll, nargs);
+                    }
+                }
+            }
+        }
+    }
+    public void testAsCollector(Class<?> argType, int pos, int collect, int nargs) throws Throwable {
+        countTest();
+        // fake up a MH with the same type as the desired adapter:
+        MethodHandle fake = varargsArray(nargs);
+        fake = changeArgTypes(fake, argType);
+        MethodType newType = fake.type();
+        Object[] args = randomArgs(newType.parameterArray());
+        // here is what should happen:
+        // new arg list has "collect" less arguments, but one extra for collected arguments array
+        int collectedLength = nargs-(collect-1);
+        Object[] collectedArgs = new Object[collectedLength];
+        System.arraycopy(args, 0, collectedArgs, 0, pos);
+        collectedArgs[pos] = Arrays.copyOfRange(args, pos, pos+collect);
+        System.arraycopy(args, pos+collect, collectedArgs, pos+1, args.length-(pos+collect));
+        // here is the MH which will witness the collected argument part (not tail!):
+        MethodHandle target = varargsArray(collectedLength);
+        target = changeArgTypes(target, 0, pos, argType);
+        target = changeArgTypes(target, pos, pos+1, Object[].class);
+        target = changeArgTypes(target, pos+1, collectedLength, argType);
+        if (verbosity >= 3)
+            System.out.println("collect "+collect+" from "+Arrays.asList(args)+" ["+pos+".."+(pos+collect)+"[");
+        MethodHandle result = target.asCollector(pos, Object[].class, collect).asType(newType);
+        Object[] returnValue = (Object[]) result.invokeWithArguments(args);
         assertArrayEquals(collectedArgs, returnValue);
     }
 
@@ -2117,21 +2223,29 @@ public class MethodHandlesTest {
     public void testCollectArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("collectArguments");
-        testFoldOrCollectArguments(true);
+        testFoldOrCollectArguments(true, false);
     }
 
     @Test
     public void testFoldArguments() throws Throwable {
         CodeCacheOverflowProcessor.runMHTest(this::testFoldArguments0);
+        CodeCacheOverflowProcessor.runMHTest(this::testFoldArguments1);
     }
 
     public void testFoldArguments0() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("foldArguments");
-        testFoldOrCollectArguments(false);
+        testFoldOrCollectArguments(false, false);
     }
 
-    void testFoldOrCollectArguments(boolean isCollect) throws Throwable {
+    public void testFoldArguments1() throws Throwable {
+        if (CAN_SKIP_WORKING) return;
+        startTest("foldArguments/pos");
+        testFoldOrCollectArguments(false, true);
+    }
+
+    void testFoldOrCollectArguments(boolean isCollect, boolean withFoldPos) throws Throwable {
+        assert !(isCollect && withFoldPos); // exclude illegal argument combination
         for (Class<?> lastType : new Class<?>[]{ Object.class, String.class, int.class }) {
             for (Class<?> collectType : new Class<?>[]{ Object.class, String.class, int.class, void.class }) {
                 int maxArity = 10;
@@ -2146,7 +2260,7 @@ public class MethodHandlesTest {
                         if (!mixArgs(argTypes, mix, argTypesSeen))  continue;
                         for (int collect = 0; collect <= nargs; collect++) {
                             for (int pos = 0; pos <= nargs - collect; pos++) {
-                                testFoldOrCollectArguments(argTypes, pos, collect, collectType, lastType, isCollect);
+                                testFoldOrCollectArguments(argTypes, pos, collect, collectType, lastType, isCollect, withFoldPos);
                             }
                         }
                     }
@@ -2186,13 +2300,14 @@ public class MethodHandlesTest {
                                     int pos, int fold, // position and length of the folded arguments
                                     Class<?> combineType, // type returned from the combiner
                                     Class<?> lastType,  // type returned from the target
-                                    boolean isCollect) throws Throwable {
+                                    boolean isCollect,
+                                    boolean withFoldPos) throws Throwable {
         int nargs = argTypes.size();
-        if (pos != 0 && !isCollect)  return;  // can fold only at pos=0 for now
+        if (pos != 0 && !isCollect && !withFoldPos)  return;  // test MethodHandles.foldArguments(MH,MH) only for pos=0
         countTest();
         List<Class<?>> combineArgTypes = argTypes.subList(pos, pos + fold);
         List<Class<?>> targetArgTypes = new ArrayList<>(argTypes);
-        if (isCollect)  // does targret see arg[pos..pos+cc-1]?
+        if (isCollect)  // does target see arg[pos..pos+cc-1]?
             targetArgTypes.subList(pos, pos + fold).clear();
         if (combineType != void.class)
             targetArgTypes.add(pos, combineType);
@@ -2205,7 +2320,7 @@ public class MethodHandlesTest {
         if (isCollect)
             target2 = MethodHandles.collectArguments(target, pos, combine);
         else
-            target2 = MethodHandles.foldArguments(target, combine);
+            target2 = withFoldPos ? MethodHandles.foldArguments(target, pos, combine) : MethodHandles.foldArguments(target, combine);
         // Simulate expected effect of combiner on arglist:
         List<Object> expectedList = new ArrayList<>(argsToPass);
         List<Object> argsToFold = expectedList.subList(pos, pos + fold);
@@ -2541,6 +2656,203 @@ public class MethodHandlesTest {
     }
 
     @Test
+    public void testGenericLoopCombinator() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testGenericLoopCombinator0);
+    }
+    public void testGenericLoopCombinator0() throws Throwable {
+        if (CAN_SKIP_WORKING) return;
+        startTest("loop");
+        // Test as follows:
+        // * Have an increasing number of loop-local state. Local state type diversity grows with the number.
+        // * Initializers set the starting value of loop-local state from the corresponding loop argument.
+        // * For each local state element, there is a predicate - for all state combinations, exercise all predicates.
+        // * Steps modify each local state element in each iteration.
+        // * Finalizers group all local state elements into a resulting array. Verify end values.
+        // * Exercise both pre- and post-checked loops.
+        // Local state types, start values, predicates, and steps:
+        // * int a, 0, a < 7, a = a + 1
+        // * double b, 7.0, b > 0.5, b = b / 2.0
+        // * String c, "start", c.length <= 9, c = c + a
+        final Class<?>[] argTypes = new Class<?>[] {int.class, double.class, String.class};
+        final Object[][] args = new Object[][] {
+            new Object[]{0              },
+            new Object[]{0, 7.0         },
+            new Object[]{0, 7.0, "start"}
+        };
+        // These are the expected final state tuples for argument type tuple / predicate combinations, for pre- and
+        // post-checked loops:
+        final Object[][] preCheckedResults = new Object[][] {
+            new Object[]{7                           }, // (int) / int
+            new Object[]{7, 0.0546875                }, // (int,double) / int
+            new Object[]{5, 0.4375                   }, // (int,double) / double
+            new Object[]{7, 0.0546875, "start1234567"}, // (int,double,String) / int
+            new Object[]{5, 0.4375,    "start1234"   }, // (int,double,String) / double
+            new Object[]{6, 0.109375,  "start12345"  }  // (int,double,String) / String
+        };
+        final Object[][] postCheckedResults = new Object[][] {
+            new Object[]{7                         }, // (int) / int
+            new Object[]{7, 0.109375               }, // (int,double) / int
+            new Object[]{4, 0.4375                 }, // (int,double) / double
+            new Object[]{7, 0.109375, "start123456"}, // (int,double,String) / int
+            new Object[]{4, 0.4375,   "start123"   }, // (int,double,String) / double
+            new Object[]{5, 0.21875,  "start12345" }  // (int,double,String) / String
+        };
+        final Lookup l = MethodHandles.lookup();
+        final Class<?> MHT = MethodHandlesTest.class;
+        final Class<?> B = boolean.class;
+        final Class<?> I = int.class;
+        final Class<?> D = double.class;
+        final Class<?> S = String.class;
+        final MethodHandle hip = l.findStatic(MHT, "loopIntPred", methodType(B, I));
+        final MethodHandle hdp = l.findStatic(MHT, "loopDoublePred", methodType(B, I, D));
+        final MethodHandle hsp = l.findStatic(MHT, "loopStringPred", methodType(B, I, D, S));
+        final MethodHandle his = l.findStatic(MHT, "loopIntStep", methodType(I, I));
+        final MethodHandle hds = l.findStatic(MHT, "loopDoubleStep", methodType(D, I, D));
+        final MethodHandle hss = l.findStatic(MHT, "loopStringStep", methodType(S, I, D, S));
+        final MethodHandle[] preds = new MethodHandle[] {hip, hdp, hsp};
+        final MethodHandle[] steps = new MethodHandle[] {his, hds, hss};
+        for (int nargs = 1, useResultsStart = 0; nargs <= argTypes.length; useResultsStart += nargs++) {
+            Class<?>[] useArgTypes = Arrays.copyOf(argTypes, nargs, Class[].class);
+            MethodHandle[] usePreds = Arrays.copyOf(preds, nargs, MethodHandle[].class);
+            MethodHandle[] useSteps = Arrays.copyOf(steps, nargs, MethodHandle[].class);
+            Object[] useArgs = args[nargs - 1];
+            Object[][] usePreCheckedResults = new Object[nargs][];
+            Object[][] usePostCheckedResults = new Object[nargs][];
+            System.arraycopy(preCheckedResults, useResultsStart, usePreCheckedResults, 0, nargs);
+            System.arraycopy(postCheckedResults, useResultsStart, usePostCheckedResults, 0, nargs);
+            testGenericLoopCombinator(nargs, useArgTypes, usePreds, useSteps, useArgs, usePreCheckedResults,
+                    usePostCheckedResults);
+        }
+    }
+    void testGenericLoopCombinator(int nargs, Class<?>[] argTypes, MethodHandle[] preds, MethodHandle[] steps,
+                                   Object[] args, Object[][] preCheckedResults, Object[][] postCheckedResults)
+            throws Throwable {
+        List<Class<?>> lArgTypes = Arrays.asList(argTypes);
+        // Predicate and step handles are passed in as arguments, initializer and finalizer handles are constructed here
+        // from the available information.
+        MethodHandle[] inits = new MethodHandle[nargs];
+        for (int i = 0; i < nargs; ++i) {
+            MethodHandle h;
+            // Initializers are meant to return whatever they are passed at a given argument position. This means that
+            // additional arguments may have to be appended and prepended.
+            h = MethodHandles.identity(argTypes[i]);
+            if (i < nargs - 1) {
+                h = MethodHandles.dropArguments(h, 1, lArgTypes.subList(i + 1, nargs));
+            }
+            if (i > 0) {
+                h = MethodHandles.dropArguments(h, 0, lArgTypes.subList(0, i));
+            }
+            inits[i] = h;
+        }
+        // Finalizers are all meant to collect all of the loop-local state in a single array and return that. Local
+        // state is passed before the loop args. Construct such a finalizer by first taking a varargsArray collector for
+        // the number of local state arguments, and then appending the loop args as to-be-dropped arguments.
+        MethodHandle[] finis = new MethodHandle[nargs];
+        MethodHandle genericFini = MethodHandles.dropArguments(
+                varargsArray(nargs).asType(methodType(Object[].class, lArgTypes)), nargs, lArgTypes);
+        Arrays.fill(finis, genericFini);
+        // The predicate and step handles' signatures need to be extended. They currently just accept local state args;
+        // append possibly missing local state args and loop args using dropArguments.
+        for (int i = 0; i < nargs; ++i) {
+            List<Class<?>> additionalLocalStateArgTypes = lArgTypes.subList(i + 1, nargs);
+            preds[i] = MethodHandles.dropArguments(
+                    MethodHandles.dropArguments(preds[i], i + 1, additionalLocalStateArgTypes), nargs, lArgTypes);
+            steps[i] = MethodHandles.dropArguments(
+                    MethodHandles.dropArguments(steps[i], i + 1, additionalLocalStateArgTypes), nargs, lArgTypes);
+        }
+        // Iterate over all of the predicates, using only one of them at a time.
+        for (int i = 0; i < nargs; ++i) {
+            MethodHandle[] usePreds;
+            if (nargs == 1) {
+                usePreds = preds;
+            } else {
+                // Create an all-null preds array, and only use one predicate in this iteration. The null entries will
+                // be substituted with true predicates by the loop combinator.
+                usePreds = new MethodHandle[nargs];
+                usePreds[i] = preds[i];
+            }
+            // Go for it.
+            if (verbosity >= 3) {
+                System.out.println("calling loop for argument types " + lArgTypes + " with predicate at index " + i);
+                if (verbosity >= 5) {
+                    System.out.println("predicates: " + Arrays.asList(usePreds));
+                }
+            }
+            MethodHandle[] preInits = new MethodHandle[nargs + 1];
+            MethodHandle[] prePreds = new MethodHandle[nargs + 1];
+            MethodHandle[] preSteps = new MethodHandle[nargs + 1];
+            MethodHandle[] preFinis = new MethodHandle[nargs + 1];
+            System.arraycopy(inits, 0, preInits, 1, nargs);
+            System.arraycopy(usePreds, 0, prePreds, 0, nargs); // preds are offset by 1 for pre-checked loops
+            System.arraycopy(steps, 0, preSteps, 1, nargs);
+            System.arraycopy(finis, 0, preFinis, 0, nargs); // finis are also offset by 1 for pre-checked loops
+            // Convert to clause-major form.
+            MethodHandle[][] preClauses = new MethodHandle[nargs+1][4];
+            MethodHandle[][] postClauses = new MethodHandle[nargs][4];
+            toClauseMajor(preClauses, preInits, preSteps, prePreds, preFinis);
+            toClauseMajor(postClauses, inits, steps, usePreds, finis);
+            MethodHandle pre = MethodHandles.loop(preClauses);
+            MethodHandle post = MethodHandles.loop(postClauses);
+            Object[] preResults = (Object[]) pre.invokeWithArguments(args);
+            if (verbosity >= 4) {
+                System.out.println("pre-checked: expected " + Arrays.asList(preCheckedResults[i]) + ", actual " +
+                        Arrays.asList(preResults));
+            }
+            Object[] postResults = (Object[]) post.invokeWithArguments(args);
+            if (verbosity >= 4) {
+                System.out.println("post-checked: expected " + Arrays.asList(postCheckedResults[i]) + ", actual " +
+                        Arrays.asList(postResults));
+            }
+            assertArrayEquals(preCheckedResults[i], preResults);
+            assertArrayEquals(postCheckedResults[i], postResults);
+        }
+    }
+    static void toClauseMajor(MethodHandle[][] clauses, MethodHandle[] init, MethodHandle[] step, MethodHandle[] pred, MethodHandle[] fini) {
+        for (int i = 0; i < clauses.length; ++i) {
+            clauses[i][0] = init[i];
+            clauses[i][1] = step[i];
+            clauses[i][2] = pred[i];
+            clauses[i][3] = fini[i];
+        }
+    }
+    static boolean loopIntPred(int a) {
+        if (verbosity >= 5) {
+            System.out.println("int pred " + a + " -> " + (a < 7));
+        }
+        return a < 7;
+    }
+    static boolean loopDoublePred(int a, double b) {
+        if (verbosity >= 5) {
+            System.out.println("double pred (a=" + a + ") " + b + " -> " + (b > 0.5));
+        }
+        return b > 0.5;
+    }
+    static boolean loopStringPred(int a, double b, String c) {
+        if (verbosity >= 5) {
+            System.out.println("String pred (a=" + a + ",b=" + b + ") " + c + " -> " + (c.length() <= 9));
+        }
+        return c.length() <= 9;
+    }
+    static int loopIntStep(int a) {
+        if (verbosity >= 5) {
+            System.out.println("int step " + a + " -> " + (a + 1));
+        }
+        return a + 1;
+    }
+    static double loopDoubleStep(int a, double b) {
+        if (verbosity >= 5) {
+            System.out.println("double step (a=" + a + ") " + b + " -> " + (b / 2.0));
+        }
+        return b / 2.0;
+    }
+    static String loopStringStep(int a, double b, String c) {
+        if (verbosity >= 5) {
+            System.out.println("String step (a=" + a + ",b=" + b + ") " + c + " -> " + (c + a));
+        }
+        return c + a;
+    }
+
+    @Test
     public void testThrowException() throws Throwable {
         CodeCacheOverflowProcessor.runMHTest(this::testThrowException0);
     }
@@ -2576,12 +2888,107 @@ public class MethodHandlesTest {
     }
 
     @Test
+    public void testTryFinally() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::testTryFinally0);
+    }
+    public void testTryFinally0() throws Throwable {
+        if (CAN_SKIP_WORKING) return;
+        startTest("tryFinally");
+        String inputMessage = "returned";
+        String augmentedMessage = "augmented";
+        String thrownMessage = "thrown";
+        String rethrownMessage = "rethrown";
+        // Test these cases:
+        // * target returns, cleanup passes through
+        // * target returns, cleanup augments
+        // * target throws, cleanup augments and returns
+        // * target throws, cleanup augments and rethrows
+        MethodHandle target = MethodHandles.identity(String.class);
+        MethodHandle targetThrow = MethodHandles.dropArguments(
+                MethodHandles.throwException(String.class, Exception.class).bindTo(new Exception(thrownMessage)), 0, String.class);
+        MethodHandle cleanupPassThrough = MethodHandles.dropArguments(MethodHandles.identity(String.class), 0,
+                Throwable.class, String.class);
+        MethodHandle cleanupAugment = MethodHandles.dropArguments(MethodHandles.constant(String.class, augmentedMessage),
+                0, Throwable.class, String.class, String.class);
+        MethodHandle cleanupCatch = MethodHandles.dropArguments(MethodHandles.constant(String.class, thrownMessage), 0,
+                Throwable.class, String.class, String.class);
+        MethodHandle cleanupThrow = MethodHandles.dropArguments(MethodHandles.throwException(String.class, Exception.class).
+                bindTo(new Exception(rethrownMessage)), 0, Throwable.class, String.class, String.class);
+        testTryFinally(target, cleanupPassThrough, inputMessage, inputMessage, false);
+        testTryFinally(target, cleanupAugment, inputMessage, augmentedMessage, false);
+        testTryFinally(targetThrow, cleanupCatch, inputMessage, thrownMessage, true);
+        testTryFinally(targetThrow, cleanupThrow, inputMessage, rethrownMessage, true);
+        // Test the same cases as above for void targets and cleanups.
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        Class<?> C = this.getClass();
+        MethodType targetType = methodType(void.class, String[].class);
+        MethodType cleanupType = methodType(void.class, Throwable.class, String[].class);
+        MethodHandle vtarget = lookup.findStatic(C, "vtarget", targetType);
+        MethodHandle vtargetThrow = lookup.findStatic(C, "vtargetThrow", targetType);
+        MethodHandle vcleanupPassThrough = lookup.findStatic(C, "vcleanupPassThrough", cleanupType);
+        MethodHandle vcleanupAugment = lookup.findStatic(C, "vcleanupAugment", cleanupType);
+        MethodHandle vcleanupCatch = lookup.findStatic(C, "vcleanupCatch", cleanupType);
+        MethodHandle vcleanupThrow = lookup.findStatic(C, "vcleanupThrow", cleanupType);
+        testTryFinally(vtarget, vcleanupPassThrough, inputMessage, inputMessage, false);
+        testTryFinally(vtarget, vcleanupAugment, inputMessage, augmentedMessage, false);
+        testTryFinally(vtargetThrow, vcleanupCatch, inputMessage, thrownMessage, true);
+        testTryFinally(vtargetThrow, vcleanupThrow, inputMessage, rethrownMessage, true);
+    }
+    void testTryFinally(MethodHandle target, MethodHandle cleanup, String input, String msg, boolean mustCatch)
+            throws Throwable {
+        countTest();
+        MethodHandle tf = MethodHandles.tryFinally(target, cleanup);
+        String result = null;
+        boolean isVoid = target.type().returnType() == void.class;
+        String[] argArray = new String[]{input};
+        try {
+            if (isVoid) {
+                tf.invoke(argArray);
+            } else {
+                result = (String) tf.invoke(input);
+            }
+        } catch (Throwable t) {
+            assertTrue(mustCatch);
+            assertEquals(msg, t.getMessage());
+            return;
+        }
+        assertFalse(mustCatch);
+        if (isVoid) {
+            assertEquals(msg, argArray[0]);
+        } else {
+            assertEquals(msg, result);
+        }
+    }
+    static void vtarget(String[] a) {
+        // naught, akin to identity
+    }
+    static void vtargetThrow(String[] a) throws Exception {
+        throw new Exception("thrown");
+    }
+    static void vcleanupPassThrough(Throwable t, String[] a) {
+        assertNull(t);
+        // naught, akin to identity
+    }
+    static void vcleanupAugment(Throwable t, String[] a) {
+        assertNull(t);
+        a[0] = "augmented";
+    }
+    static void vcleanupCatch(Throwable t, String[] a) {
+        assertNotNull(t);
+        a[0] = "caught";
+    }
+    static void vcleanupThrow(Throwable t, String[] a) throws Exception {
+        assertNotNull(t);
+        throw new Exception("rethrown");
+    }
+
+    @Test
     public void testInterfaceCast() throws Throwable {
         CodeCacheOverflowProcessor.runMHTest(this::testInterfaceCast0);
     }
 
     public void testInterfaceCast0() throws Throwable {
-        //if (CAN_SKIP_WORKING)  return;
+        if (CAN_SKIP_WORKING)  return;
         startTest("interfaceCast");
         assert( (((Object)"foo") instanceof CharSequence));
         assert(!(((Object)"foo") instanceof Iterable));

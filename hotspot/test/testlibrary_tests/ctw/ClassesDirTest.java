@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8012447
- * @library /testlibrary /../../test/lib /testlibrary/ctw/src
+ * @library /testlibrary /test/lib /testlibrary/ctw/src
  * @modules java.base/sun.misc
  *          java.base/sun.reflect
  *          java.management

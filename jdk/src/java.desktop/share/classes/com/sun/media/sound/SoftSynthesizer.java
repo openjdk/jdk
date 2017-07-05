@@ -671,6 +671,40 @@ public final class SoftSynthesizer implements AudioSynthesizer,
             actions.add(new PrivilegedAction<InputStream>() {
                 public InputStream run() {
                     if (System.getProperties().getProperty("os.name")
+                            .startsWith("Linux")) {
+
+                        File[] systemSoundFontsDir = new File[] {
+                            /* Arch, Fedora, Mageia */
+                            new File("/usr/share/soundfonts/"),
+                            new File("/usr/local/share/soundfonts/"),
+                            /* Debian, Gentoo, OpenSUSE, Ubuntu */
+                            new File("/usr/share/sounds/sf2/"),
+                            new File("/usr/local/share/sounds/sf2/"),
+                        };
+
+                        /*
+                         * Look for a default.sf2
+                         */
+                        for (File systemSoundFontDir : systemSoundFontsDir) {
+                            if (systemSoundFontDir.exists()) {
+                                File defaultSoundFont = new File(systemSoundFontDir, "default.sf2");
+                                if (defaultSoundFont.exists()) {
+                                    try {
+                                        return new FileInputStream(defaultSoundFont);
+                                    } catch (IOException e) {
+                                        // continue with lookup
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return null;
+                }
+            });
+
+            actions.add(new PrivilegedAction<InputStream>() {
+                public InputStream run() {
+                    if (System.getProperties().getProperty("os.name")
                             .startsWith("Windows")) {
                         File gm_dls = new File(System.getenv("SystemRoot")
                                 + "\\system32\\drivers\\gm.dls");

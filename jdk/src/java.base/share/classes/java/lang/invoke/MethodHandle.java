@@ -872,13 +872,54 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      * @see #asCollector
      */
     public MethodHandle asSpreader(Class<?> arrayType, int arrayLength) {
-        MethodType postSpreadType = asSpreaderChecks(arrayType, arrayLength);
-        int arity = type().parameterCount();
-        int spreadArgPos = arity - arrayLength;
+        return asSpreader(type().parameterCount() - arrayLength, arrayType, arrayLength);
+    }
+
+    /**
+     * Makes an <em>array-spreading</em> method handle, which accepts an array argument at a given position and spreads
+     * its elements as positional arguments in place of the array. The new method handle adapts, as its <i>target</i>,
+     * the current method handle. The type of the adapter will be the same as the type of the target, except that the
+     * {@code arrayLength} parameters of the target's type, starting at the zero-based position {@code spreadArgPos},
+     * are replaced by a single array parameter of type {@code arrayType}.
+     * <p>
+     * This method behaves very much like {@link #asSpreader(Class, int)}, but accepts an additional {@code spreadArgPos}
+     * argument to indicate at which position in the parameter list the spreading should take place.
+     * <p>
+     * @apiNote Example:
+     * <blockquote><pre>{@code
+    MethodHandle compare = LOOKUP.findStatic(Objects.class, "compare", methodType(int.class, Object.class, Object.class, Comparator.class));
+    MethodHandle compare2FromArray = compare.asSpreader(0, Object[].class, 2);
+    Object[] ints = new Object[]{3, 9, 7, 7};
+    Comparator<Integer> cmp = (a, b) -> a - b;
+    assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 0, 2), cmp) < 0);
+    assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 1, 3), cmp) > 0);
+    assertTrue((int) compare2FromArray.invoke(Arrays.copyOfRange(ints, 2, 4), cmp) == 0);
+     * }</pre></blockquote>
+     * @param spreadArgPos the position (zero-based index) in the argument list at which spreading should start.
+     * @param arrayType usually {@code Object[]}, the type of the array argument from which to extract the spread arguments
+     * @param arrayLength the number of arguments to spread from an incoming array argument
+     * @return a new method handle which spreads an array argument at a given position,
+     *         before calling the original method handle
+     * @throws NullPointerException if {@code arrayType} is a null reference
+     * @throws IllegalArgumentException if {@code arrayType} is not an array type,
+     *         or if target does not have at least
+     *         {@code arrayLength} parameter types,
+     *         or if {@code arrayLength} is negative,
+     *         or if {@code spreadArgPos} has an illegal value (negative, or together with arrayLength exceeding the
+     *         number of arguments),
+     *         or if the resulting method handle's type would have
+     *         <a href="MethodHandle.html#maxarity">too many parameters</a>
+     * @throws WrongMethodTypeException if the implied {@code asType} call fails
+     *
+     * @see #asSpreader(Class, int)
+     * @since 9
+     */
+    public MethodHandle asSpreader(int spreadArgPos, Class<?> arrayType, int arrayLength) {
+        MethodType postSpreadType = asSpreaderChecks(arrayType, spreadArgPos, arrayLength);
         MethodHandle afterSpread = this.asType(postSpreadType);
         BoundMethodHandle mh = afterSpread.rebind();
         LambdaForm lform = mh.editor().spreadArgumentsForm(1 + spreadArgPos, arrayType, arrayLength);
-        MethodType preSpreadType = postSpreadType.replaceParameterTypes(spreadArgPos, arity, arrayType);
+        MethodType preSpreadType = postSpreadType.replaceParameterTypes(spreadArgPos, spreadArgPos + arrayLength, arrayType);
         return mh.copyWith(preSpreadType, lform);
     }
 
@@ -886,15 +927,18 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      * See if {@code asSpreader} can be validly called with the given arguments.
      * Return the type of the method handle call after spreading but before conversions.
      */
-    private MethodType asSpreaderChecks(Class<?> arrayType, int arrayLength) {
+    private MethodType asSpreaderChecks(Class<?> arrayType, int pos, int arrayLength) {
         spreadArrayChecks(arrayType, arrayLength);
         int nargs = type().parameterCount();
         if (nargs < arrayLength || arrayLength < 0)
             throw newIllegalArgumentException("bad spread array length");
+        if (pos < 0 || pos + arrayLength > nargs) {
+            throw newIllegalArgumentException("bad spread position");
+        }
         Class<?> arrayElement = arrayType.getComponentType();
         MethodType mtype = type();
         boolean match = true, fail = false;
-        for (int i = nargs - arrayLength; i < nargs; i++) {
+        for (int i = pos; i < arrayLength; i++) {
             Class<?> ptype = mtype.parameterType(i);
             if (ptype != arrayElement) {
                 match = false;
@@ -905,7 +949,7 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
             }
         }
         if (match)  return mtype;
-        MethodType needType = mtype.asSpreaderType(arrayType, arrayLength);
+        MethodType needType = mtype.asSpreaderType(arrayType, pos, arrayLength);
         if (!fail)  return needType;
         // elicit an error:
         this.asType(needType);
@@ -998,10 +1042,53 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * @see #asVarargsCollector
      */
     public MethodHandle asCollector(Class<?> arrayType, int arrayLength) {
-        asCollectorChecks(arrayType, arrayLength);
-        int collectArgPos = type().parameterCount() - 1;
+        return asCollector(type().parameterCount() - 1, arrayType, arrayLength);
+    }
+
+    /**
+     * Makes an <em>array-collecting</em> method handle, which accepts a given number of positional arguments starting
+     * at a given position, and collects them into an array argument. The new method handle adapts, as its
+     * <i>target</i>, the current method handle. The type of the adapter will be the same as the type of the target,
+     * except that the parameter at the position indicated by {@code collectArgPos} (usually of type {@code arrayType})
+     * is replaced by {@code arrayLength} parameters whose type is element type of {@code arrayType}.
+     * <p>
+     * This method behaves very much like {@link #asCollector(Class, int)}, but differs in that its {@code
+     * collectArgPos} argument indicates at which position in the parameter list arguments should be collected. This
+     * index is zero-based.
+     * <p>
+     * @apiNote Examples:
+     * <blockquote><pre>{@code
+    StringWriter swr = new StringWriter();
+    MethodHandle swWrite = LOOKUP.findVirtual(StringWriter.class, "write", methodType(void.class, char[].class, int.class, int.class)).bindTo(swr);
+    MethodHandle swWrite4 = swWrite.asCollector(0, char[].class, 4);
+    swWrite4.invoke('A', 'B', 'C', 'D', 1, 2);
+    assertEquals("BC", swr.toString());
+    swWrite4.invoke('P', 'Q', 'R', 'S', 0, 4);
+    assertEquals("BCPQRS", swr.toString());
+    swWrite4.invoke('W', 'X', 'Y', 'Z', 3, 1);
+    assertEquals("BCPQRSZ", swr.toString());
+     * }</pre></blockquote>
+     * @param collectArgPos the zero-based position in the parameter list at which to start collecting.
+     * @param arrayType often {@code Object[]}, the type of the array argument which will collect the arguments
+     * @param arrayLength the number of arguments to collect into a new array argument
+     * @return a new method handle which collects some arguments
+     *         into an array, before calling the original method handle
+     * @throws NullPointerException if {@code arrayType} is a null reference
+     * @throws IllegalArgumentException if {@code arrayType} is not an array type
+     *         or {@code arrayType} is not assignable to this method handle's array parameter type,
+     *         or {@code arrayLength} is not a legal array size,
+     *         or {@code collectArgPos} has an illegal value (negative, or greater than the number of arguments),
+     *         or the resulting method handle's type would have
+     *         <a href="MethodHandle.html#maxarity">too many parameters</a>
+     * @throws WrongMethodTypeException if the implied {@code asType} call fails
+     *
+     * @see #asCollector(Class, int)
+     * @since 9
+     */
+    public MethodHandle asCollector(int collectArgPos, Class<?> arrayType, int arrayLength) {
+        asCollectorChecks(arrayType, collectArgPos, arrayLength);
         BoundMethodHandle mh = rebind();
-        MethodType resultType = type().asCollectorType(arrayType, arrayLength);
+        MethodType resultType = type().asCollectorType(arrayType, collectArgPos, arrayLength);
         MethodHandle newArray = MethodHandleImpl.varargsArray(arrayType, arrayLength);
         LambdaForm lform = mh.editor().collectArgumentArrayForm(1 + collectArgPos, newArray);
         if (lform != null) {
@@ -1015,15 +1102,18 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * See if {@code asCollector} can be validly called with the given arguments.
      * Return false if the last parameter is not an exact match to arrayType.
      */
-    /*non-public*/ boolean asCollectorChecks(Class<?> arrayType, int arrayLength) {
+    /*non-public*/ boolean asCollectorChecks(Class<?> arrayType, int pos, int arrayLength) {
         spreadArrayChecks(arrayType, arrayLength);
         int nargs = type().parameterCount();
-        if (nargs != 0) {
-            Class<?> lastParam = type().parameterType(nargs-1);
-            if (lastParam == arrayType)  return true;
-            if (lastParam.isAssignableFrom(arrayType))  return false;
+        if (pos < 0 || pos >= nargs) {
+            throw newIllegalArgumentException("bad collect position");
         }
-        throw newIllegalArgumentException("array type not assignable to trailing argument", this, arrayType);
+        if (nargs != 0) {
+            Class<?> param = type().parameterType(pos);
+            if (param == arrayType)  return true;
+            if (param.isAssignableFrom(arrayType))  return false;
+        }
+        throw newIllegalArgumentException("array type not assignable to argument", this, arrayType);
     }
 
     /**
@@ -1178,7 +1268,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      */
     public MethodHandle asVarargsCollector(Class<?> arrayType) {
         Objects.requireNonNull(arrayType);
-        boolean lastMatch = asCollectorChecks(arrayType, 0);
+        boolean lastMatch = asCollectorChecks(arrayType, type().parameterCount() - 1, 0);
         if (isVarargsCollector() && lastMatch)
             return this;
         return MethodHandleImpl.makeVarargsCollector(this, arrayType);
@@ -1341,7 +1431,6 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
         // cannot be cracked into MethodHandleInfo.
         assert viewAsTypeChecks(newType, strict);
         BoundMethodHandle mh = rebind();
-        assert(!((MethodHandle)mh instanceof DirectMethodHandle));
         return mh.copyWith(newType, mh.form);
     }
 

@@ -40,7 +40,7 @@ import uncommontrap.Verifier;
 /*
  * @test
  * @bug 8030976 8059226
- * @library /testlibrary /compiler/testlibrary /../../test/lib
+ * @library /testlibrary /compiler/testlibrary /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/sun.misc
  *          java.compiler

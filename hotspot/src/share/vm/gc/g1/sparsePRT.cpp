@@ -32,8 +32,6 @@
 #include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
-#define SPARSE_PRT_VERBOSE 0
-
 void SparsePRTEntry::init(RegionIdx_t region_ind) {
   _region_ind = region_ind;
   _next_index = NullEntry;
@@ -121,11 +119,6 @@ bool RSHashTable::add_card(RegionIdx_t region_ind, CardIdx_t card_index) {
          "Postcondition of call above.");
   SparsePRTEntry::AddCardResult res = e->add_card(card_index);
   if (res == SparsePRTEntry::added) _occupied_cards++;
-#if SPARSE_PRT_VERBOSE
-  gclog_or_tty->print_cr("       after add_card[%d]: valid-cards = %d.",
-                         pointer_delta(e, _entries, SparsePRTEntry::size()),
-                         e->num_valid_cards());
-#endif
   assert(e->num_valid_cards() > 0, "Postcondition");
   return res != SparsePRTEntry::overflow;
 }
@@ -387,10 +380,6 @@ size_t SparsePRT::mem_size() const {
 }
 
 bool SparsePRT::add_card(RegionIdx_t region_id, CardIdx_t card_index) {
-#if SPARSE_PRT_VERBOSE
-  gclog_or_tty->print_cr("  Adding card %d from region %d to region %u sparse.",
-                         card_index, region_id, _hr->hrm_index());
-#endif
   if (_next->occupied_entries() * 2 > _next->capacity()) {
     expand();
   }
@@ -438,18 +427,9 @@ void SparsePRT::cleanup() {
 void SparsePRT::expand() {
   RSHashTable* last = _next;
   _next = new RSHashTable(last->capacity() * 2);
-
-#if SPARSE_PRT_VERBOSE
-  gclog_or_tty->print_cr("  Expanded sparse table for %u to %d.",
-                         _hr->hrm_index(), _next->capacity());
-#endif
   for (size_t i = 0; i < last->capacity(); i++) {
     SparsePRTEntry* e = last->entry((int)i);
     if (e->valid_entry()) {
-#if SPARSE_PRT_VERBOSE
-      gclog_or_tty->print_cr("    During expansion, transferred entry for %d.",
-                    e->r_ind());
-#endif
       _next->add_entry(e);
     }
   }

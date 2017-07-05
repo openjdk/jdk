@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that NoRTMLockEliding option could be applied to
  *          specified method and that such method will not use rtm.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestNoRTMLockElidingOption
