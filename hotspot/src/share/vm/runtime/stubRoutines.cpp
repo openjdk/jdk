@@ -196,11 +196,19 @@ void stubRoutines_init2() { StubRoutines::initialize2(); }
 // Default versions of arraycopy functions
 //
 
+static void gen_arraycopy_barrier_pre(oop* dest, size_t count) {
+    assert(count != 0, "count should be non-zero");
+    assert(count <= (size_t)max_intx, "count too large");
+    BarrierSet* bs = Universe::heap()->barrier_set();
+    assert(bs->has_write_ref_array_pre_opt(), "Must have pre-barrier opt");
+    bs->write_ref_array_pre(dest, (int)count);
+}
+
 static void gen_arraycopy_barrier(oop* dest, size_t count) {
     assert(count != 0, "count should be non-zero");
     BarrierSet* bs = Universe::heap()->barrier_set();
     assert(bs->has_write_ref_array_opt(), "Barrier set must have ref array opt");
-    bs->write_ref_array(MemRegion((HeapWord*)dest, (HeapWord*)(dest + count)));
+    bs->write_ref_array((HeapWord*)dest, count);
 }
 
 JRT_LEAF(void, StubRoutines::jbyte_copy(jbyte* src, jbyte* dest, size_t count))
@@ -240,6 +248,7 @@ JRT_LEAF(void, StubRoutines::oop_copy(oop* src, oop* dest, size_t count))
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
   assert(count != 0, "count should be non-zero");
+  gen_arraycopy_barrier_pre(dest, count);
   Copy::conjoint_oops_atomic(src, dest, count);
   gen_arraycopy_barrier(dest, count);
 JRT_END
@@ -281,6 +290,7 @@ JRT_LEAF(void, StubRoutines::arrayof_oop_copy(HeapWord* src, HeapWord* dest, siz
   SharedRuntime::_oop_array_copy_ctr++;        // Slow-path oop array copy
 #endif // !PRODUCT
   assert(count != 0, "count should be non-zero");
+  gen_arraycopy_barrier_pre((oop *) dest, count);
   Copy::arrayof_conjoint_oops(src, dest, count);
   gen_arraycopy_barrier((oop *) dest, count);
 JRT_END

@@ -27,7 +27,6 @@ package com.sun.java.util.jar.pack;
 
 import java.io.*;
 import java.util.*;
-import java.util.logging.Level;
 import com.sun.java.util.jar.pack.Package.Class;
 import com.sun.java.util.jar.pack.Package.File;
 import com.sun.java.util.jar.pack.Package.InnerClass;
@@ -84,7 +83,7 @@ class PackageWriter extends BandStructure {
 
             ok = true;
         } catch (Exception ee) {
-            Utils.log.log(Level.WARNING, "Error on output: "+ee, ee);
+            Utils.log.warning("Error on output: "+ee, ee);
             //if (verbose > 0)  ee.printStackTrace();
             // Write partial output only if we are verbose.
             if (verbose > 0)  finalOut.close();

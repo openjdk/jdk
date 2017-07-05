@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,8 +136,10 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
     }
     // Mark the call node as virtual, sort of:
     call->set_optimized_virtual(true);
-    if (method()->is_method_handle_invoke())
+    if (method()->is_method_handle_invoke()) {
       call->set_method_handle_invoke(true);
+      kit.C->set_has_method_handle_invokes(true);
+    }
   }
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
@@ -194,6 +196,7 @@ JVMState* DynamicCallGenerator::generate(JVMState* jvms) {
   call->set_optimized_virtual(true);
   // Take extra care (in the presence of argument motion) not to trash the SP:
   call->set_method_handle_invoke(true);
+  kit.C->set_has_method_handle_invokes(true);
 
   // Pass the target MethodHandle as first argument and shift the
   // other arguments.

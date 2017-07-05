@@ -49,7 +49,7 @@ Euro_Resources_properties := $(FILES_compiled_properties)
 # $(BUILDDIR)/java/text/FILES_java.gmk contains the "sun.text.resources" for 
 # European language support
 
-include $(BUILDDIR)/java/text/FILES_java.gmk
+include $(BUILDDIR)/java/text/base/FILES_java.gmk
 
 Euro_Resources_java += $(FILES_java)
 

@@ -36,6 +36,8 @@ SUBDIRS = java javaw
 else 
 SUBDIRS = java
 endif 
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1073,7 +1073,7 @@ void PhaseStringOpts::int_getChars(GraphKit& kit, Node* arg, Node* char_array, N
     kit.set_control(head);
     kit.set_memory(mem, char_adr_idx);
 
-    Node* q = __ DivI(kit.null(), i_phi, __ intcon(10));
+    Node* q = __ DivI(NULL, i_phi, __ intcon(10));
     Node* r = __ SubI(i_phi, __ AddI(__ LShiftI(q, __ intcon(3)),
                                      __ LShiftI(q, __ intcon(1))));
     Node* m1 = __ SubI(charPos, __ intcon(1));
@@ -1270,14 +1270,15 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           // length = length + (s.count - s.offset);
           RegionNode *r = new (C, 3) RegionNode(3);
           kit.gvn().set_type(r, Type::CONTROL);
-          Node *phi = new (C, 3) PhiNode(r, type->join(TypeInstPtr::NOTNULL));
+          Node *phi = new (C, 3) PhiNode(r, type);
           kit.gvn().set_type(phi, phi->bottom_type());
           Node* p = __ Bool(__ CmpP(arg, kit.null()), BoolTest::ne);
           IfNode* iff = kit.create_and_map_if(kit.control(), p, PROB_MIN, COUNT_UNKNOWN);
           Node* notnull = __ IfTrue(iff);
           Node* isnull =  __ IfFalse(iff);
+          kit.set_control(notnull); // set control for the cast_not_null
           r->init_req(1, notnull);
-          phi->init_req(1, arg);
+          phi->init_req(1, kit.cast_not_null(arg, false));
           r->init_req(2, isnull);
           phi->init_req(2, null_string);
           kit.set_control(r);
