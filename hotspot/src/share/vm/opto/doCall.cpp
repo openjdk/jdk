@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,6 +503,30 @@ void Parse::do_call() {
                                       receiver_type, is_virtual,
                                       call_does_dispatch, vtable_index);  // out-parameters
     speculative_receiver_type = receiver_type != NULL ? receiver_type->speculative_type() : NULL;
+  }
+
+  // invoke-super-special
+  if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_initializer()) {
+    ciInstanceKlass* calling_klass = method()->holder();
+    ciInstanceKlass* sender_klass =
+        calling_klass->is_anonymous() ? calling_klass->host_klass() :
+                                        calling_klass;
+    if (sender_klass->is_interface()) {
+      Node* receiver_node = stack(sp() - nargs);
+      Node* cls_node = makecon(TypeKlassPtr::make(sender_klass));
+      Node* bad_type_ctrl = NULL;
+      Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl);
+      if (bad_type_ctrl != NULL) {
+        PreserveJVMState pjvms(this);
+        set_control(bad_type_ctrl);
+        uncommon_trap(Deoptimization::Reason_class_check,
+                      Deoptimization::Action_none);
+      }
+      if (stopped()) {
+        return; // MUST uncommon-trap?
+      }
+      set_stack(sp() - nargs, casted_receiver);
+    }
   }
 
   // Note:  It's OK to try to inline a virtual call.

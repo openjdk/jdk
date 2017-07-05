@@ -34,7 +34,7 @@ import sun.management.LockInfoCompositeData;
  * an <em>ownable synchronizer</em>, or the {@link Condition Condition}
  * object associated with synchronizers.
  * <p>
- * <a name="OwnableSynchronizer">An ownable synchronizer</a> is
+ * <a id="OwnableSynchronizer">An ownable synchronizer</a> is
  * a synchronizer that may be exclusively owned by a thread and uses
  * {@link AbstractOwnableSynchronizer AbstractOwnableSynchronizer}
  * (or its subclass) to implement its synchronization property.
@@ -42,7 +42,7 @@ import sun.management.LockInfoCompositeData;
  * the read-lock) of {@link ReentrantReadWriteLock ReentrantReadWriteLock} are
  * two examples of ownable synchronizers provided by the platform.
  *
- * <h3><a name="MappedType">MXBean Mapping</a></h3>
+ * <h3><a id="MappedType">MXBean Mapping</a></h3>
  * {@code LockInfo} is mapped to a {@link CompositeData CompositeData}
  * as specified in the {@link #from from} method.
  *
@@ -105,10 +105,11 @@ public class LockInfo {
      * given {@code CompositeData}.
      * The given {@code CompositeData} must contain the following attributes:
      * <blockquote>
-     * <table border summary="The attributes and the types the given CompositeData contains">
+     * <table border="1">
+     * <caption style="display:none">The attributes and the types the given CompositeData contains</caption>
      * <tr>
-     *   <th align=left>Attribute Name</th>
-     *   <th align=left>Type</th>
+     *   <th style="text-align:left">Attribute Name</th>
+     *   <th style="text-align:left">Type</th>
      * </tr>
      * <tr>
      *   <td>className</td>
