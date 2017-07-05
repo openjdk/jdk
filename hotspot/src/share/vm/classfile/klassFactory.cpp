@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/klassFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiEnvBase.hpp"
+#include "trace/traceMacros.hpp"
 
 static ClassFileStream* prologue(ClassFileStream* stream,
                                  Symbol* name,
@@ -135,6 +136,8 @@ instanceKlassHandle KlassFactory::create_from_stream(ClassFileStream* stream,
     // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
     result->set_cached_class_file(cached_class_file);
   }
+
+  TRACE_KLASS_CREATION(result, parser, THREAD);
 
   return result;
 }

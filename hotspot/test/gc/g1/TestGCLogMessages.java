@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test TestGCLogMessages
- * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330
+ * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330 8076463 8150630
  * @summary Ensure the output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -38,9 +38,23 @@ import jdk.test.lib.OutputAnalyzer;
 public class TestGCLogMessages {
 
     private enum Level {
-        OFF, DEBUG, TRACE;
-        public boolean lessOrEqualTo(Level other) {
+        OFF(""),
+        INFO("info"),
+        DEBUG("debug"),
+        TRACE("trace");
+
+        private String logName;
+
+        Level(String logName) {
+            this.logName = logName;
+        }
+
+        public boolean lessThan(Level other) {
             return this.compareTo(other) < 0;
+        }
+
+        public String toString() {
+            return logName;
         }
     }
 
@@ -56,44 +70,48 @@ public class TestGCLogMessages {
 
     private LogMessageWithLevel allLogMessages[] = new LogMessageWithLevel[] {
         // Update RS
-        new LogMessageWithLevel("Scan HCC", Level.DEBUG),
+        new LogMessageWithLevel("Scan HCC", Level.TRACE),
         // Ext Root Scan
-        new LogMessageWithLevel("Thread Roots:", Level.DEBUG),
-        new LogMessageWithLevel("StringTable Roots:", Level.DEBUG),
-        new LogMessageWithLevel("Universe Roots:", Level.DEBUG),
-        new LogMessageWithLevel("JNI Handles Roots:", Level.DEBUG),
-        new LogMessageWithLevel("ObjectSynchronizer Roots:", Level.DEBUG),
-        new LogMessageWithLevel("FlatProfiler Roots", Level.DEBUG),
-        new LogMessageWithLevel("Management Roots", Level.DEBUG),
-        new LogMessageWithLevel("SystemDictionary Roots", Level.DEBUG),
-        new LogMessageWithLevel("CLDG Roots", Level.DEBUG),
-        new LogMessageWithLevel("JVMTI Roots", Level.DEBUG),
-        new LogMessageWithLevel("SATB Filtering", Level.DEBUG),
-        new LogMessageWithLevel("CM RefProcessor Roots", Level.DEBUG),
-        new LogMessageWithLevel("Wait For Strong CLD", Level.DEBUG),
-        new LogMessageWithLevel("Weak CLD Roots", Level.DEBUG),
+        new LogMessageWithLevel("Thread Roots", Level.TRACE),
+        new LogMessageWithLevel("StringTable Roots", Level.TRACE),
+        new LogMessageWithLevel("Universe Roots", Level.TRACE),
+        new LogMessageWithLevel("JNI Handles Roots", Level.TRACE),
+        new LogMessageWithLevel("ObjectSynchronizer Roots", Level.TRACE),
+        new LogMessageWithLevel("FlatProfiler Roots", Level.TRACE),
+        new LogMessageWithLevel("Management Roots", Level.TRACE),
+        new LogMessageWithLevel("SystemDictionary Roots", Level.TRACE),
+        new LogMessageWithLevel("CLDG Roots", Level.TRACE),
+        new LogMessageWithLevel("JVMTI Roots", Level.TRACE),
+        new LogMessageWithLevel("SATB Filtering", Level.TRACE),
+        new LogMessageWithLevel("CM RefProcessor Roots", Level.TRACE),
+        new LogMessageWithLevel("Wait For Strong CLD", Level.TRACE),
+        new LogMessageWithLevel("Weak CLD Roots", Level.TRACE),
         // Redirty Cards
         new LogMessageWithLevel("Redirty Cards", Level.DEBUG),
-        new LogMessageWithLevel("Parallel Redirty", Level.DEBUG),
-        new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
+        new LogMessageWithLevel("Parallel Redirty", Level.TRACE),
+        new LogMessageWithLevel("Redirtied Cards", Level.TRACE),
         // Misc Top-level
-        new LogMessageWithLevel("Code Root Purge", Level.DEBUG),
-        new LogMessageWithLevel("String Dedup Fixup", Level.DEBUG),
-        new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
+        new LogMessageWithLevel("Code Roots Purge", Level.DEBUG),
+        new LogMessageWithLevel("String Dedup Fixup", Level.INFO),
+        new LogMessageWithLevel("Expand Heap After Collection", Level.INFO),
         // Free CSet
-        new LogMessageWithLevel("Young Free CSet", Level.TRACE),
-        new LogMessageWithLevel("Non-Young Free CSet", Level.TRACE),
+        new LogMessageWithLevel("Young Free Collection Set", Level.DEBUG),
+        new LogMessageWithLevel("Non-Young Free Collection Set", Level.DEBUG),
         // Humongous Eager Reclaim
         new LogMessageWithLevel("Humongous Reclaim", Level.DEBUG),
         new LogMessageWithLevel("Humongous Register", Level.DEBUG),
+        // Preserve CM Referents
+        new LogMessageWithLevel("Preserve CM Refs", Level.DEBUG),
+        // Merge PSS
+        new LogMessageWithLevel("Merge Per-Thread State", Level.INFO),
     };
 
     void checkMessagesAtLevel(OutputAnalyzer output, LogMessageWithLevel messages[], Level level) throws Exception {
         for (LogMessageWithLevel l : messages) {
-            if (level.lessOrEqualTo(l.level)) {
+            if (level.lessThan(l.level)) {
                 output.shouldNotContain(l.message);
             } else {
-                output.shouldContain(l.message);
+                output.shouldMatch("\\[" + l.level + ".*" + l.message);
             }
         }
     }

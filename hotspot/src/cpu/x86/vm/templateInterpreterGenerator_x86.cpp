@@ -161,13 +161,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
                                      create_klass_exception),
                rarg, rarg2);
   } else {
-    // kind of lame ExternalAddress can't take NULL because
-    // external_word_Relocation will assert.
-    if (message != NULL) {
-      __ lea(rarg2, ExternalAddress((address)message));
-    } else {
-      __ movptr(rarg2, NULL_WORD);
-    }
+    __ lea(rarg2, ExternalAddress((address)message));
     __ call_VM(rax,
                CAST_FROM_FN_PTR(address, InterpreterRuntime::create_exception),
                rarg, rarg2);
