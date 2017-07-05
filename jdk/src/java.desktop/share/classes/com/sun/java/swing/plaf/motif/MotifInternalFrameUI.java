@@ -38,7 +38,7 @@ import javax.swing.plaf.*;
 
 
 /**
- * A Motif L&F implementation of InternalFrame.
+ * A Motif {@literal L&F} implementation of InternalFrame.
  * <p>
  * <strong>Warning:</strong>
  * Serialized objects of this class will not be compatible with

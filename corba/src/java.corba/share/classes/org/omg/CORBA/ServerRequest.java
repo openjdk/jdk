@@ -248,7 +248,7 @@ public abstract class ServerRequest {
      * contain an exception will result in a BAD_PARAM system exception. Passing
      * in an unlisted user exception will result in either the DIR receiving a
      * BAD_PARAM system exception or in the client receiving an
-     * UNKNOWN_EXCEPTION system exception.
+     * UNKNOWN system exception.
      *
      * @param any       the <code>Any</code> object containing the exception
      * @deprecated use set_exception()
@@ -272,13 +272,13 @@ public abstract class ServerRequest {
      * will cause a BAD_PARAM system exception to be thrown. Passing
      * in an unlisted user exception will result in either the DIR receiving a
      * BAD_PARAM system exception or in the client receiving an
-     * UNKNOWN_EXCEPTION system exception.
+     * UNKNOWN system exception.
      *
      * @param any       the <code>Any</code> object containing the exception
      * @exception BAD_PARAM if the given <code>Any</code> object does not
      *                      contain an exception or the exception is an
      *                      unlisted user exception
-     * @exception UNKNOWN_EXCEPTION if the given exception is an unlisted
+     * @exception UNKNOWN if the given exception is an unlisted
      *                              user exception and the DIR did not
      *                              receive a BAD_PARAM exception
      * @see <a href="package-summary.html#unimpl"><code>CORBA</code>
