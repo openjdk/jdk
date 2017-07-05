@@ -132,7 +132,7 @@ public class SizeSequence {
      * can use <code>insertEntries</code> or <code>setSizes</code>.
      *
      * @see #insertEntries
-     * @see #setSizes
+     * @see #setSizes(int[])
      */
     public SizeSequence() {
         a = emptyArray;

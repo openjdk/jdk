@@ -267,7 +267,7 @@ class ClientVector extends java.util.Stack<KeepAliveEntry> {
 
     /* return a still valid, unused HttpClient */
     synchronized void put(HttpClient h) {
-        if (size() > KeepAliveCache.getMaxConnections()) {
+        if (size() >= KeepAliveCache.getMaxConnections()) {
             h.closeServer(); // otherwise the connection remains in limbo
         } else {
             push(new KeepAliveEntry(h, System.currentTimeMillis()));

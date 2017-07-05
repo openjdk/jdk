@@ -153,8 +153,7 @@ final class SignatureAndHashAlgorithm {
     static Collection<SignatureAndHashAlgorithm>
             getSupportedAlgorithms(AlgorithmConstraints constraints) {
 
-        Collection<SignatureAndHashAlgorithm> supported =
-                        new ArrayList<SignatureAndHashAlgorithm>();
+        Collection<SignatureAndHashAlgorithm> supported = new ArrayList<>();
         synchronized (priorityMap) {
             for (SignatureAndHashAlgorithm sigAlg : priorityMap.values()) {
                 if (sigAlg.priority <= SUPPORTED_ALG_PRIORITY_MAX_NUM &&
@@ -171,8 +170,7 @@ final class SignatureAndHashAlgorithm {
     // Get supported algorithm collection from an untrusted collection
     static Collection<SignatureAndHashAlgorithm> getSupportedAlgorithms(
             Collection<SignatureAndHashAlgorithm> algorithms ) {
-        Collection<SignatureAndHashAlgorithm> supported =
-                        new ArrayList<SignatureAndHashAlgorithm>();
+        Collection<SignatureAndHashAlgorithm> supported = new ArrayList<>();
         for (SignatureAndHashAlgorithm sigAlg : algorithms) {
             if (sigAlg.priority <= SUPPORTED_ALG_PRIORITY_MAX_NUM) {
                 supported.add(sigAlg);
@@ -184,7 +182,7 @@ final class SignatureAndHashAlgorithm {
 
     static String[] getAlgorithmNames(
             Collection<SignatureAndHashAlgorithm> algorithms) {
-        ArrayList<String> algorithmNames = new ArrayList<String>();
+        ArrayList<String> algorithmNames = new ArrayList<>();
         if (algorithms != null) {
             for (SignatureAndHashAlgorithm sigAlg : algorithms) {
                 algorithmNames.add(sigAlg.algorithm);
@@ -197,7 +195,7 @@ final class SignatureAndHashAlgorithm {
 
     static Set<String> getHashAlgorithmNames(
             Collection<SignatureAndHashAlgorithm> algorithms) {
-        Set<String> algorithmNames = new HashSet<String>();
+        Set<String> algorithmNames = new HashSet<>();
         if (algorithms != null) {
             for (SignatureAndHashAlgorithm sigAlg : algorithms) {
                 if (sigAlg.hash.value > 0) {

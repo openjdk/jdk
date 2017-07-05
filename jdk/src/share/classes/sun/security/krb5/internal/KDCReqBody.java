@@ -158,7 +158,7 @@ public class KDCReqBody {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }
         der = encoding.getData().getDerValue();
-        Vector<Integer> v = new Vector<Integer> ();
+        Vector<Integer> v = new Vector<>();
         if ((der.getTag() & (byte)0x1F) == (byte)0x08) {
             subDer = der.getData().getDerValue();
 
@@ -183,7 +183,7 @@ public class KDCReqBody {
             encAuthorizationData = EncryptedData.parse(encoding.getData(), (byte)0x0A, true);
         }
         if (encoding.getData().available() > 0) {
-            Vector<Ticket> tempTickets = new Vector<Ticket> ();
+            Vector<Ticket> tempTickets = new Vector<>();
             der = encoding.getData().getDerValue();
             if ((der.getTag() & (byte)0x1F) == (byte)0x0B) {
                 subDer = der.getData().getDerValue();
@@ -216,7 +216,7 @@ public class KDCReqBody {
      *
      */
     public byte[] asn1Encode(int msgType) throws Asn1Exception, IOException {
-        Vector<DerValue> v = new Vector<DerValue> ();
+        Vector<DerValue> v = new Vector<>();
         v.addElement(new DerValue(DerValue.createTag(DerValue.TAG_CONTEXT, true, (byte)0x00), kdcOptions.asn1Encode()));
         if (msgType == Krb5.KRB_AS_REQ) {
             if (cname != null) {

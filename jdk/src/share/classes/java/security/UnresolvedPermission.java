@@ -198,7 +198,7 @@ implements java.io.Serializable
                 if (this.certs == null) {
                     // extract the signer certs
                     ArrayList<java.security.cert.Certificate> signerCerts =
-                        new ArrayList<java.security.cert.Certificate>();
+                        new ArrayList<>();
                     i = 0;
                     while (i < certs.length) {
                         signerCerts.add(certs[i]);

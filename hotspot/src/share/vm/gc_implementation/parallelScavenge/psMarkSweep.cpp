@@ -258,6 +258,7 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     BiasedLocking::restore_marks();
     Threads::gc_epilogue();
     CodeCache::gc_epilogue();
+    JvmtiExport::gc_epilogue();
 
     COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 

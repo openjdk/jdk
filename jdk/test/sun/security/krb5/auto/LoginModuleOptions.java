@@ -135,8 +135,8 @@ public class LoginModuleOptions {
             throws Exception {
         Krb5LoginModule krb5 = new Krb5LoginModule();
         Subject subject = new Subject();
-        Map<String, String> map = new HashMap<String, String>();
-        Map<String, Object> shared = new HashMap<String, Object>();
+        Map<String, String> map = new HashMap<>();
+        Map<String, Object> shared = new HashMap<>();
 
         int count = options.length / 2;
         for (int i = 0; i < count; i++) {

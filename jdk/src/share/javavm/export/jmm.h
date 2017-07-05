@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,8 @@ typedef struct {
   unsigned int isBootClassPathSupported : 1;
   unsigned int isObjectMonitorUsageSupported : 1;
   unsigned int isSynchronizerUsageSupported : 1;
-  unsigned int : 24;
+  unsigned int isThreadAllocatedMemorySupported : 1;
+  unsigned int : 23;
 } jmmOptionalSupport;
 
 typedef enum {
@@ -105,7 +106,8 @@ typedef enum {
   JMM_VERBOSE_GC                     = 21,
   JMM_VERBOSE_CLASS                  = 22,
   JMM_THREAD_CONTENTION_MONITORING   = 23,
-  JMM_THREAD_CPU_TIME                = 24
+  JMM_THREAD_CPU_TIME                = 24,
+  JMM_THREAD_ALLOCATED_MEMORY        = 25
 } jmmBoolAttribute;
 
 
@@ -213,7 +215,10 @@ typedef struct jmmInterface_1_ {
   jobject      (JNICALL *GetMemoryPoolUsage)     (JNIEnv* env, jobject pool);
   jobject      (JNICALL *GetPeakMemoryPoolUsage) (JNIEnv* env, jobject pool);
 
-  void*        reserved4;
+  void         (JNICALL *GetThreadAllocatedMemory)
+                                                 (JNIEnv *env,
+                                                  jlongArray ids,
+                                                  jlongArray sizeArray);
 
   jobject      (JNICALL *GetMemoryUsage)         (JNIEnv* env, jboolean heap);
 
@@ -228,6 +233,8 @@ typedef struct jmmInterface_1_ {
                                                   jlong* result);
 
   jobjectArray (JNICALL *FindCircularBlockedThreads) (JNIEnv *env);
+
+  // Not used in JDK 6 or JDK 7
   jlong        (JNICALL *GetThreadCpuTime)       (JNIEnv *env, jlong thread_id);
 
   jobjectArray (JNICALL *GetVMGlobalNames)       (JNIEnv *env);
@@ -262,14 +269,22 @@ typedef struct jmmInterface_1_ {
   void         (JNICALL *GetLastGCStat)          (JNIEnv *env,
                                                   jobject mgr,
                                                   jmmGCStat *gc_stat);
-  jlong        (JNICALL *GetThreadCpuTimeWithKind) (JNIEnv *env,
-                                                    jlong thread_id,
-                                                    jboolean user_sys_cpu_time);
-  void*        reserved5;
+
+  jlong        (JNICALL *GetThreadCpuTimeWithKind)
+                                                 (JNIEnv *env,
+                                                  jlong thread_id,
+                                                  jboolean user_sys_cpu_time);
+  void         (JNICALL *GetThreadCpuTimesWithKind)
+                                                 (JNIEnv *env,
+                                                  jlongArray ids,
+                                                  jlongArray timeArray,
+                                                  jboolean user_sys_cpu_time);
+
   jint         (JNICALL *DumpHeap0)              (JNIEnv *env,
                                                   jstring outputfile,
                                                   jboolean live);
-  jobjectArray (JNICALL *FindDeadlocks)             (JNIEnv *env, jboolean object_monitors_only);
+  jobjectArray (JNICALL *FindDeadlocks)          (JNIEnv *env,
+                                                  jboolean object_monitors_only);
   void         (JNICALL *SetVMGlobal)            (JNIEnv *env,
                                                   jstring flag_name,
                                                   jvalue  new_value);
