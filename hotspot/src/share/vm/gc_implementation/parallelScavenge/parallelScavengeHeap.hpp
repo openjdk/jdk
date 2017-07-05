@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_HPP
 
+#include "gc_implementation/parallelScavenge/generationSizer.hpp"
 #include "gc_implementation/parallelScavenge/objectStartArray.hpp"
 #include "gc_implementation/parallelScavenge/psGCAdaptivePolicyCounters.hpp"
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
@@ -32,14 +33,12 @@
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
 #include "gc_implementation/shared/gcWhen.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/collectorPolicy.hpp"
 #include "utilities/ostream.hpp"
 
 class AdjoiningGenerations;
-class CollectorPolicy;
 class GCHeapSummary;
 class GCTaskManager;
-class GenerationSizer;
-class CollectorPolicy;
 class PSAdaptiveSizePolicy;
 class PSHeapSummary;
 
@@ -50,24 +49,20 @@ class ParallelScavengeHeap : public CollectedHeap {
   static PSOldGen*   _old_gen;
 
   // Sizing policy for entire heap
-  static PSAdaptiveSizePolicy* _size_policy;
-  static PSGCAdaptivePolicyCounters*   _gc_policy_counters;
+  static PSAdaptiveSizePolicy*       _size_policy;
+  static PSGCAdaptivePolicyCounters* _gc_policy_counters;
 
   static ParallelScavengeHeap* _psh;
 
-  size_t _young_gen_alignment;
-  size_t _old_gen_alignment;
-
   GenerationSizer* _collector_policy;
-
-  inline size_t set_alignment(size_t& var, size_t val);
 
   // Collection of generations that are adjacent in the
   // space reserved for the heap.
   AdjoiningGenerations* _gens;
   unsigned int _death_march_count;
 
-  static GCTaskManager*          _gc_task_manager;      // The task manager.
+  // The task manager
+  static GCTaskManager* _gc_task_manager;
 
   void trace_heap(GCWhen::Type when, GCTracer* tracer);
 
@@ -80,16 +75,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* mem_allocate_old_gen(size_t size);
 
  public:
-  ParallelScavengeHeap() : CollectedHeap() {
-    _death_march_count = 0;
-    set_alignment(_young_gen_alignment, intra_heap_alignment());
-    set_alignment(_old_gen_alignment, intra_heap_alignment());
-  }
-
-  // Return the (conservative) maximum heap alignment
-  static size_t conservative_max_heap_alignment() {
-    return intra_heap_alignment();
-  }
+  ParallelScavengeHeap() : CollectedHeap(), _death_march_count(0) { }
 
   // For use by VM operations
   enum CollectionType {
@@ -103,8 +89,8 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   virtual CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector_policy; }
 
-  static PSYoungGen* young_gen()     { return _young_gen; }
-  static PSOldGen* old_gen()         { return _old_gen; }
+  static PSYoungGen* young_gen() { return _young_gen; }
+  static PSOldGen* old_gen()     { return _old_gen; }
 
   virtual PSAdaptiveSizePolicy* size_policy() { return _size_policy; }
 
@@ -121,13 +107,15 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void post_initialize();
   void update_counters();
-  // The alignment used for the various generations.
-  size_t young_gen_alignment() const { return _young_gen_alignment; }
-  size_t old_gen_alignment()  const { return _old_gen_alignment; }
 
-  // The alignment used for eden and survivors within the young gen
-  // and for boundary between young gen and old gen.
-  static size_t intra_heap_alignment() { return 64 * K * HeapWordSize; }
+  // The alignment used for the various areas
+  size_t space_alignment()      { return _collector_policy->space_alignment(); }
+  size_t generation_alignment() { return _collector_policy->gen_alignment(); }
+
+  // Return the (conservative) maximum heap alignment
+  static size_t conservative_max_heap_alignment() {
+    return CollectorPolicy::compute_heap_alignment();
+  }
 
   size_t capacity() const;
   size_t used() const;
@@ -157,16 +145,15 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual bool is_in_partial_collection(const void *p);
 #endif
 
-  bool is_in_young(oop p);        // reserved part
-  bool is_in_old(oop p);          // reserved part
+  bool is_in_young(oop p);  // reserved part
+  bool is_in_old(oop p);    // reserved part
 
   // Memory allocation.   "gc_time_limit_was_exceeded" will
   // be set to true if the adaptive size policy determine that
   // an excessive amount of time is being spent doing collections
   // and caused a NULL to be returned.  If a NULL is not returned,
   // "gc_time_limit_was_exceeded" has an undefined meaning.
-  HeapWord* mem_allocate(size_t size,
-                         bool* gc_overhead_limit_was_exceeded);
+  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
 
   // Allocation attempt(s) during a safepoint. It should never be called
   // to allocate a new TLAB as this allocation might be satisfied out
@@ -257,17 +244,10 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   // Call these in sequential code around the processing of strong roots.
   class ParStrongRootsScope : public MarkingCodeBlobClosure::MarkScope {
-  public:
+   public:
     ParStrongRootsScope();
     ~ParStrongRootsScope();
   };
 };
-
-inline size_t ParallelScavengeHeap::set_alignment(size_t& var, size_t val)
-{
-  assert(is_power_of_2((intptr_t)val), "must be a power of 2");
-  var = round_to(val, intra_heap_alignment());
-  return var;
-}
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_HPP

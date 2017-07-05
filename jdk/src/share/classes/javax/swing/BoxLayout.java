@@ -287,7 +287,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      * in the specified target container.
      *
      * @param target  the container that needs to be laid out
-     * @return the dimensions >= 0 && <= Integer.MAX_VALUE
+     * @return the dimensions &gt;= 0 &amp;&amp; &lt;= Integer.MAX_VALUE
      * @exception AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      * @see Container
@@ -313,7 +313,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      * contained in the specified target container.
      *
      * @param target  the container that needs to be laid out
-     * @return the dimensions >= 0 && <= Integer.MAX_VALUE
+     * @return the dimensions &gt;= 0 &amp;&amp; &lt;= Integer.MAX_VALUE
      * @exception AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      * @see #preferredLayoutSize
@@ -338,7 +338,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      * to lay out the components it contains.
      *
      * @param target  the container that needs to be laid out
-     * @return the dimensions >= 0 && <= Integer.MAX_VALUE
+     * @return the dimensions &gt;= 0 &amp;&amp; &lt;= Integer.MAX_VALUE
      * @exception AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      * @see #preferredLayoutSize
@@ -365,7 +365,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      * to place the children along the X axis will be returned.
      *
      * @param target  the container
-     * @return the alignment >= 0.0f && <= 1.0f
+     * @return the alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f
      * @exception AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      */
@@ -382,7 +382,7 @@ public class BoxLayout implements LayoutManager2, Serializable {
      * to place the children along the Y axis will be returned.
      *
      * @param target  the container
-     * @return the alignment >= 0.0f && <= 1.0f
+     * @return the alignment &gt;= 0.0f &amp;&amp; &lt;= 1.0f
      * @exception AWTError  if the target isn't the container specified to the
      *                      BoxLayout constructor
      */

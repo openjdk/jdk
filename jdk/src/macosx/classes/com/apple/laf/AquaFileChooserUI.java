@@ -227,7 +227,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         // Exist in basic.properties (though we might want to override)
         fileDescriptionText = UIManager.getString("FileChooser.fileDescriptionText");
         directoryDescriptionText = UIManager.getString("FileChooser.directoryDescriptionText");
-        newFolderErrorText = getString("FileChooser.newFolderErrorText", "Error occured during folder creation");
+        newFolderErrorText = getString("FileChooser.newFolderErrorText", "Error occurred during folder creation");
 
         saveButtonText = UIManager.getString("FileChooser.saveButtonText");
         openButtonText = UIManager.getString("FileChooser.openButtonText");

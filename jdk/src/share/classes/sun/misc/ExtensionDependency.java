@@ -265,7 +265,7 @@ public class ExtensionDependency {
      * the jar file.
      * </p>
      *
-     * @param extensionName key in the attibute list
+     * @param extensionName key in the attribute list
      * @param attr manifest file attributes
      * @param file installed extension jar file to compare the requested
      * extension against.

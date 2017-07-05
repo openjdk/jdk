@@ -86,7 +86,7 @@ package javax.management;
  *     be set to an array of ObjectNames containing the names of all MBeans
  *     being registered or unregistered.</li>
  * </ul>
- * </p>
+ *
  * <p>
  * MBeans which emit these group registration/unregistration notifications will
  * declare them in their {@link MBeanInfo#getNotifications()

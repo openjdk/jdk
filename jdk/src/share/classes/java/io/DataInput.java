@@ -444,7 +444,7 @@ interface DataInput {
      * a {@code double} value. It does this
      * by first constructing a {@code long}
      * value in exactly the manner
-     * of the {@code readlong}
+     * of the {@code readLong}
      * method, then converting this {@code long}
      * value to a {@code double} in exactly
      * the manner of the method {@code Double.longBitsToDouble}.

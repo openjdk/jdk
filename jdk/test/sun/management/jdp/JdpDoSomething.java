@@ -34,7 +34,7 @@ public class JdpDoSomething {
     private static final String lockFileName = "JdpDoSomething.lck";
     private static final boolean verbose = false;
 
-    public static boolean getVerbose(){
+    public static boolean getVerbose() {
         return verbose;
     }
 
@@ -61,7 +61,7 @@ public class JdpDoSomething {
     }
 
     public static void compaireJdpPacketEx(JdpJmxPacket p1, JdpJmxPacket p2)
-    throws JdpException {
+            throws JdpException {
 
         if (!Objects.equals(p1, p1)) {
             throw new JdpException("Packet mismatch error");

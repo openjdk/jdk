@@ -113,16 +113,6 @@ public class TestAppletLoggerContext {
 
             @Override
             public Object getAppletContext() { return active ? exc : null; }
-            @Override
-            public Object get(Object o) { return exc.get(o); }
-            @Override
-            public void put(Object o, Object o1) { exc.put(o, o1); }
-            @Override
-            public void remove(Object o) { exc.remove(o); }
-            @Override
-            public boolean isDisposed() { return false; }
-            @Override
-            public boolean isMainAppContext() { return !active || exc == null; }
         }
 
         final static JavaAWTAccessStub javaAwtAccess = new JavaAWTAccessStub();

@@ -78,7 +78,8 @@ public final class Handle {
     final int tag;
 
     /**
-     * The internal name of the field or method designed by this handle.
+     * The internal name of the class that owns the field or method designated
+     * by this handle.
      */
     final String owner;
 
@@ -105,8 +106,8 @@ public final class Handle {
      *            {@link Opcodes#H_NEWINVOKESPECIAL} or
      *            {@link Opcodes#H_INVOKEINTERFACE}.
      * @param owner
-     *            the internal name of the field or method designed by this
-     *            handle.
+     *            the internal name of the class that owns the field or method
+     *            designated by this handle.
      * @param name
      *            the name of the field or method designated by this handle.
      * @param desc
@@ -135,9 +136,11 @@ public final class Handle {
     }
 
     /**
-     * Returns the internal name of the field or method designed by this handle.
+     * Returns the internal name of the class that owns the field or method
+     * designated by this handle.
      *
-     * @return the internal name of the field or method designed by this handle.
+     * @return the internal name of the class that owns the field or method
+     *         designated by this handle.
      */
     public String getOwner() {
         return owner;

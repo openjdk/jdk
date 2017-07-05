@@ -211,7 +211,7 @@ public class SerialVer extends Applet {
         Class<?> cl = Class.forName(classname, false, loader);
         ObjectStreamClass desc = ObjectStreamClass.lookup(cl);
         if (desc != null) {
-            return "    static final long serialVersionUID = " +
+            return "    private static final long serialVersionUID = " +
                 desc.getSerialVersionUID() + "L;";
         } else {
             return null;

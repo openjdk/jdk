@@ -266,7 +266,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
         private void checkForException() throws IOException {
             if (exception == null)
                 return;
-            StringBuffer message =  new StringBuffer("An exception occured" +
+            StringBuffer message =  new StringBuffer("An exception occurred" +
                                        " during the execution of select(): \n");
             message.append(exception);
             message.append('\n');
