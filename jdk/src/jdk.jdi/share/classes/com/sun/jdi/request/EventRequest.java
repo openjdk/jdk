@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,22 @@
 
 package com.sun.jdi.request;
 
-import com.sun.jdi.*;
+import com.sun.jdi.Mirror;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.VMDisconnectedException;
+import com.sun.jdi.VMOutOfMemoryException;
+import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.event.BreakpointEvent;
+import com.sun.jdi.event.EventQueue;
+import com.sun.jdi.event.EventSet;
+import com.sun.jdi.event.VMDisconnectEvent;
 
 /**
  * Represents a request for notification of an event.  Examples include
  * {@link BreakpointRequest} and {@link ExceptionRequest}.
  * When an event occurs for which an enabled request is present,
- * an  {@link com.sun.jdi.event.EventSet EventSet} will
- * be placed on the {@link com.sun.jdi.event.EventQueue EventQueue}.
+ * an  {@link EventSet EventSet} will
+ * be placed on the {@link EventQueue EventQueue}.
  * The collection of existing event requests is
  * managed by the {@link EventRequestManager}.
  * <p>
@@ -63,16 +71,16 @@ import com.sun.jdi.*;
  * <p>
  * Any method on {@code EventRequest} which
  * takes {@code EventRequest} as an parameter may throw
- * {@link com.sun.jdi.VMDisconnectedException} if the target VM is
- * disconnected and the {@link com.sun.jdi.event.VMDisconnectEvent} has been or is
- * available to be read from the {@link com.sun.jdi.event.EventQueue}.
+ * {@link VMDisconnectedException} if the target VM is
+ * disconnected and the {@link VMDisconnectEvent} has been or is
+ * available to be read from the {@link EventQueue}.
  * <p>
  * Any method on {@code EventRequest} which
  * takes {@code EventRequest} as an parameter may throw
- * {@link com.sun.jdi.VMOutOfMemoryException} if the target VM has run out of memory.
+ * {@link VMOutOfMemoryException} if the target VM has run out of memory.
  *
- * @see com.sun.jdi.event.BreakpointEvent
- * @see com.sun.jdi.event.EventQueue
+ * @see BreakpointEvent
+ * @see EventQueue
  * @see EventRequestManager
  *
  * @author Robert Field
@@ -159,8 +167,8 @@ public interface EventRequest extends Mirror {
      * <p>
      * Thread suspensions through events have the same functionality
      * as explicitly requested suspensions. See
-     * {@link com.sun.jdi.ThreadReference#suspend} and
-     * {@link com.sun.jdi.VirtualMachine#suspend} for details.
+     * {@link ThreadReference#suspend} and
+     * {@link VirtualMachine#suspend} for details.
      *
      * @param policy the selected suspend policy.
      * @throws InvalidRequestStateException if this request is currently
