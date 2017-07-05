@@ -207,7 +207,7 @@ class ObjectMonitor {
     return operator new (size);
   }
   void operator delete(void* p) {
-    FreeHeap(p, mtInternal);
+    FreeHeap(p);
   }
   void operator delete[] (void *p) {
     operator delete(p);

@@ -184,8 +184,8 @@ public final class String
      *         The length
      *
      * @throws  IndexOutOfBoundsException
-     *          If the {@code offset} and {@code count} arguments index
-     *          characters outside the bounds of the {@code value} array
+     *          If {@code offset} is negative, {@code count} is negative, or
+     *          {@code offset} is greater than {@code value.length - count}
      */
     public String(char value[], int offset, int count) {
         if (offset < 0) {
@@ -224,8 +224,8 @@ public final class String
      *          codePoints}
      *
      * @throws  IndexOutOfBoundsException
-     *          If the {@code offset} and {@code count} arguments index
-     *          characters outside the bounds of the {@code codePoints} array
+     *          If {@code offset} is negative, {@code count} is negative, or
+     *          {@code offset} is greater than {@code codePoints.length - count}
      *
      * @since  1.5
      */
@@ -297,7 +297,8 @@ public final class String
      *         The length
      *
      * @throws  IndexOutOfBoundsException
-     *          If the {@code offset} or {@code count} argument is invalid
+     *          If {@code offset} is negative, {@code count} is negative, or
+     *          {@code offset} is greater than {@code ascii.length - count}
      *
      * @see  #String(byte[], int)
      * @see  #String(byte[], int, int, java.lang.String)
@@ -401,8 +402,8 @@ public final class String
      *          If the named charset is not supported
      *
      * @throws  IndexOutOfBoundsException
-     *          If the {@code offset} and {@code length} arguments index
-     *          characters outside the bounds of the {@code bytes} array
+     *          If {@code offset} is negative, {@code length} is negative, or
+     *          {@code offset} is greater than {@code bytes.length - length}
      *
      * @since  1.1
      */
@@ -439,8 +440,8 @@ public final class String
      *         decode the {@code bytes}
      *
      * @throws  IndexOutOfBoundsException
-     *          If the {@code offset} and {@code length} arguments index
-     *          characters outside the bounds of the {@code bytes} array
+     *          If {@code offset} is negative, {@code length} is negative, or
+     *          {@code offset} is greater than {@code bytes.length - length}
      *
      * @since  1.6
      */
@@ -524,8 +525,8 @@ public final class String
      *         The number of bytes to decode
      *
      * @throws  IndexOutOfBoundsException
-     *          If the {@code offset} and the {@code length} arguments index
-     *          characters outside the bounds of the {@code bytes} array
+     *          If {@code offset} is negative, {@code length} is negative, or
+     *          {@code offset} is greater than {@code bytes.length - length}
      *
      * @since  1.1
      */

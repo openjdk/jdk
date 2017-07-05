@@ -54,6 +54,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _wb_young_gc:
       return "WhiteBox Initiated Young GC";
 
+    case _wb_conc_mark:
+      return "WhiteBox Initiated Concurrent Mark";
+
     case _update_allocation_context_stats_inc:
     case _update_allocation_context_stats_full:
       return "Update Allocation Context Stats";

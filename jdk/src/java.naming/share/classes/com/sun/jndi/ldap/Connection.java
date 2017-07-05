@@ -111,7 +111,6 @@ public final class Connection implements Runnable {
 
     private static final boolean debug = false;
     private static final int dump = 0; // > 0 r, > 1 rw
-    public static final long DEFAULT_READ_TIMEOUT_MILLIS = 15 * 1000; // 15 second timeout;
 
 
     final private Thread worker;    // Initialized in constructor
@@ -414,10 +413,13 @@ public final class Connection implements Runnable {
                             // will be woken up before readTimeout only if reply is
                             // available
                             ldr.wait(readTimeout);
+                            waited = true;
                         } else {
-                            ldr.wait(DEFAULT_READ_TIMEOUT_MILLIS);
+                            // no timeout is set so we wait infinitely until
+                            // a response is received
+                            // http://docs.oracle.com/javase/8/docs/technotes/guides/jndi/jndi-ldap.html#PROP
+                            ldr.wait();
                         }
-                        waited = true;
                     } else {
                         break;
                     }

@@ -348,7 +348,6 @@ class Arguments : AllStatic {
   static void select_gc();
   static void set_ergonomics_flags();
   static void set_shared_spaces_flags();
-  static void set_gc_specific_flags();
   // limits the given memory size by the maximum amount of memory this process is
   // currently allowed to allocate or reserve.
   static julong limit_by_allocatable_memory(julong size);
@@ -460,6 +459,7 @@ class Arguments : AllStatic {
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
 
+  static void set_gc_specific_flags();
   static inline bool gc_selected(); // whether a gc has been selected
   static void select_gc_ergonomically();
 
@@ -474,7 +474,6 @@ class Arguments : AllStatic {
   // Check for consistency in the selection of the garbage collector.
   static bool check_gc_consistency_user();        // Check user-selected gc
   static inline bool check_gc_consistency_ergo(); // Check ergonomic-selected gc
-  static void check_deprecated_gcs();
   static void check_deprecated_gc_flags();
   // Check consistency or otherwise of VM argument settings
   static bool check_vm_args_consistency();
@@ -616,8 +615,7 @@ class Arguments : AllStatic {
 };
 
 bool Arguments::gc_selected() {
-  return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC ||
-    UseParNewGC || UseSerialGC;
+  return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC || UseSerialGC;
 }
 
 bool Arguments::check_gc_consistency_ergo() {

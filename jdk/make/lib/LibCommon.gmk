@@ -79,7 +79,9 @@ endif
 # Param 2 - library name
 # Param 3 - subdir for library
 define FindLib
-  $(call FindLibDirForModule, $(strip $1))$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(SHARED_LIBRARY_SUFFIX)
+$(strip \
+  $(call FindLibDirForModule, $(strip $1))$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(SHARED_LIBRARY_SUFFIX) \
+)
 endef
 
 ################################################################################

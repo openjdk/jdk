@@ -334,7 +334,7 @@ void OopMapCacheEntry::deallocate_bit_mask() {
   if (mask_size() > small_mask_limit && _bit_mask[0] != 0) {
     assert(!Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
       "This bit mask should not be in the resource area");
-    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0], mtClass);
+    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
     debug_only(_bit_mask[0] = 0;)
   }
 }
@@ -492,7 +492,7 @@ OopMapCache::~OopMapCache() {
   flush();
   // Deallocate array
   NOT_PRODUCT(_total_memory_usage -= sizeof(OopMapCache) + (sizeof(OopMapCacheEntry) * _size);)
-  FREE_C_HEAP_ARRAY(OopMapCacheEntry, _array, mtClass);
+  FREE_C_HEAP_ARRAY(OopMapCacheEntry, _array);
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
@@ -603,5 +603,5 @@ void OopMapCache::compute_one_oop_map(methodHandle method, int bci, InterpreterO
   tmp->initialize();
   tmp->fill(method, bci);
   entry->resource_copy(tmp);
-  FREE_C_HEAP_ARRAY(OopMapCacheEntry, tmp, mtInternal);
+  FREE_C_HEAP_ARRAY(OopMapCacheEntry, tmp);
 }

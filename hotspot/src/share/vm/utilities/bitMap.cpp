@@ -468,7 +468,7 @@ void BitMap::init_pop_count_table() {
                                        (intptr_t)  NULL_WORD);
     if (res != NULL_WORD) {
       guarantee( _pop_count_table == (void*) res, "invariant" );
-      FREE_C_HEAP_ARRAY(idx_t, table, mtInternal);
+      FREE_C_HEAP_ARRAY(idx_t, table);
     }
   }
 }

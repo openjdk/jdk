@@ -368,7 +368,7 @@ class ThreadTab extends Tab implements ActionListener, DocumentListener, ListSel
                             sb.append(Messages.STACK_TRACE);
                             int index = 0;
                             for (StackTraceElement e : ti.getStackTrace()) {
-                                sb.append(e.toString()+"\n");
+                                sb.append(e).append('\n');
                                 if (monitors != null) {
                                     for (MonitorInfo mi : monitors) {
                                         if (mi.getLockedStackDepth() == index) {
