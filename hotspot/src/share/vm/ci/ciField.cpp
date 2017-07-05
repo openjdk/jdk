@@ -352,11 +352,11 @@ bool ciField::will_link(ciInstanceKlass* accessing_klass,
     }
   }
 
+  LinkInfo link_info(_holder->get_instanceKlass(),
+                     _name->get_symbol(), _signature->get_symbol(),
+                     accessing_klass->get_Klass());
   fieldDescriptor result;
-  LinkResolver::resolve_field(result, _holder->get_instanceKlass(),
-                              _name->get_symbol(), _signature->get_symbol(),
-                              accessing_klass->get_Klass(), bc, true, false,
-                              KILL_COMPILE_ON_FATAL_(false));
+  LinkResolver::resolve_field(result, link_info, bc, false, KILL_COMPILE_ON_FATAL_(false));
 
   // update the hit-cache, unless there is a problem with memory scoping:
   if (accessing_klass->is_shared() || !is_shared()) {

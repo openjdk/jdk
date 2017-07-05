@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBDT_SOCKET_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_CFLAGS_WARNINGS_ARE_ERRORS) -DUSE_MMAP \
+    CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
         $(LIBDT_SOCKET_CPPFLAGS), \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libdt_socket/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -77,7 +77,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJDWP_SRC), \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) -DJDWP_LOGGING \
+    CFLAGS := $(CFLAGS_JDKLIB) -DJDWP_LOGGING \
         $(LIBJDWP_CPPFLAGS) \
         -I$(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjdwp/mapfile-vers, \

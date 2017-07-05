@@ -842,7 +842,7 @@ JvmtiEnvBase::get_stack_trace(JavaThread *java_thread,
         // optimize to limit the number of times that java_sender() is called
         javaVFrame *jvf_cursor = jvf;
         javaVFrame *jvf_prev = NULL;
-        javaVFrame *jvf_prev_prev;
+        javaVFrame *jvf_prev_prev = NULL;
         int j = 0;
         while (jvf_cursor != NULL) {
           jvf_prev_prev = jvf_prev;
