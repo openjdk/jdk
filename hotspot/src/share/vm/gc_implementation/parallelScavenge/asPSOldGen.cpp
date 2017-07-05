@@ -70,6 +70,17 @@ ASPSOldGen::ASPSOldGen(PSVirtualSpace* vs,
   _virtual_space = vs;
 }
 
+void ASPSOldGen::initialize_work(const char* perf_data_name, int level) {
+
+  PSOldGen::initialize_work(perf_data_name, level);
+
+  // The old gen can grow to gen_size_limit().  _reserve reflects only
+  // the current maximum that can be committed.
+  assert(_reserved.byte_size() <= gen_size_limit(), "Consistency check");
+
+  initialize_performance_counters(perf_data_name, level);
+}
+
 void ASPSOldGen::reset_after_change() {
   _reserved = MemRegion((HeapWord*)virtual_space()->low_boundary(),
                         (HeapWord*)virtual_space()->high_boundary());
