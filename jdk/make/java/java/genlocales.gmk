@@ -1,0 +1,91 @@
+#
+# Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+# This file defines rules to build the locales information for
+# resources in "sun.util.resources" & "sun.text.resources" packages
+#
+
+# Save the current FILES_java & FILES_compiled_properties variables
+
+FILES_java_orig := $(FILES_java)
+FILES_compiled_properties_orig := $(FILES_compiled_properties)
+
+
+# Since all the resources files are going to be compiled into class file format,
+# only FILES_java and FILES_compiled_properties variables will be picked up
+#
+# $(BUILDDIR)/java/util/FILES_java.gmk & $(BUILDDIR)/java/util/FILES_properties.gmk
+# contain "sun.util.resources" for European language support
+
+include $(BUILDDIR)/java/util/FILES_java.gmk
+include $(BUILDDIR)/java/util/FILES_properties.gmk
+
+Euro_Resources_java := $(FILES_java)
+Euro_Resources_properties := $(FILES_compiled_properties)
+
+# $(BUILDDIR)/java/text/FILES_java.gmk contains the "sun.text.resources" for 
+# European language support
+
+include $(BUILDDIR)/java/text/FILES_java.gmk
+
+Euro_Resources_java += $(FILES_java)
+
+FILES_compiled_properties=
+
+# $(BUILDDIR)/sun/text/FILES_java.gmk & $(BUILDDIR)/sun/text/FILES_properties.gmk
+# contain both resources for Non-European language support
+
+include $(BUILDDIR)/sun/text/FILES_java.gmk
+include $(BUILDDIR)/sun/text/FILES_properties.gmk
+
+NonEuro_Resources_java := $(FILES_java)
+NonEuro_Resources_properties := $(FILES_compiled_properties)
+
+# Restore the orignal FILES_java & FILES_compiled_properties variables
+FILES_java := $(FILES_java_orig)
+FILES_compiled_properties := $(FILES_compiled_properties_orig)
+
+LocaleDataMetaInfo_Src=$(SHARE_SRC)/classes/sun/util/LocaleDataMetaInfo-XLocales.java
+LocaleDataMetaInfo_Dest=$(GENSRCDIR)/sun/util/LocaleDataMetaInfo.java
+LOCALEGEN_SH=localegen.sh
+RESOURCE_NAMES="FormatData CollationData TimeZoneNames LocaleNames CurrencyNames CalendarData"
+
+$(LocaleDataMetaInfo_Dest):$(LocaleDataMetaInfo_Src) $(LOCALEGEN_SH)
+	@$(RM) $@.tmp.euro $@.tmp.noneuro;
+	@$(prep-target) 
+	@$(ECHO) $(subst .properties,'\n',$(Euro_Resources_properties)) > $@.tmp.euro;
+	@$(ECHO) $(subst .java,'\n',$(Euro_Resources_java)) >> $@.tmp.euro;	
+	@$(ECHO) $(subst .properties,'\n',$(NonEuro_Resources_properties)) > $@.tmp.noneuro;
+	@$(ECHO) $(subst .java,'\n',$(NonEuro_Resources_java)) >> $@.tmp.noneuro;
+	NAWK=$(NAWK) SED=$(SED) $(SH) $(LOCALEGEN_SH) $(RESOURCE_NAMES) $@.tmp.euro \
+		$@.tmp.noneuro $< $@
+	@$(RM) $@.tmp.euro $@.tmp.noneuro;
+	
+genlocales : $(LocaleDataMetaInfo_Dest)  
+
+clean clobber::
+	$(RM) $(LocaleDataMetaInfo_Dest)
+

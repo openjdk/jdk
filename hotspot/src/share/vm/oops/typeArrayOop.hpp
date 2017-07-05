@@ -1,0 +1,143 @@
+/*
+ * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+
+// A typeArrayOop is an array containing basic types (non oop elements).
+// It is used for arrays of {characters, singles, doubles, bytes, shorts, integers, longs}
+#include <limits.h>
+
+class typeArrayOopDesc : public arrayOopDesc {
+ protected:
+  jchar*    char_base()   const { return (jchar*)   base(T_CHAR); }
+  jboolean* bool_base()   const { return (jboolean*)base(T_BOOLEAN); }
+  jbyte*    byte_base()   const { return (jbyte*)   base(T_BYTE); }
+  jint*     int_base()    const { return (jint*)    base(T_INT); }
+  jlong*    long_base()   const { return (jlong*)   base(T_LONG); }
+  jshort*   short_base()  const { return (jshort*)  base(T_SHORT); }
+  jfloat*   float_base()  const { return (jfloat*)  base(T_FLOAT); }
+  jdouble*  double_base() const { return (jdouble*) base(T_DOUBLE); }
+
+  friend class typeArrayKlass;
+
+ public:
+  jbyte* byte_at_addr(int which) const {
+    assert(is_within_bounds(which), "index out of bounds");
+    return &byte_base()[which];
+  }
+
+  jboolean* bool_at_addr(int which) const {
+    assert(is_within_bounds(which), "index out of bounds");
+    return &bool_base()[which];
+  }
+
+  jchar* char_at_addr(int which) const {
+    assert(is_within_bounds(which), "index out of bounds");
+    return &char_base()[which];
+  }
+
+  jint* int_at_addr(int which) const {
+    assert(is_within_bounds(which), "index out of bounds");
+    return &int_base()[which];
+  }
+
+  jshort* short_at_addr(int which) const {
+    assert(is_within_bounds(which), "index out of bounds");
+    return &short_base()[which];
+  }
+
+  jushort* ushort_at_addr(int which) const {  // for field descriptor arrays
+    assert(is_within_bounds(which), "index out of bounds");
+    return (jushort*) &short_base()[which];
+  }
+
+  jlong* long_at_addr(int which) const {
+    assert(is_within_bounds(which), "index out of bounds");
+    return &long_base()[which];
+  }
+
+  jfloat* float_at_addr(int which) const {
+    assert(is_within_bounds(which), "index out of bounds");
+    return &float_base()[which];
+  }
+
+  jdouble* double_at_addr(int which) const {
+    assert(is_within_bounds(which), "index out of bounds");
+    return &double_base()[which];
+  }
+
+  jbyte byte_at(int which) const                  { return *byte_at_addr(which); }
+  void byte_at_put(int which, jbyte contents)     { *byte_at_addr(which) = contents; }
+
+  jboolean bool_at(int which) const               { return *bool_at_addr(which); }
+  void bool_at_put(int which, jboolean contents)  { *bool_at_addr(which) = contents; }
+
+  jchar char_at(int which) const                  { return *char_at_addr(which); }
+  void char_at_put(int which, jchar contents)     { *char_at_addr(which) = contents; }
+
+  jint int_at(int which) const                    { return *int_at_addr(which); }
+  void int_at_put(int which, jint contents)       { *int_at_addr(which) = contents; }
+
+  jshort short_at(int which) const                { return *short_at_addr(which); }
+  void short_at_put(int which, jshort contents)   { *short_at_addr(which) = contents; }
+
+  jushort ushort_at(int which) const              { return *ushort_at_addr(which); }
+  void ushort_at_put(int which, jushort contents) { *ushort_at_addr(which) = contents; }
+
+  jlong long_at(int which) const                  { return *long_at_addr(which); }
+  void long_at_put(int which, jlong contents)     { *long_at_addr(which) = contents; }
+
+  jfloat float_at(int which) const                { return *float_at_addr(which); }
+  void float_at_put(int which, jfloat contents)   { *float_at_addr(which) = contents; }
+
+  jdouble double_at(int which) const              { return *double_at_addr(which); }
+  void double_at_put(int which, jdouble contents) { *double_at_addr(which) = contents; }
+
+  jbyte byte_at_acquire(int which) const              { return OrderAccess::load_acquire(byte_at_addr(which)); }
+  void release_byte_at_put(int which, jbyte contents) { OrderAccess::release_store(byte_at_addr(which), contents); }
+
+  // Sizing
+
+  // Returns the number of words necessary to hold an array of "len"
+  // elements each of the given "byte_size".
+ private:
+  static int object_size(int lh, int length) {
+    int instance_header_size = Klass::layout_helper_header_size(lh);
+    int element_shift = Klass::layout_helper_log2_element_size(lh);
+    DEBUG_ONLY(BasicType etype = Klass::layout_helper_element_type(lh));
+    assert(length <= arrayOopDesc::max_array_length(etype), "no overflow");
+
+    julong size_in_bytes = length;
+    size_in_bytes <<= element_shift;
+    size_in_bytes += instance_header_size;
+    julong size_in_words = ((size_in_bytes + (HeapWordSize-1)) >> LogHeapWordSize);
+    assert(size_in_words <= (julong)max_jint, "no overflow");
+
+    return align_object_size((intptr_t)size_in_words);
+  }
+
+ public:
+  int object_size() {
+    typeArrayKlass* tk = typeArrayKlass::cast(klass());
+    return object_size(tk->layout_helper(), length());
+  }
+};

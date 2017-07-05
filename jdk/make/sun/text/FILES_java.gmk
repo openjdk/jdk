@@ -1,0 +1,95 @@
+#
+# Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+# Locale data files for lib/ext/localedata.jar.
+# This includes resource bundles and data for non-European
+# languages in sun.text.resources as well as sun.util.resources.
+#
+# Locale data for European languages is built from
+# - make/java/text for classes in sun.text.resources
+# - make/java/util for classes in sun.util.resources
+#
+
+FILES_java = \
+		sun/text/resources/BreakIteratorInfo_th.java \
+		\
+		sun/text/resources/CollationData_ar.java \
+		sun/text/resources/CollationData_hi.java \
+		sun/text/resources/CollationData_iw.java \
+		sun/text/resources/CollationData_ja.java \
+		sun/text/resources/CollationData_ko.java \
+		sun/text/resources/CollationData_th.java \
+		sun/text/resources/CollationData_vi.java \
+		sun/text/resources/CollationData_zh.java \
+		sun/text/resources/CollationData_zh_HK.java \
+ 		sun/text/resources/CollationData_zh_TW.java \
+		\
+		sun/text/resources/FormatData_ar.java \
+		sun/text/resources/FormatData_ar_AE.java \
+		sun/text/resources/FormatData_ar_BH.java \
+		sun/text/resources/FormatData_ar_DZ.java \
+		sun/text/resources/FormatData_ar_EG.java \
+		sun/text/resources/FormatData_ar_IQ.java \
+		sun/text/resources/FormatData_ar_JO.java \
+		sun/text/resources/FormatData_ar_KW.java \
+		sun/text/resources/FormatData_ar_LB.java \
+		sun/text/resources/FormatData_ar_LY.java \
+		sun/text/resources/FormatData_ar_MA.java \
+		sun/text/resources/FormatData_ar_OM.java \
+		sun/text/resources/FormatData_ar_QA.java \
+		sun/text/resources/FormatData_ar_SA.java \
+		sun/text/resources/FormatData_ar_SD.java \
+		sun/text/resources/FormatData_ar_SY.java \
+		sun/text/resources/FormatData_ar_TN.java \
+		sun/text/resources/FormatData_ar_YE.java \
+                sun/text/resources/FormatData_hi_IN.java \
+		sun/text/resources/FormatData_iw.java \
+		sun/text/resources/FormatData_iw_IL.java \
+		sun/text/resources/FormatData_ja.java \
+		sun/text/resources/FormatData_ja_JP.java \
+		sun/text/resources/FormatData_ja_JP_JP.java \
+		sun/text/resources/FormatData_ko.java \
+		sun/text/resources/FormatData_ko_KR.java \
+		sun/text/resources/FormatData_th.java \
+		sun/text/resources/FormatData_th_TH.java \
+		sun/text/resources/FormatData_th_TH_TH.java \
+		sun/text/resources/FormatData_vi.java \
+		sun/text/resources/FormatData_vi_VN.java \
+		sun/text/resources/FormatData_zh.java \
+		sun/text/resources/FormatData_zh_CN.java \
+		sun/text/resources/FormatData_zh_HK.java \
+		sun/text/resources/FormatData_zh_SG.java \
+		sun/text/resources/FormatData_zh_TW.java \
+		\
+                sun/util/resources/CurrencyNames_zh_HK.java \
+                sun/util/resources/CurrencyNames_zh_SG.java \
+                sun/util/resources/LocaleNames_zh_HK.java \
+                sun/util/resources/TimeZoneNames_hi.java \
+		sun/util/resources/TimeZoneNames_ja.java \
+		sun/util/resources/TimeZoneNames_ko.java \
+		sun/util/resources/TimeZoneNames_zh_CN.java \
+		sun/util/resources/TimeZoneNames_zh_TW.java \
+		sun/util/resources/TimeZoneNames_zh_HK.java
+

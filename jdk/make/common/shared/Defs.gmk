@@ -1,0 +1,483 @@
+#
+# Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+# Definitions for all platforms.
+#
+# Normally the convention is that these alternate definitions of
+#   primary make variables are never defined inside the Makefiles anywhere
+#   but are defined via environment variables or set on the make command
+#   line. So you should never see an ALT_* variable defined in any
+#   makefiles, just used. This is the convention and there are some
+#   exceptions, either mistakes or unusual circumstances.
+#
+# The naming convention for the default value of one of these variables
+#   that has an ALT_* override capability is to name the default value with a
+#   leading underscore (_). So for XXX you would have:
+#      _XXX      default value
+#      ALT_XXX   any override the user is providing if any
+#      XXX       the final value, either the default _XXX or the ALT_XXX value.
+#
+
+# On Directory names. In very rare cases should the Windows directory
+#    names use the backslash, please use the C:/ style of windows paths.
+#    Avoid duplicating the // characters in paths, this has known to cause
+#    strange problems with jar and other utilities, e.g. /a//b/ != /a/b/.
+#    Some of these variables have an explicit trailing / character, but in
+#    general, they should NOT have the trailing / character.
+
+# Get shared system utilities macros defined
+include $(JDK_MAKE_SHARED_DIR)/Defs-utils.gmk
+
+# Assumes ARCH, PLATFORM, ARCH_VM_SUBDIR, JDK_TOPDIR, etc. have been defined.
+
+# Simple pwd path
+define PwdPath
+$(shell cd $1 2> $(DEV_NULL) && pwd)
+endef
+
+# Checks an ALT value for spaces (should be one word), 
+#       warns and returns Check_ALT_$1 if spaces
+define AltCheckSpaces
+$(if $(word 2,$($1)),$(warning "WARNING: Value of $1 contains a space: '$($1)', check or set ALT_$1")Check_ALT_$1,$($1))
+endef
+
+# Checks an ALT value for empty, warns and returns Check_ALT_$1 if empty
+define AltCheckValue
+$(if $($1),$($1),$(warning "WARNING: Value of $1 cannot be empty, check or set ALT_$1")Check_ALT_$1)
+endef
+
+# Checks any value for empty, warns and returns $2 if empty
+define CheckValue
+$(if $($1),$($1),$(warning "WARNING: Value of $1 cannot be empty, will use '$2'")$2)
+endef
+
+# Prefix for a utility prefix path, if empty leave alone, otherwise end with a /
+define PrefixPath
+$(if $1,$(subst //,/,$1/),)
+endef
+
+# Select a directory if it exists, or the alternate 2 or the alternate 3
+define DirExists
+$(shell \
+  if [ -d "$1" ]; then  \
+    echo "$1"; \
+  elif [ -d "$2" ]; then \
+    echo "$2"; \
+  else \
+    echo "$3"; \
+  fi)
+endef
+
+# Select a writable directory if it exists and is writable, or the alternate
+define WriteDirExists
+$(shell \
+  if [ -d "$1" -a -w "$1" ]; then  \
+    echo "$1"; \
+  else \
+    echo "$2"; \
+  fi)
+endef
+
+# Select a file if it exists, or the alternate 1, or the alternate 2
+define FileExists
+$(shell \
+  if [ -r "$1" ]; then \
+    echo "$1"; \
+  elif [ -r "$2" ]; then \
+    echo "$2"; \
+  else \
+    echo "NO_FILE_EXISTS"; \
+  fi)
+endef
+
+# Given a line of text, get the major.minor version number from it
+define GetVersion
+$(shell echo $1 | sed -e 's@[^1-9]*\([1-9][0-9]*\.[0-9][0-9]*\).*@\1@' )
+endef
+
+# Given a major.minor.micro version, return the major, minor, or micro number
+define MajorVersion
+$(if $(word 1, $(subst ., ,$1)),$(word 1, $(subst ., ,$1)),0)
+endef
+define MinorVersion
+$(if $(word 2, $(subst ., ,$1)),$(word 2, $(subst ., ,$1)),0)
+endef
+define MicroVersion
+$(if $(word 3, $(subst ., ,$1)),$(word 3, $(subst ., ,$1)),0)
+endef
+
+# Macro that returns missing, same, newer, or older $1=version $2=required
+#  (currently does not check the micro number)
+define CheckVersions
+$(shell \
+  if [ "$1" = "" -o "$2" = "" ]; then \
+    echo missing; \
+  else \
+    if [ "$1" = "$2" ]; then \
+      echo same; \
+    else \
+      if [ $(call MajorVersion,$1) -lt $(call MajorVersion,$2) ] ; then \
+        echo older; \
+      else \
+	if [ $(call MajorVersion,$1) -eq $(call MajorVersion,$2) -a \
+	     $(call MinorVersion,$1) -lt $(call MinorVersion,$2) ]; then \
+          echo older; \
+        else \
+          echo newer; \
+        fi; \
+      fi; \
+    fi; \
+  fi)
+endef
+
+# Make sure certain variables are non-empty at this point
+_check_values:=\
+$(call CheckValue,ARCH,),\
+$(call CheckValue,ARCH_DATA_MODEL,),\
+$(call CheckValue,ARCH_VM_SUBDIR,),\
+$(call CheckValue,JDK_TOPDIR,),\
+$(call CheckValue,JDK_MAKE_SHARED_DIR,),\
+$(call CheckValue,VARIANT,),\
+$(call CheckValue,PLATFORM,)
+
+# Misc common settings for all workspaces
+#   This determines the version of the product, and the previous version or boot
+ifndef JDK_MAJOR_VERSION
+  JDK_MAJOR_VERSION      = 1
+  PREVIOUS_MAJOR_VERSION = 1
+endif
+
+ifndef JDK_MINOR_VERSION
+  JDK_MINOR_VERSION      = 7
+  PREVIOUS_MINOR_VERSION = 6
+endif
+
+ifndef JDK_MICRO_VERSION
+  JDK_MICRO_VERSION      = 0
+  PREVIOUS_MICRO_VERSION = 0
+endif
+
+ifndef MILESTONE
+  MILESTONE = internal
+endif
+
+# Default names
+LAUNCHER_NAME = java
+PRODUCT_NAME = Java(TM)
+PRODUCT_SUFFIX = SE Runtime Environment
+COMPANY_NAME = Sun Microsystems, Inc.
+
+ifdef OPENJDK
+  LAUNCHER_NAME = openjdk
+  PRODUCT_NAME = OpenJDK
+  PRODUCT_SUFFIX = Runtime Environment
+  COMPANY_NAME =
+endif
+
+RUNTIME_NAME = $(PRODUCT_NAME) $(PRODUCT_SUFFIX)
+
+ifndef BUILD_NUMBER
+  JDK_BUILD_NUMBER = b00
+else
+  ifndef JDK_BUILD_NUMBER
+    JDK_BUILD_NUMBER = $(BUILD_NUMBER)
+  endif
+endif
+
+# Default variant is the optimized version of everything
+#    can be OPT or DBG,  default is OPT
+#    Determine the extra pattern to add to the release name for debug/fastdebug.
+#    Determine the JDK_IMPORT_VARIANT, so we get the right VM files copied over.
+#    Determine suffix for obj directory or OBJDIR, for .o files.
+#    (by keeping .o files separate, just .o files, they don't clobber each
+#     other, however, the library files will clobber each other).
+#
+ifeq ($(VARIANT), DBG)
+  BUILD_VARIANT_RELEASE=-debug
+  OBJDIRNAME_SUFFIX=_g
+else
+  BUILD_VARIANT_RELEASE=
+  OBJDIRNAME_SUFFIX=
+endif
+ifeq ($(FASTDEBUG), true)
+  VARIANT=DBG
+  BUILD_VARIANT_RELEASE=-fastdebug
+  OBJDIRNAME_SUFFIX=_gO
+  _JDK_IMPORT_VARIANT=/fastdebug
+endif
+
+# Depending on the flavor of the build, add a -debug or -fastdebug to the name
+ifdef DEBUG_NAME
+  BUILD_VARIANT_RELEASE=-$(DEBUG_NAME)
+endif
+
+# These default values are redefined during a release build.
+#    CTE can set JDK_UPDATE_VERSION during the update release
+ifdef JDK_UPDATE_VERSION
+  JDK_VERSION  = $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)_$(JDK_UPDATE_VERSION)
+  MARKETING_NUMBER := $(shell \
+	$(ECHO) $(JDK_UPDATE_VERSION) | $(NAWK) '{if (substr($$0,1,1)=="0") print substr($$0, 2); else print $$0;}')
+  MARKET_NAME= $(shell $(ECHO) " Update $(MARKETING_NUMBER)")
+  JDK_MKTG_VERSION  = $(JDK_MINOR_VERSION)u$(MARKETING_NUMBER)
+else
+  JDK_VERSION  = $(JDK_MAJOR_VERSION).$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION)
+  JDK_MKTG_VERSION  = $(JDK_MINOR_VERSION)
+  MARKET_NAME=
+endif
+JDK_UNDERSCORE_VERSION =  $(subst .,_,$(JDK_VERSION))
+JDK_MKTG_UNDERSCORE_VERSION =  $(subst .,_,$(JDK_MKTG_VERSION))
+
+# RELEASE is JDK_VERSION and -MILESTONE if MILESTONE is set
+ifneq ($(MILESTONE),fcs)
+  RELEASE      = $(JDK_VERSION)-$(MILESTONE)$(BUILD_VARIANT_RELEASE)
+else
+  RELEASE      = $(JDK_VERSION)$(BUILD_VARIANT_RELEASE)
+endif
+
+# FULL_VERSION is RELEASE and -BUILD_NUMBER if BUILD_NUMBER is set
+ifdef BUILD_NUMBER
+  FULL_VERSION = $(RELEASE)-$(BUILD_NUMBER)
+else
+  BUILD_NUMBER = b00
+  USER_RELEASE_SUFFIX := $(shell echo $(USER)_`date '+%d_%b_%Y_%H_%M' | tr "A-Z" "a-z"`)
+  FULL_VERSION = $(RELEASE)-$(USER_RELEASE_SUFFIX)-$(BUILD_NUMBER)
+endif
+
+# Promoted build location
+PROMOTED_RE_AREA = $(SLASH_JAVA)/re/jdk/$(JDK_VERSION)/promoted
+PROMOTED_BUILD_LATEST = latest
+PROMOTED_BUILD_BASEDIR = $(PROMOTED_RE_AREA)/$(PROMOTED_BUILD_LATEST)
+PROMOTED_BUILD_BINARIES = $(PROMOTED_BUILD_BASEDIR)/binaries
+
+# OPT: Changes what the optimizations settings (in _OPT)
+POPT = $(_OPT$(ALT_OPT))$(ALT_OPT)
+
+# PARALLEL_COMPILE_JOBS: is the number of compiles done in parallel.
+#  If the user sets ALT_PARALLEL_COMPILE_JOBS, then COMPILE_APPROACH is set
+#  to parallel.
+#
+#  Recommended setting: 2 seems to be ideal for single cpu machines,
+#                       2 times the number of CPU's is a basic formula, 
+#                       but probably not more than 4 if the machine is 
+#                       being shared by others, or the machine is limited 
+#                       in RAM or swap.
+#
+ifdef ALT_PARALLEL_COMPILE_JOBS
+  PARALLEL_COMPILE_JOBS=$(ALT_PARALLEL_COMPILE_JOBS)
+else
+  PARALLEL_COMPILE_JOBS=2
+endif
+
+# Previous JDK release (version of BOOTDIR version)
+ifdef ALT_PREVIOUS_JDK_VERSION
+  PREVIOUS_JDK_VERSION = $(ALT_PREVIOUS_JDK_VERSION)
+else
+  PREVIOUS_JDK_VERSION  = $(PREVIOUS_MAJOR_VERSION).$(PREVIOUS_MINOR_VERSION).$(PREVIOUS_MICRO_VERSION)
+endif
+export PREVIOUS_JDK_VERSION
+PREVIOUS_JDK_VERSION:=$(call AltCheckSpaces,PREVIOUS_JDK_VERSION)
+PREVIOUS_JDK_VERSION:=$(call AltCheckValue,PREVIOUS_JDK_VERSION)
+
+# Version with _ instead of . in number
+ifeq ($(PREVIOUS_MINOR_VERSION),5)
+  PREVIOUS_JDK_UNDERSCORE_VERSION =  $(subst .,_,$(PREVIOUS_JDK_VERSION))
+else
+  PREVIOUS_JDK_UNDERSCORE_VERSION = $(PREVIOUS_MINOR_VERSION)
+endif
+
+# Include any private definitions for this set of workspaces
+_PRIVATE_DEFS_FILE=$(JDK_MAKE_SHARED_DIR)/PrivateDefs.gmk
+USING_PRIVATE_DEFS:=$(shell if [ -f $(_PRIVATE_DEFS_FILE) ]; then echo true; else echo false; fi)
+ifeq ($(USING_PRIVATE_DEFS),true)
+dummy:=$(warning "WARNING: Using definitions from $(_PRIVATE_DEFS_FILE)")
+include $(_PRIVATE_DEFS_FILE)
+endif
+
+# Get platform specific settings
+include $(JDK_MAKE_SHARED_DIR)/Defs-$(PLATFORM).gmk
+
+# Components
+ifdef ALT_LANGTOOLS_DIST
+  LANGTOOLS_DIST :=$(call FullPath,$(ALT_LANGTOOLS_DIST))
+else
+  LANGTOOLS_DIST =
+endif
+ifdef ALT_CORBA_DIST
+  CORBA_DIST :=$(call FullPath,$(ALT_CORBA_DIST))
+else
+  CORBA_DIST =
+endif
+ifdef ALT_JAXP_DIST
+  JAXP_DIST :=$(call FullPath,$(ALT_JAXP_DIST))
+else
+  JAXP_DIST =
+endif
+ifdef ALT_JAXWS_DIST
+  JAXWS_DIST :=$(call FullPath,$(ALT_JAXWS_DIST))
+else
+  JAXWS_DIST =
+endif
+
+# HOTSPOT_DOCS_IMPORT_PATH: Path to hotspot docs files to import into the docs generation
+ifdef ALT_HOTSPOT_DOCS_IMPORT_PATH
+  HOTSPOT_DOCS_IMPORT_PATH :=$(call FullPath,$(ALT_HOTSPOT_DOCS_IMPORT_PATH))
+else
+  HOTSPOT_DOCS_IMPORT_PATH :=$(call DirExists,$(HOTSPOT_IMPORT_PATH)/docs,$(PROMOTED_BUILD_BASEDIR)/docs,/NO_DOCS_DIR)
+endif
+
+# PREVIOUS_JDK_FILE: filename of install bundle for previous JDK
+ifdef ALT_PREVIOUS_JDK_FILE
+  PREVIOUS_JDK_FILE  =$(ALT_PREVIOUS_JDK_FILE)
+else
+  PREVIOUS_JDK_FILE = jdk-$(PREVIOUS_JDK_UNDERSCORE_VERSION)-$(PLATFORM)-$(ARCH)$(BUNDLE_FILE_SUFFIX)
+endif
+export PREVIOUS_JDK_FILE
+PREVIOUS_JDK_FILE:=$(call AltCheckSpaces,PREVIOUS_JDK_FILE)
+PREVIOUS_JDK_FILE:=$(call AltCheckValue,PREVIOUS_JDK_FILE)
+
+# PREVIOUS_JRE_FILE: filename of install bundle for previous JRE
+ifdef ALT_PREVIOUS_JRE_FILE
+  PREVIOUS_JRE_FILE  =$(ALT_PREVIOUS_JRE_FILE)
+else
+  PREVIOUS_JRE_FILE = jre-$(PREVIOUS_JDK_UNDERSCORE_VERSION)-$(PLATFORM)-$(ARCH)$(BUNDLE_FILE_SUFFIX)
+endif
+export PREVIOUS_JRE_FILE
+PREVIOUS_JRE_FILE:=$(call AltCheckSpaces,PREVIOUS_JRE_FILE)
+PREVIOUS_JRE_FILE:=$(call AltCheckValue,PREVIOUS_JRE_FILE)
+
+# Set here as shared variables
+PREVIOUS_JRE_BUNDLE = $(PREVIOUS_RELEASE_PATH)/$(PREVIOUS_JRE_FILE)
+PREVIOUS_JDK_BUNDLE = $(PREVIOUS_RELEASE_PATH)/$(PREVIOUS_JDK_FILE)
+
+# These are the same on all platforms but require the above platform include 1st
+
+# BOOTDIR: Bootstrap JDK, previous released JDK.
+#   _BOOTDIR1 and _BOOTDIR2 picked by platform
+ifdef ALT_BOOTDIR
+  BOOTDIR =$(ALT_BOOTDIR)
+else
+  BOOTDIR  :=$(call DirExists,$(_BOOTDIR1),$(_BOOTDIR2),/NO_BOOTDIR)
+endif
+export BOOTDIR
+BOOTDIR:=$(call AltCheckSpaces,BOOTDIR)
+BOOTDIR:=$(call AltCheckValue,BOOTDIR)
+
+# PREVIOUS_RELEASE_PATH: path to where previous release bundles are
+ifdef ALT_PREVIOUS_RELEASE_PATH
+  PREVIOUS_RELEASE_PATH :=$(call OptFullPath,$(ALT_PREVIOUS_RELEASE_PATH))
+else
+  PREVIOUS_RELEASE_PATH =$(SLASH_JAVA)/re/jdk/$(PREVIOUS_JDK_VERSION)/archive/fcs/bundles/$(PLATFORM)-$(ARCH)
+endif
+export PREVIOUS_RELEASE_PATH
+PREVIOUS_RELEASE_PATH:=$(call AltCheckSpaces,PREVIOUS_RELEASE_PATH)
+PREVIOUS_RELEASE_PATH:=$(call AltCheckValue,PREVIOUS_RELEASE_PATH)
+
+# PREVIOUS_RELEASE_IMAGE: Previous install image to compare against
+ifdef ALT_PREVIOUS_RELEASE_IMAGE
+  PREVIOUS_RELEASE_IMAGE :=$(call FullPath,$(ALT_PREVIOUS_RELEASE_IMAGE))
+endif
+
+# CACERTS_FILE: if OPENJDK is false and the internal version of the file 
+#		(that is, non-empty) is available, use it, otherwise use an 
+#		empty keystore.
+#
+# We put this variable here for sanity checks and in case another
+# components will need to know which cacerts file is being used.
+#
+ifdef ALT_CACERTS_FILE
+  CACERTS_FILE = $(ALT_CACERTS_FILE)
+else
+  CACERTS_EXT   = $(SHARE_SRC)/lib/security/cacerts
+  ifdef OPENJDK
+    CACERTS_FILE  :=$(CACERTS_EXT)
+  else # (!OPENJDK)
+    CACERTS_INT   = $(CLOSED_SHARE_SRC)/lib/security/cacerts.internal
+    CACERTS_FILE  :=$(call FileExists,$(CACERTS_INT),$(CACERTS_EXT))
+  endif # (OPENJDK)
+endif
+CACERTS_FILE:=$(call AltCheckSpaces,CACERTS_FILE)
+CACERTS_FILE:=$(call AltCheckValue,CACERTS_FILE)
+
+# OUTPUTDIR: Location of all output for the build
+_BACKUP_OUTPUTDIR = $(TEMP_DISK)/$(USER)/jdk-outputdir
+ifdef ALT_OUTPUTDIR
+  _POSSIBLE_OUTPUTDIR =$(subst \,/,$(ALT_OUTPUTDIR))
+else
+  ifndef _OUTPUTDIR
+    _OUTPUTDIR = $(_BACKUP_OUTPUTDIR)
+  endif
+  _POSSIBLE_OUTPUTDIR =$(_OUTPUTDIR)
+endif
+_create_outputdir1:=$(shell mkdir -p $(_POSSIBLE_OUTPUTDIR) > $(DEV_NULL) 2>&1)
+OUTPUTDIR:=$(call WriteDirExists,$(_POSSIBLE_OUTPUTDIR),$(_BACKUP_OUTPUTDIR))
+_create_outputdir2:=$(shell mkdir -p $(OUTPUTDIR) > $(DEV_NULL) 2>&1)
+ifeq "$(OUTPUTDIR)" "$(_BACKUP_OUTPUTDIR)"
+  _outputdir_warning:=$(warning "WARNING: OUTPUTDIR '$(_POSSIBLE_OUTPUTDIR)' not writable, will use '$(_BACKUP_OUTPUTDIR)'")
+endif
+OUTPUTDIR:=$(call AltCheckSpaces,OUTPUTDIR)
+OUTPUTDIR:=$(call AltCheckValue,OUTPUTDIR)
+
+# Bin directory
+#   NOTE: ISA_DIR is usually empty, on Solaris it might be /sparcv9 or /amd64
+BINDIR      = $(OUTPUTDIR)/bin$(ISA_DIR)
+  
+# MOZILLA_HEADERS_PATH: path to mozilla header files for plugin
+ifdef ALT_MOZILLA_HEADERS_PATH
+  MOZILLA_HEADERS_PATH :=$(call FullPath,$(ALT_MOZILLA_HEADERS_PATH))
+else
+  MOZILLA_HEADERS_PATH  =$(JDK_DEVTOOLS_DIR)/share/plugin
+endif
+MOZILLA_HEADERS_PATH:=$(call AltCheckSpaces,MOZILLA_HEADERS_PATH)
+MOZILLA_HEADERS_PATH:=$(call AltCheckValue,MOZILLA_HEADERS_PATH)
+
+# CUPS_HEADERS_PATH: path to Cups headers files for Unix printing
+ifneq ($(PLATFORM), windows)
+JDK_CUPS_HEADERS_PATH=$(JDK_DEVTOOLS_DIR)/share/cups/include
+  ifdef ALT_CUPS_HEADERS_PATH
+     CUPS_HEADERS_PATH:=$(call FullPath,$(ALT_CUPS_HEADERS_PATH))
+     CUP_HEADERS_PATH:=$(call AltCheckValue,CUPS_HEADERS_PATH)
+  else 
+    CUPS_HEADERS_PATH:= \
+      $(shell if [ -d "$(JDK_CUPS_HEADERS_PATH)" ]; then \
+        echo "$(JDK_CUPS_HEADERS_PATH)"; \
+      else \
+         echo "$(_CUPS_HEADERS_PATH)";\
+      fi)
+  endif
+endif
+
+ifdef ALT_COPYRIGHT_YEAR
+  COPYRIGHT_YEAR = $(ALT_COPYRIGHT_YEAR)
+else
+  COPYRIGHT_YEAR = $(shell $(DATE) '+%Y')
+endif
+
+# Absolute path to output directory
+ABS_OUTPUTDIR:=$(call FullPath,$(OUTPUTDIR))
+
+# Get shared compiler settings
+include $(JDK_MAKE_SHARED_DIR)/Compiler.gmk
+

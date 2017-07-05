@@ -1,0 +1,87 @@
+/*
+ * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package sun.tools.jstat;
+
+import java.io.StreamTokenizer;
+import java.util.Set;
+import java.util.Iterator;
+
+/**
+ * An exception class for syntax exceptions detected by the options file
+ * parser.
+ *
+ * @author Brian Doherty
+ * @since 1.5
+ */
+public class SyntaxException extends ParserException {
+    private String message;
+
+    public SyntaxException(String message) {
+        this.message = message;
+    }
+
+    public SyntaxException(int lineno, String expected, String found) {
+        message = "Syntax error at line " + lineno
+                  + ": Expected " + expected
+                  + ", Found " + found;
+    }
+
+    public SyntaxException(int lineno, String expected, Token found) {
+        message = "Syntax error at line " + lineno
+                  + ": Expected " + expected
+                  + ", Found " + found.toMessage();
+    }
+
+    public SyntaxException(int lineno, Token expected, Token found) {
+        message = "Syntax error at line " + lineno
+                  + ": Expected " + expected.toMessage()
+                  + ", Found " + found.toMessage();
+    }
+
+    public SyntaxException(int lineno, Set expected, Token found) {
+        StringBuilder msg = new StringBuilder();
+
+        msg.append("Syntax error at line " + lineno + ": Expected one of \'");
+
+        boolean first = true;
+        for (Iterator i = expected.iterator(); i.hasNext(); /* empty */) {
+            String keyWord = (String)i.next();
+            if (first) {
+                msg.append(keyWord);
+                first = false;
+            } else {
+                msg.append("|" + keyWord);
+            }
+        }
+
+        msg.append("\', Found " + found.toMessage());
+        message = msg.toString();
+    }
+
+    public String getMessage() {
+        return message;
+    }
+}

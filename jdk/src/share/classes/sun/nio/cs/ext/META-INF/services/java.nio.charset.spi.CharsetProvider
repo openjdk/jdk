@@ -1,0 +1,2 @@
+# NIO charset SPI extended charset provider
+sun.nio.cs.ext.ExtendedCharsets

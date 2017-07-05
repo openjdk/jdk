@@ -1,0 +1,38 @@
+The HotSpot Serviceability Agent (SA) is a debugger for hotspot core
+dumps and hung processes. There is a read-only JDI (Java Debugger
+Interface) implementation on top of SA. This is part of JDK product and
+the classes are in $JDK/tools/sa-jdi.jar.
+
+In addition, there are few serviceability tools in $JDK/bin, namely,
+jstack (java stack trace tool), jmap (heap tool), jinfo (Java config
+tool) and jsadebugd. The classes for these are also in sa-jdi.jar
+file. sa-jdi.jar file is built along with hotspot (libjvm.so) on Solaris
+and Linux platforms. On Windows platform, SA-JDI is not included and
+serviceability tools do not use SA.
+
+Apart from these, HotSpot SA consists of a number of tools that are
+*not* included in JDK product bits.
+
+The sources and makefile for all-of-SA (including non-productized stuff)
+are under $HOTSPOT_WS/agent directory. The makefile $HOTSPOT/agent/make
+directory and shell scripts (and batch files) are used to build and run
+SA non-product tools. There is also documentation of SA under
+$HOTSPOT/agent/doc directory.
+
+To build complete SA, you need to have Rhino Mozilla jar (js.jar)
+version 1.5R5 under $HOTSPOT/agent/src/share/lib directory. Rhino is
+JavaScript interpreter written in Java. Rhino is used to implement SA
+features such as
+
+* SA command line debugger's JavaScript interface
+ - refer to $HOTSPOT/agent/doc/clhsdb.html
+ - refer to $HOTSPOT/agent/doc/jsdb.html
+* SA simple object query language (SOQL) 
+ - language to query Java heap. 
+
+Rhino's "js.jar" is not included in hotspot source bundles. You need to
+download it from http://www.mozilla.org/rhino/download.html.
+ 
+Without js.jar, $HOTSPOT/agent/make/Makefile will fail to build. But,
+note that sa-jdi.jar containing the productized portions of SA will
+still be built when you build hotspot JVM. 
