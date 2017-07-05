@@ -120,7 +120,8 @@ public class ConcurrentAssociateTest {
             }
         };
 
-        int ps = Runtime.getRuntime().availableProcessors();
+        // Bound concurrency to avoid degenerate performance
+        int ps = Math.min(Runtime.getRuntime().availableProcessors(), 32);
         Stream<CompletableFuture> runners = IntStream.range(0, ps)
                 .mapToObj(i -> sr.get())
                 .map(CompletableFuture::runAsync);

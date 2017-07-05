@@ -100,6 +100,10 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     return;
   }
 
+  // We only re-enter slp when we vector mapped a queried loop and we want to
+  // continue unrolling, in this case, slp is not subsequently done.
+  if (cl->do_unroll_only()) return;
+
   // Check for pre-loop ending with CountedLoopEnd(Bool(Cmp(x,Opaque1(limit))))
   CountedLoopEndNode* pre_end = get_pre_loop_end(cl);
   if (pre_end == NULL) return;
@@ -121,12 +125,13 @@ void SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
 }
 
 //------------------------------early unrolling analysis------------------------------
-void SuperWord::unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_factor) {
+void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   bool is_slp = true;
   ResourceMark rm;
   size_t ignored_size = lpt()->_body.size();
   int *ignored_loop_nodes = NEW_RESOURCE_ARRAY(int, ignored_size);
   Node_Stack nstack((int)ignored_size);
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   Node *cl_exit = cl->loopexit();
 
   // First clear the entries
@@ -249,13 +254,9 @@ void SuperWord::unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_f
 
       // If a max vector exists which is not larger than _local_loop_unroll_factor
       // stop looking, we already have the max vector to map to.
-      if (cur_max_vector <= local_loop_unroll_factor) {
+      if (cur_max_vector < local_loop_unroll_factor) {
         is_slp = false;
-#ifndef PRODUCT
-        if (TraceSuperWordLoopUnrollAnalysis) {
-          tty->print_cr("slp analysis fails: unroll limit equals max vector\n");
-        }
-#endif
+        NOT_PRODUCT(if (TraceSuperWordLoopUnrollAnalysis) tty->print_cr("slp analysis fails: unroll limit greater than max vector\n"));
         break;
       }
 
@@ -268,8 +269,9 @@ void SuperWord::unrolling_analysis(CountedLoopNode *cl, int &local_loop_unroll_f
     }
     if (is_slp) {
       local_loop_unroll_factor = max_vector;
+      cl->mark_passed_slp();
     }
-    cl->mark_passed_slp();
+    cl->mark_was_slp();
     cl->set_slp_max_unroll(local_loop_unroll_factor);
   }
 }
@@ -1758,7 +1760,9 @@ void SuperWord::output() {
   }
 
   Compile* C = _phase->C;
+  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   uint max_vlen_in_bytes = 0;
+  uint max_vlen = 0;
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
@@ -1841,6 +1845,7 @@ void SuperWord::output() {
       _igvn._worklist.push(vn);
 
       if (vlen_in_bytes > max_vlen_in_bytes) {
+        max_vlen = vlen;
         max_vlen_in_bytes = vlen_in_bytes;
       }
 #ifdef ASSERT
@@ -1852,6 +1857,18 @@ void SuperWord::output() {
     }
   }
   C->set_max_vector_size(max_vlen_in_bytes);
+  if (SuperWordLoopUnrollAnalysis) {
+    if (cl->has_passed_slp()) {
+      uint slp_max_unroll_factor = cl->slp_max_unroll();
+      if (slp_max_unroll_factor == max_vlen) {
+        NOT_PRODUCT(if (TraceSuperWordLoopUnrollAnalysis) tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vlen, max_vlen_in_bytes*BitsPerByte));
+        // For atomic unrolled loops which are vector mapped, instigate more unrolling.
+        cl->set_notpassed_slp();
+        C->set_major_progress();
+        cl->mark_do_unroll_only();
+      }
+    }
+  }
 }
 
 //------------------------------vector_opd---------------------------
