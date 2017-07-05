@@ -602,24 +602,18 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       // make room for the new argument:
       __ movl(rax_argslot, rcx_bmh_vmargslot);
       __ lea(rax_argslot, __ argument_address(rax_argslot));
-      insert_arg_slots(_masm, arg_slots * stack_move_unit(), arg_mask,
-                       rax_argslot, rbx_temp, rdx_temp);
+
+      insert_arg_slots(_masm, arg_slots * stack_move_unit(), arg_mask, rax_argslot, rbx_temp, rdx_temp);
 
       // store bound argument into the new stack slot:
       __ load_heap_oop(rbx_temp, rcx_bmh_argument);
-      Address prim_value_addr(rbx_temp, java_lang_boxing_object::value_offset_in_bytes(arg_type));
       if (arg_type == T_OBJECT) {
         __ movptr(Address(rax_argslot, 0), rbx_temp);
       } else {
-        __ load_sized_value(rdx_temp, prim_value_addr,
-                            type2aelembytes(arg_type), is_signed_subword_type(arg_type));
-        __ movptr(Address(rax_argslot, 0), rdx_temp);
-#ifndef _LP64
-        if (arg_slots == 2) {
-          __ movl(rdx_temp, prim_value_addr.plus_disp(wordSize));
-          __ movl(Address(rax_argslot, Interpreter::stackElementSize), rdx_temp);
-        }
-#endif //_LP64
+        Address prim_value_addr(rbx_temp, java_lang_boxing_object::value_offset_in_bytes(arg_type));
+        const int arg_size = type2aelembytes(arg_type);
+        __ load_sized_value(rdx_temp, prim_value_addr, arg_size, is_signed_subword_type(arg_type), rbx_temp);
+        __ store_sized_value(Address(rax_argslot, 0), rdx_temp, arg_size, rbx_temp);
       }
 
       if (direct_to_method) {

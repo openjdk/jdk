@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,25 +677,6 @@ void klassVtable::oop_update_pointers(ParCompactionManager* cm) {
     PSParallelCompact::adjust_pointer(adr_method_at(i));
   }
 }
-
-void klassVtable::oop_update_pointers(ParCompactionManager* cm,
-                                      HeapWord* beg_addr, HeapWord* end_addr) {
-  const int n = length();
-  const int entry_size = vtableEntry::size();
-
-  int beg_idx = 0;
-  HeapWord* const method_0 = (HeapWord*)adr_method_at(0);
-  if (beg_addr > method_0) {
-    // it's safe to use cast, as we have guarantees on vtable size to be sane
-    beg_idx = int((pointer_delta(beg_addr, method_0) + entry_size - 1) / entry_size);
-  }
-
-  oop* const beg_oop = adr_method_at(beg_idx);
-  oop* const end_oop = MIN2((oop*)end_addr, adr_method_at(n));
-  for (oop* cur_oop = beg_oop; cur_oop < end_oop; cur_oop += entry_size) {
-    PSParallelCompact::adjust_pointer(cur_oop);
-  }
-}
 #endif // SERIALGC
 
 // Iterators
@@ -817,25 +798,6 @@ void klassItable::oop_update_pointers(ParCompactionManager* cm) {
   itableMethodEntry* ime = method_entry(0);
   for(int j = 0; j < _size_method_table; j++) {
     PSParallelCompact::adjust_pointer((oop*)&ime->_method);
-    ime++;
-  }
-}
-
-void klassItable::oop_update_pointers(ParCompactionManager* cm,
-                                      HeapWord* beg_addr, HeapWord* end_addr) {
-  // offset table
-  itableOffsetEntry* ioe = offset_entry(0);
-  for(int i = 0; i < _size_offset_table; i++) {
-    oop* p = (oop*)&ioe->_interface;
-    PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
-    ioe++;
-  }
-
-  // method table
-  itableMethodEntry* ime = method_entry(0);
-  for(int j = 0; j < _size_method_table; j++) {
-    oop* p = (oop*)&ime->_method;
-    PSParallelCompact::adjust_pointer(p, beg_addr, end_addr);
     ime++;
   }
 }

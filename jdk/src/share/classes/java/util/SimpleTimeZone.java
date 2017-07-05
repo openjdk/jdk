@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -825,10 +825,7 @@ public class SimpleTimeZone extends TimeZone {
      * @since 1.2
      */
     public int getDSTSavings() {
-        if (useDaylight) {
-            return dstSavings;
-        }
-        return 0;
+        return useDaylight ? dstSavings : 0;
     }
 
     /**
@@ -839,6 +836,20 @@ public class SimpleTimeZone extends TimeZone {
     public boolean useDaylightTime()
     {
         return useDaylight;
+    }
+
+    /**
+     * Returns {@code true} if this {@code SimpleTimeZone} observes
+     * Daylight Saving Time. This method is equivalent to {@link
+     * #useDaylightTime()}.
+     *
+     * @return {@code true} if this {@code SimpleTimeZone} observes
+     * Daylight Saving Time; {@code false} otherwise.
+     * @since 1.7
+     */
+    @Override
+    public boolean observesDaylightTime() {
+        return useDaylightTime();
     }
 
     /**

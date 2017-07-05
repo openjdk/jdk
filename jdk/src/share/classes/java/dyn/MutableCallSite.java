@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ assertEquals("Wilma, dear?", (String) worker2.invokeExact());
  * (This is a normal consequence of the Java Memory Model as applied
  * to object fields.)
  * <p>
- * The {@link #sync sync} operation provides a way to force threads
+ * The {@link #syncAll syncAll} operation provides a way to force threads
  * to accept a new target value, even if there is no other synchronization.
  * <p>
  * For target values which will be frequently updated, consider using
@@ -82,13 +82,17 @@ assertEquals("Wilma, dear?", (String) worker2.invokeExact());
  */
 public class MutableCallSite extends CallSite {
     /**
-     * Make a blank call site object with the given method type.
-     * An initial target method is supplied which will throw
-     * an {@link IllegalStateException} if called.
+     * Creates a blank call site object with the given method type.
+     * The initial target is set to a method handle of the given type
+     * which will throw an {@link IllegalStateException} if called.
+     * <p>
+     * The type of the call site is permanently set to the given type.
      * <p>
      * Before this {@code CallSite} object is returned from a bootstrap method,
+     * or invoked in some other manner,
      * it is usually provided with a more useful target method,
      * via a call to {@link CallSite#setTarget(MethodHandle) setTarget}.
+     * @param type the method type that this call site will have
      * @throws NullPointerException if the proposed type is null
      */
     public MutableCallSite(MethodType type) {
@@ -96,8 +100,9 @@ public class MutableCallSite extends CallSite {
     }
 
     /**
-     * Make a blank call site object, possibly equipped with an initial target method handle.
-     * @param target the method handle which will be the initial target of the call site
+     * Creates a call site object with an initial target method handle.
+     * The type of the call site is permanently set to the initial target's type.
+     * @param target the method handle that will be the initial target of the call site
      * @throws NullPointerException if the proposed target is null
      */
     public MutableCallSite(MethodHandle target) {
@@ -105,7 +110,59 @@ public class MutableCallSite extends CallSite {
     }
 
     /**
-     * Perform a synchronization operation on each call site in the given array,
+     * Returns the target method of the call site, which behaves
+     * like a normal field of the {@code MutableCallSite}.
+     * <p>
+     * The interactions of {@code getTarget} with memory are the same
+     * as of a read from an ordinary variable, such as an array element or a
+     * non-volatile, non-final field.
+     * <p>
+     * In particular, the current thread may choose to reuse the result
+     * of a previous read of the target from memory, and may fail to see
+     * a recent update to the target by another thread.
+     *
+     * @return the linkage state of this call site, a method handle which can change over time
+     * @see #setTarget
+     */
+    @Override public final MethodHandle getTarget() {
+        return target;
+    }
+
+    /**
+     * Updates the target method of this call site, as a normal variable.
+     * The type of the new target must agree with the type of the old target.
+     * <p>
+     * The interactions with memory are the same
+     * as of a write to an ordinary variable, such as an array element or a
+     * non-volatile, non-final field.
+     * <p>
+     * In particular, unrelated threads may fail to see the updated target
+     * until they perform a read from memory.
+     * Stronger guarantees can be created by putting appropriate operations
+     * into the bootstrap method and/or the target methods used
+     * at any given call site.
+     *
+     * @param newTarget the new target
+     * @throws NullPointerException if the proposed new target is null
+     * @throws WrongMethodTypeException if the proposed new target
+     *         has a method type that differs from the previous target
+     * @see #getTarget
+     */
+    @Override public void setTarget(MethodHandle newTarget) {
+        checkTargetChange(this.target, newTarget);
+        setTargetNormal(newTarget);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public final MethodHandle dynamicInvoker() {
+        return makeDynamicInvoker();
+    }
+
+    /**
+     * Performs a synchronization operation on each call site in the given array,
      * forcing all other threads to throw away any cached values previously
      * loaded from the target of any of the call sites.
      * <p>
@@ -115,19 +172,29 @@ public class MutableCallSite extends CallSite {
      * <p>
      * The overall effect is to force all future readers of each call site's target
      * to accept the most recently stored value.
-     * ("Most recently" is reckoned relative to the {@code sync} itself.)
-     * Conversely, the {@code sync} call may block until all readers have
+     * ("Most recently" is reckoned relative to the {@code syncAll} itself.)
+     * Conversely, the {@code syncAll} call may block until all readers have
      * (somehow) decached all previous versions of each call site's target.
      * <p>
-     * To avoid race conditions, calls to {@code setTarget} and {@code sync}
+     * To avoid race conditions, calls to {@code setTarget} and {@code syncAll}
      * should generally be performed under some sort of mutual exclusion.
      * Note that reader threads may observe an updated target as early
      * as the {@code setTarget} call that install the value
-     * (and before the {@code sync} that confirms the value).
+     * (and before the {@code syncAll} that confirms the value).
      * On the other hand, reader threads may observe previous versions of
-     * the target until the {@code sync} call returns
+     * the target until the {@code syncAll} call returns
      * (and after the {@code setTarget} that attempts to convey the updated version).
      * <p>
+     * This operation is likely to be expensive and should be used sparingly.
+     * If possible, it should be buffered for batch processing on sets of call sites.
+     * <p>
+     * If {@code sites} contains a null element,
+     * a {@code NullPointerException} will be raised.
+     * In this case, some non-null elements in the array may be
+     * processed before the method returns abnormally.
+     * Which elements these are (if any) is implementation-dependent.
+     *
+     * <h3>Java Memory Model details</h3>
      * In terms of the Java Memory Model, this operation performs a synchronization
      * action which is comparable in effect to the writing of a volatile variable
      * by the current thread, and an eventual volatile read by every other thread
@@ -171,18 +238,17 @@ public class MutableCallSite extends CallSite {
      * thereby ensuring communication of the new target value.
      * <p>
      * As long as the constraints of the Java Memory Model are obeyed,
-     * implementations may delay the completion of a {@code sync}
+     * implementations may delay the completion of a {@code syncAll}
      * operation while other threads ({@code T} above) continue to
      * use previous values of {@code S}'s target.
      * However, implementations are (as always) encouraged to avoid
      * livelock, and to eventually require all threads to take account
      * of the updated target.
-     * <p>
-     * This operation is likely to be expensive and should be used sparingly.
-     * If possible, it should be buffered for batch processing on sets of call sites.
+     *
      * <p style="font-size:smaller;">
-     * (This is a static method on a set of call sites, not a
-     * virtual method on a single call site, for performance reasons.
+     * <em>Discussion:</em>
+     * For performance reasons, {@code syncAll} is not a virtual method
+     * on a single call site, but rather applies to a set of call sites.
      * Some implementations may incur a large fixed overhead cost
      * for processing one or more synchronization operations,
      * but a small incremental cost for each additional call site.
@@ -191,15 +257,25 @@ public class MutableCallSite extends CallSite {
      * in order to make them notice the updated target value.
      * However, it may be observed that a single call to synchronize
      * several sites has the same formal effect as many calls,
-     * each on just one of the sites.)
-     * <p>
+     * each on just one of the sites.
+     *
+     * <p style="font-size:smaller;">
+     * <em>Implementation Note:</em>
      * Simple implementations of {@code MutableCallSite} may use
      * a volatile variable for the target of a mutable call site.
-     * In such an implementation, the {@code sync} method can be a no-op,
+     * In such an implementation, the {@code syncAll} method can be a no-op,
      * and yet it will conform to the JMM behavior documented above.
+     *
+     * @param sites an array of call sites to be synchronized
+     * @throws NullPointerException if the {@code sites} array reference is null
+     *                              or the array contains a null
      */
-    public static void sync(MutableCallSite[] sites) {
+    public static void syncAll(MutableCallSite[] sites) {
+        if (sites.length == 0)  return;
         STORE_BARRIER.lazySet(0);
+        for (int i = 0; i < sites.length; i++) {
+            sites[i].getClass();  // trigger NPE on first null
+        }
         // FIXME: NYI
     }
     private static final AtomicInteger STORE_BARRIER = new AtomicInteger();

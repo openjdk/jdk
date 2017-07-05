@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ ResourceObj::~ResourceObj() {
 
 void trace_heap_malloc(size_t size, const char* name, void* p) {
   // A lock is not needed here - tty uses a lock internally
-  tty->print_cr("Heap malloc " INTPTR_FORMAT " %7d %s", p, size, name == NULL ? "" : name);
+  tty->print_cr("Heap malloc " INTPTR_FORMAT " " SIZE_FORMAT " %s", p, size, name == NULL ? "" : name);
 }
 
 
@@ -573,22 +573,27 @@ void AllocatedObj::print_value_on(outputStream* st) const {
   st->print("AllocatedObj(" INTPTR_FORMAT ")", this);
 }
 
-size_t Arena::_bytes_allocated = 0;
+julong Arena::_bytes_allocated = 0;
+
+void Arena::inc_bytes_allocated(size_t x) { inc_stat_counter(&_bytes_allocated, x); }
 
 AllocStats::AllocStats() {
-  start_mallocs = os::num_mallocs;
-  start_frees = os::num_frees;
+  start_mallocs      = os::num_mallocs;
+  start_frees        = os::num_frees;
   start_malloc_bytes = os::alloc_bytes;
-  start_res_bytes = Arena::_bytes_allocated;
+  start_mfree_bytes  = os::free_bytes;
+  start_res_bytes    = Arena::_bytes_allocated;
 }
 
-int     AllocStats::num_mallocs() { return os::num_mallocs - start_mallocs; }
-size_t  AllocStats::alloc_bytes() { return os::alloc_bytes - start_malloc_bytes; }
-size_t  AllocStats::resource_bytes() { return Arena::_bytes_allocated - start_res_bytes; }
-int     AllocStats::num_frees() { return os::num_frees - start_frees; }
+julong  AllocStats::num_mallocs() { return os::num_mallocs - start_mallocs; }
+julong  AllocStats::alloc_bytes() { return os::alloc_bytes - start_malloc_bytes; }
+julong  AllocStats::num_frees()   { return os::num_frees - start_frees; }
+julong  AllocStats::free_bytes()  { return os::free_bytes - start_mfree_bytes; }
+julong  AllocStats::resource_bytes() { return Arena::_bytes_allocated - start_res_bytes; }
 void    AllocStats::print() {
-  tty->print("%d mallocs (%ldK), %d frees, %ldK resrc",
-             num_mallocs(), alloc_bytes()/K, num_frees(), resource_bytes()/K);
+  tty->print_cr(UINT64_FORMAT " mallocs (" UINT64_FORMAT "MB), "
+                UINT64_FORMAT" frees (" UINT64_FORMAT "MB), " UINT64_FORMAT "MB resrc",
+                num_mallocs(), alloc_bytes()/M, num_frees(), free_bytes()/M, resource_bytes()/M);
 }
 
 

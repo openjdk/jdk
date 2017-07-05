@@ -332,12 +332,13 @@ public abstract class LookAndFeel
     {
         JTextComponent.KeyBinding[] rv = new JTextComponent.KeyBinding[keyBindingList.length / 2];
 
-        for(int i = 0; i < keyBindingList.length; i += 2) {
-            KeyStroke keystroke = (keyBindingList[i] instanceof KeyStroke)
-                ? (KeyStroke)keyBindingList[i]
-                : KeyStroke.getKeyStroke((String)keyBindingList[i]);
-            String action = (String)keyBindingList[i+1];
-            rv[i / 2] = new JTextComponent.KeyBinding(keystroke, action);
+        for(int i = 0; i < rv.length; i ++) {
+            Object o = keyBindingList[2 * i];
+            KeyStroke keystroke = (o instanceof KeyStroke)
+                ? (KeyStroke) o
+                : KeyStroke.getKeyStroke((String) o);
+            String action = (String) keyBindingList[2 * i + 1];
+            rv[i] = new JTextComponent.KeyBinding(keystroke, action);
         }
 
         return rv;

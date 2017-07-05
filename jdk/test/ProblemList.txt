@@ -41,14 +41,14 @@
 #
 # Shell tests are othervm by default.
 #
-# List items  are testnames followed by labels, all MUST BE commented 
+# List items  are testnames followed by labels, all MUST BE commented
 #   as to why they are here and use a label:
 #     generic-all	Problems on all platforms
 #     generic-ARCH	Where ARCH is one of: sparc, sparcv9, x64, i586, etc.
 #     OSNAME-all	Where OSNAME is one of: solaris, linux, windows
 #     OSNAME-ARCH	Specific on to one OSNAME and ARCH, e.g. solaris-x64
 #     OSNAME-REV	Specific on to one OSNAME and REV, e.g. solaris-5.8
-#	 
+#
 # More than one label is allowed but must be on the same line.
 #
 #############################################################################
@@ -234,7 +234,7 @@ javax/management/remote/mandatory/threads/ExecutorTest.java 	generic-all
 # Linux 32bit Fedora 9, IllegalStateException
 javax/management/monitor/RuntimeExceptionTest.java		generic-all
 
-# Problems with rmi connection, othervm  
+# Problems with rmi connection, othervm
 javax/management/remote/mandatory/subjectDelegation/SubjectDelegation2Test.java generic-all
 
 # Fails with port already in use
@@ -411,7 +411,7 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java
 com/sun/nio/sctp/SctpChannel/Send.java				generic-all
 com/sun/nio/sctp/SctpChannel/Shutdown.java			generic-all
 
-# Fails on OpenSolaris, IllegalStateException: Cannot add or remove addresses 
+# Fails on OpenSolaris, IllegalStateException: Cannot add or remove addresses
 #    from a channel that is bound to the wildcard address
 com/sun/nio/sctp/SctpChannel/Bind.java				generic-all
 
@@ -456,10 +456,10 @@ java/rmi/transport/pinLastArguments/PinLastArguments.java	generic-all
 java/rmi/server/RemoteServer/AddrInUse.java			generic-all
 
 # Connection error on Windows i586 -server
-#  Also connection errors in othervm on Solaris 10 sparc, same port??? 
+#  Also connection errors in othervm on Solaris 10 sparc, same port???
 sun/rmi/transport/tcp/DeadCachedConnection.java 	 	generic-all
 
-# Connection errors in othervm on Solaris 10 sparc, same port??? 
+# Connection errors in othervm on Solaris 10 sparc, same port???
 java/rmi/activation/Activatable/checkActivateRef/CheckActivateRef.java generic-all
 java/rmi/activation/Activatable/checkAnnotations/CheckAnnotations.java generic-all
 java/rmi/activation/Activatable/checkImplClassLoader/CheckImplClassLoader.java generic-all
@@ -532,7 +532,7 @@ sun/security/pkcs11/ec/TestKeyFactory.java			solaris-i586
 java/security/Security/SynchronizedAccess.java			generic-all
 
 # Failing on Solaris X64 (-d64 -server) with:
-#  GSSException: Failure unspecified at GSS-API level 
+#  GSSException: Failure unspecified at GSS-API level
 #    (Mechanism level: Specified version of key is not available (44))
 sun/security/krb5/auto/BasicKrb5Test.java			generic-all
 
@@ -546,14 +546,14 @@ sun/security/tools/keytool/standard.sh				generic-all
 sun/security/krb5/auto/HttpNegotiateServer.java			generic-all
 
 # Fails on almost all platforms
-#   java.lang.UnsupportedClassVersionError: SerialTest : 
+#   java.lang.UnsupportedClassVersionError: SerialTest :
 #      Unsupported major.minor version 51.0
 #    at java.lang.ClassLoader.defineClass1(Native Method)
 sun/security/util/Oid/S11N.sh					generic-all
 
 # Fails on Fedora 9 32bit
-#  GSSException: Failure unspecified at GSS-API level (Mechanism level: 
-#    Invalid argument (400) - Cannot find key of appropriate type to decrypt 
+#  GSSException: Failure unspecified at GSS-API level (Mechanism level:
+#    Invalid argument (400) - Cannot find key of appropriate type to decrypt
 #    AP REP - DES CBC mode with MD5)
 #  at sun.security.jgss.krb5.Krb5Context.acceptSecContext(Krb5Context.java:778)
 sun/security/krb5/auto/NonMutualSpnego.java			generic-all
@@ -673,7 +673,7 @@ sun/security/rsa/TestSignatures.java			 	solaris-all
 # Timeout on solaris-sparc and i586 and x64, -client and -server
 sun/security/ssl/com/sun/net/ssl/internal/ssl/InputRecord/InterruptedIO.java solaris-all
 
-# Do not seem to run on windows machines? dll missing? 
+# Do not seem to run on windows machines? dll missing?
 sun/security/tools/jarsigner/emptymanifest.sh		 	windows-all
 
 # Files does not exist or no encoding? solaris-sparcv9
@@ -733,9 +733,6 @@ java/util/concurrent/FutureTask/BlockingTaskExecutor.java	generic-all
 
 # Problems on windows, jmap.exe hangs? (these run jmap), fails on Solaris 10 x86
 java/util/concurrent/locks/Lock/TimedAcquireLeak.java		generic-all
-
-# Fails on solaris-sparc -server (Set not equal to copy. 1)
-java/util/EnumSet/EnumSetBash.java			 	solaris-sparc
 
 ############################################################################
 

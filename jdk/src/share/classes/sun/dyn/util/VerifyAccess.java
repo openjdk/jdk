@@ -25,7 +25,6 @@
 
 package sun.dyn.util;
 
-import java.dyn.NoAccessException;
 import java.lang.reflect.Modifier;
 import sun.dyn.MemberName;
 import sun.dyn.MethodHandleImpl;
@@ -139,6 +138,8 @@ public class VerifyAccess {
      * <li>C is public.
      * <li>C and D are members of the same runtime package.
      * </ul>
+     * @param refc the symbolic reference class to which access is being checked (C)
+     * @param lookupClass the class performing the lookup (D)
      */
     public static boolean isClassAccessible(Class<?> refc, Class<?> lookupClass) {
         int mods = refc.getModifiers();

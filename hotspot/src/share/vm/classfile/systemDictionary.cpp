@@ -1690,6 +1690,8 @@ klassOop SystemDictionary::try_get_next_class() {
 
 void SystemDictionary::add_to_hierarchy(instanceKlassHandle k, TRAPS) {
   assert(k.not_null(), "just checking");
+  assert_locked_or_safepoint(Compile_lock);
+
   // Link into hierachy. Make sure the vtables are initialized before linking into
   k->append_to_sibling_list();                    // add to superklass/sibling list
   k->process_interfaces(THREAD);                  // handle all "implements" declarations
@@ -2152,6 +2154,9 @@ void SystemDictionary::update_dictionary(int d_index, unsigned int d_hash,
 }
 
 
+// Try to find a class name using the loader constraints.  The
+// loader constraints might know about a class that isn't fully loaded
+// yet and these will be ignored.
 klassOop SystemDictionary::find_constrained_instance_or_array_klass(
                     Symbol* class_name, Handle class_loader, TRAPS) {
 
