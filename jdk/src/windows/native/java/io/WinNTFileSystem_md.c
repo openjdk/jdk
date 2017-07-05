@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,26 +229,29 @@ JNIEXPORT jboolean
 JNICALL Java_java_io_WinNTFileSystem_checkAccess(JNIEnv *env, jobject this,
                                                  jobject file, jint access)
 {
-    jboolean rv = JNI_FALSE;
-    int mode;
+    DWORD attr;
     WCHAR *pathbuf = fileToNTPath(env, file, ids.path);
     if (pathbuf == NULL)
+        return JNI_FALSE;
+    attr = GetFileAttributesW(pathbuf);
+    free(pathbuf);
+    if (attr == INVALID_FILE_ATTRIBUTES)
         return JNI_FALSE;
     switch (access) {
     case java_io_FileSystem_ACCESS_READ:
     case java_io_FileSystem_ACCESS_EXECUTE:
-        mode = 4;
-        break;
+        return JNI_TRUE;
     case java_io_FileSystem_ACCESS_WRITE:
-        mode = 2;
-        break;
-    default: assert(0);
+        /* Read-only attribute ignored on directories */
+        if ((attr & FILE_ATTRIBUTE_DIRECTORY) ||
+            (attr & FILE_ATTRIBUTE_READONLY) == 0)
+            return JNI_TRUE;
+        else
+            return JNI_FALSE;
+    default:
+        assert(0);
+        return JNI_FALSE;
     }
-    if (_waccess(pathbuf, mode) == 0) {
-        rv = JNI_TRUE;
-    }
-    free(pathbuf);
-    return rv;
 }
 
 JNIEXPORT jboolean JNICALL
