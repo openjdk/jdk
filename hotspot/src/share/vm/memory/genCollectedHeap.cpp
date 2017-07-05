@@ -123,17 +123,9 @@ jint GenCollectedHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  _reserved = MemRegion((HeapWord*)heap_rs.base(),
-                        (HeapWord*)(heap_rs.base() + heap_rs.size()));
+  initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
-  // It is important to do this in a way such that concurrent readers can't
-  // temporarily think something is in the heap.  (Seen this happen in asserts.)
-  _reserved.set_word_size(0);
-  _reserved.set_start((HeapWord*)heap_rs.base());
-  size_t actual_heap_size = heap_rs.size();
-  _reserved.set_end((HeapWord*)(heap_rs.base() + actual_heap_size));
-
-  _rem_set = collector_policy()->create_rem_set(_reserved, n_covered_regions);
+  _rem_set = collector_policy()->create_rem_set(reserved_region(), n_covered_regions);
   set_barrier_set(rem_set()->bs());
 
   _gch = this;

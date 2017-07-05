@@ -258,6 +258,8 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	    echo && echo "ZIP_DEBUGINFO_FILES = $(ZIP_DEBUGINFO_FILES)"; \
 	[ -n "$(ZIPEXE)" ] && \
 	    echo && echo "ZIPEXE = $(ZIPEXE)"; \
+	[ -n "$(HS_ALT_MAKE)" ] && \
+	    echo && echo "HS_ALT_MAKE = $(HS_ALT_MAKE)"; \
 	[ -n "$(HOTSPOT_EXTRA_SYSDEFS)" ] && \
 	    echo && \
 	    echo "HOTSPOT_EXTRA_SYSDEFS\$$(HOTSPOT_EXTRA_SYSDEFS) = $(HOTSPOT_EXTRA_SYSDEFS)" && \

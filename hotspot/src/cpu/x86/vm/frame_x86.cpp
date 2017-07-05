@@ -715,3 +715,10 @@ intptr_t* frame::real_fp() const {
   assert(! is_compiled_frame(), "unknown compiled frame size");
   return fp();
 }
+
+#ifndef PRODUCT
+// This is a generic constructor which is only used by pns() in debug.cpp.
+frame::frame(void* sp, void* fp, void* pc) {
+  init((intptr_t*)sp, (intptr_t*)fp, (address)pc);
+}
+#endif

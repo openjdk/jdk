@@ -44,7 +44,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     // Arity after reducing because of long and double take 2 slots.
@@ -83,7 +83,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     // Arity after reducing because of long and double take 2 slots.
@@ -91,7 +91,7 @@ public enum TestMethods {
                     int dropArgsPos = Helper.RNG.nextInt(realArity + 1);
                     data.put("dropArgsPos", dropArgsPos);
                     MethodType mtDropArgs = TestMethods.randomMethodTypeGenerator(
-                            Helper.RNG.nextInt(Helper.MAX_ARITY - realArity));
+                            Helper.RNG.nextInt(super.maxArity - realArity));
                     data.put("mtDropArgs", mtDropArgs);
                     return data;
                 }
@@ -106,20 +106,20 @@ public enum TestMethods {
                     int mtTgtSlotsCount = TestMethods.argSlotsCount(mtTarget);
                     int mtDASlotsCount = TestMethods.argSlotsCount(mtDropArgs);
                     List<Class<?>> fakeParList;
-                    if (mtTgtSlotsCount + mtDASlotsCount > Helper.MAX_ARITY - 1) {
+                    if (mtTgtSlotsCount + mtDASlotsCount > super.maxArity - 1) {
                         fakeParList = TestMethods.reduceArgListToSlotsCount(mtDropArgs.parameterList(),
-                                Helper.MAX_ARITY - mtTgtSlotsCount - 1);
+                                super.maxArity - mtTgtSlotsCount - 1);
                     } else {
                         fakeParList = mtDropArgs.parameterList();
                     }
                     return MethodHandles.dropArguments(target, dropArgsPos, fakeParList);
                 }
             },
-    EXPLICIT_CAST_ARGUMENTS("explicitCastArguments") {
+    EXPLICIT_CAST_ARGUMENTS("explicitCastArguments", Helper.MAX_ARITY / 2) {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY / 2);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     // Arity after reducing because of long and double take 2 slots.
@@ -146,11 +146,11 @@ public enum TestMethods {
                     return MethodHandles.explicitCastArguments(target, mtExcplCastArgs);
                 }
             },
-    FILTER_ARGUMENTS("filterArguments") {
+    FILTER_ARGUMENTS("filterArguments", Helper.MAX_ARITY / 2) {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY / 2);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     // Arity after reducing because of long and double take 2 slots.
@@ -184,7 +184,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     // Arity after reducing because of long and double take 2 slots.
@@ -211,7 +211,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     // Arity after reducing because of long and double take 2 slots.
@@ -236,18 +236,18 @@ public enum TestMethods {
                     return MethodHandles.insertArguments(target, insertArgsPos, insertList);
                 }
             },
-    PERMUTE_ARGUMENTS("permuteArguments") {
+    PERMUTE_ARGUMENTS("permuteArguments", Helper.MAX_ARITY / 2) {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY / 2);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     // Arity after reducing because of long and double take 2 slots.
                     int realArity = mtTarget.parameterCount();
                     int[] permuteArgsReorderArray = new int[realArity];
-                    int mtParmuteArgsNum = Helper.RNG.nextInt(Helper.MAX_ARITY);
-                    mtParmuteArgsNum = mtParmuteArgsNum == 0 ? 1 : mtParmuteArgsNum;
-                    MethodType mtPermuteArgs = TestMethods.randomMethodTypeGenerator(mtParmuteArgsNum);
+                    int mtPermuteArgsNum = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    mtPermuteArgsNum = mtPermuteArgsNum == 0 ? 1 : mtPermuteArgsNum;
+                    MethodType mtPermuteArgs = TestMethods.randomMethodTypeGenerator(mtPermuteArgsNum);
                     mtTarget = mtTarget.changeReturnType(mtPermuteArgs.returnType());
                     for (int i = 0; i < realArity; i++) {
                         int mtPermuteArgsParNum = Helper.RNG.nextInt(mtPermuteArgs.parameterCount());
@@ -275,7 +275,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     return data;
@@ -293,7 +293,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     // Arity after reducing because of long and double take 2 slots.
@@ -329,7 +329,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     // Arity after reducing because of long and double take 2 slots.
@@ -359,11 +359,11 @@ public enum TestMethods {
                     return MethodHandles.catchException(target, Exception.class, handler);
                 }
             },
-    INVOKER("invoker") {
+    INVOKER("invoker", Helper.MAX_ARITY - 1) {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     return data;
@@ -375,11 +375,11 @@ public enum TestMethods {
                     return MethodHandles.invoker(mtTarget);
                 }
             },
-    EXACT_INVOKER("exactInvoker") {
+    EXACT_INVOKER("exactInvoker", Helper.MAX_ARITY - 1) {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     return data;
@@ -391,11 +391,11 @@ public enum TestMethods {
                     return MethodHandles.exactInvoker(mtTarget);
                 }
             },
-    SPREAD_INVOKER("spreadInvoker") {
+    SPREAD_INVOKER("spreadInvoker", Helper.MAX_ARITY - 1) {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     // Arity after reducing because of long and double take 2 slots.
@@ -416,7 +416,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     return data;
@@ -436,7 +436,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     return data;
@@ -456,7 +456,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     return data;
@@ -481,7 +481,7 @@ public enum TestMethods {
                 @Override
                 public Map<String, Object> getTestCaseData() {
                     Map<String, Object> data = new HashMap<>();
-                    int desiredArity = Helper.RNG.nextInt(Helper.MAX_ARITY);
+                    int desiredArity = Helper.RNG.nextInt(super.maxArity);
                     MethodType mtTarget = TestMethods.randomMethodTypeGenerator(desiredArity);
                     data.put("mtTarget", mtTarget);
                     return data;
@@ -503,8 +503,15 @@ public enum TestMethods {
      */
     public final String name;
 
-    private TestMethods(String name) {
+    private final int maxArity;
+
+    private TestMethods(String name, int maxArity) {
         this.name = name;
+        this.maxArity = maxArity;
+    }
+
+    private TestMethods(String name) {
+        this(name, Helper.MAX_ARITY);
     }
 
     protected MethodHandle getMH(Map<String, Object> data, TestMethods.Kind kind) throws NoSuchMethodException, IllegalAccessException {
