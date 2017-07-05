@@ -113,7 +113,7 @@ public class PlatformLogger {
 
     // Table of known loggers.  Maps names to PlatformLoggers.
     private static Map<String,WeakReference<PlatformLogger>> loggers =
-        new HashMap<String,WeakReference<PlatformLogger>>();
+        new HashMap<>();
 
     /**
      * Returns a PlatformLogger of a given name.
@@ -126,7 +126,7 @@ public class PlatformLogger {
         }
         if (log == null) {
             log = new PlatformLogger(name);
-            loggers.put(name, new WeakReference<PlatformLogger>(log));
+            loggers.put(name, new WeakReference<>(log));
         }
         return log;
     }
@@ -488,7 +488,7 @@ public class PlatformLogger {
      */
     static class JavaLogger extends LoggerProxy {
         private static final Map<Integer, Object> levelObjects =
-            new HashMap<Integer, Object>();
+            new HashMap<>();
 
         static {
             if (LoggingSupport.isAvailable()) {

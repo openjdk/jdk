@@ -118,6 +118,8 @@ SUNWprivate_1.1 {
 		Java_sun_java2d_loops_GraphicsPrimitiveMgr_registerNativeLoops;
 		Java_sun_java2d_loops_MaskBlit_MaskBlit;
 		Java_sun_java2d_loops_MaskFill_MaskFill;
+		Java_sun_java2d_loops_MaskFill_FillAAPgram;
+		Java_sun_java2d_loops_MaskFill_DrawAAPgram;
 		Java_sun_java2d_loops_TransformHelper_Transform;
 		Java_sun_java2d_pipe_Region_initIDs;
 		Java_sun_java2d_pipe_SpanClipRenderer_initIDs;

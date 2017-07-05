@@ -32,7 +32,10 @@ import java.util.List;
  * Shared constants
  * @author John Rose
  */
-interface Constants {
+class Constants {
+
+    private Constants(){}
+
     public final static int JAVA_MAGIC = 0xCAFEBABE;
 
     /*

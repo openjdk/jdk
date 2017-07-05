@@ -56,7 +56,7 @@ public class NPEProvoker implements java.io.Externalizable {
     public static void main(String[] args) {
         System.err.println("\n Regression test for bug 6541870\n");
         try {
-            ArrayList<NPEProvoker> list = new ArrayList<NPEProvoker>();
+            ArrayList<NPEProvoker> list = new ArrayList<>();
             list.add(new NPEProvoker());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ObjectOutputStream oos = new ObjectOutputStream(baos);
