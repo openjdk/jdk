@@ -2465,7 +2465,10 @@ void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
 //   InterpreterRuntime::post_method_entry();
 // }
 // if (DTraceMethodProbes) {
-//   SharedRuntime::dtrace_method_entry(method, reciever);
+//   SharedRuntime::dtrace_method_entry(method, receiver);
+// }
+// if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+//   SharedRuntime::rc_trace_method_entry(method, receiver);
 // }
 
 void InterpreterMacroAssembler::notify_method_entry() {
@@ -2495,6 +2498,13 @@ void InterpreterMacroAssembler::notify_method_entry() {
     SkipIfEqual skip_if(this, temp_reg, &DTraceMethodProbes, zero);
     call_VM_leaf(noreg,
       CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
+      G2_thread, Lmethod);
+  }
+
+  // RedefineClasses() tracing support for obsolete method entry
+  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+    call_VM_leaf(noreg,
+      CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
       G2_thread, Lmethod);
   }
 }

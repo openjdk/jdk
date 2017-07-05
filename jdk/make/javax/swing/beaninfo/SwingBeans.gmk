@@ -47,7 +47,7 @@ swing-1.2-beans-debug:
 LOCAL_JAVADOC   = $(JAVADOC_CMD) $(JAVADOCFLAGS)
 # get the absolute path to the jar command.
 PREFIX          = 1.2
-JAVADOCFLAGS    = $(LANGUAGE_VERSION)
+JAVADOCFLAGS    = $(NO_PROPRIETARY_API_WARNINGS) $(LANGUAGE_VERSION)
 SWINGPKG        = javax/swing
 LOCAL_JAVAC_FLAGS = $(OTHER_JAVACFLAGS)
 
