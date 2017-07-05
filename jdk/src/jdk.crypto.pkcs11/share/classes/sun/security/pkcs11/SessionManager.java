@@ -90,6 +90,7 @@ final class SessionManager {
 
     // maximum number of active sessions during this invocation, for debugging
     private int maxActiveSessions;
+    private Object maxActiveSessionsLock;
 
     // flags to use in the C_OpenSession() call
     private final long openSessionFlags;
@@ -113,6 +114,9 @@ final class SessionManager {
         this.token = token;
         this.objSessions = new Pool(this);
         this.opSessions = new Pool(this);
+        if (debug != null) {
+            maxActiveSessionsLock = new Object();
+        }
     }
 
     // returns whether only a fairly low number of sessions are
@@ -212,7 +216,7 @@ final class SessionManager {
         Session session = new Session(token, id);
         activeSessions.incrementAndGet();
         if (debug != null) {
-            synchronized(this) {
+            synchronized(maxActiveSessionsLock) {
                 if (activeSessions.get() > maxActiveSessions) {
                     maxActiveSessions = activeSessions.get();
                     if (maxActiveSessions % 10 == 0) {

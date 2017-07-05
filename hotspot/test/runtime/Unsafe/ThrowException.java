@@ -25,6 +25,8 @@
  * @test
  * @summary Verify that throwException() can throw an exception
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main ThrowException
  */
 

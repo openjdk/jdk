@@ -42,10 +42,10 @@ class ProtocolException extends IOException {
      * Constructs a new {@code ProtocolException} with the
      * specified detail message.
      *
-     * @param   host   the detail message.
+     * @param   message   the detail message.
      */
-    public ProtocolException(String host) {
-        super(host);
+    public ProtocolException(String message) {
+        super(message);
     }
 
     /**

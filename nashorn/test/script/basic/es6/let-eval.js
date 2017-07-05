@@ -96,3 +96,9 @@ function f() {
 f();
 
 print(typeof a, typeof b, typeof c, typeof x, typeof z);
+
+let v = 1;
+eval("print('v: ' + v); v = 2; print ('v: ' + v);");
+print("this.v: " + this.v);
+print("v: " + v);
+

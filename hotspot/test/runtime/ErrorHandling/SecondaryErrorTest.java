@@ -14,6 +14,8 @@ import com.oracle.java.testlibrary.ProcessTools;
  * @summary Synchronous signals during error reporting may terminate or hang VM process
  * @library /testlibrary
  * @author Thomas Stuefe (SAP)
+ * @modules java.base/sun.misc
+ *          java.management
  */
 
 public class SecondaryErrorTest {

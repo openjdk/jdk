@@ -25,6 +25,8 @@
  * @test
  * @summary Verifies that setMemory works correctly
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main SetMemory
  */
 

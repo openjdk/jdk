@@ -30,6 +30,10 @@ import org.testng.annotations.Test;
  * @test
  * @summary Test of diagnostic command VM.flags
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.jvmstat/sun.jvmstat.monitor
  * @build com.oracle.java.testlibrary.*
  * @build com.oracle.java.testlibrary.dcmd.*
  * @run testng/othervm -Xmx129m -XX:+PrintGC -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions -XX:+ThereShouldNotBeAnyVMOptionNamedLikeThis_Right -XX:-TieredCompilation FlagsTest

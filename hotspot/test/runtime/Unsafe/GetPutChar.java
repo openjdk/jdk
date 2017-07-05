@@ -25,6 +25,8 @@
  * @test
  * @summary Verify behaviour of Unsafe.get/putChar
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main GetPutChar
  */
 

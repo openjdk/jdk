@@ -25,6 +25,8 @@
  * @test
  * @summary Verifies behaviour of Unsafe.getField
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main GetField
  */
 
