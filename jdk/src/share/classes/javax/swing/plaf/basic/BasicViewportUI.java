@@ -56,8 +56,8 @@ public class BasicViewportUI extends ViewportUI {
     }
 
     public void uninstallUI(JComponent c) {
+        uninstallDefaults(c);
         super.uninstallUI(c);
-
     }
 
     protected void installDefaults(JComponent c) {

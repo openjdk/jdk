@@ -407,7 +407,20 @@ public class XMLEncoder extends Encoder {
                    os.writeObject(this);
             */
             mark(oldStm);
-            statementList(oldStm.getTarget()).add(oldStm);
+            Object target = oldStm.getTarget();
+            if (target instanceof Field) {
+                String method = oldStm.getMethodName();
+                Object[] args = oldStm.getArguments();
+                if ((method == null) || (args == null)) {
+                }
+                else if (method.equals("get") && (args.length == 1)) {
+                    target = args[0];
+                }
+                else if (method.equals("set") && (args.length == 2)) {
+                    target = args[0];
+                }
+            }
+            statementList(target).add(oldStm);
         }
         catch (Exception e) {
             getExceptionListener().exceptionThrown(new Exception("XMLEncoder: discarding statement " + oldStm, e));
@@ -703,7 +716,9 @@ public class XMLEncoder extends Encoder {
                 statements.add(exp);
             }
             outputValue(target, outer, false);
-            outputValue(value, outer, isArgument);
+            if (expression) {
+                outputValue(value, outer, isArgument);
+            }
             return;
         }
         if (expression && (d.refs > 1)) {
@@ -722,8 +737,10 @@ public class XMLEncoder extends Encoder {
         }
         else if ((!expression && methodName.startsWith("set") && args.length == 1) ||
                  (expression && methodName.startsWith("get") && args.length == 0)) {
-            attributes = attributes + " property=" +
-                quote(Introspector.decapitalize(methodName.substring(3)));
+            if (3 < methodName.length()) {
+                attributes = attributes + " property=" +
+                    quote(Introspector.decapitalize(methodName.substring(3)));
+            }
         }
         else if (!methodName.equals("new") && !methodName.equals("newInstance")) {
             attributes = attributes + " method=" + quote(methodName);

@@ -27,8 +27,6 @@ package sun.jvmstat.perfdata.monitor.v2_0;
 
 import sun.jvmstat.monitor.*;
 import sun.jvmstat.perfdata.monitor.*;
-import sun.management.counter.Units;
-import sun.management.counter.Variability;
 import java.util.*;
 import java.util.regex.*;
 import java.nio.*;

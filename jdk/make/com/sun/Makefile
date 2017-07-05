@@ -42,7 +42,7 @@ endif
 SUBDIRS = java security net/ssl jarsigner
 
 SUBDIRS_management = jmx
-SUBDIRS_desktop    = image inputmethods
+SUBDIRS_desktop    = image
 SUBDIRS_enterprise = crypto/provider jndi \
                      org xml rowset net/httpserver
 SUBDIRS_misc       = $(SCRIPT_SUBDIR) tracing servicetag nio demo

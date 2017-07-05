@@ -33,6 +33,7 @@ import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.opengl.GLXGraphicsConfig;
 import sun.java2d.opengl.GLXVolatileSurfaceManager;
 import sun.java2d.x11.X11VolatileSurfaceManager;
+import sun.java2d.xr.*;
 
 /**
  * The SurfaceManagerFactory that creates VolatileSurfaceManager
@@ -54,9 +55,12 @@ public class UnixSurfaceManagerFactory extends SurfaceManagerFactory {
                                                         Object context)
     {
         GraphicsConfiguration gc = vImg.getGraphicsConfig();
+
         if (gc instanceof GLXGraphicsConfig) {
             return new GLXVolatileSurfaceManager(vImg, context);
-        } else {
+        } else if(gc instanceof XRGraphicsConfig) {
+            return new XRVolatileSurfaceManager(vImg, context);
+        }else {
             return new X11VolatileSurfaceManager(vImg, context);
         }
     }

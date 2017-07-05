@@ -2491,6 +2491,8 @@ public final class URI
 
     // Tell whether the given character is permitted by the given mask pair
     private static boolean match(char c, long lowMask, long highMask) {
+        if (c == 0) // 0 doesn't have a slot in the mask. So, it never matches.
+            return false;
         if (c < 64)
             return ((1L << c) & lowMask) != 0;
         if (c < 128)

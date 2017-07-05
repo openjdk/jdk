@@ -325,6 +325,7 @@ AccelGlyphCache_AddCellInfo(GlyphInfo *glyph, CacheCellInfo *cellInfo)
     cellInfo->glyphInfo = glyph;
     cellInfo->nextGCI = glyph->cellInfo;
     glyph->cellInfo = cellInfo;
+    glyph->managed = MANAGED_GLYPH;
 }
 
 /**
