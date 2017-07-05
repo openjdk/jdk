@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,13 @@ LIBJSIG   = lib$(JSIG).so
 JSIG_G    = $(JSIG)$(G_SUFFIX)
 LIBJSIG_G = lib$(JSIG_G).so
 
+LIBJSIG_DEBUGINFO   = lib$(JSIG).debuginfo
+LIBJSIG_G_DEBUGINFO = lib$(JSIG_G).debuginfo
+
 JSIGSRCDIR = $(GAMMADIR)/src/os/$(Platform_os_family)/vm
 
-DEST_JSIG  = $(JDK_LIBDIR)/$(LIBJSIG)
+DEST_JSIG           = $(JDK_LIBDIR)/$(LIBJSIG)
+DEST_JSIG_DEBUGINFO = $(JDK_LIBDIR)/$(LIBJSIG_DEBUGINFO)
 
 LIBJSIG_MAPFILE = $(MAKEFILES_DIR)/mapfile-vers-jsig
 
@@ -50,9 +54,24 @@ $(LIBJSIG): $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
                          $(LFLAGS_JSIG) -o $@ $< -ldl
 	[ -f $(LIBJSIG_G) ] || { ln -s $@ $(LIBJSIG_G); }
+ifneq ($(OBJCOPY),)
+	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJSIG_DEBUGINFO)
+	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJSIG_DEBUGINFO) $@
+  ifeq ($(STRIP_POLICY),all_strip)
+	$(QUIETLY) $(STRIP) $@
+  else
+    ifeq ($(STRIP_POLICY),min_strip)
+	$(QUIETLY) $(STRIP) -x $@
+    # implied else here is no stripping at all
+    endif
+  endif
+	[ -f $(LIBJSIG_G_DEBUGINFO) ] || { ln -s $(LIBJSIG_DEBUGINFO) $(LIBJSIG_G_DEBUGINFO); }
+endif
 
 install_jsig: $(LIBJSIG)
 	@echo "Copying $(LIBJSIG) to $(DEST_JSIG)"
+	$(QUIETLY) test -f $(LIBJSIG_DEBUGINFO) && \
+	    cp -f $(LIBJSIG_DEBUGINFO) $(DEST_JSIG_DEBUGINFO)
 	$(QUIETLY) cp -f $(LIBJSIG) $(DEST_JSIG) && echo "Done"
 
 .PHONY: install_jsig

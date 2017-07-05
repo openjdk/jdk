@@ -249,7 +249,6 @@ public class CookieManager extends CookieHandler
         return Collections.unmodifiableMap(cookieMap);
     }
 
-
     public void
         put(URI uri, Map<String, List<String>> responseHeaders)
         throws IOException
@@ -284,7 +283,7 @@ public class CookieManager extends CookieHandler
                         cookies = HttpCookie.parse(headerValue);
                     } catch (IllegalArgumentException e) {
                         // Bogus header, make an empty list and log the error
-                        cookies = java.util.Collections.EMPTY_LIST;
+                        cookies = java.util.Collections.emptyList();
                         if (logger.isLoggable(PlatformLogger.SEVERE)) {
                             logger.severe("Invalid cookie for " + uri + ": " + headerValue);
                         }

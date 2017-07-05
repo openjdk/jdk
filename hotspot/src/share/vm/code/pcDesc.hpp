@@ -39,15 +39,17 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
   int _scope_decode_offset; // offset for scope in nmethod
   int _obj_decode_offset;
 
-  union PcDescFlags {
-    int word;
-    struct {
-      unsigned int reexecute: 1;
-      unsigned int is_method_handle_invoke: 1;
-      unsigned int return_oop: 1;
-    } bits;
-    bool operator ==(const PcDescFlags& other) { return word == other.word; }
-  } _flags;
+  enum {
+    PCDESC_reexecute               = 1 << 0,
+    PCDESC_is_method_handle_invoke = 1 << 1,
+    PCDESC_return_oop              = 1 << 2
+  };
+
+  int _flags;
+
+  void set_flag(int mask, bool z) {
+    _flags = z ? (_flags | mask) : (_flags & ~mask);
+  }
 
  public:
   int pc_offset() const           { return _pc_offset;   }
@@ -69,8 +71,8 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
   };
 
   // Flags
-  bool     should_reexecute()              const { return _flags.bits.reexecute; }
-  void set_should_reexecute(bool z)              { _flags.bits.reexecute = z;    }
+  bool     should_reexecute()              const { return (_flags & PCDESC_reexecute) != 0; }
+  void set_should_reexecute(bool z)              { set_flag(PCDESC_reexecute, z); }
 
   // Does pd refer to the same information as pd?
   bool is_same_info(const PcDesc* pd) {
@@ -79,11 +81,11 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
       _flags == pd->_flags;
   }
 
-  bool     is_method_handle_invoke()       const { return _flags.bits.is_method_handle_invoke;     }
-  void set_is_method_handle_invoke(bool z)       {        _flags.bits.is_method_handle_invoke = z; }
+  bool     is_method_handle_invoke()       const { return (_flags & PCDESC_is_method_handle_invoke) != 0;     }
+  void set_is_method_handle_invoke(bool z)       { set_flag(PCDESC_is_method_handle_invoke, z); }
 
-  bool     return_oop()                    const { return _flags.bits.return_oop;     }
-  void set_return_oop(bool z)                    {        _flags.bits.return_oop = z; }
+  bool     return_oop()                    const { return (_flags & PCDESC_return_oop) != 0;     }
+  void set_return_oop(bool z)                    { set_flag(PCDESC_return_oop, z); }
 
   // Returns the real pc
   address real_pc(const nmethod* code) const;

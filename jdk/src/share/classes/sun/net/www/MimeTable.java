@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,6 @@
 
 package sun.net.www;
 import java.io.*;
-import java.util.Calendar;
-import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.net.URL;
 import java.net.FileNameMap;
 import java.util.Hashtable;
 import java.util.Enumeration;
@@ -271,7 +267,7 @@ public class MimeTable implements FileNameMap {
         String tempFileTemplate = (String)entries.get("temp.file.template");
         if (tempFileTemplate != null) {
             entries.remove("temp.file.template");
-            this.tempFileTemplate = tempFileTemplate;
+            MimeTable.tempFileTemplate = tempFileTemplate;
         }
 
         // now, parse the mime-type spec's
@@ -417,10 +413,10 @@ public class MimeTable implements FileNameMap {
             String user = System.getProperty("user.name");
             if (user != null) {
                 tag = "; customized for " + user;
-                properties.save(os, filePreamble + tag);
+                properties.store(os, filePreamble + tag);
             }
             else {
-                properties.save(os, filePreamble);
+                properties.store(os, filePreamble);
             }
         }
         catch (IOException e) {

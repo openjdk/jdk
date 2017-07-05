@@ -65,6 +65,12 @@
 #ifdef TARGET_OS_ARCH_linux_ppc
 # include "orderAccess_linux_ppc.inline.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_bsd_x86
+# include "orderAccess_bsd_x86.inline.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_bsd_zero
+# include "orderAccess_bsd_zero.inline.hpp"
+#endif
 
 
 // no precompiled headers

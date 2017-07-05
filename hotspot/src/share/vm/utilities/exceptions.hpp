@@ -58,6 +58,8 @@ class JavaCallArguments;
 // include hierachy reasons).
 
 class ThreadShadow: public CHeapObj {
+  friend class VMStructs;
+
  protected:
   oop  _pending_exception;                       // Thread has gc actions.
   const char* _exception_file;                   // file information for exception (debugging only)

@@ -48,6 +48,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "thread_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "thread_bsd.inline.hpp"
+#endif
 
 // -----------------------------------------------------
 // Implementation of JavaCallWrapper
@@ -557,4 +560,3 @@ void JavaCallArguments::verify(methodHandle method, BasicType return_type,
   sc.check_doing_return(true);
   sc.iterate_returntype();
 }
-

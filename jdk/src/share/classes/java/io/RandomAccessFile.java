@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -590,8 +590,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
          * Decrement FD use count associated with this stream.
          * The count got incremented by FileDescriptor during its construction.
          */
-        fd.decrementAndGetUseCount();
-        close0();
+        int useCount = fd.decrementAndGetUseCount();
+
+        /*
+         * If FileDescriptor is still in use by another stream, we
+         * will not close it.
+         */
+        if (useCount <= 0) {
+            close0();
+        }
     }
 
     //

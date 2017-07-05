@@ -30,6 +30,8 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 
 public class RuntimeStub extends CodeBlob {
+  private static CIntegerField callerMustGCArgumentsField;
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -40,6 +42,7 @@ public class RuntimeStub extends CodeBlob {
 
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("RuntimeStub");
+    callerMustGCArgumentsField                = type.getCIntegerField("_caller_must_gc_arguments");
 
     // FIXME: add any needed fields
   }
@@ -51,6 +54,11 @@ public class RuntimeStub extends CodeBlob {
   public boolean isRuntimeStub() {
     return true;
   }
+
+  public boolean callerMustGCArguments() {
+    return callerMustGCArgumentsField.getValue(addr) != 0;
+  }
+
 
   public String getName() {
     return "RuntimeStub: " + super.getName();

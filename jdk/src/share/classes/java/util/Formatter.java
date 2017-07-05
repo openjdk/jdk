@@ -50,7 +50,6 @@ import java.text.NumberFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 import sun.misc.FormattedFloatingDecimal;
 
@@ -3417,24 +3416,24 @@ public final class Formatter implements Closeable, Flushable {
         // Method assumes that d > 0.
         private String hexDouble(double d, int prec) {
             // Let Double.toHexString handle simple cases
-            if(!FpUtils.isFinite(d) || d == 0.0 || prec == 0 || prec >= 13)
+            if(!Double.isFinite(d) || d == 0.0 || prec == 0 || prec >= 13)
                 // remove "0x"
                 return Double.toHexString(d).substring(2);
             else {
                 assert(prec >= 1 && prec <= 12);
 
-                int exponent  = FpUtils.getExponent(d);
+                int exponent  = Math.getExponent(d);
                 boolean subnormal
                     = (exponent == DoubleConsts.MIN_EXPONENT - 1);
 
                 // If this is subnormal input so normalize (could be faster to
                 // do as integer operation).
                 if (subnormal) {
-                    scaleUp = FpUtils.scalb(1.0, 54);
+                    scaleUp = Math.scalb(1.0, 54);
                     d *= scaleUp;
                     // Calculate the exponent.  This is not just exponent + 54
                     // since the former is not the normalized exponent.
-                    exponent = FpUtils.getExponent(d);
+                    exponent = Math.getExponent(d);
                     assert exponent >= DoubleConsts.MIN_EXPONENT &&
                         exponent <= DoubleConsts.MAX_EXPONENT: exponent;
                 }

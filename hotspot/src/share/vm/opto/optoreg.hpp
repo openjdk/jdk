@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,7 @@ class OptoReg VALUE_OBJ_CLASS_SPEC {
 // and converting that will return OptoReg::Bad losing the identity of the OptoReg.
 
 class OptoRegPair {
+  friend class VMStructs;
 private:
   short _second;
   short _first;

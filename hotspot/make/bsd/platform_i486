@@ -1,0 +1,15 @@
+os_family = bsd
+
+arch = x86
+
+arch_model = x86_32
+
+os_arch = bsd_x86
+
+os_arch_model = bsd_x86_32
+
+lib_arch = i386
+
+compiler = gcc
+
+sysdefs = -D_ALLBSD_SOURCE -D_GNU_SOURCE -DIA32

@@ -1262,6 +1262,15 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
     }
     break;
 
+  case _adapter_opt_profiling:
+    if (java_lang_invoke_CountingMethodHandle::vmcount_offset_in_bytes() != 0) {
+      Address G3_mh_vmcount(G3_method_handle, java_lang_invoke_CountingMethodHandle::vmcount_offset_in_bytes());
+      __ ld(G3_mh_vmcount, O1_scratch);
+      __ add(O1_scratch, 1, O1_scratch);
+      __ st(O1_scratch, G3_mh_vmcount);
+    }
+    // fall through
+
   case _adapter_retype_only:
   case _adapter_retype_raw:
     // Immediately jump to the next MH layer:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,8 @@
 
 package sun.net;
 
-import java.lang.StringIndexOutOfBoundsException;
 import java.io.*;
 import java.util.Vector;
-import sun.net.NetworkClient;
 
 /**
  * This class implements that basic intefaces of transfer protocols.
@@ -44,7 +42,7 @@ public class TransferProtocolClient extends NetworkClient {
 
     /** Array of strings (usually 1 entry) for the last reply
         from the server. */
-    protected Vector    serverResponse = new Vector(1);
+    protected Vector<String> serverResponse = new Vector<>(1);
 
     /** code for last reply */
     protected int       lastReplyCode;
@@ -123,11 +121,11 @@ public class TransferProtocolClient extends NetworkClient {
 
     /** converts the server response into a string. */
     public String getResponseString() {
-        return (String) serverResponse.elementAt(0);
+        return serverResponse.elementAt(0);
     }
 
     /** Returns all server response strings. */
-    public Vector getResponseStrings() {
+    public Vector<String> getResponseStrings() {
         return serverResponse;
     }
 

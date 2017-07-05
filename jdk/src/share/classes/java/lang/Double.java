@@ -276,14 +276,14 @@ public final class Double extends Number implements Comparable<Double> {
          * 7.19.6.1; however, the output of this method is more
          * tightly specified.
          */
-        if (!FpUtils.isFinite(d) )
+        if (!isFinite(d) )
             // For infinity and NaN, use the decimal output.
             return Double.toString(d);
         else {
             // Initialized to maximum size of output.
             StringBuffer answer = new StringBuffer(24);
 
-            if (FpUtils.rawCopySign(1.0, d) == -1.0) // value is negative,
+            if (Math.copySign(1.0, d) == -1.0)    // value is negative,
                 answer.append("-");                  // so append sign info
 
             answer.append("0x");
@@ -322,7 +322,7 @@ public final class Double extends Number implements Comparable<Double> {
                 // E_min -1).
                 answer.append("p" + (subnormal ?
                                DoubleConsts.MIN_EXPONENT:
-                               FpUtils.getExponent(d) ));
+                               Math.getExponent(d) ));
             }
             return answer.toString();
         }
@@ -548,7 +548,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return  {@code true} if the value of the argument is NaN;
      *          {@code false} otherwise.
      */
-    static public boolean isNaN(double v) {
+    public static boolean isNaN(double v) {
         return (v != v);
     }
 
@@ -560,8 +560,22 @@ public final class Double extends Number implements Comparable<Double> {
      * @return  {@code true} if the value of the argument is positive
      *          infinity or negative infinity; {@code false} otherwise.
      */
-    static public boolean isInfinite(double v) {
+    public static boolean isInfinite(double v) {
         return (v == POSITIVE_INFINITY) || (v == NEGATIVE_INFINITY);
+    }
+
+    /**
+     * Returns {@code true} if the argument is a finite floating-point
+     * value; returns {@code false} otherwise (for NaN and infinity
+     * arguments).
+     *
+     * @param d the {@code double} value to be tested
+     * @return {@code true} if the argument is a finite
+     * floating-point value, {@code false} otherwise.
+     * @since 1.8
+     */
+    public static boolean isFinite(double d) {
+        return Math.abs(d) <= DoubleConsts.MAX_VALUE;
     }
 
     /**

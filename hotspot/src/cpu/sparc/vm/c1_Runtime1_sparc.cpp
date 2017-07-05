@@ -782,13 +782,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case jvmti_exception_throw_id:
-      { // Oexception : exception
-        __ set_info("jvmti_exception_throw", dont_gc_arguments);
-        oop_maps = generate_stub_call(sasm, noreg, CAST_FROM_FN_PTR(address, Runtime1::post_jvmti_exception_throw), I0);
-      }
-      break;
-
     case dtrace_object_alloc_id:
       { // O0: object
         __ set_info("dtrace_object_alloc", dont_gc_arguments);
@@ -834,14 +827,16 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         int satb_q_buf_byte_offset =
           in_bytes(JavaThread::satb_mark_queue_offset() +
                    PtrQueue::byte_offset_of_buf());
+
         __ bind(restart);
+        // Load the index into the SATB buffer. PtrQueue::_index is a
+        // size_t so ld_ptr is appropriate
         __ ld_ptr(G2_thread, satb_q_index_byte_offset, tmp);
 
-        __ br_on_reg_cond(Assembler::rc_z, /*annul*/false,
-                          Assembler::pn, tmp, refill);
+        // index == 0?
+        __ cmp_and_brx_short(tmp, G0, Assembler::equal, Assembler::pn, refill);
 
-        // If the branch is taken, no harm in executing this in the delay slot.
-        __ delayed()->ld_ptr(G2_thread, satb_q_buf_byte_offset, tmp2);
+        __ ld_ptr(G2_thread, satb_q_buf_byte_offset, tmp2);
         __ sub(tmp, oopSize, tmp);
 
         __ st_ptr(pre_val, tmp2, tmp);  // [_buf + index] := <address_of_card>
@@ -901,11 +896,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ set(rs, cardtable);         // cardtable := <card table base>
         __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
 
-        __ br_on_reg_cond(Assembler::rc_nz, /*annul*/false, Assembler::pt,
-                          tmp, not_already_dirty);
-        // Get cardtable + tmp into a reg by itself -- useful in the take-the-branch
-        // case, harmless if not.
-        __ delayed()->add(addr, cardtable, tmp2);
+        assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
+        __ cmp_and_br_short(tmp, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
 
         // We didn't take the branch, so we're already dirty: return.
         // Use return-from-leaf
@@ -914,6 +906,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         // Not dirty.
         __ bind(not_already_dirty);
+
+        // Get cardtable + tmp into a reg by itself
+        __ add(addr, cardtable, tmp2);
+
         // First, dirty it.
         __ stb(G0, tmp2, 0);  // [cardPtr] := 0  (i.e., dirty).
 
@@ -929,13 +925,17 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         int dirty_card_q_buf_byte_offset =
           in_bytes(JavaThread::dirty_card_queue_offset() +
                    PtrQueue::byte_offset_of_buf());
+
         __ bind(restart);
+
+        // Get the index into the update buffer. PtrQueue::_index is
+        // a size_t so ld_ptr is appropriate here.
         __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, tmp3);
 
-        __ br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn,
-                          tmp3, refill);
-        // If the branch is taken, no harm in executing this in the delay slot.
-        __ delayed()->ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, tmp4);
+        // index == 0?
+        __ cmp_and_brx_short(tmp3, G0, Assembler::equal,  Assembler::pn, refill);
+
+        __ ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, tmp4);
         __ sub(tmp3, oopSize, tmp3);
 
         __ st_ptr(tmp2, tmp4, tmp3);  // [_buf + index] := <address_of_card>
