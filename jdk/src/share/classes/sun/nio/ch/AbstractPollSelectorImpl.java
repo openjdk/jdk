@@ -58,6 +58,9 @@ abstract class AbstractPollSelectorImpl
     // True if this Selector has been closed
     private boolean closed = false;
 
+    // Lock for close and cleanup
+    private Object closeLock = new Object();
+
     AbstractPollSelectorImpl(SelectorProvider sp, int channels, int offset) {
         super(sp);
         this.totalChannels = channels;
@@ -65,7 +68,11 @@ abstract class AbstractPollSelectorImpl
     }
 
     void putEventOps(SelectionKeyImpl sk, int ops) {
-        pollWrapper.putEventOps(sk.getIndex(), ops);
+        synchronized (closeLock) {
+            if (closed)
+                throw new ClosedSelectorException();
+            pollWrapper.putEventOps(sk.getIndex(), ops);
+        }
     }
 
     public Selector wakeup() {
@@ -76,7 +83,9 @@ abstract class AbstractPollSelectorImpl
     protected abstract int doSelect(long timeout) throws IOException;
 
     protected void implClose() throws IOException {
-        if (!closed) {
+        synchronized (closeLock) {
+            if (closed)
+                return;
             closed = true;
             // Deregister channels
             for(int i=channelOffset; i<totalChannels; i++) {
@@ -129,23 +138,28 @@ abstract class AbstractPollSelectorImpl
     }
 
     protected void implRegister(SelectionKeyImpl ski) {
-        // Check to see if the array is large enough
-        if (channelArray.length == totalChannels) {
-            // Make a larger array
-            int newSize = pollWrapper.totalChannels * 2;
-            SelectionKeyImpl temp[] = new SelectionKeyImpl[newSize];
-            // Copy over
-            for (int i=channelOffset; i<totalChannels; i++)
-                temp[i] = channelArray[i];
-            channelArray = temp;
-            // Grow the NativeObject poll array
-            pollWrapper.grow(newSize);
+        synchronized (closeLock) {
+            if (closed)
+                throw new ClosedSelectorException();
+
+            // Check to see if the array is large enough
+            if (channelArray.length == totalChannels) {
+                // Make a larger array
+                int newSize = pollWrapper.totalChannels * 2;
+                SelectionKeyImpl temp[] = new SelectionKeyImpl[newSize];
+                // Copy over
+                for (int i=channelOffset; i<totalChannels; i++)
+                    temp[i] = channelArray[i];
+                channelArray = temp;
+                // Grow the NativeObject poll array
+                pollWrapper.grow(newSize);
+            }
+            channelArray[totalChannels] = ski;
+            ski.setIndex(totalChannels);
+            pollWrapper.addEntry(ski.channel);
+            totalChannels++;
+            keys.add(ski);
         }
-        channelArray[totalChannels] = ski;
-        ski.setIndex(totalChannels);
-        pollWrapper.addEntry(ski.channel);
-        totalChannels++;
-        keys.add(ski);
     }
 
     protected void implDereg(SelectionKeyImpl ski) throws IOException {

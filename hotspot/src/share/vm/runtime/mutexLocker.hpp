@@ -38,7 +38,7 @@ extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI stati
 extern Monitor* JNICritical_lock;                // a lock used while entering and exiting JNI critical regions, allows GC to sometimes get in
 extern Mutex*   JvmtiThreadState_lock;           // a lock on modification of JVMTI thread data
 extern Monitor* JvmtiPendingEvent_lock;          // a lock on the JVMTI pending events list
-extern Mutex*   Heap_lock;                       // a lock on the heap
+extern Monitor* Heap_lock;                       // a lock on the heap
 extern Mutex*   ExpandHeap_lock;                 // a lock on expanding the heap
 extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandlerLibrary
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
@@ -60,8 +60,30 @@ extern Mutex*   STS_init_lock;                   // coordinate initialization of
 extern Monitor* SLT_lock;                        // used in CMS GC for acquiring PLL
 extern Monitor* iCMS_lock;                       // CMS incremental mode start/stop notification
 extern Monitor* FullGCCount_lock;                // in support of "concurrent" full gc
+extern Monitor* CMark_lock;                      // used for concurrent mark thread coordination
+extern Monitor* ZF_mon;                          // used for G1 conc zero-fill.
+extern Monitor* Cleanup_mon;                     // used for G1 conc cleanup.
+extern Monitor* G1ConcRefine_mon;                // used for G1 conc-refine
+                                                 // coordination.
+
+extern Mutex*   SATB_Q_FL_lock;                  // Protects SATB Q
+                                                 // buffer free list.
+extern Monitor* SATB_Q_CBL_mon;                  // Protects SATB Q
+                                                 // completed buffer queue.
+extern Mutex*   Shared_SATB_Q_lock;              // Lock protecting SATB
+                                                 // queue shared by
+                                                 // non-Java threads.
+
+extern Mutex*   DirtyCardQ_FL_lock;              // Protects dirty card Q
+                                                 // buffer free list.
+extern Monitor* DirtyCardQ_CBL_mon;              // Protects dirty card Q
+                                                 // completed buffer queue.
+extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
+                                                 // queue shared by
+                                                 // non-Java threads.
                                                  // (see option ExplicitGCInvokesConcurrent)
 extern Mutex*   ParGCRareEvent_lock;             // Synchronizes various (rare) parallel GC ops.
+extern Mutex*   EvacFailureStack_lock;           // guards the evac failure scan stack
 extern Mutex*   Compile_lock;                    // a lock held when Compilation is updating code (used to block CodeCache traversal, CHA updates, etc)
 extern Monitor* MethodCompileQueue_lock;         // a lock held when method compilations are enqueued, dequeued
 #ifdef TIERED
@@ -92,6 +114,10 @@ extern Mutex*   PerfDataMemAlloc_lock;           // a lock on the allocator for 
 extern Mutex*   PerfDataManager_lock;            // a long on access to PerfDataManager resources
 extern Mutex*   ParkerFreeList_lock;
 extern Mutex*   OopMapCacheAlloc_lock;           // protects allocation of oop_map caches
+
+extern Mutex*   MMUTracker_lock;                 // protects the MMU
+                                                 // tracker data structures
+extern Mutex*   HotCardCache_lock;               // protects the hot card cache
 
 extern Mutex*   Management_lock;                 // a lock used to serialize JVM management
 extern Monitor* LowMemory_lock;                  // a lock used for low memory detection

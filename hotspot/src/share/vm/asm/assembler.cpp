@@ -249,8 +249,6 @@ void AbstractAssembler::block_comment(const char* comment) {
 bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
   // Exception handler checks the nmethod's implicit null checks table
   // only when this method returns false.
-#ifndef SPARC
-  // Sparc does not have based addressing
   if (UseCompressedOops) {
     // The first page after heap_base is unmapped and
     // the 'offset' is equal to [heap_base + offset] for
@@ -261,7 +259,6 @@ bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
       offset = (intptr_t)(pointer_delta((void*)offset, (void*)heap_base, 1));
     }
   }
-#endif // SPARC
   return offset < 0 || os::vm_page_size() <= offset;
 }
 
