@@ -99,7 +99,6 @@ import jdk.internal.dynalink.support.Lookup;
 
 /**
  * Provides a linker for the {@link StaticClass} objects.
- * @author Attila Szegedi
  */
 class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
     private static final ClassValue<SingleClassStaticsLinker> linkers = new ClassValue<SingleClassStaticsLinker>() {

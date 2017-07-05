@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-
 /**
  * @test
  * @bug 8068432 8072030

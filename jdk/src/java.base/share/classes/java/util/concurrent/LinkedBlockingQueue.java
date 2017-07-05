@@ -35,15 +35,15 @@
 
 package java.util.concurrent;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
@@ -75,7 +75,7 @@ import java.util.function.Consumer;
  *
  * @since 1.5
  * @author Doug Lea
- * @param <E> the type of elements held in this collection
+ * @param <E> the type of elements held in this queue
  */
 public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {
@@ -117,7 +117,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      */
 
     /**
-     * Linked list node class
+     * Linked list node class.
      */
     static class Node<E> {
         E item;
@@ -380,7 +380,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         putLock.lockInterruptibly();
         try {
             while (count.get() == capacity) {
-                if (nanos <= 0)
+                if (nanos <= 0L)
                     return false;
                 nanos = notFull.awaitNanos(nanos);
             }
@@ -462,7 +462,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         takeLock.lockInterruptibly();
         try {
             while (count.get() == 0) {
-                if (nanos <= 0)
+                if (nanos <= 0L)
                     return null;
                 nanos = notEmpty.awaitNanos(nanos);
             }
@@ -507,11 +507,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lock();
         try {
-            Node<E> first = head.next;
-            if (first == null)
-                return null;
-            else
-                return first.item;
+            return (count.get() > 0) ? head.next.item : null;
         } finally {
             takeLock.unlock();
         }
@@ -630,7 +626,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * The following code can be used to dump the queue into a newly
      * allocated array of {@code String}:
      *
-     *  <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
+     * <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
      *
      * Note that {@code toArray(new Object[0])} is identical in function to
      * {@code toArray()}.
@@ -665,25 +661,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
     }
 
     public String toString() {
-        fullyLock();
-        try {
-            Node<E> p = head.next;
-            if (p == null)
-                return "[]";
-
-            StringBuilder sb = new StringBuilder();
-            sb.append('[');
-            for (;;) {
-                E e = p.item;
-                sb.append(e == this ? "(this Collection)" : e);
-                p = p.next;
-                if (p == null)
-                    return sb.append(']').toString();
-                sb.append(',').append(' ');
-            }
-        } finally {
-            fullyUnlock();
-        }
+        return Helpers.collectionToString(this);
     }
 
     /**
@@ -801,34 +779,26 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
             return current != null;
         }
 
-        /**
-         * Returns the next live successor of p, or null if no such.
-         *
-         * Unlike other traversal methods, iterators need to handle both:
-         * - dequeued nodes (p.next == p)
-         * - (possibly multiple) interior removed nodes (p.item == null)
-         */
-        private Node<E> nextNode(Node<E> p) {
-            for (;;) {
-                Node<E> s = p.next;
-                if (s == p)
-                    return head.next;
-                if (s == null || s.item != null)
-                    return s;
-                p = s;
-            }
-        }
-
         public E next() {
             fullyLock();
             try {
                 if (current == null)
                     throw new NoSuchElementException();
-                E x = currentElement;
                 lastRet = current;
-                current = nextNode(current);
-                currentElement = (current == null) ? null : current.item;
-                return x;
+                E item = null;
+                // Unlike other traversal methods, iterators must handle both:
+                // - dequeued nodes (p.next == p)
+                // - (possibly multiple) interior removed nodes (p.item == null)
+                for (Node<E> p = current, q;; p = q) {
+                    if ((q = p.next) == p)
+                        q = head.next;
+                    if (q == null || (item = q.item) != null) {
+                        current = q;
+                        E x = currentElement;
+                        currentElement = item;
+                        return x;
+                    }
+                }
             } finally {
                 fullyUnlock();
             }
@@ -901,8 +871,9 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
                 if (i > 0) {
                     batch = i;
                     return Spliterators.spliterator
-                        (a, 0, i, Spliterator.ORDERED | Spliterator.NONNULL |
-                         Spliterator.CONCURRENT);
+                        (a, 0, i, (Spliterator.ORDERED |
+                                   Spliterator.NONNULL |
+                                   Spliterator.CONCURRENT));
                 }
             }
             return null;

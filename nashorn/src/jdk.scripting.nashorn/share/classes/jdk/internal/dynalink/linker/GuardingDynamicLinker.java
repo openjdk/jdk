@@ -89,8 +89,6 @@ package jdk.internal.dynalink.linker;
  * very least, it depends on the receiver belonging to the language runtime of the linker). Language runtime
  * implementors will normally implement one for their own language, and declare it in the
  * <tt>META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker</tt> file within their JAR file.
- *
- * @author Attila Szegedi
  */
 public interface GuardingDynamicLinker {
     /**
