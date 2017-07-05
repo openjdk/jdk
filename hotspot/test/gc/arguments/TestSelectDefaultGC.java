@@ -29,6 +29,7 @@
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management
+ * @ignore 8148239
  * @run driver TestSelectDefaultGC
  */
 

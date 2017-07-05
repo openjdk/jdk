@@ -88,6 +88,7 @@ public class WaitNotifyThreadTest {
     }
 
     private void doTest() throws Exception {
+
         // Verify stack trace consistency when notifying the thread
         doTest(new ActionNotify());
 
@@ -134,8 +135,7 @@ public class WaitNotifyThreadTest {
             if (mi.getName().startsWith(OBJECT_WAIT) && mi.getCompilationUnit() == null /*native method*/) {
                 if (mi.getLocks().size() == 1) {
                     MonitorInfo monInfo = mi.getLocks().getFirst();
-                    if (monInfo.getType().equals("waiting on")
-                            && monInfo.getMonitorClass().equals(OBJECT)) {
+                    if (monInfo.getType().equals("waiting on") && compareMonitorClass(monInfo)) {
                         monitorAddress = monInfo.getMonitorAddress();
                     } else {
                         System.err.println("Error: incorrect monitor info: " + monInfo.getType() + ", " + monInfo.getMonitorClass());
@@ -166,7 +166,7 @@ public class WaitNotifyThreadTest {
 
     private void assertMonitorInfo(String expectedMessage, MonitorInfo monInfo, String monitorAddress) {
         if (monInfo.getType().equals(expectedMessage)
-                && monInfo.getMonitorClass().equals(OBJECT + "11")
+                && compareMonitorClass(monInfo)
                 && monInfo.getMonitorAddress().equals(
                         monitorAddress)) {
             System.out.println("Correct monitor info found");
@@ -175,6 +175,13 @@ public class WaitNotifyThreadTest {
             System.err.println("Expected: " + expectedMessage + ", a java.lang.Object, " + monitorAddress);
             throw new RuntimeException("Incorrect lock record in 'run' method");
         }
+    }
+
+    private boolean compareMonitorClass(MonitorInfo monInfo) {
+        // If monitor class info is present in the jstack output
+        // then compare it with the class of the actual monitor object
+        // If there is no monitor class info available then return true
+        return OBJECT.equals(monInfo.getMonitorClass()) || (monInfo.getMonitorClass() == null);
     }
 
     private void analyzeThreadStackNoWaiting(ThreadStack ti2) {

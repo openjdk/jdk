@@ -285,9 +285,6 @@ protected:
   // Save the tops for eden, from, and to
   virtual void record_spaces_top();
 
-  // Doesn't require additional work during GC prologue and epilogue
-  virtual bool performs_in_place_marking() const { return false; }
-
   // Accessing marks
   void save_marks();
   void reset_saved_marks();

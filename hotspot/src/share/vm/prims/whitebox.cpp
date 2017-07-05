@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc/g1/concurrentMark.hpp"
 #include "gc/g1/concurrentMarkThread.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/adjoiningGenerations.hpp"
@@ -1410,7 +1410,7 @@ int WhiteBox::offset_for_field(const char* field_name, oop object,
   if (res == NULL) {
     tty->print_cr("Invalid layout of %s at %s", ik->external_name(),
         name_symbol->as_C_string());
-    vm_exit_during_initialization("Invalid layout of preloaded class: use -XX:+TraceClassLoading to see the origin of the problem class");
+    vm_exit_during_initialization("Invalid layout of preloaded class: use -Xlog:classload=info to see the origin of the problem class");
   }
 
   //fetch the field at the offset we've found

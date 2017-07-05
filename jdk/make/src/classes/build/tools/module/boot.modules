@@ -19,9 +19,11 @@ java.xml.crypto
 jdk.charsets
 jdk.deploy
 jdk.deploy.osx
-jdk.vm.cds
 jdk.httpserver
 jdk.jfr
+jdk.net
+jdk.vm.cds
+jdk.vm.ci
 jdk.management
 jdk.management.cmm
 jdk.management.resource
@@ -30,4 +32,3 @@ jdk.sctp
 jdk.security.auth
 jdk.security.jgss
 jdk.snmp
-jdk.vm.ci
