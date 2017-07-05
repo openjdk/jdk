@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,8 +217,8 @@ abstract class ConnectorImpl implements Connector {
     }
 
     protected void checkNativeLink(SecurityManager sm, String os) {
-        if (os.equals("SunOS") || os.equals("Linux")) {
-            // link "saproc" - SA native library on SunOS and Linux?
+        if (os.equals("SunOS") || os.equals("Linux") || os.contains("OS X")) {
+            // link "saproc" - SA native library on SunOS, Linux, and Mac OS X
             sm.checkLink("saproc");
         } else if (os.startsWith("Windows")) {
             // link "sawindbg" - SA native library on Windows.
