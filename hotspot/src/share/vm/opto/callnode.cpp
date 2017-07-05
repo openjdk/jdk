@@ -231,9 +231,9 @@ uint TailJumpNode::match_edge(uint idx) const {
 }
 
 //=============================================================================
-JVMState::JVMState(ciMethod* method, JVMState* caller) {
+JVMState::JVMState(ciMethod* method, JVMState* caller) :
+  _method(method) {
   assert(method != NULL, "must be valid call site");
-  _method = method;
   _reexecute = Reexecute_Undefined;
   debug_only(_bci = -99);  // random garbage value
   debug_only(_map = (SafePointNode*)-1);
@@ -246,8 +246,8 @@ JVMState::JVMState(ciMethod* method, JVMState* caller) {
   _endoff = _monoff;
   _sp = 0;
 }
-JVMState::JVMState(int stack_size) {
-  _method = NULL;
+JVMState::JVMState(int stack_size) :
+  _method(NULL) {
   _bci = InvocationEntryBci;
   _reexecute = Reexecute_Undefined;
   debug_only(_map = (SafePointNode*)-1);
@@ -526,8 +526,8 @@ void JVMState::dump_on(outputStream* st) const {
     }
     _map->dump(2);
   }
-  st->print("JVMS depth=%d loc=%d stk=%d mon=%d scalar=%d end=%d mondepth=%d sp=%d bci=%d reexecute=%s method=",
-             depth(), locoff(), stkoff(), monoff(), scloff(), endoff(), monitor_depth(), sp(), bci(), should_reexecute()?"true":"false");
+  st->print("JVMS depth=%d loc=%d stk=%d arg=%d mon=%d scalar=%d end=%d mondepth=%d sp=%d bci=%d reexecute=%s method=",
+             depth(), locoff(), stkoff(), argoff(), monoff(), scloff(), endoff(), monitor_depth(), sp(), bci(), should_reexecute()?"true":"false");
   if (_method == NULL) {
     st->print_cr("(none)");
   } else {

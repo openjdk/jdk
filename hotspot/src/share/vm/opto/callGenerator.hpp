@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_OPTO_CALLGENERATOR_HPP
 #define SHARE_VM_OPTO_CALLGENERATOR_HPP
 
+#include "compiler/compileBroker.hpp"
 #include "opto/callnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/type.hpp"
@@ -44,7 +45,7 @@ class CallGenerator : public ResourceObj {
   ciMethod*             _method;                // The method being called.
 
  protected:
-  CallGenerator(ciMethod* method);
+  CallGenerator(ciMethod* method) : _method(method) {}
 
  public:
   // Accessors
@@ -111,11 +112,8 @@ class CallGenerator : public ResourceObj {
   static CallGenerator* for_virtual_call(ciMethod* m, int vtable_index);  // virtual, interface
   static CallGenerator* for_dynamic_call(ciMethod* m);   // invokedynamic
 
-  static CallGenerator* for_method_handle_call(Node* method_handle, JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile);
-  static CallGenerator* for_invokedynamic_call(                     JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile);
-
-  static CallGenerator* for_method_handle_inline(Node* method_handle,   JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile);
-  static CallGenerator* for_invokedynamic_inline(ciCallSite* call_site, JVMState* jvms, ciMethod* caller, ciMethod* callee, ciCallProfile profile);
+  static CallGenerator* for_method_handle_call(  JVMState* jvms, ciMethod* caller, ciMethod* callee);
+  static CallGenerator* for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee);
 
   // How to generate a replace a direct call with an inline version
   static CallGenerator* for_late_inline(ciMethod* m, CallGenerator* inline_cg);
@@ -145,13 +143,21 @@ class CallGenerator : public ResourceObj {
   // Registry for intrinsics:
   static CallGenerator* for_intrinsic(ciMethod* m);
   static void register_intrinsic(ciMethod* m, CallGenerator* cg);
+
+  static void print_inlining(ciMethod* callee, int inline_level, int bci, const char* msg) {
+    if (PrintInlining)
+      CompileTask::print_inlining(callee, inline_level, bci, msg);
+  }
 };
 
-class InlineCallGenerator : public CallGenerator {
-  virtual bool      is_inline() const           { return true; }
 
+//------------------------InlineCallGenerator----------------------------------
+class InlineCallGenerator : public CallGenerator {
  protected:
-  InlineCallGenerator(ciMethod* method) : CallGenerator(method) { }
+  InlineCallGenerator(ciMethod* method) : CallGenerator(method) {}
+
+ public:
+  virtual bool      is_inline() const           { return true; }
 };
 
 

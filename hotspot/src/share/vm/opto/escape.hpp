@@ -512,13 +512,11 @@ private:
       assert(ptn != NULL, "node should be registered");
     }
     add_edge(ptnode_adr(n->_idx), ptn);
-  }
-
+ }
   // Helper functions
-  bool   is_oop_field(Node* n, int offset);
-  static Node* get_addp_base(Node *addp);
-  static Node* find_second_addp(Node* addp, Node* n);
-
+  bool   is_oop_field(Node* n, int offset, bool* unsafe);
+ static Node* get_addp_base(Node *addp);
+ static Node* find_second_addp(Node* addp, Node* n);
   // offset of a field reference
   int address_offset(Node* adr, PhaseTransform *phase);
 

@@ -145,7 +145,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* thread, Bytecodes::C
     // The bytecode wrappers aren't GC-safe so construct a new one
     Bytecode_loadconstant ldc2(m, bci(thread));
     ConstantPoolCacheEntry* cpce = m->constants()->cache()->entry_at(ldc2.cache_index());
-    assert(result == cpce->f1(), "expected result for assembly code");
+    assert(result == cpce->f1_as_instance(), "expected result for assembly code");
   }
 #endif
 }
@@ -656,7 +656,7 @@ IRT_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* thread, methodOopDes
   JvmtiExport::post_raw_breakpoint(thread, method, bcp);
 IRT_END
 
-IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code bytecode))
+IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code bytecode)) {
   // extract receiver from the outgoing argument list if necessary
   Handle receiver(thread, NULL);
   if (bytecode == Bytecodes::_invokevirtual || bytecode == Bytecodes::_invokeinterface) {
@@ -724,86 +724,54 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes
       info.resolved_method(),
       info.vtable_index());
   }
+}
+IRT_END
+
+
+// First time execution:  Resolve symbols, create a permanent MethodType object.
+IRT_ENTRY(void, InterpreterRuntime::resolve_invokehandle(JavaThread* thread)) {
+  assert(EnableInvokeDynamic, "");
+  const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
+
+  // resolve method
+  CallInfo info;
+  constantPoolHandle pool(thread, method(thread)->constants());
+
+  {
+    JvmtiHideSingleStepping jhss(thread);
+    LinkResolver::resolve_invoke(info, Handle(), pool,
+                                 get_index_u2_cpcache(thread, bytecode), bytecode, CHECK);
+  } // end JvmtiHideSingleStepping
+
+  cache_entry(thread)->set_method_handle(
+      info.resolved_method(),
+      info.resolved_appendix());
+}
 IRT_END
 
 
 // First time execution:  Resolve symbols, create a permanent CallSite object.
 IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
-  ResourceMark rm(thread);
-
   assert(EnableInvokeDynamic, "");
-
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
 
-  methodHandle caller_method(thread, method(thread));
+  //TO DO: consider passing BCI to Java.
+  //  int caller_bci = method(thread)->bci_from(bcp(thread));
 
-  constantPoolHandle pool(thread, caller_method->constants());
-  pool->set_invokedynamic();    // mark header to flag active call sites
+  // resolve method
+  CallInfo info;
+  constantPoolHandle pool(thread, method(thread)->constants());
+  int index = get_index_u4(thread, bytecode);
 
-  int caller_bci = 0;
-  int site_index = 0;
-  { address caller_bcp = bcp(thread);
-    caller_bci = caller_method->bci_from(caller_bcp);
-    site_index = Bytes::get_native_u4(caller_bcp+1);
-  }
-  assert(site_index == InterpreterRuntime::bytecode(thread).get_index_u4(bytecode), "");
-  assert(constantPoolCacheOopDesc::is_secondary_index(site_index), "proper format");
-  // there is a second CPC entries that is of interest; it caches signature info:
-  int main_index = pool->cache()->secondary_entry_at(site_index)->main_entry_index();
-  int pool_index = pool->cache()->entry_at(main_index)->constant_pool_index();
-
-  // first resolve the signature to a MH.invoke methodOop
-  if (!pool->cache()->entry_at(main_index)->is_resolved(bytecode)) {
+  {
     JvmtiHideSingleStepping jhss(thread);
-    CallInfo callinfo;
-    LinkResolver::resolve_invoke(callinfo, Handle(), pool,
-                                 site_index, bytecode, CHECK);
-    // The main entry corresponds to a JVM_CONSTANT_InvokeDynamic, and serves
-    // as a common reference point for all invokedynamic call sites with
-    // that exact call descriptor.  We will link it in the CP cache exactly
-    // as if it were an invokevirtual of MethodHandle.invoke.
-    pool->cache()->entry_at(main_index)->set_method(
-      bytecode,
-      callinfo.resolved_method(),
-      callinfo.vtable_index());
-  }
+    LinkResolver::resolve_invoke(info, Handle(), pool,
+                                 index, bytecode, CHECK);
+  } // end JvmtiHideSingleStepping
 
-  // The method (f2 entry) of the main entry is the MH.invoke for the
-  // invokedynamic target call signature.
-  oop f1_value = pool->cache()->entry_at(main_index)->f1();
-  methodHandle signature_invoker(THREAD, (methodOop) f1_value);
-  assert(signature_invoker.not_null() && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
-         "correct result from LinkResolver::resolve_invokedynamic");
-
-  Handle info;  // optional argument(s) in JVM_CONSTANT_InvokeDynamic
-  Handle bootm = SystemDictionary::find_bootstrap_method(caller_method, caller_bci,
-                                                         main_index, info, CHECK);
-  if (!java_lang_invoke_MethodHandle::is_instance(bootm())) {
-    THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
-              "no bootstrap method found for invokedynamic");
-  }
-
-  // Short circuit if CallSite has been bound already:
-  if (!pool->cache()->secondary_entry_at(site_index)->is_f1_null())
-    return;
-
-  Symbol*  call_site_name = pool->name_ref_at(site_index);
-
-  Handle call_site
-    = SystemDictionary::make_dynamic_call_site(bootm,
-                                               // Callee information:
-                                               call_site_name,
-                                               signature_invoker,
-                                               info,
-                                               // Caller information:
-                                               caller_method,
-                                               caller_bci,
-                                               CHECK);
-
-  // In the secondary entry, the f1 field is the call site, and the f2 (index)
-  // field is some data about the invoke site.  Currently, it is just the BCI.
-  // Later, it might be changed to help manage inlining dependencies.
-  pool->cache()->secondary_entry_at(site_index)->set_dynamic_call(call_site, signature_invoker);
+  pool->cache()->secondary_entry_at(index)->set_dynamic_call(
+      info.resolved_method(),
+      info.resolved_appendix());
 }
 IRT_END
 
@@ -975,7 +943,7 @@ ConstantPoolCacheEntry *cp_entry))
 
   // check the access_flags for the field in the klass
 
-  instanceKlass* ik = instanceKlass::cast(java_lang_Class::as_klassOop(cp_entry->f1()));
+  instanceKlass* ik = instanceKlass::cast(java_lang_Class::as_klassOop(cp_entry->f1_as_klass_mirror()));
   int index = cp_entry->field_index();
   if ((ik->field_access_flags(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
 
@@ -998,15 +966,15 @@ ConstantPoolCacheEntry *cp_entry))
     // non-static field accessors have an object, but we need a handle
     h_obj = Handle(thread, obj);
   }
-  instanceKlassHandle h_cp_entry_f1(thread, java_lang_Class::as_klassOop(cp_entry->f1()));
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(h_cp_entry_f1, cp_entry->f2(), is_static);
+  instanceKlassHandle h_cp_entry_f1(thread, java_lang_Class::as_klassOop(cp_entry->f1_as_klass_mirror()));
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(h_cp_entry_f1, cp_entry->f2_as_index(), is_static);
   JvmtiExport::post_field_access(thread, method(thread), bcp(thread), h_cp_entry_f1, h_obj, fid);
 IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
   oopDesc* obj, ConstantPoolCacheEntry *cp_entry, jvalue *value))
 
-  klassOop k = java_lang_Class::as_klassOop(cp_entry->f1());
+  klassOop k = java_lang_Class::as_klassOop(cp_entry->f1_as_klass_mirror());
 
   // check the access_flags for the field in the klass
   instanceKlass* ik = instanceKlass::cast(k);
@@ -1031,7 +999,7 @@ IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
 
   HandleMark hm(thread);
   instanceKlassHandle h_klass(thread, k);
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(h_klass, cp_entry->f2(), is_static);
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(h_klass, cp_entry->f2_as_index(), is_static);
   jvalue fvalue;
 #ifdef _LP64
   fvalue = *value;

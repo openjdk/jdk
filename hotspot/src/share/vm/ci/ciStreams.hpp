@@ -259,8 +259,11 @@ public:
 
   // If this is a method invocation bytecode, get the invoked method.
   ciMethod* get_method(bool& will_link);
+  bool      has_appendix();
+  ciObject* get_appendix();
   ciKlass*  get_declared_method_holder();
   int       get_method_holder_index();
+  ciSignature* get_declared_method_signature();
   int       get_method_signature_index();
 
   ciCPCache*  get_cpcache() const;

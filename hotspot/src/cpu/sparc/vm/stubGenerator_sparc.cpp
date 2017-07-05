@@ -3404,14 +3404,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_add_ptr_entry      = StubRoutines::_atomic_add_entry;
 #endif  // COMPILER2 !=> _LP64
 
-    // Build this early so it's available for the interpreter.  The
-    // stub expects the required and actual type to already be in O1
-    // and O2 respectively.
-    StubRoutines::_throw_WrongMethodTypeException_entry =
-      generate_throw_exception("WrongMethodTypeException throw_exception",
-                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_WrongMethodTypeException),
-                               G5_method_type, G3_method_handle);
-
     // Build this early so it's available for the interpreter.
     StubRoutines::_throw_StackOverflowError_entry          = generate_throw_exception("StackOverflowError throw_exception",           CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
   }

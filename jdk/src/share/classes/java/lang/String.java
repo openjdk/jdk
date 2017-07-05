@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -987,7 +987,8 @@ public final class String
     /**
      * Compares this string to the specified {@code StringBuffer}.  The result
      * is {@code true} if and only if this {@code String} represents the same
-     * sequence of characters as the specified {@code StringBuffer}.
+     * sequence of characters as the specified {@code StringBuffer}. This method
+     * synchronizes on the {@code StringBuffer}.
      *
      * @param  sb
      *         The {@code StringBuffer} to compare this {@code String} against
@@ -999,15 +1000,29 @@ public final class String
      * @since  1.4
      */
     public boolean contentEquals(StringBuffer sb) {
-        synchronized (sb) {
-            return contentEquals((CharSequence) sb);
+        return contentEquals((CharSequence) sb);
+    }
+
+    private boolean nonSyncContentEquals(AbstractStringBuilder sb) {
+        char v1[] = value;
+        char v2[] = sb.getValue();
+        int i = 0;
+        int n = value.length;
+        while (n-- != 0) {
+            if (v1[i] != v2[i]) {
+                return false;
+            }
+            i++;
         }
+        return true;
     }
 
     /**
-     * Compares this string to the specified {@code CharSequence}.  The result
-     * is {@code true} if and only if this {@code String} represents the same
-     * sequence of char values as the specified sequence.
+     * Compares this string to the specified {@code CharSequence}.  The
+     * result is {@code true} if and only if this {@code String} represents the
+     * same sequence of char values as the specified sequence. Note that if the
+     * {@code CharSequence} is a {@code StringBuffer} then the method
+     * synchronizes on it.
      *
      * @param  cs
      *         The sequence to compare this {@code String} against
@@ -1023,16 +1038,13 @@ public final class String
             return false;
         // Argument is a StringBuffer, StringBuilder
         if (cs instanceof AbstractStringBuilder) {
-            char v1[] = value;
-            char v2[] = ((AbstractStringBuilder) cs).getValue();
-            int i = 0;
-            int n = value.length;
-            while (n-- != 0) {
-                if (v1[i] != v2[i])
-                    return false;
-                i++;
+            if (cs instanceof StringBuffer) {
+                synchronized(cs) {
+                   return nonSyncContentEquals((AbstractStringBuilder)cs);
+                }
+            } else {
+                return nonSyncContentEquals((AbstractStringBuilder)cs);
             }
-            return true;
         }
         // Argument is a String
         if (cs.equals(this))

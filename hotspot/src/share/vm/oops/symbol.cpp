@@ -96,7 +96,7 @@ int Symbol::index_of_at(int i, const char* str, int len) const {
   address scan = bytes + i;
   if (scan > limit)
     return -1;
-  for (;;) {
+  for (; scan <= limit; scan++) {
     scan = (address) memchr(scan, first_char, (limit + 1 - scan));
     if (scan == NULL)
       return -1;  // not found
@@ -104,6 +104,7 @@ int Symbol::index_of_at(int i, const char* str, int len) const {
     if (memcmp(scan, str, len) == 0)
       return (int)(scan - bytes);
   }
+  return -1;
 }
 
 

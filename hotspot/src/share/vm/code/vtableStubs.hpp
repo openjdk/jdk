@@ -55,6 +55,8 @@ class VtableStub {
   int index() const                              { return _index; }
   static VMReg receiver_location()               { return _receiver_location; }
   void set_next(VtableStub* n)                   { _next = n; }
+
+ public:
   address code_begin() const                     { return (address)(this + 1); }
   address code_end() const                       { return code_begin() + pd_code_size_limit(_is_vtable_stub); }
   address entry_point() const                    { return code_begin(); }
@@ -65,6 +67,7 @@ class VtableStub {
   }
   bool contains(address pc) const                { return code_begin() <= pc && pc < code_end(); }
 
+ private:
   void set_exception_points(address npe_addr, address ame_addr) {
     _npe_offset = npe_addr - code_begin();
     _ame_offset = ame_addr - code_begin();

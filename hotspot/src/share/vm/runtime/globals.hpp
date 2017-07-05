@@ -930,6 +930,9 @@ class CommandLineFlags {
   diagnostic(bool, PrintAdapterHandlers, false,                             \
           "Print code generated for i2c/c2i adapters")                      \
                                                                             \
+  diagnostic(bool, VerifyAdapterCalls, trueInDebug,                         \
+          "Verify that i2c/c2i adapters are called properly")               \
+                                                                            \
   develop(bool, VerifyAdapterSharing, false,                                \
           "Verify that the code for shared adapters is the equivalent")     \
                                                                             \
@@ -3832,12 +3835,6 @@ class CommandLineFlags {
   product(bool, AnonymousClasses, false,                                    \
           "support sun.misc.Unsafe.defineAnonymousClass (deprecated)")      \
                                                                             \
-  experimental(bool, EnableMethodHandles, false,                            \
-          "support method handles (deprecated)")                            \
-                                                                            \
-  diagnostic(intx, MethodHandlePushLimit, 3,                                \
-          "number of additional stack slots a method handle may push")      \
-                                                                            \
   diagnostic(bool, PrintMethodHandleStubs, false,                           \
           "Print generated stub code for method handles")                   \
                                                                             \
@@ -3847,18 +3844,11 @@ class CommandLineFlags {
   diagnostic(bool, VerifyMethodHandles, trueInDebug,                        \
           "perform extra checks when constructing method handles")          \
                                                                             \
-  diagnostic(bool, OptimizeMethodHandles, true,                             \
-          "when constructing method handles, try to improve them")          \
-                                                                            \
-  develop(bool, StressMethodHandleWalk, false,                              \
-          "Process all method handles with MethodHandleWalk")               \
+  diagnostic(bool, ShowHiddenFrames, false,                                 \
+          "show method handle implementation frames (usually hidden)")      \
                                                                             \
   experimental(bool, TrustFinalNonStaticFields, false,                      \
           "trust final non-static declarations for constant folding")       \
-                                                                            \
-  experimental(bool, AllowInvokeGeneric, false,                             \
-          "accept MethodHandle.invoke and MethodHandle.invokeGeneric "      \
-          "as equivalent methods")                                          \
                                                                             \
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \

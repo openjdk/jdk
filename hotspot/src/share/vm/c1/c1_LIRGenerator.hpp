@@ -500,6 +500,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   virtual void do_IfOp           (IfOp*            x);
   virtual void do_Convert        (Convert*         x);
   virtual void do_NullCheck      (NullCheck*       x);
+  virtual void do_TypeCast       (TypeCast*        x);
   virtual void do_Invoke         (Invoke*          x);
   virtual void do_NewInstance    (NewInstance*     x);
   virtual void do_NewTypeArray   (NewTypeArray*    x);
