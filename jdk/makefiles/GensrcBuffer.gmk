@@ -226,7 +226,7 @@ define SetupGenBuffer
 	endif
 
 $$($1_DST) : $$($1_DEP) $(GENSRC_BUFFER_DST)/_the.dir
-	$(TOOL_SPP) < $$($1_SRC) > $$($1_OUT).temp \
+	$(TOOL_SPP) < $$($1_SRC) > $$($1_OUT).tmp \
 		-K$$($1_type) \
 		-K$$($1_category) \
 		-Dtype=$$($1_type) \
@@ -248,19 +248,19 @@ $$($1_DST) : $$($1_DEP) $(GENSRC_BUFFER_DST)/_the.dir
 		-Da=$$($1_a) \
 		-DA=$$($1_A) \
 		-Kbo$$($1_BO)
-		$(MV) $$($1_OUT).temp $$($1_OUT)
+		$(MV) $$($1_OUT).tmp $$($1_OUT)
 # Do the extra bin thing
 ifeq ($$($1_BIN),1)
-	$(SED) -e '/#BIN/,$$$$d' < $$($1_OUT) > $$($1_DST).temp
+	$(SED) -e '/#BIN/,$$$$d' < $$($1_OUT) > $$($1_DST).tmp
 	$(RM) $$($1_OUT)
-	$$($1_char_CMD) < $$($1_SRC_BIN) >> $$($1_DST).temp
-	$$($1_short_CMD) < $$($1_SRC_BIN) >> $$($1_DST).temp
-	$$($1_int_CMD) < $$($1_SRC_BIN) >> $$($1_DST).temp
-	$$($1_long_CMD) < $$($1_SRC_BIN) >> $$($1_DST).temp
-	$$($1_float_CMD) < $$($1_SRC_BIN) >> $$($1_DST).temp
-	$$($1_double_CMD) < $$($1_SRC_BIN) >> $$($1_DST).temp
-	$(PRINTF) "}\n" >> $$($1_DST).temp
-	mv $$($1_DST).temp $$($1_DST)
+	$$($1_char_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
+	$$($1_short_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
+	$$($1_int_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
+	$$($1_long_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
+	$$($1_float_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
+	$$($1_double_CMD) < $$($1_SRC_BIN) >> $$($1_DST).tmp
+	$(PRINTF) "}\n" >> $$($1_DST).tmp
+	mv $$($1_DST).tmp $$($1_DST)
 endif
 
 GENSRC_BUFFER += $$($1_DST)

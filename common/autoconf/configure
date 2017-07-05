@@ -2,7 +2,12 @@
 
 CONFIGURE_COMMAND_LINE="$@"
 conf_script_dir=`dirname $0`
-conf_closed_script_dir="$conf_script_dir/../../jdk/make/closed/autoconf"
+
+if [ "$CUSTOM_CONFIG_DIR" = "" ]; then
+  conf_custom_script_dir="$conf_script_dir/../../jdk/make/closed/autoconf"
+else
+  conf_custom_script_dir=$CUSTOM_CONFIG_DIR
+fi
 
 ###
 ### Test that the generated configure is up-to-date
@@ -14,8 +19,12 @@ TEST=`which test`
 print_error_not_up_to_date() {
   echo "Error: The configure source files is newer than the generated files."
   echo "Please run 'sh autogen.sh' to update the generated files."
+  echo "Note that this test might trigger incorrectly sometimes due to hg timestamps".
 }
 
+# NOTE: This test can occasionally go wrong due to the way mercurial handles
+# timestamps. It it supposed to aid during development of build-infra, but should
+# go away before making this the default build system.
 for file in configure.ac *.m4 ; do
   if $TEST $file -nt generated-configure.sh; then
     print_error_not_up_to_date
@@ -23,26 +32,32 @@ for file in configure.ac *.m4 ; do
   fi
 done
 
-if $TEST -e $conf_closed_script_dir/generated-configure.sh; then
-  # If closed source configure is available, make sure it is up-to-date as well.
-  for file in configure.ac *.m4 $conf_closed_script_dir/*.m4; do
-    if $TEST $file -nt $conf_closed_script_dir/generated-configure.sh; then
+if $TEST -e $conf_custom_script_dir/generated-configure.sh; then
+  # If custom source configure is available, make sure it is up-to-date as well.
+  for file in configure.ac *.m4 $conf_custom_script_dir/*.m4; do
+    if $TEST $file -nt $conf_custom_script_dir/generated-configure.sh; then
       print_error_not_up_to_date
       exit 1
     fi
   done
 
-  # Test if open configure is newer than closed configure, if so, closed needs to
-  # be regenerated.
+  # Test if open configure is newer than custom configure, if so, custom needs to
+  # be regenerated. This test is required to ensure consistency with custom source.
   conf_open_configure_timestamp=`grep DATE_WHEN_GENERATED: $conf_script_dir/generated-configure.sh  | cut -d" " -f 3`
-  conf_closed_configure_timestamp=`grep DATE_WHEN_GENERATED: $conf_closed_script_dir/generated-configure.sh  | cut -d" " -f 3`
-  if $TEST $conf_open_configure_timestamp -gt $conf_closed_configure_timestamp; then
-    print_error_not_up_to_date
+  conf_custom_configure_timestamp=`grep DATE_WHEN_GENERATED: $conf_custom_script_dir/generated-configure.sh  | cut -d" " -f 3`
+  if $TEST $conf_open_configure_timestamp -gt $conf_custom_configure_timestamp; then
+    echo "Error: The generated configure file contains changes not present in the custom generated file."
+    echo "Please run 'sh autogen.sh' to update the generated files."
     exit 1
   fi
   
 fi
 
+# Autoconf calls the configure script recursively sometimes. 
+# Don't start logging twice in that case
+if $TEST "x$conf_debug_configure" = xtrue; then
+  conf_debug_configure=recursive
+fi
 ###
 ### Process command-line arguments
 ###
@@ -62,6 +77,12 @@ do
     continue ;;
   --with-extra-cxxflags=*)
     conf_extra_cxxflags=`expr "X$conf_option" : '[^=]*=\(.*\)'`
+    continue ;;
+  --debug-configure)
+    if $TEST "x$conf_debug_configure" != xrecursive; then
+      conf_debug_configure=true
+      export conf_debug_configure
+    fi
     continue ;;
   *)
     conf_processed_arguments="$conf_processed_arguments $conf_option" ;;
@@ -104,13 +125,29 @@ conf_processed_arguments="--enable-option-checking=fatal $conf_processed_argumen
 ###
 ### Call the configure script
 ###
-if $TEST -e $conf_closed_script_dir/generated-configure.sh; then
-  # Closed source configure available; run that instead
-  . $conf_closed_script_dir/generated-configure.sh $conf_processed_arguments --with-extra-cflags="$conf_extra_cflags" --with-extra-cxxflags="$conf_extra_cxxflags"
+if $TEST -e $conf_custom_script_dir/generated-configure.sh; then
+  # Custom source configure available; run that instead
+  echo Running custom generated-configure.sh
+  conf_script_to_run=$conf_custom_script_dir/generated-configure.sh
 else
-  . $conf_script_dir/generated-configure.sh $conf_processed_arguments --with-extra-cflags="$conf_extra_cflags" --with-extra-cxxflags="$conf_extra_cxxflags"
+  echo Running generated-configure.sh
+  conf_script_to_run=$conf_script_dir/generated-configure.sh
+fi  
+
+if $TEST "x$conf_debug_configure" != x; then
+  # Turn on shell debug output if requested (initial or recursive)
+  set -x
 fi
 
+if $TEST "x$conf_debug_configure" = xtrue; then
+  # Turn on logging, but don't turn on twice when called recursive
+  conf_debug_logfile=./debug-configure.log
+  (exec 3>&1 ; (. $conf_script_to_run $conf_processed_arguments --with-extra-cflags="$conf_extra_cflags" --with-extra-cxxflags="$conf_extra_cxxflags" 2>&1 1>&3 ) | tee -a $conf_debug_logfile 1>&2 ; exec 3>&-) | tee -a $conf_debug_logfile
+else
+  . $conf_script_to_run $conf_processed_arguments --with-extra-cflags="$conf_extra_cflags" --with-extra-cxxflags="$conf_extra_cxxflags"
+fi
+
+conf_result_code=$?
 ###
 ### Post-processing
 ###
@@ -119,3 +156,5 @@ fi
 if $TEST -d "$OUTPUT_ROOT"; then
   mv -f config.log "$OUTPUT_ROOT" 2> /dev/null
 fi
+
+exit $conf_result_code

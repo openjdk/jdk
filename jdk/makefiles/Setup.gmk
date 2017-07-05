@@ -36,10 +36,8 @@ $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
      FLAGS:=-source 7 -target 7 -bootclasspath $(BOOT_RTJAR) $(DISABLE_WARNINGS),\
-     SERVER_DIR:=$(JAVAC_SERVERS),\
-     SERVER_JVM:=$(SERVER_JAVA),\
-     MODE:=$(JAVAC_USE_MODE),\
-     USE_DEPS:=$(JAVAC_USE_DEPS)))
+     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
 # The generate new bytecode javac setup uses the new compiler to compile for the
 # new jdk. This new bytecode might only be possible to run using the new jvm.
@@ -47,11 +45,9 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
      JAVAH:=$(JAVAH_JARS),\
-     FLAGS:=-bootclasspath "$(JDK_OUTPUTDIR)/classes" -Xprefer:source -XDignore.symbol.file=true $(DISABLE_WARNINGS),\
-     SERVER_DIR:=$(JAVAC_SERVERS),\
-     SERVER_JVM:=$(SERVER_JAVA),\
-     MODE:=$(JAVAC_USE_MODE),\
-     USE_DEPS:=$(JAVAC_USE_DEPS)))
+     FLAGS:=-bootclasspath $(JDK_OUTPUTDIR)/classes -source 7 -target 7 -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS),\
+     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
 # After the jdk is built, we want to build demos using only the recently
 # generated jdk classes and nothing else, no jdk source, etc etc.
@@ -60,19 +56,6 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE,\
 $(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE,\
      JVM:=$(JAVA),\
      JAVAC:=$(JAVAC_JARS),\
-     FLAGS:= -Xbootclasspath:$(JDK_OUTPUTDIR)/classes $(DISABLE_WARNINGS),\
-     SERVER_DIR:=$(JAVAC_SERVERS),\
-     SERVER_JVM:=$(SERVER_JAVA),\
-     MODE:=$(JAVAC_USE_MODE),\
-     USE_DEPS:=$(JAVAC_USE_DEPS)))
-
-# A temporary solution to work around the fact that Matrix3D.java
-# exists in several applets. The javacserver does not like to be
-# fed the same class twice. Thus we compile one applet outside of the
-# javacserver.
-$(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE_NOSERV,\
-     JVM:=$(JAVA),\
-     JAVAC:=$(JAVAC_JARS),\
-     FLAGS:= -Xbootclasspath:$(JDK_OUTPUTDIR)/classes $(DISABLE_WARNINGS),\
-     MODE:=SINGLE_THREADED_BATCH,\
-     USE_DEPS:=FALSE))
+     FLAGS:=-bootclasspath $(JDK_OUTPUTDIR)/classes $(DISABLE_WARNINGS),\
+     SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
+     SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
