@@ -878,7 +878,7 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
 
 instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
   ResourceMark rm(THREAD);
-  EventMark m("loading class " INTPTR_FORMAT, (address)h_name);
+  EventMark m("loading class %s", h_name->as_C_string());
   ThreadProfilerMark tpm(ThreadProfilerMark::classLoaderRegion);
 
   stringStream st;
