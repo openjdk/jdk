@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.MimeUtility;
 import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ContentType;
 
 /**
- * JAF data content handler for text/plain --> String
+ * JAF data content handler for text/plain --&gt; String
  *
  */
 public class StringDataContentHandler implements DataContentHandler {
@@ -51,6 +51,7 @@ public class StringDataContentHandler implements DataContentHandler {
      *
      * @return The DataFlavors
      */
+    @Override
     public DataFlavor[] getTransferDataFlavors() {
         return new DataFlavor[] { getDF() };
     }
@@ -62,6 +63,7 @@ public class StringDataContentHandler implements DataContentHandler {
      * @param ds The DataSource corresponding to the data
      * @return String object
      */
+    @Override
     public Object getTransferData(DataFlavor df, DataSource ds)
                         throws IOException {
         // use myDF.equals to be sure to get ActivationDataFlavor.equals,
@@ -72,6 +74,7 @@ public class StringDataContentHandler implements DataContentHandler {
             return null;
     }
 
+    @Override
     public Object getContent(DataSource ds) throws IOException {
         String enc = null;
         InputStreamReader is = null;
@@ -120,6 +123,7 @@ public class StringDataContentHandler implements DataContentHandler {
     /**
      * Write the object to the output stream, using the specified MIME type.
      */
+    @Override
     public void writeTo(Object obj, String type, OutputStream os)
                         throws IOException {
         if (!(obj instanceof String))

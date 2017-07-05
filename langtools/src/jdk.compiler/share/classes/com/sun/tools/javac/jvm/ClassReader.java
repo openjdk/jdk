@@ -2354,7 +2354,7 @@ public class ClassReader {
                 (flags & ABSTRACT) == 0 && !name.equals(names.clinit)) {
             if (majorVersion > Version.V52.major ||
                     (majorVersion == Version.V52.major && minorVersion >= Version.V52.minor)) {
-                if ((flags & STATIC) == 0) {
+                if ((flags & (STATIC | PRIVATE)) == 0) {
                     currentOwner.flags_field |= DEFAULT;
                     flags |= DEFAULT | ABSTRACT;
                 }
