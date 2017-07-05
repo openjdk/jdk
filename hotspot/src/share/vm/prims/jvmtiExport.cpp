@@ -1805,6 +1805,10 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, const jmethodID metho
 
 void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const void *code_begin, const void *code_end) {
   JavaThread* thread = JavaThread::current();
+  // In theory everyone coming thru here is in_vm but we need to be certain
+  // because a callee will do a vm->native transition
+  ThreadInVMfromUnknown __tiv;
+
   EVT_TRIG_TRACE(JVMTI_EVENT_DYNAMIC_CODE_GENERATED,
                  ("JVMTI [%s] method dynamic code generated event triggered",
                  JvmtiTrace::safe_get_thread_name(thread)));
@@ -1826,19 +1830,18 @@ void JvmtiExport::post_dynamic_code_generated_internal(const char *name, const v
 }
 
 void JvmtiExport::post_dynamic_code_generated(const char *name, const void *code_begin, const void *code_end) {
-  // In theory everyone coming thru here is in_vm but we need to be certain
-  // because a callee will do a vm->native transition
-  ThreadInVMfromUnknown __tiv;
   jvmtiPhase phase = JvmtiEnv::get_phase();
   if (phase == JVMTI_PHASE_PRIMORDIAL || phase == JVMTI_PHASE_START) {
     post_dynamic_code_generated_internal(name, code_begin, code_end);
-    return;
+  } else {
+    // It may not be safe to post the event from this thread.  Defer all
+    // postings to the service thread so that it can perform them in a safe
+    // context and in-order.
+    MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    JvmtiDeferredEvent event = JvmtiDeferredEvent::dynamic_code_generated_event(
+        name, code_begin, code_end);
+    JvmtiDeferredEventQueue::enqueue(event);
   }
-
-  // Blocks until everything now in the queue has been posted
-  JvmtiDeferredEventQueue::flush_queue(Thread::current());
-
-  post_dynamic_code_generated_internal(name, code_begin, code_end);
 }
 
 

@@ -400,7 +400,8 @@ abstract public class HttpURLConnection extends URLConnection {
      * @exception ProtocolException if the method cannot be reset or if
      *              the requested method isn't valid for HTTP.
      * @exception SecurityException if a security manager is set and the
-     *              "allowHttpTrace" NetPermission is not granted.
+     *              method is "TRACE", but the "allowHttpTrace"
+     *              NetPermission is not granted.
      * @see #getRequestMethod()
      */
     public void setRequestMethod(String method) throws ProtocolException {

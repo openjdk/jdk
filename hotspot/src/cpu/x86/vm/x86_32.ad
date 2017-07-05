@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -12658,17 +12658,46 @@ instruct string_equals(eDIRegP str1, eSIRegP str2, eCXRegI cnt, eAXRegI result,
   ins_pipe( pipe_slow );
 %}
 
+// fast search of substring with known size.
+instruct string_indexof_con(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, immI int_cnt2,
+                            eBXRegI result, regXD vec, eAXRegI cnt2, eCXRegI tmp, eFlagsReg cr) %{
+  predicate(UseSSE42Intrinsics);
+  match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
+  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
+
+  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec, $cnt1, $cnt2, $tmp" %}
+  ins_encode %{
+    int icnt2 = (int)$int_cnt2$$constant;
+    if (icnt2 >= 8) {
+      // IndexOf for constant substrings with size >= 8 elements
+      // which don't need to be loaded through stack.
+      __ string_indexofC8($str1$$Register, $str2$$Register,
+                          $cnt1$$Register, $cnt2$$Register,
+                          icnt2, $result$$Register,
+                          $vec$$XMMRegister, $tmp$$Register);
+    } else {
+      // Small strings are loaded through stack if they cross page boundary.
+      __ string_indexof($str1$$Register, $str2$$Register,
+                        $cnt1$$Register, $cnt2$$Register,
+                        icnt2, $result$$Register,
+                        $vec$$XMMRegister, $tmp$$Register);
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct string_indexof(eDIRegP str1, eDXRegI cnt1, eSIRegP str2, eAXRegI cnt2,
-                        eBXRegI result, regXD tmp1, eCXRegI tmp2, eFlagsReg cr) %{
+                        eBXRegI result, regXD vec, eCXRegI tmp, eFlagsReg cr) %{
   predicate(UseSSE42Intrinsics);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp2, KILL cr);
+  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
 
-  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp2, $tmp1" %}
+  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result   // KILL all" %}
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
-                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$XMMRegister, $tmp2$$Register);
+                      $cnt1$$Register, $cnt2$$Register,
+                      (-1), $result$$Register,
+                      $vec$$XMMRegister, $tmp$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
