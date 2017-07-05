@@ -60,6 +60,14 @@ ifndef LDNOMAP
   LFLAGS_LIBSA = -Xlinker --version-script=mapfile
 endif
 
+# If this is a --hash-style=gnu system, use --hash-style=both
+#   The gnu .hash section won't work on some Linux systems like SuSE 10.
+_HAS_HASH_STYLE_GNU:=$(shell $(CC) -dumpspecs | grep -- '--hash-style=gnu')
+ifneq ($(_HAS_HASH_STYLE_GNU),)
+  LDFLAGS_HASH_STYLE = -Wl,--hash-style=both
+endif
+LFLAGS_LIBSA += $(LDFLAGS_HASH_STYLE)
+
 $(LIBSA): $(OBJS) mapfile
 	if [ ! -d $(ARCH) ] ; then mkdir $(ARCH) ; fi
 	$(GCC) -shared $(LFLAGS_LIBSA) -o $(LIBSA) $(OBJS) $(LIBS)
