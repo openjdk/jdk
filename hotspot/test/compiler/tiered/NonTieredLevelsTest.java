@@ -21,12 +21,9 @@
  * questions.
  */
 
-import java.util.function.IntPredicate;
-import compiler.whitebox.CompilerWhiteBoxTest;
-
 /**
  * @test NonTieredLevelsTest
- * @library /testlibrary /test/lib /compiler/whitebox /
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build NonTieredLevelsTest
@@ -39,6 +36,10 @@ import compiler.whitebox.CompilerWhiteBoxTest;
  * @summary Verify that only one level can be used
  * @author igor.ignatyev@oracle.com
  */
+
+import java.util.function.IntPredicate;
+import compiler.whitebox.CompilerWhiteBoxTest;
+
 public class NonTieredLevelsTest extends CompLevelsTest {
     private static final int AVAILABLE_COMP_LEVEL;
     private static final IntPredicate IS_AVAILABLE_COMPLEVEL;

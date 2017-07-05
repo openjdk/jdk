@@ -21,21 +21,14 @@
  * questions.
  */
 
-import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
-import java.util.Objects;
-import java.util.concurrent.Callable;
-import compiler.whitebox.CompilerWhiteBoxTest;
-import compiler.whitebox.SimpleTestCase;
-
 /**
  * @test LevelTransitionTest
- * @library /testlibrary /test/lib /compiler/whitebox /
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @ignore 8067651
  * @build TransitionsTestExecutor LevelTransitionTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
@@ -43,6 +36,14 @@ import compiler.whitebox.SimpleTestCase;
  *                   TransitionsTestExecutor LevelTransitionTest
  * @summary Test the correctness of compilation level transitions for different methods
  */
+
+import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import compiler.whitebox.CompilerWhiteBoxTest;
+import compiler.whitebox.SimpleTestCase;
+
 public class LevelTransitionTest extends TieredLevelsTest {
     /** Shows if method was profiled by being executed on levels 2 or 3 */
     protected boolean isMethodProfiled;

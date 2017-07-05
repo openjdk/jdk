@@ -194,17 +194,15 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
             int layer = JLayeredPane.getLayer(f);
             JLayeredPane.putLayer(desktopIcon, layer);
         }
-
+        d.setComponentOrderCheckingEnabled(true);
+        c.remove(f);
+        c.add(desktopIcon);
         if (findNext) {
             if (d.selectFrame(true) == null) {
                 // The icon is the last frame.
                 f.restoreSubcomponentFocus();
             }
         }
-        d.setComponentOrderCheckingEnabled(false);
-        c.remove(f);
-        c.add(desktopIcon);
-        d.setComponentOrderCheckingEnabled(true);
         c.repaint(f.getX(), f.getY(), f.getWidth(), f.getHeight());
     }
 

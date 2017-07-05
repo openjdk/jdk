@@ -558,6 +558,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code byt
   // resolve field
   fieldDescriptor info;
   constantPoolHandle pool(thread, method(thread)->constants());
+  methodHandle m(thread, method(thread));
   bool is_put    = (bytecode == Bytecodes::_putfield  || bytecode == Bytecodes::_nofast_putfield ||
                     bytecode == Bytecodes::_putstatic);
   bool is_static = (bytecode == Bytecodes::_getstatic || bytecode == Bytecodes::_putstatic);
@@ -565,7 +566,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* thread, Bytecodes::Code byt
   {
     JvmtiHideSingleStepping jhss(thread);
     LinkResolver::resolve_field_access(info, pool, get_index_u2_cpcache(thread, bytecode),
-                                       bytecode, CHECK);
+                                       m, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated

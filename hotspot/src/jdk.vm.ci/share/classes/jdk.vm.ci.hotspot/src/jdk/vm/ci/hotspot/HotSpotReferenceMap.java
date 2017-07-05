@@ -27,13 +27,25 @@ import java.util.Arrays;
 import jdk.vm.ci.code.Location;
 import jdk.vm.ci.code.ReferenceMap;
 
+/**
+ * Describes where the object references are in machine state, compliant with what HotSpot expects.
+ */
 public final class HotSpotReferenceMap extends ReferenceMap {
 
-    final Location[] objects;
-    final Location[] derivedBase;
-    final int[] sizeInBytes;
-    final int maxRegisterSize;
+    private final Location[] objects;
+    private final Location[] derivedBase;
+    private final int[] sizeInBytes;
+    private final int maxRegisterSize;
 
+    /**
+     *
+     * @param objects This array is now owned by this object and must not be mutated by the caller.
+     * @param derivedBase This array is now owned by this object and must not be mutated by the
+     *            caller.
+     * @param sizeInBytes This array is now owned by this object and must not be mutated by the
+     *            caller.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `objects`, `derivedBase` and `sizeInBytes`")
     public HotSpotReferenceMap(Location[] objects, Location[] derivedBase, int[] sizeInBytes, int maxRegisterSize) {
         this.objects = objects;
         this.derivedBase = derivedBase;

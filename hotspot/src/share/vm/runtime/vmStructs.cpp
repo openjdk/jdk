@@ -2024,15 +2024,21 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(StorePConditionalNode, LoadStoreNode)                   \
   declare_c2_type(StoreLConditionalNode, LoadStoreNode)                   \
   declare_c2_type(CompareAndSwapNode, LoadStoreConditionalNode)           \
+  declare_c2_type(CompareAndSwapBNode, CompareAndSwapNode)                \
+  declare_c2_type(CompareAndSwapSNode, CompareAndSwapNode)                \
   declare_c2_type(CompareAndSwapLNode, CompareAndSwapNode)                \
   declare_c2_type(CompareAndSwapINode, CompareAndSwapNode)                \
   declare_c2_type(CompareAndSwapPNode, CompareAndSwapNode)                \
   declare_c2_type(CompareAndSwapNNode, CompareAndSwapNode)                \
+  declare_c2_type(WeakCompareAndSwapBNode, CompareAndSwapNode)            \
+  declare_c2_type(WeakCompareAndSwapSNode, CompareAndSwapNode)            \
   declare_c2_type(WeakCompareAndSwapLNode, CompareAndSwapNode)            \
   declare_c2_type(WeakCompareAndSwapINode, CompareAndSwapNode)            \
   declare_c2_type(WeakCompareAndSwapPNode, CompareAndSwapNode)            \
   declare_c2_type(WeakCompareAndSwapNNode, CompareAndSwapNode)            \
   declare_c2_type(CompareAndExchangeNode, LoadStoreNode)                  \
+  declare_c2_type(CompareAndExchangeBNode, CompareAndExchangeNode)        \
+  declare_c2_type(CompareAndExchangeSNode, CompareAndExchangeNode)        \
   declare_c2_type(CompareAndExchangeLNode, CompareAndExchangeNode)        \
   declare_c2_type(CompareAndExchangeINode, CompareAndExchangeNode)        \
   declare_c2_type(CompareAndExchangePNode, CompareAndExchangeNode)        \

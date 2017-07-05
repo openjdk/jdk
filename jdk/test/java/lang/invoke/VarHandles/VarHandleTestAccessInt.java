@@ -42,11 +42,11 @@ import java.util.List;
 import static org.testng.Assert.*;
 
 public class VarHandleTestAccessInt extends VarHandleBaseTest {
-    static final int static_final_v = 1;
+    static final int static_final_v = 0x01234567;
 
     static int static_v;
 
-    final int final_v = 1;
+    final int final_v = 0x01234567;
 
     int v;
 
@@ -100,7 +100,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.SET_OPAQUE));
 
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_SET));
-        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE));
+        assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertTrue(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
@@ -220,44 +220,44 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         // Plain
         {
             int x = (int) vh.get(recv);
-            assertEquals(x, 1, "get int value");
+            assertEquals(x, 0x01234567, "get int value");
         }
 
 
         // Volatile
         {
             int x = (int) vh.getVolatile(recv);
-            assertEquals(x, 1, "getVolatile int value");
+            assertEquals(x, 0x01234567, "getVolatile int value");
         }
 
         // Lazy
         {
             int x = (int) vh.getAcquire(recv);
-            assertEquals(x, 1, "getRelease int value");
+            assertEquals(x, 0x01234567, "getRelease int value");
         }
 
         // Opaque
         {
             int x = (int) vh.getOpaque(recv);
-            assertEquals(x, 1, "getOpaque int value");
+            assertEquals(x, 0x01234567, "getOpaque int value");
         }
     }
 
     static void testInstanceFinalFieldUnsupported(VarHandleTestAccessInt recv, VarHandle vh) {
         checkUOE(() -> {
-            vh.set(recv, 2);
+            vh.set(recv, 0x89ABCDEF);
         });
 
         checkUOE(() -> {
-            vh.setVolatile(recv, 2);
+            vh.setVolatile(recv, 0x89ABCDEF);
         });
 
         checkUOE(() -> {
-            vh.setRelease(recv, 2);
+            vh.setRelease(recv, 0x89ABCDEF);
         });
 
         checkUOE(() -> {
-            vh.setOpaque(recv, 2);
+            vh.setOpaque(recv, 0x89ABCDEF);
         });
 
 
@@ -268,44 +268,44 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         // Plain
         {
             int x = (int) vh.get();
-            assertEquals(x, 1, "get int value");
+            assertEquals(x, 0x01234567, "get int value");
         }
 
 
         // Volatile
         {
             int x = (int) vh.getVolatile();
-            assertEquals(x, 1, "getVolatile int value");
+            assertEquals(x, 0x01234567, "getVolatile int value");
         }
 
         // Lazy
         {
             int x = (int) vh.getAcquire();
-            assertEquals(x, 1, "getRelease int value");
+            assertEquals(x, 0x01234567, "getRelease int value");
         }
 
         // Opaque
         {
             int x = (int) vh.getOpaque();
-            assertEquals(x, 1, "getOpaque int value");
+            assertEquals(x, 0x01234567, "getOpaque int value");
         }
     }
 
     static void testStaticFinalFieldUnsupported(VarHandle vh) {
         checkUOE(() -> {
-            vh.set(2);
+            vh.set(0x89ABCDEF);
         });
 
         checkUOE(() -> {
-            vh.setVolatile(2);
+            vh.setVolatile(0x89ABCDEF);
         });
 
         checkUOE(() -> {
-            vh.setRelease(2);
+            vh.setRelease(0x89ABCDEF);
         });
 
         checkUOE(() -> {
-            vh.setOpaque(2);
+            vh.setOpaque(0x89ABCDEF);
         });
 
 
@@ -315,148 +315,148 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
     static void testInstanceField(VarHandleTestAccessInt recv, VarHandle vh) {
         // Plain
         {
-            vh.set(recv, 1);
+            vh.set(recv, 0x01234567);
             int x = (int) vh.get(recv);
-            assertEquals(x, 1, "set int value");
+            assertEquals(x, 0x01234567, "set int value");
         }
 
 
         // Volatile
         {
-            vh.setVolatile(recv, 2);
+            vh.setVolatile(recv, 0x89ABCDEF);
             int x = (int) vh.getVolatile(recv);
-            assertEquals(x, 2, "setVolatile int value");
+            assertEquals(x, 0x89ABCDEF, "setVolatile int value");
         }
 
         // Lazy
         {
-            vh.setRelease(recv, 1);
+            vh.setRelease(recv, 0x01234567);
             int x = (int) vh.getAcquire(recv);
-            assertEquals(x, 1, "setRelease int value");
+            assertEquals(x, 0x01234567, "setRelease int value");
         }
 
         // Opaque
         {
-            vh.setOpaque(recv, 2);
+            vh.setOpaque(recv, 0x89ABCDEF);
             int x = (int) vh.getOpaque(recv);
-            assertEquals(x, 2, "setOpaque int value");
+            assertEquals(x, 0x89ABCDEF, "setOpaque int value");
         }
 
-        vh.set(recv, 1);
+        vh.set(recv, 0x01234567);
 
         // Compare
         {
-            boolean r = vh.compareAndSet(recv, 1, 2);
+            boolean r = vh.compareAndSet(recv, 0x01234567, 0x89ABCDEF);
             assertEquals(r, true, "success compareAndSet int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 2, "success compareAndSet int value");
+            assertEquals(x, 0x89ABCDEF, "success compareAndSet int value");
         }
 
         {
-            boolean r = vh.compareAndSet(recv, 1, 3);
+            boolean r = vh.compareAndSet(recv, 0x01234567, 0xCAFEBABE);
             assertEquals(r, false, "failing compareAndSet int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 2, "failing compareAndSet int value");
+            assertEquals(x, 0x89ABCDEF, "failing compareAndSet int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeVolatile(recv, 2, 1);
-            assertEquals(r, 2, "success compareAndExchangeVolatile int");
+            int r = (int) vh.compareAndExchange(recv, 0x89ABCDEF, 0x01234567);
+            assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 1, "success compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "success compareAndExchange int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeVolatile(recv, 2, 3);
-            assertEquals(r, 1, "failing compareAndExchangeVolatile int");
+            int r = (int) vh.compareAndExchange(recv, 0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(r, 0x01234567, "failing compareAndExchange int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 1, "failing compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "failing compareAndExchange int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeAcquire(recv, 1, 2);
-            assertEquals(r, 1, "success compareAndExchangeAcquire int");
+            int r = (int) vh.compareAndExchangeAcquire(recv, 0x01234567, 0x89ABCDEF);
+            assertEquals(r, 0x01234567, "success compareAndExchangeAcquire int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 2, "success compareAndExchangeAcquire int value");
+            assertEquals(x, 0x89ABCDEF, "success compareAndExchangeAcquire int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeAcquire(recv, 1, 3);
-            assertEquals(r, 2, "failing compareAndExchangeAcquire int");
+            int r = (int) vh.compareAndExchangeAcquire(recv, 0x01234567, 0xCAFEBABE);
+            assertEquals(r, 0x89ABCDEF, "failing compareAndExchangeAcquire int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 2, "failing compareAndExchangeAcquire int value");
+            assertEquals(x, 0x89ABCDEF, "failing compareAndExchangeAcquire int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeRelease(recv, 2, 1);
-            assertEquals(r, 2, "success compareAndExchangeRelease int");
+            int r = (int) vh.compareAndExchangeRelease(recv, 0x89ABCDEF, 0x01234567);
+            assertEquals(r, 0x89ABCDEF, "success compareAndExchangeRelease int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 1, "success compareAndExchangeRelease int value");
+            assertEquals(x, 0x01234567, "success compareAndExchangeRelease int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeRelease(recv, 2, 3);
-            assertEquals(r, 1, "failing compareAndExchangeRelease int");
+            int r = (int) vh.compareAndExchangeRelease(recv, 0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(r, 0x01234567, "failing compareAndExchangeRelease int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 1, "failing compareAndExchangeRelease int value");
+            assertEquals(x, 0x01234567, "failing compareAndExchangeRelease int value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(recv, 1, 2);
+                success = vh.weakCompareAndSet(recv, 0x01234567, 0x89ABCDEF);
             }
             assertEquals(success, true, "weakCompareAndSet int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 2, "weakCompareAndSet int value");
+            assertEquals(x, 0x89ABCDEF, "weakCompareAndSet int value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetAcquire(recv, 2, 1);
+                success = vh.weakCompareAndSetAcquire(recv, 0x89ABCDEF, 0x01234567);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 1, "weakCompareAndSetAcquire int");
+            assertEquals(x, 0x01234567, "weakCompareAndSetAcquire int");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease(recv, 1, 2);
+                success = vh.weakCompareAndSetRelease(recv, 0x01234567, 0x89ABCDEF);
             }
             assertEquals(success, true, "weakCompareAndSetRelease int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 2, "weakCompareAndSetRelease int");
+            assertEquals(x, 0x89ABCDEF, "weakCompareAndSetRelease int");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetVolatile(recv, 2, 1);
+                success = vh.weakCompareAndSetVolatile(recv, 0x89ABCDEF, 0x01234567);
             }
             assertEquals(success, true, "weakCompareAndSetVolatile int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 1, "weakCompareAndSetVolatile int value");
+            assertEquals(x, 0x01234567, "weakCompareAndSetVolatile int value");
         }
 
         // Compare set and get
         {
-            int o = (int) vh.getAndSet(recv, 2);
-            assertEquals(o, 1, "getAndSet int");
+            int o = (int) vh.getAndSet(recv, 0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndSet int");
             int x = (int) vh.get(recv);
-            assertEquals(x, 2, "getAndSet int value");
+            assertEquals(x, 0x89ABCDEF, "getAndSet int value");
         }
 
-        vh.set(recv, 1);
+        vh.set(recv, 0x01234567);
 
         // get and add, add and get
         {
-            int o = (int) vh.getAndAdd(recv, 3);
-            assertEquals(o, 1, "getAndAdd int");
-            int c = (int) vh.addAndGet(recv, 3);
-            assertEquals(c, 1 + 3 + 3, "getAndAdd int value");
+            int o = (int) vh.getAndAdd(recv, 0xCAFEBABE);
+            assertEquals(o, 0x01234567, "getAndAdd int");
+            int c = (int) vh.addAndGet(recv, 0xCAFEBABE);
+            assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
         }
     }
 
@@ -468,148 +468,148 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
     static void testStaticField(VarHandle vh) {
         // Plain
         {
-            vh.set(1);
+            vh.set(0x01234567);
             int x = (int) vh.get();
-            assertEquals(x, 1, "set int value");
+            assertEquals(x, 0x01234567, "set int value");
         }
 
 
         // Volatile
         {
-            vh.setVolatile(2);
+            vh.setVolatile(0x89ABCDEF);
             int x = (int) vh.getVolatile();
-            assertEquals(x, 2, "setVolatile int value");
+            assertEquals(x, 0x89ABCDEF, "setVolatile int value");
         }
 
         // Lazy
         {
-            vh.setRelease(1);
+            vh.setRelease(0x01234567);
             int x = (int) vh.getAcquire();
-            assertEquals(x, 1, "setRelease int value");
+            assertEquals(x, 0x01234567, "setRelease int value");
         }
 
         // Opaque
         {
-            vh.setOpaque(2);
+            vh.setOpaque(0x89ABCDEF);
             int x = (int) vh.getOpaque();
-            assertEquals(x, 2, "setOpaque int value");
+            assertEquals(x, 0x89ABCDEF, "setOpaque int value");
         }
 
-        vh.set(1);
+        vh.set(0x01234567);
 
         // Compare
         {
-            boolean r = vh.compareAndSet(1, 2);
+            boolean r = vh.compareAndSet(0x01234567, 0x89ABCDEF);
             assertEquals(r, true, "success compareAndSet int");
             int x = (int) vh.get();
-            assertEquals(x, 2, "success compareAndSet int value");
+            assertEquals(x, 0x89ABCDEF, "success compareAndSet int value");
         }
 
         {
-            boolean r = vh.compareAndSet(1, 3);
+            boolean r = vh.compareAndSet(0x01234567, 0xCAFEBABE);
             assertEquals(r, false, "failing compareAndSet int");
             int x = (int) vh.get();
-            assertEquals(x, 2, "failing compareAndSet int value");
+            assertEquals(x, 0x89ABCDEF, "failing compareAndSet int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeVolatile(2, 1);
-            assertEquals(r, 2, "success compareAndExchangeVolatile int");
+            int r = (int) vh.compareAndExchange(0x89ABCDEF, 0x01234567);
+            assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
             int x = (int) vh.get();
-            assertEquals(x, 1, "success compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "success compareAndExchange int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeVolatile(2, 3);
-            assertEquals(r, 1, "failing compareAndExchangeVolatile int");
+            int r = (int) vh.compareAndExchange(0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(r, 0x01234567, "failing compareAndExchange int");
             int x = (int) vh.get();
-            assertEquals(x, 1, "failing compareAndExchangeVolatile int value");
+            assertEquals(x, 0x01234567, "failing compareAndExchange int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeAcquire(1, 2);
-            assertEquals(r, 1, "success compareAndExchangeAcquire int");
+            int r = (int) vh.compareAndExchangeAcquire(0x01234567, 0x89ABCDEF);
+            assertEquals(r, 0x01234567, "success compareAndExchangeAcquire int");
             int x = (int) vh.get();
-            assertEquals(x, 2, "success compareAndExchangeAcquire int value");
+            assertEquals(x, 0x89ABCDEF, "success compareAndExchangeAcquire int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeAcquire(1, 3);
-            assertEquals(r, 2, "failing compareAndExchangeAcquire int");
+            int r = (int) vh.compareAndExchangeAcquire(0x01234567, 0xCAFEBABE);
+            assertEquals(r, 0x89ABCDEF, "failing compareAndExchangeAcquire int");
             int x = (int) vh.get();
-            assertEquals(x, 2, "failing compareAndExchangeAcquire int value");
+            assertEquals(x, 0x89ABCDEF, "failing compareAndExchangeAcquire int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeRelease(2, 1);
-            assertEquals(r, 2, "success compareAndExchangeRelease int");
+            int r = (int) vh.compareAndExchangeRelease(0x89ABCDEF, 0x01234567);
+            assertEquals(r, 0x89ABCDEF, "success compareAndExchangeRelease int");
             int x = (int) vh.get();
-            assertEquals(x, 1, "success compareAndExchangeRelease int value");
+            assertEquals(x, 0x01234567, "success compareAndExchangeRelease int value");
         }
 
         {
-            int r = (int) vh.compareAndExchangeRelease(2, 3);
-            assertEquals(r, 1, "failing compareAndExchangeRelease int");
+            int r = (int) vh.compareAndExchangeRelease(0x89ABCDEF, 0xCAFEBABE);
+            assertEquals(r, 0x01234567, "failing compareAndExchangeRelease int");
             int x = (int) vh.get();
-            assertEquals(x, 1, "failing compareAndExchangeRelease int value");
+            assertEquals(x, 0x01234567, "failing compareAndExchangeRelease int value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSet(1, 2);
+                success = vh.weakCompareAndSet(0x01234567, 0x89ABCDEF);
             }
             assertEquals(success, true, "weakCompareAndSet int");
             int x = (int) vh.get();
-            assertEquals(x, 2, "weakCompareAndSet int value");
+            assertEquals(x, 0x89ABCDEF, "weakCompareAndSet int value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetAcquire(2, 1);
+                success = vh.weakCompareAndSetAcquire(0x89ABCDEF, 0x01234567);
             }
             assertEquals(success, true, "weakCompareAndSetAcquire int");
             int x = (int) vh.get();
-            assertEquals(x, 1, "weakCompareAndSetAcquire int");
+            assertEquals(x, 0x01234567, "weakCompareAndSetAcquire int");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease(1, 2);
+                success = vh.weakCompareAndSetRelease(0x01234567, 0x89ABCDEF);
             }
             assertEquals(success, true, "weakCompareAndSetRelease int");
             int x = (int) vh.get();
-            assertEquals(x, 2, "weakCompareAndSetRelease int");
+            assertEquals(x, 0x89ABCDEF, "weakCompareAndSetRelease int");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = vh.weakCompareAndSetRelease(2, 1);
+                success = vh.weakCompareAndSetRelease(0x89ABCDEF, 0x01234567);
             }
             assertEquals(success, true, "weakCompareAndSetVolatile int");
             int x = (int) vh.get();
-            assertEquals(x, 1, "weakCompareAndSetVolatile int");
+            assertEquals(x, 0x01234567, "weakCompareAndSetVolatile int");
         }
 
         // Compare set and get
         {
-            int o = (int) vh.getAndSet(2);
-            assertEquals(o, 1, "getAndSet int");
+            int o = (int) vh.getAndSet(0x89ABCDEF);
+            assertEquals(o, 0x01234567, "getAndSet int");
             int x = (int) vh.get();
-            assertEquals(x, 2, "getAndSet int value");
+            assertEquals(x, 0x89ABCDEF, "getAndSet int value");
         }
 
-        vh.set(1);
+        vh.set(0x01234567);
 
         // get and add, add and get
         {
-            int o = (int) vh.getAndAdd( 3);
-            assertEquals(o, 1, "getAndAdd int");
-            int c = (int) vh.addAndGet(3);
-            assertEquals(c, 1 + 3 + 3, "getAndAdd int value");
+            int o = (int) vh.getAndAdd( 0xCAFEBABE);
+            assertEquals(o, 0x01234567, "getAndAdd int");
+            int c = (int) vh.addAndGet(0xCAFEBABE);
+            assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
         }
     }
 
@@ -624,148 +624,148 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         for (int i = 0; i < array.length; i++) {
             // Plain
             {
-                vh.set(array, i, 1);
+                vh.set(array, i, 0x01234567);
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 1, "get int value");
+                assertEquals(x, 0x01234567, "get int value");
             }
 
 
             // Volatile
             {
-                vh.setVolatile(array, i, 2);
+                vh.setVolatile(array, i, 0x89ABCDEF);
                 int x = (int) vh.getVolatile(array, i);
-                assertEquals(x, 2, "setVolatile int value");
+                assertEquals(x, 0x89ABCDEF, "setVolatile int value");
             }
 
             // Lazy
             {
-                vh.setRelease(array, i, 1);
+                vh.setRelease(array, i, 0x01234567);
                 int x = (int) vh.getAcquire(array, i);
-                assertEquals(x, 1, "setRelease int value");
+                assertEquals(x, 0x01234567, "setRelease int value");
             }
 
             // Opaque
             {
-                vh.setOpaque(array, i, 2);
+                vh.setOpaque(array, i, 0x89ABCDEF);
                 int x = (int) vh.getOpaque(array, i);
-                assertEquals(x, 2, "setOpaque int value");
+                assertEquals(x, 0x89ABCDEF, "setOpaque int value");
             }
 
-            vh.set(array, i, 1);
+            vh.set(array, i, 0x01234567);
 
             // Compare
             {
-                boolean r = vh.compareAndSet(array, i, 1, 2);
+                boolean r = vh.compareAndSet(array, i, 0x01234567, 0x89ABCDEF);
                 assertEquals(r, true, "success compareAndSet int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 2, "success compareAndSet int value");
+                assertEquals(x, 0x89ABCDEF, "success compareAndSet int value");
             }
 
             {
-                boolean r = vh.compareAndSet(array, i, 1, 3);
+                boolean r = vh.compareAndSet(array, i, 0x01234567, 0xCAFEBABE);
                 assertEquals(r, false, "failing compareAndSet int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 2, "failing compareAndSet int value");
+                assertEquals(x, 0x89ABCDEF, "failing compareAndSet int value");
             }
 
             {
-                int r = (int) vh.compareAndExchangeVolatile(array, i, 2, 1);
-                assertEquals(r, 2, "success compareAndExchangeVolatile int");
+                int r = (int) vh.compareAndExchange(array, i, 0x89ABCDEF, 0x01234567);
+                assertEquals(r, 0x89ABCDEF, "success compareAndExchange int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 1, "success compareAndExchangeVolatile int value");
+                assertEquals(x, 0x01234567, "success compareAndExchange int value");
             }
 
             {
-                int r = (int) vh.compareAndExchangeVolatile(array, i, 2, 3);
-                assertEquals(r, 1, "failing compareAndExchangeVolatile int");
+                int r = (int) vh.compareAndExchange(array, i, 0x89ABCDEF, 0xCAFEBABE);
+                assertEquals(r, 0x01234567, "failing compareAndExchange int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 1, "failing compareAndExchangeVolatile int value");
+                assertEquals(x, 0x01234567, "failing compareAndExchange int value");
             }
 
             {
-                int r = (int) vh.compareAndExchangeAcquire(array, i, 1, 2);
-                assertEquals(r, 1, "success compareAndExchangeAcquire int");
+                int r = (int) vh.compareAndExchangeAcquire(array, i, 0x01234567, 0x89ABCDEF);
+                assertEquals(r, 0x01234567, "success compareAndExchangeAcquire int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 2, "success compareAndExchangeAcquire int value");
+                assertEquals(x, 0x89ABCDEF, "success compareAndExchangeAcquire int value");
             }
 
             {
-                int r = (int) vh.compareAndExchangeAcquire(array, i, 1, 3);
-                assertEquals(r, 2, "failing compareAndExchangeAcquire int");
+                int r = (int) vh.compareAndExchangeAcquire(array, i, 0x01234567, 0xCAFEBABE);
+                assertEquals(r, 0x89ABCDEF, "failing compareAndExchangeAcquire int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 2, "failing compareAndExchangeAcquire int value");
+                assertEquals(x, 0x89ABCDEF, "failing compareAndExchangeAcquire int value");
             }
 
             {
-                int r = (int) vh.compareAndExchangeRelease(array, i, 2, 1);
-                assertEquals(r, 2, "success compareAndExchangeRelease int");
+                int r = (int) vh.compareAndExchangeRelease(array, i, 0x89ABCDEF, 0x01234567);
+                assertEquals(r, 0x89ABCDEF, "success compareAndExchangeRelease int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 1, "success compareAndExchangeRelease int value");
+                assertEquals(x, 0x01234567, "success compareAndExchangeRelease int value");
             }
 
             {
-                int r = (int) vh.compareAndExchangeRelease(array, i, 2, 3);
-                assertEquals(r, 1, "failing compareAndExchangeRelease int");
+                int r = (int) vh.compareAndExchangeRelease(array, i, 0x89ABCDEF, 0xCAFEBABE);
+                assertEquals(r, 0x01234567, "failing compareAndExchangeRelease int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 1, "failing compareAndExchangeRelease int value");
+                assertEquals(x, 0x01234567, "failing compareAndExchangeRelease int value");
             }
 
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSet(array, i, 1, 2);
+                    success = vh.weakCompareAndSet(array, i, 0x01234567, 0x89ABCDEF);
                 }
                 assertEquals(success, true, "weakCompareAndSet int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 2, "weakCompareAndSet int value");
+                assertEquals(x, 0x89ABCDEF, "weakCompareAndSet int value");
             }
 
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetAcquire(array, i, 2, 1);
+                    success = vh.weakCompareAndSetAcquire(array, i, 0x89ABCDEF, 0x01234567);
                 }
                 assertEquals(success, true, "weakCompareAndSetAcquire int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 1, "weakCompareAndSetAcquire int");
+                assertEquals(x, 0x01234567, "weakCompareAndSetAcquire int");
             }
 
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetRelease(array, i, 1, 2);
+                    success = vh.weakCompareAndSetRelease(array, i, 0x01234567, 0x89ABCDEF);
                 }
                 assertEquals(success, true, "weakCompareAndSetRelease int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 2, "weakCompareAndSetRelease int");
+                assertEquals(x, 0x89ABCDEF, "weakCompareAndSetRelease int");
             }
 
             {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                    success = vh.weakCompareAndSetVolatile(array, i, 2, 1);
+                    success = vh.weakCompareAndSetVolatile(array, i, 0x89ABCDEF, 0x01234567);
                 }
                 assertEquals(success, true, "weakCompareAndSetVolatile int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 1, "weakCompareAndSetVolatile int");
+                assertEquals(x, 0x01234567, "weakCompareAndSetVolatile int");
             }
 
             // Compare set and get
             {
-                int o = (int) vh.getAndSet(array, i, 2);
-                assertEquals(o, 1, "getAndSet int");
+                int o = (int) vh.getAndSet(array, i, 0x89ABCDEF);
+                assertEquals(o, 0x01234567, "getAndSet int");
                 int x = (int) vh.get(array, i);
-                assertEquals(x, 2, "getAndSet int value");
+                assertEquals(x, 0x89ABCDEF, "getAndSet int value");
             }
 
-            vh.set(array, i, 1);
+            vh.set(array, i, 0x01234567);
 
             // get and add, add and get
             {
-                int o = (int) vh.getAndAdd(array, i, 3);
-                assertEquals(o, 1, "getAndAdd int");
-                int c = (int) vh.addAndGet(array, i, 3);
-                assertEquals(c, 1 + 3 + 3, "getAndAdd int value");
+                int o = (int) vh.getAndAdd(array, i, 0xCAFEBABE);
+                assertEquals(o, 0x01234567, "getAndAdd int");
+                int c = (int) vh.addAndGet(array, i, 0xCAFEBABE);
+                assertEquals(c, (int)(0x01234567 + 0xCAFEBABE + 0xCAFEBABE), "getAndAdd int value");
             }
         }
     }
@@ -788,7 +788,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                vh.set(array, ci, 1);
+                vh.set(array, ci, 0x01234567);
             });
 
             checkIOOBE(() -> {
@@ -796,7 +796,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                vh.setVolatile(array, ci, 1);
+                vh.setVolatile(array, ci, 0x01234567);
             });
 
             checkIOOBE(() -> {
@@ -804,7 +804,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                vh.setRelease(array, ci, 1);
+                vh.setRelease(array, ci, 0x01234567);
             });
 
             checkIOOBE(() -> {
@@ -812,51 +812,51 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             });
 
             checkIOOBE(() -> {
-                vh.setOpaque(array, ci, 1);
+                vh.setOpaque(array, ci, 0x01234567);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.compareAndSet(array, ci, 1, 2);
+                boolean r = vh.compareAndSet(array, ci, 0x01234567, 0x89ABCDEF);
             });
 
             checkIOOBE(() -> {
-                int r = (int) vh.compareAndExchangeVolatile(array, ci, 2, 1);
+                int r = (int) vh.compareAndExchange(array, ci, 0x89ABCDEF, 0x01234567);
             });
 
             checkIOOBE(() -> {
-                int r = (int) vh.compareAndExchangeAcquire(array, ci, 2, 1);
+                int r = (int) vh.compareAndExchangeAcquire(array, ci, 0x89ABCDEF, 0x01234567);
             });
 
             checkIOOBE(() -> {
-                int r = (int) vh.compareAndExchangeRelease(array, ci, 2, 1);
+                int r = (int) vh.compareAndExchangeRelease(array, ci, 0x89ABCDEF, 0x01234567);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSet(array, ci, 1, 2);
+                boolean r = vh.weakCompareAndSet(array, ci, 0x01234567, 0x89ABCDEF);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetVolatile(array, ci, 1, 2);
+                boolean r = vh.weakCompareAndSetVolatile(array, ci, 0x01234567, 0x89ABCDEF);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetAcquire(array, ci, 1, 2);
+                boolean r = vh.weakCompareAndSetAcquire(array, ci, 0x01234567, 0x89ABCDEF);
             });
 
             checkIOOBE(() -> {
-                boolean r = vh.weakCompareAndSetRelease(array, ci, 1, 2);
+                boolean r = vh.weakCompareAndSetRelease(array, ci, 0x01234567, 0x89ABCDEF);
             });
 
             checkIOOBE(() -> {
-                int o = (int) vh.getAndSet(array, ci, 1);
+                int o = (int) vh.getAndSet(array, ci, 0x01234567);
             });
 
             checkIOOBE(() -> {
-                int o = (int) vh.getAndAdd(array, ci, 3);
+                int o = (int) vh.getAndAdd(array, ci, 0xCAFEBABE);
             });
 
             checkIOOBE(() -> {
-                int o = (int) vh.addAndGet(array, ci, 3);
+                int o = (int) vh.addAndGet(array, ci, 0xCAFEBABE);
             });
         }
     }

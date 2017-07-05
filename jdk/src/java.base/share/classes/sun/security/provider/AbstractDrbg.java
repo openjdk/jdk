@@ -377,11 +377,12 @@ public abstract class AbstractDrbg {
 
             instantiateIfNecessary(null);
 
-            // Step 7: Auto reseed
+            // Step 7: Auto reseed (reseedCounter might overflow)
             // Double checked locking, safe because reseedCounter is volatile
-            if (reseedCounter > reseedInterval || pr) {
+            if (reseedCounter < 0 || reseedCounter > reseedInterval || pr) {
                 synchronized (this) {
-                    if (reseedCounter > reseedInterval || pr) {
+                    if (reseedCounter < 0 || reseedCounter > reseedInterval
+                            || pr) {
                         reseedAlgorithm(getEntropyInput(pr), ai);
                         ai = null;
                     }

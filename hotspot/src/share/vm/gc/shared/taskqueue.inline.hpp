@@ -103,6 +103,11 @@ inline bool OverflowTaskQueue<E, F, N>::push(E t)
   return true;
 }
 
+template <class E, MEMFLAGS F, unsigned int N>
+inline bool OverflowTaskQueue<E, F, N>::try_push_to_taskqueue(E t) {
+  return taskqueue_t::push(t);
+}
+
 // pop_local_slow() is done by the owning thread and is trying to
 // get the last task in the queue.  It will compete with pop_global()
 // that will be used by other threads.  The tag age is incremented

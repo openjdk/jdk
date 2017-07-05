@@ -26,7 +26,7 @@
  * @bug 8148397
  * @key stress
  * @summary Stress test for IHOP
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @run main/othervm/timeout=200 -Xmx128m -XX:G1HeapWastePercent=0 -XX:G1MixedGCCountTarget=1
  *              -XX:+UseG1GC -XX:G1HeapRegionSize=1m -XX:+G1UseAdaptiveIHOP
  *              -Xlog:gc+ihop=debug,gc+ihop+ergo=debug,gc+ergo=debug:TestStressIHOPMultiThread1.log

@@ -25,10 +25,19 @@ package jdk.vm.ci.meta;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @see "https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.13"
+ */
 public class LocalVariableTable {
 
     private final Local[] locals;
 
+    /**
+     *
+     * @param locals array of objects describing local variables. This array is now owned by this
+     *            object and must not be mutated by the caller.
+     */
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `locals`")
     public LocalVariableTable(Local[] locals) {
         this.locals = locals;
     }
@@ -45,10 +54,6 @@ public class LocalVariableTable {
             }
         }
         return result;
-    }
-
-    public Local[] getLocals() {
-        return locals;
     }
 
     public Local[] getLocalsAt(int bci) {

@@ -25,7 +25,7 @@
  * @test TestPLABEvacuationFailure
  * @bug 8148376
  * @summary Checks PLAB statistics on evacuation failure
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
