@@ -52,6 +52,9 @@ class Request {
         os = rawout;
         do {
             startLine = readLine();
+            if (startLine == null) {
+                return;
+            }
             /* skip blank lines */
         } while (startLine == null ? false : startLine.equals (""));
     }

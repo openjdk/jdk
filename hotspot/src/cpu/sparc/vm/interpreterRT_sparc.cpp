@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   // the handle for a receiver will never be null
   bool do_NULL_check = offset() != 0 || is_static();
 
-  Address     h_arg = Address(Llocals, 0, Interpreter::local_offset_in_bytes(offset()));
+  Address     h_arg = Address(Llocals, Interpreter::local_offset_in_bytes(offset()));
   __ ld_ptr(h_arg, Rtmp1);
 #ifdef ASSERT
   if (TaggedStackInterpreter) {
@@ -120,14 +120,14 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_object() {
   }
 #endif // ASSERT
   if (!do_NULL_check) {
-    __ add(h_arg, Rtmp2);
+    __ add(h_arg.base(), h_arg.disp(), Rtmp2);
   } else {
     if (Rtmp1 == Rtmp2)
           __ tst(Rtmp1);
     else  __ addcc(G0, Rtmp1, Rtmp2); // optimize mov/test pair
     Label L;
     __ brx(Assembler::notZero, true, Assembler::pt, L);
-    __ delayed()->add(h_arg, Rtmp2);
+    __ delayed()->add(h_arg.base(), h_arg.disp(), Rtmp2);
     __ bind(L);
   }
   __ store_ptr_argument(Rtmp2, jni_arg);    // this is often a no-op
@@ -140,10 +140,10 @@ void InterpreterRuntime::SignatureHandlerGenerator::generate(uint64_t fingerprin
   iterate(fingerprint);
 
   // return result handler
-  Address result_handler(Lscratch, Interpreter::result_handler(method()->result_type()));
-  __ sethi(result_handler);
+  AddressLiteral result_handler(Interpreter::result_handler(method()->result_type()));
+  __ sethi(result_handler, Lscratch);
   __ retl();
-  __ delayed()->add(result_handler, result_handler.base());
+  __ delayed()->add(Lscratch, result_handler.low10(), Lscratch);
 
   __ flush();
 }

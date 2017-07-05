@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,11 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
      * Construct a key from its components. Used by the
      * RSAKeyFactory and the RSAKeyPairGenerator.
      */
-    public RSAPublicKeyImpl(BigInteger n, BigInteger e) throws InvalidKeyException {
+    public RSAPublicKeyImpl(BigInteger n, BigInteger e)
+            throws InvalidKeyException {
         this.n = n;
         this.e = e;
-        RSAKeyFactory.checkKeyLength(n);
+        RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
         // generate the encoding
         algid = RSAPrivateCrtKeyImpl.rsaId;
         try {
@@ -80,7 +81,7 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
      */
     public RSAPublicKeyImpl(byte[] encoded) throws InvalidKeyException {
         decode(encoded);
-        RSAKeyFactory.checkKeyLength(n);
+        RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
     }
 
     // see JCA doc

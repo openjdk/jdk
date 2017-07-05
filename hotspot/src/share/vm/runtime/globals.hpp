@@ -3316,6 +3316,12 @@ class CommandLineFlags {
   diagnostic(bool, OptimizeMethodHandles, true,                             \
           "when constructing method handles, try to improve them")          \
                                                                             \
+  product(bool, EnableInvokeDynamic, false,                                 \
+          "recognize the invokedynamic instruction")                        \
+                                                                            \
+  develop(bool, TraceInvokeDynamic, false,                                  \
+          "trace internal invoke dynamic operations")                       \
+                                                                            \
   product(bool, TaggedStackInterpreter, false,                              \
           "Insert tags in interpreter execution stack for oopmap generaion")\
                                                                             \

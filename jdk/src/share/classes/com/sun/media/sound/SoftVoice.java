@@ -782,6 +782,7 @@ public class SoftVoice extends VoiceStatus {
 
         SoftAudioBuffer left = buffer[SoftMainMixer.CHANNEL_LEFT];
         SoftAudioBuffer right = buffer[SoftMainMixer.CHANNEL_RIGHT];
+        SoftAudioBuffer mono = buffer[SoftMainMixer.CHANNEL_MONO];
         SoftAudioBuffer eff1 = buffer[SoftMainMixer.CHANNEL_EFFECT1];
         SoftAudioBuffer eff2 = buffer[SoftMainMixer.CHANNEL_EFFECT2];
         SoftAudioBuffer leftdry = buffer[SoftMainMixer.CHANNEL_LEFT_DRY];
@@ -803,13 +804,22 @@ public class SoftVoice extends VoiceStatus {
                 mixAudioStream(rightdry, left, last_out_mixer_left,
                         out_mixer_left);
         } else {
-            mixAudioStream(leftdry, left, last_out_mixer_left, out_mixer_left);
-            if (rightdry != null)
-                mixAudioStream(rightdry, right, last_out_mixer_right,
-                        out_mixer_right);
+            if(rightdry == null &&
+                    last_out_mixer_left == last_out_mixer_right &&
+                    out_mixer_left == out_mixer_right)
+            {
+                mixAudioStream(leftdry, mono, last_out_mixer_left, out_mixer_left);
+            }
             else
-                mixAudioStream(leftdry, right, last_out_mixer_right,
+            {
+                mixAudioStream(leftdry, left, last_out_mixer_left, out_mixer_left);
+                if (rightdry != null)
+                    mixAudioStream(rightdry, right, last_out_mixer_right,
                         out_mixer_right);
+                else
+                    mixAudioStream(leftdry, right, last_out_mixer_right,
+                        out_mixer_right);
+            }
         }
 
         if (rightdry == null) {

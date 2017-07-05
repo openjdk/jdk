@@ -1,5 +1,5 @@
 /*
- * Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import java.security.spec.*;
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
+
+import sun.security.rsa.RSAKeyFactory;
 
 /**
  * RSA KeyFactory implemenation.
@@ -131,6 +133,9 @@ final class P11RSAKeyFactory extends P11KeyFactory {
         } catch (PKCS11Exception e) {
             throw new InvalidKeySpecException
                 ("Could not create RSA public key", e);
+        } catch (InvalidKeyException e) {
+            throw new InvalidKeySpecException
+                ("Could not create RSA public key", e);
         }
     }
 
@@ -175,11 +180,15 @@ final class P11RSAKeyFactory extends P11KeyFactory {
         } catch (PKCS11Exception e) {
             throw new InvalidKeySpecException
                 ("Could not create RSA private key", e);
+        } catch (InvalidKeyException e) {
+            throw new InvalidKeySpecException
+                ("Could not create RSA private key", e);
         }
     }
 
     private PublicKey generatePublic(BigInteger n, BigInteger e)
-            throws PKCS11Exception {
+            throws PKCS11Exception, InvalidKeyException {
+        RSAKeyFactory.checkKeyLengths(n.bitLength(), e, -1, 64 * 1024);
         CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
             new CK_ATTRIBUTE(CKA_CLASS, CKO_PUBLIC_KEY),
             new CK_ATTRIBUTE(CKA_KEY_TYPE, CKK_RSA),
@@ -200,7 +209,8 @@ final class P11RSAKeyFactory extends P11KeyFactory {
     }
 
     private PrivateKey generatePrivate(BigInteger n, BigInteger d)
-            throws PKCS11Exception {
+            throws PKCS11Exception, InvalidKeyException {
+        RSAKeyFactory.checkKeyLengths(n.bitLength(), null, -1, 64 * 1024);
         CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
             new CK_ATTRIBUTE(CKA_CLASS, CKO_PRIVATE_KEY),
             new CK_ATTRIBUTE(CKA_KEY_TYPE, CKK_RSA),
@@ -222,7 +232,9 @@ final class P11RSAKeyFactory extends P11KeyFactory {
 
     private PrivateKey generatePrivate(BigInteger n, BigInteger e,
             BigInteger d, BigInteger p, BigInteger q, BigInteger pe,
-            BigInteger qe, BigInteger coeff) throws PKCS11Exception {
+            BigInteger qe, BigInteger coeff) throws PKCS11Exception,
+            InvalidKeyException {
+        RSAKeyFactory.checkKeyLengths(n.bitLength(), e, -1, 64 * 1024);
         CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
             new CK_ATTRIBUTE(CKA_CLASS, CKO_PRIVATE_KEY),
             new CK_ATTRIBUTE(CKA_KEY_TYPE, CKK_RSA),

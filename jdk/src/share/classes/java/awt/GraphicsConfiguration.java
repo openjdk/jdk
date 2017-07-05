@@ -440,13 +440,14 @@ public abstract class GraphicsConfiguration {
      * the {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
      * PERPIXEL_TRANSLUCENT} kind of translucency.
      *
-     * @param gc GraphicsConfiguration
-     * @throws NullPointerException if the gc argument is null
      * @return whether the given GraphicsConfiguration supports
      *         the translucency effects.
+     *
      * @see Window#setBackground(Color)
+     *
+     * @since 1.7
      */
-    /*public */boolean isTranslucencyCapable() {
+    public boolean isTranslucencyCapable() {
         // Overridden in subclasses
         return false;
     }

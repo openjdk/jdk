@@ -480,6 +480,12 @@ public class BasicListUI extends ListUI
         if (renderer == null) {
             ListCellRenderer lcr = (ListCellRenderer)UIManager.get(
                     "List.cellRenderer");
+
+            // fix for 6711072 some LAFs like Nimbus do not provide this
+            // UIManager key and we should not through a NPE here because of it
+            if (lcr == null) {
+                lcr = new DefaultListCellRenderer();
+            }
             renderer = lcr.getListCellRendererComponent(
                     list, "a", -1, false, false);
             lafDefaults.put(BASELINE_COMPONENT_KEY, renderer);

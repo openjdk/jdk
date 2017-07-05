@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,7 @@ void NativeInstruction::set_data64_sethi(address instaddr, intptr_t x) {
 
   destreg = inv_rd(*(unsigned int *)instaddr);
   // Generate a the new sequence
-  Address dest( destreg, (address)x );
-  _masm->sethi( dest, true );
+  _masm->patchable_sethi(x, destreg);
   ICache::invalidate_range(instaddr, 7 * BytesPerInstWord);
 }
 
@@ -227,8 +226,8 @@ void NativeFarCall::set_destination(address dest) {
   CodeBuffer buf(addr_at(0), instruction_size + 1);
   MacroAssembler* _masm = new MacroAssembler(&buf);
   // Generate the new sequence
-  Address(O7, dest);
-  _masm->jumpl_to(dest, O7);
+  AddressLiteral(dest);
+  _masm->jumpl_to(dest, O7, O7);
   ICache::invalidate_range(addr_at(0), instruction_size );
 #endif
 }
@@ -361,10 +360,12 @@ void NativeMovConstReg::test() {
 
   VM_Version::allow_all();
 
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none);
-  a->add(I3, low10(0xaaaabbbb), I3);
-  a->sethi(0xccccdddd, O2, true, RelocationHolder::none);
-  a->add(O2, low10(0xccccdddd), O2);
+  AddressLiteral al1(0xaaaabbbb, relocInfo::external_word_type);
+  a->sethi(al1, I3);
+  a->add(I3, al1.low10(), I3);
+  AddressLiteral al2(0xccccdddd, relocInfo::external_word_type);
+  a->sethi(al2, O2);
+  a->add(O2, al2.low10(), O2);
 
   nm = nativeMovConstReg_at( cb.code_begin() );
   nm->print();
@@ -468,12 +469,14 @@ void NativeMovConstRegPatching::test() {
 
   VM_Version::allow_all();
 
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none);
+  AddressLiteral al1(0xaaaabbbb, relocInfo::external_word_type);
+  a->sethi(al1, I3);
   a->nop();
-  a->add(I3, low10(0xaaaabbbb), I3);
-  a->sethi(0xccccdddd, O2, true, RelocationHolder::none);
+  a->add(I3, al1.low10(), I3);
+  AddressLiteral al2(0xccccdddd, relocInfo::external_word_type);
+  a->sethi(al2, O2);
   a->nop();
-  a->add(O2, low10(0xccccdddd), O2);
+  a->add(O2, al2.low10(), O2);
 
   nm = nativeMovConstRegPatching_at( cb.code_begin() );
   nm->print();
@@ -562,51 +565,53 @@ void NativeMovRegMem::test() {
 
   VM_Version::allow_all();
 
-  a->ldsw( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  AddressLiteral al1(0xffffffff, relocInfo::external_word_type);
+  AddressLiteral al2(0xaaaabbbb, relocInfo::external_word_type);
+  a->ldsw( G5, al1.low10(), G4 ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->ldsw( G5, I3, G4 ); idx++;
-  a->ldsb( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->ldsb( G5, al1.low10(), G4 ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->ldsb( G5, I3, G4 ); idx++;
-  a->ldsh( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->ldsh( G5, al1.low10(), G4 ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->ldsh( G5, I3, G4 ); idx++;
-  a->lduw( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->lduw( G5, al1.low10(), G4 ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->lduw( G5, I3, G4 ); idx++;
-  a->ldub( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->ldub( G5, al1.low10(), G4 ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->ldub( G5, I3, G4 ); idx++;
-  a->lduh( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->lduh( G5, al1.low10(), G4 ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->lduh( G5, I3, G4 ); idx++;
-  a->ldx( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->ldx( G5, al1.low10(), G4 ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->ldx( G5, I3, G4 ); idx++;
-  a->ldd( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->ldd( G5, al1.low10(), G4 ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->ldd( G5, I3, G4 ); idx++;
   a->ldf( FloatRegisterImpl::D, O2, -1, F14 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->ldf( FloatRegisterImpl::S, O0, I3, F15 ); idx++;
 
-  a->stw( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->stw( G5, G4, al1.low10() ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->stw( G5, G4, I3 ); idx++;
-  a->stb( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->stb( G5, G4, al1.low10() ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->stb( G5, G4, I3 ); idx++;
-  a->sth( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->sth( G5, G4, al1.low10() ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->sth( G5, G4, I3 ); idx++;
-  a->stx( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->stx( G5, G4, al1.low10() ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->stx( G5, G4, I3 ); idx++;
-  a->std( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->std( G5, G4, al1.low10() ); idx++;
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->std( G5, G4, I3 ); idx++;
   a->stf( FloatRegisterImpl::S, F18, O2, -1 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->add(I3, low10(0xaaaabbbb), I3);
+  a->sethi(al2, I3); a->add(I3, al2.low10(), I3);
   a->stf( FloatRegisterImpl::S, F15, O0, I3 ); idx++;
 
   nm = nativeMovRegMem_at( cb.code_begin() );
@@ -705,51 +710,52 @@ void NativeMovRegMemPatching::test() {
 
   VM_Version::allow_all();
 
-  a->ldsw( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  AddressLiteral al(0xffffffff, relocInfo::external_word_type);
+  a->ldsw( G5, al.low10(), G4); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->ldsw( G5, I3, G4 ); idx++;
-  a->ldsb( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->ldsb( G5, al.low10(), G4); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->ldsb( G5, I3, G4 ); idx++;
-  a->ldsh( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->ldsh( G5, al.low10(), G4); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->ldsh( G5, I3, G4 ); idx++;
-  a->lduw( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->lduw( G5, al.low10(), G4); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->lduw( G5, I3, G4 ); idx++;
-  a->ldub( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->ldub( G5, al.low10(), G4); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->ldub( G5, I3, G4 ); idx++;
-  a->lduh( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->lduh( G5, al.low10(), G4); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->lduh( G5, I3, G4 ); idx++;
-  a->ldx( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
-  a->ldx( G5, I3, G4 ); idx++;
-  a->ldd( G5, low10(0xffffffff), G4 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
-  a->ldd( G5, I3, G4 ); idx++;
-  a->ldf( FloatRegisterImpl::D, O2, -1, F14 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
-  a->ldf( FloatRegisterImpl::S, O0, I3, F15 ); idx++;
+  a->ldx(  G5, al.low10(), G4); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
+  a->ldx(  G5, I3, G4 ); idx++;
+  a->ldd(  G5, al.low10(), G4); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
+  a->ldd(  G5, I3, G4 ); idx++;
+  a->ldf(  FloatRegisterImpl::D, O2, -1, F14 ); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
+  a->ldf(  FloatRegisterImpl::S, O0, I3, F15 ); idx++;
 
-  a->stw( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->stw( G5, G4, al.low10()); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->stw( G5, G4, I3 ); idx++;
-  a->stb( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->stb( G5, G4, al.low10()); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->stb( G5, G4, I3 ); idx++;
-  a->sth( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->sth( G5, G4, al.low10()); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->sth( G5, G4, I3 ); idx++;
-  a->stx( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->stx( G5, G4, al.low10()); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->stx( G5, G4, I3 ); idx++;
-  a->std( G5, G4, low10(0xffffffff) ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->std( G5, G4, al.low10()); idx++;
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->std( G5, G4, I3 ); idx++;
   a->stf( FloatRegisterImpl::S, F18, O2, -1 ); idx++;
-  a->sethi(0xaaaabbbb, I3, true, RelocationHolder::none); a->nop(); a->add(I3, low10(0xaaaabbbb), I3);
+  a->sethi(al, I3); a->nop(); a->add(I3, al.low10(), I3);
   a->stf( FloatRegisterImpl::S, F15, O0, I3 ); idx++;
 
   nm = nativeMovRegMemPatching_at( cb.code_begin() );
@@ -833,11 +839,12 @@ void NativeJump::test() {
 
   VM_Version::allow_all();
 
-  a->sethi(0x7fffbbbb, I3, true, RelocationHolder::none);
-  a->jmpl(I3, low10(0x7fffbbbb), G0, RelocationHolder::none);
+  AddressLiteral al(0x7fffbbbb, relocInfo::external_word_type);
+  a->sethi(al, I3);
+  a->jmpl(I3, al.low10(), G0, RelocationHolder::none);
   a->delayed()->nop();
-  a->sethi(0x7fffbbbb, I3, true, RelocationHolder::none);
-  a->jmpl(I3, low10(0x7fffbbbb), L3, RelocationHolder::none);
+  a->sethi(al, I3);
+  a->jmpl(I3, al.low10(), L3, RelocationHolder::none);
   a->delayed()->nop();
 
   nj = nativeJump_at( cb.code_begin() );

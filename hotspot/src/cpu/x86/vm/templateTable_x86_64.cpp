@@ -3058,6 +3058,23 @@ void TemplateTable::invokeinterface(int byte_no) {
   return;
 }
 
+void TemplateTable::invokedynamic(int byte_no) {
+  transition(vtos, vtos);
+
+  if (!EnableInvokeDynamic) {
+    // We should not encounter this bytecode if !EnableInvokeDynamic.
+    // The verifier will stop it.  However, if we get past the verifier,
+    // this will stop the thread in a reasonable way, without crashing the JVM.
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address,
+                     InterpreterRuntime::throw_IncompatibleClassChangeError));
+    // the call_VM checks for exception, so we should never return here.
+    __ should_not_reach_here();
+    return;
+  }
+
+  __ stop("invokedynamic NYI");//6815692//
+}
+
 
 //-----------------------------------------------------------------------------
 // Allocation

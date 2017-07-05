@@ -375,6 +375,9 @@ public class BasicInt
 
 
 
+
+
+
         // Compact
 
         relPut(b);
@@ -703,6 +706,8 @@ public class BasicInt
         relPut(b);                       // Required by testViews
 
     }
+
+
 
 
 

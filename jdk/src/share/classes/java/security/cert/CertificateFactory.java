@@ -460,7 +460,7 @@ public class CertificateFactory {
      * {@link java.io.InputStream#reset() reset}, this method will
      * consume the entire input stream. Otherwise, each call to this
      * method consumes one CRL and the read position of the input stream
-     * is positioned to the next available byte after the the inherent
+     * is positioned to the next available byte after the inherent
      * end-of-CRL marker. If the data in the
      * input stream does not contain an inherent end-of-CRL marker (other
      * than EOF) and there is trailing data after the CRL is parsed, a

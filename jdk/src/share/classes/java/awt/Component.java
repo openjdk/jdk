@@ -6666,7 +6666,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
 
             // Update stacking order
-            peer.setZOrder(getHWPeerAboveMe());
+            updateZOrder();
 
             if (!isAddNotifyComplete) {
                 mixOnShowing();
@@ -9838,4 +9838,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         return doesClassImplement(obj.getClass(), interfaceName);
     }
+
+    // Note that the method is overriden in the Window class,
+    // a window doesn't need to be updated in the Z-order.
+    void updateZOrder() {
+        peer.setZOrder(getHWPeerAboveMe());
+    }
+
 }

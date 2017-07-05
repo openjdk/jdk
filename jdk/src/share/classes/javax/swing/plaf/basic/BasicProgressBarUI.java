@@ -158,6 +158,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
                                          "ProgressBar.foreground",
                                          "ProgressBar.font");
         cellLength = UIManager.getInt("ProgressBar.cellLength");
+        if (cellLength == 0) cellLength = 1;
         cellSpacing = UIManager.getInt("ProgressBar.cellSpacing");
         selectionForeground = UIManager.getColor("ProgressBar.selectionForeground");
         selectionBackground = UIManager.getColor("ProgressBar.selectionBackground");

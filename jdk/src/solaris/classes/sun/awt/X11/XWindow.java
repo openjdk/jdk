@@ -156,11 +156,11 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
 
     XWindow(Component target, long parentWindow) {
-        this(target, parentWindow, target.getBounds());
+        this(target, parentWindow, new Rectangle(target.getBounds()));
     }
 
     XWindow(Component target) {
-        this(target, (target.getParent() == null) ? 0 : getParentWindowID(target), target.getBounds());
+        this(target, (target.getParent() == null) ? 0 : getParentWindowID(target), new Rectangle(target.getBounds()));
     }
 
     XWindow(Object target) {
@@ -198,7 +198,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             | XConstants.ButtonMotionMask | XConstants.ExposureMask | XConstants.StructureNotifyMask);
 
         if (target != null) {
-            params.putIfNull(BOUNDS, target.getBounds());
+            params.putIfNull(BOUNDS, new Rectangle(target.getBounds()));
         } else {
             params.putIfNull(BOUNDS, new Rectangle(0, 0, MIN_SIZE, MIN_SIZE));
         }

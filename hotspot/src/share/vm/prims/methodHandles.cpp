@@ -2279,6 +2279,16 @@ JVM_ENTRY(jint, MHI_getMembers(JNIEnv *env, jobject igcls,
 JVM_END
 
 
+JVM_ENTRY(void, MH_linkCallSite(JNIEnv *env, jobject igcls, jobject site_jh, jobject target_jh)) {
+  // No special action required, yet.
+  oop site_oop = JNIHandles::resolve(site_jh);
+  if (site_oop == NULL || site_oop->klass() != SystemDictionary::CallSiteImpl_klass())
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "call site");
+  sun_dyn_CallSiteImpl::set_target(site_oop, JNIHandles::resolve(target_jh));
+}
+JVM_END
+
+
 /// JVM_RegisterMethodHandleMethods
 
 #define ADR "J"
@@ -2297,6 +2307,7 @@ JVM_END
 #define AMH   IDYN"AdapterMethodHandle;"
 #define BMH   IDYN"BoundMethodHandle;"
 #define DMH   IDYN"DirectMethodHandle;"
+#define CSTI  IDYN"CallSiteImpl;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
@@ -2320,11 +2331,18 @@ static JNINativeMethod methods[] = {
   {CC"getMembers",              CC"("CLS""STRG""STRG"I"CLS"I["MEM")I",  FN_PTR(MHI_getMembers)}
 };
 
+// More entry points specifically for EnableInvokeDynamic.
+static JNINativeMethod methods2[] = {
+  {CC"linkCallSite",            CC"("CSTI MH")V",               FN_PTR(MH_linkCallSite)}
+};
+
 
 // This one function is exported, used by NativeLookup.
 
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
   assert(MethodHandles::spot_check_entry_names(), "entry enum is OK");
+
+  // note: this explicit warning-producing stuff will be replaced by auto-detection of the JSR 292 classes
 
   if (!EnableMethodHandles) {
     warning("JSR 292 method handles are disabled in this JVM.  Use -XX:+EnableMethodHandles to enable.");
@@ -2335,6 +2353,24 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     ThreadToNativeFromVM ttnfv(thread);
 
     int status = env->RegisterNatives(MHN_class, methods, sizeof(methods)/sizeof(JNINativeMethod));
+    if (env->ExceptionOccurred()) {
+      MethodHandles::set_enabled(false);
+      warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
+      env->ExceptionClear();
+    } else {
+      MethodHandles::set_enabled(true);
+    }
+  }
+
+  if (!EnableInvokeDynamic) {
+    warning("JSR 292 invokedynamic is disabled in this JVM.  Use -XX:+EnableInvokeDynamic to enable.");
+    return;  // bind nothing
+  }
+
+  {
+    ThreadToNativeFromVM ttnfv(thread);
+
+    int status = env->RegisterNatives(MHN_class, methods2, sizeof(methods2)/sizeof(JNINativeMethod));
     if (env->ExceptionOccurred()) {
       MethodHandles::set_enabled(false);
       warning("JSR 292 method handle code is mismatched to this JVM.  Disabling support.");
