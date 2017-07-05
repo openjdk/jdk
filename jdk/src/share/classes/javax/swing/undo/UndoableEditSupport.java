@@ -101,10 +101,11 @@ public class UndoableEditSupport {
      */
     protected void _postEdit(UndoableEdit e) {
         UndoableEditEvent ev = new UndoableEditEvent(realSource, e);
-        Enumeration cursor = ((Vector)listeners.clone()).elements();
+        @SuppressWarnings("unchecked")
+        Enumeration<UndoableEditListener> cursor =
+            ((Vector<UndoableEditListener>)listeners.clone()).elements();
         while (cursor.hasMoreElements()) {
-            ((UndoableEditListener)cursor.nextElement()).
-                undoableEditHappened(ev);
+            cursor.nextElement().undoableEditHappened(ev);
         }
     }
 

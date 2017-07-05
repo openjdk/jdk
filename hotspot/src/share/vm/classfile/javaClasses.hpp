@@ -241,6 +241,7 @@ class java_lang_Class : AllStatic {
   static int _init_lock_offset;
   static int _signers_offset;
   static int _class_loader_offset;
+  static int _component_mirror_offset;
 
   static bool offsets_computed;
   static int classRedefinedCount_offset;
@@ -250,6 +251,7 @@ class java_lang_Class : AllStatic {
   static void set_init_lock(oop java_class, oop init_lock);
   static void set_protection_domain(oop java_class, oop protection_domain);
   static void set_class_loader(oop java_class, oop class_loader);
+  static void set_component_mirror(oop java_class, oop comp_mirror);
   static void initialize_mirror_fields(KlassHandle k, Handle mirror, Handle protection_domain, TRAPS);
  public:
   static void compute_offsets();
@@ -291,6 +293,7 @@ class java_lang_Class : AllStatic {
   // Support for embedded per-class oops
   static oop  protection_domain(oop java_class);
   static oop  init_lock(oop java_class);
+  static oop  component_mirror(oop java_class);
   static objArrayOop  signers(oop java_class);
   static void set_signers(oop java_class, objArrayOop signers);
 

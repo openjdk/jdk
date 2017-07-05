@@ -222,7 +222,6 @@ public class MenuSelectionManager {
         MenuElement menuElement;
         MenuElement subElements[];
         MenuElement path[];
-        Vector<MenuElement> tmp;
         int selectionSize;
         p = event.getPoint();
 
@@ -251,7 +250,8 @@ public class MenuSelectionManager {
         screenX = p.x;
         screenY = p.y;
 
-        tmp = (Vector<MenuElement>)selection.clone();
+        @SuppressWarnings("unchecked")
+        Vector<MenuElement> tmp = (Vector<MenuElement>)selection.clone();
         selectionSize = tmp.size();
         boolean success = false;
         for (i=selectionSize - 1;i >= 0 && success == false; i--) {
@@ -386,7 +386,6 @@ public class MenuSelectionManager {
         int cWidth,cHeight;
         MenuElement menuElement;
         MenuElement subElements[];
-        Vector<MenuElement> tmp;
         int selectionSize;
 
         SwingUtilities.convertPointToScreen(p,source);
@@ -394,7 +393,8 @@ public class MenuSelectionManager {
         screenX = p.x;
         screenY = p.y;
 
-        tmp = (Vector<MenuElement>)selection.clone();
+        @SuppressWarnings("unchecked")
+        Vector<MenuElement> tmp = (Vector<MenuElement>)selection.clone();
         selectionSize = tmp.size();
         for(i=selectionSize - 1 ; i >= 0 ; i--) {
             menuElement = tmp.elementAt(i);

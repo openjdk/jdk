@@ -467,7 +467,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSend
  */
 JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSetIntOption
   (JNIEnv *env, jclass clazz, jint fd , jint cmd, jint value) {
-    int level, opt;
+    int level = 0, opt = 0;
 
     if (NET_MapSocketOption(cmd, &level, &opt) < 0) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
@@ -487,7 +487,7 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketSetI
  */
 JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketGetIntOption
   (JNIEnv *env, jclass clazz, jint fd, jint cmd) {
-    int level, opt, result=0;
+    int level = 0, opt = 0, result=0;
     int result_len = sizeof(result);
 
     if (NET_MapSocketOption(cmd, &level, &opt) < 0) {

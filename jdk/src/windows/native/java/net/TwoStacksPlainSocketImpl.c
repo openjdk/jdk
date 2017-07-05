@@ -207,6 +207,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketConnect(JNIEnv *env, jobject this,
 
     /* The result of the connection */
     int connect_res;
+    memset((char *)&him, 0, sizeof(him));
 
     if (!IS_NULL(fdObj)) {
         fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
@@ -399,7 +400,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
     /* fdObj is the FileDescriptor field on this */
     jobject fdObj, fd1Obj;
     /* fd is an int field on fdObj */
-    int fd, fd1, len;
+    int fd, fd1, len = 0;
     int ipv6_supported = ipv6_available();
 
     /* family is an int field of iaObj */
@@ -837,12 +838,13 @@ Java_java_net_TwoStacksPlainSocketImpl_socketNativeSetOption(JNIEnv *env,
                                               jint cmd, jboolean on,
                                               jobject value) {
     int fd, fd1;
-    int level, optname, optlen;
+    int level = 0, optname = 0, optlen = 0;
     union {
         int i;
         struct linger ling;
     } optval;
 
+    memset((char *)&optval, 0, sizeof(optval));
     /*
      * Get SOCKET and check that it hasn't been closed
      */
@@ -1003,17 +1005,17 @@ Java_java_net_TwoStacksPlainSocketImpl_socketGetOption(JNIEnv *env, jobject this
                                               jint opt, jobject iaContainerObj) {
 
     int fd, fd1;
-    int level, optname, optlen;
+    int level = 0, optname = 0, optlen = 0;
     union {
         int i;
         struct linger ling;
     } optval;
-
     /*
      * Get SOCKET and check it hasn't been closed
      */
     fd = getFD(env, this);
     fd1 = getFD1(env, this);
+    memset((char *)&optval, 0, sizeof(optval));
 
     if (fd < 0 && fd1 < 0) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException", "Socket closed");
@@ -1037,6 +1039,7 @@ Java_java_net_TwoStacksPlainSocketImpl_socketGetOption(JNIEnv *env, jobject this
         jfieldID iaFieldID;
 
         len = sizeof(him);
+        memset((char *)&him, 0, len);
 
         if (fd == -1) {
             /* must be an IPV6 only socket. Case where both sockets are != -1

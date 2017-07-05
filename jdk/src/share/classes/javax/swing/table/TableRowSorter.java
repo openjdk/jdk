@@ -131,7 +131,7 @@ public class TableRowSorter<M extends TableModel> extends DefaultRowSorter<M, In
     /**
      * Comparator that uses compareTo on the contents.
      */
-    private static final Comparator COMPARABLE_COMPARATOR =
+    private static final Comparator<?> COMPARABLE_COMPARATOR =
             new ComparableComparator();
 
     /**
@@ -214,11 +214,11 @@ public class TableRowSorter<M extends TableModel> extends DefaultRowSorter<M, In
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public Comparator<?> getComparator(int column) {
-        Comparator comparator = super.getComparator(column);
+        Comparator<?> comparator = super.getComparator(column);
         if (comparator != null) {
             return comparator;
         }
-        Class columnClass = getModel().getColumnClass(column);
+        Class<?> columnClass = getModel().getColumnClass(column);
         if (columnClass == String.class) {
             return Collator.getInstance();
         }
@@ -234,11 +234,11 @@ public class TableRowSorter<M extends TableModel> extends DefaultRowSorter<M, In
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     protected boolean useToString(int column) {
-        Comparator comparator = super.getComparator(column);
+        Comparator<?> comparator = super.getComparator(column);
         if (comparator != null) {
             return false;
         }
-        Class columnClass = getModel().getColumnClass(column);
+        Class<?> columnClass = getModel().getColumnClass(column);
         if (columnClass == String.class) {
             return false;
         }
@@ -299,7 +299,7 @@ public class TableRowSorter<M extends TableModel> extends DefaultRowSorter<M, In
     }
 
 
-    private static class ComparableComparator implements Comparator {
+    private static class ComparableComparator implements Comparator<Object> {
         @SuppressWarnings("unchecked")
         public int compare(Object o1, Object o2) {
             return ((Comparable)o1).compareTo(o2);

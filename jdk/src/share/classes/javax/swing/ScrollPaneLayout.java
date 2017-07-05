@@ -823,10 +823,7 @@ public class ScrollPaneLayout
         Rectangle vsbR = new Rectangle(0, availR.y - vpbInsets.top, 0, 0);
 
         boolean vsbNeeded;
-        if (isEmpty) {
-            vsbNeeded = false;
-        }
-        else if (vsbPolicy == VERTICAL_SCROLLBAR_ALWAYS) {
+        if (vsbPolicy == VERTICAL_SCROLLBAR_ALWAYS) {
             vsbNeeded = true;
         }
         else if (vsbPolicy == VERTICAL_SCROLLBAR_NEVER) {
@@ -849,10 +846,7 @@ public class ScrollPaneLayout
 
         Rectangle hsbR = new Rectangle(availR.x - vpbInsets.left, 0, 0, 0);
         boolean hsbNeeded;
-        if (isEmpty) {
-            hsbNeeded = false;
-        }
-        else if (hsbPolicy == HORIZONTAL_SCROLLBAR_ALWAYS) {
+        if (hsbPolicy == HORIZONTAL_SCROLLBAR_ALWAYS) {
             hsbNeeded = true;
         }
         else if (hsbPolicy == HORIZONTAL_SCROLLBAR_NEVER) {

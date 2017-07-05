@@ -279,7 +279,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
             throw new SocketException("Socket Closed");
         }
         if (opt == SO_TIMEOUT) {
-            return new Integer(timeout);
+            return timeout;
         }
         int ret = 0;
         /*
@@ -299,7 +299,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
             return Boolean.valueOf(ret != -1);
         case SO_LINGER:
             ret = socketGetOption(opt, null);
-            return (ret == -1) ? Boolean.FALSE: (Object)(new Integer(ret));
+            return (ret == -1) ? Boolean.FALSE: (Object)(ret);
         case SO_REUSEADDR:
             ret = socketGetOption(opt, null);
             return Boolean.valueOf(ret != -1);
@@ -310,13 +310,13 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
         case SO_SNDBUF:
         case SO_RCVBUF:
             ret = socketGetOption(opt, null);
-            return new Integer(ret);
+            return ret;
         case IP_TOS:
             ret = socketGetOption(opt, null);
             if (ret == -1) { // ipv6 tos
-                return new Integer(trafficClass);
+                return trafficClass;
             } else {
-                return new Integer(ret);
+                return ret;
             }
         case SO_KEEPALIVE:
             ret = socketGetOption(opt, null);

@@ -450,7 +450,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
                 if (sValues != null) {
                     if (sValues.length < 20) {
-                        JComboBox            cBox = new JComboBox();
+                        JComboBox<Object> cBox = new JComboBox<>();
 
                         cBox.setName("OptionPane.comboBox");
                         for(int counter = 0, maxCounter = sValues.length;
@@ -464,7 +464,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                         toAdd = cBox;
 
                     } else {
-                        JList                list = new JList(sValues);
+                        JList<Object>      list = new JList<>(sValues);
                         JScrollPane          sp = new JScrollPane(list);
 
                         sp.setName("OptionPane.scrollPane");
@@ -1232,7 +1232,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
         public void mousePressed(MouseEvent e) {
             if (e.getClickCount() == 2) {
-                JList     list = (JList)e.getSource();
+                JList<?>  list = (JList)e.getSource();
                 int       index = list.locationToIndex(e.getPoint());
 
                 optionPane.setInputValue(list.getModel().getElementAt(index));

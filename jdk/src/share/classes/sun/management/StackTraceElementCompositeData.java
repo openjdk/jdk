@@ -67,7 +67,7 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
             ste.getClassName(),
             ste.getMethodName(),
             ste.getFileName(),
-            new Integer(ste.getLineNumber()),
+            ste.getLineNumber(),
             ste.isNativeMethod(),
         };
         try {

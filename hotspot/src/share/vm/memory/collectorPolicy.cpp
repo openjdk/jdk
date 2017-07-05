@@ -40,10 +40,6 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-#include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
-#include "gc_implementation/concurrentMarkSweep/cmsGCAdaptivePolicyCounters.hpp"
-#endif // INCLUDE_ALL_GCS
 
 // CollectorPolicy methods
 

@@ -58,7 +58,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     // made most things in this class private.
 
     private JLabel lookInLabel;
-    private JComboBox directoryComboBox;
+    private JComboBox<Object> directoryComboBox;
     private DirectoryComboBoxModel directoryComboBoxModel;
     private Action directoryComboBoxAction = new DirectoryComboBoxAction();
 
@@ -76,7 +76,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     private JPanel buttonPanel;
     private JPanel bottomPanel;
 
-    private JComboBox filterComboBox;
+    private JComboBox<?> filterComboBox;
 
     private static final Dimension hstrut5 = new Dimension(5, 1);
     private static final Dimension hstrut11 = new Dimension(11, 1);
@@ -204,7 +204,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
             return MetalFileChooserUI.this.getNewFolderAction();
         }
 
-        public MouseListener createDoubleClickListener(JList list) {
+        public MouseListener createDoubleClickListener(JList<?> list) {
             return MetalFileChooserUI.this.createDoubleClickListener(getFileChooser(),
                                                                      list);
         }
@@ -243,7 +243,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
         // CurrentDir ComboBox
         @SuppressWarnings("serial") // anonymous class
-        JComboBox tmp1 = new JComboBox() {
+        JComboBox<Object> tmp1 = new JComboBox<Object>() {
             public Dimension getPreferredSize() {
                 Dimension d = super.getPreferredSize();
                 // Must be small enough to not affect total width.
@@ -426,7 +426,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
 
         filterComboBoxModel = createFilterComboBoxModel();
         fc.addPropertyChangeListener(filterComboBoxModel);
-        filterComboBox = new JComboBox(filterComboBoxModel);
+        filterComboBox = new JComboBox<>(filterComboBoxModel);
         filterComboBox.putClientProperty(AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY,
                                          filesOfTypeLabelText);
         filesOfTypeLabel.setLabelFor(filterComboBox);
@@ -578,7 +578,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
          *
          * @param list an instance of {@code JList}
          */
-        public SingleClickListener(JList list) {
+        public  SingleClickListener(JList<?> list) {
         }
     }
 
@@ -927,7 +927,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     class DirectoryComboBoxRenderer extends DefaultListCellRenderer  {
         IndentIcon ii = new IndentIcon();
-        public Component getListCellRendererComponent(JList list, Object value,
+        public Component getListCellRendererComponent(JList<?> list, Object value,
                                                       int index, boolean isSelected,
                                                       boolean cellHasFocus) {
 
@@ -1131,7 +1131,7 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
-        public Component getListCellRendererComponent(JList list,
+        public Component getListCellRendererComponent(JList<?> list,
             Object value, int index, boolean isSelected,
             boolean cellHasFocus) {
 

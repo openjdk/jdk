@@ -142,7 +142,7 @@ class Instruction implements Constants {
             // Don't keep the LocalVariable info around, unless we
             // are actually going to generate a local variable table.
             if ((value instanceof LocalVariable) && !env.debug_vars()) {
-                value = new Integer(((LocalVariable)value).slot);
+                value = ((LocalVariable)value).slot;
             }
             break;
 

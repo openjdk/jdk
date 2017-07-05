@@ -23,9 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
-#include "gc_implementation/concurrentMarkSweep/cmsGCAdaptivePolicyCounters.hpp"
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #include "gc_implementation/shared/gcPolicyCounters.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
@@ -57,25 +56,12 @@ void ConcurrentMarkSweepPolicy::initialize_generations() {
   if (_generations == NULL)
     vm_exit_during_initialization("Unable to allocate gen spec");
 
-  if (UseParNewGC) {
-    if (UseAdaptiveSizePolicy) {
-      _generations[0] = new GenerationSpec(Generation::ASParNew,
-                                           _initial_young_size, _max_young_size);
-    } else {
-      _generations[0] = new GenerationSpec(Generation::ParNew,
-                                           _initial_young_size, _max_young_size);
-    }
-  } else {
-    _generations[0] = new GenerationSpec(Generation::DefNew,
-                                         _initial_young_size, _max_young_size);
-  }
-  if (UseAdaptiveSizePolicy) {
-    _generations[1] = new GenerationSpec(Generation::ASConcurrentMarkSweep,
-                                         _initial_old_size, _max_old_size);
-  } else {
-    _generations[1] = new GenerationSpec(Generation::ConcurrentMarkSweep,
-                                         _initial_old_size, _max_old_size);
-  }
+  Generation::Name yg_name =
+    UseParNewGC ? Generation::ParNew : Generation::DefNew;
+  _generations[0] = new GenerationSpec(yg_name, _initial_young_size,
+                                       _max_young_size);
+  _generations[1] = new GenerationSpec(Generation::ConcurrentMarkSweep,
+                                       _initial_old_size, _max_old_size);
 
   if (_generations[0] == NULL || _generations[1] == NULL) {
     vm_exit_during_initialization("Unable to allocate gen spec");
@@ -85,14 +71,12 @@ void ConcurrentMarkSweepPolicy::initialize_generations() {
 void ConcurrentMarkSweepPolicy::initialize_size_policy(size_t init_eden_size,
                                                size_t init_promo_size,
                                                size_t init_survivor_size) {
-  double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
-  _size_policy = new CMSAdaptiveSizePolicy(init_eden_size,
-                                           init_promo_size,
-                                           init_survivor_size,
-                                           max_gc_minor_pause_sec,
-                                           max_gc_pause_sec,
-                                           GCTimeRatio);
+  _size_policy = new AdaptiveSizePolicy(init_eden_size,
+                                        init_promo_size,
+                                        init_survivor_size,
+                                        max_gc_pause_sec,
+                                        GCTimeRatio);
 }
 
 void ConcurrentMarkSweepPolicy::initialize_gc_policy_counters() {
@@ -109,23 +93,4 @@ void ConcurrentMarkSweepPolicy::initialize_gc_policy_counters() {
 bool ConcurrentMarkSweepPolicy::has_soft_ended_eden()
 {
   return CMSIncrementalMode;
-}
-
-
-//
-// ASConcurrentMarkSweepPolicy methods
-//
-
-void ASConcurrentMarkSweepPolicy::initialize_gc_policy_counters() {
-
-  assert(size_policy() != NULL, "A size policy is required");
-  // initialize the policy counters - 2 collectors, 3 generations
-  if (UseParNewGC) {
-    _gc_policy_counters = new CMSGCAdaptivePolicyCounters("ParNew:CMS", 2, 3,
-      size_policy());
-  }
-  else {
-    _gc_policy_counters = new CMSGCAdaptivePolicyCounters("Copy:CMS", 2, 3,
-      size_policy());
-  }
 }

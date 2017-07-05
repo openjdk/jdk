@@ -3019,7 +3019,7 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
 
   // If there are any non-perm roots in the code cache, visit them.
   blk.set_kind(JVMTI_HEAP_REFERENCE_OTHER);
-  CodeBlobToOopClosure look_in_blobs(&blk, false);
+  CodeBlobToOopClosure look_in_blobs(&blk, !CodeBlobToOopClosure::FixRelocations);
   CodeCache::scavenge_root_nmethods_do(&look_in_blobs);
 
   return true;

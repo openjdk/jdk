@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -764,7 +764,7 @@ class Metacity implements SynthConstants {
             } else {
                 return;
             }
-            Map gm = getFrameGeometry();
+            Map<String, Object> gm = getFrameGeometry();
 
             int w = titlePane.getWidth();
             int h = titlePane.getHeight();
@@ -828,11 +828,11 @@ class Metacity implements SynthConstants {
         }
     } // end TitlePaneLayout
 
-    protected Map getFrameGeometry() {
+    protected Map<String, Object> getFrameGeometry() {
         return frameGeometry;
     }
 
-    protected void setFrameGeometry(JComponent titlePane, Map gm) {
+    protected void setFrameGeometry(JComponent titlePane, Map<String, Object> gm) {
         this.frameGeometry = gm;
         if (getInt("top_height") == 0 && titlePane != null) {
             gm.put("top_height", Integer.valueOf(titlePane.getHeight()));
@@ -1501,7 +1501,7 @@ class Metacity implements SynthConstants {
                     "name", getStringAttr(frame, "style")
                 });
                 if (frame_style != null) {
-                    Map gm = frameGeometries.get(getStringAttr(frame_style, "geometry"));
+                    Map<String, Object> gm = frameGeometries.get(getStringAttr(frame_style, "geometry"));
 
                     setFrameGeometry(titlePane, gm);
                 }

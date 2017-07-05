@@ -607,6 +607,20 @@ public class ScriptEngineTest {
         assertEquals(res, "hello");
     }
 
+    // @bug 8050432:javax.script.filename variable should not be enumerable
+    // with nashorn engine's ENGINE_SCOPE bindings
+    @Test
+    public void enumerableGlobalsTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        e.put(ScriptEngine.FILENAME, "test");
+        Object enumerable = e.eval(
+            "Object.getOwnPropertyDescriptor(this, " +
+            " 'javax.script.filename').enumerable");
+        assertEquals(enumerable, Boolean.FALSE);
+    }
+
     private static void checkProperty(final ScriptEngine e, final String name)
         throws ScriptException {
         final String value = System.getProperty(name);

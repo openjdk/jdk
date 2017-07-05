@@ -60,7 +60,7 @@ class BinaryConstantPool implements Constants {
                 break;
 
               case CONSTANT_INTEGER:
-                cpool[i] = new Integer(in.readInt());
+                cpool[i] = in.readInt();
                 break;
               case CONSTANT_FLOAT:
                 cpool[i] = new Float(in.readFloat());
@@ -76,7 +76,7 @@ class BinaryConstantPool implements Constants {
               case CONSTANT_STRING:
                 // JVM 4.4.3 CONSTANT_String_info.string_index
                 // or JVM 4.4.1 CONSTANT_Class_info.name_index
-                cpool[i] = new Integer(in.readUnsignedShort());
+                cpool[i] =in.readUnsignedShort();
                 break;
 
               case CONSTANT_FIELD:
@@ -84,7 +84,7 @@ class BinaryConstantPool implements Constants {
               case CONSTANT_INTERFACEMETHOD:
               case CONSTANT_NAMEANDTYPE:
                 // JVM 4.4.2 CONSTANT_*ref_info.class_index & name_and_type_index
-                cpool[i] = new Integer((in.readUnsignedShort() << 16) | in.readUnsignedShort());
+                cpool[i] = (in.readUnsignedShort() << 16) | in.readUnsignedShort();
                 break;
 
               case CONSTANT_METHODHANDLE:
@@ -260,7 +260,7 @@ class BinaryConstantPool implements Constants {
         Integer result = (Integer)indexHashAscii.get(string);
         if (result == null) {
             if (MoreStuff == null) MoreStuff = new Vector();
-            result = new Integer(cpool.length + MoreStuff.size());
+            result = cpool.length + MoreStuff.size();
             MoreStuff.addElement(string);
             indexHashAscii.put(string, result);
         }
@@ -277,10 +277,10 @@ class BinaryConstantPool implements Constants {
         indexHashAscii = new Hashtable();
         for (int i = 1; i < cpool.length; i++) {
             if (types[i] == CONSTANT_UTF8) {
-                indexHashAscii.put(cpool[i], new Integer(i));
+                indexHashAscii.put(cpool[i], i);
             } else {
                 try {
-                    indexHashObject.put(getConstant(i, env), new Integer(i));
+                    indexHashObject.put(getConstant(i, env), i);
                 } catch (ClassFormatError e) { }
             }
         }
