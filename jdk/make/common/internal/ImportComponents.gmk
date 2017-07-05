@@ -107,8 +107,9 @@ endef
 define Unjar
 ( \
   $(MKDIR) -p $1; \
-  $(ECHO) "( $(CD) $1 && $(BOOT_JAR_CMD) xfv $2 $3 )" ; \
-  ( $(CD) $1 && $(BOOT_JAR_CMD) xfv $2 $3 ) \
+  $(ECHO) "( $(CD) $1 && $(BOOT_JAR_CMD) xfv $2 $3 $(BOOT_JAR_JFLAGS) )" ; \
+  ( $(CD) $1 && $(BOOT_JAR_CMD) xfv $2 $3 $(BOOT_JAR_JFLAGS) ) && \
+  ( $(CD) $1 && $(java-vm-cleanup) ) \
 )
 endef
 

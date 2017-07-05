@@ -51,9 +51,13 @@ class Util {
     // Per-thread soft cache of the last temporary direct buffer
     private static ThreadLocal<SoftReference<ByteBuffer>>[] bufferPool;
 
+    @SuppressWarnings("unchecked")
+    static ThreadLocal<SoftReference<ByteBuffer>>[] createThreadLocalBufferPool() {
+        return new ThreadLocal[TEMP_BUF_POOL_SIZE];
+    }
+
     static {
-        bufferPool = (ThreadLocal<SoftReference<ByteBuffer>>[])
-            new ThreadLocal[TEMP_BUF_POOL_SIZE];
+        bufferPool = createThreadLocalBufferPool();
         for (int i=0; i<TEMP_BUF_POOL_SIZE; i++)
             bufferPool[i] = new ThreadLocal<SoftReference<ByteBuffer>>();
     }

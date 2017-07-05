@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ extern "C" {
 #include "awt_Palette.h"
 #include "awt_MMStub.h"
 #include "Devices.h"
-#include "dxCapabilities.h"
 
 class AwtPalette;
 class Devices;
@@ -63,7 +62,6 @@ public:
     int                     GetBitDepth() { return colorData->bitsperpixel; }
     MHND                    GetMonitor() { return monitor; }
     MONITOR_INFO            *GetMonitorInfo() { return pMonitorInfo; }
-    DxCapabilities          *GetDxCaps() { return &dxCaps; }
     jobject                 GetJavaDevice() { return javaDevice; }
     int                     GetDeviceIndex() { return screen; }
     void                    Release();
@@ -86,7 +84,6 @@ public:
     static BOOL             IsPrimaryPalettized() { return primaryPalettized; }
     static int              GetDefaultDeviceIndex() { return primaryIndex; }
     static void             DisableOffscreenAccelerationForDevice(MHND hMonitor);
-    static DxCapabilities   *GetDxCapsForDevice(MHND hMonitor);
     static HDC              GetDCFromScreen(int screen);
     static int              GetScreenFromMHND(MHND mon);
 
@@ -97,7 +94,6 @@ public:
     static jfieldID         dynamicColorModelID;
     static jfieldID         indexCMrgbID;
     static jfieldID         indexCMcacheID;
-    static jfieldID         accelerationEnabledID;
     static jmethodID        paletteChangedMID;
 
 private:
@@ -112,7 +108,6 @@ private:
     MONITOR_INFO            *pMonitorInfo;
     jobject                 javaDevice;
     Devices                 *devicesArray;
-    DxCapabilities          dxCaps;
 };
 
 #endif AWT_WIN32GRAPHICSDEVICE_H

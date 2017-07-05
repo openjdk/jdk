@@ -27,12 +27,11 @@ BUILDDIR = ../..
 PACKAGE = sun.awt
 LIBRARY = jpeg
 PRODUCT = sun
-include $(BUILDDIR)/common/Defs.gmk
 
-#
 # Use highest optimization level
-#
-_OPT = $(CC_HIGHEST_OPT)
+OPTIMIZATION_LEVEL = HIGHEST
+
+include $(BUILDDIR)/common/Defs.gmk
 
 #
 # Files
