@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
  *      Any Exception thrown during the instantiation process is wrapped as a {@link DatatypeConfigurationException}.
  *    </li>
  *    <li>
- *      If the file ${JAVA_HOME}/lib/jaxp.properties exists, it is loaded in a {@link java.util.Properties} <code>Object</code>.
+ *      If the file ${JAVA_HOME}/conf/jaxp.properties exists, it is loaded in a {@link java.util.Properties} <code>Object</code>.
  *      The <code>Properties</code> <code>Object </code> is then queried for the property as documented in the prior step
  *      and processed as documented in the prior step.
  *    </li>

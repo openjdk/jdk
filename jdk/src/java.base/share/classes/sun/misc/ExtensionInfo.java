@@ -38,8 +38,10 @@ import java.lang.Character.*;
  * This class holds all necessary information to install or
  * upgrade a extension on the user's disk
  *
+ * @deprecated this class will be removed in a future release.
  * @author  Jerome Dochez
  */
+@Deprecated
 public class ExtensionInfo {
 
     /**

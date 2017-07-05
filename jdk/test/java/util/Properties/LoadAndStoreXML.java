@@ -136,7 +136,7 @@ public class LoadAndStoreXML {
         props.put("k2", "bar");
         props.put("k3", "\u0020\u0391\u0392\u0393\u0394\u0395\u0396\u0397");
         props.put("k4", "\u7532\u9aa8\u6587");
-        props.put("k5", "<java.home>/lib/jaxp.properties");
+        props.put("k5", "<java.home>/conf/jaxp.properties");
 
         TestOutputStream out = new TestOutputStream();
         props.storeToXML(out, null, encoding);

@@ -784,24 +784,24 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   LDFLAGS_JDKLIB="${LDFLAGS_JDK}"
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -dll -libpath:${JDK_OUTPUTDIR}/lib"
+    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -dll -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
     LDFLAGS_JDKLIB_SUFFIX=""
   else
     LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB}  ${SHARED_LIBRARY_FLAGS} \
-        -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}"
+        -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}"
 
     # On some platforms (mac) the linker warns about non existing -L dirs.
     # Add server first if available. Linking aginst client does not always produce the same results.
     # Only add client dir if client is being built. Add minimal (note not minimal1) if only building minimal1.
     # Default to server for other variants.
     if test "x$JVM_VARIANT_SERVER" = xtrue; then
-      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
+      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}/server"
     elif test "x$JVM_VARIANT_CLIENT" = xtrue; then
-      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/client"
+      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}/client"
     elif test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/minimal"
+      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}/minimal"
     else
-      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}/server"
+      LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}/server"
     fi
 
     LDFLAGS_JDKLIB_SUFFIX="-ljava -ljvm"

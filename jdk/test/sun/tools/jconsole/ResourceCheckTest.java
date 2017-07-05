@@ -23,12 +23,10 @@
 
 /**
  *
- *
- *  This isn't the test case: ResourceCheckTest.sh is.
- *  Refer to ResourceCheckTest.sh when running this test.
- *
+ *  @test
  *  @bug 5008856 5023573 5024917 5062569 7172176
  *  @summary 'missing resource key' error for key = "Operating system"
+ *  @run main ResourceCheckTest
  */
 
 import java.lang.reflect.Field;

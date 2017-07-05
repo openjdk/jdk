@@ -32,7 +32,7 @@ LIBINSTRUMENT_SRC := $(JDK_TOPDIR)/src/java.instrument/share/native/libinstrumen
     #
 LIBINSTRUMENT_CFLAGS := $(CFLAGS_JDKLIB) \
     $(addprefix -I, $(LIBINSTRUMENT_SRC)) \
-    -I$(JDK_OUTPUTDIR)/gensrc_headers/java.instrument \
+    -I$(SUPPORT_OUTPUTDIR)/headers/java.instrument \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libjli \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
     #
@@ -41,7 +41,7 @@ LIBINSTRUMENT_LDFLAGS :=
 LIBINSTRUMENT_LDFLAGS_SUFFIX :=
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  LIBINSTRUMENT_LDFLAGS += $(JDK_OUTPUTDIR)/objs/jli_static.lib $(WIN_JAVA_LIB) \
+  LIBINSTRUMENT_LDFLAGS += $(SUPPORT_OUTPUTDIR)/native/java.base/jli_static.lib $(WIN_JAVA_LIB) \
       -export:Agent_OnAttach advapi32.lib
   # Statically link the C runtime so that there are not dependencies on modules
   # not on the search patch when invoked from the Windows system directory
@@ -68,34 +68,28 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
         $(LIBINSTRUMENT_LDFLAGS), \
     LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/jli), \
     LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/jli), \
-    LDFLAGS_macosx := -Xlinker -all_load $(JDK_OUTPUTDIR)/objs/libjli_static.a \
+    LDFLAGS_macosx := -Xlinker -all_load $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a \
         -framework Cocoa -framework Security -framework ApplicationServices, \
     LDFLAGS_SUFFIX := $(LIBINSTRUMENT_LDFLAGS_SUFFIX), \
     LDFLAGS_SUFFIX_macosx := -liconv $(LIBZ), \
-    LDFLAGS_SUFFIX_solaris := $(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL) -lc, \
-    LDFLAGS_SUFFIX_linux := $(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL), \
-    LDFLAGS_SUFFIX_aix := $(LIBZ) -L$(JDK_OUTPUTDIR)/objs -ljli_static $(LIBDL),\
+    LDFLAGS_SUFFIX_solaris := $(LIBZ) -L $(call FindLibDirForModule, java.base)/jli -ljli $(LIBDL) -lc, \
+    LDFLAGS_SUFFIX_linux := $(LIBZ) -L $(call FindLibDirForModule, java.base)/jli -ljli $(LIBDL), \
+    LDFLAGS_SUFFIX_aix := $(LIBZ) -L$(SUPPORT_OUTPUTDIR)/native/java.base -ljli_static $(LIBDL),\
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=instrument.dll" \
         -D "JDK_INTERNAL_NAME=instrument" \
         -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libinstrument, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libinstrument, \
     DEBUG_SYMBOLS := true))
 
 ifneq (, $(findstring $(OPENJDK_TARGET_OS), macosx windows aix))
-  $(BUILD_LIBINSTRUMENT): $(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)jli_static$(STATIC_LIBRARY_SUFFIX)
+  $(BUILD_LIBINSTRUMENT): $(SUPPORT_OUTPUTDIR)/native/java.base/$(LIBRARY_PREFIX)jli_static$(STATIC_LIBRARY_SUFFIX)
 else
-  $(BUILD_LIBINSTRUMENT): $(INSTALL_LIBRARIES_HERE)/jli/$(LIBRARY_PREFIX)jli$(SHARED_LIBRARY_SUFFIX)
+  $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, jli, /jli)
 endif
 $(BUILD_LIBINSTRUMENT): $(BUILD_LIBJAVA)
 
-INSTRUMENT_LIBRARIES += $(BUILD_LIBINSTRUMENT)
+TARGETS += $(BUILD_LIBINSTRUMENT)
 
 ################################################################################
-
-java.instrument: $(INSTRUMENT_LIBRARIES)
-
-all: java.instrument
-
-.PHONY: all java.instrument

@@ -140,7 +140,7 @@ public class RMIGenerator implements RMIConstants, Generator {
             if (env.verbose()) {
                 env.output(Main.getText("rmic.wrote", stubFile.getPath()));
             }
-            env.parseFile(new ClassFile(stubFile));
+            env.parseFile(ClassFile.newClassFile(stubFile));
         } catch (IOException e) {
             env.error(0, "cant.write", stubFile.toString());
             return;
@@ -161,7 +161,7 @@ public class RMIGenerator implements RMIConstants, Generator {
                     env.output(Main.getText("rmic.wrote",
                         skeletonFile.getPath()));
                 }
-                env.parseFile(new ClassFile(skeletonFile));
+                env.parseFile(ClassFile.newClassFile(skeletonFile));
             } catch (IOException e) {
                 env.error(0, "cant.write", stubFile.toString());
                 return;

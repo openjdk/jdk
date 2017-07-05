@@ -730,7 +730,7 @@ public abstract class Toolkit {
                 if (properties.size() == 0) {
                     try {
                         File propsFile = new File(
-                            System.getProperty("java.home") + sep + "lib" +
+                            System.getProperty("java.home") + sep + "conf" +
                             sep + "accessibility.properties");
                         FileInputStream in =
                             new FileInputStream(propsFile);

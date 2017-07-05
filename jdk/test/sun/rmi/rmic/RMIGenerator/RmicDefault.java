@@ -48,12 +48,6 @@ public class RmicDefault {
         String testclasses = System.getProperty("test.classes");
         String userDir = System.getProperty("user.dir");
 
-        if (javahome.regionMatches(true, javahome.length() - 4,
-                                   File.separator + "jre", 0, 4))
-        {
-            javahome = javahome.substring(0, javahome.length() - 4);
-        }
-
         Process javacProcess = Runtime.getRuntime().exec(
             javahome + File.separator + "bin" + File.separator +
             "javac -d " + testclasses + " " +
