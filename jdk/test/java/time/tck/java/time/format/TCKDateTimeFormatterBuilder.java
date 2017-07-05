@@ -60,11 +60,14 @@
 package tck.java.time.format;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
 
+import java.text.ParsePosition;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneOffset;
@@ -73,6 +76,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -726,6 +730,152 @@ public class TCKDateTimeFormatterBuilder {
 
     private static Temporal date(int y, int m, int d) {
         return LocalDate.of(y, m, d);
+    }
+
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_adjacent_strict_firstFixedWidth() throws Exception {
+        // succeeds because both number elements are fixed width
+        DateTimeFormatter f = builder.appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendLiteral('9').toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("12309", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 5);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+    }
+
+    @Test
+    public void test_adjacent_strict_firstVariableWidth_success() throws Exception {
+        // succeeds greedily parsing variable width, then fixed width, to non-numeric Z
+        DateTimeFormatter f = builder.appendValue(HOUR_OF_DAY).appendValue(MINUTE_OF_HOUR, 2).appendLiteral('Z').toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("12309Z", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 6);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 123L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 9L);
+    }
+
+    @Test
+    public void test_adjacent_strict_firstVariableWidth_fails() throws Exception {
+        // fails because literal is a number and variable width parse greedily absorbs it
+        DateTimeFormatter f = builder.appendValue(HOUR_OF_DAY).appendValue(MINUTE_OF_HOUR, 2).appendLiteral('9').toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("12309", pp);
+        assertEquals(pp.getErrorIndex(), 5);
+        assertEquals(parsed, null);
+    }
+
+    @Test
+    public void test_adjacent_lenient() throws Exception {
+        // succeeds because both number elements are fixed width even in lenient mode
+        DateTimeFormatter f = builder.parseLenient().appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendLiteral('9').toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("12309", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 5);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+    }
+
+    @Test
+    public void test_adjacent_lenient_firstVariableWidth_success() throws Exception {
+        // succeeds greedily parsing variable width, then fixed width, to non-numeric Z
+        DateTimeFormatter f = builder.parseLenient().appendValue(HOUR_OF_DAY).appendValue(MINUTE_OF_HOUR, 2).appendLiteral('Z').toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("12309Z", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 6);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 123L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 9L);
+    }
+
+    @Test
+    public void test_adjacent_lenient_firstVariableWidth_fails() throws Exception {
+        // fails because literal is a number and variable width parse greedily absorbs it
+        DateTimeFormatter f = builder.parseLenient().appendValue(HOUR_OF_DAY).appendValue(MINUTE_OF_HOUR, 2).appendLiteral('9').toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("12309", pp);
+        assertEquals(pp.getErrorIndex(), 5);
+        assertEquals(parsed, null);
+    }
+
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_adjacent_strict_fractionFollows() throws Exception {
+        // succeeds because hour/min are fixed width
+        DateTimeFormatter f = builder.appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendFraction(NANO_OF_SECOND, 0, 3, false).toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("1230567", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 7);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+        assertEquals(parsed.getLong(NANO_OF_SECOND), 567_000_000L);
+    }
+
+    @Test
+    public void test_adjacent_strict_fractionFollows_2digit() throws Exception {
+        // succeeds because hour/min are fixed width
+        DateTimeFormatter f = builder.appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendFraction(NANO_OF_SECOND, 0, 3, false).toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("123056", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 6);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+        assertEquals(parsed.getLong(NANO_OF_SECOND), 560_000_000L);
+    }
+
+    @Test
+    public void test_adjacent_strict_fractionFollows_0digit() throws Exception {
+        // succeeds because hour/min are fixed width
+        DateTimeFormatter f = builder.appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendFraction(NANO_OF_SECOND, 0, 3, false).toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("1230", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 4);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+    }
+
+    @Test
+    public void test_adjacent_lenient_fractionFollows() throws Exception {
+        // succeeds because hour/min are fixed width
+        DateTimeFormatter f = builder.parseLenient().appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendFraction(NANO_OF_SECOND, 3, 3, false).toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("1230567", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 7);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+        assertEquals(parsed.getLong(NANO_OF_SECOND), 567_000_000L);
+    }
+
+    @Test
+    public void test_adjacent_lenient_fractionFollows_2digit() throws Exception {
+        // succeeds because hour/min are fixed width
+        DateTimeFormatter f = builder.parseLenient().appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendFraction(NANO_OF_SECOND, 3, 3, false).toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("123056", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 6);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
+        assertEquals(parsed.getLong(NANO_OF_SECOND), 560_000_000L);
+    }
+
+    @Test
+    public void test_adjacent_lenient_fractionFollows_0digit() throws Exception {
+        // succeeds because hour/min are fixed width
+        DateTimeFormatter f = builder.parseLenient().appendValue(HOUR_OF_DAY, 2).appendValue(MINUTE_OF_HOUR, 2).appendFraction(NANO_OF_SECOND, 3, 3, false).toFormatter(Locale.UK);
+        ParsePosition pp = new ParsePosition(0);
+        TemporalAccessor parsed = f.parseUnresolved("1230", pp);
+        assertEquals(pp.getErrorIndex(), -1);
+        assertEquals(pp.getIndex(), 4);
+        assertEquals(parsed.getLong(HOUR_OF_DAY), 12L);
+        assertEquals(parsed.getLong(MINUTE_OF_HOUR), 30L);
     }
 
 }

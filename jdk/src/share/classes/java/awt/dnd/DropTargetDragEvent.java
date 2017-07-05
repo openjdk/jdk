@@ -80,7 +80,7 @@ public class DropTargetDragEvent extends DropTargetEvent {
      * the location of the "Drag" <code>Cursor</code>'s hotspot
      * in the <code>Component</code>'s coordinates, the
      * user drop action, and the source drop actions.
-     * <P>
+     *
      * @param dtc        The DropTargetContext for this operation
      * @param cursorLocn The location of the "Drag" Cursor's
      * hotspot in Component coordinates
@@ -118,7 +118,7 @@ public class DropTargetDragEvent extends DropTargetEvent {
      * indicating the <code>Cursor</code>'s current
      * location within the <code>Component'</code>s
      * coordinates.
-     * <P>
+     *
      * @return the current cursor location in
      * <code>Component</code>'s coords.
      */
@@ -131,7 +131,7 @@ public class DropTargetDragEvent extends DropTargetEvent {
     /**
      * This method returns the current <code>DataFlavor</code>s from the
      * <code>DropTargetContext</code>.
-     * <P>
+     *
      * @return current DataFlavors from the DropTargetContext
      */
 
@@ -142,7 +142,7 @@ public class DropTargetDragEvent extends DropTargetEvent {
     /**
      * This method returns the current <code>DataFlavor</code>s
      * as a <code>java.util.List</code>
-     * <P>
+     *
      * @return a <code>java.util.List</code> of the Current <code>DataFlavor</code>s
      */
 
@@ -153,9 +153,9 @@ public class DropTargetDragEvent extends DropTargetEvent {
     /**
      * This method returns a <code>boolean</code> indicating
      * if the specified <code>DataFlavor</code> is supported.
-     * <P>
+     *
      * @param df the <code>DataFlavor</code> to test
-     * <P>
+     *
      * @return if a particular DataFlavor is supported
      */
 

@@ -149,7 +149,6 @@ public interface ObjectFactory {
  * If a factory uses <code>nameCtx</code> it should synchronize its use
  * against concurrent access, since context implementations are not
  * guaranteed to be thread-safe.
- * <p>
  *
  * @param obj The possibly null object containing location or reference
  *              information that can be used in creating an object.

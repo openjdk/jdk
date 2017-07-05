@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import sun.swing.DefaultLookup;
 
 /**
  * Provides the basic look and feel for a JColorChooser.
- * <p>
+ *
  * @author Tom Santos
  * @author Steve Wilson
  */
@@ -345,6 +345,7 @@ public class BasicColorChooserUI extends ColorChooserUI
         }
     }
 
+    @SuppressWarnings("serial") // JDK-implementation class
     static class ColorTransferHandler extends TransferHandler implements UIResource {
 
         ColorTransferHandler() {

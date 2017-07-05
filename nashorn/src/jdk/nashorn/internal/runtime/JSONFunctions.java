@@ -101,7 +101,6 @@ public final class JSONFunctions {
     // apply 'reviver' function if available
     private static Object applyReviver(final Global global, final Object unfiltered, final Object reviver) {
         if (reviver instanceof ScriptFunction) {
-            assert global instanceof Global;
             final ScriptObject root = global.newObject();
             root.addOwnProperty("", Property.WRITABLE_ENUMERABLE_CONFIGURABLE, unfiltered);
             return walk(root, "", (ScriptFunction)reviver);

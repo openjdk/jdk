@@ -28,7 +28,6 @@
 #include "memory/sharedHeap.hpp"
 
 volatile jint GC_locker::_jni_lock_count = 0;
-volatile jint GC_locker::_lock_count     = 0;
 volatile bool GC_locker::_needs_gc       = false;
 volatile bool GC_locker::_doing_gc       = false;
 
@@ -102,7 +101,7 @@ void GC_locker::jni_lock(JavaThread* thread) {
   // We check that at least one thread is in a critical region before
   // blocking because blocked threads are woken up by a thread exiting
   // a JNI critical region.
-  while ((needs_gc() && is_jni_active()) || _doing_gc) {
+  while (is_active_and_needs_gc() || _doing_gc) {
     JNICritical_lock->wait();
   }
   thread->enter_critical();
@@ -116,27 +115,20 @@ void GC_locker::jni_unlock(JavaThread* thread) {
   _jni_lock_count--;
   decrement_debug_jni_lock_count();
   thread->exit_critical();
-  if (needs_gc() && !is_jni_active()) {
+  if (needs_gc() && !is_active_internal()) {
     // We're the last thread out. Cause a GC to occur.
-    // GC will also check is_active, so this check is not
-    // strictly needed. It's added here to make it clear that
-    // the GC will NOT be performed if any other caller
-    // of GC_locker::lock() still needs GC locked.
-    if (!is_active_internal()) {
-      _doing_gc = true;
-      {
-        // Must give up the lock while at a safepoint
-        MutexUnlocker munlock(JNICritical_lock);
-        if (PrintJNIGCStalls && PrintGCDetails) {
-          ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
-          gclog_or_tty->print_cr("%.3f: Thread \"%s\" is performing GC after exiting critical section, %d locked",
-                                 gclog_or_tty->time_stamp().seconds(), Thread::current()->name(), _jni_lock_count);
-        }
-        Universe::heap()->collect(GCCause::_gc_locker);
+    _doing_gc = true;
+    {
+      // Must give up the lock while at a safepoint
+      MutexUnlocker munlock(JNICritical_lock);
+      if (PrintJNIGCStalls && PrintGCDetails) {
+        ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
+        gclog_or_tty->print_cr("%.3f: Thread \"%s\" is performing GC after exiting critical section, %d locked",
+            gclog_or_tty->time_stamp().seconds(), Thread::current()->name(), _jni_lock_count);
       }
-      _doing_gc = false;
+      Universe::heap()->collect(GCCause::_gc_locker);
     }
-
+    _doing_gc = false;
     _needs_gc = false;
     JNICritical_lock->notify_all();
   }

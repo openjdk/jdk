@@ -62,6 +62,7 @@ public abstract class WindowsTextUI extends BasicTextUI {
     static LayeredHighlighter.LayerPainter WindowsPainter = new WindowsHighlightPainter(null);
 
     /* public */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class WindowsCaret extends DefaultCaret
                      implements UIResource {
         /**

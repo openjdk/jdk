@@ -40,6 +40,7 @@ startApplication SimpleApplication "${PORTFILE}"
 
 # all return statuses are checked in this test
 set +e
+set -x
 
 failed=0
 
@@ -70,16 +71,6 @@ if [ $runSA = true ]; then
 
     # no option
     ${JINFO} -J-XX:+UsePerfData -F $appJavaPid
-    if [ $? != 0 ]; then failed=1; fi
-
-    # -flag option
-    ${JINFO} -J-XX:+UsePerfData -F -flag +PrintGC $appJavaPid
-    if [ $? != 0 ]; then failed=1; fi 
-
-    ${JINFO} -J-XX:+UsePerfData -F -flag -PrintGC $appJavaPid
-    if [ $? != 0 ]; then failed=1; fi
-
-    ${JINFO} -J-XX:+UsePerfData -F -flag PrintGC $appJavaPid
     if [ $? != 0 ]; then failed=1; fi
 fi
 

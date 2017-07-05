@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,10 @@ AwtCanvas* AwtCanvas::Create(jobject self, jobject hParent)
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     jobject target = NULL;
+    jobject graphicsConfig = NULL;
+    jclass canvasClass = NULL;
+    jclass win32cls = NULL;
+
     AwtCanvas *canvas = NULL;
 
     try {
@@ -100,16 +104,24 @@ AwtCanvas* AwtCanvas::Create(jobject self, jobject hParent)
         // Set the pixel format of the HWND if a GraphicsConfiguration
         // was provided to the Canvas constructor.
 
-        jclass canvasClass = env->FindClass("java/awt/Canvas");
+        canvasClass = env->FindClass("java/awt/Canvas");
+        DASSERT(canvasClass != NULL);
+        if (!canvasClass) {
+            throw std::bad_alloc();
+        }
+
         if ( env->IsInstanceOf( target, canvasClass ) ) {
 
             // Get GraphicsConfig from our target
-            jobject graphicsConfig = env->GetObjectField(target,
+            graphicsConfig = env->GetObjectField(target,
                 AwtComponent::graphicsConfigID);
             if (graphicsConfig != NULL) {
 
-                jclass win32cls = env->FindClass("sun/awt/Win32GraphicsConfig");
+                win32cls = env->FindClass("sun/awt/Win32GraphicsConfig");
                 DASSERT (win32cls != NULL);
+                if (!win32cls) {
+                    throw std::bad_alloc();
+                }
 
                 if ( env->IsInstanceOf( graphicsConfig, win32cls ) ) {
                     // Get the visual ID member from our GC
@@ -131,8 +143,7 @@ AwtCanvas* AwtCanvas::Create(jobject self, jobject hParent)
                             env->ExceptionClear();
                             env->ThrowNew(excCls,
                              "\nUnable to set Pixel format on Canvas");
-                            env->DeleteLocalRef(target);
-                            return canvas;
+                            env->DeleteLocalRef(excCls);
                         }
                     }
                 }
@@ -141,11 +152,20 @@ AwtCanvas* AwtCanvas::Create(jobject self, jobject hParent)
     }
     } catch (...) {
         env->DeleteLocalRef(target);
+        env->DeleteLocalRef(graphicsConfig);
+        env->DeleteLocalRef(canvasClass);
+        env->DeleteLocalRef(win32cls);
+
+        env->DeleteGlobalRef(self);
+        env->DeleteGlobalRef(hParent);
         throw;
     }
 
 done:
     env->DeleteLocalRef(target);
+    env->DeleteLocalRef(graphicsConfig);
+    env->DeleteLocalRef(canvasClass);
+    env->DeleteLocalRef(win32cls);
     return canvas;
     CATCH_BAD_ALLOC_RET(0);
 }

@@ -1,127 +1,158 @@
-." Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH schemagen 1 "07 May 2011"
-
-.LP
-.SH "名前"
-schemagen \- XML バインドのための Java(TM) アーキテクチャースキーマジェネレータ
-.LP
-.LP
-\f3仕様バージョン:\fP 2.1
-.br
-\f3実装バージョン:\fP 2.1.3
-.LP
-.SH "schemagen の起動"
-.LP
-.LP
-スキーマジェネレータを起動するには、ユーザーのプラットフォームの bin ディレクトリ内にある \f2適切な schemagen シェルスクリプト\fP を使用 \f2します\fP 。
-.LP
-.LP
-現在のスキーマジェネレータは、Java ソースファイルとクラスファイルのいずれも処理できます。
-.LP
-.LP
-また、スキーマジェネレータを実行するための Ant タスクも用意されています。
-.na
-\f2schemagen を Ant とともに使用する\fP @
-.fi
-https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagenTask.htmlための手順を参照してください。
-.LP
+'\" t
+.\" Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: schemagen
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: Java Webサービス・ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "schemagen" "1" "2013年11月21日" "JDK 8" "Java Webサービス・ツール"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+schemagen \- Javaクラス内で参照されているネームスペースごとにスキーマを生成します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-% schemagen.sh Foo.java Bar.java ...
-.fl
-Note: Writing schema1.xsd
-.fl
-\fP
+\fIschemagen\fR [ \fIoptions\fR ] \fIjava\-files\fR
 .fi
-
-.LP
-.LP
-ユーザーの Java ソース/クラスがほかのクラスを参照している場合、システムの 環境変数経由でそれらのクラスにアクセスできるようになっているか、あるいは \f2\-classpath\fP/\f2\-cp\fP を使ってそれらのクラスをツールに指定する必要があります。そうしないと、スキーマの生成時にエラーが発生します。
-.LP
-.SS 
-コマンド行オプション
-.LP
-.nf
-\f3
-.fl
-使用方法: schemagen [\-options ...] <java files> 
-.fl
-
-.fl
-オプション:
-.fl
-    \-d <path>             : プロセッサおよび javac によって生成されるクラスファイルの格納場所を指定します。
-.fl
-    \-cp <path>            : ユーザー指定ファイルの検索場所を指定します。
-.fl
-    \-classpath <path>     : ユーザー指定ファイルの検索場所を指定します。
-.fl
-    \-encoding <encoding>  : apt/javac 呼び出しに使用されるエンコーディングを指定します。
-.fl
-
-.fl
-    \-episode <file>       : 個別コンパイル用のエピソードファイルを生成します。
-.fl
-    \-version              : バージョン情報を表示します。
-.fl
-    \-help                 : この使用方法に関するメッセージを表示します。
-.fl
-\fP
-.fi
-
-.LP
-.SH "生成されるリソースファイル"
-.LP
-.LP
-現在のスキーマジェネレータは単純に、Java クラス内で参照されている名前空間ごとに 1 つのスキーマファイルを作成します。生成されるスキーマファイルの名前を制御する方法は、現時点では存在しません。そうした目的には、
-.na
-\f2スキーマジェネレータの ant タスク\fP @
-.fi
-https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagenTask.htmlを使用してください。
-.LP
-.SH "名前"
-関連項目
-.LP
-.RS 3
-.TP 2
-o
-スキーマジェネレータの実行 (schemagen): [
-.na
-\f2コマンド行の命令\fP @
-.fi
-https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagen.html、
-.na
-\f2SchemaGen を Ant とともに使用する\fP @
-.fi
-https://jaxb.dev.java.net/nonav/2.1.3/docs/schemagenTask.html] 
-.TP 2
-o
-.na
-\f2XML バインドのための JavaTM アーキテクチャー (JAXB)\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/xml/jaxb/index.html 
+.if n \{\
 .RE
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIjava\-files\fR
+.RS 4
+処理するJavaクラス・ファイル。
+.RE
+.SH "説明"
+.PP
+スキーマ・ジェネレータは、Javaクラス内で参照されているネームスペースごとに1つのスキーマ・ファイルを作成します。現在、生成されるスキーマ・ファイルの名前は制御できません。スキーマ・ファイル名を制御する場合は、http://jaxb\&.java\&.net/nonav/2\&.2\&.3u1/docs/schemagenTask\&.htmlにある
+「Using SchemaGen with Ant」を参照してください
+.PP
+プラットフォームのbinディレクトリにある適切な\fIschemagen\fRシェル・スクリプトを使用して、スキーマ・ジェネレータを起動します。現在のスキーマ・ジェネレータは、Javaソース・ファイルとクラス・ファイルのいずれも処理できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+schemagen\&.sh Foo\&.java Bar\&.java \&.\&.\&.
+Note: Writing schema1\&.xsd
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+javaファイルが他のクラスを参照している場合、それらのクラスにシステム\fICLASSPATH\fR環境変数でアクセスできる必要があります。または、クラス・パス・オプションを指定して\fIschemagen\fRコマンド・ラインで指定する必要があります。オプションを参照してください。参照されるファイルにアクセスできない、または参照されるファイルが指定されていない場合、スキーマの生成時にエラーが表示されます。
+.SH "オプション"
+.PP
+\-d \fIpath\fR
+.RS 4
+\fIschemagen\fRコマンドがプロセッサ生成および\fIjavac\fR生成クラス・ファイルを配置する場所。
+.RE
+.PP
+\-cp \fIpath\fR
+.RS 4
+\fIschemagen\fRコマンドがユーザー指定ファイルを配置する場所。
+.RE
+.PP
+\-classpath \fIpath\fR
+.RS 4
+\fIschemagen\fRコマンドがユーザー指定ファイルを配置する場所。
+.RE
+.PP
+\-encoding \fIencoding\fR
+.RS 4
+\fIapt\fRまたは\fIjavac\fRコマンドの呼出しに使用するエンコーディングを指定します。
+.RE
+.PP
+\-episode \fIfile\fR
+.RS 4
+コンパイルごとにエピソード・ファイルを生成します。
+.RE
+.PP
+\-version
+.RS 4
+リリース情報を表示します。
+.RE
+.PP
+\-help
+.RS 4
+ヘルプ・メッセージを表示します。
+.RE
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Using SchemaGen with Ant
 
-.LP
- 
+(http://jaxb\&.java\&.net/nonav/2\&.2\&.3u1/docs/schemagenTask\&.html)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+Java Architecture for XML Binding (JAXB)
+
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/xml/jaxb/index\&.html)
+.RE
+.br
+'pl 8.5i
+'bp

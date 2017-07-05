@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.beans.PropertyVetoException;
  *
  * @since 1.3
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class MotifInternalFrameTitlePane
     extends BasicInternalFrameTitlePane implements LayoutManager, ActionListener, PropertyChangeListener
 {
@@ -232,6 +233,7 @@ public class MotifInternalFrameTitlePane
 
     static Dimension buttonDimension = new Dimension(BUTTON_SIZE, BUTTON_SIZE);
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private abstract class FrameButton extends JButton {
 
         FrameButton() {
@@ -276,6 +278,7 @@ public class MotifInternalFrameTitlePane
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class MinimizeButton extends FrameButton {
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -288,7 +291,8 @@ public class MotifInternalFrameTitlePane
         }
     }
 
-    private class MaximizeButton extends FrameButton {
+   @SuppressWarnings("serial") // Superclass is not serializable across versions
+   private class MaximizeButton extends FrameButton {
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             int max = BUTTON_SIZE - 5;
@@ -302,6 +306,7 @@ public class MotifInternalFrameTitlePane
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class SystemButton extends FrameButton {
         public boolean isFocusTraversable() { return false; }
         public void requestFocus() {}
@@ -317,6 +322,7 @@ public class MotifInternalFrameTitlePane
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class Title extends FrameButton {
         Title(String title) {
             super();

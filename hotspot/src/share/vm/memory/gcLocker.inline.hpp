@@ -27,22 +27,6 @@
 
 #include "memory/gcLocker.hpp"
 
-inline void GC_locker::lock() {
-  // cast away volatile
-  Atomic::inc(&_lock_count);
-  CHECK_UNHANDLED_OOPS_ONLY(
-    if (CheckUnhandledOops) { Thread::current()->_gc_locked_out_count++; })
-  assert(Universe::heap() == NULL ||
-         !Universe::heap()->is_gc_active(), "locking failed");
-}
-
-inline void GC_locker::unlock() {
-  // cast away volatile
-  Atomic::dec(&_lock_count);
-  CHECK_UNHANDLED_OOPS_ONLY(
-    if (CheckUnhandledOops) { Thread::current()->_gc_locked_out_count--; })
-}
-
 inline void GC_locker::lock_critical(JavaThread* thread) {
   if (!thread->in_critical()) {
     if (needs_gc()) {

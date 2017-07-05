@@ -253,24 +253,41 @@ Zone Antarctica/Syowa	0	-	zzz	1957 Jan 29
 # year-round base
 # Scott Base, Ross Island, since 1957-01.
 # See Pacific/Auckland.
-#
-# These rules for New Zealand are stolen from the 'australasia' file.
-# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	NZAQ	1974	only	-	Nov	 3	2:00s	1:00	D
-Rule	NZAQ	1975	1988	-	Oct	lastSun	2:00s	1:00	D
-Rule	NZAQ	1989	only	-	Oct	 8	2:00s	1:00	D
-Rule	NZAQ	1990	2006	-	Oct	Sun>=1	2:00s	1:00	D
-Rule	NZAQ	1975	only	-	Feb	23	2:00s	0	S
-Rule	NZAQ	1976	1989	-	Mar	Sun>=1	2:00s	0	S
-Rule	NZAQ	1990	2007	-	Mar	Sun>=15	2:00s	0	S
-Rule	NZAQ	2007	max	-	Sep	lastSun	2:00s	1:00	D
-Rule	NZAQ	2008	max	-	Apr	Sun>=1	2:00s	0	S
 
 # Norway - territories
 # Bouvet (never inhabited)
 #
 # claims
 # Peter I Island (never inhabited)
+#
+# year-round base
+# Troll, Queen Maud Land, -720041+0023206, since 2005-02-12
+#
+# From Paul-Inge Flakstad (2014-03-10):
+# I recently had a long dialog about this with the developer of timegenie.com.
+# In the absence of specific dates, he decided to choose some likely ones:
+#   GMT +1 - From March 1 to the last Sunday in March
+#   GMT +2 - From the last Sunday in March until the last Sunday in October
+#   GMT +1 - From the last Sunday in October until November 7
+#   GMT +0 - From November 7 until March 1
+# The dates for switching to and from UTC+0 will probably not be absolutely
+# correct, but they should be quite close to the actual dates.
+#
+# From Paul Eggert (2014-03-21):
+# The CET-switching Troll rules require zic from tzcode 2014b or later, so as
+# suggested by Bengt-Inge Larsson comment them out for now, and approximate
+# with only UTC and CEST.  Uncomment them when 2014b is more prevalent.
+#
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+#Rule	Troll	2005	max	-	Mar	 1	1:00u	1:00	CET
+Rule	Troll	2005	max	-	Mar	lastSun	1:00u	2:00	CEST
+#Rule	Troll	2005	max	-	Oct	lastSun	1:00u	1:00	CET
+#Rule	Troll	2004	max	-	Nov	 7	1:00u	0:00	UTC
+# Remove the following line when uncommenting the above '#Rule' lines.
+Rule	Troll	2004	max	-	Oct	lastSun	1:00u	0:00	UTC
+# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
+Zone Antarctica/Troll	0	-	zzz	2005 Feb 12
+     			0:00	Troll	%s
 
 # Poland - year-round base
 # Arctowski, King George Island, -620945-0582745, since 1977

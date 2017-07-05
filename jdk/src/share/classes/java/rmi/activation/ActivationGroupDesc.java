@@ -49,7 +49,7 @@ import java.util.Properties;
  *
  * <li> the group's <code>ActivationGroupID</code>, and
  * <li> the group's initialization data (in a
- * <code>java.rmi.MarshalledObject</code>)</ul><p>
+ * <code>java.rmi.MarshalledObject</code>)</ul>
  *
  * @author      Ann Wollrath
  * @since       1.2

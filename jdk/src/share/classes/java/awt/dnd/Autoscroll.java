@@ -62,7 +62,7 @@ public interface Autoscroll {
      * This value is read once by the <code>DropTarget</code>
      * upon entry of the drag <code>Cursor</code>
      * into the associated <code>Component</code>.
-     * <P>
+     *
      * @return the Insets
      */
 
@@ -70,7 +70,7 @@ public interface Autoscroll {
 
     /**
      * notify the <code>Component</code> to autoscroll
-     * <P>
+     *
      * @param cursorLocn A <code>Point</code> indicating the
      * location of the cursor that triggered this operation.
      */

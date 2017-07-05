@@ -29,10 +29,10 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
+import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 
 /**
@@ -40,7 +40,7 @@ import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
  * Instances of this class are created during codegen and stored in script classes'
  * constants array to reduce function instantiation overhead during runtime.
  */
-public abstract class ScriptFunctionData {
+public abstract class ScriptFunctionData implements Serializable {
 
     /** Name of the function or "" for anonynous functions */
     protected final String name;
@@ -73,6 +73,8 @@ public abstract class ScriptFunctionData {
     public static final int IS_BUILTIN_CONSTRUCTOR = IS_BUILTIN | IS_CONSTRUCTOR;
     /** Flag for strict constructors */
     public static final int IS_STRICT_CONSTRUCTOR = IS_STRICT | IS_CONSTRUCTOR;
+
+    private static final long serialVersionUID = 4252901245508769114L;
 
     /**
      * Constructor

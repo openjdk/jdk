@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,8 +184,9 @@ int deviceInfoIterator(UINT32 deviceID, snd_pcm_info_t* pcminfo,
                 1 : snd_pcm_info_get_subdevices_count(pcminfo);
         *desc->deviceID = deviceID;
         buffer[0]=' '; buffer[1]='[';
+        // buffer[300] is enough to store the actual device string w/o overrun
         getDeviceStringFromDeviceID(&buffer[2], deviceID, usePlugHw, ALSA_PCM);
-        strcat(buffer, "]");
+        strncat(buffer, "]", sizeof(buffer) - strlen(buffer) - 1);
         strncpy(desc->name,
                 (cardinfo != NULL)
                     ? snd_ctl_card_info_get_id(cardinfo)

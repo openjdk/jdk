@@ -32,6 +32,7 @@ import java.awt.print.PrinterJob;
 
 import sun.awt.AWTAccessor;
 
+@SuppressWarnings("serial") // JDK-implementation class
 class WPrintDialog extends Dialog {
     static {
         initIDs();

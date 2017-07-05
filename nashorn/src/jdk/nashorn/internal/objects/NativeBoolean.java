@@ -110,7 +110,7 @@ public final class NativeBoolean extends ScriptObject {
      * @return string representation of this boolean
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object toString(final Object self) {
+    public static String toString(final Object self) {
         return getBoolean(self).toString();
     }
 
@@ -121,7 +121,7 @@ public final class NativeBoolean extends ScriptObject {
      * @return value of this boolean
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    public static Object valueOf(final Object self) {
+    public static boolean valueOf(final Object self) {
         return getBoolean(self);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,12 +37,13 @@ extern "C" {
   extern OM_uint32 getGSSTime(jint);
   extern void checkStatus(JNIEnv *, jobject, OM_uint32, OM_uint32, char*);
   extern jint checkTime(OM_uint32);
-  extern jint initGSSBuffer(JNIEnv *, jbyteArray, gss_buffer_t);
-  extern void resetGSSBuffer(JNIEnv *, jbyteArray, gss_buffer_t);
+  extern void throwOutOfMemoryError(JNIEnv *, const char*);
+  extern void initGSSBuffer(JNIEnv *, jbyteArray, gss_buffer_t);
+  extern void resetGSSBuffer(gss_buffer_t);
 
   extern gss_OID newGSSOID(JNIEnv *, jobject);
   extern void deleteGSSOID(gss_OID);
-  extern gss_OID_set newGSSOIDSet(JNIEnv *, gss_OID);
+  extern gss_OID_set newGSSOIDSet(gss_OID);
   extern void deleteGSSOIDSet(gss_OID_set);
 
   extern jbyteArray getJavaBuffer(JNIEnv *, gss_buffer_t);
@@ -51,13 +52,12 @@ extern "C" {
   extern jobjectArray getJavaOIDArray(JNIEnv *, gss_OID_set);
 
   extern jstring getMinorMessage(JNIEnv *, jobject, OM_uint32);
-  extern void debug(JNIEnv *, char *);
-  extern int sameMech(JNIEnv *, gss_OID, gss_OID);
+  extern int sameMech(gss_OID, gss_OID);
 
   JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *, void *);
   JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *, void *);
 
-  extern char debugBuf[];
+  extern int JGSS_DEBUG;
 
   extern jclass CLS_Object;
   extern jclass CLS_GSSNameElement;
@@ -85,6 +85,12 @@ extern "C" {
   extern jfieldID FID_NativeGSSContext_flags;
   extern jfieldID FID_NativeGSSContext_lifetime;
   extern jfieldID FID_NativeGSSContext_actualMech;
+  #define TRACE0(s) { if (JGSS_DEBUG) { puts(s); fflush(stdout); }}
+  #define TRACE1(s, p1) { if (JGSS_DEBUG) { printf(s"\n", p1); fflush(stdout); }}
+  #define TRACE2(s, p1, p2) { if (JGSS_DEBUG) { printf(s"\n", p1, p2); fflush(stdout); }}
+  #define TRACE3(s, p1, p2, p3) { if (JGSS_DEBUG) { printf(s"\n", p1, p2, p3); fflush(stdout); }}
+
+
 #ifdef __cplusplus
 }
 #endif

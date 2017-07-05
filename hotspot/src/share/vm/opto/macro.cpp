@@ -27,14 +27,17 @@
 #include "libadt/vectset.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
-#include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/macro.hpp"
 #include "opto/memnode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -2439,6 +2442,7 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
     }
   }
   // Next, attempt to eliminate allocations
+  _has_locks = false;
   progress = true;
   while (progress) {
     progress = false;
@@ -2457,11 +2461,13 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
       case Node::Class_Lock:
       case Node::Class_Unlock:
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
+        _has_locks = true;
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque1   ||
-               n->Opcode() == Op_Opaque2, "unknown node type in macro list");
+               n->Opcode() == Op_Opaque2   ||
+               n->Opcode() == Op_Opaque3, "unknown node type in macro list");
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
@@ -2502,6 +2508,30 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       } else if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
         _igvn.replace_node(n, n->in(1));
         success = true;
+#if INCLUDE_RTM_OPT
+      } else if ((n->Opcode() == Op_Opaque3) && ((Opaque3Node*)n)->rtm_opt()) {
+        assert(C->profile_rtm(), "should be used only in rtm deoptimization code");
+        assert((n->outcnt() == 1) && n->unique_out()->is_Cmp(), "");
+        Node* cmp = n->unique_out();
+#ifdef ASSERT
+        // Validate graph.
+        assert((cmp->outcnt() == 1) && cmp->unique_out()->is_Bool(), "");
+        BoolNode* bol = cmp->unique_out()->as_Bool();
+        assert((bol->outcnt() == 1) && bol->unique_out()->is_If() &&
+               (bol->_test._test == BoolTest::ne), "");
+        IfNode* ifn = bol->unique_out()->as_If();
+        assert((ifn->outcnt() == 2) &&
+               ifn->proj_out(1)->is_uncommon_trap_proj(Deoptimization::Reason_rtm_state_change), "");
+#endif
+        Node* repl = n->in(1);
+        if (!_has_locks) {
+          // Remove RTM state check if there are no locks in the code.
+          // Replace input to compare the same value.
+          repl = (cmp->in(1) == n) ? cmp->in(2) : cmp->in(1);
+        }
+        _igvn.replace_node(n, repl);
+        success = true;
+#endif
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;

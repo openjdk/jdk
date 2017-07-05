@@ -100,6 +100,9 @@ JDKOPT_SETUP_DEBUG_LEVEL
 # With basic setup done, call the custom early hook.
 CUSTOM_EARLY_HOOK
 
+# Check if we have devkits, extra paths or sysroot set.
+BASIC_SETUP_DEVKIT
+
 # To properly create a configuration name, we need to have the OpenJDK target
 # and options (variants and debug level) parsed.
 BASIC_SETUP_OUTPUT_DIR

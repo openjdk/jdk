@@ -177,16 +177,7 @@ final class AquaUtils {
 
     abstract static class RecyclableSingleton<T> {
         final T get() {
-            final AppContext appContext = AppContext.getAppContext();
-            SoftReference<T> ref = (SoftReference<T>) appContext.get(this);
-            if (ref != null) {
-                final T object = ref.get();
-                if (object != null) return object;
-            }
-            final T object = getInstance();
-            ref = new SoftReference<T>(object);
-            appContext.put(this, ref);
-            return object;
+            return AppContext.getSoftReferenceValue(this, () -> getInstance());
         }
 
         void reset() {

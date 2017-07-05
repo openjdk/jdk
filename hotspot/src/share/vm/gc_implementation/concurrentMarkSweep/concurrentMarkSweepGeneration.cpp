@@ -2496,7 +2496,8 @@ void CMSCollector::save_heap_summary() {
 }
 
 void CMSCollector::report_heap_summary(GCWhen::Type when) {
-  _gc_tracer_cm->report_gc_heap_summary(when, _last_heap_summary, _last_metaspace_summary);
+  _gc_tracer_cm->report_gc_heap_summary(when, _last_heap_summary);
+  _gc_tracer_cm->report_metaspace_summary(when, _last_metaspace_summary);
 }
 
 void CMSCollector::collect_in_foreground(bool clear_all_soft_refs, GCCause::Cause cause) {
@@ -3160,16 +3161,6 @@ ConcurrentMarkSweepGeneration::younger_refs_iterate(OopsInGenClosure* cl) {
   cl->set_generation(this);
   younger_refs_in_space_iterate(_cmsSpace, cl);
   cl->reset_generation();
-}
-
-void
-ConcurrentMarkSweepGeneration::oop_iterate(MemRegion mr, ExtendedOopClosure* cl) {
-  if (freelistLock()->owned_by_self()) {
-    Generation::oop_iterate(mr, cl);
-  } else {
-    MutexLockerEx x(freelistLock(), Mutex::_no_safepoint_check_flag);
-    Generation::oop_iterate(mr, cl);
-  }
 }
 
 void

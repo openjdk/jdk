@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.InvalidKeyException;
 import java.security.interfaces.ECKey;
 import java.security.interfaces.RSAKey;
 import java.security.interfaces.DSAKey;
+import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHKey;
@@ -154,6 +155,79 @@ public final class KeyUtil {
     public static final boolean isOracleJCEProvider(String providerName) {
         return providerName != null && (providerName.equals("SunJCE") ||
                                         providerName.startsWith("SunPKCS11"));
+    }
+
+    /**
+     * Check the format of TLS PreMasterSecret.
+     * <P>
+     * To avoid vulnerabilities described by section 7.4.7.1, RFC 5246,
+     * treating incorrectly formatted message blocks and/or mismatched
+     * version numbers in a manner indistinguishable from correctly
+     * formatted RSA blocks.
+     *
+     * RFC 5246 describes the approach as :
+     *
+     *  1. Generate a string R of 48 random bytes
+     *
+     *  2. Decrypt the message to recover the plaintext M
+     *
+     *  3. If the PKCS#1 padding is not correct, or the length of message
+     *     M is not exactly 48 bytes:
+     *        pre_master_secret = R
+     *     else If ClientHello.client_version <= TLS 1.0, and version
+     *     number check is explicitly disabled:
+     *        premaster secret = M
+     *     else If M[0..1] != ClientHello.client_version:
+     *        premaster secret = R
+     *     else:
+     *        premaster secret = M
+     *
+     * Note that #2 should have completed before the call to this method.
+     *
+     * @param  clientVersion the version of the TLS protocol by which the
+     *         client wishes to communicate during this session
+     * @param  serverVersion the negotiated version of the TLS protocol which
+     *         contains the lower of that suggested by the client in the client
+     *         hello and the highest supported by the server.
+     * @param  encoded the encoded key in its "RAW" encoding format
+     * @param  isFailover whether or not the previous decryption of the
+     *         encrypted PreMasterSecret message run into problem
+     * @return the polished PreMasterSecret key in its "RAW" encoding format
+     */
+    public static byte[] checkTlsPreMasterSecretKey(
+            int clientVersion, int serverVersion, SecureRandom random,
+            byte[] encoded, boolean isFailOver) {
+
+        if (random == null) {
+            random = new SecureRandom();
+        }
+        byte[] replacer = new byte[48];
+        random.nextBytes(replacer);
+
+        if (!isFailOver && (encoded != null)) {
+            // check the length
+            if (encoded.length != 48) {
+                // private, don't need to clone the byte array.
+                return replacer;
+            }
+
+            int encodedVersion =
+                    ((encoded[0] & 0xFF) << 8) | (encoded[1] & 0xFF);
+            if (clientVersion != encodedVersion) {
+                if (clientVersion > 0x0301 ||               // 0x0301: TLSv1
+                       serverVersion != encodedVersion) {
+                    encoded = replacer;
+                }   // Otherwise, For compatibility, we maintain the behavior
+                    // that the version in pre_master_secret can be the
+                    // negotiated version for TLS v1.0 and SSL v3.0.
+            }
+
+            // private, don't need to clone the byte array.
+            return encoded;
+        }
+
+        // private, don't need to clone the byte array.
+        return replacer;
     }
 
     /**

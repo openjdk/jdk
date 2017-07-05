@@ -2012,6 +2012,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
 
+    if (UseRTMLocking) {
+      // Abort RTM transaction before calling JNI
+      // because critical section will be large and will be
+      // aborted anyway. Also nmethod could be deoptimized.
+      __ xabort(0);
+    }
+
 #ifdef ASSERT
     {
       Label L;
@@ -3612,6 +3619,11 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   address start = __ pc();
 
+  if (UseRTMLocking) {
+    // Abort RTM transaction before possible nmethod deoptimization.
+    __ xabort(0);
+  }
+
   // Push self-frame.  We get here with a return address on the
   // stack, so rsp is 8-byte aligned until we allocate our frame.
   __ subptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Epilog!
@@ -3791,6 +3803,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   int frame_size_in_words;
   bool cause_return = (poll_type == POLL_AT_RETURN);
   bool save_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
+
+  if (UseRTMLocking) {
+    // Abort RTM transaction before calling runtime
+    // because critical section will be large and will be
+    // aborted anyway. Also nmethod could be deoptimized.
+    __ xabort(0);
+  }
 
   // Make room for return address (or push it again)
   if (!cause_return) {

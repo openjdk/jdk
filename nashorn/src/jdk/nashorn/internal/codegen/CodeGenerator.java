@@ -3228,7 +3228,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final String      className          = SCRIPTFUNCTION_IMPL_OBJECT;
         final int         fieldCount         = ObjectClassGenerator.getPaddedFieldCount(functionNode.countThisProperties());
         final String      allocatorClassName = Compiler.binaryName(ObjectClassGenerator.getClassName(fieldCount));
-        final PropertyMap allocatorMap       = PropertyMap.newMap(null, 0, fieldCount, 0);
+        final PropertyMap allocatorMap       = PropertyMap.newMap(null, allocatorClassName, 0, fieldCount, 0);
 
         method._new(className).dup();
         loadConstant(new RecompilableScriptFunctionData(functionNode, compiler.getCodeInstaller(), allocatorClassName, allocatorMap));

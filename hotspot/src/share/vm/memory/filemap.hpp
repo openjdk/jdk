@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@
 //  header: dump of archive instance plus versioning info, datestamp, etc.
 //   [magic # = 0xF00BABA2]
 //  ... padding to align on page-boundary
-//  read-write space from CompactingPermGenGen
-//  read-only space from CompactingPermGenGen
+//  read-write space
+//  read-only space
 //  misc data (block offset table, string table, symbols, dictionary, etc.)
 //  tag(666)
 

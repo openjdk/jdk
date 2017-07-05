@@ -37,6 +37,7 @@ import sun.lwawt.LWWindowPeer;
  * The CViewEmbeddedFrame class is used in the SWT_AWT bridge.
  * This is a part of public API and should not be renamed or moved
  */
+@SuppressWarnings("serial") // JDK implementation class
 public class CViewEmbeddedFrame extends EmbeddedFrame {
 
     private final long nsViewPtr;

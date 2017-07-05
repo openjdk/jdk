@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import javax.swing.plaf.basic.BasicComboPopup;
 
 import sun.lwawt.macosx.CPlatformWindow;
 
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 class AquaComboBoxPopup extends BasicComboPopup {
     static final int FOCUS_RING_PAD_LEFT = 6;
     static final int FOCUS_RING_PAD_RIGHT = 6;
@@ -147,6 +148,7 @@ class AquaComboBoxPopup extends BasicComboPopup {
     }
 
     @Override
+    @SuppressWarnings("serial") // anonymous class
     protected JList createList() {
         return new JList(comboBox.getModel()) {
             @Override

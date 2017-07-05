@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,6 +393,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
             if (nl >= 0) {
                 // break up newlines
                 if (nl == 0) {
+                    @SuppressWarnings("serial") // anonymous class
                     JPanel breakPanel = new JPanel() {
                         public Dimension getPreferredSize() {
                             Font       f = getFont();
@@ -1338,6 +1339,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
      * change to the JOptionPane, but we also want additional bindings
      * (those of the JRootPane) to be processed as well.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class MultiplexingTextField extends JTextField {
         private KeyStroke[] strokes;
 
@@ -1431,6 +1433,7 @@ public class BasicOptionPaneUI extends OptionPaneUI {
             return button;
         }
 
+        @SuppressWarnings("serial") // Superclass is not serializable across versions
         private static class ConstrainedButton extends JButton {
             int minimumWidth;
 

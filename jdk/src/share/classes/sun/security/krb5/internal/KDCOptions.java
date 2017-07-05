@@ -299,14 +299,14 @@ public class KDCOptions extends KerberosFlags {
             if ((options & KDC_OPT_RENEWABLE_OK) == KDC_OPT_RENEWABLE_OK) {
                 set(RENEWABLE_OK, true);
             } else {
-                if (config.getBooleanValue("libdefaults", "renewable")) {
+                if (config.getBooleanObject("libdefaults", "renewable") == Boolean.TRUE) {
                     set(RENEWABLE_OK, true);
                 }
             }
             if ((options & KDC_OPT_PROXIABLE) == KDC_OPT_PROXIABLE) {
                 set(PROXIABLE, true);
             } else {
-                if (config.getBooleanValue("libdefaults", "proxiable")) {
+                if (config.getBooleanObject("libdefaults", "proxiable") == Boolean.TRUE) {
                     set(PROXIABLE, true);
                 }
             }
@@ -314,7 +314,7 @@ public class KDCOptions extends KerberosFlags {
             if ((options & KDC_OPT_FORWARDABLE) == KDC_OPT_FORWARDABLE) {
                 set(FORWARDABLE, true);
             } else {
-                if (config.getBooleanValue("libdefaults", "forwardable")) {
+                if (config.getBooleanObject("libdefaults", "forwardable") == Boolean.TRUE) {
                     set(FORWARDABLE, true);
                 }
             }

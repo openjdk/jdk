@@ -53,7 +53,7 @@ class AssignOpExpression extends BinaryAssignExpression {
      * Select the type
      *
      */
-
+    @SuppressWarnings("fallthrough")
     final void selectType(Environment env, Context ctx, int tm) {
         Type rtype = null;      // special conversion type for RHS
         switch(op) {

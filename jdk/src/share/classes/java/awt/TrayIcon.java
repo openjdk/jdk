@@ -231,7 +231,7 @@ public class TrayIcon {
     /**
      * Sets the image for this <code>TrayIcon</code>.  The previous
      * tray icon image is discarded without calling the {@link
-     * java.awt.Image#flush} method &#151; you will need to call it
+     * java.awt.Image#flush} method &#8212; you will need to call it
      * manually.
      *
      * <p> If the image represents an animated image, it will be
@@ -368,7 +368,7 @@ public class TrayIcon {
      *
      * <p> If auto-size is <code>false</code>, and the image size
      * doesn't match the tray icon space, the image is painted as-is
-     * inside that space &#151; if larger than the allocated space, it will
+     * inside that space &#8212; if larger than the allocated space, it will
      * be cropped.
      *
      * <p> If auto-size is <code>true</code>, the image is stretched or shrunk to

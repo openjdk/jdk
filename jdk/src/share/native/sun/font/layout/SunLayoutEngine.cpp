@@ -56,50 +56,13 @@ static jfieldID gvdIndicesFID = 0;
 JNIEXPORT void JNICALL
 Java_sun_font_SunLayoutEngine_initGVIDs
     (JNIEnv *env, jclass cls) {
-    gvdClass = env->FindClass(gvdClassName);
-    if (!gvdClass) {
-        JNU_ThrowClassNotFoundException(env, gvdClassName);
-        return;
-    }
-    gvdClass = (jclass)env->NewGlobalRef(gvdClass);
-      if (!gvdClass) {
-        JNU_ThrowInternalError(env, "could not create global ref");
-        return;
-    }
-    gvdCountFID = env->GetFieldID(gvdClass, "_count", "I");
-    if (!gvdCountFID) {
-      gvdClass = 0;
-      JNU_ThrowNoSuchFieldException(env, "_count");
-      return;
-    }
-
-    gvdFlagsFID = env->GetFieldID(gvdClass, "_flags", "I");
-    if (!gvdFlagsFID) {
-      gvdClass = 0;
-      JNU_ThrowNoSuchFieldException(env, "_flags");
-      return;
-    }
-
-    gvdGlyphsFID = env->GetFieldID(gvdClass, "_glyphs", "[I");
-    if (!gvdGlyphsFID) {
-      gvdClass = 0;
-      JNU_ThrowNoSuchFieldException(env, "_glyphs");
-      return;
-    }
-
-    gvdPositionsFID = env->GetFieldID(gvdClass, "_positions", "[F");
-    if (!gvdPositionsFID) {
-      gvdClass = 0;
-      JNU_ThrowNoSuchFieldException(env, "_positions");
-      return;
-    }
-
+    CHECK_NULL(gvdClass = env->FindClass(gvdClassName));
+    CHECK_NULL(gvdClass = (jclass)env->NewGlobalRef(gvdClass));
+    CHECK_NULL(gvdCountFID = env->GetFieldID(gvdClass, "_count", "I"));
+    CHECK_NULL(gvdFlagsFID = env->GetFieldID(gvdClass, "_flags", "I"));
+    CHECK_NULL(gvdGlyphsFID = env->GetFieldID(gvdClass, "_glyphs", "[I"));
+    CHECK_NULL(gvdPositionsFID = env->GetFieldID(gvdClass, "_positions", "[F"));
     gvdIndicesFID = env->GetFieldID(gvdClass, "_indices", "[I");
-    if (!gvdIndicesFID) {
-      gvdClass = 0;
-      JNU_ThrowNoSuchFieldException(env, "_indices");
-      return;
-    }
 }
 
 int putGV(JNIEnv* env, jint gmask, jint baseIndex, jobject gvdata, const LayoutEngine* engine, int glyphCount) {
@@ -195,7 +158,7 @@ JNIEXPORT void JNICALL Java_sun_font_SunLayoutEngine_nativeLayout
   jchar* chars = buffer;
   if (len > 256) {
     size_t size = len * sizeof(jchar);
-    if (size / sizeof(jchar) != len) {
+    if (size / sizeof(jchar) != (size_t)len) {
       return;
     }
     chars = (jchar*)malloc(size);
@@ -220,8 +183,10 @@ JNIEXPORT void JNICALL Java_sun_font_SunLayoutEngine_nativeLayout
        env->SetIntField(gvdata, gvdCountFID, -1); // flag failure
    } else {
       if (putGV(env, gmask, baseIndex, gvdata, engine, glyphCount)) {
-        // !!! hmmm, could use current value in positions array of GVData...
-        putFloat(env, pt, x, y);
+          if (!(env->ExceptionCheck())) {
+              // !!! hmmm, could use current value in positions array of GVData...
+              putFloat(env, pt, x, y);
+          }
       }
    }
 

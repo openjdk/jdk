@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -63,13 +63,13 @@ public class TestInitialTenuringThreshold {
     // successful tests
     runWithThresholds(0, 10, false);
     runWithThresholds(5, 5, false);
+    runWithThresholds(8, 16, false);
     // failing tests
     runWithThresholds(10, 0, true);
     runWithThresholds(9, 8, true);
     runWithThresholds(-1, 8, true);
     runWithThresholds(8, -1, true);
-    runWithThresholds(8, 16, true);
     runWithThresholds(16, 8, true);
+    runWithThresholds(8, 17, true);
   }
 }
-
