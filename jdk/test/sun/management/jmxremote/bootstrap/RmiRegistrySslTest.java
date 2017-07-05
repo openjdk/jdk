@@ -39,13 +39,14 @@ import java.util.regex.Pattern;
 
 /**
  * @test
- * @library /lib/testlibrary
  * @bug 6228231
  * @summary Test that RMI registry uses SSL.
- * @modules jdk.management.agent
+ * @author Luis-Miguel Alventosa, Taras Ledkov
+ *
+ * @library /lib/testlibrary
+ *
  * @build jdk.testlibrary.* RmiRegistrySslTestApp
  * @run main/timeout=300 RmiRegistrySslTest
- * @author Luis-Miguel Alventosa, Taras Ledkov
  */
 public class RmiRegistrySslTest {
     private final String TEST_CLASS_PATH = System.getProperty("test.class.path");
