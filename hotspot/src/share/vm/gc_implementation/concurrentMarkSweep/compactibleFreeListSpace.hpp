@@ -172,6 +172,20 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // list of size "word_sz", and must now be decremented.
   void par_get_chunk_of_blocks(size_t word_sz, size_t n, AdaptiveFreeList<FreeChunk>* fl);
 
+  // Used by par_get_chunk_of_blocks() for the chunks from the
+  // indexed_free_lists.
+  bool par_get_chunk_of_blocks_IFL(size_t word_sz, size_t n, AdaptiveFreeList<FreeChunk>* fl);
+
+  // Used by par_get_chunk_of_blocks_dictionary() to get a chunk
+  // evenly splittable into "n" "word_sz" chunks.  Returns that
+  // evenly splittable chunk.  May split a larger chunk to get the
+  // evenly splittable chunk.
+  FreeChunk* get_n_way_chunk_to_split(size_t word_sz, size_t n);
+
+  // Used by par_get_chunk_of_blocks() for the chunks from the
+  // dictionary.
+  void par_get_chunk_of_blocks_dictionary(size_t word_sz, size_t n, AdaptiveFreeList<FreeChunk>* fl);
+
   // Allocation helper functions
   // Allocate using a strategy that takes from the indexed free lists
   // first.  This allocation strategy assumes a companion sweeping

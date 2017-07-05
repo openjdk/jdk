@@ -28,8 +28,9 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include Modules.gmk
 include JavaCompilation.gmk
-include SetupJava.gmk
+include SetupJavaCompilers.gmk
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , CompileJavaModules.gmk))
@@ -396,36 +397,6 @@ jdk.dev_CLEAN_FILES := $(wildcard \
         com/sun/tools/script/shell))
 
 jdk.dev_COPY := .js oqlhelp.html .txt
-
-################################################################################
-
-ifneq ($(OPENJDK_TARGET_OS), solaris)
-  jdk.attach_EXCLUDE_FILES += \
-      sun/tools/attach/SolarisAttachProvider.java \
-      sun/tools/attach/SolarisVirtualMachine.java \
-      #
-endif
-
-ifneq ($(OPENJDK_TARGET_OS), linux)
-  jdk.attach_EXCLUDE_FILES += \
-      sun/tools/attach/LinuxAttachProvider.java \
-      sun/tools/attach/LinuxVirtualMachine.java \
-      #
-endif
-
-ifneq ($(OPENJDK_TARGET_OS), macosx)
-  jdk.attach_EXCLUDE_FILES += \
-      sun/tools/attach/BsdAttachProvider.java \
-      sun/tools/attach/BsdVirtualMachine.java \
-      #
-endif
-
-ifneq ($(OPENJDK_TARGET_OS),aix)
-  jdk.attach_EXCLUDE_FILES += \
-      sun/tools/attach/AixAttachProvider.java \
-      sun/tools/attach/AixVirtualMachine.java \
-      #
-endif
 
 ################################################################################
 

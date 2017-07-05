@@ -38,7 +38,10 @@ class MetaspaceShared : AllStatic {
   // CDS support
   static ReservedSpace* _shared_rs;
   static int _max_alignment;
-
+  static bool _link_classes_made_progress;
+  static bool _check_classes_made_progress;
+  static bool _has_error_classes;
+  static bool _archive_loading_failed;
  public:
   enum {
     vtbl_list_size = 17, // number of entries in the shared space vtable list.
@@ -67,7 +70,11 @@ class MetaspaceShared : AllStatic {
     NOT_CDS(return 0);
   }
 
+  static void prepare_for_dumping() NOT_CDS_RETURN;
   static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
+  static int preload_and_dump(const char * class_list_path,
+                              GrowableArray<Klass*>* class_promote_order,
+                              TRAPS) NOT_CDS_RETURN;
 
   static ReservedSpace* shared_rs() {
     CDS_ONLY(return _shared_rs);
@@ -78,6 +85,9 @@ class MetaspaceShared : AllStatic {
     CDS_ONLY(_shared_rs = rs;)
   }
 
+  static void set_archive_loading_failed() {
+    _archive_loading_failed = true;
+  }
   static bool map_shared_spaces(FileMapInfo* mapinfo) NOT_CDS_RETURN_(false);
   static void initialize_shared_spaces() NOT_CDS_RETURN;
 
@@ -97,5 +107,10 @@ class MetaspaceShared : AllStatic {
   static bool remap_shared_readonly_as_readwrite() NOT_CDS_RETURN_(true);
 
   static void print_shared_spaces();
+
+  static bool try_link_class(InstanceKlass* ik, TRAPS);
+  static void link_one_shared_class(Klass* obj, TRAPS);
+  static void check_one_shared_class(Klass* obj);
+  static void link_and_cleanup_shared_classes(TRAPS);
 };
 #endif // SHARE_VM_MEMORY_METASPACE_SHARED_HPP

@@ -40,6 +40,7 @@ class AddPNode;
 class AliasInfo;
 class AllocateArrayNode;
 class AllocateNode;
+class ArrayCopyNode;
 class Block;
 class BoolNode;
 class BoxLockNode;
@@ -561,6 +562,7 @@ public:
           DEFINE_CLASS_ID(AbstractLock,     Call, 3)
             DEFINE_CLASS_ID(Lock,             AbstractLock, 0)
             DEFINE_CLASS_ID(Unlock,           AbstractLock, 1)
+          DEFINE_CLASS_ID(ArrayCopy,        Call, 4)
       DEFINE_CLASS_ID(MultiBranch, Multi, 1)
         DEFINE_CLASS_ID(PCTable,     MultiBranch, 0)
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
@@ -707,6 +709,7 @@ public:
   DEFINE_CLASS_QUERY(AddP)
   DEFINE_CLASS_QUERY(Allocate)
   DEFINE_CLASS_QUERY(AllocateArray)
+  DEFINE_CLASS_QUERY(ArrayCopy)
   DEFINE_CLASS_QUERY(Bool)
   DEFINE_CLASS_QUERY(BoxLock)
   DEFINE_CLASS_QUERY(Call)

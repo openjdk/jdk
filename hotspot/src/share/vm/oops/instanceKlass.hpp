@@ -980,6 +980,13 @@ class InstanceKlass: public Klass {
 
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
+public:
+  void set_in_error_state() {
+    assert(DumpSharedSpaces, "only call this when dumping archive");
+    _init_state = initialization_error;
+  }
+  bool check_sharing_error_state();
+
 private:
   // initialization state
 #ifdef ASSERT
@@ -1038,7 +1045,7 @@ private:
 public:
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
-  virtual void restore_unshareable_info(TRAPS);
+  virtual void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
 
   // jvm support
   jint compute_modifier_flags(TRAPS) const;

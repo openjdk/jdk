@@ -46,6 +46,8 @@ class ObjectWithSomeRefs {
 }
 
 class ReclaimRegionFast {
+    public static final long MAX_MILLIS_FOR_RUN = 50 * 1000; // The maximum runtime for the actual test.
+
     public static final int M = 1024*1024;
 
     public static LinkedList<Object> garbageList = new LinkedList<Object>();
@@ -83,7 +85,14 @@ class ReclaimRegionFast {
 
         Object ref_from_stack = large1;
 
+        long start_millis = System.currentTimeMillis();
+
         for (int i = 0; i < 20; i++) {
+            long current_millis = System.currentTimeMillis();
+            if ((current_millis - start_millis) > MAX_MILLIS_FOR_RUN) {
+              System.out.println("Finishing test because maximum runtime exceeded");
+              break;
+            }
             // A set of large objects that will be reclaimed eagerly - and hopefully marked.
             large1 = new int[M - 20];
             large2 = new int[M - 20];

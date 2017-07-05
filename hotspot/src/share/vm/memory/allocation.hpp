@@ -265,7 +265,8 @@ class MetaspaceObj {
   f(ConstantPool) \
   f(ConstantPoolCache) \
   f(Annotation) \
-  f(MethodCounters)
+  f(MethodCounters) \
+  f(Deallocated)
 
 #define METASPACE_OBJ_TYPE_DECLARE(name) name ## Type,
 #define METASPACE_OBJ_TYPE_NAME_CASE(name) case name ## Type: return #name;
