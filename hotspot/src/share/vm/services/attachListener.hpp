@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/macros.hpp"
 
 // The AttachListener thread services a queue of operations that are enqueued
 // by client tools. Each operation is identified by a name and has up to 3
@@ -38,8 +39,6 @@
 // complets the result value and any result data is returned to the client
 // tool.
 
-#ifndef SERVICES_KERNEL
-
 class AttachOperation;
 
 typedef jint (*AttachOperationFunction)(AttachOperation* op, outputStream* out);
@@ -48,7 +47,6 @@ struct AttachOperationFunctionInfo {
   const char* name;
   AttachOperationFunction func;
 };
-#endif // SERVICES_KERNEL
 
 class AttachListener: AllStatic {
  public:

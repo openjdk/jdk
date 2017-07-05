@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "runtime/orderAccess.hpp"
 
 class BytecodeStream;
+class KlassSizeStats;
 
 // The MethodData object collects counts and other profile information
 // during zeroth-tier (interpretive) and first-tier execution.
@@ -1289,6 +1290,9 @@ public:
   // My size
   int size_in_bytes() const { return _size; }
   int size() const    { return align_object_size(align_size_up(_size, BytesPerWord)/BytesPerWord); }
+#if INCLUDE_SERVICES
+  void collect_statistics(KlassSizeStats *sz) const;
+#endif
 
   int      creation_mileage() const  { return _creation_mileage; }
   void set_creation_mileage(int x)   { _creation_mileage = x; }
@@ -1465,7 +1469,7 @@ public:
   void inc_decompile_count() {
     _nof_decompiles += 1;
     if (decompile_count() > (uint)PerMethodRecompilationCutoff) {
-      method()->set_not_compilable(CompLevel_full_optimization);
+      method()->set_not_compilable(CompLevel_full_optimization, true, "decompile_count > PerMethodRecompilationCutoff");
     }
   }
 

@@ -27,7 +27,9 @@
 
   // Expands to Parallel Scavenge and Parallel Old declarations
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+
+#if INCLUDE_ALL_GCS
 #define PARALLEL_GC_DECLS \
   virtual void oop_push_contents(PSPromotionManager* pm, oop obj);          \
   /* Parallel Old GC support                                                \
@@ -44,9 +46,9 @@
   virtual void oop_push_contents(PSPromotionManager* pm, oop obj) = 0;      \
   virtual void oop_follow_contents(ParCompactionManager* cm, oop obj) = 0;  \
   virtual int  oop_update_pointers(ParCompactionManager* cm, oop obj) = 0;
-#else  // SERIALGC
+#else  // INCLUDE_ALL_GCS
 #define PARALLEL_GC_DECLS
 #define PARALLEL_GC_DECLS_PV
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 #endif // SHARE_VM_OOPS_KLASSPS_HPP

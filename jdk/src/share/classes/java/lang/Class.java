@@ -29,12 +29,14 @@ import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Member;
 import java.lang.reflect.Field;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.AnnotatedType;
 import java.lang.ref.SoftReference;
 import java.io.InputStream;
 import java.io.ObjectStreamField;
@@ -2325,6 +2327,11 @@ public final
 
     // Annotations handling
     private native byte[] getRawAnnotations();
+    // Since 1.8
+    native byte[] getRawTypeAnnotations();
+    static byte[] getExecutableTypeAnnotationBytes(Executable ex) {
+        return getReflectionFactory().getExecutableTypeAnnotationBytes(ex);
+    }
 
     native ConstantPool getConstantPool();
 
@@ -3068,21 +3075,12 @@ public final
      * @throws NullPointerException {@inheritDoc}
      * @since 1.5
      */
+    @SuppressWarnings("unchecked")
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
         initAnnotationsIfNecessary();
-        return AnnotationSupport.getOneAnnotation(annotations, annotationClass);
-    }
-
-    /**
-     * @throws NullPointerException {@inheritDoc}
-     * @since 1.5
-     */
-    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
-        Objects.requireNonNull(annotationClass);
-
-        return getAnnotation(annotationClass) != null;
+        return (A) annotations.get(annotationClass);
     }
 
     /**
@@ -3101,18 +3099,19 @@ public final
      */
     public Annotation[] getAnnotations() {
         initAnnotationsIfNecessary();
-        return AnnotationSupport.unpackToArray(annotations);
+        return AnnotationParser.toArray(annotations);
     }
 
     /**
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */
+    @SuppressWarnings("unchecked")
     public <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
         initAnnotationsIfNecessary();
-        return AnnotationSupport.getOneAnnotation(declaredAnnotations, annotationClass);
+        return (A) declaredAnnotations.get(annotationClass);
     }
 
     /**
@@ -3131,17 +3130,7 @@ public final
      */
     public Annotation[] getDeclaredAnnotations()  {
         initAnnotationsIfNecessary();
-        return AnnotationSupport.unpackToArray(declaredAnnotations);
-    }
-
-    /** Returns one "directly" present annotation or null */
-    <A extends Annotation> A getDirectDeclaredAnnotation(Class<A> annotationClass) {
-        Objects.requireNonNull(annotationClass);
-
-        initAnnotationsIfNecessary();
-        @SuppressWarnings("unchecked") // TODO check safe
-        A ret = (A)declaredAnnotations.get(annotationClass);
-        return ret;
+        return AnnotationParser.toArray(declaredAnnotations);
     }
 
     // Annotations cache
@@ -3196,4 +3185,53 @@ public final
      * Maintained by the ClassValue class.
      */
     transient ClassValue.ClassValueMap classValueMap;
+
+    /**
+     * Returns an AnnotatedType object that represents the use of a type to specify
+     * the superclass of the entity represented by this Class. (The <em>use</em> of type
+     * Foo to specify the superclass in '... extends Foo' is distinct from the
+     * <em>declaration</em> of type Foo.)
+     *
+     * If this Class represents a class type whose declaration does not explicitly
+     * indicate an annotated superclass, the return value is null.
+     *
+     * If this Class represents either the Object class, an interface type, an
+     * array type, a primitive type, or void, the return value is null.
+     *
+     * @since 1.8
+     */
+    public AnnotatedType getAnnotatedSuperclass() {
+         return TypeAnnotationParser.buildAnnotatedSuperclass(getRawTypeAnnotations(), getConstantPool(), this);
+}
+
+    /**
+     * Returns an array of AnnotatedType objects that represent the use of types to
+     * specify superinterfaces of the entity represented by this Class. (The <em>use</em>
+     * of type Foo to specify a superinterface in '... implements Foo' is
+     * distinct from the <em>declaration</em> of type Foo.)
+     *
+     * If this Class represents a class, the return value is an array
+     * containing objects representing the uses of interface types to specify
+     * interfaces implemented by the class. The order of the objects in the
+     * array corresponds to the order of the interface types used in the
+     * 'implements' clause of the declaration of this Class.
+     *
+     * If this Class represents an interface, the return value is an array
+     * containing objects representing the uses of interface types to specify
+     * interfaces directly extended by the interface. The order of the objects in
+     * the array corresponds to the order of the interface types used in the
+     * 'extends' clause of the declaration of this Class.
+     *
+     * If this Class represents a class or interface whose declaration does not
+     * explicitly indicate any annotated superinterfaces, the return value is an
+     * array of length 0.
+     *
+     * If this Class represents either the Object class, an array type, a
+     * primitive type, or void, the return value is an array of length 0.
+     *
+     * @since 1.8
+     */
+    public AnnotatedType[] getAnnotatedInterfaces() {
+         return TypeAnnotationParser.buildAnnotatedInterfaces(getRawTypeAnnotations(), getConstantPool(), this);
+    }
 }

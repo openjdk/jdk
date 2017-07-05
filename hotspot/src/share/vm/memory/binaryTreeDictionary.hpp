@@ -43,6 +43,10 @@ template <class Chunk_t, template <class> class FreeList_t> class AscendTreeCens
 template <class Chunk_t, template <class> class FreeList_t> class DescendTreeCensusClosure;
 template <class Chunk_t, template <class> class FreeList_t> class DescendTreeSearchClosure;
 
+class FreeChunk;
+template <class> class AdaptiveFreeList;
+typedef BinaryTreeDictionary<FreeChunk, AdaptiveFreeList> AFLBinaryTreeDictionary;
+
 template <class Chunk_t, template <class> class FreeList_t>
 class TreeList : public FreeList_t<Chunk_t> {
   friend class TreeChunk<Chunk_t, FreeList_t>;

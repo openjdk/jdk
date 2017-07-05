@@ -40,6 +40,7 @@ MemType2Name MemBaseline::MemType2NameMap[NUMBER_OF_MEMORY_TYPE] = {
   {mtNMT,        "Memory Tracking"},
   {mtChunk,      "Pooled Free Chunks"},
   {mtClassShared,"Shared spaces for classes"},
+  {mtTest,       "Test"},
   {mtNone,       "Unknown"}  // It can happen when type tagging records are lagging
                              // behind
 };
