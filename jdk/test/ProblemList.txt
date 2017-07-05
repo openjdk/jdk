@@ -137,6 +137,10 @@ java/lang/Class/asSubclass/BasicUnit.java                       generic-all
 # 8015780
 java/lang/reflect/Method/GenericStringTest.java			generic-all
 
+# 8019500
+java/lang/management/MemoryMXBean/MemoryTestAllGC.sh            generic-all
+java/lang/management/MemoryMXBean/MemoryTest.java               generic-all
+
 ############################################################################
 
 # jdk_management

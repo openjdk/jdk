@@ -107,6 +107,10 @@ CXXFLAGS/BYFILE = $(CXXFLAGS/$@)
 # File specific flags
 CXXFLAGS += $(CXXFLAGS/BYFILE)
 
+# Large File Support
+ifneq ($(LP64), 1)
+CXXFLAGS/ostream.o += -D_FILE_OFFSET_BITS=64
+endif # ifneq ($(LP64), 1)
 
 # CFLAGS_WARN holds compiler options to suppress/enable warnings.
 CFLAGS += $(CFLAGS_WARN/BYFILE)
