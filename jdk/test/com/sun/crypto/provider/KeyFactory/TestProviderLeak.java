@@ -28,7 +28,12 @@
  *     LoginContext
  * @author Brad Wetmore
  *
- * @run main/othervm -Xmx2m TestProviderLeak
+ * @run main/othervm -Xmx2m -XX:OldSize=1m -XX:NewSize=512k TestProviderLeak
+ *
+ * The original test invocation is below, but had to use the above
+ * workaround for bug 6923123.
+ *
+ * run main/othervm -Xmx2m TestProviderLeak
  */
 
 /*

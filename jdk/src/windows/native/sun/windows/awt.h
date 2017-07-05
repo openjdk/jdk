@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,5 +232,123 @@ extern JavaVM *jvm;
 #define CHECK_IS_TOOLKIT_THREAD()
 #define CHECK_ISNOT_TOOLKIT_THREAD()
 #endif
+
+
+struct EnvHolder
+{
+    JavaVM *m_pVM;
+    JNIEnv *m_env;
+    bool    m_isOwner;
+    EnvHolder(
+        JavaVM *pVM,
+        LPCSTR name = "COM holder",
+        jint ver = JNI_VERSION_1_2)
+    : m_pVM(pVM),
+      m_env((JNIEnv *)JNU_GetEnv(pVM, ver)),
+      m_isOwner(false)
+    {
+        if (NULL == m_env) {
+            JavaVMAttachArgs attachArgs;
+            attachArgs.version  = ver;
+            attachArgs.name     = const_cast<char *>(name);
+            attachArgs.group    = NULL;
+            jint status = m_pVM->AttachCurrentThread(
+                (void**)&m_env,
+                &attachArgs);
+            m_isOwner = (NULL!=m_env);
+        }
+    }
+    ~EnvHolder() {
+        if (m_isOwner) {
+            m_pVM->DetachCurrentThread();
+        }
+    }
+    operator bool()  const { return NULL!=m_env; }
+    bool operator !()  const { return NULL==m_env; }
+    operator JNIEnv*() const { return m_env; }
+    JNIEnv* operator ->() const { return m_env; }
+};
+
+template <class T>
+class JLocalRef {
+    JNIEnv* m_env;
+    T m_localJRef;
+
+public:
+    JLocalRef(JNIEnv* env, T localJRef = NULL)
+    : m_env(env),
+    m_localJRef(localJRef)
+    {}
+    T Detach() {
+        T ret = m_localJRef;
+        m_localJRef = NULL;
+        return ret;
+    }
+    void Attach(T newValue) {
+        if (m_localJRef) {
+            m_env->DeleteLocalRef((jobject)m_localJRef);
+        }
+        m_localJRef = newValue;
+    }
+
+    operator T() { return m_localJRef; }
+    operator bool() { return NULL!=m_localJRef; }
+    bool operator !() { return NULL==m_localJRef; }
+
+    ~JLocalRef() {
+        if (m_localJRef) {
+            m_env->DeleteLocalRef((jobject)m_localJRef);
+        }
+    }
+};
+
+typedef JLocalRef<jobject> JLObject;
+typedef JLocalRef<jstring> JLString;
+typedef JLocalRef<jclass>  JLClass;
+
+/*
+ * Class to encapsulate the extraction of the java string contents
+ * into a buffer and the cleanup of the buffer
+ */
+ class JavaStringBuffer
+{
+protected:
+    LPWSTR m_pStr;
+    jsize  m_dwSize;
+
+public:
+    JavaStringBuffer(jsize cbTCharCount) {
+        m_dwSize = cbTCharCount;
+        m_pStr = (LPWSTR)safe_Malloc( (m_dwSize+1)*sizeof(WCHAR) );
+    }
+
+    JavaStringBuffer(JNIEnv *env, jstring text) {
+        if (NULL == text) {
+            m_pStr = L"";
+            m_dwSize = 0;
+        } else {
+            m_dwSize = env->GetStringLength(text);
+            m_pStr = (LPWSTR)safe_Malloc( (m_dwSize+1)*sizeof(WCHAR) );
+            env->GetStringRegion(text, 0, m_dwSize, reinterpret_cast<jchar *>(m_pStr));
+            m_pStr[m_dwSize] = 0;
+        }
+    }
+
+
+    ~JavaStringBuffer() {
+        free(m_pStr);
+    }
+
+    void Resize(jsize cbTCharCount) {
+        m_dwSize = cbTCharCount;
+        m_pStr = (LPWSTR)safe_Realloc(m_pStr, (m_dwSize+1)*sizeof(WCHAR) );
+    }
+    //we are in UNICODE now, so LPWSTR:=:LPTSTR
+    operator LPWSTR() { return m_pStr; }
+    operator LPARAM() { return (LPARAM)m_pStr; }
+    void *GetData() { return (void *)m_pStr; }
+    jsize  GetSize() { return m_dwSize; }
+};
+
 
 #endif  /* _AWT_H_ */
