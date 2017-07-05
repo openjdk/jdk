@@ -113,7 +113,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (_reads == NULL) {
       // Lazily create a module's reads list
-      _reads = new (ResourceObj::C_HEAP, mtClass)GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, true);
+      _reads = new (ResourceObj::C_HEAP, mtModule)GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, true);
     }
     _reads->append_if_missing(m);
   }
@@ -159,7 +159,7 @@ void ModuleEntry::delete_reads() {
 }
 
 ModuleEntryTable::ModuleEntryTable(int table_size)
-  : Hashtable<Symbol*, mtClass>(table_size, sizeof(ModuleEntry)), _unnamed_module(NULL)
+  : Hashtable<Symbol*, mtModule>(table_size, sizeof(ModuleEntry)), _unnamed_module(NULL)
 {
 }
 
@@ -228,7 +228,7 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
                                          Symbol* version, Symbol* location,
                                          ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(Module_lock);
-  ModuleEntry* entry = (ModuleEntry*) NEW_C_HEAP_ARRAY(char, entry_size(), mtClass);
+  ModuleEntry* entry = (ModuleEntry*) NEW_C_HEAP_ARRAY(char, entry_size(), mtModule);
 
   // Initialize everything BasicHashtable would
   entry->set_next(NULL);
@@ -259,7 +259,7 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
 
 void ModuleEntryTable::add_entry(int index, ModuleEntry* new_entry) {
   assert_locked_or_safepoint(Module_lock);
-  Hashtable<Symbol*, mtClass>::add_entry(index, (HashtableEntry<Symbol*, mtClass>*)new_entry);
+  Hashtable<Symbol*, mtModule>::add_entry(index, (HashtableEntry<Symbol*, mtModule>*)new_entry);
 }
 
 ModuleEntry* ModuleEntryTable::locked_create_entry_or_null(Handle module_handle,

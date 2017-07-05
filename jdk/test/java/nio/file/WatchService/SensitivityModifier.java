@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /* @test
  * @bug 4313887
- * @summary Sanity test for Sun-specific sensitivity level watch event modifier
- * @modules java.base/com.sun.nio.file
+ * @summary Sanity test for JDK-specific sensitivity level watch event modifier
+ * @modules jdk.unsupported
  * @library ..
  * @run main/timeout=240 SensitivityModifier
  * @key randomness

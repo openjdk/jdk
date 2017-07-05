@@ -23,21 +23,18 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.Pair;
 import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.TernaryOperator;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
-import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class TernaryOperatorFactory extends OperatorFactory {
-    protected final Type resultType;
-    protected final TypeKlass ownerClass;
+class TernaryOperatorFactory extends OperatorFactory<TernaryOperator> {
+    private final Type resultType;
+    private final TypeKlass ownerClass;
 
     TernaryOperatorFactory(long complexityLimit, int operatorLimit, TypeKlass ownerClass,
             Type resultType, boolean exceptionSafe, boolean noconsts) {
@@ -46,15 +43,7 @@ class TernaryOperatorFactory extends OperatorFactory {
         this.ownerClass = ownerClass;
     }
 
-    private Pair<Type, Type> generateTypes() {
-        Pair<Type, Type> types = new Pair<>(resultType, PseudoRandom.randomElement(
-                TypeUtil.getImplicitlyCastable(TypeList.getAll(), resultType)));
-        if (PseudoRandom.randomBoolean())
-            types = new Pair<>(types.second, types.first);
-        return types;
-    }
-
-    private IRNode generateProduction(Type conditionType, Type leftType, Type rightType) throws ProductionFailedException {
+    private TernaryOperator generateProduction() throws ProductionFailedException {
         int leftOpLimit = (int) (PseudoRandom.random() * 0.3 * (operatorLimit - 1));
         int rightOpLimit = (int) (PseudoRandom.random() * 0.3 * (operatorLimit - 1));
         int condOpLimit = operatorLimit - 1 - leftOpLimit - rightOpLimit;
@@ -69,7 +58,7 @@ class TernaryOperatorFactory extends OperatorFactory {
                 .setExceptionSafe(exceptionSafe);
         IRNode conditionalExp = builder.setComplexityLimit(condComplLimit)
                 .setOperatorLimit(condOpLimit)
-                .setResultType(conditionType)
+                .setResultType(TypeList.BOOLEAN)
                 .setNoConsts(noconsts)
                 .getExpressionFactory()
                 .produce();
@@ -79,7 +68,7 @@ class TernaryOperatorFactory extends OperatorFactory {
         try {
             leftExp = builder.setComplexityLimit(leftComplLimit)
                     .setOperatorLimit(leftOpLimit)
-                    .setResultType(leftType)
+                    .setResultType(resultType)
                     .setNoConsts(false)
                     .getExpressionFactory()
                     .produce();
@@ -91,7 +80,7 @@ class TernaryOperatorFactory extends OperatorFactory {
         try {
             rightExp = builder.setComplexityLimit(rightComplLimit)
                     .setOperatorLimit(rightOpLimit)
-                    .setResultType(rightType)
+                    .setResultType(resultType)
                     .setNoConsts(false)
                     .getExpressionFactory()
                     .produce();
@@ -102,16 +91,10 @@ class TernaryOperatorFactory extends OperatorFactory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
-        Pair<Type, Type> types;
-        try {
-            types = generateTypes();
-        } catch (RuntimeException ex) {
-            throw new ProductionFailedException(ex.getMessage());
-        }
+    public TernaryOperator produce() throws ProductionFailedException {
         try {
             SymbolTable.push();
-            IRNode result = generateProduction(new TypeBoolean(), types.first, types.second);
+            TernaryOperator result = generateProduction();
             SymbolTable.merge();
             return result;
         } catch (ProductionFailedException e) {

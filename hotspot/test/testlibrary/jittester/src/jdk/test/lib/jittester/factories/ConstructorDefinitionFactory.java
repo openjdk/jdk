@@ -28,15 +28,15 @@ import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Symbol;
 import jdk.test.lib.jittester.SymbolTable;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.functions.ArgumentDeclaration;
 import jdk.test.lib.jittester.functions.ConstructorDefinition;
 import jdk.test.lib.jittester.functions.FunctionInfo;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeVoid;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class ConstructorDefinitionFactory extends Factory {
+class ConstructorDefinitionFactory extends Factory<ConstructorDefinition> {
     private final long complexityLimit;
     private final int statementLimit;
     private final int operatorLimit;
@@ -55,7 +55,7 @@ class ConstructorDefinitionFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public ConstructorDefinition produce() throws ProductionFailedException {
         int argNumber = (int) (PseudoRandom.random() * memberFunctionsArgLimit);
         ArrayList<VariableInfo> argumentsInfo = new ArrayList<>(argNumber);
         ArrayList<ArgumentDeclaration> argumentsDeclaration = new ArrayList<>(argNumber);
@@ -90,7 +90,7 @@ class ConstructorDefinitionFactory extends Factory {
             }
             long blockComplLimit = (long) (PseudoRandom.random() * complexityLimit);
             try {
-                body = builder.setResultType(new TypeVoid())
+                body = builder.setResultType(TypeList.VOID)
                         .setComplexityLimit(blockComplLimit)
                         .setStatementLimit(statementLimit)
                         .setOperatorLimit(operatorLimit)

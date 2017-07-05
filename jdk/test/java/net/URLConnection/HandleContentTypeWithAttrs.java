@@ -32,6 +32,7 @@ import java.net.*;
 import java.io.*;
 import sun.net.www.content.text.*;
 import sun.net.www.MessageHeader;
+import static java.net.Proxy.NO_PROXY;
 
 public class HandleContentTypeWithAttrs {
 
@@ -39,13 +40,11 @@ public class HandleContentTypeWithAttrs {
 
     public HandleContentTypeWithAttrs (int port) throws Exception {
 
-        String localHostName = InetAddress.getLocalHost().getHostName();
-
         // Request echo.html from myHttpServer.
         // In the header of the response, we make
         // the content type have some attributes.
-        url = new URL("http://" + localHostName + ":" + port + "/echo.html");
-        URLConnection urlConn = url.openConnection();
+        url = new URL("http://localhost:" + port + "/echo.html");
+        URLConnection urlConn = url.openConnection(NO_PROXY);
 
         // the method getContent() calls the method
         // getContentHandler(). With the fix, the method

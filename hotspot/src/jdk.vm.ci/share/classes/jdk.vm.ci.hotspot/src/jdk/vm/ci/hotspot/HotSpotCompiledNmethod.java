@@ -25,7 +25,6 @@ package jdk.vm.ci.hotspot;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.DataPatch;
 import jdk.vm.ci.code.site.Site;
-import jdk.vm.ci.inittimer.SuppressFBWarnings;
 import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 

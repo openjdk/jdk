@@ -25,6 +25,7 @@
  * @bug 4474409
  * @author John O'Conner
  * @modules jdk.localedata
+ * @run main/othervm -Djava.locale.providers=COMPAT ThaiGov
  */
 
 import java.util.*;

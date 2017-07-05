@@ -350,7 +350,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         if (VM_Version::supports_sse2() && StubRoutines::dsin() != NULL) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dsin())));
         } else {
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dsin)));
+          __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dsin));
         }
         __ addptr(rsp, 2 * wordSize);
         break;
@@ -360,7 +360,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         if (VM_Version::supports_sse2() && StubRoutines::dcos() != NULL) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dcos())));
         } else {
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dcos)));
+          __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dcos));
         }
         __ addptr(rsp, 2 * wordSize);
         break;
@@ -370,7 +370,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         if (StubRoutines::dtan() != NULL) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtan())));
         } else {
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dtan)));
+          __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtan));
         }
         __ addptr(rsp, 2 * wordSize);
         break;
@@ -386,7 +386,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         if (StubRoutines::dlog() != NULL) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog())));
         } else {
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dlog)));
+          __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dlog));
         }
         __ addptr(rsp, 2 * wordSize);
         break;
@@ -396,7 +396,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         if (StubRoutines::dlog10() != NULL) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog10())));
         } else {
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10)));
+          __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10));
         }
         __ addptr(rsp, 2 * wordSize);
         break;
@@ -408,7 +408,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       if (StubRoutines::dpow() != NULL) {
         __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dpow())));
       } else {
-        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dpow)));
+        __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dpow));
       }
       __ addptr(rsp, 4 * wordSize);
       break;
@@ -418,7 +418,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       if (StubRoutines::dexp() != NULL) {
         __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dexp())));
       } else {
-        __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::dexp)));
+        __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dexp));
       }
       __ addptr(rsp, 2*wordSize);
     break;

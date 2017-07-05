@@ -38,13 +38,12 @@ import jdk.test.lib.jittester.loops.DoWhile;
 import jdk.test.lib.jittester.loops.For;
 import jdk.test.lib.jittester.loops.While;
 import jdk.test.lib.jittester.types.TypeKlass;
-import jdk.test.lib.jittester.types.TypeVoid;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class BlockFactory extends Factory {
+class BlockFactory extends Factory<Block> {
     private final Type returnType;
     private final long complexityLimit;
     private final int statementLimit;
@@ -74,7 +73,7 @@ class BlockFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public Block produce() throws ProductionFailedException {
         if (statementLimit > 0 && complexityLimit > 0) {
             List<IRNode> content = new ArrayList<>();
             int slimit = PseudoRandom.randomNotZero(statementLimit);
@@ -89,12 +88,12 @@ class BlockFactory extends Factory {
                     .setCanHaveContinues(canHaveContinues)
                     .setExceptionSafe(false)
                     .setNoConsts(false);
-            Rule rule;
+            Rule<IRNode> rule;
             SymbolTable.push();
             for (int i = 0; i < slimit && climit > 0; ) {
                 int subLimit = (int) (PseudoRandom.random() * (slimit - i - 1));
                 builder.setComplexityLimit((long) (PseudoRandom.random() * climit));
-                rule = new Rule("block");
+                rule = new Rule<>("block");
                 rule.add("statement", builder.getStatementFactory(), 5);
                 if (!ProductionParams.disableVarsInBlock.value()) {
                     rule.add("decl", builder.setIsLocal(true).getDeclarationFactory());
@@ -131,14 +130,14 @@ class BlockFactory extends Factory {
                 }
             }
             // Ok, if the block can end with break and continue. Generate the appropriate productions.
-            rule = new Rule("block_ending");
+            rule = new Rule<>("block_ending");
             if (canHaveBreaks && !subBlock) {
                 rule.add("break", builder.getBreakFactory());
             }
             if (canHaveContinues && !subBlock) {
                 rule.add("continue", builder.getContinueFactory());
             }
-            if (canHaveReturn && !subBlock && !returnType.equals(new TypeVoid())) {
+            if (canHaveReturn && !subBlock && !returnType.equals(TypeList.VOID)) {
                 rule.add("return", builder.setComplexityLimit(climit).getReturnFactory());
             }
             if (canHaveThrow && !subBlock) {
@@ -166,7 +165,7 @@ class BlockFactory extends Factory {
         throw new ProductionFailedException();
     }
 
-    private void addControlFlowDeviation(Rule rule, IRNodeBuilder builder) {
+    private void addControlFlowDeviation(Rule<IRNode> rule, IRNodeBuilder builder) {
         if (!ProductionParams.disableIf.value()) {
             rule.add("if", builder.getIfFactory());
         }

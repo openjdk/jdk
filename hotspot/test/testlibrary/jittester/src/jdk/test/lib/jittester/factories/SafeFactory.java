@@ -27,14 +27,14 @@ import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
 
-public abstract class SafeFactory extends Factory {
-    protected abstract IRNode sproduce() throws ProductionFailedException;
+public abstract class SafeFactory<T extends IRNode> extends Factory<T> {
+    protected abstract T sproduce() throws ProductionFailedException;
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public T produce() throws ProductionFailedException {
         try {
             SymbolTable.push();
-            IRNode p = sproduce();
+            T p = sproduce();
             SymbolTable.merge();
             return p;
         } catch (ProductionFailedException e) {

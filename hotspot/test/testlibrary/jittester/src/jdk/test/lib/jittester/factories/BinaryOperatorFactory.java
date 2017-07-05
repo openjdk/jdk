@@ -33,7 +33,7 @@ import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-abstract class BinaryOperatorFactory extends OperatorFactory {
+abstract class BinaryOperatorFactory extends OperatorFactory<BinaryOperator> {
     protected final OperatorKind opKind;
     protected final Type resultType;
     protected final Type ownerClass;
@@ -48,7 +48,7 @@ abstract class BinaryOperatorFactory extends OperatorFactory {
 
     protected abstract boolean isApplicable(Type resultType);
 
-    protected abstract Pair<Type, Type> generateTypes() throws ProductionFailedException;
+    protected abstract Pair<Type, Type> generateTypes();
 
     protected BinaryOperator generateProduction(Type leftType, Type rightType) throws ProductionFailedException {
         int leftOpLimit = (int) (PseudoRandom.random() * (operatorLimit - 1));
@@ -72,11 +72,11 @@ abstract class BinaryOperatorFactory extends OperatorFactory {
                 .setResultType(rightType)
                 .getExpressionFactory()
                 .produce();
-        return new BinaryOperator(opKind, leftExpr, rightExpr);
+        return new BinaryOperator(opKind, resultType, leftExpr, rightExpr);
     }
 
     @Override
-    public final IRNode produce() throws ProductionFailedException {
+    public final BinaryOperator produce() throws ProductionFailedException {
         if (!isApplicable(resultType)) {
             //avoid implicit use of resultType.toString()
             throw new ProductionFailedException("Type " + resultType.getName() + " is not applicable by " + getClass().getName());
@@ -91,7 +91,7 @@ abstract class BinaryOperatorFactory extends OperatorFactory {
 
         try {
             SymbolTable.push();
-            IRNode p = generateProduction(types.first, types.second);
+            BinaryOperator p = generateProduction(types.first, types.second);
             SymbolTable.merge();
             return p;
         } catch (ProductionFailedException e) {

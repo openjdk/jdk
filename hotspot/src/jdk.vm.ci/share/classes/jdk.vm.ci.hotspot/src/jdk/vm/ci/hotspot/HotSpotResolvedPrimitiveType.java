@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 /**
  * Implementation of {@link JavaType} for primitive HotSpot types.
  */
-public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType implements HotSpotProxified {
+public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType {
 
     private final JavaKind kind;
 
@@ -55,7 +55,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
      * @param kind the Kind to create the mirror for
      */
     public HotSpotResolvedPrimitiveType(JavaKind kind) {
-        super(String.valueOf(Character.toUpperCase(kind.getTypeChar())));
+        super(String.valueOf(kind.getTypeChar()));
         this.kind = kind;
         assert mirror().isPrimitive() : mirror() + " not a primitive type";
     }
@@ -81,11 +81,6 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     @Override
     public ResolvedJavaType getComponentType() {
         return null;
-    }
-
-    @Override
-    public ResolvedJavaType asExactType() {
-        return this;
     }
 
     @Override
@@ -204,6 +199,11 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
+    public Annotation[] getDeclaredAnnotations() {
+        return new Annotation[0];
+    }
+
+    @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         return null;
     }
@@ -261,11 +261,6 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     @Override
     public ResolvedJavaMethod getClassInitializer() {
         return null;
-    }
-
-    @Override
-    public boolean isTrustedInterfaceType() {
-        return false;
     }
 
     @Override

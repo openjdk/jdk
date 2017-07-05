@@ -40,6 +40,7 @@ dimentions, where N < M.
 public class ArrayExtraction extends IRNode {
     private final List<Byte> dims;
     public ArrayExtraction(IRNode array, ArrayList<IRNode> dimensionExpressions) {
+        super(array.getResultType());
         addChild(array);
         addChildren(dimensionExpressions);
         if (array instanceof ArrayCreation) {
@@ -56,7 +57,7 @@ public class ArrayExtraction extends IRNode {
             }
         } else if (array instanceof LocalVariable) {
             LocalVariable loc = (LocalVariable) array;
-            TypeArray type = (TypeArray) loc.get().type;
+            TypeArray type = (TypeArray) loc.getVariableInfo().type;
             dims = type.getDims();
             for (int i = dimensionExpressions.size(); i < type.dimensions; ++i) {
                 dims.add(type.getDims().get(i));

@@ -2392,10 +2392,9 @@ void CompileBroker::print_times(bool per_compiler, bool aggregate) {
 
 // Debugging output for failure
 void CompileBroker::print_last_compile() {
-  if ( _last_compile_level != CompLevel_none &&
-       compiler(_last_compile_level) != NULL &&
-       _last_method_compiled != NULL &&
-       _last_compile_type != no_compile) {
+  if (_last_compile_level != CompLevel_none &&
+      compiler(_last_compile_level) != NULL &&
+      _last_compile_type != no_compile) {
     if (_last_compile_type == osr_compile) {
       tty->print_cr("Last parse:  [osr]%d+++(%d) %s",
                     _osr_compilation_id, _last_compile_level, _last_method_compiled);

@@ -30,7 +30,7 @@ import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.Type;
-import jdk.test.lib.jittester.types.TypeBoolean;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
@@ -42,11 +42,11 @@ public class BinaryLogicOperatorFactory extends BinaryOperatorFactory {
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        return resultType.equals(new TypeBoolean());
+        return resultType.equals(TypeList.BOOLEAN);
     }
 
     @Override
-    protected Pair<Type, Type> generateTypes() throws ProductionFailedException {
+    protected Pair<Type, Type> generateTypes() {
         return new Pair<>(resultType, resultType);
     }
 
@@ -81,6 +81,6 @@ public class BinaryLogicOperatorFactory extends BinaryOperatorFactory {
         } finally {
             SymbolTable.pop();
         }
-        return new BinaryOperator(opKind, leftOperand, rightOperand);
+        return new BinaryOperator(opKind, resultType, leftOperand, rightOperand);
     }
 }

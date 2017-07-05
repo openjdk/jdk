@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,36 @@
 
 package jdk.test.resources.eu;
 
-import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.ResourceBundle.Control;
-import jdk.test.resources.MyControl;
+import java.util.Set;
+import java.util.spi.AbstractResourceBundleProvider;
+
 import jdk.test.resources.MyResourcesProvider;
 
-public class MyResourcesEU extends MyControl implements MyResourcesProvider {
+public class MyResourcesEU extends AbstractResourceBundleProvider
+    implements MyResourcesProvider
+{
+    private static final Set<Locale> euLocales = Set.of(Locale.GERMAN, Locale.FRENCH);
+
+    public MyResourcesEU() {
+        super("java.class");
+    }
+
+    @Override
+    public String toBundleName(String baseName, Locale locale) {
+        String bundleName = super.toBundleName(baseName, locale);
+        if (euLocales.contains(locale)) {
+            int index = bundleName.lastIndexOf('.');
+            return bundleName.substring(0, index + 1) + "eu" + bundleName.substring(index);
+        }
+        return bundleName;
+    }
+
     @Override
     public ResourceBundle getBundle(String baseName, Locale locale) {
-        if (isEULocale(locale)) {
-            try {
-                ClassLoader loader = MyResourcesEU.class.getClassLoader();
-                return newBundle(baseName, locale, "java.class", loader, false);
-            } catch (IllegalAccessException | InstantiationException | IOException e) {
-                System.out.println(e);
-            }
+        if (euLocales.contains(locale)) {
+            return super.getBundle(baseName, locale);
         }
         return null;
     }

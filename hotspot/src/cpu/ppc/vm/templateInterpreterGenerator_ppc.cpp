@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -562,10 +562,16 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   return NULL;
 }
 
-// Actually we should never reach here since we do stack overflow checks before pushing any frame.
 address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   address entry = __ pc();
-  __ unimplemented("generate_StackOverflowError_handler");
+
+  // Expression stack must be empty before entering the VM if an
+  // exception happened.
+  __ empty_expression_stack();
+  // Throw exception.
+  __ call_VM(noreg,
+             CAST_FROM_FN_PTR(address,
+                              InterpreterRuntime::throw_StackOverflowError));
   return entry;
 }
 
@@ -944,7 +950,7 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
 // The top most frame needs an abi space of 112 bytes. This space is needed,
 // since we call to c. The c function may spill their arguments to the caller
 // frame. When we call to java, we don't need these spill slots. In order to save
-// space on the stack, we resize the caller. However, java local reside in
+// space on the stack, we resize the caller. However, java locals reside in
 // the caller frame and the frame has to be increased. The frame_size for the
 // current frame was calculated based on max_stack as size for the expression
 // stack. At the call, just a part of the expression stack might be used.
@@ -1007,7 +1013,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   // parent_frame_resize = (locals-parameters) - (ESP-SP-ABI48) Rounded to frame alignment size.
   // Enlarge by locals-parameters (not in case of native_call), shrink by ESP-SP-ABI48.
 
-  {
+  if (!native_call) {
     // --------------------------------------------------------------------------
     // Stack overflow check
 
@@ -1047,7 +1053,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ addi(R26_monitor, R1_SP, - frame::ijava_state_size);
   __ addi(R15_esp, R26_monitor, - Interpreter::stackElementSize);
 
-  // Get mirror and store it in the frame as GC root for this Method*
+  // Get mirror and store it in the frame as GC root for this Method*.
   __ load_mirror(R12_scratch2, R19_method);
 
   // Store values.
@@ -1133,6 +1139,29 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   return entry;
 }
 
+void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
+  // Quick & dirty stack overflow checking: bang the stack & handle trap.
+  // Note that we do the banging after the frame is setup, since the exception
+  // handling code expects to find a valid interpreter frame on the stack.
+  // Doing the banging earlier fails if the caller frame is not an interpreter
+  // frame.
+  // (Also, the exception throwing code expects to unlock any synchronized
+  // method receiever, so do the banging after locking the receiver.)
+
+  // Bang each page in the shadow zone. We can't assume it's been done for
+  // an interpreter frame with greater than a page of locals, so each page
+  // needs to be checked.  Only true for non-native.
+  if (UseStackBanging) {
+    const int page_size = os::vm_page_size();
+    const int n_shadow_pages = ((int)JavaThread::stack_shadow_zone_size()) / page_size;
+    const int start_page = native_call ? n_shadow_pages : 1;
+    BLOCK_COMMENT("bang_stack_shadow_pages:");
+    for (int pages = start_page; pages <= n_shadow_pages; pages++) {
+      __ bang_stack_with_offset(pages*page_size);
+    }
+  }
+}
+
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the
 // native method than the typical interpreter frame setup.
@@ -1156,7 +1185,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // This is not a full-blown interpreter frame, but in particular, the
   // following registers are valid after this:
   // - R19_method
-  // - R18_local (points to start of argumuments to native function)
+  // - R18_local (points to start of arguments to native function)
   //
   //   abstract stack (grows up)
   //     [  IJava (caller of JNI callee)  ]  <-- ASP
@@ -1207,6 +1236,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     generate_counter_incr(&invocation_counter_overflow, NULL, NULL);
 
     BIND(continue_after_compile);
+  }
+
+  bang_stack_shadow_pages(true);
+
+  if (inc_counter) {
     // Reset the _do_not_unlock_if_synchronized flag.
     if (synchronized) {
       __ li(R0, 0);
@@ -1595,6 +1629,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   Register Rsize_of_parameters = R4_ARG2, // Written by generate_fixed_frame.
            Rsize_of_locals     = R5_ARG3; // Written by generate_fixed_frame.
 
+  // Does also a stack check to assure this frame fits on the stack.
   generate_fixed_frame(false, Rsize_of_parameters, Rsize_of_locals);
 
   // --------------------------------------------------------------------------
@@ -1651,7 +1686,11 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     }
 
     __ bind(profile_method_continue);
+  }
 
+  bang_stack_shadow_pages(false);
+
+  if (inc_counter || ProfileInterpreter) {
     // Reset the _do_not_unlock_if_synchronized flag.
     if (synchronized) {
       __ li(R0, 0);

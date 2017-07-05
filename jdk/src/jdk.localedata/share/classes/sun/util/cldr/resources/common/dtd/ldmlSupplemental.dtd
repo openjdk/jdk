@@ -1,0 +1,945 @@
+<!--
+Copyright © 2003-2015 Unicode, Inc. and others. All rights reserved. Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that (a) the above copyright notice(s) and this permission notice appear with all copies of the Data Files or Software, (b) both the above copyright notice(s) and this permission notice appear in associated documentation, and (c) there is clear notice in each modified Data File or in the Software as well as in the documentation associated with the Data File(s) or Software that the data or software has been modified.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+
+    $Revision: 12436 $
+-->
+
+<!ELEMENT supplementalData ( version, generation?, cldrVersion?, currencyData?, territoryContainment?, subdivisionContainment?, languageData?, territoryInfo?, postalCodeData?, calendarData?, calendarPreferenceData?, weekData?, timeData?, measurementData?, unitPreferenceData?, timezoneData?, characters?, transforms?, metadata?, codeMappings?, parentLocales?, likelySubtags?, metazoneInfo?, plurals?, telephoneCodeData?, numberingSystems?, bcp47KeywordMappings?, gender?, references?, languageMatching?, dayPeriodRuleSet*, metaZones?, primaryZones?, windowsZones?, coverageLevels?, idValidity?, rgScope? ) >
+
+<!ELEMENT version EMPTY >
+    <!--@METADATA-->
+<!ATTLIST version number CDATA #REQUIRED >
+    <!--@METADATA-->
+<!ATTLIST version cldrVersion CDATA #FIXED "29" >
+    <!--@VALUE-->
+<!ATTLIST version unicodeVersion CDATA #FIXED "8.0.0" >
+    <!--@VALUE-->
+
+<!ELEMENT generation EMPTY >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST generation date CDATA #REQUIRED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT cldrVersion EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST cldrVersion version CDATA #REQUIRED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT currencyData ( fractions*, region+ ) >
+<!ATTLIST currencyData draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT fractions ( info+ ) >
+<!ATTLIST fractions draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT info EMPTY >
+<!ATTLIST info iso4217 NMTOKEN #REQUIRED >
+<!ATTLIST info digits NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST info rounding NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST info cashDigits NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST info cashRounding NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST info draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST info references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT region ( currency* ) >
+<!ATTLIST region iso3166 NMTOKEN #REQUIRED >
+<!ATTLIST region draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT currency ( alternate* ) >
+<!ATTLIST currency before NMTOKEN #IMPLIED >
+    <!-- use from and to instead. -->
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST currency from NMTOKEN #IMPLIED >
+<!ATTLIST currency to NMTOKEN #IMPLIED >
+<!ATTLIST currency iso4217 NMTOKEN #REQUIRED >
+<!ATTLIST currency digits NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST currency rounding NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST currency cashRounding NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST currency tender (true | false) #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST currency draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST currency references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT alternate EMPTY >
+    <!-- use from and to instead. -->
+    <!--@DEPRECATED-->
+<!ATTLIST alternate iso4217 NMTOKEN #REQUIRED >
+    <!--@DEPRECATED-->
+
+<!ELEMENT territoryContainment ( group* ) >
+
+<!ELEMENT group EMPTY >
+<!ATTLIST group type NMTOKEN #REQUIRED >
+<!ATTLIST group contains NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST group grouping (true | false) #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST group status (deprecated | grouping) #IMPLIED >
+<!ATTLIST group draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST group references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT subdivisionContainment ( subgroup* ) >
+
+<!ELEMENT subgroup EMPTY >
+<!ATTLIST subgroup type NMTOKEN #REQUIRED >
+<!ATTLIST subgroup subtype NMTOKEN #IMPLIED >
+<!ATTLIST subgroup contains NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT languageData ( language* ) >
+
+<!ELEMENT language EMPTY >
+<!ATTLIST language type NMTOKEN #REQUIRED >
+<!ATTLIST language scripts NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST language territories NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST language variants NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST language draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST language references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST language alt NMTOKENS #IMPLIED >
+
+<!ELEMENT territoryInfo ( territory* ) >
+<!ATTLIST territoryInfo draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST territoryInfo references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST territoryInfo alt NMTOKENS #IMPLIED >
+
+<!ELEMENT territory ( languagePopulation* ) >
+<!ATTLIST territory type NMTOKEN #REQUIRED >
+<!ATTLIST territory gdp NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST territory literacyPercent NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST territory population NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST territory draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST territory references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST territory alt NMTOKENS #IMPLIED >
+
+<!ELEMENT languagePopulation EMPTY >
+<!ATTLIST languagePopulation type NMTOKEN #REQUIRED >
+<!ATTLIST languagePopulation writingPercent NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST languagePopulation populationPercent NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST languagePopulation officialStatus (de_facto_official | official | official_regional | official_minority) #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST languagePopulation draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST languagePopulation references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST languagePopulation alt NMTOKENS #IMPLIED >
+
+<!ELEMENT postalCodeData ( postCodeRegex* ) >
+    <!--@DEPRECATED-->
+
+<!ELEMENT postCodeRegex ( #PCDATA ) >
+    <!--@DEPRECATED-->
+<!ATTLIST postCodeRegex territoryId NMTOKEN #REQUIRED >
+    <!--@DEPRECATED-->
+<!ATTLIST postCodeRegex draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT calendarData ( calendar* ) >
+
+<!ELEMENT calendar ( calendarSystem?, eras? ) >
+<!ATTLIST calendar type NMTOKEN #REQUIRED >
+<!ATTLIST calendar territories NMTOKENS #IMPLIED >
+    <!-- use ordering attribute in calendarPreference element instead. -->
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST calendar draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST calendar references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST calendar alt NMTOKENS #IMPLIED >
+
+<!ELEMENT calendarSystem EMPTY >
+<!ATTLIST calendarSystem type (solar | lunar | lunisolar | other) #REQUIRED >
+<!ATTLIST calendarSystem references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT eras ( era* ) >
+<!ATTLIST eras references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT era EMPTY >
+<!ATTLIST era type NMTOKEN #REQUIRED >
+<!ATTLIST era start CDATA #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST era end CDATA #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT calendarPreferenceData ( calendarPreference* ) >
+
+<!ELEMENT calendarPreference EMPTY >
+<!ATTLIST calendarPreference territories NMTOKENS #REQUIRED >
+<!ATTLIST calendarPreference ordering NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+
+<!ELEMENT weekData ( minDays*, firstDay*, weekendStart*, weekendEnd* ) >
+
+<!ELEMENT minDays EMPTY >
+<!ATTLIST minDays count (1 | 2 | 3 | 4 | 5 | 6 | 7) #REQUIRED >
+<!ATTLIST minDays territories NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST minDays draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST minDays references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST minDays alt NMTOKENS #IMPLIED >
+
+<!ELEMENT firstDay EMPTY >
+<!ATTLIST firstDay day (sun | mon | tue | wed | thu | fri | sat) #REQUIRED >
+<!ATTLIST firstDay territories NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST firstDay draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST firstDay references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST firstDay alt NMTOKENS #IMPLIED >
+
+<!ELEMENT weekendStart EMPTY >
+<!ATTLIST weekendStart day (sun | mon | tue | wed | thu | fri | sat) #REQUIRED >
+<!ATTLIST weekendStart territories NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST weekendStart draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST weekendStart references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST weekendStart alt NMTOKENS #IMPLIED >
+
+<!ELEMENT weekendEnd EMPTY >
+<!ATTLIST weekendEnd day (sun | mon | tue | wed | thu | fri | sat) #REQUIRED >
+<!ATTLIST weekendEnd territories NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST weekendEnd draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST weekendEnd references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST weekendEnd alt NMTOKENS #IMPLIED >
+
+<!ELEMENT timeData ( hours* ) >
+
+<!ELEMENT hours EMPTY >
+<!ATTLIST hours allowed NMTOKENS #REQUIRED >
+<!ATTLIST hours preferred NMTOKEN #REQUIRED >
+<!ATTLIST hours regions NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST hours draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST hours references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT measurementData ( measurementSystem*, paperSize* ) >
+
+<!ELEMENT measurementSystem EMPTY >
+<!ATTLIST measurementSystem type (metric | US | UK) #REQUIRED >
+<!ATTLIST measurementSystem category (temperature) #IMPLIED >
+<!ATTLIST measurementSystem territories NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST measurementSystem draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST measurementSystem references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST measurementSystem alt NMTOKENS #IMPLIED >
+
+<!ELEMENT paperSize EMPTY >
+<!ATTLIST paperSize type (A4 | US-Letter) #REQUIRED >
+<!ATTLIST paperSize territories NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST paperSize draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST paperSize references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST paperSize alt NMTOKENS #IMPLIED >
+
+<!ELEMENT unitPreferenceData ( unitPreferences* ) >
+
+<!ELEMENT unitPreferences ( unitPreference* ) >
+<!ATTLIST unitPreferences category NMTOKEN #REQUIRED >
+<!ATTLIST unitPreferences usage NMTOKENS #REQUIRED >
+<!ATTLIST unitPreferences scope (small) #IMPLIED >
+
+<!ELEMENT unitPreference ( #PCDATA ) >
+<!ATTLIST unitPreference regions NMTOKENS #REQUIRED >
+<!ATTLIST unitPreference draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST unitPreference references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST unitPreference alt NMTOKENS #IMPLIED >
+
+<!ELEMENT timezoneData ( mapTimezones*, zoneFormatting* ) >
+    <!--@DEPRECATED-->
+
+<!ELEMENT mapTimezones ( mapZone* ) >
+<!ATTLIST mapTimezones type NMTOKEN #IMPLIED >
+<!ATTLIST mapTimezones otherVersion CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST mapTimezones typeVersion CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST mapTimezones references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT mapZone EMPTY >
+<!ATTLIST mapZone type CDATA #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST mapZone other CDATA #REQUIRED >
+<!ATTLIST mapZone territory CDATA #IMPLIED >
+<!ATTLIST mapZone references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT zoneFormatting ( zoneItem* ) >
+    <!--@DEPRECATED-->
+<!ATTLIST zoneFormatting multizone NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST zoneFormatting tzidVersion CDATA #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST zoneFormatting references CDATA #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT zoneItem EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST zoneItem type CDATA #REQUIRED >
+    <!--@DEPRECATED-->
+<!ATTLIST zoneItem territory NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST zoneItem aliases CDATA #IMPLIED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST zoneItem references CDATA #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT characters ( character-fallback* ) >
+<!ATTLIST characters draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT character-fallback ( character* ) >
+
+<!ELEMENT character ( substitute* ) >
+<!ATTLIST character value CDATA #REQUIRED >
+<!ATTLIST character draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST character standard CDATA #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST character references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST character alt NMTOKENS #IMPLIED >
+
+<!ELEMENT substitute ( #PCDATA ) >
+    <!--@ORDERED-->
+<!ATTLIST substitute draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST substitute standard CDATA #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST substitute references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST substitute alt NMTOKENS #IMPLIED >
+
+<!ELEMENT transforms ( transform* ) >
+
+<!ELEMENT transform ( ( comment | tRule )* ) >
+<!ATTLIST transform source CDATA #IMPLIED >
+<!ATTLIST transform target CDATA #IMPLIED >
+<!ATTLIST transform variant CDATA #IMPLIED >
+<!ATTLIST transform direction (forward | backward | both) "both" >
+<!ATTLIST transform alias CDATA #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST transform backwardAlias CDATA #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST transform visibility (internal | external) "external" >
+    <!--@VALUE-->
+<!ATTLIST transform draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST transform references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST transform alt NMTOKENS #IMPLIED >
+
+<!ELEMENT comment ( #PCDATA ) >
+    <!--@ORDERED-->
+    <!--@METADATA-->
+
+<!ELEMENT tRule ( #PCDATA ) >
+    <!--@ORDERED-->
+
+<!ELEMENT metadata ( attributeOrder?, elementOrder?, serialElements?, suppress?, validity?, alias?, deprecated?, distinguishing?, blocking?, coverageAdditions?, skipDefaultLocale?, defaultContent? ) >
+<!ATTLIST metadata draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT attributeOrder ( #PCDATA ) >
+    <!--@DEPRECATED-->
+<!ATTLIST attributeOrder draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT elementOrder ( #PCDATA ) >
+    <!--@DEPRECATED-->
+<!ATTLIST elementOrder draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT serialElements ( #PCDATA ) >
+    <!--@METADATA-->
+<!ATTLIST serialElements draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+
+<!ELEMENT suppress ( attributes* ) >
+    <!--@METADATA-->
+<!ATTLIST suppress draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT attributes EMPTY >
+    <!--@ORDERED-->
+<!ATTLIST attributes element NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST attributes attribute NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST attributes attributeValue CDATA #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST attributes draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+
+<!ELEMENT validity ( variable*, attributeValues* ) >
+    <!--@METADATA-->
+<!ATTLIST validity draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT variable ( #PCDATA ) >
+    <!--@ORDERED-->
+<!ATTLIST variable type NMTOKEN #IMPLIED >
+<!ATTLIST variable id CDATA #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST variable draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+
+<!ELEMENT attributeValues ( #PCDATA ) >
+    <!--@ORDERED-->
+<!ATTLIST attributeValues dtds NMTOKEN #IMPLIED >
+<!ATTLIST attributeValues type NMTOKEN #IMPLIED >
+<!ATTLIST attributeValues elements NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST attributeValues attributes NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST attributeValues order NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST attributeValues draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+
+<!ELEMENT alias ( languageAlias*, scriptAlias*, territoryAlias*, subdivisionAlias*, variantAlias*, zoneAlias* ) >
+<!ATTLIST alias draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT languageAlias EMPTY >
+<!ATTLIST languageAlias type NMTOKEN #REQUIRED >
+<!ATTLIST languageAlias replacement NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST languageAlias reason (deprecated | overlong | macrolanguage | legacy | bibliographic) #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT scriptAlias EMPTY >
+<!ATTLIST scriptAlias type NMTOKEN #REQUIRED >
+<!ATTLIST scriptAlias replacement NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST scriptAlias reason (deprecated | overlong) #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT territoryAlias EMPTY >
+<!ATTLIST territoryAlias type NMTOKEN #REQUIRED >
+<!ATTLIST territoryAlias replacement NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST territoryAlias reason (deprecated | overlong) #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT subdivisionAlias EMPTY >
+<!ATTLIST subdivisionAlias type NMTOKEN #REQUIRED >
+<!ATTLIST subdivisionAlias replacement NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST subdivisionAlias reason (deprecated | overlong) #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT variantAlias EMPTY >
+<!ATTLIST variantAlias type NMTOKEN #REQUIRED >
+<!ATTLIST variantAlias replacement NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST variantAlias reason (deprecated | overlong) #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT zoneAlias EMPTY >
+<!ATTLIST zoneAlias type CDATA #REQUIRED >
+<!ATTLIST zoneAlias replacement CDATA #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST zoneAlias reason (deprecated | overlong) #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT deprecated ( deprecatedItems* ) >
+<!ATTLIST deprecated draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT deprecatedItems EMPTY >
+<!ATTLIST deprecatedItems type (standard | supplemental | ldml | supplementalData | ldmlBCP47) #IMPLIED >
+    <!--@DEPRECATED:standard, supplemental-->
+<!ATTLIST deprecatedItems elements NMTOKENS #IMPLIED >
+<!ATTLIST deprecatedItems attributes NMTOKENS #IMPLIED >
+<!ATTLIST deprecatedItems values CDATA #IMPLIED >
+<!ATTLIST deprecatedItems draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+
+<!ELEMENT distinguishing ( distinguishingItems* ) >
+    <!--@METADATA-->
+<!ATTLIST distinguishing draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT distinguishingItems EMPTY >
+<!ATTLIST distinguishingItems exclude (true | false) #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST distinguishingItems elements NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST distinguishingItems attributes NMTOKENS #IMPLIED >
+<!ATTLIST distinguishingItems draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT blocking ( blockingItems* ) >
+    <!--@METADATA-->
+<!ATTLIST blocking draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT blockingItems EMPTY >
+<!ATTLIST blockingItems elements NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST blockingItems draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT coverageAdditions ( languageCoverage*, scriptCoverage*, territoryCoverage*, currencyCoverage*, timezoneCoverage* ) >
+    <!--@DEPRECATED-->
+<!ATTLIST coverageAdditions draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT languageCoverage EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST languageCoverage type NMTOKEN #IMPLIED >
+    <!--@DEPRECATED-->
+<!ATTLIST languageCoverage values NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST languageCoverage draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT scriptCoverage EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST scriptCoverage type NMTOKEN #IMPLIED >
+    <!--@DEPRECATED-->
+<!ATTLIST scriptCoverage values NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST scriptCoverage draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT territoryCoverage EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST territoryCoverage type NMTOKEN #IMPLIED >
+    <!--@DEPRECATED-->
+<!ATTLIST territoryCoverage values NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST territoryCoverage draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT currencyCoverage EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST currencyCoverage type NMTOKEN #IMPLIED >
+    <!--@DEPRECATED-->
+<!ATTLIST currencyCoverage values NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST currencyCoverage draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT timezoneCoverage EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST timezoneCoverage type NMTOKEN #IMPLIED >
+    <!--@DEPRECATED-->
+<!ATTLIST timezoneCoverage values CDATA #IMPLIED >
+    <!-- would be NMTOKENS, but needs to allow / -->
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST timezoneCoverage draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT skipDefaultLocale EMPTY >
+<!ATTLIST skipDefaultLocale services NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT defaultContent EMPTY >
+<!ATTLIST defaultContent locales NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT codeMappings ( languageCodes*, territoryCodes*, currencyCodes* ) >
+
+<!ELEMENT languageCodes EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST languageCodes type NMTOKEN #REQUIRED >
+    <!--@DEPRECATED-->
+<!ATTLIST languageCodes alpha3 NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT territoryCodes EMPTY >
+<!ATTLIST territoryCodes type NMTOKEN #REQUIRED >
+<!ATTLIST territoryCodes numeric NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST territoryCodes alpha3 NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST territoryCodes fips10 NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST territoryCodes internet NMTOKENS #IMPLIED >
+    <!--@VALUE-->
+
+<!ELEMENT currencyCodes EMPTY >
+<!ATTLIST currencyCodes type NMTOKEN #REQUIRED >
+<!ATTLIST currencyCodes numeric NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+
+<!-- # Parent locales -->
+
+<!ELEMENT parentLocales ( parentLocale* ) >
+
+<!ELEMENT parentLocale EMPTY >
+<!ATTLIST parentLocale parent NMTOKEN #REQUIRED >
+<!ATTLIST parentLocale locales NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+
+<!ELEMENT likelySubtags ( likelySubtag* ) >
+
+<!ELEMENT likelySubtag EMPTY >
+<!ATTLIST likelySubtag from NMTOKEN #REQUIRED >
+<!ATTLIST likelySubtag to NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+
+<!ELEMENT metazoneInfo ( timezone* ) >
+
+<!ELEMENT timezone ( usesMetazone* ) >
+<!ATTLIST timezone type CDATA #REQUIRED >
+
+<!ELEMENT usesMetazone EMPTY >
+<!ATTLIST usesMetazone from CDATA #IMPLIED >
+<!ATTLIST usesMetazone to CDATA #IMPLIED >
+<!ATTLIST usesMetazone mzone NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+
+<!ELEMENT plurals ( pluralRules*, pluralRanges* ) >
+<!ATTLIST plurals type (ordinal | cardinal) #IMPLIED >
+    <!-- default is cardinal -->
+<!ATTLIST plurals draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST plurals references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT pluralRules ( pluralRule* ) >
+<!ATTLIST pluralRules locales NMTOKENS #REQUIRED >
+<!ATTLIST pluralRules draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST pluralRules references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT pluralRule ( #PCDATA ) >
+    <!--@ORDERED-->
+<!ATTLIST pluralRule count (zero | one | two | few | many | other) #REQUIRED >
+    <!-- 'other' is implicitly everything else -->
+<!ATTLIST pluralRule draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST pluralRule references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT pluralRanges ( pluralRange* ) >
+<!ATTLIST pluralRanges locales NMTOKENS #REQUIRED >
+<!ATTLIST pluralRanges draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST pluralRanges references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT pluralRange ( #PCDATA ) >
+<!ATTLIST pluralRange start (zero | one | two | few | many | other) #IMPLIED >
+    <!-- if missing, means *all* -->
+<!ATTLIST pluralRange end (zero | one | two | few | many | other) #IMPLIED >
+    <!-- if missing, means *all* -->
+<!ATTLIST pluralRange result (zero | one | two | few | many | other) #REQUIRED >
+    <!-- if a whole rule is missing, means *other* -->
+    <!--@VALUE-->
+<!ATTLIST pluralRange draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST pluralRange references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT telephoneCodeData ( codesByTerritory* ) >
+
+<!ELEMENT codesByTerritory ( telephoneCountryCode+ ) >
+<!ATTLIST codesByTerritory territory NMTOKEN #REQUIRED >
+<!ATTLIST codesByTerritory draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST codesByTerritory references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT telephoneCountryCode EMPTY >
+<!ATTLIST telephoneCountryCode code NMTOKEN #REQUIRED >
+<!ATTLIST telephoneCountryCode from NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST telephoneCountryCode to NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST telephoneCountryCode draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST telephoneCountryCode references CDATA #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST telephoneCountryCode alt NMTOKENS #IMPLIED >
+
+<!ELEMENT numberingSystems ( numberingSystem* ) >
+
+<!ELEMENT numberingSystem EMPTY >
+<!ATTLIST numberingSystem type (numeric | algorithmic) #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST numberingSystem id NMTOKEN #REQUIRED >
+<!ATTLIST numberingSystem radix NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST numberingSystem digits CDATA #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST numberingSystem rules CDATA #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST numberingSystem draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT bcp47KeywordMappings ( mapKeys?, mapTypes* ) >
+    <!--@DEPRECATED-->
+
+<!ELEMENT mapKeys ( keyMap* ) >
+    <!--@DEPRECATED-->
+
+<!ELEMENT keyMap EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST keyMap type NMTOKEN #REQUIRED >
+    <!--@DEPRECATED-->
+<!ATTLIST keyMap bcp47 NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+
+<!ELEMENT mapTypes ( typeMap* ) >
+    <!--@DEPRECATED-->
+<!ATTLIST mapTypes type NMTOKEN #REQUIRED >
+    <!--@DEPRECATED-->
+
+<!ELEMENT typeMap EMPTY >
+    <!--@DEPRECATED-->
+<!ATTLIST typeMap type CDATA #REQUIRED >
+    <!--@DEPRECATED-->
+<!ATTLIST typeMap bcp47 NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+
+<!-- # Gender List support -->
+
+<!ELEMENT gender ( personList+ ) >
+
+<!ELEMENT personList EMPTY >
+<!ATTLIST personList type (neutral | mixedNeutral | maleTaints) #REQUIRED >
+<!ATTLIST personList locales NMTOKENS #REQUIRED >
+    <!--@VALUE-->
+
+<!ELEMENT references ( reference* ) >
+    <!--@METADATA-->
+
+<!ELEMENT reference ( #PCDATA ) >
+    <!--@METADATA-->
+<!ATTLIST reference type NMTOKEN #REQUIRED >
+<!ATTLIST reference uri CDATA #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST reference draft (approved | contributed | provisional | unconfirmed | true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED:true, false-->
+<!ATTLIST reference standard (true | false) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST reference alt NMTOKENS #IMPLIED >
+
+<!ELEMENT languageMatching ( languageMatches* ) >
+
+<!ELEMENT languageMatches ( languageMatch* ) >
+<!ATTLIST languageMatches type NMTOKEN #REQUIRED >
+
+<!ELEMENT languageMatch EMPTY >
+    <!--@ORDERED-->
+<!ATTLIST languageMatch desired CDATA #REQUIRED >
+<!ATTLIST languageMatch oneway (true | false) #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST languageMatch percent NMTOKEN #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST languageMatch supported CDATA #REQUIRED >
+
+<!-- # Day Periods -->
+
+<!ELEMENT dayPeriodRuleSet ( dayPeriodRules* ) >
+<!ATTLIST dayPeriodRuleSet type NMTOKEN #IMPLIED >
+<!ATTLIST dayPeriodRuleSet draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST dayPeriodRuleSet references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT dayPeriodRules ( dayPeriodRule* ) >
+<!ATTLIST dayPeriodRules locales NMTOKENS #REQUIRED >
+<!ATTLIST dayPeriodRules draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+    <!--@DEPRECATED-->
+<!ATTLIST dayPeriodRules references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT dayPeriodRule EMPTY >
+<!ATTLIST dayPeriodRule type NMTOKEN #REQUIRED >
+<!ATTLIST dayPeriodRule at NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST dayPeriodRule after NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST dayPeriodRule before NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST dayPeriodRule from NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+<!ATTLIST dayPeriodRule to NMTOKEN #IMPLIED >
+    <!--@VALUE-->
+    <!--@DEPRECATED-->
+<!ATTLIST dayPeriodRule draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->
+<!ATTLIST dayPeriodRule references CDATA #IMPLIED >
+    <!--@METADATA-->
+
+<!ELEMENT metaZones ( metazoneInfo?, mapTimezones? ) >
+
+<!ELEMENT primaryZones ( primaryZone* ) >
+
+<!ELEMENT primaryZone ( #PCDATA ) >
+<!ATTLIST primaryZone iso3166 NMTOKEN #REQUIRED >
+
+<!-- # Time Zones -->
+
+<!ELEMENT windowsZones ( mapTimezones? ) >
+
+<!-- # Coverage levels -->
+
+<!ELEMENT coverageLevels ( approvalRequirements, coverageVariable*, coverageLevel* ) >
+    <!--@METADATA-->
+
+<!ELEMENT approvalRequirements ( approvalRequirement* ) >
+
+<!ELEMENT approvalRequirement EMPTY >
+<!ATTLIST approvalRequirement votes CDATA #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST approvalRequirement locales CDATA #REQUIRED >
+<!ATTLIST approvalRequirement paths CDATA #REQUIRED >
+
+<!ELEMENT coverageVariable EMPTY >
+    <!--@ORDERED-->
+<!ATTLIST coverageVariable key CDATA #REQUIRED >
+<!ATTLIST coverageVariable value CDATA #REQUIRED >
+    <!--@VALUE-->
+
+<!ELEMENT coverageLevel EMPTY >
+    <!--@ORDERED-->
+<!ATTLIST coverageLevel inLanguage CDATA #IMPLIED >
+<!ATTLIST coverageLevel inScript CDATA #IMPLIED >
+<!ATTLIST coverageLevel inTerritory CDATA #IMPLIED >
+<!ATTLIST coverageLevel value CDATA #REQUIRED >
+    <!--@VALUE-->
+<!ATTLIST coverageLevel match CDATA #REQUIRED >
+
+<!ELEMENT idValidity ( id* ) >
+
+<!ELEMENT id ( #PCDATA ) >
+<!ATTLIST id type NMTOKEN #REQUIRED >
+<!ATTLIST id idStatus NMTOKEN #REQUIRED >
+
+<!ELEMENT rgScope ( rgPath* ) >
+
+<!ELEMENT rgPath EMPTY >
+<!ATTLIST rgPath path CDATA #REQUIRED >
+<!ATTLIST rgPath draft (approved | contributed | provisional | unconfirmed) #IMPLIED >
+    <!--@METADATA-->

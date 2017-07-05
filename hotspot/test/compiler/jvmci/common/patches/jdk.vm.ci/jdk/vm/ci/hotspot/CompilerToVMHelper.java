@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,10 +205,6 @@ public class CompilerToVMHelper {
 
     public static long getLocalVariableTableStart(HotSpotResolvedJavaMethod method) {
         return CTVM.getLocalVariableTableStart((HotSpotResolvedJavaMethodImpl)method);
-    }
-
-    public static Object readUncompressedOop(long address) {
-        return CTVM.readUncompressedOop(address);
     }
 
     public static void doNotInlineOrCompile(HotSpotResolvedJavaMethod method) {

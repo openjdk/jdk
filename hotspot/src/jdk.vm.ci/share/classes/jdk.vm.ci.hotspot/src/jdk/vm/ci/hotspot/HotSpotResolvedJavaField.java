@@ -43,11 +43,4 @@ public interface HotSpotResolvedJavaField extends ResolvedJavaField {
      * Determines if this field should be treated as a constant.
      */
     boolean isStable();
-
-    /**
-     * Determines if this field should be considered constant if it has the default value for its
-     * type (e.g, 0, null, etc.). The result of this method is undefined if this field is not
-     * {@linkplain #isStable() stable}.
-     */
-    boolean isDefaultStable();
 }

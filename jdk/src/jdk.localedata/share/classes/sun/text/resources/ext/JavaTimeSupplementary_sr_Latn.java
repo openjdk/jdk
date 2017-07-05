@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -83,10 +83,10 @@ public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
             },
             { "QuarterNames",
                 new String[] {
-                    "Prvo tromese\u010dje",
-                    "Drugo tromese\u010dje",
-                    "Tre\u0107e tromese\u010dje",
-                    "\u010cetvrto tromese\u010dje",
+                    "prvi kvartal",
+                    "drugi kvartal",
+                    "tre\u0107i kvartal",
+                    "\u010detvrti kvartal",
                 }
             },
             { "calendarname.buddhist",
@@ -195,10 +195,16 @@ public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
             },
             { "islamic.QuarterNames",
                 new String[] {
-                    "Prvo tromese\u010dje",
-                    "Drugo tromese\u010dje",
-                    "Tre\u0107e tromese\u010dje",
-                    "\u010cetvrto tromese\u010dje",
+                    "prvi kvartal",
+                    "drugi kvartal",
+                    "tre\u0107i kvartal",
+                    "\u010detvrti kvartal",
+                }
+            },
+            { "islamic.abbreviated.AmPmMarkers",
+                new String[] {
+                    "pre podne",
+                    "po podne",
                 }
             },
             { "islamic.long.Eras",
@@ -233,7 +239,7 @@ public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
             },
             { "java.time.japanese.long.Eras",
                 new String[] {
-                    "Nove ere",
+                    "nove ere",
                     "Mei\u0111i",
                     "Tai\u0161o",
                     "\u0160ova",
@@ -251,8 +257,8 @@ public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
             },
             { "java.time.long.Eras",
                 new String[] {
-                    "Pre nove ere",
-                    "Nove ere",
+                    "pre nove ere",
+                    "nove ere",
                 }
             },
             { "java.time.short.Eras",
@@ -367,10 +373,16 @@ public class JavaTimeSupplementary_sr_Latn extends OpenListResourceBundle {
             },
             { "roc.QuarterNames",
                 new String[] {
-                    "Prvo tromese\u010dje",
-                    "Drugo tromese\u010dje",
-                    "Tre\u0107e tromese\u010dje",
-                    "\u010cetvrto tromese\u010dje",
+                    "prvi kvartal",
+                    "drugi kvartal",
+                    "tre\u0107i kvartal",
+                    "\u010detvrti kvartal",
+                }
+            },
+            { "roc.abbreviated.AmPmMarkers",
+                new String[] {
+                    "pre podne",
+                    "po podne",
                 }
             },
             { "roc.long.Eras",
