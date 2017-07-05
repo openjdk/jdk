@@ -87,6 +87,7 @@ import javax.accessibility.*;
  * @see JCheckBoxMenuItem
  * @see JRadioButtonMenuItem
  */
+@SuppressWarnings("serial")
 public class JMenuItem extends AbstractButton implements Accessible,MenuElement  {
 
     /**
@@ -829,6 +830,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJMenuItem extends AccessibleAbstractButton implements ChangeListener {
 
         private boolean isArmed = false;

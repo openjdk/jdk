@@ -75,6 +75,7 @@ import java.io.IOException;
  *
  * @author Jeff Dinkins
  */
+@SuppressWarnings("serial")
 public class JButton extends AbstractButton implements Accessible {
 
     /**
@@ -307,6 +308,7 @@ public class JButton extends AbstractButton implements Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial")
     protected class AccessibleJButton extends AccessibleAbstractButton {
 
         /**

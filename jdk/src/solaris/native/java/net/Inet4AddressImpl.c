@@ -367,11 +367,11 @@ ping4(JNIEnv *env, jint fd, struct sockaddr_in* him, jint timeout,
                  sizeof(struct sockaddr));
       if (n < 0 && errno != EINPROGRESS ) {
 #ifdef __linux__
-        if (errno != EINVAL)
+        if (errno != EINVAL && errno != EHOSTUNREACH)
           /*
            * On some Linuxes, when bound to the loopback interface, sendto
-           * will fail and errno will be set to EINVAL. When that happens,
-           * don't throw an exception, just return false.
+           * will fail and errno will be set to EINVAL or EHOSTUNREACH.
+           * When that happens, don't throw an exception, just return false.
            */
 #endif /*__linux__ */
           NET_ThrowNew(env, errno, "Can't send ICMP packet");
@@ -525,10 +525,11 @@ Java_java_net_Inet4AddressImpl_isReachable0(JNIEnv *env, jobject this,
         case EADDRNOTAVAIL: /* address is not available on  the  remote machine */
 #ifdef __linux__
         case EINVAL:
+        case EHOSTUNREACH:
           /*
            * On some Linuxes, when bound to the loopback interface, connect
-           * will fail and errno will be set to EINVAL. When that happens,
-           * don't throw an exception, just return false.
+           * will fail and errno will be set to EINVAL or EHOSTUNREACH.
+           * When that happens, don't throw an exception, just return false.
            */
 #endif /* __linux__ */
           close(fd);

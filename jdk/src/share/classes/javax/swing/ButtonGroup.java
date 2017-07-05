@@ -65,6 +65,7 @@ import java.io.Serializable;
  *
  * @author Jeff Dinkins
  */
+@SuppressWarnings("serial")
 public class ButtonGroup implements Serializable {
 
     // the list of buttons participating in this group

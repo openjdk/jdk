@@ -118,7 +118,7 @@ public class ThreadGroupReferenceImpl extends ObjectReferenceImpl
                                                   .process(vm, this);
                 if (local != null) {
                     local.kids = kids;
-                    if ((vm.traceFlags & vm.TRACE_OBJREFS) != 0) {
+                    if ((vm.traceFlags & VirtualMachine.TRACE_OBJREFS) != 0) {
                         vm.printTrace(description() +
                                       " temporarily caching children ");
                     }

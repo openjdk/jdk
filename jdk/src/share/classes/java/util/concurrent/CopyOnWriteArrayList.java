@@ -36,7 +36,6 @@
 package java.util.concurrent;
 import java.util.*;
 import java.util.concurrent.locks.*;
-import sun.misc.Unsafe;
 
 /**
  * A thread-safe variant of {@link java.util.ArrayList} in which all mutative
@@ -281,9 +280,11 @@ public class CopyOnWriteArrayList<E>
      */
     public Object clone() {
         try {
-            CopyOnWriteArrayList c = (CopyOnWriteArrayList)(super.clone());
-            c.resetLock();
-            return c;
+            @SuppressWarnings("unchecked")
+            CopyOnWriteArrayList<E> clone =
+                (CopyOnWriteArrayList<E>) super.clone();
+            clone.resetLock();
+            return clone;
         } catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
             throw new InternalError();
@@ -1330,7 +1331,7 @@ public class CopyOnWriteArrayList<E>
     static {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Class k = CopyOnWriteArrayList.class;
+            Class<?> k = CopyOnWriteArrayList.class;
             lockOffset = UNSAFE.objectFieldOffset
                 (k.getDeclaredField("lock"));
         } catch (Exception e) {

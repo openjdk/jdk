@@ -59,7 +59,7 @@ public class InternalEventHandler implements Runnable
                             ClassUnloadEvent cuEvent = (ClassUnloadEvent)event;
                             vm.removeReferenceType(cuEvent.classSignature());
 
-                            if ((vm.traceFlags & vm.TRACE_EVENTS) != 0) {
+                            if ((vm.traceFlags & VirtualMachine.TRACE_EVENTS) != 0) {
                                 vm.printTrace("Handled Unload Event for " +
                                               cuEvent.classSignature());
                             }
@@ -68,7 +68,7 @@ public class InternalEventHandler implements Runnable
                             ((ReferenceTypeImpl)cpEvent.referenceType())
                                                             .markPrepared();
 
-                            if ((vm.traceFlags & vm.TRACE_EVENTS) != 0) {
+                            if ((vm.traceFlags & VirtualMachine.TRACE_EVENTS) != 0) {
                                 vm.printTrace("Handled Prepare Event for " +
                                               cpEvent.referenceType().name());
                             }

@@ -24,25 +24,12 @@
  */
 package sun.awt.windows;
 
-import java.util.Vector;
-
 import java.awt.*;
 import java.awt.peer.*;
-import java.awt.image.ImageObserver;
-
-import java.awt.image.Raster;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferInt;
-import java.awt.image.BufferedImage;
-
-import java.awt.image.ColorModel;
-
-import sun.awt.image.ImageRepresentation;
-import sun.awt.image.IntegerComponentRaster;
-import sun.awt.image.ToolkitImage;
-import sun.awt.im.*;
-import sun.awt.Win32GraphicsDevice;
 import sun.awt.AWTAccessor;
+import sun.awt.im.InputMethodManager;
+import java.security.AccessController;
+import sun.security.action.GetPropertyAction;
 
 class WFramePeer extends WWindowPeer implements FramePeer {
 
@@ -71,9 +58,9 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     private native void clearMaximizedBounds();
 
     private static final boolean keepOnMinimize = "true".equals(
-        (String)java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction(
-                "sun.awt.keepWorkingSetOnMinimize")));
+        AccessController.doPrivileged(
+            new GetPropertyAction(
+            "sun.awt.keepWorkingSetOnMinimize")));
 
     public void setMaximizedBounds(Rectangle b) {
         if (b == null) {
