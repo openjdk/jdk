@@ -99,7 +99,6 @@ public class SynthViewportUI extends ViewportUI
             newStyle.installDefaults(context);
         }
         this.style = newStyle;
-        context.dispose();
     }
 
     /**
@@ -128,7 +127,6 @@ public class SynthViewportUI extends ViewportUI
     protected void uninstallDefaults(JComponent c) {
         SynthContext context = getContext(c, ENABLED);
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -168,7 +166,6 @@ public class SynthViewportUI extends ViewportUI
         context.getPainter().paintViewportBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -202,7 +199,6 @@ public class SynthViewportUI extends ViewportUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

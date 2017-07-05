@@ -24,44 +24,22 @@
 package java.net.http;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Implementation of HttpHeaders.
  */
-class HttpHeadersImpl implements HttpHeaders1 {
+class HttpHeadersImpl implements HttpHeaders {
 
-    private final HashMap<String,List<String>> headers;
-    private boolean isUnmodifiable = false;
+    private final TreeMap<String,List<String>> headers;
 
     public HttpHeadersImpl() {
-        headers = new HashMap<>();
-    }
-
-    /**
-     * Replace all List<String> in headers with unmodifiable Lists. Call
-     * this only after all headers are added. The headers HashMap
-     * is wrapped with an unmodifiable HashMap in map()
-     */
-    @Override
-    public void makeUnmodifiable() {
-        if (isUnmodifiable)
-            return;
-
-        Set<String> keys = new HashSet<>(headers.keySet());
-        for (String key : keys) {
-            List<String> values = headers.remove(key);
-            if (values != null) {
-                headers.put(key, Collections.unmodifiableList(values));
-            }
-        }
-        isUnmodifiable = true;
+        headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 
     @Override
@@ -88,7 +66,7 @@ class HttpHeadersImpl implements HttpHeaders1 {
 
     public HttpHeadersImpl deepCopy() {
         HttpHeadersImpl h1 = new HttpHeadersImpl();
-        HashMap<String,List<String>> headers1 = h1.headers;
+        TreeMap<String,List<String>> headers1 = h1.headers;
         Set<String> keys = headers.keySet();
         for (String key : keys) {
             List<String> vals = headers.get(key);
@@ -98,22 +76,13 @@ class HttpHeadersImpl implements HttpHeaders1 {
         return h1;
     }
 
-    private List<String> getOrCreate(String name) {
-        List<String> l = headers.get(name);
-        if (l == null) {
-            l = new LinkedList<>();
-            headers.put(name, l);
-        }
-        return l;
-    }
-
     void addHeader(String name, String value) {
-        List<String> l = getOrCreate(name);
-        l.add(value);
+        headers.computeIfAbsent(name, k -> new LinkedList<>())
+               .add(value);
     }
 
     void setHeader(String name, String value) {
-        List<String> l = getOrCreate(name);
+        List<String> l = headers.computeIfAbsent(name, k -> new LinkedList<>());
         l.clear();
         l.add(value);
     }
@@ -122,7 +91,7 @@ class HttpHeadersImpl implements HttpHeaders1 {
     public Optional<Long> firstValueAsLong(String name) {
         List<String> l = headers.get(name);
         if (l == null) {
-            return Optional.ofNullable(null);
+            return Optional.empty();
         } else {
             String v = l.get(0);
             Long lv = Long.parseLong(v);

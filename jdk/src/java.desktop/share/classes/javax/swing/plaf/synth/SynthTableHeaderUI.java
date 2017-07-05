@@ -85,7 +85,6 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     /**
@@ -109,7 +108,6 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
         SynthContext context = getContext(header, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -142,7 +140,6 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
         context.getPainter().paintTableHeaderBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -159,7 +156,6 @@ public class SynthTableHeaderUI extends BasicTableHeaderUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

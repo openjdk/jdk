@@ -31,6 +31,7 @@ import javax.swing.border.LineBorder;
 
 import com.sun.swingset3.DemoProperties;
 import com.sun.swingset3.demos.DemoUtilities;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * @author aim
@@ -145,8 +146,8 @@ public final class WindowDemo extends JPanel {
         }
     }
 
-    public static void main(String args[]) {
-        EventQueue.invokeLater(() -> {
+    public static void main(String args[]) throws InterruptedException, InvocationTargetException {
+        EventQueue.invokeAndWait(() -> {
             JFrame frame = new JFrame();
             WindowDemo demo = new WindowDemo();
             frame.add(demo);

@@ -109,7 +109,7 @@ void callback(DbusmenuMenuitem* mi, guint ts, jobject data) {
  * Signature: (Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XTaskbarPeer_init
-(JNIEnv *env, jclass cls, jstring jname) {
+(JNIEnv *env, jclass cls, jstring jname, jint version, jboolean verbose) {
     jclass clazz;
 
     jTaskbarCls = (*env)->NewGlobalRef(env, cls);
@@ -121,7 +121,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XTaskbarPeer_init
     CHECK_NULL_RETURN(
             jMenuItemGetLabel = (*env)->GetMethodID(env, clazz, "getLabel", "()Ljava/lang/String;"), JNI_FALSE);
 
-    if (gtk2_load(env) && unity_load()) {
+    if (gtk_load(env, version, verbose) && unity_load()) {
         const gchar* name = (*env)->GetStringUTFChars(env, jname, NULL);
         if (name) {
             entry = fp_unity_launcher_entry_get_for_desktop_file(name);
@@ -139,9 +139,9 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XTaskbarPeer_init
  */
 JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_runloop
 (JNIEnv *env, jclass cls) {
-    fp_gdk_threads_enter();
-    fp_gtk_main();
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_enter();
+    gtk->gtk_main();
+    gtk->gdk_threads_leave();
 }
 
 /*
@@ -151,14 +151,14 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_runloop
  */
 JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_setBadge
 (JNIEnv *env, jobject obj, jlong value, jboolean visible) {
-    fp_gdk_threads_enter();
+    gtk->gdk_threads_enter();
     fp_unity_launcher_entry_set_count(entry, value);
     fp_unity_launcher_entry_set_count_visible(entry, visible);
     DbusmenuMenuitem* m;
     if (m = fp_unity_launcher_entry_get_quicklist(entry)) {
         fp_unity_launcher_entry_set_quicklist(entry, m);
     }
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_leave();
 }
 
 /*
@@ -168,13 +168,13 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_setBadge
  */
 JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_setUrgent
 (JNIEnv *env, jobject obj, jboolean urgent) {
-    fp_gdk_threads_enter();
+    gtk->gdk_threads_enter();
     fp_unity_launcher_entry_set_urgent(entry, urgent);
     DbusmenuMenuitem* m;
     if (m = fp_unity_launcher_entry_get_quicklist(entry)) {
         fp_unity_launcher_entry_set_quicklist(entry, m);
     }
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_leave();
 }
 
 /*
@@ -184,14 +184,14 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_setUrgent
  */
 JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_updateProgress
 (JNIEnv *env, jobject obj, jdouble value, jboolean visible) {
-    fp_gdk_threads_enter();
+    gtk->gdk_threads_enter();
     fp_unity_launcher_entry_set_progress(entry, value);
     fp_unity_launcher_entry_set_progress_visible(entry, visible);
     DbusmenuMenuitem* m;
     if (m = fp_unity_launcher_entry_get_quicklist(entry)) {
         fp_unity_launcher_entry_set_quicklist(entry, m);
     }
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_leave();
 }
 
 void deleteGlobalRef(gpointer data) {
@@ -209,7 +209,7 @@ void fill_menu(JNIEnv *env, jobjectArray items) {
         }
         elem = (*env)->NewGlobalRef(env, elem);
 
-        globalRefs = fp_g_list_append(globalRefs, elem);
+        globalRefs = gtk->g_list_append(globalRefs, elem);
 
         jstring jlabel = (jstring) (*env)->CallObjectMethod(env, elem, jMenuItemGetLabel);
         if (!(*env)->ExceptionCheck(env) && jlabel) {
@@ -224,7 +224,8 @@ void fill_menu(JNIEnv *env, jobjectArray items) {
 
                 (*env)->ReleaseStringUTFChars(env, jlabel, label);
                 fp_dbusmenu_menuitem_child_append(menu, mi);
-                fp_g_signal_connect(mi, "item_activated", G_CALLBACK(callback), elem);
+                gtk->g_signal_connect_data(mi, "item_activated",
+                                           G_CALLBACK(callback), elem, NULL, 0);
             }
         }
     }
@@ -238,7 +239,7 @@ void fill_menu(JNIEnv *env, jobjectArray items) {
 JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_setNativeMenu
 (JNIEnv *env, jobject obj, jobjectArray items) {
 
-    fp_gdk_threads_enter();
+    gtk->gdk_threads_enter();
 
     if (!menu) {
         menu = fp_dbusmenu_menuitem_new();
@@ -247,14 +248,14 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XTaskbarPeer_setNativeMenu
     fp_unity_launcher_entry_set_quicklist(entry, menu);
 
     GList* list = fp_dbusmenu_menuitem_take_children(menu);
-    fp_g_list_free_full(list, fp_g_object_unref);
+    gtk->g_list_free_full(list, gtk->g_object_unref);
 
-    fp_g_list_free_full(globalRefs, deleteGlobalRef);
+    gtk->g_list_free_full(globalRefs, deleteGlobalRef);
     globalRefs = NULL;
 
     if (items) {
         fill_menu(env, items);
     }
 
-    fp_gdk_threads_leave();
+    gtk->gdk_threads_leave();
 }

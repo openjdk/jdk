@@ -45,7 +45,7 @@ class AuthenticationFilter implements HeaderFilter {
     static final int DEFAULT_RETRY_LIMIT = 3;
 
     static final int retry_limit = Utils.getIntegerNetProperty(
-            "sun.net.httpclient.auth.retrylimit", DEFAULT_RETRY_LIMIT);
+            "java.net.httpclient.auth.retrylimit", DEFAULT_RETRY_LIMIT);
 
     static final int UNAUTHORIZED = 401;
     static final int PROXY_UNAUTHORIZED = 407;

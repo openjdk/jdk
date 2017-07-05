@@ -73,7 +73,7 @@ import sun.swing.SwingUtilities2;
  * type the value class represents. For example:
  * <code>setValueClass(Integer.class)</code> will cause the resulting
  * value to be created via
- * <code>new Integer(((Number)formatter.parseObject(string)).intValue())</code>.
+ * <code>Integer.valueOf(((Number)formatter.parseObject(string)).intValue())</code>.
  * This is typically useful if you
  * wish to set a min/max value as the various <code>Number</code>
  * implementations are generally not comparable to each other. This is also

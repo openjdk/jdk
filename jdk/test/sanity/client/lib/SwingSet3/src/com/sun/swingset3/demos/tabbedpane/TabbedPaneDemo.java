@@ -91,7 +91,6 @@ public class TabbedPaneDemo extends JPanel implements ActionListener {
     public static void main(String[] args) {
         JFrame frame = new JFrame(DEMO_TITLE);
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.getContentPane().add(new TabbedPaneDemo());
         frame.setPreferredSize(new Dimension(800, 600));
         frame.pack();
@@ -205,7 +204,9 @@ public class TabbedPaneDemo extends JPanel implements ActionListener {
         }
 
         public void go() {
-            animator = new javax.swing.Timer(22 + 22 + 22, this);
+            if (animator == null) {
+                animator = new javax.swing.Timer(22 + 22 + 22, this);
+            }
             animator.start();
         }
 
@@ -247,7 +248,7 @@ public class TabbedPaneDemo extends JPanel implements ActionListener {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (isVisible()) {
+            if (isShowing()) {
                 repaint();
             } else {
                 animator.stop();

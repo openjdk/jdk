@@ -1155,8 +1155,9 @@ public final class System {
          * @param level the log message level.
          * @param msg the string message (or a key in the message catalog, if
          * this logger is a {@link
-         * LoggerFinder#getLocalizedLogger(java.lang.String, java.util.ResourceBundle, java.lang.Class)
-         * localized logger}); can be {@code null}.
+         * LoggerFinder#getLocalizedLogger(java.lang.String,
+         * java.util.ResourceBundle, java.lang.reflect.Module) localized logger});
+         * can be {@code null}.
          *
          * @throws NullPointerException if {@code level} is {@code null}.
          */
@@ -1222,8 +1223,9 @@ public final class System {
          * @param level the log message level.
          * @param msg the string message (or a key in the message catalog, if
          * this logger is a {@link
-         * LoggerFinder#getLocalizedLogger(java.lang.String, java.util.ResourceBundle, java.lang.Class)
-         * localized logger}); can be {@code null}.
+         * LoggerFinder#getLocalizedLogger(java.lang.String,
+         * java.util.ResourceBundle, java.lang.reflect.Module) localized logger});
+         * can be {@code null}.
          * @param thrown a {@code Throwable} associated with the log message;
          *        can be {@code null}.
          *
@@ -1270,8 +1272,9 @@ public final class System {
          * @param format the string message format in {@link
          * java.text.MessageFormat} format, (or a key in the message
          * catalog, if this logger is a {@link
-         * LoggerFinder#getLocalizedLogger(java.lang.String, java.util.ResourceBundle, java.lang.Class)
-         * localized logger}); can be {@code null}.
+         * LoggerFinder#getLocalizedLogger(java.lang.String,
+         * java.util.ResourceBundle, java.lang.reflect.Module) localized logger});
+         * can be {@code null}.
          * @param params an optional list of parameters to the message (may be
          * none).
          *
@@ -1453,30 +1456,30 @@ public final class System {
 
         /**
          * Returns an instance of {@link Logger Logger}
-         * for the given {@code caller}.
+         * for the given {@code module}.
          *
          * @param name the name of the logger.
-         * @param caller the class for which the logger is being requested.
+         * @param module the module for which the logger is being requested.
          *
-         * @return a {@link Logger logger} suitable for the given caller's
-         *         use.
+         * @return a {@link Logger logger} suitable for use within the given
+         *         module.
          * @throws NullPointerException if {@code name} is {@code null} or
-         *        {@code caller} is {@code null}.
+         *        {@code module} is {@code null}.
          * @throws SecurityException if a security manager is present and its
          *         {@code checkPermission} method doesn't allow the
          *         {@code RuntimePermission("loggerFinder")}.
          */
-        public abstract Logger getLogger(String name, /* Module */ Class<?> caller);
+        public abstract Logger getLogger(String name, Module module);
 
         /**
          * Returns a localizable instance of {@link Logger Logger}
-         * for the given {@code caller}.
+         * for the given {@code module}.
          * The returned logger will use the provided resource bundle for
          * message localization.
          *
          * @implSpec By default, this method calls {@link
-         * #getLogger(java.lang.String, java.lang.Class)
-         * this.getLogger(name, caller)} to obtain a logger, then wraps that
+         * #getLogger(java.lang.String, java.lang.reflect.Module)
+         * this.getLogger(name, module)} to obtain a logger, then wraps that
          * logger in a {@link Logger} instance where all methods that do not
          * take a {@link ResourceBundle} as parameter are redirected to one
          * which does - passing the given {@code bundle} for
@@ -1499,19 +1502,19 @@ public final class System {
          *
          * @param name    the name of the logger.
          * @param bundle  a resource bundle; can be {@code null}.
-         * @param caller the class for which the logger is being requested.
+         * @param module  the module for which the logger is being requested.
          * @return an instance of {@link Logger Logger}  which will use the
          * provided resource bundle for message localization.
          *
          * @throws NullPointerException if {@code name} is {@code null} or
-         *         {@code caller} is {@code null}.
+         *         {@code module} is {@code null}.
          * @throws SecurityException if a security manager is present and its
          *         {@code checkPermission} method doesn't allow the
          *         {@code RuntimePermission("loggerFinder")}.
          */
         public Logger getLocalizedLogger(String name, ResourceBundle bundle,
-                                          /* Module */ Class<?> caller) {
-            return new LocalizedLoggerWrapper<>(getLogger(name, caller), bundle);
+                                         Module module) {
+            return new LocalizedLoggerWrapper<>(getLogger(name, module), bundle);
         }
 
         /**
@@ -1558,12 +1561,13 @@ public final class System {
      *
      * @implSpec
      * Instances returned by this method route messages to loggers
-     * obtained by calling {@link LoggerFinder#getLogger(java.lang.String, java.lang.Class)
-     * LoggerFinder.getLogger(name, caller)}.
+     * obtained by calling {@link LoggerFinder#getLogger(java.lang.String,
+     * java.lang.reflect.Module) LoggerFinder.getLogger(name, module)}, where
+     * {@code module} is the caller's module.
      *
      * @apiNote
      * This method may defer calling the {@link
-     * LoggerFinder#getLogger(java.lang.String, java.lang.Class)
+     * LoggerFinder#getLogger(java.lang.String, java.lang.reflect.Module)
      * LoggerFinder.getLogger} method to create an actual logger supplied by
      * the logging backend, for instance, to allow loggers to be obtained during
      * the system initialization time.
@@ -1579,7 +1583,7 @@ public final class System {
     public static Logger getLogger(String name) {
         Objects.requireNonNull(name);
         final Class<?> caller = Reflection.getCallerClass();
-        return LazyLoggers.getLogger(name, caller);
+        return LazyLoggers.getLogger(name, caller.getModule());
     }
 
     /**
@@ -1591,8 +1595,9 @@ public final class System {
      * @implSpec
      * The returned logger will perform message localization as specified
      * by {@link LoggerFinder#getLocalizedLogger(java.lang.String,
-     * java.util.ResourceBundle, java.lang.Class)
-     * LoggerFinder.getLocalizedLogger(name, bundle, caller}.
+     * java.util.ResourceBundle, java.lang.reflect.Module)
+     * LoggerFinder.getLocalizedLogger(name, bundle, module}, where
+     * {@code module} is the caller's module.
      *
      * @apiNote
      * This method is intended to be used after the system is fully initialized.
@@ -1624,12 +1629,14 @@ public final class System {
         // Bootstrap sensitive classes in the JDK do not use resource bundles
         // when logging. This could be revisited later, if it needs to.
         if (sm != null) {
-            return AccessController.doPrivileged((PrivilegedAction<Logger>)
-                    () -> LoggerFinder.accessProvider().getLocalizedLogger(name, rb, caller),
-                    null,
-                    LoggerFinder.LOGGERFINDER_PERMISSION);
+            final PrivilegedAction<Logger> pa =
+                    () -> LoggerFinder.accessProvider()
+                            .getLocalizedLogger(name, rb, caller.getModule());
+            return AccessController.doPrivileged(pa, null,
+                                         LoggerFinder.LOGGERFINDER_PERMISSION);
         }
-        return LoggerFinder.accessProvider().getLocalizedLogger(name, rb, caller);
+        return LoggerFinder.accessProvider()
+                .getLocalizedLogger(name, rb, caller.getModule());
     }
 
     /**

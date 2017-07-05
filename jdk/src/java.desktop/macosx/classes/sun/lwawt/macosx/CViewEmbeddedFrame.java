@@ -87,23 +87,22 @@ public class CViewEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
-    /*
+    /**
      * Initializes the embedded frame bounds and validates a component.
-     * Designed to be called from the main thread
-     * This method should be called once from the initialization of the SWT_AWT Bridge
+     * Designed to be called from the main thread. This method should be called
+     * once from the initialization of the SWT_AWT Bridge.
      */
-    public void validateWithBounds(final int x, final int y, final int width, final int height) {
+    public void validateWithBounds(final int x, final int y, final int width,
+                                   final int height) {
         try {
-            final LWWindowPeer peer = AWTAccessor.getComponentAccessor()
-                                                 .getPeer(this);
-            LWCToolkit.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    peer.setBoundsPrivate(0, 0, width, height);
-                    validate();
-                    setVisible(true);
-                }
+            LWCToolkit.invokeAndWait(() -> {
+                final LWWindowPeer peer = AWTAccessor.getComponentAccessor()
+                                                     .getPeer(this);
+                peer.setBoundsPrivate(0, 0, width, height);
+                validate();
+                setVisible(true);
             }, this);
-        } catch (InvocationTargetException ex) {}
+        } catch (InvocationTargetException ex) {
+        }
     }
 }

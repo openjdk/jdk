@@ -117,7 +117,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
 
         if (refreshTimeStr != null) {
             try {
-                minRefreshTime = (new Integer(refreshTimeStr)).intValue();
+                minRefreshTime = (Integer.valueOf(refreshTimeStr)).intValue();
             } catch (NumberFormatException e) {
             }
             if (minRefreshTime < DEFAULT_MINREFRESH) {

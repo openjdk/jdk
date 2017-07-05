@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4402,6 +4402,35 @@ public class Arrays {
         @Override
         public void sort(Comparator<? super E> c) {
             Arrays.sort(a, c);
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return new ArrayItr<>(a);
+        }
+    }
+
+    private static class ArrayItr<E> implements Iterator<E> {
+        private int cursor;
+        private final E[] a;
+
+        ArrayItr(E[] a) {
+            this.a = a;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return cursor < a.length;
+        }
+
+        @Override
+        public E next() {
+            int i = cursor;
+            if (i >= a.length) {
+                throw new NoSuchElementException();
+            }
+            cursor = i + 1;
+            return a[i];
         }
     }
 
