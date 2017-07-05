@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package java.security;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>SecureRandom</code> class.
+ * for the {@code SecureRandom} class.
  * All the abstract methods in this class must be implemented by each
  * service provider who wishes to supply the implementation
  * of a cryptographically strong pseudo-random number generator.
@@ -53,10 +53,10 @@ public abstract class SecureRandomSpi implements java.io.Serializable {
     /**
      * Generates a user-specified number of random bytes.
      *
-     * <p> If a call to <code>engineSetSeed</code> had not occurred previously,
+     * <p> If a call to {@code engineSetSeed} had not occurred previously,
      * the first call to this method forces this SecureRandom implementation
      * to seed itself.  This self-seeding will not occur if
-     * <code>engineSetSeed</code> was previously called.
+     * {@code engineSetSeed} was previously called.
      *
      * @param bytes the array to be filled in with random bytes.
      */

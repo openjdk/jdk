@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ public interface DSAPublicKey extends DSAKey, java.security.PublicKey {
     static final long serialVersionUID = 1234526332779022332L;
 
     /**
-     * Returns the value of the public key, <code>y</code>.
+     * Returns the value of the public key, {@code y}.
      *
-     * @return the value of the public key, <code>y</code>.
+     * @return the value of the public key, {@code y}.
      */
     public BigInteger getY();
 }

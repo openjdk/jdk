@@ -129,6 +129,18 @@ abstract class ArrayFilter extends ArrayData {
     }
 
     @Override
+    public ArrayData setEmpty(final int index) {
+        underlying.setEmpty(index);
+        return this;
+    }
+
+    @Override
+    public ArrayData setEmpty(final long lo, final long hi) {
+        underlying.setEmpty(lo, hi);
+        return this;
+    }
+
+    @Override
     public int getInt(final int index) {
         return underlying.getInt(index);
     }

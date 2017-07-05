@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2791,6 +2791,15 @@ void MacroAssembler::movdqu(XMMRegister dst, AddressLiteral src) {
   } else {
     lea(rscratch1, src);
     Assembler::movdqu(dst, Address(rscratch1, 0));
+  }
+}
+
+void MacroAssembler::movdqa(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    Assembler::movdqa(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    Assembler::movdqa(dst, Address(rscratch1, 0));
   }
 }
 
@@ -6386,6 +6395,193 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   bind(L_copy_1_char_exit);
   addptr(result, len); // len is negative count of not processed elements
   bind(L_done);
+}
+
+/**
+ * Emits code to update CRC-32 with a byte value according to constants in table
+ *
+ * @param [in,out]crc   Register containing the crc.
+ * @param [in]val       Register containing the byte to fold into the CRC.
+ * @param [in]table     Register containing the table of crc constants.
+ *
+ * uint32_t crc;
+ * val = crc_table[(val ^ crc) & 0xFF];
+ * crc = val ^ (crc >> 8);
+ *
+ */
+void MacroAssembler::update_byte_crc32(Register crc, Register val, Register table) {
+  xorl(val, crc);
+  andl(val, 0xFF);
+  shrl(crc, 8); // unsigned shift
+  xorl(crc, Address(table, val, Address::times_4, 0));
+}
+
+/**
+ * Fold 128-bit data chunk
+ */
+void MacroAssembler::fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset) {
+  vpclmulhdq(xtmp, xK, xcrc); // [123:64]
+  vpclmulldq(xcrc, xK, xcrc); // [63:0]
+  vpxor(xcrc, xcrc, Address(buf, offset), false /* vector256 */);
+  pxor(xcrc, xtmp);
+}
+
+void MacroAssembler::fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, XMMRegister xbuf) {
+  vpclmulhdq(xtmp, xK, xcrc);
+  vpclmulldq(xcrc, xK, xcrc);
+  pxor(xcrc, xbuf);
+  pxor(xcrc, xtmp);
+}
+
+/**
+ * 8-bit folds to compute 32-bit CRC
+ *
+ * uint64_t xcrc;
+ * timesXtoThe32[xcrc & 0xFF] ^ (xcrc >> 8);
+ */
+void MacroAssembler::fold_8bit_crc32(XMMRegister xcrc, Register table, XMMRegister xtmp, Register tmp) {
+  movdl(tmp, xcrc);
+  andl(tmp, 0xFF);
+  movdl(xtmp, Address(table, tmp, Address::times_4, 0));
+  psrldq(xcrc, 1); // unsigned shift one byte
+  pxor(xcrc, xtmp);
+}
+
+/**
+ * uint32_t crc;
+ * timesXtoThe32[crc & 0xFF] ^ (crc >> 8);
+ */
+void MacroAssembler::fold_8bit_crc32(Register crc, Register table, Register tmp) {
+  movl(tmp, crc);
+  andl(tmp, 0xFF);
+  shrl(crc, 8);
+  xorl(crc, Address(table, tmp, Address::times_4, 0));
+}
+
+/**
+ * @param crc   register containing existing CRC (32-bit)
+ * @param buf   register pointing to input byte buffer (byte*)
+ * @param len   register containing number of bytes
+ * @param table register that will contain address of CRC table
+ * @param tmp   scratch register
+ */
+void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp) {
+  assert_different_registers(crc, buf, len, table, tmp, rax);
+
+  Label L_tail, L_tail_restore, L_tail_loop, L_exit, L_align_loop, L_aligned;
+  Label L_fold_tail, L_fold_128b, L_fold_512b, L_fold_512b_loop, L_fold_tail_loop;
+
+  lea(table, ExternalAddress(StubRoutines::crc_table_addr()));
+  notl(crc); // ~crc
+  cmpl(len, 16);
+  jcc(Assembler::less, L_tail);
+
+  // Align buffer to 16 bytes
+  movl(tmp, buf);
+  andl(tmp, 0xF);
+  jccb(Assembler::zero, L_aligned);
+  subl(tmp,  16);
+  addl(len, tmp);
+
+  align(4);
+  BIND(L_align_loop);
+  movsbl(rax, Address(buf, 0)); // load byte with sign extension
+  update_byte_crc32(crc, rax, table);
+  increment(buf);
+  incrementl(tmp);
+  jccb(Assembler::less, L_align_loop);
+
+  BIND(L_aligned);
+  movl(tmp, len); // save
+  shrl(len, 4);
+  jcc(Assembler::zero, L_tail_restore);
+
+  // Fold crc into first bytes of vector
+  movdqa(xmm1, Address(buf, 0));
+  movdl(rax, xmm1);
+  xorl(crc, rax);
+  pinsrd(xmm1, crc, 0);
+  addptr(buf, 16);
+  subl(len, 4); // len > 0
+  jcc(Assembler::less, L_fold_tail);
+
+  movdqa(xmm2, Address(buf,  0));
+  movdqa(xmm3, Address(buf, 16));
+  movdqa(xmm4, Address(buf, 32));
+  addptr(buf, 48);
+  subl(len, 3);
+  jcc(Assembler::lessEqual, L_fold_512b);
+
+  // Fold total 512 bits of polynomial on each iteration,
+  // 128 bits per each of 4 parallel streams.
+  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 32));
+
+  align(32);
+  BIND(L_fold_512b_loop);
+  fold_128bit_crc32(xmm1, xmm0, xmm5, buf,  0);
+  fold_128bit_crc32(xmm2, xmm0, xmm5, buf, 16);
+  fold_128bit_crc32(xmm3, xmm0, xmm5, buf, 32);
+  fold_128bit_crc32(xmm4, xmm0, xmm5, buf, 48);
+  addptr(buf, 64);
+  subl(len, 4);
+  jcc(Assembler::greater, L_fold_512b_loop);
+
+  // Fold 512 bits to 128 bits.
+  BIND(L_fold_512b);
+  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 16));
+  fold_128bit_crc32(xmm1, xmm0, xmm5, xmm2);
+  fold_128bit_crc32(xmm1, xmm0, xmm5, xmm3);
+  fold_128bit_crc32(xmm1, xmm0, xmm5, xmm4);
+
+  // Fold the rest of 128 bits data chunks
+  BIND(L_fold_tail);
+  addl(len, 3);
+  jccb(Assembler::lessEqual, L_fold_128b);
+  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr() + 16));
+
+  BIND(L_fold_tail_loop);
+  fold_128bit_crc32(xmm1, xmm0, xmm5, buf,  0);
+  addptr(buf, 16);
+  decrementl(len);
+  jccb(Assembler::greater, L_fold_tail_loop);
+
+  // Fold 128 bits in xmm1 down into 32 bits in crc register.
+  BIND(L_fold_128b);
+  movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()));
+  vpclmulqdq(xmm2, xmm0, xmm1, 0x1);
+  vpand(xmm3, xmm0, xmm2, false /* vector256 */);
+  vpclmulqdq(xmm0, xmm0, xmm3, 0x1);
+  psrldq(xmm1, 8);
+  psrldq(xmm2, 4);
+  pxor(xmm0, xmm1);
+  pxor(xmm0, xmm2);
+
+  // 8 8-bit folds to compute 32-bit CRC.
+  for (int j = 0; j < 4; j++) {
+    fold_8bit_crc32(xmm0, table, xmm1, rax);
+  }
+  movdl(crc, xmm0); // mov 32 bits to general register
+  for (int j = 0; j < 4; j++) {
+    fold_8bit_crc32(crc, table, rax);
+  }
+
+  BIND(L_tail_restore);
+  movl(len, tmp); // restore
+  BIND(L_tail);
+  andl(len, 0xf);
+  jccb(Assembler::zero, L_exit);
+
+  // Fold the rest of bytes
+  align(4);
+  BIND(L_tail_loop);
+  movsbl(rax, Address(buf, 0)); // load byte with sign extension
+  update_byte_crc32(crc, rax, table);
+  increment(buf);
+  decrementl(len);
+  jccb(Assembler::greater, L_tail_loop);
+
+  BIND(L_exit);
+  notl(crc); // ~c
 }
 
 #undef BIND

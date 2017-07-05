@@ -26,15 +26,12 @@
  * @bug 7158329
  * @bug 8001208
  * @summary NPE in sun.security.krb5.Credentials.acquireDefaultCreds()
+ * @library ../../../../java/security/testlibrary/
  * @compile -XDignore.symbol.file EmptyCC.java
  * @run main EmptyCC tmpcc
  * @run main EmptyCC FILE:tmpcc
  */
 import java.io.File;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import sun.security.krb5.Credentials;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.internal.ccache.CredentialsCache;
@@ -48,32 +45,9 @@ public class EmptyCC {
             // Main process, write the ccache and launch sub process
             CredentialsCache cache = CredentialsCache.create(pn, ccache);
             cache.save();
-
-            // java -cp $test.classes EmptyCC readcc
-            ProcessBuilder pb = new ProcessBuilder(
-                    new File(new File(System.getProperty("java.home"), "bin"),
-                        "java").getPath(),
-                    "-cp",
-                    System.getProperty("test.classes"),
-                    "EmptyCC",
-                    ccache,
-                    "readcc"
-                    );
-
-            pb.environment().put("KRB5CCNAME", ccache);
-            pb.redirectErrorStream(true);
-
-            Process p = pb.start();
-            try (InputStream ins = p.getInputStream()) {
-                byte[] buf = new byte[8192];
-                int n;
-                while ((n = ins.read(buf)) > 0) {
-                    System.out.write(buf, 0, n);
-                }
-            }
-            if (p.waitFor() != 0) {
-                throw new Exception("Test failed");
-            }
+            Proc p = Proc.create("EmptyCC").args(ccache, "readcc")
+                    .env("KRB5CCNAME", ccache).start();
+            p.waitFor();
         } else {
             // Sub process, read the ccache
             String cc = System.getenv("KRB5CCNAME");

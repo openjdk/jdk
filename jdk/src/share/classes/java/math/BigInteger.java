@@ -33,8 +33,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
+import sun.misc.DoubleConsts;
+import sun.misc.FloatConsts;
 
 /**
  * Immutable arbitrary-precision integers.  All operations behave as if
@@ -210,6 +213,16 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * experimentally to work well.
      */
     private static final int TOOM_COOK_SQUARE_THRESHOLD = 140;
+
+    /**
+     * The threshold value for using Schoenhage recursive base conversion. If
+     * the number of ints in the number are larger than this value,
+     * the Schoenhage algorithm will be used.  In practice, it appears that the
+     * Schoenhage routine is faster for any threshold down to 2, and is
+     * relatively flat for thresholds between 2-25, so this choice may be
+     * varied within this range for very small effect.
+     */
+    private static final int SCHOENHAGE_BASE_CONVERSION_THRESHOLD = 8;
 
     //Constructors
 
@@ -1024,12 +1037,39 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     private static BigInteger posConst[] = new BigInteger[MAX_CONSTANT+1];
     private static BigInteger negConst[] = new BigInteger[MAX_CONSTANT+1];
 
+    /**
+     * The cache of powers of each radix.  This allows us to not have to
+     * recalculate powers of radix^(2^n) more than once.  This speeds
+     * Schoenhage recursive base conversion significantly.
+     */
+    private static volatile BigInteger[][] powerCache;
+
+    /** The cache of logarithms of radices for base conversion. */
+    private static final double[] logCache;
+
+    /** The natural log of 2.  This is used in computing cache indices. */
+    private static final double LOG_TWO = Math.log(2.0);
+
     static {
         for (int i = 1; i <= MAX_CONSTANT; i++) {
             int[] magnitude = new int[1];
             magnitude[0] = i;
             posConst[i] = new BigInteger(magnitude,  1);
             negConst[i] = new BigInteger(magnitude, -1);
+        }
+
+        /*
+         * Initialize the cache of radix^(2^x) values used for base conversion
+         * with just the very first value.  Additional values will be created
+         * on demand.
+         */
+        powerCache = new BigInteger[Character.MAX_RADIX+1][];
+        logCache = new double[Character.MAX_RADIX+1];
+
+        for (int i=Character.MIN_RADIX; i<=Character.MAX_RADIX; i++)
+        {
+            powerCache[i] = new BigInteger[] { BigInteger.valueOf(i) };
+            logCache[i] = Math.log(i);
         }
     }
 
@@ -1355,7 +1395,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             if ((xlen < TOOM_COOK_THRESHOLD) && (ylen < TOOM_COOK_THRESHOLD))
                 return multiplyKaratsuba(this, val);
             else
-               return multiplyToomCook3(this, val);
+                return multiplyToomCook3(this, val);
     }
 
     private static BigInteger multiplyByInt(int[] x, int y, int sign) {
@@ -3297,6 +3337,28 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX)
             radix = 10;
 
+        // If it's small enough, use smallToString.
+        if (mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD)
+           return smallToString(radix);
+
+        // Otherwise use recursive toString, which requires positive arguments.
+        // The results will be concatenated into this StringBuilder
+        StringBuilder sb = new StringBuilder();
+        if (signum < 0) {
+            toString(this.negate(), sb, radix, 0);
+            sb.insert(0, '-');
+        }
+        else
+            toString(this, sb, radix, 0);
+
+        return sb.toString();
+    }
+
+    /** This method is used to perform toString when arguments are small. */
+    private String smallToString(int radix) {
+        if (signum == 0)
+            return "0";
+
         // Compute upper bound on number of digit groups and allocate space
         int maxNumDigitGroups = (4*mag.length + 6)/7;
         String digitGroup[] = new String[maxNumDigitGroups];
@@ -3335,6 +3397,81 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         return buf.toString();
     }
 
+    /**
+     * Converts the specified BigInteger to a string and appends to
+     * <code>sb</code>.  This implements the recursive Schoenhage algorithm
+     * for base conversions.
+     * <p/>
+     * See Knuth, Donald,  _The Art of Computer Programming_, Vol. 2,
+     * Answers to Exercises (4.4) Question 14.
+     *
+     * @param u      The number to convert to a string.
+     * @param sb     The StringBuilder that will be appended to in place.
+     * @param radix  The base to convert to.
+     * @param digits The minimum number of digits to pad to.
+     */
+    private static void toString(BigInteger u, StringBuilder sb, int radix,
+                                 int digits) {
+        /* If we're smaller than a certain threshold, use the smallToString
+           method, padding with leading zeroes when necessary. */
+        if (u.mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD) {
+            String s = u.smallToString(radix);
+
+            // Pad with internal zeros if necessary.
+            // Don't pad if we're at the beginning of the string.
+            if ((s.length() < digits) && (sb.length() > 0))
+                for (int i=s.length(); i<digits; i++) // May be a faster way to
+                    sb.append('0');                    // do this?
+
+            sb.append(s);
+            return;
+        }
+
+        int b, n;
+        b = u.bitLength();
+
+        // Calculate a value for n in the equation radix^(2^n) = u
+        // and subtract 1 from that value.  This is used to find the
+        // cache index that contains the best value to divide u.
+        n = (int) Math.round(Math.log(b * LOG_TWO / logCache[radix]) / LOG_TWO - 1.0);
+        BigInteger v = getRadixConversionCache(radix, n);
+        BigInteger[] results;
+        results = u.divideAndRemainder(v);
+
+        int expectedDigits = 1 << n;
+
+        // Now recursively build the two halves of each number.
+        toString(results[0], sb, radix, digits-expectedDigits);
+        toString(results[1], sb, radix, expectedDigits);
+    }
+
+    /**
+     * Returns the value radix^(2^exponent) from the cache.
+     * If this value doesn't already exist in the cache, it is added.
+     * <p/>
+     * This could be changed to a more complicated caching method using
+     * <code>Future</code>.
+     */
+    private static BigInteger getRadixConversionCache(int radix, int exponent) {
+        BigInteger[] cacheLine = powerCache[radix]; // volatile read
+        if (exponent < cacheLine.length) {
+            return cacheLine[exponent];
+        }
+
+        int oldLength = cacheLine.length;
+        cacheLine = Arrays.copyOf(cacheLine, exponent + 1);
+        for (int i = oldLength; i <= exponent; i++) {
+            cacheLine[i] = cacheLine[i - 1].pow(2);
+        }
+
+        BigInteger[][] pc = powerCache; // volatile read again
+        if (exponent >= pc[radix].length) {
+            pc = pc.clone();
+            pc[radix] = cacheLine;
+            powerCache = pc; // volatile write, publish
+        }
+        return cacheLine[exponent];
+    }
 
     /* zero[i] is a string of i consecutive zeros. */
     private static String zeros[] = new String[64];
@@ -3452,8 +3589,72 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return this BigInteger converted to a {@code float}.
      */
     public float floatValue() {
-        // Somewhat inefficient, but guaranteed to work.
-        return Float.parseFloat(this.toString());
+        if (signum == 0) {
+            return 0.0f;
+        }
+
+        int exponent = ((mag.length - 1) << 5) + bitLengthForInt(mag[0]) - 1;
+
+        // exponent == floor(log2(abs(this)))
+        if (exponent < Long.SIZE - 1) {
+            return longValue();
+        } else if (exponent > Float.MAX_EXPONENT) {
+            return signum > 0 ? Float.POSITIVE_INFINITY : Float.NEGATIVE_INFINITY;
+        }
+
+        /*
+         * We need the top SIGNIFICAND_WIDTH bits, including the "implicit"
+         * one bit. To make rounding easier, we pick out the top
+         * SIGNIFICAND_WIDTH + 1 bits, so we have one to help us round up or
+         * down. twiceSignifFloor will contain the top SIGNIFICAND_WIDTH + 1
+         * bits, and signifFloor the top SIGNIFICAND_WIDTH.
+         *
+         * It helps to consider the real number signif = abs(this) *
+         * 2^(SIGNIFICAND_WIDTH - 1 - exponent).
+         */
+        int shift = exponent - FloatConsts.SIGNIFICAND_WIDTH;
+
+        int twiceSignifFloor;
+        // twiceSignifFloor will be == abs().shiftRight(shift).intValue()
+        // We do the shift into an int directly to improve performance.
+
+        int nBits = shift & 0x1f;
+        int nBits2 = 32 - nBits;
+
+        if (nBits == 0) {
+            twiceSignifFloor = mag[0];
+        } else {
+            twiceSignifFloor = mag[0] >>> nBits;
+            if (twiceSignifFloor == 0) {
+                twiceSignifFloor = (mag[0] << nBits2) | (mag[1] >>> nBits);
+            }
+        }
+
+        int signifFloor = twiceSignifFloor >> 1;
+        signifFloor &= FloatConsts.SIGNIF_BIT_MASK; // remove the implied bit
+
+        /*
+         * We round up if either the fractional part of signif is strictly
+         * greater than 0.5 (which is true if the 0.5 bit is set and any lower
+         * bit is set), or if the fractional part of signif is >= 0.5 and
+         * signifFloor is odd (which is true if both the 0.5 bit and the 1 bit
+         * are set). This is equivalent to the desired HALF_EVEN rounding.
+         */
+        boolean increment = (twiceSignifFloor & 1) != 0
+                && ((signifFloor & 1) != 0 || abs().getLowestSetBit() < shift);
+        int signifRounded = increment ? signifFloor + 1 : signifFloor;
+        int bits = ((exponent + FloatConsts.EXP_BIAS))
+                << (FloatConsts.SIGNIFICAND_WIDTH - 1);
+        bits += signifRounded;
+        /*
+         * If signifRounded == 2^24, we'd need to set all of the significand
+         * bits to zero and add 1 to the exponent. This is exactly the behavior
+         * we get from just adding signifRounded to bits directly. If the
+         * exponent is Float.MAX_EXPONENT, we round up (correctly) to
+         * Float.POSITIVE_INFINITY.
+         */
+        bits |= signum & FloatConsts.SIGN_BIT_MASK;
+        return Float.intBitsToFloat(bits);
     }
 
     /**
@@ -3472,8 +3673,80 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return this BigInteger converted to a {@code double}.
      */
     public double doubleValue() {
-        // Somewhat inefficient, but guaranteed to work.
-        return Double.parseDouble(this.toString());
+        if (signum == 0) {
+            return 0.0;
+        }
+
+        int exponent = ((mag.length - 1) << 5) + bitLengthForInt(mag[0]) - 1;
+
+        // exponent == floor(log2(abs(this))Double)
+        if (exponent < Long.SIZE - 1) {
+            return longValue();
+        } else if (exponent > Double.MAX_EXPONENT) {
+            return signum > 0 ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
+        }
+
+        /*
+         * We need the top SIGNIFICAND_WIDTH bits, including the "implicit"
+         * one bit. To make rounding easier, we pick out the top
+         * SIGNIFICAND_WIDTH + 1 bits, so we have one to help us round up or
+         * down. twiceSignifFloor will contain the top SIGNIFICAND_WIDTH + 1
+         * bits, and signifFloor the top SIGNIFICAND_WIDTH.
+         *
+         * It helps to consider the real number signif = abs(this) *
+         * 2^(SIGNIFICAND_WIDTH - 1 - exponent).
+         */
+        int shift = exponent - DoubleConsts.SIGNIFICAND_WIDTH;
+
+        long twiceSignifFloor;
+        // twiceSignifFloor will be == abs().shiftRight(shift).longValue()
+        // We do the shift into a long directly to improve performance.
+
+        int nBits = shift & 0x1f;
+        int nBits2 = 32 - nBits;
+
+        int highBits;
+        int lowBits;
+        if (nBits == 0) {
+            highBits = mag[0];
+            lowBits = mag[1];
+        } else {
+            highBits = mag[0] >>> nBits;
+            lowBits = (mag[0] << nBits2) | (mag[1] >>> nBits);
+            if (highBits == 0) {
+                highBits = lowBits;
+                lowBits = (mag[1] << nBits2) | (mag[2] >>> nBits);
+            }
+        }
+
+        twiceSignifFloor = ((highBits & LONG_MASK) << 32)
+                | (lowBits & LONG_MASK);
+
+        long signifFloor = twiceSignifFloor >> 1;
+        signifFloor &= DoubleConsts.SIGNIF_BIT_MASK; // remove the implied bit
+
+        /*
+         * We round up if either the fractional part of signif is strictly
+         * greater than 0.5 (which is true if the 0.5 bit is set and any lower
+         * bit is set), or if the fractional part of signif is >= 0.5 and
+         * signifFloor is odd (which is true if both the 0.5 bit and the 1 bit
+         * are set). This is equivalent to the desired HALF_EVEN rounding.
+         */
+        boolean increment = (twiceSignifFloor & 1) != 0
+                && ((signifFloor & 1) != 0 || abs().getLowestSetBit() < shift);
+        long signifRounded = increment ? signifFloor + 1 : signifFloor;
+        long bits = (long) ((exponent + DoubleConsts.EXP_BIAS))
+                << (DoubleConsts.SIGNIFICAND_WIDTH - 1);
+        bits += signifRounded;
+        /*
+         * If signifRounded == 2^53, we'd need to set all of the significand
+         * bits to zero and add 1 to the exponent. This is exactly the behavior
+         * we get from just adding signifRounded to bits directly. If the
+         * exponent is Double.MAX_EXPONENT, we round up (correctly) to
+         * Double.POSITIVE_INFINITY.
+         */
+        bits |= signum & DoubleConsts.SIGN_BIT_MASK;
+        return Double.longBitsToDouble(bits);
     }
 
     /**

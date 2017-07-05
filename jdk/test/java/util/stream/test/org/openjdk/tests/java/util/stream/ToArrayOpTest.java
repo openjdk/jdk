@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.*;
+import static org.testng.Assert.assertEquals;
 
 
 /**
@@ -134,15 +135,51 @@ public class ToArrayOpTest extends OpTestCase {
                     s -> s.sorted()
             ));
 
+    private <T extends Object> ResultAsserter<T[]> statefulOpResultAsserter(TestData.OfRef<Integer> data) {
+        return (act, exp, ord, par) -> {
+            if (par) {
+                if (!data.isOrdered()) {
+                    // Relax the checking if the data source is unordered
+                    // It is not exactly possible to determine if the limit
+                    // operation is present and if it is before or after
+                    // the sorted operation
+                    // If the limit operation is present and before the sorted
+                    // operation then the sub-set output after limit is a
+                    // non-deterministic sub-set of the source
+                    List<Integer> expected = new ArrayList<>();
+                    data.forEach(expected::add);
+
+                    List<T> actual = Arrays.asList(act);
+
+                    assertEquals(actual.size(), exp.length);
+                    assertTrue(expected.containsAll(actual));
+                    return;
+                }
+                else if (!ord) {
+                    LambdaTestHelpers.assertContentsUnordered(Arrays.asList(act),
+                                                              Arrays.asList(exp));
+                    return;
+                }
+            }
+            assertEquals(act, exp);
+        };
+    }
+
     @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
     public void testStatefulOpPermutations(String name, TestData.OfRef<Integer> data) {
         for (Function<Stream<Integer>, Stream<Integer>> f : statefulOpPermutations) {
-            exerciseTerminalOps(data, f, s -> s.toArray());
+            withData(data).terminal(f, s -> s.toArray())
+                    .resultAsserter(statefulOpResultAsserter(data))
+                    .exercise();
 
-            Integer[] is = exerciseTerminalOps(data, f, s -> s.toArray(Integer[]::new));
+            Integer[] is = withData(data).terminal(f, s -> s.toArray(Integer[]::new))
+                    .resultAsserter(statefulOpResultAsserter(data))
+                    .exercise();
             assertEquals(is.getClass(), Integer[].class);
 
-            Number[] ns = exerciseTerminalOps(data, f, s -> s.toArray(Number[]::new));
+            Number[] ns = withData(data).terminal(f, s -> s.toArray(Number[]::new))
+                    .resultAsserter(statefulOpResultAsserter(data))
+                    .exercise();
             assertEquals(ns.getClass(), Number[].class);
 
             if (data.size() > 0) {

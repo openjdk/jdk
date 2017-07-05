@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,20 @@
 package java.security.cert;
 
 /**
- * A specification of <code>CertStore</code> parameters.
+ * A specification of {@code CertStore} parameters.
  * <p>
  * The purpose of this interface is to group (and provide type safety for)
- * all <code>CertStore</code> parameter specifications. All
- * <code>CertStore</code> parameter specifications must implement this
+ * all {@code CertStore} parameter specifications. All
+ * {@code CertStore} parameter specifications must implement this
  * interface.
  * <p>
- * Typically, a <code>CertStoreParameters</code> object is passed as a parameter
+ * Typically, a {@code CertStoreParameters} object is passed as a parameter
  * to one of the {@link CertStore#getInstance CertStore.getInstance} methods.
- * The <code>getInstance</code> method returns a <code>CertStore</code> that
- * is used for retrieving <code>Certificate</code>s and <code>CRL</code>s. The
- * <code>CertStore</code> that is returned is initialized with the specified
+ * The {@code getInstance} method returns a {@code CertStore} that
+ * is used for retrieving {@code Certificate}s and {@code CRL}s. The
+ * {@code CertStore} that is returned is initialized with the specified
  * parameters. The type of parameters needed may vary between different types
- * of <code>CertStore</code>s.
+ * of {@code CertStore}s.
  *
  * @see CertStore#getInstance
  *
@@ -49,32 +49,32 @@ package java.security.cert;
 public interface CertStoreParameters extends Cloneable {
 
     /**
-     * Makes a copy of this <code>CertStoreParameters</code>.
+     * Makes a copy of this {@code CertStoreParameters}.
      * <p>
      * The precise meaning of "copy" may depend on the class of
-     * the <code>CertStoreParameters</code> object. A typical implementation
+     * the {@code CertStoreParameters} object. A typical implementation
      * performs a "deep copy" of this object, but this is not an absolute
      * requirement. Some implementations may perform a "shallow copy" of some
      * or all of the fields of this object.
      * <p>
-     * Note that the <code>CertStore.getInstance</code> methods make a copy
-     * of the specified <code>CertStoreParameters</code>. A deep copy
-     * implementation of <code>clone</code> is safer and more robust, as it
-     * prevents the caller from corrupting a shared <code>CertStore</code> by
+     * Note that the {@code CertStore.getInstance} methods make a copy
+     * of the specified {@code CertStoreParameters}. A deep copy
+     * implementation of {@code clone} is safer and more robust, as it
+     * prevents the caller from corrupting a shared {@code CertStore} by
      * subsequently modifying the contents of its initialization parameters.
-     * However, a shallow copy implementation of <code>clone</code> is more
+     * However, a shallow copy implementation of {@code clone} is more
      * appropriate for applications that need to hold a reference to a
-     * parameter contained in the <code>CertStoreParameters</code>. For example,
+     * parameter contained in the {@code CertStoreParameters}. For example,
      * a shallow copy clone allows an application to release the resources of
-     * a particular <code>CertStore</code> initialization parameter immediately,
+     * a particular {@code CertStore} initialization parameter immediately,
      * rather than waiting for the garbage collection mechanism. This should
-     * be done with the utmost care, since the <code>CertStore</code> may still
+     * be done with the utmost care, since the {@code CertStore} may still
      * be in use by other threads.
      * <p>
      * Each subclass should state the precise behavior of this method so
      * that users and developers know what to expect.
      *
-     * @return a copy of this <code>CertStoreParameters</code>
+     * @return a copy of this {@code CertStoreParameters}
      */
     Object clone();
 }

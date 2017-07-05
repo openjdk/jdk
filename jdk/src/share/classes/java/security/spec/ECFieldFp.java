@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,10 @@ public class ECFieldFp implements ECField {
 
     /**
      * Creates an elliptic curve prime finite field
-     * with the specified prime <code>p</code>.
+     * with the specified prime {@code p}.
      * @param p the prime.
-     * @exception NullPointerException if <code>p</code> is null.
-     * @exception IllegalArgumentException if <code>p</code>
+     * @exception NullPointerException if {@code p} is null.
+     * @exception IllegalArgumentException if {@code p}
      * is not positive.
      */
     public ECFieldFp(BigInteger p) {
@@ -66,7 +66,7 @@ public class ECFieldFp implements ECField {
     };
 
     /**
-     * Returns the prime <code>p</code> of this prime finite field.
+     * Returns the prime {@code p} of this prime finite field.
      * @return the prime.
      */
     public BigInteger getP() {
@@ -77,7 +77,7 @@ public class ECFieldFp implements ECField {
      * Compares this prime finite field for equality with the
      * specified object.
      * @param obj the object to be compared.
-     * @return true if <code>obj</code> is an instance
+     * @return true if {@code obj} is an instance
      * of ECFieldFp and the prime value match, false otherwise.
      */
     public boolean equals(Object obj) {

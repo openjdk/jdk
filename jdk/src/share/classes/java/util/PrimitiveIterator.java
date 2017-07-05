@@ -55,16 +55,34 @@ import java.util.function.LongConsumer;
  * is set to {@code true} then diagnostic warnings are reported if boxing of
  * primitive values occur when operating on primitive subtype specializations.
  *
- * @param <T> the boxed type of the primitive type
+ * @param <T> the type of elements returned by this PrimitiveIterator.  The
+ *        type must be a wrapper type for a primitive type, such as
+ *        {@code Integer} for the primitive {@code int} type.
+ * @param <T_CONS> the type of primitive consumer.  The type must be a
+ *        primitive specialization of {@link java.util.function.Consumer} for
+ *        {@code T}, such as {@link java.util.function.IntConsumer} for
+ *        {@code Integer}.
+ *
  * @since 1.8
  */
-public interface PrimitiveIterator<T> extends Iterator<T> {
+public interface PrimitiveIterator<T, T_CONS> extends Iterator<T> {
+
+    /**
+     * Performs the given action for each remaining element, in the order
+     * elements occur when iterating, until all elements have been processed
+     * or the action throws an exception.  Errors or runtime exceptions
+     * thrown by the action are relayed to the caller.
+     *
+     * @param action The action to be performed for each element
+     * @throws NullPointerException if the specified action is null
+     */
+    void forEachRemaining(T_CONS action);
 
     /**
      * An Iterator specialized for {@code int} values.
      * @since 1.8
      */
-    public static interface OfInt extends PrimitiveIterator<Integer> {
+    public static interface OfInt extends PrimitiveIterator<Integer, IntConsumer> {
 
         /**
          * Returns the next {@code int} element in the iteration.
@@ -138,7 +156,7 @@ public interface PrimitiveIterator<T> extends Iterator<T> {
      * An Iterator specialized for {@code long} values.
      * @since 1.8
      */
-    public static interface OfLong extends PrimitiveIterator<Long> {
+    public static interface OfLong extends PrimitiveIterator<Long, LongConsumer> {
 
         /**
          * Returns the next {@code long} element in the iteration.
@@ -211,7 +229,7 @@ public interface PrimitiveIterator<T> extends Iterator<T> {
      * An Iterator specialized for {@code double} values.
      * @since 1.8
      */
-    public static interface OfDouble extends PrimitiveIterator<Double> {
+    public static interface OfDouble extends PrimitiveIterator<Double, DoubleConsumer> {
 
         /**
          * Returns the next {@code double} element in the iteration.

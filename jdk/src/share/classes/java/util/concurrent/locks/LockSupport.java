@@ -67,10 +67,10 @@ import sun.misc.Unsafe;
  * {@code blocker} object parameter. This object is recorded while
  * the thread is blocked to permit monitoring and diagnostic tools to
  * identify the reasons that threads are blocked. (Such tools may
- * access blockers using method {@link #getBlocker}.) The use of these
- * forms rather than the original forms without this parameter is
- * strongly encouraged. The normal argument to supply as a
- * {@code blocker} within a lock implementation is {@code this}.
+ * access blockers using method {@link #getBlocker(Thread)}.)
+ * The use of these forms rather than the original forms without this
+ * parameter is strongly encouraged. The normal argument to supply as
+ * a {@code blocker} within a lock implementation is {@code this}.
  *
  * <p>These methods are designed to be used as tools for creating
  * higher-level synchronization utilities, and are not in themselves

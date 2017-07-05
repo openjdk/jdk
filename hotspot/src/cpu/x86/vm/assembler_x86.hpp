@@ -1266,6 +1266,7 @@ private:
 
   // Move Aligned Double Quadword
   void movdqa(XMMRegister dst, XMMRegister src);
+  void movdqa(XMMRegister dst, Address src);
 
   // Move Unaligned Double Quadword
   void movdqu(Address     dst, XMMRegister src);
@@ -1403,6 +1404,14 @@ private:
   // SSE4.2 string instructions
   void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
   void pcmpestri(XMMRegister xmm1, Address src, int imm8);
+
+  // SSE 4.1 extract
+  void pextrd(Register dst, XMMRegister src, int imm8);
+  void pextrq(Register dst, XMMRegister src, int imm8);
+
+  // SSE 4.1 insert
+  void pinsrd(XMMRegister dst, Register src, int imm8);
+  void pinsrq(XMMRegister dst, Register src, int imm8);
 
   // SSE4.1 packed move
   void pmovzxbw(XMMRegister dst, XMMRegister src);
@@ -1763,6 +1772,9 @@ private:
 
   // duplicate 4-bytes integer data from src into 8 locations in dest
   void vpbroadcastd(XMMRegister dst, XMMRegister src);
+
+  // Carry-Less Multiplication Quadword
+  void vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask);
 
   // AVX instruction which is used to clear upper 128 bits of YMM registers and
   // to avoid transaction penalty between AVX and SSE states. There is no

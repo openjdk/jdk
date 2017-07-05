@@ -39,7 +39,7 @@ import org.testng.annotations.Test;
 /**
  * @test
  * @build jdk.nashorn.api.javaaccess.SharedObject jdk.nashorn.api.javaaccess.Person jdk.nashorn.api.javaaccess.BooleanAccessTest
- * @run testng jdk.nashorn.api.javaaccess.BooleanAccessTest
+ * @run testng/othervm jdk.nashorn.api.javaaccess.BooleanAccessTest
  */
 public class BooleanAccessTest {
 

@@ -47,8 +47,12 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  */
 @ScriptClass("Debug")
 public final class NativeDebug extends ScriptObject {
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeDebug() {
-        this.setProto(Global.objectPrototype());
+        super(Global.objectPrototype(), $nasgenmap$);
     }
 
     @Override
@@ -187,7 +191,7 @@ public final class NativeDebug extends ScriptObject {
         out.println("Scope count " + ScriptObject.getScopeCount());
         out.println("ScriptObject listeners added " + PropertyListenerManager.getListenersAdded());
         out.println("ScriptObject listeners removed " + PropertyListenerManager.getListenersRemoved());
-        out.println("ScriptFunction count " + ScriptObject.getCount());
+        out.println("ScriptFunction constructor calls " + ScriptFunction.getConstructorCount());
         out.println("ScriptFunction invokes " + ScriptFunction.getInvokes());
         out.println("ScriptFunction allocations " + ScriptFunction.getAllocations());
         out.println("PropertyMap count " + PropertyMap.getCount());

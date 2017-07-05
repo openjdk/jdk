@@ -37,6 +37,7 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
@@ -52,13 +53,16 @@ public final class NativeBoolean extends ScriptObject {
 
     final static MethodHandle WRAPFILTER = findWrapFilter();
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeBoolean(final boolean value) {
         this(value, Global.instance().getBooleanPrototype());
     }
 
     private NativeBoolean(final boolean value, final ScriptObject proto) {
+        super(proto, $nasgenmap$);
         this.value = value;
-        this.setProto(proto);
     }
 
     @Override

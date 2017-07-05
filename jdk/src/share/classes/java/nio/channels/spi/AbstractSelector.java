@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * after, respectively, invoking an I/O operation that might block
  * indefinitely.  In order to ensure that the {@link #end end} method is always
  * invoked, these methods should be used within a
- * <tt>try</tt>&nbsp;...&nbsp;<tt>finally</tt> block: <a name="be">
+ * <tt>try</tt>&nbsp;...&nbsp;<tt>finally</tt> block:
  *
  * <blockquote><pre>
  * try {
@@ -77,6 +77,9 @@ public abstract class AbstractSelector
 
     /**
      * Initializes a new instance of this class.
+     *
+     * @param  provider
+     *         The provider that created this selector
      */
     protected AbstractSelector(SelectorProvider provider) {
         this.provider = provider;

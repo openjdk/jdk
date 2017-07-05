@@ -25,6 +25,9 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.util.ArrayList;
+import java.util.List;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.runtime.ECMAErrors;
 
 /**
@@ -136,4 +139,53 @@ public abstract class NashornException extends RuntimeException {
         return column;
     }
 
+    /**
+     * Returns array javascript stack frames from the given exception object.
+     *
+     * @param exception exception from which stack frames are retrieved and filtered
+     * @return array of javascript stack frames
+     */
+    public static StackTraceElement[] getScriptFrames(final Throwable exception) {
+        final StackTraceElement[] frames = ((Throwable)exception).getStackTrace();
+        final List<StackTraceElement> filtered = new ArrayList<>();
+        for (final StackTraceElement st : frames) {
+            if (ECMAErrors.isScriptFrame(st)) {
+                final String className = "<" + st.getFileName() + ">";
+                String methodName = st.getMethodName();
+                if (methodName.equals(CompilerConstants.RUN_SCRIPT.symbolName())) {
+                    methodName = "<program>";
+                }
+                filtered.add(new StackTraceElement(className, methodName,
+                        st.getFileName(), st.getLineNumber()));
+            }
+        }
+        return filtered.toArray(new StackTraceElement[filtered.size()]);
+    }
+
+    /**
+     * Return a formatted script stack trace string with frames information separated by '\n'
+     *
+     * @param exception exception for which script stack string is returned
+     * @return formatted stack trace string
+     */
+    public static String getScriptStackString(final Throwable exception) {
+        final StringBuilder buf = new StringBuilder();
+        final StackTraceElement[] frames = getScriptFrames((Throwable)exception);
+        for (final StackTraceElement st : frames) {
+            buf.append("\tat ");
+            buf.append(st.getMethodName());
+            buf.append(" (");
+            buf.append(st.getFileName());
+            buf.append(':');
+            buf.append(st.getLineNumber());
+            buf.append(")\n");
+        }
+        final int len = buf.length();
+        // remove trailing '\n'
+        if (len > 0) {
+            assert buf.charAt(len - 1) == '\n';
+            buf.deleteCharAt(len - 1);
+        }
+        return buf.toString();
+    }
 }

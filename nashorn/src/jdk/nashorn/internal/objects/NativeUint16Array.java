@@ -31,6 +31,7 @@ import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 
@@ -44,6 +45,9 @@ public final class NativeUint16Array extends ArrayBufferView {
      */
     @Property(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_WRITABLE | Attribute.NOT_CONFIGURABLE, where = Where.CONSTRUCTOR)
     public static final int BYTES_PER_ELEMENT = 2;
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
 
     private static final Factory FACTORY = new Factory(BYTES_PER_ELEMENT) {
         @Override

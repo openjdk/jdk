@@ -366,6 +366,8 @@ public class StampedLock implements java.io.Serializable {
      * Behavior under timeout and interruption matches that specified
      * for method {@link Lock#tryLock(long,TimeUnit)}.
      *
+     * @param time the maximum time to wait for the lock
+     * @param unit the time unit of the {@code time} argument
      * @return a stamp that can be used to unlock or convert mode,
      * or zero if the lock is not available
      * @throws InterruptedException if the current thread is interrupted
@@ -445,6 +447,8 @@ public class StampedLock implements java.io.Serializable {
      * Behavior under timeout and interruption matches that specified
      * for method {@link Lock#tryLock(long,TimeUnit)}.
      *
+     * @param time the maximum time to wait for the lock
+     * @param unit the time unit of the {@code time} argument
      * @return a stamp that can be used to unlock or convert mode,
      * or zero if the lock is not available
      * @throws InterruptedException if the current thread is interrupted
@@ -510,7 +514,8 @@ public class StampedLock implements java.io.Serializable {
      * obtained from {@link #tryOptimisticRead} or a locking method
      * for this lock has no defined effect or result.
      *
-     * @return true if the lock has not been exclusively acquired
+     * @param stamp a stamp
+     * @return {@code true} if the lock has not been exclusively acquired
      * since issuance of the given stamp; else false
      */
     public boolean validate(long stamp) {
@@ -723,7 +728,7 @@ public class StampedLock implements java.io.Serializable {
      * stamp value. This method may be useful for recovery after
      * errors.
      *
-     * @return true if the lock was held, else false
+     * @return {@code true} if the lock was held, else false
      */
     public boolean tryUnlockWrite() {
         long s; WNode h;
@@ -741,7 +746,7 @@ public class StampedLock implements java.io.Serializable {
      * requiring a stamp value. This method may be useful for recovery
      * after errors.
      *
-     * @return true if the read lock was held, else false
+     * @return {@code true} if the read lock was held, else false
      */
     public boolean tryUnlockRead() {
         long s, m; WNode h;
@@ -773,18 +778,18 @@ public class StampedLock implements java.io.Serializable {
     }
 
     /**
-     * Returns true if the lock is currently held exclusively.
+     * Returns {@code true} if the lock is currently held exclusively.
      *
-     * @return true if the lock is currently held exclusively
+     * @return {@code true} if the lock is currently held exclusively
      */
     public boolean isWriteLocked() {
         return (state & WBIT) != 0L;
     }
 
     /**
-     * Returns true if the lock is currently held non-exclusively.
+     * Returns {@code true} if the lock is currently held non-exclusively.
      *
-     * @return true if the lock is currently held non-exclusively
+     * @return {@code true} if the lock is currently held non-exclusively
      */
     public boolean isReadLocked() {
         return (state & RBITS) != 0L;

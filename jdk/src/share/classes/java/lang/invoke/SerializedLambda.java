@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,66 +97,113 @@ public final class SerializedLambda implements Serializable {
         this.capturedArgs = Objects.requireNonNull(capturedArgs).clone();
     }
 
-    /** Get the name of the class that captured this lambda */
+    /**
+     * Get the name of the class that captured this lambda.
+     * @return the name of the class that captured this lambda
+     */
     public String getCapturingClass() {
         return capturingClass.getName().replace('.', '/');
     }
 
-    /** Get the name of the functional interface class to which this lambda has been converted */
+    /**
+     * Get the name of the functional interface class to which this
+     * lambda has been converted
+     * @return the name of the functional interface this lambda has
+     * been converted to
+     */
     public String getFunctionalInterfaceClass() {
         return functionalInterfaceClass;
     }
 
-    /** Get the name of the primary method for the functional interface to which this lambda has been converted */
+    /**
+     * Get the name of the primary method for the functional interface
+     * to which this lambda has been converted.
+     * @return the name of the primary methods of the functional interface
+     */
     public String getFunctionalInterfaceMethodName() {
         return functionalInterfaceMethodName;
     }
 
-    /** Get the signature of the primary method for the functional interface to which this lambda has been converted */
+    /**
+     * Get the signature of the primary method for the functional
+     * interface to which this lambda has been converted.
+     * @return the signature of the primary method of the functional
+     * interface
+     */
     public String getFunctionalInterfaceMethodSignature() {
         return functionalInterfaceMethodSignature;
     }
 
-    /** Get the method handle kind (see {@link MethodHandleInfo}) of the primary method for the functional interface
-     * to which this lambda has been converted */
+    /**
+     * Get the method handle kind (see {@link MethodHandleInfo}) of
+     * the primary method for the functional interface to which this
+     * lambda has been converted
+     * @return the method handle kind of the primary method of
+     * functional interface
+     */
     public int getFunctionalInterfaceMethodKind() {
         return functionalInterfaceMethodKind;
     }
 
-    /** Get the name of the class containing the implementation method */
+    /**
+     * Get the name of the class containing the implementation
+     * method.
+     * @return the name of the class containing the implementation
+     * method
+     */
     public String getImplClass() {
         return implClass;
     }
 
-    /** Get the name of the implementation method */
+    /**
+     * Get the name of the implementation method.
+     * @return the name of the implementation method
+     */
     public String getImplMethodName() {
         return implMethodName;
     }
 
-    /** Get the signature of the implementation method */
+    /**
+     * Get the signature of the implementation method.
+     * @return the signature of the implementation method
+     */
     public String getImplMethodSignature() {
         return implMethodSignature;
     }
 
-    /** Get the method handle kind (see {@link MethodHandleInfo}) of the implementation method */
+    /**
+     * Get the method handle kind (see {@link MethodHandleInfo}) of
+     * the implementation method.
+     * @return the method handle kind of the implementation method
+     */
     public int getImplMethodKind() {
         return implMethodKind;
     }
 
     /**
-     * Get the signature of the primary functional interface method after type variables are substituted with
-     * their instantiation from the capture site
+     * Get the signature of the primary functional interface method
+     * after type variables are substituted with their instantiation
+     * from the capture site.
+     * @return the signature of the primary functional interface method
+     * after type variable processing
      */
     public final String getInstantiatedMethodType() {
         return instantiatedMethodType;
     }
 
-    /** Get the count of dynamic arguments to the lambda capture site */
+    /**
+     * Get the count of dynamic arguments to the lambda capture site.
+     * @return the count of dynamic arguments to the lambda capture site
+     */
     public int getCapturedArgCount() {
         return capturedArgs.length;
     }
 
-    /** Get a dynamic argument to the lambda capture site */
+    /**
+     * Get a dynamic argument to the lambda capture site.
+     * @param i the argument to capture
+     * @return a dynamic argument to the lambda capture site
+     */
     public Object getCapturedArg(int i) {
         return capturedArgs[i];
     }

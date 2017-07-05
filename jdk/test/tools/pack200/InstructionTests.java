@@ -35,6 +35,7 @@ import java.util.List;
 public class InstructionTests {
     public static void main(String... args) throws Exception {
         testInvokeOpCodes();
+        Utils.cleanup();
     }
     /*
      * the following should produce invokestatic and invokespecial
