@@ -1380,11 +1380,13 @@ class java_lang_LiveStackFrameInfo: AllStatic {
   static int _monitors_offset;
   static int _locals_offset;
   static int _operands_offset;
+  static int _mode_offset;
 
  public:
   static void set_monitors(oop info, oop value);
   static void set_locals(oop info, oop value);
   static void set_operands(oop info, oop value);
+  static void set_mode(oop info, int value);
 
   static void compute_offsets();
 

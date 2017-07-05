@@ -98,21 +98,17 @@ abstract class DelegatingMethodHandle extends MethodHandle {
                                         Object constraint,
                                         NamedFunction getTargetFn) {
         // No pre-action needed.
-        return makeReinvokerForm(target, whichCache, constraint, null, true, getTargetFn, null);
+        return makeReinvokerForm(target, whichCache, constraint, true, getTargetFn, null);
     }
     /** Create a LF which simply reinvokes a target of the given basic type. */
     static LambdaForm makeReinvokerForm(MethodHandle target,
                                         int whichCache,
                                         Object constraint,
-                                        String debugString,
                                         boolean forceInline,
                                         NamedFunction getTargetFn,
                                         NamedFunction preActionFn) {
         MethodType mtype = target.type().basicType();
         Kind kind = whichKind(whichCache);
-        if (debugString == null) {
-            debugString = kind.defaultLambdaName;
-        }
         boolean customized = (whichCache < 0 ||
                 mtype.parameterSlotCount() > MethodType.MAX_MH_INVOKER_ARITY);
         boolean hasPreAction = (preActionFn != null);
@@ -144,7 +140,7 @@ abstract class DelegatingMethodHandle extends MethodHandle {
             targetArgs[0] = names[NEXT_MH];  // overwrite this MH with next MH
             names[REINVOKE] = new LambdaForm.Name(mtype, targetArgs);
         }
-        form = new LambdaForm(debugString, ARG_LIMIT, names, forceInline, kind);
+        form = new LambdaForm(ARG_LIMIT, names, forceInline, kind);
         if (!customized) {
             form = mtype.form().setCachedLambdaForm(whichCache, form);
         }

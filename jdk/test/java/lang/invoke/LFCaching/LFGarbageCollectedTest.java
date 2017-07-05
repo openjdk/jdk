@@ -82,9 +82,9 @@ public final class LFGarbageCollectedTest extends LambdaFormTestCase {
                 throw new Error("Unexpected error: Lambda form of the method handle is null");
             }
 
-            String debugName = (String)DEBUG_NAME.get(lambdaForm);
-            if (debugName != null && debugName.startsWith("identity_")) {
-                // Ignore identity_* LambdaForms.
+            String kind = KIND_FIELD.get(lambdaForm).toString();
+            if (kind.equals("IDENTITY")) {
+                // Ignore identity LambdaForms.
                 return;
             }
 

@@ -275,6 +275,7 @@ public:
     virtual void Show();
     virtual void Hide();
     virtual void Reshape(int x, int y, int w, int h);
+    void ReshapeNoScale(int x, int y, int w, int h);
 
     /*
      * Fix for 4046446.
