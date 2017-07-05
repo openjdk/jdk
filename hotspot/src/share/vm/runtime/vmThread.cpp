@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,11 +426,6 @@ void VMThread::loop() {
       // follow that also require a safepoint
       if (_cur_vm_operation->evaluate_at_safepoint()) {
 
-        if (PrintGCApplicationConcurrentTime) {
-           gclog_or_tty->print_cr("Application time: %3.7f seconds",
-                                  RuntimeService::last_application_time_sec());
-        }
-
         _vm_queue->set_drain_list(safepoint_ops); // ensure ops can be scanned
 
         SafepointSynchronize::begin();
@@ -476,12 +471,6 @@ void VMThread::loop() {
 
         // Complete safepoint synchronization
         SafepointSynchronize::end();
-
-        if (PrintGCApplicationStoppedTime) {
-          gclog_or_tty->print_cr("Total time for which application threads "
-                                 "were stopped: %3.7f seconds",
-                                 RuntimeService::last_safepoint_time_sec());
-        }
 
       } else {  // not a safepoint operation
         if (TraceLongCompiles) {

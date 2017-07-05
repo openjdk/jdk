@@ -139,6 +139,10 @@ const size_t M                  = K*K;
 const size_t G                  = M*K;
 const size_t HWperKB            = K / sizeof(HeapWord);
 
+const size_t LOG_K              = 10;
+const size_t LOG_M              = 2 * LOG_K;
+const size_t LOG_G              = 2 * LOG_M;
+
 const jint min_jint = (jint)1 << (sizeof(jint)*BitsPerByte-1); // 0x80000000 == smallest jint
 const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == largest jint
 

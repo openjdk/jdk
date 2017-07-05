@@ -32,6 +32,7 @@ PRODUCT = java
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = EbayClient EbayServer
+include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::
 	$(SUBDIRS-loop)

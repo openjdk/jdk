@@ -207,8 +207,20 @@
   develop(bool, G1PrintOopAppls, false,                                     \
           "When true, print applications of closures to external locs.")    \
                                                                             \
-  develop(intx, G1LogRSRegionEntries, 7,                                    \
-          "Log_2 of max number of regions for which we keep bitmaps.")      \
+  develop(intx, G1RSetRegionEntriesBase, 256,                               \
+          "Max number of regions in a fine-grain table per MB.")            \
+                                                                            \
+  product(intx, G1RSetRegionEntries, 0,                                     \
+          "Max number of regions for which we keep bitmaps."                \
+          "Will be set ergonomically by default")                           \
+                                                                            \
+  develop(intx, G1RSetSparseRegionEntriesBase, 4,                           \
+          "Max number of entries per region in a sparse table "             \
+          "per MB.")                                                        \
+                                                                            \
+  product(intx, G1RSetSparseRegionEntries, 0,                               \
+          "Max number of entries per region in a sparse table."             \
+          "Will be set ergonomically by default.")                          \
                                                                             \
   develop(bool, G1RecordHRRSOops, false,                                    \
           "When true, record recent calls to rem set operations.")          \
@@ -292,6 +304,10 @@
                                                                             \
   develop(bool, G1VerifyCTCleanup, false,                                   \
           "Verify card table cleanup.")                                     \
+                                                                            \
+  product(uintx, G1RSetScanBlockSize, 64,                                   \
+          "Size of a work unit of cards claimed by a worker thread"         \
+          "during RSet scanning.")                                          \
                                                                             \
   develop(bool, ReduceInitialCardMarksForG1, false,                         \
           "When ReduceInitialCardMarks is true, this flag setting "         \

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1341,7 +1341,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
         if (is_virtual_call) {
           jccb(Assembler::zero, found_null);
           // Receiver did not match any saved receiver and there is no empty row for it.
-          // Increment total counter to indicate polimorphic case.
+          // Increment total counter to indicate polymorphic case.
           increment_mdp_data_at(mdp, in_bytes(CounterData::count_offset()));
           jmp(done);
           bind(found_null);

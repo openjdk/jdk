@@ -175,6 +175,7 @@ arguments.cpp                           jvmtiExport.hpp
 arguments.cpp                           management.hpp
 arguments.cpp                           oop.inline.hpp
 arguments.cpp                           os_<os_family>.inline.hpp
+arguments.cpp                           referenceProcessor.hpp
 arguments.cpp                           universe.inline.hpp
 arguments.cpp                           vm_version_<arch>.hpp
 
@@ -1483,6 +1484,7 @@ deoptimization.cpp                      thread.hpp
 deoptimization.cpp                      vframe.hpp
 deoptimization.cpp                      vframeArray.hpp
 deoptimization.cpp                      vframe_hp.hpp
+deoptimization.cpp                      vmreg_<arch>.inline.hpp
 deoptimization.cpp                      xmlstream.hpp
 
 deoptimization.hpp                      allocation.hpp
@@ -2653,6 +2655,7 @@ loaderConstraints.cpp                   resourceArea.hpp
 loaderConstraints.cpp                   safepoint.hpp
 
 loaderConstraints.hpp                   dictionary.hpp
+loaderConstraints.hpp                   placeholders.hpp
 loaderConstraints.hpp                   hashtable.hpp
 
 location.cpp                            debugInfo.hpp

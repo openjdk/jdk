@@ -37,6 +37,7 @@ import javax.swing.plaf.ComponentUI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.util.logging.PlatformLogger;
+import sun.awt.AWTAccessor;
 
 class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListener, ItemListener, KeyEventDispatcher, XChoicePeerListener {
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XFileDialogPeer");
@@ -170,6 +171,10 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         fileList = new List();
         filterField = new TextField();
         selectionField = new TextField();
+
+        boolean isMultipleMode =
+            AWTAccessor.getFileDialogAccessor().isMultipleMode(target);
+        fileList.setMultipleMode(isMultipleMode);
 
         // the insets used by the components in the fileDialog
         Insets noInset = new Insets(0, 0, 0, 0);
@@ -380,7 +385,8 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
      * handle the selection event
      */
     void handleSelection(String file) {
-        int index = file.lastIndexOf('/');
+
+        int index = file.lastIndexOf(java.io.File.separatorChar);
 
         if (index == -1) {
             savedDir = this.dir;
@@ -389,8 +395,12 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
             savedDir = file.substring(0, index+1);
             savedFile = file.substring(index+1);
         }
-        target.setDirectory(savedDir);
-        target.setFile(savedFile);
+
+        AWTAccessor.FileDialogAccessor fileDialogAccessor = AWTAccessor.getFileDialogAccessor();
+
+        fileDialogAccessor.setDirectory(target, savedDir);
+        fileDialogAccessor.setFile(target, savedFile);
+        fileDialogAccessor.setFiles(target, savedDir, fileList.getSelectedItems());
     }
 
     /**
@@ -404,8 +414,13 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         setFilterField(null);
         directoryList.clear();
         fileList.clear();
-        target.setFile(null);
-        target.setDirectory(null);
+
+        AWTAccessor.FileDialogAccessor fileDialogAccessor = AWTAccessor.getFileDialogAccessor();
+
+        fileDialogAccessor.setDirectory(target, null);
+        fileDialogAccessor.setFile(target, null);
+        fileDialogAccessor.setFiles(target, null, null);
+
         handleQuitButton();
     }
 
