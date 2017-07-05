@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,5 +292,31 @@ void CollectedHeap::resize_all_tlabs() {
          "should only resize tlabs at safepoint");
 
     ThreadLocalAllocBuffer::resize_all_tlabs();
+  }
+}
+
+void CollectedHeap::pre_full_gc_dump() {
+  if (HeapDumpBeforeFullGC) {
+    TraceTime tt("Heap Dump: ", PrintGCDetails, false, gclog_or_tty);
+    // We are doing a "major" collection and a heap dump before
+    // major collection has been requested.
+    HeapDumper::dump_heap();
+  }
+  if (PrintClassHistogramBeforeFullGC) {
+    TraceTime tt("Class Histogram: ", PrintGCDetails, true, gclog_or_tty);
+    VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */, false /* ! prologue */);
+    inspector.doit();
+  }
+}
+
+void CollectedHeap::post_full_gc_dump() {
+  if (HeapDumpAfterFullGC) {
+    TraceTime tt("Heap Dump", PrintGCDetails, false, gclog_or_tty);
+    HeapDumper::dump_heap();
+  }
+  if (PrintClassHistogramAfterFullGC) {
+    TraceTime tt("Class Histogram", PrintGCDetails, true, gclog_or_tty);
+    VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */, false /* ! prologue */);
+    inspector.doit();
   }
 }

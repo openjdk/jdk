@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -73,7 +73,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestEn
     CK_SESSION_HANDLE ckSessionHandle;
     CK_BYTE_PTR ckpPart = NULL_PTR, ckpEncryptedPart;
     CK_ULONG ckPartLength, ckEncryptedPartLength = 0;
-    jbyteArray jEncryptedPart;
+    jbyteArray jEncryptedPart = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -81,19 +81,27 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestEn
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jByteArrayToCKByteArray(env, jPart, &ckpPart, &ckPartLength);
+    if ((*env)->ExceptionCheck(env)) { return NULL; }
 
     rv = (*ckpFunctions->C_DigestEncryptUpdate)(ckSessionHandle, ckpPart, ckPartLength, NULL_PTR, &ckEncryptedPartLength);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+        free(ckpPart);
+        return NULL;
+    }
 
     ckpEncryptedPart = (CK_BYTE_PTR) malloc(ckEncryptedPartLength * sizeof(CK_BYTE));
+    if (ckpEncryptedPart == NULL) {
+        free(ckpPart);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
 
     rv = (*ckpFunctions->C_DigestEncryptUpdate)(ckSessionHandle, ckpPart, ckPartLength, ckpEncryptedPart, &ckEncryptedPartLength);
-
-    jEncryptedPart = ckByteArrayToJByteArray(env, ckpEncryptedPart, ckEncryptedPartLength);
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jEncryptedPart = ckByteArrayToJByteArray(env, ckpEncryptedPart, ckEncryptedPartLength);
+    }
     free(ckpPart);
     free(ckpEncryptedPart);
-
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
 
     return jEncryptedPart ;
 }
@@ -117,7 +125,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptD
     CK_SESSION_HANDLE ckSessionHandle;
     CK_BYTE_PTR ckpPart, ckpEncryptedPart = NULL_PTR;
     CK_ULONG ckPartLength = 0, ckEncryptedPartLength;
-    jbyteArray jPart;
+    jbyteArray jPart = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -125,19 +133,27 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptD
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jByteArrayToCKByteArray(env, jEncryptedPart, &ckpEncryptedPart, &ckEncryptedPartLength);
+    if ((*env)->ExceptionCheck(env)) { return NULL; }
 
     rv = (*ckpFunctions->C_DecryptDigestUpdate)(ckSessionHandle, ckpEncryptedPart, ckEncryptedPartLength, NULL_PTR, &ckPartLength);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+        free(ckpEncryptedPart);
+        return NULL;
+    }
 
     ckpPart = (CK_BYTE_PTR) malloc(ckPartLength * sizeof(CK_BYTE));
+    if (ckpPart == NULL) {
+        free(ckpEncryptedPart);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
 
     rv = (*ckpFunctions->C_DecryptDigestUpdate)(ckSessionHandle, ckpEncryptedPart, ckEncryptedPartLength, ckpPart, &ckPartLength);
-
-    jPart = ckByteArrayToJByteArray(env, ckpPart, ckPartLength);
-    free(ckpPart);
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jPart = ckByteArrayToJByteArray(env, ckpPart, ckPartLength);
+    }
     free(ckpEncryptedPart);
-
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
+    free(ckpPart);
 
     return jPart ;
 }
@@ -161,7 +177,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignEncr
     CK_SESSION_HANDLE ckSessionHandle;
     CK_BYTE_PTR ckpPart = NULL_PTR, ckpEncryptedPart;
     CK_ULONG ckPartLength, ckEncryptedPartLength = 0;
-    jbyteArray jEncryptedPart;
+    jbyteArray jEncryptedPart = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -169,19 +185,27 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SignEncr
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jByteArrayToCKByteArray(env, jPart, &ckpPart, &ckPartLength);
+    if ((*env)->ExceptionCheck(env)) { return NULL; }
 
     rv = (*ckpFunctions->C_SignEncryptUpdate)(ckSessionHandle, ckpPart, ckPartLength, NULL_PTR, &ckEncryptedPartLength);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+        free(ckpPart);
+        return NULL;
+    }
 
     ckpEncryptedPart = (CK_BYTE_PTR) malloc(ckEncryptedPartLength * sizeof(CK_BYTE));
+    if (ckpEncryptedPart == NULL) {
+        free(ckpPart);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
 
     rv = (*ckpFunctions->C_SignEncryptUpdate)(ckSessionHandle, ckpPart, ckPartLength, ckpEncryptedPart, &ckEncryptedPartLength);
-
-    jEncryptedPart = ckByteArrayToJByteArray(env, ckpEncryptedPart, ckEncryptedPartLength);
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jEncryptedPart = ckByteArrayToJByteArray(env, ckpEncryptedPart, ckEncryptedPartLength);
+    }
     free(ckpPart);
     free(ckpEncryptedPart);
-
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
 
     return jEncryptedPart ;
 }
@@ -205,7 +229,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptV
     CK_SESSION_HANDLE ckSessionHandle;
     CK_BYTE_PTR ckpPart, ckpEncryptedPart = NULL_PTR;
     CK_ULONG ckPartLength = 0, ckEncryptedPartLength;
-    jbyteArray jPart;
+    jbyteArray jPart = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -213,19 +237,28 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptV
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jByteArrayToCKByteArray(env, jEncryptedPart, &ckpEncryptedPart, &ckEncryptedPartLength);
+    if ((*env)->ExceptionCheck(env)) { return NULL; }
 
     rv = (*ckpFunctions->C_DecryptVerifyUpdate)(ckSessionHandle, ckpEncryptedPart, ckEncryptedPartLength, NULL_PTR, &ckPartLength);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+        free(ckpEncryptedPart);
+        return NULL;
+    }
 
     ckpPart = (CK_BYTE_PTR) malloc(ckPartLength * sizeof(CK_BYTE));
+    if (ckpPart == NULL) {
+        free(ckpEncryptedPart);
+        JNU_ThrowOutOfMemoryError(env, 0);
+        return NULL;
+    }
 
     rv = (*ckpFunctions->C_DecryptVerifyUpdate)(ckSessionHandle, ckpEncryptedPart, ckEncryptedPartLength, ckpPart, &ckPartLength);
 
-    jPart = ckByteArrayToJByteArray(env, ckpPart, ckPartLength);
-    free(ckpPart);
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        jPart = ckByteArrayToJByteArray(env, ckpPart, ckPartLength);
+    }
     free(ckpEncryptedPart);
-
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return NULL ; }
+    free(ckpPart);
 
     return jPart ;
 }
@@ -252,7 +285,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GetFunctionSta
 
     /* C_GetFunctionStatus should always return CKR_FUNCTION_NOT_PARALLEL */
     rv = (*ckpFunctions->C_GetFunctionStatus)(ckSessionHandle);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
 #endif
 
@@ -277,6 +310,6 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1CancelFunction
 
     /* C_GetFunctionStatus should always return CKR_FUNCTION_NOT_PARALLEL */
     rv = (*ckpFunctions->C_CancelFunction)(ckSessionHandle);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
 #endif

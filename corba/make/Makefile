@@ -112,8 +112,6 @@ ifndef TARGET_JAVA
   TARGET_JAVA = java
 endif
 
-NO_PROPRIETARY_API_WARNINGS = -XDignore.symbol.file=true
-
 SELF = $(lastword $(MAKEFILE_LIST))
 
 # for jdk, we generate the following:

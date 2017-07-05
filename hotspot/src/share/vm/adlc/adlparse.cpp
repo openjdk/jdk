@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,7 +298,7 @@ void ADLParser::matchrule_clone_and_swap(MatchRule* rule, const char* instr_iden
   rule->count_commutative_op(count);
   if (count > 0) {
     // Clone match rule and swap commutative operation's operands.
-    rule->swap_commutative_op(instr_ident, count, match_rules_cnt);
+    rule->matchrule_swap_commutative_op(instr_ident, count, match_rules_cnt);
   }
 }
 
@@ -2586,7 +2586,7 @@ void ADLParser::peep_constraint_parse(Peephole &peep) {
   while( _curchar != ')' ) {
     // Get information on the left instruction and its operand
     // left-instructions's number
-    intptr_t   left_inst = get_int();
+    int left_inst = get_int();
     // Left-instruction's operand
     skipws();
     if( _curchar != '.' ) {
@@ -2602,7 +2602,7 @@ void ADLParser::peep_constraint_parse(Peephole &peep) {
 
     skipws();
     // Get information on the right instruction and its operand
-    intptr_t right_inst;        // Right-instructions's number
+    int right_inst;        // Right-instructions's number
     if( isdigit(_curchar) ) {
       right_inst = get_int();
       // Right-instruction's operand
@@ -3497,22 +3497,24 @@ FormatRule* ADLParser::template_parse(void) {
 
     // (1)
     // Check if there is a string to pass through to output
-    char *start = _ptr;       // Record start of the next string
-    while ((_curchar != '$') && ((_curchar != '%') || (*(_ptr+1) != '}')) ) {
-      // If at the start of a comment, skip past it
-      if( (_curchar == '/') && ((*(_ptr+1) == '/') || (*(_ptr+1) == '*')) ) {
-        skipws_no_preproc();
-      } else {
-        // ELSE advance to the next character, or start of the next line
-        next_char_or_line();
+    {
+      char *start = _ptr;       // Record start of the next string
+      while ((_curchar != '$') && ((_curchar != '%') || (*(_ptr+1) != '}')) ) {
+        // If at the start of a comment, skip past it
+        if( (_curchar == '/') && ((*(_ptr+1) == '/') || (*(_ptr+1) == '*')) ) {
+          skipws_no_preproc();
+        } else {
+          // ELSE advance to the next character, or start of the next line
+          next_char_or_line();
+        }
       }
-    }
-    // If a string was found, terminate it and record in EncClass
-    if ( start != _ptr ) {
-      *_ptr  = '\0';          // Terminate the string
-      // Add flag to _strings list indicating we should check _rep_vars
-      format->_strings.addName(NameList::_signal2);
-      format->_strings.addName(start);
+      // If a string was found, terminate it and record in EncClass
+      if ( start != _ptr ) {
+        *_ptr  = '\0';          // Terminate the string
+        // Add flag to _strings list indicating we should check _rep_vars
+        format->_strings.addName(NameList::_signal2);
+        format->_strings.addName(start);
+      }
     }
 
     // (2)
@@ -3563,10 +3565,10 @@ FormatRule* ADLParser::template_parse(void) {
             // copy it and record in FormatRule
             if ( _curchar == '$' ) {
               next_char();          // Move past the '$'
-              char* rep_var = get_ident(); // Nil terminate the variable name
-              rep_var = strdup(rep_var);// Copy the string
+              char* next_rep_var = get_ident(); // Nil terminate the variable name
+              next_rep_var = strdup(next_rep_var);// Copy the string
               *_ptr   = _curchar;     // and replace Nil with original character
-              format->_rep_vars.addName(rep_var);
+              format->_rep_vars.addName(next_rep_var);
               // Add flag to _strings list indicating we should check _rep_vars
               format->_strings.addName(NameList::_signal);
             }
@@ -3714,13 +3716,13 @@ ExpandRule* ADLParser::expand_parse(InstructForm *instr) {
           parse_err(SYNERR, "identifier expected at %c\n", _curchar);
           continue;
         }                            // Check that you have a valid operand
-        const Form *form = instr->_localNames[ident2];
-        if (!form) {
+        const Form *form2 = instr->_localNames[ident2];
+        if (!form2) {
           parse_err(SYNERR, "operand name expected at %s\n", ident2);
           continue;
         }
-        oper = form->is_operand();
-        if (oper == NULL && !form->is_opclass()) {
+        oper = form2->is_operand();
+        if (oper == NULL && !form2->is_opclass()) {
           parse_err(SYNERR, "operand name expected at %s\n", ident2);
           continue;
         }                            // Add operand to list
@@ -4271,7 +4273,7 @@ int ADLParser::get_int(void) {
   int           result;           // Storage for integer result
 
   if( _curline == NULL )          // Return NULL at EOF.
-    return NULL;
+    return 0;
 
   skipws();                       // Skip whitespace before identifier
   start = end = _ptr;             // Start points at first character
@@ -4553,7 +4555,7 @@ void ADLParser::parse_err(int flag, const char *fmt, ...) {
 
 //---------------------------ensure_start_of_line------------------------------
 // A preprocessor directive has been encountered.  Be sure it has fallen at
-// the begining of a line, or else report an error.
+// the beginning of a line, or else report an error.
 void ADLParser::ensure_start_of_line(void) {
   if (_curchar == '\n') { next_line(); return; }
   assert( _ptr >= _curline && _ptr < _curline+strlen(_curline),

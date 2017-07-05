@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,7 +275,7 @@ void Dict::print(PrintKeyOrValue print_key, PrintKeyOrValue print_value) {
 // Convert string to hash key.  This algorithm implements a universal hash
 // function with the multipliers frozen (ok, so it's not universal).  The
 // multipliers (and allowable characters) are all odd, so the resultant sum
-// is odd - guarenteed not divisible by any power of two, so the hash tables
+// is odd - guaranteed not divisible by any power of two, so the hash tables
 // can be any power of two with good results.  Also, I choose multipliers
 // that have only 2 bits set (the low is always set to be odd) so
 // multiplication requires only shifts and adds.  Characters are required to
@@ -296,7 +296,7 @@ int hashstr(const void *t) {
 }
 
 //------------------------------hashptr--------------------------------------
-// Slimey cheap hash function; no guarenteed performance.  Better than the
+// Slimey cheap hash function; no guaranteed performance.  Better than the
 // default for pointers, especially on MS-DOS machines.
 int hashptr(const void *key) {
 #ifdef __TURBOC__
@@ -306,7 +306,7 @@ int hashptr(const void *key) {
 #endif
 }
 
-// Slimey cheap hash function; no guarenteed performance.
+// Slimey cheap hash function; no guaranteed performance.
 int hashkey(const void *key) {
   return (int)((intptr_t)key);
 }

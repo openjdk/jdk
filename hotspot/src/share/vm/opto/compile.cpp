@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,7 +337,7 @@ void Compile::print_compile_messages() {
     tty->print_cr("*********************************************************");
   }
   if (env()->break_at_compile()) {
-    // Open the debugger when compiing this method.
+    // Open the debugger when compiling this method.
     tty->print("### Breaking when compiling: ");
     method()->print_short_name();
     tty->cr();
@@ -1191,8 +1191,8 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     default: ShouldNotReachHere();
     }
     break;
-  case 2:                       // No collasping at level 2; keep all splits
-  case 3:                       // No collasping at level 3; keep all splits
+  case 2:                       // No collapsing at level 2; keep all splits
+  case 3:                       // No collapsing at level 3; keep all splits
     break;
   default:
     Unimplemented();
@@ -2005,8 +2005,10 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
   case Op_StoreP:
   case Op_StoreN:
   case Op_LoadB:
+  case Op_LoadUB:
   case Op_LoadUS:
   case Op_LoadI:
+  case Op_LoadUI2L:
   case Op_LoadKlass:
   case Op_LoadNKlass:
   case Op_LoadL:
@@ -2102,7 +2104,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
         // [base_reg + offset]
         // NullCheck base_reg
         //
-        // Pin the new DecodeN node to non-null path on these patforms (Sparc)
+        // Pin the new DecodeN node to non-null path on these platform (Sparc)
         // to keep the information to which NULL check the new DecodeN node
         // corresponds to use it as value in implicit_null_check().
         //

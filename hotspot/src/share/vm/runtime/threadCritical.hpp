@@ -29,7 +29,7 @@
 //
 // Due to race conditions during vm exit, some of the os level
 // synchronization primitives may not be deallocated at exit. It
-// is a good plan to implement the platform dependant sections of
+// is a good plan to implement the platform dependent sections of
 // code with resources that are recoverable during process
 // cleanup by the os. Calling the initialize method before use
 // is also problematic, it is best to use preinitialized primitives

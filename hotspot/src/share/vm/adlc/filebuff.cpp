@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 // FILEBUFF.CPP - Routines for handling a parser file buffer
 #include "adlc.hpp"
 
+using namespace std;
+
 //------------------------------FileBuff---------------------------------------
 // Create a new parsing buffer
 FileBuff::FileBuff( BufferedFile *fptr, ArchDesc& archDesc) : _fp(fptr), _AD(archDesc) {
@@ -48,10 +50,10 @@ FileBuff::FileBuff( BufferedFile *fptr, ArchDesc& archDesc) : _fp(fptr), _AD(arc
     file_error(SEMERR, 0, "Buffer allocation failed\n");
     exit(1);                    // Exit on allocation failure
   }
-  *_bigbuf = '\n';               // Lead with a sentinal newline
-  _buf = _bigbuf+1;                     // Skip sentinal
+  *_bigbuf = '\n';               // Lead with a sentinel newline
+  _buf = _bigbuf+1;                     // Skip sentinel
   _bufmax = _buf;               // Buffer is empty
-  _bufeol = _bigbuf;              // _bufeol points at sentinal
+  _bufeol = _bigbuf;              // _bufeol points at sentinel
   _filepos = -1;                 // filepos is in sync with _bufeol
   _bufoff = _offset = 0L;       // Offset at file start
 
@@ -60,8 +62,8 @@ FileBuff::FileBuff( BufferedFile *fptr, ArchDesc& archDesc) : _fp(fptr), _AD(arc
     file_error(SEMERR, 0, "File read error, no input read\n");
     exit(1);                     // Exit on read error
   }
-  *_bufmax = '\n';               // End with a sentinal new-line
-  *(_bufmax+1) = '\0';           // Then end with a sentinal NULL
+  *_bufmax = '\n';               // End with a sentinel new-line
+  *(_bufmax+1) = '\0';           // Then end with a sentinel NULL
 }
 
 //------------------------------~FileBuff--------------------------------------
@@ -79,7 +81,7 @@ char *FileBuff::get_line(void) {
 
   _linenum++;
   retval = ++_bufeol;      // return character following end of previous line
-  if (*retval == '\0') return NULL; // Check for EOF sentinal
+  if (*retval == '\0') return NULL; // Check for EOF sentinel
   // Search for newline character which must end each line
   for(_filepos++; *_bufeol != '\n'; _bufeol++)
     _filepos++;                    // keep filepos in sync with _bufeol
@@ -217,7 +219,7 @@ static int printline( ostream& os, const char *fname, int line,
     off = expandtab(os,off,*s++,'-','-');
   if( i == len ) os << '^';     // Mark end of region
   os << '\n';                   // End of marked line
-  return 0L;                    // All done
+  return 0;                     // All done
 }
 
 //------------------------------print------------------------------------------
