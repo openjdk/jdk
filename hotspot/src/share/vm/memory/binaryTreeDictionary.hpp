@@ -37,77 +37,78 @@
 // A TreeList is a FreeList which can be used to maintain a
 // binary tree of free lists.
 
-template <class Chunk> class TreeChunk;
-template <class Chunk> class BinaryTreeDictionary;
-template <class Chunk> class AscendTreeCensusClosure;
-template <class Chunk> class DescendTreeCensusClosure;
-template <class Chunk> class DescendTreeSearchClosure;
+template <class Chunk_t, template <class> class FreeList_t> class TreeChunk;
+template <class Chunk_t, template <class> class FreeList_t> class BinaryTreeDictionary;
+template <class Chunk_t, template <class> class FreeList_t> class AscendTreeCensusClosure;
+template <class Chunk_t, template <class> class FreeList_t> class DescendTreeCensusClosure;
+template <class Chunk_t, template <class> class FreeList_t> class DescendTreeSearchClosure;
 
-template <class Chunk>
-class TreeList: public FreeList<Chunk> {
-  friend class TreeChunk<Chunk>;
-  friend class BinaryTreeDictionary<Chunk>;
-  friend class AscendTreeCensusClosure<Chunk>;
-  friend class DescendTreeCensusClosure<Chunk>;
-  friend class DescendTreeSearchClosure<Chunk>;
+template <class Chunk_t, template <class> class FreeList_t>
+class TreeList : public FreeList_t<Chunk_t> {
+  friend class TreeChunk<Chunk_t, FreeList_t>;
+  friend class BinaryTreeDictionary<Chunk_t, FreeList_t>;
+  friend class AscendTreeCensusClosure<Chunk_t, FreeList_t>;
+  friend class DescendTreeCensusClosure<Chunk_t, FreeList_t>;
+  friend class DescendTreeSearchClosure<Chunk_t, FreeList_t>;
 
-  TreeList<Chunk>* _parent;
-  TreeList<Chunk>* _left;
-  TreeList<Chunk>* _right;
+  TreeList<Chunk_t, FreeList_t>* _parent;
+  TreeList<Chunk_t, FreeList_t>* _left;
+  TreeList<Chunk_t, FreeList_t>* _right;
 
  protected:
-  TreeList<Chunk>* parent() const { return _parent; }
-  TreeList<Chunk>* left()   const { return _left;   }
-  TreeList<Chunk>* right()  const { return _right;  }
 
-  // Explicitly import these names into our namespace to fix name lookup with templates
-  using FreeList<Chunk>::head;
-  using FreeList<Chunk>::set_head;
+  TreeList<Chunk_t, FreeList_t>* parent() const { return _parent; }
+  TreeList<Chunk_t, FreeList_t>* left()   const { return _left;   }
+  TreeList<Chunk_t, FreeList_t>* right()  const { return _right;  }
 
-  using FreeList<Chunk>::tail;
-  using FreeList<Chunk>::set_tail;
-  using FreeList<Chunk>::link_tail;
+  // Wrapper on call to base class, to get the template to compile.
+  Chunk_t* head() const { return FreeList_t<Chunk_t>::head(); }
+  Chunk_t* tail() const { return FreeList_t<Chunk_t>::tail(); }
+  void set_head(Chunk_t* head) { FreeList_t<Chunk_t>::set_head(head); }
+  void set_tail(Chunk_t* tail) { FreeList_t<Chunk_t>::set_tail(tail); }
 
-  using FreeList<Chunk>::increment_count;
-  NOT_PRODUCT(using FreeList<Chunk>::increment_returned_bytes_by;)
-  using FreeList<Chunk>::verify_chunk_in_free_list;
-  using FreeList<Chunk>::size;
+  size_t size() const { return FreeList_t<Chunk_t>::size(); }
 
   // Accessors for links in tree.
 
-  void set_left(TreeList<Chunk>* tl) {
+  void set_left(TreeList<Chunk_t, FreeList_t>* tl) {
     _left   = tl;
     if (tl != NULL)
       tl->set_parent(this);
   }
-  void set_right(TreeList<Chunk>* tl) {
+  void set_right(TreeList<Chunk_t, FreeList_t>* tl) {
     _right  = tl;
     if (tl != NULL)
       tl->set_parent(this);
   }
-  void set_parent(TreeList<Chunk>* tl)  { _parent = tl;   }
+  void set_parent(TreeList<Chunk_t, FreeList_t>* tl)  { _parent = tl;   }
 
-  void clearLeft()               { _left = NULL;   }
+  void clear_left()               { _left = NULL;   }
   void clear_right()              { _right = NULL;  }
   void clear_parent()             { _parent = NULL; }
-  void initialize()              { clearLeft(); clear_right(), clear_parent(); }
+  void initialize()               { clear_left(); clear_right(), clear_parent(); FreeList_t<Chunk_t>::initialize(); }
 
   // For constructing a TreeList from a Tree chunk or
   // address and size.
-  static TreeList<Chunk>* as_TreeList(TreeChunk<Chunk>* tc);
-  static TreeList<Chunk>* as_TreeList(HeapWord* addr, size_t size);
+  TreeList();
+  static TreeList<Chunk_t, FreeList_t>*
+          as_TreeList(TreeChunk<Chunk_t, FreeList_t>* tc);
+  static TreeList<Chunk_t, FreeList_t>* as_TreeList(HeapWord* addr, size_t size);
 
   // Returns the head of the free list as a pointer to a TreeChunk.
-  TreeChunk<Chunk>* head_as_TreeChunk();
+  TreeChunk<Chunk_t, FreeList_t>* head_as_TreeChunk();
 
   // Returns the first available chunk in the free list as a pointer
   // to a TreeChunk.
-  TreeChunk<Chunk>* first_available();
+  TreeChunk<Chunk_t, FreeList_t>* first_available();
 
   // Returns the block with the largest heap address amongst
   // those in the list for this size; potentially slow and expensive,
   // use with caution!
-  TreeChunk<Chunk>* largest_address();
+  TreeChunk<Chunk_t, FreeList_t>* largest_address();
+
+  TreeList<Chunk_t, FreeList_t>* get_better_list(
+    BinaryTreeDictionary<Chunk_t, FreeList_t>* dictionary);
 
   // remove_chunk_replace_if_needed() removes the given "tc" from the TreeList.
   // If "tc" is the first chunk in the list, it is also the
@@ -115,10 +116,10 @@ class TreeList: public FreeList<Chunk> {
   // returns the possibly replaced TreeList* for the node in
   // the tree.  It also updates the parent of the original
   // node to point to the new node.
-  TreeList<Chunk>* remove_chunk_replace_if_needed(TreeChunk<Chunk>* tc);
+  TreeList<Chunk_t, FreeList_t>* remove_chunk_replace_if_needed(TreeChunk<Chunk_t, FreeList_t>* tc);
   // See FreeList.
-  void return_chunk_at_head(TreeChunk<Chunk>* tc);
-  void return_chunk_at_tail(TreeChunk<Chunk>* tc);
+  void return_chunk_at_head(TreeChunk<Chunk_t, FreeList_t>* tc);
+  void return_chunk_at_tail(TreeChunk<Chunk_t, FreeList_t>* tc);
 };
 
 // A TreeChunk is a subclass of a Chunk that additionally
@@ -134,52 +135,54 @@ class TreeList: public FreeList<Chunk> {
 // on the free list for a node in the tree and is only removed if
 // it is the last chunk on the free list.
 
-template <class Chunk>
-class TreeChunk : public Chunk {
-  friend class TreeList<Chunk>;
-  TreeList<Chunk>* _list;
-  TreeList<Chunk> _embedded_list;  // if non-null, this chunk is on _list
+template <class Chunk_t, template <class> class FreeList_t>
+class TreeChunk : public Chunk_t {
+  friend class TreeList<Chunk_t, FreeList_t>;
+  TreeList<Chunk_t, FreeList_t>* _list;
+  TreeList<Chunk_t, FreeList_t> _embedded_list;  // if non-null, this chunk is on _list
+
+  static size_t _min_tree_chunk_size;
+
  protected:
-  TreeList<Chunk>* embedded_list() const { return (TreeList<Chunk>*) &_embedded_list; }
-  void set_embedded_list(TreeList<Chunk>* v) { _embedded_list = *v; }
+  TreeList<Chunk_t, FreeList_t>* embedded_list() const { return (TreeList<Chunk_t, FreeList_t>*) &_embedded_list; }
+  void set_embedded_list(TreeList<Chunk_t, FreeList_t>* v) { _embedded_list = *v; }
  public:
-  TreeList<Chunk>* list() { return _list; }
-  void set_list(TreeList<Chunk>* v) { _list = v; }
-  static TreeChunk<Chunk>* as_TreeChunk(Chunk* fc);
+  TreeList<Chunk_t, FreeList_t>* list() { return _list; }
+  void set_list(TreeList<Chunk_t, FreeList_t>* v) { _list = v; }
+  static TreeChunk<Chunk_t, FreeList_t>* as_TreeChunk(Chunk_t* fc);
   // Initialize fields in a TreeChunk that should be
   // initialized when the TreeChunk is being added to
   // a free list in the tree.
   void initialize() { embedded_list()->initialize(); }
 
-  Chunk* next() const { return Chunk::next(); }
-  Chunk* prev() const { return Chunk::prev(); }
-  size_t size() const volatile { return Chunk::size(); }
+  Chunk_t* next() const { return Chunk_t::next(); }
+  Chunk_t* prev() const { return Chunk_t::prev(); }
+  size_t size() const volatile { return Chunk_t::size(); }
+
+  static size_t min_size() {
+    return _min_tree_chunk_size;
+  }
 
   // debugging
   void verify_tree_chunk_list() const;
+  void assert_is_mangled() const;
 };
 
 
-template <class Chunk>
-class BinaryTreeDictionary: public FreeBlockDictionary<Chunk> {
+template <class Chunk_t, template <class> class FreeList_t>
+class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
   friend class VMStructs;
-  bool       _splay;
-  bool       _adaptive_freelists;
   size_t     _total_size;
   size_t     _total_free_blocks;
-  TreeList<Chunk>* _root;
+  TreeList<Chunk_t, FreeList_t>* _root;
 
   // private accessors
-  bool splay() const { return _splay; }
-  void set_splay(bool v) { _splay = v; }
   void set_total_size(size_t v) { _total_size = v; }
   virtual void inc_total_size(size_t v);
   virtual void dec_total_size(size_t v);
-  size_t total_free_blocks() const { return _total_free_blocks; }
   void set_total_free_blocks(size_t v) { _total_free_blocks = v; }
-  TreeList<Chunk>* root() const { return _root; }
-  void set_root(TreeList<Chunk>* v) { _root = v; }
-  bool adaptive_freelists() { return _adaptive_freelists; }
+  TreeList<Chunk_t, FreeList_t>* root() const { return _root; }
+  void set_root(TreeList<Chunk_t, FreeList_t>* v) { _root = v; }
 
   // This field is added and can be set to point to the
   // the Mutex used to synchronize access to the
@@ -191,54 +194,55 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk> {
   // return it.  If the chunk
   // is the last chunk of that size, remove the node for that size
   // from the tree.
-  TreeChunk<Chunk>* get_chunk_from_tree(size_t size, enum FreeBlockDictionary<Chunk>::Dither dither, bool splay);
-  // Return a list of the specified size or NULL from the tree.
-  // The list is not removed from the tree.
-  TreeList<Chunk>* find_list (size_t size) const;
+  TreeChunk<Chunk_t, FreeList_t>* get_chunk_from_tree(size_t size, enum FreeBlockDictionary<Chunk_t>::Dither dither);
   // Remove this chunk from the tree.  If the removal results
   // in an empty list in the tree, remove the empty list.
-  TreeChunk<Chunk>* remove_chunk_from_tree(TreeChunk<Chunk>* tc);
+  TreeChunk<Chunk_t, FreeList_t>* remove_chunk_from_tree(TreeChunk<Chunk_t, FreeList_t>* tc);
   // Remove the node in the trees starting at tl that has the
   // minimum value and return it.  Repair the tree as needed.
-  TreeList<Chunk>* remove_tree_minimum(TreeList<Chunk>* tl);
-  void       semi_splay_step(TreeList<Chunk>* tl);
+  TreeList<Chunk_t, FreeList_t>* remove_tree_minimum(TreeList<Chunk_t, FreeList_t>* tl);
   // Add this free chunk to the tree.
-  void       insert_chunk_in_tree(Chunk* freeChunk);
+  void       insert_chunk_in_tree(Chunk_t* freeChunk);
  public:
 
-  static const size_t min_tree_chunk_size  = sizeof(TreeChunk<Chunk>)/HeapWordSize;
+  // Return a list of the specified size or NULL from the tree.
+  // The list is not removed from the tree.
+  TreeList<Chunk_t, FreeList_t>* find_list (size_t size) const;
 
   void       verify_tree() const;
   // verify that the given chunk is in the tree.
-  bool       verify_chunk_in_free_list(Chunk* tc) const;
+  bool       verify_chunk_in_free_list(Chunk_t* tc) const;
  private:
-  void          verify_tree_helper(TreeList<Chunk>* tl) const;
-  static size_t verify_prev_free_ptrs(TreeList<Chunk>* tl);
+  void          verify_tree_helper(TreeList<Chunk_t, FreeList_t>* tl) const;
+  static size_t verify_prev_free_ptrs(TreeList<Chunk_t, FreeList_t>* tl);
 
   // Returns the total number of chunks in the list.
-  size_t     total_list_length(TreeList<Chunk>* tl) const;
+  size_t     total_list_length(TreeList<Chunk_t, FreeList_t>* tl) const;
   // Returns the total number of words in the chunks in the tree
   // starting at "tl".
-  size_t     total_size_in_tree(TreeList<Chunk>* tl) const;
+  size_t     total_size_in_tree(TreeList<Chunk_t, FreeList_t>* tl) const;
   // Returns the sum of the square of the size of each block
   // in the tree starting at "tl".
-  double     sum_of_squared_block_sizes(TreeList<Chunk>* const tl) const;
+  double     sum_of_squared_block_sizes(TreeList<Chunk_t, FreeList_t>* const tl) const;
   // Returns the total number of free blocks in the tree starting
   // at "tl".
-  size_t     total_free_blocks_in_tree(TreeList<Chunk>* tl) const;
-  size_t     num_free_blocks() const;
-  size_t     treeHeight() const;
-  size_t     tree_height_helper(TreeList<Chunk>* tl) const;
-  size_t     total_nodes_in_tree(TreeList<Chunk>* tl) const;
-  size_t     total_nodes_helper(TreeList<Chunk>* tl) const;
+  size_t     total_free_blocks_in_tree(TreeList<Chunk_t, FreeList_t>* tl) const;
+  size_t     num_free_blocks()  const;
+  size_t     tree_height() const;
+  size_t     tree_height_helper(TreeList<Chunk_t, FreeList_t>* tl) const;
+  size_t     total_nodes_in_tree(TreeList<Chunk_t, FreeList_t>* tl) const;
+  size_t     total_nodes_helper(TreeList<Chunk_t, FreeList_t>* tl) const;
 
  public:
   // Constructor
-  BinaryTreeDictionary(bool adaptive_freelists, bool splay = false);
-  BinaryTreeDictionary(MemRegion mr, bool adaptive_freelists, bool splay = false);
+  BinaryTreeDictionary() :
+    _total_size(0), _total_free_blocks(0), _root(0) {}
+
+  BinaryTreeDictionary(MemRegion mr);
 
   // Public accessors
   size_t total_size() const { return _total_size; }
+  size_t total_free_blocks() const { return _total_free_blocks; }
 
   // Reset the dictionary to the initial conditions with
   // a single free chunk.
@@ -249,23 +253,24 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk> {
 
   // Return a chunk of size "size" or greater from
   // the tree.
-  // want a better dynamic splay strategy for the future.
-  Chunk* get_chunk(size_t size, enum FreeBlockDictionary<Chunk>::Dither dither) {
-    FreeBlockDictionary<Chunk>::verify_par_locked();
-    Chunk* res = get_chunk_from_tree(size, dither, splay());
+  Chunk_t* get_chunk(size_t size, enum FreeBlockDictionary<Chunk_t>::Dither dither) {
+    FreeBlockDictionary<Chunk_t>::verify_par_locked();
+    Chunk_t* res = get_chunk_from_tree(size, dither);
     assert(res == NULL || res->is_free(),
            "Should be returning a free chunk");
+    assert(dither != FreeBlockDictionary<Chunk_t>::exactly ||
+           res == NULL || res->size() == size, "Not correct size");
     return res;
   }
 
-  void return_chunk(Chunk* chunk) {
-    FreeBlockDictionary<Chunk>::verify_par_locked();
+  void return_chunk(Chunk_t* chunk) {
+    FreeBlockDictionary<Chunk_t>::verify_par_locked();
     insert_chunk_in_tree(chunk);
   }
 
-  void remove_chunk(Chunk* chunk) {
-    FreeBlockDictionary<Chunk>::verify_par_locked();
-    remove_chunk_from_tree((TreeChunk<Chunk>*)chunk);
+  void remove_chunk(Chunk_t* chunk) {
+    FreeBlockDictionary<Chunk_t>::verify_par_locked();
+    remove_chunk_from_tree((TreeChunk<Chunk_t, FreeList_t>*)chunk);
     assert(chunk->is_free(), "Should still be a free chunk");
   }
 
@@ -281,19 +286,19 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk> {
   }
 
   size_t     min_size() const {
-    return min_tree_chunk_size;
+    return TreeChunk<Chunk_t, FreeList_t>::min_size();
   }
 
   double     sum_of_squared_block_sizes() const {
     return sum_of_squared_block_sizes(root());
   }
 
-  Chunk* find_chunk_ends_at(HeapWord* target) const;
+  Chunk_t* find_chunk_ends_at(HeapWord* target) const;
 
   // Find the list with size "size" in the binary tree and update
   // the statistics in the list according to "split" (chunk was
   // split or coalesce) and "birth" (chunk was added or removed).
-  void       dict_census_udpate(size_t size, bool split, bool birth);
+  void       dict_census_update(size_t size, bool split, bool birth);
   // Return true if the dictionary is overpopulated (more chunks of
   // this size than desired) for size "size".
   bool       coal_dict_over_populated(size_t size);
@@ -307,7 +312,7 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk> {
   // statistics for the sweep.
   void       end_sweep_dict_census(double splitSurplusPercent);
   // Return the largest free chunk in the tree.
-  Chunk* find_largest_dict() const;
+  Chunk_t* find_largest_dict() const;
   // Accessors for statistics
   void       set_tree_surplus(double splitSurplusPercent);
   void       set_tree_hints(void);

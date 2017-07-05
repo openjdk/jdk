@@ -26,3 +26,7 @@ PRODUCT_NAME="Java(TM)"
 PRODUCT_SUFFIX="SE Runtime Environment"
 JDK_RC_PLATFORM_NAME="Platform SE"
 COMPANY_NAME="Oracle Corporation"
+
+# Might need better names for these
+MACOSX_BUNDLE_NAME_BASE="Java SE"
+MACOSX_BUNDLE_ID_BASE="com.oracle.java"
