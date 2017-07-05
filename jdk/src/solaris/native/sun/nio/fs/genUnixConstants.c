@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 
 /**

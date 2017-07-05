@@ -192,6 +192,11 @@ final class Config {
     // works only for NSS providers created via the Secmod API
     private boolean nssUseSecmodTrust = false;
 
+    // Flag to indicate whether the X9.63 encoding for EC points shall be used
+    // (true) or whether that encoding shall be wrapped in an ASN.1 OctetString
+    // (false).
+    private boolean useEcX963Encoding = false;
+
     private Config(String filename, InputStream in) throws IOException {
         if (in == null) {
             if (filename.startsWith("--")) {
@@ -320,6 +325,10 @@ final class Config {
         return nssUseSecmodTrust;
     }
 
+    boolean getUseEcX963Encoding() {
+        return useEcX963Encoding;
+    }
+
     private static String expand(final String s) throws IOException {
         try {
             return PropertyExpander.expand(s);
@@ -440,6 +449,8 @@ final class Config {
                 parseNSSArgs(word);
             } else if (word.equals("nssUseSecmodTrust")) {
                 nssUseSecmodTrust = parseBooleanEntry(word);
+            } else if (word.equals("useEcX963Encoding")) {
+                useEcX963Encoding = parseBooleanEntry(word);
             } else {
                 throw new ConfigurationException
                         ("Unknown keyword '" + word + "', line " + st.lineno());

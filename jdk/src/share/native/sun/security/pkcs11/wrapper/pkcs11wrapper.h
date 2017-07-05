@@ -228,7 +228,6 @@
 #define CLASS_PKCS11EXCEPTION "sun/security/pkcs11/wrapper/PKCS11Exception"
 #define CLASS_PKCS11RUNTIMEEXCEPTION "sun/security/pkcs11/wrapper/PKCS11RuntimeException"
 #define CLASS_FILE_NOT_FOUND_EXCEPTION "java/io/FileNotFoundException"
-#define CLASS_IO_EXCEPTION "java/io/IOException"
 #define CLASS_C_INITIALIZE_ARGS "sun/security/pkcs11/wrapper/CK_C_INITIALIZE_ARGS"
 #define CLASS_CREATEMUTEX "sun/security/pkcs11/wrapper/CK_CREATEMUTEX"
 #define CLASS_DESTROYMUTEX "sun/security/pkcs11/wrapper/CK_DESTROYMUTEX"
@@ -280,6 +279,8 @@
  */
 
 jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue);
+void throwOutOfMemoryError(JNIEnv *env, const char *message);
+void throwNullPointerException(JNIEnv *env, const char *message);
 void throwIOException(JNIEnv *env, const char *message);
 void throwPKCS11RuntimeException(JNIEnv *env, const char *message);
 void throwDisconnectedRuntimeException(JNIEnv *env);

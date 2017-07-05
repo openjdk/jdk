@@ -28,13 +28,13 @@ package sun.security.timestamp;
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.net.HttpURLConnection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import sun.misc.IOUtils;
+import sun.security.util.Debug;
 
 /**
  * A timestamper that communicates with a Timestamping Authority (TSA)
@@ -58,20 +58,23 @@ public class HttpTimestamper implements Timestamper {
     private static final String TS_REPLY_MIME_TYPE =
         "application/timestamp-reply";
 
-    private static final boolean DEBUG = false;
+    private static final Debug debug = Debug.getInstance("ts");
 
     /*
-     * HTTP URL identifying the location of the TSA
+     * HTTP URI identifying the location of the TSA
      */
-    private String tsaUrl = null;
+    private URI tsaURI = null;
 
     /**
      * Creates a timestamper that connects to the specified TSA.
      *
-     * @param tsa The location of the TSA. It must be an HTTP URL.
+     * @param tsa The location of the TSA. It must be an HTTP URI.
+     * @throws IllegalArgumentException if tsaURI is not an HTTP URI
      */
-    public HttpTimestamper(String tsaUrl) {
-        this.tsaUrl = tsaUrl;
+    public HttpTimestamper(URI tsaURI) {
+        if (!tsaURI.getScheme().equalsIgnoreCase("http"))
+            throw new IllegalArgumentException("TSA must be an HTTP URI");
+        this.tsaURI = tsaURI;
     }
 
     /**
@@ -85,7 +88,7 @@ public class HttpTimestamper implements Timestamper {
     public TSResponse generateTimestamp(TSRequest tsQuery) throws IOException {
 
         HttpURLConnection connection =
-            (HttpURLConnection) new URL(tsaUrl).openConnection();
+            (HttpURLConnection) tsaURI.toURL().openConnection();
         connection.setDoOutput(true);
         connection.setUseCaches(false); // ignore cache
         connection.setRequestProperty("Content-Type", TS_QUERY_MIME_TYPE);
@@ -93,15 +96,15 @@ public class HttpTimestamper implements Timestamper {
         // Avoids the "hang" when a proxy is required but none has been set.
         connection.setConnectTimeout(CONNECT_TIMEOUT);
 
-        if (DEBUG) {
+        if (debug != null) {
             Set<Map.Entry<String, List<String>>> headers =
-                    connection.getRequestProperties().entrySet();
-            System.out.println(connection.getRequestMethod() + " " + tsaUrl +
+                connection.getRequestProperties().entrySet();
+            debug.println(connection.getRequestMethod() + " " + tsaURI +
                 " HTTP/1.1");
-            for (Map.Entry<String, List<String>> entry : headers) {
-                System.out.println("  " + entry);
+            for (Map.Entry<String, List<String>> e : headers) {
+                debug.println("  " + e);
             }
-            System.out.println();
+            debug.println();
         }
         connection.connect(); // No HTTP authentication is performed
 
@@ -112,8 +115,8 @@ public class HttpTimestamper implements Timestamper {
             byte[] request = tsQuery.encode();
             output.write(request, 0, request.length);
             output.flush();
-            if (DEBUG) {
-                System.out.println("sent timestamp query (length=" +
+            if (debug != null) {
+                debug.println("sent timestamp query (length=" +
                         request.length + ")");
             }
         } finally {
@@ -127,17 +130,17 @@ public class HttpTimestamper implements Timestamper {
         byte[] replyBuffer = null;
         try {
             input = new BufferedInputStream(connection.getInputStream());
-            if (DEBUG) {
+            if (debug != null) {
                 String header = connection.getHeaderField(0);
-                System.out.println(header);
+                debug.println(header);
                 int i = 1;
                 while ((header = connection.getHeaderField(i)) != null) {
                     String key = connection.getHeaderFieldKey(i);
-                    System.out.println("  " + ((key==null) ? "" : key + ": ") +
+                    debug.println("  " + ((key==null) ? "" : key + ": ") +
                         header);
                     i++;
                 }
-                System.out.println();
+                debug.println();
             }
             verifyMimeType(connection.getContentType());
 
@@ -145,8 +148,8 @@ public class HttpTimestamper implements Timestamper {
             int contentLength = connection.getContentLength();
             replyBuffer = IOUtils.readFully(input, contentLength, false);
 
-            if (DEBUG) {
-                System.out.println("received timestamp response (length=" +
+            if (debug != null) {
+                debug.println("received timestamp response (length=" +
                         total + ")");
             }
         } finally {
