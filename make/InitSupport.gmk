@@ -318,6 +318,11 @@ else # $(HAS_SPEC)=true
 	)
   endef
 
+  define PrepareFailureLogs
+	$(RM) -r $(MAKESUPPORT_OUTPUTDIR)/failure-logs 2> /dev/null
+	$(MKDIR) -p $(MAKESUPPORT_OUTPUTDIR)/failure-logs
+  endef
+
   # Remove any javac server logs and port files. This
   # prevents a new make run to reuse the previous servers.
   define PrepareSmartJavac
