@@ -510,7 +510,7 @@ void Parse::do_multianewarray() {
                           dims);
   }
 
-  Node* res = _gvn.transform(new (C, 1) ProjNode(c, TypeFunc::Parms));
+  Node* res = _gvn.transform(new (C) ProjNode(c, TypeFunc::Parms));
 
   const Type* type = TypeOopPtr::make_from_klass_raw(array_klass);
 
@@ -524,7 +524,7 @@ void Parse::do_multianewarray() {
 
     // We cannot sharpen the nested sub-arrays, since the top level is mutable.
 
-  Node* cast = _gvn.transform( new (C, 2) CheckCastPPNode(control(), res, type) );
+  Node* cast = _gvn.transform( new (C) CheckCastPPNode(control(), res, type) );
   push(cast);
 
   // Possible improvements:

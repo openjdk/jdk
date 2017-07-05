@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,16 @@
    This demonstrates the protocol required by the HotSpot PrintAssembly option.
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <inttypes.h>
+
 #include "hsdis.h"
 
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
 
 void greet(const char*);
-void disassemble(void*, void*);
+void disassemble(uintptr_t, uintptr_t);
 void end_of_file();
 
 const char* options = NULL;
@@ -62,7 +64,14 @@ int main(int ac, char** av) {
   if (!greeted)
     greet("world");
   printf("...And now for something completely different:\n");
-  disassemble((void*) &main, (void*) &end_of_file);
+  void *start = (void*) &main;
+  void *end = (void*) &end_of_file;
+#if defined(__ia64) || defined(__powerpc__)
+  /* On IA64 and PPC function pointers are pointers to function descriptors */
+  start = *((void**)start);
+  end = *((void**)end);
+#endif
+  disassemble(start, (end > start) ? end : start + 64);
   printf("Cheers!\n");
 }
 
@@ -76,7 +85,7 @@ void end_of_file() { }
 
 #include "dlfcn.h"
 
-#define DECODE_INSTRUCTIONS_NAME "decode_instructions"
+#define DECODE_INSTRUCTIONS_NAME "decode_instructions_virtual"
 #define HSDIS_NAME               "hsdis"
 static void* decode_instructions_pv = 0;
 static const char* hsdis_path[] = {
@@ -108,8 +117,14 @@ static const char* load_decode_instructions() {
 
 
 static const char* lookup(void* addr) {
+#if defined(__ia64) || defined(__powerpc__)
+  /* On IA64 and PPC function pointers are pointers to function descriptors */
+#define CHECK_NAME(fn) \
+  if (addr == *((void**) &fn))  return #fn;
+#else
 #define CHECK_NAME(fn) \
   if (addr == (void*) &fn)  return #fn;
+#endif
 
   CHECK_NAME(main);
   CHECK_NAME(greet);
@@ -123,6 +138,14 @@ static const char* lookup(void* addr) {
 
 
 static const char event_cookie[] = "event_cookie"; /* demo placeholder */
+static void* simple_handle_event(void* cookie, const char* event, void* arg) {
+  if (MATCH(event, "/insn")) {
+    // follow each complete insn by a nice newline
+    printf("\n");
+  }
+  return NULL;
+}
+
 static void* handle_event(void* cookie, const char* event, void* arg) {
 #define NS_DEMO "demo:"
   if (cookie != event_cookie)
@@ -162,10 +185,8 @@ static void* handle_event(void* cookie, const char* event, void* arg) {
     printf(" %p\t", arg);
 
   } else if (MATCH(event, "/insn")) {
-    /* basic action for </insn>:
-       (none, plugin puts the newline for us
-    */
-
+    // follow each complete insn by a nice newline
+    printf("\n");
   } else if (MATCH(event, "mach")) {
     printf("Decoding for CPU '%s'\n", (char*) arg);
 
@@ -186,7 +207,7 @@ static void* handle_event(void* cookie, const char* event, void* arg) {
 #define fprintf_callback \
   (decode_instructions_printf_callback_ftype)&fprintf
 
-void disassemble(void* from, void* to) {
+void disassemble(uintptr_t from, uintptr_t to) {
   const char* err = load_decode_instructions();
   if (err != NULL) {
     printf("%s: %s\n", err, dlerror());
@@ -197,15 +218,15 @@ void disassemble(void* from, void* to) {
     = (decode_instructions_ftype) decode_instructions_pv;
   void* res;
   if (raw && xml) {
-    res = (*decode_instructions)(from, to, NULL, stdout, NULL, stdout, options);
+    res = (*decode_instructions)(from, to, (unsigned char*)from, to - from, simple_handle_event, stdout, NULL, stdout, options);
   } else if (raw) {
-    res = (*decode_instructions)(from, to, NULL, NULL, NULL, stdout, options);
+    res = (*decode_instructions)(from, to, (unsigned char*)from, to - from, simple_handle_event, stdout, NULL, stdout, options);
   } else {
-    res = (*decode_instructions)(from, to,
+    res = (*decode_instructions)(from, to, (unsigned char*)from, to - from,
                                  handle_event, (void*) event_cookie,
                                  fprintf_callback, stdout,
                                  options);
   }
-  if (res != to)
+  if (res != (void*)to)
     printf("*** Result was %p!\n", res);
 }
