@@ -24,6 +24,8 @@
  * @test
  * @bug 6919610
  * @summary KeyTabInputStream uses static field for per-instance value
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.ktab
  */
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.internal.ktab.KeyTab;

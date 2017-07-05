@@ -25,7 +25,8 @@
  * @test
  * @bug 5025019
  * @summary REGRESSION: Sun implementation for HttpURLConnection could throw NPE
- *
+ * @modules java.base/sun.net
+ *          java.base/sun.net.www.http
  */
 import java.net.ServerSocket;
 import java.net.URL;

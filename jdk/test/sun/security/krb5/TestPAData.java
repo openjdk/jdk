@@ -24,6 +24,8 @@
  * @test
  * @bug 6570062
  * @summary Kerberos authentication regression
+ * @modules java.base/sun.security.util
+ *          java.security.jgss/sun.security.krb5.internal
  */
 
 import sun.security.krb5.internal.KRBError;

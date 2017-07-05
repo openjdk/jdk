@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8032878
+ * @bug 8032878 8078855
  * @summary Checks that JComboBox as JTable cell editor processes key events
  *          even where setSurrendersFocusOnKeystroke flag in JTable is false and
  *          that it does not lose the first key press where the flag is true.
@@ -36,6 +36,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
+import javax.swing.plaf.metal.MetalLookAndFeel;
 
 public class bug8032878 implements Runnable {
     private static final String ONE = "one";
@@ -53,6 +54,8 @@ public class bug8032878 implements Runnable {
     private volatile String text;
 
     public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel(new MetalLookAndFeel());
+
         final bug8032878 test = new bug8032878();
 
         test.test(false);

@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6870935
+ * @modules java.base/sun.net.www
  * @run main/othervm -Dhttp.nonProxyHosts="" -Dhttp.auth.digest.validateProxy=true B6870935
  */
 

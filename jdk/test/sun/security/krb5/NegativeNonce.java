@@ -24,6 +24,7 @@
  * @test
  * @bug 6517944
  * @summary Nonce should be UInt32
+ * @modules java.security.jgss/sun.security.krb5.internal.crypto
  */
 
 import sun.security.krb5.internal.crypto.Nonce;

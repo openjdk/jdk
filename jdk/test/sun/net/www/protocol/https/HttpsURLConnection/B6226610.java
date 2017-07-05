@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 6226610 6973030
- * @run main/othervm B6226610
  * @summary HTTP tunnel connections send user headers to proxy
+ * @modules java.base/sun.net.www
+ * @run main/othervm B6226610
  */
 
 /* This class includes a proxy server that processes the HTTP CONNECT request,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ Java_jdk_internal_jimage_concurrent_ConcurrentPReader_pread(JNIEnv *env, jclass 
     DWORD nread;
     BOOL result;
 
-    jlong handle = (*env)->GetLongField(env, fdo, handle_fdID);
+    HANDLE handle = (HANDLE)(*env)->GetLongField(env, fdo, handle_fdID);
     void *buf = (void *)jlong_to_ptr(address);
 
     ZeroMemory(&ov, sizeof(ov));
