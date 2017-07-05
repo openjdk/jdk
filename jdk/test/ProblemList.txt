@@ -124,6 +124,10 @@
 
 # jdk_management
 
+# 8046351
+com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationContentTest.java   generic-all
+com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java          generic-all
+
 ############################################################################
 
 # jdk_jmx
@@ -264,7 +268,6 @@ com/sun/jdi/RepStep.java                                        generic-all
 # 8044419
 com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 
-
 ############################################################################
 
 # jdk_util
@@ -291,5 +294,11 @@ sun/tools/jstatd/TestJstatdDefaults.java                        generic-all
 
 # 8037285
 sun/tools/jstatd/TestJstatdServer.java                          generic-all
+
+# 8046355
+sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
+
+# 8046352
+com/sun/tools/attach/TempDirTest.java                           generic-all
 
 ############################################################################

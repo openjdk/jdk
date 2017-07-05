@@ -9,21 +9,21 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
  *  @run compile FilterMangleTest.java
  *  @run compile -g onion/pickle/Mangle.java
- *  @run main FilterMangleTest
- *  @run main FilterMangleTest SDE-pMangle.java*
- *  @run main FilterMangleTest SDE-pMangle.jav*
- *  @run main FilterMangleTest SDE-pMangle.j*
- *  @run main FilterMangleTest SDE-p*Mangle.java
- *  @run main FilterMangleTest SDE-p*angle.java
- *  @run main FilterMangleTest SDE-p*java
- *  @run main FilterMangleTest SDE-pMangle.xyz
- *  @run main FilterMangleTest SDE-pIncl.rats*
- *  @run main FilterMangleTest SDE-pIncl.rat*
- *  @run main FilterMangleTest SDE-p*angle.rats
- *  @run main FilterMangleTest SDE-f*Incl.rat
- *  @run main FilterMangleTest SDE-ffred
- *  @run main FilterMangleTest SDE-f*ratsx
- *  @run main FilterMangleTest SDE-fMangle.javax*
+ *  @run driver FilterMangleTest
+ *  @run driver FilterMangleTest SDE-pMangle.java*
+ *  @run driver FilterMangleTest SDE-pMangle.jav*
+ *  @run driver FilterMangleTest SDE-pMangle.j*
+ *  @run driver FilterMangleTest SDE-p*Mangle.java
+ *  @run driver FilterMangleTest SDE-p*angle.java
+ *  @run driver FilterMangleTest SDE-p*java
+ *  @run driver FilterMangleTest SDE-pMangle.xyz
+ *  @run driver FilterMangleTest SDE-pIncl.rats*
+ *  @run driver FilterMangleTest SDE-pIncl.rat*
+ *  @run driver FilterMangleTest SDE-p*angle.rats
+ *  @run driver FilterMangleTest SDE-f*Incl.rat
+ *  @run driver FilterMangleTest SDE-ffred
+ *  @run driver FilterMangleTest SDE-f*ratsx
+ *  @run driver FilterMangleTest SDE-fMangle.javax*
  */
 
 /*

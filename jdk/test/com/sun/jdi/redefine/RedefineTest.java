@@ -34,7 +34,7 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g RedefineTest.java
  *  @run shell RedefineSetUp.sh
- *  @run main/othervm RedefineTest
+ *  @run driver RedefineTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

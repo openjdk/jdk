@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -740,16 +740,11 @@ parse_options(char *command_line_options)
     }
 
     if ( gdata->utf8_output_filename != NULL ) {
-        /* UTF-8 to platform encoding (fill in gdata->output_filename) */
+        // Don't attempt to convert output filename.
+        // If fileystem uses the same encoding as the rest of the OS it will work as is.
         ulen = (int)strlen(gdata->utf8_output_filename);
         gdata->output_filename = (char*)HPROF_MALLOC(ulen*3+3);
-#ifdef SKIP_NPT
         (void)strcpy(gdata->output_filename, gdata->utf8_output_filename);
-#else
-        (void)(gdata->npt->utf8ToPlatform)
-              (gdata->npt->utf, (jbyte*)gdata->utf8_output_filename, ulen,
-               gdata->output_filename, ulen*3+3);
-#endif
     }
 
     /* By default we turn on gdata->alloc_sites and gdata->heap_dump */
@@ -1949,7 +1944,6 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 {
     char *boot_path = NULL;
-    char npt_lib[JVM_MAXPATHLEN];
 
     /* See if it's already loaded */
     if ( gdata!=NULL && gdata->isLoaded==JNI_TRUE ) {
@@ -1969,24 +1963,6 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 
     /* Get the JVMTI environment */
     getJvmti();
-
-#ifndef SKIP_NPT
-    getSystemProperty("sun.boot.library.path", &boot_path);
-    /* Load in NPT library for character conversions */
-    md_build_library_name(npt_lib, sizeof(npt_lib), boot_path, NPT_LIBNAME);
-    if ( strlen(npt_lib) == 0 ) {
-        HPROF_ERROR(JNI_TRUE, "Could not find npt library");
-    }
-    jvmtiDeallocate(boot_path);
-    NPT_INITIALIZE(npt_lib, &(gdata->npt), NPT_VERSION, NULL);
-    if ( gdata->npt == NULL ) {
-        HPROF_ERROR(JNI_TRUE, "Cannot load npt library");
-    }
-    gdata->npt->utf = (gdata->npt->utfInitialize)(NULL);
-    if ( gdata->npt->utf == NULL ) {
-        HPROF_ERROR(JNI_TRUE, "Cannot initialize npt utf functions");
-    }
-#endif
 
     /* Lock needed to protect debug_malloc() code, which is not MT safe */
     #ifdef DEBUG

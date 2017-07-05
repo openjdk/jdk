@@ -34,23 +34,44 @@ import java.awt.event.*;
  */
 public interface ComboBoxEditor {
 
-  /** Return the component that should be added to the tree hierarchy for
-    * this editor
-    */
+  /**
+   * Returns the component that should be added to the tree hierarchy for
+   * this editor
+   *
+   * @return the component
+   */
   public Component getEditorComponent();
 
-  /** Set the item that should be edited. Cancel any editing if necessary **/
+  /**
+   * Set the item that should be edited. Cancel any editing if necessary
+   *
+   * @param anObject an item
+   */
   public void setItem(Object anObject);
 
-  /** Return the edited item **/
+  /**
+   * Returns the edited item
+   *
+   * @return the edited item
+   */
   public Object getItem();
 
-  /** Ask the editor to start editing and to select everything **/
+  /**
+   * Ask the editor to start editing and to select everything
+   */
   public void selectAll();
 
-  /** Add an ActionListener. An action event is generated when the edited item changes **/
+  /**
+   * Add an ActionListener. An action event is generated when the edited item changes
+   *
+   * @param l an {@code ActionListener}
+   */
   public void addActionListener(ActionListener l);
 
-  /** Remove an ActionListener **/
+  /**
+   * Remove an ActionListener
+   *
+   * @param l an {@code ActionListener}
+   */
   public void removeActionListener(ActionListener l);
 }

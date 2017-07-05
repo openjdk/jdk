@@ -52,6 +52,8 @@ import java.util.Vector;
  * to write data from the <code>SQLData</code> object to
  * the <code>SQLOutputImpl</code> output stream as the
  * representation of an SQL user-defined type.
+ *
+ * @since 1.5
  */
 public class SQLOutputImpl implements SQLOutput {
 

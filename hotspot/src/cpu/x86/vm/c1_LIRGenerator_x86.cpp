@@ -1085,14 +1085,11 @@ void LIRGenerator::do_Convert(Convert* x) {
 
 
 void LIRGenerator::do_NewInstance(NewInstance* x) {
-#ifndef PRODUCT
-  if (PrintNotLoaded && !x->klass()->is_loaded()) {
-    tty->print_cr("   ###class not loaded at new bci %d", x->printable_bci());
-  }
-#endif
+  print_if_not_loaded(x);
+
   CodeEmitInfo* info = state_for(x, x->state());
   LIR_Opr reg = result_register_for(x->type());
-  new_instance(reg, x->klass(),
+  new_instance(reg, x->klass(), x->is_unresolved(),
                        FrameMap::rcx_oop_opr,
                        FrameMap::rdi_oop_opr,
                        FrameMap::rsi_oop_opr,

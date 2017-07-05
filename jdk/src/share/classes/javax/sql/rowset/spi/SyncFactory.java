@@ -200,6 +200,7 @@ import sun.reflect.misc.ReflectUtil;
  * @author  Jonathan Bruce
  * @see javax.sql.rowset.spi.SyncProvider
  * @see javax.sql.rowset.spi.SyncFactoryException
+ * @since 1.5
  */
 public class SyncFactory {
 

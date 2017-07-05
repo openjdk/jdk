@@ -32,7 +32,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g ClassLoaderClassesTest.java
- *  @run main ClassLoaderClassesTest
+ *  @run driver ClassLoaderClassesTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -1341,13 +1341,14 @@ bool CMSAdaptiveSizePolicy::get_and_clear_first_after_collection() {
 bool CMSAdaptiveSizePolicy::print_adaptive_size_policy_on(
                                                     outputStream* st) const {
 
-  if (!UseAdaptiveSizePolicy) return false;
+  if (!UseAdaptiveSizePolicy) {
+    return false;
+  }
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
-  Generation* gen0 = gch->get_gen(0);
-  DefNewGeneration* def_new = gen0->as_DefNewGeneration();
-  return
-    AdaptiveSizePolicy::print_adaptive_size_policy_on(
+  Generation* young = gch->get_gen(0);
+  DefNewGeneration* def_new = young->as_DefNewGeneration();
+  return AdaptiveSizePolicy::print_adaptive_size_policy_on(
                                          st,
                                          def_new->tenuring_threshold());
 }

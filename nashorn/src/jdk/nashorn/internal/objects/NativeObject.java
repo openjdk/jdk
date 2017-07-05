@@ -75,7 +75,10 @@ import jdk.nashorn.internal.runtime.linker.NashornBeansLinker;
  */
 @ScriptClass("Object")
 public final class NativeObject {
+    /** Methodhandle to proto getter */
     public static final MethodHandle GET__PROTO__ = findOwnMH("get__proto__", ScriptObject.class, Object.class);
+
+    /** Methodhandle to proto setter */
     public static final MethodHandle SET__PROTO__ = findOwnMH("set__proto__", Object.class, Object.class, Object.class);
 
     private static final Object TO_STRING = new Object();

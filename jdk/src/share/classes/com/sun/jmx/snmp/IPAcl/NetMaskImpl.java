@@ -63,12 +63,12 @@ class NetMaskImpl extends PrincipalImpl implements Group, Serializable {
         if (SNMP_LOGGER.isLoggable(Level.FINEST)) {
             SNMP_LOGGER.logp(Level.FINEST, NetMaskImpl.class.getName(),
                 "extractSubNet", "BINARY ARRAY :");
-            StringBuffer buff = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for(int i =0; i < addrLength; i++) {
-                buff.append((b[i] &0xFF) +":");
+                sb.append((b[i] & 0xFF) + ":");
             }
             SNMP_LOGGER.logp(Level.FINEST, NetMaskImpl.class.getName(),
-                "extractSubNet", buff.toString());
+                "extractSubNet", sb.toString());
         }
 
         // 8 is a byte size. Common to any InetAddress (V4 or V6).

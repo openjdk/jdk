@@ -4575,6 +4575,219 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_sha1_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Label L_sha1_loop, L_sha1_unaligned_input, L_sha1_unaligned_input_loop;
+    int i;
+
+    Register buf   = O0; // byte[] source+offset
+    Register state = O1; // int[]  SHA.state
+    Register ofs   = O2; // int    offset
+    Register limit = O3; // int    limit
+
+    // load state into F0-F4
+    for (i = 0; i < 5; i++) {
+      __ ldf(FloatRegisterImpl::S, state, i*4, as_FloatRegister(i));
+    }
+
+    __ andcc(buf, 7, G0);
+    __ br(Assembler::notZero, false, Assembler::pn, L_sha1_unaligned_input);
+    __ delayed()->nop();
+
+    __ BIND(L_sha1_loop);
+    // load buf into F8-F22
+    for (i = 0; i < 8; i++) {
+      __ ldf(FloatRegisterImpl::D, buf, i*8, as_FloatRegister(i*2 + 8));
+    }
+    __ sha1();
+    if (multi_block) {
+      __ add(ofs, 64, ofs);
+      __ add(buf, 64, buf);
+      __ cmp_and_brx_short(ofs, limit, Assembler::lessEqual, Assembler::pt, L_sha1_loop);
+      __ mov(ofs, O0); // to be returned
+    }
+
+    // store F0-F4 into state and return
+    for (i = 0; i < 4; i++) {
+      __ stf(FloatRegisterImpl::S, as_FloatRegister(i), state, i*4);
+    }
+    __ retl();
+    __ delayed()->stf(FloatRegisterImpl::S, F4, state, 0x10);
+
+    __ BIND(L_sha1_unaligned_input);
+    __ alignaddr(buf, G0, buf);
+
+    __ BIND(L_sha1_unaligned_input_loop);
+    // load buf into F8-F22
+    for (i = 0; i < 9; i++) {
+      __ ldf(FloatRegisterImpl::D, buf, i*8, as_FloatRegister(i*2 + 8));
+    }
+    for (i = 0; i < 8; i++) {
+      __ faligndata(as_FloatRegister(i*2 + 8), as_FloatRegister(i*2 + 10), as_FloatRegister(i*2 + 8));
+    }
+    __ sha1();
+    if (multi_block) {
+      __ add(ofs, 64, ofs);
+      __ add(buf, 64, buf);
+      __ cmp_and_brx_short(ofs, limit, Assembler::lessEqual, Assembler::pt, L_sha1_unaligned_input_loop);
+      __ mov(ofs, O0); // to be returned
+    }
+
+    // store F0-F4 into state and return
+    for (i = 0; i < 4; i++) {
+      __ stf(FloatRegisterImpl::S, as_FloatRegister(i), state, i*4);
+    }
+    __ retl();
+    __ delayed()->stf(FloatRegisterImpl::S, F4, state, 0x10);
+
+    return start;
+  }
+
+  address generate_sha256_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Label L_sha256_loop, L_sha256_unaligned_input, L_sha256_unaligned_input_loop;
+    int i;
+
+    Register buf   = O0; // byte[] source+offset
+    Register state = O1; // int[]  SHA2.state
+    Register ofs   = O2; // int    offset
+    Register limit = O3; // int    limit
+
+    // load state into F0-F7
+    for (i = 0; i < 8; i++) {
+      __ ldf(FloatRegisterImpl::S, state, i*4, as_FloatRegister(i));
+    }
+
+    __ andcc(buf, 7, G0);
+    __ br(Assembler::notZero, false, Assembler::pn, L_sha256_unaligned_input);
+    __ delayed()->nop();
+
+    __ BIND(L_sha256_loop);
+    // load buf into F8-F22
+    for (i = 0; i < 8; i++) {
+      __ ldf(FloatRegisterImpl::D, buf, i*8, as_FloatRegister(i*2 + 8));
+    }
+    __ sha256();
+    if (multi_block) {
+      __ add(ofs, 64, ofs);
+      __ add(buf, 64, buf);
+      __ cmp_and_brx_short(ofs, limit, Assembler::lessEqual, Assembler::pt, L_sha256_loop);
+      __ mov(ofs, O0); // to be returned
+    }
+
+    // store F0-F7 into state and return
+    for (i = 0; i < 7; i++) {
+      __ stf(FloatRegisterImpl::S, as_FloatRegister(i), state, i*4);
+    }
+    __ retl();
+    __ delayed()->stf(FloatRegisterImpl::S, F7, state, 0x1c);
+
+    __ BIND(L_sha256_unaligned_input);
+    __ alignaddr(buf, G0, buf);
+
+    __ BIND(L_sha256_unaligned_input_loop);
+    // load buf into F8-F22
+    for (i = 0; i < 9; i++) {
+      __ ldf(FloatRegisterImpl::D, buf, i*8, as_FloatRegister(i*2 + 8));
+    }
+    for (i = 0; i < 8; i++) {
+      __ faligndata(as_FloatRegister(i*2 + 8), as_FloatRegister(i*2 + 10), as_FloatRegister(i*2 + 8));
+    }
+    __ sha256();
+    if (multi_block) {
+      __ add(ofs, 64, ofs);
+      __ add(buf, 64, buf);
+      __ cmp_and_brx_short(ofs, limit, Assembler::lessEqual, Assembler::pt, L_sha256_unaligned_input_loop);
+      __ mov(ofs, O0); // to be returned
+    }
+
+    // store F0-F7 into state and return
+    for (i = 0; i < 7; i++) {
+      __ stf(FloatRegisterImpl::S, as_FloatRegister(i), state, i*4);
+    }
+    __ retl();
+    __ delayed()->stf(FloatRegisterImpl::S, F7, state, 0x1c);
+
+    return start;
+  }
+
+  address generate_sha512_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Label L_sha512_loop, L_sha512_unaligned_input, L_sha512_unaligned_input_loop;
+    int i;
+
+    Register buf   = O0; // byte[] source+offset
+    Register state = O1; // long[] SHA5.state
+    Register ofs   = O2; // int    offset
+    Register limit = O3; // int    limit
+
+    // load state into F0-F14
+    for (i = 0; i < 8; i++) {
+      __ ldf(FloatRegisterImpl::D, state, i*8, as_FloatRegister(i*2));
+    }
+
+    __ andcc(buf, 7, G0);
+    __ br(Assembler::notZero, false, Assembler::pn, L_sha512_unaligned_input);
+    __ delayed()->nop();
+
+    __ BIND(L_sha512_loop);
+    // load buf into F16-F46
+    for (i = 0; i < 16; i++) {
+      __ ldf(FloatRegisterImpl::D, buf, i*8, as_FloatRegister(i*2 + 16));
+    }
+    __ sha512();
+    if (multi_block) {
+      __ add(ofs, 128, ofs);
+      __ add(buf, 128, buf);
+      __ cmp_and_brx_short(ofs, limit, Assembler::lessEqual, Assembler::pt, L_sha512_loop);
+      __ mov(ofs, O0); // to be returned
+    }
+
+    // store F0-F14 into state and return
+    for (i = 0; i < 7; i++) {
+      __ stf(FloatRegisterImpl::D, as_FloatRegister(i*2), state, i*8);
+    }
+    __ retl();
+    __ delayed()->stf(FloatRegisterImpl::D, F14, state, 0x38);
+
+    __ BIND(L_sha512_unaligned_input);
+    __ alignaddr(buf, G0, buf);
+
+    __ BIND(L_sha512_unaligned_input_loop);
+    // load buf into F16-F46
+    for (i = 0; i < 17; i++) {
+      __ ldf(FloatRegisterImpl::D, buf, i*8, as_FloatRegister(i*2 + 16));
+    }
+    for (i = 0; i < 16; i++) {
+      __ faligndata(as_FloatRegister(i*2 + 16), as_FloatRegister(i*2 + 18), as_FloatRegister(i*2 + 16));
+    }
+    __ sha512();
+    if (multi_block) {
+      __ add(ofs, 128, ofs);
+      __ add(buf, 128, buf);
+      __ cmp_and_brx_short(ofs, limit, Assembler::lessEqual, Assembler::pt, L_sha512_unaligned_input_loop);
+      __ mov(ofs, O0); // to be returned
+    }
+
+    // store F0-F14 into state and return
+    for (i = 0; i < 7; i++) {
+      __ stf(FloatRegisterImpl::D, as_FloatRegister(i*2), state, i*8);
+    }
+    __ retl();
+    __ delayed()->stf(FloatRegisterImpl::D, F14, state, 0x38);
+
+    return start;
+  }
+
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
@@ -4646,6 +4859,20 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
       StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt_Parallel();
+    }
+
+    // generate SHA1/SHA256/SHA512 intrinsics code
+    if (UseSHA1Intrinsics) {
+      StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false,   "sha1_implCompress");
+      StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true,    "sha1_implCompressMB");
+    }
+    if (UseSHA256Intrinsics) {
+      StubRoutines::_sha256_implCompress   = generate_sha256_implCompress(false, "sha256_implCompress");
+      StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true,  "sha256_implCompressMB");
+    }
+    if (UseSHA512Intrinsics) {
+      StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(false, "sha512_implCompress");
+      StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(true,  "sha512_implCompressMB");
     }
   }
 

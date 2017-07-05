@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g MonitorEventTest.java
- *  @run main MonitorEventTest
+ *  @run driver MonitorEventTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

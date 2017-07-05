@@ -114,29 +114,29 @@ public class CK_SESSION_INFO {
      * @return the string representation of CK_SESSION_INFO
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("slotID: ");
-        buffer.append(String.valueOf(slotID));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("slotID: ");
+        sb.append(String.valueOf(slotID));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("state: ");
-        buffer.append(Functions.sessionStateToString(state));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("state: ");
+        sb.append(Functions.sessionStateToString(state));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("flags: ");
-        buffer.append(Functions.sessionInfoFlagsToString(flags));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("flags: ");
+        sb.append(Functions.sessionInfoFlagsToString(flags));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulDeviceError: ");
-        buffer.append(Functions.toHexString(ulDeviceError));
+        sb.append(Constants.INDENT);
+        sb.append("ulDeviceError: ");
+        sb.append(Functions.toHexString(ulDeviceError));
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString() ;
+        return sb.toString() ;
     }
 
 }

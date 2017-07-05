@@ -375,7 +375,7 @@ public final class Instant
             return Instant.ofEpochSecond(instantSecs, nanoOfSecond);
         } catch (DateTimeException ex) {
             throw new DateTimeException("Unable to obtain Instant from TemporalAccessor: " +
-                    temporal + " of type " + temporal.getClass().getName());
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 
@@ -1058,7 +1058,8 @@ public final class Instant
         }
         // inline TemporalAccessor.super.query(query) as an optimization
         if (query == TemporalQueries.chronology() || query == TemporalQueries.zoneId() ||
-                query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
+                query == TemporalQueries.zone() || query == TemporalQueries.offset() ||
+                query == TemporalQueries.localDate() || query == TemporalQueries.localTime()) {
             return null;
         }
         return query.queryFrom(this);

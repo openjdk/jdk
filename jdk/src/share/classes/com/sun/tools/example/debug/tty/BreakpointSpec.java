@@ -154,27 +154,27 @@ class BreakpointSpec extends EventRequestSpec {
 
     @Override
     public String toString() {
-        StringBuffer buffer = new StringBuffer(refSpec.toString());
+        StringBuilder sb = new StringBuilder(refSpec.toString());
         if (isMethodBreakpoint()) {
-            buffer.append('.');
-            buffer.append(methodId);
+            sb.append('.');
+            sb.append(methodId);
             if (methodArgs != null) {
                 boolean first = true;
-                buffer.append('(');
+                sb.append('(');
                 for (String arg : methodArgs) {
                     if (!first) {
-                        buffer.append(',');
+                        sb.append(',');
                     }
-                    buffer.append(arg);
+                    sb.append(arg);
                     first = false;
                 }
-                buffer.append(")");
+                sb.append(")");
             }
         } else {
-            buffer.append(':');
-            buffer.append(lineNumber);
+            sb.append(':');
+            sb.append(lineNumber);
         }
-        return MessageOutput.format("breakpoint", buffer.toString());
+        return MessageOutput.format("breakpoint", sb.toString());
     }
 
     private Location location(ReferenceType refType) throws
@@ -275,8 +275,8 @@ class BreakpointSpec extends EventRequestSpec {
          * stripping whitespace after the name ends
          */
         int i = 0;
-        StringBuffer typePart = new StringBuffer();
-        StringBuffer arrayPart = new StringBuffer();
+        StringBuilder typePart = new StringBuilder();
+        StringBuilder arrayPart = new StringBuilder();
         name = name.trim();
         int nameLength = name.length();
         /*

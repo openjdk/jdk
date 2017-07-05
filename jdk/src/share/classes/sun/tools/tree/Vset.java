@@ -495,7 +495,7 @@ class Vset implements Constants {
     public String toString() {
         if (this == DEAD_END)
             return "{DEAD_END}";
-        StringBuffer sb = new StringBuffer("{");
+        StringBuilder sb = new StringBuilder("{");
         int maxVar = VBITS * (1 + (x.length+1)/2);
         for (int i = 0; i < maxVar; i++) {
             if (!testVarUnassigned(i)) {

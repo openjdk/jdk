@@ -29,7 +29,7 @@
  *  @run compile -g RepStepTarg.java
  *  @run build VMConnection RepStep
  *
- *  @run main/othervm RepStep
+ *  @run driver RepStep
  *
  * @summary RepStep detects missed step events due to lack of
  * frame pop events (in back-end).

@@ -30,8 +30,10 @@
  */
 
 import java.net.*;
+import java.io.IOException;
 import java.nio.channels.*;
 import java.util.concurrent.*;
+import java.util.Set;
 import jdk.net.*;
 
 public class Test {
@@ -74,6 +76,13 @@ public class Test {
 
         DatagramSocket dg = new DatagramSocket(0);
         final int udp_port = dg.getLocalPort();
+
+        // If option not available, end test
+        Set<SocketOption<?>> options = dg.supportedOptions();
+        if (!options.contains(ExtendedSocketOptions.SO_FLOW_SLA)) {
+            System.out.println("SO_FLOW_SLA not supported");
+            return;
+        }
 
         final Socket s = new Socket("127.0.0.1", tcp_port);
         final SocketChannel sc = SocketChannel.open();
@@ -125,6 +134,13 @@ public class Test {
             if (success) {
                 throw new RuntimeException("Test failed");
             }
-        } catch (UnsupportedOperationException e) {}
+        } catch (UnsupportedOperationException e) {
+            System.out.println (e);
+        } catch (IOException e) {
+            // Probably a permission error, but we're not
+            // going to check unless a specific permission exception
+            // is defined.
+            System.out.println (e);
+        }
     }
 }
