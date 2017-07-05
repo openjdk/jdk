@@ -10374,14 +10374,31 @@ instruct MoveL2D_reg_reg(regD dst, rRegL src) %{
 instruct rep_stos(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dummy,
                   rFlagsReg cr)
 %{
+  predicate(!UseFastStosb);
   match(Set dummy (ClearArray cnt base));
   effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
 
-  format %{ "xorl    rax, rax\t# ClearArray:\n\t"
-            "rep stosq\t# Store rax to *rdi++ while rcx--" %}
-  ins_encode(opc_reg_reg(0x33, RAX, RAX), // xorl %eax, %eax
-             Opcode(0xF3), Opcode(0x48), Opcode(0xAB)); // rep REX_W stos
+  format %{ "xorq    rax, rax\t# ClearArray:\n\t"
+            "rep     stosq\t# Store rax to *rdi++ while rcx--" %}
+  ins_encode %{ 
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
+  %}
   ins_pipe(pipe_slow);
+%}
+
+instruct rep_fast_stosb(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dummy,
+                        rFlagsReg cr)
+%{
+  predicate(UseFastStosb);
+  match(Set dummy (ClearArray cnt base));
+  effect(USE_KILL cnt, USE_KILL base, KILL zero, KILL cr);
+  format %{ "xorq    rax, rax\t# ClearArray:\n\t"
+            "shlq    rcx,3\t# Convert doublewords to bytes\n\t"
+            "rep     stosb\t# Store rax to *rdi++ while rcx--" %}
+  ins_encode %{ 
+    __ clear_mem($base$$Register, $cnt$$Register, $zero$$Register);
+  %}
+  ins_pipe( pipe_slow );
 %}
 
 instruct string_compare(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,

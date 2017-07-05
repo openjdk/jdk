@@ -309,9 +309,9 @@ void G1CollectorPolicy::initialize_flags() {
 }
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(true) {
-  assert(G1DefaultMinNewGenPercent <= G1DefaultMaxNewGenPercent, "Min larger than max");
-  assert(G1DefaultMinNewGenPercent > 0 && G1DefaultMinNewGenPercent < 100, "Min out of bounds");
-  assert(G1DefaultMaxNewGenPercent > 0 && G1DefaultMaxNewGenPercent < 100, "Max out of bounds");
+  assert(G1NewSizePercent <= G1MaxNewSizePercent, "Min larger than max");
+  assert(G1NewSizePercent > 0 && G1NewSizePercent < 100, "Min out of bounds");
+  assert(G1MaxNewSizePercent > 0 && G1MaxNewSizePercent < 100, "Max out of bounds");
 
   if (FLAG_IS_CMDLINE(NewRatio)) {
     if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
@@ -344,12 +344,12 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(
 }
 
 uint G1YoungGenSizer::calculate_default_min_length(uint new_number_of_heap_regions) {
-  uint default_value = (new_number_of_heap_regions * G1DefaultMinNewGenPercent) / 100;
+  uint default_value = (new_number_of_heap_regions * G1NewSizePercent) / 100;
   return MAX2(1U, default_value);
 }
 
 uint G1YoungGenSizer::calculate_default_max_length(uint new_number_of_heap_regions) {
-  uint default_value = (new_number_of_heap_regions * G1DefaultMaxNewGenPercent) / 100;
+  uint default_value = (new_number_of_heap_regions * G1MaxNewSizePercent) / 100;
   return MAX2(1U, default_value);
 }
 

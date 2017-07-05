@@ -29,6 +29,16 @@
 #include "utilities/decoder.hpp"
 #include "utilities/vmError.hpp"
 
+
+void GenerationData::reset() {
+  _number_of_classes = 0;
+  while (_recorder_list != NULL) {
+    MemRecorder* tmp = _recorder_list;
+    _recorder_list = _recorder_list->next();
+    MemTracker::release_thread_recorder(tmp);
+  }
+}
+
 MemTrackWorker::MemTrackWorker() {
   // create thread uses cgc thread type for now. We should revisit
   // the option, or create new thread type.
@@ -39,7 +49,7 @@ MemTrackWorker::MemTrackWorker() {
   if (!has_error()) {
     _head = _tail = 0;
     for(int index = 0; index < MAX_GENERATIONS; index ++) {
-      _gen[index] = NULL;
+      ::new ((void*)&_gen[index]) GenerationData();
     }
   }
   NOT_PRODUCT(_sync_point_count = 0;)
@@ -49,10 +59,7 @@ MemTrackWorker::MemTrackWorker() {
 
 MemTrackWorker::~MemTrackWorker() {
   for (int index = 0; index < MAX_GENERATIONS; index ++) {
-    MemRecorder* rc = _gen[index];
-    if (rc != NULL) {
-      delete rc;
-    }
+    _gen[index].reset();
   }
 }
 
@@ -90,12 +97,7 @@ void MemTrackWorker::run() {
     {
       // take a recorder from earliest generation in buffer
       ThreadCritical tc;
-      rec = _gen[_head];
-      if (rec != NULL) {
-        _gen[_head] = rec->next();
-      }
-      assert(count_recorder(_gen[_head]) <= MemRecorder::_instance_count,
-        "infinite loop after dequeue");
+      rec = _gen[_head].next_recorder();
     }
     if (rec != NULL) {
       // merge the recorder into staging area
@@ -109,16 +111,20 @@ void MemTrackWorker::run() {
       // no more recorder to merge, promote staging area
       // to snapshot
       if (_head != _tail) {
+        long number_of_classes;
         {
           ThreadCritical tc;
-          if (_gen[_head] != NULL || _head == _tail) {
+          if (_gen[_head].has_more_recorder() || _head == _tail) {
             continue;
           }
+          number_of_classes = _gen[_head].number_of_classes();
+          _gen[_head].reset();
+
           // done with this generation, increment _head pointer
           _head = (_head + 1) % MAX_GENERATIONS;
         }
         // promote this generation data to snapshot
-        if (!snapshot->promote()) {
+        if (!snapshot->promote(number_of_classes)) {
           // failed to promote, means out of memory
           MemTracker::shutdown(MemTracker::NMT_out_of_memory);
         }
@@ -126,8 +132,8 @@ void MemTrackWorker::run() {
         snapshot->wait(1000);
         ThreadCritical tc;
         // check if more data arrived
-        if (_gen[_head] == NULL) {
-          _gen[_head] = MemTracker::get_pending_recorders();
+        if (!_gen[_head].has_more_recorder()) {
+          _gen[_head].add_recorders(MemTracker::get_pending_recorders());
         }
       }
     }
@@ -147,7 +153,7 @@ void MemTrackWorker::run() {
 //   1. add all recorders in pending queue to current generation
 //   2. increase generation
 
-void MemTrackWorker::at_sync_point(MemRecorder* rec) {
+void MemTrackWorker::at_sync_point(MemRecorder* rec, int number_of_classes) {
   NOT_PRODUCT(_sync_point_count ++;)
   assert(count_recorder(rec) <= MemRecorder::_instance_count,
     "pending queue has infinite loop");
@@ -155,23 +161,15 @@ void MemTrackWorker::at_sync_point(MemRecorder* rec) {
   bool out_of_generation_buffer = false;
   // check shutdown state inside ThreadCritical
   if (MemTracker::shutdown_in_progress()) return;
+
+  _gen[_tail].set_number_of_classes(number_of_classes);
   // append the recorders to the end of the generation
-  if( rec != NULL) {
-    MemRecorder* cur_head = _gen[_tail];
-    if (cur_head == NULL) {
-      _gen[_tail] = rec;
-    } else {
-      while (cur_head->next() != NULL) {
-        cur_head = cur_head->next();
-      }
-      cur_head->set_next(rec);
-    }
-  }
-  assert(count_recorder(rec) <= MemRecorder::_instance_count,
+  _gen[_tail].add_recorders(rec);
+  assert(count_recorder(_gen[_tail].peek()) <= MemRecorder::_instance_count,
     "after add to current generation has infinite loop");
   // we have collected all recorders for this generation. If there is data,
   // we need to increment _tail to start a new generation.
-  if (_gen[_tail] != NULL || _head == _tail) {
+  if (_gen[_tail].has_more_recorder()  || _head == _tail) {
     _tail = (_tail + 1) % MAX_GENERATIONS;
     out_of_generation_buffer = (_tail == _head);
   }
@@ -194,7 +192,7 @@ int MemTrackWorker::count_recorder(const MemRecorder* head) {
 int MemTrackWorker::count_pending_recorders() const {
   int count = 0;
   for (int index = 0; index < MAX_GENERATIONS; index ++) {
-    MemRecorder* head = _gen[index];
+    MemRecorder* head = _gen[index].peek();
     if (head != NULL) {
       count += count_recorder(head);
     }

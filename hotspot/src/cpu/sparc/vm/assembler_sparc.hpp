@@ -675,8 +675,8 @@ public:
     AbstractAssembler::flush();
   }
 
-  inline void emit_long(int);  // shadows AbstractAssembler::emit_long
-  inline void emit_data(int x) { emit_long(x); }
+  inline void emit_int32(int);  // shadows AbstractAssembler::emit_int32
+  inline void emit_data(int x) { emit_int32(x); }
   inline void emit_data(int, RelocationHolder const&);
   inline void emit_data(int, relocInfo::relocType rtype);
   // helper for above fcns
@@ -691,12 +691,12 @@ public:
   inline void add(Register s1, Register s2, Register d );
   inline void add(Register s1, int simm13a, Register d );
 
-  void addcc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void addcc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void addc(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(addc_op3             ) | rs1(s1) | rs2(s2) ); }
-  void addc(   Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(addc_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void addccc( Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(addc_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void addccc( Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(addc_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void addcc(  Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void addcc(  Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void addc(   Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(addc_op3             ) | rs1(s1) | rs2(s2) ); }
+  void addc(   Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(addc_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void addccc( Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(addc_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void addccc( Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(addc_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
 
   // pp 136
@@ -749,76 +749,76 @@ public:
   // at address s1 is swapped with the data in d. If the values are not equal,
   // the the contents of memory at s1 is loaded into d, without the swap.
 
-  void casa(  Register s1, Register s2, Register d, int ia = -1 ) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(casa_op3 ) | rs1(s1) | (ia == -1  ? immed(true) : imm_asi(ia)) | rs2(s2)); }
-  void casxa( Register s1, Register s2, Register d, int ia = -1 ) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(casxa_op3) | rs1(s1) | (ia == -1  ? immed(true) : imm_asi(ia)) | rs2(s2)); }
+  void casa(  Register s1, Register s2, Register d, int ia = -1 ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(casa_op3 ) | rs1(s1) | (ia == -1  ? immed(true) : imm_asi(ia)) | rs2(s2)); }
+  void casxa( Register s1, Register s2, Register d, int ia = -1 ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(casxa_op3) | rs1(s1) | (ia == -1  ? immed(true) : imm_asi(ia)) | rs2(s2)); }
 
   // pp 152
 
-  void udiv(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(udiv_op3             ) | rs1(s1) | rs2(s2)); }
-  void udiv(   Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(udiv_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void sdiv(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sdiv_op3             ) | rs1(s1) | rs2(s2)); }
-  void sdiv(   Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sdiv_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void udivcc( Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(udiv_op3 | cc_bit_op3) | rs1(s1) | rs2(s2)); }
-  void udivcc( Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(udiv_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void sdivcc( Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sdiv_op3 | cc_bit_op3) | rs1(s1) | rs2(s2)); }
-  void sdivcc( Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sdiv_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void udiv(   Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(udiv_op3             ) | rs1(s1) | rs2(s2)); }
+  void udiv(   Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(udiv_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void sdiv(   Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sdiv_op3             ) | rs1(s1) | rs2(s2)); }
+  void sdiv(   Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sdiv_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void udivcc( Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(udiv_op3 | cc_bit_op3) | rs1(s1) | rs2(s2)); }
+  void udivcc( Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(udiv_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void sdivcc( Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sdiv_op3 | cc_bit_op3) | rs1(s1) | rs2(s2)); }
+  void sdivcc( Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sdiv_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 155
 
-  void done()  { v9_only();  cti();  emit_long( op(arith_op) | fcn(0) | op3(done_op3) ); }
-  void retry() { v9_only();  cti();  emit_long( op(arith_op) | fcn(1) | op3(retry_op3) ); }
+  void done()  { v9_only();  cti();  emit_int32( op(arith_op) | fcn(0) | op3(done_op3) ); }
+  void retry() { v9_only();  cti();  emit_int32( op(arith_op) | fcn(1) | op3(retry_op3) ); }
 
   // pp 156
 
-  void fadd( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | fs1(s1, w) | opf(0x40 + w) | fs2(s2, w)); }
-  void fsub( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | fs1(s1, w) | opf(0x44 + w) | fs2(s2, w)); }
+  void fadd( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | fs1(s1, w) | opf(0x40 + w) | fs2(s2, w)); }
+  void fsub( FloatRegisterImpl::Width w, FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | fs1(s1, w) | opf(0x44 + w) | fs2(s2, w)); }
 
   // pp 157
 
-  void fcmp(  FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2) { v8_no_cc(cc);  emit_long( op(arith_op) | cmpcc(cc) | op3(fpop2_op3) | fs1(s1, w) | opf(0x50 + w) | fs2(s2, w)); }
-  void fcmpe( FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2) { v8_no_cc(cc);  emit_long( op(arith_op) | cmpcc(cc) | op3(fpop2_op3) | fs1(s1, w) | opf(0x54 + w) | fs2(s2, w)); }
+  void fcmp(  FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2) { v8_no_cc(cc);  emit_int32( op(arith_op) | cmpcc(cc) | op3(fpop2_op3) | fs1(s1, w) | opf(0x50 + w) | fs2(s2, w)); }
+  void fcmpe( FloatRegisterImpl::Width w, CC cc, FloatRegister s1, FloatRegister s2) { v8_no_cc(cc);  emit_int32( op(arith_op) | cmpcc(cc) | op3(fpop2_op3) | fs1(s1, w) | opf(0x54 + w) | fs2(s2, w)); }
 
   // pp 159
 
-  void ftox( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(fpop1_op3) | opf(0x80 + w) | fs2(s, w)); }
-  void ftoi( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(fpop1_op3) | opf(0xd0 + w) | fs2(s, w)); }
+  void ftox( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(fpop1_op3) | opf(0x80 + w) | fs2(s, w)); }
+  void ftoi( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(fpop1_op3) | opf(0xd0 + w) | fs2(s, w)); }
 
   // pp 160
 
-  void ftof( FloatRegisterImpl::Width sw, FloatRegisterImpl::Width dw, FloatRegister s, FloatRegister d ) { emit_long( op(arith_op) | fd(d, dw) | op3(fpop1_op3) | opf(0xc0 + sw + dw*4) | fs2(s, sw)); }
+  void ftof( FloatRegisterImpl::Width sw, FloatRegisterImpl::Width dw, FloatRegister s, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, dw) | op3(fpop1_op3) | opf(0xc0 + sw + dw*4) | fs2(s, sw)); }
 
   // pp 161
 
-  void fxtof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w*4) | fs2(s, FloatRegisterImpl::D)); }
-  void fitof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xc0 + w*4) | fs2(s, FloatRegisterImpl::S)); }
+  void fxtof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w*4) | fs2(s, FloatRegisterImpl::D)); }
+  void fitof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xc0 + w*4) | fs2(s, FloatRegisterImpl::S)); }
 
   // pp 162
 
-  void fmov( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v8_s_only(w);  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x00 + w) | fs2(s, w)); }
+  void fmov( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v8_s_only(w);  emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x00 + w) | fs2(s, w)); }
 
-  void fneg( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v8_s_only(w);  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x04 + w) | fs2(s, w)); }
+  void fneg( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v8_s_only(w);  emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x04 + w) | fs2(s, w)); }
 
   // page 144 sparc v8 architecture (double prec works on v8 if the source and destination registers are the same). fnegs is the only instruction available
   // on v8 to do negation of single, double and quad precision floats.
 
-  void fneg( FloatRegisterImpl::Width w, FloatRegister sd ) { if (VM_Version::v9_instructions_work()) emit_long( op(arith_op) | fd(sd, w) | op3(fpop1_op3) | opf(0x04 + w) | fs2(sd, w)); else emit_long( op(arith_op) | fd(sd, w) | op3(fpop1_op3) |  opf(0x05) | fs2(sd, w)); }
+  void fneg( FloatRegisterImpl::Width w, FloatRegister sd ) { if (VM_Version::v9_instructions_work()) emit_int32( op(arith_op) | fd(sd, w) | op3(fpop1_op3) | opf(0x04 + w) | fs2(sd, w)); else emit_int32( op(arith_op) | fd(sd, w) | op3(fpop1_op3) |  opf(0x05) | fs2(sd, w)); }
 
-  void fabs( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v8_s_only(w);  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x08 + w) | fs2(s, w)); }
+  void fabs( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v8_s_only(w);  emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x08 + w) | fs2(s, w)); }
 
   // page 144 sparc v8 architecture (double prec works on v8 if the source and destination registers are the same). fabss is the only instruction available
   // on v8 to do abs operation on single/double/quad precision floats.
 
-  void fabs( FloatRegisterImpl::Width w, FloatRegister sd ) { if (VM_Version::v9_instructions_work()) emit_long( op(arith_op) | fd(sd, w) | op3(fpop1_op3) | opf(0x08 + w) | fs2(sd, w)); else emit_long( op(arith_op) | fd(sd, w) | op3(fpop1_op3) | opf(0x09) | fs2(sd, w)); }
+  void fabs( FloatRegisterImpl::Width w, FloatRegister sd ) { if (VM_Version::v9_instructions_work()) emit_int32( op(arith_op) | fd(sd, w) | op3(fpop1_op3) | opf(0x08 + w) | fs2(sd, w)); else emit_int32( op(arith_op) | fd(sd, w) | op3(fpop1_op3) | opf(0x09) | fs2(sd, w)); }
 
   // pp 163
 
-  void fmul( FloatRegisterImpl::Width w,                            FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_long( op(arith_op) | fd(d, w)  | op3(fpop1_op3) | fs1(s1, w)  | opf(0x48 + w)         | fs2(s2, w)); }
-  void fmul( FloatRegisterImpl::Width sw, FloatRegisterImpl::Width dw,  FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_long( op(arith_op) | fd(d, dw) | op3(fpop1_op3) | fs1(s1, sw) | opf(0x60 + sw + dw*4) | fs2(s2, sw)); }
-  void fdiv( FloatRegisterImpl::Width w,                            FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_long( op(arith_op) | fd(d, w)  | op3(fpop1_op3) | fs1(s1, w)  | opf(0x4c + w)         | fs2(s2, w)); }
+  void fmul( FloatRegisterImpl::Width w,                            FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w)  | op3(fpop1_op3) | fs1(s1, w)  | opf(0x48 + w)         | fs2(s2, w)); }
+  void fmul( FloatRegisterImpl::Width sw, FloatRegisterImpl::Width dw,  FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, dw) | op3(fpop1_op3) | fs1(s1, sw) | opf(0x60 + sw + dw*4) | fs2(s2, sw)); }
+  void fdiv( FloatRegisterImpl::Width w,                            FloatRegister s1, FloatRegister s2, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w)  | op3(fpop1_op3) | fs1(s1, w)  | opf(0x4c + w)         | fs2(s2, w)); }
 
   // pp 164
 
-  void fsqrt( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x28 + w) | fs2(s, w)); }
+  void fsqrt( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { emit_int32( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x28 + w) | fs2(s, w)); }
 
   // pp 165
 
@@ -827,22 +827,22 @@ public:
 
   // pp 167
 
-  void flushw() { v9_only();  emit_long( op(arith_op) | op3(flushw_op3) ); }
+  void flushw() { v9_only();  emit_int32( op(arith_op) | op3(flushw_op3) ); }
 
   // pp 168
 
-  void illtrap( int const22a) { if (const22a != 0) v9_only();  emit_long( op(branch_op) | u_field(const22a, 21, 0) ); }
+  void illtrap( int const22a) { if (const22a != 0) v9_only();  emit_int32( op(branch_op) | u_field(const22a, 21, 0) ); }
   // v8 unimp == illtrap(0)
 
   // pp 169
 
-  void impdep1( int id1, int const19a ) { v9_only();  emit_long( op(arith_op) | fcn(id1) | op3(impdep1_op3) | u_field(const19a, 18, 0)); }
-  void impdep2( int id1, int const19a ) { v9_only();  emit_long( op(arith_op) | fcn(id1) | op3(impdep2_op3) | u_field(const19a, 18, 0)); }
+  void impdep1( int id1, int const19a ) { v9_only();  emit_int32( op(arith_op) | fcn(id1) | op3(impdep1_op3) | u_field(const19a, 18, 0)); }
+  void impdep2( int id1, int const19a ) { v9_only();  emit_int32( op(arith_op) | fcn(id1) | op3(impdep2_op3) | u_field(const19a, 18, 0)); }
 
   // pp 149 (v8)
 
-  void cpop1( int opc, int cr1, int cr2, int crd ) { v8_only();  emit_long( op(arith_op) | fcn(crd) | op3(impdep1_op3) | u_field(cr1, 18, 14) | opf(opc) | u_field(cr2, 4, 0)); }
-  void cpop2( int opc, int cr1, int cr2, int crd ) { v8_only();  emit_long( op(arith_op) | fcn(crd) | op3(impdep2_op3) | u_field(cr1, 18, 14) | opf(opc) | u_field(cr2, 4, 0)); }
+  void cpop1( int opc, int cr1, int cr2, int crd ) { v8_only();  emit_int32( op(arith_op) | fcn(crd) | op3(impdep1_op3) | u_field(cr1, 18, 14) | opf(opc) | u_field(cr2, 4, 0)); }
+  void cpop2( int opc, int cr1, int cr2, int crd ) { v8_only();  emit_int32( op(arith_op) | fcn(crd) | op3(impdep2_op3) | u_field(cr1, 18, 14) | opf(opc) | u_field(cr2, 4, 0)); }
 
   // pp 170
 
@@ -872,8 +872,8 @@ public:
 
   // 173
 
-  void ldfa(  FloatRegisterImpl::Width w, Register s1, Register s2, int ia, FloatRegister d ) { v9_only();  emit_long( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3 | alt_bit_op3, w) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void ldfa(  FloatRegisterImpl::Width w, Register s1, int simm13a,         FloatRegister d ) { v9_only();  emit_long( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3 | alt_bit_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void ldfa(  FloatRegisterImpl::Width w, Register s1, Register s2, int ia, FloatRegister d ) { v9_only();  emit_int32( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3 | alt_bit_op3, w) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void ldfa(  FloatRegisterImpl::Width w, Register s1, int simm13a,         FloatRegister d ) { v9_only();  emit_int32( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3 | alt_bit_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 175, lduw is ld on v8
 
@@ -896,22 +896,22 @@ public:
 
   // pp 177
 
-  void ldsba(  Register s1, Register s2, int ia, Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(ldsb_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void ldsba(  Register s1, int simm13a,         Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(ldsb_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void ldsha(  Register s1, Register s2, int ia, Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(ldsh_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void ldsha(  Register s1, int simm13a,         Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(ldsh_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void ldswa(  Register s1, Register s2, int ia, Register d ) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(ldsw_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void ldswa(  Register s1, int simm13a,         Register d ) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(ldsw_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void lduba(  Register s1, Register s2, int ia, Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(ldub_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void lduba(  Register s1, int simm13a,         Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(ldub_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void lduha(  Register s1, Register s2, int ia, Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(lduh_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void lduha(  Register s1, int simm13a,         Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(lduh_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void lduwa(  Register s1, Register s2, int ia, Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(lduw_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void lduwa(  Register s1, int simm13a,         Register d ) {             emit_long( op(ldst_op) | rd(d) | op3(lduw_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void ldxa(   Register s1, Register s2, int ia, Register d ) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(ldx_op3  | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void ldxa(   Register s1, int simm13a,         Register d ) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(ldx_op3  | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void ldda(   Register s1, Register s2, int ia, Register d ) { v9_dep();   emit_long( op(ldst_op) | rd(d) | op3(ldd_op3  | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void ldda(   Register s1, int simm13a,         Register d ) { v9_dep();   emit_long( op(ldst_op) | rd(d) | op3(ldd_op3  | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void ldsba(  Register s1, Register s2, int ia, Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(ldsb_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void ldsba(  Register s1, int simm13a,         Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(ldsb_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void ldsha(  Register s1, Register s2, int ia, Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(ldsh_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void ldsha(  Register s1, int simm13a,         Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(ldsh_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void ldswa(  Register s1, Register s2, int ia, Register d ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(ldsw_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void ldswa(  Register s1, int simm13a,         Register d ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(ldsw_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void lduba(  Register s1, Register s2, int ia, Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(ldub_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void lduba(  Register s1, int simm13a,         Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(ldub_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void lduha(  Register s1, Register s2, int ia, Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(lduh_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void lduha(  Register s1, int simm13a,         Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(lduh_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void lduwa(  Register s1, Register s2, int ia, Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(lduw_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void lduwa(  Register s1, int simm13a,         Register d ) {             emit_int32( op(ldst_op) | rd(d) | op3(lduw_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void ldxa(   Register s1, Register s2, int ia, Register d ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(ldx_op3  | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void ldxa(   Register s1, int simm13a,         Register d ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(ldx_op3  | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void ldda(   Register s1, Register s2, int ia, Register d ) { v9_dep();   emit_int32( op(ldst_op) | rd(d) | op3(ldd_op3  | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void ldda(   Register s1, int simm13a,         Register d ) { v9_dep();   emit_int32( op(ldst_op) | rd(d) | op3(ldd_op3  | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 179
 
@@ -920,111 +920,111 @@ public:
 
   // pp 180
 
-  void ldstuba( Register s1, Register s2, int ia, Register d ) { emit_long( op(ldst_op) | rd(d) | op3(ldstub_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void ldstuba( Register s1, int simm13a,         Register d ) { emit_long( op(ldst_op) | rd(d) | op3(ldstub_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void ldstuba( Register s1, Register s2, int ia, Register d ) { emit_int32( op(ldst_op) | rd(d) | op3(ldstub_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void ldstuba( Register s1, int simm13a,         Register d ) { emit_int32( op(ldst_op) | rd(d) | op3(ldstub_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 181
 
-  void and3(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(and_op3              ) | rs1(s1) | rs2(s2) ); }
-  void and3(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(and_op3              ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void andcc(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(and_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void andcc(   Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(and_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void andn(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(andn_op3             ) | rs1(s1) | rs2(s2) ); }
-  void andn(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(andn_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void andncc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(andn_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void andncc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(andn_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void or3(     Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(or_op3               ) | rs1(s1) | rs2(s2) ); }
-  void or3(     Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(or_op3               ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void orcc(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(or_op3   | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void orcc(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(or_op3   | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void orn(     Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(orn_op3) | rs1(s1) | rs2(s2) ); }
-  void orn(     Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(orn_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void orncc(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(orn_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void orncc(   Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(orn_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void xor3(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(xor_op3              ) | rs1(s1) | rs2(s2) ); }
-  void xor3(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(xor_op3              ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void xorcc(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(xor_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void xorcc(   Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(xor_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void xnor(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(xnor_op3             ) | rs1(s1) | rs2(s2) ); }
-  void xnor(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(xnor_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void xnorcc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(xnor_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void xnorcc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(xnor_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void and3(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(and_op3              ) | rs1(s1) | rs2(s2) ); }
+  void and3(    Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(and_op3              ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void andcc(   Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(and_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void andcc(   Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(and_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void andn(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(andn_op3             ) | rs1(s1) | rs2(s2) ); }
+  void andn(    Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(andn_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void andncc(  Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(andn_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void andncc(  Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(andn_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void or3(     Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(or_op3               ) | rs1(s1) | rs2(s2) ); }
+  void or3(     Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(or_op3               ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void orcc(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(or_op3   | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void orcc(    Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(or_op3   | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void orn(     Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(orn_op3) | rs1(s1) | rs2(s2) ); }
+  void orn(     Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(orn_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void orncc(   Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(orn_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void orncc(   Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(orn_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void xor3(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(xor_op3              ) | rs1(s1) | rs2(s2) ); }
+  void xor3(    Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(xor_op3              ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void xorcc(   Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(xor_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void xorcc(   Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(xor_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void xnor(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(xnor_op3             ) | rs1(s1) | rs2(s2) ); }
+  void xnor(    Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(xnor_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void xnorcc(  Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(xnor_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void xnorcc(  Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(xnor_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 183
 
-  void membar( Membar_mask_bits const7a ) { v9_only(); emit_long( op(arith_op) | op3(membar_op3) | rs1(O7) | immed(true) | u_field( int(const7a), 6, 0)); }
+  void membar( Membar_mask_bits const7a ) { v9_only(); emit_int32( op(arith_op) | op3(membar_op3) | rs1(O7) | immed(true) | u_field( int(const7a), 6, 0)); }
 
   // pp 185
 
-  void fmov( FloatRegisterImpl::Width w, Condition c,  bool floatCC, CC cca, FloatRegister s2, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop2_op3) | cond_mov(c) | opf_cc(cca, floatCC) | opf_low6(w) | fs2(s2, w)); }
+  void fmov( FloatRegisterImpl::Width w, Condition c,  bool floatCC, CC cca, FloatRegister s2, FloatRegister d ) { v9_only();  emit_int32( op(arith_op) | fd(d, w) | op3(fpop2_op3) | cond_mov(c) | opf_cc(cca, floatCC) | opf_low6(w) | fs2(s2, w)); }
 
   // pp 189
 
-  void fmov( FloatRegisterImpl::Width w, RCondition c, Register s1,  FloatRegister s2, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop2_op3) | rs1(s1) | rcond(c) | opf_low5(4 + w) | fs2(s2, w)); }
+  void fmov( FloatRegisterImpl::Width w, RCondition c, Register s1,  FloatRegister s2, FloatRegister d ) { v9_only();  emit_int32( op(arith_op) | fd(d, w) | op3(fpop2_op3) | rs1(s1) | rcond(c) | opf_low5(4 + w) | fs2(s2, w)); }
 
   // pp 191
 
-  void movcc( Condition c, bool floatCC, CC cca, Register s2, Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(movcc_op3) | mov_cc(cca, floatCC) | cond_mov(c) | rs2(s2) ); }
-  void movcc( Condition c, bool floatCC, CC cca, int simm11a, Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(movcc_op3) | mov_cc(cca, floatCC) | cond_mov(c) | immed(true) | simm(simm11a, 11) ); }
+  void movcc( Condition c, bool floatCC, CC cca, Register s2, Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(movcc_op3) | mov_cc(cca, floatCC) | cond_mov(c) | rs2(s2) ); }
+  void movcc( Condition c, bool floatCC, CC cca, int simm11a, Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(movcc_op3) | mov_cc(cca, floatCC) | cond_mov(c) | immed(true) | simm(simm11a, 11) ); }
 
   // pp 195
 
-  void movr( RCondition c, Register s1, Register s2,  Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(movr_op3) | rs1(s1) | rcond(c) | rs2(s2) ); }
-  void movr( RCondition c, Register s1, int simm10a,  Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(movr_op3) | rs1(s1) | rcond(c) | immed(true) | simm(simm10a, 10) ); }
+  void movr( RCondition c, Register s1, Register s2,  Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(movr_op3) | rs1(s1) | rcond(c) | rs2(s2) ); }
+  void movr( RCondition c, Register s1, int simm10a,  Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(movr_op3) | rs1(s1) | rcond(c) | immed(true) | simm(simm10a, 10) ); }
 
   // pp 196
 
-  void mulx(  Register s1, Register s2, Register d ) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(mulx_op3 ) | rs1(s1) | rs2(s2) ); }
-  void mulx(  Register s1, int simm13a, Register d ) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(mulx_op3 ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void sdivx( Register s1, Register s2, Register d ) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(sdivx_op3) | rs1(s1) | rs2(s2) ); }
-  void sdivx( Register s1, int simm13a, Register d ) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(sdivx_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void udivx( Register s1, Register s2, Register d ) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(udivx_op3) | rs1(s1) | rs2(s2) ); }
-  void udivx( Register s1, int simm13a, Register d ) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(udivx_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void mulx(  Register s1, Register s2, Register d ) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(mulx_op3 ) | rs1(s1) | rs2(s2) ); }
+  void mulx(  Register s1, int simm13a, Register d ) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(mulx_op3 ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void sdivx( Register s1, Register s2, Register d ) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(sdivx_op3) | rs1(s1) | rs2(s2) ); }
+  void sdivx( Register s1, int simm13a, Register d ) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(sdivx_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void udivx( Register s1, Register s2, Register d ) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(udivx_op3) | rs1(s1) | rs2(s2) ); }
+  void udivx( Register s1, int simm13a, Register d ) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(udivx_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 197
 
-  void umul(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(umul_op3             ) | rs1(s1) | rs2(s2) ); }
-  void umul(   Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(umul_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void smul(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(smul_op3             ) | rs1(s1) | rs2(s2) ); }
-  void smul(   Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(smul_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void umulcc( Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(umul_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void umulcc( Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(umul_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void smulcc( Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(smul_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void smulcc( Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(smul_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void umul(   Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(umul_op3             ) | rs1(s1) | rs2(s2) ); }
+  void umul(   Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(umul_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void smul(   Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(smul_op3             ) | rs1(s1) | rs2(s2) ); }
+  void smul(   Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(smul_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void umulcc( Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(umul_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void umulcc( Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(umul_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void smulcc( Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(smul_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void smulcc( Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(smul_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 199
 
-  void mulscc(   Register s1, Register s2, Register d ) { v9_dep();  emit_long( op(arith_op) | rd(d) | op3(mulscc_op3) | rs1(s1) | rs2(s2) ); }
-  void mulscc(   Register s1, int simm13a, Register d ) { v9_dep();  emit_long( op(arith_op) | rd(d) | op3(mulscc_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void mulscc(   Register s1, Register s2, Register d ) { v9_dep();  emit_int32( op(arith_op) | rd(d) | op3(mulscc_op3) | rs1(s1) | rs2(s2) ); }
+  void mulscc(   Register s1, int simm13a, Register d ) { v9_dep();  emit_int32( op(arith_op) | rd(d) | op3(mulscc_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 201
 
-  void nop() { emit_long( op(branch_op) | op2(sethi_op2) ); }
+  void nop() { emit_int32( op(branch_op) | op2(sethi_op2) ); }
 
 
   // pp 202
 
-  void popc( Register s,  Register d) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(popc_op3) | rs2(s)); }
-  void popc( int simm13a, Register d) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(popc_op3) | immed(true) | simm(simm13a, 13)); }
+  void popc( Register s,  Register d) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(popc_op3) | rs2(s)); }
+  void popc( int simm13a, Register d) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(popc_op3) | immed(true) | simm(simm13a, 13)); }
 
   // pp 203
 
-  void prefetch(   Register s1, Register s2, PrefetchFcn f) { v9_only();  emit_long( op(ldst_op) | fcn(f) | op3(prefetch_op3) | rs1(s1) | rs2(s2) ); }
+  void prefetch(   Register s1, Register s2, PrefetchFcn f) { v9_only();  emit_int32( op(ldst_op) | fcn(f) | op3(prefetch_op3) | rs1(s1) | rs2(s2) ); }
   void prefetch(   Register s1, int simm13a, PrefetchFcn f) { v9_only();  emit_data( op(ldst_op) | fcn(f) | op3(prefetch_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-  void prefetcha(  Register s1, Register s2, int ia, PrefetchFcn f ) { v9_only();  emit_long( op(ldst_op) | fcn(f) | op3(prefetch_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void prefetcha(  Register s1, int simm13a,         PrefetchFcn f ) { v9_only();  emit_long( op(ldst_op) | fcn(f) | op3(prefetch_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void prefetcha(  Register s1, Register s2, int ia, PrefetchFcn f ) { v9_only();  emit_int32( op(ldst_op) | fcn(f) | op3(prefetch_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void prefetcha(  Register s1, int simm13a,         PrefetchFcn f ) { v9_only();  emit_int32( op(ldst_op) | fcn(f) | op3(prefetch_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 208
 
   // not implementing read privileged register
 
-  inline void rdy(    Register d) { v9_dep();  emit_long( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(0, 18, 14)); }
-  inline void rdccr(  Register d) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(2, 18, 14)); }
-  inline void rdasi(  Register d) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(3, 18, 14)); }
-  inline void rdtick( Register d) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(4, 18, 14)); } // Spoon!
-  inline void rdpc(   Register d) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(5, 18, 14)); }
-  inline void rdfprs( Register d) { v9_only(); emit_long( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(6, 18, 14)); }
+  inline void rdy(    Register d) { v9_dep();  emit_int32( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(0, 18, 14)); }
+  inline void rdccr(  Register d) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(2, 18, 14)); }
+  inline void rdasi(  Register d) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(3, 18, 14)); }
+  inline void rdtick( Register d) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(4, 18, 14)); } // Spoon!
+  inline void rdpc(   Register d) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(5, 18, 14)); }
+  inline void rdfprs( Register d) { v9_only(); emit_int32( op(arith_op) | rd(d) | op3(rdreg_op3) | u_field(6, 18, 14)); }
 
   // pp 213
 
@@ -1033,47 +1033,47 @@ public:
 
   // pp 214
 
-  void save(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(save_op3) | rs1(s1) | rs2(s2) ); }
+  void save(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(save_op3) | rs1(s1) | rs2(s2) ); }
   void save(    Register s1, int simm13a, Register d ) {
     // make sure frame is at least large enough for the register save area
     assert(-simm13a >= 16 * wordSize, "frame too small");
-    emit_long( op(arith_op) | rd(d) | op3(save_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) );
+    emit_int32( op(arith_op) | rd(d) | op3(save_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) );
   }
 
-  void restore( Register s1 = G0,  Register s2 = G0, Register d = G0 ) { emit_long( op(arith_op) | rd(d) | op3(restore_op3) | rs1(s1) | rs2(s2) ); }
-  void restore( Register s1,       int simm13a,      Register d      ) { emit_long( op(arith_op) | rd(d) | op3(restore_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void restore( Register s1 = G0,  Register s2 = G0, Register d = G0 ) { emit_int32( op(arith_op) | rd(d) | op3(restore_op3) | rs1(s1) | rs2(s2) ); }
+  void restore( Register s1,       int simm13a,      Register d      ) { emit_int32( op(arith_op) | rd(d) | op3(restore_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 216
 
-  void saved()    { v9_only();  emit_long( op(arith_op) | fcn(0) | op3(saved_op3)); }
-  void restored() { v9_only();  emit_long( op(arith_op) | fcn(1) | op3(saved_op3)); }
+  void saved()    { v9_only();  emit_int32( op(arith_op) | fcn(0) | op3(saved_op3)); }
+  void restored() { v9_only();  emit_int32( op(arith_op) | fcn(1) | op3(saved_op3)); }
 
   // pp 217
 
   inline void sethi( int imm22a, Register d, RelocationHolder const& rspec = RelocationHolder() );
   // pp 218
 
-  void sll(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sll_op3) | rs1(s1) | sx(0) | rs2(s2) ); }
-  void sll(  Register s1, int imm5a,   Register d ) { emit_long( op(arith_op) | rd(d) | op3(sll_op3) | rs1(s1) | sx(0) | immed(true) | u_field(imm5a, 4, 0) ); }
-  void srl(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(srl_op3) | rs1(s1) | sx(0) | rs2(s2) ); }
-  void srl(  Register s1, int imm5a,   Register d ) { emit_long( op(arith_op) | rd(d) | op3(srl_op3) | rs1(s1) | sx(0) | immed(true) | u_field(imm5a, 4, 0) ); }
-  void sra(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sra_op3) | rs1(s1) | sx(0) | rs2(s2) ); }
-  void sra(  Register s1, int imm5a,   Register d ) { emit_long( op(arith_op) | rd(d) | op3(sra_op3) | rs1(s1) | sx(0) | immed(true) | u_field(imm5a, 4, 0) ); }
+  void sll(  Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sll_op3) | rs1(s1) | sx(0) | rs2(s2) ); }
+  void sll(  Register s1, int imm5a,   Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sll_op3) | rs1(s1) | sx(0) | immed(true) | u_field(imm5a, 4, 0) ); }
+  void srl(  Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(srl_op3) | rs1(s1) | sx(0) | rs2(s2) ); }
+  void srl(  Register s1, int imm5a,   Register d ) { emit_int32( op(arith_op) | rd(d) | op3(srl_op3) | rs1(s1) | sx(0) | immed(true) | u_field(imm5a, 4, 0) ); }
+  void sra(  Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sra_op3) | rs1(s1) | sx(0) | rs2(s2) ); }
+  void sra(  Register s1, int imm5a,   Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sra_op3) | rs1(s1) | sx(0) | immed(true) | u_field(imm5a, 4, 0) ); }
 
-  void sllx( Register s1, Register s2, Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(sll_op3) | rs1(s1) | sx(1) | rs2(s2) ); }
-  void sllx( Register s1, int imm6a,   Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(sll_op3) | rs1(s1) | sx(1) | immed(true) | u_field(imm6a, 5, 0) ); }
-  void srlx( Register s1, Register s2, Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(srl_op3) | rs1(s1) | sx(1) | rs2(s2) ); }
-  void srlx( Register s1, int imm6a,   Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(srl_op3) | rs1(s1) | sx(1) | immed(true) | u_field(imm6a, 5, 0) ); }
-  void srax( Register s1, Register s2, Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(sra_op3) | rs1(s1) | sx(1) | rs2(s2) ); }
-  void srax( Register s1, int imm6a,   Register d ) { v9_only();  emit_long( op(arith_op) | rd(d) | op3(sra_op3) | rs1(s1) | sx(1) | immed(true) | u_field(imm6a, 5, 0) ); }
+  void sllx( Register s1, Register s2, Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(sll_op3) | rs1(s1) | sx(1) | rs2(s2) ); }
+  void sllx( Register s1, int imm6a,   Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(sll_op3) | rs1(s1) | sx(1) | immed(true) | u_field(imm6a, 5, 0) ); }
+  void srlx( Register s1, Register s2, Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(srl_op3) | rs1(s1) | sx(1) | rs2(s2) ); }
+  void srlx( Register s1, int imm6a,   Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(srl_op3) | rs1(s1) | sx(1) | immed(true) | u_field(imm6a, 5, 0) ); }
+  void srax( Register s1, Register s2, Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(sra_op3) | rs1(s1) | sx(1) | rs2(s2) ); }
+  void srax( Register s1, int imm6a,   Register d ) { v9_only();  emit_int32( op(arith_op) | rd(d) | op3(sra_op3) | rs1(s1) | sx(1) | immed(true) | u_field(imm6a, 5, 0) ); }
 
   // pp 220
 
-  void sir( int simm13a ) { emit_long( op(arith_op) | fcn(15) | op3(sir_op3) | immed(true) | simm(simm13a, 13)); }
+  void sir( int simm13a ) { emit_int32( op(arith_op) | fcn(15) | op3(sir_op3) | immed(true) | simm(simm13a, 13)); }
 
   // pp 221
 
-  void stbar() { emit_long( op(arith_op) | op3(membar_op3) | u_field(15, 18, 14)); }
+  void stbar() { emit_int32( op(arith_op) | op3(membar_op3) | u_field(15, 18, 14)); }
 
   // pp 222
 
@@ -1087,8 +1087,8 @@ public:
 
   //  pp 224
 
-  void stfa(  FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2, int ia ) { v9_only();  emit_long( op(ldst_op) | fd(d, w) | alt_op3(stf_op3 | alt_bit_op3, w) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void stfa(  FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a         ) { v9_only();  emit_long( op(ldst_op) | fd(d, w) | alt_op3(stf_op3 | alt_bit_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void stfa(  FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2, int ia ) { v9_only();  emit_int32( op(ldst_op) | fd(d, w) | alt_op3(stf_op3 | alt_bit_op3, w) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void stfa(  FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a         ) { v9_only();  emit_int32( op(ldst_op) | fd(d, w) | alt_op3(stf_op3 | alt_bit_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // p 226
 
@@ -1105,16 +1105,16 @@ public:
 
   // pp 177
 
-  void stba(  Register d, Register s1, Register s2, int ia ) {             emit_long( op(ldst_op) | rd(d) | op3(stb_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void stba(  Register d, Register s1, int simm13a         ) {             emit_long( op(ldst_op) | rd(d) | op3(stb_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void stha(  Register d, Register s1, Register s2, int ia ) {             emit_long( op(ldst_op) | rd(d) | op3(sth_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void stha(  Register d, Register s1, int simm13a         ) {             emit_long( op(ldst_op) | rd(d) | op3(sth_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void stwa(  Register d, Register s1, Register s2, int ia ) {             emit_long( op(ldst_op) | rd(d) | op3(stw_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void stwa(  Register d, Register s1, int simm13a         ) {             emit_long( op(ldst_op) | rd(d) | op3(stw_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void stxa(  Register d, Register s1, Register s2, int ia ) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(stx_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void stxa(  Register d, Register s1, int simm13a         ) { v9_only();  emit_long( op(ldst_op) | rd(d) | op3(stx_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void stda(  Register d, Register s1, Register s2, int ia ) {             emit_long( op(ldst_op) | rd(d) | op3(std_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void stda(  Register d, Register s1, int simm13a         ) {             emit_long( op(ldst_op) | rd(d) | op3(std_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void stba(  Register d, Register s1, Register s2, int ia ) {             emit_int32( op(ldst_op) | rd(d) | op3(stb_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void stba(  Register d, Register s1, int simm13a         ) {             emit_int32( op(ldst_op) | rd(d) | op3(stb_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void stha(  Register d, Register s1, Register s2, int ia ) {             emit_int32( op(ldst_op) | rd(d) | op3(sth_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void stha(  Register d, Register s1, int simm13a         ) {             emit_int32( op(ldst_op) | rd(d) | op3(sth_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void stwa(  Register d, Register s1, Register s2, int ia ) {             emit_int32( op(ldst_op) | rd(d) | op3(stw_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void stwa(  Register d, Register s1, int simm13a         ) {             emit_int32( op(ldst_op) | rd(d) | op3(stw_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void stxa(  Register d, Register s1, Register s2, int ia ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(stx_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void stxa(  Register d, Register s1, int simm13a         ) { v9_only();  emit_int32( op(ldst_op) | rd(d) | op3(stx_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void stda(  Register d, Register s1, Register s2, int ia ) {             emit_int32( op(ldst_op) | rd(d) | op3(std_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void stda(  Register d, Register s1, int simm13a         ) {             emit_int32( op(ldst_op) | rd(d) | op3(std_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 97 (v8)
 
@@ -1129,15 +1129,15 @@ public:
 
   // pp 230
 
-  void sub(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3              ) | rs1(s1) | rs2(s2) ); }
-  void sub(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3              ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void sub(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sub_op3              ) | rs1(s1) | rs2(s2) ); }
+  void sub(    Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sub_op3              ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
-  void subcc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3 | cc_bit_op3 ) | rs1(s1) | rs2(s2) ); }
-  void subcc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(sub_op3 | cc_bit_op3 ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void subc(   Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(subc_op3             ) | rs1(s1) | rs2(s2) ); }
-  void subc(   Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(subc_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void subccc( Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(subc_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
-  void subccc( Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(subc_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void subcc(  Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sub_op3 | cc_bit_op3 ) | rs1(s1) | rs2(s2) ); }
+  void subcc(  Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(sub_op3 | cc_bit_op3 ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void subc(   Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(subc_op3             ) | rs1(s1) | rs2(s2) ); }
+  void subc(   Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(subc_op3             ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void subccc( Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(subc_op3 | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
+  void subccc( Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(subc_op3 | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 231
 
@@ -1146,55 +1146,55 @@ public:
 
   // pp 232
 
-  void swapa(   Register s1, Register s2, int ia, Register d ) { v9_dep();  emit_long( op(ldst_op) | rd(d) | op3(swap_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
-  void swapa(   Register s1, int simm13a,         Register d ) { v9_dep();  emit_long( op(ldst_op) | rd(d) | op3(swap_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void swapa(   Register s1, Register s2, int ia, Register d ) { v9_dep();  emit_int32( op(ldst_op) | rd(d) | op3(swap_op3 | alt_bit_op3) | rs1(s1) | imm_asi(ia) | rs2(s2) ); }
+  void swapa(   Register s1, int simm13a,         Register d ) { v9_dep();  emit_int32( op(ldst_op) | rd(d) | op3(swap_op3 | alt_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 234, note op in book is wrong, see pp 268
 
-  void taddcc(    Register s1, Register s2, Register d ) {            emit_long( op(arith_op) | rd(d) | op3(taddcc_op3  ) | rs1(s1) | rs2(s2) ); }
-  void taddcc(    Register s1, int simm13a, Register d ) {            emit_long( op(arith_op) | rd(d) | op3(taddcc_op3  ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void taddcctv(  Register s1, Register s2, Register d ) { v9_dep();  emit_long( op(arith_op) | rd(d) | op3(taddcctv_op3) | rs1(s1) | rs2(s2) ); }
-  void taddcctv(  Register s1, int simm13a, Register d ) { v9_dep();  emit_long( op(arith_op) | rd(d) | op3(taddcctv_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void taddcc(    Register s1, Register s2, Register d ) {            emit_int32( op(arith_op) | rd(d) | op3(taddcc_op3  ) | rs1(s1) | rs2(s2) ); }
+  void taddcc(    Register s1, int simm13a, Register d ) {            emit_int32( op(arith_op) | rd(d) | op3(taddcc_op3  ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void taddcctv(  Register s1, Register s2, Register d ) { v9_dep();  emit_int32( op(arith_op) | rd(d) | op3(taddcctv_op3) | rs1(s1) | rs2(s2) ); }
+  void taddcctv(  Register s1, int simm13a, Register d ) { v9_dep();  emit_int32( op(arith_op) | rd(d) | op3(taddcctv_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 235
 
-  void tsubcc(    Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(tsubcc_op3  ) | rs1(s1) | rs2(s2) ); }
-  void tsubcc(    Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(tsubcc_op3  ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
-  void tsubcctv(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(tsubcctv_op3) | rs1(s1) | rs2(s2) ); }
-  void tsubcctv(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(tsubcctv_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void tsubcc(    Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(tsubcc_op3  ) | rs1(s1) | rs2(s2) ); }
+  void tsubcc(    Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(tsubcc_op3  ) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
+  void tsubcctv(  Register s1, Register s2, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(tsubcctv_op3) | rs1(s1) | rs2(s2) ); }
+  void tsubcctv(  Register s1, int simm13a, Register d ) { emit_int32( op(arith_op) | rd(d) | op3(tsubcctv_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
 
   // pp 237
 
-  void trap( Condition c, CC cc, Register s1, Register s2 ) { v8_no_cc(cc);  emit_long( op(arith_op) | cond(c) | op3(trap_op3) | rs1(s1) | trapcc(cc) | rs2(s2)); }
-  void trap( Condition c, CC cc, Register s1, int trapa   ) { v8_no_cc(cc);  emit_long( op(arith_op) | cond(c) | op3(trap_op3) | rs1(s1) | trapcc(cc) | immed(true) | u_field(trapa, 6, 0)); }
+  void trap( Condition c, CC cc, Register s1, Register s2 ) { v8_no_cc(cc);  emit_int32( op(arith_op) | cond(c) | op3(trap_op3) | rs1(s1) | trapcc(cc) | rs2(s2)); }
+  void trap( Condition c, CC cc, Register s1, int trapa   ) { v8_no_cc(cc);  emit_int32( op(arith_op) | cond(c) | op3(trap_op3) | rs1(s1) | trapcc(cc) | immed(true) | u_field(trapa, 6, 0)); }
   // simple uncond. trap
   void trap( int trapa ) { trap( always, icc, G0, trapa ); }
 
   // pp 239 omit write priv register for now
 
-  inline void wry(    Register d) { v9_dep();  emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(0, 29, 25)); }
-  inline void wrccr(Register s) { v9_only(); emit_long( op(arith_op) | rs1(s) | op3(wrreg_op3) | u_field(2, 29, 25)); }
-  inline void wrccr(Register s, int simm13a) { v9_only(); emit_long( op(arith_op) |
+  inline void wry(    Register d) { v9_dep();  emit_int32( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(0, 29, 25)); }
+  inline void wrccr(Register s) { v9_only(); emit_int32( op(arith_op) | rs1(s) | op3(wrreg_op3) | u_field(2, 29, 25)); }
+  inline void wrccr(Register s, int simm13a) { v9_only(); emit_int32( op(arith_op) |
                                                                            rs1(s) |
                                                                            op3(wrreg_op3) |
                                                                            u_field(2, 29, 25) |
                                                                            immed(true) |
                                                                            simm(simm13a, 13)); }
-  inline void wrasi(Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(3, 29, 25)); }
+  inline void wrasi(Register d) { v9_only(); emit_int32( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(3, 29, 25)); }
   // wrasi(d, imm) stores (d xor imm) to asi
-  inline void wrasi(Register d, int simm13a) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) |
+  inline void wrasi(Register d, int simm13a) { v9_only(); emit_int32( op(arith_op) | rs1(d) | op3(wrreg_op3) |
                                                u_field(3, 29, 25) | immed(true) | simm(simm13a, 13)); }
-  inline void wrfprs( Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(6, 29, 25)); }
+  inline void wrfprs( Register d) { v9_only(); emit_int32( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(6, 29, 25)); }
 
 
   // VIS3 instructions
 
-  void movstosw( FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstosw_opf) | fs2(s, FloatRegisterImpl::S)); }
-  void movstouw( FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstouw_opf) | fs2(s, FloatRegisterImpl::S)); }
-  void movdtox(  FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mdtox_opf) | fs2(s, FloatRegisterImpl::D)); }
+  void movstosw( FloatRegister s, Register d ) { vis3_only();  emit_int32( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstosw_opf) | fs2(s, FloatRegisterImpl::S)); }
+  void movstouw( FloatRegister s, Register d ) { vis3_only();  emit_int32( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstouw_opf) | fs2(s, FloatRegisterImpl::S)); }
+  void movdtox(  FloatRegister s, Register d ) { vis3_only();  emit_int32( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mdtox_opf) | fs2(s, FloatRegisterImpl::D)); }
 
-  void movwtos( Register s, FloatRegister d ) { vis3_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(mftoi_op3) | opf(mwtos_opf) | rs2(s)); }
-  void movxtod( Register s, FloatRegister d ) { vis3_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(mftoi_op3) | opf(mxtod_opf) | rs2(s)); }
+  void movwtos( Register s, FloatRegister d ) { vis3_only();  emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(mftoi_op3) | opf(mwtos_opf) | rs2(s)); }
+  void movxtod( Register s, FloatRegister d ) { vis3_only();  emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(mftoi_op3) | opf(mxtod_opf) | rs2(s)); }
 
   // Creation
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {

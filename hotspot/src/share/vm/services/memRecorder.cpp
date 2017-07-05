@@ -84,10 +84,13 @@ MemRecorder::~MemRecorder() {
     }
     delete _pointer_records;
   }
-  if (_next != NULL) {
-    delete _next;
+  // delete all linked recorders
+  while (_next != NULL) {
+    MemRecorder* tmp = _next;
+    _next = _next->next();
+    tmp->set_next(NULL);
+    delete tmp;
   }
-
   Atomic::dec(&_instance_count);
 }
 

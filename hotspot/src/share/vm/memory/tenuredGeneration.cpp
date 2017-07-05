@@ -62,7 +62,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                        _virtual_space.reserved_size(),
                                        _the_space, _gen_counters);
 #ifndef SERIALGC
-  if (UseParNewGC && ParallelGCThreads > 0) {
+  if (UseParNewGC) {
     typedef ParGCAllocBufferWithBOT* ParGCAllocBufferWithBOTPtr;
     _alloc_buffers = NEW_C_HEAP_ARRAY(ParGCAllocBufferWithBOTPtr,
                                       ParallelGCThreads, mtGC);
