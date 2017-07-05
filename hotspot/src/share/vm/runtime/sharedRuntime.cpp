@@ -527,7 +527,7 @@ address SharedRuntime::get_poll_stub(address pc) {
 }
 
 
-oop SharedRuntime::retrieve_receiver( symbolHandle sig, frame caller ) {
+oop SharedRuntime::retrieve_receiver( Symbol* sig, frame caller ) {
   assert(caller.is_interpreted_frame(), "");
   int args_size = ArgumentSizeComputer(sig).size() + 1;
   assert(args_size <= caller.interpreter_frame_expression_stack_size(), "receiver must be on interpreter stack");
@@ -547,7 +547,7 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, Handle h_
   Exceptions::_throw(thread, __FILE__, __LINE__, h_exception);
 }
 
-void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, symbolOop name, const char *message) {
+void SharedRuntime::throw_and_post_jvmti_exception(JavaThread *thread, Symbol* name, const char *message) {
   Handle h_exception = Exceptions::new_exception(thread, name, message);
   throw_and_post_jvmti_exception(thread, h_exception);
 }
@@ -880,7 +880,7 @@ int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
   assert(DTraceAllocProbes, "wrong call");
   Klass* klass = o->blueprint();
   int size = o->size();
-  symbolOop name = klass->name();
+  Symbol* name = klass->name();
   HS_DTRACE_PROBE4(hotspot, object__alloc, get_java_tid(thread),
                    name->bytes(), name->utf8_length(), size * HeapWordSize);
   return 0;
@@ -889,9 +889,9 @@ int SharedRuntime::dtrace_object_alloc_base(Thread* thread, oopDesc* o) {
 JRT_LEAF(int, SharedRuntime::dtrace_method_entry(
     JavaThread* thread, methodOopDesc* method))
   assert(DTraceMethodProbes, "wrong call");
-  symbolOop kname = method->klass_name();
-  symbolOop name = method->name();
-  symbolOop sig = method->signature();
+  Symbol* kname = method->klass_name();
+  Symbol* name = method->name();
+  Symbol* sig = method->signature();
   HS_DTRACE_PROBE7(hotspot, method__entry, get_java_tid(thread),
       kname->bytes(), kname->utf8_length(),
       name->bytes(), name->utf8_length(),
@@ -902,9 +902,9 @@ JRT_END
 JRT_LEAF(int, SharedRuntime::dtrace_method_exit(
     JavaThread* thread, methodOopDesc* method))
   assert(DTraceMethodProbes, "wrong call");
-  symbolOop kname = method->klass_name();
-  symbolOop name = method->name();
-  symbolOop sig = method->signature();
+  Symbol* kname = method->klass_name();
+  Symbol* name = method->name();
+  Symbol* sig = method->signature();
   HS_DTRACE_PROBE7(hotspot, method__return, get_java_tid(thread),
       kname->bytes(), kname->utf8_length(),
       name->bytes(), name->utf8_length(),
@@ -2637,7 +2637,7 @@ VMReg SharedRuntime::name_for_receiver() {
   return regs.first();
 }
 
-VMRegPair *SharedRuntime::find_callee_arguments(symbolOop sig, bool has_receiver, int* arg_size) {
+VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, int* arg_size) {
   // This method is returning a data structure allocating as a
   // ResourceObject, so do not put any ResourceMarks in here.
   char *s = sig->as_C_string();

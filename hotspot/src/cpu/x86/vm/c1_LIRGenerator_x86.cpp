@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -733,8 +733,8 @@ void LIRGenerator::do_AttemptUpdate(Intrinsic* x) {
 
   // generate compare-and-swap; produces zero condition if swap occurs
   int value_offset = sun_misc_AtomicLongCSImpl::value_offset();
-  LIR_Opr addr = obj.result();
-  __ add(addr, LIR_OprFact::intConst(value_offset), addr);
+  LIR_Opr addr = new_pointer_register();
+  __ leal(LIR_OprFact::address(new LIR_Address(obj.result(), value_offset, T_LONG)), addr);
   LIR_Opr t1 = LIR_OprFact::illegalOpr;  // no temp needed
   LIR_Opr t2 = LIR_OprFact::illegalOpr;  // no temp needed
   __ cas_long(addr, cmp_value.result(), new_value.result(), t1, t2);

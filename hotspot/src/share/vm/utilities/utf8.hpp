@@ -51,8 +51,8 @@ class UTF8 : AllStatic {
   static char* next_character(const char* str, jint* value);
 
   // Utility methods
-  static jbyte* strrchr(jbyte* base, int length, jbyte c);
-  static bool   equal(jbyte* base1, int length1, jbyte* base2, int length2);
+  static const jbyte* strrchr(const jbyte* base, int length, jbyte c);
+  static bool   equal(const jbyte* base1, int length1, const jbyte* base2,int length2);
   static bool   is_supplementary_character(const unsigned char* str);
   static jint   get_supplementary_character(const unsigned char* str);
 };

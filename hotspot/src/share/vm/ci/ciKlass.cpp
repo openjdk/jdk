@@ -39,9 +39,9 @@ ciKlass::ciKlass(KlassHandle h_k) : ciType(h_k) {
   assert(get_oop()->is_klass(), "wrong type");
   Klass* k = get_Klass();
   _layout_helper = k->layout_helper();
-  symbolOop klass_name = k->name();
+  Symbol* klass_name = k->name();
   assert(klass_name != NULL, "wrong ciKlass constructor");
-  _name = CURRENT_ENV->get_object(klass_name)->as_symbol();
+  _name = CURRENT_ENV->get_symbol(klass_name);
 }
 
 // ------------------------------------------------------------------

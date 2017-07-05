@@ -1941,10 +1941,16 @@ bool Arguments::check_vm_args_consistency() {
     status = false;
   }
 
+#ifndef SERIALGC
   if (UseG1GC) {
     status = status && verify_percentage(InitiatingHeapOccupancyPercent,
                                          "InitiatingHeapOccupancyPercent");
+    status = status && verify_min_value(G1RefProcDrainInterval, 1,
+                                        "G1RefProcDrainInterval");
+    status = status && verify_min_value((intx)G1ConcMarkStepDurationMillis, 1,
+                                        "G1ConcMarkStepDurationMillis");
   }
+#endif
 
   status = status && verify_interval(RefDiscoveryPolicy,
                                      ReferenceProcessor::DiscoveryPolicyMin,
@@ -3029,15 +3035,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
     ScavengeRootsInCode = 1;
   }
-#ifdef COMPILER2
-  if (EnableInvokeDynamic && DoEscapeAnalysis) {
-    // TODO: We need to find rules for invokedynamic and EA.  For now,
-    // simply disable EA by default.
-    if (FLAG_IS_DEFAULT(DoEscapeAnalysis)) {
-      DoEscapeAnalysis = false;
-    }
-  }
-#endif
 
   if (PrintGCDetails) {
     // Turn on -verbose:gc options as well

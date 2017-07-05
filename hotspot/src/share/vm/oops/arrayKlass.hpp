@@ -84,7 +84,7 @@ class arrayKlass: public Klass {
   objArrayOop allocate_arrayArray(int n, int length, TRAPS);
 
   // Lookup operations
-  methodOop uncached_lookup_method(symbolOop name, symbolOop signature) const;
+  methodOop uncached_lookup_method(Symbol* name, Symbol* signature) const;
 
   // Casting from klassOop
   static arrayKlass* cast(klassOop k) {
