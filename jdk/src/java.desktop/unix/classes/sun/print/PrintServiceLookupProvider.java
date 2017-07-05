@@ -25,8 +25,6 @@
 
 package sun.print;
 
-import sun.misc.ManagedLocalsThread;
-
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -213,7 +211,8 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     public PrintServiceLookupProvider() {
         // start the printer listener thread
         if (pollServices) {
-            Thread thr = new ManagedLocalsThread(new PrinterChangeListener());
+            Thread thr = new Thread(null, new PrinterChangeListener(),
+                                    "PrinterListener", 0, false);
             thr.setDaemon(true);
             thr.start();
             IPPPrintService.debug_println(debugPrefix+"polling turned on");

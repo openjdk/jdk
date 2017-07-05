@@ -146,6 +146,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
         $(LIBJAVA_CFLAGS), \
     System.c_CFLAGS := $(VERSION_CFLAGS), \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
+    WARNINGS_AS_ERRORS_xlc := false, \
     DISABLED_WARNINGS_gcc := unused-result, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     MAPFILE := $(LIBJAVA_MAPFILE), \
@@ -266,7 +267,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     LDFLAGS_windows := -export:JIMAGE_Open -export:JIMAGE_Close \
         -export:JIMAGE_PackageToModule \
         -export:JIMAGE_FindResource -export:JIMAGE_GetResource \
-        -export:JIMAGE_ResourceIterator, \
+        -export:JIMAGE_ResourceIterator -export:JIMAGE_ResourcePath, \
     LIBS_unix := -ljvm -ldl $(LIBCXX), \
     LIBS_solaris := -lc, \
     LIBS_macosx := -lc++, \
@@ -289,7 +290,7 @@ LIBJLI_SRC_DIRS := $(call FindSrcDirsForLib, java.base, jli)
 
 LIBJLI_CFLAGS := $(CFLAGS_JDKLIB)
 
-ifeq ($(JVM_VARIANT_ZERO), true)
+ifeq ($(call check-jvm-variant, zero zeroshark), true)
   ERGO_FAMILY := zero
 else
   ifeq ($(OPENJDK_TARGET_CPU_ARCH), x86)

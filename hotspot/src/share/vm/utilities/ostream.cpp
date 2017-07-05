@@ -31,7 +31,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/top.hpp"
 #include "utilities/xmlstream.hpp"
 
 extern "C" void jio_print(const char* s); // Declarationtion of jvm method

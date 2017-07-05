@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
@@ -1223,59 +1224,60 @@ void VM_Version::get_processor_features() {
   }
 
 #ifndef PRODUCT
-  if (PrintMiscellaneous && Verbose) {
-    tty->print_cr("Logical CPUs per core: %u",
+  if (log_is_enabled(Info, os, cpu)) {
+    outputStream* log = Log(os, cpu)::info_stream();
+    log->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
-    tty->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
-    tty->print("UseSSE=%d", (int) UseSSE);
+    log->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
+    log->print("UseSSE=%d", (int) UseSSE);
     if (UseAVX > 0) {
-      tty->print("  UseAVX=%d", (int) UseAVX);
+      log->print("  UseAVX=%d", (int) UseAVX);
     }
     if (UseAES) {
-      tty->print("  UseAES=1");
+      log->print("  UseAES=1");
     }
 #ifdef COMPILER2
     if (MaxVectorSize > 0) {
-      tty->print("  MaxVectorSize=%d", (int) MaxVectorSize);
+      log->print("  MaxVectorSize=%d", (int) MaxVectorSize);
     }
 #endif
-    tty->cr();
-    tty->print("Allocation");
+    log->cr();
+    log->print("Allocation");
     if (AllocatePrefetchStyle <= 0 || UseSSE == 0 && !supports_3dnow_prefetch()) {
-      tty->print_cr(": no prefetching");
+      log->print_cr(": no prefetching");
     } else {
-      tty->print(" prefetching: ");
+      log->print(" prefetching: ");
       if (UseSSE == 0 && supports_3dnow_prefetch()) {
-        tty->print("PREFETCHW");
+        log->print("PREFETCHW");
       } else if (UseSSE >= 1) {
         if (AllocatePrefetchInstr == 0) {
-          tty->print("PREFETCHNTA");
+          log->print("PREFETCHNTA");
         } else if (AllocatePrefetchInstr == 1) {
-          tty->print("PREFETCHT0");
+          log->print("PREFETCHT0");
         } else if (AllocatePrefetchInstr == 2) {
-          tty->print("PREFETCHT2");
+          log->print("PREFETCHT2");
         } else if (AllocatePrefetchInstr == 3) {
-          tty->print("PREFETCHW");
+          log->print("PREFETCHW");
         }
       }
       if (AllocatePrefetchLines > 1) {
-        tty->print_cr(" at distance %d, %d lines of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchLines, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, %d lines of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchLines, (int) AllocatePrefetchStepSize);
       } else {
-        tty->print_cr(" at distance %d, one line of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchStepSize);
+        log->print_cr(" at distance %d, one line of %d bytes", (int) AllocatePrefetchDistance, (int) AllocatePrefetchStepSize);
       }
     }
 
     if (PrefetchCopyIntervalInBytes > 0) {
-      tty->print_cr("PrefetchCopyIntervalInBytes %d", (int) PrefetchCopyIntervalInBytes);
+      log->print_cr("PrefetchCopyIntervalInBytes %d", (int) PrefetchCopyIntervalInBytes);
     }
     if (PrefetchScanIntervalInBytes > 0) {
-      tty->print_cr("PrefetchScanIntervalInBytes %d", (int) PrefetchScanIntervalInBytes);
+      log->print_cr("PrefetchScanIntervalInBytes %d", (int) PrefetchScanIntervalInBytes);
     }
     if (PrefetchFieldsAhead > 0) {
-      tty->print_cr("PrefetchFieldsAhead %d", (int) PrefetchFieldsAhead);
+      log->print_cr("PrefetchFieldsAhead %d", (int) PrefetchFieldsAhead);
     }
     if (ContendedPaddingWidth > 0) {
-      tty->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
+      log->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
     }
   }
 #endif // !PRODUCT

@@ -33,6 +33,7 @@
 #include "gc/shared/vmGCOperations.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #ifdef ASSERT
 #include "memory/guardedMemory.hpp"
@@ -1494,31 +1495,63 @@ const char* os::errno_name(int e) {
   return errno_to_string(e, true);
 }
 
-#ifndef PRODUCT
-void os::trace_page_sizes(const char* str, const size_t* page_sizes, int count)
-{
-  if (TracePageSizes) {
-    tty->print("%s: ", str);
+void os::trace_page_sizes(const char* str, const size_t* page_sizes, int count) {
+  LogTarget(Info, pagesize) log;
+  if (log.is_enabled()) {
+    LogStreamCHeap out(log);
+
+    out.print("%s: ", str);
     for (int i = 0; i < count; ++i) {
-      tty->print(" " SIZE_FORMAT, page_sizes[i]);
+      out.print(" " SIZE_FORMAT, page_sizes[i]);
     }
-    tty->cr();
+    out.cr();
   }
 }
 
-void os::trace_page_sizes(const char* str, const size_t region_min_size,
-                          const size_t region_max_size, const size_t page_size,
-                          const char* base, const size_t size)
-{
-  if (TracePageSizes) {
-    tty->print_cr("%s:  min=" SIZE_FORMAT " max=" SIZE_FORMAT
-                  " pg_sz=" SIZE_FORMAT " base=" PTR_FORMAT
-                  " size=" SIZE_FORMAT,
-                  str, region_min_size, region_max_size,
-                  page_size, p2i(base), size);
-  }
+#define trace_page_size_params(size) byte_size_in_exact_unit(size), exact_unit_for_byte_size(size)
+
+void os::trace_page_sizes(const char* str,
+                          const size_t region_min_size,
+                          const size_t region_max_size,
+                          const size_t page_size,
+                          const char* base,
+                          const size_t size) {
+
+  log_info(pagesize)("%s: "
+                     " min=" SIZE_FORMAT "%s"
+                     " max=" SIZE_FORMAT "%s"
+                     " base=" PTR_FORMAT
+                     " page_size=" SIZE_FORMAT "%s"
+                     " size=" SIZE_FORMAT "%s",
+                     str,
+                     trace_page_size_params(region_min_size),
+                     trace_page_size_params(region_max_size),
+                     p2i(base),
+                     trace_page_size_params(page_size),
+                     trace_page_size_params(size));
 }
-#endif  // #ifndef PRODUCT
+
+void os::trace_page_sizes_for_requested_size(const char* str,
+                                             const size_t requested_size,
+                                             const size_t page_size,
+                                             const size_t alignment,
+                                             const char* base,
+                                             const size_t size) {
+
+  log_info(pagesize)("%s:"
+                     " req_size=" SIZE_FORMAT "%s"
+                     " base=" PTR_FORMAT
+                     " page_size=" SIZE_FORMAT "%s"
+                     " alignment=" SIZE_FORMAT "%s"
+                     " size=" SIZE_FORMAT "%s",
+                     str,
+                     trace_page_size_params(requested_size),
+                     p2i(base),
+                     trace_page_size_params(page_size),
+                     trace_page_size_params(alignment),
+                     trace_page_size_params(size));
+}
+
 
 // This is the working definition of a server class machine:
 // >= 2 physical CPU's and >=2GB of memory, with some fuzz

@@ -41,8 +41,9 @@ char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
 
 LogFileOutput::LogFileOutput(const char* name)
     : LogFileStreamOutput(NULL), _name(os::strdup_check_oom(name, mtLogging)),
-      _file_name(NULL), _archive_name(NULL), _archive_name_len(0), _current_size(0),
-      _rotate_size(0), _current_file(1), _file_count(0), _rotation_semaphore(1) {
+      _file_name(NULL), _archive_name(NULL), _archive_name_len(0),
+      _rotate_size(DefaultFileSize), _file_count(DefaultFileCount),
+      _current_size(0), _current_file(0), _rotation_semaphore(1) {
   _file_name = make_file_name(name, _pid_str, _vm_start_time_str);
 }
 
@@ -59,9 +60,6 @@ void LogFileOutput::set_file_name_parameters(jlong vm_start_time) {
 
 LogFileOutput::~LogFileOutput() {
   if (_stream != NULL) {
-    if (_archive_name != NULL) {
-      archive();
-    }
     if (fclose(_stream) != 0) {
       jio_fprintf(defaultStream::error_stream(), "Could not close log file '%s' (%s).\n",
                   _file_name, os::strerror(errno));
@@ -72,7 +70,7 @@ LogFileOutput::~LogFileOutput() {
   os::free(const_cast<char*>(_name));
 }
 
-size_t LogFileOutput::parse_value(const char* value_str) {
+static size_t parse_value(const char* value_str) {
   char* end;
   unsigned long long value = strtoull(value_str, &end, 10);
   if (!isdigit(*value_str) || end != value_str + strlen(value_str) || value >= SIZE_MAX) {
@@ -81,7 +79,80 @@ size_t LogFileOutput::parse_value(const char* value_str) {
   return value;
 }
 
-bool LogFileOutput::configure_rotation(const char* options) {
+static bool file_exists(const char* filename) {
+  struct stat dummy_stat;
+  return os::stat(filename, &dummy_stat) == 0;
+}
+
+static uint number_of_digits(uint number) {
+  return number < 10 ? 1 : (number < 100 ? 2 : 3);
+}
+
+static bool is_regular_file(const char* filename) {
+  struct stat st;
+  int ret = os::stat(filename, &st);
+  if (ret != 0) {
+    return false;
+  }
+#ifdef _WINDOWS
+  return (st.st_mode & S_IFMT) == _S_IFREG;
+#else
+  return S_ISREG(st.st_mode);
+#endif
+}
+
+// Try to find the next number that should be used for file rotation.
+// Return UINT_MAX on error.
+static uint next_file_number(const char* filename,
+                             uint number_of_digits,
+                             uint filecount,
+                             outputStream* errstream) {
+  bool found = false;
+  uint next_num = 0;
+
+  // len is filename + dot + digits + null char
+  size_t len = strlen(filename) + number_of_digits + 2;
+  char* archive_name = NEW_C_HEAP_ARRAY(char, len, mtLogging);
+  char* oldest_name = NEW_C_HEAP_ARRAY(char, len, mtLogging);
+
+  for (uint i = 0; i < filecount; i++) {
+    int ret = jio_snprintf(archive_name, len, "%s.%0*u",
+                           filename, number_of_digits, i);
+    assert(ret > 0 && static_cast<size_t>(ret) == len - 1,
+           "incorrect buffer length calculation");
+
+    if (file_exists(archive_name) && !is_regular_file(archive_name)) {
+      // We've encountered something that's not a regular file among the
+      // possible file rotation targets. Fail immediately to prevent
+      // problems later.
+      errstream->print_cr("Possible rotation target file '%s' already exists "
+                          "but is not a regular file.", archive_name);
+      next_num = UINT_MAX;
+      break;
+    }
+
+    // Stop looking if we find an unused file name
+    if (!file_exists(archive_name)) {
+      next_num = i;
+      found = true;
+      break;
+    }
+
+    // Keep track of oldest existing log file
+    if (!found
+        || os::compare_file_modified_times(oldest_name, archive_name) > 0) {
+      strcpy(oldest_name, archive_name);
+      next_num = i;
+      found = true;
+    }
+  }
+
+  FREE_C_HEAP_ARRAY(char, oldest_name);
+  FREE_C_HEAP_ARRAY(char, archive_name);
+  return next_num;
+}
+
+bool LogFileOutput::parse_options(const char* options, outputStream* errstream) {
   if (options == NULL || strlen(options) == 0) {
     return true;
   }
@@ -107,22 +178,25 @@ bool LogFileOutput::configure_rotation(const char* options) {
 
     if (strcmp(FileCountOptionKey, key) == 0) {
       size_t value = parse_value(value_str);
-      if (value == SIZE_MAX || value >= UINT_MAX) {
+      if (value > MaxRotationFileCount) {
+        errstream->print_cr("Invalid option: %s must be in range [0, %u]",
+                            FileCountOptionKey,
+                            MaxRotationFileCount);
         success = false;
         break;
       }
       _file_count = static_cast<uint>(value);
-      _file_count_max_digits = static_cast<uint>(log10(static_cast<double>(_file_count)) + 1);
-      _archive_name_len = 2 + strlen(_file_name) + _file_count_max_digits;
-      _archive_name = NEW_C_HEAP_ARRAY(char, _archive_name_len, mtLogging);
     } else if (strcmp(FileSizeOptionKey, key) == 0) {
       size_t value = parse_value(value_str);
       if (value == SIZE_MAX || value > SIZE_MAX / K) {
+        errstream->print_cr("Invalid option: %s must be in range [0, "
+                            SIZE_FORMAT "]", FileSizeOptionKey, SIZE_MAX / K);
         success = false;
         break;
       }
       _rotate_size = value * K;
     } else {
+      errstream->print_cr("Invalid option '%s' for log file output.", key);
       success = false;
       break;
     }
@@ -133,15 +207,54 @@ bool LogFileOutput::configure_rotation(const char* options) {
   return success;
 }
 
-bool LogFileOutput::initialize(const char* options) {
-  if (!configure_rotation(options)) {
+bool LogFileOutput::initialize(const char* options, outputStream* errstream) {
+  if (!parse_options(options, errstream)) {
     return false;
   }
+
+  if (_file_count > 0) {
+    // compute digits with filecount - 1 since numbers will start from 0
+    _file_count_max_digits = number_of_digits(_file_count - 1);
+    _archive_name_len = 2 + strlen(_file_name) + _file_count_max_digits;
+    _archive_name = NEW_C_HEAP_ARRAY(char, _archive_name_len, mtLogging);
+  }
+
+  log_trace(logging)("Initializing logging to file '%s' (filecount: %u"
+                     ", filesize: " SIZE_FORMAT " KiB).",
+                     _file_name, _file_count, _rotate_size / K);
+
+  if (_file_count > 0 && file_exists(_file_name)) {
+    if (!is_regular_file(_file_name)) {
+      errstream->print_cr("Unable to log to file %s with log file rotation: "
+                          "%s is not a regular file",
+                          _file_name, _file_name);
+      return false;
+    }
+    _current_file = next_file_number(_file_name,
+                                     _file_count_max_digits,
+                                     _file_count,
+                                     errstream);
+    if (_current_file == UINT_MAX) {
+      return false;
+    }
+    log_trace(logging)("Existing log file found, saving it as '%s.%0*u'",
+                       _file_name, _file_count_max_digits, _current_file);
+    archive();
+    increment_file_count();
+  }
+
   _stream = fopen(_file_name, FileOpenMode);
   if (_stream == NULL) {
-    log_error(logging)("Could not open log file '%s' (%s).\n", _file_name, os::strerror(errno));
+    errstream->print_cr("Error opening log file '%s': %s",
+                        _file_name, strerror(errno));
     return false;
   }
+
+  if (_file_count == 0 && is_regular_file(_file_name)) {
+    log_trace(logging)("Truncating log file");
+    os::ftruncate(os::fileno(_stream), 0);
+  }
+
   return true;
 }
 
@@ -210,7 +323,7 @@ void LogFileOutput::rotate() {
 
   // Reset accumulated size, increase current file counter, and check for file count wrap-around.
   _current_size = 0;
-  _current_file = (_current_file >= _file_count ? 1 : _current_file + 1);
+  increment_file_count();
 }
 
 char* LogFileOutput::make_file_name(const char* file_name,

@@ -27,7 +27,6 @@ package com.sun.jmx.remote.internal;
 
 
 import com.sun.jmx.remote.util.ClassLogger;
-import sun.misc.ManagedLocalsThread;
 
 public abstract class ServerCommunicatorAdmin {
     public ServerCommunicatorAdmin(long timeout) {
@@ -42,7 +41,11 @@ public abstract class ServerCommunicatorAdmin {
         timestamp = 0;
         if (timeout < Long.MAX_VALUE) {
             Runnable timeoutTask = new Timeout();
-            final Thread t = new ManagedLocalsThread(timeoutTask);
+            final Thread t = new Thread(null,
+                                        timeoutTask,
+                                        "JMX-Server-Admin-Timeout",
+                                        0,
+                                        false);
             t.setName("JMX server connection timeout " + t.getId());
             // If you change this name you will need to change a unit test
             // (NoServerTimeoutTest)

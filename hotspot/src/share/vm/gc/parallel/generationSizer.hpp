@@ -33,8 +33,6 @@
 class GenerationSizer : public GenCollectorPolicy {
  private:
 
-  void trace_gen_sizes(const char* const str);
-
   // The alignment used for boundary between young gen and old gen
   static size_t default_gen_alignment() { return 64 * K * HeapWordSize; }
 

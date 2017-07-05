@@ -70,6 +70,7 @@ package jdk.internal.org.objectweb.asm;
  * @author Eric Bruneton
  * @author Eugene Kuleshov
  */
+@SuppressWarnings("deprecation") // for Integer(int) constructor
 public interface Opcodes {
 
     // ASM API versions
@@ -176,6 +177,8 @@ public interface Opcodes {
      */
     int F_SAME1 = 4;
 
+    // For reference comparison purposes, construct new instances
+    // instead of using valueOf() or autoboxing.
     Integer TOP = new Integer(0);
     Integer INTEGER = new Integer(1);
     Integer FLOAT = new Integer(2);

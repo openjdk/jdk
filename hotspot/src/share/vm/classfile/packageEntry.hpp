@@ -29,6 +29,7 @@
 #include "oops/symbol.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/hashtable.hpp"
+#include "utilities/ostream.hpp"
 
 // A PackageEntry basically represents a Java package.  It contains:
 //   - Symbol* containing the package's name.
@@ -144,7 +145,7 @@ public:
   void purge_qualified_exports();
   void delete_qualified_exports();
 
-  void print() PRODUCT_RETURN;
+  void print(outputStream* st = tty);
   void verify();
 };
 
@@ -195,7 +196,7 @@ public:
   // purge dead weak references out of exported list
   void purge_all_package_exports();
 
-  void print() PRODUCT_RETURN;
+  void print(outputStream* st = tty);
   void verify();
 };
 

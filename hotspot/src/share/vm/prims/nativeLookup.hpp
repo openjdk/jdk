@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_PRIMS_NATIVELOOKUP_HPP
 #define SHARE_VM_PRIMS_NATIVELOOKUP_HPP
 
+#include "memory/allocation.hpp"
 #include "runtime/handles.hpp"
-#include "utilities/top.hpp"
 
 // NativeLookup provides an interface for finding DLL entry points for
 // Java native functions.

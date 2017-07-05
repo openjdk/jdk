@@ -34,7 +34,6 @@ import java.util.stream.StreamSupport;
 import java.util.zip.*;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
-import java.security.AccessController;
 import java.security.CodeSource;
 import jdk.internal.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
@@ -155,16 +154,16 @@ class JarFile extends ZipFile {
 
         BASE_VERSION = 8;  // one less than lowest version for versioned entries
         int runtimeVersion = jdk.Version.current().major();
-        String jarVersion = AccessController.doPrivileged(
-                new GetPropertyAction("jdk.util.jar.version"));
+        String jarVersion =
+                GetPropertyAction.getProperty("jdk.util.jar.version");
         if (jarVersion != null) {
             int jarVer = Integer.parseInt(jarVersion);
             runtimeVersion = (jarVer > runtimeVersion)
                     ? runtimeVersion : Math.max(jarVer, 0);
         }
         RUNTIME_VERSION = runtimeVersion;
-        String enableMultiRelease = AccessController.doPrivileged(
-                new GetPropertyAction("jdk.util.jar.enableMultiRelease", "true"));
+        String enableMultiRelease = GetPropertyAction
+                .getProperty("jdk.util.jar.enableMultiRelease", "true");
         switch (enableMultiRelease) {
             case "true":
             default:

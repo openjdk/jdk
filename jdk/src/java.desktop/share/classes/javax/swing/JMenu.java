@@ -1296,7 +1296,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @return the array of menu items
      */
     private MenuElement[] buildMenuElementArray(JMenu leaf) {
-        Vector<MenuElement> elements = new Vector<MenuElement>();
+        Vector<MenuElement> elements = new Vector<>();
         Component current = leaf.getPopupMenu();
         JPopupMenu pop;
         JMenu menu;
@@ -1314,11 +1314,14 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
             } else if (current instanceof JMenuBar) {
                 bar = (JMenuBar) current;
                 elements.insertElementAt(bar, 0);
-                MenuElement me[] = new MenuElement[elements.size()];
-                elements.copyInto(me);
-                return me;
+                break;
+            } else {
+                break;
             }
         }
+        MenuElement me[] = new MenuElement[elements.size()];
+        elements.copyInto(me);
+        return me;
     }
 
 

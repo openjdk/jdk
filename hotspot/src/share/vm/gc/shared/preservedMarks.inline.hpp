@@ -22,12 +22,12 @@
  *
  */
 
-#include "gc/shared/preservedMarks.hpp"
-#include "oops/markOop.inline.hpp"
-#include "utilities/stack.inline.hpp"
-
 #ifndef SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
 #define SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
+
+#include "gc/shared/preservedMarks.hpp"
+#include "oops/oop.inline.hpp"
+#include "utilities/stack.inline.hpp"
 
 inline bool PreservedMarks::should_preserve_mark(oop obj, markOop m) const {
   return m->must_be_preserved_for_promotion_failure(obj);
@@ -44,5 +44,49 @@ inline void PreservedMarks::push_if_necessary(oop obj, markOop m) {
     push(obj, m);
   }
 }
+
+inline void PreservedMarks::init_forwarded_mark(oop obj) {
+  obj->init_mark();
+}
+
+template <class E>
+inline void PreservedMarksSet::restore(E* executor) {
+  volatile size_t total_size = 0;
+
+#ifdef ASSERT
+  // This is to make sure the total_size we'll calculate below is correct.
+  size_t total_size_before = 0;
+  for (uint i = 0; i < _num; i += 1) {
+    total_size_before += get(i)->size();
+  }
+#endif // def ASSERT
+
+  if (executor == NULL) {
+    for (uint i = 0; i < _num; i += 1) {
+      total_size += get(i)->size();
+      get(i)->restore();
+    }
+  } else {
+    // Right now, if the executor is not NULL we do the work in
+    // parallel. In the future we might want to do the restoration
+    // serially, if there's only a small number of marks per stack.
+    restore_internal(executor, &total_size);
+  }
+  assert_empty();
+
+  assert(total_size == total_size_before,
+         "total_size = " SIZE_FORMAT " before = " SIZE_FORMAT,
+         total_size, total_size_before);
+
+  log_trace(gc)("Restored " SIZE_FORMAT " marks", total_size);
+}
+
+inline PreservedMarks::PreservedMarks()
+    : _stack(OopAndMarkOopStack::default_segment_size(),
+             // This stack should be used very infrequently so there's
+             // no point in caching stack segments (there will be a
+             // waste of space most of the time). So we set the max
+             // cache size to 0.
+             0 /* max_cache_size */) { }
 
 #endif // SHARE_VM_GC_SHARED_PRESERVEDMARKS_INLINE_HPP

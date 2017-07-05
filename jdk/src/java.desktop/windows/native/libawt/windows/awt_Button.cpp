@@ -187,7 +187,7 @@ void
 AwtButton::NotifyListeners()
 {
     DoCallback("handleAction", "(JI)V", ::JVM_CurrentTimeMillis(NULL, 0),
-               (jint)AwtComponent::GetJavaModifiers());
+               (jint)AwtComponent::GetActionModifiers());
 }
 
 MsgRouting

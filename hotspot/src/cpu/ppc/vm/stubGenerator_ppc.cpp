@@ -37,7 +37,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/top.hpp"
 #include "runtime/thread.inline.hpp"
 
 #define __ _masm->

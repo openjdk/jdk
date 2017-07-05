@@ -40,8 +40,7 @@ import static java.lang.StackWalker.Option.*;
  * @summary Verify stack trace information obtained with respect to StackWalker
  *          options, when the stack contains lambdas, method handle invoke
  *          virtual calls, and reflection.
- * @run main/othervm -XX:-MemberNameInStackFrame VerifyStackTrace
- * @run main/othervm -XX:+MemberNameInStackFrame VerifyStackTrace
+ * @run main/othervm VerifyStackTrace
  * @run main/othervm/java.security.policy=stackwalk.policy VerifyStackTrace
  * @author danielfuchs
  */

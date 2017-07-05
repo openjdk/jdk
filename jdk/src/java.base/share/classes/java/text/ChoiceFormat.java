@@ -437,7 +437,7 @@ public class ChoiceFormat extends NumberFormat {
         if (status.index == start) {
             status.errorIndex = furthest;
         }
-        return new Double(bestNumber);
+        return Double.valueOf(bestNumber);
     }
 
     /**

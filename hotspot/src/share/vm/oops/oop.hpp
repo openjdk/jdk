@@ -30,7 +30,6 @@
 #include "memory/memRegion.hpp"
 #include "oops/metadata.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/top.hpp"
 
 // oopDesc is the top baseclass for objects classes. The {name}Desc classes describe
 // the format of Java objects so the fields can be accessed from C++.

@@ -747,8 +747,10 @@ jint Universe::initialize_heap() {
 
     Universe::set_narrow_ptrs_base(Universe::narrow_oop_base());
 
-    if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
-      Universe::print_compressed_oops_mode(tty);
+    if (log_is_enabled(Info, gc, heap, coops)) {
+      ResourceMark rm;
+      outputStream* logst = Log(gc, heap, coops)::info_stream();
+      Universe::print_compressed_oops_mode(logst);
     }
 
     // Tell tests in which mode we run.
@@ -776,8 +778,8 @@ jint Universe::initialize_heap() {
 }
 
 void Universe::print_compressed_oops_mode(outputStream* st) {
-  st->print("heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
-              p2i(Universe::heap()->base()), Universe::heap()->reserved_region().byte_size()/M);
+  st->print("Heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
+            p2i(Universe::heap()->base()), Universe::heap()->reserved_region().byte_size()/M);
 
   st->print(", Compressed Oops mode: %s", narrow_oop_mode_to_string(narrow_oop_mode()));
 

@@ -27,7 +27,6 @@
 #define CPU_AARCH64_VM_FRAME_AARCH64_HPP
 
 #include "runtime/synchronizer.hpp"
-#include "utilities/top.hpp"
 
 // A frame represents a physical stack frame (an activation).  Frames can be
 // C or Java frames, and the Java frames can be interpreted or compiled.

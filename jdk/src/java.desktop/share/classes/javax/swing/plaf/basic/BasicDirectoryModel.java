@@ -26,7 +26,6 @@
 package javax.swing.plaf.basic;
 
 import sun.awt.shell.ShellFolder;
-import sun.misc.ManagedLocalsThread;
 
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
@@ -271,7 +270,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             this.currentDirectory = currentDirectory;
             this.fid = fid;
             String name = "Basic L&F File Loading Thread";
-            this.loadThread = new ManagedLocalsThread(this, name);
+            this.loadThread = new Thread(null, this, name, 0, false);
             this.loadThread.start();
         }
 

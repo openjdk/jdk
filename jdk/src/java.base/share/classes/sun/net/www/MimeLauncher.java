@@ -27,6 +27,7 @@ package sun.net.www;
 import java.net.URL;
 import java.io.*;
 import java.util.StringTokenizer;
+import sun.security.action.GetPropertyAction;
 
 class MimeLauncher extends Thread {
     java.net.URLConnection uc;
@@ -182,8 +183,7 @@ class MimeLauncher extends Thread {
         }
 
         String execPathList;
-        execPathList = java.security.AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("exec.path"));
+        execPathList = GetPropertyAction.getProperty("exec.path");
         if (execPathList == null) {
             // exec.path property not set
             return false;

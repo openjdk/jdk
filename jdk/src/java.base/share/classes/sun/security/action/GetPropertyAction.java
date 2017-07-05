@@ -25,6 +25,10 @@
 
 package sun.security.action;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Properties;
+
 /**
  * A convenience class for retrieving the string value of a system
  * property as a privileged action.
@@ -46,8 +50,7 @@ package sun.security.action;
  * @since 1.2
  */
 
-public class GetPropertyAction
-        implements java.security.PrivilegedAction<String> {
+public class GetPropertyAction implements PrivilegedAction<String> {
     private String theProp;
     private String defaultVal;
 
@@ -83,5 +86,58 @@ public class GetPropertyAction
     public String run() {
         String value = System.getProperty(theProp);
         return (value == null) ? defaultVal : value;
+    }
+
+    /**
+     * Convenience method to get a property without going through doPrivileged
+     * if no security manager is present. This is unsafe for inclusion in a
+     * public API but allowable here since this class is now encapsulated.
+     *
+     * @param theProp the name of the system property.
+     */
+    public static String getProperty(String theProp) {
+        if (System.getSecurityManager() == null) {
+            return System.getProperty(theProp);
+        } else {
+            return AccessController.doPrivileged(
+                    new GetPropertyAction(theProp));
+        }
+    }
+
+    /**
+     * Convenience method to get a property without going through doPrivileged
+     * if no security manager is present. This is unsafe for inclusion in a
+     * public API but allowable here since this class is now encapsulated.
+     *
+     * @param theProp the name of the system property.
+     * @param defaultVal the default value.
+     */
+    public static String getProperty(String theProp, String defaultVal) {
+        if (System.getSecurityManager() == null) {
+            return System.getProperty(theProp, defaultVal);
+        } else {
+            return AccessController.doPrivileged(
+                    new GetPropertyAction(theProp, defaultVal));
+        }
+    }
+
+    /**
+     * Convenience method to call <code>System.getProperties</code> without
+     * having to go through doPrivileged if no security manager is present.
+     * This is unsafe for inclusion in a public API but allowable here since
+     * this class is now encapsulated.
+     */
+    public static Properties getProperties() {
+        if (System.getSecurityManager() == null) {
+            return System.getProperties();
+        } else {
+            return AccessController.doPrivileged(
+                    new PrivilegedAction<Properties>() {
+                        public Properties run() {
+                            return System.getProperties();
+                        }
+                    }
+            );
+        }
     }
 }
