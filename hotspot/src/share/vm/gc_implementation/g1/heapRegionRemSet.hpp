@@ -84,7 +84,7 @@ class FromCardCache : public AllStatic {
 
   static void initialize(uint n_par_rs, uint max_num_regions);
 
-  static void shrink(uint new_num_regions);
+  static void invalidate(uint start_idx, size_t num_regions);
 
   static void print(outputStream* out = gclog_or_tty) PRODUCT_RETURN;
 
@@ -213,11 +213,11 @@ public:
 
   // Declare the heap size (in # of regions) to the OtherRegionsTable.
   // (Uses it to initialize from_card_cache).
-  static void init_from_card_cache(uint max_regions);
+  static void initialize(uint max_regions);
 
-  // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
-  // Make sure any entries for higher regions are invalid.
-  static void shrink_from_card_cache(uint new_num_regions);
+  // Declares that regions between start_idx <= i < start_idx + num_regions are
+  // not in use. Make sure that any entries for these regions are invalid.
+  static void invalidate(uint start_idx, size_t num_regions);
 
   static void print_from_card_cache();
 };
@@ -400,12 +400,11 @@ public:
   // Declare the heap size (in # of regions) to the HeapRegionRemSet(s).
   // (Uses it to initialize from_card_cache).
   static void init_heap(uint max_regions) {
-    OtherRegionsTable::init_from_card_cache(max_regions);
+    OtherRegionsTable::initialize(max_regions);
   }
 
-  // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
-  static void shrink_heap(uint new_n_regs) {
-    OtherRegionsTable::shrink_from_card_cache(new_n_regs);
+  static void invalidate(uint start_idx, uint num_regions) {
+    OtherRegionsTable::invalidate(start_idx, num_regions);
   }
 
 #ifndef PRODUCT

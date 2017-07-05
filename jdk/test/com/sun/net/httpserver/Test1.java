@@ -24,6 +24,8 @@
 /**
  * @test
  * @bug 6270015
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.SimpleSSLContext
  * @run main/othervm Test1
  * @run main/othervm -Dsun.net.httpserver.maxReqTime=10 Test1
  * @run main/othervm -Dsun.net.httpserver.nodelay=true Test1
@@ -36,6 +38,7 @@ import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+import jdk.testlibrary.SimpleSSLContext;
 
 /* basic http/s connectivity test
  * Tests:
@@ -72,7 +75,7 @@ public class Test1 extends Test {
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
-            ctx = new SimpleSSLContext(System.getProperty("test.src")).get();
+            ctx = new SimpleSSLContext().get();
             s2.setHttpsConfigurator(new HttpsConfigurator (ctx));
             s1.start();
             s2.start();

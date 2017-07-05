@@ -32,15 +32,6 @@ endef
 
 ################################################################################
 
-# Filter com.sun.tools.attach.spi.AttachProvider
-$(JDK_OUTPUTDIR)/gensrc/jdk.attach/META-INF/services/com.sun.tools.attach.spi.AttachProvider: \
-    $(JDK_TOPDIR)/src/jdk.attach/share/classes/META-INF/services/com.sun.tools.attach.spi.AttachProvider
-	$(process-provider)
-
-GENSRC_JDK_ATTACH += $(JDK_OUTPUTDIR)/gensrc/jdk.attach/META-INF/services/com.sun.tools.attach.spi.AttachProvider
-
-################################################################################
-
 # Filter com.sun.jdi.connect.Connector
 $(JDK_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector: \
     $(JDK_TOPDIR)/src/jdk.jdi/share/classes/META-INF/services/com.sun.jdi.connect.Connector

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ import java.util.Iterator;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.StringJoiner;
 import sun.net.*;
 import sun.net.www.*;
 import sun.net.www.http.HttpClient;
@@ -1386,16 +1387,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                         }
                         List<String> l = entry.getValue();
                         if (l != null && !l.isEmpty()) {
-                            StringBuilder cookieValue = new StringBuilder();
+                            StringJoiner cookieValue = new StringJoiner("; ");
                             for (String value : l) {
-                                cookieValue.append(value).append("; ");
+                                cookieValue.add(value);
                             }
-                            // strip off the trailing '; '
-                            try {
-                                requests.add(key, cookieValue.substring(0, cookieValue.length() - 2));
-                            } catch (StringIndexOutOfBoundsException ignored) {
-                                // no-op
-                            }
+                            requests.add(key, cookieValue.toString());
                         }
                     }
                 }
@@ -2870,20 +2866,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
             sun.misc.JavaNetHttpCookieAccess access =
                     sun.misc.SharedSecrets.getJavaNetHttpCookieAccess();
-            StringBuilder retValue = new StringBuilder();
+            StringJoiner retValue = new StringJoiner(",");  // RFC 2965, comma separated
             List<HttpCookie> cookies = access.parse(value);
-            boolean multipleCookies = false;
             for (HttpCookie cookie : cookies) {
                 // skip HttpOnly cookies
-                if (cookie.isHttpOnly())
-                    continue;
-                if (multipleCookies)
-                    retValue.append(',');  // RFC 2965, comma separated
-                retValue.append(access.header(cookie));
-                multipleCookies = true;
+                if (!cookie.isHttpOnly())
+                    retValue.add(access.header(cookie));
             }
-
-            return retValue.length() == 0 ? "" : retValue.toString();
+            return retValue.toString();
         }
 
         return value;

@@ -171,9 +171,10 @@ class Metaspace : public CHeapObj<mtClass> {
   static const MetaspaceTracer* tracer() { return _tracer; }
 
  private:
-  // This is used by DumpSharedSpaces only, where only _vsm is used. So we will
+  // These 2 methods are used by DumpSharedSpaces only, where only _vsm is used. So we will
   // maintain a single list for now.
   void record_allocation(void* ptr, MetaspaceObj::Type type, size_t word_size);
+  void record_deallocation(void* ptr, size_t word_size);
 
 #ifdef _LP64
   static void set_narrow_klass_base_and_shift(address metaspace_base, address cds_base);

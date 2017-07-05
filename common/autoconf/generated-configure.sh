@@ -634,6 +634,10 @@ USE_PRECOMPILED_HEADER
 SJAVAC_SERVER_DIR
 ENABLE_SJAVAC
 SJAVAC_SERVER_JAVA
+JAVA_TOOL_FLAGS_SMALL
+JAVA_FLAGS_SMALL
+JAVA_FLAGS_BIG
+JAVA_FLAGS
 JOBS
 MEMORY_SIZE
 NUM_CORES
@@ -805,10 +809,6 @@ JAXWS_TOPDIR
 JAXP_TOPDIR
 CORBA_TOPDIR
 LANGTOOLS_TOPDIR
-JAVA_TOOL_FLAGS_SMALL
-JAVA_FLAGS_SMALL
-JAVA_FLAGS_BIG
-JAVA_FLAGS
 JAVAC_FLAGS
 BOOT_JDK_SOURCETARGET
 JARSIGNER
@@ -1064,7 +1064,6 @@ with_update_version
 with_user_release_suffix
 with_build_number
 with_boot_jdk
-with_boot_jdk_jvmargs
 with_add_source_root
 with_override_source_root
 with_adds_and_overrides
@@ -1106,6 +1105,7 @@ with_dxsdk_include
 with_num_cores
 with_memory_size
 with_jobs
+with_boot_jdk_jvmargs
 with_sjavac_server_java
 enable_sjavac
 enable_precompiled_headers
@@ -1904,10 +1904,6 @@ Optional Packages:
                           number is not set.[username_builddateb00]
   --with-build-number     Set build number value for build [b00]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
-  --with-boot-jdk-jvmargs specify JVM arguments to be passed to all java
-                          invocations of boot JDK, overriding the default
-                          values, e.g --with-boot-jdk-jvmargs="-Xmx8G
-                          -enableassertions"
   --with-add-source-root  for each and every source directory, look in this
                           additional source root for the same directory; if it
                           exists and have files in it, include it in the build
@@ -1979,6 +1975,10 @@ Optional Packages:
                           --with-memory-size=1024 [probed]
   --with-jobs             number of parallel jobs to let make run [calculated
                           based on cores and memory]
+  --with-boot-jdk-jvmargs specify JVM arguments to be passed to all java
+                          invocations of boot JDK, overriding the default
+                          values, e.g --with-boot-jdk-jvmargs="-Xmx8G
+                          -enableassertions"
   --with-sjavac-server-java
                           use this java binary for running the sjavac
                           background server [Boot JDK java]
@@ -4321,7 +4321,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1408448519
+DATE_WHEN_GENERATED=1409311712
 
 ###############################################################################
 #
@@ -17284,7 +17284,12 @@ $as_echo_n "checking if find supports -delete... " >&6; }
   if test -f $DELETEDIR/TestIfFindSupportsDelete; then
     # No, it does not.
     rm $DELETEDIR/TestIfFindSupportsDelete
-    FIND_DELETE="-exec rm \{\} \+"
+    if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      # AIX 'find' is buggy if called with '-exec {} \+' and an empty file list
+      FIND_DELETE="-print | xargs rm"
+    else
+      FIND_DELETE="-exec rm \{\} \+"
+    fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
   else
@@ -26312,197 +26317,6 @@ $as_echo "$tool_specified" >&6; }
   # When compiling code to be executed by the Boot JDK, force jdk8 compatibility.
   BOOT_JDK_SOURCETARGET="-source 8 -target 8"
 
-
-
-
-  ##############################################################################
-  #
-  # Specify jvm options for anything that is run with the Boot JDK.
-  # Not all JVM:s accept the same arguments on the command line.
-  #
-
-# Check whether --with-boot-jdk-jvmargs was given.
-if test "${with_boot_jdk_jvmargs+set}" = set; then :
-  withval=$with_boot_jdk_jvmargs;
-fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command " >&5
-$as_echo_n "checking flags for boot jdk java command ... " >&6; }
-
-  # Disable special log output when a debug build is used as Boot JDK...
-
-  $ECHO "Check if jvm arg is ok: -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput" >&5
-  $ECHO "Command: $JAVA -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput -version" >&5
-  OUTPUT=`$JAVA -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  # Apply user provided options.
-
-  $ECHO "Check if jvm arg is ok: $with_boot_jdk_jvmargs" >&5
-  $ECHO "Command: $JAVA $with_boot_jdk_jvmargs -version" >&5
-  OUTPUT=`$JAVA $with_boot_jdk_jvmargs -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs="$boot_jdk_jvmargs $with_boot_jdk_jvmargs"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs" >&5
-$as_echo "$boot_jdk_jvmargs" >&6; }
-
-  # For now, general JAVA_FLAGS are the same as the boot jdk jvmargs
-  JAVA_FLAGS=$boot_jdk_jvmargs
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for big workloads" >&5
-$as_echo_n "checking flags for boot jdk java command for big workloads... " >&6; }
-
-  # Starting amount of heap memory.
-
-  $ECHO "Check if jvm arg is ok: -Xms64M" >&5
-  $ECHO "Command: $JAVA -Xms64M -version" >&5
-  OUTPUT=`$JAVA -Xms64M -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -Xms64M"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  # Maximum amount of heap memory.
-  # Maximum stack size.
-  if test "x$BUILD_NUM_BITS" = x32; then
-    JVM_MAX_HEAP=1100M
-    STACK_SIZE=768
-  else
-    # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
-    # pointers are used. Apparently, we need to increase the heap and stack
-    # space for the jvm. More specifically, when running javac to build huge
-    # jdk batch
-    JVM_MAX_HEAP=1600M
-    STACK_SIZE=1536
-  fi
-
-  $ECHO "Check if jvm arg is ok: -Xmx$JVM_MAX_HEAP" >&5
-  $ECHO "Command: $JAVA -Xmx$JVM_MAX_HEAP -version" >&5
-  OUTPUT=`$JAVA -Xmx$JVM_MAX_HEAP -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -Xmx$JVM_MAX_HEAP"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  $ECHO "Check if jvm arg is ok: -XX:ThreadStackSize=$STACK_SIZE" >&5
-  $ECHO "Command: $JAVA -XX:ThreadStackSize=$STACK_SIZE -version" >&5
-  OUTPUT=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -XX:ThreadStackSize=$STACK_SIZE"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs_big" >&5
-$as_echo "$boot_jdk_jvmargs_big" >&6; }
-
-  JAVA_FLAGS_BIG=$boot_jdk_jvmargs_big
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for small workloads" >&5
-$as_echo_n "checking flags for boot jdk java command for small workloads... " >&6; }
-
-  # Use serial gc for small short lived tools if possible
-
-  $ECHO "Check if jvm arg is ok: -XX:+UseSerialGC" >&5
-  $ECHO "Command: $JAVA -XX:+UseSerialGC -version" >&5
-  OUTPUT=`$JAVA -XX:+UseSerialGC -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -XX:+UseSerialGC"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  $ECHO "Check if jvm arg is ok: -Xms32M" >&5
-  $ECHO "Command: $JAVA -Xms32M -version" >&5
-  OUTPUT=`$JAVA -Xms32M -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xms32M"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  $ECHO "Check if jvm arg is ok: -Xmx512M" >&5
-  $ECHO "Command: $JAVA -Xmx512M -version" >&5
-  OUTPUT=`$JAVA -Xmx512M -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xmx512M"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs_small" >&5
-$as_echo "$boot_jdk_jvmargs_small" >&6; }
-
-  JAVA_FLAGS_SMALL=$boot_jdk_jvmargs_small
-
-
-  JAVA_TOOL_FLAGS_SMALL=""
-  for f in $JAVA_FLAGS_SMALL; do
-    JAVA_TOOL_FLAGS_SMALL="$JAVA_TOOL_FLAGS_SMALL -J$f"
-  done
 
 
 
@@ -42515,17 +42329,15 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # no adjustment
       ;;
     fastdebug )
-      # Add compile time bounds checks.
-      CFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1"
-      CXXFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1"
+      # no adjustment
       ;;
     slowdebug )
-      # Add runtime bounds checks and symbol info.
-      CFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1"
-      CXXFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1"
+      # Add runtime stack smashing and undefined behavior checks
+      CFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
+      CXXFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
       if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
         CFLAGS_DEBUG_OPTIONS="$CFLAGS_DEBUG_OPTIONS  $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
-        CXXFLAGS_DEBUG_OPTIONS="$CXXFLAGS_DEBUG_OPTIONS $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
+        CXXFLAGS_DEBUG_OPTIONS="$CXXFLAGS_DEBUG_OPTIONS $CFLAG_DETECT_UNDEFINED_BEHAVIsOR_FLAG"
       fi
       ;;
     esac
@@ -49884,8 +49696,8 @@ fi
     # Number of jobs was not specified, calculate.
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for appropriate number of jobs to run in parallel" >&5
 $as_echo_n "checking for appropriate number of jobs to run in parallel... " >&6; }
-    # Approximate memory in GB, rounding up a bit.
-    memory_gb=`expr $MEMORY_SIZE / 1100`
+    # Approximate memory in GB.
+    memory_gb=`expr $MEMORY_SIZE / 1024`
     # Pick the lowest of memory in gb and number of cores.
     if test "$memory_gb" -lt "$NUM_CORES"; then
       JOBS="$memory_gb"
@@ -49911,6 +49723,208 @@ $as_echo "$JOBS" >&6; }
 
 
 
+# Setup arguments for the boot jdk (after cores and memory have been setup)
+
+  ##############################################################################
+  #
+  # Specify jvm options for anything that is run with the Boot JDK.
+  # Not all JVM:s accept the same arguments on the command line.
+  #
+
+# Check whether --with-boot-jdk-jvmargs was given.
+if test "${with_boot_jdk_jvmargs+set}" = set; then :
+  withval=$with_boot_jdk_jvmargs;
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command " >&5
+$as_echo_n "checking flags for boot jdk java command ... " >&6; }
+
+  # Disable special log output when a debug build is used as Boot JDK...
+
+  $ECHO "Check if jvm arg is ok: -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput" >&5
+  $ECHO "Command: $JAVA -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput -version" >&5
+  OUTPUT=`$JAVA -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs="$boot_jdk_jvmargs -XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  # Apply user provided options.
+
+  $ECHO "Check if jvm arg is ok: $with_boot_jdk_jvmargs" >&5
+  $ECHO "Command: $JAVA $with_boot_jdk_jvmargs -version" >&5
+  OUTPUT=`$JAVA $with_boot_jdk_jvmargs -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs="$boot_jdk_jvmargs $with_boot_jdk_jvmargs"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs" >&5
+$as_echo "$boot_jdk_jvmargs" >&6; }
+
+  # For now, general JAVA_FLAGS are the same as the boot jdk jvmargs
+  JAVA_FLAGS=$boot_jdk_jvmargs
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for big workloads" >&5
+$as_echo_n "checking flags for boot jdk java command for big workloads... " >&6; }
+
+  # Starting amount of heap memory.
+
+  $ECHO "Check if jvm arg is ok: -Xms64M" >&5
+  $ECHO "Command: $JAVA -Xms64M -version" >&5
+  OUTPUT=`$JAVA -Xms64M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -Xms64M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  # Maximum amount of heap memory.
+  # Maximum stack size.
+  JVM_MAX_HEAP=`expr $MEMORY_SIZE / 2`
+  if test "x$BUILD_NUM_BITS" = x32; then
+    if test "$JVM_MAX_HEAP" -gt "1100"; then
+      JVM_MAX_HEAP=1100
+    elif test "$JVM_MAX_HEAP" -lt "512"; then
+      JVM_MAX_HEAP=512
+    fi
+    STACK_SIZE=768
+  else
+    # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
+    # pointers are used. Apparently, we need to increase the heap and stack
+    # space for the jvm. More specifically, when running javac to build huge
+    # jdk batch
+    if test "$JVM_MAX_HEAP" -gt "1600"; then
+      JVM_MAX_HEAP=1600
+    elif test "$JVM_MAX_HEAP" -lt "512"; then
+      JVM_MAX_HEAP=512
+    fi
+    STACK_SIZE=1536
+  fi
+
+  $ECHO "Check if jvm arg is ok: -Xmx${JVM_MAX_HEAP}M" >&5
+  $ECHO "Command: $JAVA -Xmx${JVM_MAX_HEAP}M -version" >&5
+  OUTPUT=`$JAVA -Xmx${JVM_MAX_HEAP}M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -Xmx${JVM_MAX_HEAP}M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -XX:ThreadStackSize=$STACK_SIZE" >&5
+  $ECHO "Command: $JAVA -XX:ThreadStackSize=$STACK_SIZE -version" >&5
+  OUTPUT=`$JAVA -XX:ThreadStackSize=$STACK_SIZE -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_big="$boot_jdk_jvmargs_big -XX:ThreadStackSize=$STACK_SIZE"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs_big" >&5
+$as_echo "$boot_jdk_jvmargs_big" >&6; }
+
+  JAVA_FLAGS_BIG=$boot_jdk_jvmargs_big
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for small workloads" >&5
+$as_echo_n "checking flags for boot jdk java command for small workloads... " >&6; }
+
+  # Use serial gc for small short lived tools if possible
+
+  $ECHO "Check if jvm arg is ok: -XX:+UseSerialGC" >&5
+  $ECHO "Command: $JAVA -XX:+UseSerialGC -version" >&5
+  OUTPUT=`$JAVA -XX:+UseSerialGC -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -XX:+UseSerialGC"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -Xms32M" >&5
+  $ECHO "Command: $JAVA -Xms32M -version" >&5
+  OUTPUT=`$JAVA -Xms32M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xms32M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -Xmx512M" >&5
+  $ECHO "Command: $JAVA -Xmx512M -version" >&5
+  OUTPUT=`$JAVA -Xmx512M -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xmx512M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $boot_jdk_jvmargs_small" >&5
+$as_echo "$boot_jdk_jvmargs_small" >&6; }
+
+  JAVA_FLAGS_SMALL=$boot_jdk_jvmargs_small
+
+
+  JAVA_TOOL_FLAGS_SMALL=""
+  for f in $JAVA_FLAGS_SMALL; do
+    JAVA_TOOL_FLAGS_SMALL="$JAVA_TOOL_FLAGS_SMALL -J$f"
+  done
+
+
+
 # Setup smart javac (after cores and memory have been setup)
 
 
@@ -49927,44 +49941,11 @@ fi
       as_fn_error $? "Could not execute server java: $SJAVAC_SERVER_JAVA" "$LINENO" 5
     fi
   else
-    SJAVAC_SERVER_JAVA=""
-    # Hotspot specific options.
-
-  $ECHO "Check if jvm arg is ok: -verbosegc" >&5
-  $ECHO "Command: $JAVA -verbosegc -version" >&5
-  OUTPUT=`$JAVA -verbosegc -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -verbosegc"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-    # JRockit specific options.
-
-  $ECHO "Check if jvm arg is ok: -Xverbose:gc" >&5
-  $ECHO "Command: $JAVA -Xverbose:gc -version" >&5
-  OUTPUT=`$JAVA -Xverbose:gc -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xverbose:gc"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-    SJAVAC_SERVER_JAVA="$JAVA $SJAVAC_SERVER_JAVA"
+    SJAVAC_SERVER_JAVA="$JAVA"
   fi
 
 
-  if test "$MEMORY_SIZE" -gt "2500"; then
+  if test "$MEMORY_SIZE" -gt "3000"; then
 
   $ECHO "Check if jvm arg is ok: -d64" >&5
   $ECHO "Command: $SJAVAC_SERVER_JAVA -d64 -version" >&5
@@ -49986,85 +49967,31 @@ fi
     fi
   fi
 
+  MX_VALUE=`expr $MEMORY_SIZE / 2`
   if test "$JVM_64BIT" = true; then
-    if test "$MEMORY_SIZE" -gt "17000"; then
-
-  $ECHO "Check if jvm arg is ok: -Xms10G -Xmx10G" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms10G -Xmx10G -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -Xms10G -Xmx10G -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms10G -Xmx10G"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
+    # Set ms lower than mx since more than one instance of the server might
+    # get launched at the same time before they figure out which instance won.
+    MS_VALUE=512
+    if test "$MX_VALUE" -gt "2048"; then
+      MX_VALUE=2048
     fi
-    if test "$MEMORY_SIZE" -gt "10000" && test "$JVM_ARG_OK" = false; then
-
-  $ECHO "Check if jvm arg is ok: -Xms6G -Xmx6G" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms6G -Xmx6G -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -Xms6G -Xmx6G -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms6G -Xmx6G"
-    JVM_ARG_OK=true
   else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-    fi
-    if test "$MEMORY_SIZE" -gt "5000" && test "$JVM_ARG_OK" = false; then
-
-  $ECHO "Check if jvm arg is ok: -Xms1G -Xmx3G" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms1G -Xmx3G -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx3G -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms1G -Xmx3G"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-    fi
-    if test "$MEMORY_SIZE" -gt "3800" && test "$JVM_ARG_OK" = false; then
-
-  $ECHO "Check if jvm arg is ok: -Xms1G -Xmx2500M" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms1G -Xmx2500M"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
+    MS_VALUE=256
+    if test "$MX_VALUE" -gt "1500"; then
+      MX_VALUE=1500
     fi
   fi
-  if test "$MEMORY_SIZE" -gt "2500" && test "$JVM_ARG_OK" = false; then
+  if test "$MX_VALUE" -lt "512"; then
+    MX_VALUE=512
+  fi
 
-  $ECHO "Check if jvm arg is ok: -Xms1000M -Xmx1500M" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms1000M -Xmx1500M -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -Xms1000M -Xmx1500M -version 2>&1`
+  $ECHO "Check if jvm arg is ok: -Xms${MS_VALUE}M -Xmx${MX_VALUE}M" >&5
+  $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms${MS_VALUE}M -Xmx${MX_VALUE}M -version" >&5
+  OUTPUT=`$SJAVAC_SERVER_JAVA -Xms${MS_VALUE}M -Xmx${MX_VALUE}M -version 2>&1`
   FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
   FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
   if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms1000M -Xmx1500M"
+    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms${MS_VALUE}M -Xmx${MX_VALUE}M"
     JVM_ARG_OK=true
   else
     $ECHO "Arg failed:" >&5
@@ -50072,44 +49999,7 @@ fi
     JVM_ARG_OK=false
   fi
 
-  fi
-  if test "$MEMORY_SIZE" -gt "1000" && test "$JVM_ARG_OK" = false; then
 
-  $ECHO "Check if jvm arg is ok: -Xms400M -Xmx1100M" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms400M -Xmx1100M"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-  fi
-  if test "$JVM_ARG_OK" = false; then
-
-  $ECHO "Check if jvm arg is ok: -Xms256M -Xmx512M" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -Xms256M -Xmx512M -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms256M -Xmx512M"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-  fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use sjavac" >&5
-$as_echo_n "checking whether to use sjavac... " >&6; }
   # Check whether --enable-sjavac was given.
 if test "${enable_sjavac+set}" = set; then :
   enableval=$enable_sjavac; ENABLE_SJAVAC="${enableval}"
@@ -50117,6 +50007,13 @@ else
   ENABLE_SJAVAC='no'
 fi
 
+  if test "x$JVM_ARG_OK" = "xfalse"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling sjavac" >&5
+$as_echo "$as_me: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling sjavac" >&2;}
+    ENABLE_SJAVAC=no;
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use sjavac" >&5
+$as_echo_n "checking whether to use sjavac... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_SJAVAC" >&5
 $as_echo "$ENABLE_SJAVAC" >&6; }
 

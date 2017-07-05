@@ -64,15 +64,15 @@ GENDATA += $(GENDATA_CURDATA)
 
 GENDATA_JAVA_SECURITY_SRC := $(JDK_TOPDIR)/src/java.base/share/conf/security/java.security
 GENDATA_JAVA_SECURITY := $(JDK_OUTPUTDIR)/lib/security/java.security
- 
+
 # RESTRICTED_PKGS_SRC is optionally set in custom extension for this makefile
- 
+
 $(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS) $(GENDATA_JAVA_SECURITY_SRC) $(RESTRICTED_PKGS_SRC)
 	$(ECHO) "Generating java.security"
 	$(MKDIR) -p $(@D)
 	$(TOOL_MAKEJAVASECURITY) $(GENDATA_JAVA_SECURITY_SRC) $@ $(OPENJDK_TARGET_OS) \
 		$(RESTRICTED_PKGS_SRC) || exit 1
- 
+
 GENDATA += $(GENDATA_JAVA_SECURITY)
 
 ##########################################################################################
