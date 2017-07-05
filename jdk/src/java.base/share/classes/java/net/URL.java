@@ -310,7 +310,8 @@ public final class URL implements java.io.Serializable {
      * @param      host       the name of the host.
      * @param      port       the port number on the host.
      * @param      file       the file on the host
-     * @exception  MalformedURLException  if an unknown protocol is specified.
+     * @exception  MalformedURLException  if an unknown protocol or the port
+     *                  is a negative number other than -1
      * @see        java.lang.System#getProperty(java.lang.String)
      * @see        java.net.URL#setURLStreamHandlerFactory(
      *                  java.net.URLStreamHandlerFactory)
@@ -329,9 +330,9 @@ public final class URL implements java.io.Serializable {
      * name, {@code host} name, and {@code file} name. The
      * default port for the specified protocol is used.
      * <p>
-     * This method is equivalent to calling the four-argument
-     * constructor with the arguments being {@code protocol},
-     * {@code host}, {@code -1}, and {@code file}.
+     * This constructor is equivalent to the four-argument
+     * constructor with the only difference of using the
+     * default port for the specified protocol.
      *
      * No validation of the inputs is performed by this constructor.
      *
@@ -372,7 +373,8 @@ public final class URL implements java.io.Serializable {
      * @param      port       the port number on the host.
      * @param      file       the file on the host
      * @param      handler    the stream handler for the URL.
-     * @exception  MalformedURLException  if an unknown protocol is specified.
+     * @exception  MalformedURLException  if an unknown protocol or the port
+                        is a negative number other than -1
      * @exception  SecurityException
      *        if a security manager exists and its
      *        {@code checkPermission} method doesn't allow
@@ -446,7 +448,9 @@ public final class URL implements java.io.Serializable {
      *
      * @param      spec   the {@code String} to parse as a URL.
      * @exception  MalformedURLException  if no protocol is specified, or an
-     *               unknown protocol is found, or {@code spec} is {@code null}.
+     *               unknown protocol is found, or {@code spec} is {@code null},
+     *               or the parsed URL fails to comply with the specific syntax
+     *               of the associated protocol.
      * @see        java.net.URL#URL(java.net.URL, java.lang.String)
      */
     public URL(String spec) throws MalformedURLException {
@@ -493,7 +497,9 @@ public final class URL implements java.io.Serializable {
      * @param      context   the context in which to parse the specification.
      * @param      spec      the {@code String} to parse as a URL.
      * @exception  MalformedURLException  if no protocol is specified, or an
-     *               unknown protocol is found, or {@code spec} is {@code null}.
+     *               unknown protocol is found, or {@code spec} is {@code null},
+     *               or the parsed URL fails to comply with the specific syntax
+     *               of the associated protocol.
      * @see        java.net.URL#URL(java.lang.String, java.lang.String,
      *                  int, java.lang.String)
      * @see        java.net.URLStreamHandler
@@ -513,7 +519,9 @@ public final class URL implements java.io.Serializable {
      * @param      spec      the {@code String} to parse as a URL.
      * @param      handler   the stream handler for the URL.
      * @exception  MalformedURLException  if no protocol is specified, or an
-     *               unknown protocol is found, or {@code spec} is {@code null}.
+     *               unknown protocol is found, or {@code spec} is {@code null},
+     *               or the parsed URL fails to comply with the specific syntax
+     *               of the associated protocol.
      * @exception  SecurityException
      *        if a security manager exists and its
      *        {@code checkPermission} method doesn't allow

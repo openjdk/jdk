@@ -32,7 +32,7 @@ installed_jib_script=${mydir}/../../.jib/jib
 install_data=${mydir}/../../.jib/.data
 
 setup_url() {
-    if [ -f "~/.config/jib/jib.conf" ]; then
+    if [ -f ~/.config/jib/jib.conf ]; then
         source ~/.config/jib/jib.conf
     fi
 
@@ -49,6 +49,9 @@ setup_url() {
 
     if [ -n "${JIB_SERVER}" ]; then
         jib_server="${JIB_SERVER}"
+    fi
+    if [ -n "${JIB_SERVER_MIRRORS}" ]; then
+        jib_server_mirrors="${JIB_SERVER_MIRRORS}"
     fi
     if [ -n "${JIB_REPOSITORY}" ]; then
         jib_repository="${JIB_REPOSITORY}"
@@ -70,8 +73,9 @@ setup_url() {
         jib_url="${JIB_URL}"
         data_string="${jib_url}"
     else
-        data_string="${jib_repository}/${jib_organization}/${jib_module}/${jib_revision}/${jib_module}-${jib_revision}.${jib_ext}"
-        jib_url="${jib_server}/${data_string}"
+        jib_path="${jib_repository}/${jib_organization}/${jib_module}/${jib_revision}/${jib_module}-${jib_revision}.${jib_ext}"
+        data_string="${jib_path}"
+        jib_url="${jib_server}/${jib_path}"
     fi
 }
 
@@ -104,7 +108,25 @@ install_jib() {
     ${getcmd} ${jib_url} > "${installed_jib_script}.gz"
     if [ ! -s "${installed_jib_script}.gz" ]; then
         echo "Failed to download ${jib_url}"
-        exit 1
+        if [ -n "${jib_path}" -a -n "${jib_server_mirrors}" ]; then
+            OLD_IFS="${IFS}"
+            IFS=" ,"
+            for mirror in ${jib_server_mirrors}; do
+                echo "Trying mirror ${mirror}"
+                jib_url="${mirror}/${jib_path}"
+                ${getcmd} ${jib_url} > "${installed_jib_script}.gz"
+                if [ -s "${installed_jib_script}.gz" ]; then
+                    echo "Download from mirror successful"
+                    break
+                else
+                    echo "Failed to download ${jib_url}"
+                fi
+            done
+            IFS="${OLD_IFS}"
+        fi
+        if [ ! -s "${installed_jib_script}.gz" ]; then
+            exit 1
+        fi
     fi
     echo "Extracting JIB bootstrap script"
     rm -f "${installed_jib_script}"

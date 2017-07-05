@@ -33,7 +33,6 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.CharacterCodingException;
@@ -490,17 +489,17 @@ public final class URI
     private transient String path;              // null ==> opaque
     private transient String query;
 
-    // The remaining fields may be computed on demand
+    // The remaining fields may be computed on demand, which is safe even in
+    // the face of multiple threads racing to initialize them
+    private transient String schemeSpecificPart;
+    private transient int hash;        // Zero ==> undefined
 
-    private transient volatile String schemeSpecificPart;
-    private transient volatile int hash;        // Zero ==> undefined
-
-    private transient volatile String decodedUserInfo = null;
-    private transient volatile String decodedAuthority = null;
-    private transient volatile String decodedPath = null;
-    private transient volatile String decodedQuery = null;
-    private transient volatile String decodedFragment = null;
-    private transient volatile String decodedSchemeSpecificPart = null;
+    private transient String decodedUserInfo;
+    private transient String decodedAuthority;
+    private transient String decodedPath;
+    private transient String decodedQuery;
+    private transient String decodedFragment;
+    private transient String decodedSchemeSpecificPart;
 
     /**
      * The string form of this URI.
@@ -911,8 +910,7 @@ public final class URI
         // either more fields or a more-obscure representation.
         if ((host != null) || (authority == null))
             return this;
-        defineString();
-        new Parser(string).parse(true);
+        new Parser(toString()).parse(true);
         return this;
     }
 
@@ -1144,8 +1142,17 @@ public final class URI
      *          (never {@code null})
      */
     public String getRawSchemeSpecificPart() {
-        defineSchemeSpecificPart();
-        return schemeSpecificPart;
+        String part = schemeSpecificPart;
+        if (part != null) {
+            return part;
+        }
+        StringBuilder sb = new StringBuilder();
+        appendSchemeSpecificPart(sb, null, getAuthority(), getUserInfo(),
+                                 host, port, getPath(), getQuery());
+        if (sb.length() == 0) {
+            return null;
+        }
+        return schemeSpecificPart = sb.toString();
     }
 
     /**
@@ -1160,9 +1167,11 @@ public final class URI
      *          (never {@code null})
      */
     public String getSchemeSpecificPart() {
-        if (decodedSchemeSpecificPart == null)
-            decodedSchemeSpecificPart = decode(getRawSchemeSpecificPart());
-        return decodedSchemeSpecificPart;
+        String part = decodedSchemeSpecificPart;
+        if (part == null) {
+            decodedSchemeSpecificPart = part = decode(getRawSchemeSpecificPart());
+        }
+        return part;
     }
 
     /**
@@ -1193,9 +1202,11 @@ public final class URI
      *          or {@code null} if the authority is undefined
      */
     public String getAuthority() {
-        if (decodedAuthority == null)
-            decodedAuthority = decode(authority);
-        return decodedAuthority;
+        String auth = decodedAuthority;
+        if ((auth == null) && (authority != null)) {
+            decodedAuthority = auth = decode(authority);
+        }
+        return auth;
     }
 
     /**
@@ -1223,9 +1234,11 @@ public final class URI
      *          or {@code null} if the user information is undefined
      */
     public String getUserInfo() {
-        if ((decodedUserInfo == null) && (userInfo != null))
-            decodedUserInfo = decode(userInfo);
-        return decodedUserInfo;
+        String user = decodedUserInfo;
+        if ((user == null) && (userInfo != null)) {
+            decodedUserInfo = user = decode(userInfo);
+        }
+        return user;
     }
 
     /**
@@ -1307,9 +1320,11 @@ public final class URI
      *          or {@code null} if the path is undefined
      */
     public String getPath() {
-        if ((decodedPath == null) && (path != null))
-            decodedPath = decode(path);
-        return decodedPath;
+        String decoded = decodedPath;
+        if ((decoded == null) && (path != null)) {
+            decodedPath = decoded = decode(path);
+        }
+        return decoded;
     }
 
     /**
@@ -1336,9 +1351,11 @@ public final class URI
      *          or {@code null} if the query is undefined
      */
     public String getQuery() {
-        if ((decodedQuery == null) && (query != null))
-            decodedQuery = decode(query, false);
-        return decodedQuery;
+        String decoded = decodedQuery;
+        if ((decoded == null) && (query != null)) {
+            decodedQuery = decoded = decode(query, false);
+        }
+        return decoded;
     }
 
     /**
@@ -1365,9 +1382,11 @@ public final class URI
      *          or {@code null} if the fragment is undefined
      */
     public String getFragment() {
-        if ((decodedFragment == null) && (fragment != null))
-            decodedFragment = decode(fragment, false);
-        return decodedFragment;
+        String decoded = decodedFragment;
+        if ((decoded == null) && (fragment != null)) {
+            decodedFragment = decoded = decode(fragment, false);
+        }
+        return decoded;
     }
 
 
@@ -1453,24 +1472,27 @@ public final class URI
      * @return  A hash-code value for this URI
      */
     public int hashCode() {
-        if (hash != 0)
-            return hash;
-        int h = hashIgnoringCase(0, scheme);
-        h = hash(h, fragment);
-        if (isOpaque()) {
-            h = hash(h, schemeSpecificPart);
-        } else {
-            h = hash(h, path);
-            h = hash(h, query);
-            if (host != null) {
-                h = hash(h, userInfo);
-                h = hashIgnoringCase(h, host);
-                h += 1949 * port;
+        int h = hash;
+        if (h == 0) {
+            h = hashIgnoringCase(0, scheme);
+            h = hash(h, fragment);
+            if (isOpaque()) {
+                h = hash(h, schemeSpecificPart);
             } else {
-                h = hash(h, authority);
+                h = hash(h, path);
+                h = hash(h, query);
+                if (host != null) {
+                    h = hash(h, userInfo);
+                    h = hashIgnoringCase(h, host);
+                    h += 1949 * port;
+                } else {
+                    h = hash(h, authority);
+                }
+            }
+            if (h != 0) {
+                hash = h;
             }
         }
-        hash = h;
         return h;
     }
 
@@ -1600,8 +1622,59 @@ public final class URI
      * @return  The string form of this URI
      */
     public String toString() {
-        defineString();
-        return string;
+        String s = string;
+        if (s == null) {
+            s = defineString();
+        }
+        return s;
+    }
+
+    private String defineString() {
+        String s = string;
+        if (s != null) {
+            return s;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        if (scheme != null) {
+            sb.append(scheme);
+            sb.append(':');
+        }
+        if (isOpaque()) {
+            sb.append(schemeSpecificPart);
+        } else {
+            if (host != null) {
+                sb.append("//");
+                if (userInfo != null) {
+                    sb.append(userInfo);
+                    sb.append('@');
+                }
+                boolean needBrackets = ((host.indexOf(':') >= 0)
+                        && !host.startsWith("[")
+                        && !host.endsWith("]"));
+                if (needBrackets) sb.append('[');
+                sb.append(host);
+                if (needBrackets) sb.append(']');
+                if (port != -1) {
+                    sb.append(':');
+                    sb.append(port);
+                }
+            } else if (authority != null) {
+                sb.append("//");
+                sb.append(authority);
+            }
+            if (path != null)
+                sb.append(path);
+            if (query != null) {
+                sb.append('?');
+                sb.append(query);
+            }
+        }
+        if (fragment != null) {
+            sb.append('#');
+            sb.append(fragment);
+        }
+        return string = sb.toString();
     }
 
     /**
@@ -1618,8 +1691,7 @@ public final class URI
      *          charset
      */
     public String toASCIIString() {
-        defineString();
-        return encode(string);
+        return encode(toString());
     }
 
 
@@ -1825,7 +1897,7 @@ public final class URI
         }
     }
 
-    private void appendAuthority(StringBuffer sb,
+    private void appendAuthority(StringBuilder sb,
                                  String authority,
                                  String userInfo,
                                  String host,
@@ -1875,7 +1947,7 @@ public final class URI
         }
     }
 
-    private void appendSchemeSpecificPart(StringBuffer sb,
+    private void appendSchemeSpecificPart(StringBuilder sb,
                                           String opaquePart,
                                           String authority,
                                           String userInfo,
@@ -1916,7 +1988,7 @@ public final class URI
         }
     }
 
-    private void appendFragment(StringBuffer sb, String fragment) {
+    private void appendFragment(StringBuilder sb, String fragment) {
         if (fragment != null) {
             sb.append('#');
             sb.append(quote(fragment, L_URIC, H_URIC));
@@ -1933,7 +2005,7 @@ public final class URI
                             String query,
                             String fragment)
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (scheme != null) {
             sb.append(scheme);
             sb.append(':');
@@ -1944,61 +2016,6 @@ public final class URI
         appendFragment(sb, fragment);
         return sb.toString();
     }
-
-    private void defineSchemeSpecificPart() {
-        if (schemeSpecificPart != null) return;
-        StringBuffer sb = new StringBuffer();
-        appendSchemeSpecificPart(sb, null, getAuthority(), getUserInfo(),
-                                 host, port, getPath(), getQuery());
-        if (sb.length() == 0) return;
-        schemeSpecificPart = sb.toString();
-    }
-
-    private void defineString() {
-        if (string != null) return;
-
-        StringBuilder sb = new StringBuilder();
-        if (scheme != null) {
-            sb.append(scheme);
-            sb.append(':');
-        }
-        if (isOpaque()) {
-            sb.append(schemeSpecificPart);
-        } else {
-            if (host != null) {
-                sb.append("//");
-                if (userInfo != null) {
-                    sb.append(userInfo);
-                    sb.append('@');
-                }
-                boolean needBrackets = ((host.indexOf(':') >= 0)
-                                    && !host.startsWith("[")
-                                    && !host.endsWith("]"));
-                if (needBrackets) sb.append('[');
-                sb.append(host);
-                if (needBrackets) sb.append(']');
-                if (port != -1) {
-                    sb.append(':');
-                    sb.append(port);
-                }
-            } else if (authority != null) {
-                sb.append("//");
-                sb.append(authority);
-            }
-            if (path != null)
-                sb.append(path);
-            if (query != null) {
-                sb.append('?');
-                sb.append(query);
-            }
-        }
-        if (fragment != null) {
-            sb.append('#');
-            sb.append(fragment);
-        }
-        string = sb.toString();
-    }
-
 
     // -- Normalization, resolution, and relativization --
 
@@ -2650,13 +2667,13 @@ public final class URI
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };
 
-    private static void appendEscape(StringBuffer sb, byte b) {
+    private static void appendEscape(StringBuilder sb, byte b) {
         sb.append('%');
         sb.append(hexDigits[(b >> 4) & 0x0f]);
         sb.append(hexDigits[(b >> 0) & 0x0f]);
     }
 
-    private static void appendEncoded(StringBuffer sb, char c) {
+    private static void appendEncoded(StringBuilder sb, char c) {
         ByteBuffer bb = null;
         try {
             bb = ThreadLocalCoders.encoderFor("UTF-8")
@@ -2677,15 +2694,14 @@ public final class URI
     // by the given mask pair
     //
     private static String quote(String s, long lowMask, long highMask) {
-        int n = s.length();
-        StringBuffer sb = null;
+        StringBuilder sb = null;
         boolean allowNonASCII = ((lowMask & L_ESCAPED) != 0);
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if (c < '\u0080') {
                 if (!match(c, lowMask, highMask)) {
                     if (sb == null) {
-                        sb = new StringBuffer();
+                        sb = new StringBuilder();
                         sb.append(s, 0, i);
                     }
                     appendEscape(sb, (byte)c);
@@ -2697,7 +2713,7 @@ public final class URI
                        && (Character.isSpaceChar(c)
                            || Character.isISOControl(c))) {
                 if (sb == null) {
-                    sb = new StringBuffer();
+                    sb = new StringBuilder();
                     sb.append(s, 0, i);
                 }
                 appendEncoded(sb, c);
@@ -2734,7 +2750,7 @@ public final class URI
             assert false;
         }
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         while (bb.hasRemaining()) {
             int b = bb.get() & 0xff;
             if (b >= 0x80)
@@ -2863,12 +2879,6 @@ public final class URI
             throws URISyntaxException
         {
             fail("Expected " + expected, p);
-        }
-
-        private void failExpecting(String expected, String prior, int p)
-            throws URISyntaxException
-        {
-            fail("Expected " + expected + " following " + prior, p);
         }
 
 

@@ -299,7 +299,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 }});
     }
 
-    private transient volatile Method[] memberMethods = null;
+    private transient volatile Method[] memberMethods;
 
     /**
      * Validates that a method is structurally appropriate for an

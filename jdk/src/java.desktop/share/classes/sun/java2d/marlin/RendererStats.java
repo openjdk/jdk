@@ -25,6 +25,8 @@
 
 package sun.java2d.marlin;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -32,6 +34,7 @@ import static sun.java2d.marlin.MarlinUtils.logInfo;
 import sun.java2d.marlin.stats.Histogram;
 import sun.java2d.marlin.stats.Monitor;
 import sun.java2d.marlin.stats.StatLong;
+import sun.awt.util.ThreadGroupUtils;
 
 /**
  * This class gathers global rendering statistics for debugging purposes only
@@ -237,22 +240,33 @@ public final class RendererStats implements MarlinConst {
     private RendererStats() {
         super();
 
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                dump();
-            }
-        });
+        AccessController.doPrivileged(
+            (PrivilegedAction<Void>) () -> {
+                final Thread hook = new Thread(
+                    ThreadGroupUtils.getRootThreadGroup(),
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            dump();
+                        }
+                    },
+                    "MarlinStatsHook"
+                );
+                hook.setContextClassLoader(null);
+                Runtime.getRuntime().addShutdownHook(hook);
 
-        if (useDumpThread) {
-            final Timer statTimer = new Timer("RendererStats");
-            statTimer.scheduleAtFixedRate(new TimerTask() {
-                @Override
-                public void run() {
-                    dump();
+                if (useDumpThread) {
+                    final Timer statTimer = new Timer("RendererStats");
+                    statTimer.scheduleAtFixedRate(new TimerTask() {
+                        @Override
+                        public void run() {
+                            dump();
+                        }
+                    }, statDump, statDump);
                 }
-            }, statDump, statDump);
-        }
+                return null;
+            }
+        );
     }
 
     void dump() {

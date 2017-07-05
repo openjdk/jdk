@@ -413,6 +413,7 @@ public class XTrayIconPeer implements TrayIconPeer,
     void addListeners() {
         canvas.addMouseListener(eventProxy);
         canvas.addMouseMotionListener(eventProxy);
+        eframe.addMouseListener(eventProxy);
     }
 
     long getWindow() {
