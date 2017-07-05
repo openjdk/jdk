@@ -331,7 +331,9 @@ class ZipFile implements ZipConstants, Closeable {
         ZipFileInputStream in = null;
         synchronized (this) {
             ensureOpen();
-            if (!zc.isUTF8() && (entry.flag & EFS) != 0) {
+            if (Objects.equals(lastEntryName, entry.name)) {
+                pos = lastEntryPos;
+            } else if (!zc.isUTF8() && (entry.flag & EFS) != 0) {
                 pos = zsrc.getEntryPos(zc.getBytesUTF8(entry.name), false);
             } else {
                 pos = zsrc.getEntryPos(zc.getBytes(entry.name), false);
@@ -526,6 +528,9 @@ class ZipFile implements ZipConstants, Closeable {
                         Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
     }
 
+    private String lastEntryName;
+    private int lastEntryPos;
+
     /* Checks ensureOpen() before invoke this method */
     private ZipEntry getZipEntry(String name, byte[] bname, int pos) {
         byte[] cen = zsrc.cen;
@@ -563,6 +568,8 @@ class ZipFile implements ZipConstants, Closeable {
                 e.comment = zc.toString(cen, start, clen);
             }
         }
+        lastEntryName = e.name;
+        lastEntryPos = pos;
         return e;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -809,7 +809,7 @@ SplashGetScaledImageName(const char* jarName, const char* fileName,
 #ifndef __linux__
     return JNI_FALSE;
 #endif
-    *scaleFactor = getNativeScaleFactor(NULL);
+    *scaleFactor = (float)getNativeScaleFactor(NULL);
     return GetScaledImageName(fileName, scaledImgName, scaleFactor, scaledImageNameLength);
 }
 

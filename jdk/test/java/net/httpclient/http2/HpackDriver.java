@@ -24,16 +24,16 @@
 /*
  * @test
  * @bug 8153353
- * @modules java.httpclient/sun.net.httpclient.hpack
+ * @modules jdk.incubator.httpclient/jdk.incubator.http.internal.hpack
  * @key randomness
- * @compile/module=java.httpclient sun/net/httpclient/hpack/SpecHelper.java
- * @compile/module=java.httpclient sun/net/httpclient/hpack/TestHelper.java
- * @compile/module=java.httpclient sun/net/httpclient/hpack/BuffersTestingKit.java
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.BinaryPrimitivesTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.CircularBufferTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.DecoderTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.EncoderTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.HuffmanTest
- * @run testng/othervm java.httpclient/sun.net.httpclient.hpack.TestHelper
+ * @compile/module=jdk.incubator.httpclient jdk/incubator/http/internal/hpack/SpecHelper.java
+ * @compile/module=jdk.incubator.httpclient jdk/incubator/http/internal/hpack/TestHelper.java
+ * @compile/module=jdk.incubator.httpclient jdk/incubator/http/internal/hpack/BuffersTestingKit.java
+ * @run testng/othervm jdk.incubator.httpclient/jdk.incubator.http.internal.hpack.BinaryPrimitivesTest
+ * @run testng/othervm jdk.incubator.httpclient/jdk.incubator.http.internal.hpack.CircularBufferTest
+ * @run testng/othervm jdk.incubator.httpclient/jdk.incubator.http.internal.hpack.DecoderTest
+ * @run testng/othervm jdk.incubator.httpclient/jdk.incubator.http.internal.hpack.EncoderTest
+ * @run testng/othervm jdk.incubator.httpclient/jdk.incubator.http.internal.hpack.HuffmanTest
+ * @run testng/othervm jdk.incubator.httpclient/jdk.incubator.http.internal.hpack.TestHelper
  */
 public class HpackDriver { }

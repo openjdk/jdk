@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,27 @@ Java_sun_nio_ch_FileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
     return handle(env,
                   ftruncate64(fdval(env, fdo), size),
                   "Truncation failed");
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_FileDispatcherImpl_allocate0(JNIEnv *env, jobject this,
+                                             jobject fdo, jlong size)
+{
+#if defined(__linux__)
+    /*
+     * On Linux, if the file size is being increased, then ftruncate64()
+     * will modify the metadata value of the size without actually allocating
+     * any blocks which can cause a SIGBUS error if the file is subsequently
+     * memory-mapped.
+     */
+    return handle(env,
+                  fallocate64(fdval(env, fdo), 0, 0, size),
+                  "Allocation failed");
+#else
+    return handle(env,
+                  ftruncate64(fdval(env, fdo), size),
+                  "Truncation failed");
+#endif
 }
 
 JNIEXPORT jlong JNICALL

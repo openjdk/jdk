@@ -24,14 +24,18 @@
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
+import jdk.incubator.http.HttpClient;
+import jdk.incubator.http.HttpRequest;
+import jdk.incubator.http.HttpResponse;
+import jdk.incubator.http.HttpTimeoutException;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletionException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
+import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
+import static jdk.incubator.http.HttpResponse.BodyHandler.asString;
 
 /*
  * @test
@@ -51,6 +55,11 @@ public class Timeout {
     private static volatile boolean ready = false;
 
     public static void main(String[] args) throws Exception {
+        test(false);
+        test(true);
+    }
+
+    public static void test(boolean async) throws Exception {
         System.setProperty("javax.net.ssl.keyStore", KEYSTORE);
         System.setProperty("javax.net.ssl.keyStorePassword", PASSWORD);
         System.setProperty("javax.net.ssl.trustStore", KEYSTORE);
@@ -89,25 +98,51 @@ public class Timeout {
             } while (!ready);
 
             String uri = "https://localhost:" + ssocket.getLocalPort();
-            connect(uri);
+            if (async) {
+                System.out.println(uri + ": Trying to connect asynchronously");
+                connectAsync(uri);
+            } else {
+                System.out.println(uri + ": Trying to connect synchronously");
+                connect(uri);
+            }
         }
     }
 
     private static void connect(String server) throws Exception {
         try {
-            HttpClient.create()
-                    .version(HttpClient.Version.HTTP_2)
-                    .build()
-                    .request(new URI(server))
-                    .timeout(TimeUnit.MILLISECONDS, TIMEOUT)
-                    .body(HttpRequest.fromString("body"))
-                    .GET()
-                    .response()
-                    .body(HttpResponse.asString());
-
+            HttpClient client = HttpClient.newBuilder()
+                                          .version(HttpClient.Version.HTTP_2)
+                                          .build();
+            HttpRequest request = HttpRequest.newBuilder(new URI(server))
+                                             .timeout(Duration.ofMillis(TIMEOUT))
+                                             .POST(fromString("body"))
+                                             .build();
+            HttpResponse<String> response = client.send(request, asString());
+            System.out.println("Received unexpected reply: " + response.statusCode());
             throw new RuntimeException("unexpected successful connection");
         } catch (HttpTimeoutException e) {
             System.out.println("expected exception: " + e);
+        }
+    }
+
+    private static void connectAsync(String server) throws Exception {
+        try {
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_2)
+                    .build();
+            HttpRequest request = HttpRequest.newBuilder(new URI(server))
+                    .timeout(Duration.ofMillis(TIMEOUT))
+                    .POST(fromString("body"))
+                    .build();
+            HttpResponse<String> response = client.sendAsync(request, asString()).join();
+            System.out.println("Received unexpected reply: " + response.statusCode());
+            throw new RuntimeException("unexpected successful connection");
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof HttpTimeoutException) {
+                System.out.println("expected exception: " + e.getCause());
+            } else {
+                throw new RuntimeException("Unexpected exception received: " + e.getCause(), e);
+            }
         }
     }
 

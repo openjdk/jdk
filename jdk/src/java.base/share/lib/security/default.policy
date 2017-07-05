@@ -20,6 +20,9 @@ grant codeBase "jrt:/java.corba" {
     permission java.security.AllPermission;
 };
 
+grant codeBase "jrt:/jdk.incubator.httpclient" {
+};
+
 grant codeBase "jrt:/java.scripting" {
     permission java.security.AllPermission;
 };
