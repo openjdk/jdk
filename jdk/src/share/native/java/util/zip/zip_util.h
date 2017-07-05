@@ -45,9 +45,6 @@
  * Header sizes including signatures
  */
 
-#ifdef USE_MMAP
-#define SIGSIZ  4
-#endif
 #define LOCHDR 30
 #define EXTHDR 16
 #define CENHDR 46
@@ -211,9 +208,9 @@ typedef struct jzfile {   /* Zip file */
     jlong mlen;           /* length (in bytes) mmaped */
     jlong offset;         /* offset of the mmapped region from the
                              start of the file. */
-#else
-    cencache cencache;    /* CEN header cache */
+    jboolean usemmap;     /* if mmap is used. */
 #endif
+    cencache cencache;    /* CEN header cache */
     ZFILE zfd;            /* open file descriptor */
     void *lock;           /* read lock */
     char *comment;        /* zip file comment */
@@ -258,6 +255,9 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified);
 
 jzfile *
 ZIP_Put_In_Cache(const char *name, ZFILE zfd, char **pmsg, jlong lastModified);
+
+jzfile *
+ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified, jboolean usemmap);
 
 void JNICALL
 ZIP_Close(jzfile *zip);

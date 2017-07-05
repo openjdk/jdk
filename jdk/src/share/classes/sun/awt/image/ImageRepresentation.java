@@ -333,10 +333,10 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         hints = h;
     }
 
-    public native void setICMpixels(int x, int y, int w, int h, int[] lut,
+    private native void setICMpixels(int x, int y, int w, int h, int[] lut,
                                     byte[] pix, int off, int scansize,
                                     IntegerComponentRaster ict);
-    public native int setDiffICM(int x, int y, int w, int h, int[] lut,
+    private native int setDiffICM(int x, int y, int w, int h, int[] lut,
                                  int transPix, int numLut, IndexColorModel icm,
                                  byte[] pix, int off, int scansize,
                                  ByteComponentRaster bct, int chanOff);
@@ -361,6 +361,64 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                 }
                 createBufferedImage();
             }
+
+            if (w <= 0 || h <= 0) {
+                return;
+            }
+
+            int biWidth = biRaster.getWidth();
+            int biHeight = biRaster.getHeight();
+
+            int x1 = x+w;  // Overflow protection below
+            int y1 = y+h;  // Overflow protection below
+            if (x < 0) {
+                off -= x;
+                x = 0;
+            } else if (x1 < 0) {
+                x1 = biWidth;  // Must be overflow
+            }
+            if (y < 0) {
+                off -= y*scansize;
+                y = 0;
+            } else if (y1 < 0) {
+                y1 = biHeight;  // Must be overflow
+            }
+            if (x1 > biWidth) {
+                x1 = biWidth;
+            }
+            if (y1 > biHeight) {
+                y1 = biHeight;
+            }
+            if (x >= x1 || y >= y1) {
+                return;
+            }
+            // x,y,x1,y1 are all >= 0, so w,h must be >= 0
+            w = x1-x;
+            h = y1-y;
+            // off is first pixel read so it must be in bounds
+            if (off < 0 || off >= pix.length) {
+                // They overflowed their own array
+                throw new ArrayIndexOutOfBoundsException("Data offset out of bounds.");
+            }
+            // pix.length and off are >= 0 so remainder >= 0
+            int remainder = pix.length - off;
+            if (remainder < w) {
+                // They overflowed their own array
+                throw new ArrayIndexOutOfBoundsException("Data array is too short.");
+            }
+            int num;
+            if (scansize < 0) {
+                num = (off / -scansize) + 1;
+            } else if (scansize > 0) {
+                num = ((remainder-w) / scansize) + 1;
+            } else {
+                num = h;
+            }
+            if (h > num) {
+                // They overflowed their own array.
+                throw new ArrayIndexOutOfBoundsException("Data array is too short.");
+            }
+
             if (isSameCM && (cmodel != model) && (srcLUT != null) &&
                 (model instanceof IndexColorModel) &&
                 (biRaster instanceof ByteComponentRaster))

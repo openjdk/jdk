@@ -22,17 +22,16 @@
  */
 
 /*
- * @test
- * @summary configuring unconnected Socket before passing to implAccept can cause fd leak
- * @bug 6368984
- * @author Edward Wang
+ * Test run from script, AcceptCauseFileDescriptorLeak.sh
+ * author Edward Wang
  */
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class AcceptCauseFileDescriptorLeak {
-    private static final int REPS = 1000;
+    private static final int REPS = 2048;
 
     public static void main(String[] args) throws Exception {
         final ServerSocket ss = new ServerSocket(0) {
@@ -60,31 +59,5 @@ public class AcceptCauseFileDescriptorLeak {
         }
         ss.close();
         t.join();
-
-        //
-        // The threshold 20 below is a little arbitrary. The point here is that
-        // the remaining open file descriptors should be constant independent
-        // of REPS.
-        //
-        if (countOpenFD() > 20) {
-            throw new RuntimeException("File descriptor leak detected.");
-        }
-    }
-
-
-    /*
-     * Actually, this approach to count open file descriptors only
-     * works for Solaris/Linux. On Windows platform, this method
-     * will simply return zero. So the test will always be passed
-     * on Windows, too.
-     */
-    private static int countOpenFD() {
-        File dirOfFD = new File("/proc/self/fd");
-        File[] fds = dirOfFD.listFiles();
-
-        if (fds != null)
-            return fds.length;
-        else
-            return 0;
     }
 }
