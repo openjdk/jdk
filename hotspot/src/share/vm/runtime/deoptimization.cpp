@@ -221,8 +221,9 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
       // It is not guaranteed that we can get such information here only
       // by analyzing bytecode in deoptimized frames. This is why this flag
       // is set during method compilation (see Compile::Process_OopMap_Node()).
-      // If the previous frame was popped, we don't have a result.
-      bool save_oop_result = chunk->at(0)->scope()->return_oop() && !thread->popframe_forcing_deopt_reexecution();
+      // If the previous frame was popped or if we are dispatching an exception,
+      // we don't have an oop result.
+      bool save_oop_result = chunk->at(0)->scope()->return_oop() && !thread->popframe_forcing_deopt_reexecution() && (exec_mode == Unpack_deopt);
       Handle return_value;
       if (save_oop_result) {
         // Reallocation may trigger GC. If deoptimization happened on return from
@@ -1596,9 +1597,9 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
       get_method_data(thread, profiled_method, create_if_missing);
 
     // Log a message
-    Events::log_deopt_message(thread, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d",
+    Events::log_deopt_message(thread, "Uncommon trap: reason=%s action=%s pc=" INTPTR_FORMAT " method=%s @ %d %s",
                               trap_reason_name(reason), trap_action_name(action), p2i(fr.pc()),
-                              trap_method->name_and_sig_as_C_string(), trap_bci);
+                              trap_method->name_and_sig_as_C_string(), trap_bci, nm->compiler_name());
 
     // Print a bunch of diagnostics, if requested.
     if (TraceDeoptimization || LogCompilation) {
@@ -1812,7 +1813,7 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     // aggressive optimization.
     bool inc_recompile_count = false;
     ProfileData* pdata = NULL;
-    if (ProfileTraps && update_trap_state && trap_mdo != NULL) {
+    if (ProfileTraps && !is_client_compilation_mode_vm() && update_trap_state && trap_mdo != NULL) {
       assert(trap_mdo == get_method_data(thread, profiled_method, false), "sanity");
       uint this_trap_count = 0;
       bool maybe_prior_trap = false;
