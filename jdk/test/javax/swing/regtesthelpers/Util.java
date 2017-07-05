@@ -24,8 +24,10 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * <p>This class contains utilities useful for regression testing.
@@ -152,5 +154,32 @@ public class Util {
         for (int i = keys.length - 1; i >= 0; i--) {
             robot.keyRelease(keys[i]);
         }
+    }
+
+    /**
+     * Invokes the <code>task</code> on the EDT thread.
+     *
+     * @return result of the <code>task</code>
+     */
+    public static <T> T invokeOnEDT(final Callable<T> task) throws Exception {
+        final List<T> result = new ArrayList<>(1);
+        final Exception[] exception = new Exception[1];
+
+        SwingUtilities.invokeAndWait(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    result.add(task.call());
+                } catch (Exception e) {
+                    exception[0] = e;
+                }
+            }
+        });
+
+        if (exception[0] != null) {
+            throw exception[0];
+        }
+
+        return result.get(0);
     }
 }

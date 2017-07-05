@@ -330,11 +330,16 @@ public class Credentials {
         CredentialsCache ccache =
             CredentialsCache.getInstance(princ, ticketCache);
 
-        if (ccache == null)
+        if (ccache == null) {
             return null;
+        }
 
         sun.security.krb5.internal.ccache.Credentials tgtCred  =
             ccache.getDefaultCreds();
+
+        if (tgtCred == null) {
+            return null;
+        }
 
         if (EType.isSupported(tgtCred.getEType())) {
             return tgtCred.setKrbCreds();
@@ -375,19 +380,21 @@ public class Credentials {
             cache = CredentialsCache.getInstance();
         }
         if (cache != null) {
-            if (DEBUG) {
-                System.out.println(">>> KrbCreds found the default ticket " +
-                                   "granting ticket in credential cache.");
-            }
             sun.security.krb5.internal.ccache.Credentials temp =
                 cache.getDefaultCreds();
-            if (EType.isSupported(temp.getEType())) {
-                result = temp.setKrbCreds();
-            } else {
+            if (temp != null) {
                 if (DEBUG) {
-                    System.out.println(
-                        ">>> unsupported key type found the default TGT: " +
-                        temp.getEType());
+                    System.out.println(">>> KrbCreds found the default ticket"
+                            + " granting ticket in credential cache.");
+                }
+                if (EType.isSupported(temp.getEType())) {
+                    result = temp.setKrbCreds();
+                } else {
+                    if (DEBUG) {
+                        System.out.println(
+                            ">>> unsupported key type found the default TGT: " +
+                            temp.getEType());
+                    }
                 }
             }
         }

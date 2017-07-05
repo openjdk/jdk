@@ -3468,12 +3468,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     create_vm_init_libraries();
   }
 
+  // Notify JVMTI agents that VM initialization is complete - nop if no agents.
+  JvmtiExport::post_vm_initialized();
+
   if (!TRACE_START()) {
     vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
   }
-
-  // Notify JVMTI agents that VM initialization is complete - nop if no agents.
-  JvmtiExport::post_vm_initialized();
 
   if (CleanChunkPoolAsync) {
     Chunk::start_chunk_pool_cleaner_task();

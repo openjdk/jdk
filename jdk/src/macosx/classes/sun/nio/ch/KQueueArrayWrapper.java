@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -64,8 +66,8 @@ class KQueueArrayWrapper {
     static short FD_OFFSET;
     static short FILTER_OFFSET;
 
-    // kevent array size (just under 1K bytes)
-    static final int NUM_KEVENTS = 50;
+    // kevent array size
+    static final int NUM_KEVENTS = 128;
 
     // Are we in a 64-bit VM?
     static boolean is64bit = false;

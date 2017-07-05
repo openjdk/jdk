@@ -257,7 +257,7 @@ CollectorPolicy* collector_policy() const { return (CollectorPolicy*) _collector
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;
 
-  void verify(bool allow_dirty, bool silent, VerifyOption option /* ignored */);
+  void verify(bool silent, VerifyOption option /* ignored */);
 
   void print_heap_change(size_t prev_used);
 
