@@ -222,8 +222,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_UNIXProcess_waitForProcessExit;
 		Java_java_lang_UNIXProcess_forkAndExec;
 		Java_java_lang_UNIXProcess_destroyProcess;
-                Java_java_nio_Bits_copyFromByteArray;
-                Java_java_nio_Bits_copyToByteArray;
                 Java_java_nio_Bits_copyFromShortArray;
                 Java_java_nio_Bits_copyToShortArray;
                 Java_java_nio_Bits_copyFromIntArray;

@@ -68,46 +68,6 @@
                               ((jlong)SWAPINT((jint)((x) >> 32)) & 0xffffffff)))
 
 JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyFromByteArray(JNIEnv *env, jobject this, jobject src,
-                                     jlong srcPos, jlong dstAddr, jlong length)
-{
-    jbyte *bytes;
-    size_t size;
-
-    while (length > 0) {
-        size = (length > MBYTE ? MBYTE : length);
-
-        GETCRITICAL(bytes, env, src);
-        memcpy((void *)dstAddr, bytes + srcPos, size);
-        RELEASECRITICAL(bytes, env, src, JNI_ABORT);
-
-        length -= size;
-        dstAddr += size;
-        srcPos += size;
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_java_nio_Bits_copyToByteArray(JNIEnv *env, jobject this, jlong srcAddr,
-                                   jobject dst, jlong dstPos, jlong length)
-{
-    jbyte *bytes;
-    size_t size;
-
-    while (length > 0) {
-        size = (length > MBYTE ? MBYTE : length);
-
-        GETCRITICAL(bytes, env, dst);
-        memcpy(bytes + dstPos, (void *)srcAddr, size);
-        RELEASECRITICAL(bytes, env, dst, 0);
-
-        length -= size;
-        srcAddr += size;
-        dstPos += size;
-    }
-}
-
-JNIEXPORT void JNICALL
 Java_java_nio_Bits_copyFromShortArray(JNIEnv *env, jobject this, jobject src,
                                       jlong srcPos, jlong dstAddr, jlong length)
 {

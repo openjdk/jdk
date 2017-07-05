@@ -65,14 +65,6 @@ Java_sun_nio_ch_ServerSocketChannelImpl_initIDs(JNIEnv *env, jclass c)
                                      "(Ljava/net/InetAddress;I)V");
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_ServerSocketChannelImpl_listen(JNIEnv *env, jclass cl,
-                                               jobject fdo, jint backlog)
-{
-    if (listen(fdval(env, fdo), backlog) < 0)
-        handleSocketError(env, errno);
-}
-
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
                                                 jobject ssfdo, jobject newfdo,
