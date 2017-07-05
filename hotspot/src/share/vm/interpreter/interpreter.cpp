@@ -29,6 +29,7 @@
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
@@ -261,7 +262,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
   // Special intrinsic method?
   // Note: This test must come _after_ the test for native methods,
   //       otherwise we will run into problems with JDK 1.2, see also
-  //       AbstractInterpreterGenerator::generate_method_entry() for
+  //       InterpreterGenerator::generate_method_entry() for
   //       for details.
   switch (m->intrinsic_id()) {
     case vmIntrinsics::_dsin  : return java_lang_math_sin  ;
@@ -520,4 +521,51 @@ void AbstractInterpreterGenerator::initialize_method_handle_entries() {
     Interpreter::MethodKind kind = (Interpreter::MethodKind) i;
     Interpreter::_entry_table[kind] = Interpreter::_entry_table[Interpreter::abstract];
   }
+}
+
+// Generate method entries
+address InterpreterGenerator::generate_method_entry(
+                                        AbstractInterpreter::MethodKind kind) {
+  // determine code generation flags
+  bool synchronized = false;
+  address entry_point = NULL;
+
+  switch (kind) {
+  case Interpreter::zerolocals             :                                                      break;
+  case Interpreter::zerolocals_synchronized: synchronized = true;                                 break;
+  case Interpreter::native                 : entry_point = generate_native_entry(false); break;
+  case Interpreter::native_synchronized    : entry_point = generate_native_entry(true);  break;
+  case Interpreter::empty                  : entry_point = generate_empty_entry(); break;
+  case Interpreter::accessor               : entry_point = generate_accessor_entry(); break;
+  case Interpreter::abstract               : entry_point = generate_abstract_entry();    break;
+
+  case Interpreter::java_lang_math_sin     : // fall thru
+  case Interpreter::java_lang_math_cos     : // fall thru
+  case Interpreter::java_lang_math_tan     : // fall thru
+  case Interpreter::java_lang_math_abs     : // fall thru
+  case Interpreter::java_lang_math_log     : // fall thru
+  case Interpreter::java_lang_math_log10   : // fall thru
+  case Interpreter::java_lang_math_sqrt    : // fall thru
+  case Interpreter::java_lang_math_pow     : // fall thru
+  case Interpreter::java_lang_math_exp     : entry_point = generate_math_entry(kind);      break;
+  case Interpreter::java_lang_ref_reference_get
+                                           : entry_point = generate_Reference_get_entry(); break;
+#ifndef CC_INTERP
+  case Interpreter::java_util_zip_CRC32_update
+                                           : entry_point = generate_CRC32_update_entry();  break;
+  case Interpreter::java_util_zip_CRC32_updateBytes
+                                           : // fall thru
+  case Interpreter::java_util_zip_CRC32_updateByteBuffer
+                                           : entry_point = generate_CRC32_updateBytes_entry(kind); break;
+#endif // CC_INTERP
+  default:
+    fatal(err_msg("unexpected method kind: %d", kind));
+    break;
+  }
+
+  if (entry_point) {
+    return entry_point;
+  }
+
+  return generate_normal_entry(synchronized);
 }

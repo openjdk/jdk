@@ -40,6 +40,7 @@ public class TestAll {
         TestMultiplePresent.class,
         TestPresent.class,
         TestTransmit.class,
+        TestDirect.class,
     };
 
     public static void main(String[] args) throws Exception {

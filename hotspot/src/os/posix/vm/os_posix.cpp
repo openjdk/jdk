@@ -75,21 +75,41 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
   VMError::report_coredump_status(buffer, success);
 }
 
-address os::get_caller_pc(int n) {
+int os::get_native_stack(address* stack, int frames, int toSkip) {
 #ifdef _NMT_NOINLINE_
-  n ++;
+  toSkip++;
 #endif
+
+  int frame_idx = 0;
+  int num_of_frames;  // number of frames captured
   frame fr = os::current_frame();
-  while (n > 0 && fr.pc() &&
-    !os::is_first_C_frame(&fr) && fr.sender_pc()) {
-    fr = os::get_sender_for_C_frame(&fr);
-    n --;
+  while (fr.pc() && frame_idx < frames) {
+    if (toSkip > 0) {
+      toSkip --;
+    } else {
+      stack[frame_idx ++] = fr.pc();
+    }
+    if (fr.fp() == NULL || os::is_first_C_frame(&fr)
+        ||fr.sender_pc() == NULL || fr.cb() != NULL) break;
+
+    if (fr.sender_pc() && !os::is_first_C_frame(&fr)) {
+      fr = os::get_sender_for_C_frame(&fr);
+    } else {
+      break;
+    }
   }
-  if (n == 0) {
-    return fr.pc();
-  } else {
-    return NULL;
+  num_of_frames = frame_idx;
+  for (; frame_idx < frames; frame_idx ++) {
+    stack[frame_idx] = NULL;
   }
+
+  return num_of_frames;
+}
+
+
+bool os::unsetenv(const char* name) {
+  assert(name != NULL, "Null pointer");
+  return (::unsetenv(name) == 0);
 }
 
 int os::get_last_error() {

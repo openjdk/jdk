@@ -234,7 +234,8 @@ nashorn-jar:
 	+($(CD) $(NASHORN_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk all)
 
 # Creates the jar files (rt.jar resources.jar etc)
-main-jars:
+# this depends on all modules built
+main-jars: exploded-image
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJars.gmk)
 
 # Creates the images (j2sdk-image j2re-image etc)

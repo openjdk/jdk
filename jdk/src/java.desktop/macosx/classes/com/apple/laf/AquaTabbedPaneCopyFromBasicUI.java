@@ -3307,7 +3307,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                 pane.repaint();
             } else if (name == "indexForTitle") {
                 calculatedBaseline = false;
-                updateHtmlViews((Integer) e.getNewValue());
+                updateHtmlViews((Integer) e.getNewValue(), false);
             } else if (name == "tabLayoutPolicy") {
                 AquaTabbedPaneCopyFromBasicUI.this.uninstallUI(pane);
                 AquaTabbedPaneCopyFromBasicUI.this.installUI(pane);
@@ -3345,7 +3345,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                 calculatedBaseline = false;
             } else if (name == "indexForNullComponent") {
                 isRunsDirty = true;
-                updateHtmlViews((Integer) e.getNewValue());
+                updateHtmlViews((Integer) e.getNewValue(), true);
             } else if (name == "font") {
                 calculatedBaseline = false;
             }
@@ -3464,10 +3464,10 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                 return;
             }
             isRunsDirty = true;
-            updateHtmlViews(tp.indexOfComponent(child));
+            updateHtmlViews(tp.indexOfComponent(child), true);
         }
 
-        private void updateHtmlViews(int index) {
+        private void updateHtmlViews(int index, boolean inserted) {
             final String title = tabPane.getTitleAt(index);
             final boolean isHTML = BasicHTML.isHTMLString(title);
             if (isHTML) {
@@ -3475,14 +3475,22 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                     htmlViews = createHTMLVector();
                 } else { // Vector already exists
                     final View v = BasicHTML.createHTMLView(tabPane, title);
-                    htmlViews.insertElementAt(v, index);
+                    setHtmlView(v, inserted, index);
                 }
             } else { // Not HTML
                 if (htmlViews != null) { // Add placeholder
-                    htmlViews.insertElementAt(null, index);
+                    setHtmlView(null, inserted, index);
                 } // else nada!
             }
             updateMnemonics();
+        }
+
+        private void setHtmlView(View v, boolean inserted, int index) {
+            if (inserted || index >= htmlViews.size()) {
+                htmlViews.insertElementAt(v, index);
+            } else {
+                htmlViews.setElementAt(v, index);
+            }
         }
 
         public void componentRemoved(final ContainerEvent e) {

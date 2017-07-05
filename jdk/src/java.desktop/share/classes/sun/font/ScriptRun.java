@@ -121,7 +121,7 @@ public final class ScriptRun
      *
      * @return the index of the first character in the current script run.
      */
-    public final int getScriptStart() {
+    public int getScriptStart() {
         return scriptStart;
     }
 
@@ -130,7 +130,7 @@ public final class ScriptRun
      *
      * @return the index of the first character after the current script run.
      */
-    public final int getScriptLimit() {
+    public int getScriptLimit() {
         return scriptLimit;
     }
 
@@ -140,7 +140,7 @@ public final class ScriptRun
      * @return the script code for the script of the current script run.
      * @see #Script
      */
-    public final int getScriptCode() {
+    public int getScriptCode() {
         return scriptCode;
     }
 
@@ -150,7 +150,7 @@ public final class ScriptRun
      *
      * @return <code>false</code> if there isn't another run, <code>true</code> if there is.
      */
-    public final boolean next() {
+    public boolean next() {
         int startSP  = parenSP;  // used to find the first new open character
 
         // if we've fallen off the end of the text, we're done
@@ -242,7 +242,7 @@ public final class ScriptRun
 
     static final int DONE = -1;
 
-    private final int nextCodePoint() {
+    private int nextCodePoint() {
         if (scriptLimit >= textLimit) {
             return DONE;
         }
@@ -257,7 +257,7 @@ public final class ScriptRun
         return ch;
     }
 
-    private final void pushback(int ch) {
+    private void pushback(int ch) {
         if (ch >= 0) {
             if (ch >= 0x10000) {
                 scriptLimit -= 2;
@@ -287,7 +287,7 @@ public final class ScriptRun
      * @param n the word in which to find the highest bit that's set.
      * @return the bit number (counting from the low order bit) of the highest bit.
      */
-    private static final byte highBit(int n)
+    private static byte highBit(int n)
     {
         if (n <= 0) {
             return -32;

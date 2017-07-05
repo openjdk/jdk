@@ -882,7 +882,7 @@ startJdb()
 
 startDebuggee()
 {
-    args=$TESTVMOPTS $TESTJAVAOPTS
+    args="$TESTVMOPTS $TESTJAVAOPTS"
 
     if [ ! -z "$args" ] ; then
        echo "--Starting debuggee with args from TESTVMOPTS and/or TESTJAVAOPTS: $args"

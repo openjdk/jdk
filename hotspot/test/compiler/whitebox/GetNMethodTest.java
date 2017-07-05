@@ -31,6 +31,7 @@ import sun.hotspot.code.NMethod;
  * @ignore 8046268
  * @build GetNMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* GetNMethodTest
  * @summary testing of WB::getNMethod()
  * @author igor.ignatyev@oracle.com

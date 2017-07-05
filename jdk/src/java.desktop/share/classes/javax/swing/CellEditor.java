@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import javax.swing.event.*;
  * new component implement the interface.  Or the developer can
  * choose a wrapper based approach and provide a companion object which
  * implements the <code>CellEditor</code> interface (See
- * <code>JCellEditor</code> for example).  The wrapper approach
+ * <code>DefaultCellEditor</code> for example).  The wrapper approach
  * is particularly useful if the user want to use a 3rd party ISV
  * editor with <code>JTable</code>, but the ISV didn't implement the
  * <code>CellEditor</code> interface.  The user can simply create an object

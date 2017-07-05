@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -591,7 +591,7 @@ void GraphKit::builtin_throw(Deoptimization::DeoptReason reason, Node* arg) {
         C->log()->elem("hot_throw preallocated='1' reason='%s'",
                        Deoptimization::trap_reason_name(reason));
       const TypeInstPtr* ex_con  = TypeInstPtr::make(ex_obj);
-      Node*              ex_node = _gvn.transform( ConNode::make(C, ex_con) );
+      Node*              ex_node = _gvn.transform(ConNode::make(ex_con));
 
       // Clear the detail message of the preallocated exception object.
       // Weblogic sometimes mutates the detail message of exceptions
@@ -706,7 +706,7 @@ SafePointNode* GraphKit::clone_map() {
   if (map() == NULL)  return NULL;
 
   // Clone the memory edge first
-  Node* mem = MergeMemNode::make(C, map()->memory());
+  Node* mem = MergeMemNode::make(map()->memory());
   gvn().set_type_bottom(mem);
 
   SafePointNode *clonemap = (SafePointNode*)map()->clone();
@@ -1135,7 +1135,7 @@ Node* GraphKit::ConvI2UL(Node* offset) {
     return longcon((julong) offset_con);
   }
   Node* conv = _gvn.transform( new ConvI2LNode(offset));
-  Node* mask = _gvn.transform( ConLNode::make(C, (julong) max_juint) );
+  Node* mask = _gvn.transform(ConLNode::make((julong) max_juint));
   return _gvn.transform( new AndLNode(conv, mask) );
 }
 
@@ -1435,7 +1435,7 @@ Node* GraphKit::reset_memory() {
 
 //------------------------------set_all_memory---------------------------------
 void GraphKit::set_all_memory(Node* newmem) {
-  Node* mergemem = MergeMemNode::make(C, newmem);
+  Node* mergemem = MergeMemNode::make(newmem);
   gvn().set_type_bottom(mergemem);
   map()->set_memory(mergemem);
 }
@@ -1464,9 +1464,9 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   Node* mem = memory(adr_idx);
   Node* ld;
   if (require_atomic_access && bt == T_LONG) {
-    ld = LoadLNode::make_atomic(C, ctl, mem, adr, adr_type, t, mo);
+    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, mo);
   } else if (require_atomic_access && bt == T_DOUBLE) {
-    ld = LoadDNode::make_atomic(C, ctl, mem, adr, adr_type, t, mo);
+    ld = LoadDNode::make_atomic(ctl, mem, adr, adr_type, t, mo);
   } else {
     ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo);
   }
@@ -1488,9 +1488,9 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   Node *mem = memory(adr_idx);
   Node* st;
   if (require_atomic_access && bt == T_LONG) {
-    st = StoreLNode::make_atomic(C, ctl, mem, adr, adr_type, val, mo);
+    st = StoreLNode::make_atomic(ctl, mem, adr, adr_type, val, mo);
   } else if (require_atomic_access && bt == T_DOUBLE) {
-    st = StoreDNode::make_atomic(C, ctl, mem, adr, adr_type, val, mo);
+    st = StoreDNode::make_atomic(ctl, mem, adr, adr_type, val, mo);
   } else {
     st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo);
   }
@@ -2084,9 +2084,9 @@ Node* GraphKit::just_allocated_object(Node* current_control) {
 void GraphKit::round_double_arguments(ciMethod* dest_method) {
   // (Note:  TypeFunc::make has a cache that makes this fast.)
   const TypeFunc* tf    = TypeFunc::make(dest_method);
-  int             nargs = tf->_domain->_cnt - TypeFunc::Parms;
+  int             nargs = tf->domain()->cnt() - TypeFunc::Parms;
   for (int j = 0; j < nargs; j++) {
-    const Type *targ = tf->_domain->field_at(j + TypeFunc::Parms);
+    const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
     if( targ->basic_type() == T_DOUBLE ) {
       // If any parameters are doubles, they must be rounded before
       // the call, dstore_rounding does gvn.transform
@@ -2188,10 +2188,10 @@ void GraphKit::record_profiled_arguments_for_speculation(ciMethod* dest_method, 
     return;
   }
   const TypeFunc* tf    = TypeFunc::make(dest_method);
-  int             nargs = tf->_domain->_cnt - TypeFunc::Parms;
+  int             nargs = tf->domain()->cnt() - TypeFunc::Parms;
   int skip = Bytecodes::has_receiver(bc) ? 1 : 0;
   for (int j = skip, i = 0; j < nargs && i < TypeProfileArgsLimit; j++) {
-    const Type *targ = tf->_domain->field_at(j + TypeFunc::Parms);
+    const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
     if (targ->basic_type() == T_OBJECT || targ->basic_type() == T_ARRAY) {
       bool maybe_null = true;
       ciKlass* better_type = NULL;
@@ -3364,7 +3364,7 @@ Node* GraphKit::set_output_for_allocation(AllocateNode* alloc,
     // This will allow us to observe initializations when they occur,
     // and link them properly (as a group) to the InitializeNode.
     assert(init->in(InitializeNode::Memory) == malloc, "");
-    MergeMemNode* minit_in = MergeMemNode::make(C, malloc);
+    MergeMemNode* minit_in = MergeMemNode::make(malloc);
     init->set_req(InitializeNode::Memory, minit_in);
     record_for_igvn(minit_in); // fold it up later, if possible
     Node* minit_out = memory(rawidx);

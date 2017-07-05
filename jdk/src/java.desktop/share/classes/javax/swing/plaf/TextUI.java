@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,9 @@ public abstract class TextUI extends ComponentUI
      * Converts the given location in the model to a place in
      * the view coordinate system.
      *
+     * @param t the text component for which this UI is installed
      * @param pos  the local location in the model to translate &gt;= 0
-     * @return the coordinates as a rectangle
+     * @return the coordinates as a {@code Rectangle}
      * @exception BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      */
@@ -53,8 +54,10 @@ public abstract class TextUI extends ComponentUI
      * Converts the given location in the model to a place in
      * the view coordinate system.
      *
+     * @param t the text component for which this UI is installed
      * @param pos  the local location in the model to translate &gt;= 0
-     * @return the coordinates as a rectangle
+     * @param bias the bias for the position
+     * @return the coordinates as a {@code Rectangle}
      * @exception BadLocationException  if the given position does not
      *   represent a valid location in the associated document
      */
@@ -64,6 +67,7 @@ public abstract class TextUI extends ComponentUI
      * Converts the given place in the view coordinate system
      * to the nearest representative location in the model.
      *
+     * @param t the text component for which this UI is installed
      * @param pt  the location in the view to translate.  This
      *   should be in the same coordinate system as the mouse
      *   events.
@@ -75,6 +79,7 @@ public abstract class TextUI extends ComponentUI
      * Provides a mapping from the view coordinate space to the logical
      * coordinate space of the model.
      *
+     * @param t the text component for which this UI is installed
      * @param pt the location in the view to translate.
      *           This should be in the same coordinate system
      *           as the mouse events.
@@ -117,6 +122,7 @@ public abstract class TextUI extends ComponentUI
      * Causes the portion of the view responsible for the
      * given part of the model to be repainted.
      *
+     * @param t the text component for which this UI is installed
      * @param p0 the beginning of the range &gt;= 0
      * @param p1 the end of the range &gt;= p0
      */
@@ -126,8 +132,13 @@ public abstract class TextUI extends ComponentUI
      * Causes the portion of the view responsible for the
      * given part of the model to be repainted.
      *
+     * @param t the text component for which this UI is installed
      * @param p0 the beginning of the range &gt;= 0
      * @param p1 the end of the range &gt;= p0
+     * @param firstBias the bias of the first character position, toward the
+     *        previous character or the next character
+     * @param secondBias the bias of the second character position, toward the
+     *        previous character or the next character
      */
     public abstract void damageRange(JTextComponent t, int p0, int p1,
                                      Position.Bias firstBias,
@@ -139,6 +150,7 @@ public abstract class TextUI extends ComponentUI
      * things like the commands available, stream readers and
      * writers, etc.
      *
+     * @param t the text component for which this UI is installed
      * @return the editor kit binding
      */
     public abstract EditorKit getEditorKit(JTextComponent t);
@@ -149,13 +161,18 @@ public abstract class TextUI extends ComponentUI
      * can be traversed to determine how the model is being
      * represented spatially.
      *
-     * @return the view
+     * @param t the text component for which this UI is installed
+     * @return a {@code View} with the allocation of the associated
+     *         text component
      */
     public abstract View getRootView(JTextComponent t);
 
     /**
      * Returns the string to be used as the tooltip at the passed in location.
      *
+     * @param t  the text component for which this UI is installed
+     * @param pt a {@code Point} specifying location for which to get a tooltip
+     * @return a {@code String} containing the tooltip
      * @see javax.swing.text.JTextComponent#getToolTipText
      * @since 1.4
      */

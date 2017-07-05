@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,6 +316,7 @@ void JvmtiManageCapabilities::update() {
     avail.can_generate_frame_pop_events ||
     avail.can_generate_method_entry_events ||
     avail.can_generate_method_exit_events;
+#ifdef ZERO
   bool enter_all_methods =
     interp_events ||
     avail.can_generate_breakpoint_events;
@@ -324,6 +325,7 @@ void JvmtiManageCapabilities::update() {
     UseFastEmptyMethods = false;
     UseFastAccessorMethods = false;
   }
+#endif // ZERO
 
   if (avail.can_generate_breakpoint_events) {
     RewriteFrequentPairs = false;

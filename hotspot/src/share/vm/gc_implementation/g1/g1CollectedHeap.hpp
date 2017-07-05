@@ -197,16 +197,6 @@ public:
   bool do_object_b(oop p);
 };
 
-// Instances of this class are used for quick tests on whether a reference points
-// into the collection set. Each of the array's elements denotes whether the
-// corresponding region is in the collection set.
-class G1FastCSetBiasedMappedArray : public G1BiasedMappedArray<bool> {
- protected:
-  bool default_value() const { return false; }
- public:
-  void clear() { G1BiasedMappedArray<bool>::clear(); }
-};
-
 class RefineCardTableEntryClosure;
 
 class G1CollectedHeap : public SharedHeap {
@@ -237,6 +227,7 @@ class G1CollectedHeap : public SharedHeap {
   friend class EvacPopObjClosure;
   friend class G1ParCleanupCTTask;
 
+  friend class G1FreeHumongousRegionClosure;
   // Other related classes.
   friend class G1MarkSweep;
 
@@ -266,6 +257,9 @@ private:
 
   // It keeps track of the humongous regions.
   HeapRegionSet _humongous_set;
+
+  void clear_humongous_is_live_table();
+  void eagerly_reclaim_humongous_regions();
 
   // The number of regions we could create by expansion.
   uint _expansion_regions;
@@ -367,10 +361,25 @@ private:
   // than the current allocation region.
   size_t _summary_bytes_used;
 
-  // This array is used for a quick test on whether a reference points into
-  // the collection set or not. Each of the array's elements denotes whether the
-  // corresponding region is in the collection set or not.
-  G1FastCSetBiasedMappedArray _in_cset_fast_test;
+  // Records whether the region at the given index is kept live by roots or
+  // references from the young generation.
+  class HumongousIsLiveBiasedMappedArray : public G1BiasedMappedArray<bool> {
+   protected:
+    bool default_value() const { return false; }
+   public:
+    void clear() { G1BiasedMappedArray<bool>::clear(); }
+    void set_live(uint region) {
+      set_by_index(region, true);
+    }
+    bool is_live(uint region) {
+      return get_by_index(region);
+    }
+  };
+
+  HumongousIsLiveBiasedMappedArray _humongous_is_live;
+  // Stores whether during humongous object registration we found candidate regions.
+  // If not, we can skip a few steps.
+  bool _has_humongous_reclaim_candidates;
 
   volatile unsigned _gc_time_stamp;
 
@@ -690,10 +699,24 @@ public:
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
 
+  inline void set_humongous_is_live(oop obj);
+
+  bool humongous_is_live(uint region) {
+    return _humongous_is_live.is_live(region);
+  }
+
+  // Returns whether the given region (which must be a humongous (start) region)
+  // is to be considered conservatively live regardless of any other conditions.
+  bool humongous_region_is_always_live(uint index);
+  // Register the given region to be part of the collection set.
+  inline void register_humongous_region_with_in_cset_fast_test(uint index);
+  // Register regions with humongous objects (actually on the start region) in
+  // the in_cset_fast_test table.
+  void register_humongous_regions_with_in_cset_fast_test();
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_region_with_in_cset_fast_test(HeapRegion* r) {
-    _in_cset_fast_test.set_by_index(r->hrs_index(), true);
+    _in_cset_fast_test.set_in_cset(r->hrs_index());
   }
 
   // This is a fast test on whether a reference points into the
@@ -1283,8 +1306,60 @@ public:
   virtual bool is_in(const void* p) const;
 
   // Return "TRUE" iff the given object address is within the collection
-  // set.
+  // set. Slow implementation.
   inline bool obj_in_cs(oop obj);
+
+  inline bool is_in_cset(oop obj);
+
+  inline bool is_in_cset_or_humongous(const oop obj);
+
+  enum in_cset_state_t {
+   InNeither,           // neither in collection set nor humongous
+   InCSet,              // region is in collection set only
+   IsHumongous          // region is a humongous start region
+  };
+ private:
+  // Instances of this class are used for quick tests on whether a reference points
+  // into the collection set or is a humongous object (points into a humongous
+  // object).
+  // Each of the array's elements denotes whether the corresponding region is in
+  // the collection set or a humongous region.
+  // We use this to quickly reclaim humongous objects: by making a humongous region
+  // succeed this test, we sort-of add it to the collection set. During the reference
+  // iteration closures, when we see a humongous region, we simply mark it as
+  // referenced, i.e. live.
+  class G1FastCSetBiasedMappedArray : public G1BiasedMappedArray<char> {
+   protected:
+    char default_value() const { return G1CollectedHeap::InNeither; }
+   public:
+    void set_humongous(uintptr_t index) {
+      assert(get_by_index(index) != InCSet, "Should not overwrite InCSet values");
+      set_by_index(index, G1CollectedHeap::IsHumongous);
+    }
+
+    void clear_humongous(uintptr_t index) {
+      set_by_index(index, G1CollectedHeap::InNeither);
+    }
+
+    void set_in_cset(uintptr_t index) {
+      assert(get_by_index(index) != G1CollectedHeap::IsHumongous, "Should not overwrite IsHumongous value");
+      set_by_index(index, G1CollectedHeap::InCSet);
+    }
+
+    bool is_in_cset_or_humongous(HeapWord* addr) const { return get_by_address(addr) != G1CollectedHeap::InNeither; }
+    bool is_in_cset(HeapWord* addr) const { return get_by_address(addr) == G1CollectedHeap::InCSet; }
+    G1CollectedHeap::in_cset_state_t at(HeapWord* addr) const { return (G1CollectedHeap::in_cset_state_t)get_by_address(addr); }
+    void clear() { G1BiasedMappedArray<char>::clear(); }
+  };
+
+  // This array is used for a quick test on whether a reference points into
+  // the collection set or not. Each of the array's elements denotes whether the
+  // corresponding region is in the collection set or not.
+  G1FastCSetBiasedMappedArray _in_cset_fast_test;
+
+ public:
+
+  inline in_cset_state_t in_cset_state(const oop obj);
 
   // Return "TRUE" iff the given object address is in the reserved
   // region of g1.
@@ -1320,9 +1395,6 @@ public:
   // "cl.do_oop" on each.
   virtual void oop_iterate(ExtendedOopClosure* cl);
 
-  // Same as above, restricted to a memory region.
-  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
-
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl);
 
@@ -1339,6 +1411,10 @@ public:
 
   // Return the region with the given index. It assumes the index is valid.
   inline HeapRegion* region_at(uint index) const;
+
+  // Calculate the region index of the given address. Given address must be
+  // within the heap.
+  inline uint addr_to_region(HeapWord* addr) const;
 
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some

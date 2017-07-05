@@ -38,7 +38,8 @@ public class CEmbeddedFrame extends EmbeddedFrame {
 
     private CPlatformResponder responder;
     private static final Object classLock = new Object();
-    private static volatile CEmbeddedFrame focusedWindow;
+    private static volatile CEmbeddedFrame globalFocusedWindow;
+    private CEmbeddedFrame browserWindowFocusedApplet;
     private boolean parentWindowActive = true;
 
     public CEmbeddedFrame() {
@@ -111,10 +112,10 @@ public class CEmbeddedFrame extends EmbeddedFrame {
         synchronized (classLock) {
             // In some cases an applet may not receive the focus lost event
             // from the parent window (see 8012330)
-            focusedWindow = (focused) ? this
-                    : ((focusedWindow == this) ? null : focusedWindow);
+            globalFocusedWindow = (focused) ? this
+                    : ((globalFocusedWindow == this) ? null : globalFocusedWindow);
         }
-        if (focusedWindow == this) {
+        if (globalFocusedWindow == this) {
             // see bug 8010925
             // we can't put this to handleWindowFocusEvent because
             // it won't be invoced if focuse is moved to a html element
@@ -145,14 +146,34 @@ public class CEmbeddedFrame extends EmbeddedFrame {
     // non-focused applet. This method can be called from different threads.
     public void handleWindowFocusEvent(boolean parentWindowActive) {
         this.parentWindowActive = parentWindowActive;
+        // If several applets are running in different browser's windows, it is necessary to
+        // detect the switching between the parent windows and update globalFocusedWindow accordingly.
+        synchronized (classLock) {
+            if (!parentWindowActive) {
+                this.browserWindowFocusedApplet = globalFocusedWindow;
+            }
+            if (parentWindowActive && globalFocusedWindow != this && isParentWindowChanged()) {
+                // It looks like we have switched to another browser window, let's restore focus to
+                // the previously focused applet in this window. If no applets were focused in the
+                // window, we will set focus to the first applet in the window.
+                globalFocusedWindow = (this.browserWindowFocusedApplet != null) ? this.browserWindowFocusedApplet
+                        : this;
+            }
+        }
         // ignore focus "lost" native request as it may mistakenly
         // deactivate active window (see 8001161)
-        if (focusedWindow == this && parentWindowActive) {
+        if (globalFocusedWindow == this && parentWindowActive) {
             responder.handleWindowFocusEvent(parentWindowActive, null);
         }
     }
 
     public boolean isParentWindowActive() {
         return parentWindowActive;
+    }
+
+    private boolean isParentWindowChanged() {
+        // If globalFocusedWindow is located at inactive parent window or null, we have swithed to
+        // another window.
+        return globalFocusedWindow != null ? !globalFocusedWindow.isParentWindowActive() : true;
     }
 }
