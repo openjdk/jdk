@@ -35,6 +35,7 @@ import java.util.logging.LoggingPermission;
  * @test
  * @bug 8026499
  * @summary checks that Logger.getLogger("").setLevel() is working correctly.
+ * @modules java.base/sun.util.logging
  * @build TestRootLoggerLevel
  * @run main/othervm -Dtest.security=on TestRootLoggerLevel
  * @run main/othervm -Dtest.security=off TestRootLoggerLevel

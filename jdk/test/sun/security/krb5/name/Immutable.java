@@ -25,6 +25,7 @@
  * @test
  * @bug 8005460
  * @summary [findbugs] Probably returned array should be cloned
+ * @modules java.security.jgss/sun.security.krb5
  */
 
 import sun.security.krb5.PrincipalName;

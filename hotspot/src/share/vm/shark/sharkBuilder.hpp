@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,8 +27,8 @@
 #define SHARE_VM_SHARK_SHARKBUILDER_HPP
 
 #include "ci/ciType.hpp"
-#include "memory/barrierSet.hpp"
-#include "memory/cardTableModRefBS.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
 #include "shark/llvmHeaders.hpp"
 #include "shark/llvmValue.hpp"
 #include "shark/sharkCodeBuffer.hpp"

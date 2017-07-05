@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6789935 8012615
+ * @modules java.security.jgss/sun.security.krb5
  * @run main/othervm ParseCAPaths
  * @summary cross-realm capath search error
  */

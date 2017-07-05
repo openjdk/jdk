@@ -27,6 +27,7 @@
  * @summary verify getInstance() works using Provider.getService()
  *          Export "PKIX" as the standard algorithm name of KeyManagerFactory
  * @author Andreas Sterbenz
+ * @modules java.base/com.sun.net.ssl
  */
 
 import java.security.*;

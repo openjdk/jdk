@@ -26,6 +26,8 @@
  * @bug 8009650
  * @summary HttpClient available() check throws SocketException when connection
  * has been closed
+ * @modules java.base/sun.net
+ *          java.base/sun.net.www.http
  */
 
 import java.net.URL;

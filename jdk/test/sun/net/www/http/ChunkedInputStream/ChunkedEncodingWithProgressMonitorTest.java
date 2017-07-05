@@ -24,8 +24,9 @@
 /**
  * @test
  * @bug 4333920 4994372
- * @run main ChunkedEncodingWithProgressMonitorTest
  * @summary ChunkedEncoding unit test; MeteredStream/ProgressData problem
+ * @modules java.base/sun.net
+ * @run main ChunkedEncodingWithProgressMonitorTest
  */
 
 import java.net.*;

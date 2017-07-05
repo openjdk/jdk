@@ -25,6 +25,7 @@
  * @bug 6994413
  * @summary Check the JDK and JVM version returned by sun.misc.Version
  *          matches the versions defined in the system properties
+ * @modules java.base/sun.misc
  * @compile -XDignore.symbol.file Version.java
  * @run main Version
  */

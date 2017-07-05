@@ -25,6 +25,8 @@
  * @test
  * @bug 8029995
  * @summary accept yes/no for boolean krb5.conf settings
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.crypto
  * @compile -XDignore.symbol.file YesNo.java
  * @run main/othervm YesNo
  */

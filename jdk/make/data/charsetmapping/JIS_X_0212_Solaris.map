@@ -23,7 +23,7 @@
 #    as the round-trip entries.
 #
 #    b2c and c2b all have entry "0x2271 <-> 0x2116", so the
-#    "0x742c -> 0x2116" entry is moved to the .nr table.
+#    "0x742c -> 0x2116" entry is copied to the .nr table.
 #
 #    mapping (c2b) generated from JIS_X_0212_Solaris_Encoder has
 #    two "dup" entries
@@ -6126,7 +6126,7 @@
 0x7429    0xff07
 0x742a    0xff02
 0x742b    0x3231
-#0x742c    0x2116
+0x742c    0x2116
 0x742d    0x2121
 0x742e    0x70bb
 0x742f    0x4efc

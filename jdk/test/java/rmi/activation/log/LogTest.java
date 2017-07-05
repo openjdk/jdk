@@ -29,6 +29,7 @@
  * boundaries
  * @author Ann Wollrath
  *
+ * @modules java.rmi/sun.rmi.log
  * @run main/othervm/timeout=240 LogTest
  */
 

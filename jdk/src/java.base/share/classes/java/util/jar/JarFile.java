@@ -268,13 +268,25 @@ class JarFile extends ZipFile {
     }
 
     /**
-     * Returns an enumeration of the zip file entries.
+     * Returns an enumeration of the jar file entries.
+     *
+     * @return an enumeration of the jar file entries
+     * @throws IllegalStateException
+     *         may be thrown if the jar file has been closed
      */
     public Enumeration<JarEntry> entries() {
         return new JarEntryIterator();
     }
 
-    @Override
+    /**
+     * Returns an ordered {@code Stream} over the jar file entries.
+     * Entries appear in the {@code Stream} in the order they appear in
+     * the central directory of the jar file.
+     *
+     * @return an ordered {@code Stream} of entries in this jar file
+     * @throws IllegalStateException if the jar file has been closed
+     * @since 1.8
+     */
     public Stream<JarEntry> stream() {
         return StreamSupport.stream(Spliterators.spliterator(
                 new JarEntryIterator(), size(),

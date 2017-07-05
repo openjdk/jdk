@@ -31,10 +31,10 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "memory/gcLocker.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -79,7 +79,7 @@
 #include "utilities/histogram.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif // INCLUDE_ALL_GCS
 
 static jint CurrentVersion = JNI_VERSION_1_8;
@@ -3838,14 +3838,14 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 
 #ifndef PRODUCT
 
-#include "gc_implementation/shared/gcTimer.hpp"
-#include "gc_interface/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcTimer.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "gc/g1/heapRegionRemSet.hpp"
 #endif
 #include "memory/guardedMemory.hpp"
-#include "utilities/quickSort.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/quickSort.hpp"
 #if INCLUDE_VM_STRUCTS
 #include "runtime/vmStructs.hpp"
 #endif

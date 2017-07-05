@@ -31,7 +31,6 @@
 import java.net.*;
 import java.io.*;
 import javax.net.ssl.*;
-import com.sun.net.ssl.*;
 
 class GetPeerHostClient extends Thread
 {

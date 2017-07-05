@@ -25,6 +25,7 @@
  * @test
  * @bug 4511556
  * @summary Verify BitString value containing padding bits is accepted.
+ * @modules java.base/sun.security.util
  */
 
 import java.io.*;

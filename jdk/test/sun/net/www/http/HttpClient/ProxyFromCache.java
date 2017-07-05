@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 6498566
- * @run main/othervm ProxyFromCache
  * @summary URL.openConnection(Proxy.NO_PROXY) may connect through a proxy.
+ * @modules java.base/sun.net.www
+ * @run main/othervm ProxyFromCache
  */
 
 import java.net.*;

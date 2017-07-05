@@ -24,6 +24,8 @@
  * @test
  * @bug 6979329
  * @summary CCacheInputStream fails to read ticket cache files from Kerberos 1.8.1
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.ccache
  */
 
 import java.io.ByteArrayInputStream;
