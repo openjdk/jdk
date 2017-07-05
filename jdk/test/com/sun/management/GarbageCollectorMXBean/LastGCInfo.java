@@ -27,7 +27,6 @@
  * @summary Sanity Test for GarbageCollectorMXBean.getLastGcInfo().
  * @author  Mandy Chung
  *
- * @modules jdk.management
  * @run main/othervm -XX:-ExplicitGCInvokesConcurrent LastGCInfo
  */
 // Passing "-XX:-ExplicitGCInvokesConcurrent" to force System.gc()

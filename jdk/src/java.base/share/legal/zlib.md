@@ -1,9 +1,9 @@
-## zlib v1.2.8
+## zlib v1.2.11
 
 ### zlib License
 <pre>
 
-Copyright (C) 1995-2013 Jean-loup Gailly and Mark Adler
+Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
