@@ -3387,14 +3387,14 @@ bool force_verify_field_access(Klass* current_class, Klass* field_class, AccessF
   return (!access.is_private() && InstanceKlass::cast(current_class)->is_same_class_package(field_class));
 }
 
-// Return the first non-null class loader up the execution stack, or null
-// if only code from the null class loader is on the stack.
+// Return the first user-defined class loader up the execution stack, or null
+// if only code from the bootstrap or platform class loader is on the stack.
 
 JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
   for (vframeStream vfst(thread); !vfst.at_end(); vfst.next()) {
     vfst.skip_reflection_related_frames(); // Only needed for 1.4 reflection
     oop loader = vfst.method()->method_holder()->class_loader();
-    if (loader != NULL) {
+    if (loader != NULL && !SystemDictionary::is_platform_class_loader(loader)) {
       return JNIHandles::make_local(env, loader);
     }
   }

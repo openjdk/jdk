@@ -34,7 +34,7 @@ import java.util.HashMap;
  * An abstract sensor.
  *
  * <p>
- * A {@code AbstractSensor} object consists of two attributes:
+ * An {@code AbstractSensor} object consists of two attributes:
  * <ul>
  *   <li>{@code on} is a boolean flag indicating if a sensor is
  *       triggered. This flag will be set or cleared by the

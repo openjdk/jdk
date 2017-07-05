@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,17 @@
 
 package org.xml.sax.helpers;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import org.xml.sax.XMLReader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
 
 
 /**
@@ -70,7 +77,11 @@ import org.xml.sax.SAXException;
  * @since 1.4, SAX 2.0
  * @author David Megginson, David Brownell
  * @version 2.0.1 (sax2r2)
+ *
+ * @deprecated It is recommended to use {@link javax.xml.parsers.SAXParserFactory}
+ * instead.
  */
+@Deprecated(since="9")
 final public class XMLReaderFactory
 {
     /**
@@ -83,47 +94,43 @@ final public class XMLReaderFactory
     }
 
     private static final String property = "org.xml.sax.driver";
-    private static SecuritySupport ss = new SecuritySupport();
+    private static final SecuritySupport ss = new SecuritySupport();
 
-    private static String _clsFromJar = null;
-    private static boolean _jarread = false;
     /**
-     * Attempt to create an XMLReader from system defaults.
-     * In environments which can support it, the name of the XMLReader
-     * class is determined by trying each these options in order, and
-     * using the first one which succeeds:
-     * <ul>
-     *
+     * Obtains a new instance of a {@link org.xml.sax.XMLReader}.
+     * This method uses the following ordered lookup procedure to find and load
+     * the {@link org.xml.sax.XMLReader} implementation class:
+     * <p>
+     * <ol>
      * <li>If the system property {@code org.xml.sax.driver}
      * has a value, that is used as an XMLReader class name. </li>
+     * <li>
+     * Use the service-provider loading facility, defined by the
+     * {@link java.util.ServiceLoader} class, to attempt to locate and load an
+     * implementation of the service {@link org.xml.sax.XMLReader} by using the
+     * {@linkplain java.lang.Thread#getContextClassLoader() current thread's context class loader}.
+     * If the context class loader is null, the
+     * {@linkplain ClassLoader#getSystemClassLoader() system class loader} will
+     * be used.
+     * </li>
+     * <li>
+     * Deprecated. Look for a class name in the {@code META-INF/services/org.xml.sax.driver}
+     * file in a jar file available to the runtime.</li>
+     * <li>
+     * <p>
+     * Otherwise, the system-default implementation is returned.
+     * </li>
+     * </ol>
      *
-     * <li>The JAR "Services API" is used to look for a class name
-     * in the <em>META-INF/services/org.xml.sax.driver</em> file in
-     * jarfiles available to the runtime.</li>
+     * @apiNote
+     * The process that looks for a class name in the
+     * {@code META-INF/services/org.xml.sax.driver} file in a jar file does not
+     * conform to the specification of the service-provider loading facility
+     * as defined in {@link java.util.ServiceLoader} and therefore does not
+     * support modularization. It is deprecated as of Java SE 9 and subject to
+     * removal in a future release.
      *
-     * <li> SAX parser distributions are strongly encouraged to provide
-     * a default XMLReader class name that will take effect only when
-     * previous options (on this list) are not successful.</li>
-     *
-     * <li>Finally, if {@link ParserFactory#makeParser()} can
-     * return a system default SAX1 parser, that parser is wrapped in
-     * a {@link ParserAdapter}.  (This is a migration aid for SAX1
-     * environments, where the {@code org.xml.sax.parser} system
-     * property will often be usable.) </li>
-     * </ul>
-     *
-     * <p> In environments such as small embedded systems, which can not
-     * support that flexibility, other mechanisms to determine the default
-     * may be used.
-     *
-     * <p>Note that many Java environments allow system properties to be
-     * initialized on a command line.  This means that <em>in most cases</em>
-     * setting a good value for that property ensures that calls to this
-     * method will succeed, except when security policies intervene.
-     * This will also maximize application portability to older SAX
-     * environments, with less robust implementations of this method.
-     *
-     * @return A new XMLReader.
+     * @return a new XMLReader.
      * @exception org.xml.sax.SAXException If no default XMLReader class
      *            can be identified and instantiated.
      * @see #createXMLReader(java.lang.String)
@@ -132,7 +139,7 @@ final public class XMLReaderFactory
         throws SAXException
     {
         String          className = null;
-        ClassLoader     cl = ss.getContextClassLoader();
+        ClassLoader     cl = ss.getClassLoader();
 
         // 1. try the JVM-instance-wide system property
         try {
@@ -140,62 +147,26 @@ final public class XMLReaderFactory
         }
         catch (RuntimeException e) { /* continue searching */ }
 
-        // 2. if that fails, try META-INF/services/
+        // 2. try the ServiceLoader
         if (className == null) {
-            if (!_jarread) {
-                _jarread = true;
-                String      service = "META-INF/services/" + property;
-                InputStream in;
-                BufferedReader      reader;
-
-                try {
-                    if (cl != null) {
-                        in = ss.getResourceAsStream(cl, service);
-
-                        // If no provider found then try the current ClassLoader
-                        if (in == null) {
-                            cl = null;
-                            in = ss.getResourceAsStream(cl, service);
-                        }
-                    } else {
-                        // No Context ClassLoader, try the current ClassLoader
-                        in = ss.getResourceAsStream(cl, service);
-                    }
-
-                    if (in != null) {
-                        reader = new BufferedReader (new InputStreamReader (in, "UTF8"));
-                        _clsFromJar = reader.readLine ();
-                        in.close ();
-                    }
-                } catch (Exception e) {
-                }
+            final XMLReader provider = findServiceProvider(XMLReader.class, cl);
+            if (provider != null) {
+                return provider;
             }
-            className = _clsFromJar;
         }
 
-        // 3. Distro-specific fallback
+        // 3. try META-INF/services/org.xml.sax.driver. This old process allows
+        // legacy providers to be found
         if (className == null) {
-// BEGIN DISTRIBUTION-SPECIFIC
-
-            // EXAMPLE:
-            // className = "com.example.sax.XmlReader";
-            // or a $JAVA_HOME/jre/lib/*properties setting...
-            className = "com.sun.org.apache.xerces.internal.parsers.SAXParser";
-
-// END DISTRIBUTION-SPECIFIC
+            className = jarLookup(cl);
         }
 
-        // do we know the XMLReader implementation class yet?
-        if (className != null)
-            return loadClass (cl, className);
-
-        // 4. panic -- adapt any SAX1 parser
-        try {
-            return new ParserAdapter (ParserFactory.makeParser ());
-        } catch (Exception e) {
-            throw new SAXException ("Can't create default XMLReader; "
-                    + "is system property org.xml.sax.driver set?");
+        // 4. Distro-specific fallback
+        if (className == null) {
+            return new com.sun.org.apache.xerces.internal.parsers.SAXParser();
         }
+
+        return loadClass (cl, className);
     }
 
 
@@ -217,14 +188,14 @@ final public class XMLReaderFactory
     public static XMLReader createXMLReader (String className)
         throws SAXException
     {
-        return loadClass (ss.getContextClassLoader(), className);
+        return loadClass (ss.getClassLoader(), className);
     }
 
     private static XMLReader loadClass (ClassLoader loader, String className)
     throws SAXException
     {
         try {
-            return (XMLReader) NewInstance.newInstance (loader, className);
+            return NewInstance.newInstance (XMLReader.class, loader, className);
         } catch (ClassNotFoundException e1) {
             throw new SAXException("SAX2 driver class " + className +
                                    " not found", e1);
@@ -240,4 +211,64 @@ final public class XMLReaderFactory
                                    " does not implement XMLReader", e4);
         }
     }
+
+    /**
+     * Locates a provider by directly reading the jar service file.
+     * @param loader the ClassLoader to be used to read the service file
+     * @return the name of the provider, or null if nothing is found
+     */
+    private static String jarLookup(final ClassLoader loader) {
+        final ClassLoader cl = Objects.requireNonNull(loader);
+        String clsFromJar = null;
+        String service = "META-INF/services/" + property;
+        InputStream in;
+        BufferedReader      reader;
+
+        try {
+            in = ss.getResourceAsStream(cl, service);
+
+            // If no provider found then try the current ClassLoader
+            if (in == null) {
+                in = ss.getResourceAsStream(null, service);
+            }
+
+            if (in != null) {
+                reader = new BufferedReader (new InputStreamReader (in, "UTF8"));
+                clsFromJar = reader.readLine ();
+                in.close ();
+            }
+        } catch (IOException e) {
+        }
+        return clsFromJar;
+    }
+
+    /*
+     * Try to find provider using the ServiceLoader API
+     *
+     * @param type Base class / Service interface of the factory to find.
+     *
+     * @return instance of provider class if found or null
+     */
+    private static <T> T findServiceProvider(final Class<T> type, final ClassLoader loader)
+            throws SAXException {
+        ClassLoader cl = Objects.requireNonNull(loader);
+        try {
+            return AccessController.doPrivileged((PrivilegedAction<T>) () -> {
+                final ServiceLoader<T> serviceLoader;
+                serviceLoader = ServiceLoader.load(type, cl);
+                final Iterator<T> iterator = serviceLoader.iterator();
+                if (iterator.hasNext()) {
+                    return iterator.next();
+                } else {
+                    return null;
+                }
+            });
+        } catch(ServiceConfigurationError e) {
+            final RuntimeException x = new RuntimeException(
+                    "Provider for " + type + " cannot be created", e);
+            throw new SAXException("Provider for " + type + " cannot be created", x);
+
+          }
+      }
+
 }

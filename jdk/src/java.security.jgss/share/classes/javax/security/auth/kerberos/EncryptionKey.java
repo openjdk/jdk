@@ -61,7 +61,7 @@ public final class EncryptionKey implements SecretKey {
     private transient boolean destroyed = false;
 
     /**
-     * Constructs a {@code EncryptionKey} from the given bytes and
+     * Constructs an {@code EncryptionKey} from the given bytes and
      * the key type.
      * <p>
      * The contents of the byte array are copied; subsequent modification of

@@ -30,6 +30,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.xml.sax.helpers.XMLReaderFactory;
+
 public class Main {
     /*
      * @param args, the names of provider modules, which have been loaded
@@ -69,7 +71,9 @@ public class Main {
      */
     private static Object instantiateXMLService(String serviceName) {
         try {
-            if (serviceName.equals("javax.xml.validation.SchemaFactory"))
+            if (serviceName.equals("org.xml.sax.XMLReader"))
+                return XMLReaderFactory.createXMLReader();
+            else if (serviceName.equals("javax.xml.validation.SchemaFactory"))
                 return Class.forName(serviceName).getMethod("newInstance", String.class)
                         .invoke(null, W3C_XML_SCHEMA_NS_URI);
             else
@@ -102,6 +106,7 @@ public class Main {
             "javax.xml.parsers.DocumentBuilderFactory", "javax.xml.parsers.SAXParserFactory",
             "javax.xml.stream.XMLEventFactory", "javax.xml.stream.XMLInputFactory",
             "javax.xml.stream.XMLOutputFactory", "javax.xml.transform.TransformerFactory",
-            "javax.xml.validation.SchemaFactory", "javax.xml.xpath.XPathFactory" };
+            "javax.xml.validation.SchemaFactory", "javax.xml.xpath.XPathFactory",
+            "org.xml.sax.XMLReader"};
 
 }

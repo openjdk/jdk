@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/####" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jdk/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/langtools/test" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/jaxp/test" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/####/buildtools" />
+      <excludeFolder url="file://$MODULE_DIR$/####/configure-support" />
+      <excludeFolder url="file://$MODULE_DIR$/####/hotspot" />
+      <excludeFolder url="file://$MODULE_DIR$/####/images" />
+      <excludeFolder url="file://$MODULE_DIR$/####/ide" />
+      <excludeFolder url="file://$MODULE_DIR$/####/jdk" />
+      <excludeFolder url="file://$MODULE_DIR$/####/make-support" />
+      <excludeFolder url="file://$MODULE_DIR$/####/testoutput" />
+    </content>    
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="inheritedJdk" />
+  </component>
+</module>
