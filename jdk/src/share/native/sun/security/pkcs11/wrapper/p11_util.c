@@ -213,28 +213,52 @@ jlong ckAssertReturnValueOK(JNIEnv *env, CK_RV returnValue)
     return jErrorCode ;
 }
 
+
 /*
- * This function simply throws an IOException
- *
- * @param env Used to call JNI funktions and to get the Exception class.
- * @param message The message string of the Exception object.
+ * Throws a Java Exception by name
  */
-void throwIOException(JNIEnv *env, const char *message)
+void throwByName(JNIEnv *env, const char *name, const char *msg)
 {
-    JNU_ThrowByName(env, CLASS_IO_EXCEPTION, message);
+    jclass cls = (*env)->FindClass(env, name);
+
+    if (cls != 0) /* Otherwise an exception has already been thrown */
+        (*env)->ThrowNew(env, cls, msg);
+}
+
+/*
+ * Throws java.lang.OutOfMemoryError
+ */
+void throwOutOfMemoryError(JNIEnv *env, const char *msg)
+{
+    throwByName(env, "java/lang/OutOfMemoryError", msg);
+}
+
+/*
+ * Throws java.lang.NullPointerException
+ */
+void throwNullPointerException(JNIEnv *env, const char *msg)
+{
+    throwByName(env, "java/lang/NullPointerException", msg);
+}
+
+/*
+ * Throws java.io.IOException
+ */
+void throwIOException(JNIEnv *env, const char *msg)
+{
+    throwByName(env, "java/io/IOException", msg);
 }
 
 /*
  * This function simply throws a PKCS#11RuntimeException with the given
- * string as its message. If the message is NULL, the exception is created
- * using the default constructor.
+ * string as its message.
  *
  * @param env Used to call JNI funktions and to get the Exception class.
  * @param jmessage The message string of the Exception object.
  */
 void throwPKCS11RuntimeException(JNIEnv *env, const char *message)
 {
-    JNU_ThrowByName(env, CLASS_PKCS11RUNTIMEEXCEPTION, message);
+    throwByName(env, CLASS_PKCS11RUNTIMEEXCEPTION, message);
 }
 
 /*
@@ -318,7 +342,7 @@ void jBooleanArrayToCKBBoolArray(JNIEnv *env, const jbooleanArray jArray, CK_BBO
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jpTemp = (jboolean*) malloc((*ckpLength) * sizeof(jboolean));
     if (jpTemp == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     (*env)->GetBooleanArrayRegion(env, jArray, 0, *ckpLength, jpTemp);
@@ -330,7 +354,7 @@ void jBooleanArrayToCKBBoolArray(JNIEnv *env, const jbooleanArray jArray, CK_BBO
     *ckpArray = (CK_BBOOL*) malloc ((*ckpLength) * sizeof(CK_BBOOL));
     if (*ckpArray == NULL) {
         free(jpTemp);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     for (i=0; i<(*ckpLength); i++) {
@@ -360,7 +384,7 @@ void jByteArrayToCKByteArray(JNIEnv *env, const jbyteArray jArray, CK_BYTE_PTR *
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jpTemp = (jbyte*) malloc((*ckpLength) * sizeof(jbyte));
     if (jpTemp == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     (*env)->GetByteArrayRegion(env, jArray, 0, *ckpLength, jpTemp);
@@ -376,7 +400,7 @@ void jByteArrayToCKByteArray(JNIEnv *env, const jbyteArray jArray, CK_BYTE_PTR *
         *ckpArray = (CK_BYTE_PTR) malloc ((*ckpLength) * sizeof(CK_BYTE));
         if (*ckpArray == NULL) {
             free(jpTemp);
-            JNU_ThrowOutOfMemoryError(env, 0);
+            throwOutOfMemoryError(env, 0);
             return;
         }
         for (i=0; i<(*ckpLength); i++) {
@@ -407,7 +431,7 @@ void jLongArrayToCKULongArray(JNIEnv *env, const jlongArray jArray, CK_ULONG_PTR
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jTemp = (jlong*) malloc((*ckpLength) * sizeof(jlong));
     if (jTemp == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     (*env)->GetLongArrayRegion(env, jArray, 0, *ckpLength, jTemp);
@@ -419,7 +443,7 @@ void jLongArrayToCKULongArray(JNIEnv *env, const jlongArray jArray, CK_ULONG_PTR
     *ckpArray = (CK_ULONG_PTR) malloc (*ckpLength * sizeof(CK_ULONG));
     if (*ckpArray == NULL) {
         free(jTemp);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     for (i=0; i<(*ckpLength); i++) {
@@ -449,7 +473,7 @@ void jCharArrayToCKCharArray(JNIEnv *env, const jcharArray jArray, CK_CHAR_PTR *
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jpTemp = (jchar*) malloc((*ckpLength) * sizeof(jchar));
     if (jpTemp == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     (*env)->GetCharArrayRegion(env, jArray, 0, *ckpLength, jpTemp);
@@ -461,7 +485,7 @@ void jCharArrayToCKCharArray(JNIEnv *env, const jcharArray jArray, CK_CHAR_PTR *
     *ckpArray = (CK_CHAR_PTR) malloc (*ckpLength * sizeof(CK_CHAR));
     if (*ckpArray == NULL) {
         free(jpTemp);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     for (i=0; i<(*ckpLength); i++) {
@@ -491,7 +515,7 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
     *ckpLength = (*env)->GetArrayLength(env, jArray);
     jTemp = (jchar*) malloc((*ckpLength) * sizeof(jchar));
     if (jTemp == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     (*env)->GetCharArrayRegion(env, jArray, 0, *ckpLength, jTemp);
@@ -503,7 +527,7 @@ void jCharArrayToCKUTF8CharArray(JNIEnv *env, const jcharArray jArray, CK_UTF8CH
     *ckpArray = (CK_UTF8CHAR_PTR) malloc (*ckpLength * sizeof(CK_UTF8CHAR));
     if (*ckpArray == NULL) {
         free(jTemp);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     for (i=0; i<(*ckpLength); i++) {
@@ -538,7 +562,7 @@ void jStringToCKUTF8CharArray(JNIEnv *env, const jstring jArray, CK_UTF8CHAR_PTR
     *ckpArray = (CK_UTF8CHAR_PTR) malloc((*ckpLength + 1) * sizeof(CK_UTF8CHAR));
     if (*ckpArray == NULL) {
         (*env)->ReleaseStringUTFChars(env, (jstring) jArray, pCharArray);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     strcpy((char*)*ckpArray, pCharArray);
@@ -571,7 +595,7 @@ void jAttributeArrayToCKAttributeArray(JNIEnv *env, jobjectArray jArray, CK_ATTR
     *ckpLength = jLongToCKULong(jLength);
     *ckpArray = (CK_ATTRIBUTE_PTR) malloc(*ckpLength * sizeof(CK_ATTRIBUTE));
     if (*ckpArray == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     TRACE1(", converting %d attibutes", jLength);
@@ -613,7 +637,7 @@ jbyteArray ckByteArrayToJByteArray(JNIEnv *env, const CK_BYTE_PTR ckpArray, CK_U
     } else {
         jpTemp = (jbyte*) malloc((ckLength) * sizeof(jbyte));
         if (jpTemp == NULL) {
-            JNU_ThrowOutOfMemoryError(env, 0);
+            throwOutOfMemoryError(env, 0);
             return NULL;
         }
         for (i=0; i<ckLength; i++) {
@@ -647,7 +671,7 @@ jlongArray ckULongArrayToJLongArray(JNIEnv *env, const CK_ULONG_PTR ckpArray, CK
 
     jpTemp = (jlong*) malloc((ckLength) * sizeof(jlong));
     if (jpTemp == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
     for (i=0; i<ckLength; i++) {
@@ -678,7 +702,7 @@ jcharArray ckCharArrayToJCharArray(JNIEnv *env, const CK_CHAR_PTR ckpArray, CK_U
 
     jpTemp = (jchar*) malloc(ckLength * sizeof(jchar));
     if (jpTemp == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
     for (i=0; i<ckLength; i++) {
@@ -709,7 +733,7 @@ jcharArray ckUTF8CharArrayToJCharArray(JNIEnv *env, const CK_UTF8CHAR_PTR ckpArr
 
     jpTemp = (jchar*) malloc(ckLength * sizeof(jchar));
     if (jpTemp == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
     for (i=0; i<ckLength; i++) {
@@ -812,7 +836,7 @@ CK_BBOOL* jBooleanObjectToCKBBoolPtr(JNIEnv *env, jobject jObject)
     jValue = (*env)->CallBooleanMethod(env, jObject, jValueMethod);
     ckpValue = (CK_BBOOL *) malloc(sizeof(CK_BBOOL));
     if (ckpValue == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
     *ckpValue = jBooleanToCKBBool(jValue);
@@ -842,7 +866,7 @@ CK_BYTE_PTR jByteObjectToCKBytePtr(JNIEnv *env, jobject jObject)
     jValue = (*env)->CallByteMethod(env, jObject, jValueMethod);
     ckpValue = (CK_BYTE_PTR) malloc(sizeof(CK_BYTE));
     if (ckpValue == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
     *ckpValue = jByteToCKByte(jValue);
@@ -871,7 +895,7 @@ CK_ULONG* jIntegerObjectToCKULongPtr(JNIEnv *env, jobject jObject)
     jValue = (*env)->CallIntMethod(env, jObject, jValueMethod);
     ckpValue = (CK_ULONG *) malloc(sizeof(CK_ULONG));
     if (ckpValue == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
     *ckpValue = jLongToCKLong(jValue);
@@ -900,7 +924,7 @@ CK_ULONG* jLongObjectToCKULongPtr(JNIEnv *env, jobject jObject)
     jValue = (*env)->CallLongMethod(env, jObject, jValueMethod);
     ckpValue = (CK_ULONG *) malloc(sizeof(CK_ULONG));
     if (ckpValue == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
     *ckpValue = jLongToCKULong(jValue);
@@ -930,7 +954,7 @@ CK_CHAR_PTR jCharObjectToCKCharPtr(JNIEnv *env, jobject jObject)
     jValue = (*env)->CallCharMethod(env, jObject, jValueMethod);
     ckpValue = (CK_CHAR_PTR) malloc(sizeof(CK_CHAR));
     if (ckpValue == NULL) {
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return NULL;
     }
     *ckpValue = jCharToCKChar(jValue);
@@ -1087,7 +1111,7 @@ void jObjectToPrimitiveCKObjectPtrPtr(JNIEnv *env, jobject jObject, CK_VOID_PTR 
         malloc((strlen(exceptionMsgPrefix) + strlen(classNameString) + 1));
     if (exceptionMsg == NULL) {
         (*env)->ReleaseStringUTFChars(env, jClassNameString, classNameString);
-        JNU_ThrowOutOfMemoryError(env, 0);
+        throwOutOfMemoryError(env, 0);
         return;
     }
     strcpy(exceptionMsg, exceptionMsgPrefix);
