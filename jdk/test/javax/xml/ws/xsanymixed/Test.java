@@ -27,7 +27,8 @@
  * @summary the content of xs:any content:mixed should remain as is,
  *          no white space changes and no changes to namespace prefixes
  * @run shell compile-wsdl.sh
- * @run main/othervm Test
+ * @compile -addmods java.xml.ws Test.java
+ * @run main/othervm -addmods java.xml.ws Test
  */
 
 import com.sun.net.httpserver.HttpServer;

@@ -38,6 +38,10 @@ module jdk.scripting.nashorn {
     exports jdk.nashorn.tools to
         jdk.scripting.nashorn.shell;
 
-    provides javax.script.ScriptEngineFactory with jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+    provides javax.script.ScriptEngineFactory
+        with jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+
+    provides jdk.dynalink.linker.GuardingDynamicLinkerExporter
+        with jdk.nashorn.api.linker.NashornLinkerExporter;
 }
 

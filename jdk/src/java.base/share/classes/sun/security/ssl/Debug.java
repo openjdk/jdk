@@ -45,7 +45,7 @@ public class Debug {
     private static String args;
 
     static {
-        args = GetPropertyAction.getProperty("javax.net.debug", "");
+        args = GetPropertyAction.privilegedGetProperty("javax.net.debug", "");
         args = args.toLowerCase(Locale.ENGLISH);
         if (args.equals("help")) {
             Help();
@@ -178,11 +178,11 @@ public class Debug {
     /**
      * Return the value of the boolean System property propName.
      *
-     * Note use of doPrivileged(). Do make accessible to applications.
+     * Note use of privileged action. Do NOT make accessible to applications.
      */
     static boolean getBooleanProperty(String propName, boolean defaultValue) {
         // if set, require value of either true or false
-        String b = GetPropertyAction.getProperty(propName);
+        String b = GetPropertyAction.privilegedGetProperty(propName);
         if (b == null) {
             return defaultValue;
         } else if (b.equalsIgnoreCase("false")) {

@@ -33,6 +33,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.util.Collections;
+import java.util.List;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.DynamicLinker;
 import jdk.dynalink.DynamicLinkerFactory;
@@ -70,6 +72,7 @@ public final class Bootstrap {
     private static final BeansLinker beansLinker = new BeansLinker(Bootstrap::createMissingMemberHandler);
     private static final GuardingDynamicLinker[] prioritizedLinkers;
     private static final GuardingDynamicLinker[] fallbackLinkers;
+
     static {
         final NashornBeansLinker nashornBeansLinker = new NashornBeansLinker(beansLinker);
         prioritizedLinkers = new GuardingDynamicLinker[] {
@@ -87,6 +90,19 @@ public final class Bootstrap {
 
     // do not create me!!
     private Bootstrap() {
+    }
+
+    /**
+     * Returns a list of exposed nashorn dynalink linkers.
+     *
+     * @return a list of exposed nashorn dynalink linkers.
+     */
+    public static List<GuardingDynamicLinker> getExposedLinkers() {
+        // we have to create BeansLinker without nashorn specific missing member handler!
+        // Or else, we'd return values such as 'undefined' to the external world!
+        final NashornBeansLinker nbl = new NashornBeansLinker(new BeansLinker());
+        final JSObjectLinker linker = new JSObjectLinker(nbl);
+        return Collections.singletonList(linker);
     }
 
     /**

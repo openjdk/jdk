@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,5 +207,12 @@ typedef jint    IntArgbDataType;
         COMP_PREFIX ## G = ComposeUshortGrayFrom3ByteRgb(r, g, b); \
         COMP_PREFIX ## A = (COMP_PREFIX ## A << 8) + COMP_PREFIX ## A; \
     } while (0)
+
+/*
+ * SrcOver ## TYPE ## BlendFactor
+ * Returns appropriate blend value for use in blending calculations.
+ */
+#define SrcOverIntArgbBlendFactor(dF, dA) \
+    (dA)
 
 #endif /* IntArgb_h_Included */

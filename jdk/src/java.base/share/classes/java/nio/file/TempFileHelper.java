@@ -46,7 +46,7 @@ class TempFileHelper {
 
     // temporary directory location
     private static final Path tmpdir =
-        Paths.get(GetPropertyAction.getProperty("java.io.tmpdir"));
+        Paths.get(GetPropertyAction.privilegedGetProperty("java.io.tmpdir"));
 
     private static final boolean isPosix =
         FileSystems.getDefault().supportedFileAttributeViews().contains("posix");

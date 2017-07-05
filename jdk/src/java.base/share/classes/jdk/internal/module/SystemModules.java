@@ -40,13 +40,18 @@ import java.lang.module.ModuleDescriptor;
  */
 public final class SystemModules {
     /**
-     * Name of the installed modules.
+     * Name of the system modules.
      *
-     * This array provides a way for InstalledModuleFinder to fallback
+     * This array provides a way for SystemModuleFinder to fallback
      * and read module-info.class from the run-time image instead of
      * the fastpath.
      */
     public static final String[] MODULE_NAMES = new String[1];
+
+    /**
+     * Hash of system modules.
+     */
+    public static String[] MODULES_TO_HASH = new String[1];
 
     /**
      * Number of packages in the boot layer from the installed modules.
@@ -54,7 +59,7 @@ public final class SystemModules {
      * Don't make it final to avoid inlining during compile time as
      * the value will be changed at jlink time.
      */
-    public static final int PACKAGES_IN_BOOT_LAYER = 1024;
+    public static int PACKAGES_IN_BOOT_LAYER = 1024;
 
     /**
      * Returns a non-empty array of ModuleDescriptors in the run-time image.
@@ -64,4 +69,5 @@ public final class SystemModules {
     public static ModuleDescriptor[] modules() {
         return new ModuleDescriptor[0];
     }
+
 }

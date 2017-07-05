@@ -273,7 +273,8 @@ public final class Version
      */
     public static Version current() {
         if (current == null) {
-            current = parse(GetPropertyAction.getProperty("java.version"));
+            current = parse(
+                    GetPropertyAction.privilegedGetProperty("java.version"));
         }
         return current;
     }

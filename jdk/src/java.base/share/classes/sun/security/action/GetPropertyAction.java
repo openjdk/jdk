@@ -93,9 +93,14 @@ public class GetPropertyAction implements PrivilegedAction<String> {
      * if no security manager is present. This is unsafe for inclusion in a
      * public API but allowable here since this class is now encapsulated.
      *
+     * Note that this method performs a privileged action using caller-provided
+     * inputs. The caller of this method should take care to ensure that the
+     * inputs are not tainted and the returned property is not made accessible
+     * to untrusted code if it contains sensitive information.
+     *
      * @param theProp the name of the system property.
      */
-    public static String getProperty(String theProp) {
+    public static String privilegedGetProperty(String theProp) {
         if (System.getSecurityManager() == null) {
             return System.getProperty(theProp);
         } else {
@@ -109,10 +114,16 @@ public class GetPropertyAction implements PrivilegedAction<String> {
      * if no security manager is present. This is unsafe for inclusion in a
      * public API but allowable here since this class is now encapsulated.
      *
+     * Note that this method performs a privileged action using caller-provided
+     * inputs. The caller of this method should take care to ensure that the
+     * inputs are not tainted and the returned property is not made accessible
+     * to untrusted code if it contains sensitive information.
+     *
      * @param theProp the name of the system property.
      * @param defaultVal the default value.
      */
-    public static String getProperty(String theProp, String defaultVal) {
+    public static String privilegedGetProperty(String theProp,
+            String defaultVal) {
         if (System.getSecurityManager() == null) {
             return System.getProperty(theProp, defaultVal);
         } else {
@@ -126,8 +137,13 @@ public class GetPropertyAction implements PrivilegedAction<String> {
      * having to go through doPrivileged if no security manager is present.
      * This is unsafe for inclusion in a public API but allowable here since
      * this class is now encapsulated.
+     *
+     * Note that this method performs a privileged action, and callers of
+     * this method should take care to ensure that the returned properties
+     * are not made accessible to untrusted code since it may contain
+     * sensitive information.
      */
-    public static Properties getProperties() {
+    public static Properties privilegedGetProperties() {
         if (System.getSecurityManager() == null) {
             return System.getProperties();
         } else {

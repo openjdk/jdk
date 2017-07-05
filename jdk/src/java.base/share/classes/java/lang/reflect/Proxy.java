@@ -582,7 +582,7 @@ public class Proxy implements java.io.Serializable {
         }
 
         private static final String DEBUG =
-                GetPropertyAction.getProperty("jdk.proxy.debug", "");
+                GetPropertyAction.privilegedGetProperty("jdk.proxy.debug", "");
 
         private static boolean isDebug() {
             return !DEBUG.isEmpty();

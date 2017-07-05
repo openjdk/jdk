@@ -250,7 +250,9 @@ public abstract class Configuration {
                                             finalClass, false,
                                             Thread.currentThread().getContextClassLoader()
                                     ).asSubclass(Configuration.class);
-                                    return implClass.newInstance();
+                                    @SuppressWarnings("deprecation")
+                                    Configuration result = implClass.newInstance();
+                                    return result;
                                 }
                             });
                     AccessController.doPrivileged(

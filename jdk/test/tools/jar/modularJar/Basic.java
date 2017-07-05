@@ -340,43 +340,43 @@ public class Basic {
             "--file=" + modularJar.toString())
             .assertSuccess()
             .resultChecker(r -> {
-                // Expect similar output: "Name:bar,  Requires: foo,...
-                // Conceals: jdk.test.foo, jdk.test.foo.internal"
-                Pattern p = Pattern.compile("\\s+Name:\\s+bar\\s+Requires:\\s+foo");
+                // Expect similar output: "bar, requires mandated foo, ...
+                // conceals jdk.test.foo, conceals jdk.test.foo.internal"
+                Pattern p = Pattern.compile("\\s+bar\\s+requires\\s++foo");
                 assertTrue(p.matcher(r.output).find(),
-                           "Expecting to find \"Name: bar, Requires: foo,...\"",
+                           "Expecting to find \"bar, requires foo,...\"",
                            "in output, but did not: [" + r.output + "]");
                 p = Pattern.compile(
-                        "Conceals:\\s+jdk.test.foo\\s+jdk.test.foo.internal");
+                        "conceals\\s+jdk.test.foo\\s+conceals\\s+jdk.test.foo.internal");
                 assertTrue(p.matcher(r.output).find(),
-                           "Expecting to find \"Conceals: jdk.test.foo,...\"",
+                           "Expecting to find \"conceals jdk.test.foo,...\"",
                            "in output, but did not: [" + r.output + "]");
             });
     }
 
     @Test
-    public void dependencesFooBar() throws IOException {
+    public void hashBarInFooModule() throws IOException {
         Path mp = Paths.get("dependencesFooBar");
         createTestDir(mp);
 
-        Path modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
-        Path modularJar = mp.resolve(FOO.moduleName + ".jar");
-        jar("--create",
-            "--file=" + modularJar.toString(),
-            "--main-class=" + FOO.mainClass,
-            "--module-version=" + FOO.version,
-            "--no-manifest",
-            "-C", modClasses.toString(), ".")
-            .assertSuccess();
-
-        modClasses = MODULE_CLASSES.resolve(BAR.moduleName);
-        modularJar = mp.resolve(BAR.moduleName + ".jar");
+        Path modClasses = MODULE_CLASSES.resolve(BAR.moduleName);
+        Path modularJar = mp.resolve(BAR.moduleName + ".jar");
         jar("--create",
             "--file=" + modularJar.toString(),
             "--main-class=" + BAR.mainClass,
             "--module-version=" + BAR.version,
+            "--no-manifest",
+            "-C", modClasses.toString(), ".")
+            .assertSuccess();
+
+        modClasses = MODULE_CLASSES.resolve(FOO.moduleName);
+        modularJar = mp.resolve(FOO.moduleName + ".jar");
+        jar("--create",
+            "--file=" + modularJar.toString(),
+            "--main-class=" + FOO.mainClass,
+            "--module-version=" + FOO.version,
             "--modulepath=" + mp.toString(),
-            "--hash-dependencies=" + "foo",  // dependency on foo
+            "--hash-modules=" + "bar",
             "--no-manifest",
             "-C", modClasses.toString(), ".")
             .assertSuccess();
@@ -392,18 +392,9 @@ public class Basic {
     }
 
     @Test
-    public void badDependencyFooBar() throws IOException {
+    public void invalidHashInFooModule() throws IOException {
         Path mp = Paths.get("badDependencyFooBar");
         createTestDir(mp);
-
-        Path fooClasses = MODULE_CLASSES.resolve(FOO.moduleName);
-        Path fooJar = mp.resolve(FOO.moduleName + ".jar");
-        jar("--create",
-            "--file=" + fooJar.toString(),
-            "--main-class=" + FOO.mainClass,
-            "--module-version=" + FOO.version,
-            "--no-manifest",
-            "-C", fooClasses.toString(), ".").assertSuccess();
 
         Path barClasses = MODULE_CLASSES.resolve(BAR.moduleName);
         Path barJar = mp.resolve(BAR.moduleName + ".jar");
@@ -411,30 +402,39 @@ public class Basic {
             "--file=" + barJar.toString(),
             "--main-class=" + BAR.mainClass,
             "--module-version=" + BAR.version,
-            "--modulepath=" + mp.toString(),
-            "--hash-dependencies=" + "foo",  // dependency on foo
             "--no-manifest",
             "-C", barClasses.toString(), ".").assertSuccess();
 
-        // Rebuild foo.jar with a change that will cause its hash to be different
-        FileUtils.deleteFileWithRetry(fooJar);
+        Path fooClasses = MODULE_CLASSES.resolve(FOO.moduleName);
+        Path fooJar = mp.resolve(FOO.moduleName + ".jar");
         jar("--create",
             "--file=" + fooJar.toString(),
             "--main-class=" + FOO.mainClass,
-            "--module-version=" + FOO.version + ".1", // a newer version
+            "--module-version=" + FOO.version,
+            "--modulepath=" + mp.toString(),
+            "--hash-modules=" + "bar",
             "--no-manifest",
             "-C", fooClasses.toString(), ".").assertSuccess();
+
+        // Rebuild bar.jar with a change that will cause its hash to be different
+        FileUtils.deleteFileWithRetry(barJar);
+        jar("--create",
+            "--file=" + barJar.toString(),
+            "--main-class=" + BAR.mainClass,
+            "--module-version=" + BAR.version + ".1", // a newer version
+            "--no-manifest",
+            "-C", barClasses.toString(), ".").assertSuccess();
 
         java(mp, BAR.moduleName + "/" + BAR.mainClass,
              "-XaddExports:java.base/jdk.internal.module=bar")
             .assertFailure()
             .resultChecker(r -> {
                 // Expect similar output: "java.lang.module.ResolutionException: Hash
-                // of foo (WdktSIQSkd4+CEacpOZoeDrCosMATNrIuNub9b5yBeo=) differs to
+                // of bar (WdktSIQSkd4+CEacpOZoeDrCosMATNrIuNub9b5yBeo=) differs to
                 // expected hash (iepvdv8xTeVrFgMtUhcFnmetSub6qQHCHc92lSaSEg0=)"
-                Pattern p = Pattern.compile(".*Hash of foo.*differs to expected hash.*");
+                Pattern p = Pattern.compile(".*Hash of bar.*differs to expected hash.*");
                 assertTrue(p.matcher(r.output).find(),
-                      "Expecting error message containing \"Hash of foo ... differs to"
+                      "Expecting error message containing \"Hash of bar ... differs to"
                               + " expected hash...\" but got: [", r.output + "]");
             });
     }
@@ -454,7 +454,7 @@ public class Basic {
 
          jar("--create",
              "--file=" + modularJar.toString(),
-             "--hash-dependencies=" + ".*",   // no module-info.class
+             "--hash-modules=" + ".*",   // no module-info.class
              "-C", modClasses.toString(), "jdk")
              .assertFailure();      // TODO: expected failure message
     }

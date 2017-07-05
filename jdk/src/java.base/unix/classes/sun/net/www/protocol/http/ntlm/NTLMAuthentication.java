@@ -76,7 +76,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
     private String hostname;
     /* Domain to use if not specified by user */
     private static String defaultDomain =
-            GetPropertyAction.getProperty("http.auth.ntlm.domain", "");
+            GetPropertyAction.privilegedGetProperty("http.auth.ntlm.domain", "");
 
     public static boolean supportsTransparentAuth () {
         return false;
@@ -141,7 +141,7 @@ public class NTLMAuthentication extends AuthenticationInfo {
         password = pw.getPassword();
         init0();
         try {
-            String version = GetPropertyAction.getProperty("ntlm.version");
+            String version = GetPropertyAction.privilegedGetProperty("ntlm.version");
             client = new Client(version, hostname, username, ntdomain, password);
         } catch (NTLMException ne) {
             try {

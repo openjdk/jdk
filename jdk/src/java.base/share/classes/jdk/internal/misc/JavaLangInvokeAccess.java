@@ -35,4 +35,9 @@ public interface JavaLangInvokeAccess {
      * Returns the name for the given MemberName
      */
     String getName(Object mname);
+
+    /**
+     * Returns {@code true} if the given MemberName is a native method
+     */
+    boolean isNative(Object mname);
 }

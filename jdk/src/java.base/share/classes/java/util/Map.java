@@ -1282,7 +1282,7 @@ public interface Map<K, V> {
      * @since 9
      */
     static <K, V> Map<K, V> of() {
-        return Collections.emptyMap();
+        return new ImmutableCollections.Map0<>();
     }
 
     /**
@@ -1299,7 +1299,7 @@ public interface Map<K, V> {
      * @since 9
      */
     static <K, V> Map<K, V> of(K k1, V v1) {
-        return Collections.singletonMap(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
+        return new ImmutableCollections.Map1<>(k1, v1);
     }
 
     /**
@@ -1319,13 +1319,7 @@ public interface Map<K, V> {
      * @since 9
      */
     static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2) {
-        Map<K, V> map = new HashMap<>(3); // specify number of buckets to avoid resizing
-        map.put(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
-        map.put(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
-        if (map.size() != 2) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
+        return new ImmutableCollections.MapN<>(k1, v1, k2, v2);
     }
 
     /**
@@ -1347,14 +1341,7 @@ public interface Map<K, V> {
      * @since 9
      */
     static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
-        Map<K, V> map = new HashMap<>(5); // specify number of buckets to avoid resizing
-        map.put(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
-        map.put(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
-        map.put(Objects.requireNonNull(k3), Objects.requireNonNull(v3));
-        if (map.size() != 3) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
+        return new ImmutableCollections.MapN<>(k1, v1, k2, v2, k3, v3);
     }
 
     /**
@@ -1378,15 +1365,7 @@ public interface Map<K, V> {
      * @since 9
      */
     static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
-        Map<K, V> map = new HashMap<>(6); // specify number of buckets to avoid resizing
-        map.put(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
-        map.put(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
-        map.put(Objects.requireNonNull(k3), Objects.requireNonNull(v3));
-        map.put(Objects.requireNonNull(k4), Objects.requireNonNull(v4));
-        if (map.size() != 4) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
+        return new ImmutableCollections.MapN<>(k1, v1, k2, v2, k3, v3, k4, v4);
     }
 
     /**
@@ -1412,16 +1391,7 @@ public interface Map<K, V> {
      * @since 9
      */
     static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
-        Map<K, V> map = new HashMap<>(7); // specify number of buckets to avoid resizing
-        map.put(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
-        map.put(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
-        map.put(Objects.requireNonNull(k3), Objects.requireNonNull(v3));
-        map.put(Objects.requireNonNull(k4), Objects.requireNonNull(v4));
-        map.put(Objects.requireNonNull(k5), Objects.requireNonNull(v5));
-        if (map.size() != 5) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
+        return new ImmutableCollections.MapN<>(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5);
     }
 
     /**
@@ -1450,17 +1420,8 @@ public interface Map<K, V> {
      */
     static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
                                K k6, V v6) {
-        Map<K, V> map = new HashMap<>(9); // specify number of buckets to avoid resizing
-        map.put(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
-        map.put(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
-        map.put(Objects.requireNonNull(k3), Objects.requireNonNull(v3));
-        map.put(Objects.requireNonNull(k4), Objects.requireNonNull(v4));
-        map.put(Objects.requireNonNull(k5), Objects.requireNonNull(v5));
-        map.put(Objects.requireNonNull(k6), Objects.requireNonNull(v6));
-        if (map.size() != 6) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
+        return new ImmutableCollections.MapN<>(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5,
+                                               k6, v6);
     }
 
     /**
@@ -1491,18 +1452,8 @@ public interface Map<K, V> {
      */
     static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
                                K k6, V v6, K k7, V v7) {
-        Map<K, V> map = new HashMap<>(10); // specify number of buckets to avoid resizing
-        map.put(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
-        map.put(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
-        map.put(Objects.requireNonNull(k3), Objects.requireNonNull(v3));
-        map.put(Objects.requireNonNull(k4), Objects.requireNonNull(v4));
-        map.put(Objects.requireNonNull(k5), Objects.requireNonNull(v5));
-        map.put(Objects.requireNonNull(k6), Objects.requireNonNull(v6));
-        map.put(Objects.requireNonNull(k7), Objects.requireNonNull(v7));
-        if (map.size() != 7) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
+        return new ImmutableCollections.MapN<>(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5,
+                                               k6, v6, k7, v7);
     }
 
     /**
@@ -1535,19 +1486,8 @@ public interface Map<K, V> {
      */
     static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
                                K k6, V v6, K k7, V v7, K k8, V v8) {
-        Map<K, V> map = new HashMap<>(11); // specify number of buckets to avoid resizing
-        map.put(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
-        map.put(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
-        map.put(Objects.requireNonNull(k3), Objects.requireNonNull(v3));
-        map.put(Objects.requireNonNull(k4), Objects.requireNonNull(v4));
-        map.put(Objects.requireNonNull(k5), Objects.requireNonNull(v5));
-        map.put(Objects.requireNonNull(k6), Objects.requireNonNull(v6));
-        map.put(Objects.requireNonNull(k7), Objects.requireNonNull(v7));
-        map.put(Objects.requireNonNull(k8), Objects.requireNonNull(v8));
-        if (map.size() != 8) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
+        return new ImmutableCollections.MapN<>(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5,
+                                               k6, v6, k7, v7, k8, v8);
     }
 
     /**
@@ -1582,20 +1522,8 @@ public interface Map<K, V> {
      */
     static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
                                K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
-        Map<K, V> map = new HashMap<>(13); // specify number of buckets to avoid resizing
-        map.put(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
-        map.put(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
-        map.put(Objects.requireNonNull(k3), Objects.requireNonNull(v3));
-        map.put(Objects.requireNonNull(k4), Objects.requireNonNull(v4));
-        map.put(Objects.requireNonNull(k5), Objects.requireNonNull(v5));
-        map.put(Objects.requireNonNull(k6), Objects.requireNonNull(v6));
-        map.put(Objects.requireNonNull(k7), Objects.requireNonNull(v7));
-        map.put(Objects.requireNonNull(k8), Objects.requireNonNull(v8));
-        map.put(Objects.requireNonNull(k9), Objects.requireNonNull(v9));
-        if (map.size() != 9) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
+        return new ImmutableCollections.MapN<>(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5,
+                                               k6, v6, k7, v7, k8, v8, k9, v9);
     }
 
     /**
@@ -1632,21 +1560,8 @@ public interface Map<K, V> {
      */
     static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
                                K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
-        Map<K, V> map = new HashMap<>(14); // specify number of buckets to avoid resizing
-        map.put(Objects.requireNonNull(k1), Objects.requireNonNull(v1));
-        map.put(Objects.requireNonNull(k2), Objects.requireNonNull(v2));
-        map.put(Objects.requireNonNull(k3), Objects.requireNonNull(v3));
-        map.put(Objects.requireNonNull(k4), Objects.requireNonNull(v4));
-        map.put(Objects.requireNonNull(k5), Objects.requireNonNull(v5));
-        map.put(Objects.requireNonNull(k6), Objects.requireNonNull(v6));
-        map.put(Objects.requireNonNull(k7), Objects.requireNonNull(v7));
-        map.put(Objects.requireNonNull(k8), Objects.requireNonNull(v8));
-        map.put(Objects.requireNonNull(k9), Objects.requireNonNull(v9));
-        map.put(Objects.requireNonNull(k10), Objects.requireNonNull(v10));
-        if (map.size() != 10) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
+        return new ImmutableCollections.MapN<>(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5,
+                                               k6, v6, k7, v7, k8, v8, k9, v9, k10, v10);
     }
 
     /**
@@ -1683,15 +1598,21 @@ public interface Map<K, V> {
     @SafeVarargs
     @SuppressWarnings("varargs")
     static <K, V> Map<K, V> ofEntries(Entry<? extends K, ? extends V>... entries) {
-        Map<K, V> map = new HashMap<>(entries.length * 4 / 3 + 1); // throws NPE if entries is null
-        for (Entry<? extends K, ? extends V> e : entries) {
-            // next line throws NPE if e is null
-            map.put(Objects.requireNonNull(e.getKey()), Objects.requireNonNull(e.getValue()));
+        Objects.requireNonNull(entries);
+        if (entries.length == 0) {
+            return new ImmutableCollections.Map0<>();
+        } else if (entries.length == 1) {
+            return new ImmutableCollections.Map1<>(entries[0].getKey(),
+                                                   entries[0].getValue());
+        } else {
+            Object[] kva = new Object[entries.length << 1];
+            int a = 0;
+            for (Entry<? extends K, ? extends V> entry : entries) {
+                kva[a++] = entry.getKey();
+                kva[a++] = entry.getValue();
+            }
+            return new ImmutableCollections.MapN<>(kva);
         }
-        if (map.size() != entries.length) {
-            throw new IllegalArgumentException("duplicate keys");
-        }
-        return Collections.unmodifiableMap(map);
     }
 
     /**

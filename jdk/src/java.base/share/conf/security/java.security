@@ -120,29 +120,29 @@ jdk.security.provider.preferred=AES:SunJCE, RSA:SunRsaSign
 #
 # Sun Provider SecureRandom seed source.
 #
-# Select the primary source of seed data for the "SHA1PRNG" and
-# "NativePRNG" SecureRandom implementations in the "Sun" provider.
+# Select the primary source of seed data for the "NativePRNG", "SHA1PRNG"
+# and "DRBG" SecureRandom implementations in the "Sun" provider.
 # (Other SecureRandom implementations might also use this property.)
 #
 # On Unix-like systems (for example, Solaris/Linux/MacOS), the
-# "NativePRNG" and "SHA1PRNG" implementations obtains seed data from
+# "NativePRNG", "SHA1PRNG" and "DRBG" implementations obtains seed data from
 # special device files such as file:/dev/random.
 #
 # On Windows systems, specifying the URLs "file:/dev/random" or
 # "file:/dev/urandom" will enable the native Microsoft CryptoAPI seeding
-# mechanism for SHA1PRNG.
+# mechanism for SHA1PRNG and DRBG.
 #
 # By default, an attempt is made to use the entropy gathering device
 # specified by the "securerandom.source" Security property.  If an
 # exception occurs while accessing the specified URL:
 #
-#     SHA1PRNG:
-#         the traditional system/thread activity algorithm will be used.
-#
 #     NativePRNG:
 #         a default value of /dev/random will be used.  If neither
 #         are available, the implementation will be disabled.
 #         "file" is the only currently supported protocol type.
+#
+#     SHA1PRNG and DRBG:
+#         the traditional system/thread activity algorithm will be used.
 #
 # The entropy gathering device can also be specified with the System
 # property "java.security.egd". For example:
@@ -154,7 +154,7 @@ jdk.security.provider.preferred=AES:SunJCE, RSA:SunRsaSign
 #
 # In addition, if "file:/dev/random" or "file:/dev/urandom" is
 # specified, the "NativePRNG" implementation will be more preferred than
-# SHA1PRNG in the Sun provider.
+# DRBG and SHA1PRNG in the Sun provider.
 #
 securerandom.source=file:/dev/random
 
@@ -169,11 +169,77 @@ securerandom.source=file:/dev/random
 # entries.
 #
 #ifdef windows
-securerandom.strongAlgorithms=Windows-PRNG:SunMSCAPI,SHA1PRNG:SUN
+securerandom.strongAlgorithms=Windows-PRNG:SunMSCAPI,DRBG:SUN
 #endif
 #ifndef windows
-securerandom.strongAlgorithms=NativePRNGBlocking:SUN
+securerandom.strongAlgorithms=NativePRNGBlocking:SUN,DRBG:SUN
 #endif
+
+#
+# Sun provider DRBG configuration and default instantiation request.
+#
+# NIST SP 800-90Ar1 lists several DRBG mechanisms. Each can be configured
+# with a DRBG algorithm name, and can be instantiated with a security strength,
+# prediction resistance support, etc. This property defines the configuration
+# and the default instantiation request of "DRBG" SecureRandom implementations
+# in the SUN provider. (Other DRBG implementations can also use this property.)
+# Applications can request different instantiation parameters like security
+# strength, capability, personalization string using one of the
+# getInstance(...,SecureRandomParameters,...) methods with a
+# DrbgParameters.Instantiation argument, but other settings such as the
+# mechanism and DRBG algorithm names are not currently configurable by any API.
+#
+# Please note that the SUN implementation of DRBG always supports reseeding.
+#
+# The value of this property is a comma-separated list of all configurable
+# aspects. The aspects can appear in any order but the same aspect can only
+# appear at most once. Its BNF-style definition is:
+#
+#   Value:
+#     aspect { "," aspect }
+#
+#   aspect:
+#     mech_name | algorithm_name | strength | capability | df
+#
+#   // The DRBG mechanism to use. Default "Hash_DRBG"
+#   mech_name:
+#     "Hash_DRBG" | "HMAC_DRBG" | "CTR_DRBG"
+#
+#   // The DRBG algorithm name. The "SHA-***" names are for Hash_DRBG and
+#   // HMAC_DRBG, default "SHA-256". "3KeyTDEA" and "AES-***" names are for
+#   // CTR_DRBG, default "AES-128" when using the limited cryptographic
+#   // or "AES-256" when using the unlimited.
+#   algorithm_name:
+#     "SHA-1" | "SHA-224" | "SHA-512/224" | "SHA-256" |
+#     "SHA-512/256" | "SHA-384" | "SHA-512" |
+#     "3KeyTDEA" | "AES-128" | "AES-192" | "AES-256"
+#
+#   // Security strength requested. Default "128", or "112"
+#   // if mech_name is CTR_DRBG and algorithm_name is "3KeyTDEA"
+#   strength:
+#     "112" | "128" | "192" | "256"
+#
+#   // Prediction resistance and reseeding request. Default "none"
+#   //  "pr_and_reseed" - Both prediction resistance and reseeding
+#   //                    support requested
+#   //  "reseed_only"   - Only reseeding support requested
+#   //  "none"          - Neither prediction resistance not reseeding
+#   //                    support requested
+#   pr:
+#     "pr_and_reseed" | "reseed_only" | "none"
+#
+#   // Whether a derivation function should be used. only applicable
+#   // to CTR_DRBG. Default "use_df"
+#   df:
+#     "use_df" | "no_df"
+#
+# Examples,
+#   securerandom.drbg.config=Hash_DRBG,SHA-1,112,none
+#   securerandom.drbg.config=CTR_DRBG,AES-256,192,pr_and_reseed,use_df
+#
+# The default value is an empty string, which is equivalent to
+#   securerandom.drbg.config=Hash_DRBG,SHA-256,128,none
+securerandom.drbg.config=
 
 #
 # Class to instantiate as the javax.security.auth.login.Configuration
