@@ -44,6 +44,7 @@
 #include "runtime/unhandledOops.hpp"
 #include "trace/traceBackend.hpp"
 #include "trace/traceMacros.hpp"
+#include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS

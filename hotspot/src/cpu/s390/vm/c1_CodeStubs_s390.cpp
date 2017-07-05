@@ -31,6 +31,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "nativeInst_s390.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_s390.inline.hpp"
 #if INCLUDE_ALL_GCS

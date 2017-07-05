@@ -45,6 +45,7 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 
 # include <sys/stat.h>

@@ -35,6 +35,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/align.hpp"
 #include "vmreg_sparc.inline.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"

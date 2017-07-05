@@ -40,6 +40,7 @@
 #include "opto/vectornode.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 
 OptoReg::Name OptoReg::c_frame_pointer;
 

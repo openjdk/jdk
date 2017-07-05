@@ -48,8 +48,8 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "services/threadService.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
-#include "logging/log.hpp"
 
 #define NOFAILOVER_MAJOR_VERSION                       51
 #define NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION  51

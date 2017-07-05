@@ -26,6 +26,7 @@
 #define SHARE_VM_UTILITIES_COPY_HPP
 
 #include "runtime/stubRoutines.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 // Assembly code for platforms that need it.

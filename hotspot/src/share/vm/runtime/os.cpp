@@ -60,6 +60,7 @@
 #include "services/memTracker.hpp"
 #include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
+#include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 

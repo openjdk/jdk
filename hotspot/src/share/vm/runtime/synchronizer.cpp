@@ -44,6 +44,7 @@
 #include "runtime/vframe.hpp"
 #include "trace/traceMacros.hpp"
 #include "trace/tracing.hpp"
+#include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"

@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_SHARED_GENERATIONSPEC_HPP
 
 #include "gc/shared/generation.hpp"
+#include "utilities/align.hpp"
 
 // The specification of a generation.  This class also encapsulates
 // some generation-specific behavior.  This is done here rather than as a

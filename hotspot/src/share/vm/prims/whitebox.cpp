@@ -55,6 +55,7 @@
 #include "runtime/sweeper.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"

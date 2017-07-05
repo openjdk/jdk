@@ -34,6 +34,7 @@
 #include "oops/method.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/timer.hpp"
+#include "utilities/align.hpp"
 
 
 // Standard closure for BytecodeTracer: prints the current bytecode

@@ -30,6 +30,7 @@
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "utilities/align.hpp"
 
 // Whereas PSOldGen takes the maximum size of the generation
 // (which doesn't change in the case of PSOldGen) as a parameter,

@@ -27,6 +27,7 @@
 
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspace.hpp"
+#include "utilities/align.hpp"
 
 // Layout of the file:
 //  header: dump of archive instance plus versioning info, datestamp, etc.

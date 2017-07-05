@@ -33,6 +33,7 @@
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "utilities/align.hpp"
 
 PSYoungGen::PSYoungGen(size_t        initial_size,
                        size_t        min_size,

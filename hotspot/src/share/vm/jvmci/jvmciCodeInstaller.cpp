@@ -37,6 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "utilities/align.hpp"
 
 // frequently used constants
 // Allocate them with new so they are never destroyed (otherwise, a

@@ -27,6 +27,7 @@
 
 #include "gc/shared/specialized_oop_closures.hpp"
 #include "oops/arrayOop.hpp"
+#include "utilities/align.hpp"
 
 // An objArrayOop is an array containing oops.
 // Evaluating "String arg[10]" will create an objArrayOop.

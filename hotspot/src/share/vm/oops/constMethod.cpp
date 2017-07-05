@@ -30,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
+#include "utilities/align.hpp"
 
 // Static initialization
 const u2 ConstMethod::MAX_IDNUM   = 0xFFFE;

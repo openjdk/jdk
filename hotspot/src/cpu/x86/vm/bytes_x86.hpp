@@ -26,6 +26,7 @@
 #define CPU_X86_VM_BYTES_X86_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 class Bytes: AllStatic {

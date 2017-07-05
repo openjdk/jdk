@@ -37,6 +37,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/align.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
 #endif

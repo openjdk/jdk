@@ -26,6 +26,7 @@
 
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/prefetch.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"

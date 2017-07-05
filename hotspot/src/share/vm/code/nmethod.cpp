@@ -47,11 +47,11 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/align.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
+#include "utilities/resourceHash.hpp"
 #include "utilities/xmlstream.hpp"
-#include "logging/log.hpp"
 #ifdef SHARK
 #include "shark/sharkCompiler.hpp"
 #endif

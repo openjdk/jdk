@@ -54,6 +54,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
+#include "utilities/align.hpp"
 #include "utilities/preserveException.hpp"
 
 #if INCLUDE_JVMCI

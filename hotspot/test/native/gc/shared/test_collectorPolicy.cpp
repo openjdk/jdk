@@ -25,6 +25,7 @@
 #include "gc/shared/collectorPolicy.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "unittest.hpp"

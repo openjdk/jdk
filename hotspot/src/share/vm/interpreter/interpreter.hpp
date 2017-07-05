@@ -29,6 +29,7 @@
 #include "interpreter/cppInterpreter.hpp"
 #include "interpreter/templateInterpreter.hpp"
 #include "memory/resourceArea.hpp"
+#include "utilities/align.hpp"
 
 // This file contains the platform-independent parts
 // of the interpreter and the interpreter generator.

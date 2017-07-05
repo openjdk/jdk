@@ -36,6 +36,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframeArray.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_ppc.inline.hpp"
 #if INCLUDE_ALL_GCS

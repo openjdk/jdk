@@ -41,6 +41,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframe.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/align.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif

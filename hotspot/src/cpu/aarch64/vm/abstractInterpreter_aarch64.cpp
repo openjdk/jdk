@@ -28,6 +28,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
 #include "runtime/frame.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 

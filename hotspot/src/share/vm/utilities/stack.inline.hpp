@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_UTILITIES_STACK_INLINE_HPP
 #define SHARE_VM_UTILITIES_STACK_INLINE_HPP
 
+#include "utilities/align.hpp"
 #include "utilities/stack.hpp"
 
 template <MEMFLAGS F> StackBase<F>::StackBase(size_t segment_size, size_t max_cache_size,

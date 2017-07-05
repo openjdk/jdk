@@ -35,6 +35,7 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/signature.hpp"
 #include "stack_zero.inline.hpp"
+#include "utilities/align.hpp"
 
 void InterpreterRuntime::SignatureHandlerGeneratorBase::pass_int() {
   push(T_INT);

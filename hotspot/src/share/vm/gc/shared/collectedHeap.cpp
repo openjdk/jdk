@@ -41,6 +41,7 @@
 #include "runtime/init.hpp"
 #include "runtime/thread.inline.hpp"
 #include "services/heapDumper.hpp"
+#include "utilities/align.hpp"
 
 
 #ifdef ASSERT

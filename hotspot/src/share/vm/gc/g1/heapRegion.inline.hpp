@@ -31,6 +31,7 @@
 #include "gc/shared/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/align.hpp"
 
 inline HeapWord* G1ContiguousSpace::allocate_impl(size_t min_word_size,
                                                   size_t desired_word_size,

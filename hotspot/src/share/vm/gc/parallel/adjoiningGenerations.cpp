@@ -29,6 +29,7 @@
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "utilities/align.hpp"
 #include "utilities/ostream.hpp"
 
 // If boundary moving is being used, create the young gen and old

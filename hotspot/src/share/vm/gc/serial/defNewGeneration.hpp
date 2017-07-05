@@ -31,6 +31,7 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/preservedMarks.hpp"
+#include "utilities/align.hpp"
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;

@@ -29,6 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "runtime/orderAccess.hpp"
+#include "utilities/align.hpp"
 
 // Array for metadata allocation
 

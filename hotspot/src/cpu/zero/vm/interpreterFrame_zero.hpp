@@ -30,6 +30,7 @@
 #include "oops/method.hpp"
 #include "runtime/thread.hpp"
 #include "stack_zero.hpp"
+#include "utilities/align.hpp"
 
 #ifdef CC_INTERP
 // |  ...               |

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/icache.hpp"
+#include "utilities/align.hpp"
 
 // The flush stub function address
 AbstractICache::flush_icache_stub_t AbstractICache::_flush_icache_stub = NULL;

@@ -26,6 +26,7 @@
 #define SHARE_VM_RUNTIME_ATOMIC_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 enum cmpxchg_memory_order {

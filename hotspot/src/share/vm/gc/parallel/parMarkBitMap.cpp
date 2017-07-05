@@ -30,6 +30,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 bool

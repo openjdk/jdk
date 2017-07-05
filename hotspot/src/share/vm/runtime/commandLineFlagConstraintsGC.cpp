@@ -33,6 +33,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/thread.inline.hpp"
+#include "utilities/align.hpp"
 #include "utilities/defaultStream.hpp"
 
 #if INCLUDE_ALL_GCS

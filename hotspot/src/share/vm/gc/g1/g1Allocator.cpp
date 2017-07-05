@@ -29,6 +29,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
+#include "utilities/align.hpp"
 
 G1DefaultAllocator::G1DefaultAllocator(G1CollectedHeap* heap) :
   G1Allocator(heap),

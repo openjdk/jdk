@@ -28,6 +28,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "utilities/align.hpp"
 
 
 // Implementation of StubQueue

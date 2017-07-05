@@ -41,6 +41,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/threadService.hpp"
 #include "trace/tracing.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"

@@ -27,6 +27,7 @@
 
 #include "gc/parallel/psPromotionLAB.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "utilities/align.hpp"
 
 HeapWord* PSYoungPromotionLAB::allocate(size_t size) {
   // Can't assert this, when young fills, we keep the LAB around, but flushed.

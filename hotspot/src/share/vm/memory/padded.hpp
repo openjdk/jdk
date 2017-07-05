@@ -26,6 +26,7 @@
 #define SHARE_VM_MEMORY_PADDED_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Bytes needed to pad type to avoid cache-line sharing; alignment should be the

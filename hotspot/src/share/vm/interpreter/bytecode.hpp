@@ -28,6 +28,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 
 class ciBytecodeStream;

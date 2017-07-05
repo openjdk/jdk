@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
+#include "utilities/align.hpp"
 #include "utilities/bitMap.hpp"
 
 class WorkGang;

@@ -27,6 +27,7 @@
 
 #include "memory/universe.inline.hpp"
 #include "oops/oop.hpp"
+#include "utilities/align.hpp"
 
 // arrayOopDesc is the abstract baseclass for all arrays.  It doesn't
 // declare pure virtual to enforce this because that would allocate a vtbl

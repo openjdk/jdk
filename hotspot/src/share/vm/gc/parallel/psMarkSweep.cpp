@@ -55,6 +55,7 @@
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/align.hpp"
 #include "utilities/events.hpp"
 #include "utilities/stack.inline.hpp"
 

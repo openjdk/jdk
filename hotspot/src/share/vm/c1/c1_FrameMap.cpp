@@ -27,6 +27,7 @@
 #include "c1/c1_LIR.hpp"
 #include "code/vmreg.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "utilities/align.hpp"
 
 //-----------------------------------------------------
 

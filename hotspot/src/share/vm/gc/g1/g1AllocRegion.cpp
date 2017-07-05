@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "utilities/align.hpp"
 
 G1CollectedHeap* G1AllocRegion::_g1h = NULL;
 HeapRegion* G1AllocRegion::_dummy_region = NULL;

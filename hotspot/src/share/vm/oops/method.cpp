@@ -58,6 +58,7 @@
 #include "runtime/relocator.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
+#include "utilities/align.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"

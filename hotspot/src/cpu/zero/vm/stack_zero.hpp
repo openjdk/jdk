@@ -26,6 +26,7 @@
 #ifndef CPU_ZERO_VM_STACK_ZERO_HPP
 #define CPU_ZERO_VM_STACK_ZERO_HPP
 
+#include "utilities/align.hpp"
 #include "utilities/sizes.hpp"
 
 class ZeroStack {

@@ -34,6 +34,7 @@
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "utilities/align.hpp"
 
 inline const char* PSOldGen::select_name() {
   return UseParallelOldGC ? "ParOldGen" : "PSOldGen";

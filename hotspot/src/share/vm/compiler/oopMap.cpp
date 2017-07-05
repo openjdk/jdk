@@ -33,6 +33,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/signature.hpp"
+#include "utilities/align.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Defs.hpp"
 #endif

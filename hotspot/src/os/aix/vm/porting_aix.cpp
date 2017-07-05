@@ -31,6 +31,7 @@
 #include "porting_aix.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
 #include <demangle.h>

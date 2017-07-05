@@ -40,6 +40,7 @@
 #include "runtime/java.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
 // CollectorPolicy methods
