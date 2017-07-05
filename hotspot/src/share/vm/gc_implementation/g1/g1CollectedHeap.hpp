@@ -359,10 +359,13 @@ private:
   // (c) cause == _g1_humongous_allocation
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
-  // Keeps track of how many "full collections" (i.e., Full GCs or
-  // concurrent cycles) we have completed. The number of them we have
-  // started is maintained in _total_full_collections in CollectedHeap.
-  volatile unsigned int _full_collections_completed;
+  // Keeps track of how many "old marking cycles" (i.e., Full GCs or
+  // concurrent cycles) we have started.
+  volatile unsigned int _old_marking_cycles_started;
+
+  // Keeps track of how many "old marking cycles" (i.e., Full GCs or
+  // concurrent cycles) we have completed.
+  volatile unsigned int _old_marking_cycles_completed;
 
   // This is a non-product method that is helpful for testing. It is
   // called at the end of a GC and artificially expands the heap by
@@ -673,8 +676,12 @@ public:
            (size_t) _in_cset_fast_test_length * sizeof(bool));
   }
 
+  // This is called at the start of either a concurrent cycle or a Full
+  // GC to update the number of old marking cycles started.
+  void increment_old_marking_cycles_started();
+
   // This is called at the end of either a concurrent cycle or a Full
-  // GC to update the number of full collections completed. Those two
+  // GC to update the number of old marking cycles completed. Those two
   // can happen in a nested fashion, i.e., we start a concurrent
   // cycle, a Full GC happens half-way through it which ends first,
   // and then the cycle notices that a Full GC happened and ends
@@ -683,14 +690,14 @@ public:
   // false, the caller is the inner caller in the nesting (i.e., the
   // Full GC). If concurrent is true, the caller is the outer caller
   // in this nesting (i.e., the concurrent cycle). Further nesting is
-  // not currently supported. The end of the this call also notifies
+  // not currently supported. The end of this call also notifies
   // the FullGCCount_lock in case a Java thread is waiting for a full
   // GC to happen (e.g., it called System.gc() with
   // +ExplicitGCInvokesConcurrent).
-  void increment_full_collections_completed(bool concurrent);
+  void increment_old_marking_cycles_completed(bool concurrent);
 
-  unsigned int full_collections_completed() {
-    return _full_collections_completed;
+  unsigned int old_marking_cycles_completed() {
+    return _old_marking_cycles_completed;
   }
 
   G1HRPrinter* hr_printer() { return &_hr_printer; }

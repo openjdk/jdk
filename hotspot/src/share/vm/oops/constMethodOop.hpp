@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
 // |------------------------------------------------------|
 // | fingerprint 1                                        |
 // | fingerprint 2                                        |
-// | method                         (oop)                 |
+// | constants                      (oop)                 |
 // | stackmap_data                  (oop)                 |
 // | exception_table                (oop)                 |
 // | constMethod_size                                     |
@@ -113,7 +113,7 @@ private:
   volatile bool     _is_conc_safe; // if true, safe for concurrent GC processing
 
 public:
-  oop* oop_block_beg() const { return adr_method(); }
+  oop* oop_block_beg() const { return adr_constants(); }
   oop* oop_block_end() const { return adr_exception_table() + 1; }
 
 private:
@@ -121,8 +121,7 @@ private:
   // The oop block.  See comment in klass.hpp before making changes.
   //
 
-  // Backpointer to non-const methodOop (needed for some JVMTI operations)
-  methodOop         _method;
+  constantPoolOop   _constants;                  // Constant pool
 
   // Raw stackmap data for the method
   typeArrayOop      _stackmap_data;
@@ -167,10 +166,13 @@ public:
   void set_interpreter_kind(int kind)      { _interpreter_kind = kind; }
   int  interpreter_kind(void) const        { return _interpreter_kind; }
 
-  // backpointer to non-const methodOop
-  methodOop method() const                 { return _method; }
-  void set_method(methodOop m)             { oop_store_without_check((oop*)&_method, (oop) m); }
+  // constant pool
+  constantPoolOop constants() const        { return _constants; }
+  void set_constants(constantPoolOop c)    {
+    oop_store_without_check((oop*)&_constants, (oop)c);
+  }
 
+  methodOop method() const;
 
   // stackmap table data
   typeArrayOop stackmap_data() const { return _stackmap_data; }
@@ -278,11 +280,13 @@ public:
                             { return in_ByteSize(sizeof(constMethodOopDesc)); }
 
   // interpreter support
+  static ByteSize constants_offset()
+               { return byte_offset_of(constMethodOopDesc, _constants); }
   static ByteSize exception_table_offset()
                { return byte_offset_of(constMethodOopDesc, _exception_table); }
 
   // Garbage collection support
-  oop*  adr_method() const             { return (oop*)&_method;          }
+  oop*  adr_constants() const          { return (oop*)&_constants; }
   oop*  adr_stackmap_data() const      { return (oop*)&_stackmap_data;   }
   oop*  adr_exception_table() const    { return (oop*)&_exception_table; }
   bool is_conc_safe() { return _is_conc_safe; }

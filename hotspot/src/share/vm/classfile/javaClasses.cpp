@@ -2919,7 +2919,6 @@ int java_lang_AssertionStatusDirectives::packages_offset;
 int java_lang_AssertionStatusDirectives::packageEnabled_offset;
 int java_lang_AssertionStatusDirectives::deflt_offset;
 int java_nio_Buffer::_limit_offset;
-int sun_misc_AtomicLongCSImpl::_value_offset;
 int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset = 0;
 int sun_reflect_ConstantPool::_cp_oop_offset;
 int sun_reflect_UnsafeStaticFieldAccessorImpl::_base_offset;
@@ -2977,21 +2976,6 @@ void java_nio_Buffer::compute_offsets() {
   klassOop k = SystemDictionary::nio_Buffer_klass();
   assert(k != NULL, "must be loaded in 1.4+");
   compute_offset(_limit_offset, k, vmSymbols::limit_name(), vmSymbols::int_signature());
-}
-
-// Support for intrinsification of sun.misc.AtomicLongCSImpl.attemptUpdate
-int sun_misc_AtomicLongCSImpl::value_offset() {
-  assert(SystemDictionary::AtomicLongCSImpl_klass() != NULL, "can't call this");
-  return _value_offset;
-}
-
-
-void sun_misc_AtomicLongCSImpl::compute_offsets() {
-  klassOop k = SystemDictionary::AtomicLongCSImpl_klass();
-  // If this class is not present, its value field offset won't be referenced.
-  if (k != NULL) {
-    compute_offset(_value_offset, k, vmSymbols::value_name(), vmSymbols::long_signature());
-  }
 }
 
 void java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(TRAPS) {
@@ -3098,7 +3082,6 @@ void JavaClasses::compute_offsets() {
     sun_reflect_ConstantPool::compute_offsets();
     sun_reflect_UnsafeStaticFieldAccessorImpl::compute_offsets();
   }
-  sun_misc_AtomicLongCSImpl::compute_offsets();
 
   // generated interpreter code wants to know about the offsets we just computed:
   AbstractAssembler::update_delayed_values();

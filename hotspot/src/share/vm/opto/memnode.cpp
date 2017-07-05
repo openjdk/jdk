@@ -717,6 +717,22 @@ Node *MemNode::Ideal_common_DU_postCCP( PhaseCCP *ccp, Node* n, Node* adr ) {
         adr = adr->in(1);
         continue;
 
+      case Op_EncodeP:
+        // EncodeP node's control edge could be set by this method
+        // when EncodeP node depends on CastPP node.
+        //
+        // Use its control edge for memory op because EncodeP may go away
+        // later when it is folded with following or preceding DecodeN node.
+        if (adr->in(0) == NULL) {
+          // Keep looking for cast nodes.
+          adr = adr->in(1);
+          continue;
+        }
+        ccp->hash_delete(n);
+        n->set_req(MemNode::Control, adr->in(0));
+        ccp->hash_insert(n);
+        return n;
+
       case Op_CastPP:
         // If the CastPP is useless, just peek on through it.
         if( ccp->type(adr) == ccp->type(adr->in(1)) ) {
