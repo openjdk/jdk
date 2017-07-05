@@ -2093,7 +2093,11 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   // the known type isn't loaded since the code sanity checks
   // in debug mode and the type isn't required when we know the exact type
   // also check that the type is an array type.
-  if (op->expected_type() == NULL) {
+  // We also, for now, always call the stub if the barrier set requires a
+  // write_ref_pre barrier (which the stub does, but none of the optimized
+  // cases currently does).
+  if (op->expected_type() == NULL ||
+      Universe::heap()->barrier_set()->has_write_ref_pre_barrier()) {
     __ mov(src,     O0);
     __ mov(src_pos, O1);
     __ mov(dst,     O2);
