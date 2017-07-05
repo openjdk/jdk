@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 4206909
- * @summary Test basic functionality of DeflaterOutputStream and InflaterInputStream including flush
+ * @bug 4206909 4813885
+ * @summary Test basic functionality of DeflaterOutputStream/InflaterInputStream and GZIPOutputStream/GZIPInputStream, including flush
  */
 
 import java.io.*;
@@ -79,23 +79,23 @@ public class InflateIn_DeflateOut {
     }
 
     private static class PairedOutputStream extends ByteArrayOutputStream {
-      private PairedInputStream pairedStream = null;
+        private PairedInputStream pairedStream = null;
 
-      public PairedOutputStream(PairedInputStream inputPair) {
-        super();
-        this.pairedStream = inputPair;
-      }
-
-      public void flush() {
-        if (count > 0) {
-          pairedStream.addBytes(buf, count);
-          reset();
+        public PairedOutputStream(PairedInputStream inputPair) {
+            super();
+            this.pairedStream = inputPair;
         }
-      }
 
-      public void close() {
-        flush();
-      }
+        public void flush() {
+            if (count > 0) {
+                pairedStream.addBytes(buf, count);
+                reset();
+            }
+        }
+
+        public void close() {
+            flush();
+        }
     }
 
     private static boolean readFully(InputStream in, byte[] buf, int length)
@@ -146,27 +146,20 @@ public class InflateIn_DeflateOut {
         check(Arrays.equals(data, buf));
     }
 
-    /** Check that written, flushed and read */
-    private static void WriteFlushRead() throws Throwable {
+    private static void check(InputStream is, OutputStream os)
+        throws Throwable
+    {
         Random random = new Random(new Date().getTime());
-
-        PairedInputStream pis = new PairedInputStream();
-        InflaterInputStream iis = new InflaterInputStream(pis);
-
-        PairedOutputStream pos = new PairedOutputStream(pis);
-        pis.setPairedOutputStream(pos);
-        DeflaterOutputStream dos = new DeflaterOutputStream(pos, true);
-
-        // Large writes
+       // Large writes
         for (int x = 0; x < 200 ; x++) {
             // byte[] data = new byte[random.nextInt(1024 * 1024)];
             byte[] data = new byte[1024];
             byte[] buf = new byte[data.length];
             random.nextBytes(data);
 
-            dos.write(data);
-            dos.flush();
-            check(readFully(iis, buf, buf.length));
+            os.write(data);
+            os.flush();
+            check(readFully(is, buf, buf.length));
             check(Arrays.equals(data, buf));
         }
 
@@ -176,9 +169,9 @@ public class InflateIn_DeflateOut {
             byte[] buf = new byte[data.length];
             random.nextBytes(data);
 
-            dos.write(data);
-            dos.flush();
-            if (!readFully(iis, buf, buf.length)) {
+            os.write(data);
+            os.flush();
+            if (!readFully(is, buf, buf.length)) {
                 fail("Didn't read full buffer of " + buf.length);
             }
             check(Arrays.equals(data, buf));
@@ -187,12 +180,60 @@ public class InflateIn_DeflateOut {
         String quit = "QUIT\r\n";
 
         // Close it out
-        dos.write(quit.getBytes());
-        dos.close();
+        os.write(quit.getBytes());
+        os.close();
 
         StringBuilder sb = new StringBuilder();
-        check(readLineIfAvailable(iis, sb));
+        check(readLineIfAvailable(is, sb));
         equal(sb.toString(), quit);
+    }
+
+    /** Check that written, flushed and read */
+    private static void WriteFlushRead() throws Throwable {
+        PairedInputStream pis = new PairedInputStream();
+        InflaterInputStream iis = new InflaterInputStream(pis);
+
+        PairedOutputStream pos = new PairedOutputStream(pis);
+        pis.setPairedOutputStream(pos);
+        DeflaterOutputStream dos = new DeflaterOutputStream(pos, true);
+
+        check(iis, dos);
+    }
+
+    private static void GZWriteFlushRead() throws Throwable {
+        PairedInputStream pis = new PairedInputStream();
+        PairedOutputStream pos = new PairedOutputStream(pis);
+        pis.setPairedOutputStream(pos);
+
+        GZIPOutputStream gos = new GZIPOutputStream(pos, true);
+        gos.flush();  // flush the head out, so gis can read
+        GZIPInputStream gis = new GZIPInputStream(pis);
+
+        check(gis, gos);
+    }
+
+    private static void checkLOP(InputStream is, OutputStream os)
+        throws Throwable
+    {
+        boolean flushed = false;
+        int count = 0;
+
+        // Do at least a certain number of lines, but too many without a
+        // flush means this test isn't testing anything
+        while ((count < 10 && flushed) || (count < 1000 && !flushed)) {
+            String command = "PING " + count + "\r\n";
+            os.write(command.getBytes());
+
+            StringBuilder buf = new StringBuilder();
+            if (!readLineIfAvailable(is, buf)) {
+                flushed = true;
+                os.flush();
+                check(readLineIfAvailable(is, buf));
+            }
+            equal(buf.toString(), command);
+            count++;
+        }
+        check(flushed);
     }
 
     /** Validate that we need to use flush at least once on a line
@@ -205,33 +246,27 @@ public class InflateIn_DeflateOut {
         pis.setPairedOutputStream(pos);
         DeflaterOutputStream dos = new DeflaterOutputStream(pos, true);
 
-        boolean flushed = false;
-        int count = 0;
+        checkLOP(iis, dos);
+    }
 
-        // Do at least a certain number of lines, but too many without a
-        // flush means this test isn't testing anything
-        while ((count < 10 && flushed) || (count < 1000 && !flushed)) {
-            String command = "PING " + count + "\r\n";
-            dos.write(command.getBytes());
+    private static void GZLineOrientedProtocol() throws Throwable {
+        PairedInputStream pis = new PairedInputStream();
+        PairedOutputStream pos = new PairedOutputStream(pis);
+        pis.setPairedOutputStream(pos);
 
-            StringBuilder buf = new StringBuilder();
-            if (!readLineIfAvailable(iis, buf)) {
-                flushed = true;
-                dos.flush();
-                check(readLineIfAvailable(iis, buf));
-            }
-            equal(buf.toString(), command);
-            count++;
-        }
-        check(flushed);
+        GZIPOutputStream gos = new GZIPOutputStream(pos, true);
+        gos.flush();  // flush the head out, so gis can read
+        GZIPInputStream gis = new GZIPInputStream(pis);
+
+        checkLOP(gis, gos);
     }
 
     public static void realMain(String[] args) throws Throwable {
         WriteCloseRead();
-
         WriteFlushRead();
-
         LineOrientedProtocol();
+        GZWriteFlushRead();
+        GZLineOrientedProtocol();
     }
 
     //--------------------- Infrastructure ---------------------------

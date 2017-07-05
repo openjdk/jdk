@@ -1486,7 +1486,7 @@ public class JarSigner {
         for (int i=0; i<len; i++) {
             switch (bs[i]) {
                 case '\r':
-                    if (i < len && bs[i+1] == '\n') i++;
+                    if (i < len - 1 && bs[i+1] == '\n') i++;
                     // fallthrough
                 case '\n':
                     if (newline) return i+1;    //+1 to get length

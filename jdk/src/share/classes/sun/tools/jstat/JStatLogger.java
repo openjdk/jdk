@@ -29,8 +29,6 @@ import java.util.*;
 import java.io.*;
 import sun.jvmstat.monitor.*;
 import sun.jvmstat.monitor.event.*;
-import sun.management.counter.Units;
-import sun.management.counter.Variability;
 import java.util.regex.PatternSyntaxException;
 
 /**

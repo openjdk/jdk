@@ -30,7 +30,7 @@
 BUILDDIR = ../..
 include $(BUILDDIR)/common/Defs.gmk
 
-SUBDIRS = org
+SUBDIRS = org core
 all build clean clobber::
 	$(SUBDIRS-loop)
 
