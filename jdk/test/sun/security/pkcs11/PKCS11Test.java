@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -457,7 +457,7 @@ public abstract class PKCS11Test {
         osMap.put("SunOS-x86-32", new String[]{"/usr/lib/mps/"});
         osMap.put("SunOS-amd64-64", new String[]{"/usr/lib/mps/64/"});
         osMap.put("Linux-i386-32", new String[]{
-            "/usr/lib/i386-linux-gnu/", "/usr/lib/"});
+            "/usr/lib/i386-linux-gnu/", "/usr/lib32/", "/usr/lib/"});
         osMap.put("Linux-amd64-64", new String[]{
             "/usr/lib/x86_64-linux-gnu/", "/usr/lib/x86_64-linux-gnu/nss/",
             "/usr/lib64/"});

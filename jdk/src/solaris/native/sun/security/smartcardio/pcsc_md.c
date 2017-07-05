@@ -136,5 +136,9 @@ JNIEXPORT void JNICALL Java_sun_security_smartcardio_PlatformPCSC_initialize
     if ((*env)->ExceptionCheck(env)) {
          return;
     }
+#ifndef __APPLE__
     scardControl          = (FPTR_SCardControl)         findFunction(env, hModule, "SCardControl");
+#else
+    scardControl          = (FPTR_SCardControl)         findFunction(env, hModule, "SCardControl132");
+#endif // __APPLE__
 }
