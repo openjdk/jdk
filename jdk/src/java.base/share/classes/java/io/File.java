@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1907,16 +1907,10 @@ public class File
             throws IOException
         {
             long n = random.nextLong();
-            if (n == Long.MIN_VALUE) {
-                n = 0;      // corner case
-            } else {
-                n = Math.abs(n);
-            }
 
             // Use only the file name from the supplied prefix
             prefix = (new File(prefix)).getName();
-
-            String name = prefix + Long.toString(n) + suffix;
+            String name = prefix + Long.toUnsignedString(n) + suffix;
             File f = new File(dir, name);
             if (!name.equals(f.getName()) || f.isInvalid()) {
                 if (System.getSecurityManager() != null)

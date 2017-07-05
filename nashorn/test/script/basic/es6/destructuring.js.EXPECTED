@@ -1,0 +1,72 @@
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:4 ES6 destructuring is not yet implemented
+var { x: y } = obj;
+    ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:4 ES6 destructuring is not yet implemented
+let { x: y } = obj;
+    ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:6 ES6 destructuring is not yet implemented
+const { x: y } = obj;
+      ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:1 ES6 destructuring is not yet implemented
+({ x: y }) = obj;
+ ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:0 ES6 destructuring is not yet implemented
+for (var { x: y } of obj) ;
+^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:0 ES6 destructuring is not yet implemented
+for (let { x: y } of obj) ;
+^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:4 ES6 destructuring is not yet implemented
+var { x, y } = obj;
+    ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:4 ES6 destructuring is not yet implemented
+let { x, y } = obj;
+    ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:6 ES6 destructuring is not yet implemented
+const { x, y } = obj;
+      ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:1 ES6 destructuring is not yet implemented
+({ x, y }) = obj;
+ ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:0 ES6 destructuring is not yet implemented
+for (var { x, y } of obj) ;
+^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:0 ES6 destructuring is not yet implemented
+for (let { x, y } of obj) ;
+^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:4 ES6 destructuring is not yet implemented
+var [a, b] = obj;
+    ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:4 ES6 destructuring is not yet implemented
+let [a, b] = obj;
+    ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:6 ES6 destructuring is not yet implemented
+const [a, b] = obj;
+      ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:0 ES6 destructuring is not yet implemented
+[a, b] = obj;
+^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:0 ES6 destructuring is not yet implemented
+for ([a, b] of obj) ;
+^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:0 ES6 destructuring is not yet implemented
+for (var [a, b] of obj) ;
+^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:0 ES6 destructuring is not yet implemented
+for (let [a, b] of obj) ;
+^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:9 ES6 destructuring is not yet implemented
+(function({ x: y }) { return x; })()
+         ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:9 ES6 destructuring is not yet implemented
+(function({ x }) { return x; })()
+         ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:9 ES6 destructuring is not yet implemented
+(function([x]) { return x; })()
+         ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:9 ES6 destructuring is not yet implemented
+for (var [[x, y, z] = [4, 5, 6]] = [7, 8, 9]; iterCount < 1; ) ;
+         ^
+java.lang.RuntimeException: test/script/basic/es6/destructuring.js#35:6<eval>:1:0 ES6 destructuring is not yet implemented
+for ([ arrow = () => {} ] of [[]]) ;
+^
