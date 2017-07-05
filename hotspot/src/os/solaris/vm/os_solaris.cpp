@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3050,14 +3050,11 @@ void os::naked_yield() {
   thr_yield();
 }
 
-// Interface for setting lwp priorities.  If we are using T2 libthread,
-// which forces the use of BoundThreads or we manually set UseBoundThreads,
-// all of our threads will be assigned to real lwp's.  Using the thr_setprio
-// function is meaningless in this mode so we must adjust the real lwp's priority
+// Interface for setting lwp priorities.  We are using T2 libthread,
+// which forces the use of bound threads, so all of our threads will
+// be assigned to real lwp's.  Using the thr_setprio function is
+// meaningless in this mode so we must adjust the real lwp's priority.
 // The routines below implement the getting and setting of lwp priorities.
-//
-// Note: T2 is now the only supported libthread. UseBoundThreads flag is
-//       being deprecated and all threads are now BoundThreads
 //
 // Note: There are three priority scales used on Solaris.  Java priotities
 //       which range from 1 to 10, libthread "thr_setprio" scale which range
