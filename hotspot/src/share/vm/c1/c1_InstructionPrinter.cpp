@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -853,11 +853,6 @@ void InstructionPrinter::do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) {
   output()->put(')');
 }
 
-void InstructionPrinter::do_UnsafePrefetchRead(UnsafePrefetchRead* x) {
-  print_unsafe_object_op(x, "UnsafePrefetchRead");
-  output()->put(')');
-}
-
 void InstructionPrinter::do_RangeCheckPredicate(RangeCheckPredicate* x) {
 
   if (x->x() != NULL && x->y() != NULL) {
@@ -879,11 +874,6 @@ void InstructionPrinter::do_Assert(Assert* x) {
   print_value(x->y());
 }
 #endif
-
-void InstructionPrinter::do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) {
-  print_unsafe_object_op(x, "UnsafePrefetchWrite");
-  output()->put(')');
-}
 
 void InstructionPrinter::do_ProfileCall(ProfileCall* x) {
   output()->print("profile ");

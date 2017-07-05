@@ -27,9 +27,11 @@
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
+#include <elf.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ptrace.h>
+#include <sys/uio.h>
 #include "libproc_impl.h"
 
 #if defined(x86_64) && !defined(amd64)
@@ -135,6 +137,15 @@ static bool process_get_lwp_regs(struct ps_prochandle* ph, pid_t pid, struct use
 #ifdef PTRACE_GETREGS_REQ
  if (ptrace_getregs(PTRACE_GETREGS_REQ, pid, user, NULL) < 0) {
    print_debug("ptrace(PTRACE_GETREGS, ...) failed for lwp %d\n", pid);
+   return false;
+ }
+ return true;
+#elif defined(PTRACE_GETREGSET)
+ struct iovec iov;
+ iov.iov_base = user;
+ iov.iov_len = sizeof(*user);
+ if (ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, (void*) &iov) < 0) {
+   print_debug("ptrace(PTRACE_GETREGSET, ...) failed for lwp %d\n", pid);
    return false;
  }
  return true;

@@ -39,7 +39,7 @@ public class GetPutLong {
         Test t = new Test();
         Field field = Test.class.getField("l");
 
-        int offset = unsafe.fieldOffset(field);
+        long offset = unsafe.objectFieldOffset(field);
         assertEquals(-1L, unsafe.getLong(t, offset));
         unsafe.putLong(t, offset, 0L);
         assertEquals(0L, unsafe.getLong(t, offset));

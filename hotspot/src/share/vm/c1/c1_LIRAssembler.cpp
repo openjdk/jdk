@@ -503,14 +503,6 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       }
       break;
 
-    case lir_prefetchr:
-      prefetchr(op->in_opr());
-      break;
-
-    case lir_prefetchw:
-      prefetchw(op->in_opr());
-      break;
-
     case lir_roundfp: {
       LIR_OpRoundFP* round_op = op->as_OpRoundFP();
       roundfp_op(round_op->in_opr(), round_op->tmp(), round_op->result_opr(), round_op->pop_fpu_stack());
