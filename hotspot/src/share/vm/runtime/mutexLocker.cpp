@@ -82,9 +82,6 @@ Mutex*   EvacFailureStack_lock        = NULL;
 Mutex*   DerivedPointerTableGC_lock   = NULL;
 Mutex*   Compile_lock                 = NULL;
 Monitor* MethodCompileQueue_lock      = NULL;
-#ifdef TIERED
-Monitor* C1_lock                      = NULL;
-#endif // TIERED
 Monitor* CompileThread_lock           = NULL;
 Mutex*   CompileTaskAlloc_lock        = NULL;
 Mutex*   CompileStatistics_lock       = NULL;
@@ -255,11 +252,6 @@ void mutex_init() {
   def(Debug3_lock                  , Mutex  , nonleaf+4,   true );
   def(ProfileVM_lock               , Monitor, nonleaf+4,   false); // used for profiling of the VMThread
   def(CompileThread_lock           , Monitor, nonleaf+5,   false );
-#ifdef TIERED
-  def(C1_lock                      , Monitor, nonleaf+5,   false );
-#endif // TIERED
-
-
 }
 
 GCMutexLocker::GCMutexLocker(Monitor * mutex) {

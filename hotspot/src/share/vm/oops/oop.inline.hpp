@@ -146,8 +146,13 @@ inline bool oopDesc::is_null(narrowOop obj) { return obj == 0; }
 // offset from the heap base.  Saving the check for null can save instructions
 // in inner GC loops so these are separated.
 
+inline bool check_obj_alignment(oop obj) {
+  return (intptr_t)obj % MinObjAlignmentInBytes == 0;
+}
+
 inline narrowOop oopDesc::encode_heap_oop_not_null(oop v) {
   assert(!is_null(v), "oop value can never be zero");
+  assert(check_obj_alignment(v), "Address not aligned");
   assert(Universe::heap()->is_in_reserved(v), "Address not in heap");
   address base = Universe::narrow_oop_base();
   int    shift = Universe::narrow_oop_shift();
@@ -167,7 +172,9 @@ inline oop oopDesc::decode_heap_oop_not_null(narrowOop v) {
   assert(!is_null(v), "narrow oop value can never be zero");
   address base = Universe::narrow_oop_base();
   int    shift = Universe::narrow_oop_shift();
-  return (oop)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
+  oop result = (oop)(void*)((uintptr_t)base + ((uintptr_t)v << shift));
+  assert(check_obj_alignment(result), "Address not aligned");
+  return result;
 }
 
 inline oop oopDesc::decode_heap_oop(narrowOop v) {
@@ -522,10 +529,6 @@ inline bool oopDesc::has_bias_pattern() const {
   return mark()->has_bias_pattern();
 }
 
-inline bool check_obj_alignment(oop obj) {
-  return (intptr_t)obj % MinObjAlignmentInBytes == 0;
-}
-
 
 // used only for asserts
 inline bool oopDesc::is_oop(bool ignore_mark_word) const {
@@ -600,6 +603,8 @@ inline bool oopDesc::is_forwarded() const {
 
 // Used by scavengers
 inline void oopDesc::forward_to(oop p) {
+  assert(check_obj_alignment(p),
+         "forwarding to something not aligned");
   assert(Universe::heap()->is_in_reserved(p),
          "forwarding to something not in heap");
   markOop m = markOopDesc::encode_pointer_as_mark(p);
@@ -609,6 +614,8 @@ inline void oopDesc::forward_to(oop p) {
 
 // Used by parallel scavengers
 inline bool oopDesc::cas_forward_to(oop p, markOop compare) {
+  assert(check_obj_alignment(p),
+         "forwarding to something not aligned");
   assert(Universe::heap()->is_in_reserved(p),
          "forwarding to something not in heap");
   markOop m = markOopDesc::encode_pointer_as_mark(p);

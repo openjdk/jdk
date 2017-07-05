@@ -28,7 +28,8 @@ package java.dyn;
 import sun.dyn.Access;
 
 /**
- * A Java method handle extends the basic method handle type with additional
+ * A Java method handle is a deprecated proposal for extending
+ * the basic method handle type with additional
  * programmer defined methods and fields.
  * Its behavior as a method handle is determined at instance creation time,
  * by providing the new instance with an "entry point" method handle
@@ -62,11 +63,11 @@ import sun.dyn.Access;
  * greeter.run();  // prints "hello, world"
  * // Statically typed method handle invocation (most direct):
  * MethodHandle mh = greeter;
- * mh.&lt;void&gt;invoke();  // also prints "hello, world"
+ * mh.&lt;void&gt;invokeExact();  // also prints "hello, world"
  * // Dynamically typed method handle invocation:
- * MethodHandles.invoke(greeter);  // also prints "hello, world"
+ * MethodHandles.invokeExact(greeter);  // also prints "hello, world"
  * greeter.setGreeting("howdy");
- * mh.invoke();  // prints "howdy, world" (object-like mutable behavior)
+ * mh.invokeExact();  // prints "howdy, world" (object-like mutable behavior)
  * </pre></blockquote>
  * <p>
  * In the example of {@code Greeter}, the method {@code run} provides the entry point.
@@ -81,7 +82,7 @@ import sun.dyn.Access;
  * inner class:
  * <p><blockquote><pre>
  * // We can also do this with symbolic names and/or inner classes:
- * MethodHandles.invoke(new JavaMethodHandle("yow") {
+ * MethodHandles.invokeExact(new JavaMethodHandle("yow") {
  *     void yow() { System.out.println("yow, world"); }
  * });
  * </pre></blockquote>
@@ -101,7 +102,7 @@ import sun.dyn.Access;
  *     Greeter greeter = new Greeter("world");
  *     greeter.run();  // prints "hello, world"
  *     MethodHandle mh = MethodHanndles.insertArgument(Greeter.RUN, 0, greeter);
- *     mh.invoke();  // also prints "hello, world"
+ *     mh.invokeExact();  // also prints "hello, world"
  * </pre></blockquote>
  * Note that the method handle must be separately created as a view on the base object.
  * This increases footprint, complexity, and dynamic indirections.
@@ -113,7 +114,7 @@ import sun.dyn.Access;
  *     MethodHandle greeter = new JavaMethodHandle("run") {
  *         private void run() { System.out.println("hello, "+greetee); }
  *     }
- *     greeter.invoke();  // prints "hello, world"
+ *     greeter.invokeExact();  // prints "hello, world"
  * </pre></blockquote>
  * <p>
  * Here is an abstract parameterized lvalue, efficiently expressed as a subtype of MethodHandle,
@@ -137,10 +138,12 @@ import sun.dyn.Access;
  *         public Number get(long i)           { return stuff[(int)i]; }
  *         public void   set(long i, Object x) {        stuff[(int)i] = x; }
  *     }
- *     int x = (Integer) stuffPtr.&lt;Number&gt;invoke(1L);  // 456
- *     stuffPtr.setter().&lt;void&gt;invoke(0L, (Number) 789);  // replaces 123 with 789
+ *     int x = (Integer) stuffPtr.&lt;Number&gt;invokeExact(1L);  // 456
+ *     stuffPtr.setter().&lt;void&gt;invokeExact(0L, (Number) 789);  // replaces 123 with 789
  * </pre></blockquote>
  * @see MethodHandle
+ * @deprecated The JSR 292 EG intends to replace {@code JavaMethodHandle} with
+ * an interface-based API for mixing method handle behavior with other classes.
  * @author John Rose, JSR 292 EG
  */
 public abstract class JavaMethodHandle

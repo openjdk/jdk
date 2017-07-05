@@ -1211,8 +1211,44 @@ void Arguments::set_cms_and_parnew_gc_flags() {
 }
 #endif // KERNEL
 
+void set_object_alignment() {
+  // Object alignment.
+  assert(is_power_of_2(ObjectAlignmentInBytes), "ObjectAlignmentInBytes must be power of 2");
+  MinObjAlignmentInBytes     = ObjectAlignmentInBytes;
+  assert(MinObjAlignmentInBytes >= HeapWordsPerLong * HeapWordSize, "ObjectAlignmentInBytes value is too small");
+  MinObjAlignment            = MinObjAlignmentInBytes / HeapWordSize;
+  assert(MinObjAlignmentInBytes == MinObjAlignment * HeapWordSize, "ObjectAlignmentInBytes value is incorrect");
+  MinObjAlignmentInBytesMask = MinObjAlignmentInBytes - 1;
+
+  LogMinObjAlignmentInBytes  = exact_log2(ObjectAlignmentInBytes);
+  LogMinObjAlignment         = LogMinObjAlignmentInBytes - LogHeapWordSize;
+
+  // Oop encoding heap max
+  OopEncodingHeapMax = (uint64_t(max_juint) + 1) << LogMinObjAlignmentInBytes;
+
+#ifndef KERNEL
+  // Set CMS global values
+  CompactibleFreeListSpace::set_cms_values();
+#endif // KERNEL
+}
+
+bool verify_object_alignment() {
+  // Object alignment.
+  if (!is_power_of_2(ObjectAlignmentInBytes)) {
+    jio_fprintf(defaultStream::error_stream(),
+                "error: ObjectAlignmentInBytes=%d must be power of 2", (int)ObjectAlignmentInBytes);
+    return false;
+  }
+  if ((int)ObjectAlignmentInBytes < BytesPerLong) {
+    jio_fprintf(defaultStream::error_stream(),
+                "error: ObjectAlignmentInBytes=%d must be greater or equal %d", (int)ObjectAlignmentInBytes, BytesPerLong);
+    return false;
+  }
+  return true;
+}
+
 inline uintx max_heap_for_compressed_oops() {
-  LP64_ONLY(return oopDesc::OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
+  LP64_ONLY(return OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
   NOT_LP64(ShouldNotReachHere(); return 0);
 }
 
@@ -1775,6 +1811,8 @@ bool Arguments::check_vm_args_consistency() {
   // expression.
   status = status && verify_interval(TLABWasteTargetPercent,
                                      1, 100, "TLABWasteTargetPercent");
+
+  status = status && verify_object_alignment();
 
   return status;
 }
@@ -2847,6 +2885,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 #if defined(_LP64) && defined(COMPILER1)
   UseCompressedOops = false;
 #endif
+
+  // Set object alignment values.
+  set_object_alignment();
 
 #ifdef SERIALGC
   force_serial_gc();

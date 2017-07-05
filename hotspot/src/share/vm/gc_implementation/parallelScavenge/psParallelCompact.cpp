@@ -711,6 +711,7 @@ HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr) {
   // object in the region.
   if (region_ptr->data_size() == RegionSize) {
     result += pointer_delta(addr, region_addr);
+    DEBUG_ONLY(PSParallelCompact::check_new_location(addr, result);)
     return result;
   }
 
@@ -1487,13 +1488,14 @@ PSParallelCompact::provoke_split_fill_survivor(SpaceId id)
       space->set_top_for_allocations();
     }
 
-    size_t obj_len = 8;
+    size_t min_size = CollectedHeap::min_fill_size();
+    size_t obj_len = min_size;
     while (b + obj_len <= t) {
       CollectedHeap::fill_with_object(b, obj_len);
       mark_bitmap()->mark_obj(b, obj_len);
       summary_data().add_obj(b, obj_len);
       b += obj_len;
-      obj_len = (obj_len & 0x18) + 8; // 8 16 24 32 8 16 24 32 ...
+      obj_len = (obj_len & (min_size*3)) + min_size; // 8 16 24 32 8 16 24 32 ...
     }
     if (b < t) {
       // The loop didn't completely fill to t (top); adjust top downward.
@@ -1680,11 +1682,13 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
     //                          +-------+
 
     // Initially assume case a, c or e will apply.
-    size_t obj_len = (size_t)oopDesc::header_size();
+    size_t obj_len = CollectedHeap::min_fill_size();
     HeapWord* obj_beg = dense_prefix_end - obj_len;
 
 #ifdef  _LP64
-    if (_mark_bitmap.is_obj_end(dense_prefix_bit - 2)) {
+    if (MinObjAlignment > 1) { // object alignment > heap word size
+      // Cases a, c or e.
+    } else if (_mark_bitmap.is_obj_end(dense_prefix_bit - 2)) {
       // Case b above.
       obj_beg = dense_prefix_end - 1;
     } else if (!_mark_bitmap.is_obj_end(dense_prefix_bit - 3) &&
