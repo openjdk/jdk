@@ -56,15 +56,12 @@ class FreeList VALUE_OBJ_CLASS_SPEC {
 
 #ifdef ASSERT
   Mutex*        _protecting_lock;
+  void assert_proper_lock_protection_work() const;
 #endif
 
   // Asserts false if the protecting lock (if any) is not held.
-  void assert_proper_lock_protection_work() const PRODUCT_RETURN;
   void assert_proper_lock_protection() const {
-#ifdef ASSERT
-    if (_protecting_lock != NULL)
-      assert_proper_lock_protection_work();
-#endif
+    DEBUG_ONLY(assert_proper_lock_protection_work());
   }
 
   void increment_count()    {

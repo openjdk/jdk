@@ -124,14 +124,10 @@ public:
   // Requires "region_bm" and "card_bm" to be bitmaps with 1 bit per region
   // or card, respectively, such that a region or card with a corresponding
   // 0 bit contains no part of any live object.  Eliminates any remembered
-  // set entries that correspond to dead heap ranges.
-  void scrub(BitMap* region_bm, BitMap* card_bm);
-
-  // Like the above, but assumes is called in parallel: "worker_num" is the
-  // parallel thread id of the current thread, and "hrclaimer" is the shared
-  // HeapRegionClaimer that should be used to claim heap regions.
-  void scrub_par(BitMap* region_bm, BitMap* card_bm,
-                 uint worker_num, HeapRegionClaimer* hrclaimer);
+  // set entries that correspond to dead heap ranges. "worker_num" is the
+  // parallel thread id of the current thread, and "hrclaimer" is the
+  // HeapRegionClaimer that should be used.
+  void scrub(BitMap* region_bm, BitMap* card_bm, uint worker_num, HeapRegionClaimer* hrclaimer);
 
   // Refine the card corresponding to "card_ptr".
   // If check_for_refs_into_cset is true, a true result is returned

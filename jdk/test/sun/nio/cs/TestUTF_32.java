@@ -184,7 +184,7 @@ public class TestUTF_32 {
         if (CoderResult.OVERFLOW !=
             Charset.forName("UTF_32")
             .newDecoder()
-            .decode((ByteBuffer)(ByteBuffer.allocate(4)
+            .decode((ByteBuffer.allocate(4)
                                  .put(new byte[]
                                       {(byte)0,(byte)1, (byte)0,(byte)01})
                                  .flip()),
