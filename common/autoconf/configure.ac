@@ -1004,7 +1004,7 @@ TESTFOR_PROG_CCACHE
 
 # Setup default logging of stdout and stderr to build.log in the output root.
 BUILD_LOG='$(OUTPUT_ROOT)/build.log'
-BUILD_LOG_WRAPPER='$(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
+BUILD_LOG_WRAPPER='$(SH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)'
 AC_SUBST(BUILD_LOG)
 AC_SUBST(BUILD_LOG_WRAPPER)
 
