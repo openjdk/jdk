@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,6 +77,8 @@ void mkdirs(int oklen, char* path) {
 
 
 #ifndef PRODUCT
+#ifndef STATIC_BUILD
+// use the definition in libjvm when building statically
 void breakpoint() { }  // hook for debugger
 int assert_failed(const char* p) {
   char message[1<<12];
@@ -86,6 +88,7 @@ int assert_failed(const char* p) {
   unpack_abort(message);
   return 0;
 }
+#endif
 #endif
 
 void unpack_abort(const char* msg, unpacker* u) {

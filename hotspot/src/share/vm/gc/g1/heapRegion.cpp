@@ -660,7 +660,7 @@ public:
   void print_object(outputStream* out, oop obj) {
 #ifdef PRODUCT
     Klass* k = obj->klass();
-    const char* class_name = InstanceKlass::cast(k)->external_name();
+    const char* class_name = k->external_name();
     out->print_cr("class name %s", class_name);
 #else // PRODUCT
     obj->print_on(out);

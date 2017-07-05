@@ -75,6 +75,7 @@ SUNWprivate_1.1 {
                 Java_sun_nio_ch_IOUtil_makePipe;
                 Java_sun_nio_ch_IOUtil_randomBytes;
                 Java_sun_nio_ch_IOUtil_setfdVal;
+                Java_sun_nio_ch_IOUtil_iovMax;
 		Java_sun_nio_ch_KQueue_kqueue;
 		Java_sun_nio_ch_KQueue_keventRegister;
 		Java_sun_nio_ch_KQueue_keventPoll;

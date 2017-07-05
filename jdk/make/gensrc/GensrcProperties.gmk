@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -49,30 +49,40 @@ define SetupCopy-zh_HK
 endef
 
 ################################################################################
-# Creates a rule that runs CompileProperties on a set of properties files.
-# Param 1 - Variable to add targets to, must not contain space
-# Param 2 - Properties files to process
-# Param 3 - The super class for the generated classes
-# Param 4 - Module path root, defaults to $(JDK_TOPDIR)/src
-define SetupCompileProperties
-  $1_SRCS := $2
-  $1_CLASS := $3
-  $1_MODULE_PATH_ROOT := $4
-
+# Setup make rules that runs CompileProperties on a set of properties files.
+#
+# Parameter 1 is the name of the rule. This name is used as variable prefix,
+# and the targets generated are listed in a variable by that name.
+#
+# Remaining parameters are named arguments. These include:
+# SRC_DIRS   Directories containing properties files to process.
+# EXCLUDE   Exclude files matching this pattern.
+# CLASS   The super class for the generated classes.
+# MODULE_PATH_ROOT   Module path root, defaults to $(JDK_TOPDIR)/src.
+SetupCompileProperties = $(NamedParamsMacroTemplate)
+define SetupCompilePropertiesBody
+  # Set default value unless overridden
   ifeq ($$($1_MODULE_PATH_ROOT), )
     $1_MODULE_PATH_ROOT := $(JDK_TOPDIR)/src
   endif
 
+  # Locate all properties files in the given source dirs.
+  $1_SRC_FILES := $$(filter %.properties, $$(call CacheFind, $$($1_SRC_DIRS)))
+
+  ifneq ($$($1_EXCLUDE), )
+    $1_SRC_FILES := $$(filter-out $$($1_EXCLUDE), $$($1_SRC_FILES))
+  endif
+
   # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
   # to .../support/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
-  # Strip away prefix and suffix, leaving for example only: 
+  # Strip away prefix and suffix, leaving for example only:
   # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
   $1_JAVAS := $$(patsubst $$($1_MODULE_PATH_ROOT)/%, \
       $(SUPPORT_OUTPUTDIR)/gensrc/%, \
       $$(patsubst %.properties, %.java, \
       $$(subst /$(OPENJDK_TARGET_OS)/classes,, \
       $$(subst /$(OPENJDK_TARGET_OS_TYPE)/classes,, \
-      $$(subst /share/classes,, $$($1_SRCS))))))
+      $$(subst /share/classes,, $$($1_SRC_FILES))))))
 
   # Generate the package dirs for the to be generated java files. Sort to remove
   # duplicates.
@@ -82,22 +92,22 @@ define SetupCompileProperties
   # "-compile ...javac_zh_CN.properties ...javac_zh_CN.java java.util.ListResourceBundle"
   # suitable to be fed into the CompileProperties command.
   $1_CMDLINE := $$(subst _SPACE_, $(SPACE), \
-      $$(join $$(addprefix -compile_SPACE_, $$($1_SRCS)), \
+      $$(join $$(addprefix -compile_SPACE_, $$($1_SRC_FILES)), \
       $$(addsuffix _SPACE_$$($1_CLASS), \
       $$(addprefix _SPACE_, $$($1_JAVAS)))))
 
-  $1_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.done
+  $1_TARGET := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.marker
   $1_CMDLINE_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/_the.$1.cmdline
 
 # Now setup the rule for the generation of the resource bundles.
-  $$($1_TARGET): $$($1_SRCS) $$($1_JAVAS) $(BUILD_TOOLS_JDK)
+  $$($1_TARGET): $$($1_SRC_FILES) $$($1_JAVAS) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $$(@D) $$($1_DIRS)
-	$(ECHO) Compiling $$(words $$($1_SRCS)) properties into resource bundles for $(MODULE)
+	$(ECHO) Compiling $$(words $$($1_SRC_FILES)) properties into resource bundles for $(MODULE)
 	$$(eval $$(call ListPathsSafely, $1_CMDLINE, $$($1_CMDLINE_FILE)))
 	$(TOOL_COMPILEPROPERTIES) -quiet @$$($1_CMDLINE_FILE)
 	$(TOUCH) $$@
 
-  $$($1_JAVAS): $$($1_SRCS)
+  $$($1_JAVAS): $$($1_SRC_FILES)
 
   # Create zh_HK versions of all zh_TW files created above
   $$(eval $$(call SetupCopy-zh_HK,$1_HK,$$(filter %_zh_TW.java, $$($1_JAVAS))))

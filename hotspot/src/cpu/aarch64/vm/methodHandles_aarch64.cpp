@@ -62,7 +62,7 @@ static int check_nonzero(const char* xname, int x) {
 void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj, SystemDictionary::WKID klass_id,
                                  const char* error_message) {
-  Klass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
+  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
   KlassHandle klass = SystemDictionary::well_known_klass(klass_id);
   Register temp = rscratch2;
   Register temp2 = rscratch1; // used by MacroAssembler::cmpptr

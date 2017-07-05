@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,9 @@ protected:
   // Print policy-specific information if necessary
   virtual void print_specific(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level) { }
   // Check if the method can be compiled, change level if necessary
-  void compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread);
+  void compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // Submit a given method for compilation
-  virtual void submit_compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread);
+  virtual void submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // Simple methods are as good being compiled with C1 as C2.
   // This function tells if it's such a function.
   inline bool is_trivial(Method* method);
@@ -87,9 +87,9 @@ protected:
     }
     return CompLevel_none;
   }
-  virtual void method_invocation_event(methodHandle method, methodHandle inlinee,
+  virtual void method_invocation_event(const methodHandle& method, const methodHandle& inlinee,
                                        CompLevel level, nmethod* nm, JavaThread* thread);
-  virtual void method_back_branch_event(methodHandle method, methodHandle inlinee,
+  virtual void method_back_branch_event(const methodHandle& method, const methodHandle& inlinee,
                                         int bci, CompLevel level, nmethod* nm, JavaThread* thread);
 public:
   SimpleThresholdPolicy() : _c1_count(0), _c2_count(0) { }
@@ -103,7 +103,7 @@ public:
   virtual void delay_compilation(Method* method) { }
   virtual void disable_compilation(Method* method) { }
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);
-  virtual nmethod* event(methodHandle method, methodHandle inlinee,
+  virtual nmethod* event(const methodHandle& method, const methodHandle& inlinee,
                          int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread);
   // Select task is called by CompileBroker. We should return a task or NULL.
   virtual CompileTask* select_task(CompileQueue* compile_queue);

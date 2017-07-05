@@ -307,7 +307,7 @@ class nmethod : public CodeBlob {
 
  public:
   // create nmethod with entry_bci
-  static nmethod* new_nmethod(methodHandle method,
+  static nmethod* new_nmethod(const methodHandle& method,
                               int compile_id,
                               int entry_bci,
                               CodeOffsets* offsets,
@@ -327,7 +327,7 @@ class nmethod : public CodeBlob {
 #endif
                              );
 
-  static nmethod* new_native_nmethod(methodHandle method,
+  static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,
                                      CodeBuffer *code_buffer,
                                      int vep_offset,
@@ -603,6 +603,7 @@ public:
   oop jvmci_installed_code() { return _jvmci_installed_code ; }
   char* jvmci_installed_code_name(char* buf, size_t buflen);
   void set_jvmci_installed_code(oop installed_code) { _jvmci_installed_code = installed_code;  }
+  void maybe_invalidate_installed_code();
   oop speculation_log() { return _speculation_log ; }
   void set_speculation_log(oop speculation_log) { _speculation_log = speculation_log;  }
 #endif

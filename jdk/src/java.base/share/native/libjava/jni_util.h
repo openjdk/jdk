@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -389,6 +389,117 @@ void buildJniFunctionName(const char *sym, const char *cname,
 
 extern size_t getLastErrorString(char *buf, size_t len);
 extern int getErrorString(int err, char *buf, size_t len);
+
+#ifdef STATIC_BUILD
+/* Macros for handling declaration of static/dynamic
+ * JNI library Load/Unload functions
+ *
+ * Use DEF_JNI_On{Un}Load when you want a static and non-static entry points.
+ * Use DEF_STATIC_JNI_On{Un}Load when you only want a static one.
+ *
+ * LIBRARY_NAME must be set to the name of the library
+ */
+
+/* These three macros are needed to get proper concatenation of
+ * the LIBRARY_NAME
+ *
+ * NOTE: LIBRARY_NAME must be set for static builds.
+ */
+#define ADD_LIB_NAME3(name, lib) name ## lib
+#define ADD_LIB_NAME2(name, lib) ADD_LIB_NAME3(name, lib)
+#define ADD_LIB_NAME(entry) ADD_LIB_NAME2(entry, LIBRARY_NAME)
+
+#define DEF_JNI_OnLoad \
+ADD_LIB_NAME(JNI_OnLoad_)(JavaVM *vm, void *reserved) \
+{ \
+  jint JNICALL ADD_LIB_NAME(JNI_OnLoad_dynamic_)(JavaVM *vm, void *reserved); \
+  ADD_LIB_NAME(JNI_OnLoad_dynamic_)(vm, reserved); \
+  return JNI_VERSION_1_8; \
+} \
+jint JNICALL ADD_LIB_NAME(JNI_OnLoad_dynamic_)
+
+#define DEF_STATIC_JNI_OnLoad \
+JNIEXPORT jint JNICALL ADD_LIB_NAME(JNI_OnLoad_)(JavaVM *vm, void *reserved) { \
+    return JNI_VERSION_1_8; \
+}
+
+#define DEF_JNI_OnUnload \
+ADD_LIB_NAME(JNI_OnUnload_)(JavaVM *vm, void *reserved) \
+{ \
+  void JNICALL ADD_LIB_NAME(JNI_OnUnload_dynamic_)(JavaVM *vm, void *reserved); \
+  ADD_LIB_NAME(JNI_OnUnload_dynamic_)(vm, reserved); \
+} \
+void JNICALL ADD_LIB_NAME(JNI_OnUnload_dynamic_)
+
+#define DEF_STATIC_JNI_OnUnload \
+ADD_LIB_NAME(JNI_OnUnload_)
+
+#else
+
+#define DEF_JNI_OnLoad JNI_OnLoad
+#define DEF_STATIC_JNI_OnLoad
+#define DEF_JNI_OnUnload JNI_OnUnload
+#define DEF_STATIC_JNI_OnUnload
+#endif
+
+#ifdef STATIC_BUILD
+/* Macros for handling declaration of static/dynamic
+ * Agent library Load/Attach/Unload functions
+ *
+ * Use DEF_Agent_OnLoad, DEF_Agent_OnAttach or DEF_Agent_OnUnload
+ *     when you want both static and non-static entry points.
+ * Use DEF_STATIC_Agent_OnLoad, DEF_STATIC_Agent_OnAttach or
+ *     DEF_STATIC_Agent_OnUnload when you only want a static one.
+ *
+ * LIBRARY_NAME must be set to the name of the library for static builds.
+ */
+
+#define DEF_Agent_OnLoad \
+ADD_LIB_NAME(Agent_OnLoad_)(JavaVM *vm, char *options, void *reserved) \
+{ \
+  jint JNICALL ADD_LIB_NAME(Agent_OnLoad_dynamic_)(JavaVM *vm, char *options, void *reserved); \
+  return ADD_LIB_NAME(Agent_OnLoad_dynamic_)(vm, options, reserved); \
+} \
+jint JNICALL ADD_LIB_NAME(Agent_OnLoad_dynamic_)
+
+#define DEF_STATIC_Agent_OnLoad \
+JNIEXPORT jint JNICALL ADD_LIB_NAME(Agent_OnLoad_)(JavaVM *vm, char *options, void *reserved) { \
+    return JNI_FALSE; \
+}
+
+#define DEF_Agent_OnAttach \
+ADD_LIB_NAME(Agent_OnAttach_)(JavaVM *vm, char *options, void *reserved) \
+{ \
+  jint JNICALL ADD_LIB_NAME(Agent_OnAttach_dynamic_)(JavaVM *vm, char *options, void *reserved); \
+  return ADD_LIB_NAME(Agent_OnAttach_dynamic_)(vm, options, reserved); \
+} \
+jint JNICALL ADD_LIB_NAME(Agent_OnAttach_dynamic_)
+
+#define DEF_STATIC_Agent_OnAttach \
+JNIEXPORT jint JNICALL ADD_LIB_NAME(Agent_OnLoad_)(JavaVM *vm, char *options, void *reserved) { \
+    return JNI_FALSE; \
+}
+
+#define DEF_Agent_OnUnload \
+ADD_LIB_NAME(Agent_OnUnload_)(JavaVM *vm) \
+{ \
+  void JNICALL ADD_LIB_NAME(Agent_OnUnload_dynamic_)(JavaVM *vm); \
+  ADD_LIB_NAME(Agent_OnUnload_dynamic_)(vm); \
+} \
+void JNICALL ADD_LIB_NAME(Agent_OnUnload_dynamic_)
+
+#define DEF_STATIC_Agent_OnUnload \
+ADD_LIB_NAME(Agent_OnUnload_)
+
+#else
+#define DEF_Agent_OnLoad Agent_OnLoad
+#define DEF_Agent_OnAttach Agent_OnAttach
+#define DEF_Agent_OnUnload Agent_OnUnload
+#define DEF_STATIC_Agent_OnLoad
+#define DEF_STATIC_Agent_OnAttach
+#define DEF_STATIC_Agent_OnUnload
+#endif
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */

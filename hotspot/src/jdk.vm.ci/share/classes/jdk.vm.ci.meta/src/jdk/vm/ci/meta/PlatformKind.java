@@ -29,8 +29,6 @@ public interface PlatformKind {
 
     String name();
 
-    JavaConstant getDefaultValue();
-
     public interface Key {
 
     }

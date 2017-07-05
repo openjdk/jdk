@@ -22,16 +22,23 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.LIRKind;
+import jdk.vm.ci.meta.VMConstant;
+import jdk.vm.ci.meta.Value;
 
 public final class HotSpotSentinelConstant extends Value implements JavaConstant, VMConstant {
 
-    public HotSpotSentinelConstant(JavaKind kind) {
-        super(LIRKind.reference(kind));
+    private final JavaKind javaKind;
+
+    public HotSpotSentinelConstant(LIRKind lirKind, JavaKind javaKind) {
+        super(lirKind);
+        this.javaKind = javaKind;
     }
 
     public JavaKind getJavaKind() {
-        return (JavaKind) getLIRKind().getPlatformKind();
+        return javaKind;
     }
 
     @Override

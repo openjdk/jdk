@@ -530,15 +530,15 @@ class CompileReplay : public StackObj {
     if (_imethod != NULL) {
       return; // Replay Inlining
     }
-    Klass* k = method->method_holder();
-    ((InstanceKlass*)k)->initialize(THREAD);
+    InstanceKlass* ik = method->method_holder();
+    ik->initialize(THREAD);
     if (HAS_PENDING_EXCEPTION) {
       oop throwable = PENDING_EXCEPTION;
       java_lang_Throwable::print(throwable, tty);
       tty->cr();
       if (ReplayIgnoreInitErrors) {
         CLEAR_PENDING_EXCEPTION;
-        ((InstanceKlass*)k)->set_init_state(InstanceKlass::fully_initialized);
+        ik->set_init_state(InstanceKlass::fully_initialized);
       } else {
         return;
       }
@@ -842,7 +842,7 @@ class CompileReplay : public StackObj {
       } else if (field_signature[0] == 'L') {
         Symbol* klass_name = SymbolTable::lookup(field_signature, (int)strlen(field_signature), CHECK);
         KlassHandle kelem = resolve_klass(field_signature, CHECK);
-        oop value = ((InstanceKlass*)kelem())->allocate_instance(CHECK);
+        oop value = InstanceKlass::cast(kelem())->allocate_instance(CHECK);
         java_mirror->obj_field_put(fd.offset(), value);
       } else {
         report_error("unhandled staticfield");
