@@ -31,10 +31,6 @@ class Compiler: public AbstractCompiler {
  // Tracks whether runtime has been initialized
  static volatile int _runtimes;
 
- // In tiered it is possible for multiple threads to want to do compilation
- // only one can enter c1 at a time
- static volatile bool _compiling;
-
  public:
   // Creation
   Compiler();
@@ -47,6 +43,7 @@ class Compiler: public AbstractCompiler {
   virtual bool is_c1() { return true; };
 #endif // TIERED
 
+  BufferBlob* build_buffer_blob();
 
   // Missing feature tests
   virtual bool supports_native()                 { return true; }
@@ -58,6 +55,7 @@ class Compiler: public AbstractCompiler {
 
   // Initialization
   virtual void initialize();
+  static  void initialize_all();
 
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci);

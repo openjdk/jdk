@@ -239,11 +239,11 @@ oop CollectedHeap::new_store_pre_barrier(JavaThread* thread, oop new_obj) {
 }
 
 size_t CollectedHeap::filler_array_hdr_size() {
-  return size_t(arrayOopDesc::header_size(T_INT));
+  return size_t(align_object_offset(arrayOopDesc::header_size(T_INT))); // align to Long
 }
 
 size_t CollectedHeap::filler_array_min_size() {
-  return align_object_size(filler_array_hdr_size());
+  return align_object_size(filler_array_hdr_size()); // align to MinObjAlignment
 }
 
 size_t CollectedHeap::filler_array_max_size() {

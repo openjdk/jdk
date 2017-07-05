@@ -1317,8 +1317,8 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_iconst_3: push(intcon( 3)); break;
   case Bytecodes::_iconst_4: push(intcon( 4)); break;
   case Bytecodes::_iconst_5: push(intcon( 5)); break;
-  case Bytecodes::_bipush:   push(intcon( iter().get_byte())); break;
-  case Bytecodes::_sipush:   push(intcon( iter().get_short())); break;
+  case Bytecodes::_bipush:   push(intcon(iter().get_constant_u1())); break;
+  case Bytecodes::_sipush:   push(intcon(iter().get_constant_u2())); break;
   case Bytecodes::_aconst_null: push(null());  break;
   case Bytecodes::_ldc:
   case Bytecodes::_ldc_w:

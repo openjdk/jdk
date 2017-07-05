@@ -301,9 +301,9 @@ void LIR_Assembler::add_debug_info_for_branch(CodeEmitInfo* info) {
 }
 
 
-void LIR_Assembler::add_call_info(int pc_offset, CodeEmitInfo* cinfo, bool is_method_handle_invoke) {
+void LIR_Assembler::add_call_info(int pc_offset, CodeEmitInfo* cinfo) {
   flush_debug_info(pc_offset);
-  cinfo->record_debug_info(compilation()->debug_info_recorder(), pc_offset, is_method_handle_invoke);
+  cinfo->record_debug_info(compilation()->debug_info_recorder(), pc_offset);
   if (cinfo->exception_handlers() != NULL) {
     compilation()->add_exception_handlers_for_pco(pc_offset, cinfo->exception_handlers());
   }
@@ -413,12 +413,6 @@ void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {
 void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   verify_oop_map(op->info());
 
-  // JSR 292
-  // Preserve the SP over MethodHandle call sites.
-  if (op->is_method_handle_invoke()) {
-    preserve_SP(op);
-  }
-
   if (os::is_MP()) {
     // must align calls sites, otherwise they can't be updated atomically on MP hardware
     align_call(op->code());
@@ -442,10 +436,6 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
     vtable_call(op);
     break;
   default: ShouldNotReachHere();
-  }
-
-  if (op->is_method_handle_invoke()) {
-    restore_SP(op);
   }
 
 #if defined(X86) && defined(TIERED)
