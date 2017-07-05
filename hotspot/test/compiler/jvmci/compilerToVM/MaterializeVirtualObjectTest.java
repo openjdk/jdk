@@ -44,6 +44,8 @@
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   -XX:CompileCommand=exclude,*::check
  *                   -XX:+DoEscapeAnalysis -XX:-UseCounterDecay
+ *                   -XX:CompileCommand=dontinline,compiler/jvmci/compilerToVM/MaterializeVirtualObjectTest,testFrame
+ *                   -XX:CompileCommand=inline,compiler/jvmci/compilerToVM/MaterializeVirtualObjectTest,recurse
  *                   -Xbatch
  *                   -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
  *                   compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
@@ -119,14 +121,25 @@ public class MaterializeVirtualObjectTest {
         }
         Asserts.assertTrue(WB.isMethodCompiled(METHOD), getName()
                 + "Method unexpectedly not compiled");
+        Asserts.assertTrue(WB.getMethodCompilationLevel(METHOD) == 4, getName()
+                + "Method not compiled at level 4");
         testFrame("someString", COMPILE_THRESHOLD);
     }
 
     private void testFrame(String str, int iteration) {
         Helper helper = new Helper(str);
-        check(iteration);
+        recurse(2, iteration);
         Asserts.assertTrue((helper.string != null) && (this != null)
-                && (helper != null), getName() + " : some locals are null");
+                           && (helper != null), String.format("%s : some locals are null", getName()));
+    }
+    private void recurse(int depth, int iteration) {
+        if (depth == 0) {
+            check(iteration);
+        } else {
+            Integer s = new Integer(depth);
+            recurse(depth - 1, iteration);
+            Asserts.assertEQ(s.intValue(), depth, String.format("different values: %s != %s", s.intValue(), depth));
+        }
     }
 
     private void check(int iteration) {
