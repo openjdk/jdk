@@ -67,29 +67,31 @@ static jint maskCacheIndex = 0;
     } while (0)
 
 jboolean
-OGLVertexCache_InitVertexCache()
+OGLVertexCache_InitVertexCache(OGLContext *oglc)
 {
     J2dTraceLn(J2D_TRACE_INFO, "OGLVertexCache_InitVertexCache");
 
-    if (vertexCache != NULL) {
-        return JNI_TRUE;
-    }
-
-    vertexCache = (J2DVertex *)malloc(OGLVC_MAX_INDEX * sizeof(J2DVertex));
     if (vertexCache == NULL) {
-        return JNI_FALSE;
+        vertexCache = (J2DVertex *)malloc(OGLVC_MAX_INDEX * sizeof(J2DVertex));
+        if (vertexCache == NULL) {
+            return JNI_FALSE;
+        }
     }
 
-    j2d_glTexCoordPointer(2, GL_FLOAT,
-                          sizeof(J2DVertex), vertexCache);
-    j2d_glColorPointer(4, GL_UNSIGNED_BYTE,
-                       sizeof(J2DVertex), ((jfloat *)vertexCache) + 2);
-    j2d_glVertexPointer(2, GL_FLOAT,
-                        sizeof(J2DVertex), ((jfloat *)vertexCache) + 3);
+    if (!oglc->vertexCacheEnabled) {
+        j2d_glTexCoordPointer(2, GL_FLOAT,
+                              sizeof(J2DVertex), vertexCache);
+        j2d_glColorPointer(4, GL_UNSIGNED_BYTE,
+                           sizeof(J2DVertex), ((jfloat *)vertexCache) + 2);
+        j2d_glVertexPointer(2, GL_FLOAT,
+                            sizeof(J2DVertex), ((jfloat *)vertexCache) + 3);
 
-    j2d_glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    j2d_glEnableClientState(GL_COLOR_ARRAY);
-    j2d_glEnableClientState(GL_VERTEX_ARRAY);
+        j2d_glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+        j2d_glEnableClientState(GL_COLOR_ARRAY);
+        j2d_glEnableClientState(GL_VERTEX_ARRAY);
+
+        oglc->vertexCacheEnabled = JNI_TRUE;
+    }
 
     return JNI_TRUE;
 }
@@ -149,10 +151,6 @@ OGLVertexCache_InitMaskCache()
 {
     J2dTraceLn(J2D_TRACE_INFO, "OGLVertexCache_InitMaskCache");
 
-    if (!OGLVertexCache_InitVertexCache()) {
-        return JNI_FALSE;
-    }
-
     maskCacheTexID =
         OGLContext_CreateBlitTexture(GL_INTENSITY8, GL_LUMINANCE,
                                      OGLVC_MASK_CACHE_WIDTH_IN_TEXELS,
@@ -178,6 +176,10 @@ void
 OGLVertexCache_EnableMaskCache(OGLContext *oglc)
 {
     J2dTraceLn(J2D_TRACE_INFO, "OGLVertexCache_EnableMaskCache");
+
+    if (!OGLVertexCache_InitVertexCache(oglc)) {
+        return;
+    }
 
     if (maskCacheTexID == 0) {
         if (!OGLVertexCache_InitMaskCache()) {

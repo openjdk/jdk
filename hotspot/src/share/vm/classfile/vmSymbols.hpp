@@ -340,6 +340,9 @@
   template(park_event_name,                           "nativeParkEventPointer")                   \
   template(cache_field_name,                          "cache")                                    \
   template(value_name,                                "value")                                    \
+  template(offset_name,                               "offset")                                   \
+  template(count_name,                                "count")                                    \
+  template(hash_name,                                 "hash")                                     \
   template(frontCacheEnabled_name,                    "frontCacheEnabled")                        \
   template(stringCacheEnabled_name,                   "stringCacheEnabled")                       \
   template(numberOfLeadingZeros_name,                 "numberOfLeadingZeros")                     \

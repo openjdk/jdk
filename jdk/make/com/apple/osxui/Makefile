@@ -65,12 +65,8 @@ FILES_export = \
 	com/apple/laf/ScreenMenuPropertyHandler.java \
 	com/apple/laf/ScreenMenuPropertyListener.java
 
-#RESOURCE_BUNDLES_COMPILED_PROPERTIES += \
-#	com/apple/laf/resources/aqua.properties \
-#	com/apple/laf/resources/aqua_de.properties \
-#	com/apple/laf/resources/aqua_fr.properties \
-#	com/apple/laf/resources/aqua_ja.properties
-
+RESOURCE_BUNDLES_COMPILED_PROPERTIES += \
+	com/apple/laf/resources/aqua.properties
 
 #
 # Rules

@@ -250,6 +250,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      */
     private void initResourceBundle(final UIDefaults table) {
         table.setDefaultLocale(Locale.getDefault());
+        table.addResourceBundle(PKG_PREFIX + "resources.aqua");
         try {
             final ResourceBundle aquaProperties = MacOSXResourceBundle.getMacResourceBundle(PKG_PREFIX + "resources.aqua");
             final Enumeration<String> propertyKeys = aquaProperties.getKeys();
@@ -259,7 +260,6 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
                 table.put(key, aquaProperties.getString(key));
             }
         } catch (final Exception e) {
-            table.addResourceBundle(PKG_PREFIX + "resources.aqua");
         }
     }
 

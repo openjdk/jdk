@@ -204,7 +204,8 @@ JNF_COCOA_ENTER(env);
         if (!CGLSD_MakeCurrentToScratch(env, oglc)) {
             return NULL;
         }
-    } else if ([NSOpenGLContext currentContext] == nil) {
+    // make sure our context is current
+    } else if ([NSOpenGLContext currentContext] != ctxinfo->context) {
         [ctxinfo->context makeCurrentContext];
     }
 

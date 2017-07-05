@@ -38,7 +38,7 @@ and plots the memory usage history graph.
 
 To run the MemoryMonitor demo
 
-   java -jar <JDK_HOME>/demo/management/MemoryMonitor.jar 
+   java -jar <JDK_HOME>/demo/management/MemoryMonitor/MemoryMonitor.jar 
 
 These instructions assume that this installation's version of the java
 command is in your path.  If it isn't, then you should either

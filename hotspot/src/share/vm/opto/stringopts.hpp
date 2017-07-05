@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,6 @@ class PhaseStringOpts : public Phase {
 
   // Memory slices needed for code gen
   int char_adr_idx;
-  int value_field_idx;
-  int count_field_idx;
-  int offset_field_idx;
 
   // Integer.sizeTable - used for int to String conversion
   ciField* size_table_field;

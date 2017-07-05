@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
  * MAC implementation class. This class currently supports HMAC using
- * MD5, SHA-1, SHA-256, SHA-384, and SHA-512 and the SSL3 MAC using MD5
- * and SHA-1.
+ * MD5, SHA-1, SHA-224, SHA-256, SHA-384, and SHA-512 and the SSL3 MAC
+ * using MD5 and SHA-1.
  *
  * Note that unlike other classes (e.g. Signature), this does not
  * composite various operations if the token only supports part of the
@@ -106,6 +106,9 @@ final class P11Mac extends MacSpi {
             break;
         case (int)CKM_SHA_1_HMAC:
             macLength = 20;
+            break;
+        case (int)CKM_SHA224_HMAC:
+            macLength = 28;
             break;
         case (int)CKM_SHA256_HMAC:
             macLength = 32;

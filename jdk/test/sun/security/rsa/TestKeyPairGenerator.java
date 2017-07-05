@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4853305 4865198 4888410
+ * @bug 4853305 4865198 4888410 4963723
  * @summary Verify that the RSA KeyPairGenerator works
  * @author Andreas Sterbenz
  */
@@ -60,6 +60,7 @@ public class TestKeyPairGenerator {
         testSignature("MD2withRSA", privateKey, publicKey);
         testSignature("MD5withRSA", privateKey, publicKey);
         testSignature("SHA1withRSA", privateKey, publicKey);
+        testSignature("SHA224withRSA", privateKey, publicKey);
         testSignature("SHA256withRSA", privateKey, publicKey);
         RSAPublicKey rsaKey = (RSAPublicKey)publicKey;
         if (rsaKey.getModulus().bitLength() > 512) {
