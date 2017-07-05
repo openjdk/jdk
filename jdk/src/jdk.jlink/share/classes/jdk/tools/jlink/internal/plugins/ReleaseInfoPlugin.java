@@ -36,6 +36,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.internal.Utils;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -71,7 +73,7 @@ public final class ReleaseInfoPlugin implements Plugin {
 
     @Override
     public Set<State> getState() {
-        return EnumSet.of(State.FUNCTIONAL);
+        return EnumSet.of(State.AUTO_ENABLED, State.FUNCTIONAL);
     }
 
     @Override
@@ -87,6 +89,10 @@ public final class ReleaseInfoPlugin implements Plugin {
     @Override
     public void configure(Map<String, String> config) {
         String operation = config.get(NAME);
+        if (operation == null) {
+            return;
+        }
+
         switch (operation) {
             case "add": {
                 // leave it to open-ended! source, java_version, java_full_version
@@ -127,10 +133,44 @@ public final class ReleaseInfoPlugin implements Plugin {
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.transformAndCopy(Function.identity(), out);
 
+        Optional<ResourcePoolModule> javaBase = in.moduleView().findModule("java.base");
+        javaBase.ifPresent(mod -> {
+            // fill release information available from transformed "java.base" module!
+            ModuleDescriptor desc = mod.descriptor();
+            desc.osName().ifPresent(s -> {
+                release.put("OS_NAME", quote(s));
+            });
+            desc.osVersion().ifPresent(s -> release.put("OS_VERSION", quote(s)));
+            desc.osArch().ifPresent(s -> release.put("OS_ARCH", quote(s)));
+            desc.version().ifPresent(s -> release.put("JAVA_VERSION",
+                    quote(parseVersion(s.toString()))));
+            desc.version().ifPresent(s -> release.put("JAVA_FULL_VERSION",
+                    quote(s.toString())));
+        });
+
+        // put topological sorted module names separated by space
+        release.put("MODULES",  new ModuleSorter(in.moduleView())
+                .sorted().map(ResourcePoolModule::name)
+                .collect(Collectors.joining(" ", "\"", "\"")));
+
         // create a TOP level ResourcePoolEntry for "release" file.
         out.add(ResourcePoolEntry.create("/java.base/release",
             ResourcePoolEntry.Type.TOP, releaseFileContent()));
         return out.build();
+    }
+
+    // Parse version string and return a string that includes only version part
+    // leaving "pre", "build" information. See also: java.lang.Runtime.Version.
+    private static String parseVersion(String str) {
+        return Runtime.Version.parse(str).
+            version().
+            stream().
+            map(Object::toString).
+            collect(Collectors.joining("."));
+    }
+
+    private static String quote(String str) {
+        return "\"" + str + "\"";
     }
 
     private byte[] releaseFileContent() {

@@ -126,16 +126,24 @@ public class Resources_ko extends java.util.ListResourceBundle {
                 "\uD0A4 \uBE44\uD2B8 \uD06C\uAE30"}, //-keysize
         {"keystore.name",
                 "\uD0A4 \uC800\uC7A5\uC18C \uC774\uB984"}, //-keystore
+        {"access.the.cacerts.keystore",
+                "cacerts \uD0A4 \uC800\uC7A5\uC18C \uC561\uC138\uC2A4"}, // -cacerts
+        {"warning.cacerts.option",
+                "\uACBD\uACE0: -cacerts \uC635\uC158\uC744 \uC0AC\uC6A9\uD558\uC5EC cacerts \uD0A4 \uC800\uC7A5\uC18C\uC5D0 \uC561\uC138\uC2A4\uD558\uC2ED\uC2DC\uC624."},
         {"new.password",
                 "\uC0C8 \uBE44\uBC00\uBC88\uD638"}, //-new
         {"do.not.prompt",
                 "\uD655\uC778\uD558\uC9C0 \uC54A\uC74C"}, //-noprompt
         {"password.through.protected.mechanism",
                 "\uBCF4\uD638\uB418\uB294 \uBA54\uCEE4\uB2C8\uC998\uC744 \uD1B5\uD55C \uBE44\uBC00\uBC88\uD638"}, //-protected
-        {"provider.argument",
-                "\uC81C\uACF5\uC790 \uC778\uC218"}, //-providerarg
-        {"provider.class.name",
-                "\uC81C\uACF5\uC790 \uD074\uB798\uC2A4 \uC774\uB984"}, //-providerclass
+
+        // The following 2 values should span 2 lines, the first for the
+        // option itself, the second for its -providerArg value.
+        {"addprovider.option",
+                "\uC774\uB984\uBCC4 \uBCF4\uC548 \uC81C\uACF5\uC790 \uCD94\uAC00(\uC608: SunPKCS11)\n-addprovider\uC5D0 \uB300\uD55C \uC778\uC218 \uAD6C\uC131"}, //-addprovider
+        {"provider.class.option",
+                "\uC804\uCCB4 \uD074\uB798\uC2A4 \uC774\uB984\uBCC4 \uBCF4\uC548 \uC81C\uACF5\uC790 \uCD94\uAC00\n-providerclass\uC5D0 \uB300\uD55C \uC778\uC218 \uAD6C\uC131"}, //-providerclass
+
         {"provider.name",
                 "\uC81C\uACF5\uC790 \uC774\uB984"}, //-providername
         {"provider.classpath",
@@ -187,6 +195,8 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"Command.option.flag.needs.an.argument.", "\uBA85\uB839 \uC635\uC158 {0}\uC5D0 \uC778\uC218\uAC00 \uD544\uC694\uD569\uB2C8\uB2E4."},
         {"Warning.Different.store.and.key.passwords.not.supported.for.PKCS12.KeyStores.Ignoring.user.specified.command.value.",
                 "\uACBD\uACE0: \uB2E4\uB978 \uC800\uC7A5\uC18C \uBC0F \uD0A4 \uBE44\uBC00\uBC88\uD638\uB294 PKCS12 KeyStores\uC5D0 \uB300\uD574 \uC9C0\uC6D0\uB418\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uC0AC\uC6A9\uC790\uAC00 \uC9C0\uC815\uD55C {0} \uAC12\uC744 \uBB34\uC2DC\uD558\uB294 \uC911\uC785\uB2C8\uB2E4."},
+        {"the.keystore.or.storetype.option.cannot.be.used.with.the.cacerts.option",
+            "-keystore \uB610\uB294 -storetype \uC635\uC158\uC740 -cacerts \uC635\uC158\uACFC \uD568\uAED8 \uC0AC\uC6A9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-storetype\uC774 {0}\uC778 \uACBD\uC6B0 -keystore\uB294 NONE\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
         {"Too.many.retries.program.terminated",
@@ -208,7 +218,9 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"Illegal.startdate.value", "startdate \uAC12\uC774 \uC798\uBABB\uB418\uC5C8\uC2B5\uB2C8\uB2E4."},
         {"Validity.must.be.greater.than.zero",
                 "\uC720\uD6A8 \uAE30\uAC04\uC740 0\uBCF4\uB2E4 \uCEE4\uC57C \uD569\uB2C8\uB2E4."},
-        {"provName.not.a.provider", "{0}\uC740(\uB294) \uC81C\uACF5\uC790\uAC00 \uC544\uB2D9\uB2C8\uB2E4."},
+        {"provclass.not.a.provider", "%s\uC740(\uB294) \uC81C\uACF5\uC790\uAC00 \uC544\uB2D9\uB2C8\uB2E4."},
+        {"provider.name.not.found", "\"%s\" \uC774\uB984\uC758 \uC81C\uACF5\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
+        {"provider.class.not.found", "\"%s\" \uC81C\uACF5\uC790\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
         {"Usage.error.no.command.provided", "\uC0AC\uC6A9\uBC95 \uC624\uB958: \uBA85\uB839\uC744 \uC785\uB825\uD558\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."},
         {"Source.keystore.file.exists.but.is.empty.", "\uC18C\uC2A4 \uD0A4 \uC800\uC7A5\uC18C \uD30C\uC77C\uC774 \uC874\uC7AC\uD558\uC9C0\uB9CC \uBE44\uC5B4 \uC788\uC74C: "},
         {"Please.specify.srckeystore", "-srckeystore\uB97C \uC9C0\uC815\uD558\uC2ED\uC2DC\uC624."},
