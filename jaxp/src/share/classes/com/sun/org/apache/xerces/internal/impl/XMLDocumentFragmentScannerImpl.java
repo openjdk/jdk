@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  */
 
 /*
