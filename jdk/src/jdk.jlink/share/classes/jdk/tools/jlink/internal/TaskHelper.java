@@ -212,7 +212,7 @@ public final class TaskHelper {
             mainOptions.add(new PlugOption(true, (task, opt, arg) -> {
                 Path path = Paths.get(arg);
                 if (!Files.exists(path) || !Files.isDirectory(path)) {
-                    throw newBadArgs("err.existing.image.must.exist");
+                    throw newBadArgs("err.image.must.exist");
                 }
                 existingImage = path.toAbsolutePath();
             }, true, POST_PROCESS));
