@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public:
   // Public Methods
   Form(int formType=0, int line=0)
     : _next(NULL), _linenum(line), _ftype(formType) { };
-  ~Form() {};
+  virtual ~Form() {};
 
   virtual bool ideal_only() const {
     assert(0,"Check of ideal status on non-instruction/operand form.\n");

@@ -57,7 +57,6 @@ public class Klass extends Metadata implements ClassConstants {
     accessFlags  = new CIntField(type.getCIntegerField("_access_flags"), 0);
     subklass     = new MetadataField(type.getAddressField("_subklass"), 0);
     nextSibling  = new MetadataField(type.getAddressField("_next_sibling"), 0);
-    allocCount   = new CIntField(type.getCIntegerField("_alloc_count"), 0);
 
     LH_INSTANCE_SLOW_PATH_BIT  = db.lookupIntConstant("Klass::_lh_instance_slow_path_bit").intValue();
     LH_LOG2_ELEMENT_SIZE_SHIFT = db.lookupIntConstant("Klass::_lh_log2_element_size_shift").intValue();
@@ -87,7 +86,6 @@ public class Klass extends Metadata implements ClassConstants {
   private static CIntField accessFlags;
   private static MetadataField  subklass;
   private static MetadataField  nextSibling;
-  private static CIntField allocCount;
 
   private Address getValue(AddressField field) {
     return addr.getAddressAt(field.getOffset());
@@ -108,7 +106,6 @@ public class Klass extends Metadata implements ClassConstants {
   public AccessFlags getAccessFlagsObj(){ return new AccessFlags(getAccessFlags());      }
   public Klass    getSubklassKlass()    { return (Klass)    subklass.getValue(this);     }
   public Klass    getNextSiblingKlass() { return (Klass)    nextSibling.getValue(this);  }
-  public long     getAllocCount()       { return            allocCount.getValue(this);   }
 
   // computed access flags - takes care of inner classes etc.
   // This is closer to actual source level than getAccessFlags() etc.
@@ -172,7 +169,6 @@ public class Klass extends Metadata implements ClassConstants {
       visitor.doCInt(accessFlags, true);
     visitor.doMetadata(subklass, true);
     visitor.doMetadata(nextSibling, true);
-      visitor.doCInt(allocCount, true);
     }
 
   public long getObjectSize() {

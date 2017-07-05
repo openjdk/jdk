@@ -49,7 +49,6 @@ public class ArrayKlass extends Klass {
     higherDimension    = new MetadataField(type.getAddressField("_higher_dimension"), 0);
     lowerDimension     = new MetadataField(type.getAddressField("_lower_dimension"), 0);
     vtableLen          = new CIntField(type.getCIntegerField("_vtable_len"), 0);
-    allocSize          = new CIntField(type.getCIntegerField("_alloc_size"), 0);
     componentMirror    = new OopField(type.getOopField("_component_mirror"), 0);
     javaLangCloneableName = null;
     javaLangObjectName = null;
@@ -64,7 +63,6 @@ public class ArrayKlass extends Klass {
   private static MetadataField  higherDimension;
   private static MetadataField  lowerDimension;
   private static CIntField vtableLen;
-  private static CIntField allocSize;
   private static OopField  componentMirror;
 
   public Klass getJavaSuper() {
@@ -76,7 +74,6 @@ public class ArrayKlass extends Klass {
   public Klass getHigherDimension() { return (Klass) higherDimension.getValue(this); }
   public Klass getLowerDimension()  { return (Klass) lowerDimension.getValue(this); }
   public long  getVtableLen()       { return         vtableLen.getValue(this); }
-  public long  getAllocSize()       { return         allocSize.getValue(this); }
   public Oop   getComponentMirror() { return         componentMirror.getValue(this); }
 
   // constant class names - javaLangCloneable, javaIoSerializable, javaLangObject
@@ -147,7 +144,6 @@ public class ArrayKlass extends Klass {
     visitor.doMetadata(higherDimension, true);
     visitor.doMetadata(lowerDimension, true);
       visitor.doCInt(vtableLen, true);
-      visitor.doCInt(allocSize, true);
       visitor.doOop(componentMirror, true);
     }
   }
