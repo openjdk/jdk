@@ -190,7 +190,7 @@ public class Basic {
             if (fl == null)
                 throw new RuntimeException("Unable to acquire lock");
             try {
-                ch.lock(null, new CompletionHandler<FileLock,Void> () {
+                ch.lock((Void)null, new CompletionHandler<FileLock,Void> () {
                     public void completed(FileLock result, Void att) {
                     }
                     public void failed(Throwable exc, Void att) {
@@ -217,7 +217,7 @@ public class Basic {
         ByteBuffer buf = ByteBuffer.allocateDirect(100);
         final CountDownLatch latch = new CountDownLatch(1);
 
-        ch.read(buf, 0L, null, new CompletionHandler<Integer,Void>() {
+        ch.read(buf, 0L, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer result, Void att) {
                 try {
                     Thread.currentThread().interrupt();
@@ -311,7 +311,7 @@ public class Basic {
                     final AtomicReference<Thread> invoker = new AtomicReference<Thread>();
                     final CountDownLatch latch = new CountDownLatch(1);
 
-                    ch.write(genBuffer(), 0L, null, new CompletionHandler<Integer,Void>() {
+                    ch.write(genBuffer(), 0L, (Void)null, new CompletionHandler<Integer,Void>() {
                         public void completed(Integer result, Void att) {
                             invoker.set(Thread.currentThread());
                             latch.countDown();
@@ -410,7 +410,7 @@ public class Basic {
 
             // start write operation
             final CountDownLatch latch = new CountDownLatch(1);
-            Future<Integer> res = ch.write(genBuffer(), 0L, null,
+            Future<Integer> res = ch.write(genBuffer(), 0L, (Void)null,
                 new CompletionHandler<Integer,Void>() {
                     public void completed(Integer result, Void att) {
                     }

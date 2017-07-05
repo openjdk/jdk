@@ -181,7 +181,7 @@ public class Basic {
         }
         final AtomicReference<Throwable> connectException =
             new AtomicReference<Throwable>();
-        ch.connect(server.address(), null, new CompletionHandler<Void,Void>() {
+        ch.connect(server.address(), (Void)null, new CompletionHandler<Void,Void>() {
             public void completed(Void result, Void att) {
             }
             public void failed(Throwable exc, Void att) {
@@ -332,7 +332,7 @@ public class Basic {
             // start read operation
             final CountDownLatch latch = new CountDownLatch(1);
             ByteBuffer buf = ByteBuffer.allocate(1);
-            Future<Integer> res = ch.read(buf, null,
+            Future<Integer> res = ch.read(buf, (Void)null,
                 new CompletionHandler<Integer,Void>() {
                     public void completed(Integer result, Void att) {
                     }
@@ -397,11 +397,11 @@ public class Basic {
         // reads should complete immediately
         final ByteBuffer dst = ByteBuffer.allocateDirect(src.capacity() + 100);
         final CountDownLatch latch = new CountDownLatch(1);
-        ch.read(dst, null, new CompletionHandler<Integer,Void>() {
+        ch.read(dst, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer result, Void att) {
                 int n = result;
                 if (n > 0) {
-                    ch.read(dst, null, this);
+                    ch.read(dst, (Void)null, this);
                 } else {
                     latch.countDown();
                 }
@@ -450,10 +450,10 @@ public class Basic {
         // read until the buffer is full
         final ByteBuffer dst = ByteBuffer.allocateDirect(src.capacity());
         final CountDownLatch latch = new CountDownLatch(1);
-        ch.read(dst, null, new CompletionHandler<Integer,Void>() {
+        ch.read(dst, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer result, Void att) {
                 if (dst.hasRemaining()) {
-                    ch.read(dst, null, this);
+                    ch.read(dst, (Void)null, this);
                 } else {
                     latch.countDown();
                 }
@@ -508,7 +508,7 @@ public class Basic {
 
         // scattering read that completes ascynhronously
         final CountDownLatch latch = new CountDownLatch(1);
-        ch.read(dsts, 0, dsts.length, 0L, TimeUnit.SECONDS, null,
+        ch.read(dsts, 0, dsts.length, 0L, TimeUnit.SECONDS, (Void)null,
             new CompletionHandler<Long,Void>() {
                 public void completed(Long result, Void att) {
                     long n = result;
@@ -536,7 +536,7 @@ public class Basic {
             dsts[i].rewind();
         }
         long n = ch
-            .read(dsts, 0, dsts.length, 0L, TimeUnit.SECONDS, null, null).get();
+            .read(dsts, 0, dsts.length, 0L, TimeUnit.SECONDS, (Void)null, null).get();
         if (n <= 0)
             throw new RuntimeException("No bytes read");
 
@@ -562,10 +562,10 @@ public class Basic {
 
         // write all bytes and close connection when done
         final ByteBuffer src = genBuffer();
-        ch.write(src, null, new CompletionHandler<Integer,Void>() {
+        ch.write(src, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer result, Void att) {
                 if (src.hasRemaining()) {
-                    ch.write(src, null, this);
+                    ch.write(src, (Void)null, this);
                 } else {
                     try {
                         ch.close();
@@ -616,7 +616,7 @@ public class Basic {
         // write buffers (should complete immediately)
         ByteBuffer[] srcs = genBuffers(1);
         long n = ch
-            .write(srcs, 0, srcs.length, 0L, TimeUnit.SECONDS, null, null).get();
+            .write(srcs, 0, srcs.length, 0L, TimeUnit.SECONDS, (Void)null, null).get();
         if (n <= 0)
             throw new RuntimeException("No bytes written");
 
@@ -629,7 +629,7 @@ public class Basic {
         // write until socket buffer is full so as to create the conditions
         // for when a write does not complete immediately
         srcs = genBuffers(1);
-        ch.write(srcs, 0, srcs.length, 0L, TimeUnit.SECONDS, null,
+        ch.write(srcs, 0, srcs.length, 0L, TimeUnit.SECONDS, (Void)null,
             new CompletionHandler<Long,Void>() {
                 public void completed(Long result, Void att) {
                     long n = result;
@@ -639,7 +639,7 @@ public class Basic {
                     if (continueWriting.get()) {
                         ByteBuffer[] srcs = genBuffers(8);
                         ch.write(srcs, 0, srcs.length, 0L, TimeUnit.SECONDS,
-                            null, this);
+                            (Void)null, this);
                     }
                 }
                 public void failed(Throwable exc, Void att) {
@@ -717,7 +717,7 @@ public class Basic {
         // this read should timeout
         ByteBuffer dst = ByteBuffer.allocate(512);
         try {
-            ch.read(dst, 3, TimeUnit.SECONDS, null, null).get();
+            ch.read(dst, 3, TimeUnit.SECONDS, (Void)null, null).get();
             throw new RuntimeException("Read did not timeout");
         } catch (ExecutionException x) {
             if (!(x.getCause() instanceof InterruptedByTimeoutException))

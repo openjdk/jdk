@@ -73,9 +73,8 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GenerateKey
     CK_MECHANISM ckMechanism;
     CK_ATTRIBUTE_PTR ckpAttributes = NULL_PTR;
     CK_ULONG ckAttributesLength;
-    CK_OBJECT_HANDLE ckKeyHandle;
+    CK_OBJECT_HANDLE ckKeyHandle = 0;
     jlong jKeyHandle = 0L;
-    CK_ULONG i;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -151,8 +150,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Generate
     CK_OBJECT_HANDLE_PTR ckpPublicKeyHandle;  /* pointer to Public Key */
     CK_OBJECT_HANDLE_PTR ckpPrivateKeyHandle; /* pointer to Private Key */
     CK_OBJECT_HANDLE_PTR ckpKeyHandles;     /* pointer to array with Public and Private Key */
-    jlongArray jKeyHandles;
-    CK_ULONG i;
+    jlongArray jKeyHandles = NULL;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -299,9 +297,8 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1UnwrapKey
     CK_ULONG ckWrappedKeyLength;
     CK_ATTRIBUTE_PTR ckpAttributes = NULL_PTR;
     CK_ULONG ckAttributesLength;
-    CK_OBJECT_HANDLE ckKeyHandle;
+    CK_OBJECT_HANDLE ckKeyHandle = 0;
     jlong jKeyHandle = 0L;
-    CK_ULONG i;
     CK_RV rv;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
@@ -478,8 +475,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
     CK_ATTRIBUTE_PTR ckpAttributes = NULL_PTR;
     CK_ULONG ckAttributesLength;
     CK_OBJECT_HANDLE ckKeyHandle = 0;
-    jlong jKeyHandle;
-    CK_ULONG i;
+    jlong jKeyHandle = 0L;
     CK_RV rv;
     CK_OBJECT_HANDLE_PTR phKey = &ckKeyHandle;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ class CertPathHelperImpl extends CertPathHelper {
     /**
      * Initialize the helper framework. This method must be called from
      * the static initializer of each class that is the target of one of
-     * the methods in this class. This ensures that the helper if initialized
+     * the methods in this class. This ensures that the helper is initialized
      * prior to a tunneled call from the Sun provider.
      */
     synchronized static void initialize() {
@@ -58,5 +58,9 @@ class CertPathHelperImpl extends CertPathHelper {
     protected void implSetPathToNames(X509CertSelector sel,
             Set<GeneralNameInterface> names) {
         sel.setPathToNamesInternal(names);
+    }
+
+    protected void implSetDateAndTime(X509CRLSelector sel, Date date, long skew) {
+        sel.setDateAndTime(date, skew);
     }
 }

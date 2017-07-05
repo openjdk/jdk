@@ -94,7 +94,7 @@ public class Restart {
         for (int i=0; i<count; i++) {
             final CountDownLatch latch = new CountDownLatch(1);
 
-            listener.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
+            listener.accept((Void)null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
                 public void completed(AsynchronousSocketChannel ch, Void att) {
                     try {
                         ch.close();

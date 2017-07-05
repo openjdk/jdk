@@ -66,7 +66,7 @@ public class Basic {
         // Test: datagram packet not received immediately
         dst.clear();
         final CountDownLatch latch = new CountDownLatch(1);
-        ch.receive(dst, null, new CompletionHandler<SocketAddress,Void>() {
+        ch.receive(dst, (Void)null, new CompletionHandler<SocketAddress,Void>() {
             public void completed(SocketAddress source, Void att) {
                 latch.countDown();
             }
@@ -82,7 +82,7 @@ public class Basic {
         // Test: timeout
         dst.clear();
         final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
-        ch.receive(dst, 2, TimeUnit.SECONDS, null, new CompletionHandler<SocketAddress,Void>() {
+        ch.receive(dst, 2, TimeUnit.SECONDS, (Void)null, new CompletionHandler<SocketAddress,Void>() {
             public void completed(SocketAddress source, Void att) {
             }
             public void failed (Throwable exc, Void att) {
@@ -101,7 +101,7 @@ public class Basic {
         // AsynchronousCloseException
         dst = ByteBuffer.allocateDirect(100);
         exception.set(null);
-        ch.receive(dst, null, new CompletionHandler<SocketAddress,Void>() {
+        ch.receive(dst, (Void)null, new CompletionHandler<SocketAddress,Void>() {
             public void completed(SocketAddress source, Void att) {
             }
             public void failed (Throwable exc, Void att) {
@@ -156,7 +156,7 @@ public class Basic {
         // Test: datagram packet not received immediately
         dst.clear();
         final CountDownLatch l1 = new CountDownLatch(1);
-        ch.read(dst, null, new CompletionHandler<Integer,Void>() {
+        ch.read(dst, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesRead, Void att) {
                 l1.countDown();
             }
@@ -172,7 +172,7 @@ public class Basic {
         // Test: timeout
         dst.clear();
         final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
-        ch.read(dst, 2, TimeUnit.SECONDS, null, new CompletionHandler<Integer,Void>() {
+        ch.read(dst, 2, TimeUnit.SECONDS, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesRead, Void att) {
             }
             public void failed (Throwable exc, Void att) {
@@ -191,7 +191,7 @@ public class Basic {
         // AsynchronousCloseException
         dst.clear();
         exception.set(null);
-        ch.read(dst, null, new CompletionHandler<Integer,Void>() {
+        ch.read(dst, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesRead, Void att) {
             }
             public void failed (Throwable exc, Void att) {
@@ -238,7 +238,7 @@ public class Basic {
         // Test: send datagram packet to reader and check completion handler
         // is invoked
         final CountDownLatch l2 = new CountDownLatch(1);
-        ch.send(ByteBuffer.wrap(msg), sa, null, new CompletionHandler<Integer,Void>() {
+        ch.send(ByteBuffer.wrap(msg), sa, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesSent, Void att) {
                 if (bytesSent != msg.length)
                     throw new RuntimeException("Unexpected number of bytes received");
@@ -261,7 +261,7 @@ public class Basic {
         // Test: check that failed method is invoked
         ch.close();
         final CountDownLatch l3 = new CountDownLatch(1);
-        ch.send(ByteBuffer.wrap(msg), sa, null, new CompletionHandler<Integer,Void>() {
+        ch.send(ByteBuffer.wrap(msg), sa, (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesSent, Void att) {
                 throw new RuntimeException("completed method invoked");
             }
@@ -315,7 +315,7 @@ public class Basic {
 
         // Test: write datagram and check completion handler is invoked
         final CountDownLatch l2 = new CountDownLatch(1);
-        ch.write(ByteBuffer.wrap(msg), null, new CompletionHandler<Integer,Void>() {
+        ch.write(ByteBuffer.wrap(msg), (Void)null, new CompletionHandler<Integer,Void>() {
             public void completed(Integer bytesSent, Void att) {
                 if (bytesSent != msg.length)
                     throw new RuntimeException("Unexpected number of bytes received");
@@ -372,7 +372,7 @@ public class Basic {
             final CountDownLatch latch = new CountDownLatch(1);
             long timeout = (i == 0) ? 0L : 60L;
             Future<SocketAddress> remote = ch
-                .receive(ByteBuffer.allocate(100), timeout, TimeUnit.SECONDS, null,
+                .receive(ByteBuffer.allocate(100), timeout, TimeUnit.SECONDS, (Void)null,
                     new CompletionHandler<SocketAddress,Void>() {
                         public void completed(SocketAddress source, Void att) {
                         }
@@ -395,7 +395,7 @@ public class Basic {
             final CountDownLatch latch = new CountDownLatch(1);
             long timeout = (i == 0) ? 0L : 60L;
             Future<Integer> result = ch
-                .read(ByteBuffer.allocate(100), timeout, TimeUnit.SECONDS, null,
+                .read(ByteBuffer.allocate(100), timeout, TimeUnit.SECONDS, (Void)null,
                     new CompletionHandler<Integer,Void>() {
                         public void completed(Integer bytesRead, Void att) {
                         }
