@@ -235,7 +235,7 @@ class HttpClientImpl extends HttpClient {
     sendAsync(HttpRequest req, HttpResponse.BodyHandler<T> responseHandler)
     {
         MultiExchange<Void,T> mex = new MultiExchange<>(req, this, responseHandler);
-        return mex.responseAsync(null)
+        return mex.responseAsync()
                   .thenApply((HttpResponseImpl<T> b) -> (HttpResponse<T>) b);
     }
 

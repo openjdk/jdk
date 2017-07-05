@@ -385,7 +385,7 @@ final class ListHelper implements XScrollbarClient {
         }
         return false;
     }
-
+    @SuppressWarnings("deprecation")
     void handleVSBEvent(MouseEvent e, Rectangle bounds, int x, int y) {
         int sbHeight = hsbVis ? bounds.height - SCROLLBAR_WIDTH : bounds.height;
 
