@@ -177,12 +177,18 @@ public class SimulResumerTest extends TestScaffold {
                 List<StackFrame> frames = thr.frames();
                 // no failure return value here; could cause an NPE
 
-                int nframes = frames.size();
-                if (nframes > 0) {
-                    // hmm, how could it ever be 0?
-                    kind = "frames(0, size - 1)";
+                kind = "frames(0, size - 1)";
                 System.out.println("kind = " + kind);
-                    thr.frames(0, frames.size() - 1);
+                int nframes = frames.size();
+                while (nframes > 0) {
+                    try {
+                        thr.frames(0, nframes - 1);
+                        break;
+                    } catch (IndexOutOfBoundsException iobe) {
+                        // 6815126. let's try to get less frames
+                        iobe.printStackTrace();
+                        nframes--;
+                    }
                 }
 
                 kind = "frameCount()";

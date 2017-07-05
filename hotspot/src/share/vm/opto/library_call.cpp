@@ -30,10 +30,16 @@
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callGenerator.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/convertnode.hpp"
+#include "opto/countbitsnode.hpp"
+#include "opto/intrinsicnode.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/mathexactnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
@@ -2600,7 +2606,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
     case T_ADDRESS:
       // Cast to an int type.
       p = _gvn.transform(new (C) CastP2XNode(NULL, p));
-      p = ConvX2L(p);
+      p = ConvX2UL(p);
       break;
     default:
       fatal(err_msg_res("unexpected type %d: %s", type, type2name(type)));
@@ -4658,7 +4664,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
     ciKlass* src_k = NULL;
     if (!has_src) {
-      src_k = src_type->speculative_type();
+      src_k = src_type->speculative_type_not_null();
       if (src_k != NULL && src_k->is_array_klass()) {
         could_have_src = true;
       }
@@ -4666,7 +4672,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
     ciKlass* dest_k = NULL;
     if (!has_dest) {
-      dest_k = dest_type->speculative_type();
+      dest_k = dest_type->speculative_type_not_null();
       if (dest_k != NULL && dest_k->is_array_klass()) {
         could_have_dest = true;
       }
@@ -4738,13 +4744,13 @@ bool LibraryCallKit::inline_arraycopy() {
     ciKlass* src_k = top_src->klass();
     ciKlass* dest_k = top_dest->klass();
     if (!src_spec) {
-      src_k = src_type->speculative_type();
+      src_k = src_type->speculative_type_not_null();
       if (src_k != NULL && src_k->is_array_klass()) {
           could_have_src = true;
       }
     }
     if (!dest_spec) {
-      dest_k = dest_type->speculative_type();
+      dest_k = dest_type->speculative_type_not_null();
       if (dest_k != NULL && dest_k->is_array_klass()) {
         could_have_dest = true;
       }

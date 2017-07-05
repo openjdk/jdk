@@ -1001,7 +1001,7 @@ public final class SocketPermission extends Permission
 
     /**
      * Checks two SocketPermission objects for equality.
-     * <P>
+     *
      * @param obj the object to test for equality with this object.
      *
      * @return true if <i>obj</i> is a SocketPermission, and has the

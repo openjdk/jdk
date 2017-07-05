@@ -367,7 +367,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      * view the first time this view is requested.  The view is stateless,
      * so there's no reason to create more than one.
      */
-    private transient Set<Map.Entry<K,V>> entrySet = null;
+    private transient Set<Map.Entry<K,V>> entrySet;
 
     /**
      * Returns a {@link Set} view of the keys contained in this map.
@@ -562,7 +562,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     }
 
     private class EntryIterator extends EnumMapIterator<Map.Entry<K,V>> {
-        private Entry lastReturnedEntry = null;
+        private Entry lastReturnedEntry;
 
         public Map.Entry<K,V> next() {
             if (!hasNext())

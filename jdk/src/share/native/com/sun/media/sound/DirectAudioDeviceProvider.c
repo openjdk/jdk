@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 
 
 #include <jni.h>
+#include <jni_util.h>
 #include "SoundDefs.h"
 #include "DirectAudio.h"
 #include "Utilities.h"
@@ -70,6 +71,11 @@ JNIEXPORT jobject JNICALL Java_com_sun_media_sound_DirectAudioDeviceProvider_nNe
     jmethodID directAudioDeviceInfoConstructor;
     DirectAudioDeviceDescription desc;
     jobject info = NULL;
+    jstring name;
+    jstring vendor;
+    jstring description;
+    jstring version;
+
     TRACE1("Java_com_sun_media_sound_DirectAudioDeviceProvider_nNewDirectAudioDeviceInfo(%d).\n", mixerIndex);
 
     // retrieve class and constructor of DirectAudioDeviceProvider.DirectAudioDeviceInfo
@@ -89,14 +95,18 @@ JNIEXPORT jobject JNICALL Java_com_sun_media_sound_DirectAudioDeviceProvider_nNe
 
     if (getDirectAudioDeviceDescription(mixerIndex, &desc)) {
         // create a new DirectAudioDeviceInfo object and return it
-        info = (*env)->NewObject(env, directAudioDeviceInfoClass, directAudioDeviceInfoConstructor,
-                                 mixerIndex,
-                                 desc.deviceID,
-                                 desc.maxSimulLines,
-                                 (*env)->NewStringUTF(env, desc.name),
-                                 (*env)->NewStringUTF(env, desc.vendor),
-                                 (*env)->NewStringUTF(env, desc.description),
-                                 (*env)->NewStringUTF(env, desc.version));
+        name = (*env)->NewStringUTF(env, desc.name);
+        CHECK_NULL_RETURN(name, info);
+        vendor = (*env)->NewStringUTF(env, desc.vendor);
+        CHECK_NULL_RETURN(vendor, info);
+        description = (*env)->NewStringUTF(env, desc.description);
+        CHECK_NULL_RETURN(description, info);
+        version = (*env)->NewStringUTF(env, desc.version);
+        CHECK_NULL_RETURN(version, info);
+        info = (*env)->NewObject(env, directAudioDeviceInfoClass,
+                                 directAudioDeviceInfoConstructor, mixerIndex,
+                                 desc.deviceID, desc.maxSimulLines,
+                                 name, vendor, description, version);
     } else {
         ERROR1("ERROR: getDirectAudioDeviceDescription(%d, desc) returned FALSE!\n", mixerIndex);
     }

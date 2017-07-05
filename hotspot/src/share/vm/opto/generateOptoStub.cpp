@@ -27,7 +27,7 @@
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
-#include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"

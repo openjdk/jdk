@@ -765,8 +765,19 @@ public final class Math {
      * pseudorandom numbers at a great rate, it may reduce contention
      * for each thread to have its own pseudorandom-number generator.
      *
+     * @apiNote
+     * As the largest {@code double} value less than {@code 1.0}
+     * is {@code Math.nextDown(1.0)}, a value {@code x} in the closed range
+     * {@code [x1,x2]} where {@code x1<=x2} may be defined by the statements
+     *
+     * <blockquote><pre>{@code
+     * double f = Math.random()/Math.nextDown(1.0);
+     * double x = x1*(1.0 - f) + x2*f;
+     * }</pre></blockquote>
+     *
      * @return  a pseudorandom {@code double} greater than or equal
      * to {@code 0.0} and less than {@code 1.0}.
+     * @see #nextDown(double)
      * @see Random#nextDouble()
      */
     public static double random() {

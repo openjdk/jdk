@@ -26,6 +26,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
+#include "memory/metaspaceChunkFreeListSummary.hpp"
 #include "runtime/virtualspace.hpp"
 #include "utilities/exceptions.hpp"
 
@@ -60,6 +61,7 @@ class ChunkManager;
 class ClassLoaderData;
 class Metablock;
 class Metachunk;
+class MetaspaceTracer;
 class MetaWord;
 class Mutex;
 class outputStream;
@@ -149,6 +151,8 @@ class Metaspace : public CHeapObj<mtClass> {
   static ChunkManager* _chunk_manager_metadata;
   static ChunkManager* _chunk_manager_class;
 
+  static const MetaspaceTracer* _tracer;
+
  public:
   static VirtualSpaceList* space_list()       { return _space_list; }
   static VirtualSpaceList* class_space_list() { return _class_space_list; }
@@ -163,6 +167,8 @@ class Metaspace : public CHeapObj<mtClass> {
     assert(mdtype != MetadataTypeCount, "MetadaTypeCount can't be used as mdtype");
     return mdtype == ClassType ? chunk_manager_class() : chunk_manager_metadata();
   }
+
+  static const MetaspaceTracer* tracer() { return _tracer; }
 
  private:
   // This is used by DumpSharedSpaces only, where only _vsm is used. So we will
@@ -234,7 +240,9 @@ class Metaspace : public CHeapObj<mtClass> {
   static void purge();
 
   static void report_metadata_oome(ClassLoaderData* loader_data, size_t word_size,
-                                   MetadataType mdtype, TRAPS);
+                                   MetaspaceObj::Type type, MetadataType mdtype, TRAPS);
+
+  static const char* metadata_type_name(Metaspace::MetadataType mdtype);
 
   void print_on(outputStream* st) const;
   // Debugging support
@@ -347,6 +355,9 @@ class MetaspaceAux : AllStatic {
   static size_t min_chunk_size_bytes() {
     return min_chunk_size_words() * BytesPerWord;
   }
+
+  static bool has_chunk_free_list(Metaspace::MetadataType mdtype);
+  static MetaspaceChunkFreeListSummary chunk_free_list_summary(Metaspace::MetadataType mdtype);
 
   // Print change in used metadata.
   static void print_metaspace_change(size_t prev_metadata_used);

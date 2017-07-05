@@ -163,9 +163,6 @@ public:
   // Iteration functions.
   void oop_iterate(ExtendedOopClosure* cl) = 0;
 
-  // Same as above, restricted to a memory region.
-  virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl) = 0;
-
   // Iterate over all spaces in use in the heap, in an undefined order.
   virtual void space_iterate(SpaceClosure* cl) = 0;
 

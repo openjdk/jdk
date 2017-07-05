@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.awt.Window;
  *
  * @author David Mendenhall
  */
+@SuppressWarnings("serial") // JDK-implementation class
 final class LayoutComparator implements Comparator<Component>, java.io.Serializable {
 
     private static final int ROW_TOLERANCE = 10;

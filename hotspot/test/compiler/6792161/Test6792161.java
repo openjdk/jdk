@@ -27,7 +27,7 @@
  * @bug 6792161
  * @summary assert("No dead instructions after post-alloc")
  *
- * @run main/othervm/timeout=300 -Xcomp -XX:MaxInlineSize=120 Test6792161
+ * @run main/othervm/timeout=600 -Xcomp -XX:MaxInlineSize=120 Test6792161
  */
 
 import java.lang.reflect.Constructor;

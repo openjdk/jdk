@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,8 @@ inline void Assembler::cmpldi(ConditionRegister crx, Register a, int ui16)   { A
 inline void Assembler::cmplw( ConditionRegister crx, Register a, Register b) { Assembler::cmpl( crx, 0, a, b); }
 inline void Assembler::cmpld( ConditionRegister crx, Register a, Register b) { Assembler::cmpl( crx, 1, a, b); }
 
-inline void Assembler::isel(Register d, Register a, Register b, int c) { emit_int32(ISEL_OPCODE    | rt(d)  | ra(a) | rb(b) | bc(c)); }
+inline void Assembler::isel(Register d, Register a, Register b, int c) { guarantee(VM_Version::has_isel(), "opcode not supported on this hardware");
+                                                                         emit_int32(ISEL_OPCODE    | rt(d)  | ra(a) | rb(b) | bc(c)); }
 
 // PPC 1, section 3.3.11, Fixed-Point Logical Instructions
 inline void Assembler::andi_(   Register a, Register s, int ui16)      { emit_int32(ANDI_OPCODE    | rta(a) | rs(s) | uimm(ui16, 16)); }
@@ -531,9 +532,12 @@ inline void Assembler::fmr_(FloatRegister d, FloatRegister b) { emit_int32( FMR_
 //inline void Assembler::mffgpr( FloatRegister d, Register b)   { emit_int32( MFFGPR_OPCODE | frt(d) | rb(b) | rc(0)); }
 //inline void Assembler::mftgpr( Register d, FloatRegister b)   { emit_int32( MFTGPR_OPCODE | rt(d) | frb(b) | rc(0)); }
 // add cmpb and popcntb to detect ppc power version.
-inline void Assembler::cmpb(   Register a, Register s, Register b) { emit_int32( CMPB_OPCODE    | rta(a) | rs(s) | rb(b) | rc(0)); }
-inline void Assembler::popcntb(Register a, Register s)             { emit_int32( POPCNTB_OPCODE | rta(a) | rs(s)); };
-inline void Assembler::popcntw(Register a, Register s)             { emit_int32( POPCNTW_OPCODE | rta(a) | rs(s)); };
+inline void Assembler::cmpb(   Register a, Register s, Register b) { guarantee(VM_Version::has_cmpb(), "opcode not supported on this hardware");
+                                                                     emit_int32( CMPB_OPCODE    | rta(a) | rs(s) | rb(b) | rc(0)); }
+inline void Assembler::popcntb(Register a, Register s)             { guarantee(VM_Version::has_popcntb(), "opcode not supported on this hardware");
+                                                                     emit_int32( POPCNTB_OPCODE | rta(a) | rs(s)); };
+inline void Assembler::popcntw(Register a, Register s)             { guarantee(VM_Version::has_popcntw(), "opcode not supported on this hardware");
+                                                                     emit_int32( POPCNTW_OPCODE | rta(a) | rs(s)); };
 inline void Assembler::popcntd(Register a, Register s)             { emit_int32( POPCNTD_OPCODE | rta(a) | rs(s)); };
 
 inline void Assembler::fneg(  FloatRegister d, FloatRegister b) { emit_int32( FNEG_OPCODE  | frt(d) | frb(b) | rc(0)); }
@@ -568,14 +572,17 @@ inline void Assembler::fctidz(FloatRegister d, FloatRegister b) { emit_int32( FC
 inline void Assembler::fctiw( FloatRegister d, FloatRegister b) { emit_int32( FCTIW_OPCODE  | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::fctiwz(FloatRegister d, FloatRegister b) { emit_int32( FCTIWZ_OPCODE | frt(d) | frb(b) | rc(0)); }
 inline void Assembler::fcfid( FloatRegister d, FloatRegister b) { emit_int32( FCFID_OPCODE  | frt(d) | frb(b) | rc(0)); }
-inline void Assembler::fcfids(FloatRegister d, FloatRegister b) { emit_int32( FCFIDS_OPCODE | frt(d) | frb(b) | rc(0)); }
+inline void Assembler::fcfids(FloatRegister d, FloatRegister b) { guarantee(VM_Version::has_fcfids(), "opcode not supported on this hardware");
+                                                                  emit_int32( FCFIDS_OPCODE | frt(d) | frb(b) | rc(0)); }
 
 // PPC 1, section 4.6.7 Floating-Point Compare Instructions
 inline void Assembler::fcmpu( ConditionRegister crx, FloatRegister a, FloatRegister b) { emit_int32( FCMPU_OPCODE | bf(crx) | fra(a) | frb(b)); }
 
 // PPC 1, section 5.2.1 Floating-Point Arithmetic Instructions
-inline void Assembler::fsqrt( FloatRegister d, FloatRegister b) { emit_int32( FSQRT_OPCODE  | frt(d) | frb(b) | rc(0)); }
-inline void Assembler::fsqrts(FloatRegister d, FloatRegister b) { emit_int32( FSQRTS_OPCODE | frt(d) | frb(b) | rc(0)); }
+inline void Assembler::fsqrt( FloatRegister d, FloatRegister b) { guarantee(VM_Version::has_fsqrt(), "opcode not supported on this hardware");
+                                                                  emit_int32( FSQRT_OPCODE  | frt(d) | frb(b) | rc(0)); }
+inline void Assembler::fsqrts(FloatRegister d, FloatRegister b) { guarantee(VM_Version::has_fsqrts(), "opcode not supported on this hardware");
+                                                                  emit_int32( FSQRTS_OPCODE | frt(d) | frb(b) | rc(0)); }
 
 // Vector instructions for >= Power6.
 inline void Assembler::lvebx( VectorRegister d, Register s1, Register s2) { emit_int32( LVEBX_OPCODE  | vrt(d) | ra0mem(s1) | rb(s2)); }
@@ -703,7 +710,8 @@ inline void Assembler::vcmpgtsw_(VectorRegister d,VectorRegister a, VectorRegist
 inline void Assembler::vcmpgtub_(VectorRegister d,VectorRegister a, VectorRegister b) { emit_int32( VCMPGTUB_OPCODE | vrt(d) | vra(a) | vrb(b) | vcmp_rc(1)); }
 inline void Assembler::vcmpgtuh_(VectorRegister d,VectorRegister a, VectorRegister b) { emit_int32( VCMPGTUH_OPCODE | vrt(d) | vra(a) | vrb(b) | vcmp_rc(1)); }
 inline void Assembler::vcmpgtuw_(VectorRegister d,VectorRegister a, VectorRegister b) { emit_int32( VCMPGTUW_OPCODE | vrt(d) | vra(a) | vrb(b) | vcmp_rc(1)); }
-inline void Assembler::vand(    VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VAND_OPCODE     | vrt(d) | vra(a) | vrb(b)); }
+inline void Assembler::vand(    VectorRegister d, VectorRegister a, VectorRegister b) { guarantee(VM_Version::has_vand(), "opcode not supported on this hardware");
+                                                                                        emit_int32( VAND_OPCODE     | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vandc(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VANDC_OPCODE    | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vnor(    VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VNOR_OPCODE     | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vor(     VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VOR_OPCODE      | vrt(d) | vra(a) | vrb(b)); }

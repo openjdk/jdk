@@ -113,9 +113,7 @@ void UnhandledOops::unregister_unhandled_oop(oop* op) {
 
 void UnhandledOops::clear_unhandled_oops() {
   assert (CheckUnhandledOops, "should only be called with checking option");
-  if (_thread->is_gc_locked_out()) {
-    return;
-  }
+
   for (int k = 0; k < _oop_list->length(); k++) {
     UnhandledOopEntry entry = _oop_list->at(k);
     // If an entry is on the unhandled oop list but isn't on the stack

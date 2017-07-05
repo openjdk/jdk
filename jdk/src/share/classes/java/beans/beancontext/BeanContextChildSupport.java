@@ -262,7 +262,7 @@ public class BeanContextChildSupport implements BeanContextChild, BeanContextSer
      * the PropertyVetoException. <P>
      *
      * No event is fired if old and new are equal and non-null.
-     * <P>
+     *
      * @param name The programmatic name of the property that is about to
      * change
      *

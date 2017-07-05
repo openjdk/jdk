@@ -160,6 +160,7 @@ import java.lang.ref.*;
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     private JEditorPane theEditor;
@@ -640,6 +641,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * Class to watch the associated component and fire
      * hyperlink events on it when appropriate.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class LinkController extends MouseAdapter implements MouseMotionListener, Serializable {
         private Element curElem = null;
         /**
@@ -1482,6 +1484,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * document. If you have another thread modifying the text these
      * methods may have inconsistent behavior, or return the wrong thing.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static abstract class HTMLTextAction extends StyledTextAction {
         public HTMLTextAction(String name) {
             super(name);
@@ -1592,6 +1595,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * addTag. These will be checked for if there is no parentTag at
      * offset.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InsertHTMLTextAction extends HTMLTextAction {
         public InsertHTMLTextAction(String name, String html,
                                     HTML.Tag parentTag, HTML.Tag addTag) {
@@ -1823,6 +1827,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * the parent HTML.Tag based on the paragraph element at the selection
      * start.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class InsertHRAction extends InsertHTMLTextAction {
         InsertHRAction() {
             super("InsertHR", "<hr>", null, HTML.Tag.IMPLIED, null, null,
@@ -1877,6 +1882,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * javax.accessibility package.  The text package should support
      * keyboard navigation of text elements directly.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class NavigateLinkAction extends TextAction implements CaretListener {
 
         private static final FocusHighlightPainter focusPainter =
@@ -2086,6 +2092,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * javax.accessibility package.  The text package should support
      * keyboard navigation of text elements directly.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class ActivateLinkAction extends TextAction {
 
         /**
@@ -2259,7 +2266,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * @see DefaultEditorKit#beginAction
      * @see HTMLEditorKit#getActions
      */
-
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class BeginAction extends TextAction {
 
         /* Create this object with the appropriate identifier. */

@@ -34,6 +34,7 @@ import java.awt.print.PrinterJob;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 
+@SuppressWarnings("serial") // JDK-implementation class
 final class WPageDialog extends WPrintDialog {
     static {
         initIDs();

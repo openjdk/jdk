@@ -49,7 +49,6 @@ public class DataTruncation extends SQLWarning {
      * The <code>cause</code> is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
-     * <p>
      *
      * @param index The index of the parameter or column value
      * @param parameter true if a parameter value was truncated
@@ -77,7 +76,6 @@ public class DataTruncation extends SQLWarning {
      * the reason set to "Data truncation", the
      * vendor code set to 0, and
      * the other fields set to the given values.
-     * <p>
      *
      * @param index The index of the parameter or column value
      * @param parameter true if a parameter value was truncated

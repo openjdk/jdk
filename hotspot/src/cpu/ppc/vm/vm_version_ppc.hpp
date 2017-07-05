@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ class VM_Version: public Abstract_VM_Version {
 protected:
   enum Feature_Flag {
     fsqrt,
+    fsqrts,
     isel,
     lxarxeh,
     cmpb,
@@ -46,6 +47,7 @@ protected:
   enum Feature_Flag_Set {
     unknown_m             = 0,
     fsqrt_m               = (1 << fsqrt  ),
+    fsqrts_m              = (1 << fsqrts ),
     isel_m                = (1 << isel   ),
     lxarxeh_m             = (1 << lxarxeh),
     cmpb_m                = (1 << cmpb   ),
@@ -72,6 +74,7 @@ public:
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
   // CPU instruction support
   static bool has_fsqrt()   { return (_features & fsqrt_m) != 0; }
+  static bool has_fsqrts()  { return (_features & fsqrts_m) != 0; }
   static bool has_isel()    { return (_features & isel_m) != 0; }
   static bool has_lxarxeh() { return (_features & lxarxeh_m) !=0; }
   static bool has_cmpb()    { return (_features & cmpb_m) != 0; }

@@ -74,7 +74,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
      * permitted for this drag operation, and
      * the <code>DragGestureListener</code> to
      * notify when a drag gesture is detected.
-     * <P>
+     *
      * @param ds  The DragSource for the Component c
      * @param c   The Component to observe
      * @param act The actions permitted for this Drag
@@ -92,7 +92,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
      * the <code>Component</code> c,
      * the <code>Component</code> to observe, and the action(s)
      * permitted for this drag operation.
-     * <P>
+     *
      * @param ds  The DragSource for the Component c
      * @param c   The Component to observe
      * @param act The actions permitted for this drag
@@ -107,7 +107,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
      * given the <code>DragSource</code> for the
      * <code>Component</code> c, and the
      * <code>Component</code> to observe.
-     * <P>
+     *
      * @param ds  The DragSource for the Component c
      * @param c   The Component to observe
      */
@@ -119,7 +119,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
     /**
      * Construct a new <code>MouseDragGestureRecognizer</code>
      * given the <code>DragSource</code> for the <code>Component</code>.
-     * <P>
+     *
      * @param ds  The DragSource for the Component
      */
 
@@ -150,7 +150,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
 
     /**
      * Invoked when the mouse has been clicked on a component.
-     * <P>
+     *
      * @param e the <code>MouseEvent</code>
      */
 
@@ -159,7 +159,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
     /**
      * Invoked when a mouse button has been
      * pressed on a <code>Component</code>.
-     * <P>
+     *
      * @param e the <code>MouseEvent</code>
      */
 
@@ -167,7 +167,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
 
     /**
      * Invoked when a mouse button has been released on a component.
-     * <P>
+     *
      * @param e the <code>MouseEvent</code>
      */
 
@@ -175,7 +175,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
 
     /**
      * Invoked when the mouse enters a component.
-     * <P>
+     *
      * @param e the <code>MouseEvent</code>
      */
 
@@ -183,7 +183,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
 
     /**
      * Invoked when the mouse exits a component.
-     * <P>
+     *
      * @param e the <code>MouseEvent</code>
      */
 
@@ -191,7 +191,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
 
     /**
      * Invoked when a mouse button is pressed on a component.
-     * <P>
+     *
      * @param e the <code>MouseEvent</code>
      */
 
@@ -200,7 +200,7 @@ public abstract class MouseDragGestureRecognizer extends DragGestureRecognizer i
     /**
      * Invoked when the mouse button has been moved on a component
      * (with no buttons no down).
-     * <P>
+     *
      * @param e the <code>MouseEvent</code>
      */
 
