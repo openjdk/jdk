@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,26 @@
  * @author Andreas Sterbenz
  * @library ..
  * @run main/othervm AddPrivateKey
+ * @run main/othervm AddPrivateKey sm policy
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
-import java.security.KeyStore.*;
-import java.security.cert.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.KeyFactory;
+import java.security.KeyStore;
+import java.security.KeyStore.PasswordProtection;
+import java.security.KeyStore.PrivateKeyEntry;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Security;
+import java.security.Signature;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 // this test is currently only run for the NSS KeyStore provider, but it
 // is really a generic KeyStore test so it should be modified to run for
@@ -62,6 +74,12 @@ public class AddPrivateKey extends SecmodTest {
         System.out.println(p);
         System.out.println();
         Security.addProvider(p);
+
+        if (args.length > 1 && "sm".equals(args[0])) {
+            System.setProperty("java.security.policy",
+                    BASE + File.separator + args[1]);
+            System.setSecurityManager(new SecurityManager());
+        }
 
         KeyStore ks = KeyStore.getInstance(PKCS11, p);
         ks.load(null, password);

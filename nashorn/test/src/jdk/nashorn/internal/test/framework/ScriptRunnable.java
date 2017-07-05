@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
         int errors;
 
         try {
-            errors = evaluateScript(out, err, args.toArray(new String[args.size()]));
+            errors = evaluateScript(out, err, args.toArray(new String[0]));
         } catch (final AssertionError e) {
             final PrintWriter writer = new PrintWriter(err);
             e.printStackTrace(writer);
@@ -144,7 +144,7 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
         final File errorFileHandle  = new File(errorFileName);
 
         try (OutputStream outputFile = new FileOutputStream(outputFileName); OutputStream errorFile = new FileOutputStream(errorFileName)) {
-            final int errors = evaluateScript(outputFile, errorFile, args.toArray(new String[args.size()]));
+            final int errors = evaluateScript(outputFile, errorFile, args.toArray(new String[0]));
 
             if (errors != 0 || errorFileHandle.length() > 0) {
                 if (expectRunFailure) {

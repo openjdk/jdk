@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,25 @@
  * @library ../../../../java/security/testlibrary
  * @modules java.base/sun.security.util
  * @compile -XDignore.symbol.file TestECDH2.java
- * @run main TestECDH2
+ * @run main/othervm TestECDH2
+ * @run main/othervm TestECDH2 sm
  */
 
-import java.io.*;
-import java.util.*;
 import java.math.BigInteger;
-
-import java.security.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
-import javax.crypto.*;
-
-import sun.security.util.ECUtil;
+import java.security.AlgorithmParameters;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPrivateKeySpec;
+import java.security.spec.ECPublicKeySpec;
+import java.util.Arrays;
+import javax.crypto.KeyAgreement;
 
 public class TestECDH2 extends PKCS11Test {
 
@@ -81,7 +87,9 @@ public class TestECDH2 extends PKCS11Test {
 
     private KeyPair genECKeyPair(String curvName, String privD, String pubX,
                                  String pubY, Provider p) throws Exception {
-        ECParameterSpec ecParams = ECUtil.getECParameterSpec(p, curvName);
+        AlgorithmParameters params = AlgorithmParameters.getInstance("EC", p);
+        params.init(new ECGenParameterSpec(curvName));
+        ECParameterSpec ecParams = params.getParameterSpec(ECParameterSpec.class);
         ECPrivateKeySpec privKeySpec =
             new ECPrivateKeySpec(new BigInteger(privD, 16), ecParams);
         ECPublicKeySpec pubKeySpec =
@@ -98,19 +106,17 @@ public class TestECDH2 extends PKCS11Test {
         return kpg.generateKeyPair();
     }
     public static void main(String[] args) throws Exception {
-        main(new TestECDH2());
+        main(new TestECDH2(), args);
     }
 
+    @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyAgreement", "ECDH") == null) {
             System.out.println("ECDH not supported, skipping");
             return;
         }
 
-        if (isNSS(provider) && getNSSVersion() >= 3.11 &&
-                getNSSVersion() < 3.12) {
-            System.out.println("NSS 3.11 has a DER issue that recent " +
-                    "version do not.");
+        if (isBadNSSVersion(provider)) {
             return;
         }
 

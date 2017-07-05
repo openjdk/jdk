@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -553,7 +553,7 @@ public class ScriptFunction extends ScriptObject {
      * @param prototype actual prototype object
      * @return property map
      */
-    private synchronized PropertyMap getAllocatorMap(final ScriptObject prototype) {
+    private PropertyMap getAllocatorMap(final ScriptObject prototype) {
         if (allocatorMap == null || allocatorMap.isInvalidSharedMapFor(prototype)) {
             // The prototype map has changed since this function was last used as constructor.
             // Get a new allocator map.
@@ -993,7 +993,7 @@ public class ScriptFunction extends ScriptObject {
         if (bestInvoker.getSwitchPoints() != null) {
             sps.addAll(Arrays.asList(bestInvoker.getSwitchPoints()));
         }
-        final SwitchPoint[] spsArray = sps.isEmpty() ? null : sps.toArray(new SwitchPoint[sps.size()]);
+        final SwitchPoint[] spsArray = sps.isEmpty() ? null : sps.toArray(new SwitchPoint[0]);
 
         return new GuardedInvocation(
                 boundHandle,

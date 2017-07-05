@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
         for(final TypeBasedGuardingDynamicLinker linker: linkers) {
             l.add(Objects.requireNonNull(linker));
         }
-        this.classToLinker = new ClassToLinker(l.toArray(new TypeBasedGuardingDynamicLinker[l.size()]));
+        this.classToLinker = new ClassToLinker(l.toArray(new TypeBasedGuardingDynamicLinker[0]));
     }
 
     /**

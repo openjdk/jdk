@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public final class NativeFunction {
             return (Object[])array;
         } else if (array instanceof List) {
             final List<?> list = (List<?>)array;
-            return list.toArray(new Object[list.size()]);
+            return list.toArray(new Object[0]);
         } else if (array == null || array == UNDEFINED) {
             return ScriptRuntime.EMPTY_ARRAY;
         } else if (array instanceof JSObject) {

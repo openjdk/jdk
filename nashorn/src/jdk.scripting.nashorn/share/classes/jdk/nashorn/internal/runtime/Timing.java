@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public final class Timing implements Loggable {
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
-            return strs.toArray(new String[strs.size()]);
+            return strs.toArray(new String[0]);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,7 +166,7 @@ public class ParallelTestRunner {
             final List<String> args = getCompilerArgs();
             int errors;
             try {
-                errors = evaluateScript(out, err, args.toArray(new String[args.size()]));
+                errors = evaluateScript(out, err, args.toArray(new String[0]));
             } catch (final AssertionError e) {
                 final PrintWriter writer = new PrintWriter(err);
                 e.printStackTrace(writer);
@@ -199,7 +199,7 @@ public class ParallelTestRunner {
             final ByteArrayOutputStream err = new ByteArrayOutputStream();
 
             try {
-                final int errors = evaluateScript(out, err, args.toArray(new String[args.size()]));
+                final int errors = evaluateScript(out, err, args.toArray(new String[0]));
 
                 if (errors != 0 || err.size() > 0) {
                     if (expectRunFailure) {

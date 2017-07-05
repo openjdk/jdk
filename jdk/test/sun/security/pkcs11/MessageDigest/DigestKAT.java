@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,23 @@
  * @summary Basic known-answer-test for all our MessageDigest algorithms
  * @author Andreas Sterbenz
  * @library ..
+ * @run main/othervm DigestKAT
+ * @run main/othervm DigestKAT sm
  */
 
-import java.io.*;
-import java.util.*;
-
-import java.security.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
+import java.security.MessageDigest;
+import java.security.Provider;
+import java.util.Arrays;
 
 public class DigestKAT extends PKCS11Test {
 
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();
 
     public static String toString(byte[] b) {
-        StringBuffer sb = new StringBuffer(b.length * 3);
+        StringBuilder sb = new StringBuilder(b.length * 3);
         for (int i = 0; i < b.length; i++) {
             int k = b[i] & 0xff;
             if (i != 0) {
@@ -106,6 +110,7 @@ public class DigestKAT extends PKCS11Test {
             this.data = data;
             this.digest = digest;
         }
+        @Override
         void run(Provider p) throws Exception {
             if (p.getService("MessageDigest", alg) == null) {
                 System.out.println("Skipped " + alg);
@@ -123,7 +128,6 @@ public class DigestKAT extends PKCS11Test {
                 System.out.println("out:  " + DigestKAT.toString(myDigest));
                 throw new Exception("Digest test for " + alg + " failed");
             }
-//          System.out.println("Passed " + alg);
         }
     }
 
@@ -221,12 +225,13 @@ public class DigestKAT extends PKCS11Test {
         System.out.println("Done (" + (stop - start) + " ms).");
     }
 
+    @Override
     public void main(Provider p) throws Exception{
         runTests(tests, p);
     }
 
     public static void main(String[] args) throws Exception {
-        main(new DigestKAT());
+        main(new DigestKAT(), args);
     }
 
 }
