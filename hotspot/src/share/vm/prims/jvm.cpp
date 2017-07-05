@@ -2241,7 +2241,7 @@ JVM_QUICK_ENTRY(jint, JVM_GetMethodIxMaxStack(JNIEnv *env, jclass cls, int metho
   klassOop k = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(cls));
   k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   oop method = instanceKlass::cast(k)->methods()->obj_at(method_index);
-  return methodOop(method)->max_stack();
+  return methodOop(method)->verifier_max_stack();
 JVM_END
 
 

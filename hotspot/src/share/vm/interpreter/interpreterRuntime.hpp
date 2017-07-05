@@ -71,6 +71,8 @@ class InterpreterRuntime: AllStatic {
                                                         { return bytecode(thread).get_index_u2(bc); }
   static int       get_index_u2_cpcache(JavaThread *thread, Bytecodes::Code bc)
                                                         { return bytecode(thread).get_index_u2_cpcache(bc); }
+  static int       get_index_u4(JavaThread *thread, Bytecodes::Code bc)
+                                                        { return bytecode(thread).get_index_u4(bc); }
   static int       number_of_dimensions(JavaThread *thread)  { return bcp(thread)[3]; }
 
   static ConstantPoolCacheEntry* cache_entry_at(JavaThread *thread, int i)  { return method(thread)->constants()->cache()->entry_at(i); }
@@ -118,6 +120,7 @@ class InterpreterRuntime: AllStatic {
 
   // Calls
   static void    resolve_invoke       (JavaThread* thread, Bytecodes::Code bytecode);
+  static void    resolve_invokehandle (JavaThread* thread);
   static void    resolve_invokedynamic(JavaThread* thread);
 
   // Breakpoints

@@ -48,6 +48,9 @@ import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.Charset;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ResourceBundle;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -69,8 +72,6 @@ public enum LauncherHelper {
 
     private static StringBuilder outBuf = new StringBuilder();
 
-    private static ResourceBundle javarb = null;
-
     private static final String INDENT = "    ";
     private static final String VM_SETTINGS     = "VM settings:";
     private static final String PROP_SETTINGS   = "Property settings:";
@@ -78,6 +79,7 @@ public enum LauncherHelper {
 
     // sync with java.c and sun.misc.VM
     private static final String diagprop = "sun.java.launcher.diag";
+    final static boolean trace = sun.misc.VM.getSavedProperty(diagprop) != null;
 
     private static final String defaultBundleName =
             "sun.launcher.resources.launcher";
@@ -428,7 +430,7 @@ public enum LauncherHelper {
         if (msgKey != null) {
             ostream.println(getLocalizedMessage(msgKey, args));
         }
-        if (sun.misc.VM.getSavedProperty(diagprop) != null) {
+        if (trace) {
             if (t != null) {
                 t.printStackTrace();
             } else {
@@ -532,4 +534,82 @@ public enum LauncherHelper {
         }
         return null; // keep the compiler happy
     }
+
+    static String[] expandArgs(String[] argArray) {
+        List<StdArg> aList = new ArrayList<>();
+        for (String x : argArray) {
+            aList.add(new StdArg(x));
+        }
+        return expandArgs(aList);
+    }
+
+    static String[] expandArgs(List<StdArg> argList) {
+        ArrayList<String> out = new ArrayList<>();
+        if (trace) {
+            System.err.println("Incoming arguments:");
+        }
+        for (StdArg a : argList) {
+            if (trace) {
+                System.err.println(a);
+            }
+            if (a.needsExpansion) {
+                File x = new File(a.arg);
+                File parent = x.getParentFile();
+                String glob = x.getName();
+                if (parent == null) {
+                    parent = new File(".");
+                }
+                try (DirectoryStream<Path> dstream =
+                        Files.newDirectoryStream(parent.toPath(), glob)) {
+                    int entries = 0;
+                    for (Path p : dstream) {
+                        out.add(p.normalize().toString());
+                        entries++;
+                    }
+                    if (entries == 0) {
+                        out.add(a.arg);
+                    }
+                } catch (Exception e) {
+                    out.add(a.arg);
+                    if (trace) {
+                        System.err.println("Warning: passing argument as-is " + a);
+                        System.err.print(e);
+                    }
+                }
+            } else {
+                out.add(a.arg);
+            }
+        }
+        String[] oarray = new String[out.size()];
+        out.toArray(oarray);
+
+        if (trace) {
+            System.err.println("Expanded arguments:");
+            for (String x : oarray) {
+                System.err.println(x);
+            }
+        }
+        return oarray;
+    }
+
+    /* duplicate of the native StdArg struct */
+    private static class StdArg {
+        final String arg;
+        final boolean needsExpansion;
+        StdArg(String arg, boolean expand) {
+            this.arg = arg;
+            this.needsExpansion = expand;
+        }
+        // protocol: first char indicates whether expansion is required
+        // 'T' = true ; needs expansion
+        // 'F' = false; needs no expansion
+        StdArg(String in) {
+            this.arg = in.substring(1);
+            needsExpansion = in.charAt(0) == 'T';
+        }
+        public String toString() {
+            return "StdArg{" + "arg=" + arg + ", needsExpansion=" + needsExpansion + '}';
+        }
+    }
 }
+

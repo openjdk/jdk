@@ -181,8 +181,8 @@ class FrameMap : public CompilationResourceObj {
 
   // for outgoing calls, these also update the reserved area to
   // include space for arguments and any ABI area.
-  CallingConvention* c_calling_convention (const BasicTypeArray* signature);
-  CallingConvention* java_calling_convention (const BasicTypeArray* signature, bool outgoing);
+  CallingConvention* c_calling_convention(const BasicTypeArray* signature);
+  CallingConvention* java_calling_convention(const BasicTypeArray* signature, bool outgoing);
 
   // deopt support
   ByteSize sp_offset_for_orig_pc() { return sp_offset_for_monitor_base(_num_monitors); }
