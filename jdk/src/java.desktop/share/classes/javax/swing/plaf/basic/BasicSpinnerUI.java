@@ -210,6 +210,16 @@ public class BasicSpinnerUI extends SpinnerUI
         LookAndFeel.installBorder(spinner, "Spinner.border");
         LookAndFeel.installColorsAndFont(spinner, "Spinner.background", "Spinner.foreground", "Spinner.font");
         LookAndFeel.installProperty(spinner, "opaque", Boolean.TRUE);
+
+        JComponent editor = spinner.getEditor();
+        if (editor instanceof JSpinner.DefaultEditor) {
+            JTextField tf = ((JSpinner.DefaultEditor) editor).getTextField();
+            if (tf != null) {
+                if (tf.getFont() instanceof UIResource) {
+                    tf.setFont(new FontUIResource(spinner.getFont()));
+                }
+            }
+        }
     }
 
 

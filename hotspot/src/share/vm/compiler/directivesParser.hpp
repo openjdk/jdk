@@ -55,7 +55,7 @@ public:
   int install_directives();
 
 private:
-  DirectivesParser(const char* text, outputStream* st);
+  DirectivesParser(const char* text, outputStream* st, bool silent);
   ~DirectivesParser();
 
   bool callback(JSON_TYPE t, JSON_VAL* v, uint level);

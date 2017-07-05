@@ -155,6 +155,14 @@ addBuildDir() {
   printf "%s\n" "$mn" >> $IDEA_ANT
 }
 
+JTREG_HOME="        <property name=\"jtreg.home\" value=\"####\" />"
+
+addJtregHome() {
+  DIR=`dirname $SPEC`
+  mn="`echo "$JTREG_HOME" | sed -e s@"\(.*\)####\(.*\)"@"\1$JT_HOME\2"@`"
+  printf "%s\n" "$mn" >> $IDEA_ANT
+}
+
 ### Generate ant.xml
 
 rm -f $IDEA_ANT
@@ -162,6 +170,8 @@ while IFS= read -r line
 do
   if echo "$line" | egrep "^ .* <property name=\"module.name\"" > /dev/null ; then
     addModuleName
+  elif echo "$line" | egrep "^ .* <property name=\"jtreg.home\"" > /dev/null ; then
+    addJtregHome
   elif echo "$line" | egrep "^ .* <property name=\"build.target.dir\"" > /dev/null ; then
     addBuildDir
   else

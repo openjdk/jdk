@@ -26,9 +26,4 @@
 module jdk.jcmd {
     requires jdk.attach;
     requires jdk.jvmstat;
-
-    exports jdk.internal.vm.agent.spi to jdk.hotspot.agent;
-
-    uses jdk.internal.vm.agent.spi.ToolProvider;
 }
-

@@ -32,7 +32,7 @@ jlong LogDecorations::_vm_start_time_millis = 0;
 const char* LogDecorations::_host_name = "";
 
 LogDecorations::LogDecorations(LogLevelType level, const LogTagSet &tagset, const LogDecorators &decorators)
-  : _level(level), _tagset(tagset), _millis(-1) {
+    : _level(level), _tagset(tagset), _millis(-1) {
   create_decorations(decorators);
 }
 
@@ -110,8 +110,9 @@ char * LogDecorations::create_tid_decoration(char* pos) {
 }
 
 char* LogDecorations::create_level_decoration(char* pos) {
-  int written = jio_snprintf(pos, DecorationsBufferSize - (pos - _decorations_buffer), "%s", LogLevel::name(_level));
-  ASSERT_AND_RETURN(written, pos)
+  // Avoid generating the level decoration because it may change.
+  // The decoration() method has a special case for level decorations.
+  return pos;
 }
 
 char* LogDecorations::create_tags_decoration(char* pos) {

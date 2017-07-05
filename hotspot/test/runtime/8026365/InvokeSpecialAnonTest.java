@@ -35,7 +35,7 @@
  */
 import jdk.internal.org.objectweb.asm.*;
 import java.lang.reflect.Constructor;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class InvokeSpecialAnonTest implements Opcodes {
 

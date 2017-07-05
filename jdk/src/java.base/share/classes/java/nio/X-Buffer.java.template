@@ -70,8 +70,7 @@ import java.util.stream.$Streamtype$Stream;
  *
 #end[byte]
  *
- *   <li><p> Methods for {@link #compact compacting}, {@link
- *   #duplicate duplicating}, and {@link #slice slicing}
+ *   <li><p> A method for {@link #compact compacting}
  *   $a$ $type$ buffer.  </p></li>
  *
  * </ul>
@@ -535,6 +534,7 @@ public abstract class $Type$Buffer
      * @see #alignedSlice(int)
 #end[byte]
      */
+    @Override
     public abstract $Type$Buffer slice();
 
     /**
@@ -557,6 +557,7 @@ public abstract class $Type$Buffer
      *
      * @return  The new $type$ buffer
      */
+    @Override
     public abstract $Type$Buffer duplicate();
 
     /**

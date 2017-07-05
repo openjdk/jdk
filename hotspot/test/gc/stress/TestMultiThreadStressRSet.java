@@ -35,6 +35,7 @@ import sun.hotspot.WhiteBox;
  * @requires os.maxMemory > 2G
  *
  * @summary Stress G1 Remembered Set using multiple threads
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib /testlibrary
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

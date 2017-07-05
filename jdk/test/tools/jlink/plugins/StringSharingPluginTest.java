@@ -38,6 +38,8 @@
  * @run main StringSharingPluginTest
  */
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
@@ -50,11 +52,11 @@ import java.util.function.Consumer;
 
 import jdk.internal.jimage.decompressor.CompressedResourceHeader;
 import jdk.internal.jimage.decompressor.StringSharingDecompressor;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.internal.plugins.StringSharingPlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import tests.Helper;
 import tests.JImageValidator;
@@ -78,7 +80,7 @@ public class StringSharingPluginTest {
         Map<String, Integer> map = new HashMap<>();
         Map<Integer, String> reversedMap = new HashMap<>();
 
-        PoolImpl resources = new PoolImpl(ByteOrder.nativeOrder(), new StringTable() {
+        ModulePoolImpl resources = new ModulePoolImpl(ByteOrder.nativeOrder(), new StringTable() {
             @Override
             public int addString(String str) {
                 Integer id = map.get(str);
@@ -104,7 +106,7 @@ public class StringSharingPluginTest {
                     byte[] content = Files.readAllBytes(p);
                     String path = p.toString().replace('\\', '/');
                     path = path.substring("/modules".length());
-                    ModuleData res = Pool.newResource(path, content);
+                    ModuleEntry res = ModuleEntry.create(path, content);
                     resources.add(res);
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
@@ -115,19 +117,23 @@ public class StringSharingPluginTest {
             stream.forEach(c);
         }
         TransformerPlugin plugin = new StringSharingPlugin();
-        PoolImpl result = new PoolImpl(resources.getByteOrder(), resources.getStringTable());
+        ModulePoolImpl result = new ModulePoolImpl(resources.getByteOrder(), resources.getStringTable());
         plugin.visit(resources, result);
 
         if (result.isEmpty()) {
             throw new AssertionError("No result");
         }
 
-        for (ModuleData res : result.getContent()) {
+        result.entries().forEach(res -> {
             if (res.getPath().endsWith(".class")) {
-                byte[] uncompacted = StringSharingDecompressor.normalize(reversedMap::get, res.getBytes(),
+                try {
+                    byte[] uncompacted = StringSharingDecompressor.normalize(reversedMap::get, res.getBytes(),
                         CompressedResourceHeader.getSize());
-                JImageValidator.readClass(uncompacted);
+                    JImageValidator.readClass(uncompacted);
+                } catch (IOException exp) {
+                    throw new UncheckedIOException(exp);
+                }
             }
-        }
+        });
     }
 }

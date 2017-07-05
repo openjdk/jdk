@@ -1032,12 +1032,28 @@ public:
     system(0b00, 0b011, 0b00011, SY, 0b110);
   }
 
-  void dc(Register Rt) {
-    system(0b01, 0b011, 0b0111, 0b1011, 0b001, Rt);
+  void sys(int op1, int CRn, int CRm, int op2,
+           Register rt = (Register)0b11111) {
+    system(0b01, op1, CRn, CRm, op2, rt);
   }
 
-  void ic(Register Rt) {
-    system(0b01, 0b011, 0b0111, 0b0101, 0b001, Rt);
+  // Only implement operations accessible from EL0 or higher, i.e.,
+  //            op1    CRn    CRm    op2
+  // IC IVAU     3      7      5      1
+  // DC CVAC     3      7      10     1
+  // DC CVAU     3      7      11     1
+  // DC CIVAC    3      7      14     1
+  // DC ZVA      3      7      4      1
+  // So only deal with the CRm field.
+  enum icache_maintenance {IVAU = 0b0101};
+  enum dcache_maintenance {CVAC = 0b1010, CVAU = 0b1011, CIVAC = 0b1110, ZVA = 0b100};
+
+  void dc(dcache_maintenance cm, Register Rt) {
+    sys(0b011, 0b0111, cm, 0b001, Rt);
+  }
+
+  void ic(icache_maintenance cm, Register Rt) {
+    sys(0b011, 0b0111, cm, 0b001, Rt);
   }
 
   // A more convenient access to dmb for our purposes
@@ -2245,18 +2261,18 @@ public:
     rf(Vn, 5), rf(Rd, 0);
   }
 
-#define INSN(NAME, opc, opc2) \
-  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift){         \
-    starti;                                                                             \
-    /* The encodings for the immh:immb fields (bits 22:16) are                          \
-     *   0001 xxx       8B/16B, shift = xxx                                             \
-     *   001x xxx       4H/8H,  shift = xxxx                                            \
-     *   01xx xxx       2S/4S,  shift = xxxxx                                           \
-     *   1xxx xxx       1D/2D,  shift = xxxxxx (1D is RESERVED)                         \
-     */                                                                                 \
-    assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");                           \
-    f(0, 31), f(T & 1, 30), f(opc, 29), f(0b011110, 28, 23),                            \
-    f((1 << ((T>>1)+3))|shift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0);          \
+#define INSN(NAME, opc, opc2)                                           \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, int shift){ \
+    starti;                                                             \
+    /* The encodings for the immh:immb fields (bits 22:16) are          \
+     *   0001 xxx       8B/16B, shift = xxx                             \
+     *   001x xxx       4H/8H,  shift = xxxx                            \
+     *   01xx xxx       2S/4S,  shift = xxxxx                           \
+     *   1xxx xxx       1D/2D,  shift = xxxxxx (1D is RESERVED)         \
+     */                                                                 \
+    assert((1 << ((T>>1)+3)) > shift, "Invalid Shift value");           \
+    f(0, 31), f(T & 1, 30), f(opc, 29), f(0b011110, 28, 23),            \
+    f((1 << ((T>>1)+3))|shift, 22, 16); f(opc2, 15, 10), rf(Vn, 5), rf(Vd, 0); \
   }
 
   INSN(shl,  0, 0b010101);
@@ -2346,6 +2362,24 @@ public:
     f(((1 << (T >> 1)) | (index << ((T >> 1) + 1))), 20, 16);
     f(0b000001, 15, 10), rf(Vn, 5), rf(Vd, 0);
   }
+
+  // AdvSIMD ZIP/UZP/TRN
+#define INSN(NAME, opcode)                                              \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
+    starti;                                                             \
+    f(0, 31), f(0b001110, 29, 24), f(0, 21), f(0b001110, 15, 10);       \
+    rf(Vm, 16), rf(Vn, 5), rf(Vd, 0);                                   \
+    f(T & 1, 30), f(T >> 1, 23, 22);                                    \
+  }
+
+  INSN(uzp1, 0b001);
+  INSN(trn1, 0b010);
+  INSN(zip1, 0b011);
+  INSN(uzp2, 0b101);
+  INSN(trn2, 0b110);
+  INSN(zip2, 0b111);
+
+#undef INSN
 
   // CRC32 instructions
 #define INSN(NAME, c, sf, sz)                                             \

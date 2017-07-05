@@ -27,6 +27,7 @@
  * @test
  * @summary Test that if class c5 in an unnamed module can read package p6 in module m2, but package p6 in module m2 is
  *          exported qualifiedly to module m3, then class c5 in an unnamed module can not read p6.c6 in module m2.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MySameClassLoader.java
  * @compile p6/c6.java
@@ -100,7 +101,7 @@ public class UmodUpkg_ExpQualOther {
         // Resolves "m1"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
         // map each module to differing class loaders for this test
         Map<String, ClassLoader> map = new HashMap<>();

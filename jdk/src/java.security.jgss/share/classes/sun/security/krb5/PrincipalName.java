@@ -424,6 +424,9 @@ public class PrincipalName implements Cloneable {
                 } catch (UnknownHostException | SecurityException e) {
                     // not canonicalized or no permission to do so, use old
                 }
+                if (hostName.endsWith(".")) {
+                    hostName = hostName.substring(0, hostName.length() - 1);
+                }
                 nameParts[1] = hostName.toLowerCase(Locale.ENGLISH);
             }
             nameStrings = nameParts;

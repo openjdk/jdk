@@ -33,7 +33,7 @@ import javax.sound.sampled.AudioFormat;
  *
  * @author Jan Borgersen
  */
-final class AuFileFormat extends AudioFileFormat {
+final class AuFileFormat extends StandardFileFormat {
 
     // magic numbers
     static final int AU_SUN_MAGIC = 0x2e736e64; // ".snd"
@@ -55,11 +55,18 @@ final class AuFileFormat extends AudioFileFormat {
 
     static final int AU_HEADERSIZE       = 24;
 
+    /**
+     * According the specification of AU file format this is the value for
+     * length field if length is not known. This is a maximum possible value for
+     * the unsigned int.
+     */
+    static final long /*unsigned int */ UNKNOWN_SIZE = 0xffffffffL;
+
     private int auType;
 
-    AuFileFormat(AudioFileFormat.Type type, int lengthInBytes, AudioFormat format, int lengthInFrames) {
-
-        super(type,lengthInBytes,format,lengthInFrames);
+    AuFileFormat(final AudioFileFormat.Type type, final long byteLength,
+                 final AudioFormat format, final long frameLength) {
+        super(type, byteLength, format, frameLength);
 
         AudioFormat.Encoding encoding = format.getEncoding();
 

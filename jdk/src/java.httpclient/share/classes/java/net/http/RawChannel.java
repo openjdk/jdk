@@ -29,6 +29,7 @@ import java.nio.channels.ByteChannel;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 
 //
 // Used to implement WebSocket. Each RawChannel corresponds to a TCP connection
@@ -56,9 +57,21 @@ final class RawChannel implements ByteChannel, GatheringByteChannel {
     interface NonBlockingEvent extends RawEvent {
     }
 
-    RawChannel(HttpClientImpl client, HttpConnection connection) {
+    RawChannel(HttpClientImpl client, HttpConnection connection)
+                                                throws IOException {
         this.client = client;
         this.connection = connection;
+        SocketChannel chan = connection.channel();
+        client.cancelRegistration(chan);
+        chan.configureBlocking(false);
+    }
+
+    SocketChannel socketChannel() {
+        return connection.channel();
+    }
+
+    ByteBuffer getRemaining() {
+        return connection.getRemaining();
     }
 
     private class RawAsyncEvent extends AsyncEvent {

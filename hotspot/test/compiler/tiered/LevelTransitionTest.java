@@ -38,7 +38,7 @@ import compiler.whitebox.SimpleTestCase;
  * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation
- *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::*
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCaseHelper::*
  *                   -XX:CompileCommand=compileonly,ExtendedTestCase$CompileMethodHolder::*
  *                   TransitionsTestExecutor LevelTransitionTest
  * @summary Test the correctness of compilation level transitions for different methods
@@ -80,7 +80,7 @@ public class LevelTransitionTest extends TieredLevelsTest {
     /**
      * Makes and verifies transitions between compilation levels
      */
-    protected void checkTransitions() {
+    protected void checkTransitions() throws Exception {
         checkNotCompiled();
         boolean finish = false;
         while (!finish) {

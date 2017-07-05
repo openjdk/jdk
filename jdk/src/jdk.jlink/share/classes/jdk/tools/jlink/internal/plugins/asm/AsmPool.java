@@ -24,13 +24,12 @@
  */
 package jdk.tools.jlink.internal.plugins.asm;
 
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 /**
  * A pool of ClassReader and other resource files.
@@ -138,14 +137,14 @@ public interface AsmPool {
          * @return The ClassReader or null if the class is not found.
          * @throws jdk.tools.jlink.plugin.PluginException
          */
-        public ClassReader getClassReader(Pool.ModuleData res);
+        public ClassReader getClassReader(ModuleEntry res);
 
         /**
          * Returns all the classes contained in the writable pool.
          *
          * @return The collection of classes.
          */
-        public Collection<Pool.ModuleData> getClasses();
+        public Collection<ModuleEntry> getClasses();
     }
 
     /**
@@ -185,14 +184,14 @@ public interface AsmPool {
          * @param res The java resource
          * @return The Resource or null if the resource is not found.
          */
-        public ResourceFile getResourceFile(Pool.ModuleData res);
+        public ResourceFile getResourceFile(ModuleEntry res);
 
         /**
          * Returns all the resources contained in the writable pool.
          *
          * @return The array of resources.
          */
-        public Collection<Pool.ModuleData> getResourceFiles();
+        public Collection<ModuleEntry> getResourceFiles();
     }
 
     /**
@@ -206,7 +205,7 @@ public interface AsmPool {
          * @return The resource paths ordered in the way to use for storage in the jimage.
          * @throws jdk.tools.jlink.plugin.PluginException
          */
-        public List<String> sort(Pool resources);
+        public List<String> sort(ModulePool resources);
     }
 
     /**
@@ -237,7 +236,7 @@ public interface AsmPool {
      *
      * @return The classes.
      */
-    public Collection<Pool.ModuleData> getClasses();
+    public Collection<ModuleEntry> getClasses();
 
     /**
      * Returns the resources contained in the pool. Resources are all the file
@@ -245,7 +244,7 @@ public interface AsmPool {
      *
      * @return The array of resource files.
      */
-    public Collection<Pool.ModuleData> getResourceFiles();
+    public Collection<ModuleEntry> getResourceFiles();
 
     /**
      * Retrieves a resource based on the binary name. This name doesn't contain
@@ -266,7 +265,7 @@ public interface AsmPool {
      * @param res The resource
      * @return The resource file or null if it doesn't exist.
      */
-    public ResourceFile getResourceFile(Pool.ModuleData res);
+    public ResourceFile getResourceFile(ModuleEntry res);
 
     /**
      * Retrieve a ClassReader from the pool.
@@ -284,7 +283,7 @@ public interface AsmPool {
      * @return A reader or null if the class is unknown
      * @throws jdk.tools.jlink.plugin.PluginException
      */
-    public ClassReader getClassReader(Pool.ModuleData res);
+    public ClassReader getClassReader(ModuleEntry res);
 
     /**
      * To visit the set of ClassReaders.
@@ -310,6 +309,6 @@ public interface AsmPool {
      * @param output The pool used to fill the jimage.
      * @throws jdk.tools.jlink.plugin.PluginException
      */
-    public void fillOutputResources(Pool output);
+    public void fillOutputResources(ModulePool output);
 
 }

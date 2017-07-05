@@ -38,7 +38,6 @@ void HeapRegionSetBase::verify_region(HeapRegion* hr) {
   assert(!hr->is_free() || hr->is_empty(), "Free region %u is not empty for set %s", hr->hrm_index(), name());
   assert(!hr->is_empty() || hr->is_free() || hr->is_archive(),
          "Empty region %u is not free or archive for set %s", hr->hrm_index(), name());
-  assert(hr->rem_set()->verify_ready_for_par_iteration(), "Wrong iteration state %u", hr->hrm_index());
 }
 #endif
 

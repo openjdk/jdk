@@ -564,7 +564,7 @@ HeapWord* DefNewGeneration::expand_and_allocate(size_t size,
 
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
   // Set the desired survivor size to half the real survivor space
-  GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->collector_policy()->counters();
+  GCPolicyCounters* gc_counters = GenCollectedHeap::heap()->gen_policy()->counters();
   _tenuring_threshold =
     age_table()->compute_tenuring_threshold(to()->capacity()/HeapWordSize, gc_counters);
 }
@@ -945,7 +945,7 @@ void DefNewGeneration::gc_epilogue(bool full) {
 
   // update the generation and space performance counters
   update_counters();
-  gch->collector_policy()->counters()->update_counters();
+  gch->gen_policy()->counters()->update_counters();
 }
 
 void DefNewGeneration::record_spaces_top() {

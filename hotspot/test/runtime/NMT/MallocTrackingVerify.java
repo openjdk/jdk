@@ -53,7 +53,7 @@ public class MallocTrackingVerify {
         OutputAnalyzer output;
 
         // Grab my own PID
-        String pid = Integer.toString(ProcessTools.getProcessId());
+        String pid = Long.toString(ProcessTools.getProcessId());
         ProcessBuilder pb = new ProcessBuilder();
 
         Random random = new Random();

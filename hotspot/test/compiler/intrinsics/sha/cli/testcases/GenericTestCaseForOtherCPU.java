@@ -50,11 +50,13 @@ public class GenericTestCaseForOtherCPU extends
         CommandLineOptionTest.verifySameJVMStartup(null,
                 new String[] { ".*" + optionName + ".*" }, shouldPassMessage,
                 shouldPassMessage, ExitCode.OK,
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
         CommandLineOptionTest.verifySameJVMStartup(null,
                 new String[] { ".*" + optionName + ".*" }, shouldPassMessage,
                 shouldPassMessage, ExitCode.OK,
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 
@@ -63,13 +65,15 @@ public class GenericTestCaseForOtherCPU extends
         // Verify that option is disabled by default.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
                 String.format("Option '%s' should be disabled by default",
-                        optionName));
+                        optionName),
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS);
 
         // Verify that option is disabled even if it was explicitly enabled
         // using CLI options.
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
                 String.format("Option '%s' should be off on unsupported "
                         + "CPU even if set to true directly", optionName),
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
         // Verify that option is disabled when it explicitly disabled
@@ -79,6 +83,7 @@ public class GenericTestCaseForOtherCPU extends
                         + " even if '%s' flag set to JVM", optionName,
                         CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, true)),
+                SHAOptionsBase.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 }

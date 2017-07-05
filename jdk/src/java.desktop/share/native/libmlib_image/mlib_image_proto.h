@@ -1430,17 +1430,6 @@ mlib_status  __mlib_ImageAffine(mlib_image *dst,
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageAffineIndex mlib_ImageAffineIndex
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageAffineIndex(mlib_image *dst,
-                                     const mlib_image *src,
-                                     const mlib_d64 *mtx,
-                                     mlib_filter filter,
-                                     mlib_edge edge,
-                                     const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
 #define __mlib_ImageAffineTable mlib_ImageAffineTable
 #endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
 mlib_status  __mlib_ImageAffineTable(mlib_image *dst,
@@ -1468,17 +1457,6 @@ mlib_status  __mlib_ImageAffineTransform(mlib_image *dst,
                                          const mlib_d64 *mtx,
                                          mlib_filter filter,
                                          mlib_edge edge);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageAffineTransformIndex mlib_ImageAffineTransformIndex
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageAffineTransformIndex(mlib_image *dst,
-                                              const mlib_image *src,
-                                              const mlib_d64 *mtx,
-                                              mlib_filter filter,
-                                              mlib_edge edge,
-                                              const void *colormap);
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
@@ -1825,19 +1803,6 @@ mlib_status  __mlib_ImageRotate90_Fp(mlib_image *dst,
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageRotateIndex mlib_ImageRotateIndex
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageRotateIndex(mlib_image *dst,
-                                     const mlib_image *src,
-                                     mlib_d64 angle,
-                                     mlib_d64 xcenter,
-                                     mlib_d64 ycenter,
-                                     mlib_filter filter,
-                                     mlib_edge edge,
-                                     const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
 #define __mlib_ImageRotate_Fp mlib_ImageRotate_Fp
 #endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
 mlib_status  __mlib_ImageRotate_Fp(mlib_image *dst,
@@ -1887,16 +1852,6 @@ mlib_status  __mlib_ImageZoomIn2X(mlib_image *dst,
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageZoomIn2XIndex mlib_ImageZoomIn2XIndex
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageZoomIn2XIndex(mlib_image *dst,
-                                       const mlib_image *src,
-                                       mlib_filter filter,
-                                       mlib_edge edge,
-                                       const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
 #define __mlib_ImageZoomIn2X_Fp mlib_ImageZoomIn2X_Fp
 #endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
 mlib_status  __mlib_ImageZoomIn2X_Fp(mlib_image *dst,
@@ -1912,16 +1867,6 @@ mlib_status  __mlib_ImageZoomOut2X(mlib_image *dst,
                                    const mlib_image *src,
                                    mlib_filter filter,
                                    mlib_edge edge);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageZoomOut2XIndex mlib_ImageZoomOut2XIndex
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageZoomOut2XIndex(mlib_image *dst,
-                                        const mlib_image *src,
-                                        mlib_filter filter,
-                                        mlib_edge edge,
-                                        const void *colormap);
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
@@ -2009,18 +1954,6 @@ mlib_status  __mlib_ImageZoom(mlib_image *dst,
                               mlib_d64 zoomy,
                               mlib_filter filter,
                               mlib_edge edge);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageZoomIndex mlib_ImageZoomIndex
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageZoomIndex(mlib_image *dst,
-                                   const mlib_image *src,
-                                   mlib_d64 zoomx,
-                                   mlib_d64 zoomy,
-                                   mlib_filter filter,
-                                   mlib_edge edge,
-                                   const void *colormap);
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
@@ -2309,98 +2242,6 @@ mlib_status  __mlib_ImageXor_Inp(mlib_image *src1dst,
                                  const mlib_image *src2);
 
 /* Radiometric Operations ( radio ) */
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageColorTrue2IndexInit mlib_ImageColorTrue2IndexInit
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageColorTrue2IndexInit(void **colormap,
-                                             mlib_s32 bits,
-                                             mlib_type intype,
-                                             mlib_type outtype,
-                                             mlib_s32 channels,
-                                             mlib_s32 entries,
-                                             mlib_s32 offset,
-                                             const void **table);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageColorTrue2Index mlib_ImageColorTrue2Index
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageColorTrue2Index(mlib_image *dst,
-                                         const mlib_image *src,
-                                         const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageColorTrue2IndexFree mlib_ImageColorTrue2IndexFree
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-void  __mlib_ImageColorTrue2IndexFree(void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageColorDitherInit mlib_ImageColorDitherInit
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageColorDitherInit(void **colormap,
-                                         const mlib_s32 *dimensions,
-                                         mlib_type intype,
-                                         mlib_type outtype,
-                                         mlib_s32 channels,
-                                         mlib_s32 entries,
-                                         mlib_s32 offset,
-                                         void **lut);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageColorDitherFree mlib_ImageColorDitherFree
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-void  __mlib_ImageColorDitherFree(void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageColorErrorDiffusion3x3 mlib_ImageColorErrorDiffusion3x3
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageColorErrorDiffusion3x3(mlib_image *dst,
-                                                const mlib_image *src,
-                                                const mlib_s32 *kernel,
-                                                mlib_s32 scale,
-                                                const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageColorErrorDiffusionMxN mlib_ImageColorErrorDiffusionMxN
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageColorErrorDiffusionMxN(mlib_image *dst,
-                                                const mlib_image *src,
-                                                const mlib_s32 *kernel,
-                                                mlib_s32 m,
-                                                mlib_s32 n,
-                                                mlib_s32 dm,
-                                                mlib_s32 dn,
-                                                mlib_s32 scale,
-                                                const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageColorOrderedDither8x8 mlib_ImageColorOrderedDither8x8
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageColorOrderedDither8x8(mlib_image *dst,
-                                               const mlib_image *src,
-                                               const mlib_s32 *dmask,
-                                               mlib_s32 scale,
-                                               const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageColorOrderedDitherMxN mlib_ImageColorOrderedDitherMxN
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageColorOrderedDitherMxN(mlib_image *dst,
-                                               const mlib_image *src,
-                                               const mlib_s32 **dmask,
-                                               mlib_s32 m,
-                                               mlib_s32 n,
-                                               mlib_s32 scale,
-                                               const void *colormap);
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
@@ -2694,17 +2535,6 @@ mlib_status  __mlib_ImageConv2x2(mlib_image *dst,
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageConv2x2Index mlib_ImageConv2x2Index
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageConv2x2Index(mlib_image *dst,
-                                      const mlib_image *src,
-                                      const mlib_s32 *kernel,
-                                      mlib_s32 scale,
-                                      mlib_edge edge,
-                                      const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
 #define __mlib_ImageConv2x2_Fp mlib_ImageConv2x2_Fp
 #endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
 mlib_status  __mlib_ImageConv2x2_Fp(mlib_image *dst,
@@ -2723,17 +2553,6 @@ mlib_status  __mlib_ImageConv3x3(mlib_image *dst,
                                  mlib_s32 scale,
                                  mlib_s32 cmask,
                                  mlib_edge edge);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageConv3x3Index mlib_ImageConv3x3Index
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageConv3x3Index(mlib_image *dst,
-                                      const mlib_image *src,
-                                      const mlib_s32 *kernel,
-                                      mlib_s32 scale,
-                                      mlib_edge edge,
-                                      const void *colormap);
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
@@ -2758,17 +2577,6 @@ mlib_status  __mlib_ImageConv4x4(mlib_image *dst,
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageConv4x4Index mlib_ImageConv4x4Index
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageConv4x4Index(mlib_image *dst,
-                                      const mlib_image *src,
-                                      const mlib_s32 *kernel,
-                                      mlib_s32 scale,
-                                      mlib_edge edge,
-                                      const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
 #define __mlib_ImageConv4x4_Fp mlib_ImageConv4x4_Fp
 #endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
 mlib_status  __mlib_ImageConv4x4_Fp(mlib_image *dst,
@@ -2790,17 +2598,6 @@ mlib_status  __mlib_ImageConv5x5(mlib_image *dst,
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageConv5x5Index mlib_ImageConv5x5Index
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageConv5x5Index(mlib_image *dst,
-                                      const mlib_image *src,
-                                      const mlib_s32 *kernel,
-                                      mlib_s32 scale,
-                                      mlib_edge edge,
-                                      const void *colormap);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
 #define __mlib_ImageConv5x5_Fp mlib_ImageConv5x5_Fp
 #endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
 mlib_status  __mlib_ImageConv5x5_Fp(mlib_image *dst,
@@ -2819,17 +2616,6 @@ mlib_status  __mlib_ImageConv7x7(mlib_image *dst,
                                  mlib_s32 scale,
                                  mlib_s32 cmask,
                                  mlib_edge edge);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageConv7x7Index mlib_ImageConv7x7Index
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageConv7x7Index(mlib_image *dst,
-                                      const mlib_image *src,
-                                      const mlib_s32 *kernel,
-                                      mlib_s32 scale,
-                                      mlib_edge edge,
-                                      const void *colormap);
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )
@@ -2868,21 +2654,6 @@ mlib_status  __mlib_ImageConvMxN(mlib_image *dst,
                                  mlib_s32 scale,
                                  mlib_s32 cmask,
                                  mlib_edge edge);
-
-
-#if defined ( __MEDIALIB_OLD_NAMES )
-#define __mlib_ImageConvMxNIndex mlib_ImageConvMxNIndex
-#endif /* ! defined ( __MEDIALIB_OLD_NAMES ) */
-mlib_status  __mlib_ImageConvMxNIndex(mlib_image *dst,
-                                      const mlib_image *src,
-                                      const mlib_s32 *kernel,
-                                      mlib_s32 m,
-                                      mlib_s32 n,
-                                      mlib_s32 dm,
-                                      mlib_s32 dn,
-                                      mlib_s32 scale,
-                                      mlib_edge edge,
-                                      const void *colormap);
 
 
 #if defined ( __MEDIALIB_OLD_NAMES )

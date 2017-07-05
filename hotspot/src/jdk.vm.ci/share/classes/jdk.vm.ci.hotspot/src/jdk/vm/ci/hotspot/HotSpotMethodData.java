@@ -39,7 +39,7 @@ import jdk.vm.ci.meta.JavaTypeProfile.ProfiledType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.TriState;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Access to a HotSpot MethodData structure (defined in methodData.hpp).

@@ -33,7 +33,6 @@
 
 #include "vis_proto.h"
 #include "mlib_image.h"
-#include "mlib_ImageColormap.h"
 #include "mlib_ImageCopy.h"
 #include "mlib_ImageAffine.h"
 #include "mlib_v_ImageFilters.h"
@@ -706,131 +705,6 @@ mlib_status FUN_NAME(4ch_na)(mlib_affine_param *param)
     }
 
     mlib_ImageCopy_na((mlib_u8*)pbuff, dl, 8*size);
-  }
-
-  if (pbuff != buff) {
-    mlib_free(pbuff);
-  }
-
-  return MLIB_SUCCESS;
-}
-
-/***************************************************************/
-#define LUT(x)  plut[x]
-
-mlib_status FUN_NAME(s16_i)(mlib_affine_param *param,
-                            const void        *colormap)
-{
-  DECLAREVAR();
-  mlib_s32 nchan   = mlib_ImageGetLutChannels(colormap);
-  mlib_s32 lut_off = mlib_ImageGetLutOffset(colormap);
-  mlib_d64 *plut = (mlib_d64*)mlib_ImageGetLutNormalTable(colormap) - lut_off;
-  mlib_s32 max_xsize = param -> max_xsize;
-  mlib_d64 buff[BUF_SIZE], *pbuff = buff;
-
-  srcYStride /= sizeof(DTYPE);
-
-  if (max_xsize > BUF_SIZE) {
-    pbuff = mlib_malloc(max_xsize*sizeof(mlib_d64));
-
-    if (pbuff == NULL) return MLIB_FAILURE;
-  }
-
-  dX = (dX - (dX >> 31)) &~ 1; /* rounding towards ZERO */
-  dY = (dY - (dY >> 31)) &~ 1; /* rounding towards ZERO */
-  dx64 = vis_to_double_dup((((dX >> 1) & 0xFFFF) << 16) | ((dX >> 1) & 0xFFFF));
-  dy64 = vis_to_double_dup((((dY >> 1) & 0xFFFF) << 16) | ((dY >> 1) & 0xFFFF));
-
-  for (j = yStart; j <= yFinish; j++) {
-    DTYPE *sp;
-
-    NEW_LINE(1);
-
-    deltax = DOUBLE_4U16(X, X, X, X);
-    deltay = DOUBLE_4U16(Y, Y, Y, Y);
-
-#pragma pipeloop(0)
-    for (i = 0; i < size; i++) {
-      sp = *(DTYPE**)((mlib_u8*)lineAddr + PTR_SHIFT(Y)) + (X >> MLIB_SHIFT);
-      s0 = LUT(sp[0]);
-      s1 = LUT(sp[1]);
-      s2 = LUT(sp[srcYStride]);
-      s3 = LUT(sp[srcYStride + 1]);
-
-      BL_SUM();
-
-      pbuff[i] = dd;
-      X += dX;
-      Y += dY;
-    }
-
-    if (nchan == 3) {
-      mlib_ImageColorTrue2IndexLine_S16_S16_3_in_4((void*)pbuff, (void*)dl, size, colormap);
-    } else {
-      mlib_ImageColorTrue2IndexLine_S16_S16_4((void*)pbuff, (void*)dl, size, colormap);
-    }
-  }
-
-  if (pbuff != buff) {
-    mlib_free(pbuff);
-  }
-
-  return MLIB_SUCCESS;
-}
-
-/***************************************************************/
-#undef  DTYPE
-#define DTYPE mlib_u8
-
-mlib_status FUN_NAME(u8_i)(mlib_affine_param *param,
-                           const void        *colormap)
-{
-  DECLAREVAR();
-  mlib_s32 nchan   = mlib_ImageGetLutChannels(colormap);
-  mlib_s32 lut_off = mlib_ImageGetLutOffset(colormap);
-  mlib_d64 *plut = (mlib_d64*)mlib_ImageGetLutNormalTable(colormap) - lut_off;
-  mlib_s32 max_xsize = param -> max_xsize;
-  mlib_d64 buff[BUF_SIZE], *pbuff = buff;
-
-  if (max_xsize > BUF_SIZE) {
-    pbuff = mlib_malloc(max_xsize*sizeof(mlib_d64));
-
-    if (pbuff == NULL) return MLIB_FAILURE;
-  }
-
-  dX = (dX - (dX >> 31)) &~ 1; /* rounding towards ZERO */
-  dY = (dY - (dY >> 31)) &~ 1; /* rounding towards ZERO */
-  dx64 = vis_to_double_dup((((dX >> 1) & 0xFFFF) << 16) | ((dX >> 1) & 0xFFFF));
-  dy64 = vis_to_double_dup((((dY >> 1) & 0xFFFF) << 16) | ((dY >> 1) & 0xFFFF));
-
-  for (j = yStart; j <= yFinish; j++) {
-    DTYPE *sp;
-
-    NEW_LINE(1);
-
-    deltax = DOUBLE_4U16(X, X, X, X);
-    deltay = DOUBLE_4U16(Y, Y, Y, Y);
-
-#pragma pipeloop(0)
-    for (i = 0; i < size; i++) {
-      sp = *(DTYPE**)((mlib_u8*)lineAddr + PTR_SHIFT(Y)) + (X >> MLIB_SHIFT);
-      s0 = LUT(sp[0]);
-      s1 = LUT(sp[1]);
-      s2 = LUT(sp[srcYStride]);
-      s3 = LUT(sp[srcYStride + 1]);
-
-      BL_SUM();
-
-      pbuff[i] = dd;
-      X += dX;
-      Y += dY;
-    }
-
-    if (nchan == 3) {
-      mlib_ImageColorTrue2IndexLine_S16_U8_3_in_4((void*)pbuff, (void*)dl, size, colormap);
-    } else {
-      mlib_ImageColorTrue2IndexLine_S16_U8_4((void*)pbuff, (void*)dl, size, colormap);
-    }
   }
 
   if (pbuff != buff) {

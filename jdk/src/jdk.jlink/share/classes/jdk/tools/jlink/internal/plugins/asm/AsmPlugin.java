@@ -26,9 +26,9 @@ package jdk.tools.jlink.internal.plugins.asm;
 
 import java.util.Objects;
 import jdk.tools.jlink.plugin.TransformerPlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 
 /**
  * Extend this class to develop your own plugin in order to transform jimage
@@ -41,17 +41,17 @@ public abstract class AsmPlugin implements TransformerPlugin {
     }
 
     @Override
-    public void visit(Pool allContent, Pool outResources) {
+    public void visit(ModulePool allContent, ModulePool outResources) {
         Objects.requireNonNull(allContent);
         Objects.requireNonNull(outResources);
-        PoolImpl resources = new PoolImpl(allContent.getByteOrder());
-        for(ModuleData md : allContent.getContent()) {
-            if(md.getType().equals(Pool.ModuleDataType.CLASS_OR_RESOURCE)) {
+        ModulePoolImpl resources = new ModulePoolImpl(allContent.getByteOrder());
+        allContent.entries().forEach(md -> {
+            if(md.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)) {
                 resources.add(md);
             } else {
                 outResources.add(md);
             }
-        }
+        });
         AsmPools pools = new AsmPools(resources);
         visit(pools);
         pools.fillOutputResources(outResources);

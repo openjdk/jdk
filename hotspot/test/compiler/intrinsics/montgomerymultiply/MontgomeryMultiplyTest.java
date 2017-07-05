@@ -42,6 +42,7 @@ import jdk.test.lib.Platform;
  * @test
  * @bug 8130150 8131779 8139907
  * @summary Verify that the Montgomery multiply and square intrinsic works and correctly checks their arguments.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @library /testlibrary
  * @build MontgomeryMultiplyTest

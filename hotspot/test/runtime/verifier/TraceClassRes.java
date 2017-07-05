@@ -25,6 +25,7 @@
  * @test
  * @bug 8076318
  * @summary split verifier needs to add TraceClassResolution
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 
@@ -38,7 +39,7 @@ public class TraceClassRes {
         "-XX:+TraceClassResolution", "-verify", "-Xshare:off", "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("[classresolve] java.lang.ClassLoader java.lang.Throwable ClassLoader.java (verification)");
+    output.shouldContain("[class,resolve] java.lang.ClassLoader java.lang.Throwable ClassLoader.java (verification)");
     output.shouldHaveExitValue(0);
   }
 }

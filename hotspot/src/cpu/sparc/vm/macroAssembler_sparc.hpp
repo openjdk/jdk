@@ -1012,6 +1012,8 @@ public:
   inline void ldbool(const Address& a, Register d);
   inline void movbool( bool boolconst, Register d);
 
+  void load_mirror(Register mirror, Register method);
+
   // klass oop manipulations if compressed
   void load_klass(Register src_oop, Register klass);
   void store_klass(Register klass, Register dst_oop);
@@ -1418,6 +1420,8 @@ public:
   // Fold 8-bit data
   void fold_8bit_crc32(Register xcrc, Register table, Register xtmp, Register tmp);
   void fold_8bit_crc32(Register crc, Register table, Register tmp);
+  // CRC32C code for java.util.zip.CRC32C::updateBytes/updateDirectByteBuffer instrinsic.
+  void kernel_crc32c(Register crc, Register buf, Register len, Register table);
 
 };
 

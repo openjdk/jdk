@@ -996,6 +996,7 @@ definitions %{
 source_hpp %{
 
 #include "gc/shared/cardTableModRefBS.hpp"
+#include "opto/addnode.hpp"
 
 class CallStubImpl {
 
@@ -1061,6 +1062,9 @@ class HandlerImpl {
 
   // predicate controlling translation of StoreCM
   bool unnecessary_storestore(const Node *storecm);
+
+  // predicate controlling addressing modes
+  bool size_fits_all_mem_uses(AddPNode* addp, int shift);
 %}
 
 source %{
@@ -3077,7 +3081,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       assert((src_lo_rc != rc_int && dst_lo_rc != rc_int), "sanity");
       if (src_lo_rc == rc_stack && dst_lo_rc == rc_stack) {
         // stack->stack
-        assert((src_offset & 7) && (dst_offset & 7), "unaligned stack offset");
+        assert((src_offset & 7) == 0 && (dst_offset & 7) == 0, "unaligned stack offset");
         if (ireg == Op_VecD) {
           __ unspill(rscratch1, true, src_offset);
           __ spill(rscratch1, true, dst_offset);
@@ -3325,9 +3329,15 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 const bool Matcher::match_rule_supported(int opcode) {
 
-  // TODO
-  // identify extra cases that we might want to provide match rules for
-  // e.g. Op_StrEquals and other intrinsics
+  switch (opcode) {
+  case Op_StrComp:
+  case Op_StrIndexOf:
+    if (CompactStrings)  return false;
+    break;
+  default:
+    break;
+  }
+
   if (!has_match_rule(opcode)) {
     return false;
   }
@@ -3344,6 +3354,10 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
   // Add rules here.
 
   return ret_value;  // Per default match rules are supported.
+}
+
+const bool Matcher::has_predicated_vectors(void) {
+  return false;
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -3438,11 +3452,6 @@ const int Matcher::float_cmove_cost() {
 
 // Does the CPU require late expand (see block.cpp for description of late expand)?
 const bool Matcher::require_postalloc_expand = false;
-
-// Should the Matcher clone shifts on addressing modes, expecting them
-// to be subsumed into complex addressing expressions or compute them
-// into registers?  True for Intel but false for most RISCs
-const bool Matcher::clone_shift_expressions = false;
 
 // Do we need to mask the count passed to shift instructions or does
 // the cpu only look at the lower 5/6 bits anyway?
@@ -3562,6 +3571,119 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
   return FP_REG_mask();
 }
 
+bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
+  for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
+    Node* u = addp->fast_out(i);
+    if (u->is_Mem()) {
+      int opsize = u->as_Mem()->memory_size();
+      assert(opsize > 0, "unexpected memory operand size");
+      if (u->as_Mem()->memory_size() != (1<<shift)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+const bool Matcher::convi2l_type_required = false;
+
+// Should the Matcher clone shifts on addressing modes, expecting them
+// to be subsumed into complex addressing expressions or compute them
+// into registers?
+bool Matcher::clone_address_expressions(AddPNode* m, Matcher::MStack& mstack, VectorSet& address_visited) {
+  if (clone_base_plus_offset_address(m, mstack, address_visited)) {
+    return true;
+  }
+
+  Node *off = m->in(AddPNode::Offset);
+  if (off->Opcode() == Op_LShiftL && off->in(2)->is_Con() &&
+      size_fits_all_mem_uses(m, off->in(2)->get_int()) &&
+      // Are there other uses besides address expressions?
+      !is_visited(off)) {
+    address_visited.set(off->_idx); // Flag as address_visited
+    mstack.push(off->in(2), Visit);
+    Node *conv = off->in(1);
+    if (conv->Opcode() == Op_ConvI2L &&
+        // Are there other uses besides address expressions?
+        !is_visited(conv)) {
+      address_visited.set(conv->_idx); // Flag as address_visited
+      mstack.push(conv->in(1), Pre_Visit);
+    } else {
+      mstack.push(conv, Pre_Visit);
+    }
+    address_visited.test_set(m->_idx); // Flag as address_visited
+    mstack.push(m->in(AddPNode::Address), Pre_Visit);
+    mstack.push(m->in(AddPNode::Base), Pre_Visit);
+    return true;
+  } else if (off->Opcode() == Op_ConvI2L &&
+             // Are there other uses besides address expressions?
+             !is_visited(off)) {
+    address_visited.test_set(m->_idx); // Flag as address_visited
+    address_visited.set(off->_idx); // Flag as address_visited
+    mstack.push(off->in(1), Pre_Visit);
+    mstack.push(m->in(AddPNode::Address), Pre_Visit);
+    mstack.push(m->in(AddPNode::Base), Pre_Visit);
+    return true;
+  }
+  return false;
+}
+
+// Transform:
+// (AddP base (AddP base address (LShiftL index con)) offset)
+// into:
+// (AddP base (AddP base offset) (LShiftL index con))
+// to take full advantage of ARM's addressing modes
+void Compile::reshape_address(AddPNode* addp) {
+  Node *addr = addp->in(AddPNode::Address);
+  if (addr->is_AddP() && addr->in(AddPNode::Base) == addp->in(AddPNode::Base)) {
+    const AddPNode *addp2 = addr->as_AddP();
+    if ((addp2->in(AddPNode::Offset)->Opcode() == Op_LShiftL &&
+         addp2->in(AddPNode::Offset)->in(2)->is_Con() &&
+         size_fits_all_mem_uses(addp, addp2->in(AddPNode::Offset)->in(2)->get_int())) ||
+        addp2->in(AddPNode::Offset)->Opcode() == Op_ConvI2L) {
+
+      // Any use that can't embed the address computation?
+      for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
+        Node* u = addp->fast_out(i);
+        if (!u->is_Mem() || u->is_LoadVector() || u->is_StoreVector() || u->Opcode() == Op_StoreCM) {
+          return;
+        }
+      }
+      
+      Node* off = addp->in(AddPNode::Offset);
+      Node* addr2 = addp2->in(AddPNode::Address);
+      Node* base = addp->in(AddPNode::Base);
+      
+      Node* new_addr = NULL;
+      // Check whether the graph already has the new AddP we need
+      // before we create one (no GVN available here).
+      for (DUIterator_Fast imax, i = addr2->fast_outs(imax); i < imax; i++) {
+        Node* u = addr2->fast_out(i);
+        if (u->is_AddP() &&
+            u->in(AddPNode::Base) == base &&
+            u->in(AddPNode::Address) == addr2 &&
+            u->in(AddPNode::Offset) == off) {
+          new_addr = u;
+          break;
+        }
+      }
+      
+      if (new_addr == NULL) {
+        new_addr = new AddPNode(base, addr2, off);
+      }
+      Node* new_off = addp2->in(AddPNode::Offset);
+      addp->set_req(AddPNode::Address, new_addr);
+      if (addr->outcnt() == 0) {
+        addr->disconnect_inputs(NULL, this);
+      }
+      addp->set_req(AddPNode::Offset, new_off);
+      if (off->outcnt() == 0) {
+        off->disconnect_inputs(NULL, this);
+      }
+    }
+  }
+}
+
 // helper for encoding java_to_runtime calls on sim
 //
 // this is needed to compute the extra arguments required when
@@ -3631,12 +3753,10 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
     // encoder that the index needs to be sign extended, so we have to
     // enumerate all the cases.
     switch (opcode) {
-    case INDINDEXSCALEDOFFSETI2L:
     case INDINDEXSCALEDI2L:
-    case INDINDEXSCALEDOFFSETI2LN:
     case INDINDEXSCALEDI2LN:
-    case INDINDEXOFFSETI2L:
-    case INDINDEXOFFSETI2LN:
+    case INDINDEXI2L:
+    case INDINDEXI2LN:
       scale = Address::sxtw(size);
       break;
     default:
@@ -3646,12 +3766,8 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
     if (index == -1) {
       (masm.*insn)(reg, Address(base, disp));
     } else {
-      if (disp == 0) {
-        (masm.*insn)(reg, Address(base, as_Register(index), scale));
-      } else {
-        masm.lea(rscratch1, Address(base, disp));
-        (masm.*insn)(reg, Address(rscratch1, as_Register(index), scale));
-      }
+      assert(disp == 0, "unsupported address mode: disp = %d", disp);
+      (masm.*insn)(reg, Address(base, as_Register(index), scale));
     }
   }
 
@@ -3662,9 +3778,7 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
     Address::extend scale;
 
     switch (opcode) {
-    case INDINDEXSCALEDOFFSETI2L:
     case INDINDEXSCALEDI2L:
-    case INDINDEXSCALEDOFFSETI2LN:
     case INDINDEXSCALEDI2LN:
       scale = Address::sxtw(size);
       break;
@@ -3675,12 +3789,8 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
      if (index == -1) {
       (masm.*insn)(reg, Address(base, disp));
     } else {
-      if (disp == 0) {
-        (masm.*insn)(reg, Address(base, as_Register(index), scale));
-      } else {
-        masm.lea(rscratch1, Address(base, disp));
-        (masm.*insn)(reg, Address(rscratch1, as_Register(index), scale));
-      }
+      assert(disp == 0, "unsupported address mode: disp = %d", disp);
+      (masm.*insn)(reg, Address(base, as_Register(index), scale));
     }
   }
 
@@ -4188,55 +4298,6 @@ encode %{
 	__ prfm(Address(rscratch1, index_reg, Address::lsl(scale)), PSTL1KEEP);
       }
     }
-  %}
-
-  enc_class aarch64_enc_clear_array_reg_reg(iRegL_R11 cnt, iRegP_R10 base) %{
-    MacroAssembler _masm(&cbuf);
-    Register cnt_reg = as_Register($cnt$$reg);
-    Register base_reg = as_Register($base$$reg);
-    // base is word aligned
-    // cnt is count of words
-
-    Label loop;
-    Label entry;
-
-//  Algorithm:
-//
-//    scratch1 = cnt & 7;
-//    cnt -= scratch1;
-//    p += scratch1;
-//    switch (scratch1) {
-//      do {
-//        cnt -= 8;
-//          p[-8] = 0;
-//        case 7:
-//          p[-7] = 0;
-//        case 6:
-//          p[-6] = 0;
-//          // ...
-//        case 1:
-//          p[-1] = 0;
-//        case 0:
-//          p += 8;
-//      } while (cnt);
-//    }
-
-    const int unroll = 8; // Number of str(zr) instructions we'll unroll
-
-    __ andr(rscratch1, cnt_reg, unroll - 1);  // tmp1 = cnt % unroll
-    __ sub(cnt_reg, cnt_reg, rscratch1);      // cnt -= unroll
-    // base_reg always points to the end of the region we're about to zero
-    __ add(base_reg, base_reg, rscratch1, Assembler::LSL, exact_log2(wordSize));
-    __ adr(rscratch2, entry);
-    __ sub(rscratch2, rscratch2, rscratch1, Assembler::LSL, 2);
-    __ br(rscratch2);
-    __ bind(loop);
-    __ sub(cnt_reg, cnt_reg, unroll);
-    for (int i = -unroll; i < 0; i++)
-      __ str(zr, Address(base_reg, i * wordSize));
-    __ bind(entry);
-    __ add(base_reg, base_reg, unroll * wordSize);
-    __ cbnz(cnt_reg, loop);
   %}
 
   /// mov envcodings
@@ -5351,9 +5412,69 @@ operand immIOffset()
   interface(CONST_INTER);
 %}
 
+operand immIOffset4()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 2));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIOffset8()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 3));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIOffset16()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_int(), 4));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immLoffset()
 %{
   predicate(Address::offset_ok_for_immed(n->get_long()));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset4()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 2));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset8()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 3));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immLoffset16()
+%{
+  predicate(Address::offset_ok_for_immed(n->get_long(), 4));
   match(ConL);
 
   op_cost(0);
@@ -6083,65 +6204,10 @@ operand indirect(iRegP reg)
   %}
 %}
 
-operand indIndexScaledOffsetI(iRegP reg, iRegL lreg, immIScale scale, immIU12 off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP reg (LShiftL lreg scale)) off);
-  op_cost(INSN_COST);
-  format %{ "$reg, $lreg lsl($scale), $off" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($lreg);
-    scale($scale);
-    disp($off);
-  %}
-%}
-
-operand indIndexScaledOffsetL(iRegP reg, iRegL lreg, immIScale scale, immLU12 off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP reg (LShiftL lreg scale)) off);
-  op_cost(INSN_COST);
-  format %{ "$reg, $lreg lsl($scale), $off" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($lreg);
-    scale($scale);
-    disp($off);
-  %}
-%}
-
-operand indIndexOffsetI2L(iRegP reg, iRegI ireg, immLU12 off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP reg (ConvI2L ireg)) off);
-  op_cost(INSN_COST);
-  format %{ "$reg, $ireg, $off I2L" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-operand indIndexScaledOffsetI2L(iRegP reg, iRegI ireg, immIScale scale, immLU12 off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP reg (LShiftL (ConvI2L ireg) scale)) off);
-  op_cost(INSN_COST);
-  format %{ "$reg, $ireg sxtw($scale), $off I2L" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale($scale);
-    disp($off);
-  %}
-%}
-
 operand indIndexScaledI2L(iRegP reg, iRegI ireg, immIScale scale)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
+  predicate(size_fits_all_mem_uses(n->as_AddP(), n->in(AddPNode::Offset)->in(2)->get_int()));
   match(AddP reg (LShiftL (ConvI2L ireg) scale));
   op_cost(0);
   format %{ "$reg, $ireg sxtw($scale), 0, I2L" %}
@@ -6156,6 +6222,7 @@ operand indIndexScaledI2L(iRegP reg, iRegI ireg, immIScale scale)
 operand indIndexScaled(iRegP reg, iRegL lreg, immIScale scale)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
+  predicate(size_fits_all_mem_uses(n->as_AddP(), n->in(AddPNode::Offset)->in(2)->get_int()));
   match(AddP reg (LShiftL lreg scale));
   op_cost(0);
   format %{ "$reg, $lreg lsl($scale)" %}
@@ -6163,6 +6230,20 @@ operand indIndexScaled(iRegP reg, iRegL lreg, immIScale scale)
     base($reg);
     index($lreg);
     scale($scale);
+    disp(0x0);
+  %}
+%}
+
+operand indIndexI2L(iRegP reg, iRegI ireg)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg (ConvI2L ireg));
+  op_cost(0);
+  format %{ "$reg, $ireg, 0, I2L" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($ireg);
+    scale(0x0);
     disp(0x0);
   %}
 %}
@@ -6195,6 +6276,48 @@ operand indOffI(iRegP reg, immIOffset off)
   %}
 %}
 
+operand indOffI4(iRegP reg, immIOffset4 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffI8(iRegP reg, immIOffset8 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffI16(iRegP reg, immIOffset16 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
 operand indOffL(iRegP reg, immLoffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -6209,6 +6332,47 @@ operand indOffL(iRegP reg, immLoffset off)
   %}
 %}
 
+operand indOffL4(iRegP reg, immLoffset4 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffL8(iRegP reg, immLoffset8 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
+operand indOffL16(iRegP reg, immLoffset16 off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP reg off);
+  op_cost(0);
+  format %{ "[$reg, $off]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
 
 operand indirectN(iRegN reg)
 %{
@@ -6225,69 +6389,9 @@ operand indirectN(iRegN reg)
   %}
 %}
 
-operand indIndexScaledOffsetIN(iRegN reg, iRegL lreg, immIScale scale, immIU12 off)
-%{
-  predicate(Universe::narrow_oop_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP (DecodeN reg) (LShiftL lreg scale)) off);
-  op_cost(0);
-  format %{ "$reg, $lreg lsl($scale), $off\t# narrow" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($lreg);
-    scale($scale);
-    disp($off);
-  %}
-%}
-
-operand indIndexScaledOffsetLN(iRegN reg, iRegL lreg, immIScale scale, immLU12 off)
-%{
-  predicate(Universe::narrow_oop_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP (DecodeN reg) (LShiftL lreg scale)) off);
-  op_cost(INSN_COST);
-  format %{ "$reg, $lreg lsl($scale), $off\t# narrow" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($lreg);
-    scale($scale);
-    disp($off);
-  %}
-%}
-
-operand indIndexOffsetI2LN(iRegN reg, iRegI ireg, immLU12 off)
-%{
-  predicate(Universe::narrow_oop_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP (DecodeN reg) (ConvI2L ireg)) off);
-  op_cost(INSN_COST);
-  format %{ "$reg, $ireg, $off I2L\t# narrow" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-operand indIndexScaledOffsetI2LN(iRegN reg, iRegI ireg, immIScale scale, immLU12 off)
-%{
-  predicate(Universe::narrow_oop_shift() == 0);
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (AddP (DecodeN reg) (LShiftL (ConvI2L ireg) scale)) off);
-  op_cost(INSN_COST);
-  format %{ "$reg, $ireg sxtw($scale), $off I2L\t# narrow" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index($ireg);
-    scale($scale);
-    disp($off);
-  %}
-%}
-
 operand indIndexScaledI2LN(iRegN reg, iRegI ireg, immIScale scale)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(Universe::narrow_oop_shift() == 0 && size_fits_all_mem_uses(n->as_AddP(), n->in(AddPNode::Offset)->in(2)->get_int()));
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (DecodeN reg) (LShiftL (ConvI2L ireg) scale));
   op_cost(0);
@@ -6302,7 +6406,7 @@ operand indIndexScaledI2LN(iRegN reg, iRegI ireg, immIScale scale)
 
 operand indIndexScaledN(iRegN reg, iRegL lreg, immIScale scale)
 %{
-  predicate(Universe::narrow_oop_shift() == 0);
+  predicate(Universe::narrow_oop_shift() == 0 && size_fits_all_mem_uses(n->as_AddP(), n->in(AddPNode::Offset)->in(2)->get_int()));
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP (DecodeN reg) (LShiftL lreg scale));
   op_cost(0);
@@ -6311,6 +6415,21 @@ operand indIndexScaledN(iRegN reg, iRegL lreg, immIScale scale)
     base($reg);
     index($lreg);
     scale($scale);
+    disp(0x0);
+  %}
+%}
+
+operand indIndexI2LN(iRegN reg, iRegI ireg)
+%{
+  predicate(Universe::narrow_oop_shift() == 0);
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (DecodeN reg) (ConvI2L ireg));
+  op_cost(0);
+  format %{ "$reg, $ireg, 0, I2L\t# narrow" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($ireg);
+    scale(0x0);
     disp(0x0);
   %}
 %}
@@ -6521,7 +6640,9 @@ operand iRegL2I(iRegL reg) %{
   interface(REG_INTER)
 %}
 
-opclass vmem(indirect, indIndex, indOffI, indOffL);
+opclass vmem4(indirect, indIndex, indOffI4, indOffL4);
+opclass vmem8(indirect, indIndex, indOffI8, indOffL8);
+opclass vmem16(indirect, indIndex, indOffI16, indOffL16);
 
 //----------OPERAND CLASSES----------------------------------------------------
 // Operand Classes are groups of operands that are used as to simplify
@@ -6533,9 +6654,8 @@ opclass vmem(indirect, indIndex, indOffI, indOffL);
 // memory is used to define read/write location for load/store
 // instruction defs. we can turn a memory op into an Address
 
-opclass memory(indirect, indIndexScaledOffsetI, indIndexScaledOffsetL, indIndexOffsetI2L, indIndexScaledOffsetI2L, indIndexScaled, indIndexScaledI2L, indIndex, indOffI, indOffL,
-               indirectN, indIndexScaledOffsetIN, indIndexScaledOffsetLN, indIndexOffsetI2LN, indIndexScaledOffsetI2LN, indIndexScaledN, indIndexScaledI2LN, indIndexN, indOffIN, indOffLN);
-
+opclass memory(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI, indOffL,
+               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
 
 // iRegIorL2I is used for src inputs in rules for 32 bit int (I)
 // operations. it allows the src to be either an iRegI or a (ConvL2I
@@ -7053,7 +7173,7 @@ pipe_class vmovi_reg_imm128(vecX dst)
   NEON_FP : S3;
 %}
 
-pipe_class vload_reg_mem64(vecD dst, vmem mem)
+pipe_class vload_reg_mem64(vecD dst, vmem8 mem)
 %{
   single_instruction;
   dst    : S5(write);
@@ -7062,7 +7182,7 @@ pipe_class vload_reg_mem64(vecD dst, vmem mem)
   NEON_FP : S3;
 %}
 
-pipe_class vload_reg_mem128(vecX dst, vmem mem)
+pipe_class vload_reg_mem128(vecX dst, vmem16 mem)
 %{
   single_instruction;
   dst    : S5(write);
@@ -7071,7 +7191,7 @@ pipe_class vload_reg_mem128(vecX dst, vmem mem)
   NEON_FP : S3;
 %}
 
-pipe_class vstore_reg_mem64(vecD src, vmem mem)
+pipe_class vstore_reg_mem64(vecD src, vmem8 mem)
 %{
   single_instruction;
   mem    : ISS(read);
@@ -7080,7 +7200,7 @@ pipe_class vstore_reg_mem64(vecD src, vmem mem)
   NEON_FP : S3;
 %}
 
-pipe_class vstore_reg_mem128(vecD src, vmem mem)
+pipe_class vstore_reg_mem128(vecD src, vmem16 mem)
 %{
   single_instruction;
   mem    : ISS(read);
@@ -12123,21 +12243,21 @@ instruct rorL_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlag
   %}
 %}
 
-instruct rorI_rReg_Var_C_32(iRegLNoSp dst, iRegL src, iRegI shift, immI_32 c_32, rFlagsReg cr)
+instruct rorI_rReg_Var_C_32(iRegINoSp dst, iRegI src, iRegI shift, immI_32 c_32, rFlagsReg cr)
 %{
   match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c_32 shift))));
 
   expand %{
-    rorL_rReg(dst, src, shift, cr);
+    rorI_rReg(dst, src, shift, cr);
   %}
 %}
 
-instruct rorI_rReg_Var_C0(iRegLNoSp dst, iRegL src, iRegI shift, immI0 c0, rFlagsReg cr)
+instruct rorI_rReg_Var_C0(iRegINoSp dst, iRegI src, iRegI shift, immI0 c0, rFlagsReg cr)
 %{
   match(Set dst (OrI (URShiftI src shift) (LShiftI src (SubI c0 shift))));
 
   expand %{
-    rorL_rReg(dst, src, shift, cr);
+    rorI_rReg(dst, src, shift, cr);
   %}
 %}
 
@@ -13363,7 +13483,24 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
   ins_cost(4 * INSN_COST);
   format %{ "ClearArray $cnt, $base" %}
 
-  ins_encode(aarch64_enc_clear_array_reg_reg(cnt, base));
+  ins_encode %{
+    __ zero_words($base$$Register, $cnt$$Register);
+  %}
+
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 tmp, Universe dummy, rFlagsReg cr)
+%{
+  match(Set dummy (ClearArray cnt base));
+  effect(USE_KILL base, TEMP tmp);
+
+  ins_cost(4 * INSN_COST);
+  format %{ "ClearArray $cnt, $base" %}
+
+  ins_encode %{
+    __ zero_words($base$$Register, (u_int64_t)$cnt$$constant);
+  %}
 
   ins_pipe(pipe_class_memory);
 %}
@@ -14797,10 +14934,10 @@ instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, 
   ins_pipe(pipe_class_memory);
 %}
 
-instruct string_compare(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
+instruct string_compareU(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, rFlagsReg cr)
 %{
-  predicate(!CompactStrings);
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -14819,7 +14956,7 @@ instruct string_compare(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cn
 instruct string_indexof(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
        iRegI_R0 result, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI tmp4, rFlagsReg cr)
 %{
-  predicate(!CompactStrings);
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
@@ -14839,7 +14976,7 @@ instruct string_indexof_con(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
                  immI_le_4 int_cnt2, iRegI_R0 result, iRegI tmp1, iRegI tmp2,
                  iRegI tmp3, iRegI tmp4, rFlagsReg cr)
 %{
-  predicate(!CompactStrings);
+  predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
@@ -14856,10 +14993,27 @@ instruct string_indexof_con(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
+instruct string_equalsL(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
                         iRegI_R0 result, rFlagsReg cr)
 %{
-  predicate(!CompactStrings);
+  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (StrEquals (Binary str1 str2) cnt));
+  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
+
+  format %{ "String Equals $str1,$str2,$cnt -> $result" %}
+  ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ arrays_equals($str1$$Register, $str2$$Register,
+                     $result$$Register, $cnt$$Register,
+                     1, /*is_string*/true);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct string_equalsU(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
+                        iRegI_R0 result, rFlagsReg cr)
+%{
+  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
 
@@ -14907,6 +15061,40 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 %}
 
 
+// fast char[] to byte[] compression
+instruct string_compress(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
+                         vRegD_V0 tmp1, vRegD_V1 tmp2,
+                         vRegD_V2 tmp3, vRegD_V3 tmp4,
+                         iRegI_R0 result, rFlagsReg cr)
+%{
+  match(Set result (StrCompressedCopy src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+
+  format %{ "String Compress $src,$dst -> $result    // KILL R1, R2, R3, R4" %}
+  ins_encode %{
+    __ char_array_compress($src$$Register, $dst$$Register, $len$$Register,
+                           $tmp1$$FloatRegister, $tmp2$$FloatRegister,
+                           $tmp3$$FloatRegister, $tmp4$$FloatRegister,
+                           $result$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// fast byte[] to char[] inflation
+instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len,
+                        vRegD tmp1, vRegD tmp2, vRegD tmp3, iRegP_R3 tmp4, rFlagsReg cr)
+%{
+  match(Set dummy (StrInflatedCopy src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+
+  format %{ "String Inflate $src,$dst    // KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
+                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, $tmp3$$FloatRegister, $tmp4$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
                           vRegD_V0 Vtmp1, vRegD_V1 Vtmp2,
@@ -14948,7 +15136,7 @@ instruct tlsLoadP(thread_RegP dst)
 // ====================VECTOR INSTRUCTIONS=====================================
 
 // Load vector (32 bits)
-instruct loadV4(vecD dst, vmem mem)
+instruct loadV4(vecD dst, vmem4 mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 4);
   match(Set dst (LoadVector mem));
@@ -14959,7 +15147,7 @@ instruct loadV4(vecD dst, vmem mem)
 %}
 
 // Load vector (64 bits)
-instruct loadV8(vecD dst, vmem mem)
+instruct loadV8(vecD dst, vmem8 mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 8);
   match(Set dst (LoadVector mem));
@@ -14970,7 +15158,7 @@ instruct loadV8(vecD dst, vmem mem)
 %}
 
 // Load Vector (128 bits)
-instruct loadV16(vecX dst, vmem mem)
+instruct loadV16(vecX dst, vmem16 mem)
 %{
   predicate(n->as_LoadVector()->memory_size() == 16);
   match(Set dst (LoadVector mem));
@@ -14981,7 +15169,7 @@ instruct loadV16(vecX dst, vmem mem)
 %}
 
 // Store Vector (32 bits)
-instruct storeV4(vecD src, vmem mem)
+instruct storeV4(vecD src, vmem4 mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 4);
   match(Set mem (StoreVector mem src));
@@ -14992,7 +15180,7 @@ instruct storeV4(vecD src, vmem mem)
 %}
 
 // Store Vector (64 bits)
-instruct storeV8(vecD src, vmem mem)
+instruct storeV8(vecD src, vmem8 mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 8);
   match(Set mem (StoreVector mem src));
@@ -15003,7 +15191,7 @@ instruct storeV8(vecD src, vmem mem)
 %}
 
 // Store Vector (128 bits)
-instruct storeV16(vecX src, vmem mem)
+instruct storeV16(vecX src, vmem16 mem)
 %{
   predicate(n->as_StoreVector()->memory_size() == 16);
   match(Set mem (StoreVector mem src));

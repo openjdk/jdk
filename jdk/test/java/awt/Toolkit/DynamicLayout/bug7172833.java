@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,15 +45,33 @@ public final class bug7172833 {
 
     public static void main(final String[] args) throws Exception {
         final StubbedToolkit t = new StubbedToolkit();
-
+        final Boolean dynamicLayoutSupported
+                = (Boolean) t.getDesktopProperty("awt.dynamicLayoutSupported");
         t.setDynamicLayout(true);
         if(!t.isDynamicLayoutSet()){
             throw new RuntimeException("'true' expected but 'false' returned");
+        }
+        if (dynamicLayoutSupported) {
+            if (!t.isDynamicLayoutActive()) {
+                throw new RuntimeException("is inactive but set+supported");
+            }
+        } else {
+            if (t.isDynamicLayoutActive()) {
+                throw new RuntimeException("is active but unsupported");
+            }
         }
 
         t.setDynamicLayout(false);
         if(t.isDynamicLayoutSet()){
             throw new RuntimeException("'false' expected but 'true' returned");
+        }
+        if (dynamicLayoutSupported) {
+            // Layout is supported and was set to false, cannot verifym because
+            // the native system is free to ignore our request.
+        } else {
+            if (t.isDynamicLayoutActive()) {
+                throw new RuntimeException("is active but unset+unsupported");
+            }
         }
     }
 

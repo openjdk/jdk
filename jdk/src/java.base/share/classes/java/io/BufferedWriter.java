@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,13 +153,18 @@ public class BufferedWriter extends Writer {
      * needed.  If the requested length is at least as large as the buffer,
      * however, then this method will flush the buffer and write the characters
      * directly to the underlying stream.  Thus redundant
-     * <code>BufferedWriter</code>s will not copy data unnecessarily.
+     * {@code BufferedWriter}s will not copy data unnecessarily.
      *
      * @param  cbuf  A character array
      * @param  off   Offset from which to start reading characters
      * @param  len   Number of characters to write
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws  IndexOutOfBoundsException
+     *          If {@code off} is negative, or {@code len} is negative,
+     *          or {@code off + len} is negative or greater than the length
+     *          of the given array
+     *
+     * @throws  IOException  If an I/O error occurs
      */
     public void write(char cbuf[], int off, int len) throws IOException {
         synchronized (lock) {
@@ -195,17 +200,24 @@ public class BufferedWriter extends Writer {
     /**
      * Writes a portion of a String.
      *
-     * <p> If the value of the {@code len} parameter is negative then no
-     * characters are written.  This is contrary to the specification of this
-     * method in the {@linkplain java.io.Writer#write(java.lang.String,int,int)
-     * superclass}, which requires that an {@link IndexOutOfBoundsException} be
-     * thrown.
+     * @implSpec
+     * While the specification of this method in the
+     * {@linkplain java.io.Writer#write(java.lang.String,int,int) superclass}
+     * recommends that an {@link IndexOutOfBoundsException} be thrown
+     * if {@code len} is negative or {@code off + len} is negative,
+     * the implementation in this class does not throw such an exception in
+     * these cases but instead simply writes no characters.
      *
      * @param  s     String to be written
      * @param  off   Offset from which to start reading characters
      * @param  len   Number of characters to be written
      *
-     * @exception  IOException  If an I/O error occurs
+     * @throws  IndexOutOfBoundsException
+     *          If {@code off} is negative,
+     *          or {@code off + len} is greater than the length
+     *          of the given string
+     *
+     * @throws  IOException  If an I/O error occurs
      */
     public void write(String s, int off, int len) throws IOException {
         synchronized (lock) {

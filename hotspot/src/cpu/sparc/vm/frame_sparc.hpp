@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,8 @@
        // 2 words, also used to save float regs across  calls to C
        interpreter_frame_d_scratch_fp_offset          = -2,
        interpreter_frame_l_scratch_fp_offset          = -4,
-       interpreter_frame_padding_offset               = -5, // for native calls only
+       interpreter_frame_mirror_offset                = -5, // keep interpreted method alive
+
        interpreter_frame_oop_temp_offset              = -6, // for native calls only
        interpreter_frame_vm_locals_fp_offset          = -6, // should be same as above, and should be zero mod 8
 

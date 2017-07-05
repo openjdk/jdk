@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package sun.hotspot.tools.ctw;
 
 import sun.hotspot.WhiteBox;
 import jdk.internal.misc.SharedSecrets;
-import sun.reflect.ConstantPool;
+import jdk.internal.reflect.ConstantPool;
 
 import java.lang.reflect.Executable;
 

@@ -33,7 +33,7 @@
  */
 
 import jdk.test.lib.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class CreateCoredumpOnCrash {
     private static class Crasher {
@@ -56,7 +56,7 @@ public class CreateCoredumpOnCrash {
     public static OutputAnalyzer runTest(String option) throws Exception {
         return new OutputAnalyzer(
             ProcessTools.createJavaProcessBuilder(
-            "-Xmx64m", "-XX:-TransmitErrorReport", option, Crasher.class.getName())
+            "-Xmx64m", "-XX:-TransmitErrorReport", "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED", option, Crasher.class.getName())
             .start());
     }
 }

@@ -24,6 +24,7 @@
 /*
  * @test TestQuotedLogOutputs
  * @summary Ensure proper parsing of quoted output names for -Xlog arguments.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 
