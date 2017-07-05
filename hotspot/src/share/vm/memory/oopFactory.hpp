@@ -84,7 +84,9 @@ class oopFactory: AllStatic {
   static constantPoolOop      new_constantPool     (int length,
                                                     bool is_conc_safe,
                                                     TRAPS);
-  static constantPoolCacheOop new_constantPoolCache(int length, TRAPS);
+  static constantPoolCacheOop new_constantPoolCache(int length,
+                                                    bool is_conc_safe,
+                                                    TRAPS);
 
   // Instance classes
   static klassOop        new_instanceKlass(int vtable_len, int itable_len, int static_field_size,

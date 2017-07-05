@@ -1824,7 +1824,7 @@ void Matcher::find_shared( Node *n ) {
         mem_op = true;
         break;
       case Op_LoadB:
-      case Op_LoadC:
+      case Op_LoadUS:
       case Op_LoadD:
       case Op_LoadF:
       case Op_LoadI:

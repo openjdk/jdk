@@ -248,7 +248,7 @@ Form::DataType Form::ideal_to_Reg_type(const char *name) const {
 // True if 'opType', an ideal name, loads or stores.
 Form::DataType Form::is_load_from_memory(const char *opType) const {
   if( strcmp(opType,"LoadB")==0 )  return Form::idealB;
-  if( strcmp(opType,"LoadC")==0 )  return Form::idealC;
+  if( strcmp(opType,"LoadUS")==0 )  return Form::idealC;
   if( strcmp(opType,"LoadD")==0 )  return Form::idealD;
   if( strcmp(opType,"LoadD_unaligned")==0 )  return Form::idealD;
   if( strcmp(opType,"LoadF")==0 )  return Form::idealF;

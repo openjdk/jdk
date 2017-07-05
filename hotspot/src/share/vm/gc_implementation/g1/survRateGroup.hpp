@@ -29,7 +29,7 @@ private:
   G1CollectorPolicy* _g1p;
   const char* _name;
 
-  size_t  _array_length;
+  size_t  _stats_arrays_length;
   double* _surv_rate;
   double* _accum_surv_rate_pred;
   double  _last_pred;
@@ -40,7 +40,7 @@ private:
   size_t         _summary_surv_rates_max_len;
 
   int _all_regions_allocated;
-  size_t _curr_length;
+  size_t _region_num;
   size_t _scan_only_prefix;
   size_t _setup_seq_num;
 
@@ -48,6 +48,7 @@ public:
   SurvRateGroup(G1CollectorPolicy* g1p,
                 const char* name,
                 size_t summary_surv_rates_len);
+  void reset();
   void start_adding_regions();
   void stop_adding_regions();
   void record_scan_only_prefix(size_t scan_only_prefix);
@@ -55,22 +56,21 @@ public:
   void all_surviving_words_recorded(bool propagate);
   const char* name() { return _name; }
 
-  size_t region_num() { return _curr_length; }
+  size_t region_num() { return _region_num; }
   size_t scan_only_length() { return _scan_only_prefix; }
   double accum_surv_rate_pred(int age) {
     assert(age >= 0, "must be");
-    if ((size_t)age < _array_length)
+    if ((size_t)age < _stats_arrays_length)
       return _accum_surv_rate_pred[age];
     else {
-      double diff = (double) (age - _array_length + 1);
-      return _accum_surv_rate_pred[_array_length-1] + diff * _last_pred;
+      double diff = (double) (age - _stats_arrays_length + 1);
+      return _accum_surv_rate_pred[_stats_arrays_length-1] + diff * _last_pred;
     }
   }
 
   double accum_surv_rate(size_t adjustment);
 
   TruncatedSeq* get_seq(size_t age) {
-    guarantee( 0 <= age, "pre-condition" );
     if (age >= _setup_seq_num) {
       guarantee( _setup_seq_num > 0, "invariant" );
       age = _setup_seq_num-1;
