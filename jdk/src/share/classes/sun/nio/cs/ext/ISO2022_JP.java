@@ -35,6 +35,7 @@ import java.nio.charset.CodingErrorAction;
 import sun.nio.cs.HistoricallyNamedCharset;
 import sun.nio.cs.Surrogate;
 import sun.nio.cs.US_ASCII;
+import static sun.nio.cs.CharsetMapping.*;
 
 /*
  * Implementation notes:
@@ -154,71 +155,41 @@ public class ISO2022_JP
     }
 
     public CharsetDecoder newDecoder() {
-        return new Decoder(this,
-                           getDecIndex1(),
-                           getDecIndex2(),
-                           get0212Decoder());
+        return new Decoder(this);
     }
 
     public CharsetEncoder newEncoder() {
-        return new Encoder(this,
-                           getEncIndex1(),
-                           getEncIndex2(),
-                           get0212Encoder(),
-                           doSBKANA());
-    }
-
-    protected short[] getDecIndex1() {
-        return JIS_X_0208_Decoder.getIndex1();
-    }
-
-    protected String[] getDecIndex2() {
-        return JIS_X_0208_Decoder.getIndex2();
-    }
-
-    protected DoubleByteDecoder get0212Decoder() {
-        return null;
-    }
-
-    protected short[] getEncIndex1() {
-        return JIS_X_0208_Encoder.getIndex1();
-    }
-
-    protected String[] getEncIndex2() {
-        return JIS_X_0208_Encoder.getIndex2();
-    }
-
-    protected DoubleByteEncoder get0212Encoder() {
-        return null;
+        return new Encoder(this);
     }
 
     protected boolean doSBKANA() {
         return true;
     }
 
-    private static class Decoder extends DoubleByteDecoder
+    static class Decoder extends CharsetDecoder
         implements DelegatableDecoder {
+
+        final static DoubleByte.Decoder DEC0208 =
+            (DoubleByte.Decoder)new JIS_X_0208().newDecoder();
 
         private int currentState;
         private int previousState;
-        private DoubleByteDecoder decoder0212;
 
-        protected Decoder(Charset cs,
-                          short[] index1,
-                          String[] index2,
-                          DoubleByteDecoder decoder0212) {
-            super(cs,
-                  index1,
-                  index2,
-                  0x21,
-                  0x7e);
-            this.decoder0212 = decoder0212;
-            currentState = ASCII;
-            previousState = ASCII;
+        private DoubleByte.Decoder dec0208;
+        private DoubleByte.Decoder dec0212;
+
+        private Decoder(Charset cs) {
+            this(cs, DEC0208, null);
         }
 
-        protected char convSingleByte(int b) {
-            return REPLACE_CHAR;
+        protected Decoder(Charset cs,
+                          DoubleByte.Decoder dec0208,
+                          DoubleByte.Decoder dec0212) {
+            super(cs, 0.5f, 1.0f);
+            this.dec0208 = dec0208;
+            this.dec0212 = dec0212;
+            currentState = ASCII;
+            previousState = ASCII;
         }
 
         public void implReset() {
@@ -231,7 +202,7 @@ public class ISO2022_JP
         {
             int inputSize = 0;
             int b1 = 0, b2 = 0, b3 = 0, b4 = 0;
-            char c = REPLACE_CHAR;
+            char c = UNMAPPABLE_DECODING;
             byte[] sa = src.array();
             int sp = src.arrayOffset() + src.position();
             int sl = src.arrayOffset() + src.limit();
@@ -273,7 +244,7 @@ public class ISO2022_JP
                                     currentState = JISX0208_1978;
                                 } else if (b3 == 'B'){
                                     currentState = JISX0208_1983;
-                                } else if (b3 == '(' && decoder0212 != null) {
+                                } else if (b3 == '(' && dec0212 != null) {
                                     if (sp + inputSize + 1 > sl)
                                         return CoderResult.UNDERFLOW;
                                     b4 = sa[sp + inputSize++] & 0xff;
@@ -322,8 +293,8 @@ public class ISO2022_JP
                             if (sp + inputSize + 1 > sl)
                                 return CoderResult.UNDERFLOW;
                             b2 = sa[sp + inputSize++] & 0xff;
-                            c = decodeDouble(b1,b2);
-                            if (c == REPLACE_CHAR)
+                            c = dec0208.decodeDouble(b1,b2);
+                            if (c == UNMAPPABLE_DECODING)
                                 return CoderResult.unmappableForLength(inputSize);
                             da[dp++] = c;
                             break;
@@ -331,8 +302,8 @@ public class ISO2022_JP
                             if (sp + inputSize + 1 > sl)
                                 return CoderResult.UNDERFLOW;
                             b2 = sa[sp + inputSize++] & 0xff;
-                            c = decoder0212.decodeDouble(b1,b2);
-                            if (c == REPLACE_CHAR)
+                            c = dec0212.decodeDouble(b1,b2);
+                            if (c == UNMAPPABLE_DECODING)
                                 return CoderResult.unmappableForLength(inputSize);
                             da[dp++] = c;
                             break;
@@ -358,7 +329,7 @@ public class ISO2022_JP
         {
             int mark = src.position();
             int b1 = 0, b2 = 0, b3 = 0, b4=0;
-            char c = REPLACE_CHAR;
+            char c = UNMAPPABLE_DECODING;
             int inputSize = 0;
             try {
                 while (src.hasRemaining()) {
@@ -391,7 +362,7 @@ public class ISO2022_JP
                                     currentState = JISX0208_1978;
                                 } else if (b3 == 'B'){
                                     currentState = JISX0208_1983;
-                                } else if (b3 == '(' && decoder0212 != null) {
+                                } else if (b3 == '(' && dec0212 != null) {
                                     if (!src.hasRemaining())
                                         return CoderResult.UNDERFLOW;
                                     b4 = src.get() & 0xff;
@@ -442,8 +413,8 @@ public class ISO2022_JP
                                 return CoderResult.UNDERFLOW;
                             b2 = src.get() & 0xff;
                             inputSize++;
-                            c = decodeDouble(b1,b2);
-                            if (c == REPLACE_CHAR)
+                            c = dec0208.decodeDouble(b1,b2);
+                            if (c == UNMAPPABLE_DECODING)
                                 return CoderResult.unmappableForLength(inputSize);
                             dst.put(c);
                             break;
@@ -452,8 +423,8 @@ public class ISO2022_JP
                                 return CoderResult.UNDERFLOW;
                             b2 = src.get() & 0xff;
                             inputSize++;
-                            c = decoder0212.decodeDouble(b1,b2);
-                            if (c == REPLACE_CHAR)
+                            c = dec0212.decodeDouble(b1,b2);
+                            if (c == UNMAPPABLE_DECODING)
                                 return CoderResult.unmappableForLength(inputSize);
                             dst.put(c);
                             break;
@@ -486,25 +457,29 @@ public class ISO2022_JP
         }
     }
 
-    private static class Encoder extends DoubleByteEncoder {
+    static class Encoder extends CharsetEncoder {
+
+        final static DoubleByte.Encoder ENC0208 =
+            (DoubleByte.Encoder)new JIS_X_0208().newEncoder();
+
         private static byte[] repl = { (byte)0x21, (byte)0x29 };
         private int currentMode = ASCII;
         private int replaceMode = JISX0208_1983;
-        private DoubleByteEncoder encoder0212 = null;
+        private DoubleByte.Encoder enc0208;
+        private DoubleByte.Encoder enc0212;
         private boolean doSBKANA;
 
-        private Encoder(Charset cs,
-                        short[] index1,
-                        String[] index2,
-                        DoubleByteEncoder encoder0212,
-                        boolean doSBKANA) {
-            super(cs,
-                  index1,
-                  index2,
-                  repl,
-                  4.0f,
-                  (encoder0212 != null)? 9.0f : 8.0f);
-            this.encoder0212 = encoder0212;
+        private Encoder(Charset cs) {
+            this(cs, ENC0208, null, true);
+        }
+
+        Encoder(Charset cs,
+                DoubleByte.Encoder enc0208,
+                DoubleByte.Encoder enc0212,
+                boolean doSBKANA) {
+            super(cs, 4.0f, (enc0212 != null)? 9.0f : 8.0f, repl);
+            this.enc0208 = enc0208;
+            this.enc0212 = enc0212;
             this.doSBKANA = doSBKANA;
         }
 
@@ -545,8 +520,8 @@ public class ISO2022_JP
                     (c >= 0xFF61 && c <= 0xFF9F) ||
                     (c == '\u00A5') ||
                     (c == '\u203E') ||
-                    super.canEncode(c) ||
-                    (encoder0212!=null && encoder0212.canEncode(c)));
+                    enc0208.canEncode(c) ||
+                    (enc0212!=null && enc0212.canEncode(c)));
         }
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
@@ -607,8 +582,8 @@ public class ISO2022_JP
                             return CoderResult.OVERFLOW;
                         da[dp++] = (c == '\u00A5')?(byte)0x5C:(byte)0x7e;
                     } else {
-                        int index = encodeDouble(c);
-                        if (index != 0) {
+                        int index = enc0208.encodeChar(c);
+                        if (index != UNMAPPABLE_ENCODING) {
                             if (currentMode != JISX0208_1983) {
                                 if (dl - dp < 3)
                                     return CoderResult.OVERFLOW;
@@ -621,8 +596,8 @@ public class ISO2022_JP
                                 return CoderResult.OVERFLOW;
                             da[dp++] = (byte)(index >> 8);
                             da[dp++] = (byte)(index & 0xff);
-                        } else if (encoder0212 != null &&
-                                   (index = encoder0212.encodeDouble(c)) != 0) {
+                        } else if (enc0212 != null &&
+                                   (index = enc0212.encodeChar(c)) != UNMAPPABLE_ENCODING) {
                             if (currentMode != JISX0212_1990) {
                                 if (dl - dp < 4)
                                     return CoderResult.OVERFLOW;
@@ -715,8 +690,8 @@ public class ISO2022_JP
                             return CoderResult.OVERFLOW;
                         dst.put((c == '\u00A5')?(byte)0x5C:(byte)0x7e);
                     } else {
-                        int index = encodeDouble(c);
-                        if (index != 0) {
+                        int index = enc0208.encodeChar(c);
+                        if (index != UNMAPPABLE_ENCODING) {
                             if (currentMode != JISX0208_1983) {
                                 if (dst.remaining() < 3)
                                     return CoderResult.OVERFLOW;
@@ -729,8 +704,8 @@ public class ISO2022_JP
                                 return CoderResult.OVERFLOW;
                             dst.put((byte)(index >> 8));
                             dst.put((byte)(index & 0xff));
-                        } else if (encoder0212 != null &&
-                                   (index = encoder0212.encodeDouble(c)) != 0) {
+                        } else if (enc0212 != null &&
+                                   (index = enc0212.encodeChar(c)) != UNMAPPABLE_ENCODING) {
                             if (currentMode != JISX0212_1990) {
                                 if (dst.remaining() < 4)
                                     return CoderResult.OVERFLOW;

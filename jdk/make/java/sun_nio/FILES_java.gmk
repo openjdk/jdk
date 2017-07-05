@@ -34,8 +34,6 @@ FILES_java = \
     sun/nio/cs/HistoricallyNamedCharset.java \
     sun/nio/cs/Surrogate.java \
     sun/nio/cs/CharsetMapping.java \
-    sun/nio/cs/SingleByteEncoder.java \
-    sun/nio/cs/SingleByteDecoder.java \
     sun/nio/cs/UnicodeEncoder.java \
     sun/nio/cs/UnicodeDecoder.java \
     sun/nio/cs/ISO_8859_1.java \

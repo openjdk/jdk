@@ -215,6 +215,50 @@ done:
     return c;
 }
 
+LRESULT
+AwtTextComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam) {
+
+    switch (message) {
+        case WM_PRINTCLIENT:
+          {
+            FORMATRANGE fr;
+            HDC hPrinterDC = (HDC)wParam;
+            int nHorizRes = ::GetDeviceCaps(hPrinterDC, HORZRES);
+            int nVertRes = ::GetDeviceCaps(hPrinterDC, VERTRES);
+            int nLogPixelsX = ::GetDeviceCaps(hPrinterDC, LOGPIXELSX);
+            int nLogPixelsY = ::GetDeviceCaps(hPrinterDC, LOGPIXELSY);
+
+            // Ensure the printer DC is in MM_TEXT mode.
+            ::SetMapMode ( hPrinterDC, MM_TEXT );
+
+            // Rendering to the same DC we are measuring.
+            ::ZeroMemory(&fr, sizeof(fr));
+            fr.hdc = fr.hdcTarget = hPrinterDC;
+            // Set up the page.
+            fr.rcPage.left     = fr.rcPage.top = 0;
+            fr.rcPage.right    = (nHorizRes/nLogPixelsX) * 1440; // in twips
+            fr.rcPage.bottom   = (nVertRes/nLogPixelsY) * 1440;
+            fr.rc.left   = fr.rcPage.left;
+            fr.rc.top    = fr.rcPage.top;
+            fr.rc.right  = fr.rcPage.right;
+            fr.rc.bottom = fr.rcPage.bottom;
+
+            // start printing from the first visible line
+            LRESULT nLine = SendMessage(EM_GETFIRSTVISIBLELINE, 0, 0);
+            LONG startCh = static_cast<LONG>(SendMessage(EM_LINEINDEX,
+                                                         (WPARAM)nLine, 0));
+            fr.chrg.cpMin = startCh;
+            fr.chrg.cpMax = -1;
+
+            SendMessage(EM_FORMATRANGE, TRUE, (LPARAM)&fr);
+          }
+
+        break;
+    }
+
+    return AwtComponent::WindowProc(message, wParam, lParam);
+}
+
 LONG AwtTextComponent::EditGetCharFromPos(POINT& pt) {
     return static_cast<LONG>(SendMessage(EM_CHARFROMPOS, 0,
             reinterpret_cast<LPARAM>(&pt)));
