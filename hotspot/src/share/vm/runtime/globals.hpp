@@ -657,14 +657,13 @@ public:
           range(0, 99)                                                      \
                                                                             \
   product(bool, UseAES, false,                                              \
-          "Control whether AES instructions can be used on x86/x64")        \
+          "Control whether AES instructions are used when available")       \
                                                                             \
   product(bool, UseFMA, false,                                              \
-          "Control whether FMA instructions can be used")                   \
+          "Control whether FMA instructions are used when available")       \
                                                                             \
   product(bool, UseSHA, false,                                              \
-          "Control whether SHA instructions can be used "                   \
-          "on SPARC, on ARM and on x86")                                    \
+          "Control whether SHA instructions are used when available")       \
                                                                             \
   diagnostic(bool, UseGHASHIntrinsics, false,                               \
           "Use intrinsics for GHASH versions of crypto")                    \
@@ -1458,9 +1457,9 @@ public:
           "Number of threads concurrent gc will use")                       \
           constraint(ConcGCThreadsConstraintFunc,AfterErgo)                 \
                                                                             \
-  product(uintx, GCTaskTimeStampEntries, 200,                               \
+  product(uint, GCTaskTimeStampEntries, 200,                                \
           "Number of time stamp entries per gc worker thread")              \
-          range(1, max_uintx)                                               \
+          range(1, max_jint)                                                \
                                                                             \
   product(bool, AlwaysTenure, false,                                        \
           "Always tenure objects in eden (ParallelGC only)")                \
@@ -3375,7 +3374,7 @@ public:
           "Code cache expansion size (in bytes)")                           \
           range(0, max_uintx)                                               \
                                                                             \
-  develop_pd(uintx, CodeCacheMinBlockLength,                                \
+  diagnostic_pd(uintx, CodeCacheMinBlockLength,                             \
           "Minimum number of segments in a code cache block")               \
           range(1, 100)                                                     \
                                                                             \

@@ -24,8 +24,6 @@
 package jdk.test;
 
 import java.lang.module.ModuleDescriptor;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -65,7 +63,7 @@ public class Main {
         // check the module descriptor of a system module
         for (int i=0; i < modules.size(); i++) {
             String mn = modules.get(i);
-            Module module = Layer.boot().findModule(mn).orElseThrow(
+            Module module = ModuleLayer.boot().findModule(mn).orElseThrow(
                 () -> new RuntimeException(mn + " not found")
             );
 
