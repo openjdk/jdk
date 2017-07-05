@@ -1027,7 +1027,7 @@ void HeapRegion::verify(VerifyOption vo,
       }
     }
 
-    // Loook up end - 1
+    // Look up end - 1
     HeapWord* addr_4 = the_end - 1;
     HeapWord* b_start_4 = _offsets.block_start_const(addr_4);
     if (b_start_4 != p) {
@@ -1111,7 +1111,7 @@ void G1OffsetTableContigSpace::set_saved_mark() {
     // will be false, and it will pick up top() as the high water mark
     // of region. If it does so after _gc_time_stamp = ..., then it
     // will pick up the right saved_mark_word() as the high water mark
-    // of the region. Either way, the behaviour will be correct.
+    // of the region. Either way, the behavior will be correct.
     ContiguousSpace::set_saved_mark();
     OrderAccess::storestore();
     _gc_time_stamp = curr_gc_time_stamp;

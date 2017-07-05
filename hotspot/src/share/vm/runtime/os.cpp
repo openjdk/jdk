@@ -236,7 +236,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
   while (true) {
     int sig;
     {
-      // FIXME : Currently we have not decieded what should be the status
+      // FIXME : Currently we have not decided what should be the status
       //         for this java thread blocked here. Once we decide about
       //         that we should fix this.
       sig = os::signal_wait();
@@ -583,7 +583,7 @@ void print_neighbor_blocks(void* ptr) {
   ptrdiff_t size = *size_addr_from_base(start_of_prev_block);
   u_char* obj = start_of_prev_block + space_before;
   if (size <= 0 ) {
-    // start is bad; mayhave been confused by OS data inbetween objects
+    // start is bad; may have been confused by OS data in between objects
     // search one more backwards
     start_of_prev_block = find_cushion_backwards(start_of_prev_block);
     size = *size_addr_from_base(start_of_prev_block);
@@ -1011,7 +1011,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   if (Universe::heap()->is_in(addr)) {
     HeapWord* p = Universe::heap()->block_start(addr);
     bool print = false;
-    // If we couldn't find it it just may mean that heap wasn't parseable
+    // If we couldn't find it it just may mean that heap wasn't parsable
     // See if we were just given an oop directly
     if (p != NULL && Universe::heap()->block_is_obj(p)) {
       print = true;
@@ -1443,7 +1443,7 @@ void os::trace_page_sizes(const char* str, const size_t region_min_size,
 // >= 2 physical CPU's and >=2GB of memory, with some fuzz
 // because the graphics memory (?) sometimes masks physical memory.
 // If you want to change the definition of a server class machine
-// on some OS or platform, e.g., >=4GB on Windohs platforms,
+// on some OS or platform, e.g., >=4GB on Windows platforms,
 // then you'll have to parameterize this method based on that state,
 // as was done for logical processors here, or replicate and
 // specialize this method for each platform.  (Or fix os to have

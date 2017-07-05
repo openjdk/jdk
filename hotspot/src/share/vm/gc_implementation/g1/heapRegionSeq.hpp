@@ -97,7 +97,7 @@ class HeapRegionSeq: public CHeapObj<mtGC> {
   HeapWord* heap_end() const {return _regions.end_address_mapped(); }
 
  public:
-  // Empty contructor, we'll initialize it with the initialize() method.
+  // Empty constructor, we'll initialize it with the initialize() method.
   HeapRegionSeq() : _regions(), _committed_length(0), _next_search_index(0), _allocated_length(0) { }
 
   void initialize(HeapWord* bottom, HeapWord* end);

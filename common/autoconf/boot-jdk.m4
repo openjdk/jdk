@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,34 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+########################################################################
+# This file handles detection of the Boot JDK. The Boot JDK detection 
+# process has been developed as a response to solve a complex real-world 
+# problem. Initially, it was simple, but it has grown as platform after 
+# platform, idiosyncracy after idiosyncracy has been supported.
+#
+# The basic idea is this:
+# 1) You need an acceptable *) JDK to use as a Boot JDK
+# 2) There are several ways to locate a JDK, that are mostly platform 
+#    dependent **)
+# 3) You can have multiple JDKs installed
+# 4) If possible, configure should try to dig out an acceptable JDK 
+#    automatically, without having to resort to command-line options
+#
+# *)  acceptable means e.g. JDK7 for building JDK8, a complete JDK (with 
+#     javac) and not a JRE, etc. 
+#
+# **) On Windows we typically use a well-known path. 
+#     On MacOSX we typically use the tool java_home.
+#     On Linux we typically find javac in the $PATH, and then follow a 
+#     chain of symlinks that often ends up in a real JDK. 
+#
+# This leads to the code where we check in different ways to locate a 
+# JDK, and if one is found, check if it is acceptable. If not, we print 
+# our reasons for rejecting it (useful when debugging non-working 
+# configure situations) and continue checking the next one. 
+########################################################################
 
 # Execute the check given as argument, and verify the result
 # If the Boot JDK was previously found, do nothing
@@ -54,10 +82,10 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
             BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
 
             # Extra M4 quote needed to protect [] in grep expression.
-            [FOUND_VERSION_78=`echo $BOOT_JDK_VERSION | grep  '\"1\.[78]\.'`]
-            if test "x$FOUND_VERSION_78" = x; then
+            [FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[789]\.'`]
+            if test "x$FOUND_CORRECT_VERSION" = x; then
               AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
-              AC_MSG_NOTICE([(Your Boot JDK must be version 7 or 8)])
+              AC_MSG_NOTICE([(Your Boot JDK must be version 7, 8 or 9)])
               BOOT_JDK_FOUND=no
             else
               # We're done! :-)
@@ -136,12 +164,26 @@ AC_DEFUN([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK],
 ])
 
 # Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
+# $1: Argument to the java_home binary (optional)
 AC_DEFUN([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME],
 [
   if test -x /usr/libexec/java_home; then
-    BOOT_JDK=`/usr/libexec/java_home`
+    BOOT_JDK=`/usr/libexec/java_home $1`
     BOOT_JDK_FOUND=maybe
-    AC_MSG_NOTICE([Found potential Boot JDK using /usr/libexec/java_home])
+    AC_MSG_NOTICE([Found potential Boot JDK using /usr/libexec/java_home $1])
+  fi
+])
+
+# Test: On MacOS X, can we find a boot jdk using /usr/libexec/java_home?
+AC_DEFUN([BOOTJDK_CHECK_MACOSX_JAVA_LOCATOR],
+[
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # First check at user selected default
+    BOOTJDK_DO_CHECK([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME()])
+    # If that did not work out (e.g. too old), try explicit versions instead
+    BOOTJDK_DO_CHECK([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME([-v 1.9])])
+    BOOTJDK_DO_CHECK([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME([-v 1.8])])
+    BOOTJDK_DO_CHECK([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME([-v 1.7])])
   fi
 ])
 
@@ -201,14 +243,19 @@ AC_DEFUN([BOOTJDK_CHECK_WELL_KNOWN_LOCATIONS],
 # $2 = name of binary
 AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
 [
-  AC_MSG_CHECKING([for $2 in Boot JDK])
-  $1=$BOOT_JDK/bin/$2
-  if test ! -x [$]$1; then
-    AC_MSG_RESULT(not found)
-    AC_MSG_NOTICE([Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk])
-    AC_MSG_ERROR([Could not find $2 in the Boot JDK])
-  fi
-  AC_MSG_RESULT(ok)
+  # Use user overridden value if available, otherwise locate tool in the Boot JDK.
+  BASIC_SETUP_TOOL($1, 
+    [
+      AC_MSG_CHECKING([for $2 in Boot JDK])
+      $1=$BOOT_JDK/bin/$2
+      if test ! -x [$]$1; then
+        AC_MSG_RESULT(not found)
+        AC_MSG_NOTICE([Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk])
+        AC_MSG_ERROR([Could not find $2 in the Boot JDK])
+      fi
+      AC_MSG_RESULT(ok)
+      AC_SUBST($1)
+    ])
 ])
 
 ###############################################################################
@@ -238,11 +285,11 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   # Test: Is bootjdk available from builddeps?
   BOOTJDK_DO_CHECK([BOOTJDK_CHECK_BUILDDEPS])
 
+  # Test: On MacOS X, can we find a boot jdk using /usr/libexec/java_home?
+  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_MACOSX_JAVA_LOCATOR])
+
   # Test: Is $JAVA_HOME set?
   BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_HOME])
-
-  # Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
-  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME])
 
   # Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
   BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK])
@@ -275,13 +322,12 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   AC_SUBST(BOOT_JDK)
 
   # Setup tools from the Boot JDK.
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVA,java)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC,javac)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAH,javah)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAP,javap)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR,jar)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(RMIC,rmic)
-  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(NATIVE2ASCII,native2ascii)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVA, java)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC, javac)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAH, javah)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR, jar)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(NATIVE2ASCII, native2ascii)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JARSIGNER, jarsigner)
 
   # Finally, set some other options...
 
@@ -316,7 +362,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
     # Minimum amount of heap memory.
     ADD_JVM_ARG_IF_OK([-Xms64M],boot_jdk_jvmargs,[$JAVA])
-    if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
+    if test "x$OPENJDK_TARGET_OS" = "xmacosx" || test "x$OPENJDK_TARGET_CPU" = "xppc64" ; then
       # Why does macosx need more heap? Its the huge JDK batch.
       ADD_JVM_ARG_IF_OK([-Xmx1600M],boot_jdk_jvmargs,[$JAVA])
     else
