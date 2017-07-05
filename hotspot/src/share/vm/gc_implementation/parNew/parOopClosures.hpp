@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_PARNEW_PAROOPCLOSURES_HPP
 
 #include "memory/genOopClosures.hpp"
+#include "memory/padded.hpp"
 
 // Closures for ParNewGeneration
 

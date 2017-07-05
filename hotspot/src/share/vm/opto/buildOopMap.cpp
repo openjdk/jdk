@@ -426,14 +426,16 @@ static void do_liveness( PhaseRegAlloc *regalloc, PhaseCFG *cfg, Block_List *wor
   }
   memset( live, 0, cfg->_num_blocks * (max_reg_ints<<LogBytesPerInt) );
   // Push preds onto worklist
-  for( uint i=1; i<root->req(); i++ )
-    worklist->push(cfg->_bbs[root->in(i)->_idx]);
+  for (uint i = 1; i < root->req(); i++) {
+    Block* block = cfg->get_block_for_node(root->in(i));
+    worklist->push(block);
+  }
 
   // ZKM.jar includes tiny infinite loops which are unreached from below.
   // If we missed any blocks, we'll retry here after pushing all missed
   // blocks on the worklist.  Normally this outer loop never trips more
   // than once.
-  while( 1 ) {
+  while (1) {
 
     while( worklist->size() ) { // Standard worklist algorithm
       Block *b = worklist->rpop();
@@ -537,8 +539,10 @@ static void do_liveness( PhaseRegAlloc *regalloc, PhaseCFG *cfg, Block_List *wor
         for( l=0; l<max_reg_ints; l++ )
           old_live[l] = tmp_live[l];
         // Push preds onto worklist
-        for( l=1; l<(int)b->num_preds(); l++ )
-          worklist->push(cfg->_bbs[b->pred(l)->_idx]);
+        for (l = 1; l < (int)b->num_preds(); l++) {
+          Block* block = cfg->get_block_for_node(b->pred(l));
+          worklist->push(block);
+        }
       }
     }
 
@@ -629,10 +633,9 @@ void Compile::BuildOopMaps() {
     // pred to this block.  Otherwise we have to grab a new OopFlow.
     OopFlow *flow = NULL;       // Flag for finding optimized flow
     Block *pred = (Block*)0xdeadbeef;
-    uint j;
     // Scan this block's preds to find a done predecessor
-    for( j=1; j<b->num_preds(); j++ ) {
-      Block *p = _cfg->_bbs[b->pred(j)->_idx];
+    for (uint j = 1; j < b->num_preds(); j++) {
+      Block* p = _cfg->get_block_for_node(b->pred(j));
       OopFlow *p_flow = flows[p->_pre_order];
       if( p_flow ) {            // Predecessor is done
         assert( p_flow->_b == p, "cross check" );

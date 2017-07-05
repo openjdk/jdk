@@ -52,7 +52,7 @@ void PhaseCoalesce::dump() const {
     // Print a nice block header
     tty->print("B%d: ",b->_pre_order);
     for( j=1; j<b->num_preds(); j++ )
-      tty->print("B%d ", _phc._cfg._bbs[b->pred(j)->_idx]->_pre_order);
+      tty->print("B%d ", _phc._cfg.get_block_for_node(b->pred(j))->_pre_order);
     tty->print("-> ");
     for( j=0; j<b->_num_succs; j++ )
       tty->print("B%d ",b->_succs[j]->_pre_order);
@@ -208,7 +208,7 @@ void PhaseAggressiveCoalesce::insert_copy_with_overlap( Block *b, Node *copy, ui
     copy->set_req(idx,tmp);
     // Save source in temp early, before source is killed
     b->_nodes.insert(kill_src_idx,tmp);
-    _phc._cfg._bbs.map( tmp->_idx, b );
+    _phc._cfg.map_node_to_block(tmp, b);
     last_use_idx++;
   }
 
@@ -286,7 +286,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
           Node *m = n->in(j);
           uint src_name = _phc._lrg_map.find(m);
           if (src_name != phi_name) {
-            Block *pred = _phc._cfg._bbs[b->pred(j)->_idx];
+            Block *pred = _phc._cfg.get_block_for_node(b->pred(j));
             Node *copy;
             assert(!m->is_Con() || m->is_Mach(), "all Con must be Mach");
             // Rematerialize constants instead of copying them
@@ -305,7 +305,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
             }
             // Insert the copy in the use-def chain
             n->set_req(j, copy);
-            _phc._cfg._bbs.map( copy->_idx, pred );
+            _phc._cfg.map_node_to_block(copy, pred);
             // Extend ("register allocate") the names array for the copy.
             _phc._lrg_map.extend(copy->_idx, phi_name);
           } // End of if Phi names do not match
@@ -343,13 +343,13 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
             n->set_req(idx, copy);
             // Extend ("register allocate") the names array for the copy.
             _phc._lrg_map.extend(copy->_idx, name);
-            _phc._cfg._bbs.map( copy->_idx, b );
+            _phc._cfg.map_node_to_block(copy, b);
           }
 
         } // End of is two-adr
 
         // Insert a copy at a debug use for a lrg which has high frequency
-        if (b->_freq < OPTO_DEBUG_SPLIT_FREQ || b->is_uncommon(_phc._cfg._bbs)) {
+        if (b->_freq < OPTO_DEBUG_SPLIT_FREQ || b->is_uncommon(&_phc._cfg)) {
           // Walk the debug inputs to the node and check for lrg freq
           JVMState* jvms = n->jvms();
           uint debug_start = jvms ? jvms->debug_start() : 999999;
@@ -391,7 +391,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
               uint max_lrg_id = _phc._lrg_map.max_lrg_id();
               _phc.new_lrg(copy, max_lrg_id);
               _phc._lrg_map.set_max_lrg_id(max_lrg_id + 1);
-              _phc._cfg._bbs.map(copy->_idx, b);
+              _phc._cfg.map_node_to_block(copy, b);
               //tty->print_cr("Split a debug use in Aggressive Coalesce");
             }  // End of if high frequency use/def
           }  // End of for all debug inputs
@@ -437,7 +437,10 @@ void PhaseAggressiveCoalesce::coalesce( Block *b ) {
     Block *bs = b->_succs[i];
     // Find index of 'b' in 'bs' predecessors
     uint j=1;
-    while( _phc._cfg._bbs[bs->pred(j)->_idx] != b ) j++;
+    while (_phc._cfg.get_block_for_node(bs->pred(j)) != b) {
+      j++;
+    }
+
     // Visit all the Phis in successor block
     for( uint k = 1; k<bs->_nodes.size(); k++ ) {
       Node *n = bs->_nodes[k];
@@ -510,9 +513,9 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
   if( bindex < b->_fhrp_index ) b->_fhrp_index--;
 
   // Stretched lr1; add it to liveness of intermediate blocks
-  Block *b2 = _phc._cfg._bbs[src_copy->_idx];
+  Block *b2 = _phc._cfg.get_block_for_node(src_copy);
   while( b != b2 ) {
-    b = _phc._cfg._bbs[b->pred(1)->_idx];
+    b = _phc._cfg.get_block_for_node(b->pred(1));
     _phc._live->live(b)->insert(lr1);
   }
 }
@@ -532,7 +535,7 @@ uint PhaseConservativeCoalesce::compute_separating_interferences(Node *dst_copy,
     bindex2--;                  // Chain backwards 1 instruction
     while( bindex2 == 0 ) {     // At block start, find prior block
       assert( b2->num_preds() == 2, "cannot double coalesce across c-flow" );
-      b2 = _phc._cfg._bbs[b2->pred(1)->_idx];
+      b2 = _phc._cfg.get_block_for_node(b2->pred(1));
       bindex2 = b2->end_idx()-1;
     }
     // Get prior instruction
@@ -676,8 +679,8 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
 
   if (UseFPUForSpilling && rm.is_AllStack() ) {
     // Don't coalesce when frequency difference is large
-    Block *dst_b = _phc._cfg._bbs[dst_copy->_idx];
-    Block *src_def_b = _phc._cfg._bbs[src_def->_idx];
+    Block *dst_b = _phc._cfg.get_block_for_node(dst_copy);
+    Block *src_def_b = _phc._cfg.get_block_for_node(src_def);
     if (src_def_b->_freq > 10*dst_b->_freq )
       return false;
   }
@@ -690,7 +693,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
   // Another early bail-out test is when we are double-coalescing and the
   // 2 copies are separated by some control flow.
   if( dst_copy != src_copy ) {
-    Block *src_b = _phc._cfg._bbs[src_copy->_idx];
+    Block *src_b = _phc._cfg.get_block_for_node(src_copy);
     Block *b2 = b;
     while( b2 != src_b ) {
       if( b2->num_preds() > 2 ){// Found merge-point
@@ -701,7 +704,7 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
         //record_bias( _phc._lrgs, lr1, lr2 );
         return false;           // To hard to find all interferences
       }
-      b2 = _phc._cfg._bbs[b2->pred(1)->_idx];
+      b2 = _phc._cfg.get_block_for_node(b2->pred(1));
     }
   }
 
@@ -786,8 +789,9 @@ bool PhaseConservativeCoalesce::copy_copy(Node *dst_copy, Node *src_copy, Block 
 // Conservative (but pessimistic) copy coalescing of a single block
 void PhaseConservativeCoalesce::coalesce( Block *b ) {
   // Bail out on infrequent blocks
-  if( b->is_uncommon(_phc._cfg._bbs) )
+  if (b->is_uncommon(&_phc._cfg)) {
     return;
+  }
   // Check this block for copies.
   for( uint i = 1; i<b->end_idx(); i++ ) {
     // Check for actual copies on inputs.  Coalesce a copy into its
