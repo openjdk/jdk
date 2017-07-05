@@ -97,8 +97,8 @@ public class ciMethod extends ciMetadata {
                   holder.getName().asString() + " " +
                   OopUtilities.escapeString(method.getName().asString()) + " " +
                   method.getSignature().asString() + " " +
-                  method.getInvocationCounter() + " " +
-                  method.getBackedgeCounter() + " " +
+                  method.getInvocationCount() + " " +
+                  method.getBackedgeCount() + " " +
                   interpreterInvocationCount() + " " +
                   interpreterThrowoutCount() + " " +
                   instructionsSize());

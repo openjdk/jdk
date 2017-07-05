@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+import java.io.PrintWriter;
+import com.oracle.java.testlibrary.*;
 
-#ifndef _JLI_UTIL_H
-#define _JLI_UTIL_H
+/*
+ * Test to redefine java/lang/Object and verify that it doesn't crash on vtable
+ * call on basic array type.
+ *
+ * @test
+ * @bug 8005056
+ * @library /testlibrary
+ * @build Agent
+ * @run main ClassFileInstaller Agent
+ * @run main Test
+ * @run main/othervm -javaagent:agent.jar Agent
+ */
+public class Test {
+    public static void main(String[] args) throws Exception  {
 
-#include <stdlib.h>
+      PrintWriter pw = new PrintWriter("MANIFEST.MF");
+      pw.println("Premain-Class: Agent");
+      pw.println("Can-Retransform-Classes: true");
+      pw.close();
 
-void *JLI_MemAlloc(size_t size);
-void *JLI_MemRealloc(void *ptr, size_t size);
-char *JLI_StringDup(const char *s1);
-void  JLI_MemFree(void *ptr);
-
-#endif  /* _JLI_UTIL_H */
+      ProcessBuilder pb = new ProcessBuilder();
+      pb.command(new String[] { JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "Agent.class"});
+      pb.start().waitFor();
+    }
+}
