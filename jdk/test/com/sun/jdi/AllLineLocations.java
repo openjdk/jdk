@@ -22,17 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4248728
- *  @summary Test ReferenceType.allLineLocations
- *  @author Gordon Hirsch
+ * @test
+ * @bug 4248728
+ * @summary Test ReferenceType.allLineLocations
+ * @author Gordon Hirsch
  *
- *  @modules jdk.jdi
- *  @run build JDIScaffold VMConnection
- *  @run compile -g RefTypes.java
- *  @run build AllLineLocations
+ * @run build JDIScaffold VMConnection
+ * @run compile -g RefTypes.java
+ * @run build AllLineLocations
  *
- *  @run driver AllLineLocations RefTypes
+ * @run driver AllLineLocations RefTypes
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

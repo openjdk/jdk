@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,6 +132,7 @@ final class WInputMethod extends InputMethodAdapter
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void finalize() throws Throwable
     {
         // Release the resources used by the native input context.
@@ -588,6 +589,9 @@ final class WInputMethod extends InputMethodAdapter
                 Component client = getClientComponent();
 
                 if (client != null) {
+                    if (!client.isShowing()) {
+                        return;
+                    }
                     if (haveActiveClient()) {
                             Rectangle rc = inputContext.getTextLocation(TextHitInfo.leading(0));
                             x = rc.x;

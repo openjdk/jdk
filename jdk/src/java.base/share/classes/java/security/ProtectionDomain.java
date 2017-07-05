@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import jdk.internal.misc.JavaSecurityAccess;
 import jdk.internal.misc.JavaSecurityProtectionDomainAccess;
 import static jdk.internal.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
 import jdk.internal.misc.SharedSecrets;
+import sun.security.action.GetPropertyAction;
 import sun.security.provider.PolicyFile;
 import sun.security.util.Debug;
 import sun.security.util.FilePermCompat;
@@ -58,9 +59,18 @@ import sun.security.util.SecurityConstants;
  * @author Li Gong
  * @author Roland Schemers
  * @author Gary Ellison
+ * @since 1.2
  */
 
 public class ProtectionDomain {
+
+    /**
+     * If true, {@link #impliesWithAltFilePerm} will try to be compatible on
+     * FilePermission checking even if a 3rd-party Policy implementation is set.
+     */
+    private static final boolean filePermCompatInPD =
+            "true".equals(GetPropertyAction.privilegedGetProperty(
+                "jdk.security.filePermCompat"));
 
     private static class JavaSecurityAccessImpl implements JavaSecurityAccess {
 
@@ -321,19 +331,27 @@ public class ProtectionDomain {
     }
 
     /**
-     * This method has the same logic flow as {@link #implies} except that
-     * when the {@link FilePermCompat#compat} flag is on it ensures
-     * FilePermission compatibility after JDK-8164705. {@code implies()}
-     * is called when compat flag is not on or user has extended
-     * {@code ProtectionDomain}.
+     * This method has almost the same logic flow as {@link #implies} but
+     * it ensures some level of FilePermission compatibility after JDK-8164705.
      *
      * This method is called by {@link AccessControlContext#checkPermission}
      * and not intended to be called by an application.
      */
     boolean impliesWithAltFilePerm(Permission perm) {
 
-        // If this is a subclass of ProtectionDomain. Call the old method.
-        if (!FilePermCompat.compat || getClass() != ProtectionDomain.class) {
+        // If FilePermCompat.compat is set (default value), FilePermission
+        // checking compatibility should be considered.
+
+        // If filePermCompatInPD is set, this method checks for alternative
+        // FilePermission to keep compatibility for any Policy implementation.
+        // When set to false (default value), implies() is called since
+        // the PolicyFile implementation already supports compatibility.
+
+        // If this is a subclass of ProtectionDomain, call implies()
+        // because most likely user has overridden it.
+
+        if (!filePermCompatInPD || !FilePermCompat.compat ||
+                getClass() != ProtectionDomain.class) {
             return implies(perm);
         }
 

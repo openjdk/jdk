@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,11 +60,15 @@ import java.util.concurrent.TimeUnit;
  * default group is not configured then the pooled threads of the default group
  * are {@link Thread#isDaemon daemon} threads.
  *
- * <table border summary="System properties">
+ * <table class="striped">
+ * <caption style="display:none:">System properties</caption>
+ *   <thead>
  *   <tr>
  *     <th>System property</th>
  *     <th>Description</th>
  *   </tr>
+ *   </thead>
+ *   <tbody>
  *   <tr>
  *     <td> {@code java.nio.channels.DefaultThreadPool.threadFactory} </td>
  *     <td> The value of this property is taken to be the fully-qualified name
@@ -86,9 +90,10 @@ import java.util.concurrent.TimeUnit;
  *     unspecified error to be thrown during the construction of the default
  *     group. </td>
  *   </tr>
+ *   </tbody>
  * </table>
  *
- * <a name="threading"></a><h2>Threading</h2>
+ * <a id="threading"></a><h2>Threading</h2>
  *
  * <p> The completion handler for an I/O operation initiated on a channel bound
  * to a group is guaranteed to be invoked by one of the pooled threads in the
@@ -103,7 +108,7 @@ import java.util.concurrent.TimeUnit;
  * handler directly by the initiating thread (see {@link
  * AsynchronousServerSocketChannel#accept(Object,CompletionHandler) accept}).
  *
- * <a name="shutdown"></a><h2>Shutdown and Termination</h2>
+ * <a id="shutdown"></a><h2>Shutdown and Termination</h2>
  *
  * <p> The {@link #shutdown() shutdown} method is used to initiate an <em>orderly
  * shutdown</em> of a group. An orderly shutdown marks the group as shutdown;

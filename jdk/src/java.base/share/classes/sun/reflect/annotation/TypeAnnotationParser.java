@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,9 +123,30 @@ public final class TypeAnnotationParser {
                 tmp.add(t);
             }
         }
+        // If a constructor has a mandated outer this, that parameter
+        // has no annotations and the annotations to parameter mapping
+        // should be offset by 1.
+        boolean offset = false;
+        if (decl instanceof Constructor) {
+            Constructor<?> ctor = (Constructor<?>) decl;
+            Class<?> declaringClass = ctor.getDeclaringClass();
+            if (!declaringClass.isEnum() &&
+                (declaringClass.isMemberClass() &&
+                 (declaringClass.getModifiers() & Modifier.STATIC) == 0) ) {
+                offset = true;
+            }
+        }
         for (int i = 0; i < size; i++) {
-            @SuppressWarnings("unchecked")
-            ArrayList<TypeAnnotation> list = l[i];
+            ArrayList<TypeAnnotation> list;
+            if (offset) {
+                @SuppressWarnings("unchecked")
+                ArrayList<TypeAnnotation> tmp = (i == 0) ? null : l[i - 1];
+                list = tmp;
+            } else {
+                @SuppressWarnings("unchecked")
+                ArrayList<TypeAnnotation> tmp = l[i];
+                list = tmp;
+            }
             TypeAnnotation[] typeAnnotations;
             if (list != null) {
                 typeAnnotations = list.toArray(new TypeAnnotation[list.size()]);

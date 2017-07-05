@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,10 +59,12 @@ public class bug6276188 extends JFrame {
             }
         });
 
-        p = Util.getCenterPoint(button);
-
         Robot robot = new Robot();
         robot.setAutoDelay(50);
+        robot.waitForIdle();
+        robot.delay(200);
+
+        p = Util.getCenterPoint(button);
 
         robot.mouseMove(p.x , p.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);

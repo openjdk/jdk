@@ -12,7 +12,7 @@
     -Xms<size>        set initial Java heap size
     -Xmx<size>        set maximum Java heap size
     -Xss<size>        set java thread stack size
-    -Xprof            output cpu profiling data
+    -Xprof            output cpu profiling data (deprecated)
     -Xfuture          enable strictest checks, anticipating future default
     -Xrs              reduce use of OS signals by Java/VM (see documentation)
     -Xcheck:jni       perform additional checks for JNI functions

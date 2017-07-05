@@ -26,7 +26,7 @@
  * @bug 4892674
  * @summary Test that RelationNotification can be constructed with ObjectName.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean RelationNotificationSourceTest
  * @run build RelationNotificationSourceTest
  * @run main RelationNotificationSourceTest
