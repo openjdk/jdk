@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,7 @@ public:
   virtual bool        is_ideal_safepoint() const; // node matches 'SafePoint'
   virtual bool        is_ideal_nop() const;     // node matches 'Nop'
   virtual bool        is_ideal_control() const; // control node
+  virtual bool        is_vector() const;        // vector instruction
 
   virtual Form::CallType is_ideal_call() const; // matches ideal 'Call'
   virtual Form::DataType is_ideal_load() const; // node matches ideal 'LoadXNode'
@@ -1011,6 +1012,7 @@ public:
   bool       is_ideal_goto() const;    // node matches ideal 'Goto'
   bool       is_ideal_loopEnd() const; // node matches ideal 'LoopEnd'
   bool       is_ideal_bool() const;    // node matches ideal 'Bool'
+  bool       is_vector() const;        // vector instruction
   Form::DataType is_ideal_load() const;// node matches ideal 'LoadXNode'
   // Should antidep checks be disabled for this rule
   // See definition of MatchRule::skip_antidep_check

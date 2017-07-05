@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "code/icBuffer.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -156,6 +157,10 @@ void exit_globals() {
     if (PrintSafepointStatistics) {
       // Print the collected safepoint statistics.
       SafepointSynchronize::print_stat_on_exit();
+    }
+    if (PrintStringTableStatistics) {
+      SymbolTable::dump(tty);
+      StringTable::dump(tty);
     }
     ostream_exit();
   }

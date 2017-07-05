@@ -62,8 +62,8 @@ public:
 // written later, increasing the likelihood that the shared page contain
 // the hash can be shared.
 //
-// NOTE THAT the algorithm in StringTable::hash_string() MUST MATCH the
-// algorithm in java.lang.String.hashCode().
+// NOTE THAT we have to call java_lang_String::to_hash() to match the
+// algorithm in java.lang.String.toHash().
 
 class StringHashCodeClosure: public OopClosure {
 private:
@@ -80,7 +80,7 @@ public:
       oop obj = *p;
       if (obj->klass() == SystemDictionary::String_klass() &&
           java_lang_String::has_hash_field()) {
-        int hash = java_lang_String::hash_string(obj);
+        int hash = java_lang_String::to_hash(obj);
         obj->int_field_put(hash_offset, hash);
       }
     }

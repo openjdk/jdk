@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,6 +115,12 @@ void ADLParser::parse() {
       parse_err(SYNERR, "expected one of - instruct, operand, ins_attrib, op_attrib, source, register, pipeline, encode\n     Found %s",ident);
     }
   }
+  // Add reg_class spill_regs after parsing.
+  RegisterForm *regBlock = _AD.get_registers();
+  if (regBlock == NULL) {
+    parse_err(SEMERR, "Did not declare 'register' definitions");
+  }
+  regBlock->addSpillRegClass();
 
   // Done with parsing, check consistency.
 
@@ -768,11 +774,12 @@ void ADLParser::source_hpp_parse(void) {
 
 //------------------------------reg_parse--------------------------------------
 void ADLParser::reg_parse(void) {
-
-  // Create the RegisterForm for the architecture description.
-  RegisterForm *regBlock = new RegisterForm();    // Build new Source object
-  regBlock->_linenum = linenum();
-  _AD.addForm(regBlock);
+  RegisterForm *regBlock = _AD.get_registers(); // Information about registers encoding
+  if (regBlock == NULL) {
+    // Create the RegisterForm for the architecture description.
+    regBlock = new RegisterForm();    // Build new Source object
+    _AD.addForm(regBlock);
+  }
 
   skipws();                       // Skip leading whitespace
   if (_curchar == '%' && *(_ptr+1) == '{') {
@@ -796,15 +803,11 @@ void ADLParser::reg_parse(void) {
     parse_err(SYNERR, "Missing %c{ ... %c} block after register keyword.\n",'%','%');
     return;
   }
-
-  // Add reg_class spill_regs
-  regBlock->addSpillRegClass();
 }
 
 //------------------------------encode_parse-----------------------------------
 void ADLParser::encode_parse(void) {
   EncodeForm *encBlock;         // Information about instruction/operand encoding
-  char       *desc = NULL;      // String representation of encode rule
 
   _AD.getForm(&encBlock);
   if ( encBlock == NULL) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1543,6 +1543,7 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
     // had an original form like p1:(AddP x x (LShiftL quux 3)), where the
     // expression (LShiftL quux 3) independently optimized to the constant 8.
     if ((t->isa_int() == NULL) && (t->isa_long() == NULL)
+        && (_type->isa_vect() == NULL)
         && Opcode() != Op_LoadKlass && Opcode() != Op_LoadNKlass) {
       // t might actually be lower than _type, if _type is a unique
       // concrete subclass of abstract class t.
