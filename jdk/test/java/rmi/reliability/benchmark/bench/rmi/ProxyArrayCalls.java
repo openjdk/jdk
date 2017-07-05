@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 2000 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,52 +44,52 @@ import java.rmi.server.UnicastRemoteObject;
 public class ProxyArrayCalls implements Benchmark {
 
     static class DummyHandler implements InvocationHandler, Serializable {
-	public Object invoke(Object proxy, Method method, Object[] args)
-	    throws Throwable
-	{
-	    return null;
-	}
+        public Object invoke(Object proxy, Method method, Object[] args)
+            throws Throwable
+        {
+            return null;
+        }
     }
-    
+
     public static interface DummyInterface {
-	public void foo();
+        public void foo();
     }
 
     interface Server extends Remote {
-	public Proxy[] call(Proxy[] a) throws RemoteException;
+        public Proxy[] call(Proxy[] a) throws RemoteException;
     }
 
     static class ServerImpl extends UnicastRemoteObject implements Server {
-	public ServerImpl() throws RemoteException {
-	}
+        public ServerImpl() throws RemoteException {
+        }
 
-	public Proxy[] call(Proxy[] a) throws RemoteException {
-	    return a;
-	}
+        public Proxy[] call(Proxy[] a) throws RemoteException {
+            return a;
+        }
     }
-    
+
     static class ServerFactory implements BenchServer.RemoteObjectFactory {
-	public Remote create() throws RemoteException {
-	    return new ServerImpl();
-	}
+        public Remote create() throws RemoteException {
+            return new ServerImpl();
+        }
     }
-    
+
     /**
      * Generate proxy object array of the given size.
      */
     Proxy[] genProxies(int size) throws Exception {
-	Class proxyClass = 
-	    Proxy.getProxyClass(DummyInterface.class.getClassLoader(),
-		    new Class[] { DummyInterface.class });
-	Constructor proxyCons = 
-	    proxyClass.getConstructor(new Class[] { InvocationHandler.class });
-	Object[] consArgs = new Object[] { new DummyHandler() };
-	Proxy[] proxies = new Proxy[size];
+        Class proxyClass =
+            Proxy.getProxyClass(DummyInterface.class.getClassLoader(),
+                    new Class[] { DummyInterface.class });
+        Constructor proxyCons =
+            proxyClass.getConstructor(new Class[] { InvocationHandler.class });
+        Object[] consArgs = new Object[] { new DummyHandler() };
+        Proxy[] proxies = new Proxy[size];
 
-	for (int i = 0; i < size; i++)
-	    proxies[i] = (Proxy) proxyCons.newInstance(consArgs);
+        for (int i = 0; i < size; i++)
+            proxies[i] = (Proxy) proxyCons.newInstance(consArgs);
 
-	return proxies;
+        return proxies;
     }
 
     /**
@@ -97,19 +97,18 @@ public class ProxyArrayCalls implements Benchmark {
      * Arguments: <array size> <# calls>
      */
     public long run(String[] args) throws Exception {
-	int size = Integer.parseInt(args[0]);
-	int reps = Integer.parseInt(args[1]);
-	BenchServer bsrv = Main.getBenchServer();
-	Server stub = (Server) bsrv.create(new ServerFactory());
-	Proxy[] proxies = genProxies(size);
+        int size = Integer.parseInt(args[0]);
+        int reps = Integer.parseInt(args[1]);
+        BenchServer bsrv = Main.getBenchServer();
+        Server stub = (Server) bsrv.create(new ServerFactory());
+        Proxy[] proxies = genProxies(size);
 
-	long start = System.currentTimeMillis();
-	for (int i = 0; i < reps; i++)
-	    stub.call(proxies);
-	long time = System.currentTimeMillis() - start;
-	
-	bsrv.unexport(stub, true);
-	return time;
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < reps; i++)
+            stub.call(proxies);
+        long time = System.currentTimeMillis() - start;
+
+        bsrv.unexport(stub, true);
+        return time;
     }
 }
-

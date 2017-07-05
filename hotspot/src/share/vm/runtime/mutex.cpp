@@ -1119,10 +1119,15 @@ Monitor::~Monitor() {
   assert ((UNS(_owner)|UNS(_LockWord.FullWord)|UNS(_EntryList)|UNS(_WaitSet)|UNS(_OnDeck)) == 0, "") ;
 }
 
-void Monitor::ClearMonitor (Monitor * m) {
+void Monitor::ClearMonitor (Monitor * m, const char *name) {
   m->_owner             = NULL ;
   m->_snuck             = false ;
-  m->_name              = "UNKNOWN" ;
+  if (name == NULL) {
+    strcpy(m->_name, "UNKNOWN") ;
+  } else {
+    strncpy(m->_name, name, MONITOR_NAME_LEN - 1);
+    m->_name[MONITOR_NAME_LEN - 1] = '\0';
+  }
   m->_LockWord.FullWord = 0 ;
   m->_EntryList         = NULL ;
   m->_OnDeck            = NULL ;
@@ -1133,7 +1138,7 @@ void Monitor::ClearMonitor (Monitor * m) {
 Monitor::Monitor() { ClearMonitor(this); }
 
 Monitor::Monitor (int Rank, const char * name, bool allow_vm_block) {
-  ClearMonitor (this) ;
+  ClearMonitor (this, name) ;
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = Rank ;
@@ -1145,7 +1150,7 @@ Mutex::~Mutex() {
 }
 
 Mutex::Mutex (int Rank, const char * name, bool allow_vm_block) {
-  ClearMonitor ((Monitor *) this) ;
+  ClearMonitor ((Monitor *) this, name) ;
 #ifdef ASSERT
  _allow_vm_block   = allow_vm_block;
  _rank             = Rank ;

@@ -546,8 +546,8 @@ void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst,
   // set rsi.edi to the end of the arrays (arrays have same length)
   // negate the index
 
-  __ leal(rsi, Address(rsi, rax, Address::times_2, type2aelembytes[T_CHAR]));
-  __ leal(rdi, Address(rdi, rax, Address::times_2, type2aelembytes[T_CHAR]));
+  __ leal(rsi, Address(rsi, rax, Address::times_2, type2aelembytes(T_CHAR)));
+  __ leal(rdi, Address(rdi, rax, Address::times_2, type2aelembytes(T_CHAR)));
   __ negl(rax);
 
   // compare the strings in a loop
@@ -1232,7 +1232,7 @@ void LIR_Assembler::prefetchw(LIR_Opr src) {
 
 NEEDS_CLEANUP; // This could be static?
 Address::ScaleFactor LIR_Assembler::array_element_size(BasicType type) const {
-  int elem_size = type2aelembytes[type];
+  int elem_size = type2aelembytes(type);
   switch (elem_size) {
     case 1: return Address::times_1;
     case 2: return Address::times_2;
@@ -2739,7 +2739,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   assert(default_type != NULL && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
 
-  int elem_size = type2aelembytes[basic_type];
+  int elem_size = type2aelembytes(basic_type);
   int shift_amount;
   Address::ScaleFactor scale;
 

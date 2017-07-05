@@ -58,12 +58,17 @@
   template(java_lang_ThreadDeath,                     "java/lang/ThreadDeath")                    \
   template(java_lang_Boolean,                         "java/lang/Boolean")                        \
   template(java_lang_Character,                       "java/lang/Character")                      \
+  template(java_lang_Character_CharacterCache,        "java/lang/Character$CharacterCache")       \
   template(java_lang_Float,                           "java/lang/Float")                          \
   template(java_lang_Double,                          "java/lang/Double")                         \
   template(java_lang_Byte,                            "java/lang/Byte")                           \
+  template(java_lang_Byte_Cache,                      "java/lang/Byte$ByteCache")                 \
   template(java_lang_Short,                           "java/lang/Short")                          \
+  template(java_lang_Short_ShortCache,                "java/lang/Short$ShortCache")               \
   template(java_lang_Integer,                         "java/lang/Integer")                        \
+  template(java_lang_Integer_IntegerCache,            "java/lang/Integer$IntegerCache")           \
   template(java_lang_Long,                            "java/lang/Long")                           \
+  template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
   template(java_lang_Shutdown,                        "java/lang/Shutdown")                       \
   template(java_lang_ref_Reference,                   "java/lang/ref/Reference")                  \
   template(java_lang_ref_SoftReference,               "java/lang/ref/SoftReference")              \
@@ -91,10 +96,11 @@
   template(java_util_Vector,                          "java/util/Vector")                         \
   template(java_util_AbstractList,                    "java/util/AbstractList")                   \
   template(java_util_Hashtable,                       "java/util/Hashtable")                      \
+  template(java_util_HashMap,                         "java/util/HashMap")                        \
   template(java_lang_Compiler,                        "java/lang/Compiler")                       \
   template(sun_misc_Signal,                           "sun/misc/Signal")                          \
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \
-  template(sun_jkernel_DownloadManager,               "sun/jkernel/DownloadManager")                 \
+  template(sun_jkernel_DownloadManager,               "sun/jkernel/DownloadManager")              \
   template(getBootClassPathEntryForClass_name,        "getBootClassPathEntryForClass")            \
                                                                                                   \
   /* class file format tags */                                                                    \
@@ -274,7 +280,9 @@
   template(exclusive_owner_thread_name,               "exclusiveOwnerThread")                     \
   template(park_blocker_name,                         "parkBlocker")                              \
   template(park_event_name,                           "nativeParkEventPointer")                   \
+  template(cache_field_name,                          "cache")                                    \
   template(value_name,                                "value")                                    \
+  template(frontCacheEnabled_name,                    "frontCacheEnabled")                        \
                                                                                                   \
   /* non-intrinsic name/signature pairs: */                                                       \
   template(register_method_name,                      "register")                                 \
@@ -576,6 +584,8 @@
    do_name(     attemptUpdate_name,                                 "attemptUpdate")                                    \
    do_signature(attemptUpdate_signature,                            "(JJ)Z")                                            \
                                                                                                                         \
+  do_intrinsic(_fillInStackTrace,         java_lang_Throwable, fillInStackTrace_name, void_throwable_signature,  F_RNY) \
+                                                                                                                        \
   /* support for sun.misc.Unsafe */                                                                                     \
   do_class(sun_misc_Unsafe,               "sun/misc/Unsafe")                                                            \
                                                                                                                         \
@@ -863,7 +873,8 @@ class vmIntrinsics: AllStatic {
     F_R,                        // !static        !synchronized (R="regular")
     F_S,                        //  static        !synchronized
     F_RN,                       // !static native !synchronized
-    F_SN                        //  static native !synchronized
+    F_SN,                       //  static native !synchronized
+    F_RNY                       // !static native  synchronized
   };
 
 public:

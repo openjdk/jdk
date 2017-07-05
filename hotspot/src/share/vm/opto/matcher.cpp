@@ -1647,6 +1647,7 @@ void Matcher::find_shared( Node *n ) {
       case Op_Phi:             // Treat Phis as shared roots
       case Op_Parm:
       case Op_Proj:            // All handled specially during matching
+      case Op_SafePointScalarObject:
         set_shared(n);
         set_dontcare(n);
         break;

@@ -587,11 +587,6 @@ ConNode* PhaseValues::uncached_makecon(const Type *t) {
       Node_Notes* loc = C->locate_node_notes(nna, x->_idx, true);
       loc->clear(); // do not put debug info on constants
     }
-    // Collect points-to information for escape analysys
-    ConnectionGraph *cgr = C->congraph();
-    if (cgr != NULL) {
-      cgr->record_escape(x, this);
-    }
   } else {
     x->destruct();              // Hit, destroy duplicate constant
     x = k;                      // use existing constant
@@ -648,79 +643,9 @@ ConNode* PhaseTransform::zerocon(BasicType bt) {
 //=============================================================================
 //------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but in a
-// faster or cheaper fashion.  The Node passed in here must have no other
-// pointers to it, as its storage will be reclaimed if the Node can be
-// optimized away.
+// faster or cheaper fashion.
 Node *PhaseGVN::transform( Node *n ) {
-  NOT_PRODUCT( set_transforms(); )
-
-  // Apply the Ideal call in a loop until it no longer applies
-  Node *k = n;
-  NOT_PRODUCT( uint loop_count = 0; )
-  while( 1 ) {
-    Node *i = k->Ideal(this, /*can_reshape=*/false);
-    if( !i ) break;
-    assert( i->_idx >= k->_idx, "Idealize should return new nodes, use Identity to return old nodes" );
-    // Can never reclaim storage for Ideal calls, because the Ideal call
-    // returns a new Node, bumping the High Water Mark and our old Node
-    // is caught behind the new one.
-    //if( k != i ) {
-    //k->destruct();            // Reclaim storage for recent node
-    k = i;
-    //}
-    assert(loop_count++ < K, "infinite loop in PhaseGVN::transform");
-  }
-  NOT_PRODUCT( if( loop_count != 0 ) { set_progress(); } )
-
-  // If brand new node, make space in type array.
-  ensure_type_or_null(k);
-
-  // Cache result of Value call since it can be expensive
-  // (abstract interpretation of node 'k' using phase->_types[ inputs ])
-  const Type *t = k->Value(this); // Get runtime Value set
-  assert(t != NULL, "value sanity");
-  if (type_or_null(k) != t) {
-#ifndef PRODUCT
-    // Do not record transformation or value construction on first visit
-    if (type_or_null(k) == NULL) {
-      inc_new_values();
-      set_progress();
-    }
-#endif
-    set_type(k, t);
-    // If k is a TypeNode, capture any more-precise type permanently into Node
-    k->raise_bottom_type(t);
-  }
-
-  if( t->singleton() && !k->is_Con() ) {
-    //k->destruct();              // Reclaim storage for recent node
-    NOT_PRODUCT( set_progress(); )
-    return makecon(t);          // Turn into a constant
-  }
-
-  // Now check for Identities
-  Node *i = k->Identity(this);  // Look for a nearby replacement
-  if( i != k ) {                // Found? Return replacement!
-    //k->destruct();              // Reclaim storage for recent node
-    NOT_PRODUCT( set_progress(); )
-    return i;
-  }
-
-  // Try Global Value Numbering
-  i = hash_find_insert(k);      // Found older value when i != NULL
-  if( i && i != k ) {           // Hit? Return the old guy
-    NOT_PRODUCT( set_progress(); )
-    return i;
-  }
-
-  // Collect points-to information for escape analysys
-  ConnectionGraph *cgr = C->congraph();
-  if (cgr != NULL) {
-    cgr->record_escape(k, this);
-  }
-
-  // Return Idealized original
-  return k;
+  return transform_no_reclaim(n);
 }
 
 //------------------------------transform--------------------------------------
@@ -1309,7 +1234,7 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
 
     uint use_op = use->Opcode();
     // If changed Cast input, check Phi users for simple cycles
-    if( use->is_ConstraintCast() || use->Opcode() == Op_CheckCastPP ) {
+    if( use->is_ConstraintCast() || use->is_CheckCastPP() ) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
         if (u->is_Phi())

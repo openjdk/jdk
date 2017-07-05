@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,9 +104,20 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
 
     /**
      * Convert an arbitrary key of algorithm into a P11Key of provider.
-     * Used engineTranslateKey(), P11Cipher.init(), and P11Mac.init().
+     * Used in engineTranslateKey(), P11Cipher.init(), and P11Mac.init().
      */
-    static P11Key convertKey(Token token, Key key, String algorithm)
+    static P11Key convertKey(Token token, Key key, String algo)
+            throws InvalidKeyException {
+        return convertKey(token, key, algo, null);
+    }
+
+    /**
+     * Convert an arbitrary key of algorithm w/ custom attributes into a
+     * P11Key of provider.
+     * Used in P11KeyStore.storeSkey.
+     */
+    static P11Key convertKey(Token token, Key key, String algo,
+            CK_ATTRIBUTE[] extraAttrs)
             throws InvalidKeyException {
         token.ensureValid();
         if (key == null) {
@@ -115,25 +126,41 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         if (key instanceof SecretKey == false) {
             throw new InvalidKeyException("Key must be a SecretKey");
         }
-        long algorithmType;
-        if (algorithm == null) {
-            algorithm = key.getAlgorithm();
-            algorithmType = getKeyType(algorithm);
+        long algoType;
+        if (algo == null) {
+            algo = key.getAlgorithm();
+            algoType = getKeyType(algo);
         } else {
-            algorithmType = getKeyType(algorithm);
+            algoType = getKeyType(algo);
             long keyAlgorithmType = getKeyType(key.getAlgorithm());
-            if (algorithmType != keyAlgorithmType) {
-                if ((algorithmType == PCKK_HMAC) || (algorithmType == PCKK_SSLMAC)) {
+            if (algoType != keyAlgorithmType) {
+                if ((algoType == PCKK_HMAC) || (algoType == PCKK_SSLMAC)) {
                     // ignore key algorithm for MACs
                 } else {
                     throw new InvalidKeyException
-                                ("Key algorithm must be " + algorithm);
+                            ("Key algorithm must be " + algo);
                 }
             }
         }
         if (key instanceof P11Key) {
             P11Key p11Key = (P11Key)key;
             if (p11Key.token == token) {
+                if (extraAttrs != null) {
+                    Session session = null;
+                    try {
+                        session = token.getObjSession();
+                        long newKeyID = token.p11.C_CopyObject(session.id(),
+                                p11Key.keyID, extraAttrs);
+                        p11Key = (P11Key) (P11Key.secretKey(p11Key.session,
+                                newKeyID, p11Key.algorithm, p11Key.keyLength,
+                                extraAttrs));
+                    } catch (PKCS11Exception p11e) {
+                        throw new InvalidKeyException
+                                ("Cannot duplicate the PKCS11 key", p11e);
+                    } finally {
+                        token.releaseSession(session);
+                    }
+                }
                 return p11Key;
             }
         }
@@ -141,11 +168,11 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         if (p11Key != null) {
             return p11Key;
         }
-        if ("RAW".equals(key.getFormat()) == false) {
+        if ("RAW".equalsIgnoreCase(key.getFormat()) == false) {
             throw new InvalidKeyException("Encoded format must be RAW");
         }
         byte[] encoded = key.getEncoded();
-        p11Key = createKey(token, encoded, algorithm, algorithmType);
+        p11Key = createKey(token, encoded, algo, algoType, extraAttrs);
         token.secretCache.put(key, p11Key);
         return p11Key;
     }
@@ -159,79 +186,79 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     }
 
     private static P11Key createKey(Token token, byte[] encoded,
-            String algorithm, long keyType) throws InvalidKeyException {
-        int n = encoded.length;
-        int keyLength;
-        switch ((int)keyType) {
-        case (int)CKK_RC4:
-            if ((n < 5) || (n > 128)) {
-                throw new InvalidKeyException
-                        ("ARCFOUR key length must be between 5 and 128 bytes");
+            String algorithm, long keyType, CK_ATTRIBUTE[] extraAttrs)
+            throws InvalidKeyException {
+        int n = encoded.length << 3;
+        int keyLength = n;
+        try {
+            switch ((int)keyType) {
+                case (int)CKK_DES:
+                    keyLength =
+                        P11KeyGenerator.checkKeySize(CKM_DES_KEY_GEN, n, token);
+                    fixDESParity(encoded, 0);
+                    break;
+                case (int)CKK_DES3:
+                    keyLength =
+                        P11KeyGenerator.checkKeySize(CKM_DES3_KEY_GEN, n, token);
+                    fixDESParity(encoded, 0);
+                    fixDESParity(encoded, 8);
+                    if (keyLength == 112) {
+                        keyType = CKK_DES2;
+                    } else {
+                        keyType = CKK_DES3;
+                        fixDESParity(encoded, 16);
+                    }
+                    break;
+                case (int)CKK_AES:
+                    keyLength =
+                        P11KeyGenerator.checkKeySize(CKM_AES_KEY_GEN, n, token);
+                    break;
+                case (int)CKK_RC4:
+                    keyLength =
+                        P11KeyGenerator.checkKeySize(CKM_RC4_KEY_GEN, n, token);
+                    break;
+                case (int)CKK_BLOWFISH:
+                    keyLength =
+                        P11KeyGenerator.checkKeySize(CKM_BLOWFISH_KEY_GEN, n,
+                        token);
+                    break;
+                case (int)CKK_GENERIC_SECRET:
+                case (int)PCKK_TLSPREMASTER:
+                case (int)PCKK_TLSRSAPREMASTER:
+                case (int)PCKK_TLSMASTER:
+                    keyType = CKK_GENERIC_SECRET;
+                    break;
+                case (int)PCKK_SSLMAC:
+                case (int)PCKK_HMAC:
+                    if (n == 0) {
+                        throw new InvalidKeyException
+                                ("MAC keys must not be empty");
+                    }
+                    keyType = CKK_GENERIC_SECRET;
+                    break;
+                default:
+                    throw new InvalidKeyException("Unknown algorithm " +
+                            algorithm);
             }
-            keyLength = n << 3;
-            break;
-        case (int)CKK_DES:
-            if (n != 8) {
-                throw new InvalidKeyException
-                        ("DES key length must be 8 bytes");
-            }
-            keyLength = 56;
-            fixDESParity(encoded, 0);
-            break;
-        case (int)CKK_DES3:
-            if (n == 16) {
-                keyType = CKK_DES2;
-            } else if (n == 24) {
-                keyType = CKK_DES3;
-                fixDESParity(encoded, 16);
-            } else {
-                throw new InvalidKeyException
-                        ("DESede key length must be 16 or 24 bytes");
-            }
-            fixDESParity(encoded, 0);
-            fixDESParity(encoded, 8);
-            keyLength = n * 7;
-            break;
-        case (int)CKK_AES:
-            if ((n != 16) && (n != 24) && (n != 32)) {
-                throw new InvalidKeyException
-                        ("AES key length must be 16, 24, or 32 bytes");
-            }
-            keyLength = n << 3;
-            break;
-        case (int)CKK_BLOWFISH:
-            if ((n < 5) || (n > 56)) {
-                throw new InvalidKeyException
-                        ("Blowfish key length must be between 5 and 56 bytes");
-            }
-            keyLength = n << 3;
-            break;
-        case (int)CKK_GENERIC_SECRET:
-        case (int)PCKK_TLSPREMASTER:
-        case (int)PCKK_TLSRSAPREMASTER:
-        case (int)PCKK_TLSMASTER:
-            keyType = CKK_GENERIC_SECRET;
-            keyLength = n << 3;
-            break;
-        case (int)PCKK_SSLMAC:
-        case (int)PCKK_HMAC:
-            if (n == 0) {
-                throw new InvalidKeyException
-                        ("MAC keys must not be empty");
-            }
-            keyType = CKK_GENERIC_SECRET;
-            keyLength = n << 3;
-            break;
-        default:
-            throw new InvalidKeyException("Unknown algorithm " + algorithm);
+        } catch (InvalidAlgorithmParameterException iape) {
+            throw new InvalidKeyException("Invalid key for " + algorithm,
+                    iape);
+        } catch (ProviderException pe) {
+            throw new InvalidKeyException("Could not create key", pe);
         }
         Session session = null;
         try {
-            CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
-                new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
-                new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType),
-                new CK_ATTRIBUTE(CKA_VALUE, encoded),
-            };
+            CK_ATTRIBUTE[] attributes;
+            if (extraAttrs != null) {
+                attributes = new CK_ATTRIBUTE[3 + extraAttrs.length];
+                System.arraycopy(extraAttrs, 0, attributes, 3,
+                        extraAttrs.length);
+            } else {
+                attributes = new CK_ATTRIBUTE[3];
+            }
+            attributes[0] = new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY);
+            attributes[1] = new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType);
+            attributes[2] = new CK_ATTRIBUTE(CKA_VALUE, encoded);
             attributes = token.getAttributes
                 (O_IMPORT, CKO_SECRET_KEY, keyType, attributes);
             session = token.getObjSession();
@@ -280,7 +307,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
     private byte[] getKeyBytes(SecretKey key) throws InvalidKeySpecException {
         try {
             key = engineTranslateKey(key);
-            if ("RAW".equals(key.getFormat()) == false) {
+            if ("RAW".equalsIgnoreCase(key.getFormat()) == false) {
                 throw new InvalidKeySpecException
                     ("Could not obtain key bytes");
             }

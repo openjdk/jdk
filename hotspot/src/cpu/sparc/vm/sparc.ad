@@ -6023,7 +6023,7 @@ instruct cmovII_imm(cmpOp cmp, flagsReg icc, iRegI dst, immI11 src) %{
   ins_pipe(ialu_imm);
 %}
 
-instruct cmovII_U_reg(cmpOp cmp, flagsRegU icc, iRegI dst, iRegI src) %{
+instruct cmovII_U_reg(cmpOpU cmp, flagsRegU icc, iRegI dst, iRegI src) %{
   match(Set dst (CMoveI (Binary cmp icc) (Binary dst src)));
   ins_cost(150);
   size(4);
@@ -6032,7 +6032,7 @@ instruct cmovII_U_reg(cmpOp cmp, flagsRegU icc, iRegI dst, iRegI src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct cmovII_U_imm(cmpOp cmp, flagsRegU icc, iRegI dst, immI11 src) %{
+instruct cmovII_U_imm(cmpOpU cmp, flagsRegU icc, iRegI dst, immI11 src) %{
   match(Set dst (CMoveI (Binary cmp icc) (Binary dst src)));
   ins_cost(140);
   size(4);

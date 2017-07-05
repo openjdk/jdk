@@ -98,6 +98,8 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
   }
 
   ssize_t desired() const { return _desired; }
+  void set_desired(ssize_t v) { _desired = v; }
+
   ssize_t coalDesired() const { return _coalDesired; }
   void set_coalDesired(ssize_t v) { _coalDesired = v; }
 

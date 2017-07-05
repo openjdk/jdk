@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,7 @@ public class TestGetInstance {
 
         Cipher c;
 
-        c = Cipher.getInstance("des");
-        same(p, c.getProvider());
-        c = Cipher.getInstance("des/cbc/pkcs5padding");
+        c = Cipher.getInstance("PBEWithMD5AndTripleDES");
         same(p, c.getProvider());
 
         c = Cipher.getInstance("des", "SunJCE");

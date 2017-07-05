@@ -104,7 +104,7 @@ public:
 };
 
 void BCEscapeAnalyzer::set_returned(ArgumentMap vars) {
-  for (int i = 0; i <= _arg_size; i++) {
+  for (int i = 0; i < _arg_size; i++) {
     if (vars.contains(i))
       _arg_returned.set_bit(i);
   }
@@ -112,10 +112,9 @@ void BCEscapeAnalyzer::set_returned(ArgumentMap vars) {
   _return_allocated = _return_allocated && vars.contains_allocated() && !(vars.contains_unknown() || vars.contains_vars());
 }
 
-
 // return true if any element of vars is an argument
 bool BCEscapeAnalyzer::is_argument(ArgumentMap vars) {
-  for (int i = 0; i <= _arg_size; i++) {
+  for (int i = 0; i < _arg_size; i++) {
     if (vars.contains(i))
       return true;
   }
@@ -126,7 +125,7 @@ bool BCEscapeAnalyzer::is_argument(ArgumentMap vars) {
 bool BCEscapeAnalyzer::is_arg_stack(ArgumentMap vars){
   if (_conservative)
     return true;
-  for (int i = 0; i <= _arg_size; i++) {
+  for (int i = 0; i < _arg_size; i++) {
     if (vars.contains(i) && _arg_stack.at(i))
       return true;
   }
@@ -134,12 +133,13 @@ bool BCEscapeAnalyzer::is_arg_stack(ArgumentMap vars){
 }
 
 void BCEscapeAnalyzer::clear_bits(ArgumentMap vars, BitMap &bm) {
-  for (int i = 0; i <= _arg_size; i++) {
+  for (int i = 0; i < _arg_size; i++) {
     if (vars.contains(i)) {
       bm.clear_bit(i);
     }
   }
 }
+
 void BCEscapeAnalyzer::set_method_escape(ArgumentMap vars) {
   clear_bits(vars, _arg_local);
 }
@@ -155,6 +155,17 @@ void BCEscapeAnalyzer::set_dirty(ArgumentMap vars) {
   clear_bits(vars, _dirty);
 }
 
+void BCEscapeAnalyzer::set_modified(ArgumentMap vars, int offs, int size) {
+
+  for (int i = 0; i < _arg_size; i++) {
+    if (vars.contains(i)) {
+      set_arg_modified(i, offs, size);
+    }
+  }
+  if (vars.contains_unknown())
+    _unknown_modified = true;
+}
+
 bool BCEscapeAnalyzer::is_recursive_call(ciMethod* callee) {
   for (BCEscapeAnalyzer* scope = this; scope != NULL; scope = scope->_parent) {
     if (scope->method() == callee) {
@@ -162,6 +173,40 @@ bool BCEscapeAnalyzer::is_recursive_call(ciMethod* callee) {
     }
   }
   return false;
+}
+
+bool BCEscapeAnalyzer::is_arg_modified(int arg, int offset, int size_in_bytes) {
+  if (offset == OFFSET_ANY)
+    return _arg_modified[arg] != 0;
+  assert(arg >= 0 && arg < _arg_size, "must be an argument.");
+  bool modified = false;
+  int l = offset / HeapWordSize;
+  int h = round_to(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
+  if (l > ARG_OFFSET_MAX)
+    l = ARG_OFFSET_MAX;
+  if (h > ARG_OFFSET_MAX+1)
+    h = ARG_OFFSET_MAX + 1;
+  for (int i = l; i < h; i++) {
+    modified = modified || (_arg_modified[arg] & (1 << i)) != 0;
+  }
+  return modified;
+}
+
+void BCEscapeAnalyzer::set_arg_modified(int arg, int offset, int size_in_bytes) {
+  if (offset == OFFSET_ANY) {
+    _arg_modified[arg] =  (uint) -1;
+    return;
+  }
+  assert(arg >= 0 && arg < _arg_size, "must be an argument.");
+  int l = offset / HeapWordSize;
+  int h = round_to(offset + size_in_bytes, HeapWordSize) / HeapWordSize;
+  if (l > ARG_OFFSET_MAX)
+    l = ARG_OFFSET_MAX;
+  if (h > ARG_OFFSET_MAX+1)
+    h = ARG_OFFSET_MAX + 1;
+  for (int i = l; i < h; i++) {
+    _arg_modified[arg] |= (1 << i);
+  }
 }
 
 void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* target, ciKlass* holder) {
@@ -197,6 +242,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
     for (i = 0; i < arg_size; i++) {
       set_method_escape(state.raw_pop());
     }
+    _unknown_modified = true;  // assume the worst since we don't analyze the called method
     return;
   }
 
@@ -224,6 +270,11 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
       ArgumentMap arg = state.raw_pop();
       if (!is_argument(arg))
         continue;
+      for (int j = 0; j < _arg_size; j++) {
+        if (arg.contains(j)) {
+          _arg_modified[j] |= analyzer._arg_modified[i];
+        }
+      }
       if (!is_arg_stack(arg)) {
         // arguments have already been recognized as escaping
       } else if (analyzer.is_arg_stack(i) && !analyzer.is_arg_returned(i)) {
@@ -233,6 +284,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
         set_global_escape(arg);
       }
     }
+    _unknown_modified = _unknown_modified || analyzer.has_non_arg_side_affects();
 
     // record dependencies if at least one parameter retained stack-allocatable
     if (must_record_dependencies) {
@@ -250,8 +302,10 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
       ArgumentMap arg = state.raw_pop();
       if (!is_argument(arg))
         continue;
+      set_modified(arg, OFFSET_ANY, type2size[T_INT]*HeapWordSize);
       set_global_escape(arg);
     }
+    _unknown_modified = true;  // assume the worst since we don't know the called method
   }
 }
 
@@ -421,6 +475,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         state.spop();
         ArgumentMap arr = state.apop();
         set_method_escape(arr);
+        set_modified(arr, OFFSET_ANY, type2size[T_INT]*HeapWordSize);
         break;
       }
       case Bytecodes::_lastore:
@@ -430,6 +485,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         state.spop();
         ArgumentMap arr = state.apop();
         set_method_escape(arr);
+        set_modified(arr, OFFSET_ANY, type2size[T_LONG]*HeapWordSize);
         break;
       }
       case Bytecodes::_aastore:
@@ -437,6 +493,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         set_global_escape(state.apop());
         state.spop();
         ArgumentMap arr = state.apop();
+        set_modified(arr, OFFSET_ANY, type2size[T_OBJECT]*HeapWordSize);
         break;
       }
       case Bytecodes::_pop:
@@ -762,6 +819,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
           if (s.cur_bc() != Bytecodes::_putstatic) {
             ArgumentMap p = state.apop();
             set_method_escape(p);
+            set_modified(p, will_link ? field->offset() : OFFSET_ANY, type2size[field_type]*HeapWordSize);
           }
         }
         break;
@@ -872,7 +930,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
 }
 
 void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest, StateInfo *s_state) {
-  StateInfo *d_state = blockstates+dest->index();
+  StateInfo *d_state = blockstates + dest->index();
   int nlocals = _method->max_locals();
 
   // exceptions may cause transfer of control to handlers in the middle of a
@@ -916,6 +974,7 @@ void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest,
     }
     for (int i = 0; i < s_state->_stack_height; i++) {
       ArgumentMap t;
+      //extra_vars |= !d_state->_vars[i] & s_state->_vars[i];
       t.clear();
       t = s_state->_stack[i];
       t.set_difference(d_state->_stack[i]);
@@ -933,7 +992,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
 
   int datacount = (numblocks + 1) * (stkSize + numLocals);
   int datasize = datacount * sizeof(ArgumentMap);
-  StateInfo *blockstates = (StateInfo *) arena->Amalloc(_methodBlocks->num_blocks() * sizeof(StateInfo));
+  StateInfo *blockstates = (StateInfo *) arena->Amalloc(numblocks * sizeof(StateInfo));
   ArgumentMap *statedata  = (ArgumentMap *) arena->Amalloc(datasize);
   for (int i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
   ArgumentMap *dp = statedata;
@@ -961,33 +1020,35 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   ArgumentMap allVars;   // all oop arguments to method
   ciSignature* sig = method()->signature();
   int j = 0;
+  ciBlock* first_blk = _methodBlocks->block_containing(0);
+  int fb_i = first_blk->index();
   if (!method()->is_static()) {
     // record information for "this"
-    blockstates[0]._vars[j].set(j);
+    blockstates[fb_i]._vars[j].set(j);
     allVars.add(j);
     j++;
   }
   for (int i = 0; i < sig->count(); i++) {
     ciType* t = sig->type_at(i);
     if (!t->is_primitive_type()) {
-      blockstates[0]._vars[j].set(j);
+      blockstates[fb_i]._vars[j].set(j);
       allVars.add(j);
     }
     j += t->size();
   }
-  blockstates[0]._initialized = true;
+  blockstates[fb_i]._initialized = true;
   assert(j == _arg_size, "just checking");
 
   ArgumentMap unknown_map;
   unknown_map.add_unknown();
 
-  worklist.push(_methodBlocks->block_containing(0));
+  worklist.push(first_blk);
   while(worklist.length() > 0) {
     ciBlock *blk = worklist.pop();
-    StateInfo *blkState = blockstates+blk->index();
+    StateInfo *blkState = blockstates + blk->index();
     if (blk->is_handler() || blk->is_ret_target()) {
       // for an exception handler or a target of a ret instruction, we assume the worst case,
-      // that any variable or stack slot could contain any argument
+      // that any variable could contain any argument
       for (int i = 0; i < numLocals; i++) {
         state._vars[i] = allVars;
       }
@@ -997,6 +1058,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
         state._stack_height = blkState->_stack_height;
       }
       for (int i = 0; i < state._stack_height; i++) {
+// ??? should this be unknown_map ???
         state._stack[i] = allVars;
       }
     } else {
@@ -1053,6 +1115,7 @@ vmIntrinsics::ID BCEscapeAnalyzer::known_intrinsic() {
   vmIntrinsics::ID iid = method()->intrinsic_id();
 
   if (iid == vmIntrinsics::_getClass ||
+      iid ==  vmIntrinsics::_fillInStackTrace ||
       iid == vmIntrinsics::_hashCode)
     return iid;
   else
@@ -1060,11 +1123,15 @@ vmIntrinsics::ID BCEscapeAnalyzer::known_intrinsic() {
 }
 
 bool BCEscapeAnalyzer::compute_escape_for_intrinsic(vmIntrinsics::ID iid) {
-  ArgumentMap empty;
-  empty.clear();
+  ArgumentMap arg;
+  arg.clear();
   switch (iid) {
   case vmIntrinsics::_getClass:
     _return_local = false;
+    break;
+  case vmIntrinsics::_fillInStackTrace:
+    arg.set(0); // 'this'
+    set_returned(arg);
     break;
   case vmIntrinsics::_hashCode:
     // initialized state is correct
@@ -1109,15 +1176,21 @@ void BCEscapeAnalyzer::initialize() {
     _return_allocated = true;
   }
   _allocated_escapes = false;
+  _unknown_modified = false;
 }
 
 void BCEscapeAnalyzer::clear_escape_info() {
   ciSignature* sig = method()->signature();
   int arg_count = sig->count();
   ArgumentMap var;
+  if (!method()->is_static()) {
+    arg_count++;  // allow for "this"
+  }
   for (int i = 0; i < arg_count; i++) {
+    set_arg_modified(i, OFFSET_ANY, 4);
     var.clear();
     var.set(i);
+    set_modified(var, OFFSET_ANY, 4);
     set_global_escape(var);
   }
   _arg_local.clear();
@@ -1126,6 +1199,7 @@ void BCEscapeAnalyzer::clear_escape_info() {
   _return_local = false;
   _return_allocated = false;
   _allocated_escapes = true;
+  _unknown_modified = true;
 }
 
 
@@ -1173,8 +1247,14 @@ void BCEscapeAnalyzer::compute_escape_info() {
 
   initialize();
 
-  // do not scan method if it has no object parameters
-  if (_arg_local.is_empty()) {
+  // Do not scan method if it has no object parameters and
+  // does not returns an object (_return_allocated is set in initialize()).
+  if (_arg_local.is_empty() && !_return_allocated) {
+    // Clear all info since method's bytecode was not analysed and
+    // set pessimistic escape information.
+    clear_escape_info();
+    methodData()->set_eflag(methodDataOopDesc::allocated_escapes);
+    methodData()->set_eflag(methodDataOopDesc::unknown_modified);
     methodData()->set_eflag(methodDataOopDesc::estimated);
     return;
   }
@@ -1185,36 +1265,8 @@ void BCEscapeAnalyzer::compute_escape_info() {
     success = do_analysis();
   }
 
-  // dump result of bytecode analysis
-#ifndef PRODUCT
-  if (BCEATraceLevel >= 3) {
-    tty->print("[EA] estimated escape information for");
-    if (iid != vmIntrinsics::_none)
-      tty->print(" intrinsic");
-    method()->print_short_name();
-    tty->print_cr(has_dependencies() ? " (not stored)" : "");
-    tty->print("     non-escaping args:      ");
-    _arg_local.print_on(tty);
-    tty->print("     stack-allocatable args: ");
-    _arg_stack.print_on(tty);
-    if (_return_local) {
-      tty->print("     returned args:          ");
-      _arg_returned.print_on(tty);
-    } else if (is_return_allocated()) {
-      tty->print_cr("     allocated return values");
-    } else {
-      tty->print_cr("     non-local return values");
-    }
-    tty->cr();
-    tty->print("     flags: ");
-    if (_return_allocated)
-      tty->print(" return_allocated");
-    tty->cr();
-  }
-
-#endif
-  // don't store interprocedural escape information if it introduces dependencies
-  // or if method data is empty
+  // don't store interprocedural escape information if it introduces
+  // dependencies or if method data is empty
   //
   if (!has_dependencies() && !methodData()->is_empty()) {
     for (i = 0; i < _arg_size; i++) {
@@ -1228,9 +1280,19 @@ void BCEscapeAnalyzer::compute_escape_info() {
       if (_arg_returned.at(i)) {
         methodData()->set_arg_returned(i);
       }
+      methodData()->set_arg_modified(i, _arg_modified[i]);
     }
     if (_return_local) {
       methodData()->set_eflag(methodDataOopDesc::return_local);
+    }
+    if (_return_allocated) {
+      methodData()->set_eflag(methodDataOopDesc::return_allocated);
+    }
+    if (_allocated_escapes) {
+      methodData()->set_eflag(methodDataOopDesc::allocated_escapes);
+    }
+    if (_unknown_modified) {
+      methodData()->set_eflag(methodDataOopDesc::unknown_modified);
     }
     methodData()->set_eflag(methodDataOopDesc::estimated);
   }
@@ -1244,29 +1306,50 @@ void BCEscapeAnalyzer::read_escape_info() {
     _arg_local.at_put(i, methodData()->is_arg_local(i));
     _arg_stack.at_put(i, methodData()->is_arg_stack(i));
     _arg_returned.at_put(i, methodData()->is_arg_returned(i));
+    _arg_modified[i] = methodData()->arg_modified(i);
   }
   _return_local = methodData()->eflag_set(methodDataOopDesc::return_local);
-
-  // dump result of loaded escape information
-#ifndef PRODUCT
-  if (BCEATraceLevel >= 4) {
-    tty->print("     non-escaping args:      ");
-    _arg_local.print_on(tty);
-    tty->print("     stack-allocatable args: ");
-    _arg_stack.print_on(tty);
-    if (_return_local) {
-      tty->print("     returned args:          ");
-      _arg_returned.print_on(tty);
-    } else {
-      tty->print_cr("     non-local return values");
-    }
-    tty->print("     modified args: ");
-    tty->cr();
-  }
-#endif
+  _return_allocated = methodData()->eflag_set(methodDataOopDesc::return_allocated);
+  _allocated_escapes = methodData()->eflag_set(methodDataOopDesc::allocated_escapes);
+  _unknown_modified = methodData()->eflag_set(methodDataOopDesc::unknown_modified);
 
 }
 
+#ifndef PRODUCT
+void BCEscapeAnalyzer::dump() {
+  tty->print("[EA] estimated escape information for");
+  method()->print_short_name();
+  tty->print_cr(has_dependencies() ? " (not stored)" : "");
+  tty->print("     non-escaping args:      ");
+  _arg_local.print_on(tty);
+  tty->print("     stack-allocatable args: ");
+  _arg_stack.print_on(tty);
+  if (_return_local) {
+    tty->print("     returned args:          ");
+    _arg_returned.print_on(tty);
+  } else if (is_return_allocated()) {
+    tty->print_cr("     return allocated value");
+  } else {
+    tty->print_cr("     return non-local value");
+  }
+  tty->print("     modified args: ");
+  for (int i = 0; i < _arg_size; i++) {
+    if (_arg_modified[i] == 0)
+      tty->print("    0");
+    else
+      tty->print("    0x%x", _arg_modified[i]);
+  }
+  tty->cr();
+  tty->print("     flags: ");
+  if (_return_allocated)
+    tty->print(" return_allocated");
+  if (_allocated_escapes)
+    tty->print(" allocated_escapes");
+  if (_unknown_modified)
+    tty->print(" unknown_modified");
+  tty->cr();
+}
+#endif
 
 BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     : _conservative(method == NULL || !EstimateArgEscape)
@@ -1281,6 +1364,7 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     , _return_local(false)
     , _return_allocated(false)
     , _allocated_escapes(false)
+    , _unknown_modified(false)
     , _dependencies()
     , _parent(parent)
     , _level(parent == NULL ? 0 : parent->level() + 1) {
@@ -1290,6 +1374,8 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     _arg_returned.clear();
     _dirty.clear();
     Arena* arena = CURRENT_ENV->arena();
+    _arg_modified = (uint *) arena->Amalloc(_arg_size * sizeof(uint));
+    Copy::zero_to_bytes(_arg_modified, _arg_size * sizeof(uint));
 
     if (methodData() == NULL)
       return;
@@ -1307,6 +1393,12 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
       compute_escape_info();
       methodData()->update_escape_info();
     }
+#ifndef PRODUCT
+    if (BCEATraceLevel >= 3) {
+      // dump escape information
+      dump();
+    }
+#endif
   }
 }
 
