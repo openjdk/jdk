@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,21 @@
 
 package javax.xml.transform.ptests;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.dom.DOMSource;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.stream.StreamSource;
-import jaxp.library.JAXPFileReadOnlyBaseTest;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stream.StreamSource;
+
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 
@@ -42,7 +45,14 @@ import org.xml.sax.InputSource;
 /**
  * Unit test for SAXSource sourceToInputSource API.
  */
-public class SAXSourceTest extends JAXPFileReadOnlyBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.transform.ptests.SAXSourceTest
+ * @run testng/othervm javax.xml.transform.ptests.SAXSourceTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class SAXSourceTest {
     /**
      * Test style-sheet file name
      */
@@ -53,7 +63,7 @@ public class SAXSourceTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws IOException reading file error.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void source2inputsource01() throws IOException {
         try (FileInputStream fis = new FileInputStream(TEST_FILE)) {
             StreamSource streamSource = new StreamSource(fis);
@@ -68,7 +78,7 @@ public class SAXSourceTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws Exception If any errors occur.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void source2inputsource02() throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
@@ -83,7 +93,7 @@ public class SAXSourceTest extends JAXPFileReadOnlyBaseTest {
      *
      * @throws IOException reading file error.
      */
-    @Test(groups = {"readLocalFiles"})
+    @Test
     public void source2inputsource03() throws IOException {
         String SYSTEM_ID = "file:///" + XML_DIR;
         try (FileInputStream fis = new FileInputStream(TEST_FILE)) {
@@ -95,3 +105,5 @@ public class SAXSourceTest extends JAXPFileReadOnlyBaseTest {
         }
     }
 }
+
+

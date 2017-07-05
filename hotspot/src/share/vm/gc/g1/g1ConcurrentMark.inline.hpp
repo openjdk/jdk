@@ -91,8 +91,9 @@ inline bool G1CMBitMap::parMark(HeapWord* addr) {
 
 template<typename Fn>
 inline void G1CMMarkStack::iterate(Fn fn) {
-  assert(_saved_index == _index, "saved index: %d index: %d", _saved_index, _index);
-  for (int i = 0; i < _index; ++i) {
+  assert_at_safepoint(true);
+  assert(!stack_modified(), "Saved index " SIZE_FORMAT " must be the same as " SIZE_FORMAT, _saved_index, _index);
+  for (size_t i = 0; i < _index; ++i) {
     fn(_base[i]);
   }
 }

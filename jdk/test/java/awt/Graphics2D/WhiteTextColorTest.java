@@ -27,11 +27,13 @@ import javax.swing.*;
 
 /**
  * @test
+ * @key headful
  * @bug 8056009
  * @summary tests whether Graphics.setColor-calls with Color.white are ignored directly
  *          after pipeline initialization for a certain set of operations.
  * @author ceisserer
  */
+
 public class WhiteTextColorTest extends Frame {
     public static volatile boolean success = false;
 

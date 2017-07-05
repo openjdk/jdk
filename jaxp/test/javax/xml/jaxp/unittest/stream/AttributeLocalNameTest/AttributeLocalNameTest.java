@@ -30,11 +30,17 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.AttributeLocalNameTest.AttributeLocalNameTest
+ * @run testng/othervm stream.AttributeLocalNameTest.AttributeLocalNameTest
  * @summary Test XMLStreamReader.getAttributeLocalName().
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class AttributeLocalNameTest {
 
     static final String XML = "<?xml version=\"1.0\"?>" + "<S:Envelope foo=\"bar\" xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\"></S:Envelope>";
@@ -60,3 +66,4 @@ public class AttributeLocalNameTest {
         }
     }
 }
+

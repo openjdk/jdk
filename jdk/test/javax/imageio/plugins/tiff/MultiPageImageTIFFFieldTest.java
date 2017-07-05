@@ -23,7 +23,6 @@
 
 /**
  * @test
- * @ignore  8148454
  * @bug     8152183 8148454
  * @author  a.stepanov
  * @summary check that TIFFields are derived properly for multi-page tiff

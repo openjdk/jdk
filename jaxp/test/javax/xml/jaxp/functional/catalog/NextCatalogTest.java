@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,19 @@ import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogUriResolver;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.NextCatalogTest
+ * @run testng/othervm catalog.NextCatalogTest
  * @summary Get matched URIs from system, public and uri entries respectively,
  *          but some of the entries are defined in none-current catalog files.
- * @compile ../../libs/catalog/CatalogTestUtils.java
- * @compile ../../libs/catalog/ResolutionChecker.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class NextCatalogTest {
 
     private static final String CATALOG_NEXTCATALOGLEFT
@@ -56,7 +59,7 @@ public class NextCatalogTest {
     }
 
     @DataProvider(name = "systemId-matchedUri")
-    private Object[][] dataOnSysId() {
+    public Object[][] dataOnSysId() {
         return new Object[][] {
                 // This matched URI of the specified system id is defined in a
                 // next catalog file.
@@ -88,7 +91,7 @@ public class NextCatalogTest {
     }
 
     @DataProvider(name = "publicId-matchedUri")
-    private Object[][] dataOnPubId() {
+    public Object[][] dataOnPubId() {
         return new Object[][] {
                 // This matched URI of the specified public id is defined in a
                 // next catalog file.
@@ -120,7 +123,7 @@ public class NextCatalogTest {
     }
 
     @DataProvider(name = "uri-matchedUri")
-    private Object[][] dataOnUri() {
+    public Object[][] dataOnUri() {
         return new Object[][] {
                 // This matched URI of the specified URI reference is defined in
                 // a next catalog file.
@@ -156,3 +159,4 @@ public class NextCatalogTest {
                 CATALOG_NEXTCATALOGRIGHT);
     }
 }
+

@@ -27,6 +27,7 @@ import javax.swing.*;
 
 /**
  * @test
+ * @key headful
  * @bug 4515762
  * @author Mark Davidson
  * @summary Tests the ability to support duplicate mnemonics

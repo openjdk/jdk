@@ -37,18 +37,24 @@ import javax.xml.stream.events.XMLEvent;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.EntitiesTest.EntityTest
+ * @run testng/othervm stream.EntitiesTest.EntityTest
  * @summary Test StAX parses entity.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class EntityTest {
 
     XMLInputFactory factory = null;
     String output = "";
 
     @BeforeMethod
-    protected void setUp() {
+    public void setUp() {
         try {
             factory = XMLInputFactory.newInstance();
         } catch (Exception ex) {
@@ -57,7 +63,7 @@ public class EntityTest {
     }
 
     @AfterMethod
-    protected void tearDown() {
+    public void tearDown() {
         factory = null;
     }
 
@@ -173,3 +179,4 @@ public class EntityTest {
         return true;
     }
 }
+

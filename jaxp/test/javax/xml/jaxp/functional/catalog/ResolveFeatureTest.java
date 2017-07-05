@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,16 +40,19 @@ import javax.xml.catalog.CatalogFeatures.Feature;
 import javax.xml.catalog.CatalogResolver;
 import javax.xml.catalog.CatalogUriResolver;
 
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
  * @bug 8077931
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true catalog.ResolveFeatureTest
+ * @run testng/othervm catalog.ResolveFeatureTest
  * @summary This case tests how does resolve feature affect the catalog
  *          resolution.
- * @compile ../../libs/catalog/CatalogTestUtils.java
- * @compile ../../libs/catalog/ResolutionChecker.java
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class ResolveFeatureTest {
 
     /*
@@ -128,3 +131,4 @@ public class ResolveFeatureTest {
         return builder().with(Feature.RESOLVE, resolve).build();
     }
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,26 +30,32 @@ import javax.xml.validation.SchemaFactory;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /*
+ * @test
  * @bug 4996446
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.Bug4996446
+ * @run testng/othervm validation.Bug4996446
  * @summary Test SchemaFactory can detect violations of the "Schema Component Constraint: Element Declarations Consistent".
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug4996446 {
 
     SchemaFactory schemaFactory = null;
 
     @BeforeMethod
-    protected void setUp() {
+    public void setUp() {
         schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
     }
 
     @AfterMethod
-    protected void tearDown() {
+    public void tearDown() {
         schemaFactory = null;
     }
 
@@ -84,3 +90,4 @@ class ErrorHandler extends DefaultHandler {
         errorCounter++;
     }
 }
+

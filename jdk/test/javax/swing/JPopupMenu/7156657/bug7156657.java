@@ -29,7 +29,9 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.Callable;
 
-/* @test
+/*
+   @test
+  @key headful
    @bug 7156657
    @summary Version 7 doesn't support translucent popup menus against a translucent window
    @library ../../regtesthelpers

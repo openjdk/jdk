@@ -26,10 +26,13 @@
  * @test
  * @bug 8073184
  * @summary CastII that guards counted loops confuses range check elimination with LoopLimitCheck off
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompileOnly=TestCastIINoLoopLimitCheck.m -Xcomp  TestCastIINoLoopLimitCheck
  *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.TestCastIINoLoopLimitCheck::m
+ *      compiler.loopopts.TestCastIINoLoopLimitCheck
  */
 
+package compiler.loopopts;
 /*
  * The test was originally run with
  *

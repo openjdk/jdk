@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import jaxp.library.JAXPFileBaseTest;
-
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
@@ -42,11 +41,15 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
 /*
+ * @test
  * @bug 4848653
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4848653
+ * @run testng/othervm test.gaptest.Bug4848653
  * @summary Verify JAXP schemaLanguage property is ignored if setValidating(false)
  */
-
-public class Bug4848653 extends JAXPFileBaseTest {
+@Listeners({jaxp.library.FilePolicy.class})
+public class Bug4848653 {
 
     @Test
     public void test() throws IOException, SAXException, ParserConfigurationException {
@@ -78,3 +81,4 @@ public class Bug4848653 extends JAXPFileBaseTest {
     }
 
 }
+

@@ -22,15 +22,16 @@
  */
 
 /*
- @test
- @bug 6232687
- @summary Tests that Window.setLocationRelativeTo() method works correctly
-for different multiscreen configurations
- @author artem.ananiev, area=awt.multiscreen
- @library ../../regtesthelpers
- @build Util
- @run main LocationRelativeToTest
-*/
+ * @test
+ * @key headful
+ * @bug 6232687
+ * @summary Tests that Window.setLocationRelativeTo() method works correctly
+ *          for different multiscreen configurations
+ * @author artem.ananiev, area=awt.multiscreen
+ * @library ../../regtesthelpers
+ * @build Util
+ * @run main LocationRelativeToTest
+ */
 
 import java.awt.*;
 import java.awt.event.*;

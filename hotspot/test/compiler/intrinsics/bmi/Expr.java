@@ -22,11 +22,12 @@
  *
  */
 
+package compiler.intrinsics.bmi;
+
 /**
  * Expression that should be replaced by particular instrinsic
  * or intruction during compilation.
  */
-
 public abstract class Expr {
 
     public static class MemI {

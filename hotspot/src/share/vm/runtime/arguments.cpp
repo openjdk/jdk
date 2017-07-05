@@ -85,7 +85,6 @@ const char*  Arguments::_java_vendor_url_bug    = DEFAULT_VENDOR_URL_BUG;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 int    Arguments::_sun_java_launcher_pid        = -1;
 bool   Arguments::_sun_java_launcher_is_altjvm  = false;
-int    Arguments::_bootclassloader_append_index = -1;
 
 // These parameters are reset in method parse_vm_init_args()
 bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
@@ -113,6 +112,7 @@ SystemProperty *Arguments::_jdk_boot_class_path_append = NULL;
 
 GrowableArray<ModuleXPatchPath*> *Arguments::_xpatchprefix = NULL;
 PathString *Arguments::_system_boot_class_path = NULL;
+bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = NULL;
 
@@ -1305,6 +1305,11 @@ void Arguments::check_unsupported_dumping_properties() {
     }
     sp = sp->next();
   }
+
+  // Check for an exploded module build in use with -Xshare:dump.
+  if (!has_jimage()) {
+    vm_exit_during_initialization("Dumping the shared archive is not supported with an exploded module build");
+  }
 }
 #endif
 
@@ -1779,11 +1784,7 @@ void Arguments::select_gc_ergonomically() {
     if (should_auto_select_low_pause_collector()) {
       FLAG_SET_ERGO_IF_DEFAULT(bool, UseConcMarkSweepGC, true);
     } else {
-#if defined(JAVASE_EMBEDDED)
-      FLAG_SET_ERGO_IF_DEFAULT(bool, UseParallelGC, true);
-#else
       FLAG_SET_ERGO_IF_DEFAULT(bool, UseG1GC, true);
-#endif
     }
   } else {
     FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
@@ -2276,11 +2277,7 @@ bool Arguments::sun_java_launcher_is_altjvm() {
 #if INCLUDE_JVMCI
 // Check consistency of jvmci vm argument settings.
 bool Arguments::check_jvmci_args_consistency() {
-  if (!EnableJVMCI && !JVMCIGlobals::check_jvmci_flags_are_consistent()) {
-    JVMCIGlobals::print_jvmci_args_inconsistency_error_message();
-    return false;
-  }
-  return true;
+   return JVMCIGlobals::check_jvmci_flags_are_consistent();
 }
 #endif //INCLUDE_JVMCI
 
@@ -2676,7 +2673,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* xpatch_
         return JNI_EINVAL;
     // -bootclasspath/a:
     } else if (match_option(option, "-Xbootclasspath/a:", &tail)) {
-      Arguments::set_bootclassloader_append_index((int)strlen(Arguments::get_sysclasspath())+1);
       Arguments::append_sysclasspath(tail);
     // -bootclasspath/p:
     } else if (match_option(option, "-Xbootclasspath/p:", &tail)) {
@@ -3323,18 +3319,6 @@ void Arguments::add_xpatchprefix(const char* module_name, const char* path, bool
   _xpatchprefix->push(new ModuleXPatchPath(module_name, path));
 }
 
-// Set property jdk.boot.class.path.append to the contents of the bootclasspath
-// that follows either the jimage file or exploded module directories.  The
-// property will contain -Xbootclasspath/a and/or jvmti appended additions.
-void Arguments::set_jdkbootclasspath_append() {
-  char *sysclasspath = get_sysclasspath();
-  assert(sysclasspath != NULL, "NULL sysclasspath");
-  int bcp_a_idx = bootclassloader_append_index();
-  if (bcp_a_idx != -1 && bcp_a_idx < (int)strlen(sysclasspath)) {
-    _jdk_boot_class_path_append->set_value(sysclasspath + bcp_a_idx);
-  }
-}
-
 // Remove all empty paths from the app classpath (if IgnoreEmptyClassPaths is enabled)
 //
 // This is necessary because some apps like to specify classpath like -cp foo.jar:${XYZ}:bar.jar
@@ -3456,8 +3440,6 @@ jint Arguments::finalize_vm_init_args() {
     os::closedir(dir);
     return JNI_ERR;
   }
-
-  Arguments::set_bootclassloader_append_index(((int)strlen(Arguments::get_sysclasspath()))+1);
 
   // This must be done after all arguments have been processed.
   // java_compiler() true means set to "NONE" or empty.

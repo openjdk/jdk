@@ -25,9 +25,12 @@
  * @test TestUseCompiler
  * @bug 8086068
  * @summary Tests execution with inconsistent UseCompiler flag combination.
- * @run main/othervm -Xint -XX:+UseCompiler TestUseCompiler
- * @run main/othervm -XX:+UseCompiler -Xint TestUseCompiler
+ *
+ * @run main/othervm -Xint -XX:+UseCompiler compiler.arguments.TestUseCompiler
+ * @run main/othervm -XX:+UseCompiler -Xint compiler.arguments.TestUseCompiler
  */
+
+package compiler.arguments;
 
 public class TestUseCompiler {
 

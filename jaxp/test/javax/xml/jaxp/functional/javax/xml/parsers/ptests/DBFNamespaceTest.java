@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,21 @@
 
 package javax.xml.parsers.ptests;
 
+import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
+import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
 import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
 import static org.testng.Assert.assertTrue;
+
 import java.io.File;
+
 import javax.xml.parsers.DocumentBuilderFactory;
-import static javax.xml.parsers.ptests.ParserTestConst.GOLDEN_DIR;
-import static javax.xml.parsers.ptests.ParserTestConst.XML_DIR;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXResult;
-import jaxp.library.JAXPFileBaseTest;
+
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 
@@ -42,7 +45,14 @@ import org.w3c.dom.Document;
  * This tests DocumentBuilderFactory for namespace processing and no-namespace
  * processing.
  */
-public class DBFNamespaceTest extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.parsers.ptests.DBFNamespaceTest
+ * @run testng/othervm javax.xml.parsers.ptests.DBFNamespaceTest
+ */
+@Listeners({jaxp.library.FilePolicy.class})
+public class DBFNamespaceTest {
 
     /**
      * Provide input for the cases that supporting namespace or not.
@@ -95,3 +105,5 @@ public class DBFNamespaceTest extends JAXPFileBaseTest {
         }
     }
 }
+
+

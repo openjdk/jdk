@@ -30,12 +30,16 @@
  * @library /testlibrary /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestAndnI BMITestRunner Expr
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @build compiler.intrinsics.bmi.TestAndnI
+ *        compiler.intrinsics.bmi.BMITestRunner
+ *        compiler.intrinsics.bmi.Expr
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI TestAndnI
+ *                   -XX:+WhiteBoxAPI compiler.intrinsics.bmi.TestAndnI
  */
+
+package compiler.intrinsics.bmi;
 
 import sun.hotspot.cpuinfo.CPUInfo;
 

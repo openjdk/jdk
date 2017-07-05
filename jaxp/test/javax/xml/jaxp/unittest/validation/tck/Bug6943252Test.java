@@ -31,13 +31,19 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
  * @bug 6943252
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6943252Test
+ * @run testng/othervm validation.tck.Bug6943252Test
  * @summary Test Schema doesn't allow to use value more than allowed by base type.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6943252Test {
     static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
@@ -63,3 +69,4 @@ public class Bug6943252Test {
     }
 
 }
+

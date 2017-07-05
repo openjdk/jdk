@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 import transform.util.DOMUtil;
@@ -44,10 +45,15 @@ import transform.util.StAXUtil;
 import transform.util.StreamUtil;
 
 /*
+ * @test
  * @bug 4892774
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.Bug4892774
+ * @run testng/othervm transform.Bug4892774
  * @summary Test identity transformer with all possible types of Source and Result combinations for doucment version and encoding information.
  */
 
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug4892774 {
 
     private final String XML_FILE = "catalog.xml";
@@ -62,7 +68,7 @@ public class Bug4892774 {
     private static StAXUtil staxUtil = null;
 
     @BeforeMethod
-    protected void setUp() {
+    public void setUp() {
         File tmpFile = new File(TEMP_FILE);
         if (tmpFile.exists())
             tmpFile.delete();
@@ -81,7 +87,7 @@ public class Bug4892774 {
     }
 
     @AfterMethod
-    protected void tearDown() {
+    public void tearDown() {
         File tmpFile = new File(TEMP_FILE);
         if (tmpFile.exists())
             tmpFile.delete();
@@ -371,3 +377,4 @@ public class Bug4892774 {
         }
     }
 }
+

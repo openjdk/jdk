@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 #ifndef SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
 #define SHARE_VM_RUNTIME_JAVAFRAMEANCHOR_HPP
 
-#include "utilities/globalDefinitions.hpp"
 #include "runtime/orderAccess.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 //
 // An object for encapsulating the machine/os dependent part of a JavaThread frame state
@@ -77,25 +78,7 @@ friend class JavaCallWrapper;
   // and no one should look at the other fields.
   void zap(void)                                     { _last_Java_sp = NULL; }
 
-#ifdef TARGET_ARCH_x86
-# include "javaFrameAnchor_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "javaFrameAnchor_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "javaFrameAnchor_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "javaFrameAnchor_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "javaFrameAnchor_ppc.hpp"
-#endif
-#ifdef TARGET_ARCH_aarch64
-# include "javaFrameAnchor_aarch64.hpp"
-#endif
-
+#include CPU_HEADER(javaFrameAnchor)
 
 public:
   JavaFrameAnchor()                              { clear(); }

@@ -58,8 +58,6 @@ public class FileCopierPlugin implements Plugin {
         Path source;
         Path target;
     }
-    public static final String FAKE_MODULE = "$jlink-file-copier";
-
     private final List<CopiedFile> files = new ArrayList<>();
 
     /**
@@ -159,7 +157,7 @@ public class FileCopierPlugin implements Plugin {
         Objects.requireNonNull(file);
         Objects.requireNonNull(path);
         ResourcePoolEntry impl = ResourcePoolEntry.create(
-                "/" + FAKE_MODULE + "/other/" + path,
+                "/java.base/other/" + path,
                 ResourcePoolEntry.Type.OTHER, file);
         try {
             pool.add(impl);

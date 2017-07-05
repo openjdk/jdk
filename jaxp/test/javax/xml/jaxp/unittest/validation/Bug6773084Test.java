@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
 
 package validation;
 
+import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -43,7 +45,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.testng.Assert;
-import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
@@ -51,9 +53,14 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /*
+ * @test
  * @bug 6773084
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.Bug6773084Test
+ * @run testng/othervm validation.Bug6773084Test
  * @summary Test Schema object is thread safe.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6773084Test {
     static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
@@ -67,11 +74,6 @@ public class Bug6773084Test {
     public static final String XSD_PATH = Bug6773084Test.class.getResource("Bug6773084.xsd").getPath();
 
     private static Schema schema;
-
-    @BeforeClass
-    public void setup(){
-        policy.PolicyUtil.changePolicy(getClass().getResource("6773084.policy").getFile());
-    }
 
     @Test
     public void test() throws Exception {
@@ -94,7 +96,7 @@ public class Bug6773084Test {
         for (int i = 0; i < files.length; i++) {
             EXEC.execute(new XMLValiddator(files[i], i));
         }
-        EXEC.shutdown();
+        runWithAllPerm(() -> EXEC.shutdown());
 
     }
 
@@ -164,3 +166,4 @@ public class Bug6773084Test {
     }
 
 }
+

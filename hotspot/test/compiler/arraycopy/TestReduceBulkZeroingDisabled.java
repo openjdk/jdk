@@ -25,8 +25,13 @@
  * @test
  * @bug 8155241
  * @summary Test arraycopy elimination with ReduceBulkZeroing disabled.
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-ReduceBulkZeroing TestReduceBulkZeroingDisabled
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:-ReduceBulkZeroing
+ *                   compiler.arraycopy.TestReduceBulkZeroingDisabled
  */
+
+package compiler.arraycopy;
+
 public class TestReduceBulkZeroingDisabled {
 
     static public void main(String[] args) {

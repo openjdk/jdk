@@ -21,17 +21,20 @@
  * questions.
  */
 
-import jdk.test.lib.*;
-
 /*
  * @test CheckCompileThresholdScaling
  * @bug 8059604
- * @summary "Add CompileThresholdScaling flag to control when methods are first compiled (with +/-TieredCompilation)"
+ * @summary Add CompileThresholdScaling flag to control when methods are first compiled (with +/-TieredCompilation)
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main CheckCompileThresholdScaling
+ * @run driver compiler.arguments.CheckCompileThresholdScaling
  */
+
+package compiler.arguments;
+
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class CheckCompileThresholdScaling {
 
@@ -105,25 +108,25 @@ public class CheckCompileThresholdScaling {
 
     private static final String[][] NON_TIERED_EXPECTED_OUTPUTS = {
         {
-            "intx CompileThreshold                         := 1000                                {pd product}",
-            "double CompileThresholdScaling                   = 1.000000                            {product}"
+            "intx CompileThreshold                         = 1000                                  {pd product} {command line}",
+            "double CompileThresholdScaling                  = 1.000000                                 {product} {default}"
         },
         {
-            "intx CompileThreshold                         := 1250                                {pd product}",
-            "double CompileThresholdScaling                  := 1.250000                            {product}"
+            "intx CompileThreshold                         = 1250                                  {pd product} {command line, ergonomic}",
+            "double CompileThresholdScaling                  = 1.250000                                 {product} {command line}"
         },
         {
-            "intx CompileThreshold                         := 750                                 {pd product}",
-            "double CompileThresholdScaling                  := 0.750000                            {product}"
+            "intx CompileThreshold                         = 750                                   {pd product} {command line, ergonomic}",
+            "double CompileThresholdScaling                  = 0.750000                                 {product} {command line}"
         },
         {
-            "intx CompileThreshold                         := 1000                                {pd product}",
-            "double CompileThresholdScaling                  := 0.000000                            {product}",
+            "intx CompileThreshold                         = 1000                                  {pd product} {command line}",
+            "double CompileThresholdScaling                  = 0.000000                                 {product} {command line}",
             "interpreted mode"
         },
         {
-            "intx CompileThreshold                         := 0                                   {pd product}",
-            "double CompileThresholdScaling                  := 0.750000                            {product}",
+            "intx CompileThreshold                         = 0                                     {pd product} {command line, ergonomic}",
+            "double CompileThresholdScaling                  = 0.750000                                 {product} {command line}",
             "interpreted mode"
         }
     };
@@ -237,94 +240,94 @@ public class CheckCompileThresholdScaling {
 
     private static final String[][] TIERED_EXPECTED_OUTPUTS = {
         {
-            "intx Tier0BackedgeNotifyFreqLog               := 10                                  {product}",
-            "intx Tier0InvokeNotifyFreqLog                 := 7                                   {product}",
-            "intx Tier23InlineeNotifyFreqLog               := 20                                  {product}",
-            "intx Tier2BackedgeNotifyFreqLog               := 14                                  {product}",
-            "intx Tier2InvokeNotifyFreqLog                 := 11                                  {product}",
-            "intx Tier3BackEdgeThreshold                   := 60000                               {product}",
-            "intx Tier3BackedgeNotifyFreqLog               := 13                                  {product}",
-            "intx Tier3CompileThreshold                    := 2000                                {product}",
-            "intx Tier3InvocationThreshold                 := 200                                 {product}",
-            "intx Tier3InvokeNotifyFreqLog                 := 10                                  {product}",
-            "intx Tier3MinInvocationThreshold              := 100                                 {product}",
-            "intx Tier4BackEdgeThreshold                   := 40000                               {product}",
-            "intx Tier4CompileThreshold                    := 15000                               {product}",
-            "intx Tier4InvocationThreshold                 := 5000                                {product}",
-            "intx Tier4MinInvocationThreshold              := 600                                 {product}",
-            "double CompileThresholdScaling                   = 1.000000                            {product}"
+            "intx Tier0BackedgeNotifyFreqLog               = 10                                       {product} {command line}",
+            "intx Tier0InvokeNotifyFreqLog                 = 7                                        {product} {command line}",
+            "intx Tier23InlineeNotifyFreqLog               = 20                                       {product} {command line}",
+            "intx Tier2BackedgeNotifyFreqLog               = 14                                       {product} {command line}",
+            "intx Tier2InvokeNotifyFreqLog                 = 11                                       {product} {command line}",
+            "intx Tier3BackEdgeThreshold                   = 60000                                    {product} {command line}",
+            "intx Tier3BackedgeNotifyFreqLog               = 13                                       {product} {command line}",
+            "intx Tier3CompileThreshold                    = 2000                                     {product} {command line}",
+            "intx Tier3InvocationThreshold                 = 200                                      {product} {command line}",
+            "intx Tier3InvokeNotifyFreqLog                 = 10                                       {product} {command line}",
+            "intx Tier3MinInvocationThreshold              = 100                                      {product} {command line}",
+            "intx Tier4BackEdgeThreshold                   = 40000                                    {product} {command line}",
+            "intx Tier4CompileThreshold                    = 15000                                    {product} {command line}",
+            "intx Tier4InvocationThreshold                 = 5000                                     {product} {command line}",
+            "intx Tier4MinInvocationThreshold              = 600                                      {product} {command line}",
+            "double CompileThresholdScaling                  = 1.000000                                 {product} {default}"
         },
         {
-            "intx Tier0BackedgeNotifyFreqLog               := 9                                   {product}",
-            "intx Tier0InvokeNotifyFreqLog                 := 6                                   {product}",
-            "intx Tier23InlineeNotifyFreqLog               := 19                                  {product}",
-            "intx Tier2BackedgeNotifyFreqLog               := 13                                  {product}",
-            "intx Tier2InvokeNotifyFreqLog                 := 10                                  {product}",
-            "intx Tier3BackEdgeThreshold                   := 45000                               {product}",
-            "intx Tier3BackedgeNotifyFreqLog               := 12                                  {product}",
-            "intx Tier3CompileThreshold                    := 1500                                {product}",
-            "intx Tier3InvocationThreshold                 := 150                                 {product}",
-            "intx Tier3InvokeNotifyFreqLog                 := 9                                   {product}",
-            "intx Tier3MinInvocationThreshold              := 75                                  {product}",
-            "intx Tier4BackEdgeThreshold                   := 30000                               {product}",
-            "intx Tier4CompileThreshold                    := 11250                               {product}",
-            "intx Tier4InvocationThreshold                 := 3750                                {product}",
-            "intx Tier4MinInvocationThreshold              := 450                                 {product}",
-            "double CompileThresholdScaling                  := 0.750000                            {product}"
+            "intx Tier0BackedgeNotifyFreqLog               = 9                                        {product} {command line, ergonomic}",
+            "intx Tier0InvokeNotifyFreqLog                 = 6                                        {product} {command line, ergonomic}",
+            "intx Tier23InlineeNotifyFreqLog               = 19                                       {product} {command line, ergonomic}",
+            "intx Tier2BackedgeNotifyFreqLog               = 13                                       {product} {command line, ergonomic}",
+            "intx Tier2InvokeNotifyFreqLog                 = 10                                       {product} {command line, ergonomic}",
+            "intx Tier3BackEdgeThreshold                   = 45000                                    {product} {command line, ergonomic}",
+            "intx Tier3BackedgeNotifyFreqLog               = 12                                       {product} {command line, ergonomic}",
+            "intx Tier3CompileThreshold                    = 1500                                     {product} {command line, ergonomic}",
+            "intx Tier3InvocationThreshold                 = 150                                      {product} {command line, ergonomic}",
+            "intx Tier3InvokeNotifyFreqLog                 = 9                                        {product} {command line, ergonomic}",
+            "intx Tier3MinInvocationThreshold              = 75                                       {product} {command line, ergonomic}",
+            "intx Tier4BackEdgeThreshold                   = 30000                                    {product} {command line, ergonomic}",
+            "intx Tier4CompileThreshold                    = 11250                                    {product} {command line, ergonomic}",
+            "intx Tier4InvocationThreshold                 = 3750                                     {product} {command line, ergonomic}",
+            "intx Tier4MinInvocationThreshold              = 450                                      {product} {command line, ergonomic}",
+            "double CompileThresholdScaling                  = 0.750000                                 {product} {command line}"
         },
         {
-            "intx Tier0BackedgeNotifyFreqLog               := 10                                  {product}",
-            "intx Tier0InvokeNotifyFreqLog                 := 7                                   {product}",
-            "intx Tier23InlineeNotifyFreqLog               := 20                                  {product}",
-            "intx Tier2BackedgeNotifyFreqLog               := 14                                  {product}",
-            "intx Tier2InvokeNotifyFreqLog                 := 11                                  {product}",
-            "intx Tier3BackEdgeThreshold                   := 75000                               {product}",
-            "intx Tier3BackedgeNotifyFreqLog               := 13                                  {product}",
-            "intx Tier3CompileThreshold                    := 2500                                {product}",
-            "intx Tier3InvocationThreshold                 := 250                                 {product}",
-            "intx Tier3InvokeNotifyFreqLog                 := 10                                  {product}",
-            "intx Tier3MinInvocationThreshold              := 125                                 {product}",
-            "intx Tier4BackEdgeThreshold                   := 50000                               {product}",
-            "intx Tier4CompileThreshold                    := 18750                               {product}",
-            "intx Tier4InvocationThreshold                 := 6250                                {product}",
-            "intx Tier4MinInvocationThreshold              := 750                                 {product}",
-            "double CompileThresholdScaling                  := 1.250000                            {product}"
+            "intx Tier0BackedgeNotifyFreqLog               = 10                                       {product} {command line, ergonomic}",
+            "intx Tier0InvokeNotifyFreqLog                 = 7                                        {product} {command line, ergonomic}",
+            "intx Tier23InlineeNotifyFreqLog               = 20                                       {product} {command line, ergonomic}",
+            "intx Tier2BackedgeNotifyFreqLog               = 14                                       {product} {command line, ergonomic}",
+            "intx Tier2InvokeNotifyFreqLog                 = 11                                       {product} {command line, ergonomic}",
+            "intx Tier3BackEdgeThreshold                   = 75000                                    {product} {command line, ergonomic}",
+            "intx Tier3BackedgeNotifyFreqLog               = 13                                       {product} {command line, ergonomic}",
+            "intx Tier3CompileThreshold                    = 2500                                     {product} {command line, ergonomic}",
+            "intx Tier3InvocationThreshold                 = 250                                      {product} {command line, ergonomic}",
+            "intx Tier3InvokeNotifyFreqLog                 = 10                                       {product} {command line, ergonomic}",
+            "intx Tier3MinInvocationThreshold              = 125                                      {product} {command line, ergonomic}",
+            "intx Tier4BackEdgeThreshold                   = 50000                                    {product} {command line, ergonomic}",
+            "intx Tier4CompileThreshold                    = 18750                                    {product} {command line, ergonomic}",
+            "intx Tier4InvocationThreshold                 = 6250                                     {product} {command line, ergonomic}",
+            "intx Tier4MinInvocationThreshold              = 750                                      {product} {command line, ergonomic}",
+            "double CompileThresholdScaling                  = 1.250000                                 {product} {command line}"
         },
         {
-            "intx Tier0BackedgeNotifyFreqLog               := 11                                  {product}",
-            "intx Tier0InvokeNotifyFreqLog                 := 8                                   {product}",
-            "intx Tier23InlineeNotifyFreqLog               := 21                                  {product}",
-            "intx Tier2BackedgeNotifyFreqLog               := 15                                  {product}",
-            "intx Tier2InvokeNotifyFreqLog                 := 12                                  {product}",
-            "intx Tier3BackEdgeThreshold                   := 120000                              {product}",
-            "intx Tier3BackedgeNotifyFreqLog               := 14                                  {product}",
-            "intx Tier3CompileThreshold                    := 4000                                {product}",
-            "intx Tier3InvocationThreshold                 := 400                                 {product}",
-            "intx Tier3InvokeNotifyFreqLog                 := 11                                  {product}",
-            "intx Tier3MinInvocationThreshold              := 200                                 {product}",
-            "intx Tier4BackEdgeThreshold                   := 80000                               {product}",
-            "intx Tier4CompileThreshold                    := 30000                               {product}",
-            "intx Tier4InvocationThreshold                 := 10000                               {product}",
-            "intx Tier4MinInvocationThreshold              := 1200                                {product}",
-            "double CompileThresholdScaling                  := 2.000000                            {product}"
+            "intx Tier0BackedgeNotifyFreqLog               = 11                                       {product} {command line, ergonomic}",
+            "intx Tier0InvokeNotifyFreqLog                 = 8                                        {product} {command line, ergonomic}",
+            "intx Tier23InlineeNotifyFreqLog               = 21                                       {product} {command line, ergonomic}",
+            "intx Tier2BackedgeNotifyFreqLog               = 15                                       {product} {command line, ergonomic}",
+            "intx Tier2InvokeNotifyFreqLog                 = 12                                       {product} {command line, ergonomic}",
+            "intx Tier3BackEdgeThreshold                   = 120000                                   {product} {command line, ergonomic}",
+            "intx Tier3BackedgeNotifyFreqLog               = 14                                       {product} {command line, ergonomic}",
+            "intx Tier3CompileThreshold                    = 4000                                     {product} {command line, ergonomic}",
+            "intx Tier3InvocationThreshold                 = 400                                      {product} {command line, ergonomic}",
+            "intx Tier3InvokeNotifyFreqLog                 = 11                                       {product} {command line, ergonomic}",
+            "intx Tier3MinInvocationThreshold              = 200                                      {product} {command line, ergonomic}",
+            "intx Tier4BackEdgeThreshold                   = 80000                                    {product} {command line, ergonomic}",
+            "intx Tier4CompileThreshold                    = 30000                                    {product} {command line, ergonomic}",
+            "intx Tier4InvocationThreshold                 = 10000                                    {product} {command line, ergonomic}",
+            "intx Tier4MinInvocationThreshold              = 1200                                     {product} {command line, ergonomic}",
+            "double CompileThresholdScaling                  = 2.000000                                 {product} {command line}"
         },
         {
-            "intx Tier0BackedgeNotifyFreqLog               := 10                                  {product}",
-            "intx Tier0InvokeNotifyFreqLog                 := 7                                   {product}",
-            "intx Tier23InlineeNotifyFreqLog               := 20                                  {product}",
-            "intx Tier2BackedgeNotifyFreqLog               := 14                                  {product}",
-            "intx Tier2InvokeNotifyFreqLog                 := 11                                  {product}",
-            "intx Tier3BackEdgeThreshold                   := 60000                               {product}",
-            "intx Tier3BackedgeNotifyFreqLog               := 13                                  {product}",
-            "intx Tier3CompileThreshold                    := 2000                                {product}",
-            "intx Tier3InvocationThreshold                 := 200                                 {product}",
-            "intx Tier3InvokeNotifyFreqLog                 := 10                                  {product}",
-            "intx Tier3MinInvocationThreshold              := 100                                 {product}",
-            "intx Tier4BackEdgeThreshold                   := 40000                               {product}",
-            "intx Tier4CompileThreshold                    := 15000                               {product}",
-            "intx Tier4InvocationThreshold                 := 5000                                {product}",
-            "intx Tier4MinInvocationThreshold              := 600                                 {product}",
-            "double CompileThresholdScaling                  := 0.000000                            {product}",
+            "intx Tier0BackedgeNotifyFreqLog               = 10                                       {product} {command line}",
+            "intx Tier0InvokeNotifyFreqLog                 = 7                                        {product} {command line}",
+            "intx Tier23InlineeNotifyFreqLog               = 20                                       {product} {command line}",
+            "intx Tier2BackedgeNotifyFreqLog               = 14                                       {product} {command line}",
+            "intx Tier2InvokeNotifyFreqLog                 = 11                                       {product} {command line}",
+            "intx Tier3BackEdgeThreshold                   = 60000                                    {product} {command line}",
+            "intx Tier3BackedgeNotifyFreqLog               = 13                                       {product} {command line}",
+            "intx Tier3CompileThreshold                    = 2000                                     {product} {command line}",
+            "intx Tier3InvocationThreshold                 = 200                                      {product} {command line}",
+            "intx Tier3InvokeNotifyFreqLog                 = 10                                       {product} {command line}",
+            "intx Tier3MinInvocationThreshold              = 100                                      {product} {command line}",
+            "intx Tier4BackEdgeThreshold                   = 40000                                    {product} {command line}",
+            "intx Tier4CompileThreshold                    = 15000                                    {product} {command line}",
+            "intx Tier4InvocationThreshold                 = 5000                                     {product} {command line}",
+            "intx Tier4MinInvocationThreshold              = 600                                      {product} {command line}",
+            "double CompileThresholdScaling                  = 0.000000                                 {product} {command line}",
             "interpreted mode"
         }
     };

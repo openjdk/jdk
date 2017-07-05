@@ -32,6 +32,7 @@ import static jdk.testlibrary.Asserts.*;
 
 /*
  * @test
+ * @key headful
  * @bug 8043126
  * @summary Check whether correct modifiers set when multiple mouse buttons were pressed;
  *          check number of received events.

@@ -22,6 +22,7 @@
  */
 /*
   @test
+  @key headful
   @bug 4476629
   @library ../../../../javax/swing/regtesthelpers
   @build Util

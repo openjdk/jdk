@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,16 +49,18 @@ class GTKGraphicsUtils extends SynthGraphicsUtils {
         int componentState = context.getComponentState();
         if ((componentState & SynthConstants.DISABLED) ==
                               SynthConstants.DISABLED){
-            Color orgColor = g.getColor();
-            g.setColor(context.getStyle().getColor(context,
-                                                   GTKColorType.WHITE));
-            x += 1;
-            y += 1;
-            super.paintText(context, g, text, x, y, mnemonicIndex);
+            if (!GTKLookAndFeel.is3()) {
+                Color orgColor = g.getColor();
+                g.setColor(context.getStyle().getColor(context,
+                        GTKColorType.WHITE));
+                x += 1;
+                y += 1;
+                super.paintText(context, g, text, x, y, mnemonicIndex);
 
-            g.setColor(orgColor);
-            x -= 1;
-            y -= 1;
+                g.setColor(orgColor);
+                x -= 1;
+                y -= 1;
+            }
             super.paintText(context, g, text, x, y, mnemonicIndex);
         }
         else {

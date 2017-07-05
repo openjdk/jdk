@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 8154431
   @summary Allow source and target based validation for the focus transfer
            between two JComponents.

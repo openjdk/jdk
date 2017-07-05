@@ -36,6 +36,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -45,9 +46,14 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /*
+ * @test
  * @bug 6963468
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true validation.tck.Bug6963468Test
+ * @run testng/othervm validation.tck.Bug6963468Test
  * @summary Test Validation allows element a is a union type and element b specifies a as its substitution group and b type is or is derived from one of the member types of the union.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug6963468Test {
     static final String SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     static final String SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
@@ -142,3 +148,4 @@ public class Bug6963468Test {
     }
 
 }
+

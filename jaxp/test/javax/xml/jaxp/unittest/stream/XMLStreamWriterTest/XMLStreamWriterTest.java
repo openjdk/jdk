@@ -29,23 +29,19 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 6347190
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamWriterTest.XMLStreamWriterTest
+ * @run testng/othervm stream.XMLStreamWriterTest.XMLStreamWriterTest
  * @summary Test StAX Writer won't insert comment into element inside.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class XMLStreamWriterTest {
-
-    @BeforeMethod
-    protected void setUp() throws Exception {
-    }
-
-    @AfterMethod
-    protected void tearDown() throws Exception {
-    }
 
     /**
      * Test of main method, of class TestXMLStreamWriter.
@@ -77,3 +73,4 @@ public class XMLStreamWriterTest {
     }
 
 }
+

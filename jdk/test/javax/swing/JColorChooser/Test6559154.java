@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6559154
  * @summary Tests EDT hanging
  * @author Sergey Malenkov

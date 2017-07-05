@@ -27,8 +27,12 @@
  * @bug 8158214
  * @requires (vm.simpleArch == "x64")
  * @summary Test correct execution without SSE 4.
- * @run main/othervm -Xcomp -XX:UseSSE=3 TestSSE4Disabled
+ *
+ * @run main/othervm -Xcomp -XX:UseSSE=3 compiler.cpuflags.TestSSE4Disabled
  */
+
+package compiler.cpuflags;
+
 public class TestSSE4Disabled {
     public static void main(String args[]) {
         System.out.println("Passed");

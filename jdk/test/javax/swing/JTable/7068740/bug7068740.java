@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 7068740
-   @summary JTable wrapped in JLayer can't use PGUP/PGDOWN keys
-   @author Vladislav Karnaukhov
-   @run main bug7068740
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 7068740
+ * @summary JTable wrapped in JLayer can't use PGUP/PGDOWN keys
+ * @author Vladislav Karnaukhov
+ * @run main bug7068740
+ */
 
 import javax.swing.*;
 import javax.swing.plaf.LayerUI;

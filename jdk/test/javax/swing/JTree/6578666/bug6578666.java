@@ -22,6 +22,7 @@
  */
 /*
  * @test
+ * @key headful
  * @bug 6578666
  * @summary REGRESSION: Exception occurs when updateUI for JTree is triggered by KeyEvent
  * @run main bug6578666

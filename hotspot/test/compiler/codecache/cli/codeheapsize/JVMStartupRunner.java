@@ -20,14 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package codeheapsize;
 
-import common.CodeCacheCLITestCase;
-import common.CodeCacheOptions;
+package compiler.codecache.cli.codeheapsize;
+
+import compiler.codecache.cli.common.CodeCacheCLITestCase;
+import compiler.codecache.cli.common.CodeCacheOptions;
 import jdk.test.lib.ExitCode;
 import jdk.test.lib.Utils;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import sun.hotspot.code.BlobType;
+
 import java.util.Random;
 
 /**

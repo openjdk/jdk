@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "runtime/os.hpp"
 
 // During dumping time, when processing class paths, we build up the dump-time
-// classpath. The JAR files that exist are stored in the list ClassLoader::_first_entry.
+// classpath. The JAR files that exist are stored in the list ClassLoader::_first_append_entry.
 // However, we need to store other "misc" information for run-time checking, such as
 //
 // + The values of Arguments::get_sysclasspath() used during dumping.

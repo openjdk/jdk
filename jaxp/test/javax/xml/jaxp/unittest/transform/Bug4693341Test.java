@@ -37,14 +37,20 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.helpers.DefaultHandler;
 
 /*
+ * @test
  * @bug 4693341
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true transform.Bug4693341Test
+ * @run testng/othervm transform.Bug4693341Test
  * @summary Test transform with external dtd.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Bug4693341Test {
     // save dtd file to current working directory to avoid writing into source repository
     public void copyDTDtoWorkDir() throws IOException {
@@ -88,3 +94,4 @@ public class Bug4693341Test {
         }
     }
 }
+

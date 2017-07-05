@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.DOMErrorHandler;
@@ -49,9 +50,14 @@ import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.SAXException;
 
 /*
+ * @test
  * @bug 4973153
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true dom.ls.Bug4973153
+ * @run testng/othervm dom.ls.Bug4973153
  * @summary Test LSSerialiser.setEncoding() raises 'unsupported-encoding' error if encoding is invalid.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4973153 {
 
     DOMImplementationLS implLS = null;
@@ -94,7 +100,7 @@ public class Bug4973153 {
     }
 
     @BeforeMethod
-    protected void setUp() {
+    public void setUp() {
         Document doc = null;
         DocumentBuilder parser = null;
         try {
@@ -116,7 +122,7 @@ public class Bug4973153 {
     }
 
     @AfterMethod
-    protected void tearDown() {
+    public void tearDown() {
         implLS = null;
     }
 
@@ -198,3 +204,4 @@ class DOMErrorHandlerImpl implements DOMErrorHandler {
         return true;
     }
 }
+

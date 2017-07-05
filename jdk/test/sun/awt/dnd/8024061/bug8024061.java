@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 8024061
  * @summary Checks that no exception is thrown if dragGestureRecognized
  *          takes a while to complete.

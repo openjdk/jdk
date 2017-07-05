@@ -166,10 +166,6 @@ class VersionProps {
 
         ps.print(java_runtime_name + " (" + jdk_debug_level + "build " + java_runtime_version);
 
-        if (java_runtime_name.indexOf("Embedded") != -1 && isHeadless) {
-            // embedded builds report headless state
-            ps.print(", headless");
-        }
         ps.println(')');
 
         /* Third line: JVM information. */

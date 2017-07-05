@@ -22,12 +22,13 @@
  */
 
 /*
-@test
-@bug 8072900
-@summary Mouse events are captured by the wrong menu in OS X
-@author Anton Nashatyrev
-@run main WrongSelectionOnMouseOver
-*/
+ * @test
+ * @key headful
+ * @bug 8072900
+ * @summary Mouse events are captured by the wrong menu in OS X
+ * @author Anton Nashatyrev
+ * @run main WrongSelectionOnMouseOver
+ */
 
 import javax.swing.*;
 import javax.swing.event.MenuEvent;

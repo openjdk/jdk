@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,19 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import jaxp.library.JAXPBaseTest;
-
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
  * @bug 4515047
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true test.gaptest.Bug4515047
+ * @run testng/othervm test.gaptest.Bug4515047
  * @summary test transform an empty dom source
  */
-
-public class Bug4515047 extends JAXPBaseTest {
+@Listeners({jaxp.library.BasePolicy.class})
+public class Bug4515047 {
 
     @Test
     public void testCreateTxDoc() throws TransformerException, ParserConfigurationException {
@@ -59,3 +62,4 @@ public class Bug4515047 extends JAXPBaseTest {
     }
 
 }
+

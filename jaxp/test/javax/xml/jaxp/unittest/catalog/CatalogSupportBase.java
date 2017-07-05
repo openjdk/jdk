@@ -23,6 +23,8 @@
 
 package catalog;
 
+import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,6 +35,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.parsers.DocumentBuilder;
@@ -58,8 +61,8 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+
 import org.testng.Assert;
-import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.LSInput;
@@ -89,7 +92,7 @@ public class CatalogSupportBase {
 
     protected void setUp() {
         String file1 = getClass().getResource("CatalogSupport.xml").getFile();
-        if (System.getProperty("os.name").contains("Windows")) {
+        if (getSystemProperty("os.name").contains("Windows")) {
             filepath = file1.substring(1, file1.lastIndexOf("/") + 1);
             slash = "/";
         } else {
@@ -932,3 +935,4 @@ public class CatalogSupportBase {
         }
     }
 }
+

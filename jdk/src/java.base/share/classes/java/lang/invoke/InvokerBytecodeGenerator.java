@@ -70,7 +70,7 @@ class InvokerBytecodeGenerator {
     private static final String LLV_SIG = "(L" + OBJ + ";L" + OBJ + ";)V";
 
     /** Name of its super class*/
-    private static final String superName = OBJ;
+    private static final String INVOKER_SUPER_NAME = OBJ;
 
     /** Name of new class */
     private final String className;
@@ -296,12 +296,15 @@ class InvokerBytecodeGenerator {
     /**
      * Set up class file generation.
      */
-    private void classFilePrologue() {
+    private ClassWriter classFilePrologue() {
         final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
         cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(Opcodes.V1_8, NOT_ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER, className, null, superName, null);
+        cw.visit(Opcodes.V1_8, NOT_ACC_PUBLIC + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER, className, null, INVOKER_SUPER_NAME, null);
         cw.visitSource(sourceFile, null);
+        return cw;
+    }
 
+    private void methodPrologue() {
         String invokerDesc = invokerType.toMethodDescriptorString();
         mv = cw.visitMethod(Opcodes.ACC_STATIC, invokerName, invokerDesc, null, null);
     }
@@ -309,7 +312,7 @@ class InvokerBytecodeGenerator {
     /**
      * Tear down class file generation.
      */
-    private void classFileEpilogue() {
+    private void methodEpilogue() {
         mv.visitMaxs(0, 0);
         mv.visitEnd();
     }
@@ -644,6 +647,44 @@ class InvokerBytecodeGenerator {
      */
     private byte[] generateCustomizedCodeBytes() {
         classFilePrologue();
+        addMethod();
+        bogusMethod(lambdaForm);
+
+        final byte[] classFile = toByteArray();
+        maybeDump(className, classFile);
+        return classFile;
+    }
+
+    /*
+     * NOTE: This is used from GenerateJLIClassesPlugin via
+     * DirectMethodHandle::generateDMHClassBytes.
+     *
+     * Generate customized code for a set of LambdaForms of specified types into
+     * a class with a specified name.
+     */
+    static byte[] generateCodeBytesForMultiple(String className,
+            LambdaForm[] forms, MethodType[] types) {
+        assert(forms.length == types.length);
+
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
+        cw.visit(Opcodes.V1_8, Opcodes.ACC_PRIVATE + Opcodes.ACC_FINAL + Opcodes.ACC_SUPER,
+                className, null, INVOKER_SUPER_NAME, null);
+        cw.visitSource(className.substring(className.lastIndexOf('/') + 1), null);
+        for (int i = 0; i < forms.length; i++) {
+            InvokerBytecodeGenerator g
+                    = new InvokerBytecodeGenerator(className, forms[i], types[i]);
+            g.setClassWriter(cw);
+            g.addMethod();
+        }
+        return cw.toByteArray();
+    }
+
+    private void setClassWriter(ClassWriter cw) {
+        this.cw = cw;
+    }
+
+    private void addMethod() {
+        methodPrologue();
 
         // Suppress this method in backtraces displayed to the user.
         mv.visitAnnotation(LF_HIDDEN_SIG, true);
@@ -748,19 +789,19 @@ class InvokerBytecodeGenerator {
         // return statement
         emitReturn(onStack);
 
-        classFileEpilogue();
-        bogusMethod(lambdaForm);
+        methodEpilogue();
+    }
 
-        final byte[] classFile;
+    /*
+     * @throws BytecodeGenerationException if something goes wrong when
+     *         generating the byte code
+     */
+    private byte[] toByteArray() {
         try {
-            classFile = cw.toByteArray();
+            return cw.toByteArray();
         } catch (RuntimeException e) {
-            // ASM throws RuntimeException if something goes wrong - capture these and wrap them in a meaningful
-            // exception to support falling back to LambdaForm interpretation
             throw new BytecodeGenerationException(e);
         }
-        maybeDump(className, classFile);
-        return classFile;
     }
 
     @SuppressWarnings("serial")
@@ -1607,6 +1648,7 @@ class InvokerBytecodeGenerator {
 
     private byte[] generateLambdaFormInterpreterEntryPointBytes() {
         classFilePrologue();
+        methodPrologue();
 
         // Suppress this method in backtraces displayed to the user.
         mv.visitAnnotation(LF_HIDDEN_SIG, true);
@@ -1645,7 +1687,7 @@ class InvokerBytecodeGenerator {
         // return statement
         emitReturnInsn(basicType(rtype));
 
-        classFileEpilogue();
+        methodEpilogue();
         bogusMethod(invokerType);
 
         final byte[] classFile = cw.toByteArray();
@@ -1666,6 +1708,7 @@ class InvokerBytecodeGenerator {
     private byte[] generateNamedFunctionInvokerImpl(MethodTypeForm typeForm) {
         MethodType dstType = typeForm.erasedType();
         classFilePrologue();
+        methodPrologue();
 
         // Suppress this method in backtraces displayed to the user.
         mv.visitAnnotation(LF_HIDDEN_SIG, true);
@@ -1685,7 +1728,6 @@ class InvokerBytecodeGenerator {
             // Maybe unbox
             Class<?> dptype = dstType.parameterType(i);
             if (dptype.isPrimitive()) {
-                Class<?> sptype = dstType.basicType().wrap().parameterType(i);
                 Wrapper dstWrapper = Wrapper.forBasicType(dptype);
                 Wrapper srcWrapper = dstWrapper.isSubwordOrInt() ? Wrapper.INT : dstWrapper;  // narrow subword from int
                 emitUnboxing(srcWrapper);
@@ -1713,7 +1755,7 @@ class InvokerBytecodeGenerator {
         }
         emitReturnInsn(L_TYPE);  // NOTE: NamedFunction invokers always return a reference value.
 
-        classFileEpilogue();
+        methodEpilogue();
         bogusMethod(dstType);
 
         final byte[] classFile = cw.toByteArray();

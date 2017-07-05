@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,28 @@
 
 package javax.xml.stream.ptests;
 
+import static jaxp.library.JAXPTestUtilities.setSystemProperty;
+import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
+
 import static org.testng.Assert.assertNotNull;
 
 import javax.xml.stream.XMLInputFactory;
 
 import jaxp.library.JAXPDataProvider;
-import jaxp.library.JAXPBaseTest;
 
 import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true javax.xml.stream.ptests.XMLInputFactoryNewInstanceTest
+ * @run testng/othervm javax.xml.stream.ptests.XMLInputFactoryNewInstanceTest
  * @summary Tests for XMLInputFactory.newFactory(factoryId , classLoader)
  */
-public class XMLInputFactoryNewInstanceTest extends JAXPBaseTest {
+@Listeners({jaxp.library.BasePolicy.class})
+public class XMLInputFactoryNewInstanceTest {
 
     private static final String XMLINPUT_FACTORY_CLASSNAME = "com.sun.xml.internal.stream.XMLInputFactoryImpl";
     private static final String XMLINPUT_FACRORY_ID = "javax.xml.stream.XMLInputFactory";
@@ -59,7 +67,7 @@ public class XMLInputFactoryNewInstanceTest extends JAXPBaseTest {
             XMLInputFactory xif = XMLInputFactory.newFactory(factoryId, classLoader);
             assertNotNull(xif);
         } finally {
-            setSystemProperty(XMLINPUT_FACRORY_ID, null);
+            clearSystemProperty(XMLINPUT_FACRORY_ID);
         }
     }
 
@@ -74,3 +82,4 @@ public class XMLInputFactoryNewInstanceTest extends JAXPBaseTest {
     }
 
 }
+

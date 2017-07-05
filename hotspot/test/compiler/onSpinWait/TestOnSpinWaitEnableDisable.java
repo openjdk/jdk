@@ -26,9 +26,13 @@
  * @test TestOnSpinWaitEnableDisable
  * @summary Test to ensure basic functioning of java.lang.Thread.onSpinWait
  * @bug 8157683
- * @run main TestOnSpinWaitEnableDisable
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_onSpinWait TestOnSpinWaitEnableDisable
+ *
+ * @run main compiler.onSpinWait.TestOnSpinWaitEnableDisable
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_onSpinWait
+ *                   compiler.onSpinWait.TestOnSpinWaitEnableDisable
  */
+
+package compiler.onSpinWait;
 
 public class TestOnSpinWaitEnableDisable {
     public static void main(String[] args) {

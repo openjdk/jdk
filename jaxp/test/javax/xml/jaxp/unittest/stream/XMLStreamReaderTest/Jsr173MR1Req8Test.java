@@ -28,11 +28,17 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import org.testng.Assert;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.Jsr173MR1Req8Test
+ * @run testng/othervm stream.XMLStreamReaderTest.Jsr173MR1Req8Test
  * @summary Test XMLStreamReader parses attribute with namespace aware.
  */
+@Listeners({jaxp.library.FilePolicy.class})
 public class Jsr173MR1Req8Test {
 
     private static final String INPUT_FILE1 = "Jsr173MR1Req8.xml";
@@ -63,3 +69,4 @@ public class Jsr173MR1Req8Test {
     }
 
 }
+

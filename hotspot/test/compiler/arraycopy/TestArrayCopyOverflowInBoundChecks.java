@@ -25,9 +25,13 @@
  * @test
  * @bug 8134468
  * @summary test that checks whether an array load falls into the range of an arraycopy is incorrect on 32bits
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayCopyOverflowInBoundChecks
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                    compiler.arraycopy.TestArrayCopyOverflowInBoundChecks
  */
+
+package compiler.arraycopy;
+
 public class TestArrayCopyOverflowInBoundChecks {
 
     static byte[] src_array = { 'a', 'b', 'c', 'd', 'e' };

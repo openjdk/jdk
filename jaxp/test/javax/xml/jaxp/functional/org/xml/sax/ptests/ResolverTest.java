@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,45 @@
  */
 package org.xml.sax.ptests;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+import static jaxp.library.JAXPTestUtilities.compareWithGold;
+import static org.testng.Assert.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
+
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import jaxp.library.JAXPFileBaseTest;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertTrue;
+
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
-import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
 /**
  * Entity resolver should be invoked in XML parse. This test verifies parsing
  * process by checking the output with golden file.
  */
-public class ResolverTest extends JAXPFileBaseTest {
+/*
+ * @test
+ * @library /javax/xml/jaxp/libs
+ * @run testng/othervm -DrunSecMngr=true org.xml.sax.ptests.ResolverTest
+ * @run testng/othervm org.xml.sax.ptests.ResolverTest
+ */
+@Test
+@Listeners({jaxp.library.FilePolicy.class})
+public class ResolverTest {
     /**
      * Unit test for entityResolver setter.
      *
@@ -53,6 +70,11 @@ public class ResolverTest extends JAXPFileBaseTest {
         String outputFile = USER_DIR + "EntityResolver.out";
         String goldFile = GOLDEN_DIR + "EntityResolverGF.out";
         String xmlFile = XML_DIR + "publish.xml";
+
+        Files.copy(Paths.get(XML_DIR + "publishers.dtd"),
+                Paths.get(USER_DIR + "publishers.dtd"), REPLACE_EXISTING);
+        Files.copy(Paths.get(XML_DIR + "familytree.dtd"),
+                Paths.get(USER_DIR + "familytree.dtd"), REPLACE_EXISTING);
 
         try(FileInputStream instream = new FileInputStream(xmlFile);
                 MyEntityResolver eResolver = new MyEntityResolver(outputFile)) {
@@ -97,7 +119,7 @@ class MyEntityResolver extends XMLFilterImpl implements AutoCloseable {
     @Override
     public InputSource resolveEntity(String publicid, String systemid)
             throws SAXException, IOException {
-        String str = "In resolveEntity.." + " " + publicid + " " + systemid;
+        String str = "In resolveEntity.." + " " + publicid + " " + getFileName(systemid);
         bWriter.write( str, 0,str.length());
         bWriter.newLine();
         return super.resolveEntity(publicid, systemid);
@@ -112,4 +134,14 @@ class MyEntityResolver extends XMLFilterImpl implements AutoCloseable {
         bWriter.flush();
         bWriter.close();
     }
+
+    private String getFileName(String systemid) {
+        try {
+            return Paths.get(new URI(systemid)).getFileName().toString();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
+
+

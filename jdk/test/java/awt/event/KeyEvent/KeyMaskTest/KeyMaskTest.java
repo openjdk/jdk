@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8043126
  * @summary Check whether KeyEvent.getModifiers() returns correct modifiers
  *          when Ctrl, Alt or Shift keys are pressed.

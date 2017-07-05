@@ -20,10 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package execution;
+package compiler.types.correctness.execution;
 
-import hierarchies.TypeHierarchy;
-import scenarios.Scenario;
+import compiler.types.correctness.hierarchies.TypeHierarchy;
+import compiler.types.correctness.scenarios.Scenario;
 
 /**
  * Execution scenario represents test methods execution type.
@@ -33,7 +33,7 @@ import scenarios.Scenario;
 public interface Execution<T extends TypeHierarchy.I, R> {
     /**
      * Executes the test code of the given scenario
-     * See {@link scenarios.Scenario#run(T)}
+     * See {@link Scenario#run(T)}
      *
      * @param scenario test scenario
      */

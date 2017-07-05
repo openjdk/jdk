@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,17 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
+ * @test
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @run testng/othervm -DrunSecMngr=true datatype.XMLGregorianCalendarTest
+ * @run testng/othervm datatype.XMLGregorianCalendarTest
  * @summary Test XMLGregorianCalendar.
  */
+@Listeners({jaxp.library.BasePolicy.class})
 public class XMLGregorianCalendarTest {
 
     private static final boolean DEBUG = false;
@@ -46,7 +52,7 @@ public class XMLGregorianCalendarTest {
     private XMLGregorianCalendar calendar;
 
     @BeforeMethod
-    protected void setUp() {
+    public void setUp() {
         try {
             calendar = DatatypeFactory.newInstance().newXMLGregorianCalendar();
         } catch (DatatypeConfigurationException dce) {
@@ -222,3 +228,4 @@ public class XMLGregorianCalendarTest {
         }
     }
 }
+

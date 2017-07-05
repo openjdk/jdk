@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 6542335
-   @summary different behavior on knob of scroll bar between 1.4.2 and 5.0
-   @author  Alexander Potochkin
-   @run main bug6542335
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 6542335
+ * @summary different behavior on knob of scroll bar between 1.4.2 and 5.0
+ * @author  Alexander Potochkin
+ * @run main bug6542335
+ */
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicScrollBarUI;

@@ -64,7 +64,7 @@ _jvmciModes = {
 _jdkDebugLevels = ['release', 'fastdebug', 'slowdebug']
 
 # TODO: add client once/if it can be built on 64-bit platforms
-_jdkJvmVariants = ['server']
+_jdkJvmVariants = ['server', 'client']
 
 """
 Translation table from mx_jvmci:8 --vmbuild values to mx_jvmci:9 --jdk-debug-level values.

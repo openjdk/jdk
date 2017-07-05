@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
+/*
+   @test
+   @key headful
    @bug 8040328
    @summary JSlider has wrong preferred size with Synth LAF
    @author Semyon Sadetsky
-*/
+ */
 
 import javax.swing.*;
 import javax.swing.plaf.synth.SynthLookAndFeel;
