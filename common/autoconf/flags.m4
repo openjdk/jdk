@@ -1378,7 +1378,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
 
   AC_MSG_CHECKING([if native warnings are errors])
   if test "x$enable_warnings_as_errors" = "xyes"; then
-    AC_MSG_RESULT([yes (explicitely set)])
+    AC_MSG_RESULT([yes (explicitly set)])
     WARNINGS_AS_ERRORS=true
   elif test "x$enable_warnings_as_errors" = "xno"; then
     AC_MSG_RESULT([no])
