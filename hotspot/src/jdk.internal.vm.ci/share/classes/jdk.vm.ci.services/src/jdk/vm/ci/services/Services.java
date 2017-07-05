@@ -28,6 +28,7 @@ import java.util.Formatter;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * A mechanism for accessing service providers via JVMCI.
@@ -108,7 +109,7 @@ public final class Services {
             Object jvmci = invoke(getModule, Services.class);
             Object requestorModule = invoke(getModule, requestor);
             if (jvmci != requestorModule) {
-                String[] packages = invoke(getPackages, jvmci);
+                Set<String> packages = invoke(getPackages, jvmci);
                 for (String pkg : packages) {
                     // Export all JVMCI packages dynamically instead
                     // of requiring a long list of --add-exports

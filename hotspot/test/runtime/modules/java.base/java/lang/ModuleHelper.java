@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,14 @@
  * questions.
  */
 
-package java.lang.reflect;
+package java.lang;
 
 import java.lang.module.ModuleDescriptor;
 
 /**
- * A helper class intended to be injected into java.lang.reflect using the
+ * A helper class intended to be injected into java.lang using the
  * java --patch-module option. The helper class provides access to package private
- * methods in java.lang.reflect.Module.
+ * methods in java.lang.Module.
  */
 
 public final class ModuleHelper {
@@ -56,7 +56,11 @@ public final class ModuleHelper {
      * {@code null} then the package is exported unconditionally.
      */
     public static void addExportsNoSync(Module from, String pkg, Module to) {
-        from.implAddExportsNoSync(pkg, to);
+        if (to == null) {
+            from.implAddExportsNoSync(pkg);
+        } else {
+            from.implAddExportsNoSync(pkg, to);
+        }
     }
 
     /**

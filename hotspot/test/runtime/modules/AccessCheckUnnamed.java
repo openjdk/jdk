@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 
 /*
@@ -31,7 +30,7 @@ import static jdk.test.lib.Asserts.*;
  * @compile p2/c2.java
  * @compile p1/c1.java
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AccessCheckUnnamed
@@ -44,10 +43,10 @@ public class AccessCheckUnnamed {
     public static void main(String args[]) throws Throwable {
         Object m1x, m2x;
 
-        // Get the java.lang.reflect.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
-        Object jlObject_jlrM = jlObject.getModule();
-        assertNotNull(jlObject_jlrM, "jlrModule object of java.lang.Object should not be null");
+        Object jlObject_jlM = jlObject.getModule();
+        assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
         // Get the class loader for AccessCheckWorks and assume it's also used to
         // load class p2.c2.
@@ -57,7 +56,7 @@ public class AccessCheckUnnamed {
         m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
         assertNotNull(m2x, "Module should not be null");
         ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2x, jlObject_jlrM);
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
         // p1.c1's ctor tries to call a method in p2.c2.  This should fail because
         // p1 is in the unnamed module and p2.c2 is not unqualifiedly exported.
