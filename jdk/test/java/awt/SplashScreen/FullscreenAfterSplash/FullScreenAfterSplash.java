@@ -39,6 +39,7 @@ import javax.swing.*;
  * @library ../
  * @library ../../../../lib/testlibrary
  * @modules java.desktop/sun.awt
+ *          java.desktop/com.apple.eawt
  * @build jdk.testlibrary.OSInfo
  * @build GenerateTestImage
  * @run main GenerateTestImage
@@ -61,6 +62,7 @@ public class FullScreenAfterSplash {
         try {
             //Move the mouse out, because it could interfere with the test.
             Robot r = new Robot();
+            r.setAutoDelay(50);
             r.mouseMove(0, 0);
             sleep();
 

@@ -220,6 +220,8 @@ class AgentLibraryList VALUE_OBJ_CLASS_SPEC {
   }
 };
 
+// Helper class for controlling the lifetime of JavaVMInitArgs objects.
+class ScopedVMInitArgs;
 
 class Arguments : AllStatic {
   friend class VMStructs;
@@ -374,10 +376,12 @@ class Arguments : AllStatic {
   static bool process_argument(const char* arg, jboolean ignore_unrecognized, Flag::Flags origin);
   static void process_java_launcher_argument(const char*, void*);
   static void process_java_compiler_argument(char* arg);
-  static jint parse_options_environment_variable(const char* name, SysClassPath* scp_p, bool* scp_assembly_required_p);
-  static jint parse_java_tool_options_environment_variable(SysClassPath* scp_p, bool* scp_assembly_required_p);
-  static jint parse_java_options_environment_variable(SysClassPath* scp_p, bool* scp_assembly_required_p);
-  static jint parse_vm_init_args(const JavaVMInitArgs* args);
+  static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
+  static jint parse_java_tool_options_environment_variable(ScopedVMInitArgs* vm_args);
+  static jint parse_java_options_environment_variable(ScopedVMInitArgs* vm_args);
+  static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
+                                 const JavaVMInitArgs *java_options_args,
+                                 const JavaVMInitArgs *cmd_line_args);
   static jint parse_each_vm_init_arg(const JavaVMInitArgs* args, SysClassPath* scp_p, bool* scp_assembly_required_p, Flag::Flags origin);
   static jint finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_required);
   static bool is_bad_option(const JavaVMOption* option, jboolean ignore, const char* option_type);

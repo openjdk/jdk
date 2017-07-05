@@ -285,7 +285,7 @@ protected:
     CPU_AVX512BW = (1 << 31)
   } cpuFeatureFlags;
 
-#define CPU_AVX512VL 0x100000000 // EVEX instructions with smaller vector length : enums are limited to 32bit
+#define CPU_AVX512VL UCONST64(0x100000000) // EVEX instructions with smaller vector length : enums are limited to 32bit
 
   enum {
     // AMD

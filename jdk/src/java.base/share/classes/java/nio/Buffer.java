@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,7 +197,7 @@ public abstract class Buffer {
     //
     Buffer(int mark, int pos, int lim, int cap) {       // package-private
         if (cap < 0)
-            throw new IllegalArgumentException("Negative capacity: " + cap);
+            throw createCapacityException(cap);
         this.capacity = cap;
         limit(lim);
         position(pos);
@@ -207,6 +207,34 @@ public abstract class Buffer {
                                                    + mark + " > " + pos + ")");
             this.mark = mark;
         }
+    }
+
+    /**
+     * Returns an {@code IllegalArgumentException} indicating that the source
+     * and target are the same {@code Buffer}.  Intended for use in
+     * {@code put(src)} when the parameter is the {@code Buffer} on which the
+     * method is being invoked.
+     *
+     * @returns  IllegalArgumentException
+     *           With a message indicating equal source and target buffers
+     */
+    static IllegalArgumentException createSameBufferException() {
+        return new IllegalArgumentException("The source buffer is this buffer");
+    }
+
+    /**
+     * Verify that the capacity is nonnegative.
+     *
+     * @param  capacity
+     *         The new buffer's capacity, in $type$s
+     *
+     * @throws  IllegalArgumentException
+     *          If the <tt>capacity</tt> is a negative integer
+     */
+    static IllegalArgumentException createCapacityException(int capacity) {
+        assert capacity < 0 : "capacity expected to be negative";
+        return new IllegalArgumentException("capacity < 0: ("
+            + capacity + " < 0)");
     }
 
     /**
@@ -241,11 +269,33 @@ public abstract class Buffer {
      *          If the preconditions on <tt>newPosition</tt> do not hold
      */
     public Buffer position(int newPosition) {
-        if ((newPosition > limit) || (newPosition < 0))
-            throw new IllegalArgumentException();
+        if (newPosition > limit | newPosition < 0)
+            throw createPositionException(newPosition);
         position = newPosition;
         if (mark > position) mark = -1;
         return this;
+    }
+
+    /**
+     * Verify that {@code 0 < newPosition <= limit}
+     *
+     * @param newPosition
+     *        The new position value
+     *
+     * @throws IllegalArgumentException
+     *         If the specified position is out of bounds.
+     */
+    private IllegalArgumentException createPositionException(int newPosition) {
+        String msg = null;
+
+        if (newPosition > limit) {
+            msg = "newPosition > limit: (" + newPosition + " > " + limit + ")";
+        } else { // assume negative
+            assert newPosition < 0 : "newPosition expected to be negative";
+            msg = "newPosition < 0: (" + newPosition + " < 0)";
+        }
+
+        return new IllegalArgumentException(msg);
     }
 
     /**
@@ -272,12 +322,34 @@ public abstract class Buffer {
      *          If the preconditions on <tt>newLimit</tt> do not hold
      */
     public Buffer limit(int newLimit) {
-        if ((newLimit > capacity) || (newLimit < 0))
-            throw new IllegalArgumentException();
+        if (newLimit > capacity | newLimit < 0)
+            throw createLimitException(newLimit);
         limit = newLimit;
         if (position > limit) position = limit;
         if (mark > limit) mark = -1;
         return this;
+    }
+
+    /**
+     * Verify that {@code 0 < newLimit <= capacity}
+     *
+     * @param newLimit
+     *        The new limit value
+     *
+     * @throws IllegalArgumentException
+     *         If the specified limit is out of bounds.
+     */
+    private IllegalArgumentException createLimitException(int newLimit) {
+        String msg = null;
+
+        if (newLimit > capacity) {
+            msg = "newLimit > capacity: (" + newLimit + " > " + capacity + ")";
+        } else { // assume negative
+            assert newLimit < 0 : "newLimit expected to be negative";
+            msg = "newLimit < 0: (" + newLimit + " < 0)";
+        }
+
+        return new IllegalArgumentException(msg);
     }
 
     /**

@@ -1565,6 +1565,10 @@
       <to>jdk.javadoc</to>
     </export>
     <export>
+      <name>com.sun.tools.javac.platform</name>
+      <to>jdk.javadoc</to>
+    </export>
+    <export>
       <name>com.sun.tools.javac.sym</name>
       <to>jdk.javadoc</to>
     </export>

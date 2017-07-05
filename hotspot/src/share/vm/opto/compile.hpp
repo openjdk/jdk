@@ -140,6 +140,9 @@ class CloneMap {
   bool is_debug()                 const          { return _debug; }
   void set_debug(bool debug)                     { _debug = debug; }
   static const char* debug_option_name;
+
+  bool same_idx(node_idx_t k1, node_idx_t k2)  const { return idx(k1) == idx(k2); }
+  bool same_gen(node_idx_t k1, node_idx_t k2)  const { return gen(k1) == gen(k2); }
 };
 
 //------------------------------Compile----------------------------------------

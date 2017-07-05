@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -574,20 +574,20 @@ public class DataFlavorUtil {
                     return comp;
                 }
             } else {
-                // First, prefer application types.
-                comp = compareIndices(primaryTypes, primaryType1, primaryType2,
-                        UNKNOWN_OBJECT_LOSES);
-                if (comp != 0) {
-                    return comp;
-                }
-
-                // Next prefer text types
+                // First, prefer text types
                 if (flavor1.isFlavorTextType()) {
                     return 1;
                 }
 
                 if (flavor2.isFlavorTextType()) {
                     return -1;
+                }
+
+                // Next, prefer application types.
+                comp = compareIndices(primaryTypes, primaryType1, primaryType2,
+                        UNKNOWN_OBJECT_LOSES);
+                if (comp != 0) {
+                    return comp;
                 }
 
                 // Next, look for application/x-java-* types. Prefer unknown
