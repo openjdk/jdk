@@ -1535,8 +1535,9 @@ throws SQLException;
      * <li>The connection pool caches {@code PooledConnection} objects</li>
      * <li>Returns a logical connection handle when {@code getConnection} is
      * called by the application</li>
-     * <li>The pool manager calls {@code Connection.close} on the logical connection handle
-     * prior to returning the {@code PooledConnection} back to the cache</li>
+     * <li>The logical {@code Connection} is closed by calling
+     * {@code Connection.close} prior to returning the {@code PooledConnection}
+     * to the cache.</li>
      * </ul>
      * @throws SQLException if an error occurs
      * @since 9
@@ -1577,8 +1578,9 @@ throws SQLException;
      * <li>The connection pool caches {@code PooledConnection} objects</li>
      * <li>Returns a logical connection handle when {@code getConnection} is
      * called by the application</li>
-     * <li>The pool manager calls {@code Connection.close} on the logical connection handle
-     * prior to returning the {@code PooledConnection} back to the cache</li>
+     * <li>The logical {@code Connection} is closed by calling
+     * {@code Connection.close} prior to returning the {@code PooledConnection}
+     * to the cache.</li>
      * </ul>
      * @throws SQLException if an error occurs
      * @since 9
@@ -1590,7 +1592,10 @@ throws SQLException;
     }
 
     /**
-     * Sets and validates the sharding keys for this connection.
+     * Sets and validates the sharding keys for this connection. A {@code null}
+     * value may be specified for the sharding Key. The validity
+     * of a {@code null} sharding key is vendor-specific. Consult your vendor&#39;s
+     * documentation for additional information.
      * @implSpec
      * The default implementation will throw a
      * {@code SQLFeatureNotSupportedException}.
@@ -1600,7 +1605,8 @@ throws SQLException;
      * {@code Connection}. The timeout value indicates how long the driver
      * should wait for the {@code Connection} to verify that the sharding key
      * is valid before {@code setShardingKeyIfValid} returns false.
-     * @param shardingKey the sharding key to be validated against this connection
+     * @param shardingKey the sharding key to be validated against this connection.
+     * The sharding key may be {@code null}
      * @param superShardingKey the super sharding key to be validated against this
      * connection. The super sharding key may be {@code null}.
      * @param timeout time in seconds before which the validation process is expected to
@@ -1610,10 +1616,10 @@ throws SQLException;
      * and set on this connection; false if the sharding keys are not valid or
      * the timeout period expires before the operation completes.
      * @throws SQLException if an error occurs while performing this validation;
-     * the {@code shardingkey} is {@code null}; a {@code superSharedingKey} is specified
+     * a {@code superSharedingKey} is specified
      * without a {@code shardingKey};
      * this method is called on a closed {@code connection}; or
-     * the {@code timeout} value is less than 0.
+     * the {@code timeout} value is negative.
      * @throws SQLFeatureNotSupportedException if the driver does not support sharding
      * @since 9
      * @see ShardingKey
@@ -1626,7 +1632,10 @@ throws SQLException;
     }
 
     /**
-     * Sets and validates the sharding key for this connection.
+     * Sets and validates the sharding key for this connection. A {@code null}
+     * value may be specified for the sharding Key. The validity
+     * of a {@code null} sharding key is vendor-specific. Consult your vendor&#39;s
+     * documentation for additional information.
      * @implSpec
      * The default implementation will throw a
      * {@code SQLFeatureNotSupportedException}.
@@ -1635,7 +1644,8 @@ throws SQLException;
      * {@code Connection}. The timeout value indicates how long the driver
      * should wait for the {@code Connection} to verify that the sharding key
      * is valid before {@code setShardingKeyIfValid} returns false.
-     * @param shardingKey the sharding key to be validated against this connection
+     * @param shardingKey the sharding key to be validated against this connection.
+     * The sharding key may be {@code null}
      * @param timeout time in seconds before which the validation process is expected to
      * be completed,else the validation process is aborted. A value of 0 indicates
      * the validation process will not time out.
@@ -1643,8 +1653,8 @@ throws SQLException;
      * set on this connection; false if the sharding key is not valid or
      * the timeout period expires before the operation completes.
      * @throws SQLException if there is an error while performing this validation;
-     * this method is called on a closed {@code connection}; the {@code shardingkey}
-     * is {@code null}; or the {@code timeout} value is less than 0.
+     * this method is called on a closed {@code connection};
+     * or the {@code timeout} value is negative.
      * @throws SQLFeatureNotSupportedException if the driver does not support sharding
      * @since 9
      * @see ShardingKey
@@ -1664,12 +1674,12 @@ throws SQLException;
      * This method sets the specified sharding keys but does not require a
      * round trip to the database to validate that the sharding keys are valid
      * for the {@code Connection}.
-     * @param shardingKey the sharding key to set on this connection.
+     * @param shardingKey the sharding key to set on this connection. The sharding
+     * key may be {@code null}
      * @param superShardingKey the super sharding key to set on this connection.
      * The super sharding key may be {@code null}
      * @throws SQLException if an error  occurs setting the sharding keys;
-     * this method is called on a closed {@code connection};
-     * the {@code shardingkey} is {@code null}; or
+     * this method is called on a closed {@code connection}; or
      * a {@code superSharedingKey} is specified without a {@code shardingKey}
      * @throws SQLFeatureNotSupportedException if the driver does not support sharding
      * @since 9
@@ -1690,10 +1700,10 @@ throws SQLException;
      * This method sets the specified sharding key but does not require a
      * round trip to the database to validate that the sharding key is valid
      * for the {@code Connection}.
-     * @param shardingKey the sharding key to set on this connection.
-     * @throws SQLException if an error  occurs setting the sharding key;
-     * this method is called on a closed {@code connection}; or the
-     * {@code shardkingKey} is {@code null}
+     * @param shardingKey the sharding key to set on this connection. The sharding
+     * key may be {@code null}
+     * @throws SQLException if an error occurs setting the sharding key; or
+     * this method is called on a closed {@code connection}
      * @throws SQLFeatureNotSupportedException if the driver does not support sharding
      * @since 9
      * @see ShardingKey

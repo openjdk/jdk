@@ -27,7 +27,6 @@ package sun.invoke.util;
 
 import java.lang.reflect.Modifier;
 import static java.lang.reflect.Modifier.*;
-import java.lang.reflect.Module;
 import java.util.Objects;
 import jdk.internal.reflect.Reflection;
 
@@ -297,10 +296,13 @@ public class VerifyAccess {
      * @param refc the class attempting to make the reference
      */
     public static boolean isTypeVisible(java.lang.invoke.MethodType type, Class<?> refc) {
-        for (int n = -1, max = type.parameterCount(); n < max; n++) {
-            Class<?> ptype = (n < 0 ? type.returnType() : type.parameterType(n));
-            if (!isTypeVisible(ptype, refc))
+        if (!isTypeVisible(type.returnType(), refc)) {
+            return false;
+        }
+        for (int n = 0, max = type.parameterCount(); n < max; n++) {
+            if (!isTypeVisible(type.parameterType(n), refc)) {
                 return false;
+            }
         }
         return true;
     }

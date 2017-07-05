@@ -24,7 +24,6 @@
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Proxy;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -70,18 +69,18 @@ public class ProxyLayerTest {
     }
 
     /**
-     * Test proxy implementing interfaces in a Layer defined in
+     * Test proxy implementing interfaces in a layer defined in
      * an unnamed module
      */
     @Test
     public void testProxyInUnnamed() throws Exception {
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
         Configuration cf = bootLayer
                 .configuration()
                 .resolveAndBind(ModuleFinder.of(), finder, Arrays.asList(modules));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
+        ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
 
         ClassLoader loader = layer.findLoader("m1");
 
@@ -110,12 +109,12 @@ public class ProxyLayerTest {
     @Test
     public void testProxyInDynamicModule() throws Exception {
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
         Configuration cf = bootLayer
                 .configuration()
                 .resolveAndBind(ModuleFinder.of(), finder, Arrays.asList(modules));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
+        ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
 
         ClassLoader loader = layer.findLoader("m1");
 
@@ -140,12 +139,12 @@ public class ProxyLayerTest {
     @Test
     public void testNoReadAccess() throws Exception {
         ModuleFinder finder = ModuleFinder.of(MODS_DIR);
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
         Configuration cf = bootLayer
                 .configuration()
                 .resolveAndBind(ModuleFinder.of(), finder, Arrays.asList(modules));
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
+        ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
 
         ClassLoader loader = layer.findLoader("m1");
 

@@ -45,7 +45,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -118,7 +117,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
             final Runnable task = new CheckedRunnable() {
                 public void realRun() { done.countDown(); }};
             p.execute(task);
-            assertTrue(done.await(LONG_DELAY_MS, MILLISECONDS));
+            await(done);
         }
     }
 
@@ -212,13 +211,13 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                 public void realRun() throws InterruptedException {
                     threadStarted.countDown();
                     assertEquals(0, p.getCompletedTaskCount());
-                    threadProceed.await();
+                    await(threadProceed);
                     threadDone.countDown();
                 }});
             await(threadStarted);
             assertEquals(0, p.getCompletedTaskCount());
             threadProceed.countDown();
-            threadDone.await();
+            await(threadDone);
             long startTime = System.nanoTime();
             while (p.getCompletedTaskCount() != 1) {
                 if (millisElapsedSince(startTime) > LONG_DELAY_MS)
@@ -298,6 +297,20 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                 p.setThreadFactory(null);
                 shouldThrow();
             } catch (NullPointerException success) {}
+        }
+    }
+
+    /**
+     * The default rejected execution handler is AbortPolicy.
+     */
+    public void testDefaultRejectedExecutionHandler() {
+        final ThreadPoolExecutor p =
+            new ThreadPoolExecutor(1, 2,
+                                   LONG_DELAY_MS, MILLISECONDS,
+                                   new ArrayBlockingQueue<Runnable>(10));
+        try (PoolCleaner cleaner = cleaner(p)) {
+            assertTrue(p.getRejectedExecutionHandler()
+                       instanceof ThreadPoolExecutor.AbortPolicy);
         }
     }
 
@@ -1139,7 +1152,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                     await(done);
                 }};
             for (int i = 0; i < 2; ++i)
-                p.submit(Executors.callable(task));
+                p.execute(task);
             for (int i = 0; i < 2; ++i) {
                 try {
                     p.execute(task);
@@ -1955,7 +1968,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                     public void realRun() {
                         done.countDown();
                     }});
-            assertTrue(done.await(LONG_DELAY_MS, MILLISECONDS));
+            await(done);
         }
     }
 
@@ -2048,7 +2061,7 @@ public class ThreadPoolExecutorTest extends JSR166TestCase {
                 }
             }
             // enough time to run all tasks
-            assertTrue(done.await(nTasks * SHORT_DELAY_MS, MILLISECONDS));
+            await(done, nTasks * SHORT_DELAY_MS);
         }
     }
 

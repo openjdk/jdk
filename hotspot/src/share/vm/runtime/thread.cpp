@@ -3465,7 +3465,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
                                       java_lang_Thread::RUNNABLE);
 
   // The VM creates objects of this class.
-  initialize_class(vmSymbols::java_lang_reflect_Module(), CHECK);
+  initialize_class(vmSymbols::java_lang_Module(), CHECK);
 
   // The VM preresolves methods to these classes. Make sure that they get initialized
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
