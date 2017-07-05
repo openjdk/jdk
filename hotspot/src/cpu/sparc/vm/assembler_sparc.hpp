@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1088,8 +1088,8 @@ public:
   inline void add(    Register s1, Register s2, Register d );
   inline void add(    Register s1, int simm13a, Register d, relocInfo::relocType rtype = relocInfo::none);
   inline void add(    Register s1, int simm13a, Register d, RelocationHolder const& rspec);
-  inline void add(    Register s1, RegisterConstant s2, Register d, int offset = 0);
-  inline void add(    const Address&  a,              Register d, int offset = 0);
+  inline void add(    Register s1, RegisterOrConstant s2, Register d, int offset = 0);
+  inline void add(    const Address&  a,                  Register d, int offset = 0);
 
   void addcc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
   void addcc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }
@@ -1305,15 +1305,15 @@ public:
   inline void ld(   const Address& a, Register d, int offset = 0 );
   inline void ldd(  const Address& a, Register d, int offset = 0 );
 
-  inline void ldub(  Register s1, RegisterConstant s2, Register d );
-  inline void ldsb(  Register s1, RegisterConstant s2, Register d );
-  inline void lduh(  Register s1, RegisterConstant s2, Register d );
-  inline void ldsh(  Register s1, RegisterConstant s2, Register d );
-  inline void lduw(  Register s1, RegisterConstant s2, Register d );
-  inline void ldsw(  Register s1, RegisterConstant s2, Register d );
-  inline void ldx(   Register s1, RegisterConstant s2, Register d );
-  inline void ld(    Register s1, RegisterConstant s2, Register d );
-  inline void ldd(   Register s1, RegisterConstant s2, Register d );
+  inline void ldub(  Register s1, RegisterOrConstant s2, Register d );
+  inline void ldsb(  Register s1, RegisterOrConstant s2, Register d );
+  inline void lduh(  Register s1, RegisterOrConstant s2, Register d );
+  inline void ldsh(  Register s1, RegisterOrConstant s2, Register d );
+  inline void lduw(  Register s1, RegisterOrConstant s2, Register d );
+  inline void ldsw(  Register s1, RegisterOrConstant s2, Register d );
+  inline void ldx(   Register s1, RegisterOrConstant s2, Register d );
+  inline void ld(    Register s1, RegisterOrConstant s2, Register d );
+  inline void ldd(   Register s1, RegisterOrConstant s2, Register d );
 
   // pp 177
 
@@ -1535,12 +1535,12 @@ public:
   inline void st(   Register d, const Address& a, int offset = 0 );
   inline void std(  Register d, const Address& a, int offset = 0 );
 
-  inline void stb(  Register d, Register s1, RegisterConstant s2 );
-  inline void sth(  Register d, Register s1, RegisterConstant s2 );
-  inline void stw(  Register d, Register s1, RegisterConstant s2 );
-  inline void stx(  Register d, Register s1, RegisterConstant s2 );
-  inline void std(  Register d, Register s1, RegisterConstant s2 );
-  inline void st(   Register d, Register s1, RegisterConstant s2 );
+  inline void stb(  Register d, Register s1, RegisterOrConstant s2 );
+  inline void sth(  Register d, Register s1, RegisterOrConstant s2 );
+  inline void stw(  Register d, Register s1, RegisterOrConstant s2 );
+  inline void stx(  Register d, Register s1, RegisterOrConstant s2 );
+  inline void std(  Register d, Register s1, RegisterOrConstant s2 );
+  inline void st(   Register d, Register s1, RegisterOrConstant s2 );
 
   // pp 177
 
@@ -1859,7 +1859,7 @@ class MacroAssembler: public Assembler {
   // Functions for isolating 64 bit shifts for LP64
   inline void sll_ptr( Register s1, Register s2, Register d );
   inline void sll_ptr( Register s1, int imm6a,   Register d );
-  inline void sll_ptr( Register s1, RegisterConstant s2, Register d );
+  inline void sll_ptr( Register s1, RegisterOrConstant s2, Register d );
   inline void srl_ptr( Register s1, Register s2, Register d );
   inline void srl_ptr( Register s1, int imm6a,   Register d );
 
@@ -1965,26 +1965,26 @@ class MacroAssembler: public Assembler {
   // st_ptr will perform st for 32 bit VM's and stx for 64 bit VM's
   inline void ld_ptr(   Register s1, Register s2, Register d );
   inline void ld_ptr(   Register s1, int simm13a, Register d);
-  inline void ld_ptr(   Register s1, RegisterConstant s2, Register d );
+  inline void ld_ptr(   Register s1, RegisterOrConstant s2, Register d );
   inline void ld_ptr(  const Address& a, Register d, int offset = 0 );
   inline void st_ptr(  Register d, Register s1, Register s2 );
   inline void st_ptr(  Register d, Register s1, int simm13a);
-  inline void st_ptr(  Register d, Register s1, RegisterConstant s2 );
+  inline void st_ptr(  Register d, Register s1, RegisterOrConstant s2 );
   inline void st_ptr(  Register d, const Address& a, int offset = 0 );
 
   // ld_long will perform ld for 32 bit VM's and ldx for 64 bit VM's
   // st_long will perform st for 32 bit VM's and stx for 64 bit VM's
   inline void ld_long( Register s1, Register s2, Register d );
   inline void ld_long( Register s1, int simm13a, Register d );
-  inline void ld_long( Register s1, RegisterConstant s2, Register d );
+  inline void ld_long( Register s1, RegisterOrConstant s2, Register d );
   inline void ld_long( const Address& a, Register d, int offset = 0 );
   inline void st_long( Register d, Register s1, Register s2 );
   inline void st_long( Register d, Register s1, int simm13a );
-  inline void st_long( Register d, Register s1, RegisterConstant s2 );
+  inline void st_long( Register d, Register s1, RegisterOrConstant s2 );
   inline void st_long( Register d, const Address& a, int offset = 0 );
 
   // Loading values by size and signed-ness
-  void load_sized_value(Register s1, RegisterConstant s2, Register d,
+  void load_sized_value(Register s1, RegisterOrConstant s2, Register d,
                         int size_in_bytes, bool is_signed);
 
   // Helpers for address formation.
@@ -1994,11 +1994,11 @@ class MacroAssembler: public Assembler {
   // is required, and becomes the result.
   // If dest is a register and src is a non-simm13 constant,
   // the temp argument is required, and is used to materialize the constant.
-  void regcon_inc_ptr( RegisterConstant& dest, RegisterConstant src,
+  void regcon_inc_ptr( RegisterOrConstant& dest, RegisterOrConstant src,
                        Register temp = noreg );
-  void regcon_sll_ptr( RegisterConstant& dest, RegisterConstant src,
+  void regcon_sll_ptr( RegisterOrConstant& dest, RegisterOrConstant src,
                        Register temp = noreg );
-  RegisterConstant ensure_rs2(RegisterConstant rs2, Register sethi_temp) {
+  RegisterOrConstant ensure_rs2(RegisterOrConstant rs2, Register sethi_temp) {
     guarantee(sethi_temp != noreg, "constant offset overflow");
     if (is_simm13(rs2.constant_or_zero()))
       return rs2;               // register or short constant
@@ -2322,7 +2322,7 @@ class MacroAssembler: public Assembler {
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
-                               RegisterConstant itable_index,
+                               RegisterOrConstant itable_index,
                                Register method_result,
                                Register temp_reg, Register temp2_reg,
                                Label& no_such_interface);
@@ -2341,7 +2341,7 @@ class MacroAssembler: public Assembler {
                                      Label* L_success,
                                      Label* L_failure,
                                      Label* L_slow_path,
-                RegisterConstant super_check_offset = RegisterConstant(-1),
+                RegisterOrConstant super_check_offset = RegisterOrConstant(-1),
                 Register instanceof_hack = noreg);
 
   // The rest of the type check; must be wired to a corresponding fast path.
@@ -2381,7 +2381,7 @@ class MacroAssembler: public Assembler {
   // stack overflow + shadow pages.  Clobbers tsp and scratch registers.
   void bang_stack_size(Register Rsize, Register Rtsp, Register Rscratch);
 
-  virtual RegisterConstant delayed_value(intptr_t* delayed_value_addr, Register tmp, int offset);
+  virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr, Register tmp, int offset);
 
   void verify_tlab();
 

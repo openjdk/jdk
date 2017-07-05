@@ -23,6 +23,7 @@
 
 /* @test
    @bug 4471738
+   @ignore until 6825739 fixed
    @summary Failure to properly traverse class hierarchy in Class.getMethod()
 */
 
