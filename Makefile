@@ -36,12 +36,6 @@ ifndef JDK_MAKE_SHARED_DIR
   JDK_MAKE_SHARED_DIR=$(JDK_TOPDIR)/make/common/shared
 endif
 
-# For start and finish echo lines
-TITLE_TEXT = Control $(PLATFORM) $(ARCH) $(RELEASE)
-DATE_STAMP = `$(DATE) '+%y-%m-%d %H:%M'`
-START_ECHO  = echo "$(TITLE_TEXT) $@ build started: $(DATE_STAMP)"
-FINISH_ECHO = echo "$(TITLE_TEXT) $@ build finished: $(DATE_STAMP)"
-
 default: all
 
 include $(JDK_MAKE_SHARED_DIR)/Defs-control.gmk
@@ -57,10 +51,6 @@ include ./make/install-rules.gmk
 include ./make/sponsors-rules.gmk
 include ./make/deploy-rules.gmk
 
-# What "all" means
-all::
-	@$(START_ECHO)
-
 all:: sanity
 
 ifeq ($(SKIP_FASTDEBUG_BUILD), false)
@@ -73,40 +63,44 @@ endif
 
 all:: all_product_build 
 
-all:: 
-	@$(FINISH_ECHO)
+all_product_build::
 
 # Everything for a full product build
-all_product_build::
-	@$(START_ECHO)
-
 ifeq ($(SKIP_PRODUCT_BUILD), false)
-  
+
   all_product_build:: product_build
 
   ifeq ($(BUILD_INSTALL), true)
     all_product_build:: $(INSTALL)
     clobber:: install-clobber
   endif
-  
+
   ifeq ($(BUILD_SPONSORS), true)
     all_product_build:: $(SPONSORS)
     clobber:: sponsors-clobber
   endif
-  
+
   ifneq ($(SKIP_COMPARE_IMAGES), true)
     all_product_build:: compare-image
   endif
 
 endif
 
-all_product_build:: 
-	@$(FINISH_ECHO)
+define StartTimer
+	$(MKDIR) -p $(BUILDTIMESDIR)
+	$(RM) $(BUILDTIMESDIR)/build_time_*
+	$(call RecordStartTime,TOTAL)
+endef
+
+define StopTimer
+	$(if $(REPORT_BUILD_TIMES),$(call RecordEndTime,TOTAL) && $(call ReportBuildTimes,$1),)
+endef
 
 # Generic build of basic repo series
 generic_build_repo_series::
 	$(MKDIR) -p $(OUTPUTDIR)
 	$(MKDIR) -p $(OUTPUTDIR)/j2sdk-image
+	@$(call StartTimer)
 
 ifeq ($(BUILD_LANGTOOLS), true)
   generic_build_repo_series:: langtools
@@ -143,6 +137,9 @@ ifeq ($(BUILD_DEPLOY), true)
   clobber:: deploy-clobber
 endif
 
+generic_build_repo_series::
+	@$(call StopTimer,$(if $(DEBUG_NAME),$(DEBUG_NAME)_build,all_product_build))
+
 # The debug build, fastdebug or debug. Needs special handling.
 #  Note that debug builds do NOT do INSTALL steps, but must be done
 #  after the product build and before the INSTALL step of the product build.
@@ -167,28 +164,22 @@ FRESH_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/j2sdk-image
 FRESH_DEBUG_BOOTDIR=$(ABS_BOOTDIR_OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-$(DEBUG_NAME)/j2sdk-image
   
 create_fresh_product_bootdir: FRC
-	@$(START_ECHO)
 	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
 		GENERATE_DOCS=false \
 		BOOT_CYCLE_SETTINGS= \
 		build_product_image
-	@$(FINISH_ECHO)
 
 create_fresh_debug_bootdir: FRC
-	@$(START_ECHO)
 	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
 		GENERATE_DOCS=false \
 		BOOT_CYCLE_DEBUG_SETTINGS= \
 		build_debug_image
-	@$(FINISH_ECHO)
 
 create_fresh_fastdebug_bootdir: FRC
-	@$(START_ECHO)
 	$(MAKE) ALT_OUTPUTDIR=$(ABS_BOOTDIR_OUTPUTDIR) \
 		GENERATE_DOCS=false \
 		BOOT_CYCLE_DEBUG_SETTINGS= \
 		build_fastdebug_image
-	@$(FINISH_ECHO)
 
 # Create boot image?
 ifeq ($(SKIP_BOOT_CYCLE),false)
@@ -196,6 +187,8 @@ ifeq ($(SKIP_BOOT_CYCLE),false)
     DO_BOOT_CYCLE=true
   endif
 endif
+
+
 
 ifeq ($(DO_BOOT_CYCLE),true)
   
@@ -221,27 +214,23 @@ else
 endif
 
 build_product_image:
-	@$(START_ECHO)
 	$(MAKE) \
 	        SKIP_FASTDEBUG_BUILD=true \
 	        SKIP_DEBUG_BUILD=true \
 	        $(BOOT_CYCLE_SETTINGS) \
 	        generic_build_repo_series
-	@$(FINISH_ECHO)
 
 #   NOTE: On windows, do not use $(ABS_OUTPUTDIR)-$(DEBUG_NAME).
 #         Due to the use of short paths in $(ABS_OUTPUTDIR), this may 
 #         not be the same location.
 
 generic_debug_build:
-	@$(START_ECHO)
 	$(MAKE) \
 		ALT_OUTPUTDIR=$(ABS_OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-$(DEBUG_NAME) \
 	        DEBUG_NAME=$(DEBUG_NAME) \
 		GENERATE_DOCS=false \
 	        $(BOOT_CYCLE_DEBUG_SETTINGS) \
 		generic_build_repo_series
-	@$(FINISH_ECHO)
 
 build_debug_image:
 	$(MAKE) DEBUG_NAME=debug generic_debug_build
@@ -254,7 +243,8 @@ product_build:: build_product_image
 debug_build:: build_debug_image
 fastdebug_build:: build_fastdebug_image
 
-clobber::
+clobber:: REPORT_BUILD_TIMES=
+clobber:: 
 	$(RM) -r $(OUTPUTDIR)/*
 	$(RM) -r $(OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-debug/*
 	$(RM) -r $(OUTPUTDIR)/../$(PLATFORM)-$(ARCH)-fastdebug/*

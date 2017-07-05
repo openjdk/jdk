@@ -166,7 +166,7 @@ JDKJRE2COREAPI    = ../../api
 
 # Common bottom argument
 define CommonBottom # year
-<font size=\"-1\"><p> $(call CopyrightLine,,$1,)</font>
+<font size=\"-1\"><br> $(call CopyrightLine,,$1,)</font>
 endef
 
 # Common trademark bottom argument (Not sure why this is used sometimes)
@@ -183,7 +183,7 @@ COREAPI_BOTTOM = <font size=\"-1\"> $(BUG_SUBMIT_LINE)\
 see <a href=\"$(DEV_DOCS_URL)\" target=\"_blank\">Java SE Documentation</a>. \
 That documentation contains more detailed, developer-targeted descriptions, \
 with conceptual overviews, definitions of terms, workarounds, \
-and working code examples.<p>\
+and working code examples.<br>\
 $(call CopyrightLine,$(COPYRIGHT_URL),$(FIRST_COPYRIGHT_YEAR),)\
 </font>
 
