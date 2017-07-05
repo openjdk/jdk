@@ -67,6 +67,11 @@ ifeq ($(PLATFORM), windows)
   OTHER_LCF += -export:nptInitialize -export:nptTerminate
 endif
 
+# Add location of iconv header
+ifeq ($(PLATFORM), macosx))
+  OTHER_LDLIBS += -liconv
+endif
+
 #
 # Add to ambient vpath so we pick up the library files
 #

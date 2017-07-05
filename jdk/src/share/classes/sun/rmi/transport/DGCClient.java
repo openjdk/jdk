@@ -125,7 +125,7 @@ final class DGCClient {
      * All of the LiveRefs in the list must be for remote objects at the
      * given endpoint.
      */
-    static void registerRefs(Endpoint ep, List refs) {
+    static void registerRefs(Endpoint ep, List<LiveRef> refs) {
         /*
          * Look up the given endpoint and register the refs with it.
          * The retrieved entry may get removed from the global endpoint
@@ -176,9 +176,9 @@ final class DGCClient {
         private DGC dgc;
 
         /** table of refs held for endpoint: maps LiveRef to RefEntry */
-        private Map refTable = new HashMap(5);
+        private Map<LiveRef, RefEntry> refTable = new HashMap<>(5);
         /** set of RefEntry instances from last (failed) dirty call */
-        private Set invalidRefs = new HashSet(5);
+        private Set<RefEntry> invalidRefs = new HashSet<>(5);
 
         /** true if this entry has been removed from the global table */
         private boolean removed = false;
@@ -200,12 +200,12 @@ final class DGCClient {
         private boolean interruptible = false;
 
         /** reference queue for phantom references */
-        private ReferenceQueue refQueue = new ReferenceQueue();
+        private ReferenceQueue<LiveRef> refQueue = new ReferenceQueue<>();
         /** set of clean calls that need to be made */
-        private Set pendingCleans = new HashSet(5);
+        private Set<CleanRequest> pendingCleans = new HashSet<>(5);
 
         /** global endpoint table: maps Endpoint to EndpointEntry */
-        private static Map endpointTable = new HashMap(5);
+        private static Map<Endpoint,EndpointEntry> endpointTable = new HashMap<>(5);
         /** handle for GC latency request (for future cancellation) */
         private static GC.LatencyRequest gcLatencyRequest = null;
 
@@ -215,7 +215,7 @@ final class DGCClient {
          */
         public static EndpointEntry lookup(Endpoint ep) {
             synchronized (endpointTable) {
-                EndpointEntry entry = (EndpointEntry) endpointTable.get(ep);
+                EndpointEntry entry = endpointTable.get(ep);
                 if (entry == null) {
                     entry = new EndpointEntry(ep);
                     endpointTable.put(ep, entry);
@@ -260,10 +260,10 @@ final class DGCClient {
          *
          * This method must NOT be called while synchronized on this entry.
          */
-        public boolean registerRefs(List refs) {
+        public boolean registerRefs(List<LiveRef> refs) {
             assert !Thread.holdsLock(this);
 
-            Set refsToDirty = null;     // entries for refs needing dirty
+            Set<RefEntry> refsToDirty = null;     // entries for refs needing dirty
             long sequenceNum;           // sequence number for dirty call
 
             synchronized (this) {
@@ -271,18 +271,18 @@ final class DGCClient {
                     return false;
                 }
 
-                Iterator iter = refs.iterator();
+                Iterator<LiveRef> iter = refs.iterator();
                 while (iter.hasNext()) {
-                    LiveRef ref = (LiveRef) iter.next();
+                    LiveRef ref = iter.next();
                     assert ref.getEndpoint().equals(endpoint);
 
-                    RefEntry refEntry = (RefEntry) refTable.get(ref);
+                    RefEntry refEntry = refTable.get(ref);
                     if (refEntry == null) {
                         LiveRef refClone = (LiveRef) ref.clone();
                         refEntry = new RefEntry(refClone);
                         refTable.put(refClone, refEntry);
                         if (refsToDirty == null) {
-                            refsToDirty = new HashSet(5);
+                            refsToDirty = new HashSet<>(5);
                         }
                         refsToDirty.add(refEntry);
                     }
@@ -345,7 +345,7 @@ final class DGCClient {
          *
          * This method must NOT be called while synchronized on this entry.
          */
-        private void makeDirtyCall(Set refEntries, long sequenceNum) {
+        private void makeDirtyCall(Set<RefEntry> refEntries, long sequenceNum) {
             assert !Thread.holdsLock(this);
 
             ObjID[] ids;
@@ -443,9 +443,9 @@ final class DGCClient {
                          * refs, so that clean calls for them in the future
                          * will be strong.
                          */
-                        Iterator iter = refEntries.iterator();
+                        Iterator<RefEntry> iter = refEntries.iterator();
                         while (iter.hasNext()) {
-                            RefEntry refEntry = (RefEntry) iter.next();
+                            RefEntry refEntry = iter.next();
                             refEntry.markDirtyFailed();
                         }
                     }
@@ -497,7 +497,7 @@ final class DGCClient {
                     long timeToWait;
                     RefEntry.PhantomLiveRef phantom = null;
                     boolean needRenewal = false;
-                    Set refsToDirty = null;
+                    Set<RefEntry> refsToDirty = null;
                     long sequenceNum = Long.MIN_VALUE;
 
                     synchronized (EndpointEntry.this) {
@@ -564,7 +564,7 @@ final class DGCClient {
                             needRenewal = true;
                             if (!invalidRefs.isEmpty()) {
                                 refsToDirty = invalidRefs;
-                                invalidRefs = new HashSet(5);
+                                invalidRefs = new HashSet<>(5);
                             }
                             sequenceNum = getNextSequenceNum();
                         }
@@ -594,8 +594,8 @@ final class DGCClient {
         private void processPhantomRefs(RefEntry.PhantomLiveRef phantom) {
             assert Thread.holdsLock(this);
 
-            Set strongCleans = null;
-            Set normalCleans = null;
+            Set<RefEntry> strongCleans = null;
+            Set<RefEntry> normalCleans = null;
 
             do {
                 RefEntry refEntry = phantom.getRefEntry();
@@ -603,12 +603,12 @@ final class DGCClient {
                 if (refEntry.isRefSetEmpty()) {
                     if (refEntry.hasDirtyFailed()) {
                         if (strongCleans == null) {
-                            strongCleans = new HashSet(5);
+                            strongCleans = new HashSet<>(5);
                         }
                         strongCleans.add(refEntry);
                     } else {
                         if (normalCleans == null) {
-                            normalCleans = new HashSet(5);
+                            normalCleans = new HashSet<>(5);
                         }
                         normalCleans.add(refEntry);
                     }
@@ -659,9 +659,9 @@ final class DGCClient {
         private void makeCleanCalls() {
             assert !Thread.holdsLock(this);
 
-            Iterator iter = pendingCleans.iterator();
+            Iterator<CleanRequest> iter = pendingCleans.iterator();
             while (iter.hasNext()) {
-                CleanRequest request = (CleanRequest) iter.next();
+                CleanRequest request = iter.next();
                 try {
                     dgc.clean(request.objIDs, request.sequenceNum, vmid,
                               request.strong);
@@ -683,11 +683,11 @@ final class DGCClient {
          * Create an array of ObjIDs (needed for the DGC remote calls)
          * from the ids in the given set of refs.
          */
-        private static ObjID[] createObjIDArray(Set refEntries) {
+        private static ObjID[] createObjIDArray(Set<RefEntry> refEntries) {
             ObjID[] ids = new ObjID[refEntries.size()];
-            Iterator iter = refEntries.iterator();
+            Iterator<RefEntry> iter = refEntries.iterator();
             for (int i = 0; i < ids.length; i++) {
-                ids[i] = ((RefEntry) iter.next()).getRef().getObjID();
+                ids[i] = iter.next().getRef().getObjID();
             }
             return ids;
         }
@@ -704,7 +704,7 @@ final class DGCClient {
             /** LiveRef value for this entry (not a registered instance) */
             private LiveRef ref;
             /** set of phantom references to registered instances */
-            private Set refSet = new HashSet(5);
+            private Set<PhantomLiveRef> refSet = new HashSet<>(5);
             /** true if a dirty call containing this ref has failed */
             private boolean dirtyFailed = false;
 
@@ -792,7 +792,7 @@ final class DGCClient {
              * used to detect when the LiveRef becomes permanently
              * unreachable in this VM.
              */
-            private class PhantomLiveRef extends PhantomReference {
+            private class PhantomLiveRef extends PhantomReference<LiveRef> {
 
                 public PhantomLiveRef(LiveRef ref) {
                     super(ref, EndpointEntry.this.refQueue);

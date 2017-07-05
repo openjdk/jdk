@@ -50,6 +50,8 @@ public class DefaultAsynchronousChannelProvider {
             return new SolarisAsynchronousChannelProvider();
         if (osname.equals("Linux"))
             return new LinuxAsynchronousChannelProvider();
+        if (osname.startsWith("Mac OS"))
+            return new BsdAsynchronousChannelProvider();
         throw new InternalError("platform not recognized");
     }
 

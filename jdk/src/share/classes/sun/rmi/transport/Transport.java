@@ -62,7 +62,7 @@ public abstract class Transport {
         Log.getLog("sun.rmi.transport.misc", "transport", Transport.logLevel);
 
     /** References the current transport when a call is being serviced */
-    private static final ThreadLocal currentTransport = new ThreadLocal();
+    private static final ThreadLocal<Transport> currentTransport = new ThreadLocal<>();
 
     /** ObjID for DGCImpl */
     private static final ObjID dgcID = new ObjID(ObjID.DGC_ID);
@@ -104,7 +104,7 @@ public abstract class Transport {
      * returns null.
      **/
     static Transport currentTransport() {
-        return (Transport) currentTransport.get();
+        return currentTransport.get();
     }
 
     /**

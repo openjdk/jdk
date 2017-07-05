@@ -45,13 +45,20 @@ PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security
 ifeq ($(PLATFORM), solaris)
 PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security-solaris
 
-else # PLATFORM
+else # NOT_SOLARIS
 
 # Register Microsoft CryptoAPI provider only on Windows platform.
 ifeq ($(PLATFORM), windows)
   PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security-windows
-endif
-endif # PLATFORM
+
+else # NOT_WINDOWS
+
+ifeq ($(PLATFORM), macosx)
+  PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security-macosx
+endif # MACOSX
+
+endif # NOT_WINDOWS
+endif # NOT_SOLARIS
 
 
 PROPS_BUILD = $(LIBDIR)/security/java.security

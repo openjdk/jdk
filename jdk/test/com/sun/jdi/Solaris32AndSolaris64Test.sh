@@ -41,7 +41,7 @@ status=1
 
 #Call this from anywhere to fail the test with an error message
 # usage: fail "reason why the test failed"
-fail() 
+fail()
  { echo "The test failed :-("
    echo "$*" 1>&2
    echo "exit status was $status"
@@ -50,7 +50,7 @@ fail()
 
 #Call this from anywhere to pass the test with a message
 # usage: pass "reason why the test passed if applicable"
-pass() 
+pass()
  { echo "The test passed!!!"
    echo "$*" 1>&2
    exit 0
@@ -65,7 +65,7 @@ fi
 testName=$1
 shift
 
-#Set appropriate jdk 
+#Set appropriate jdk
 
 if [ -z "${TESTJAVA}" ] ; then
    # TESTJAVA is not set, so the test is running stand-alone.
@@ -79,7 +79,7 @@ if [ -z "${TESTJAVA}" ] ; then
           TESTJAVA=$1
       else
           echo "no JDK specified on command line so using JAVA_HOME=$JAVA_HOME"
-	  TESTJAVA=$JAVA_HOME
+          TESTJAVA=$JAVA_HOME
    fi
    TESTSRC=.
    TESTCLASSES=.
@@ -104,15 +104,15 @@ case "$OS" in
       PATHSEP=":"
       PTYPE=`uname -p`
       if [ -x /usr/bin/isainfo ]; then
-	  # Instruction set being used by the OS
-	  ISET=`isainfo -k`
+          # Instruction set being used by the OS
+          ISET=`isainfo -k`
       else
-	  #SunOS 5.6 didn't have "isainfo"
+          #SunOS 5.6 didn't have "isainfo"
           pass "This test always passes on $OS/$PTYPE (32-bit ${ISET})"
       fi
       ;;
 
-   Linux )
+   Linux | Darwin )
       pass "This test always passes on $OS"
       ;;
 
@@ -156,12 +156,12 @@ if [ $? = 1 ]; then
    pass "This test always passes on $OS/$PTYPE if 64 bit jdk is not installed"
 fi
 
-# Want this test to run standalone as well as in the harness, so do the 
-#  following to copy the test's directory into the harness's scratch directory 
+# Want this test to run standalone as well as in the harness, so do the
+#  following to copy the test's directory into the harness's scratch directory
 #  and set all appropriate variables:
 
 #Deal with .class files:
-if [ -n "${STANDALONE}" ] ; then 
+if [ -n "${STANDALONE}" ] ; then
    #if running standalone, compile the support files
    ${TESTJAVA}/bin/javac -d ${TESTCLASSES} \
             -classpath "$TESTJAVA/lib/tools.jar${PATHSEP}${TESTSRC}" \
@@ -177,7 +177,7 @@ filename=$TESTCLASSES/@debuggeeVMOptions
 if [ ! -r ${filename} ] ; then
     filename=$TESTCLASSES/../@debuggeeVMOptions
 fi
-# Remove -d32, -d64 if present, and remove -XX:[+-]UseCompressedOops 
+# Remove -d32, -d64 if present, and remove -XX:[+-]UseCompressedOops
 # if present since it is illegal in 32 bit mode.
 if [ -r ${filename} ] ; then
     DEBUGGEEFLAGS=`cat ${filename} | sed \
@@ -204,19 +204,19 @@ for DEBUGGERMODEL in \
         DEBUGGERFLAGS="-d${DEBUGGERMODEL} -showversion -DEXPECTED=${TARGETMODEL}"
         CONNECTSTRING="-connect 'com.sun.jdi.CommandLineLaunch:options=-d${TARGETMODEL} $DEBUGGEEFLAGS -showversion'"
 
-	for TARGETCLASS in $testName ; do
-	    echo "--------------------------------------------"
-	    echo "debugger=${DEBUGGERMODEL} debugee=${TARGETMODEL} class=${TARGETCLASS}"
-	    echo "--------------------------------------------"
-	    echo ${TESTJAVA}/bin/java -DHANGINGJAVA_DEB ${DEBUGGERFLAGS} ${CP} ${TARGETCLASS} ${CONNECTSTRING}
-	    eval ${TESTJAVA}/bin/java -DHANGINGJAVA_DEB ${DEBUGGERFLAGS} ${CP} ${TARGETCLASS} ${CONNECTSTRING}
-	    status=$?
-	    if [ $status -ne "0" ];
-	       then fail "$DEBUGGERMODEL to $TARGETMODEL test failed for class=$TARGETCLASS!"
-	    fi
-	done
+        for TARGETCLASS in $testName ; do
+            echo "--------------------------------------------"
+            echo "debugger=${DEBUGGERMODEL} debugee=${TARGETMODEL} class=${TARGETCLASS}"
+            echo "--------------------------------------------"
+            echo ${TESTJAVA}/bin/java -DHANGINGJAVA_DEB ${DEBUGGERFLAGS} ${CP} ${TARGETCLASS} ${CONNECTSTRING}
+            eval ${TESTJAVA}/bin/java -DHANGINGJAVA_DEB ${DEBUGGERFLAGS} ${CP} ${TARGETCLASS} ${CONNECTSTRING}
+            status=$?
+            if [ $status -ne "0" ];
+               then fail "$DEBUGGERMODEL to $TARGETMODEL test failed for class=$TARGETCLASS!"
+            fi
+        done
     done
-done  
+done
 #
 # pass or fail the test based on status of the command
 if [ $status -eq "0" ];

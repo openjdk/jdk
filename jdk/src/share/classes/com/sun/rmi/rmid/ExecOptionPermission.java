@@ -223,7 +223,7 @@ public final class ExecOptionPermission extends Permission
         implements java.io.Serializable
     {
 
-        private Hashtable permissions;
+        private Hashtable<String, Permission> permissions;
         private boolean all_allowed; // true if "*" is in the collection
         private static final long serialVersionUID = -1242475729790124375L;
 
@@ -231,7 +231,7 @@ public final class ExecOptionPermission extends Permission
          * Create an empty ExecOptionPermissionCollection.
          */
         public ExecOptionPermissionCollection() {
-            permissions = new Hashtable(11);
+            permissions = new Hashtable<>(11);
             all_allowed = false;
         }
 
@@ -291,7 +291,7 @@ public final class ExecOptionPermission extends Permission
 
             String pname = p.getName();
 
-            Permission x = (Permission) permissions.get(pname);
+            Permission x = permissions.get(pname);
 
             if (x != null)
                 // we have a direct hit!
@@ -306,7 +306,7 @@ public final class ExecOptionPermission extends Permission
             while ((last = pname.lastIndexOf(".", offset)) != -1) {
 
                 pname = pname.substring(0, last+1) + "*";
-                x = (Permission) permissions.get(pname);
+                x = permissions.get(pname);
 
                 if (x != null) {
                     return x.implies(permission);
@@ -321,7 +321,7 @@ public final class ExecOptionPermission extends Permission
             while ((last = pname.lastIndexOf("=", offset)) != -1) {
 
                 pname = pname.substring(0, last+1) + "*";
-                x = (Permission) permissions.get(pname);
+                x = permissions.get(pname);
 
                 if (x != null) {
                     return x.implies(permission);
@@ -341,7 +341,7 @@ public final class ExecOptionPermission extends Permission
          * @return an enumeration of all the ExecOptionPermission objects.
          */
 
-        public Enumeration elements()
+        public Enumeration<Permission> elements()
         {
             return permissions.elements();
         }

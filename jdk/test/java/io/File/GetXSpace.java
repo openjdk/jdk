@@ -50,7 +50,8 @@ public class GetXSpace {
     private static final String name = System.getProperty("os.name");
     private static final String dfFormat;
     static {
-        if (name.equals("SunOS") || name.equals("Linux")) {
+        if (name.equals("SunOS") || name.equals("Linux")
+                || name.startsWith("Mac OS")) {
             // FileSystem Total Used Available Use% MountedOn
             dfFormat = "([^\\s]+)\\s+(\\d+)\\s+\\d+\\s+(\\d+)\\s+\\d+%\\s+([^\\s]+)";
         } else if (name.startsWith("Windows")) {

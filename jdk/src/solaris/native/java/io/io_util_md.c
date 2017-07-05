@@ -30,13 +30,50 @@
 #include "io_util_md.h"
 #include <string.h>
 
+#ifdef MACOSX
+
+#include <CoreFoundation/CoreFoundation.h>
+
+static inline char *convertToNFD(const char *path, char *buf, size_t bufsize)
+{
+    CFMutableStringRef mutable = CFStringCreateMutable(NULL, 0);
+    CFStringAppendCString(mutable, path, kCFStringEncodingUTF8);
+    CFStringNormalize(mutable, kCFStringNormalizationFormD);
+
+    CFStringGetCString(mutable, buf, bufsize, kCFStringEncodingUTF8);
+
+    CFRelease(mutable);
+    return buf;
+}
+
+/* Converts the path to NFD form if it was in NFC form. Returns a pointer to
+ * the converting string which could be buf (if the converstion took place) or
+ * origPath if no conversion was needed
+ */
+__private_extern__
+char* convertToNFDIfNeeded(const char *origPath, char *buf, size_t bufsize)
+{
+    const char *current = origPath;
+    int c;
+    for (c = *current; c != 0; current++, c = *current) {
+        if (c < 0) {
+            // Need to convert
+            return convertToNFD(origPath, buf, bufsize);
+        }
+    }
+
+    return (char *)origPath;
+}
+
+#endif
+
 void
 fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
 {
     WITH_PLATFORM_STRING(env, path, ps) {
         FD fd;
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
         /* Remove trailing slashes, since the kernel won't */
         char *p = (char *)ps + strlen(ps) - 1;
         while ((p > ps) && (*p == '/'))

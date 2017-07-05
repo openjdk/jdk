@@ -288,6 +288,7 @@ jboolean JNICALL JAWT_GetAWT(JNIEnv* env, JAWT* awt);
 
 #define JAWT_VERSION_1_3 0x00010003
 #define JAWT_VERSION_1_4 0x00010004
+#define JAWT_VERSION_1_7 0x00010007
 
 #ifdef __cplusplus
 } /* extern "C" */

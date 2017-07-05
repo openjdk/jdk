@@ -33,7 +33,9 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
+#if !defined(_ALLBSD_SOURCE)
 #include <alloca.h>
+#endif
 
 
 /* Note: The comments in this file use the terminology

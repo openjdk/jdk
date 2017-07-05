@@ -24,7 +24,7 @@
 # @test
 # @bug 4694076
 # @summary KeyTool throws ArrayIndexOutOfBoundsException for listing
-# 	   SecretKey entries in non-verbose mode.
+#          SecretKey entries in non-verbose mode.
 # @author Valerie Peng
 #
 # @run shell SecretKeyKS.sh
@@ -45,7 +45,7 @@ fi
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     NULL=/dev/null
     PS=":"
     FS="/"

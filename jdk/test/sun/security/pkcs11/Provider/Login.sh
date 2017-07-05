@@ -63,6 +63,12 @@ case "$OS" in
     CP="${FS}bin${FS}cp"
     CHMOD="${FS}bin${FS}chmod"
     ;;
+  Darwin )
+    FS="/"
+    PS=":"
+    CP="${FS}bin${FS}cp"
+    CHMOD="${FS}bin${FS}chmod"
+    ;;
   Windows* )
     FS="\\"
     PS=";"
@@ -96,24 +102,24 @@ ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 # compile test
 
 ${TESTJAVA}${FS}bin${FS}javac \
-	-classpath ${TESTSRC}${FS}.. \
-	-d ${TESTCLASSES} \
-	${TESTSRC}${FS}Login.java
+        -classpath ${TESTSRC}${FS}.. \
+        -d ${TESTCLASSES} \
+        ${TESTSRC}${FS}Login.java
 
 # run test
 
 ${TESTJAVA}${FS}bin${FS}java \
-	-classpath ${TESTCLASSES} \
-	-DCUSTOM_DB_DIR=${TESTCLASSES} \
-	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}Login-nss.txt \
-	-DNO_DEFAULT=true \
-	-DNO_DEIMOS=true \
-	-Dtest.src=${TESTSRC} \
-	-Dtest.classes=${TESTCLASSES} \
-	-Djava.security.manager \
-	-Djava.security.policy=${TESTSRC}${FS}Login.policy \
-	-Djava.security.debug=${DEBUG} \
-	Login
+        -classpath ${TESTCLASSES} \
+        -DCUSTOM_DB_DIR=${TESTCLASSES} \
+        -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}Login-nss.txt \
+        -DNO_DEFAULT=true \
+        -DNO_DEIMOS=true \
+        -Dtest.src=${TESTSRC} \
+        -Dtest.classes=${TESTCLASSES} \
+        -Djava.security.manager \
+        -Djava.security.policy=${TESTSRC}${FS}Login.policy \
+        -Djava.security.debug=${DEBUG} \
+        Login
 
 # save error status
 status=$?

@@ -30,7 +30,7 @@ echo "CLASSPATH=${CLASSPATH}"
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | Darwin )
     PS=":"
     FS="/"
     ;;
@@ -65,10 +65,10 @@ fi
 # copy the test properties file
 COPIED=0
 if [ -w $TESTJAVA ]
-then 
+then
   WRITABLEJDK=$TESTJAVA
 else
-  WRITABLEJDK=.${FS}testjava 
+  WRITABLEJDK=.${FS}testjava
   cp -r $TESTJAVA $WRITABLEJDK
   COPIED=1
 fi

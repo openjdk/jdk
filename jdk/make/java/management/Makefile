@@ -77,6 +77,12 @@ FILES_c     += LinuxOperatingSystem.c
 
 endif # PLATFORM linux
 
+ifeq ($(PLATFORM),macosx)
+
+FILES_c     += MacosxOperatingSystem.c
+
+endif # PLATFORM macosx
+
 endif # PLATFORM
 
 #
