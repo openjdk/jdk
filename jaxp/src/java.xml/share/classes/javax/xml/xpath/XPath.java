@@ -32,7 +32,7 @@ import org.xml.sax.InputSource;
 /**
  * {@code XPath} provides access to the XPath evaluation environment and expressions.
  *
- * <a name="XPath-evaluation"/>
+ * <a name="XPath-evaluation"></a>
  * <table border="1" cellpadding="2">
  *   <thead>
  *     <tr>
@@ -90,7 +90,6 @@ import org.xml.sax.InputSource;
  * more than one thread at any given time, and while the {@code evaluate}
  * method is invoked, applications may not recursively call
  * the {@code evaluate} method.
- * <p>
  *
  * @author  <a href="Norman.Walsh@Sun.com">Norman Walsh</a>
  * @author  <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
@@ -462,7 +461,6 @@ public interface XPath {
      * <pre> {@code
      *     evaluateExpression(expression, item, XPathEvaluationResult.class);
      * }</pre>
-     * <p>
      *
      * @implSpec
      * The default implementation in the XPath API is equivalent to:

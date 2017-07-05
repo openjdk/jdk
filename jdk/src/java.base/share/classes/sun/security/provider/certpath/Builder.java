@@ -102,8 +102,8 @@ public abstract class Builder {
 
     /**
      * Verifies whether the input certificate completes the path.
-     * When building forward, a trust anchor will complete the path.
-     * When building reverse, the target certificate will complete the path.
+     * When building in the forward direction, a trust anchor will
+     * complete the path.
      *
      * @param cert the certificate to test
      * @return a boolean value indicating whether the cert completes the path.

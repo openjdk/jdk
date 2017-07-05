@@ -106,7 +106,7 @@ class MimeTypesFileTypeDetector extends AbstractFileTypeDetector {
             synchronized (this) {
                 if (!loaded) {
                     List<String> lines = AccessController.doPrivileged(
-                        new PrivilegedAction<List<String>>() {
+                        new PrivilegedAction<>() {
                             @Override
                             public List<String> run() {
                                 try {

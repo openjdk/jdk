@@ -49,7 +49,7 @@ import org.xml.sax.SAXException;
  * </blockquote>
  *
  * <p>This class contains static methods for creating an XML reader
- * from an explicit class name, or based on runtime defaults:</p>
+ * from an explicit class name, or based on runtime defaults:
  *
  * <pre>
  * try {
@@ -64,8 +64,8 @@ import org.xml.sax.SAXException;
  * <em>createXMLReader</em> to handle cases where the external
  * configuration mechanisms aren't set up.  That method should do its
  * best to return a parser when one is in the class path, even when
- * nothing bound its class name to <code>org.xml.sax.driver</code> so
- * those configuration mechanisms would see it.</p>
+ * nothing bound its class name to {@code org.xml.sax.driver} so
+ * those configuration mechanisms would see it.
  *
  * @since 1.4, SAX 2.0
  * @author David Megginson, David Brownell
@@ -76,7 +76,7 @@ final public class XMLReaderFactory
     /**
      * Private constructor.
      *
-     * <p>This constructor prevents the class from being instantiated.</p>
+     * <p>This constructor prevents the class from being instantiated.
      */
     private XMLReaderFactory ()
     {
@@ -91,9 +91,10 @@ final public class XMLReaderFactory
      * Attempt to create an XMLReader from system defaults.
      * In environments which can support it, the name of the XMLReader
      * class is determined by trying each these options in order, and
-     * using the first one which succeeds:</p> <ul>
+     * using the first one which succeeds:
+     * <ul>
      *
-     * <li>If the system property <code>org.xml.sax.driver</code>
+     * <li>If the system property {@code org.xml.sax.driver}
      * has a value, that is used as an XMLReader class name. </li>
      *
      * <li>The JAR "Services API" is used to look for a class name
@@ -107,14 +108,13 @@ final public class XMLReaderFactory
      * <li>Finally, if {@link ParserFactory#makeParser()} can
      * return a system default SAX1 parser, that parser is wrapped in
      * a {@link ParserAdapter}.  (This is a migration aid for SAX1
-     * environments, where the <code>org.xml.sax.parser</code> system
+     * environments, where the {@code org.xml.sax.parser} system
      * property will often be usable.) </li>
-     *
      * </ul>
      *
      * <p> In environments such as small embedded systems, which can not
      * support that flexibility, other mechanisms to determine the default
-     * may be used. </p>
+     * may be used.
      *
      * <p>Note that many Java environments allow system properties to be
      * initialized on a command line.  This means that <em>in most cases</em>
@@ -122,7 +122,6 @@ final public class XMLReaderFactory
      * method will succeed, except when security policies intervene.
      * This will also maximize application portability to older SAX
      * environments, with less robust implementations of this method.
-     * </p>
      *
      * @return A new XMLReader.
      * @exception org.xml.sax.SAXException If no default XMLReader class
@@ -204,11 +203,11 @@ final public class XMLReaderFactory
      * Attempt to create an XML reader from a class name.
      *
      * <p>Given a class name, this method attempts to load
-     * and instantiate the class as an XML reader.</p>
+     * and instantiate the class as an XML reader.
      *
      * <p>Note that this method will not be usable in environments where
      * the caller (perhaps an applet) is not permitted to load classes
-     * dynamically.</p>
+     * dynamically.
      *
      * @return A new XML reader.
      * @exception org.xml.sax.SAXException If the class cannot be

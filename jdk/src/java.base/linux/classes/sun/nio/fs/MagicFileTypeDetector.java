@@ -68,7 +68,7 @@ class MagicFileTypeDetector extends AbstractFileTypeDetector {
     private static native byte[] probe0(long pathAddress);
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
                 System.loadLibrary("nio");
