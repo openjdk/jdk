@@ -265,6 +265,25 @@ public class ModulePoolImpl implements ModulePool {
     }
 
     /**
+     * Get the ModuleEntry for the passed path restricted to supplied context.
+     *
+     * @param path A data path
+     * @param context A context of the search
+     * @return A ModuleEntry instance or null if the data is not found
+     */
+    @Override
+    public Optional<ModuleEntry> findEntryInContext(String path, ModuleEntry context) {
+        Objects.requireNonNull(path);
+        Objects.requireNonNull(context);
+        LinkModule module = modules.get(context.getModule());
+        Objects.requireNonNull(module);
+        Optional<ModuleEntry> entry = module.findEntry(path);
+        // Navigating other modules via requires and exports is problematic
+        // since we cannot construct the runtime model of loaders and layers.
+        return entry;
+     }
+
+    /**
      * Check if the ModulePool contains the given ModuleEntry.
      *
      * @param data The module data to check existence for.

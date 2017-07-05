@@ -409,6 +409,8 @@ jdk.jconsole_CLEAN_FILES := $(wildcard \
 
 ################################################################################
 
+jdk.jdeps_COPY := .txt
+
 jdk.jdeps_CLEAN_FILES := $(wildcard \
     $(JDK_TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/jdeps/resources/*.properties \
     $(JDK_TOPDIR)/src/jdk.jdeps/share/classes/com/sun/tools/javap/resources/*.properties)
