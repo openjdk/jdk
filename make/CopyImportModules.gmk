@@ -41,14 +41,14 @@ ifneq ($(LIBS_DIR), )
   ifeq ($(OPENJDK_TARGET_OS), windows)
     TO_BIN_FILTER := %$(SHARED_LIBRARY_SUFFIX) %.diz %.pdb %.map
 
-    $(eval $(call SetupCopyFiles,COPY_LIBS_TO_BIN, \
+    $(eval $(call SetupCopyFiles, COPY_LIBS_TO_BIN, \
         SRC := $(LIBS_DIR), \
         DEST := $(JDK_OUTPUTDIR)/bin, \
         FILES := $(filter $(TO_BIN_FILTER), \
             $(call CacheFind, $(LIBS_DIR))) \
     ))
 
-    $(eval $(call SetupCopyFiles,COPY_LIBS_TO_LIB, \
+    $(eval $(call SetupCopyFiles, COPY_LIBS_TO_LIB, \
         SRC := $(LIBS_DIR), \
         DEST := $(JDK_OUTPUTDIR)/lib, \
         FILES := $(filter-out $(TO_BIN_FILTER), \
