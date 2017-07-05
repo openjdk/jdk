@@ -34,16 +34,32 @@
 // A PackageEntry basically represents a Java package.  It contains:
 //   - Symbol* containing the package's name.
 //   - ModuleEntry* for this package's containing module.
-//   - a flag indicating if package is exported, either qualifiedly or
-//     unqualifiedly.
+//   - a flag indicating if package is exported unqualifiedly
 //   - a flag indicating if this package is exported to all unnamed modules.
 //   - a growable array containing other module entries that this
 //     package is exported to.
 //
-// Packages that are:
-//   - not exported:        _qualified_exports = NULL  && _is_exported is false
-//   - qualified exports:   (_qualified_exports != NULL || _is_exported_allUnnamed is true) && _is_exported is true
-//   - unqualified exports: (_qualified_exports = NULL && _is_exported_allUnnamed is false) && _is_exported is true
+// Packages can be exported in the following 3 ways:
+//   - not exported:        the package has not been explicitly qualified to a
+//                            particular module nor has it been specified to be
+//                            unqualifiedly exported to all modules. If all states
+//                            of exportedness are false, the package is considered
+//                            not exported.
+//   - qualified exports:   the package has been explicitly qualified to at least
+//                            one particular module or has been qualifiedly exported
+//                            to all unnamed modules.
+//                            Note: _is_exported_allUnnamed is a form of a qualified
+//                            export. It is equivalent to the package being
+//                            explicitly exported to all current and future unnamed modules.
+//   - unqualified exports: the package is exported to all modules.
+//
+// A package can transition from:
+//   - being not exported, to being exported either in a qualified or unqualified manner
+//   - being qualifiedly exported, to unqualifiedly exported. Its exported scope is widened.
+//
+// A package cannot transition from:
+//   - being unqualifiedly exported, to exported qualifiedly to a specific module.
+//       This transition attempt is silently ignored in set_exported.
 //
 // The Mutex Module_lock is shared between ModuleEntry and PackageEntry, to lock either
 // data structure.
@@ -55,7 +71,7 @@ private:
   // loaded by the boot loader from -Xbootclasspath/a in an unnamed module, it
   // indicates from which class path entry.
   s2 _classpath_index;
-  bool _is_exported;
+  bool _is_exported_unqualified;
   bool _is_exported_allUnnamed;
   GrowableArray<ModuleEntry*>* _exported_pending_delete; // transitioned from qualified to unqualified, delete at safepoint
   GrowableArray<ModuleEntry*>* _qualified_exports;
@@ -68,7 +84,7 @@ public:
   void init() {
     _module = NULL;
     _classpath_index = -1;
-    _is_exported = false;
+    _is_exported_unqualified = false;
     _is_exported_allUnnamed = false;
     _exported_pending_delete = NULL;
     _qualified_exports = NULL;
@@ -83,34 +99,41 @@ public:
   void               set_module(ModuleEntry* m) { _module = m; }
 
   // package's export state
-  bool is_exported() const { return _is_exported; } // qualifiedly or unqualifiedly exported
+  bool is_exported() const { // qualifiedly or unqualifiedly exported
+      return (is_unqual_exported() || has_qual_exports_list() || is_exported_allUnnamed());
+  }
+  // Returns true if the package has any explicit qualified exports or is exported to all unnamed
   bool is_qual_exported() const {
-    return (_is_exported && (_qualified_exports != NULL || _is_exported_allUnnamed));
+    return (has_qual_exports_list() || is_exported_allUnnamed());
+  }
+  // Returns true if there are any explicit qualified exports
+  bool has_qual_exports_list() const {
+    assert(!(_qualified_exports != NULL && _is_exported_unqualified),
+           "_qualified_exports set at same time as _is_exported_unqualified");
+    return (_qualified_exports != NULL);
+  }
+  bool is_exported_allUnnamed() const {
+    assert(!(_is_exported_allUnnamed && _is_exported_unqualified),
+           "_is_exported_allUnnamed set at same time as _is_exported_unqualified");
+    return _is_exported_allUnnamed;
   }
   bool is_unqual_exported() const {
-    return (_is_exported && (_qualified_exports == NULL && !_is_exported_allUnnamed));
+    assert(!(_qualified_exports != NULL && _is_exported_unqualified),
+           "_qualified_exports set at same time as _is_exported_unqualified");
+    assert(!(_is_exported_allUnnamed && _is_exported_unqualified),
+           "_is_exported_allUnnamed set at same time as _is_exported_unqualified");
+    return _is_exported_unqualified;
   }
   void set_unqual_exported() {
-    _is_exported = true;
+    _is_exported_unqualified = true;
     _is_exported_allUnnamed = false;
     _qualified_exports = NULL;
   }
   bool exported_pending_delete() const     { return (_exported_pending_delete != NULL); }
 
-  void set_exported(bool e)                { _is_exported = e; }
   void set_exported(ModuleEntry* m);
 
-  void set_is_exported_allUnnamed() {
-    if (!is_unqual_exported()) {
-     _is_exported_allUnnamed = true;
-     _is_exported = true;
-    }
-  }
-  bool is_exported_allUnnamed() const {
-    assert(_is_exported || !_is_exported_allUnnamed,
-           "is_allUnnamed set without is_exported being set");
-    return _is_exported_allUnnamed;
-  }
+  void set_is_exported_allUnnamed();
 
   void set_classpath_index(s2 classpath_index) {
     _classpath_index = classpath_index;
@@ -122,7 +145,7 @@ public:
   // returns true if the package is defined in the unnamed module
   bool in_unnamed_module() const  { return !_module->is_named(); }
 
-  // returns true if the package specifies m as a qualified export
+  // returns true if the package specifies m as a qualified export, including through an unnamed export
   bool is_qexported_to(ModuleEntry* m) const;
 
   // add the module to the package's qualified exports

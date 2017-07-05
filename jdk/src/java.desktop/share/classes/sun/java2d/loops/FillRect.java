@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,6 @@
 package sun.java2d.loops;
 
 import sun.java2d.loops.GraphicsPrimitive;
-import java.awt.Color;
-import java.awt.image.ColorModel;
-import java.awt.image.Raster;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 

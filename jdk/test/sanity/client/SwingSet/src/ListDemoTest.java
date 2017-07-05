@@ -21,17 +21,25 @@
  * questions.
  */
 
-import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.list.ListDemo;
 import static com.sun.swingset3.demos.list.ListDemo.DEMO_TITLE;
-import static org.testng.AssertJUnit.*;
-import org.testng.annotations.Test;
-import static org.jemmy2ext.JemmyExt.getLabeledContainerOperator;
+
+import java.awt.Component;
+import javax.swing.JList;
+
 import org.netbeans.jemmy.ClassReference;
+import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.operators.JCheckBoxOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JListOperator;
+
+import static org.jemmy2ext.JemmyExt.*;
+
+import org.jtregext.GuiTestListener;
+
 import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+import static org.testng.AssertJUnit.*;
 
 /*
  * @test
@@ -43,6 +51,8 @@ import org.testng.annotations.Listeners;
  * @library /sanity/client/lib/jemmy/src
  * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
+ * @modules java.desktop
+ *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.list.ListDemo
  * @run testng ListDemoTest
@@ -51,6 +61,17 @@ import org.testng.annotations.Listeners;
 public class ListDemoTest {
 
     private static final int CHECKBOX_COUNT = 50;
+
+    private void waitModelSize(JListOperator listOp, int size) {
+        listOp.waitState(new ComponentChooser() {
+            public boolean checkComponent(Component comp) {
+                return getUIValue(listOp, (JList list) -> list.getModel().getSize()) == size;
+            }
+            public String getDescription() {
+                return "Model size to be equal to " + size;
+            }
+        });
+    }
 
     @Test
     public void test() throws Exception {
@@ -65,16 +86,14 @@ public class ListDemoTest {
             JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
             checkBox.changeSelection(false);
         }
-        System.out.println("######## Number of Items = " + listOp.getModel().getSize());
-        assertEquals("Select None number of items is correct", 0, listOp.getModel().getSize());
+        waitModelSize(listOp, 0);
 
         // Check *ALL* Prefix and Suffixes Marked
         for (int i = 0; i < CHECKBOX_COUNT; i++) {
             JCheckBoxOperator checkBox = getJCheckBoxOperator(frame, i);
             checkBox.changeSelection(true);
         }
-        System.out.println("######## Number of Items = " + listOp.getModel().getSize());
-        assertEquals("Select All number of items is correct", CHECKBOX_COUNT / 2 * CHECKBOX_COUNT / 2, listOp.getModel().getSize());
+        waitModelSize(listOp, CHECKBOX_COUNT * CHECKBOX_COUNT / 4);
 
         // Check *ALL* Prefix and *NO* Suffixes Marked
         for (int i = 0; i < CHECKBOX_COUNT; i++) {
@@ -85,8 +104,7 @@ public class ListDemoTest {
                 checkBox.changeSelection(false);
             }
         }
-        System.out.println("######## Number of Items = " + listOp.getModel().getSize());
-        assertEquals("Select All Prefixes and NO Suffixes number of items is correct", 0, listOp.getModel().getSize());
+        waitModelSize(listOp, 0);
 
         // Check *NO* Prefix and *ALL* Suffixes Marked
         for (int i = 0; i < CHECKBOX_COUNT; i++) {
@@ -97,8 +115,7 @@ public class ListDemoTest {
                 checkBox.changeSelection(true);
             }
         }
-        System.out.println("######## Number of Items = " + listOp.getModel().getSize());
-        assertEquals("Select NO Prefixes and All Suffixes number of items is correct", 0, listOp.getModel().getSize());
+        waitModelSize(listOp, 0);
     }
 
     private JCheckBoxOperator getJCheckBoxOperator(JFrameOperator frame, int index) {
@@ -115,7 +132,9 @@ public class ListDemoTest {
             subindex = index - CHECKBOX_COUNT / 2;
         }
 
-        return new JCheckBoxOperator(getLabeledContainerOperator(frame, labelText), subindex);
+        JCheckBoxOperator result = new JCheckBoxOperator(getLabeledContainerOperator(frame, labelText), subindex);
+        result.setVerification(true);
+        return result;
     }
 
 }

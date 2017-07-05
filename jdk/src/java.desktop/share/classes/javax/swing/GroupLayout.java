@@ -718,10 +718,10 @@ public class GroupLayout implements LayoutManager2 {
      * <p>
      * Linked {@code Component}s are not be resizable.
      *
-     * @param components the {@code Component}s that are to have the same size
      * @param axis the axis to link the size along; one of
      *             {@code SwingConstants.HORIZONTAL} or
-     *             {@code SwingConstans.VERTICAL}
+     *             {@code SwingConstants.VERTICAL}
+     * @param components the {@code Component}s that are to have the same size
      * @throws IllegalArgumentException if {@code components} is
      *         {@code null}, or contains {@code null}; or {@code axis}
      *          is not {@code SwingConstants.HORIZONTAL} or
