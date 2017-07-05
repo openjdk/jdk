@@ -50,7 +50,8 @@ IncludeDBs_gc= $(WorkSpace)/src/share/vm/includeDB_gc_parallel \
            $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_parallelScavenge \
            $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_shared \
            $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_parNew \
-           $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_concurrentMarkSweep
+           $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_concurrentMarkSweep \
+           $(WorkSpace)/src/share/vm/gc_implementation/includeDB_gc_g1
 
 IncludeDBs_core=$(IncludeDBs_base) $(IncludeDBs_gc) \
                 $(WorkSpace)/src/share/vm/includeDB_features

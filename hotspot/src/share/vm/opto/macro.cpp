@@ -944,25 +944,7 @@ void PhaseMacroExpand::expand_allocate_common(
     mem = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
   }
 
-  Node* eden_top_adr;
-  Node* eden_end_adr;
-  set_eden_pointers(eden_top_adr, eden_end_adr);
-
-  uint raw_idx = C->get_alias_index(TypeRawPtr::BOTTOM);
   assert(ctrl != NULL, "must have control");
-
-  // Load Eden::end.  Loop invariant and hoisted.
-  //
-  // Note: We set the control input on "eden_end" and "old_eden_top" when using
-  //       a TLAB to work around a bug where these values were being moved across
-  //       a safepoint.  These are not oops, so they cannot be include in the oop
-  //       map, but the can be changed by a GC.   The proper way to fix this would
-  //       be to set the raw memory state when generating a  SafepointNode.  However
-  //       this will require extensive changes to the loop optimization in order to
-  //       prevent a degradation of the optimization.
-  //       See comment in memnode.hpp, around line 227 in class LoadPNode.
-  Node* eden_end = make_load(ctrl, mem, eden_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
-
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
   enum { slow_result_path = 1, fast_result_path = 2 };
@@ -982,11 +964,14 @@ void PhaseMacroExpand::expand_allocate_common(
     initial_slow_test = BoolNode::make_predicate(initial_slow_test, &_igvn);
   }
 
-  if (DTraceAllocProbes) {
+  if (DTraceAllocProbes ||
+      !UseTLAB && (!Universe::heap()->supports_inline_contig_alloc() ||
+                   (UseConcMarkSweepGC && CMSIncrementalMode))) {
     // Force slow-path allocation
     always_slow = true;
     initial_slow_test = NULL;
   }
+
 
   enum { too_big_or_final_path = 1, need_gc_path = 2 };
   Node *slow_region = NULL;
@@ -1016,6 +1001,23 @@ void PhaseMacroExpand::expand_allocate_common(
   Node *slow_mem = mem;  // save the current memory state for slow path
   // generate the fast allocation code unless we know that the initial test will always go slow
   if (!always_slow) {
+    Node* eden_top_adr;
+    Node* eden_end_adr;
+
+    set_eden_pointers(eden_top_adr, eden_end_adr);
+
+    // Load Eden::end.  Loop invariant and hoisted.
+    //
+    // Note: We set the control input on "eden_end" and "old_eden_top" when using
+    //       a TLAB to work around a bug where these values were being moved across
+    //       a safepoint.  These are not oops, so they cannot be include in the oop
+    //       map, but the can be changed by a GC.   The proper way to fix this would
+    //       be to set the raw memory state when generating a  SafepointNode.  However
+    //       this will require extensive changes to the loop optimization in order to
+    //       prevent a degradation of the optimization.
+    //       See comment in memnode.hpp, around line 227 in class LoadPNode.
+    Node *eden_end = make_load(ctrl, mem, eden_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+
     // allocate the Region and Phi nodes for the result
     result_region = new (C, 3) RegionNode(3);
     result_phi_rawmem = new (C, 3) PhiNode( result_region, Type::MEMORY, TypeRawPtr::BOTTOM );

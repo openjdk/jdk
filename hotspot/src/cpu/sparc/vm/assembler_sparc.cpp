@@ -130,6 +130,20 @@ int AbstractAssembler::code_fill_byte() {
   return 0x00;                  // illegal instruction 0x00000000
 }
 
+Assembler::Condition Assembler::reg_cond_to_cc_cond(Assembler::RCondition in) {
+  switch (in) {
+  case rc_z:   return equal;
+  case rc_lez: return lessEqual;
+  case rc_lz:  return less;
+  case rc_nz:  return notEqual;
+  case rc_gz:  return greater;
+  case rc_gez: return greaterEqual;
+  default:
+    ShouldNotReachHere();
+  }
+  return equal;
+}
+
 // Generate a bunch 'o stuff (including v9's
 #ifndef PRODUCT
 void Assembler::test_v9() {
@@ -1213,29 +1227,17 @@ void MacroAssembler::set_vm_result(Register oop_result) {
 }
 
 
-void MacroAssembler::store_check(Register tmp, Register obj) {
-  // Use two shifts to clear out those low order two bits! (Cannot opt. into 1.)
-
-  /* $$$ This stuff needs to go into one of the BarrierSet generator
-     functions.  (The particular barrier sets will have to be friends of
-     MacroAssembler, I guess.) */
-  BarrierSet* bs = Universe::heap()->barrier_set();
-  assert(bs->kind() == BarrierSet::CardTableModRef, "Wrong barrier set kind");
-  CardTableModRefBS* ct = (CardTableModRefBS*)bs;
-  assert(sizeof(*ct->byte_map_base) == sizeof(jbyte), "adjust this code");
+void MacroAssembler::card_table_write(jbyte* byte_map_base,
+                                      Register tmp, Register obj) {
 #ifdef _LP64
   srlx(obj, CardTableModRefBS::card_shift, obj);
 #else
   srl(obj, CardTableModRefBS::card_shift, obj);
 #endif
   assert( tmp != obj, "need separate temp reg");
-  Address rs(tmp, (address)ct->byte_map_base);
+  Address rs(tmp, (address)byte_map_base);
   load_address(rs);
   stb(G0, rs.base(), obj);
-}
-
-void MacroAssembler::store_check(Register tmp, Register obj, Register offset) {
-  store_check(tmp, obj);
 }
 
 // %%% Note:  The following six instructions have been moved,
@@ -1663,11 +1665,21 @@ void MacroAssembler::_verify_oop(Register reg, const char* msg, const char * fil
 
   if (reg == G0)  return;       // always NULL, which is always an oop
 
-  char buffer[16];
+  char buffer[64];
+#ifdef COMPILER1
+  if (CommentedAssembly) {
+    snprintf(buffer, sizeof(buffer), "verify_oop at %d", offset());
+    block_comment(buffer);
+  }
+#endif
+
+  int len = strlen(file) + strlen(msg) + 1 + 4;
   sprintf(buffer, "%d", line);
-  int len = strlen(file) + strlen(msg) + 1 + 4 + strlen(buffer);
+  len += strlen(buffer);
+  sprintf(buffer, " at offset %d ", offset());
+  len += strlen(buffer);
   char * real_msg = new char[len];
-  sprintf(real_msg, "%s (%s:%d)", msg, file, line);
+  sprintf(real_msg, "%s%s(%s:%d)", msg, buffer, file, line);
 
   // Call indirectly to solve generation ordering problem
   Address a(O7, (address)StubRoutines::verify_oop_subroutine_entry_address());
@@ -2057,6 +2069,27 @@ void MacroAssembler::br_notnull( Register s1, bool a, Predict p, Label& L ) {
   tst(s1);
   br ( notZero, a, p, L );
 #endif
+}
+
+void MacroAssembler::br_on_reg_cond( RCondition rc, bool a, Predict p,
+                                     Register s1, address d,
+                                     relocInfo::relocType rt ) {
+  if (VM_Version::v9_instructions_work()) {
+    bpr(rc, a, p, s1, d, rt);
+  } else {
+    tst(s1);
+    br(reg_cond_to_cc_cond(rc), a, p, d, rt);
+  }
+}
+
+void MacroAssembler::br_on_reg_cond( RCondition rc, bool a, Predict p,
+                                     Register s1, Label& L ) {
+  if (VM_Version::v9_instructions_work()) {
+    bpr(rc, a, p, s1, L);
+  } else {
+    tst(s1);
+    br(reg_cond_to_cc_cond(rc), a, p, L);
+  }
 }
 
 
@@ -3241,68 +3274,74 @@ void MacroAssembler::eden_allocate(
   assert(0 <= con_size_in_bytes && Assembler::is_simm13(con_size_in_bytes), "illegal object size");
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0, "object size is not multiple of alignment");
 
-  // get eden boundaries
-  // note: we need both top & top_addr!
-  const Register top_addr = t1;
-  const Register end      = t2;
-
-  CollectedHeap* ch = Universe::heap();
-  set((intx)ch->top_addr(), top_addr);
-  intx delta = (intx)ch->end_addr() - (intx)ch->top_addr();
-  ld_ptr(top_addr, delta, end);
-  ld_ptr(top_addr, 0, obj);
-
-  // try to allocate
-  Label retry;
-  bind(retry);
-#ifdef ASSERT
-  // make sure eden top is properly aligned
-  {
-    Label L;
-    btst(MinObjAlignmentInBytesMask, obj);
-    br(Assembler::zero, false, Assembler::pt, L);
+  if (CMSIncrementalMode || !Universe::heap()->supports_inline_contig_alloc()) {
+    // No allocation in the shared eden.
+    br(Assembler::always, false, Assembler::pt, slow_case);
     delayed()->nop();
-    stop("eden top is not properly aligned");
-    bind(L);
-  }
-#endif // ASSERT
-  const Register free = end;
-  sub(end, obj, free);                                   // compute amount of free space
-  if (var_size_in_bytes->is_valid()) {
-    // size is unknown at compile time
-    cmp(free, var_size_in_bytes);
-    br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
-    delayed()->add(obj, var_size_in_bytes, end);
   } else {
-    // size is known at compile time
-    cmp(free, con_size_in_bytes);
-    br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
-    delayed()->add(obj, con_size_in_bytes, end);
-  }
-  // Compare obj with the value at top_addr; if still equal, swap the value of
-  // end with the value at top_addr. If not equal, read the value at top_addr
-  // into end.
-  casx_under_lock(top_addr, obj, end, (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
-  // if someone beat us on the allocation, try again, otherwise continue
-  cmp(obj, end);
-  brx(Assembler::notEqual, false, Assembler::pn, retry);
-  delayed()->mov(end, obj);                              // nop if successfull since obj == end
+    // get eden boundaries
+    // note: we need both top & top_addr!
+    const Register top_addr = t1;
+    const Register end      = t2;
+
+    CollectedHeap* ch = Universe::heap();
+    set((intx)ch->top_addr(), top_addr);
+    intx delta = (intx)ch->end_addr() - (intx)ch->top_addr();
+    ld_ptr(top_addr, delta, end);
+    ld_ptr(top_addr, 0, obj);
+
+    // try to allocate
+    Label retry;
+    bind(retry);
+#ifdef ASSERT
+    // make sure eden top is properly aligned
+    {
+      Label L;
+      btst(MinObjAlignmentInBytesMask, obj);
+      br(Assembler::zero, false, Assembler::pt, L);
+      delayed()->nop();
+      stop("eden top is not properly aligned");
+      bind(L);
+    }
+#endif // ASSERT
+    const Register free = end;
+    sub(end, obj, free);                                   // compute amount of free space
+    if (var_size_in_bytes->is_valid()) {
+      // size is unknown at compile time
+      cmp(free, var_size_in_bytes);
+      br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
+      delayed()->add(obj, var_size_in_bytes, end);
+    } else {
+      // size is known at compile time
+      cmp(free, con_size_in_bytes);
+      br(Assembler::lessUnsigned, false, Assembler::pn, slow_case); // if there is not enough space go the slow case
+      delayed()->add(obj, con_size_in_bytes, end);
+    }
+    // Compare obj with the value at top_addr; if still equal, swap the value of
+    // end with the value at top_addr. If not equal, read the value at top_addr
+    // into end.
+    casx_under_lock(top_addr, obj, end, (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr());
+    // if someone beat us on the allocation, try again, otherwise continue
+    cmp(obj, end);
+    brx(Assembler::notEqual, false, Assembler::pn, retry);
+    delayed()->mov(end, obj);                              // nop if successfull since obj == end
 
 #ifdef ASSERT
-  // make sure eden top is properly aligned
-  {
-    Label L;
-    const Register top_addr = t1;
+    // make sure eden top is properly aligned
+    {
+      Label L;
+      const Register top_addr = t1;
 
-    set((intx)ch->top_addr(), top_addr);
-    ld_ptr(top_addr, 0, top_addr);
-    btst(MinObjAlignmentInBytesMask, top_addr);
-    br(Assembler::zero, false, Assembler::pt, L);
-    delayed()->nop();
-    stop("eden top is not properly aligned");
-    bind(L);
-  }
+      set((intx)ch->top_addr(), top_addr);
+      ld_ptr(top_addr, 0, top_addr);
+      btst(MinObjAlignmentInBytesMask, top_addr);
+      br(Assembler::zero, false, Assembler::pt, L);
+      delayed()->nop();
+      stop("eden top is not properly aligned");
+      bind(L);
+    }
 #endif // ASSERT
+  }
 }
 
 
@@ -3552,6 +3591,468 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
     set((-i*offset)+STACK_BIAS, Rscratch);
     st(G0, Rtsp, Rscratch);
   }
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+#ifndef SERIALGC
+
+static uint num_stores = 0;
+static uint num_null_pre_stores = 0;
+
+static void count_null_pre_vals(void* pre_val) {
+  num_stores++;
+  if (pre_val == NULL) num_null_pre_stores++;
+  if ((num_stores % 1000000) == 0) {
+    tty->print_cr(UINT32_FORMAT " stores, " UINT32_FORMAT " (%5.2f%%) with null pre-vals.",
+                  num_stores, num_null_pre_stores,
+                  100.0*(float)num_null_pre_stores/(float)num_stores);
+  }
+}
+
+static address satb_log_enqueue_with_frame = 0;
+static u_char* satb_log_enqueue_with_frame_end = 0;
+
+static address satb_log_enqueue_frameless = 0;
+static u_char* satb_log_enqueue_frameless_end = 0;
+
+static int EnqueueCodeSize = 128 DEBUG_ONLY( + 256); // Instructions?
+
+// The calls to this don't work.  We'd need to do a fair amount of work to
+// make it work.
+static void check_index(int ind) {
+  assert(0 <= ind && ind <= 64*K && ((ind % oopSize) == 0),
+         "Invariants.")
+}
+
+static void generate_satb_log_enqueue(bool with_frame) {
+  BufferBlob* bb = BufferBlob::create("enqueue_with_frame", EnqueueCodeSize);
+  CodeBuffer buf(bb->instructions_begin(), bb->instructions_size());
+  MacroAssembler masm(&buf);
+  address start = masm.pc();
+  Register pre_val;
+
+  Label refill, restart;
+  if (with_frame) {
+    masm.save_frame(0);
+    pre_val = I0;  // Was O0 before the save.
+  } else {
+    pre_val = O0;
+  }
+  int satb_q_index_byte_offset =
+    in_bytes(JavaThread::satb_mark_queue_offset() +
+             PtrQueue::byte_offset_of_index());
+  int satb_q_buf_byte_offset =
+    in_bytes(JavaThread::satb_mark_queue_offset() +
+             PtrQueue::byte_offset_of_buf());
+  assert(in_bytes(PtrQueue::byte_width_of_index()) == sizeof(intptr_t) &&
+         in_bytes(PtrQueue::byte_width_of_buf()) == sizeof(intptr_t),
+         "check sizes in assembly below");
+
+  masm.bind(restart);
+  masm.ld_ptr(G2_thread, satb_q_index_byte_offset, L0);
+
+  masm.br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn, L0, refill);
+  // If the branch is taken, no harm in executing this in the delay slot.
+  masm.delayed()->ld_ptr(G2_thread, satb_q_buf_byte_offset, L1);
+  masm.sub(L0, oopSize, L0);
+
+  masm.st_ptr(pre_val, L1, L0);  // [_buf + index] := I0
+  if (!with_frame) {
+    // Use return-from-leaf
+    masm.retl();
+    masm.delayed()->st_ptr(L0, G2_thread, satb_q_index_byte_offset);
+  } else {
+    // Not delayed.
+    masm.st_ptr(L0, G2_thread, satb_q_index_byte_offset);
+  }
+  if (with_frame) {
+    masm.ret();
+    masm.delayed()->restore();
+  }
+  masm.bind(refill);
+
+  address handle_zero =
+    CAST_FROM_FN_PTR(address,
+                     &SATBMarkQueueSet::handle_zero_index_for_thread);
+  // This should be rare enough that we can afford to save all the
+  // scratch registers that the calling context might be using.
+  masm.mov(G1_scratch, L0);
+  masm.mov(G3_scratch, L1);
+  masm.mov(G4, L2);
+  // We need the value of O0 above (for the write into the buffer), so we
+  // save and restore it.
+  masm.mov(O0, L3);
+  // Since the call will overwrite O7, we save and restore that, as well.
+  masm.mov(O7, L4);
+  masm.call_VM_leaf(L5, handle_zero, G2_thread);
+  masm.mov(L0, G1_scratch);
+  masm.mov(L1, G3_scratch);
+  masm.mov(L2, G4);
+  masm.mov(L3, O0);
+  masm.br(Assembler::always, /*annul*/false, Assembler::pt, restart);
+  masm.delayed()->mov(L4, O7);
+
+  if (with_frame) {
+    satb_log_enqueue_with_frame = start;
+    satb_log_enqueue_with_frame_end = masm.pc();
+  } else {
+    satb_log_enqueue_frameless = start;
+    satb_log_enqueue_frameless_end = masm.pc();
+  }
+}
+
+static inline void generate_satb_log_enqueue_if_necessary(bool with_frame) {
+  if (with_frame) {
+    if (satb_log_enqueue_with_frame == 0) {
+      generate_satb_log_enqueue(with_frame);
+      assert(satb_log_enqueue_with_frame != 0, "postcondition.");
+      if (G1SATBPrintStubs) {
+        tty->print_cr("Generated with-frame satb enqueue:");
+        Disassembler::decode((u_char*)satb_log_enqueue_with_frame,
+                             satb_log_enqueue_with_frame_end,
+                             tty);
+      }
+    }
+  } else {
+    if (satb_log_enqueue_frameless == 0) {
+      generate_satb_log_enqueue(with_frame);
+      assert(satb_log_enqueue_frameless != 0, "postcondition.");
+      if (G1SATBPrintStubs) {
+        tty->print_cr("Generated frameless satb enqueue:");
+        Disassembler::decode((u_char*)satb_log_enqueue_frameless,
+                             satb_log_enqueue_frameless_end,
+                             tty);
+      }
+    }
+  }
+}
+
+void MacroAssembler::g1_write_barrier_pre(Register obj, Register index, int offset, Register tmp, bool preserve_o_regs) {
+  assert(offset == 0 || index == noreg, "choose one");
+
+  if (G1DisablePreBarrier) return;
+  // satb_log_barrier(tmp, obj, offset, preserve_o_regs);
+  Label filtered;
+  // satb_log_barrier_work0(tmp, filtered);
+  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+    ld(G2,
+       in_bytes(JavaThread::satb_mark_queue_offset() +
+                PtrQueue::byte_offset_of_active()),
+       tmp);
+  } else {
+    guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1,
+              "Assumption");
+    ldsb(G2,
+         in_bytes(JavaThread::satb_mark_queue_offset() +
+                  PtrQueue::byte_offset_of_active()),
+         tmp);
+  }
+  // Check on whether to annul.
+  br_on_reg_cond(rc_z, /*annul*/false, Assembler::pt, tmp, filtered);
+  delayed() -> nop();
+
+  // satb_log_barrier_work1(tmp, offset);
+  if (index == noreg) {
+    if (Assembler::is_simm13(offset)) {
+      ld_ptr(obj, offset, tmp);
+    } else {
+      set(offset, tmp);
+      ld_ptr(obj, tmp, tmp);
+    }
+  } else {
+    ld_ptr(obj, index, tmp);
+  }
+
+  // satb_log_barrier_work2(obj, tmp, offset);
+
+  // satb_log_barrier_work3(tmp, filtered, preserve_o_regs);
+
+  const Register pre_val = tmp;
+
+  if (G1SATBBarrierPrintNullPreVals) {
+    save_frame(0);
+    mov(pre_val, O0);
+    // Save G-regs that target may use.
+    mov(G1, L1);
+    mov(G2, L2);
+    mov(G3, L3);
+    mov(G4, L4);
+    mov(G5, L5);
+    call(CAST_FROM_FN_PTR(address, &count_null_pre_vals));
+    delayed()->nop();
+    // Restore G-regs that target may have used.
+    mov(L1, G1);
+    mov(L2, G2);
+    mov(L3, G3);
+    mov(L4, G4);
+    mov(L5, G5);
+    restore(G0, G0, G0);
+  }
+
+  // Check on whether to annul.
+  br_on_reg_cond(rc_z, /*annul*/false, Assembler::pt, pre_val, filtered);
+  delayed() -> nop();
+
+  // OK, it's not filtered, so we'll need to call enqueue.  In the normal
+  // case, pre_val will be a scratch G-reg, but there's some cases in which
+  // it's an O-reg.  In the first case, do a normal call.  In the latter,
+  // do a save here and call the frameless version.
+
+  guarantee(pre_val->is_global() || pre_val->is_out(),
+            "Or we need to think harder.");
+  if (pre_val->is_global() && !preserve_o_regs) {
+    generate_satb_log_enqueue_if_necessary(true); // with frame.
+    call(satb_log_enqueue_with_frame);
+    delayed()->mov(pre_val, O0);
+  } else {
+    generate_satb_log_enqueue_if_necessary(false); // with frameless.
+    save_frame(0);
+    call(satb_log_enqueue_frameless);
+    delayed()->mov(pre_val->after_save(), O0);
+    restore();
+  }
+
+  bind(filtered);
+}
+
+static jint num_ct_writes = 0;
+static jint num_ct_writes_filtered_in_hr = 0;
+static jint num_ct_writes_filtered_null = 0;
+static jint num_ct_writes_filtered_pop = 0;
+static G1CollectedHeap* g1 = NULL;
+
+static Thread* count_ct_writes(void* filter_val, void* new_val) {
+  Atomic::inc(&num_ct_writes);
+  if (filter_val == NULL) {
+    Atomic::inc(&num_ct_writes_filtered_in_hr);
+  } else if (new_val == NULL) {
+    Atomic::inc(&num_ct_writes_filtered_null);
+  } else {
+    if (g1 == NULL) {
+      g1 = G1CollectedHeap::heap();
+    }
+    if ((HeapWord*)new_val < g1->popular_object_boundary()) {
+      Atomic::inc(&num_ct_writes_filtered_pop);
+    }
+  }
+  if ((num_ct_writes % 1000000) == 0) {
+    jint num_ct_writes_filtered =
+      num_ct_writes_filtered_in_hr +
+      num_ct_writes_filtered_null +
+      num_ct_writes_filtered_pop;
+
+    tty->print_cr("%d potential CT writes: %5.2f%% filtered\n"
+                  "   (%5.2f%% intra-HR, %5.2f%% null, %5.2f%% popular).",
+                  num_ct_writes,
+                  100.0*(float)num_ct_writes_filtered/(float)num_ct_writes,
+                  100.0*(float)num_ct_writes_filtered_in_hr/
+                  (float)num_ct_writes,
+                  100.0*(float)num_ct_writes_filtered_null/
+                  (float)num_ct_writes,
+                  100.0*(float)num_ct_writes_filtered_pop/
+                  (float)num_ct_writes);
+  }
+  return Thread::current();
+}
+
+static address dirty_card_log_enqueue = 0;
+static u_char* dirty_card_log_enqueue_end = 0;
+
+// This gets to assume that o0 contains the object address.
+static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
+  BufferBlob* bb = BufferBlob::create("dirty_card_enqueue", EnqueueCodeSize*2);
+  CodeBuffer buf(bb->instructions_begin(), bb->instructions_size());
+  MacroAssembler masm(&buf);
+  address start = masm.pc();
+
+  Label not_already_dirty, restart, refill;
+
+#ifdef _LP64
+  masm.srlx(O0, CardTableModRefBS::card_shift, O0);
+#else
+  masm.srl(O0, CardTableModRefBS::card_shift, O0);
+#endif
+  Address rs(O1, (address)byte_map_base);
+  masm.load_address(rs); // O1 := <card table base>
+  masm.ldub(O0, O1, O2); // O2 := [O0 + O1]
+
+  masm.br_on_reg_cond(Assembler::rc_nz, /*annul*/false, Assembler::pt,
+                      O2, not_already_dirty);
+  // Get O1 + O2 into a reg by itself -- useful in the take-the-branch
+  // case, harmless if not.
+  masm.delayed()->add(O0, O1, O3);
+
+  // We didn't take the branch, so we're already dirty: return.
+  // Use return-from-leaf
+  masm.retl();
+  masm.delayed()->nop();
+
+  // Not dirty.
+  masm.bind(not_already_dirty);
+  // First, dirty it.
+  masm.stb(G0, O3, G0);  // [cardPtr] := 0  (i.e., dirty).
+  int dirty_card_q_index_byte_offset =
+    in_bytes(JavaThread::dirty_card_queue_offset() +
+             PtrQueue::byte_offset_of_index());
+  int dirty_card_q_buf_byte_offset =
+    in_bytes(JavaThread::dirty_card_queue_offset() +
+             PtrQueue::byte_offset_of_buf());
+  masm.bind(restart);
+  masm.ld_ptr(G2_thread, dirty_card_q_index_byte_offset, L0);
+
+  masm.br_on_reg_cond(Assembler::rc_z, /*annul*/false, Assembler::pn,
+                      L0, refill);
+  // If the branch is taken, no harm in executing this in the delay slot.
+  masm.delayed()->ld_ptr(G2_thread, dirty_card_q_buf_byte_offset, L1);
+  masm.sub(L0, oopSize, L0);
+
+  masm.st_ptr(O3, L1, L0);  // [_buf + index] := I0
+  // Use return-from-leaf
+  masm.retl();
+  masm.delayed()->st_ptr(L0, G2_thread, dirty_card_q_index_byte_offset);
+
+  masm.bind(refill);
+  address handle_zero =
+    CAST_FROM_FN_PTR(address,
+                     &DirtyCardQueueSet::handle_zero_index_for_thread);
+  // This should be rare enough that we can afford to save all the
+  // scratch registers that the calling context might be using.
+  masm.mov(G1_scratch, L3);
+  masm.mov(G3_scratch, L5);
+  // We need the value of O3 above (for the write into the buffer), so we
+  // save and restore it.
+  masm.mov(O3, L6);
+  // Since the call will overwrite O7, we save and restore that, as well.
+  masm.mov(O7, L4);
+
+  masm.call_VM_leaf(L7_thread_cache, handle_zero, G2_thread);
+  masm.mov(L3, G1_scratch);
+  masm.mov(L5, G3_scratch);
+  masm.mov(L6, O3);
+  masm.br(Assembler::always, /*annul*/false, Assembler::pt, restart);
+  masm.delayed()->mov(L4, O7);
+
+  dirty_card_log_enqueue = start;
+  dirty_card_log_enqueue_end = masm.pc();
+  // XXX Should have a guarantee here about not going off the end!
+  // Does it already do so?  Do an experiment...
+}
+
+static inline void
+generate_dirty_card_log_enqueue_if_necessary(jbyte* byte_map_base) {
+  if (dirty_card_log_enqueue == 0) {
+    generate_dirty_card_log_enqueue(byte_map_base);
+    assert(dirty_card_log_enqueue != 0, "postcondition.");
+    if (G1SATBPrintStubs) {
+      tty->print_cr("Generated dirty_card enqueue:");
+      Disassembler::decode((u_char*)dirty_card_log_enqueue,
+                           dirty_card_log_enqueue_end,
+                           tty);
+    }
+  }
+}
+
+
+void MacroAssembler::g1_write_barrier_post(Register store_addr, Register new_val, Register tmp) {
+
+  Label filtered;
+  MacroAssembler* post_filter_masm = this;
+
+  if (new_val == G0) return;
+  if (G1DisablePostBarrier) return;
+
+  G1SATBCardTableModRefBS* bs = (G1SATBCardTableModRefBS*) Universe::heap()->barrier_set();
+  assert(bs->kind() == BarrierSet::G1SATBCT ||
+         bs->kind() == BarrierSet::G1SATBCTLogging, "wrong barrier");
+  if (G1RSBarrierRegionFilter) {
+    xor3(store_addr, new_val, tmp);
+#ifdef _LP64
+    srlx(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
+#else
+    srl(tmp, HeapRegion::LogOfHRGrainBytes, tmp);
+#endif
+    if (G1PrintCTFilterStats) {
+      guarantee(tmp->is_global(), "Or stats won't work...");
+      // This is a sleazy hack: I'm temporarily hijacking G2, which I
+      // promise to restore.
+      mov(new_val, G2);
+      save_frame(0);
+      mov(tmp, O0);
+      mov(G2, O1);
+      // Save G-regs that target may use.
+      mov(G1, L1);
+      mov(G2, L2);
+      mov(G3, L3);
+      mov(G4, L4);
+      mov(G5, L5);
+      call(CAST_FROM_FN_PTR(address, &count_ct_writes));
+      delayed()->nop();
+      mov(O0, G2);
+      // Restore G-regs that target may have used.
+      mov(L1, G1);
+      mov(L3, G3);
+      mov(L4, G4);
+      mov(L5, G5);
+      restore(G0, G0, G0);
+    }
+    // XXX Should I predict this taken or not?  Does it mattern?
+    br_on_reg_cond(rc_z, /*annul*/false, Assembler::pt, tmp, filtered);
+    delayed()->nop();
+  }
+
+  // Now we decide how to generate the card table write.  If we're
+  // enqueueing, we call out to a generated function.  Otherwise, we do it
+  // inline here.
+
+  if (G1RSBarrierUseQueue) {
+    // If the "store_addr" register is an "in" or "local" register, move it to
+    // a scratch reg so we can pass it as an argument.
+    bool use_scr = !(store_addr->is_global() || store_addr->is_out());
+    // Pick a scratch register different from "tmp".
+    Register scr = (tmp == G1_scratch ? G3_scratch : G1_scratch);
+    // Make sure we use up the delay slot!
+    if (use_scr) {
+      post_filter_masm->mov(store_addr, scr);
+    } else {
+      post_filter_masm->nop();
+    }
+    generate_dirty_card_log_enqueue_if_necessary(bs->byte_map_base);
+    save_frame(0);
+    call(dirty_card_log_enqueue);
+    if (use_scr) {
+      delayed()->mov(scr, O0);
+    } else {
+      delayed()->mov(store_addr->after_save(), O0);
+    }
+    restore();
+
+  } else {
+
+#ifdef _LP64
+    post_filter_masm->srlx(store_addr, CardTableModRefBS::card_shift, store_addr);
+#else
+    post_filter_masm->srl(store_addr, CardTableModRefBS::card_shift, store_addr);
+#endif
+    assert( tmp != store_addr, "need separate temp reg");
+    Address rs(tmp, (address)bs->byte_map_base);
+    load_address(rs);
+    stb(G0, rs.base(), store_addr);
+  }
+
+  bind(filtered);
+
+}
+
+#endif  // SERIALGC
+///////////////////////////////////////////////////////////////////////////////////
+
+void MacroAssembler::card_write_barrier_post(Register store_addr, Register new_val, Register tmp) {
+  // If we're writing constant NULL, we can skip the write barrier.
+  if (new_val == G0) return;
+  CardTableModRefBS* bs = (CardTableModRefBS*) Universe::heap()->barrier_set();
+  assert(bs->kind() == BarrierSet::CardTableModRef ||
+         bs->kind() == BarrierSet::CardTableExtension, "wrong barrier");
+  card_table_write(bs->byte_map_base, tmp, store_addr);
 }
 
 void MacroAssembler::load_klass(Register src_oop, Register klass) {

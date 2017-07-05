@@ -176,6 +176,11 @@ int instanceRefKlass::oop_adjust_pointers(oop obj) {
 }
 
 #define InstanceRefKlass_SPECIALIZED_OOP_ITERATE(T, nv_suffix, contains)        \
+  if (closure->apply_to_weak_ref_discovered_field()) {                          \
+    T* disc_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);           \
+    closure->do_oop##nv_suffix(disc_addr);                                      \
+  }                                                                             \
+                                                                                \
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);           \
   oop referent = oopDesc::load_decode_heap_oop(referent_addr);                  \
   if (referent != NULL && contains(referent_addr)) {                            \
@@ -219,6 +224,25 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
   }                                                                             \
 }
 
+#ifndef SERIALGC
+#define InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix) \
+                                                                                \
+int instanceRefKlass::                                                          \
+oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        \
+  /* Get size before changing pointers */                                       \
+  SpecializationStats::record_iterate_call##nv_suffix(SpecializationStats::irk);\
+                                                                                \
+  int size = instanceKlass::oop_oop_iterate_backwards##nv_suffix(obj, closure); \
+                                                                                \
+  if (UseCompressedOops) {                                                      \
+    InstanceRefKlass_SPECIALIZED_OOP_ITERATE(narrowOop, nv_suffix, contains);   \
+  } else {                                                                      \
+    InstanceRefKlass_SPECIALIZED_OOP_ITERATE(oop, nv_suffix, contains);         \
+  }                                                                             \
+}
+#endif // !SERIALGC
+
+
 #define InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)      \
                                                                                 \
 int instanceRefKlass::                                                          \
@@ -236,9 +260,13 @@ oop_oop_iterate##nv_suffix##_m(oop obj,                                         
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_DEFN)
-ALL_OOP_OOP_ITERATE_CLOSURES_3(InstanceRefKlass_OOP_OOP_ITERATE_DEFN)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_DEFN)
+#ifndef SERIALGC
+ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
+#endif // SERIALGC
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m)
-ALL_OOP_OOP_ITERATE_CLOSURES_3(InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m)
+ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m)
 
 #ifndef SERIALGC
 template <class T>
@@ -423,7 +451,7 @@ void instanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
   // Verify next field
   oop next = java_lang_ref_Reference::next(obj);
   if (next != NULL) {
-    guarantee(next->is_oop(), "next field verify fa iled");
+    guarantee(next->is_oop(), "next field verify failed");
     guarantee(next->is_instanceRef(), "next field verify failed");
     if (gch != NULL && !gch->is_in_youngest(obj)) {
       // We do a specific remembered set check here since the next field is

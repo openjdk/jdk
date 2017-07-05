@@ -53,8 +53,13 @@
   template(ParallelGCFailedAllocation)            \
   template(ParallelGCFailedPermanentAllocation)   \
   template(ParallelGCSystemGC)                    \
+  template(CGC_Operation)                         \
   template(CMS_Initial_Mark)                      \
   template(CMS_Final_Remark)                      \
+  template(G1CollectFull)                         \
+  template(G1CollectForAllocation)                \
+  template(G1IncCollectionPause)                  \
+  template(G1PopRegionCollectionPause)            \
   template(EnableBiasedLocking)                   \
   template(RevokeBias)                            \
   template(BulkRevokeBias)                        \
