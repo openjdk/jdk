@@ -213,7 +213,7 @@ public class URLJarFile extends JarFile {
             /* get the stream before asserting privileges */
             try (final InputStream in = url.openConnection().getInputStream()) {
                 result = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<JarFile>() {
+                    new PrivilegedExceptionAction<>() {
                         public JarFile run() throws IOException {
                             Path tmpFile = Files.createTempFile("jar_cache", null);
                             try {

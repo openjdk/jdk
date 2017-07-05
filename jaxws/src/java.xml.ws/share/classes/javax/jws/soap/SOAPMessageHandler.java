@@ -27,7 +27,7 @@ package javax.jws.soap;
 
 /**
  * @since 1.6
- * @Deprecated
+ * @deprecated
  */
 @Deprecated public @interface SOAPMessageHandler {
     String name() default "";

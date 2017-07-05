@@ -228,7 +228,7 @@ public final class IDN {
         try {
             final String IDN_PROFILE = "uidna.spp";
             if (System.getSecurityManager() != null) {
-                stream = AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
+                stream = AccessController.doPrivileged(new PrivilegedAction<>() {
                     public InputStream run() {
                         return StringPrep.class.getResourceAsStream(IDN_PROFILE);
                     }

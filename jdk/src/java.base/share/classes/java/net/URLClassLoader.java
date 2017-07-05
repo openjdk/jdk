@@ -359,7 +359,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         final Class<?> result;
         try {
             result = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Class<?>>() {
+                new PrivilegedExceptionAction<>() {
                     public Class<?> run() throws ClassNotFoundException {
                         String path = name.replace('.', '/').concat(".class");
                         Resource res = ucp.getResource(path, false);
@@ -564,7 +564,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
          * The same restriction to finding classes applies to resources
          */
         URL url = AccessController.doPrivileged(
-            new PrivilegedAction<URL>() {
+            new PrivilegedAction<>() {
                 public URL run() {
                     return ucp.findResource(name, true);
                 }
@@ -587,7 +587,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     {
         final Enumeration<URL> e = ucp.findResources(name, true);
 
-        return new Enumeration<URL>() {
+        return new Enumeration<>() {
             private URL url = null;
 
             private boolean next() {
@@ -596,7 +596,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
                 }
                 do {
                     URL u = AccessController.doPrivileged(
-                        new PrivilegedAction<URL>() {
+                        new PrivilegedAction<>() {
                             public URL run() {
                                 if (!e.hasMoreElements())
                                     return null;
@@ -704,7 +704,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 final Permission fp = p;
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                AccessController.doPrivileged(new PrivilegedAction<>() {
                     public Void run() throws SecurityException {
                         sm.checkPermission(fp);
                         return null;
@@ -735,7 +735,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         final AccessControlContext acc = AccessController.getContext();
         // Need a privileged block to create the class loader
         URLClassLoader ucl = AccessController.doPrivileged(
-            new PrivilegedAction<URLClassLoader>() {
+            new PrivilegedAction<>() {
                 public URLClassLoader run() {
                     return new FactoryURLClassLoader(urls, parent, acc);
                 }
@@ -760,7 +760,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         final AccessControlContext acc = AccessController.getContext();
         // Need a privileged block to create the class loader
         URLClassLoader ucl = AccessController.doPrivileged(
-            new PrivilegedAction<URLClassLoader>() {
+            new PrivilegedAction<>() {
                 public URLClassLoader run() {
                     return new FactoryURLClassLoader(urls, acc);
                 }

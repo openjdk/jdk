@@ -31,10 +31,10 @@ import javax.activation.MimeType;
 
 /**
  * The ActivationDataFlavor class is a special subclass of
- * <code>java.awt.datatransfer.DataFlavor</code>. It allows the JAF to
+ * {@code java.awt.datatransfer.DataFlavor}. It allows the JAF to
  * set all three values stored by the DataFlavor class via a new
- * constructor. It also contains improved MIME parsing in the <code>equals
- * </code> method. Except for the improved parsing, its semantics are
+ * constructor. It also contains improved MIME parsing in the {@code equals}
+ * method. Except for the improved parsing, its semantics are
  * identical to that of the JDK's DataFlavor class.
  *
  * @since 1.6
@@ -70,7 +70,6 @@ public class ActivationDataFlavor extends DataFlavor {
      * representationClass = representationClass<br>
      * mimeType            = mimeType<br>
      * humanName           = humanName
-     * <p>
      *
      * @param representationClass the class used in this DataFlavor
      * @param mimeType the MIME type of the data represented by this class
@@ -98,7 +97,7 @@ public class ActivationDataFlavor extends DataFlavor {
      * otherwise:
      * <p>
      * representationClass = InputStream<p>
-     * mimeType = mimeType<p>
+     * mimeType = mimeType
      *
      * @param representationClass the class used in this DataFlavor
      * @param humanPresentableName the human presentable name of the flavor
@@ -175,7 +174,7 @@ public class ActivationDataFlavor extends DataFlavor {
 
     /**
      * Compares the DataFlavor passed in with this DataFlavor; calls
-     * the <code>isMimeTypeEqual</code> method.
+     * the {@code isMimeTypeEqual} method.
      *
      * @param dataFlavor        the DataFlavor to compare with
      * @return                  true if the MIME type and representation class

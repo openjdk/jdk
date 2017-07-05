@@ -39,27 +39,26 @@ import javax.xml.ws.soap.MTOM;
 
 /**
  * Annotation used to identify other annotations
- * as a <code>WebServiceFeature</code>.
+ * as a {@code WebServiceFeature}.
  * <p>
- * Each <code>WebServiceFeature</code> annotation annotated with
+ * Each {@code WebServiceFeature} annotation annotated with
  * this annotation MUST contain an
- * <code>enabled</code> property of type
- * <code>boolean</code> with a default value of <code>true</code>.
+ * {@code enabled} property of type
+ * {@code boolean} with a default value of {@code true}.
  * <p>
  * JAX-WS defines the following
- * <code>WebServiceFeature</code> annotations (<code>Addressing</code>,
- * <code>MTOM</code>, <code>RespectBinding</code>), however, an implementation
+ * {@code WebServiceFeature} annotations ({@code Addressing},
+ * {@code MTOM}, {@code RespectBinding}), however, an implementation
  * may define vendors specific annotations for other features.
  * <p>
- * Annotations annotated with <code>WebServiceFeatureAnnotation</code> MUST
+ * Annotations annotated with {@code WebServiceFeatureAnnotation} MUST
  * have the same @Target of {@link WebServiceRef} annotation, so that the resulting
  * feature annotation can be used in conjunction with the {@link WebServiceRef}
  * annotation if necessary.
  * <p>
  * If a JAX-WS implementation encounters an annotation annotated
- * with the <code>WebServiceFeatureAnnotation</code> that it does not
+ * with the {@code WebServiceFeatureAnnotation} that it does not
  * recognize/support an error MUST be given.
- * <p>
  *
  * @see Addressing
  * @see MTOM
@@ -79,8 +78,8 @@ public @interface WebServiceFeatureAnnotation {
     String id();
 
     /**
-     * The <code>WebServiceFeature</code> bean that is associated
-     * with the <code>WebServiceFeature</code> annotation
+     * The {@code WebServiceFeature} bean that is associated
+     * with the {@code WebServiceFeature} annotation
      */
     Class<? extends WebServiceFeature> bean();
 }

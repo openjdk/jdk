@@ -28,13 +28,13 @@ package javax.xml.transform;
 /**
  * <p>A TransformerFactory instance can be used to create
  * {@link javax.xml.transform.Transformer} and
- * {@link javax.xml.transform.Templates} objects.</p>
+ * {@link javax.xml.transform.Templates} objects.
  *
  * <p>The system property that determines which Factory implementation
- * to create is named <code>"javax.xml.transform.TransformerFactory"</code>.
+ * to create is named {@code "javax.xml.transform.TransformerFactory"}.
  * This property names a concrete subclass of the
  * {@code TransformerFactory} abstract class. If the property is not
- * defined, a platform default is be used.</p>
+ * defined, a platform default is be used.
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
  * @author <a href="mailto:Neeraj.Bajaj@sun.com">Neeraj Bajaj</a>
@@ -51,14 +51,11 @@ public abstract class TransformerFactory {
 
 
     /**
-     * <p>
      * Obtain a new instance of a {@code TransformerFactory}.
      * This static method creates a new factory instance.
      * <p>
      * This method uses the following ordered lookup procedure to determine
-     * the {@code TransformerFactory} implementation class to
-     * load:
-     * <p>
+     * the {@code TransformerFactory} implementation class to load:
      * <ul>
      * <li>
      * Use the {@code javax.xml.transform.TransformerFactory} system
@@ -118,34 +115,34 @@ public abstract class TransformerFactory {
     }
 
     /**
-     * <p>Obtain a new instance of a {@code TransformerFactory} from factory class name.
+     * Obtain a new instance of a {@code TransformerFactory} from factory class name.
      * This function is useful when there are multiple providers in the classpath.
      * It gives more control to the application as it can specify which provider
-     * should be loaded.</p>
+     * should be loaded.
      *
      * <p>Once an application has obtained a reference to a
      * {@code TransformerFactory} it can use the factory to configure
-     * and obtain transformer instances.</p>
+     * and obtain transformer instances.
      *
      * <h2>Tip for Trouble-shooting</h2>
-     * <p>Setting the <code>jaxp.debug</code> system property will cause
+     * <p>Setting the {@code jaxp.debug} system property will cause
      * this method to print a lot of debug messages
-     * to <code>System.err</code> about what it is doing and where it is looking at.</p>
+     * to {@code System.err} about what it is doing and where it is looking at.
      *
-     * <p> If you have problems try:</p>
+     * <p> If you have problems try:
      * <pre>
      * java -Djaxp.debug=1 YourProgram ....
      * </pre>
      *
      * @param factoryClassName fully qualified factory class name that provides implementation of {@code javax.xml.transform.TransformerFactory}.
      *
-     * @param classLoader <code>ClassLoader</code> used to load the factory class. If <code>null</code>
-     *                     current <code>Thread</code>'s context classLoader is used to load the factory class.
+     * @param classLoader {@code ClassLoader} used to load the factory class. If {@code null}
+     *                     current {@code Thread}'s context classLoader is used to load the factory class.
      *
      * @return new TransformerFactory instance, never null.
      *
      * @throws TransformerFactoryConfigurationError
-     *                    if <code>factoryClassName</code> is <code>null</code>, or
+     *                    if {@code factoryClassName} is {@code null}, or
      *                   the factory class cannot be loaded, instantiated.
      *
      * @see #newInstance()
@@ -160,29 +157,29 @@ public abstract class TransformerFactory {
                     factoryClassName, classLoader, false, false);
     }
     /**
-     * <p>Process the <code>Source</code> into a <code>Transformer</code>
-     * <code>Object</code>.  The <code>Source</code> is an XSLT document that
+     * Process the {@code Source} into a {@code Transformer}
+     * {@code Object}.  The {@code Source} is an XSLT document that
      * conforms to <a href="http://www.w3.org/TR/xslt">
      * XSL Transformations (XSLT) Version 1.0</a>.  Care must
-     * be taken not to use this <code>Transformer</code> in multiple
-     * <code>Thread</code>s running concurrently.
-     * Different <code>TransformerFactories</code> can be used concurrently by
-     * different <code>Thread</code>s.</p>
+     * be taken not to use this {@code Transformer} in multiple
+     * {@code Thread}s running concurrently.
+     * Different {@code TransformerFactories} can be used concurrently by
+     * different {@code Thread}s.
      *
-     * @param source <code>Source </code> of XSLT document used to create
-     *   <code>Transformer</code>.
-     *   Examples of XML <code>Source</code>s include
+     * @param source {@code Source } of XSLT document used to create
+     *   {@code Transformer}.
+     *   Examples of XML {@code Source}s include
      *   {@link javax.xml.transform.dom.DOMSource DOMSource},
      *   {@link javax.xml.transform.sax.SAXSource SAXSource}, and
      *   {@link javax.xml.transform.stream.StreamSource StreamSource}.
      *
-     * @return A <code>Transformer</code> object that may be used to perform
-     *   a transformation in a single <code>Thread</code>, never
-     *   <code>null</code>.
+     * @return A {@code Transformer} object that may be used to perform
+     *   a transformation in a single {@code Thread}, never
+     *   {@code null}.
      *
      * @throws TransformerConfigurationException Thrown if there are errors when
-     *    parsing the <code>Source</code> or it is not possible to create a
-     *   <code>Transformer</code> instance.
+     *    parsing the {@code Source} or it is not possible to create a
+     *   {@code Transformer} instance.
      *
      * @see <a href="http://www.w3.org/TR/xslt">
      *   XSL Transformations (XSLT) Version 1.0</a>
@@ -191,15 +188,15 @@ public abstract class TransformerFactory {
         throws TransformerConfigurationException;
 
     /**
-     * <p>Create a new <code>Transformer</code> that performs a copy
-     * of the <code>Source</code> to the <code>Result</code>.
-     * i.e. the "<em>identity transform</em>".</p>
+     * Create a new {@code Transformer} that performs a copy
+     * of the {@code Source} to the {@code Result}.
+     * i.e. the "<em>identity transform</em>".
      *
      * @return A Transformer object that may be used to perform a transformation
      * in a single thread, never null.
      *
      * @throws TransformerConfigurationException When it is not
-     *   possible to create a <code>Transformer</code> instance.
+     *   possible to create a {@code Transformer} instance.
      */
     public abstract Transformer newTransformer()
         throws TransformerConfigurationException;
@@ -215,7 +212,7 @@ public abstract class TransformerFactory {
      * @param source An object that holds a URL, input stream, etc.
      *
      * @return A Templates object capable of being used for transformation
-     *   purposes, never <code>null</code>.
+     *   purposes, never {@code null}.
      *
      * @throws TransformerConfigurationException When parsing to
      *   construct the Templates object fails.
@@ -224,13 +221,13 @@ public abstract class TransformerFactory {
         throws TransformerConfigurationException;
 
     /**
-     * <p>Get the stylesheet specification(s) associated with the
-     * XML <code>Source</code> document via the
+     * Get the stylesheet specification(s) associated with the
+     * XML {@code Source} document via the
      * <a href="http://www.w3.org/TR/xml-stylesheet/">
      * xml-stylesheet processing instruction</a> that match the given criteria.
      * Note that it is possible to return several stylesheets, in which case
      * they are applied as if they were a list of imports or cascades in a
-     * single stylesheet.</p>
+     * single stylesheet.
      *
      * @param source The XML source document.
      * @param media The media attribute to be matched.  May be null, in which
@@ -238,12 +235,12 @@ public abstract class TransformerFactory {
      * @param title The value of the title attribute to match.  May be null.
      * @param charset The value of the charset attribute to match.  May be null.
      *
-     * @return A <code>Source</code> <code>Object</code> suitable for passing
+     * @return A {@code Source} {@code Object} suitable for passing
      *   to the {@code TransformerFactory}.
      *
-     * @throws TransformerConfigurationException An <code>Exception</code>
+     * @throws TransformerConfigurationException An {@code Exception}
      *   is thrown if an error occurings during parsing of the
-     *   <code>source</code>.
+     *   {@code source}.
      *
      * @see <a href="http://www.w3.org/TR/xml-stylesheet/">
      *   Associating Style Sheets with XML documents Version 1.0</a>
@@ -275,22 +272,21 @@ public abstract class TransformerFactory {
     //======= CONFIGURATION METHODS =======
 
         /**
-         * <p>Set a feature for this {@code TransformerFactory} and <code>Transformer</code>s
-         * or <code>Template</code>s created by this factory.</p>
+         * <p>Set a feature for this {@code TransformerFactory} and {@code Transformer}s
+         * or {@code Template}s created by this factory.
          *
          * <p>
          * Feature names are fully qualified {@link java.net.URI}s.
          * Implementations may define their own features.
          * An {@link TransformerConfigurationException} is thrown if this {@code TransformerFactory} or the
-         * <code>Transformer</code>s or <code>Template</code>s it creates cannot support the feature.
+         * {@code Transformer}s or {@code Template}s it creates cannot support the feature.
          * It is possible for an {@code TransformerFactory} to expose a feature value but be unable to change its state.
-         * </p>
          *
          * <p>All implementations are required to support the {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING} feature.
-         * When the feature is:</p>
+         * When the feature is:
          * <ul>
          *   <li>
-         *     <code>true</code>: the implementation will limit XML processing to conform to implementation limits
+         *     {@code true}: the implementation will limit XML processing to conform to implementation limits
          *     and behave in a secure fashion as defined by the implementation.
          *     Examples include resolving user defined style sheets and functions.
          *     If XML processing is limited for security reasons, it will be reported via a call to the registered
@@ -298,17 +294,17 @@ public abstract class TransformerFactory {
          *     See {@link  #setErrorListener(ErrorListener listener)}.
          *   </li>
          *   <li>
-         *     <code>false</code>: the implementation will processing XML according to the XML specifications without
+         *     {@code false}: the implementation will processing XML according to the XML specifications without
          *     regard to possible implementation limits.
          *   </li>
          * </ul>
          *
          * @param name Feature name.
-         * @param value Is feature state <code>true</code> or <code>false</code>.
+         * @param value Is feature state {@code true} or {@code false}.
          *
          * @throws TransformerConfigurationException if this {@code TransformerFactory}
-         *   or the <code>Transformer</code>s or <code>Template</code>s it creates cannot support this feature.
-     * @throws NullPointerException If the <code>name</code> parameter is null.
+         *   or the {@code Transformer}s or {@code Template}s it creates cannot support this feature.
+     * @throws NullPointerException If the {@code name} parameter is null.
          */
         public abstract void setFeature(String name, boolean value)
                 throws TransformerConfigurationException;
@@ -319,16 +315,15 @@ public abstract class TransformerFactory {
          * <p>
          * Feature names are fully qualified {@link java.net.URI}s.
          * Implementations may define their own features.
-         * <code>false</code> is returned if this {@code TransformerFactory} or the
-         * <code>Transformer</code>s or <code>Template</code>s it creates cannot support the feature.
+         * {@code false} is returned if this {@code TransformerFactory} or the
+         * {@code Transformer}s or {@code Template}s it creates cannot support the feature.
          * It is possible for an {@code TransformerFactory} to expose a feature value but be unable to change its state.
-         * </p>
          *
          * @param name Feature name.
          *
-     * @return The current state of the feature, <code>true</code> or <code>false</code>.
+     * @return The current state of the feature, {@code true} or {@code false}.
      *
-     * @throws NullPointerException If the <code>name</code> parameter is null.
+     * @throws NullPointerException If the {@code name} parameter is null.
      */
     public abstract boolean getFeature(String name);
 
@@ -336,13 +331,13 @@ public abstract class TransformerFactory {
      * Allows the user to set specific attributes on the underlying
      * implementation.  An attribute in this context is defined to
      * be an option that the implementation provides.
-     * An <code>IllegalArgumentException</code> is thrown if the underlying
+     * An {@code IllegalArgumentException} is thrown if the underlying
      * implementation doesn't recognize the attribute.
      * <p>
      * All implementations that implement JAXP 1.5 or newer are required to
      * support the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD}  and
      * {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_STYLESHEET} properties.
-     * </p>
+     *
      * <ul>
      *   <li>
      *      <p>
@@ -351,7 +346,7 @@ public abstract class TransformerFactory {
      *      If access is denied during transformation due to the restriction of this property,
      *      {@link javax.xml.transform.TransformerException} will be thrown by
      *      {@link javax.xml.transform.Transformer#transform(Source, Result)}.
-     *      </p>
+     *
      *      <p>
      *      Access to external DTDs in the stylesheet is restricted to the protocols
      *      specified by the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} property.
@@ -359,7 +354,7 @@ public abstract class TransformerFactory {
      *      restriction of this property,
      *      {@link javax.xml.transform.TransformerConfigurationException} will be thrown
      *      by the {@link #newTransformer(Source)} method.
-     *      </p>
+     *
      *      <p>
      *      Access to external reference set by the stylesheet processing instruction,
      *      Import and Include element is restricted to the protocols specified by the
@@ -368,14 +363,14 @@ public abstract class TransformerFactory {
      *      restriction of this property,
      *      {@link javax.xml.transform.TransformerConfigurationException} will be thrown
      *      by the {@link #newTransformer(Source)} method.
-     *      </p>
+     *
      *      <p>
      *      Access to external document through XSLT document function is restricted
      *      to the protocols specified by the property. If access is denied during
      *      the transformation due to the restriction of this property,
      *      {@link javax.xml.transform.TransformerException} will be thrown by the
      *      {@link javax.xml.transform.Transformer#transform(Source, Result)} method.
-     *      </p>
+     *
      *   </li>
      * </ul>
      *
@@ -390,7 +385,7 @@ public abstract class TransformerFactory {
     /**
      * Allows the user to retrieve specific attributes on the underlying
      * implementation.
-     * An <code>IllegalArgumentException</code> is thrown if the underlying
+     * An {@code IllegalArgumentException} is thrown if the underlying
      * implementation doesn't recognize the attribute.
      *
      * @param name The name of the attribute.
@@ -406,13 +401,13 @@ public abstract class TransformerFactory {
      * Set the error event listener for the TransformerFactory, which
      * is used for the processing of transformation instructions,
      * and not for the transformation itself.
-     * An <code>IllegalArgumentException</code> is thrown if the
-     * <code>ErrorListener</code> listener is <code>null</code>.
+     * An {@code IllegalArgumentException} is thrown if the
+     * {@code ErrorListener} listener is {@code null}.
      *
      * @param listener The new error listener.
      *
-     * @throws IllegalArgumentException When <code>listener</code> is
-     *   <code>null</code>
+     * @throws IllegalArgumentException When {@code listener} is
+     *   {@code null}
      */
     public abstract void setErrorListener(ErrorListener listener);
 

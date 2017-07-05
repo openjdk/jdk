@@ -69,7 +69,7 @@ public class NetworkClient {
         final String encs[] = { null };
 
         AccessController.doPrivileged(
-                new PrivilegedAction<Void>() {
+                new PrivilegedAction<>() {
                     public Void run() {
                         vals[0] = Integer.getInteger("sun.net.client.defaultReadTimeout", 0).intValue();
                         vals[1] = Integer.getInteger("sun.net.client.defaultConnectTimeout", 0).intValue();
@@ -154,7 +154,7 @@ public class NetworkClient {
         if (proxy != null) {
             if (proxy.type() == Proxy.Type.SOCKS) {
                 s = AccessController.doPrivileged(
-                    new PrivilegedAction<Socket>() {
+                    new PrivilegedAction<>() {
                         public Socket run() {
                                        return new Socket(proxy);
                                    }});
@@ -201,7 +201,7 @@ public class NetworkClient {
         if (serverSocket == null)
             throw new IOException("not connected");
         return  AccessController.doPrivileged(
-                        new PrivilegedAction<InetAddress>() {
+                        new PrivilegedAction<>() {
                             public InetAddress run() {
                                 return serverSocket.getLocalAddress();
 

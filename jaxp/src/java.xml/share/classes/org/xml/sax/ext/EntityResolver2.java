@@ -61,7 +61,6 @@ import org.xml.sax.SAXException;
  * recognized).  If that flag is unrecognized, or its value is false,
  * or the resolver does not implement this interface, then only the
  * {@link EntityResolver} method will be used.
- * </p>
  *
  * <p>That supports three categories of application that modify entity
  * resolution.  <em>Old Style</em> applications won't know about this interface;
@@ -76,7 +75,6 @@ import org.xml.sax.SAXException;
  * They will insist that feature flag have a value of "true", and the
  * EntityResolver2 implementation they provide  might throw an exception
  * if the original SAX 1.0 style entity resolution method is invoked.
- * </p>
  *
  * @see org.xml.sax.XMLReader#setEntityResolver
  *
@@ -95,7 +93,7 @@ public interface EntityResolver2 extends EntityResolver
      * through the {@link LexicalHandler#startDTD startDTD()} method as if
      * the document text had originally included the external subset;
      * this callback is made before any internal subset data or errors
-     * are reported.</p>
+     * are reported.
      *
      * <p>This method can also be used with documents that have no DOCTYPE
      * declaration.  When the root element is encountered,
@@ -104,7 +102,7 @@ public interface EntityResolver2 extends EntityResolver
      * element is declared to be the root element, giving the effect of
      * splicing a DOCTYPE declaration at the end the prolog of a document
      * that could not otherwise be valid.  The sequence of parser callbacks
-     * in that case logically resembles this:</p>
+     * in that case logically resembles this:
      *
      * <pre>
      * ... comments and PIs from the prolog (as usual)
@@ -122,7 +120,7 @@ public interface EntityResolver2 extends EntityResolver
      * {@link #resolveEntity resolveEntity()} to gain benefits such as use
      * of local caches of DTD entities.  Also, this method will never be
      * used by a (non-validating) processor that is not including external
-     * parameter entities. </p>
+     * parameter entities.
      *
      * <p>Uses for this method include facilitating data validation when
      * interoperating with XML processors that would always require
@@ -131,12 +129,11 @@ public interface EntityResolver2 extends EntityResolver
      * Non-validation motives include forcing documents to include DTDs so
      * that attributes are handled consistently.
      * For example, an XPath processor needs to know which attibutes have
-     * type "ID" before it can process a widely used type of reference.</p>
+     * type "ID" before it can process a widely used type of reference.
      *
      * <p><strong>Warning:</strong> Returning an external subset modifies
      * the input document.  By providing definitions for general entities,
      * it can make a malformed document appear to be well formed.
-     * </p>
      *
      * @param name Identifies the document root element.  This name comes
      *  from a DOCTYPE declaration (where available) or from the actual
@@ -166,8 +163,8 @@ public interface EntityResolver2 extends EntityResolver
      * This method provides more flexibility than the {@link EntityResolver}
      * interface, supporting implementations of more complex catalogue
      * schemes such as the one defined by the <a href=
-        "http://www.oasis-open.org/committees/entity/spec-2001-08-06.html"
-        >OASIS XML Catalogs</a> specification.</p>
+     *   "http://www.oasis-open.org/committees/entity/spec-2001-08-06.html"
+     *   >OASIS XML Catalogs</a> specification.
      *
      * <p>Parsers configured to use this resolver method will call it
      * to determine the input source to use for any external entity
@@ -176,13 +173,13 @@ public interface EntityResolver2 extends EntityResolver
      * by {@link #getExternalSubset getExternalSubset()}.
      * When a (non-validating) processor is configured not to include
      * a class of entities (parameter or general) through use of feature
-     * flags, this method is not invoked for such entities.  </p>
+     * flags, this method is not invoked for such entities.
      *
      * <p>Note that the entity naming scheme used here is the same one
      * used in the {@link LexicalHandler}, or in the {@link
-        org.xml.sax.ContentHandler#skippedEntity
-        ContentHandler.skippedEntity()}
-     * method. </p>
+     *   org.xml.sax.ContentHandler#skippedEntity
+     *   ContentHandler.skippedEntity()}
+     * method.
      *
      * @param name Identifies the external entity being resolved.
      *  Either "[dtd]" for the external subset, or a name starting
@@ -196,7 +193,7 @@ public interface EntityResolver2 extends EntityResolver
      *  are interpreted.  This is always an absolute URI, unless it is
      *  null (likely because the XMLReader was given an InputSource without
      *  one).  This URI is defined by the XML specification to be the one
-     *  associated with the "&lt;" starting the relevant declaration.
+     *  associated with the "{@literal <}" starting the relevant declaration.
      * @param systemId The system identifier of the external entity
      *  being referenced; either a relative or absolute URI.
      *  This is never null when invoked by a SAX2 parser; only declared
