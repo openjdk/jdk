@@ -602,12 +602,12 @@ public class BufferedImage extends java.awt.Image
      *                  the raster has been premultiplied with alpha.
      * @param properties <code>Hashtable</code> of
      *                  <code>String</code>/<code>Object</code> pairs.
-     * @exception <code>RasterFormatException</code> if the number and
+     * @exception RasterFormatException if the number and
      * types of bands in the <code>SampleModel</code> of the
      * <code>Raster</code> do not match the number and types required by
      * the <code>ColorModel</code> to represent its color and alpha
      * components.
-     * @exception <code>IllegalArgumentException</code> if
+     * @exception IllegalArgumentException if
      *          <code>raster</code> is incompatible with <code>cm</code>
      * @see ColorModel
      * @see Raster
@@ -927,7 +927,7 @@ public class BufferedImage extends java.awt.Image
      * each color component in the returned data when
      * using this method.  With a specified coordinate (x,&nbsp;y) in the
      * image, the ARGB pixel can be accessed in this way:
-     * </p>
+     * <p>
      *
      * <pre>
      *    pixel   = rgbArray[offset + (y-startY)*scansize + (x-startX)]; </pre>
@@ -1131,7 +1131,7 @@ public class BufferedImage extends java.awt.Image
      * @return an {@link Object} that is the property referred to by the
      *          specified <code>name</code> or <code>null</code> if the
      *          properties of this image are not yet known.
-     * @throws <code>NullPointerException</code> if the property name is null.
+     * @throws NullPointerException if the property name is null.
      * @see ImageObserver
      * @see java.awt.Image#UndefinedProperty
      */
@@ -1144,7 +1144,7 @@ public class BufferedImage extends java.awt.Image
      * @param name the property name
      * @return an <code>Object</code> that is the property referred to by
      *          the specified <code>name</code>.
-     * @throws <code>NullPointerException</code> if the property name is null.
+     * @throws NullPointerException if the property name is null.
      */
     public Object getProperty(String name) {
         if (name == null) {
@@ -1196,7 +1196,7 @@ public class BufferedImage extends java.awt.Image
      * @param h the height of the specified rectangular region
      * @return a <code>BufferedImage</code> that is the subimage of this
      *          <code>BufferedImage</code>.
-     * @exception <code>RasterFormatException</code> if the specified
+     * @exception RasterFormatException if the specified
      * area is not contained within this <code>BufferedImage</code>.
      */
     public BufferedImage getSubimage (int x, int y, int w, int h) {
@@ -1388,7 +1388,7 @@ public class BufferedImage extends java.awt.Image
      * @param tileY the y index of the requested tile in the tile array
      * @return a <code>Raster</code> that is the tile defined by the
      *          arguments <code>tileX</code> and <code>tileY</code>.
-     * @exception <code>ArrayIndexOutOfBoundsException</code> if both
+     * @exception ArrayIndexOutOfBoundsException if both
      *          <code>tileX</code> and <code>tileY</code> are not
      *          equal to 0
      */
@@ -1558,7 +1558,7 @@ public class BufferedImage extends java.awt.Image
      * @return <code>true</code> if the tile specified by the specified
      *          indices is checked out for writing; <code>false</code>
      *          otherwise.
-     * @exception <code>ArrayIndexOutOfBoundsException</code> if both
+     * @exception ArrayIndexOutOfBoundsException if both
      *          <code>tileX</code> and <code>tileY</code> are not equal
      *          to 0
      */

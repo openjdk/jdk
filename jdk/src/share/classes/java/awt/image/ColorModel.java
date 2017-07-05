@@ -692,12 +692,12 @@ public abstract class ColorModel implements Transparency{
      * <code>DataBuffer.TYPE_INT</code>.
      * @param inData an array of pixel values
      * @return the value of the green component of the specified pixel.
-     * @throws <code>ClassCastException</code> if <code>inData</code>
+     * @throws ClassCastException if <code>inData</code>
      *  is not a primitive array of type <code>transferType</code>
-     * @throws <code>ArrayIndexOutOfBoundsException</code> if
+     * @throws ArrayIndexOutOfBoundsException if
      *  <code>inData</code> is not large enough to hold a pixel value
      *  for this <code>ColorModel</code>
-     * @throws <code>UnsupportedOperationException</code> if this
+     * @throws UnsupportedOperationException if this
      *  <code>tranferType</code> is not supported by this
      *  <code>ColorModel</code>
      */

@@ -46,7 +46,13 @@ final class LongArrayData extends ArrayData {
      */
     LongArrayData(final long array[], final int length) {
         super(length);
+        assert array.length >= length;
         this.array  = array;
+    }
+
+    @Override
+    public ArrayData copy() {
+        return new LongArrayData(array.clone(), (int) length());
     }
 
     @Override

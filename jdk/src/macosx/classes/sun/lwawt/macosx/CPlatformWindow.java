@@ -830,18 +830,19 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     //                          UTILITY METHODS
     // ----------------------------------------------------------------------
 
-    /*
-     * Find image to install into Title or into Application icon.
-     * First try icons installed for toplevel. If there is no icon
-     * use default Duke image.
-     * This method shouldn't return null.
+    /**
+     * Find image to install into Title or into Application icon. First try
+     * icons installed for toplevel. Null is returned, if there is no icon and
+     * default Duke image should be used.
      */
     private CImage getImageForTarget() {
-        List<Image> icons = target.getIconImages();
-        if (icons == null || icons.size() == 0) {
-            return null;
+        CImage icon = null;
+        try {
+            icon = CImage.getCreator().createFromImages(target.getIconImages());
+        } catch (Exception ignored) {
+            // Perhaps the icon passed into Java is broken. Skipping this icon.
         }
-        return CImage.getCreator().createFromImages(icons);
+        return icon;
     }
 
     /*
