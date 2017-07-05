@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -352,13 +352,13 @@ class IndexSet : public ResourceObj {
   void tally_iteration_statistics() const;
 
   // BitBlock allocation statistics
-  static uint _alloc_new;
-  static uint _alloc_total;
+  static julong _alloc_new;
+  static julong _alloc_total;
 
   // Block density statistics
-  static long _total_bits;
-  static long _total_used_blocks;
-  static long _total_unused_blocks;
+  static julong _total_bits;
+  static julong _total_used_blocks;
+  static julong _total_unused_blocks;
 
   // Sanity tests
   void verify() const;

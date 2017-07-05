@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,13 +235,6 @@ public abstract class WinGammaPlatform {
             (locationsInTree.size() == 0)) {
             filesNotFound.add(fileName);
         } else if (locationsInTree.size() > 1) {
-            // We shouldn't have duplicate file names in our workspace.
-            System.err.println();
-            System.err.println("There are multiple files named as: " + fileName);
-            System.exit(-1);
-            // The following code could be safely removed if we don't need duplicate
-            // file names.
-
             // Iterate through them, trying to find one with a
             // preferred path
         search:
@@ -336,7 +329,7 @@ public abstract class WinGammaPlatform {
 
         String projectName = getProjectName(projectFileName, ext);
 
-        writeProjectFile(projectFileName, projectName, createAllConfigs());
+        writeProjectFile(projectFileName, projectName, createAllConfigs(BuildConfig.getFieldString(null, "PlatformName")));
     }
 
     protected void writePrologue(String[] args) {
@@ -376,7 +369,13 @@ public abstract class WinGammaPlatform {
                               HsArgHandler.STRING
                               ),
 
-                new HsArgRule("-projectFileName",
+              new HsArgRule("-platformName",
+                              "PlatformName",
+                              null,
+                              HsArgHandler.STRING
+                              ),
+
+              new HsArgRule("-projectFileName",
                               "ProjectFileName",
                               null,
                               HsArgHandler.STRING
@@ -391,12 +390,6 @@ public abstract class WinGammaPlatform {
                 new HsArgRule("-compiler",
                               "CompilerVersion",
                               "   (Did you set the VcVersion correctly?)",
-                              HsArgHandler.STRING
-                              ),
-
-                new HsArgRule("-platform",
-                              "Platform",
-                              null,
                               HsArgHandler.STRING
                               ),
 
@@ -590,28 +583,27 @@ public abstract class WinGammaPlatform {
         BuildConfig.putField(null, "PlatformObject", this);
     }
 
-    Vector createAllConfigs() {
+    Vector createAllConfigs(String platform) {
         Vector allConfigs = new Vector();
 
         allConfigs.add(new C1DebugConfig());
 
-        boolean b = true;
-        if (b) {
-            allConfigs.add(new C1FastDebugConfig());
-            allConfigs.add(new C1ProductConfig());
+        allConfigs.add(new C1FastDebugConfig());
+        allConfigs.add(new C1ProductConfig());
 
-            allConfigs.add(new C2DebugConfig());
-            allConfigs.add(new C2FastDebugConfig());
-            allConfigs.add(new C2ProductConfig());
+        allConfigs.add(new C2DebugConfig());
+        allConfigs.add(new C2FastDebugConfig());
+        allConfigs.add(new C2ProductConfig());
 
-            allConfigs.add(new TieredDebugConfig());
-            allConfigs.add(new TieredFastDebugConfig());
-            allConfigs.add(new TieredProductConfig());
+        allConfigs.add(new TieredDebugConfig());
+        allConfigs.add(new TieredFastDebugConfig());
+        allConfigs.add(new TieredProductConfig());
 
-            allConfigs.add(new CoreDebugConfig());
-            allConfigs.add(new CoreFastDebugConfig());
-            allConfigs.add(new CoreProductConfig());
+        allConfigs.add(new CoreDebugConfig());
+        allConfigs.add(new CoreFastDebugConfig());
+        allConfigs.add(new CoreProductConfig());
 
+        if (platform.equals("Win32")) {
             allConfigs.add(new KernelDebugConfig());
             allConfigs.add(new KernelFastDebugConfig());
             allConfigs.add(new KernelProductConfig());

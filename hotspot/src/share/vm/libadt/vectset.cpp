@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,28 +350,11 @@ int VectorSet::hash() const
   return (int)_xor;
 }
 
-//------------------------------iterate----------------------------------------
-SetI_ *VectorSet::iterate(uint &elem) const
-{
-  VSetI_ *foo = (new(ResourceObj::C_HEAP) VSetI_(this));
-  elem = foo->next();
-  return foo;
-}
-
 //=============================================================================
-//------------------------------VSetI_-----------------------------------------
-// Initialize the innards of a VectorSet iterator
-VSetI_::VSetI_( const VectorSet *vset ) : s(vset)
-{
-  i = (uint)-1L;
-  j = (uint)-1L;
-  mask = (unsigned)(1L<<31);
-}
-
 //------------------------------next-------------------------------------------
 // Find and return the next element of a vector set, or return garbage and
-// make "VSetI_::test()" fail.
-uint VSetI_::next(void)
+// make "VectorSetI::test()" fail.
+uint VectorSetI::next(void)
 {
   j++;                          // Next element in word
   mask = (mask & max_jint) << 1;// Next bit in word

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1736,14 +1736,6 @@ void instanceKlass::update_static_fields() {
     PSParallelCompact::adjust_pointer(p), \
     assert_nothing)
 }
-
-void instanceKlass::update_static_fields(HeapWord* beg_addr, HeapWord* end_addr) {
-  InstanceKlass_BOUNDED_OOP_ITERATE( \
-    start_of_static_fields(), static_oop_field_size(), \
-    beg_addr, end_addr, \
-    PSParallelCompact::adjust_pointer(p), \
-    assert_nothing )
-}
 #endif // SERIALGC
 
 void instanceKlass::oop_follow_contents(oop obj) {
@@ -1871,15 +1863,6 @@ void instanceKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
 int instanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   InstanceKlass_OOP_MAP_ITERATE( \
     obj, \
-    PSParallelCompact::adjust_pointer(p), \
-    assert_nothing)
-  return size_helper();
-}
-
-int instanceKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
-                                       HeapWord* beg_addr, HeapWord* end_addr) {
-  InstanceKlass_BOUNDED_OOP_MAP_ITERATE( \
-    obj, beg_addr, end_addr, \
     PSParallelCompact::adjust_pointer(p), \
     assert_nothing)
   return size_helper();
