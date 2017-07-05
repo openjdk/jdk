@@ -450,11 +450,6 @@ void DefNewGeneration::compute_new_size() {
   }
 }
 
-void DefNewGeneration::object_iterate_since_last_GC(ObjectClosure* cl) {
-  // $$$ This may be wrong in case of "scavenge failure"?
-  eden()->object_iterate(cl);
-}
-
 void DefNewGeneration::younger_refs_iterate(OopsInGenClosure* cl) {
   assert(false, "NYI -- are you sure you want to call this?");
 }
