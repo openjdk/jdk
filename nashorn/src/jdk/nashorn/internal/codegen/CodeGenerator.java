@@ -244,7 +244,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     /**
      * Check if this symbol can be accessed directly with a putfield or getfield or dynamic load
      *
-     * @param function function to check for fast scope
+     * @param symbol symbol to check for fast scope
      * @return true if fast scope
      */
     private boolean isFastScope(final Symbol symbol) {
@@ -1016,6 +1016,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         assert lc.hasCompileUnits();
 
         method = lc.pushMethodEmitter(unit.getClassEmitter().method(functionNode));
+        // new method - reset last line number
+        lastLineNumber = -1;
         // Mark end for variable tables.
         method.begin();
 
@@ -1093,7 +1095,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private void lineNumber(final Statement statement) {
         final int lineNumber = statement.getLineNumber();
         if (lineNumber != lastLineNumber) {
-            method.lineNumber(statement.getLineNumber());
+            method.lineNumber(lineNumber);
         }
         lastLineNumber = lineNumber;
     }
@@ -1108,7 +1110,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @return the method generator that was used
      */
     private MethodEmitter loadArray(final ArrayLiteralNode arrayLiteralNode, final ArrayType arrayType) {
-        assert arrayType == Type.INT_ARRAY || arrayType == Type.NUMBER_ARRAY || arrayType == Type.OBJECT_ARRAY;
+        assert arrayType == Type.INT_ARRAY || arrayType == Type.LONG_ARRAY || arrayType == Type.NUMBER_ARRAY || arrayType == Type.OBJECT_ARRAY;
 
         final Node[]          nodes    = arrayLiteralNode.getValue();
         final Object          presets  = arrayLiteralNode.getPresets();
@@ -1460,7 +1462,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             rhs = tmp;
         }
 
-        if (isNullLiteral(rhs)) {
+        // this is a null literal check, so if there is implicit coercion
+        // involved like {D}x=null, we will fail - this is very rare
+        if (isNullLiteral(rhs) && lhs.getType().isObject()) {
             final Label trueLabel  = new Label("trueLabel");
             final Label falseLabel = new Label("falseLabel");
             final Label endLabel   = new Label("end");
@@ -1843,7 +1847,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // If expression not int see if we can convert, if not use deflt to trigger default.
             if (!type.isInteger()) {
                 method.load(deflt);
-                method.invoke(staticCallNoLookup(ScriptRuntime.class, "switchTagAsInt", int.class, type.getTypeClass(), int.class));
+                final Class exprClass = type.getTypeClass();
+                method.invoke(staticCallNoLookup(ScriptRuntime.class, "switchTagAsInt", int.class, exprClass.isPrimitive()? exprClass : Object.class, int.class));
             }
 
             // If reasonable size and not too sparse (80%), use table otherwise use lookup.

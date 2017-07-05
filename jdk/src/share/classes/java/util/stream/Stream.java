@@ -880,14 +880,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      */
     public static<T> Stream<T> generate(Supplier<T> s) {
         Objects.requireNonNull(s);
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
-                new Iterator<T>() {
-                    @Override
-                    public boolean hasNext() { return true; }
-
-                    @Override
-                    public T next() { return s.get(); }
-                },
-                Spliterator.ORDERED | Spliterator.IMMUTABLE));
+        return StreamSupport.stream(
+                new StreamSpliterators.InfiniteSupplyingSpliterator.OfRef<>(Long.MAX_VALUE, s));
     }
 }

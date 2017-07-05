@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ public interface DSAPrivateKey extends DSAKey, java.security.PrivateKey {
     static final long serialVersionUID = 7776497482533790279L;
 
     /**
-     * Returns the value of the private key, <code>x</code>.
+     * Returns the value of the private key, {@code x}.
      *
-     * @return the value of the private key, <code>x</code>.
+     * @return the value of the private key, {@code x}.
      */
     public BigInteger getX();
 }

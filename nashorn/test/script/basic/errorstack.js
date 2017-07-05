@@ -22,7 +22,7 @@
  */
 
 /**
- * "stack" property of Error objects. (nashorn extension).
+ * "getStackTrace()" method of Error objects. (nashorn extension).
  *
  * @test
  * @run
@@ -43,9 +43,9 @@ function func3() {
 try {
     func1();
 } catch (e) {
-    // "stack" is java.lang.StackTraceElement object
-    for (i in e.stack) {
-        print(e.stack[i].methodName + " : " + e.stack[i].lineNumber);
+    var frames = e.getStackTrace();
+    for (i in frames) {
+        print(frames[i].methodName + " : " + frames[i].lineNumber);
     }
 }
 

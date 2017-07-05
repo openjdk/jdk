@@ -82,13 +82,13 @@ public final class ObjectClassGenerator {
      * Debug field logger
      * Should we print debugging information for fields when they are generated and getters/setters are called?
      */
-    public static final DebugLogger LOG          = new DebugLogger("fields", "nashorn.fields.debug");
+    public static final DebugLogger LOG = new DebugLogger("fields", "nashorn.fields.debug");
 
     /**
      * is field debugging enabled. Several modules in codegen and properties use this, hence
      * public access.
      */
-    public static final boolean     DEBUG_FIELDS = LOG.isEnabled();
+    public static final boolean DEBUG_FIELDS = LOG.isEnabled();
 
     /**
      * Should the runtime only use java.lang.Object slots for fields? If this is false, the representation

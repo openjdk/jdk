@@ -184,7 +184,6 @@ public class UnorderedTest extends OpTestCase {
             UnaryOperator<S> fi = interpose(f, (S s) -> (S) chain(s, checkClearOrderedOp));
             withData(data).
                     terminal(fi, terminalF).
-                    without(TerminalTestScenario.ALL_PARALLEL_SEQUENTIAL).
                     equalator(equalityAsserter).
                     exercise();
         }
@@ -195,7 +194,6 @@ public class UnorderedTest extends OpTestCase {
             UnaryOperator<S> fi = interpose(f, (S s) -> (S) chain(s, checkSetOrderedOp));
             withData(data).
                     terminal(fi, s -> terminalF.apply(s.sequential())).
-                    without(TerminalTestScenario.ALL_PARALLEL_SEQUENTIAL).
                     equalator(equalityAsserter).
                     exercise();
         }

@@ -377,7 +377,7 @@ public class XMLEncoder extends Encoder implements AutoCloseable {
             Object arg = args[i];
             mark(arg, true);
         }
-        mark(stm.getTarget(), false);
+        mark(stm.getTarget(), stm instanceof Expression);
     }
 
 

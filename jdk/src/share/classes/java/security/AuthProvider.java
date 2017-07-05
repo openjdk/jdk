@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import javax.security.auth.callback.CallbackHandler;
 /**
  * This class defines login and logout methods for a provider.
  *
- * <p> While callers may invoke <code>login</code> directly,
- * the provider may also invoke <code>login</code> on behalf of callers
+ * <p> While callers may invoke {@code login} directly,
+ * the provider may also invoke {@code login} on behalf of callers
  * if it determines that a login must be performed
  * prior to certain operations.
  *
@@ -56,11 +56,11 @@ public abstract class AuthProvider extends Provider {
     /**
      * Log in to this provider.
      *
-     * <p> The provider relies on a <code>CallbackHandler</code>
+     * <p> The provider relies on a {@code CallbackHandler}
      * to obtain authentication information from the caller
-     * (a PIN, for example).  If the caller passes a <code>null</code>
+     * (a PIN, for example).  If the caller passes a {@code null}
      * handler to this method, the provider uses the handler set in the
-     * <code>setCallbackHandler</code> method.
+     * {@code setCallbackHandler} method.
      * If no handler was set in that method, the provider queries the
      * <i>auth.login.defaultCallbackHandler</i> security property
      * for the fully qualified class name of a default handler implementation.
@@ -68,21 +68,21 @@ public abstract class AuthProvider extends Provider {
      * the provider is assumed to have alternative means
      * for obtaining authentication information.
      *
-     * @param subject the <code>Subject</code> which may contain
+     * @param subject the {@code Subject} which may contain
      *          principals/credentials used for authentication,
      *          or may be populated with additional principals/credentials
      *          after successful authentication has completed.
-     *          This parameter may be <code>null</code>.
-     * @param handler the <code>CallbackHandler</code> used by
+     *          This parameter may be {@code null}.
+     * @param handler the {@code CallbackHandler} used by
      *          this provider to obtain authentication information
-     *          from the caller, which may be <code>null</code>
+     *          from the caller, which may be {@code null}
      *
      * @exception LoginException if the login operation fails
      * @exception SecurityException if the caller does not pass a
      *  security check for
-     *  <code>SecurityPermission("authProvider.<i>name</i>")</code>,
-     *  where <i>name</i> is the value returned by
-     *  this provider's <code>getName</code> method
+     *  {@code SecurityPermission("authProvider.name")},
+     *  where {@code name} is the value returned by
+     *  this provider's {@code getName} method
      */
     public abstract void login(Subject subject, CallbackHandler handler)
         throws LoginException;
@@ -93,18 +93,18 @@ public abstract class AuthProvider extends Provider {
      * @exception LoginException if the logout operation fails
      * @exception SecurityException if the caller does not pass a
      *  security check for
-     *  <code>SecurityPermission("authProvider.<i>name</i>")</code>,
-     *  where <i>name</i> is the value returned by
-     *  this provider's <code>getName</code> method
+     *  {@code SecurityPermission("authProvider.name")},
+     *  where {@code name} is the value returned by
+     *  this provider's {@code getName} method
      */
     public abstract void logout() throws LoginException;
 
     /**
-     * Set a <code>CallbackHandler</code>.
+     * Set a {@code CallbackHandler}.
      *
      * <p> The provider uses this handler if one is not passed to the
-     * <code>login</code> method.  The provider also uses this handler
-     * if it invokes <code>login</code> on behalf of callers.
+     * {@code login} method.  The provider also uses this handler
+     * if it invokes {@code login} on behalf of callers.
      * In either case if a handler is not set via this method,
      * the provider queries the
      * <i>auth.login.defaultCallbackHandler</i> security property
@@ -113,14 +113,14 @@ public abstract class AuthProvider extends Provider {
      * the provider is assumed to have alternative means
      * for obtaining authentication information.
      *
-     * @param handler a <code>CallbackHandler</code> for obtaining
-     *          authentication information, which may be <code>null</code>
+     * @param handler a {@code CallbackHandler} for obtaining
+     *          authentication information, which may be {@code null}
      *
      * @exception SecurityException if the caller does not pass a
      *  security check for
-     *  <code>SecurityPermission("authProvider.<i>name</i>")</code>,
-     *  where <i>name</i> is the value returned by
-     *  this provider's <code>getName</code> method
+     *  {@code SecurityPermission("authProvider.name")},
+     *  where {@code name} is the value returned by
+     *  this provider's {@code getName} method
      */
     public abstract void setCallbackHandler(CallbackHandler handler);
 }

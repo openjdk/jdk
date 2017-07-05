@@ -66,7 +66,7 @@ public class Pack200Test {
         }
     }
 
-    private static void doPackUnpack() {
+    private static void doPackUnpack() throws IOException {
         for (File in : jarList) {
             JarOutputStream javaUnpackerStream = null;
             JarOutputStream nativeUnpackerStream = null;
@@ -117,12 +117,13 @@ public class Pack200Test {
                 Utils.close((Closeable) jarFile);
             }
         }
+        Utils.cleanup(); // cleanup artifacts, if successful run
     }
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         // select the jars carefully, adding more jars will increase the
         // testing time, especially for jprt.
         jarList.add(Utils.locateJar("tools.jar"));

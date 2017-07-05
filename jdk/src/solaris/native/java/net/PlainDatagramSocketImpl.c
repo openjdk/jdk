@@ -43,7 +43,14 @@
 #ifndef SO_BSDCOMPAT
 #define SO_BSDCOMPAT  14
 #endif
+/**
+ * IP_MULTICAST_ALL has been supported since kernel version 2.6.31
+ * but we may be building on a machine that is older than that.
+ */
+#ifndef IP_MULTICAST_ALL
+#define IP_MULTICAST_ALL      49
 #endif
+#endif  //  __linux__
 
 #ifndef IPTOS_TOS_MASK
 #define IPTOS_TOS_MASK 0x1e
@@ -979,6 +986,18 @@ Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate(JNIEnv *env,
 #endif /* __APPLE__ */
 
      setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char*) &t, sizeof(int));
+
+#if defined(__linux__)
+     arg = 0;
+     int level = (domain == AF_INET6) ? IPPROTO_IPV6 : IPPROTO_IP;
+     if ((setsockopt(fd, level, IP_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+         (errno != ENOPROTOOPT)) {
+         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
+                         strerror(errno));
+         close(fd);
+         return;
+     }
+#endif
 
 #if defined (__linux__) && defined (AF_INET6)
     /*

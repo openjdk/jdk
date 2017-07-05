@@ -22,7 +22,7 @@
  */
 
 import java.util.Objects;
-import java.util.Comparators;
+import java.util.Comparator;
 import sun.misc.JavaLangAccess;
 import sun.misc.SharedSecrets;
 
@@ -48,7 +48,7 @@ public class NewUnsafeString {
         if (!benchmark.equals(constructorCopy)) {
             throw new Error("Copy not equal");
         }
-        if (0 != Objects.compare(benchmark, constructorCopy, Comparators.naturalOrder())) {
+        if (0 != Objects.compare(benchmark, constructorCopy, Comparator.naturalOrder())) {
             throw new Error("Copy not equal");
         }
 
@@ -58,7 +58,7 @@ public class NewUnsafeString {
         if (!benchmark.equals(jlaCopy)) {
             throw new Error("Copy not equal");
         }
-        if (0 != Objects.compare(benchmark, jlaCopy, Comparators.naturalOrder())) {
+        if (0 != Objects.compare(benchmark, jlaCopy, Comparator.naturalOrder())) {
             throw new Error("Copy not equal");
         }
 
@@ -68,7 +68,7 @@ public class NewUnsafeString {
         if (!constructorCopy.equals(jlaCopy)) {
             throw new Error("Copy not equal");
         }
-        if (0 != Objects.compare(constructorCopy, jlaCopy, Comparators.naturalOrder())) {
+        if (0 != Objects.compare(constructorCopy, jlaCopy, Comparator.naturalOrder())) {
             throw new Error("Copy not equal");
         }
 

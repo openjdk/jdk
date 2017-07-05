@@ -89,7 +89,7 @@ public final class FindProperty {
         MethodHandle setter = property.getSetter(type, getOwner().getMap());
         if (property instanceof UserAccessorProperty) {
             final UserAccessorProperty uc = (UserAccessorProperty) property;
-            setter = MH.insertArguments(setter, 0, (isInherited() ? getOwner() : null),
+            setter = MH.insertArguments(setter, 0, isInherited() ? getOwner() : null,
                     uc.getSetterSlot(), strict? property.getKey() : null);
         }
 
@@ -109,7 +109,7 @@ public final class FindProperty {
      * @return appropriate receiver
      */
     public ScriptObject getGetterReceiver() {
-        return property != null && property.hasGetterFunction() ? self : prototype;
+        return property != null && property.hasGetterFunction(prototype) ? self : prototype;
     }
 
    /**
@@ -117,7 +117,7 @@ public final class FindProperty {
      * @return appropriate receiver
      */
     public ScriptObject getSetterReceiver() {
-        return property != null && property.hasSetterFunction() ? self : prototype;
+        return property != null && property.hasSetterFunction(prototype) ? self : prototype;
     }
 
     /**

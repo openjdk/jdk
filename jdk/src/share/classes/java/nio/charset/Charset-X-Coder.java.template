@@ -163,6 +163,9 @@ public abstract class Charset$Coder$ {
      * Initializes a new $coder$.  The new $coder$ will have the given
      * $otypes-per-itype$ and replacement values.
      *
+     * @param  cs
+     *         The charset that created this $coder$
+     *
      * @param  average$ItypesPerOtype$
      *         A positive float value indicating the expected number of
      *         $otype$s that will be produced for each input $itype$
@@ -208,6 +211,9 @@ public abstract class Charset$Coder$ {
      * Initializes a new $coder$.  The new $coder$ will have the given
      * $otypes-per-itype$ values and its replacement will be the
      * $replTypeName$ $defaultReplName$.
+     *
+     * @param  cs
+     *         The charset that created this $coder$
      *
      * @param  average$ItypesPerOtype$
      *         A positive float value indicating the expected number of
@@ -386,6 +392,8 @@ public abstract class Charset$Coder$ {
      * <p> The default implementation of this method does nothing.  This method
      * should be overridden by $coder$s that require notification of changes to
      * the malformed-input action.  </p>
+     *
+     * @param  newAction  The new action
      */
     protected void implOnMalformedInput(CodingErrorAction newAction) { }
 
@@ -428,6 +436,8 @@ public abstract class Charset$Coder$ {
      * <p> The default implementation of this method does nothing.  This method
      * should be overridden by $coder$s that require notification of changes to
      * the unmappable-character action.  </p>
+     *
+     * @param  newAction  The new action
      */
     protected void implOnUnmappableCharacter(CodingErrorAction newAction) { }
 
@@ -925,6 +935,9 @@ public abstract class Charset$Coder$ {
      * <p> The default implementation of this method is not very efficient; it
      * should generally be overridden to improve performance.  </p>
      *
+     * @param   c
+     *          The given character
+     *
      * @return  <tt>true</tt> if, and only if, this encoder can encode
      *          the given character
      *
@@ -952,6 +965,9 @@ public abstract class Charset$Coder$ {
      *
      * <p> The default implementation of this method is not very efficient; it
      * should generally be overridden to improve performance.  </p>
+     *
+     * @param   cs
+     *          The given character sequence
      *
      * @return  <tt>true</tt> if, and only if, this encoder can encode
      *          the given character without throwing any exceptions and without

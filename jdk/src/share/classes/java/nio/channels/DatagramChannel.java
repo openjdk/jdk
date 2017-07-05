@@ -57,7 +57,7 @@ import java.nio.channels.spi.SelectorProvider;
  * setOption} method. A datagram channel to an Internet Protocol socket supports
  * the following options:
  * <blockquote>
- * <table border>
+ * <table border summary="Socket options">
  *   <tr>
  *     <th>Option Name</th>
  *     <th>Description</th>
@@ -117,6 +117,9 @@ public abstract class DatagramChannel
 
     /**
      * Initializes a new instance of this class.
+     *
+     * @param  provider
+     *         The provider that created this channel
      */
     protected DatagramChannel(SelectorProvider provider) {
         super(provider);

@@ -40,6 +40,7 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ListAdapter;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 
@@ -51,6 +52,9 @@ import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
  */
 @ScriptClass("Java")
 public final class NativeJava {
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
 
     private NativeJava() {
     }

@@ -36,6 +36,7 @@ import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -52,6 +53,9 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
 @ScriptClass("Object")
 public final class NativeObject {
     private static final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
+
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
 
     private NativeObject() {
     }

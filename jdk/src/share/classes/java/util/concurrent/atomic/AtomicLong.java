@@ -140,7 +140,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      *
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful. False return indicates that
+     * @return {@code true} if successful. False return indicates that
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(long expect, long update) {
@@ -151,13 +151,13 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * Atomically sets the value to the given updated value
      * if the current value {@code ==} the expected value.
      *
-     * <p>May <a href="package-summary.html#Spurious">fail spuriously</a>
-     * and does not provide ordering guarantees, so is only rarely an
-     * appropriate alternative to {@code compareAndSet}.
+     * <p><a href="package-summary.html#weakCompareAndSet">May fail
+     * spuriously and does not provide ordering guarantees</a>, so is
+     * only rarely an appropriate alternative to {@code compareAndSet}.
      *
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful
+     * @return {@code true} if successful
      */
     public final boolean weakCompareAndSet(long expect, long update) {
         return unsafe.compareAndSwapLong(this, valueOffset, expect, update);
@@ -169,7 +169,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndIncrement() {
-        return getAndAdd(1);
+        return unsafe.getAndAddLong(this, valueOffset, 1L);
     }
 
     /**
@@ -178,7 +178,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final long getAndDecrement() {
-        return getAndAdd(-1);
+        return unsafe.getAndAddLong(this, valueOffset, -1L);
     }
 
     /**
@@ -197,7 +197,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final long incrementAndGet() {
-        return getAndAdd(1) + 1;
+        return unsafe.getAndAddLong(this, valueOffset, 1L) + 1L;
     }
 
     /**
@@ -206,7 +206,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final long decrementAndGet() {
-        return getAndAdd(-1) - 1;
+        return unsafe.getAndAddLong(this, valueOffset, -1L) - 1L;
     }
 
     /**
@@ -216,7 +216,7 @@ public class AtomicLong extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final long addAndGet(long delta) {
-        return getAndAdd(delta) + delta;
+        return unsafe.getAndAddLong(this, valueOffset, delta) + delta;
     }
 
     /**

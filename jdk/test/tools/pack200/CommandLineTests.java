@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,11 @@ public class CommandLineTests {
     static void init() throws IOException {
             Utils.recursiveCopy(Utils.JavaSDK, EXP_SDK);
             creatConfigFile();
+    }
+    // cleanup the test area
+    static void cleanup() throws IOException {
+        Utils.recursiveDelete(EXP_SDK);
+        Utils.cleanup();
     }
 
     // Hopefully, this should be kept in sync with what the installer does.
@@ -172,6 +177,7 @@ public class CommandLineTests {
             init();
             testJRE();
             testJDK();
+            cleanup(); // cleanup only if we pass successfully
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }

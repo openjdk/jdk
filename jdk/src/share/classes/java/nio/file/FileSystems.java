@@ -200,6 +200,10 @@ public final class FileSystems {
      * existing file system. In the case of the {@link FileSystems#getDefault
      * default} file system, no permission check is required.
      *
+     * @param   uri  the URI to locate the file system
+     *
+     * @return  the reference to the file system
+     *
      * @throws  IllegalArgumentException
      *          if the pre-conditions for the {@code uri} parameter are not met
      * @throws  FileSystemNotFoundException
