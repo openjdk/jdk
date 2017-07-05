@@ -610,7 +610,9 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _trace_opto_output(TraceOptoOutput || method()->has_option("TraceOptoOutput")),
                   _printer(IdealGraphPrinter::printer()),
 #endif
-                  _congraph(NULL) {
+                  _congraph(NULL),
+                  _print_inlining_list(NULL),
+                  _print_inlining(0) {
   C = this;
 
   CompileWrapper cw(this);
@@ -666,6 +668,9 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   PhaseGVN gvn(node_arena(), estimated_size);
   set_initial_gvn(&gvn);
 
+  if (PrintInlining) {
+    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer>(comp_arena(), 1, 1, PrintInliningBuffer());
+  }
   { // Scope for timing the parser
     TracePhase t3("parse", &_t_parser, true);
 
@@ -754,6 +759,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       }
     }
     assert(_late_inlines.length() == 0, "should have been processed");
+    dump_inlining();
 
     print_method("Before RemoveUseless", 3);
 
@@ -899,7 +905,9 @@ Compile::Compile( ciEnv* ci_env,
 #endif
     _dead_node_list(comp_arena()),
     _dead_node_count(0),
-    _congraph(NULL) {
+    _congraph(NULL),
+    _print_inlining_list(NULL),
+    _print_inlining(0) {
   C = this;
 
 #ifndef PRODUCT
@@ -3349,5 +3357,13 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
     assert(*constant_addr == (((address) n) + i), err_msg_res("all jump-table entries must contain adjusted node pointer: " INTPTR_FORMAT " == " INTPTR_FORMAT, *constant_addr, (((address) n) + i)));
     *constant_addr = cb.consts()->target(*labels.at(i), (address) constant_addr);
     cb.consts()->relocate((address) constant_addr, relocInfo::internal_word_type);
+  }
+}
+
+void Compile::dump_inlining() {
+  if (PrintInlining) {
+    for (int i = 0; i < _print_inlining_list->length(); i++) {
+      tty->print(_print_inlining_list->at(i).ss()->as_string());
+    }
   }
 }

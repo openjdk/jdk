@@ -334,7 +334,7 @@ class MemBaseline : public _ValueObj {
   // create a memory baseline
   MemBaseline();
 
-  virtual ~MemBaseline();
+  ~MemBaseline();
 
   inline bool baselined() const {
     return _baselined;

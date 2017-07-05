@@ -592,6 +592,7 @@ class LambdaForm {
     private int invocationCounter = 0;
 
     @Hidden
+    @DontInline
     /** Interpretively invoke this form on the given arguments. */
     Object interpretWithArguments(Object... argumentValues) throws Throwable {
         if (TRACE_INTERPRETER)
@@ -606,6 +607,7 @@ class LambdaForm {
     }
 
     @Hidden
+    @DontInline
     /** Evaluate a single Name within this form, applying its function to its arguments. */
     Object interpretName(Name name, Object[] values) throws Throwable {
         if (TRACE_INTERPRETER)
