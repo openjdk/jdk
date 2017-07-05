@@ -64,7 +64,7 @@ Java_sun_nio_ch_InheritedChannel_peerAddress0(JNIEnv *env, jclass cla, jint fd)
 
     if (getpeername(fd, &sa.sa, &len) == 0) {
         if (matchFamily(&sa.sa)) {
-            remote_ia = NET_SockaddrToInetAddress(env, &sa.sa, (int *)&remote_port);
+            remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
         }
     }
 
@@ -81,7 +81,7 @@ Java_sun_nio_ch_InheritedChannel_peerPort0(JNIEnv *env, jclass cla, jint fd)
 
     if (getpeername(fd, &sa.sa, &len) == 0) {
         if (matchFamily(&sa.sa)) {
-            NET_SockaddrToInetAddress(env, &sa.sa, (int *)&remote_port);
+            NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
         }
     }
 

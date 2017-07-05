@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ public class General {
     private static int gensymCounter = 0;
 
     protected static final String userDir = System.getProperty("user.dir");
+    protected static final String workSubDir = "tmp";
 
     protected static String baseDir = null;
     protected static String relative = null;
@@ -60,7 +61,10 @@ public class General {
      *                  direct or indirect calling) in a whole test.
      */
     protected static void initTestData(int depth) throws IOException {
-        File parent = new File(userDir);
+        File parent = new File(userDir + File.separator + workSubDir);
+        if (!parent.mkdir()) {
+            throw new IOException("Fail to create directory: " + parent);
+        }
         for (int i = 0; i < depth; i++) {
             File tmp = new File(parent, gensym());
             tmp.createNewFile();

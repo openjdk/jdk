@@ -274,15 +274,15 @@ Java_sun_nio_ch_Net_bind0(JNIEnv *env, jclass clazz, jobject fdo, jboolean prefe
                           jboolean useExclBind, jobject iao, int port)
 {
     SOCKETADDRESS sa;
-    int sa_len = sizeof(SOCKETADDRESS);
+    int sa_len = 0;
     int rv = 0;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, &sa.sa, &sa_len,
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len,
                                   preferIPv6) != 0) {
         return;
     }
 
-    rv = NET_Bind(fdval(env, fdo), &sa.sa, sa_len);
+    rv = NET_Bind(fdval(env, fdo), &sa, sa_len);
     if (rv != 0) {
         handleSocketError(env, errno);
     }
@@ -300,10 +300,10 @@ Java_sun_nio_ch_Net_connect0(JNIEnv *env, jclass clazz, jboolean preferIPv6,
                              jobject fdo, jobject iao, jint port)
 {
     SOCKETADDRESS sa;
-    int sa_len = sizeof(SOCKETADDRESS);
+    int sa_len = 0;
     int rv;
 
-    if (NET_InetAddressToSockaddr(env, iao, port, &sa.sa, &sa_len,
+    if (NET_InetAddressToSockaddr(env, iao, port, &sa, &sa_len,
                                   preferIPv6) != 0) {
         return IOS_THROWN;
     }
@@ -349,7 +349,7 @@ Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
         return -1;
 #endif /* _ALLBSD_SOURCE */
     }
-    return NET_GetPortFromSockaddr(&sa.sa);
+    return NET_GetPortFromSockaddr(&sa);
 }
 
 JNIEXPORT jobject JNICALL
@@ -382,7 +382,7 @@ Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
         return NULL;
 #endif /* _ALLBSD_SOURCE */
     }
-    return NET_SockaddrToInetAddress(env, &sa.sa, &port);
+    return NET_SockaddrToInetAddress(env, &sa, &port);
 }
 
 JNIEXPORT jint JNICALL

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,22 @@
 
 /*
  * @test
+ * @bug 8160286
  * @summary Test the recording and checking of module hashes
- * @author Andrei Eremeev
  * @library /lib/testlibrary
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.module
- *          jdk.jlink
  *          jdk.compiler
- * @build CompilerUtils
+ *          jdk.jartool
+ *          jdk.jlink
+ * @build CompilerUtils ModuleInfoMaker
  * @run testng HashesTest
  */
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
@@ -53,107 +56,309 @@ import java.util.List;
 import java.util.Set;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.internal.module.ModuleInfo;
 import jdk.internal.module.ModuleHashes;
 import jdk.internal.module.ModulePath;
 
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.*;
+import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
 public class HashesTest {
     static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
         .orElseThrow(() ->
             new RuntimeException("jmod tool not found")
         );
+    static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+        .orElseThrow(() ->
+            new RuntimeException("jar tool not found")
+        );
 
-    private final Path testSrc = Paths.get(System.getProperty("test.src"));
-    private final Path modSrc = testSrc.resolve("src");
-    private final Path mods = Paths.get("mods");
-    private final Path jmods = Paths.get("jmods");
-    private final String[] modules = new String[] { "m1", "m2", "m3"};
-
-    @BeforeTest
-    private void setup() throws Exception {
-        if (Files.exists(jmods)) {
-            deleteDirectory(jmods);
+    private final Path mods;
+    private final Path srcDir;
+    private final Path lib;
+    private final ModuleInfoMaker builder;
+    HashesTest(Path dest) throws IOException {
+        if (Files.exists(dest)) {
+            deleteDirectory(dest);
         }
-        Files.createDirectories(jmods);
+        this.mods = dest.resolve("mods");
+        this.srcDir = dest.resolve("src");
+        this.lib = dest.resolve("lib");
+        this.builder = new ModuleInfoMaker(srcDir);
 
-        // build m2, m3 required by m1
-        compileModule("m2", modSrc);
-        jmod("m2");
-
-        compileModule("m3", modSrc);
-        jmod("m3");
-
-        // build m1
-        compileModule("m1", modSrc);
-        // no hash is recorded since m1 has outgoing edges
-        jmod("m1", "--module-path", jmods.toString(), "--hash-modules", ".*");
-
-        // compile org.bar and org.foo
-        compileModule("org.bar", modSrc);
-        compileModule("org.foo", modSrc);
+        Files.createDirectories(lib);
+        Files.createDirectories(mods);
     }
 
     @Test
-    public void test() throws Exception {
-        for (String mn : modules) {
-            assertTrue(hashes(mn) == null);
-        }
+    public static void test() throws IOException {
+        Path dest = Paths.get("test");
+        HashesTest ht = new HashesTest(dest);
+
+        // create modules for test cases
+        ht.makeModule("m2");
+        ht.makeModule("m3");
+        ht.makeModule("m1", "m2", "m3");
+
+        ht.makeModule("org.bar", TRANSITIVE, "m1");
+        ht.makeModule("org.foo", TRANSITIVE, "org.bar");
+
+        // create JMOD for m1, m2, m3
+        ht.makeJmod("m2");
+        ht.makeJmod("m3");
+
+        // no hash is recorded since m1 has outgoing edges
+        ht.jmodHashModules("m1", ".*");
+
+        // no hash is recorded in m1, m2, m3
+        assertTrue(ht.hashes("m1") == null);
+        assertTrue(ht.hashes("m2") == null);
+        assertTrue(ht.hashes("m3") == null);
 
         // hash m1 in m2
-        jmod("m2", "--module-path", jmods.toString(), "--hash-modules", "m1");
-        checkHashes(hashes("m2"), "m1");
+        ht.jmodHashModules("m2",  "m1");
+        ht.checkHashes("m2", "m1");
 
         // hash m1 in m2
-        jmod("m2", "--module-path", jmods.toString(), "--hash-modules", ".*");
-        checkHashes(hashes("m2"), "m1");
+        ht.jmodHashModules("m2",  ".*");
+        ht.checkHashes("m2", "m1");
 
         // create m2.jmod with no hash
-        jmod("m2");
+        ht.makeJmod("m2");
         // run jmod hash command to hash m1 in m2 and m3
-        runJmod(Arrays.asList("hash", "--module-path", jmods.toString(),
-                "--hash-modules", ".*"));
-        checkHashes(hashes("m2"), "m1");
-        checkHashes(hashes("m3"), "m1");
+        runJmod(List.of("hash", "--module-path", ht.lib.toString(),
+                        "--hash-modules", ".*"));
+        ht.checkHashes("m2", "m1");
+        ht.checkHashes("m3", "m1");
 
-        jmod("org.bar");
-        jmod("org.foo");
+        // check transitive requires
+        ht.makeJmod("org.bar");
+        ht.makeJmod("org.foo");
 
-        jmod("org.bar", "--module-path", jmods.toString(), "--hash-modules", "org.*");
-        checkHashes(hashes("org.bar"), "org.foo");
+        ht.jmodHashModules("org.bar", "org.*");
+        ht.checkHashes("org.bar", "org.foo");
 
-        jmod("m3", "--module-path", jmods.toString(), "--hash-modules", ".*");
-        checkHashes(hashes("m3"), "org.foo", "org.bar", "m1");
+        ht.jmodHashModules( "m3", ".*");
+        ht.checkHashes("m3", "org.foo", "org.bar", "m1");
     }
 
-    private void checkHashes(ModuleHashes hashes, String... hashModules) {
+    @Test
+    public static void multiBaseModules() throws IOException {
+        Path dest = Paths.get("test2");
+        HashesTest ht = new HashesTest(dest);
+
+        /*
+         * y2 -----------> y1
+         *    |______
+         *    |      |
+         *    V      V
+         *    z3 -> z2
+         *    |      |
+         *    |      V
+         *    |---> z1
+         */
+
+        ht.makeModule("z1");
+        ht.makeModule("z2", "z1");
+        ht.makeModule("z3", "z1", "z2");
+
+        ht.makeModule("y1");
+        ht.makeModule("y2", "y1", "z2", "z3");
+
+        Set<String> ys = Set.of("y1", "y2");
+        Set<String> zs = Set.of("z1", "z2", "z3");
+
+        // create JMOD files
+        Stream.concat(ys.stream(), zs.stream()).forEach(ht::makeJmod);
+
+        // run jmod hash command
+        runJmod(List.of("hash", "--module-path", ht.lib.toString(),
+                        "--hash-modules", ".*"));
+
+        /*
+         * z1 and y1 are the modules with hashes recorded.
+         */
+        ht.checkHashes("y1", "y2");
+        ht.checkHashes("z1", "z2", "z3", "y2");
+        Stream.concat(ys.stream(), zs.stream())
+              .filter(mn -> !mn.equals("y1") && !mn.equals("z1"))
+              .forEach(mn -> assertTrue(ht.hashes(mn) == null));
+    }
+
+    @Test
+    public static void mixJmodAndJarFile() throws IOException {
+        Path dest = Paths.get("test3");
+        HashesTest ht = new HashesTest(dest);
+
+        /*
+         * j3 -----------> j2
+         *    |______
+         *    |      |
+         *    V      V
+         *    m3 -> m2
+         *    |      |
+         *    |      V
+         *    |---> m1 -> j1 -> jdk.jlink
+         */
+
+        ht.makeModule("j1");
+        ht.makeModule("j2");
+        ht.makeModule("m1", "j1");
+        ht.makeModule("m2", "m1");
+        ht.makeModule("m3", "m1", "m2");
+
+        ht.makeModule("j3", "j2", "m2", "m3");
+
+        Set<String> jars = Set.of("j1", "j2", "j3");
+        Set<String> jmods = Set.of("m1", "m2", "m3");
+
+        // create JMOD and JAR files
+        jars.forEach(ht::makeJar);
+        jmods.forEach(ht::makeJmod);
+
+        // run jmod hash command
+        runJmod(List.of("hash", "--module-path", ht.lib.toString(),
+                        "--hash-modules", "^j.*|^m.*"));
+
+        /*
+         * j1 and j2 are the modules with hashes recorded.
+         */
+        ht.checkHashes("j2", "j3");
+        ht.checkHashes("j1", "m1", "m2", "m3", "j3");
+        Stream.concat(jars.stream(), jmods.stream())
+              .filter(mn -> !mn.equals("j1") && !mn.equals("j2"))
+              .forEach(mn -> assertTrue(ht.hashes(mn) == null));
+    }
+
+    @Test
+    public static void upgradeableModule() throws IOException {
+        Path mpath = Paths.get(System.getProperty("java.home"), "jmods");
+        if (!Files.exists(mpath)) {
+            return;
+        }
+
+        Path dest = Paths.get("test4");
+        HashesTest ht = new HashesTest(dest);
+        ht.makeModule("m1");
+        ht.makeModule("java.xml.bind", "m1");
+        ht.makeModule("java.xml.ws", "java.xml.bind");
+        ht.makeModule("m2", "java.xml.ws");
+
+        ht.makeJmod("m1");
+        ht.makeJmod("m2");
+        ht.makeJmod("java.xml.ws");
+        ht.makeJmod("java.xml.bind",
+                    "--module-path",
+                    ht.lib.toString() + File.pathSeparator + mpath,
+                    "--hash-modules", "^java.xml.*|^m.*");
+
+        ht.checkHashes("java.xml.bind", "java.xml.ws", "m2");
+    }
+
+    @Test
+    public static void testImageJmods() throws IOException {
+        Path mpath = Paths.get(System.getProperty("java.home"), "jmods");
+        if (!Files.exists(mpath)) {
+            return;
+        }
+
+        Path dest = Paths.get("test5");
+        HashesTest ht = new HashesTest(dest);
+        ht.makeModule("m1", "jdk.compiler", "jdk.attach");
+        ht.makeModule("m2", "m1");
+        ht.makeModule("m3", "java.compiler");
+
+        ht.makeJmod("m1");
+        ht.makeJmod("m2");
+
+        runJmod(List.of("hash",
+                        "--module-path",
+                        mpath.toString() + File.pathSeparator + ht.lib.toString(),
+                        "--hash-modules", ".*"));
+
+        validateImageJmodsTest(ht, mpath);
+    }
+
+    @Test
+    public static void testImageJmods1() throws IOException {
+        Path mpath = Paths.get(System.getProperty("java.home"), "jmods");
+        if (!Files.exists(mpath)) {
+            return;
+        }
+
+        Path dest = Paths.get("test6");
+        HashesTest ht = new HashesTest(dest);
+        ht.makeModule("m1", "jdk.compiler", "jdk.attach");
+        ht.makeModule("m2", "m1");
+        ht.makeModule("m3", "java.compiler");
+
+        ht.makeJar("m2");
+        ht.makeJar("m1",
+                    "--module-path",
+                    mpath.toString() + File.pathSeparator + ht.lib.toString(),
+                    "--hash-modules", ".*");
+        validateImageJmodsTest(ht, mpath);
+    }
+
+    private static void validateImageJmodsTest(HashesTest ht, Path mpath)
+        throws IOException
+    {
+        // hash is recorded in m1 and not any other packaged modules on module path
+        ht.checkHashes("m1", "m2");
+        assertTrue(ht.hashes("m2") == null);
+
+        // should not override any JDK packaged modules
+        ModuleFinder finder = new ModulePath(Runtime.version(),
+                                             true,
+                                             mpath);
+        assertTrue(ht.hashes(finder,"jdk.compiler") == null);
+        assertTrue(ht.hashes(finder,"jdk.attach") == null);
+    }
+
+    private void checkHashes(String mn, String... hashModules) throws IOException {
+        ModuleHashes hashes = hashes(mn);
         assertTrue(hashes.names().equals(Set.of(hashModules)));
     }
 
-    private ModuleHashes hashes(String name) throws Exception {
+    private ModuleHashes hashes(String name) {
         ModuleFinder finder = new ModulePath(Runtime.version(),
                                              true,
-                                             jmods.resolve(name + ".jmod"));
+                                             lib);
+        return hashes(finder, name);
+    }
+
+    private ModuleHashes hashes(ModuleFinder finder, String name) {
         ModuleReference mref = finder.find(name).orElseThrow(RuntimeException::new);
-        ModuleReader reader = mref.open();
-        try (InputStream in = reader.open("module-info.class").get()) {
-            ModuleHashes hashes = ModuleInfo.read(in, null).recordedHashes();
-            System.out.format("hashes in module %s %s%n", name,
+        try {
+            ModuleReader reader = mref.open();
+            try (InputStream in = reader.open("module-info.class").get()) {
+                ModuleHashes hashes = ModuleInfo.read(in, null).recordedHashes();
+                System.out.format("hashes in module %s %s%n", name,
                     (hashes != null) ? "present" : "absent");
-            if (hashes != null) {
-                hashes.names().stream()
-                    .sorted()
-                    .forEach(n -> System.out.format("  %s %s%n", n, hashes.hashFor(n)));
+                if (hashes != null) {
+                    hashes.names().stream().sorted().forEach(n ->
+                        System.out.format("  %s %s%n", n, toHex(hashes.hashFor(n)))
+                    );
+                }
+                return hashes;
+            } finally {
+                reader.close();
             }
-            return hashes;
-        } finally {
-            reader.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
+    }
+
+    private String toHex(byte[] ba) {
+        StringBuilder sb = new StringBuilder(ba.length);
+        for (byte b: ba) {
+            sb.append(String.format("%02x", b & 0xff));
+        }
+        return sb.toString();
     }
 
     private void deleteDirectory(Path dir) throws IOException {
@@ -176,31 +381,94 @@ public class HashesTest {
         });
     }
 
+
+    private void makeModule(String mn, String... deps) throws IOException {
+        makeModule(mn, null, deps);
+    }
+
+    private void makeModule(String mn, ModuleDescriptor.Requires.Modifier mod,  String... deps)
+        throws IOException
+    {
+        if (mod != null && mod != TRANSITIVE && mod != STATIC) {
+            throw new IllegalArgumentException(mod.toString());
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("module " + mn + " {").append("\n");
+        Arrays.stream(deps).forEach(req -> {
+            sb.append("    requires ");
+            if (mod != null) {
+                sb.append(mod.toString().toLowerCase()).append(" ");
+            }
+            sb.append(req + ";\n");
+        });
+        sb.append("}\n");
+        builder.writeJavaFiles(mn, sb.toString());
+
+        compileModule(mn, srcDir);
+    }
+
     private void compileModule(String moduleName, Path src) throws IOException {
         Path msrc = src.resolve(moduleName);
         assertTrue(CompilerUtils.compile(msrc, mods, "--module-source-path", src.toString()));
     }
 
-    private void jmod(String moduleName, String... options) throws IOException {
+    private void jmodHashModules(String moduleName, String hashModulesPattern) {
+        makeJmod(moduleName, "--module-path", lib.toString(),
+                 "--hash-modules", hashModulesPattern);
+    }
+
+    private void makeJmod(String moduleName, String... options) {
         Path mclasses = mods.resolve(moduleName);
-        Path outfile = jmods.resolve(moduleName + ".jmod");
+        Path outfile = lib.resolve(moduleName + ".jmod");
         List<String> args = new ArrayList<>();
         args.add("create");
         Collections.addAll(args, options);
         Collections.addAll(args, "--class-path", mclasses.toString(),
                            outfile.toString());
 
-        if (Files.exists(outfile))
-            Files.delete(outfile);
-
+        if (Files.exists(outfile)) {
+            try {
+                Files.delete(outfile);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
         runJmod(args);
     }
 
-    private void runJmod(List<String> args) {
+    private static void runJmod(List<String> args) {
         int rc = JMOD_TOOL.run(System.out, System.out, args.toArray(new String[args.size()]));
-        System.out.println("jmod options: " + args.stream().collect(Collectors.joining(" ")));
+        System.out.println("jmod " + args.stream().collect(Collectors.joining(" ")));
         if (rc != 0) {
-            throw new AssertionError("Jmod failed: rc = " + rc);
+            throw new AssertionError("jmod failed: rc = " + rc);
+        }
+    }
+
+    private void makeJar(String moduleName, String... options) {
+        Path mclasses = mods.resolve(moduleName);
+        Path outfile = lib.resolve(moduleName + ".jar");
+        List<String> args = new ArrayList<>();
+        Stream.concat(Stream.of("--create",
+                                "--file=" + outfile.toString()),
+                      Arrays.stream(options))
+              .forEach(args::add);
+        args.add("-C");
+        args.add(mclasses.toString());
+        args.add(".");
+
+        if (Files.exists(outfile)) {
+            try {
+                Files.delete(outfile);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        int rc = JAR_TOOL.run(System.out, System.out, args.toArray(new String[args.size()]));
+        System.out.println("jar " + args.stream().collect(Collectors.joining(" ")));
+        if (rc != 0) {
+            throw new AssertionError("jar failed: rc = " + rc);
         }
     }
 }

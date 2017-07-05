@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package javax.xml.catalog;
 import java.net.URL;
 
 /**
- * Represents an uriEntry entry.
+ * Represents a uri entry.
  *
  * @since 9
  */
@@ -36,7 +36,7 @@ final class UriEntry extends BaseEntry {
     URL uri;
 
     /**
-     * Construct a group entry.
+     * Construct a uri entry.
      * @param name The name attribute.
      * @param uri The uri attribute.
      */
