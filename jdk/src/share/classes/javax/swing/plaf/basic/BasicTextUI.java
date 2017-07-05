@@ -756,9 +756,8 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
      * things.
      * <ol>
      * <li>
-     * Sets the associated component to opaque (can be changed
-     * easily by a subclass or on JTextComponent directly),
-     * which is the most common case.  This will cause the
+     * Sets the associated component to opaque if the opaque property
+     * has not already been set by the client program. This will cause the
      * component's background color to be painted.
      * <li>
      * Installs the default caret and highlighter into the

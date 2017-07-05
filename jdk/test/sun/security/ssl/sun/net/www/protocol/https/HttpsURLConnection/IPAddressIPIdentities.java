@@ -625,6 +625,11 @@ public class IPAddressIPIdentities {
     volatile static boolean serverReady = false;
 
     /*
+     * Is the connection ready to close?
+     */
+    volatile static boolean closeReady = false;
+
+    /*
      * Turn on SSL debugging?
      */
     static boolean debug = false;
@@ -653,9 +658,6 @@ public class IPAddressIPIdentities {
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
         sslSocket.setNeedClientAuth(true);
-        if (sslSocket instanceof SSLSocketImpl) {
-            ((SSLSocketImpl)sslSocket).trySetHostnameVerification("HTTPS");
-        }
 
         PrintStream out =
                 new PrintStream(sslSocket.getOutputStream());
@@ -672,7 +674,10 @@ public class IPAddressIPIdentities {
             out.flush();
         } finally {
              // close the socket
-             Thread.sleep(2000);
+             while (!closeReady) {
+                 Thread.sleep(50);
+             }
+
              System.out.println("Server closing socket");
              sslSocket.close();
              serverReady = false;
@@ -705,12 +710,17 @@ public class IPAddressIPIdentities {
         URL url = new URL("https://127.0.0.1:" + serverPort+"/");
         System.out.println("url is "+url.toString());
 
-        http = (HttpsURLConnection)url.openConnection();
+        try {
+            http = (HttpsURLConnection)url.openConnection();
 
-        int respCode = http.getResponseCode();
-        System.out.println("respCode = "+respCode);
-
-        http.disconnect();
+            int respCode = http.getResponseCode();
+            System.out.println("respCode = "+respCode);
+        } finally {
+            if (http != null) {
+                http.disconnect();
+            }
+            closeReady = true;
+        }
     }
 
     /*

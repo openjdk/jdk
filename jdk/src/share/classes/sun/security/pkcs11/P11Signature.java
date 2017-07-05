@@ -226,7 +226,6 @@ final class P11Signature extends SignatureSpi {
         this.buffer = buffer;
         this.digestOID = digestOID;
         this.md = md;
-        session = token.getOpSession();
     }
 
     private void ensureInitialized() {
@@ -732,16 +731,4 @@ final class P11Signature extends SignatureSpi {
             throws InvalidParameterException {
         throw new UnsupportedOperationException("getParameter() not supported");
     }
-
-    protected void finalize() throws Throwable {
-        try {
-            if ((session != null) && token.isValid()) {
-                cancelOperation();
-                session = token.releaseSession(session);
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
 }

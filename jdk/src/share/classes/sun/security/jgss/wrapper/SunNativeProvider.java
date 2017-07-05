@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,26 +77,34 @@ public final class SunNativeProvider extends Provider {
                             if (DEBUG) err.printStackTrace();
                             return null;
                         }
-                        String gssLib = System.getProperty(LIB_PROP);
-                        if (gssLib == null || gssLib.trim().equals("")) {
+                        String gssLibs[] = new String[0];
+                        String defaultLib = System.getProperty(LIB_PROP);
+                        if (defaultLib == null || defaultLib.trim().equals("")) {
                             String osname = System.getProperty("os.name");
                             if (osname.startsWith("SunOS")) {
-                                gssLib = "libgss.so";
+                                gssLibs = new String[]{ "libgss.so" };
                             } else if (osname.startsWith("Linux")) {
-                                gssLib = "libgssapi.so";
+                                gssLibs = new String[]{
+                                    "libgssapi.so",
+                                    "libgssapi_krb5.so",
+                                };
                             }
+                        } else {
+                            gssLibs = new String[]{ defaultLib };
                         }
-                        if (GSSLibStub.init(gssLib)) {
-                            debug("Loaded GSS library: " + gssLib);
-                            Oid[] mechs = GSSLibStub.indicateMechs();
-                            HashMap<String, String> map =
-                                        new HashMap<String, String>();
-                            for (int i = 0; i < mechs.length; i++) {
-                                debug("Native MF for " + mechs[i]);
-                                map.put("GssApiMechanism." + mechs[i],
-                                        MF_CLASS);
+                        for (String libName: gssLibs) {
+                            if (GSSLibStub.init(libName)) {
+                                debug("Loaded GSS library: " + libName);
+                                Oid[] mechs = GSSLibStub.indicateMechs();
+                                HashMap<String, String> map =
+                                            new HashMap<String, String>();
+                                for (int i = 0; i < mechs.length; i++) {
+                                    debug("Native MF for " + mechs[i]);
+                                    map.put("GssApiMechanism." + mechs[i],
+                                            MF_CLASS);
+                                }
+                                return map;
                             }
-                            return map;
                         }
                         return null;
                     }

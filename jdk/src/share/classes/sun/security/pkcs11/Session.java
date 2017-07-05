@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.security.pkcs11;
 
+import java.lang.ref.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -59,11 +60,14 @@ final class Session implements Comparable<Session> {
     // this could lead to idle sessions being closed early, but that is harmless
     private long lastAccess;
 
+    private final SessionRef sessionRef;
+
     Session(Token token, long id) {
         this.token = token;
         this.id = id;
         createdObjects = new AtomicInteger();
         id();
+        sessionRef = new SessionRef(this, id, token);
     }
 
     public int compareTo(Session other) {
@@ -108,4 +112,76 @@ final class Session implements Comparable<Session> {
         return createdObjects.get() != 0;
     }
 
+    void close() {
+        if (hasObjects()) {
+            throw new ProviderException(
+                "Internal error: close session with active objects");
+        }
+        sessionRef.dispose();
+    }
+}
+
+/*
+ * NOTE: Use PhantomReference here and not WeakReference
+ * otherwise the sessions maybe closed before other objects
+ * which are still being finalized.
+ */
+final class SessionRef extends PhantomReference<Session>
+        implements Comparable<SessionRef> {
+
+    private static ReferenceQueue<Session> refQueue =
+        new ReferenceQueue<Session>();
+
+    private static Set<SessionRef> refList =
+        Collections.synchronizedSortedSet(new TreeSet<SessionRef>());
+
+    static ReferenceQueue<Session> referenceQueue() {
+        return refQueue;
+    }
+
+    static int totalCount() {
+        return refList.size();
+    }
+
+    private static void drainRefQueueBounded() {
+        while (true) {
+            SessionRef next = (SessionRef) refQueue.poll();
+            if (next == null) break;
+            next.dispose();
+        }
+    }
+
+    // handle to the native session
+    private long id;
+    private Token token;
+
+    SessionRef(Session session, long id, Token token) {
+        super(session, refQueue);
+        this.id = id;
+        this.token = token;
+        refList.add(this);
+        // TBD: run at some interval and not every time?
+        drainRefQueueBounded();
+    }
+
+    void dispose() {
+        refList.remove(this);
+        try {
+            token.p11.C_CloseSession(id);
+        } catch (PKCS11Exception e1) {
+            // ignore
+        } catch (ProviderException e2) {
+            // ignore
+        } finally {
+            this.clear();
+        }
+    }
+
+    public int compareTo(SessionRef other) {
+        if (this.id == other.id) {
+            return 0;
+        } else {
+            return (this.id < other.id) ? -1 : 1;
+        }
+    }
 }

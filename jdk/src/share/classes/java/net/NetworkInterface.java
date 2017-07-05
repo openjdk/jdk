@@ -221,11 +221,12 @@ public final class NetworkInterface {
      * A display name is a human readable String describing the network
      * device.
      *
-     * @return the display name of this network interface,
-     *         or null if no display name is available.
+     * @return a non-empty string representing the display name of this network
+     *         interface, or null if no display name is available.
      */
     public String getDisplayName() {
-        return displayName;
+        /* strict TCK conformance */
+        return "".equals(displayName) ? null : displayName;
     }
 
     /**

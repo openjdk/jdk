@@ -129,6 +129,8 @@ public final class NumericShaper implements java.io.Serializable {
      * @since 1.7
      */
     public static enum Range {
+        // The order of EUROPEAN to MOGOLIAN must be consistent
+        // with the bitmask-based constants.
         /**
          * The Latin (European) range with the Latin (ASCII) digits.
          */
@@ -210,6 +212,9 @@ public final class NumericShaper implements java.io.Serializable {
          * The Mongolian range with the Mongolian digits.
          */
         MONGOLIAN       ('\u1810', '\u1800', '\u1900'),
+        // The order of EUROPEAN to MOGOLIAN must be consistent
+        // with the bitmask-based constants.
+
         /**
          * The N'Ko range with the N'Ko digits.
          */
@@ -258,17 +263,6 @@ public final class NumericShaper implements java.io.Serializable {
          * The Cham range with the Cham digits.
          */
         CHAM            ('\uaa50', '\uaa00', '\uaa60');
-
-        private static final Range[] ranges = Range.class.getEnumConstants();
-        static {
-            // sort ranges[] by base for binary search
-            Arrays.sort(ranges,
-                        new Comparator<Range>() {
-                            public int compare(Range s1, Range s2) {
-                                return s1.base > s2.base ? 1 : s1.base == s2.base ? 0 : -1;
-                            }
-                        });
-        }
 
         private static int toRangeIndex(Range script) {
             int index = script.ordinal();
@@ -346,10 +340,19 @@ public final class NumericShaper implements java.io.Serializable {
     /**
      * {@code Set<Range>} indicating which Unicode ranges to
      * shape. {@code null} for the bit mask-based API.
-     *
-     * @since 1.7
      */
     private transient Set<Range> rangeSet;
+
+    /**
+     * rangeSet.toArray() value. Sorted by Range.base when the number
+     * of elements is greater then BSEARCH_THRESHOLD.
+     */
+    private transient Range[] rangeArray;
+
+    /**
+     * If more than BSEARCH_THRESHOLD ranges are specified, binary search is used.
+     */
+    private static final int BSEARCH_THRESHOLD = 3;
 
     private static final long serialVersionUID = -8022764705923730308L;
 
@@ -513,25 +516,32 @@ public final class NumericShaper implements java.io.Serializable {
     // cache for the NumericShaper.Range version
     private transient volatile Range currentRange = Range.EUROPEAN;
 
-    private Range rangeForCodePoint(int codepoint) {
-        Range range = currentRange;
-        if (range.inRange(codepoint)) {
-            return range;
+    private Range rangeForCodePoint(final int codepoint) {
+        if (currentRange.inRange(codepoint)) {
+            return currentRange;
         }
 
-        final Range[] ranges = Range.ranges;
-        int lo = 0;
-        int hi = ranges.length - 1;
-        while (lo <= hi) {
-            int mid = (lo + hi) / 2;
-            range = ranges[mid];
-            if (codepoint < range.start) {
-                hi = mid - 1;
-            } else if (codepoint >= range.end) {
-                lo = mid + 1;
-            } else {
-                currentRange = range;
-                return range;
+        final Range[] ranges = rangeArray;
+        if (ranges.length > BSEARCH_THRESHOLD) {
+            int lo = 0;
+            int hi = ranges.length - 1;
+            while (lo <= hi) {
+                int mid = (lo + hi) / 2;
+                Range range = ranges[mid];
+                if (codepoint < range.start) {
+                    hi = mid - 1;
+                } else if (codepoint >= range.end) {
+                    lo = mid + 1;
+                } else {
+                    currentRange = range;
+                    return range;
+                }
+            }
+        } else {
+            for (int i = 0; i < ranges.length; i++) {
+                if (ranges[i].inRange(codepoint)) {
+                    return ranges[i];
+                }
             }
         }
         return Range.EUROPEAN;
@@ -928,8 +938,25 @@ public final class NumericShaper implements java.io.Serializable {
     }
 
     private NumericShaper(Range defaultContext, Set<Range> ranges) {
-        this.shapingRange = defaultContext;
-        this.rangeSet = EnumSet.copyOf(ranges); // throws NPE if ranges is null.
+        shapingRange = defaultContext;
+        rangeSet = EnumSet.copyOf(ranges); // throws NPE if ranges is null.
+
+        // Give precedance to EASTERN_ARABIC if both ARABIC and
+        // EASTERN_ARABIC are specified.
+        if (rangeSet.contains(Range.EASTERN_ARABIC)
+            && rangeSet.contains(Range.ARABIC)) {
+            rangeSet.remove(Range.ARABIC);
+        }
+        rangeArray = rangeSet.toArray(new Range[rangeSet.size()]);
+        if (rangeArray.length > BSEARCH_THRESHOLD) {
+            // sort rangeArray for binary search
+            Arrays.sort(rangeArray,
+                        new Comparator<Range>() {
+                            public int compare(Range s1, Range s2) {
+                                return s1.base > s2.base ? 1 : s1.base == s2.base ? 0 : -1;
+                            }
+                        });
+        }
     }
 
     /**
@@ -1152,31 +1179,25 @@ public final class NumericShaper implements java.io.Serializable {
     }
 
     private void shapeContextually(char[] text, int start, int count, Range ctxKey) {
-        if (ctxKey == null) {
+        // if we don't support the specified context, then don't shape.
+        if (ctxKey == null || !rangeSet.contains(ctxKey)) {
             ctxKey = Range.EUROPEAN;
         }
 
         Range lastKey = ctxKey;
         int base = ctxKey.getDigitBase();
         char minDigit = (char)('0' + ctxKey.getNumericBase());
-        for (int i = start, end = start + count; i < end; ++i) {
+        final int end = start + count;
+        for (int i = start; i < end; ++i) {
             char c = text[i];
             if (c >= minDigit && c <= '9') {
                 text[i] = (char)(c + base);
                 continue;
             }
             if (isStrongDirectional(c)) {
-                Range newKey = rangeForCodePoint(c);
-                if (newKey != lastKey) {
-                    lastKey = newKey;
-                    ctxKey = newKey;
-                    if (rangeSet.contains(Range.EUROPEAN)
-                        && (ctxKey == Range.ARABIC || ctxKey == Range.EASTERN_ARABIC)) {
-                        ctxKey = Range.EASTERN_ARABIC;
-                    } else if (!rangeSet.contains(ctxKey)) {
-                        ctxKey = Range.EUROPEAN;
-                    }
-
+                ctxKey = rangeForCodePoint(c);
+                if (ctxKey != lastKey) {
+                    lastKey = ctxKey;
                     base = ctxKey.getDigitBase();
                     minDigit = (char)('0' + ctxKey.getNumericBase());
                 }
