@@ -30,7 +30,6 @@
  * ObjID() should still generate sequential object numbers.
  * @author Peter Jones
  *
- * @build RandomIDs
  * @run main/othervm RandomIDs random
  * @run main/othervm -Djava.rmi.server.randomIDs=true RandomIDs random
  * @run main/othervm -Djava.rmi.server.randomIDs=false RandomIDs sequential

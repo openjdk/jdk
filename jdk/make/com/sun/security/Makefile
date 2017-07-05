@@ -35,7 +35,7 @@ SUBDIRS_MAKEFLAGS += JAVAC_WARNINGS_FATAL=true
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = auth
-SUBDIRS_misc = jgss sasl auth/module
+SUBDIRS_misc = jgss sasl auth/module ntlm
 include $(BUILDDIR)/common/Subdirs.gmk
 
 all build clean clobber::

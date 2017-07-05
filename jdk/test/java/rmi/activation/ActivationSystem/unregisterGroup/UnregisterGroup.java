@@ -24,16 +24,12 @@
 /* @test
  * @bug 4134233
  * @bug 4213186
- *
  * @summary synopsis: ActivationSystem.unregisterGroup should unregister objects in group
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe
- * @build ActivateMe CallbackInterface
- * @build UnregisterGroup
- * @build UnregisterGroup_Stub
- * @build Callback_Stub
+ * @build TestLibrary RMID ActivationLibrary
+ *     ActivateMe CallbackInterface UnregisterGroup_Stub Callback_Stub
  * @run main/othervm/policy=security.policy/timeout=480 UnregisterGroup
  */
 

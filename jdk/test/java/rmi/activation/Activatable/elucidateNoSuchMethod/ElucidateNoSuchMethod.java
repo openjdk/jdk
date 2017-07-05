@@ -23,14 +23,11 @@
 
 /* @test
  * @bug 4128620
- *
  * @summary synopsis: NoSuchMethodError should be elucidated
- *
  * @author Laird Dornin
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID
- * @build ActivateMe ElucidateNoSuchMethod ElucidateNoSuchMethod_Stub
+ * @build TestLibrary RMID ActivateMe ElucidateNoSuchMethod_Stub
  * @run main/othervm/policy=security.policy/timeout=240 ElucidateNoSuchMethod
  */
 

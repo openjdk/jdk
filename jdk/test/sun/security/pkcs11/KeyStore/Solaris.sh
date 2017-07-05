@@ -142,7 +142,7 @@ fi
 # run test
 
 cd ${TESTSRC}
-${TESTJAVA}${FS}bin${FS}java \
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
 	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar \
 	-DDIR=${TESTSRC}${FS}BasicData${FS} \
 	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}BasicData${FS}p11-solaris.txt \

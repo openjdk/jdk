@@ -37,7 +37,7 @@ fi
 
 set -x
 
-${TESTJAVA}/bin/java -classpath ${TESTJAVA}/lib/tools.jar sun.tools.javac.Main -d ${TESTCLASSES:-.} ${TESTSRC:-.}/Foo.java
+${TESTJAVA}/bin/java ${TESTVMOPTS} -classpath ${TESTJAVA}/lib/tools.jar sun.tools.javac.Main -d ${TESTCLASSES:-.} ${TESTSRC:-.}/Foo.java
 
 result=$?
 if [ $result -eq 0 ]

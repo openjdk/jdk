@@ -56,7 +56,7 @@ if [ $? != 0 ]; then exit 1; fi
 failures=0
 
 # print the file tree and compare output with find(1)
-$JAVA PrintFileTree "$ROOT" > out1
+$JAVA ${TESTVMOPTS} PrintFileTree "$ROOT" > out1
 find "$ROOT" > out2
 diff out1 out2
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
@@ -66,26 +66,26 @@ if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 # not. For that reason we run PrintFileTree with the -printCycles
 # option when the output without this option differs to find(1).
 find "$ROOT" -follow > out1
-$JAVA PrintFileTree -follow "$ROOT" > out2
+$JAVA ${TESTVMOPTS} PrintFileTree -follow "$ROOT" > out2
 diff out1 out2
 if [ $? != 0 ];
   then 
     # re-run printing cycles to stdout
-    $JAVA PrintFileTree -follow -printCycles "$ROOT" > out2
+    $JAVA ${TESTVMOPTS} PrintFileTree -follow -printCycles "$ROOT" > out2
     diff out1 out2
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
   fi
 
 # test SKIP_SIBLINGS
-$JAVA SkipSiblings "$ROOT"
+$JAVA ${TESTVMOPTS} SkipSiblings "$ROOT"
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # test TERMINATE
-$JAVA TerminateWalk "$ROOT"
+$JAVA ${TESTVMOPTS} TerminateWalk "$ROOT"
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # test maxDepth
-$JAVA MaxDepth "$ROOT"
+$JAVA ${TESTVMOPTS} MaxDepth "$ROOT"
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # clean-up

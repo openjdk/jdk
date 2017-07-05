@@ -24,14 +24,12 @@
 /*
  * @test
  * @bug 6245733
- *
  * @summary synopsis: rmid's registry's list operation doesn't include
  * activation system
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
  * @build TestLibrary RMID ActivationLibrary
- * @build LookupActivationSystem
  * @run main/othervm/timeout=240 LookupActivationSystem
  */
 

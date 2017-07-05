@@ -32,7 +32,7 @@
  * @author Peter Jones
  *
  * @library ../../testlibrary
- * @build TestLibrary RapidExportUnexport
+ * @build TestLibrary
  * @run main/othervm RapidExportUnexport
  */
 

@@ -171,7 +171,7 @@ fi
 
 # run test
 
-${TESTJAVA}${FS}bin${FS}java \
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
 	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar \
 	-DDIR=${TESTSRC}${FS}BasicData \
 	-DCUSTOM_DB_DIR=${TESTCLASSES} \

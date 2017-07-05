@@ -51,6 +51,12 @@ import java.util.Arrays;
  * <code>Blob</code> object within a <code>SerialBlob</code> object
  * and to update or truncate a <code>Blob</code> object.
  *
+ * <h4> Thread safety </h4>
+ *
+ * <p> A SerialBlob is not safe for use by multiple concurrent threads.  If a
+ * SerialBlob is to be used by more than one thread then access to the SerialBlob
+ * should be controlled by appropriate synchronization.
+ *
  * @author Jonathan Bruce
  */
 public class SerialBlob implements Blob, Serializable, Cloneable {
@@ -76,7 +82,7 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
     private long len;
 
     /**
-     * The orginal number of bytes in this <code>SerialBlob</code> object's
+     * The original number of bytes in this <code>SerialBlob</code> object's
      * array of bytes when it was first established.
      * @serial
      */
@@ -160,9 +166,11 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      * @return an array of bytes that is a copy of a region of this
      *         <code>SerialBlob</code> object, starting at the given
      *         position and containing the given number of consecutive bytes
-     * @throws SerialException if the given starting position is out of bounds
+     * @throws SerialException if the given starting position is out of bounds;
+     * if {@code free} had previously been called on this object
      */
     public byte[] getBytes(long pos, int length) throws SerialException {
+        isValid();
         if (length > len) {
             length = (int)len;
         }
@@ -189,9 +197,11 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      *
      * @return a <code>long</code> indicating the length in bytes of this
      *         <code>SerialBlob</code> object's array of bytes
-     * @throws SerialException if an error occurs
+     * @throws SerialException if an error occurs;
+     * if {@code free} had previously been called on this object
      */
     public long length() throws SerialException {
+        isValid();
         return len;
     }
 
@@ -203,12 +213,14 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      *
      * @return a <code>java.io.InputStream</code> object that contains
      *         this <code>SerialBlob</code> object's array of bytes
-     * @throws SerialException if an error occurs
+     * @throws SerialException if an error occurs;
+     * if {@code free} had previously been called on this object
      * @see #setBinaryStream
      */
     public java.io.InputStream getBinaryStream() throws SerialException {
-         InputStream stream = new ByteArrayInputStream(buf);
-         return stream;
+        isValid();
+        InputStream stream = new ByteArrayInputStream(buf);
+        return stream;
     }
 
     /**
@@ -227,12 +239,14 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      *         position; <code>-1</code> if the pattern is not found
      *         or the given starting position is out of bounds; position
      *         numbering for the return value starts at <code>1</code>
-     * @throws SerialException if an error occurs when serializing the blob
+     * @throws SerialException if an error occurs when serializing the blob;
+     * if {@code free} had previously been called on this object
      * @throws SQLException if there is an error accessing the <code>BLOB</code>
      *         value from the database
      */
     public long position(byte[] pattern, long start)
                 throws SerialException, SQLException {
+        isValid();
         if (start < 1 || start > len) {
             return -1;
         }
@@ -270,12 +284,14 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      *         at the specified position; <code>-1</code> if the pattern is
      *         not found or the given starting position is out of bounds;
      *         position numbering for the return value starts at <code>1</code>
-     * @throws SerialException if an error occurs when serializing the blob
+     * @throws SerialException if an error occurs when serializing the blob;
+     * if {@code free} had previously been called on this object
      * @throws SQLException if there is an error accessing the <code>BLOB</code>
      *         value from the database
      */
     public long position(Blob pattern, long start)
        throws SerialException, SQLException {
+        isValid();
         return position(pattern.getBytes(1, (int)(pattern.length())), start);
     }
 
@@ -293,7 +309,8 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      * @return the number of bytes written
      * @throws SerialException if there is an error accessing the
      *     <code>BLOB</code> value; or if an invalid position is set; if an
-     *     invalid offset value is set
+     *     invalid offset value is set;
+     * if {@code free} had previously been called on this object
      * @throws SQLException if there is an error accessing the <code>BLOB</code>
      *         value from the database
      * @see #getBytes
@@ -328,7 +345,8 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      *     <code>BLOB</code> value; if an invalid position is set; if an
      *     invalid offset value is set; if number of bytes to be written
      *     is greater than the <code>SerialBlob</code> length; or the combined
-     *     values of the length and offset is greater than the Blob buffer
+     *     values of the length and offset is greater than the Blob buffer;
+     * if {@code free} had previously been called on this object
      * @throws SQLException if there is an error accessing the <code>BLOB</code>
      *         value from the database.
      * @see #getBytes
@@ -336,6 +354,7 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
     public int setBytes(long pos, byte[] bytes, int offset, int length)
         throws SerialException, SQLException {
 
+        isValid();
         if (offset < 0 || offset > bytes.length) {
             throw new SerialException("Invalid offset in byte array set");
         }
@@ -378,11 +397,13 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      * @throws SQLException if there is an error accessing the
      *            <code>BLOB</code> value
      * @throws SerialException if the SerialBlob in not instantiated with a
-     *     <code>Blob</code> object that supports <code>setBinaryStream()</code>
+     *     <code>Blob</code> object that supports <code>setBinaryStream()</code>;
+     * if {@code free} had previously been called on this object
      * @see #getBinaryStream
      */
     public java.io.OutputStream setBinaryStream(long pos)
         throws SerialException, SQLException {
+        isValid();
         if (this.blob != null) {
             return this.blob.setBinaryStream(pos);
         } else {
@@ -400,54 +421,75 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
      *        value that this <code>Blob</code> object represents should be
      *        truncated
      * @throws SerialException if there is an error accessing the Blob value;
-     *     or the length to truncate is greater that the SerialBlob length
+     *     or the length to truncate is greater that the SerialBlob length;
+     * if {@code free} had previously been called on this object
      */
     public void truncate(long length) throws SerialException {
 
-         if (length > len) {
-            throw new SerialException
-               ("Length more than what can be truncated");
-         } else if((int)length == 0) {
-              buf = new byte[0];
-              len = length;
-         } else {
-              len = length;
-              buf = this.getBytes(1, (int)len);
-         }
+        isValid();
+        if (length > len) {
+           throw new SerialException
+              ("Length more than what can be truncated");
+        } else if((int)length == 0) {
+             buf = new byte[0];
+             len = length;
+        } else {
+             len = length;
+             buf = this.getBytes(1, (int)len);
+        }
     }
 
 
     /**
-     * Returns an <code>InputStream</code> object that contains a partial <code>Blob</code> value,
-     * starting  with the byte specified by pos, which is length bytes in length.
+     * Returns an
+     * <code>InputStream</code> object that contains a partial
+     * {@code Blob} value, starting with the byte specified by pos, which is
+     * length bytes in length.
      *
-     * @param pos the offset to the first byte of the partial value to be retrieved.
-     *  The first byte in the <code>Blob</code> is at position 1
+     * @param pos the offset to the first byte of the partial value to be
+     * retrieved. The first byte in the {@code Blob} is at position 1
      * @param length the length in bytes of the partial value to be retrieved
-     * @return <code>InputStream</code> through which the partial <code>Blob</code> value can be read.
-     * @throws SQLException if pos is less than 1 or if pos is greater than the number of bytes
-     * in the <code>Blob</code> or if pos + length is greater than the number of bytes
-     * in the <code>Blob</code>
+     * @return
+     * <code>InputStream</code> through which the partial {@code Blob} value can
+     * be read.
+     * @throws SQLException if pos is less than 1 or if pos is greater than the
+     * number of bytes in the {@code Blob} or if pos + length is greater than
+     * the number of bytes in the {@code Blob}
+     * @throws SerialException if the {@code free} method had been previously
+     * called on this object
      *
      * @since 1.6
      */
-    public InputStream getBinaryStream(long pos,long length) throws SQLException {
-        throw new java.lang.UnsupportedOperationException("Not supported");
+    public InputStream getBinaryStream(long pos, long length) throws SQLException {
+        isValid();
+        if (pos < 1 || pos > this.length()) {
+            throw new SerialException("Invalid position in BLOB object set");
+        }
+        if (length < 1 || length > len - pos + 1) {
+            throw new SerialException("length is < 1 or pos + length >"
+                    + "total number of bytes");
+        }
+        return new ByteArrayInputStream(buf, (int) pos - 1, (int) length);
     }
 
 
     /**
-     * This method frees the <code>Blob</code> object and releases the resources that it holds.
-     * <code>Blob</code> object. The object is invalid once the <code>free</code>
-     * method is called. If <code>free</code> is called multiple times, the subsequent
-     * calls to <code>free</code> are treated as a no-op.
+     * This method frees the {@code SeriableBlob} object and releases the
+     * resources that it holds. The object is invalid once the {@code free}
+     * method is called. <p> If {@code free} is called multiple times, the
+     * subsequent calls to {@code free} are treated as a no-op. </P>
      *
-     * @throws SQLException if an error occurs releasing
-     * the Blob's resources
+     * @throws SQLException if an error occurs releasing the Blob's resources
      * @since 1.6
      */
     public void free() throws SQLException {
-        throw new java.lang.UnsupportedOperationException("Not supported");
+        if (buf != null) {
+            buf = null;
+            if (blob != null) {
+                blob.free();
+            }
+            blob = null;
+        }
     }
 
     /**
@@ -494,7 +536,7 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
     public Object clone() {
         try {
             SerialBlob sb = (SerialBlob) super.clone();
-            sb.buf = Arrays.copyOf(buf, (int)len);
+            sb.buf =  (buf != null) ? Arrays.copyOf(buf, (int)len) : null;
             sb.blob = null;
             return sb;
         } catch (CloneNotSupportedException ex) {
@@ -541,9 +583,21 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
     }
 
     /**
-         * The identifier that assists in the serialization of this <code>SerialBlob</code>
-     * object.
+     * Check to see if this object had previously had its {@code free} method
+     * called
+     *
+     * @throws SerialException
      */
+    private void isValid() throws SerialException {
+        if (buf == null) {
+            throw new SerialException("Error: You cannot call a method on a "
+                    + "SerialBlob instance once free() has been called.");
+        }
+    }
 
+    /**
+     * The identifier that assists in the serialization of this
+     * {@code SerialBlob} object.
+     */
     static final long serialVersionUID = -8144641928112860441L;
 }

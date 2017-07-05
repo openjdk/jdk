@@ -31,11 +31,7 @@
  * @author Ann Wollrath
  *
  * @library ../../../../../java/rmi/testlibrary
- * @build TestLibrary
- * @build TestFailedException
- * @build MarshalForeignStub
- * @build Receiver
- * @build MarshalForeignStub_Stub
+ * @build TestLibrary Receiver MarshalForeignStub_Stub
  * @run main/othervm/policy=security.policy MarshalForeignStub
  */
 

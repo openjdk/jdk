@@ -141,6 +141,17 @@ public class FormatData_cs extends ListResourceBundle {
                     "So" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "N",
+                    "P",
+                    "\u00da",
+                    "S",
+                    "\u010c",
+                    "P",
+                    "S",
+                }
+            },
             { "AmPmMarkers",
                 new String[] {
                     "dop.", // am marker

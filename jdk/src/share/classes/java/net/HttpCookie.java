@@ -30,6 +30,8 @@ import java.util.StringTokenizer;
 import java.util.NoSuchElementException;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
@@ -89,7 +91,10 @@ public final class HttpCookie implements Cloneable {
     private final static String[] COOKIE_DATE_FORMATS = {
         "EEE',' dd-MMM-yyyy HH:mm:ss 'GMT'",
         "EEE',' dd MMM yyyy HH:mm:ss 'GMT'",
-        "EEE MMM dd yyyy HH:mm:ss 'GMT'Z"
+        "EEE MMM dd yyyy HH:mm:ss 'GMT'Z",
+        "EEE',' dd-MMM-yy HH:mm:ss 'GMT'",
+        "EEE',' dd MMM yy HH:mm:ss 'GMT'",
+        "EEE MMM dd yy HH:mm:ss 'GMT'Z"
     };
 
     // constant strings represent set-cookie header token
@@ -1025,13 +1030,29 @@ public final class HttpCookie implements Cloneable {
      *          specified by dateString
      */
     private long expiryDate2DeltaSeconds(String dateString) {
+        Calendar cal = new GregorianCalendar(GMT);
         for (int i = 0; i < COOKIE_DATE_FORMATS.length; i++) {
             SimpleDateFormat df = new SimpleDateFormat(COOKIE_DATE_FORMATS[i],
                                                        Locale.US);
+            cal.set(1970, 0, 1, 0, 0, 0);
             df.setTimeZone(GMT);
+            df.setLenient(false);
+            df.set2DigitYearStart(cal.getTime());
             try {
-                Date date = df.parse(dateString);
-                return (date.getTime() - whenCreated) / 1000;
+                cal.setTime(df.parse(dateString));
+                if (!COOKIE_DATE_FORMATS[i].contains("yyyy")) {
+                    // 2-digit years following the standard set
+                    // out it rfc 6265
+                    int year = cal.get(Calendar.YEAR);
+                    year %= 100;
+                    if (year < 70) {
+                        year += 2000;
+                    } else {
+                        year += 1900;
+                    }
+                    cal.set(Calendar.YEAR, year);
+                }
+                return (cal.getTimeInMillis() - whenCreated) / 1000;
             } catch (Exception e) {
                 // Ignore, try the next date format
             }

@@ -688,7 +688,16 @@ public class DateFormatSymbols implements Serializable, Cloneable {
         }
         ResourceBundle resource = adapter.getLocaleData().getDateFormatData(locale);
 
-        eras = resource.getStringArray("Eras");
+        // JRE and CLDR use different keys
+        // JRE: Eras, short.Eras and narrow.Eras
+        // CLDR: long.Eras, Eras and narrow.Eras
+        if (resource.containsKey("Eras")) {
+            eras = resource.getStringArray("Eras");
+        } else if (resource.containsKey("long.Eras")) {
+            eras = resource.getStringArray("long.Eras");
+        } else if (resource.containsKey("short.Eras")) {
+            eras = resource.getStringArray("short.Eras");
+        }
         months = resource.getStringArray("MonthNames");
         shortMonths = resource.getStringArray("MonthAbbreviations");
         ampms = resource.getStringArray("AmPmMarkers");

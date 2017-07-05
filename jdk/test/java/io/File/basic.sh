@@ -44,7 +44,7 @@ case "$OS" in
     ;;
 esac
 mkdir x.Basic.dir
-if $TESTJAVA/bin/java $* -classpath "$TESTCLASSES" Basic; then
+if $TESTJAVA/bin/java ${TESTVMOPTS} $* -classpath "$TESTCLASSES" Basic; then
   [ -f x.Basic.rw ] && (echo "x.Basic.rw not deleted"; exit 1)
   ([ -d x.Basic.dir ] || [ \! -d x.Basic.dir2 ]) \
     && (echo "x.Basic.dir not renamed"; exit 1)
