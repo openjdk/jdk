@@ -90,6 +90,7 @@ protected:
     const FeatureListTable  *featureListTable;
 
     FeatureMask            *lookupSelectArray;
+    le_uint32              lookupSelectCount;
 
     le_uint16               *lookupOrderArray;
     le_uint32               lookupOrderCount;

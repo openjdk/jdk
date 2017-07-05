@@ -372,6 +372,7 @@ JAVA_JAVA_java = \
     java/util/spi/CurrencyNameProvider.java \
     java/util/spi/LocaleNameProvider.java \
     java/util/spi/LocaleServiceProvider.java \
+    java/util/spi/ResourceBundleControlProvider.java \
     java/util/spi/TimeZoneNameProvider.java \
     java/io/Closeable.java \
     java/io/Flushable.java \

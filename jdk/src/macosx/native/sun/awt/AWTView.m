@@ -188,7 +188,9 @@ AWT_ASSERT_APPKIT_THREAD;
 #endif
         }
     } else {
+#if IM_DEBUG
         NSLog(@"-> IM does not want to handle event");
+#endif
         [self deliverJavaMouseEvent: event];
     }
 }
