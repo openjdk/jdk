@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ void ParkEvent::Release (ParkEvent * ev) {
 // well as bank access imbalance on Niagara-like platforms,
 // although Niagara's hash function should help.
 
-void * ParkEvent::operator new (size_t sz) {
+void * ParkEvent::operator new (size_t sz) throw() {
   return (void *) ((intptr_t (AllocateHeap(sz + 256, mtInternal, CALLER_PC)) + 256) & -256) ;
 }
 

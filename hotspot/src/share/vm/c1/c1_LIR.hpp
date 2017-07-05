@@ -1211,8 +1211,6 @@ class LIR_OpJavaCall: public LIR_OpCall {
   bool is_invokedynamic() const                  { return code() == lir_dynamic_call; }
   bool is_method_handle_invoke() const {
     return
-      is_invokedynamic()  // An invokedynamic is always a MethodHandle call site.
-      ||
       method()->is_compiled_lambda_form()  // Java-generated adapter
       ||
       method()->is_method_handle_intrinsic();  // JVM-generated MH intrinsic

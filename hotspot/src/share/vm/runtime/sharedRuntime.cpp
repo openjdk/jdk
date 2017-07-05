@@ -1051,7 +1051,8 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
   // Find receiver for non-static call
   if (bc != Bytecodes::_invokestatic &&
-      bc != Bytecodes::_invokedynamic) {
+      bc != Bytecodes::_invokedynamic &&
+      bc != Bytecodes::_invokehandle) {
     // This register map must be update since we need to find the receiver for
     // compiled frames. The receiver might be in a register.
     RegisterMap reg_map2(thread);
@@ -1078,7 +1079,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
 
 #ifdef ASSERT
   // Check that the receiver klass is of the right subtype and that it is initialized for virtual calls
-  if (bc != Bytecodes::_invokestatic && bc != Bytecodes::_invokedynamic) {
+  if (bc != Bytecodes::_invokestatic && bc != Bytecodes::_invokedynamic && bc != Bytecodes::_invokehandle) {
     assert(receiver.not_null(), "should have thrown exception");
     KlassHandle receiver_klass(THREAD, receiver->klass());
     Klass* rk = constants->klass_ref_at(bytecode_index, CHECK_(nullHandle));
@@ -1240,9 +1241,9 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
 #endif
 
   if (is_virtual) {
-    assert(receiver.not_null(), "sanity check");
+    assert(receiver.not_null() || invoke_code == Bytecodes::_invokehandle, "sanity check");
     bool static_bound = call_info.resolved_method()->can_be_statically_bound();
-    KlassHandle h_klass(THREAD, receiver->klass());
+    KlassHandle h_klass(THREAD, invoke_code == Bytecodes::_invokehandle ? NULL : receiver->klass());
     CompiledIC::compute_monomorphic_entry(callee_method, h_klass,
                      is_optimized, static_bound, virtual_call_info,
                      CHECK_(methodHandle()));

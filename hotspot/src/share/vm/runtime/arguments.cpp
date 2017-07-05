@@ -1605,17 +1605,6 @@ julong Arguments::limit_by_allocatable_memory(julong limit) {
   return result;
 }
 
-void Arguments::set_heap_base_min_address() {
-  if (FLAG_IS_DEFAULT(HeapBaseMinAddress) && UseG1GC && HeapBaseMinAddress < 1*G) {
-    // By default HeapBaseMinAddress is 2G on all platforms except Solaris x86.
-    // G1 currently needs a lot of C-heap, so on Solaris we have to give G1
-    // some extra space for the C-heap compared to other collectors.
-    // Use FLAG_SET_DEFAULT here rather than FLAG_SET_ERGO to make sure that
-    // code that checks for default values work correctly.
-    FLAG_SET_DEFAULT(HeapBaseMinAddress, 1*G);
-  }
-}
-
 void Arguments::set_heap_size() {
   if (!FLAG_IS_DEFAULT(DefaultMaxRAMFraction)) {
     // Deprecated flag
@@ -2230,7 +2219,7 @@ bool Arguments::check_vm_args_consistency() {
   // among the distinct pages.
   if (ContendedPaddingWidth < 0 || ContendedPaddingWidth > 8192) {
     jio_fprintf(defaultStream::error_stream(),
-                "ContendedPaddingWidth=" INTX_FORMAT " must be the between %d and %d\n",
+                "ContendedPaddingWidth=" INTX_FORMAT " must be in between %d and %d\n",
                 ContendedPaddingWidth, 0, 8192);
     status = false;
   }
@@ -2239,7 +2228,7 @@ bool Arguments::check_vm_args_consistency() {
   // It is sufficient to check against the largest type size.
   if ((ContendedPaddingWidth % BytesPerLong) != 0) {
     jio_fprintf(defaultStream::error_stream(),
-                "ContendedPaddingWidth=" INTX_FORMAT " must be the multiple of %d\n",
+                "ContendedPaddingWidth=" INTX_FORMAT " must be a multiple of %d\n",
                 ContendedPaddingWidth, BytesPerLong);
     status = false;
   }
@@ -3536,8 +3525,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
         "Incompatible compilation policy selected", NULL);
     }
   }
-
-  set_heap_base_min_address();
 
   // Set heap size based on available physical memory
   set_heap_size();
