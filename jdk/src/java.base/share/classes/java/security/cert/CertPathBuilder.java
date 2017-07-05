@@ -32,7 +32,7 @@ import java.security.NoSuchProviderException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.Security;
-import sun.security.util.Debug;
+import java.util.Objects;
 
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
@@ -157,16 +157,19 @@ public class CertPathBuilder {
      * for information about standard algorithm names.
      *
      * @return a {@code CertPathBuilder} object that implements the
-     *          specified algorithm.
+     *         specified algorithm
      *
-     * @throws NoSuchAlgorithmException if no Provider supports a
-     *          CertPathBuilderSpi implementation for the
-     *          specified algorithm.
+     * @throws NoSuchAlgorithmException if no {@code Provider} supports a
+     *         {@code CertPathBuilderSpi} implementation for the
+     *         specified algorithm
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static CertPathBuilder getInstance(String algorithm)
             throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("CertPathBuilder",
             CertPathBuilderSpi.class, algorithm);
         return new CertPathBuilder((CertPathBuilderSpi)instance.impl,
@@ -194,22 +197,25 @@ public class CertPathBuilder {
      * @param provider the name of the provider.
      *
      * @return a {@code CertPathBuilder} object that implements the
-     *          specified algorithm.
+     *         specified algorithm
      *
-     * @throws NoSuchAlgorithmException if a CertPathBuilderSpi
-     *          implementation for the specified algorithm is not
-     *          available from the specified provider.
+     * @throws IllegalArgumentException if the {@code provider} is
+     *         {@code null} or empty
+     *
+     * @throws NoSuchAlgorithmException if a {@code CertPathBuilderSpi}
+     *         implementation for the specified algorithm is not
+     *         available from the specified provider
      *
      * @throws NoSuchProviderException if the specified provider is not
-     *          registered in the security provider list.
+     *         registered in the security provider list
      *
-     * @exception IllegalArgumentException if the {@code provider} is
-     *          null or empty.
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static CertPathBuilder getInstance(String algorithm, String provider)
            throws NoSuchAlgorithmException, NoSuchProviderException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("CertPathBuilder",
             CertPathBuilderSpi.class, algorithm, provider);
         return new CertPathBuilder((CertPathBuilderSpi)instance.impl,
@@ -234,19 +240,22 @@ public class CertPathBuilder {
      * @param provider the provider.
      *
      * @return a {@code CertPathBuilder} object that implements the
-     *          specified algorithm.
+     *         specified algorithm
      *
-     * @exception NoSuchAlgorithmException if a CertPathBuilderSpi
-     *          implementation for the specified algorithm is not available
-     *          from the specified Provider object.
+     * @throws IllegalArgumentException if the {@code provider} is
+     *         {@code null}
      *
-     * @exception IllegalArgumentException if the {@code provider} is
-     *          null.
+     * @throws NoSuchAlgorithmException if a {@code CertPathBuilderSpi}
+     *         implementation for the specified algorithm is not available
+     *         from the specified {@code Provider} object
+     *
+     * @throws NullPointerException if {@code algorithm} is {@code null}
      *
      * @see java.security.Provider
      */
     public static CertPathBuilder getInstance(String algorithm,
             Provider provider) throws NoSuchAlgorithmException {
+        Objects.requireNonNull(algorithm, "null algorithm name");
         Instance instance = GetInstance.getInstance("CertPathBuilder",
             CertPathBuilderSpi.class, algorithm, provider);
         return new CertPathBuilder((CertPathBuilderSpi)instance.impl,

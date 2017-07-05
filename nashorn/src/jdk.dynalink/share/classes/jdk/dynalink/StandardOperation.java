@@ -84,79 +84,40 @@
 package jdk.dynalink;
 
 /**
- * Defines the standard dynamic operations. Getter and setter operations defined
- * in this enumeration can be composed into a {@link CompositeOperation}, and
- * {@link NamedOperation} can be used to bind the name parameter of operations
- * that take one, in which case it disappears from the type signature.
+ * Defines the standard dynamic operations. The operations {@link #GET} and {@link #SET} must
+ * be used as part of a {@link NamespaceOperation}. {@link NamedOperation} can then be further used on these
+ * {@link NamespaceOperation}s to bind the name parameter of {@link #GET} and {@link #SET} operations, in which case it
+ * disappears from their type signature.
+ * {@link NamedOperation} can also be used to decorate {@link #CALL} and {@link #NEW} operations with a
+ * diagnostic name, and as such it does not affect their type signature.
  */
 public enum StandardOperation implements Operation {
     /**
-     * Get the value of a property defined on an object. Call sites with this
+     * Get the value from a namespace defined on an object. Call sites with this
      * operation should have a signature of
-     * <tt>(receiver,&nbsp;propertyName)&rarr;value</tt> or
+     * <tt>(receiver,&nbsp;name)&rarr;value</tt> or
      * <tt>(receiver)&rarr;value</tt> when used with {@link NamedOperation}, with
      * all parameters and return type being of any type (either primitive or
-     * reference).
+     * reference). This operation must always be used as part of a {@link NamespaceOperation}.
      */
-    GET_PROPERTY,
+    GET,
     /**
-     * Set the value of a property defined on an object. Call sites with this
+     * Set the value in a namespace defined on an object. Call sites with this
      * operation should have a signature of
-     * <tt>(receiver,&nbsp;propertyName,&nbsp;value)&rarr;void</tt> or
+     * <tt>(receiver,&nbsp;name,&nbsp;value)&rarr;void</tt> or
      * <tt>(receiver,&nbsp;value)&rarr;void</tt> when used with {@link NamedOperation},
      * with all parameters and return type being of any type (either primitive
-     * or reference).
+     * or reference). This operation must always be used as part of a {@link NamespaceOperation}.
      */
-    SET_PROPERTY,
+    SET,
     /**
-     * Get the value of an element of a collection. Call sites with this
-     * operation should have a signature of
-     * <tt>(receiver,&nbsp;index)&rarr;value</tt> or
-     * <tt>(receiver)&rarr;value</tt> when used with {@link NamedOperation}, with
-     * all parameters and return type being of any type (either primitive or
-     * reference).
-     */
-    GET_ELEMENT,
-    /**
-     * Set the value of an element of a collection. Call sites with this
-     * operation should have a signature of
-     * <tt>(receiver,&nbsp;index,&nbsp;value)&rarr;void</tt> or
-     * <tt>(receiver,&nbsp;value)&rarr;void</tt> when used with {@link NamedOperation},
-     * with all parameters and return type being of any type (either primitive
-     * or reference).
-     */
-    SET_ELEMENT,
-    /**
-     * Get the length of an array or size of a collection. Call sites with
-     * this operation should have a signature of <tt>(receiver)&rarr;value</tt>,
-     * with all parameters and return type being of any type (either primitive
-     * or reference).
-     */
-    GET_LENGTH,
-    /**
-     * Gets an object representing a method defined on an object. Call sites
-     * with this operation should have a signature of
-     * <tt>(receiver,&nbsp;methodName)&rarr;value</tt>, or
-     * <tt>(receiver)&rarr;value</tt> when used with {@link NamedOperation}
-     * with all parameters and return type being of any type (either primitive
-     * or reference).
-     */
-    GET_METHOD,
-    /**
-     * Calls a method defined on an object. Call sites with this
-     * operation should have a signature of
-     * <tt>(receiver,&nbsp;methodName,&nbsp;arguments...)&rarr;value</tt> or
-     * <tt>(receiver,&nbsp;arguments...)&rarr;value</tt> when used with {@link NamedOperation},
-     * with all parameters and return type being of any type (either primitive
-     * or reference).
-     */
-    CALL_METHOD,
-    /**
-     * Calls a callable object. Call sites with this operation should have a
-     * signature of <tt>(receiver,&nbsp;arguments...)&rarr;value</tt>, with all
-     * parameters and return type being of any type (either primitive or
-     * reference). Typically, if the callable is a method of an object, the
-     * first argument will act as the "this" value passed to the called method.
+     * Call a callable object. Call sites with this operation should have a
+     * signature of <tt>(callable,&nbsp;receiver,&nbsp;arguments...)&rarr;value</tt>,
+     * with all parameters and return type being of any type (either primitive or
+     * reference). Typically, the callables are presumed to be methods of an object, so
+     * an explicit receiver value is always passed to the callable before the arguments.
+     * If a callable has no concept of a receiver, it is free to ignore the value of the
+     * receiver argument.
      * The <tt>CALL</tt> operation is allowed to be used with a
      * {@link NamedOperation} even though it does not take a name. Using it with
      * a named operation won't affect its signature; the name is solely meant to
@@ -164,8 +125,8 @@ public enum StandardOperation implements Operation {
      */
     CALL,
     /**
-     * Calls a constructor object. Call sites with this operation should have a
-     * signature of <tt>(receiver,&nbsp;arguments...)&rarr;value</tt>, with all
+     * Call a constructor object. Call sites with this operation should have a
+     * signature of <tt>(constructor,&nbsp;arguments...)&rarr;value</tt>, with all
      * parameters and return type being of any type (either primitive or
      * reference). The <tt>NEW</tt> operation is allowed to be used with a
      * {@link NamedOperation} even though it does not take a name. Using it with

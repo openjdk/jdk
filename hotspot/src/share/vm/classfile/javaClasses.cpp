@@ -780,19 +780,26 @@ void java_lang_Class::set_mirror_module_field(KlassHandle k, Handle mirror, Hand
     // Put the class on the fixup_module_list to patch later when the java.lang.reflect.Module
     // for java.base is known.
     assert(!Universe::is_module_initialized(), "Incorrect java.lang.reflect.Module pre module system initialization");
-    MutexLocker m1(Module_lock, THREAD);
-    // Keep list of classes needing java.base module fixup
-    if (!ModuleEntryTable::javabase_defined()) {
-      if (fixup_module_field_list() == NULL) {
-        GrowableArray<Klass*>* list =
-          new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
-        set_fixup_module_field_list(list);
+
+    bool javabase_was_defined = false;
+    {
+      MutexLocker m1(Module_lock, THREAD);
+      // Keep list of classes needing java.base module fixup
+      if (!ModuleEntryTable::javabase_defined()) {
+        if (fixup_module_field_list() == NULL) {
+          GrowableArray<Klass*>* list =
+            new (ResourceObj::C_HEAP, mtModule) GrowableArray<Klass*>(500, true);
+          set_fixup_module_field_list(list);
+        }
+        k->class_loader_data()->inc_keep_alive();
+        fixup_module_field_list()->push(k());
+      } else {
+        javabase_was_defined = true;
       }
-      k->class_loader_data()->inc_keep_alive();
-      fixup_module_field_list()->push(k());
-    } else {
-      // java.base was defined at some point between calling create_mirror()
-      // and obtaining the Module_lock, patch this particular class with java.base.
+    }
+
+    // If java.base was already defined then patch this particular class with java.base.
+    if (javabase_was_defined) {
       ModuleEntry *javabase_entry = ModuleEntryTable::javabase_moduleEntry();
       assert(javabase_entry != NULL && javabase_entry->module() != NULL,
              "Setting class module field, java.base should be defined");

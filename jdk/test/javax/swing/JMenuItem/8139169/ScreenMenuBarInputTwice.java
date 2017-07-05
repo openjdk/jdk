@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8139169
+ * @bug 8139169 8158390
  * @summary verifies if TextArea gets input twice due to Apple's Screen Menubar
  * @requires (os.family=="mac")
  * @library ../../regtesthelpers
@@ -65,15 +65,13 @@ public class ScreenMenuBarInputTwice {
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
+        robot.setAutoDelay(200);
+        robot.setAutoWaitForIdle(true);
         createUIWithSeperateMenuBar();
-        robot.delay(2000);
         shortcutTestCase();
-        robot.delay(2000);
         cleanUp();
         createUIWithIntegratedMenuBar();
-        robot.delay(2000);
         menuTestCase();
-        robot.delay(2000);
         cleanUp();
     }
 
@@ -188,7 +186,6 @@ public class ScreenMenuBarInputTwice {
         robot.keyRelease(VK_COMMA);
         robot.keyRelease(VK_SHIFT);
         robot.keyRelease(VK_META);
-        robot.delay(2000);
         checkText(textArea.getText());
     }
 
@@ -198,13 +195,10 @@ public class ScreenMenuBarInputTwice {
         robot.mouseMove(mousePoint.x, mousePoint.y);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.delay(2000);
         mousePoint = Util.getCenterPoint(menuItem);
         robot.mouseMove(mousePoint.x, mousePoint.y);
-        robot.delay(2000);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.delay(2000);
         checkText(textArea.getText());
     }
 

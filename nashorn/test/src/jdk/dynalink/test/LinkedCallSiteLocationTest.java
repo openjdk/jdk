@@ -24,20 +24,21 @@
  */
 package jdk.dynalink.test;
 
-import static jdk.dynalink.StandardOperation.CALL_METHOD;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.DynamicLinker;
 import jdk.dynalink.DynamicLinkerFactory;
-import jdk.dynalink.NamedOperation;
+import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
+import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
 import jdk.dynalink.support.SimpleRelinkableCallSite;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class LinkedCallSiteLocationTest {
+    private static final Operation GET_METHOD = StandardOperation.GET.withNamespace(StandardNamespace.METHOD);
     @Test
     public void testLinkedCallSiteLocation() throws Throwable {
         final StackTraceElement[] lastLinked = new StackTraceElement[1];
@@ -51,7 +52,7 @@ public class LinkedCallSiteLocationTest {
         final SimpleRelinkableCallSite callSite = new SimpleRelinkableCallSite(
                 new CallSiteDescriptor(
                         MethodHandles.lookup(),
-                        new NamedOperation(CALL_METHOD, "foo"),
+                        GET_METHOD.named("foo"),
                         MethodType.methodType(void.class, Object.class)));
         linker.link(callSite);
 

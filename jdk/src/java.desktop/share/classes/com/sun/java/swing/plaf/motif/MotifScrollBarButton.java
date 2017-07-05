@@ -117,95 +117,57 @@ public class MotifScrollBarButton extends BasicArrowButton
 
         switch (direction) {
         case NORTH:
+            g.setColor(fill);
+            g.fillPolygon(new int[]{cx, 0, s - 1}, new int[]{0, s - 1, s - 1}, 3);
+            g.setColor(trail);
+            g.drawLine(cx, 0, s - 1, s - 2);
+            g.drawLine(0, s - 1, s - 1, s - 1);
+            g.drawLine(s - 1, s - 2, s - 1, s - 1); // corner
             g.setColor(lead);
-            g.drawLine(cx, 0, cx, 0);
-            for (int x = cx - 1, y = 1, dx = 1; y <= s - 2; y += 2) {
-                g.setColor(lead);
-                g.drawLine(x, y, x, y);
-                if (y >= (s - 2)) {
-                    g.drawLine(x, y + 1, x, y + 1);
-                }
-                g.setColor(fill);
-                g.drawLine(x + 1, y, x + dx, y);
-                if (y < (s - 2)) {
-                    g.drawLine(x, y + 1, x + dx + 1, y + 1);
-                }
-                g.setColor(trail);
-                g.drawLine(x + dx + 1, y, x + dx + 1, y);
-                if (y >= (s - 2)) {
-                    g.drawLine(x + 1, y + 1, x + dx + 1, y + 1);
-                }
-                dx += 2;
-                x -= 1;
-            }
+            g.drawLine(cx, 0, 0, s - 2);
+            g.drawLine(cx, 0, cx, 0); // corner
+            g.drawLine(0, s - 1, 0, s - 1); // corner
             break;
 
         case SOUTH:
+            g.setColor(fill);
+            g.fillPolygon(new int[]{0, s - 1, cx}, new int[]{1, 1, s}, 3);
             g.setColor(trail);
-            g.drawLine(cx, s, cx, s);
-            for (int x = cx - 1, y = s - 1, dx = 1; y >= 1; y -= 2) {
-                g.setColor(lead);
-                g.drawLine(x, y, x, y);
-                if (y <= 2) {
-                    g.drawLine(x, y - 1, x + dx + 1, y - 1);
-                }
-                g.setColor(fill);
-                g.drawLine(x + 1, y, x + dx, y);
-                if (y > 2) {
-                    g.drawLine(x, y - 1, x + dx + 1, y - 1);
-                }
-                g.setColor(trail);
-                g.drawLine(x + dx + 1, y, x + dx + 1, y);
-
-                dx += 2;
-                x -= 1;
-            }
+            g.drawLine(s - 1, 2, cx, s);
+            g.drawLine(s - 1, 2, s - 1, 2); // corner
+            g.setColor(lead);
+            g.drawLine(0, 2, cx, s);
+            g.drawLine(0, 1, s - 1, 1);
+            g.drawLine(0, 1, 0, 2);
+            g.setColor(trail);
+            g.drawLine(cx, s, cx, s); // corner
             break;
 
         case EAST:
+            g.setColor(fill);
+            g.fillPolygon(new int[]{1, s, 1}, new int[]{0, cy, s}, 3);
+            g.setColor(trail);
+            g.drawLine(1, s, s, cy);
+            g.drawLine(2, s, 2, s); // corner
             g.setColor(lead);
+            g.drawLine(1, 0, 1, s);
+            g.drawLine(2, 0, s, cy);
+            g.drawLine(2, 0, 2, 0); // corner
             g.drawLine(s, cy, s, cy);
-            for (int y = cy - 1, x = s - 1, dy = 1; x >= 1; x -= 2) {
-                g.setColor(lead);
-                g.drawLine(x, y, x, y);
-                if (x <= 2) {
-                    g.drawLine(x - 1, y, x - 1, y + dy + 1);
-                }
-                g.setColor(fill);
-                g.drawLine(x, y + 1, x, y + dy);
-                if (x > 2) {
-                    g.drawLine(x - 1, y, x - 1, y + dy + 1);
-                }
-                g.setColor(trail);
-                g.drawLine(x, y + dy + 1, x, y + dy + 1);
-
-                dy += 2;
-                y -= 1;
-            }
             break;
 
         case WEST:
+            g.setColor(fill);
+            g.fillPolygon(new int[]{0, s - 1, s - 1}, new int[]{cy, 0, s}, 3);
+            g.drawLine(s - 1, 0, s - 1, s);
             g.setColor(trail);
-            g.drawLine(0, cy, 0, cy);
-            for (int y = cy - 1, x = 1, dy = 1; x <= s - 2; x += 2) {
-                g.setColor(lead);
-                g.drawLine(x, y, x, y);
-                if (x >= (s - 2)) {
-                    g.drawLine(x + 1, y, x + 1, y);
-                }
-                g.setColor(fill);
-                g.drawLine(x, y + 1, x, y + dy);
-                if (x < (s - 2)) {
-                    g.drawLine(x + 1, y, x + 1, y + dy + 1);
-                }
-                g.setColor(trail);
-                g.drawLine(x, y + dy + 1, x, y + dy + 1);
-                if (x >= (s - 2)) {
-                    g.drawLine(x + 1, y + 1, x + 1, y + dy + 1);
-                }
-                dy += 2;
-                y -= 1;
-            }
+            g.drawLine(0, cy, s - 1, s);
+            g.drawLine(s - 1, 0, s - 1, s);
+            g.setColor(lead);
+            g.drawLine(0, cy, s - 2, 0);
+            g.drawLine(s - 2, 0, s - 1, 0); // corner
+            g.setColor(trail);
+            g.drawLine(0, cy, 0, cy); // corner
             break;
         }
     }

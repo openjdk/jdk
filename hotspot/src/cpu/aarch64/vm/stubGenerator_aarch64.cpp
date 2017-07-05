@@ -2743,7 +2743,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_encryptAESCrypt");
 
-    Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
+    Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52, _L_finish;
 
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
@@ -2754,9 +2754,12 @@ class StubGenerator: public StubCodeGenerator {
     const Register keylen      = rscratch1;
 
     address start = __ pc();
+
       __ enter();
 
-      __ mov(rscratch2, len_reg);
+      __ subsw(rscratch2, len_reg, zr);
+      __ br(Assembler::LE, _L_finish);
+
       __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
       __ ld1(v0, __ T16B, rvec);
@@ -2814,11 +2817,13 @@ class StubGenerator: public StubCodeGenerator {
       __ eor(v0, __ T16B, v0, v31);
 
       __ st1(v0, __ T16B, __ post(to, 16));
-      __ sub(len_reg, len_reg, 16);
-      __ cbnz(len_reg, L_aes_loop);
+
+      __ subw(len_reg, len_reg, 16);
+      __ cbnzw(len_reg, L_aes_loop);
 
       __ st1(v0, __ T16B, rvec);
 
+    __ BIND(_L_finish);
       __ mov(r0, rscratch2);
 
       __ leave();
@@ -2844,7 +2849,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
 
-    Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52;
+    Label L_loadkeys_44, L_loadkeys_52, L_aes_loop, L_rounds_44, L_rounds_52, _L_finish;
 
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
@@ -2855,9 +2860,12 @@ class StubGenerator: public StubCodeGenerator {
     const Register keylen      = rscratch1;
 
     address start = __ pc();
+
       __ enter();
 
-      __ mov(rscratch2, len_reg);
+      __ subsw(rscratch2, len_reg, zr);
+      __ br(Assembler::LE, _L_finish);
+
       __ ldrw(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
       __ ld1(v2, __ T16B, rvec);
@@ -2920,11 +2928,12 @@ class StubGenerator: public StubCodeGenerator {
       __ st1(v0, __ T16B, __ post(to, 16));
       __ orr(v2, __ T16B, v1, v1);
 
-      __ sub(len_reg, len_reg, 16);
-      __ cbnz(len_reg, L_aes_loop);
+      __ subw(len_reg, len_reg, 16);
+      __ cbnzw(len_reg, L_aes_loop);
 
       __ st1(v2, __ T16B, rvec);
 
+    __ BIND(_L_finish);
       __ mov(r0, rscratch2);
 
       __ leave();

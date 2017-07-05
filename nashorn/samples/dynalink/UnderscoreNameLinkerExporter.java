@@ -34,9 +34,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.dynalink.CallSiteDescriptor;
-import jdk.dynalink.CompositeOperation;
 import jdk.dynalink.NamedOperation;
+import jdk.dynalink.NamespaceOperation;
 import jdk.dynalink.Operation;
+import jdk.dynalink.StandardNamespace;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
@@ -68,23 +69,6 @@ public final class UnderscoreNameLinkerExporter extends GuardingDynamicLinkerExp
         return buf.toString();
     }
 
-    // locate the first standard operation from the call descriptor
-    private static StandardOperation getFirstStandardOperation(final CallSiteDescriptor desc) {
-        final Operation base = NamedOperation.getBaseOperation(desc.getOperation());
-        if (base instanceof StandardOperation) {
-            return (StandardOperation)base;
-        } else if (base instanceof CompositeOperation) {
-            final CompositeOperation cop = (CompositeOperation)base;
-            for(int i = 0; i < cop.getOperationCount(); ++i) {
-                final Operation op = cop.getOperation(i);
-                if (op instanceof StandardOperation) {
-                    return (StandardOperation)op;
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public List<GuardingDynamicLinker> get() {
         final ArrayList<GuardingDynamicLinker> linkers = new ArrayList<>();
@@ -92,12 +76,14 @@ public final class UnderscoreNameLinkerExporter extends GuardingDynamicLinkerExp
             @Override
             public GuardedInvocation getGuardedInvocation(final LinkRequest request,
                 final LinkerServices linkerServices) throws Exception {
-                final Object self = request.getReceiver();
                 final CallSiteDescriptor desc = request.getCallSiteDescriptor();
                 final Operation op = desc.getOperation();
                 final Object name = NamedOperation.getName(op);
+                final Operation namespaceOp = NamedOperation.getBaseOperation(op);
                 // is this a named GET_METHOD?
-                final boolean isGetMethod = getFirstStandardOperation(desc) == StandardOperation.GET_METHOD;
+                final boolean isGetMethod =
+                        NamespaceOperation.getBaseOperation(namespaceOp) == StandardOperation.GET
+                        && StandardNamespace.findFirst(namespaceOp) == StandardNamespace.METHOD;
                 if (isGetMethod && name instanceof String) {
                     final String str = (String)name;
                     if (str.indexOf('_') == -1) {
@@ -106,13 +92,9 @@ public final class UnderscoreNameLinkerExporter extends GuardingDynamicLinkerExp
 
                     final String nameStr = translateToCamelCase(str);
                     // create a new call descriptor to use translated name
-                    final CallSiteDescriptor newDesc = new CallSiteDescriptor(
-                        desc.getLookup(),
-                        new NamedOperation(NamedOperation.getBaseOperation(op), nameStr),
-                        desc.getMethodType());
+                    final CallSiteDescriptor newDesc = desc.changeOperation(((NamedOperation)op).changeName(nameStr));
                     // create a new Link request to link the call site with translated name
-                    final LinkRequest newRequest = new SimpleLinkRequest(newDesc,
-                        request.isCallSiteUnstable(), request.getArguments());
+                    final LinkRequest newRequest = request.replaceArguments(newDesc, request.getArguments());
                     // return guarded invocation linking the translated request
                     return linkerServices.getGuardedInvocation(newRequest);
                 }

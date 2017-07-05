@@ -135,14 +135,14 @@ TARGETS += $(JVMTI_OUTPUTDIR)/jvmtiEnvRecommended.cpp
 # Copy jvmti.h to include dir
 
 # The file is the same regardless of jvm variant. Only let one do the copy.
-#ifeq ($(JVM_VARIANT), $(firstword $(JVM_VARIANTS)))
-#  $(eval $(call SetupCopyFiles, COPY_JVMTI_H, \
-#      DEST := $(SUPPORT_OUTPUTDIR)/modules_include/java.base, \
-#      FILES := $(JVMTI_OUTPUTDIR)/jvmti.h, \
-#  ))
+ifeq ($(JVM_VARIANT), $(firstword $(JVM_VARIANTS)))
+  $(eval $(call SetupCopyFiles, COPY_JVMTI_H, \
+      DEST := $(SUPPORT_OUTPUTDIR)/modules_include/java.base, \
+      FILES := $(JVMTI_OUTPUTDIR)/jvmti.h, \
+  ))
 
-#  TARGETS += $(COPY_JVMTI_H)
-#endif
+  TARGETS += $(COPY_JVMTI_H)
+endif
 
 ################################################################################
 # Create trace files in gensrc/tracefiles

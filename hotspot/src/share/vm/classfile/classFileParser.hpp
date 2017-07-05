@@ -139,8 +139,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   bool _need_verify;
   bool _relax_verify;
 
-  bool _has_default_methods;
-  bool _declares_default_methods;
+  bool _has_nonstatic_concrete_methods;
+  bool _declares_nonstatic_concrete_methods;
   bool _has_final_method;
 
   // precomputed flags
@@ -186,7 +186,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void parse_interfaces(const ClassFileStream* const stream,
                         const int itfs_len,
                         ConstantPool* const cp,
-                        bool* has_default_methods,
+                        bool* has_nonstatic_concrete_methods,
                         TRAPS);
 
   const InstanceKlass* parse_super_class(ConstantPool* const cp,
@@ -224,7 +224,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
                      bool is_interface,
                      AccessFlags* const promoted_flags,
                      bool* const has_final_method,
-                     bool* const declares_default_methods,
+                     bool* const declares_nonstatic_concrete_methods,
                      TRAPS);
 
   const u2* parse_exception_table(const ClassFileStream* const stream,

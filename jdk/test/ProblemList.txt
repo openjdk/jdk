@@ -134,8 +134,6 @@ java/lang/instrument/RetransformBigClass.sh                     8065756 generic-
 
 java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
 
-java/lang/instrument/DaemonThread/TestDaemonThread.java         8167001 generic-all
-
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158760 generic-all
 
@@ -186,10 +184,6 @@ java/nio/file/WatchService/Basic.java                           7158947 solaris-
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
 
-java/nio/charset/coders/BashStreams.java                        8149712 generic-all
-
-java/nio/file/WatchService/DeleteInterference.java              8156511 linux-all
-
 ############################################################################
 
 # jdk_rmi
@@ -223,6 +217,8 @@ sun/security/ssl/SSLSocketImpl/AsyncSSLSocketClose.java         8161232 macosx-a
 ############################################################################
 
 # jdk_sound
+
+javax/sound/sampled/Clip/OpenNonIntegralNumberOfSampleframes.java 8168881 generic-all
 
 ############################################################################
 
