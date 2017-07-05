@@ -710,9 +710,9 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     // Need to differentiate between igetfield, agetfield, bgetfield etc.
     // because they are different sizes.
     // Use the type from the constant pool cache
-    __ shrl(rdx, ConstantPoolCacheEntry::tosBits);
-    // Make sure we don't need to mask rdx for tosBits after the above shift
-    ConstantPoolCacheEntry::verify_tosBits();
+    __ shrl(rdx, ConstantPoolCacheEntry::tos_state_shift);
+    // Make sure we don't need to mask rdx after the above shift
+    ConstantPoolCacheEntry::verify_tos_state_shift();
     __ cmpl(rdx, btos);
     __ jcc(Assembler::notEqual, notByte);
     __ load_signed_byte(rax, field_address);
@@ -1513,7 +1513,6 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::empty                  : entry_point = ((InterpreterGenerator*)this)->generate_empty_entry();        break;
     case Interpreter::accessor               : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();     break;
     case Interpreter::abstract               : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();     break;
-    case Interpreter::method_handle          : entry_point = ((InterpreterGenerator*)this)->generate_method_handle_entry(); break;
 
     case Interpreter::java_lang_math_sin     : // fall thru
     case Interpreter::java_lang_math_cos     : // fall thru
@@ -1526,7 +1525,9 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::java_lang_math_exp     : entry_point = ((InterpreterGenerator*)this)->generate_math_entry(kind);     break;
     case Interpreter::java_lang_ref_reference_get
                                              : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
-    default                                  : ShouldNotReachHere();                                                       break;
+    default:
+      fatal(err_msg("unexpected method kind: %d", kind));
+      break;
   }
 
   if (entry_point) return entry_point;

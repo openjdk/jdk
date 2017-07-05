@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,18 @@
  *
  */
 
-#ifndef CPU_X86_VM_TEMPLATETABLE_X86_64_HPP
-#define CPU_X86_VM_TEMPLATETABLE_X86_64_HPP
+#include "precompiled.hpp"
+#include "ci/ciClassList.hpp"
+#include "ci/ciMemberName.hpp"
+#include "ci/ciUtilities.hpp"
+#include "classfile/javaClasses.hpp"
 
-  static void prepare_invoke(int byte_no,
-                             Register method,         // linked method (or i-klass)
-                             Register index = noreg,  // itable index, MethodType, etc.
-                             Register recv  = noreg,  // if caller wants to see it
-                             Register flags = noreg   // if caller wants to test it
-                             );
-  static void invokevirtual_helper(Register index, Register recv,
-                                   Register flags);
-  static void volatile_barrier(Assembler::Membar_mask_bits order_constraint);
-
-  // Helpers
-  static void index_check(Register array, Register index);
-  static void index_check_without_pop(Register array, Register index);
-
-#endif // CPU_X86_VM_TEMPLATETABLE_X86_64_HPP
+// ------------------------------------------------------------------
+// ciMemberName::get_vmtarget
+//
+// Return: MN.vmtarget
+ciMethod* ciMemberName::get_vmtarget() const {
+  VM_ENTRY_MARK;
+  oop vmtarget_oop = java_lang_invoke_MemberName::vmtarget(get_oop());
+  return CURRENT_ENV->get_object(vmtarget_oop)->as_method();
+}

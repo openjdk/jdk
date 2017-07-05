@@ -523,7 +523,7 @@ void Compilation::bailout(const char* msg) {
   assert(msg != NULL, "bailout message must exist");
   if (!bailed_out()) {
     // keep first bailout message
-    if (PrintBailouts) tty->print_cr("compilation bailout: %s", msg);
+    if (PrintCompilation || PrintBailouts) tty->print_cr("compilation bailout: %s", msg);
     _bailout_msg = msg;
   }
 }

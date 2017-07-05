@@ -75,11 +75,12 @@ class CallInfo: public LinkInfo {
   methodHandle _resolved_method;        // static target method
   methodHandle _selected_method;        // dynamic (actual) target method
   int          _vtable_index;           // vtable index of selected method
+  Handle       _resolved_appendix;      // extra argument in constant pool (if CPCE::has_appendix)
 
   void         set_static(   KlassHandle resolved_klass,                             methodHandle resolved_method                                                , TRAPS);
   void         set_interface(KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method                  , TRAPS);
   void         set_virtual(  KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index, TRAPS);
-  void         set_dynamic(                                                          methodHandle resolved_method,                                                 TRAPS);
+  void         set_handle(                                                           methodHandle resolved_method,   Handle resolved_appendix,                     TRAPS);
   void         set_common(   KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index, TRAPS);
 
   friend class LinkResolver;
@@ -89,6 +90,7 @@ class CallInfo: public LinkInfo {
   KlassHandle  selected_klass() const            { return _selected_klass; }
   methodHandle resolved_method() const           { return _resolved_method; }
   methodHandle selected_method() const           { return _selected_method; }
+  Handle       resolved_appendix() const         { return _resolved_appendix; }
 
   BasicType    result_type() const               { return selected_method()->result_type(); }
   bool         has_vtable_index() const          { return _vtable_index >= 0; }
@@ -110,8 +112,8 @@ class LinkResolver: AllStatic {
   static void lookup_method_in_klasses          (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
   static void lookup_instance_method_in_klasses (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
   static void lookup_method_in_interfaces       (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
-  static void lookup_implicit_method            (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature,
-                                                 KlassHandle current_klass, TRAPS);
+  static void lookup_polymorphic_method         (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature,
+                                                 KlassHandle current_klass, Handle* appendix_result_or_null, TRAPS);
 
   static int vtable_index_of_miranda_method(KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
 
@@ -139,10 +141,9 @@ class LinkResolver: AllStatic {
   // constant pool resolving
   static void check_klass_accessability(KlassHandle ref_klass, KlassHandle sel_klass, TRAPS);
 
-  // static resolving for all calls except interface calls
-  static void resolve_method          (methodHandle& method_result, KlassHandle& klass_result, constantPoolHandle pool, int index, TRAPS);
-  static void resolve_dynamic_method  (methodHandle& resolved_method, KlassHandle& resolved_klass, constantPoolHandle pool, int index, TRAPS);
-  static void resolve_interface_method(methodHandle& method_result, KlassHandle& klass_result, constantPoolHandle pool, int index, TRAPS);
+  // static resolving calls (will not run any Java code); used only from Bytecode_invoke::static_target
+  static void resolve_method_statically(methodHandle& method_result, KlassHandle& klass_result,
+                                        Bytecodes::Code code, constantPoolHandle pool, int index, TRAPS);
 
   // runtime/static resolving for fields
   static void resolve_field(FieldAccessInfo& result, constantPoolHandle pool, int index, Bytecodes::Code byte, bool check_only, TRAPS);
@@ -156,6 +157,8 @@ class LinkResolver: AllStatic {
   static void resolve_special_call  (CallInfo& result,              KlassHandle resolved_klass, Symbol* method_name, Symbol* method_signature, KlassHandle current_klass, bool check_access, TRAPS);
   static void resolve_virtual_call  (CallInfo& result, Handle recv, KlassHandle recv_klass, KlassHandle resolved_klass, Symbol* method_name, Symbol* method_signature, KlassHandle current_klass, bool check_access, bool check_null_and_abstract, TRAPS);
   static void resolve_interface_call(CallInfo& result, Handle recv, KlassHandle recv_klass, KlassHandle resolved_klass, Symbol* method_name, Symbol* method_signature, KlassHandle current_klass, bool check_access, bool check_null_and_abstract, TRAPS);
+  static void resolve_handle_call   (CallInfo& result,                                      KlassHandle resolved_klass, Symbol* method_name, Symbol* method_signature, KlassHandle current_klass, TRAPS);
+  static void resolve_dynamic_call  (CallInfo& result,                                      Handle bootstrap_specifier, Symbol* method_name, Symbol* method_signature, KlassHandle current_klass, TRAPS);
 
   // same as above for compile-time resolution; but returns null handle instead of throwing an exception on error
   // also, does not initialize klass (i.e., no side effects)
@@ -177,6 +180,7 @@ class LinkResolver: AllStatic {
   static void resolve_invokevirtual  (CallInfo& result, Handle recv, constantPoolHandle pool, int index, TRAPS);
   static void resolve_invokeinterface(CallInfo& result, Handle recv, constantPoolHandle pool, int index, TRAPS);
   static void resolve_invokedynamic  (CallInfo& result,              constantPoolHandle pool, int index, TRAPS);
+  static void resolve_invokehandle   (CallInfo& result,              constantPoolHandle pool, int index, TRAPS);
 
   static void resolve_invoke         (CallInfo& result, Handle recv, constantPoolHandle pool, int index, Bytecodes::Code byte, TRAPS);
 };

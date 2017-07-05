@@ -137,12 +137,16 @@ void InstructionPrinter::print_object(Value obj) {
       ciMethod* m = (ciMethod*)value;
       output()->print("<method %s.%s>", m->holder()->name()->as_utf8(), m->name()->as_utf8());
     } else {
-      output()->print("<object " PTR_FORMAT ">", value->constant_encoding());
+      output()->print("<object " PTR_FORMAT " klass=", value->constant_encoding());
+      print_klass(value->klass());
+      output()->print(">");
     }
   } else if (type->as_InstanceConstant() != NULL) {
     ciInstance* value = type->as_InstanceConstant()->value();
     if (value->is_loaded()) {
-      output()->print("<instance " PTR_FORMAT ">", value->constant_encoding());
+      output()->print("<instance " PTR_FORMAT " klass=", value->constant_encoding());
+      print_klass(value->klass());
+      output()->print(">");
     } else {
       output()->print("<unloaded instance " PTR_FORMAT ">", value);
     }
@@ -450,6 +454,14 @@ void InstructionPrinter::do_NullCheck(NullCheck* x) {
   if (!x->can_trap()) {
     output()->print(" (eliminated)");
   }
+}
+
+
+void InstructionPrinter::do_TypeCast(TypeCast* x) {
+  output()->print("type_cast(");
+  print_value(x->obj());
+  output()->print(") ");
+  print_klass(x->declared_type()->klass());
 }
 
 

@@ -99,7 +99,10 @@ class AbstractInterpreter: AllStatic {
     empty,                                                      // empty method (code: _return)
     accessor,                                                   // accessor method (code: _aload_0, _getfield, _(a|i)return)
     abstract,                                                   // abstract method (throws an AbstractMethodException)
-    method_handle,                                              // java.lang.invoke.MethodHandles::invoke
+    method_handle_invoke_FIRST,                                 // java.lang.invoke.MethodHandles::invokeExact, etc.
+    method_handle_invoke_LAST                                   = (method_handle_invoke_FIRST
+                                                                   + (vmIntrinsics::LAST_MH_SIG_POLY
+                                                                      - vmIntrinsics::FIRST_MH_SIG_POLY)),
     java_lang_math_sin,                                         // implementation of java.lang.Math.sin   (x)
     java_lang_math_cos,                                         // implementation of java.lang.Math.cos   (x)
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
@@ -113,6 +116,14 @@ class AbstractInterpreter: AllStatic {
     number_of_method_entries,
     invalid = -1
   };
+
+  // Conversion from the part of the above enum to vmIntrinsics::_invokeExact, etc.
+  static vmIntrinsics::ID method_handle_intrinsic(MethodKind kind) {
+    if (kind >= method_handle_invoke_FIRST && kind <= method_handle_invoke_LAST)
+      return (vmIntrinsics::ID)( vmIntrinsics::FIRST_MH_SIG_POLY + (kind - method_handle_invoke_FIRST) );
+    else
+      return vmIntrinsics::_none;
+  }
 
   enum SomeConstants {
     number_of_result_handlers = 10                              // number of result handlers for native calls
@@ -147,6 +158,9 @@ class AbstractInterpreter: AllStatic {
   static MethodKind method_kind(methodHandle m);
   static address    entry_for_kind(MethodKind k)                { assert(0 <= k && k < number_of_method_entries, "illegal kind"); return _entry_table[k]; }
   static address    entry_for_method(methodHandle m)            { return entry_for_kind(method_kind(m)); }
+
+  // used for bootstrapping method handles:
+  static void       set_entry_for_kind(MethodKind k, address e);
 
   static void       print_method_kind(MethodKind kind)          PRODUCT_RETURN;
 

@@ -515,9 +515,9 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     // Need to differentiate between igetfield, agetfield, bgetfield etc.
     // because they are different sizes.
     // Get the type from the constant pool cache
-    __ srl(G1_scratch, ConstantPoolCacheEntry::tosBits, G1_scratch);
-    // Make sure we don't need to mask G1_scratch for tosBits after the above shift
-    ConstantPoolCacheEntry::verify_tosBits();
+    __ srl(G1_scratch, ConstantPoolCacheEntry::tos_state_shift, G1_scratch);
+    // Make sure we don't need to mask G1_scratch after the above shift
+    ConstantPoolCacheEntry::verify_tos_state_shift();
     __ cmp(G1_scratch, atos );
     __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
     __ delayed()->ld_ptr(Otos_i, G3_scratch, Otos_i);

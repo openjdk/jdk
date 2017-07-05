@@ -255,17 +255,6 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 }
 
 
-// Method handle invoker
-// Dispatch a method of the form java.lang.invoke.MethodHandles::invoke(...)
-address InterpreterGenerator::generate_method_handle_entry(void) {
-  if (!EnableInvokeDynamic) {
-    return generate_abstract_entry();
-  }
-
-  return MethodHandles::generate_method_handle_interpreter_entry(_masm);
-}
-
-
 //----------------------------------------------------------------------------------------------------
 // Entry points & stack frame layout
 //
@@ -395,7 +384,7 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::empty                  : entry_point = ((InterpreterGenerator*)this)->generate_empty_entry();        break;
     case Interpreter::accessor               : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();     break;
     case Interpreter::abstract               : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();     break;
-    case Interpreter::method_handle          : entry_point = ((InterpreterGenerator*)this)->generate_method_handle_entry(); break;
+
     case Interpreter::java_lang_math_sin     :                                                                             break;
     case Interpreter::java_lang_math_cos     :                                                                             break;
     case Interpreter::java_lang_math_tan     :                                                                             break;
@@ -407,7 +396,9 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::java_lang_math_exp     :                                                                             break;
     case Interpreter::java_lang_ref_reference_get
                                              : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
-    default                                  : ShouldNotReachHere();                                                       break;
+    default:
+      fatal(err_msg("unexpected method kind: %d", kind));
+      break;
   }
 
   if (entry_point) return entry_point;

@@ -120,19 +120,22 @@ int Bytecode_tableswitch::dest_offset_at(int i) const {
 
 void Bytecode_invoke::verify() const {
   assert(is_valid(), "check invoke");
-  assert(method()->constants()->cache() != NULL, "do not call this from verifier or rewriter");
+  assert(cpcache() != NULL, "do not call this from verifier or rewriter");
 }
 
 
-Symbol* Bytecode_member_ref::signature() const {
-  constantPoolOop constants = method()->constants();
-  return constants->signature_ref_at(index());
+Symbol* Bytecode_member_ref::klass() const {
+  return constants()->klass_ref_at_noresolve(index());
 }
 
 
 Symbol* Bytecode_member_ref::name() const {
-  constantPoolOop constants = method()->constants();
-  return constants->name_ref_at(index());
+  return constants()->name_ref_at(index());
+}
+
+
+Symbol* Bytecode_member_ref::signature() const {
+  return constants()->signature_ref_at(index());
 }
 
 
@@ -146,18 +149,19 @@ BasicType Bytecode_member_ref::result_type() const {
 methodHandle Bytecode_invoke::static_target(TRAPS) {
   methodHandle m;
   KlassHandle resolved_klass;
-  constantPoolHandle constants(THREAD, _method->constants());
+  constantPoolHandle constants(THREAD, this->constants());
 
-  if (java_code() == Bytecodes::_invokedynamic) {
-    LinkResolver::resolve_dynamic_method(m, resolved_klass, constants, index(), CHECK_(methodHandle()));
-  } else if (java_code() != Bytecodes::_invokeinterface) {
-    LinkResolver::resolve_method(m, resolved_klass, constants, index(), CHECK_(methodHandle()));
-  } else {
-    LinkResolver::resolve_interface_method(m, resolved_klass, constants, index(), CHECK_(methodHandle()));
-  }
+  Bytecodes::Code bc = invoke_code();
+  LinkResolver::resolve_method_statically(m, resolved_klass, bc, constants, index(), CHECK_(methodHandle()));
   return m;
 }
 
+Handle Bytecode_invoke::appendix(TRAPS) {
+  ConstantPoolCacheEntry* cpce = cpcache_entry();
+  if (cpce->has_appendix())
+    return Handle(THREAD, cpce->f1_appendix());
+  return Handle();  // usual case
+}
 
 int Bytecode_member_ref::index() const {
   // Note:  Rewriter::rewrite changes the Java_u2 of an invokedynamic to a native_u4,
@@ -170,12 +174,16 @@ int Bytecode_member_ref::index() const {
 }
 
 int Bytecode_member_ref::pool_index() const {
+  return cpcache_entry()->constant_pool_index();
+}
+
+ConstantPoolCacheEntry* Bytecode_member_ref::cpcache_entry() const {
   int index = this->index();
   DEBUG_ONLY({
       if (!has_index_u4(code()))
-        index -= constantPoolOopDesc::CPCACHE_INDEX_TAG;
+        index = constantPoolOopDesc::get_cpcache_index(index);
     });
-  return _method->constants()->cache()->entry_at(index)->constant_pool_index();
+  return cpcache()->entry_at(index);
 }
 
 // Implementation of Bytecode_field

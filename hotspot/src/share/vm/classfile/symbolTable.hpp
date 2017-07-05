@@ -57,12 +57,15 @@ class TempNewSymbol : public StackObj {
 
   // Operator= increments reference count.
   void operator=(const TempNewSymbol &s) {
+    //clear();  //FIXME
     _temp = s._temp;
     if (_temp !=NULL) _temp->increment_refcount();
   }
 
   // Decrement reference counter so it can go away if it's unique
-  ~TempNewSymbol() { if (_temp != NULL) _temp->decrement_refcount(); }
+  void clear() { if (_temp != NULL)  _temp->decrement_refcount();  _temp = NULL; }
+
+  ~TempNewSymbol() { clear(); }
 
   // Operators so they can be used like Symbols
   Symbol* operator -> () const                   { return _temp; }
