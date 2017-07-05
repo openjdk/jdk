@@ -38,7 +38,6 @@ import static java.lang.annotation.RetentionPolicy.*;
  * except the application client container in Java EE 5. The method on which
  * the PreDestroy annotation is applied MUST fulfill all of the following
  * criteria:
- * <p>
  * <ul>
  * <li>The method MUST NOT have any parameters except in the case of
  * interceptors in which case it takes an InvocationContext object as

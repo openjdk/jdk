@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_G1_HEAPREGION_INLINE_HPP
 
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/space.hpp"
 #include "oops/oop.inline.hpp"
@@ -198,6 +198,20 @@ inline void HeapRegion::note_end_of_copying(bool during_initial_mark) {
 
 inline bool HeapRegion::in_collection_set() const {
   return G1CollectedHeap::heap()->is_in_cset(this);
+}
+
+inline HeapRegion* HeapRegion::next_in_collection_set() const {
+  assert(in_collection_set(), "should only invoke on member of CS.");
+  assert(_next_in_special_set == NULL ||
+         _next_in_special_set->in_collection_set(),
+         "Malformed CS.");
+  return _next_in_special_set;
+}
+
+void HeapRegion::set_next_in_collection_set(HeapRegion* r) {
+  assert(in_collection_set(), "should only invoke on member of CS.");
+  assert(r == NULL || r->in_collection_set(), "Malformed CS.");
+  _next_in_special_set = r;
 }
 
 #endif // SHARE_VM_GC_G1_HEAPREGION_INLINE_HPP

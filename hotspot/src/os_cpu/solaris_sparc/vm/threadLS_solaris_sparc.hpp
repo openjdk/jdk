@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,47 +25,15 @@
 #ifndef OS_CPU_SOLARIS_SPARC_VM_THREADLS_SOLARIS_SPARC_HPP
 #define OS_CPU_SOLARIS_SPARC_VM_THREADLS_SOLARIS_SPARC_HPP
 
-public:
-  // Java Thread  - force inlining
-  static inline Thread* thread() ;
+// Solaris specific implementation involves simple, direct use
+// of a compiler-based thread-local variable
 
 private:
-  static Thread* _get_thread_cache[];  // index by [(raw_id>>9)^(raw_id>>20) % _pd_cache_size]
-  static Thread* get_thread_via_cache_slowly(uintptr_t raw_id, int index);
+  static __thread Thread * _thr_current;
 
-  NOT_PRODUCT(static int _tcacheHit;)
-  NOT_PRODUCT(static int _tcacheMiss;)
+  static bool _initialized;  // needed for shared API
 
 public:
-
-  // Print cache hit/miss statistics
-  static void print_statistics() PRODUCT_RETURN;
-
-  enum Constants {
-    _pd_cache_size         =  256*2  // projected typical # of threads * 2
-  };
-
-  static void set_thread_in_slot (Thread *) ;
-
-  static uintptr_t pd_raw_thread_id() {
-    return _raw_thread_id();
-  }
-
-  static int pd_cache_index(uintptr_t raw_id) {
-    // Hash function: From email from Dave:
-    // The hash function deserves an explanation.  %g7 points to libthread's
-    // "thread" structure.  On T1 the thread structure is allocated on the
-    // user's stack (yes, really!) so the ">>20" handles T1 where the JVM's
-    // stack size is usually >= 1Mb.  The ">>9" is for T2 where Roger allocates
-    // globs of thread blocks contiguously.  The "9" has to do with the
-    // expected size of the T2 thread structure.  If these constants are wrong
-    // the worst thing that'll happen is that the hit rate for heavily threaded
-    // apps won't be as good as it could be.  If you want to burn another
-    // shift+xor you could mix together _all of the %g7 bits to form the hash,
-    // but I think that's excessive.  Making the change above changed the
-    // T$ miss rate on SpecJBB (on a 16X system) from about 3% to imperceptible.
-    uintptr_t ix = (int) (((raw_id >> 9) ^ (raw_id >> 20)) % _pd_cache_size);
-    return ix;
-  }
+  static inline Thread* thread();
 
 #endif // OS_CPU_SOLARIS_SPARC_VM_THREADLS_SOLARIS_SPARC_HPP

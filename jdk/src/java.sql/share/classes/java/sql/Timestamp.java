@@ -31,43 +31,43 @@ import sun.misc.SharedSecrets;
 import sun.misc.JavaLangAccess;
 
 /**
- * <P>A thin wrapper around <code>java.util.Date</code> that allows
- * the JDBC API to identify this as an SQL <code>TIMESTAMP</code> value.
+ * <P>A thin wrapper around {@code java.util.Date} that allows
+ * the JDBC API to identify this as an SQL {@code TIMESTAMP} value.
  * It adds the ability
- * to hold the SQL <code>TIMESTAMP</code> fractional seconds value, by allowing
+ * to hold the SQL {@code TIMESTAMP} fractional seconds value, by allowing
  * the specification of fractional seconds to a precision of nanoseconds.
  * A Timestamp also provides formatting and
  * parsing operations to support the JDBC escape syntax for timestamp values.
  *
  * <p>The precision of a Timestamp object is calculated to be either:
  * <ul>
- * <li><code>19 </code>, which is the number of characters in yyyy-mm-dd hh:mm:ss
- * <li> <code> 20 + s </code>, which is the number
- * of characters in the yyyy-mm-dd hh:mm:ss.[fff...] and <code>s</code> represents  the scale of the given Timestamp,
+ * <li>{@code 19 }, which is the number of characters in yyyy-mm-dd hh:mm:ss
+ * <li> {@code  20 + s }, which is the number
+ * of characters in the yyyy-mm-dd hh:mm:ss.[fff...] and {@code s} represents  the scale of the given Timestamp,
  * its fractional seconds precision.
  *</ul>
  *
- * <P><B>Note:</B> This type is a composite of a <code>java.util.Date</code> and a
+ * <P><B>Note:</B> This type is a composite of a {@code java.util.Date} and a
  * separate nanoseconds value. Only integral seconds are stored in the
- * <code>java.util.Date</code> component. The fractional seconds - the nanos - are
- * separate.  The <code>Timestamp.equals(Object)</code> method never returns
- * <code>true</code> when passed an object
- * that isn't an instance of <code>java.sql.Timestamp</code>,
+ * {@code java.util.Date} component. The fractional seconds - the nanos - are
+ * separate.  The {@code Timestamp.equals(Object)} method never returns
+ * {@code true} when passed an object
+ * that isn't an instance of {@code java.sql.Timestamp},
  * because the nanos component of a date is unknown.
- * As a result, the <code>Timestamp.equals(Object)</code>
+ * As a result, the {@code Timestamp.equals(Object)}
  * method is not symmetric with respect to the
- * <code>java.util.Date.equals(Object)</code>
- * method.  Also, the <code>hashCode</code> method uses the underlying
- * <code>java.util.Date</code>
+ * {@code java.util.Date.equals(Object)}
+ * method.  Also, the {@code hashCode} method uses the underlying
+ * {@code java.util.Date}
  * implementation and therefore does not include nanos in its computation.
  * <P>
- * Due to the differences between the <code>Timestamp</code> class
- * and the <code>java.util.Date</code>
+ * Due to the differences between the {@code Timestamp} class
+ * and the {@code java.util.Date}
  * class mentioned above, it is recommended that code not view
- * <code>Timestamp</code> values generically as an instance of
- * <code>java.util.Date</code>.  The
- * inheritance relationship between <code>Timestamp</code>
- * and <code>java.util.Date</code> really
+ * {@code Timestamp} values generically as an instance of
+ * {@code java.util.Date}.  The
+ * inheritance relationship between {@code Timestamp}
+ * and {@code java.util.Date} really
  * denotes implementation inheritance, and not type inheritance.
  */
 public class Timestamp extends java.util.Date {
@@ -75,7 +75,7 @@ public class Timestamp extends java.util.Date {
     private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
-     * Constructs a <code>Timestamp</code> object initialized
+     * Constructs a {@code Timestamp} object initialized
      * with the given values.
      *
      * @param year the year minus 1900
@@ -85,7 +85,7 @@ public class Timestamp extends java.util.Date {
      * @param minute 0 to 59
      * @param second 0 to 59
      * @param nano 0 to 999,999,999
-     * @deprecated instead use the constructor <code>Timestamp(long millis)</code>
+     * @deprecated instead use the constructor {@code Timestamp(long millis)}
      * @exception IllegalArgumentException if the nano argument is out of bounds
      */
     @Deprecated
@@ -99,11 +99,11 @@ public class Timestamp extends java.util.Date {
     }
 
     /**
-     * Constructs a <code>Timestamp</code> object
+     * Constructs a {@code Timestamp} object
      * using a milliseconds time value. The
      * integral seconds are stored in the underlying date value; the
-     * fractional seconds are stored in the <code>nanos</code> field of
-     * the <code>Timestamp</code> object.
+     * fractional seconds are stored in the {@code nanos} field of
+     * the {@code Timestamp} object.
      *
      * @param time milliseconds since January 1, 1970, 00:00:00 GMT.
      *        A negative number is the number of milliseconds before
@@ -120,8 +120,8 @@ public class Timestamp extends java.util.Date {
     }
 
     /**
-     * Sets this <code>Timestamp</code> object to represent a point in time that is
-     * <tt>time</tt> milliseconds after January 1, 1970 00:00:00 GMT.
+     * Sets this {@code Timestamp} object to represent a point in time that is
+     * {@code time} milliseconds after January 1, 1970 00:00:00 GMT.
      *
      * @param time   the number of milliseconds.
      * @see #getTime
@@ -139,7 +139,7 @@ public class Timestamp extends java.util.Date {
 
     /**
      * Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT
-     * represented by this <code>Timestamp</code> object.
+     * represented by this {@code Timestamp} object.
      *
      * @return  the number of milliseconds since January 1, 1970, 00:00:00 GMT
      *          represented by this date.
@@ -157,16 +157,16 @@ public class Timestamp extends java.util.Date {
     private int nanos;
 
     /**
-     * Converts a <code>String</code> object in JDBC timestamp escape format to a
-     * <code>Timestamp</code> value.
+     * Converts a {@code String} object in JDBC timestamp escape format to a
+     * {@code Timestamp} value.
      *
-     * @param s timestamp in format <code>yyyy-[m]m-[d]d hh:mm:ss[.f...]</code>.  The
-     * fractional seconds may be omitted. The leading zero for <code>mm</code>
-     * and <code>dd</code> may also be omitted.
+     * @param s timestamp in format {@code yyyy-[m]m-[d]d hh:mm:ss[.f...]}.  The
+     * fractional seconds may be omitted. The leading zero for {@code mm}
+     * and {@code dd} may also be omitted.
      *
-     * @return corresponding <code>Timestamp</code> value
+     * @return corresponding {@code Timestamp} value
      * @exception java.lang.IllegalArgumentException if the given argument
-     * does not have the format <code>yyyy-[m]m-[d]d hh:mm:ss[.f...]</code>
+     * does not have the format {@code yyyy-[m]m-[d]d hh:mm:ss[.f...]}
      */
     public static Timestamp valueOf(String s) {
         final int YEAR_LENGTH = 4;
@@ -258,11 +258,11 @@ public class Timestamp extends java.util.Date {
 
     /**
      * Formats a timestamp in JDBC timestamp escape format.
-     *         <code>yyyy-mm-dd hh:mm:ss.fffffffff</code>,
-     * where <code>ffffffffff</code> indicates nanoseconds.
+     *         {@code yyyy-mm-dd hh:mm:ss.fffffffff},
+     * where {@code ffffffffff} indicates nanoseconds.
      *
-     * @return a <code>String</code> object in
-     *           <code>yyyy-mm-dd hh:mm:ss.fffffffff</code> format
+     * @return a {@code String} object in
+     *           {@code yyyy-mm-dd hh:mm:ss.fffffffff} format
      */
     @SuppressWarnings("deprecation")
     public String toString() {
@@ -315,9 +315,9 @@ public class Timestamp extends java.util.Date {
     }
 
     /**
-     * Gets this <code>Timestamp</code> object's <code>nanos</code> value.
+     * Gets this {@code Timestamp} object's {@code nanos} value.
      *
-     * @return this <code>Timestamp</code> object's fractional seconds component
+     * @return this {@code Timestamp} object's fractional seconds component
      * @see #setNanos
      */
     public int getNanos() {
@@ -325,7 +325,7 @@ public class Timestamp extends java.util.Date {
     }
 
     /**
-     * Sets this <code>Timestamp</code> object's <code>nanos</code> field
+     * Sets this {@code Timestamp} object's {@code nanos} field
      * to the given value.
      *
      * @param n the new fractional seconds component
@@ -341,13 +341,13 @@ public class Timestamp extends java.util.Date {
     }
 
     /**
-     * Tests to see if this <code>Timestamp</code> object is
-     * equal to the given <code>Timestamp</code> object.
+     * Tests to see if this {@code Timestamp} object is
+     * equal to the given {@code Timestamp} object.
      *
-     * @param ts the <code>Timestamp</code> value to compare with
-     * @return <code>true</code> if the given <code>Timestamp</code>
-     *         object is equal to this <code>Timestamp</code> object;
-     *         <code>false</code> otherwise
+     * @param ts the {@code Timestamp} value to compare with
+     * @return {@code true} if the given {@code Timestamp}
+     *         object is equal to this {@code Timestamp} object;
+     *         {@code false} otherwise
      */
     public boolean equals(Timestamp ts) {
         if (super.equals(ts)) {
@@ -362,22 +362,22 @@ public class Timestamp extends java.util.Date {
     }
 
     /**
-     * Tests to see if this <code>Timestamp</code> object is
+     * Tests to see if this {@code Timestamp} object is
      * equal to the given object.
      *
-     * This version of the method <code>equals</code> has been added
+     * This version of the method {@code equals} has been added
      * to fix the incorrect
-     * signature of <code>Timestamp.equals(Timestamp)</code> and to preserve backward
+     * signature of {@code Timestamp.equals(Timestamp)} and to preserve backward
      * compatibility with existing class files.
      *
      * Note: This method is not symmetric with respect to the
-     * <code>equals(Object)</code> method in the base class.
+     * {@code equals(Object)} method in the base class.
      *
-     * @param ts the <code>Object</code> value to compare with
-     * @return <code>true</code> if the given <code>Object</code> is an instance
-     *         of a <code>Timestamp</code> that
-     *         is equal to this <code>Timestamp</code> object;
-     *         <code>false</code> otherwise
+     * @param ts the {@code Object} value to compare with
+     * @return {@code true} if the given {@code Object} is an instance
+     *         of a {@code Timestamp} that
+     *         is equal to this {@code Timestamp} object;
+     *         {@code false} otherwise
      */
     public boolean equals(java.lang.Object ts) {
       if (ts instanceof Timestamp) {
@@ -388,40 +388,40 @@ public class Timestamp extends java.util.Date {
     }
 
     /**
-     * Indicates whether this <code>Timestamp</code> object is
-     * earlier than the given <code>Timestamp</code> object.
+     * Indicates whether this {@code Timestamp} object is
+     * earlier than the given {@code Timestamp} object.
      *
-     * @param ts the <code>Timestamp</code> value to compare with
-     * @return <code>true</code> if this <code>Timestamp</code> object is earlier;
-     *        <code>false</code> otherwise
+     * @param ts the {@code Timestamp} value to compare with
+     * @return {@code true} if this {@code Timestamp} object is earlier;
+     *        {@code false} otherwise
      */
     public boolean before(Timestamp ts) {
         return compareTo(ts) < 0;
     }
 
     /**
-     * Indicates whether this <code>Timestamp</code> object is
-     * later than the given <code>Timestamp</code> object.
+     * Indicates whether this {@code Timestamp} object is
+     * later than the given {@code Timestamp} object.
      *
-     * @param ts the <code>Timestamp</code> value to compare with
-     * @return <code>true</code> if this <code>Timestamp</code> object is later;
-     *        <code>false</code> otherwise
+     * @param ts the {@code Timestamp} value to compare with
+     * @return {@code true} if this {@code Timestamp} object is later;
+     *        {@code false} otherwise
      */
     public boolean after(Timestamp ts) {
         return compareTo(ts) > 0;
     }
 
     /**
-     * Compares this <code>Timestamp</code> object to the given
-     * <code>Timestamp</code> object.
+     * Compares this {@code Timestamp} object to the given
+     * {@code Timestamp} object.
      *
-     * @param   ts   the <code>Timestamp</code> object to be compared to
-     *                this <code>Timestamp</code> object
-     * @return  the value <code>0</code> if the two <code>Timestamp</code>
-     *          objects are equal; a value less than <code>0</code> if this
-     *          <code>Timestamp</code> object is before the given argument;
-     *          and a value greater than <code>0</code> if this
-     *          <code>Timestamp</code> object is after the given argument.
+     * @param   ts   the {@code Timestamp} object to be compared to
+     *                this {@code Timestamp} object
+     * @return  the value {@code 0} if the two {@code Timestamp}
+     *          objects are equal; a value less than {@code 0} if this
+     *          {@code Timestamp} object is before the given argument;
+     *          and a value greater than {@code 0} if this
+     *          {@code Timestamp} object is after the given argument.
      * @since   1.4
      */
     public int compareTo(Timestamp ts) {
@@ -439,16 +439,16 @@ public class Timestamp extends java.util.Date {
     }
 
     /**
-     * Compares this <code>Timestamp</code> object to the given
-     * <code>Date</code> object.
+     * Compares this {@code Timestamp} object to the given
+     * {@code Date} object.
      *
-     * @param o the <code>Date</code> to be compared to
-     *          this <code>Timestamp</code> object
-     * @return  the value <code>0</code> if this <code>Timestamp</code> object
-     *          and the given object are equal; a value less than <code>0</code>
-     *          if this  <code>Timestamp</code> object is before the given argument;
-     *          and a value greater than <code>0</code> if this
-     *          <code>Timestamp</code> object is after the given argument.
+     * @param o the {@code Date} to be compared to
+     *          this {@code Timestamp} object
+     * @return  the value {@code 0} if this {@code Timestamp} object
+     *          and the given object are equal; a value less than {@code 0}
+     *          if this  {@code Timestamp} object is before the given argument;
+     *          and a value greater than {@code 0} if this
+     *          {@code Timestamp} object is after the given argument.
      *
      * @since   1.5
      */

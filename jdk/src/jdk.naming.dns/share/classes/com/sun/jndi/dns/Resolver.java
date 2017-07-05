@@ -160,7 +160,7 @@ class Resolver {
     }
 
     /*
-     * Finds the name servers of a zone.  <tt>zone</tt> is a fully-qualified
+     * Finds the name servers of a zone.  {@code zone} is a fully-qualified
      * domain name at the top of a zone.
      * If recursion is true, recursion is requested on the query.
      */
