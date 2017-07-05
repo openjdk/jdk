@@ -4306,7 +4306,18 @@ void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool succes
         log->inline_fail("reason unknown");
     }
   }
-
+#if INCLUDE_TRACE
+  EventCompilerInlining event;
+  if (event.should_commit()) {
+    event.set_compileID(compilation()->env()->task()->compile_id());
+    event.set_message(msg);
+    event.set_succeeded(success);
+    event.set_bci(bci());
+    event.set_caller(method()->get_Method());
+    event.set_callee(callee->to_trace_struct());
+    event.commit();
+  }
+#endif // INCLUDE_TRACE
   if (!PrintInlining && !compilation()->method()->has_option("PrintInlining")) {
     return;
   }
