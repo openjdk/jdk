@@ -33,6 +33,7 @@
  * @summary Basic test for ServiceLoader with a provider deployed as a module.
  */
 
+import java.io.File;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.nio.file.Files;
@@ -49,6 +50,7 @@ import java.util.ServiceLoader;
 import java.util.ServiceLoader.Provider;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.script.ScriptEngineFactory;
 
 import org.testng.annotations.Test;
@@ -236,8 +238,10 @@ public class ModulesTest {
      */
     @Test
     public void testWithAutomaticModule() throws Exception {
+        Path here = Paths.get("");
+        Path jar = Files.createTempDirectory(here, "lib").resolve("pearscript.jar");
         Path classes = Paths.get(System.getProperty("test.classes"));
-        Path jar = Files.createTempDirectory("lib").resolve("pearscript.jar");
+
         JarUtils.createJarFile(jar, classes, "META-INF", "org");
 
         ModuleFinder finder = ModuleFinder.of(jar);
@@ -353,8 +357,7 @@ public class ModulesTest {
                 .isPresent());
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Path dir = Paths.get(System.getProperty("test.classes", "."), "modules");
-        ModuleFinder finder = ModuleFinder.of(dir);
+        ModuleFinder finder = ModuleFinder.of(testModulePath());
 
         // layer1
         Configuration cf1 = cf0.resolveAndBind(finder, ModuleFinder.of(), Set.of());
@@ -451,11 +454,10 @@ public class ModulesTest {
 
     /**
      * Create a custom layer by resolving the given module names. The modules
-     * are located in the {@code ${test.classes}/modules} directory.
+     * are located on the test module path ({@code ${test.module.path}}).
      */
     private ModuleLayer createCustomLayer(String... modules) {
-        Path dir = Paths.get(System.getProperty("test.classes", "."), "modules");
-        ModuleFinder finder = ModuleFinder.of(dir);
+        ModuleFinder finder = ModuleFinder.of(testModulePath());
         Set<String> roots = new HashSet<>();
         Collections.addAll(roots, modules);
         ModuleLayer bootLayer = ModuleLayer.boot();
@@ -465,6 +467,13 @@ public class ModulesTest {
         ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
         assertTrue(layer.modules().size() == 1);
         return layer;
+    }
+
+    private Path[] testModulePath() {
+        String mp = System.getProperty("test.module.path");
+        return Stream.of(mp.split(File.pathSeparator))
+                .map(Paths::get)
+                .toArray(Path[]::new);
     }
 
     private <E> List<E> collectAll(ServiceLoader<E> loader) {

@@ -42,6 +42,7 @@ import java.lang.module.ResolutionException;
 import java.lang.module.ResolvedModule;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -2117,7 +2118,7 @@ public class ConfigurationTest {
             target = null;
         }
         String name = descriptor.name();
-        Path dir = Files.createTempDirectory(name);
+        Path dir = Files.createTempDirectory(Paths.get(""), name);
         Path mi = dir.resolve("module-info.class");
         try (OutputStream out = Files.newOutputStream(mi)) {
             ModuleInfoWriter.write(descriptor, target, out);
