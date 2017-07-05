@@ -389,7 +389,7 @@ void JavaCalls::call_helper(JavaValue* result, methodHandle* m, JavaCallArgument
   // to Java
   if (!os::stack_shadow_pages_available(THREAD, method)) {
     // Throw stack overflow exception with preinitialized exception.
-    Exceptions::throw_stack_overflow_exception(THREAD, __FILE__, __LINE__);
+    Exceptions::throw_stack_overflow_exception(THREAD, __FILE__, __LINE__, method);
     return;
   } else {
     // Touch pages checked if the OS needs them to be touched to be mapped.
