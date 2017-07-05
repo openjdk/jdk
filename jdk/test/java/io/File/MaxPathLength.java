@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  */
 
 import java.io.*;
+import java.nio.file.Files;
 
 public class MaxPathLength {
     private static String sep = File.separator;
@@ -87,10 +88,8 @@ public class MaxPathLength {
             System.err.println("Warning: Test directory structure exists already!");
             return;
         }
-        boolean couldMakeTestDirectory = dirFile.mkdirs();
-        if (!couldMakeTestDirectory) {
-            throw new RuntimeException ("Could not create test directory structure");
-        }
+        Files.createDirectories(dirFile.toPath());
+
         try {
             if (tryAbsolute)
                 dirFile = new File(dirFile.getCanonicalPath());

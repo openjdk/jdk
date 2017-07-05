@@ -83,7 +83,7 @@ apt_help() {
     pulse)
         PKGHANDLER_COMMAND="sudo apt-get install libpulse-dev" ;;
     x11)
-        PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev" ;;
+        PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
         PKGHANDLER_COMMAND="sudo apt-get install ccache" ;;
     * )
@@ -102,11 +102,11 @@ yum_help() {
     cups)
         PKGHANDLER_COMMAND="sudo yum install cups-devel" ;;
     freetype2)
-        PKGHANDLER_COMMAND="sudo yum install freetype2-devel" ;;
+        PKGHANDLER_COMMAND="sudo yum install freetype-devel" ;;
     pulse)
         PKGHANDLER_COMMAND="sudo yum install pulseaudio-libs-devel" ;;
     x11)
-        PKGHANDLER_COMMAND="sudo yum install libXtst-devel" ;;
+        PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel" ;;
     ccache)
         PKGHANDLER_COMMAND="sudo yum install ccache" ;;
     * )

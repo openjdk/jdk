@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4759491 6303183 7012868 8015666
+ * @bug 4759491 6303183 7012868 8015666 8023713
  * @summary Test ZOS and ZIS timestamp in extra field correctly
  */
 
@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.util.Arrays;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
@@ -52,24 +53,26 @@ public class TestExtraTime {
             FileTime ctime = FileTime.from(time - 300000, TimeUnit.MILLISECONDS);
             TimeZone tz = TimeZone.getTimeZone("Asia/Shanghai");
 
-            test(mtime, null, null, null);
-            // ms-dos 1980 epoch problem
-            test(FileTime.from(10, TimeUnit.MILLISECONDS), null, null, null);
-            // non-default tz
-            test(mtime, null, null, tz);
+            for (byte[] extra : new byte[][] { null, new byte[] {1, 2, 3}}) {
+                test(mtime, null, null, null, extra);
+                // ms-dos 1980 epoch problem
+                test(FileTime.from(10, TimeUnit.MILLISECONDS), null, null, null, extra);
+                // non-default tz
+                test(mtime, null, null, tz, extra);
 
-            test(mtime, atime, null, null);
-            test(mtime, null, ctime, null);
-            test(mtime, atime, ctime, null);
+                test(mtime, atime, null, null, extra);
+                test(mtime, null, ctime, null, extra);
+                test(mtime, atime, ctime, null, extra);
 
-            test(mtime, atime, null, tz);
-            test(mtime, null, ctime, tz);
-            test(mtime, atime, ctime, tz);
+                test(mtime, atime, null, tz, extra);
+                test(mtime, null, ctime, tz, extra);
+                test(mtime, atime, ctime, tz, extra);
+            }
         }
     }
 
     static void test(FileTime mtime, FileTime atime, FileTime ctime,
-                     TimeZone tz) throws Throwable {
+                     TimeZone tz, byte[] extra) throws Throwable {
         System.out.printf("--------------------%nTesting: [%s]/[%s]/[%s]%n",
                           mtime, atime, ctime);
         TimeZone tz0 = TimeZone.getDefault();
@@ -78,8 +81,8 @@ public class TestExtraTime {
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(baos);
-        ZipEntry ze = new ZipEntry("TestExtreTime.java");
-
+        ZipEntry ze = new ZipEntry("TestExtraTime.java");
+        ze.setExtra(extra);
         ze.setLastModifiedTime(mtime);
         if (atime != null)
             ze.setLastAccessTime(atime);
@@ -87,6 +90,14 @@ public class TestExtraTime {
             ze.setCreationTime(ctime);
         zos.putNextEntry(ze);
         zos.write(new byte[] { 1,2 ,3, 4});
+
+        // append an extra entry to help check if the length and data
+        // of the extra field are being correctly written (in previous
+        // entry).
+        if (extra != null) {
+            ze = new ZipEntry("TestExtraEntry");
+            zos.putNextEntry(ze);
+        }
         zos.close();
         if (tz != null) {
             TimeZone.setDefault(tz0);
@@ -96,23 +107,23 @@ public class TestExtraTime {
                                  new ByteArrayInputStream(baos.toByteArray()));
         ze = zis.getNextEntry();
         zis.close();
-        check(mtime, atime, ctime, ze);
+        check(mtime, atime, ctime, ze, extra);
 
         // ZipFile
         Path zpath = Paths.get(System.getProperty("test.dir", "."),
-                               "TestExtraTimp.zip");
+                               "TestExtraTime.zip");
         Files.copy(new ByteArrayInputStream(baos.toByteArray()), zpath);
         ZipFile zf = new ZipFile(zpath.toFile());
-        ze = zf.getEntry("TestExtreTime.java");
+        ze = zf.getEntry("TestExtraTime.java");
         // ZipFile read entry from cen, which does not have a/ctime,
         // for now.
-        check(mtime, null, null, ze);
+        check(mtime, null, null, ze, extra);
         zf.close();
         Files.delete(zpath);
     }
 
     static void check(FileTime mtime, FileTime atime, FileTime ctime,
-                      ZipEntry ze) {
+                      ZipEntry ze, byte[] extra) {
         /*
         System.out.printf("    mtime [%tc]: [%tc]/[%tc]%n",
                           mtime.to(TimeUnit.MILLISECONDS),
@@ -130,5 +141,17 @@ public class TestExtraTime {
             ctime.to(TimeUnit.SECONDS) !=
             ze.getCreationTime().to(TimeUnit.SECONDS))
             throw new RuntimeException("Timestamp: storing ctime failed!");
+        if (extra != null) {
+            // if extra data exists, the current implementation put it at
+            // the end of the extra data array (implementation detail)
+            byte[] extra1 = ze.getExtra();
+            if (extra1 == null || extra1.length < extra.length ||
+                !Arrays.equals(Arrays.copyOfRange(extra1,
+                                                  extra1.length - extra.length,
+                                                  extra1.length),
+                               extra)) {
+                throw new RuntimeException("Timestamp: storing extra field failed!");
+            }
+        }
     }
 }

@@ -1024,7 +1024,7 @@ class SocketChannelImpl
         throws IOException;
 
     static {
-        Util.load();
+        IOUtil.load();
         nd = new SocketDispatcher();
     }
 

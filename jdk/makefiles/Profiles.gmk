@@ -65,16 +65,16 @@ PROFILE_2_JARS := \
     $(if $(PROFILE_2_JRE_JAR_FILES), $(addprefix $(IMAGES_OUTPUTDIR)/lib/, $(PROFILE_2_JRE_JAR_FILES))) \
     $(PROFILE_1_JARS)
 
-ifneq ($(ENABLE_JFR), true)
-  PROFILE_3_JRE_JAR_FILES :=  $(filter-out jfr.jar, $(PROFILE_3_JRE_JAR_FILES))
-endif
-
 PROFILE_3_JARS := \
     $(addprefix $(IMAGES_OUTPUTDIR)/lib/, $(PROFILE_3_JRE_JAR_FILES)) \
     $(PROFILE_2_JARS)
 
 ifdef OPENJDK
   FULL_JRE_JAR_FILES := $(filter-out alt-rt.jar, $(FULL_JRE_JAR_FILES))
+endif
+
+ifneq ($(ENABLE_JFR), true)
+  FULL_JRE_JAR_FILES :=  $(filter-out jfr.jar, $(FULL_JRE_JAR_FILES))
 endif
 
 FULL_JRE_JARS := \
