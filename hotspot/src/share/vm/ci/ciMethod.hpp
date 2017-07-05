@@ -32,13 +32,14 @@
 #include "compiler/methodLiveness.hpp"
 #include "prims/methodHandles.hpp"
 #include "utilities/bitMap.hpp"
+#include "trace/tracing.hpp"
 
 class ciMethodBlocks;
 class MethodLiveness;
 class BitMap;
 class Arena;
 class BCEscapeAnalyzer;
-
+class InlineTree;
 
 // ciMethod
 //
@@ -52,6 +53,7 @@ class ciMethod : public ciMetadata {
   friend class ciBytecodeStream;
   friend class ciMethodHandle;
   friend class ciReplay;
+  friend class InlineTree;
 
  private:
   // General method information.
@@ -94,12 +96,6 @@ class ciMethod : public ciMetadata {
 
   ciMethod(methodHandle h_m, ciInstanceKlass* holder);
   ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature, ciInstanceKlass* accessor);
-
-  Method* get_Method() const {
-    Method* m = (Method*)_metadata;
-    assert(m != NULL, "illegal use of unloaded method");
-    return m;
-  }
 
   oop loader() const                             { return _holder->loader(); }
 
@@ -158,6 +154,11 @@ class ciMethod : public ciMetadata {
     }
   }
 
+  Method* get_Method() const {
+    Method* m = (Method*)_metadata;
+    assert(m != NULL, "illegal use of unloaded method");
+    return m;
+  }
 
   // Method code and related information.
   address code()                                 { if (_code == NULL) load_code(); return _code; }
@@ -339,6 +340,10 @@ class ciMethod : public ciMetadata {
   // Print the name of this method in various incarnations.
   void print_name(outputStream* st = tty);
   void print_short_name(outputStream* st = tty);
+
+#if INCLUDE_TRACE
+  TraceStructCiMethod to_trace_struct() const;
+#endif
 };
 
 #endif // SHARE_VM_CI_CIMETHOD_HPP

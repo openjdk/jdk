@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -136,12 +136,7 @@
     entry_frame_call_wrapper_offset                  = -8,
 
     // we don't need a save area
-    arg_reg_save_area_bytes                          =  0,
-
-    // TODO - check that this is still correct
-    // Native frames
-
-    native_frame_initial_param_offset                =  2
+    arg_reg_save_area_bytes                          =  0
 
   };
 
@@ -194,9 +189,6 @@
   intptr_t*   fp() const { return _fp; }
 
   inline address* sender_pc_addr() const;
-
-  // return address of param, zero origin index.
-  inline address* native_param_addr(int idx) const;
 
   // expression stack tos if we are nested in a java call
   intptr_t* interpreter_frame_last_sp() const;

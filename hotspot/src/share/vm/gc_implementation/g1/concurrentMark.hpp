@@ -853,7 +853,7 @@ public:
 
   // Returns the card bitmap for a given task or worker id.
   BitMap* count_card_bitmap_for(uint worker_id) {
-    assert(0 <= worker_id && worker_id < _max_worker_id, "oob");
+    assert(worker_id < _max_worker_id, "oob");
     assert(_count_card_bitmaps != NULL, "uninitialized");
     BitMap* task_card_bm = &_count_card_bitmaps[worker_id];
     assert(task_card_bm->size() == _card_bm.size(), "size mismatch");
@@ -863,7 +863,7 @@ public:
   // Returns the array containing the marked bytes for each region,
   // for the given worker or task id.
   size_t* count_marked_bytes_array_for(uint worker_id) {
-    assert(0 <= worker_id && worker_id < _max_worker_id, "oob");
+    assert(worker_id < _max_worker_id, "oob");
     assert(_count_marked_bytes != NULL, "uninitialized");
     size_t* marked_bytes_array = _count_marked_bytes[worker_id];
     assert(marked_bytes_array != NULL, "uninitialized");

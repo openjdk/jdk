@@ -184,6 +184,11 @@ ExtendedPC os::Solaris::ucontext_get_ExtendedPC(ucontext_t *uc) {
   return ExtendedPC(pc);
 }
 
+void os::Solaris::ucontext_set_pc(ucontext_t* uc, address pc) {
+  uc->uc_mcontext.gregs [REG_PC]  = (greg_t) pc;
+  uc->uc_mcontext.gregs [REG_nPC] = (greg_t) (pc + 4);
+}
+
 // Assumes ucontext is valid
 intptr_t* os::Solaris::ucontext_get_sp(ucontext_t *uc) {
   return (intptr_t*)((intptr_t)uc->uc_mcontext.gregs[REG_SP] + STACK_BIAS);
@@ -355,8 +360,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
 
     // SafeFetch() support
     if (StubRoutines::is_safefetch_fault(pc)) {
-      uc->uc_mcontext.gregs[REG_PC] = intptr_t(StubRoutines::continuation_for_safefetch_fault(pc));
-      uc->uc_mcontext.gregs[REG_nPC] = uc->uc_mcontext.gregs[REG_PC] + 4;
+      os::Solaris::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
       return 1;
     }
 
@@ -494,8 +498,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
 
     // simulate a branch to the stub (a "call" in the safepoint stub case)
     // factor me: setPC
-    uc->uc_mcontext.gregs[REG_PC ] = (greg_t)stub;
-    uc->uc_mcontext.gregs[REG_nPC] = (greg_t)(stub + 4);
+    os::Solaris::ucontext_set_pc(uc, stub);
 
 #ifndef PRODUCT
     if (TraceJumps) thread->record_jump(stub, NULL, __FILE__, __LINE__);
