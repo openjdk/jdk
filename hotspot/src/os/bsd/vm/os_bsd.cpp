@@ -298,12 +298,12 @@ void os::init_system_properties_values() {
 
   // The next steps are taken in the product version:
   //
-  // Obtain the JAVA_HOME value from the location of libjvm[_g].so.
+  // Obtain the JAVA_HOME value from the location of libjvm.so.
   // This library should be located at:
-  // <JAVA_HOME>/jre/lib/<arch>/{client|server}/libjvm[_g].so.
+  // <JAVA_HOME>/jre/lib/<arch>/{client|server}/libjvm.so.
   //
   // If "/jre/lib/" appears at the right place in the path, then we
-  // assume libjvm[_g].so is installed in a JDK and we use this path.
+  // assume libjvm.so is installed in a JDK and we use this path.
   //
   // Otherwise exit with message: "Could not create the Java virtual machine."
   //
@@ -313,9 +313,9 @@ void os::init_system_properties_values() {
   // instead of exit check for $JAVA_HOME environment variable.
   //
   // If it is defined and we are able to locate $JAVA_HOME/jre/lib/<arch>,
-  // then we append a fake suffix "hotspot/libjvm[_g].so" to this path so
-  // it looks like libjvm[_g].so is installed there
-  // <JAVA_HOME>/jre/lib/<arch>/hotspot/libjvm[_g].so.
+  // then we append a fake suffix "hotspot/libjvm.so" to this path so
+  // it looks like libjvm.so is installed there
+  // <JAVA_HOME>/jre/lib/<arch>/hotspot/libjvm.so.
   //
   // Otherwise exit.
   //
@@ -1228,7 +1228,7 @@ const char* os::get_current_directory(char *buf, int buflen) {
   return getcwd(buf, buflen);
 }
 
-// check if addr is inside libjvm[_g].so
+// check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
   static address libjvm_base_addr;
   Dl_info dlinfo;
@@ -1689,7 +1689,7 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
 
 static char saved_jvm_path[MAXPATHLEN] = {0};
 
-// Find the full path to the current module, libjvm or libjvm_g
+// Find the full path to the current module, libjvm
 void os::jvm_path(char *buf, jint buflen) {
   // Error checking.
   if (buflen < MAXPATHLEN) {
@@ -1732,10 +1732,9 @@ void os::jvm_path(char *buf, jint buflen) {
         char* jrelib_p;
         int len;
 
-        // Check the current module name "libjvm" or "libjvm_g".
+        // Check the current module name "libjvm"
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
-        p = strstr(p, "_g") ? "_g" : "";
 
         rp = realpath(java_home_var, buf);
         if (rp == NULL)
@@ -1764,11 +1763,9 @@ void os::jvm_path(char *buf, jint buflen) {
         // to complete the path to JVM being overridden.  Otherwise fallback
         // to the path to the current library.
         if (0 == access(buf, F_OK)) {
-          // Use current module name "libjvm[_g]" instead of
-          // "libjvm"debug_only("_g")"" since for fastdebug version
-          // we should have "libjvm" but debug_only("_g") adds "_g"!
+          // Use current module name "libjvm"
           len = strlen(buf);
-          snprintf(buf + len, buflen-len, "/libjvm%s%s", p, JNI_LIB_SUFFIX);
+          snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
         } else {
           // Fall back to path of current library
           rp = realpath(dli_fname, buf);

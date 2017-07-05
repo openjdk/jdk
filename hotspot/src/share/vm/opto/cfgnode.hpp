@@ -95,6 +95,7 @@ public:
   virtual Node *Identity( PhaseTransform *phase );
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const RegMask &out_RegMask() const;
+  bool try_clean_mem_phi(PhaseGVN *phase);
 };
 
 //------------------------------JProjNode--------------------------------------
@@ -181,7 +182,7 @@ public:
   LoopSafety simple_data_loop_check(Node *in) const;
   // Is it unsafe data loop? It becomes a dead loop if this phi node removed.
   bool is_unsafe_data_reference(Node *in) const;
-  int  is_diamond_phi() const;
+  int  is_diamond_phi(bool check_control_only = false) const;
   virtual int Opcode() const;
   virtual bool pinned() const { return in(0) != 0; }
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }

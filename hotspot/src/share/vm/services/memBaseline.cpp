@@ -22,7 +22,6 @@
  *
  */
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
 #include "memory/allocation.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memTracker.hpp"
@@ -349,7 +348,7 @@ bool MemBaseline::baseline(MemSnapshot& snapshot, bool summary_only) {
   reset();
   _baselined = baseline_malloc_summary(snapshot._alloc_ptrs) &&
                baseline_vm_summary(snapshot._vm_ptrs);
-  _number_of_classes = SystemDictionary::number_of_classes();
+  _number_of_classes = snapshot.number_of_classes();
 
   if (!summary_only && MemTracker::track_callsite() && _baselined) {
     _baselined =  baseline_malloc_details(snapshot._alloc_ptrs) &&

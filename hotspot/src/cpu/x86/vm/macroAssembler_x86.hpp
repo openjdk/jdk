@@ -1011,6 +1011,10 @@ public:
       Assembler::vxorpd(dst, nds, src, vector256);
   }
 
+  // Simple version for AVX2 256bit vectors
+  void vpxor(XMMRegister dst, XMMRegister src) { Assembler::vpxor(dst, dst, src, true); }
+  void vpxor(XMMRegister dst, Address src) { Assembler::vpxor(dst, dst, src, true); }
+
   // Move packed integer values from low 128 bit to hign 128 bit in 256 bit vector.
   void vinserti128h(XMMRegister dst, XMMRegister nds, XMMRegister src) {
     if (UseAVX > 1) // vinserti128h is available only in AVX2
@@ -1095,6 +1099,9 @@ public:
 
   // C2 compiled method's prolog code.
   void verified_entry(int framesize, bool stack_bang, bool fp_mode_24b);
+
+  // clear memory of size 'cnt' qwords, starting at 'base'.
+  void clear_mem(Register base, Register cnt, Register rtmp);
 
   // IndexOf strings.
   // Small strings are loaded through stack if they cross page boundary.

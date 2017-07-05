@@ -120,6 +120,9 @@ define_pd_global(intx, CMSYoungGenPerWorker, 64*M);  // default max size of CMS 
   product(bool, UseUnalignedLoadStores, false,                              \
           "Use SSE2 MOVDQU instruction for Arraycopy")                      \
                                                                             \
+  product(bool, UseFastStosb, false,                                        \
+          "Use fast-string operation for zeroing: rep stosb")               \
+                                                                            \
   /* assembler */                                                           \
   product(bool, Use486InstrsOnly, false,                                    \
           "Use 80486 Compliant instruction subset")                         \

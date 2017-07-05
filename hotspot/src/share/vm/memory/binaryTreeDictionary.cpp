@@ -67,7 +67,8 @@ void TreeChunk<Chunk_t, FreeList_t>::verify_tree_chunk_list() const {
 }
 
 template <class Chunk_t, template <class> class FreeList_t>
-TreeList<Chunk_t, FreeList_t>::TreeList() {}
+TreeList<Chunk_t, FreeList_t>::TreeList() : _parent(NULL),
+  _left(NULL), _right(NULL) {}
 
 template <class Chunk_t, template <class> class FreeList_t>
 TreeList<Chunk_t, FreeList_t>*
@@ -82,7 +83,7 @@ TreeList<Chunk_t, FreeList_t>::as_TreeList(TreeChunk<Chunk_t,FreeList_t>* tc) {
   tl->link_head(tc);
   tl->link_tail(tc);
   tl->set_count(1);
-
+  assert(tl->parent() == NULL, "Should be clear");
   return tl;
 }
 
