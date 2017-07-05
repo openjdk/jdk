@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,7 @@ public abstract class PathFileObject implements JavaFileObject {
      * @param fileManager the file manager creating this file object
      * @param path the path referred to by this file object
      * @param userJarPath the path of the jar file containing the file system.
+     * @return the file object
      */
     public static PathFileObject forJarPath(BaseFileManager fileManager,
             Path path, Path userJarPath) {
@@ -220,6 +221,7 @@ public abstract class PathFileObject implements JavaFileObject {
      *
      * @param fileManager the file manager creating this file object
      * @param path the path referred to by this file object
+     * @return the file object
      */
     public static PathFileObject forJRTPath(BaseFileManager fileManager,
             final Path path) {
@@ -304,6 +306,16 @@ public abstract class PathFileObject implements JavaFileObject {
             return null;
         }
 
+        @Override @DefinedBy(Api.COMPILER)
+        public Kind getKind() {
+            return BaseFileManager.getKind(userPath);
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public boolean isNameCompatible(String simpleName, Kind kind) {
+            return isPathNameCompatible(userPath, simpleName, kind);
+        }
+
         @Override
         PathFileObject getSibling(String baseName) {
             return new SimpleFileObject(fileManager,
@@ -369,34 +381,37 @@ public abstract class PathFileObject implements JavaFileObject {
 
     @Override @DefinedBy(Api.COMPILER)
     public Kind getKind() {
-        return BaseFileManager.getKind(path.getFileName().toString());
+        return BaseFileManager.getKind(path);
     }
 
     @Override @DefinedBy(Api.COMPILER)
     public boolean isNameCompatible(String simpleName, Kind kind) {
+        return isPathNameCompatible(path, simpleName, kind);
+    }
+
+    protected boolean isPathNameCompatible(Path p, String simpleName, Kind kind) {
         Objects.requireNonNull(simpleName);
         Objects.requireNonNull(kind);
 
-        if (kind == Kind.OTHER && getKind() != kind) {
+        if (kind == Kind.OTHER && BaseFileManager.getKind(p) != kind) {
             return false;
         }
 
         String sn = simpleName + kind.extension;
-        String pn = path.getFileName().toString();
+        String pn = p.getFileName().toString();
         if (pn.equals(sn)) {
             return true;
         }
 
-        if (path.getFileSystem() == defaultFileSystem) {
+        if (p.getFileSystem() == defaultFileSystem) {
             if (isMacOS) {
-                String name = path.getFileName().toString();
-                if (Normalizer.isNormalized(name, Normalizer.Form.NFD)
+                if (Normalizer.isNormalized(pn, Normalizer.Form.NFD)
                         && Normalizer.isNormalized(sn, Normalizer.Form.NFC)) {
                     // On Mac OS X it is quite possible to have the file name and the
                     // given simple name normalized in different ways.
                     // In that case we have to normalize file name to the
                     // Normal Form Composed (NFC).
-                    String normName = Normalizer.normalize(name, Normalizer.Form.NFC);
+                    String normName = Normalizer.normalize(pn, Normalizer.Form.NFC);
                     if (normName.equals(sn)) {
                         return true;
                     }
@@ -406,7 +421,7 @@ public abstract class PathFileObject implements JavaFileObject {
             if (pn.equalsIgnoreCase(sn)) {
                 try {
                     // allow for Windows
-                    return path.toRealPath(LinkOption.NOFOLLOW_LINKS).getFileName().toString().equals(sn);
+                    return p.toRealPath(LinkOption.NOFOLLOW_LINKS).getFileName().toString().equals(sn);
                 } catch (IOException e) {
                 }
             }
@@ -552,9 +567,12 @@ public abstract class PathFileObject implements JavaFileObject {
         return (lastDot == -1 ? fileName : fileName.substring(0, lastDot));
     }
 
-    /** Return the last component of a presumed hierarchical URI.
-     *  From the scheme specific part of the URI, it returns the substring
-     *  after the last "/" if any, or everything if no "/" is found.
+    /**
+     * Return the last component of a presumed hierarchical URI.
+     * From the scheme specific part of the URI, it returns the substring
+     * after the last "/" if any, or everything if no "/" is found.
+     * @param fo the file object
+     * @return the simple name of the file object
      */
     public static String getSimpleName(FileObject fo) {
         URI uri = fo.toUri();

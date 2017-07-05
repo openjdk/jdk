@@ -35,7 +35,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * A symbolic reference obtained by cracking a direct method handle
  * into its consitutent symbolic parts.
  * To crack a direct method handle, call {@link Lookup#revealDirect Lookup.revealDirect}.
- * <h1><a name="directmh"></a>Direct Method Handles</h1>
+ * <h1><a id="directmh"></a>Direct Method Handles</h1>
  * A <em>direct method handle</em> represents a method, constructor, or field without
  * any intervening argument bindings or other transformations.
  * The method, constructor, or field referred to by a direct method handle is called
@@ -77,7 +77,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * handle with symbolic information (or caller binding) from an unexpected scope.
  * Use {@link java.lang.invoke.MethodHandles#reflectAs} to override this limitation.
  *
- * <h1><a name="refkinds"></a>Reference kinds</h1>
+ * <h1><a id="refkinds"></a>Reference kinds</h1>
  * The <a href="MethodHandles.Lookup.html#lookups">Lookup Factory Methods</a>
  * correspond to all major use cases for methods, constructors, and fields.
  * These use cases may be distinguished using small integers as follows:

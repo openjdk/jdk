@@ -73,9 +73,9 @@ import java.time.DateTimeException;
  * <table summary="ISO years and eras" cellpadding="2" cellspacing="3" border="0" >
  * <thead>
  * <tr class="tableSubHeadingColor">
- * <th class="colFirst" align="left">year-of-era</th>
- * <th class="colFirst" align="left">era</th>
- * <th class="colLast" align="left">proleptic-year</th>
+ * <th class="colFirst" style="text-align:left">year-of-era</th>
+ * <th class="colFirst" style="text-align:left">era</th>
+ * <th class="colLast" style="text-align:left">proleptic-year</th>
  * </tr>
  * </thead>
  * <tbody>
