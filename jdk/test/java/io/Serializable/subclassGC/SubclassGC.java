@@ -50,8 +50,9 @@ public class SubclassGC {
                 }
 
                 ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
-                ClassLoader loader = new URLClassLoader(((URLClassLoader) systemLoader).getURLs(),
-                                                                                        systemLoader.getParent());
+                URL testClassesURL = new File(System.getProperty("test.classes")).toURI().toURL();
+                ClassLoader loader = new URLClassLoader(new URL[] { testClassesURL } ,
+                                                        systemLoader.getParent());
                 Class<? extends ObjectOutputStream> cl =
                         Class.forName(SubclassOfOOS.class.getName(), false,
                                                   loader).asSubclass(ObjectOutputStream.class);

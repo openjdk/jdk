@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,11 @@ public class Object {
     static {
         registerNatives();
     }
+
+    /**
+     * Constructs a new object.
+     */
+    public Object() {}
 
     /**
      * Returns the runtime class of this {@code Object}. The returned
@@ -86,12 +91,11 @@ public class Object {
      *     for unequal objects may improve the performance of hash tables.
      * </ul>
      * <p>
-     * As much as is reasonably practical, the hashCode method defined by
-     * class {@code Object} does return distinct integers for distinct
-     * objects. (This is typically implemented by converting the internal
-     * address of the object into an integer, but this implementation
-     * technique is not required by the
-     * Java&trade; programming language.)
+     * As much as is reasonably practical, the hashCode method defined
+     * by class {@code Object} does return distinct integers for
+     * distinct objects. (The hashCode may or may not be implemented
+     * as some function of an object's memory address at some point
+     * in time.)
      *
      * @return  a hash code value for this object.
      * @see     java.lang.Object#equals(java.lang.Object)
@@ -344,10 +348,12 @@ public class Object {
      *         ... // Perform action appropriate to condition
      *     }
      * </pre>
-     * (For more information on this topic, see Section 3.2.3 in Doug Lea's
-     * "Concurrent Programming in Java (Second Edition)" (Addison-Wesley,
-     * 2000), or Item 50 in Joshua Bloch's "Effective Java Programming
-     * Language Guide" (Addison-Wesley, 2001).
+     *
+     * (For more information on this topic, see section 14.2,
+     * Condition Queues, in Brian Goetz and others' "Java Concurrency
+     * in Practice" (Addison-Wesley, 2006) or Item 69 in Joshua
+     * Bloch's "Effective Java (Second Edition)" (Addison-Wesley,
+     * 2008).
      *
      * <p>If the current thread is {@linkplain java.lang.Thread#interrupt()
      * interrupted} by any thread before or while it is waiting, then an

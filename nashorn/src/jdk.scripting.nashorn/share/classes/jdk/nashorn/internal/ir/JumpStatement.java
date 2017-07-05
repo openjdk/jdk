@@ -101,7 +101,26 @@ public abstract class JumpStatement extends Statement implements JoinPredecessor
      * @throws ClassCastException if invoked on the kind of breakable node that this jump statement is not prepared to
      * handle.
      */
-    public abstract Label getTargetLabel(final BreakableNode target);
+    abstract Label getTargetLabel(final BreakableNode target);
+
+    /**
+     * Returns the label this jump statement targets.
+     * @param lc the lexical context
+     * @return the label this jump statement targets.
+     */
+    public Label getTargetLabel(final LexicalContext lc) {
+        return getTargetLabel(getTarget(lc));
+    }
+
+    /**
+     * Returns the limit node for popping scopes when this jump statement is effected.
+     * @param lc the current lexical context
+     * @return the limit node for popping scopes when this jump statement is effected.
+     */
+    public LexicalContextNode getPopScopeLimit(final LexicalContext lc) {
+        // In most cases (break and continue) this is equal to the target.
+        return getTarget(lc);
+    }
 
     @Override
     public JumpStatement setLocalVariableConversion(final LexicalContext lc, final LocalVariableConversion conversion) {
