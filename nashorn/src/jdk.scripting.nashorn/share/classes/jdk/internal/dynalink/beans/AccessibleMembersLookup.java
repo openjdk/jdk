@@ -98,8 +98,6 @@ import java.util.Set;
  * public, or belongs to a restricted-access package. In that case, it is required to lookup a member in a publicly
  * accessible superclass or implemented interface of the class, and use it instead of the member discovered on the
  * class.
- *
- * @author Attila Szegedi
  */
 class AccessibleMembersLookup {
     private final Map<MethodSignature, Method> methods;
@@ -140,8 +138,6 @@ class AccessibleMembersLookup {
 
     /**
      * A helper class that represents a method signature - name and argument types.
-     *
-     * @author Attila Szegedi
      */
     static final class MethodSignature {
         private final String name;

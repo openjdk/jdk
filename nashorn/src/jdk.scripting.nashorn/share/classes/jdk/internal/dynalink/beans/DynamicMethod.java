@@ -93,8 +93,6 @@ import jdk.internal.dynalink.linker.LinkerServices;
  * overloaded methods will perform overload resolution (actually, it will perform partial overloaded resolution at link
  * time, but if that fails to identify exactly one target method, it will generate a method handle that will perform the
  * rest of the overload resolution at invocation time for actual argument types).
- *
- * @author Attila Szegedi
  */
 abstract class DynamicMethod {
     private final String name;
