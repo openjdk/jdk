@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,13 @@ import java.util.*;
 
 public class TestSHAClone {
 
+    // OracleUcrypto provider gets its digest impl from either
+    // libucrypto (starting S12 with SHA-3 support added) and
+    // libmd (pre-S12, no SHA-3 at all).
+    // The impls from libucrypto does not support clone but ones
+    // from libmd do.
     private static final String[] ALGOS = {
-        "SHA", "SHA-224", "SHA-256", "SHA-512", "SHA-384"
+        "SHA", "SHA-224", "SHA-256", "SHA-384", "SHA-512"
     };
 
     private static byte[] input1 = {
@@ -52,7 +57,13 @@ public class TestSHAClone {
 
     private void run() throws Exception {
         md.update(input1);
-        MessageDigest md2 = (MessageDigest) md.clone();
+        MessageDigest md2;
+        try {
+            md2 = (MessageDigest) md.clone();
+        } catch (CloneNotSupportedException cnse) {
+            System.out.println(md.getAlgorithm() + ": clone unsupported");
+            return;
+        }
         md.update(input2);
         md2.update(input2);
         if (!Arrays.equals(md.digest(), md2.digest())) {

@@ -39,18 +39,22 @@ final class RawChannel implements ByteChannel, GatheringByteChannel {
 
     private final HttpClientImpl client;
     private final HttpConnection connection;
-    private volatile boolean closed;
 
     private interface RawEvent {
 
-        /** must return the selector interest op flags OR'd. */
+        /**
+         * must return the selector interest op flags OR'd.
+         */
         int interestOps();
 
-        /** called when event occurs. */
+        /**
+         * called when event occurs.
+         */
         void handle();
     }
 
-    interface NonBlockingEvent extends RawEvent { }
+    interface NonBlockingEvent extends RawEvent {
+    }
 
     RawChannel(HttpClientImpl client, HttpConnection connection) {
         this.client = client;
@@ -127,12 +131,11 @@ final class RawChannel implements ByteChannel, GatheringByteChannel {
 
     @Override
     public boolean isOpen() {
-        return !closed;
+        return connection.isOpen();
     }
 
     @Override
     public void close() throws IOException {
-        closed = true;
         connection.close();
     }
 

@@ -603,12 +603,12 @@ public class ObjectInputStream
      *     Class.forName(desc.getName(), false, loader)
      * </pre>
      * where <code>loader</code> is determined as follows: if there is a
-     * method on the current thread's stack whose declaring class was
-     * defined by a user-defined class loader (and was not a generated to
-     * implement reflective invocations), then <code>loader</code> is class
-     * loader corresponding to the closest such method to the currently
-     * executing frame; otherwise, <code>loader</code> is
-     * <code>null</code>. If this call results in a
+     * method on the current thread's stack whose declaring class is not a
+     * <a href="../lang/ClassLoader.html#builtinLoaders">
+     * <em>platform class</em></a>, then <code>loader</code> is
+     * the class loader of such class; otherwise, <code>loader</code>
+     * is the {@linkplain ClassLoader#getPlatformClassLoader()
+     * platform class loader}.  If this call results in a
      * <code>ClassNotFoundException</code> and the name of the passed
      * <code>ObjectStreamClass</code> instance is the Java language keyword
      * for a primitive type or void, then the <code>Class</code> object
@@ -666,12 +666,15 @@ public class ObjectInputStream
      * <pre>
      *     Class.forName(i, false, loader)
      * </pre>
-     * where <code>loader</code> is that of the first non-<code>null</code>
-     * class loader up the execution stack, or <code>null</code> if no
-     * non-<code>null</code> class loaders are on the stack (the same class
-     * loader choice used by the <code>resolveClass</code> method).  Unless any
-     * of the resolved interfaces are non-public, this same value of
-     * <code>loader</code> is also the class loader passed to
+     * where <code>loader</code> is determined as follows: if there is a
+     * method on the current thread's stack whose declaring class is not a
+     * <a href="../lang/ClassLoader.html#builtinLoaders">
+     * <em>platform class</em></a>, then <code>loader</code> is
+     * the class loader of such class; otherwise, <code>loader</code>
+     * is the {@linkplain ClassLoader#getPlatformClassLoader()
+     * platform class loader}.
+     * Unless any of the resolved interfaces are non-public, this same value
+     * of <code>loader</code> is also the class loader passed to
      * <code>Proxy.getProxyClass</code>; if non-public interfaces are present,
      * their class loader is passed instead (if more than one non-public
      * interface class loader is encountered, an
@@ -2154,10 +2157,11 @@ public class ObjectInputStream
                                               int ndoubles);
 
     /**
-     * Returns the first non-null class loader (not counting class loaders of
-     * generated reflection implementation classes) up the execution stack, or
-     * null if only code from the null class loader is on the stack.  This
-     * method is also called via reflection by the following RMI-IIOP class:
+     * Returns the first non-null and non-platform class loader
+     * (not counting class loaders of generated reflection implementation classes)
+     * up the execution stack, or null if only code from the bootstrap and
+     * platform class loader is on the stack.
+     * This method is also called via reflection by the following RMI-IIOP class:
      *
      *     com.sun.corba.se.internal.util.JDKClassLoader
      *

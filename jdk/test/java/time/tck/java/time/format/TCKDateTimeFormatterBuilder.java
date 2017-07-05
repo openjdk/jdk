@@ -73,7 +73,10 @@ import java.text.ParsePosition;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Month;
 import java.time.YearMonth;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -459,6 +462,98 @@ public class TCKDateTimeFormatterBuilder {
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
     //-----------------------------------------------------------------------
+    @DataProvider(name = "formatGenericTimeZonePatterns")
+    Object[][] data_formatGenericNonLocationPatterns() {
+        return new Object[][] {
+                {"v", "America/Los_Angeles", "PT"},
+                {"vvvv", "America/Los_Angeles", "Pacific Time"},
+                {"v", "America/New_York", "ET"},
+                {"vvvv", "America/New_York", "Eastern Time"},
+        };
+    }
+
+    @Test(dataProvider = "formatGenericTimeZonePatterns")
+    public void test_appendZoneText_formatGenericTimeZonePatterns(String pattern, String input, String expected) {
+        ZonedDateTime zdt = ZonedDateTime.of(LocalDateTime.now(), ZoneId.of(input));
+        DateTimeFormatter df = DateTimeFormatter.ofPattern(pattern);
+        assertEquals(zdt.format(df), expected);
+    }
+
+    @DataProvider(name = "parseGenericTimeZonePatterns")
+    Object[][]  data_parseGenericTimeZonePatterns() {
+        return new Object[][] {
+                {"yyyy DDD HH mm v", LocalDateTime.of(2015, Month.MARCH, 10, 12, 13), ZoneId.of("America/Los_Angeles"),
+                 "2015 069 12 13 PT"},
+                {"yyyy DDD HH mm vvvv", LocalDateTime.of(2015, Month.MARCH, 10, 12, 13), ZoneId.of("America/Los_Angeles"),
+                 "2015 069 12 13 Pacific Time"},
+                {"yyyy DDD HH mm v", LocalDateTime.of(2015, Month.NOVEMBER, 10, 12, 13), ZoneId.of("America/Los_Angeles"),
+                 "2015 314 12 13 PT"},
+                {"yyyy DDD HH mm vvvv", LocalDateTime.of(2015, Month.NOVEMBER, 10, 12, 13), ZoneId.of("America/Los_Angeles"),
+                 "2015 314 12 13 Pacific Time"},
+        };
+    }
+
+    @Test(dataProvider = "parseGenericTimeZonePatterns")
+    public void test_appendZoneText_parseGenericTimeZonePatterns(String pattern, LocalDateTime ldt, ZoneId zId, String input) {
+        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter();
+        ZonedDateTime expected = ZonedDateTime.parse(input, df);
+        ZonedDateTime actual = ZonedDateTime.of(ldt, zId);
+        assertEquals(actual, expected);
+    }
+
+    @DataProvider(name = "formatNonGenericTimeZonePatterns_1")
+    Object[][]  data_formatNonGenericTimeZonePatterns_1() {
+        return new Object[][] {
+                {"yyyy-MM-dd HH:mm:ss z", LocalDateTime.of(2015, Month.NOVEMBER, 1, 0, 30),
+                 "2015-11-01 00:30:00 PDT"},
+                {"yyyy-MM-dd HH:mm:ss z", LocalDateTime.of(2015, Month.NOVEMBER, 1, 1, 30),
+                 "2015-11-01 01:30:00 PDT"},
+                {"yyyy-MM-dd HH:mm:ss z", LocalDateTime.of(2015, Month.NOVEMBER, 1, 2, 30),
+                 "2015-11-01 02:30:00 PST"},
+                {"yyyy-MM-dd HH:mm:ss zzzz", LocalDateTime.of(2015, Month.NOVEMBER, 1, 0, 30),
+                 "2015-11-01 00:30:00 Pacific Daylight Time"},
+                {"yyyy-MM-dd HH:mm:ss zzzz", LocalDateTime.of(2015, Month.NOVEMBER, 1, 1, 30),
+                 "2015-11-01 01:30:00 Pacific Daylight Time"},
+                {"yyyy-MM-dd HH:mm:ss zzzz", LocalDateTime.of(2015, Month.NOVEMBER, 1, 2, 30),
+                 "2015-11-01 02:30:00 Pacific Standard Time"},
+        };
+    }
+
+    @Test(dataProvider = "formatNonGenericTimeZonePatterns_1")
+    public void test_appendZoneText_parseNonGenricTimeZonePatterns_1(String pattern, LocalDateTime ldt, String expected) {
+        ZoneId  zId = ZoneId.of("America/Los_Angeles");
+        DateTimeFormatter df = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter();
+        ZonedDateTime zdt = ZonedDateTime.of(ldt, zId);
+        String actual = df.format(zdt);
+        assertEquals(actual, expected);
+    }
+
+    @DataProvider(name = "formatNonGenericTimeZonePatterns_2")
+    Object[][]  data_formatNonGenericTimeZonePatterns_2() {
+        return new Object[][] {
+                {"yyyy-MM-dd HH:mm:ss z", LocalDateTime.of(2015, Month.NOVEMBER, 1, 0, 30),
+                 "2015-11-01 00:30:00 PDT"},
+                {"yyyy-MM-dd HH:mm:ss z", LocalDateTime.of(2015, Month.NOVEMBER, 1, 1, 30),
+                 "2015-11-01 01:30:00 PT"},
+                {"yyyy-MM-dd HH:mm:ss z", LocalDateTime.of(2015, Month.NOVEMBER, 1, 2, 30),
+                 "2015-11-01 02:30:00 PST"},
+                {"yyyy-MM-dd HH:mm:ss zzzz", LocalDateTime.of(2015, Month.NOVEMBER, 1, 0, 30),
+                 "2015-11-01 00:30:00 Pacific Daylight Time"},
+                {"yyyy-MM-dd HH:mm:ss zzzz", LocalDateTime.of(2015, Month.NOVEMBER, 1, 1, 30),
+                 "2015-11-01 01:30:00 Pacific Time"},
+                {"yyyy-MM-dd HH:mm:ss zzzz", LocalDateTime.of(2015, Month.NOVEMBER, 1, 2, 30),
+                 "2015-11-01 02:30:00 Pacific Standard Time"},
+        };
+    }
+
+    @Test(dataProvider = "formatNonGenericTimeZonePatterns_2")
+    public void test_appendZoneText_parseNonGenricTimeZonePatterns_2(String pattern, LocalDateTime ldt, String expected) {
+        ZoneId  zId = ZoneId.of("America/Los_Angeles");
+        DateTimeFormatter df = DateTimeFormatter.ofPattern(pattern).withZone(zId);
+        String actual = df.format(ldt);
+        assertEquals(actual, expected);
+    }
+
     @Test(expectedExceptions=NullPointerException.class)
     public void test_appendZoneText_1arg_nullText() throws Exception {
         builder.appendZoneText(null);
@@ -734,6 +829,9 @@ public class TCKDateTimeFormatterBuilder {
 
             {"www"},
             {"WW"},
+
+            {"vv"},
+            {"vvv"},
         };
     }
 

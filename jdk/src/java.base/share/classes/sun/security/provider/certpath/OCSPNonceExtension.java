@@ -51,7 +51,7 @@ public final class OCSPNonceExtension extends Extension {
     private byte[] nonceData = null;
 
     /**
-     * Create a {@code OCSPNonceExtension} by providing the nonce length.
+     * Create an {@code OCSPNonceExtension} by providing the nonce length.
      * The criticality is set to false, and the OID for the extension will
      * be the value defined by "id-pkix-ocsp-nonce" from RFC 6960.
      *
@@ -66,7 +66,7 @@ public final class OCSPNonceExtension extends Extension {
     }
 
     /**
-     * Create a {@code OCSPNonceExtension} by providing the nonce length and
+     * Create an {@code OCSPNonceExtension} by providing the nonce length and
      * criticality setting.  The OID for the extension will
      * be the value defined by "id-pkix-ocsp-nonce" from RFC 6960.
      *
@@ -96,7 +96,7 @@ public final class OCSPNonceExtension extends Extension {
     }
 
     /**
-     * Create a {@code OCSPNonceExtension} by providing a nonce value.
+     * Create an {@code OCSPNonceExtension} by providing a nonce value.
      * The criticality is set to false, and the OID for the extension will
      * be the value defined by "id-pkix-ocsp-nonce" from RFC 6960.
      *
@@ -114,7 +114,7 @@ public final class OCSPNonceExtension extends Extension {
     }
 
     /**
-     * Create a {@code OCSPNonceExtension} by providing a nonce value and
+     * Create an {@code OCSPNonceExtension} by providing a nonce value and
      * criticality setting.  The OID for the extension will
      * be the value defined by "id-pkix-ocsp-nonce" from RFC 6960.
      *
