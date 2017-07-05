@@ -24,41 +24,101 @@
  */
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.VarHandle.AccessMode;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A var handle form containing a set of member name, one for each operation.
  * Each member characterizes a static method.
  */
-class VarForm {
+final class VarForm {
 
-    // Holds VarForm for VarHandle implementation classes
-    private static final ClassValue<VarForm> VFORMS
-            = new ClassValue<>() {
-        @Override
-        protected VarForm computeValue(Class<?> impl) {
-            return new VarForm(linkFromStatic(impl));
+    final @Stable MethodType[] methodType_table;
+
+    final @Stable MemberName[] memberName_table;
+
+    VarForm(Class<?> implClass, Class<?> receiver, Class<?> value, Class<?>... intermediate) {
+        this.methodType_table = new MethodType[VarHandle.AccessType.values().length];
+
+        // TODO lazily calculate
+        this.memberName_table = linkFromStatic(implClass);
+
+        // (Receiver, <Intermediates>)
+        List<Class<?>> l = new ArrayList<>();
+        if (receiver != null)
+            l.add(receiver);
+        l.addAll(Arrays.asList(intermediate));
+
+        // (Receiver, <Intermediates>)Value
+        methodType_table[VarHandle.AccessType.GET.ordinal()] =
+                MethodType.methodType(value, l).erase();
+
+        // (Receiver, <Intermediates>, Value)void
+        l.add(value);
+        methodType_table[VarHandle.AccessType.SET.ordinal()] =
+                MethodType.methodType(void.class, l).erase();
+
+        // (Receiver, <Intermediates>, Value)Value
+        methodType_table[VarHandle.AccessType.GET_AND_UPDATE.ordinal()] =
+                MethodType.methodType(value, l).erase();
+
+        // (Receiver, <Intermediates>, Value, Value)boolean
+        l.add(value);
+        methodType_table[VarHandle.AccessType.COMPARE_AND_SWAP.ordinal()] =
+                MethodType.methodType(boolean.class, l).erase();
+
+        // (Receiver, <Intermediates>, Value, Value)Value
+        methodType_table[VarHandle.AccessType.COMPARE_AND_EXCHANGE.ordinal()] =
+                MethodType.methodType(value, l).erase();
+    }
+
+    @ForceInline
+    final MethodType getMethodType(int type) {
+        return methodType_table[type];
+    }
+
+    @ForceInline
+    final MemberName getMemberName(int mode) {
+        // TODO calculate lazily
+        MemberName mn = memberName_table[mode];
+        if (mn == null) {
+            throw new UnsupportedOperationException();
         }
-    };
-
-    final @Stable MemberName[] table;
-
-    VarForm(MemberName[] table) {
-        this.table = table;
+        return mn;
     }
 
-    /**
-     * Creates a var form given an VarHandle implementation class.
-     * Each signature polymorphic method is linked to a static method of the
-     * same name on the implementation class or a super class.
-     */
-    static VarForm createFromStatic(Class<? extends VarHandle> impl) {
-        return VFORMS.get(impl);
+
+    @Stable
+    MethodType[] methodType_V_table;
+
+    @ForceInline
+    final MethodType[] getMethodType_V_init() {
+        MethodType[] table = new MethodType[VarHandle.AccessType.values().length];
+        for (int i = 0; i < methodType_table.length; i++) {
+            MethodType mt = methodType_table[i];
+            // TODO only adjust for sig-poly methods returning Object
+            table[i] = mt.changeReturnType(void.class);
+        }
+        methodType_V_table = table;
+        return table;
     }
+
+    @ForceInline
+    final MethodType getMethodType_V(int type) {
+        MethodType[] table = methodType_V_table;
+        if (table == null) {
+            table = getMethodType_V_init();
+        }
+        return table[type];
+    }
+
 
     /**
      * Link all signature polymorphic methods.

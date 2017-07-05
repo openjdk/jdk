@@ -76,7 +76,7 @@ public class JmodNegativeTest {
         jmod()
             .assertFailure()
             .resultChecker(r ->
-                assertContains(r.output, "Error: one of create, list, or describe must be specified")
+                assertContains(r.output, "Error: one of create, list, describe, or hash must be specified")
             );
     }
 
@@ -85,7 +85,7 @@ public class JmodNegativeTest {
         jmod("badAction")
             .assertFailure()
             .resultChecker(r ->
-                assertContains(r.output, "Error: mode must be one of create, list, or describe")
+                assertContains(r.output, "Error: mode must be one of create, list, describe, or hash")
             );
 
         jmod("--badOption")
@@ -170,14 +170,14 @@ public class JmodNegativeTest {
     }
 
     @Test
-    public void testHashDependenciesModulePathNotSpecified() {
+    public void testHashModulesModulePathNotSpecified() {
         jmod("create",
-             "--hash-dependencies", "anyPattern.*",
+             "--hash-modules", "anyPattern.*",
              "output.jmod")
             .assertFailure()
             .resultChecker(r ->
                 assertContains(r.output, "Error: --module-path must be "
-                        +"specified when hashing dependencies")
+                        +"specified when hashing modules")
             );
     }
 
@@ -317,7 +317,7 @@ public class JmodNegativeTest {
     }
 
     @Test
-    public void testDependencyNotFound() throws IOException {
+    public void testNoModuleHash() throws IOException {
         Path jmod = MODS_DIR.resolve("output.jmod");
         FileUtils.deleteFileIfExistsWithRetry(jmod);
         Path emptyDir = Paths.get("empty");
@@ -328,13 +328,12 @@ public class JmodNegativeTest {
 
         jmod("create",
              "--class-path", cp,
-             "--hash-dependencies", ".*",
+             "--hash-modules", ".*",
              "--modulepath", emptyDir.toString(),
             jmod.toString())
-            .assertFailure()
             .resultChecker(r ->
-                assertContains(r.output, "Hashing module foo dependencies, "
-                        + "unable to find module java.base on module path")
+                assertContains(r.output, "No hashes recorded: " +
+                    "no module specified for hashing depends on foo")
             );
     }
 
@@ -350,13 +349,10 @@ public class JmodNegativeTest {
 
             jmod("create",
                  "--class-path", cp,
-                 "--hash-dependencies", ".*",
+                 "--hash-modules", ".*",
                  "--modulepath", MODS_DIR.toString(),
                  jmod.toString())
-                .assertFailure()
-                .resultChecker(r ->
-                    assertContains(r.output, "Error: error reading module path")
-                );
+                .assertFailure();
         } finally {
             FileUtils.deleteFileWithRetry(empty);
         }
@@ -371,7 +367,7 @@ public class JmodNegativeTest {
         Files.createFile(file);
 
         jmod("create",
-             "--hash-dependencies", ".*",
+             "--hash-modules", ".*",
              "--modulepath", file.toString(),
              jmod.toString())
             .assertFailure()
@@ -388,7 +384,7 @@ public class JmodNegativeTest {
 
         List<Supplier<JmodResult>> tasks = Arrays.asList(
                 () -> jmod("create",
-                           "--hash-dependencies", "anyPattern",
+                           "--hash-modules", "anyPattern",
                            "--modulepath", "doesNotExist",
                            "output.jmod"),
                 () -> jmod("create",
@@ -436,7 +432,7 @@ public class JmodNegativeTest {
 
         List<Supplier<JmodResult>> tasks = Arrays.asList(
             () -> jmod("create",
-                       "--hash-dependencies", "anyPattern",
+                       "--hash-modules", "anyPattern",
                        "--modulepath","empty" + pathSeparator + "doesNotExist",
                        "output.jmod"),
             () -> jmod("create",

@@ -110,7 +110,10 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
         this.proxySelector = builder.proxy;
         authenticator = builder.authenticator;
         version = builder.version;
-        sslParams = builder.sslParams;
+        if (builder.sslParams == null)
+            sslParams = getDefaultParams(sslContext);
+        else
+            sslParams = builder.sslParams;
         connections = new ConnectionPool();
         connections.start();
         timeouts = new LinkedList<>();
@@ -127,6 +130,12 @@ class HttpClientImpl extends HttpClient implements BufferHandler {
 
     private void start() {
         selmgr.start();
+    }
+
+    private static SSLParameters getDefaultParams(SSLContext ctx) {
+        SSLParameters params = ctx.getSupportedSSLParameters();
+        params.setProtocols(new String[]{"TLSv1.2"});
+        return params;
     }
 
     /**

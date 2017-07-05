@@ -312,7 +312,7 @@ static void* dl_symbol_gthread(const char* name)
     return result;
 }
 
-gboolean gtk2_check(const char* lib_name, int flags)
+gboolean gtk2_check(const char* lib_name, gboolean load)
 {
     if (gtk2_libhandle != NULL) {
         /* We've already successfully opened the GTK libs, so return true. */
@@ -320,14 +320,23 @@ gboolean gtk2_check(const char* lib_name, int flags)
     } else {
         void *lib = NULL;
 
-        lib = dlopen(lib_name, flags);
+#ifdef RTLD_NOLOAD
+        /* Just check if gtk libs are already in the process space */
+        lib = dlopen(lib_name, RTLD_LAZY | RTLD_NOLOAD);
+        if (!load || lib != NULL) {
+            return lib != NULL;
+        }
+#else
+#ifdef _AIX
+        /* On AIX we could implement this with the help of loadquery(L_GETINFO, ..)  */
+        /* (see reload_table() in hotspot/src/os/aix/vm/loadlib_aix.cpp) but it is   */
+        /* probably not worth it because most AIX servers don't have GTK libs anyway */
+#endif
+#endif
 
+        lib = dlopen(lib_name, RTLD_LAZY | RTLD_LOCAL);
         if (lib == NULL) {
             return FALSE;
-        }
-
-        if (flags & RTLD_NOLOAD) {
-            return TRUE;
         }
 
         fp_gtk_check_version = dlsym(lib, "gtk_check_version");

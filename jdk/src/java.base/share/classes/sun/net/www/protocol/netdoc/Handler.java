@@ -56,9 +56,9 @@ public class Handler extends URLStreamHandler {
         URL ru;
 
         boolean localonly = Boolean.parseBoolean(
-                GetPropertyAction.getProperty("newdoc.localonly"));
+                GetPropertyAction.privilegedGetProperty("newdoc.localonly"));
 
-        String docurl = GetPropertyAction.getProperty("doc.url");
+        String docurl = GetPropertyAction.privilegedGetProperty("doc.url");
 
         String file = u.getFile();
         if (!localonly) {

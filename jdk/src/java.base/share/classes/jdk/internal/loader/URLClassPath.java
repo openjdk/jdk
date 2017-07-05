@@ -85,7 +85,7 @@ public class URLClassPath {
     private static final boolean DISABLE_JAR_CHECKING;
 
     static {
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         JAVA_VERSION = props.getProperty("java.version");
         DEBUG = (props.getProperty("sun.misc.URLClassPath.debug") != null);
         String p = props.getProperty("sun.misc.URLClassPath.disableJarChecking");
@@ -372,9 +372,15 @@ public class URLClassPath {
             return java.security.AccessController.doPrivileged(
                 new java.security.PrivilegedExceptionAction<>() {
                 public Loader run() throws IOException {
+                    String protocol = url.getProtocol();  // lower cased in URL
                     String file = url.getFile();
-                    if (file != null && file.endsWith("/")) {
-                        if ("file".equals(url.getProtocol())) {
+                    if ("jar".equals(protocol)
+                            && file != null && (file.indexOf("!/") == file.length() - 2)) {
+                        // extract the nested URL
+                        URL nestedUrl = new URL(file.substring(0, file.length() - 2));
+                        return new JarLoader(nestedUrl, jarHandler, lmap);
+                    } else if (file != null && file.endsWith("/")) {
+                        if ("file".equals(protocol)) {
                             return new FileLoader(url);
                         } else {
                             return new Loader(url);
@@ -718,13 +724,13 @@ public class URLClassPath {
 
             final URL url;
             try {
+                String nm;
                 if (jar.isMultiRelease()) {
-                    // add #runtime fragment to tell JarURLConnection to use
-                    // runtime versioning if the underlying jar file is multi-release
-                    url = new URL(getBaseURL(), ParseUtil.encodePath(name, false) + "#runtime");
+                    nm = SharedSecrets.javaUtilJarAccess().getRealName(jar, entry);
                 } else {
-                    url = new URL(getBaseURL(), ParseUtil.encodePath(name, false));
+                    nm = name;
                 }
+                url = new URL(getBaseURL(), ParseUtil.encodePath(nm, false));
                 if (check) {
                     URLClassPath.check(url);
                 }
@@ -940,7 +946,8 @@ public class URLClassPath {
 
             ensureOpen();
 
-            if (SharedSecrets.javaUtilJarAccess().jarFileHasClassPathAttribute(jar)) { // Only get manifest when necessary
+            // Only get manifest when necessary
+            if (SharedSecrets.javaUtilJarAccess().jarFileHasClassPathAttribute(jar)) {
                 Manifest man = jar.getManifest();
                 if (man != null) {
                     Attributes attr = man.getMainAttributes();

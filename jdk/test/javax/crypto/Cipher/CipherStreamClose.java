@@ -27,6 +27,8 @@
  * @summary Make sure Cipher IO streams doesn't call extra doFinal if close()
  * is called multiple times.  Additionally, verify the input and output streams
  * match with encryption and decryption with non-stream crypto.
+ * @compile -addmods java.xml.bind CipherStreamClose.java
+ * @run main/othervm -addmods java.xml.bind CipherStreamClose
  */
 
 import java.io.*;

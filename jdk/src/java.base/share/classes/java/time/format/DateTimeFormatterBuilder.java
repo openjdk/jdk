@@ -1488,7 +1488,7 @@ public final class DateTimeFormatterBuilder {
      *    d       1      appendValue(ChronoField.DAY_OF_MONTH)
      *    dd      2      appendValue(ChronoField.DAY_OF_MONTH, 2)
      *    D       1      appendValue(ChronoField.DAY_OF_YEAR)
-     *    DD      2      appendValue(ChronoField.DAY_OF_YEAR, 2)
+     *    DD      2      appendValue(ChronoField.DAY_OF_YEAR, 2, 3, SignStyle.NOT_NEGATIVE)
      *    DDD     3      appendValue(ChronoField.DAY_OF_YEAR, 3)
      *    F       1      appendValue(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH)
      *    g..g    1..n   appendValue(JulianFields.MODIFIED_JULIAN_DAY, n, 19, SignStyle.NORMAL)
@@ -1527,12 +1527,9 @@ public final class DateTimeFormatterBuilder {
      *    ss      2      appendValue(ChronoField.SECOND_OF_MINUTE, 2)
      *
      *    S..S    1..n   appendFraction(ChronoField.NANO_OF_SECOND, n, n, false)
-     *    A       1      appendValue(ChronoField.MILLI_OF_DAY)
-     *    A..A    2..n   appendValue(ChronoField.MILLI_OF_DAY, n)
-     *    n       1      appendValue(ChronoField.NANO_OF_SECOND)
-     *    n..n    2..n   appendValue(ChronoField.NANO_OF_SECOND, n)
-     *    N       1      appendValue(ChronoField.NANO_OF_DAY)
-     *    N..N    2..n   appendValue(ChronoField.NANO_OF_DAY, n)
+     *    A..A    1..n   appendValue(ChronoField.MILLI_OF_DAY, n, 19, SignStyle.NOT_NEGATIVE)
+     *    n..n    1..n   appendValue(ChronoField.NANO_OF_SECOND, n, 19, SignStyle.NOT_NEGATIVE)
+     *    N..N    1..n   appendValue(ChronoField.NANO_OF_DAY, n, 19, SignStyle.NOT_NEGATIVE)
      * </pre>
      * <p>
      * <b>Zone ID</b>: Pattern letters to output {@code ZoneId}.
@@ -1841,14 +1838,19 @@ public final class DateTimeFormatterBuilder {
             case 'D':
                 if (count == 1) {
                     appendValue(field);
-                } else if (count <= 3) {
-                    appendValue(field, count);
+                } else if (count == 2 || count == 3) {
+                    appendValue(field, count, 3, SignStyle.NOT_NEGATIVE);
                 } else {
                     throw new IllegalArgumentException("Too many pattern letters: " + cur);
                 }
                 break;
             case 'g':
                 appendValue(field, count, 19, SignStyle.NORMAL);
+                break;
+            case 'A':
+            case 'n':
+            case 'N':
+                appendValue(field, count, 19, SignStyle.NOT_NEGATIVE);
                 break;
             default:
                 if (count == 1) {

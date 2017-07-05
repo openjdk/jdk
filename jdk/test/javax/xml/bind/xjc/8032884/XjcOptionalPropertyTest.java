@@ -26,6 +26,7 @@
  * @bug 8032884
  * @summary Globalbindings optionalProperty="primitive" does not work when minOccurs=0
  * @run shell compile-schema.sh
+ * @compile -addmods java.xml.bind XjcOptionalPropertyTest.java
  * @run main/othervm XjcOptionalPropertyTest
  */
 
