@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*

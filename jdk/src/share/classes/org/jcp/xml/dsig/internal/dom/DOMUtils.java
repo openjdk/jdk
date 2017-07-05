@@ -19,7 +19,7 @@
  *
  */
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc. All rights reserved.
+ * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMUtils.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
