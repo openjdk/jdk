@@ -19,30 +19,18 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH javaws 1 "02 Jun 2010"
+.TH javaws 1 "14 Apr 2011"
 
 .LP
-.SH "名前"
-\f2javaws\fP コマンド行
+.SH "̾��"
+\f2javaws\fP ���ޥ�ɹ�
+.LP
+.SH "̾��"
 .LP
 .LP
-\ 
+\f2javaws\fP \- Java Web Start ��ư���ޥ��
 .LP
-.SS 
-NAME
-.LP
-.RS 3
-
-.LP
-.LP
-\f2javaws\fP \- Java Web Start 起動コマンド
-.LP
-.RE
-.SS 
-形式
-.LP
-.RS 3
-
+.SH "����"
 .LP
 .LP
 \f2javaws [run\-options] <jnlp>\fP
@@ -50,309 +38,185 @@ NAME
 .LP
 \f2javaws [control\-options]\fP
 .LP
-.RE
-.SS 
-パラメータ
-.LP
-.RS 3
-
+.SH "�ѥ�᡼��"
 .LP
 .LP
 \f2[run\-options]\fP
 .LP
-.RS 3
-
 .LP
+���ޥ�ɹԼ¹ԥ��ץ���󡣼¹ԥ��ץ�����Ǥ�դν���ǻ���Ǥ��ޤ����Ƽ索�ץ����ˤĤ��Ƥϡ����� �ּ¹ԥ��ץ����פ򻲾Ȥ��Ƥ���������
 .LP
-コマンド行実行オプション。 実行オプションは任意の順序で指定できます。各種オプションについては、下の 「実行オプション」を参照してください。
-.LP
-.RE
 .LP
 \f2<jnlp>\fP
 .LP
-.RS 3
-
 .LP
+JNLP (Java Network Launching Protocol) �ե�����Υѥ��ޤ��� URL (Uniform Resource Locator) �Τɤ��餫�Ǥ���
 .LP
-JNLP (Java Network Launching Protocol) ファイルのパスまたは URL (Uniform Resource Locator) のどちらかです。
-.LP
-.RE
 .LP
 \f2[control\-options]\fP
 .LP
-.RS 3
-
+.LP
+���ޥ�ɹ����楪�ץ�������楪�ץ�����Ǥ�դν���ǻ���Ǥ��ޤ����Ƽ索�ץ����ˤĤ��Ƥϡ����� �����楪�ץ����פ򻲾Ȥ��Ƥ���������
+.LP
+.SH "����"
 .LP
 .LP
-コマンド行制御オプション。 制御オプションは任意の順序で指定できます。各種オプションについては、下の 「制御オプション」を参照してください。
-.LP
-.RE
-.RE
-.SS 
-説明
-.LP
-.RS 3
-
+\f2javaws\fP ���ޥ�ɤϡ�JNLP (Java Network Launching Protocol) �Υ�ե���󥹼����Ǥ��� Java Web Start ��ư���ޤ���Java Web Start �ϡ��ͥåȥ�����ư��� Java ���ץꥱ�������ޤ��ϥ��ץ�åȤ�ư���ޤ���
 .LP
 .LP
-\f2javaws\fP コマンドは、JNLP (Java Network Launching Protocol) のリファレンス実装である Java Web Start を起動します。Java Web Start は、ネットワーク上で動作する Java アプリケーションまたはアプレットを起動します。
+JNLP �ե����뤬���ꤵ�줿��硢 \f2javaws\fP �ϡ����� JNLP �ե�����ǻ��ꤵ�줿 Java ���ץꥱ�������/���ץ�åȤ�ư���ޤ���
 .LP
 .LP
-JNLP ファイルを指定すると、\f2javaws\fP は JNLP ファイルに指定された Java アプリケーションまたはアプレットを起動します。
+\f2javaws\fP ��ư�ġ���ˤϡ����ߤΥ�꡼���ǥ��ݡ��Ȥ���Ƥ��� 1 �ȤΥ��ץ���󤬤���ޤ����������������Υ��ץ����Ͼ���Υ�꡼���ǤϺ��������ǽ��������ޤ���
 .LP
-.LP
-\f2javaws\fP 起動ツールには、現在のリリースでサポートされている 1 組のオプションがあります。ただし、これらのオプションは将来のリリースでは削除される可能性があります。
-.LP
-.RE
-.SS 
-実行オプション
-.LP
-.RS 3
-
+.SH "�¹ԥ��ץ����"
 .LP
 .LP
 \f2\-offline\fP
 .LP
-.RS 3
-
 .LP
+Java Web Start �򥪥ե饤��⡼�ɤǼ¹Ԥ��ޤ���
 .LP
-Java Web Start をオフラインモードで実行します。
-.LP
-.RE
 .LP
 \f2\-Xnosplash\fP
 .LP
-.RS 3
-
 .LP
+�ǽ�Υ��ץ�å�����̤�ɽ����̵���ˤ��ޤ���
 .LP
-最初のスプラッシュ画面の表示を無効にします。
-.LP
-.RE
 .LP
 \f2\-open <arguments>\fP
 .LP
-.RS 3
-
 .LP
+���Υ��ץ�������ꤹ��ȡ�JNLP �ե�������ΰ����� \f2\-open <arguments>\fP ���֤������ޤ���
 .LP
-このオプションを指定すると、JNLP ファイル内の引数が \f2\-open <arguments>\fP に置き換わります。
-.LP
-.RE
 .LP
 \f2\-print <arguments>\fP
 .LP
-.RS 3
-
 .LP
+���Υ��ץ�������ꤹ��ȡ�JNLP �ե�������ΰ����� \f2\-print <arguments>\fP ���֤������ޤ���
 .LP
-このオプションを指定すると、JNLP ファイル内の引数が \f2\-print <arguments>\fP に置き換わります。
-.LP
-.RE
 .LP
 \f2\-online\fP
 .LP
-.RS 3
-
 .LP
+����饤��⡼�ɤǼ¹Ԥ��ޤ� (�ǥե���Ȥ�ư��)��
 .LP
-オンラインモードで実行します (デフォルトの動作)。
-.LP
-.RE
 .LP
 \f2\-wait\fP
 .LP
-.RS 3
-
 .LP
+���Υ��ץ�������ꤷ����硢 \f2javaws\fP �ץ������ϡ����ץꥱ������󤬽�λ����ޤǽ�λ���ޤ���Windows �ץ�åȥե������Ǥϡ����Υ��ץ��������������Ȥ���˵�ǽ���ޤ���
 .LP
-このオプションを指定すると、アプリケーションが終了するまで \f2javaws\fP プロセスは終了しません。
-.LP
-.RE
 .LP
 \f2\-verbose\fP
 .LP
-.RS 3
-
 .LP
+�ɲäν��Ϥ�ɽ�����ޤ���
 .LP
-追加の出力を表示します。
-.LP
-.RE
 .LP
 \f2\-J<option>\fP
 .LP
-.RS 3
-
 .LP
+vm �˥��ץ������䤤�ޤ���
 .LP
-vm にオプションを補います。
-.LP
-.RE
 .LP
 \f2\-system\fP
 .LP
-.RS 3
-
 .LP
+���ץꥱ�������򥷥��ƥ७��å��夫��Τ߼¹Ԥ��ޤ���
 .LP
-アプリケーションをシステムキャッシュからのみ実行します。
-.LP
-.RE
-.RE
-.SS 
-制御オプション
-.LP
-.RS 3
-
+.SH "���楪�ץ����"
 .LP
 .LP
 \f2\-viewer\fP
 .LP
-.RS 3
-
+.LP
+Java ����ȥ�����ѥͥ�ǥ���å���ӥ塼����ɽ�����ޤ���
 .LP
 .LP
-Java コントロールパネルでキャッシュビューアを表示します。
+\f2\-clearcache\fP
 .LP
-.RE
+.LP
+���󥹥ȡ��뤵��Ƥ��ʤ����٤ƤΥ��ץꥱ�������򥭥�å��夫�������ޤ���
+.LP
 .LP
 \f2\-userConfig <property name>\fP
 .LP
-.RS 3
-
 .LP
+���ꤵ�줿�����ץ��ѥƥ����򥯥ꥢ���ޤ���
 .LP
-指定された配備プロパティーをクリアします。
-.LP
-.RE
 .LP
 \f2\-userConfig <property name> <property value>\fP
 .LP
-.RS 3
-
 .LP
+���ꤵ�줿�����ץ��ѥƥ�������ꤵ�줿�ͤ����ꤷ�ޤ���
 .LP
-指定された配備プロパティーを指定された値に設定します。
-.LP
-.RE
 .LP
 \f2\-uninstall\fP
 .LP
-.RS 3
-
 .LP
+����å��夫�餹�٤ƤΥ��ץꥱ�������������ޤ���
 .LP
-キャッシュからすべてのアプリケーションを削除します。
-.LP
-.RE
 .LP
 \f2\-uninstall <jnlp>\fP
 .LP
-.RS 3
-
 .LP
+����å��夫�饢�ץꥱ�������������ޤ���
 .LP
-キャッシュからアプリケーションを削除します。
-.LP
-.RE
 .LP
 \f2\-import [import\-options] <jnlp>\fP
 .LP
-.RS 3
-
 .LP
+����å���˥��ץꥱ�������򥤥�ݡ��Ȥ��ޤ���
 .LP
-キャッシュにアプリケーションをインポートします。
-.LP
-.RE
-\f3インポートオプション\fP
+.SH "����ݡ��ȥ��ץ����"
 .LP
 .LP
 \f2\-silent\fP
 .LP
-.RS 3
-
 .LP
+�������ȥ⡼�ɤǥ���ݡ��Ȥ��ޤ� (UI ��ɽ������ޤ���)��
 .LP
-サイレントモードでインポートします (UI は表示されません)。
-.LP
-.RE
 .LP
 \f2\-system\fP
 .LP
-.RS 3
-
 .LP
+�����ƥ७��å���˥��ץꥱ�������򥤥�ݡ��Ȥ��ޤ���
 .LP
-システムキャッシュにアプリケーションをインポートします。
-.LP
-.RE
 .LP
 \f2\-codebase <url>\fP
 .LP
-.RS 3
-
 .LP
+Ǥ�դ� codebase ����꥽������������ޤ���
 .LP
-任意の codebase からリソースを取得します。
-.LP
-.RE
 .LP
 \f2\-shortcut\fP
 .LP
-.RS 3
-
 .LP
+�桼�������ƥץ���ץȤΤ褦�˥��硼�ȥ��åȤ򥤥󥹥ȡ��뤷�ޤ������Υ��ץ����ϡ� \f2\-silent\fP ���ץ�������Ѥ��ʤ��ȸ��̤�����ޤ���
 .LP
-ユーザー許容プロンプトのようにショートカットをインストールします。このオプションは、\f2\-silent\fP オプションと一緒に使用しないと効果がありません。
-.LP
-.RE
 .LP
 \f2\-association\fP
 .LP
-.RS 3
-
+.LP
+�桼�������ƥץ���ץȤΤ褦�˴�Ϣ�դ��򥤥󥹥ȡ��뤷�ޤ������Υ��ץ����ϡ� \f2\-silent\fP ���ץ�������Ѥ��ʤ��ȸ��̤�����ޤ���
+.LP
+.SH "�ե�����"
 .LP
 .LP
-ユーザー許容プロンプトのように関連付けをインストールします。このオプションは、\f2\-silent\fP オプションと一緒に使用しないと効果がありません。
-.LP
-.RE
-.RE
-.SS 
-ファイル
-.LP
-.RS 3
-
-.LP
-.LP
-ユーザーキャッシュ、システムキャッシュ、および deployment.properties ファイルについては、
+�桼��������å��塢�����ƥ७��å��塢����� deployment.properties �ե�����ˤĤ��Ƥϡ�
 .na
-\f2システムレベルおよびユーザーレベルのプロパティー\fP @
+\f2�����ƥ��٥뤪��ӥ桼������٥�Υץ��ѥƥ���\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/properties.htmlを参照してください。
+http://java.sun.com/javase/6/docs/technotes/guides/deployment/deployment\-guide/properties.html�򻲾Ȥ��Ƥ���������
 .LP
-.RE
-.SS 
-詳細情報
-.LP
-.RS 3
-
+.SH "�ܺپ���"
 .LP
 .LP
-Java Web Start の詳細は、
+Java Web Start �ξܺ٤ϡ�
 .na
-\f2「Java Web Start」\fP @
+\f2��Java Web Start��\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/javaws/index.htmlを参照してください。
+http://java.sun.com/javase/6/docs/technotes/guides/javaws/index.html�򻲾Ȥ��Ƥ���������
 .LP
-.RS 3
-
-.LP
-.LP
-\ 
-.LP
-.RE
-.RE
  

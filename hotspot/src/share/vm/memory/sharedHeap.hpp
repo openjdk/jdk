@@ -192,9 +192,8 @@ public:
     SO_None                = 0x0,
     SO_AllClasses          = 0x1,
     SO_SystemClasses       = 0x2,
-    SO_Symbols             = 0x4,
-    SO_Strings             = 0x8,
-    SO_CodeCache           = 0x10
+    SO_Strings             = 0x4,
+    SO_CodeCache           = 0x8
   };
 
   FlexibleWorkGang* workers() const { return _workers; }
@@ -208,14 +207,13 @@ public:
 
   // Invoke the "do_oop" method the closure "roots" on all root locations.
   // If "collecting_perm_gen" is false, then roots that may only contain
-  // references to permGen objects are not scanned.  If true, the
-  // "perm_gen" closure is applied to all older-to-younger refs in the
+  // references to permGen objects are not scanned; instead, in that case,
+  // the "perm_blk" closure is applied to all outgoing refs in the
   // permanent generation.  The "so" argument determines which of roots
   // the closure is applied to:
   // "SO_None" does none;
   // "SO_AllClasses" applies the closure to all entries in the SystemDictionary;
   // "SO_SystemClasses" to all the "system" classes and loaders;
-  // "SO_Symbols" applies the closure to all entries in SymbolsTable;
   // "SO_Strings" applies the closure to all entries in StringTable;
   // "SO_CodeCache" applies the closure to all elements of the CodeCache.
   void process_strong_roots(bool activate_scope,

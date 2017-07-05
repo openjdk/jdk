@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@
  * @summary Confirm that JarEntry.getCertificates identifies signed entries.
  */
 
-import java.io.*;
 import java.net.URL;
 import java.security.CodeSigner;
 import java.security.cert.Certificate;
-import java.util.Enumeration;
 import java.util.jar.*;
 
 /*
@@ -72,6 +70,9 @@ public class ScanSignedJar {
             if (signers == null && certificates == null) {
                 System.out.println("[unsigned]\t" + name + "\t(" + size +
                     " bytes)");
+                if (name.equals("Count.class")) {
+                    throw new Exception("Count.class should be signed");
+                }
             } else if (signers != null && certificates != null) {
                 System.out.println("[" + signers.length +
                     (signers.length == 1 ? " signer" : " signers") + "]\t" +

@@ -48,17 +48,34 @@ class JarVerifier {
 
     /* a table mapping names to code signers, for jar entries that have
        had their actual hashes verified */
-    private Map verifiedSigners;
+    private Hashtable verifiedSigners;
 
     /* a table mapping names to code signers, for jar entries that have
        passed the .SF/.DSA/.EC -> MANIFEST check */
-    private Map sigFileSigners;
+    private Hashtable sigFileSigners;
+
+    /* a hash table to hold .SF bytes */
+    private Hashtable sigFileData;
+
+    /** "queue" of pending PKCS7 blocks that we couldn't parse
+     *  until we parsed the .SF file */
+    private ArrayList pendingBlocks;
 
     /* cache of CodeSigner objects */
     private ArrayList signerCache;
 
+    /* Are we parsing a block? */
+    private boolean parsingBlockOrSF = false;
+
+    /* Are we done parsing META-INF entries? */
+    private boolean parsingMeta = true;
+
     /* Are there are files to verify? */
     private boolean anyToVerify = true;
+
+    /* The output stream to use when keeping track of files we are interested
+       in */
+    private ByteArrayOutputStream baos;
 
     /** The ManifestDigester object */
     private volatile ManifestDigester manDig;
@@ -75,20 +92,20 @@ class JarVerifier {
     /** collect -DIGEST-MANIFEST values for blacklist */
     private List manifestDigests;
 
-    /** The manifest object */
-    Manifest man = null;
-
-    public JarVerifier(byte rawBytes[], Manifest man) {
-        this.man = man;
+    public JarVerifier(byte rawBytes[]) {
         manifestRawBytes = rawBytes;
-        sigFileSigners = new HashMap();
-        verifiedSigners = new HashMap();
+        sigFileSigners = new Hashtable();
+        verifiedSigners = new Hashtable();
+        sigFileData = new Hashtable(11);
+        pendingBlocks = new ArrayList();
+        baos = new ByteArrayOutputStream();
         manifestDigests = new ArrayList();
     }
 
     /**
-     * This method scans to see which entry we're parsing and keeps
-     * various state information depending on the file being parsed.
+     * This method scans to see which entry we're parsing and
+     * keeps various state information depending on what type of
+     * file is being parsed.
      */
     public void beginEntry(JarEntry je, ManifestEntryVerifier mev)
         throws IOException
@@ -111,6 +128,30 @@ class JarVerifier {
          *       the SF section.
          *    b. digest mismatch between the actual jar entry and the manifest
          */
+
+        if (parsingMeta) {
+            String uname = name.toUpperCase(Locale.ENGLISH);
+            if ((uname.startsWith("META-INF/") ||
+                 uname.startsWith("/META-INF/"))) {
+
+                if (je.isDirectory()) {
+                    mev.setEntry(null, je);
+                    return;
+                }
+
+                if (SignatureFileVerifier.isBlockOrSF(uname)) {
+                    /* We parse only DSA, RSA or EC PKCS7 blocks. */
+                    parsingBlockOrSF = true;
+                    baos.reset();
+                    mev.setEntry(null, je);
+                }
+                return;
+            }
+        }
+
+        if (parsingMeta) {
+            doneWithMeta();
+        }
 
         if (je.isDirectory()) {
             mev.setEntry(null, je);
@@ -147,7 +188,11 @@ class JarVerifier {
         throws IOException
     {
         if (b != -1) {
-            mev.update((byte)b);
+            if (parsingBlockOrSF) {
+                baos.write(b);
+            } else {
+                mev.update((byte)b);
+            }
         } else {
             processEntry(mev);
         }
@@ -162,7 +207,11 @@ class JarVerifier {
         throws IOException
     {
         if (n != -1) {
-            mev.update(b, off, n);
+            if (parsingBlockOrSF) {
+                baos.write(b, off, n);
+            } else {
+                mev.update(b, off, n);
+            }
         } else {
             processEntry(mev);
         }
@@ -174,10 +223,101 @@ class JarVerifier {
     private void processEntry(ManifestEntryVerifier mev)
         throws IOException
     {
-        JarEntry je = mev.getEntry();
-        if ((je != null) && (je.signers == null)) {
-            je.signers = mev.verify(verifiedSigners, sigFileSigners);
-            je.certs = mapSignersToCertArray(je.signers);
+        if (!parsingBlockOrSF) {
+            JarEntry je = mev.getEntry();
+            if ((je != null) && (je.signers == null)) {
+                je.signers = mev.verify(verifiedSigners, sigFileSigners);
+                je.certs = mapSignersToCertArray(je.signers);
+            }
+        } else {
+
+            try {
+                parsingBlockOrSF = false;
+
+                if (debug != null) {
+                    debug.println("processEntry: processing block");
+                }
+
+                String uname = mev.getEntry().getName()
+                                             .toUpperCase(Locale.ENGLISH);
+
+                if (uname.endsWith(".SF")) {
+                    String key = uname.substring(0, uname.length()-3);
+                    byte bytes[] = baos.toByteArray();
+                    // add to sigFileData in case future blocks need it
+                    sigFileData.put(key, bytes);
+                    // check pending blocks, we can now process
+                    // anyone waiting for this .SF file
+                    Iterator it = pendingBlocks.iterator();
+                    while (it.hasNext()) {
+                        SignatureFileVerifier sfv =
+                            (SignatureFileVerifier) it.next();
+                        if (sfv.needSignatureFile(key)) {
+                            if (debug != null) {
+                                debug.println(
+                                 "processEntry: processing pending block");
+                            }
+
+                            sfv.setSignatureFile(bytes);
+                            sfv.process(sigFileSigners, manifestDigests);
+                        }
+                    }
+                    return;
+                }
+
+                // now we are parsing a signature block file
+
+                String key = uname.substring(0, uname.lastIndexOf("."));
+
+                if (signerCache == null)
+                    signerCache = new ArrayList();
+
+                if (manDig == null) {
+                    synchronized(manifestRawBytes) {
+                        if (manDig == null) {
+                            manDig = new ManifestDigester(manifestRawBytes);
+                            manifestRawBytes = null;
+                        }
+                    }
+                }
+
+                SignatureFileVerifier sfv =
+                  new SignatureFileVerifier(signerCache,
+                                            manDig, uname, baos.toByteArray());
+
+                if (sfv.needSignatureFileBytes()) {
+                    // see if we have already parsed an external .SF file
+                    byte[] bytes = (byte[]) sigFileData.get(key);
+
+                    if (bytes == null) {
+                        // put this block on queue for later processing
+                        // since we don't have the .SF bytes yet
+                        // (uname, block);
+                        if (debug != null) {
+                            debug.println("adding pending block");
+                        }
+                        pendingBlocks.add(sfv);
+                        return;
+                    } else {
+                        sfv.setSignatureFile(bytes);
+                    }
+                }
+                sfv.process(sigFileSigners, manifestDigests);
+
+            } catch (IOException ioe) {
+                // e.g. sun.security.pkcs.ParsingException
+                if (debug != null) debug.println("processEntry caught: "+ioe);
+                // ignore and treat as unsigned
+            } catch (SignatureException se) {
+                if (debug != null) debug.println("processEntry caught: "+se);
+                // ignore and treat as unsigned
+            } catch (NoSuchAlgorithmException nsae) {
+                if (debug != null) debug.println("processEntry caught: "+nsae);
+                // ignore and treat as unsigned
+            } catch (CertificateException ce) {
+                if (debug != null) debug.println("processEntry caught: "+ce);
+                // ignore and treat as unsigned
+            }
         }
     }
 
@@ -214,15 +354,15 @@ class JarVerifier {
              * Force a read of the entry data to generate the
              * verification hash.
              */
-            try (InputStream s = jar.getInputStream(entry)) {
+            try {
+                InputStream s = jar.getInputStream(entry);
                 byte[] buffer = new byte[1024];
                 int n = buffer.length;
                 while (n != -1) {
                     n = s.read(buffer, 0, buffer.length);
                 }
+                s.close();
             } catch (IOException e) {
-                // Ignore. When an exception is thrown, code signer
-                // will not be assigned.
             }
         }
         return getCodeSigners(name);
@@ -268,7 +408,11 @@ class JarVerifier {
      */
     void doneWithMeta()
     {
+        parsingMeta = false;
         anyToVerify = !sigFileSigners.isEmpty();
+        baos = null;
+        sigFileData = null;
+        pendingBlocks = null;
         signerCache = null;
         manDig = null;
         // MANIFEST.MF is always treated as signed and verified,
@@ -276,41 +420,6 @@ class JarVerifier {
         if (sigFileSigners.containsKey(JarFile.MANIFEST_NAME)) {
             verifiedSigners.put(JarFile.MANIFEST_NAME,
                     sigFileSigners.remove(JarFile.MANIFEST_NAME));
-        }
-    }
-
-    /**
-     * Verifies a PKCS7 SignedData block
-     * @param key name of block
-     * @param block the pkcs7 file
-     * @param ins the clear data
-     */
-    void verifyBlock(String key, byte[] block, InputStream ins) {
-        try {
-            if (signerCache == null)
-                signerCache = new ArrayList();
-
-            if (manDig == null) {
-                synchronized(manifestRawBytes) {
-                    if (manDig == null) {
-                        manDig = new ManifestDigester(manifestRawBytes);
-                        manifestRawBytes = null;
-                    }
-                }
-            }
-            SignatureFileVerifier sfv =
-                    new SignatureFileVerifier(signerCache, man,
-                                        manDig, key, block);
-
-            if (sfv.needSignatureFile()) {
-                // see if we have already parsed an external .SF file
-                sfv.setSignatureFile(ins);
-            }
-            sfv.process(sigFileSigners, manifestDigests);
-        } catch (Exception e) {
-            if (debug != null) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -444,7 +553,10 @@ class JarVerifier {
          * but this handles a CodeSource of any type, just in case.
          */
         CodeSource[] sources = mapSignersToCodeSources(cs.getLocation(), getJarCodeSigners(), true);
-        List sourceList = Arrays.asList(sources);
+        List sourceList = new ArrayList();
+        for (int i = 0; i < sources.length; i++) {
+            sourceList.add(sources[i]);
+        }
         int j = sourceList.indexOf(cs);
         if (j != -1) {
             CodeSigner[] match;
