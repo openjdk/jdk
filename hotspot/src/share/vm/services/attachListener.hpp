@@ -50,6 +50,7 @@ struct AttachOperationFunctionInfo {
 
 class AttachListener: AllStatic {
  public:
+  static void vm_start() NOT_SERVICES_RETURN;
   static void init()  NOT_SERVICES_RETURN;
   static void abort() NOT_SERVICES_RETURN;
 

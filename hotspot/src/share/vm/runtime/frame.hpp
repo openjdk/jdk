@@ -353,7 +353,9 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
  public:
   // Entry frames
-  JavaCallWrapper* entry_frame_call_wrapper() const;
+  JavaCallWrapper* entry_frame_call_wrapper() const { return *entry_frame_call_wrapper_addr(); }
+  JavaCallWrapper* entry_frame_call_wrapper_if_safe(JavaThread* thread) const;
+  JavaCallWrapper** entry_frame_call_wrapper_addr() const;
   intptr_t* entry_frame_argument_at(int offset) const;
 
   // tells whether there is another chunk of Delta stack above

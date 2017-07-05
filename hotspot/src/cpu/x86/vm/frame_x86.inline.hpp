@@ -272,10 +272,9 @@ inline jint frame::interpreter_frame_expression_stack_direction() { return -1; }
 
 // Entry frames
 
-inline JavaCallWrapper* frame::entry_frame_call_wrapper() const {
- return (JavaCallWrapper*)at(entry_frame_call_wrapper_offset);
+inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
+ return (JavaCallWrapper**)addr_at(entry_frame_call_wrapper_offset);
 }
-
 
 // Compiled frames
 
