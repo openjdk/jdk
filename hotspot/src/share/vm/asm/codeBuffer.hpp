@@ -173,7 +173,7 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
   bool allocates(address pc) const  { return pc >= _start && pc <  _limit; }
   bool allocates2(address pc) const { return pc >= _start && pc <= _limit; }
 
-  void    set_end(address pc)       { assert(allocates2(pc), err_msg("not in CodeBuffer memory: " INTPTR_FORMAT " <= " INTPTR_FORMAT " <= " INTPTR_FORMAT, p2i(_start), p2i(pc), p2i(_limit))); _end = pc; }
+  void    set_end(address pc)       { assert(allocates2(pc), "not in CodeBuffer memory: " INTPTR_FORMAT " <= " INTPTR_FORMAT " <= " INTPTR_FORMAT, p2i(_start), p2i(pc), p2i(_limit)); _end = pc; }
   void    set_mark(address pc)      { assert(contains2(pc), "not in codeBuffer");
                                       _mark = pc; }
   void    set_mark_off(int offset)  { assert(contains2(offset+_start),"not in codeBuffer");
@@ -375,6 +375,8 @@ class CodeBuffer: public StackObj {
   OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
+  address      _last_membar;     // used to merge consecutive memory barriers
+
   address      _decode_begin;   // start address for decode
   address      decode_begin();
 
@@ -388,6 +390,7 @@ class CodeBuffer: public StackObj {
     _decode_begin    = NULL;
     _overflow_arena  = NULL;
     _code_strings    = CodeStrings();
+    _last_membar     = NULL;
   }
 
   void initialize(address code_start, csize_t code_size) {
@@ -451,7 +454,6 @@ class CodeBuffer: public StackObj {
   CodeBuffer(const char* name) {
     initialize_misc(name);
   }
-
 
   // (4) code buffer allocating codeBlob memory for code & relocation
   // info.  The name must be something informative and code_size must
@@ -553,6 +555,8 @@ class CodeBuffer: public StackObj {
   // allocated size of all relocation data, including index, rounded up
   csize_t total_relocation_size() const;
 
+  csize_t copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const;
+
   // allocated size of any and all recorded oops
   csize_t total_oop_size() const {
     OopRecorder* recorder = oop_recorder();
@@ -575,6 +579,10 @@ class CodeBuffer: public StackObj {
 
   OopRecorder* oop_recorder() const   { return _oop_recorder; }
   CodeStrings& strings()              { return _code_strings; }
+
+  address last_membar() const { return _last_membar; }
+  void set_last_membar(address a) { _last_membar = a; }
+  void clear_last_membar() { set_last_membar(NULL); }
 
   void free_strings() {
     if (!_code_strings.is_null()) {

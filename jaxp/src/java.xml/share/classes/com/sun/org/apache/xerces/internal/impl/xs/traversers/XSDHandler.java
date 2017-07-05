@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,21 +19,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl.xs.traversers;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Stack;
-import java.util.Vector;
-
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
@@ -74,11 +59,11 @@ import com.sun.org.apache.xerces.internal.util.StAXInputSource;
 import com.sun.org.apache.xerces.internal.util.StAXLocationWrapper;
 import com.sun.org.apache.xerces.internal.util.SymbolHash;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
+import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
@@ -107,7 +92,19 @@ import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSTerm;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.datatypes.ObjectList;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Stack;
+import java.util.Vector;
 import javax.xml.XMLConstants;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -276,9 +273,9 @@ public class XSDHandler {
     private Map<String, Element> fUnparsedIdentityConstraintRegistry =  new HashMap();
     private Map<String, Element> fUnparsedNotationRegistry =  new HashMap();
     private Map<String, Element> fUnparsedTypeRegistry =  new HashMap();
-    // Compensation for the above hashtables to locate XSDocumentInfo,
+    // Compensation for the above maps to locate XSDocumentInfo,
     // Since we may take Schema Element directly, so can not get the
-    // corresponding XSDocumentInfo object just using above hashtables.
+    // corresponding XSDocumentInfo object just using above maps.
     private Map<String, XSDocumentInfo> fUnparsedAttributeRegistrySub =  new HashMap();
     private Map<String, XSDocumentInfo> fUnparsedAttributeGroupRegistrySub =  new HashMap();
     private Map<String, XSDocumentInfo> fUnparsedElementRegistrySub =  new HashMap();
@@ -300,26 +297,25 @@ public class XSDHandler {
         null, // TYPEDECL_TYPE
     };
 
-    // this hashtable is keyed on by XSDocumentInfo objects.  Its values
+    // this map is keyed on by XSDocumentInfo objects.  Its values
     // are Vectors containing the XSDocumentInfo objects <include>d,
     // <import>ed or <redefine>d by the key XSDocumentInfo.
     private Map<XSDocumentInfo, Vector> fDependencyMap = new HashMap();
 
-    // this hashtable is keyed on by a target namespace.  Its values
+    // this map is keyed on by a target namespace.  Its values
     // are Vectors containing namespaces imported by schema documents
     // with the key target namespace.
     // if an imprted schema has absent namespace, the value "null" is stored.
     private Map<String, Vector> fImportMap = new HashMap();
     // all namespaces that imports other namespaces
     // if the importing schema has absent namespace, empty string is stored.
-    // (because the key of a hashtable can't be null.)
+    // (because the key of a map can't be null.)
     private Vector fAllTNSs = new Vector();
     // stores instance document mappings between namespaces and schema hints
-    private Map fLocationPairs = null;
-    private static final Map EMPTY_TABLE = new HashMap();
+    private Map<String, XMLSchemaLoader.LocationArray> fLocationPairs = null;
 
     // Records which nodes are hidden when the input is a DOMInputSource.
-    Hashtable fHiddenNodes = null;
+    Map<Node, String> fHiddenNodes = null;
 
     // convenience methods
     private String null2EmptyString(String ns) {
@@ -347,14 +343,14 @@ public class XSDHandler {
     // schema document that is included in multiple other schemas.
     private Map fTraversed = new HashMap();
 
-    // this hashtable contains a mapping from Schema Element to its systemId
+    // this map contains a mapping from Schema Element to its systemId
     // this is useful to resolve a uri relative to the referring document
     private Map fDoc2SystemId = new HashMap();
 
     // the primary XSDocumentInfo we were called to parse
     private XSDocumentInfo fRoot = null;
 
-    // This hashtable's job is to act as a link between the Schema Element and its
+    // This map's job is to act as a link between the Schema Element and its
     // XSDocumentInfo object.
     private Map fDoc2XSDocumentMap = new HashMap();
 
@@ -460,17 +456,17 @@ public class XSDHandler {
     private String [][] fKeyrefNamespaceContext = new String[INIT_KEYREF_STACK][1];
 
     // global decls: map from decl name to decl object
-    SymbolHash fGlobalAttrDecls = new SymbolHash();
-    SymbolHash fGlobalAttrGrpDecls = new SymbolHash();
-    SymbolHash fGlobalElemDecls = new SymbolHash();
-    SymbolHash fGlobalGroupDecls = new SymbolHash();
-    SymbolHash fGlobalNotationDecls = new SymbolHash();
-    SymbolHash fGlobalIDConstraintDecls = new SymbolHash();
-    SymbolHash fGlobalTypeDecls = new SymbolHash();
+    SymbolHash fGlobalAttrDecls = new SymbolHash(12);
+    SymbolHash fGlobalAttrGrpDecls = new SymbolHash(5);
+    SymbolHash fGlobalElemDecls = new SymbolHash(25);
+    SymbolHash fGlobalGroupDecls = new SymbolHash(5);
+    SymbolHash fGlobalNotationDecls = new SymbolHash(1);
+    SymbolHash fGlobalIDConstraintDecls = new SymbolHash(3);
+    SymbolHash fGlobalTypeDecls = new SymbolHash(25);
 
     // Constructors
     public XSDHandler(){
-        fHiddenNodes = new Hashtable();
+        fHiddenNodes = new HashMap<>();
         fSchemaParser = new SchemaDOMParser(new SchemaParsingConfig());
     }
 
@@ -499,7 +495,7 @@ public class XSDHandler {
      * @throws IOException
      */
     public SchemaGrammar parseSchema(XMLInputSource is, XSDDescription desc,
-            Map locationPairs)
+            Map<String, XMLSchemaLoader.LocationArray> locationPairs)
     throws IOException {
         fLocationPairs = locationPairs;
         fSchemaParser.resetNodePool();
@@ -1001,7 +997,7 @@ public class XSDHandler {
 
                 // If "findGrammar" returns a grammar, then this is not the
                 // the first time we see a location for a given namespace.
-                // Don't consult the location pair hashtable in this case,
+                // Don't consult the location pair map in this case,
                 // otherwise the location will be ignored because it'll get
                 // resolved to the same location as the first hint.
                 newSchemaRoot = resolveSchema(fSchemaGrammarDescription, false, child, isg == null);
@@ -2047,7 +2043,7 @@ public class XSDHandler {
                                   Element referElement, boolean usePairs) {
         XMLInputSource schemaSource = null;
         try {
-            Map pairs = usePairs ? fLocationPairs : EMPTY_TABLE;
+            Map<String, XMLSchemaLoader.LocationArray> pairs = usePairs ? fLocationPairs : Collections.emptyMap();
             schemaSource = XMLSchemaLoader.resolveDocument(desc, pairs, fEntityResolver);
         }
         catch (IOException ex) {
@@ -2100,7 +2096,7 @@ public class XSDHandler {
 
         XMLInputSource schemaSource = null;
         try {
-            Map pairs = usePairs ? fLocationPairs : EMPTY_TABLE;
+            Map<String, XMLSchemaLoader.LocationArray> pairs = usePairs ? fLocationPairs : Collections.emptyMap();
             schemaSource = XMLSchemaLoader.resolveDocument(desc, pairs, fEntityResolver);
         }
         catch (IOException ex) {
@@ -3790,7 +3786,7 @@ public class XSDHandler {
             fUnparsedRegistriesExt[declType].put(qName, currSchema);
         }
 
-    } // checkForDuplicateNames(String, Hashtable, Element, XSDocumentInfo):void
+    } // checkForDuplicateNames(String, Map, Element, XSDocumentInfo):void
 
     void checkForDuplicateNames(String qName, int declType, Element currComp) {
         int namespaceEnd = qName.indexOf(',');
@@ -3961,7 +3957,7 @@ public class XSDHandler {
     // this method takes a name of the form a:b, determines the URI mapped
     // to by a in the current SchemaNamespaceSupport object, and returns this
     // information in the form (nsURI,b) suitable for lookups in the global
-    // decl Hashtables.
+    // decl maps.
     // REVISIT: should have it return QName, instead of String. this would
     //          save lots of string concatenation time. we can use
     //          QName#equals() to compare two QNames, and use QName directly

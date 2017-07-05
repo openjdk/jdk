@@ -42,8 +42,6 @@
 # include "mutex_bsd.inline.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
 //
 // Native Monitor-Mutex locking - theory of operations
@@ -897,8 +895,7 @@ int Monitor::IWait(Thread * Self, jlong timo) {
 void Monitor::lock(Thread * Self) {
   // Ensure that the Monitor requires/allows safepoint checks.
   assert(_safepoint_check_required != Monitor::_safepoint_check_never,
-         err_msg("This lock should never have a safepoint check: %s",
-                 name()));
+         "This lock should never have a safepoint check: %s", name());
 
 #ifdef CHECK_UNHANDLED_OOPS
   // Clear unhandled oops so we get a crash right away.  Only clear for non-vm
@@ -960,8 +957,7 @@ void Monitor::lock() {
 void Monitor::lock_without_safepoint_check(Thread * Self) {
   // Ensure that the Monitor does not require or allow safepoint checks.
   assert(_safepoint_check_required != Monitor::_safepoint_check_always,
-         err_msg("This lock should always have a safepoint check: %s",
-                 name()));
+         "This lock should always have a safepoint check: %s", name());
   assert(_owner != Self, "invariant");
   ILock(Self);
   assert(_owner == NULL, "invariant");
@@ -1093,9 +1089,9 @@ bool Monitor::wait(bool no_safepoint_check, long timeout,
                    bool as_suspend_equivalent) {
   // Make sure safepoint checking is used properly.
   assert(!(_safepoint_check_required == Monitor::_safepoint_check_never && no_safepoint_check == false),
-         err_msg("This lock should never have a safepoint check: %s", name()));
+         "This lock should never have a safepoint check: %s", name());
   assert(!(_safepoint_check_required == Monitor::_safepoint_check_always && no_safepoint_check == true),
-         err_msg("This lock should always have a safepoint check: %s", name()));
+         "This lock should always have a safepoint check: %s", name());
 
   Thread * const Self = Thread::current();
   assert(_owner == Self, "invariant");
@@ -1214,9 +1210,9 @@ bool Monitor::owned_by_self() const {
 }
 
 void Monitor::print_on_error(outputStream* st) const {
-  st->print("[" PTR_FORMAT, this);
+  st->print("[" PTR_FORMAT, p2i(this));
   st->print("] %s", _name);
-  st->print(" - owner thread: " PTR_FORMAT, _owner);
+  st->print(" - owner thread: " PTR_FORMAT, p2i(_owner));
 }
 
 
@@ -1227,7 +1223,8 @@ void Monitor::print_on_error(outputStream* st) const {
 
 #ifndef PRODUCT
 void Monitor::print_on(outputStream* st) const {
-  st->print_cr("Mutex: [0x%lx/0x%lx] %s - owner: 0x%lx", this, _LockWord.FullWord, _name, _owner);
+  st->print_cr("Mutex: [" PTR_FORMAT "/" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
+               p2i(this), _LockWord.FullWord, _name, p2i(_owner));
 }
 #endif
 
@@ -1335,9 +1332,9 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
         !(this == Safepoint_lock && contains(locks, Terminator_lock) &&
         SafepointSynchronize::is_synchronizing())) {
       new_owner->print_owned_locks();
-      fatal(err_msg("acquiring lock %s/%d out of order with lock %s/%d -- "
-                    "possible deadlock", this->name(), this->rank(),
-                    locks->name(), locks->rank()));
+      fatal("acquiring lock %s/%d out of order with lock %s/%d -- "
+            "possible deadlock", this->name(), this->rank(),
+            locks->name(), locks->rank());
     }
 
     this->_next = new_owner->_owned_locks;
@@ -1386,8 +1383,7 @@ void Monitor::check_prelock_state(Thread *thread) {
          || rank() == Mutex::special, "wrong thread state for using locks");
   if (StrictSafepointChecks) {
     if (thread->is_VM_thread() && !allow_vm_block()) {
-      fatal(err_msg("VM thread using lock %s (not allowed to block on)",
-                    name()));
+      fatal("VM thread using lock %s (not allowed to block on)", name());
     }
     debug_only(if (rank() != Mutex::special) \
                thread->check_for_valid_safepoint_state(false);)

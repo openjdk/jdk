@@ -69,14 +69,14 @@ bool G1BlockOffsetSharedArray::is_card_boundary(HeapWord* p) const {
 #ifdef ASSERT
 void G1BlockOffsetSharedArray::check_index(size_t index, const char* msg) const {
   assert((index) < (_reserved.word_size() >> LogN_words),
-         err_msg("%s - index: " SIZE_FORMAT ", _vs.committed_size: " SIZE_FORMAT,
-                 msg, (index), (_reserved.word_size() >> LogN_words)));
+         "%s - index: " SIZE_FORMAT ", _vs.committed_size: " SIZE_FORMAT,
+         msg, (index), (_reserved.word_size() >> LogN_words));
   assert(G1CollectedHeap::heap()->is_in_exact(address_for_index_raw(index)),
-         err_msg("Index " SIZE_FORMAT " corresponding to " PTR_FORMAT
-                 " (%u) is not in committed area.",
-                 (index),
-                 p2i(address_for_index_raw(index)),
-                 G1CollectedHeap::heap()->addr_to_region(address_for_index_raw(index))));
+         "Index " SIZE_FORMAT " corresponding to " PTR_FORMAT
+         " (%u) is not in committed area.",
+         (index),
+         p2i(address_for_index_raw(index)),
+         G1CollectedHeap::heap()->addr_to_region(address_for_index_raw(index)));
 }
 #endif // ASSERT
 
@@ -192,27 +192,27 @@ void G1BlockOffsetArray::check_all_cards(size_t start_card, size_t end_card) con
     u_char entry = _array->offset_array(c);
     if (c - start_card > BlockOffsetArray::power_to_cards_back(1)) {
       guarantee(entry > N_words,
-                err_msg("Should be in logarithmic region - "
-                        "entry: %u, "
-                        "_array->offset_array(c): %u, "
-                        "N_words: %u",
-                        (uint)entry, (uint)_array->offset_array(c), (uint)N_words));
+                "Should be in logarithmic region - "
+                "entry: %u, "
+                "_array->offset_array(c): %u, "
+                "N_words: %u",
+                (uint)entry, (uint)_array->offset_array(c), (uint)N_words);
     }
     size_t backskip = BlockOffsetArray::entry_to_cards_back(entry);
     size_t landing_card = c - backskip;
     guarantee(landing_card >= (start_card - 1), "Inv");
     if (landing_card >= start_card) {
       guarantee(_array->offset_array(landing_card) <= entry,
-                err_msg("Monotonicity - landing_card offset: %u, "
-                        "entry: %u",
-                        (uint)_array->offset_array(landing_card), (uint)entry));
+                "Monotonicity - landing_card offset: %u, "
+                "entry: %u",
+                (uint)_array->offset_array(landing_card), (uint)entry);
     } else {
       guarantee(landing_card == start_card - 1, "Tautology");
       // Note that N_words is the maximum offset value
       guarantee(_array->offset_array(landing_card) <= N_words,
-                err_msg("landing card offset: %u, "
-                        "N_words: %u",
-                        (uint)_array->offset_array(landing_card), (uint)N_words));
+                "landing card offset: %u, "
+                "N_words: %u",
+                (uint)_array->offset_array(landing_card), (uint)N_words);
     }
   }
 }
@@ -271,9 +271,9 @@ G1BlockOffsetArray::forward_to_block_containing_addr_slow(HeapWord* q,
   HeapWord* next_boundary = _array->address_for_index(n_index) +
                             (n_index == next_index ? 0 : N_words);
   assert(next_boundary <= _array->_end,
-         err_msg("next_boundary is beyond the end of the covered region "
-                 " next_boundary " PTR_FORMAT " _array->_end " PTR_FORMAT,
-                 p2i(next_boundary), p2i(_array->_end)));
+         "next_boundary is beyond the end of the covered region "
+         " next_boundary " PTR_FORMAT " _array->_end " PTR_FORMAT,
+         p2i(next_boundary), p2i(_array->_end));
   if (addr >= gsp()->top()) return gsp()->top();
   while (next_boundary < addr) {
     while (n <= next_boundary) {
@@ -361,25 +361,23 @@ void G1BlockOffsetArray::alloc_block_work2(HeapWord** threshold_, size_t* index_
   // is checked by an assertion above.
   size_t start_index = _array->index_for(blk_start);
   HeapWord* boundary = _array->address_for_index(start_index);
-  assert((_array->offset_array(orig_index) == 0 &&
-          blk_start == boundary) ||
-          (_array->offset_array(orig_index) > 0 &&
-         _array->offset_array(orig_index) <= N_words),
-         err_msg("offset array should have been set - "
-                  "orig_index offset: %u, "
-                  "blk_start: " PTR_FORMAT ", "
-                  "boundary: " PTR_FORMAT,
-                  (uint)_array->offset_array(orig_index),
-                  p2i(blk_start), p2i(boundary)));
+  assert((_array->offset_array(orig_index) == 0 && blk_start == boundary) ||
+         (_array->offset_array(orig_index) > 0 && _array->offset_array(orig_index) <= N_words),
+         "offset array should have been set - "
+         "orig_index offset: %u, "
+         "blk_start: " PTR_FORMAT ", "
+         "boundary: " PTR_FORMAT,
+         (uint)_array->offset_array(orig_index),
+         p2i(blk_start), p2i(boundary));
   for (size_t j = orig_index + 1; j <= end_index; j++) {
     assert(_array->offset_array(j) > 0 &&
            _array->offset_array(j) <=
              (u_char) (N_words+BlockOffsetArray::N_powers-1),
-           err_msg("offset array should have been set - "
-                   "%u not > 0 OR %u not <= %u",
-                   (uint) _array->offset_array(j),
-                   (uint) _array->offset_array(j),
-                   (uint) (N_words+BlockOffsetArray::N_powers-1)));
+           "offset array should have been set - "
+           "%u not > 0 OR %u not <= %u",
+           (uint) _array->offset_array(j),
+           (uint) _array->offset_array(j),
+           (uint) (N_words+BlockOffsetArray::N_powers-1));
   }
 #endif
 }
@@ -402,8 +400,8 @@ void G1BlockOffsetArray::verify() const {
         size_t obj_size = block_size(obj);
         obj_end = obj + obj_size;
         guarantee(obj_end > obj && obj_end <= gsp()->top(),
-            err_msg("Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,
-                p2i(obj), obj_size, p2i(obj_end), p2i(gsp()->top())));
+                  "Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,
+                  p2i(obj), obj_size, p2i(obj_end), p2i(gsp()->top()));
       }
     } else {
       // Because we refine the BOT based on which cards are dirty there is not much we can verify here.
@@ -414,13 +412,13 @@ void G1BlockOffsetArray::verify() const {
 
       size_t max_backskip = current_card - start_card;
       guarantee(backskip <= max_backskip,
-          err_msg("Going backwards beyond the start_card. start_card: " SIZE_FORMAT " current_card: " SIZE_FORMAT " backskip: " SIZE_FORMAT,
-              start_card, current_card, backskip));
+                "Going backwards beyond the start_card. start_card: " SIZE_FORMAT " current_card: " SIZE_FORMAT " backskip: " SIZE_FORMAT,
+                start_card, current_card, backskip);
 
       HeapWord* backskip_address = _array->address_for_index(current_card - backskip);
       guarantee(backskip_address >= gsp()->bottom(),
-          err_msg("Going backwards beyond bottom of the region: bottom: " PTR_FORMAT ", backskip_address: " PTR_FORMAT,
-              p2i(gsp()->bottom()), p2i(backskip_address)));
+                "Going backwards beyond bottom of the region: bottom: " PTR_FORMAT ", backskip_address: " PTR_FORMAT,
+                p2i(gsp()->bottom()), p2i(backskip_address));
     }
   }
 }

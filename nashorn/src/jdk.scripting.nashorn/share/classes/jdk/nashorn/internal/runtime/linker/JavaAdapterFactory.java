@@ -46,8 +46,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.beans.StaticClass;
-import jdk.internal.dynalink.support.LinkRequestImpl;
+import jdk.internal.dynalink.linker.support.SimpleLinkRequest;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -188,9 +190,9 @@ public final class JavaAdapterFactory {
      */
     public static MethodHandle getConstructor(final Class<?> sourceType, final Class<?> targetType, final MethodHandles.Lookup lookup) throws Exception {
         final StaticClass adapterClass = getAdapterClassFor(new Class<?>[] { targetType }, null, lookup);
-        return MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new LinkRequestImpl(
-                NashornCallSiteDescriptor.get(lookup, "dyn:new",
-                        MethodType.methodType(targetType, StaticClass.class, sourceType), 0), null, 0, false,
+        return MH.bindTo(Bootstrap.getLinkerServices().getGuardedInvocation(new SimpleLinkRequest(
+                new CallSiteDescriptor(lookup, StandardOperation.NEW,
+                        MethodType.methodType(targetType, StaticClass.class, sourceType)), false,
                         adapterClass, null)).getInvocation(), adapterClass);
     }
 

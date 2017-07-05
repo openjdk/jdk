@@ -45,7 +45,7 @@ public:
     _max_size(align_size_up(max_size, alignment))
   { }
 
-  Generation* init(ReservedSpace rs, GenRemSet* remset);
+  Generation* init(ReservedSpace rs, CardTableRS* remset);
 
   // Accessors
   Generation::Name name()        const { return _name; }

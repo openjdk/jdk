@@ -327,9 +327,8 @@ public class TextArea extends TextComponent {
         TextAreaPeer peer = (TextAreaPeer)this.peer;
         if (peer != null) {
             peer.insert(str, pos);
-        } else {
-            text = text.substring(0, pos) + str + text.substring(pos);
         }
+        text = text.substring(0, pos) + str + text.substring(pos);
     }
 
     /**
@@ -355,11 +354,7 @@ public class TextArea extends TextComponent {
      */
     @Deprecated
     public synchronized void appendText(String str) {
-        if (peer != null) {
             insertText(str, getText().length());
-        } else {
-            text = text + str;
-        }
     }
 
     /**
@@ -403,9 +398,8 @@ public class TextArea extends TextComponent {
         TextAreaPeer peer = (TextAreaPeer)this.peer;
         if (peer != null) {
             peer.replaceRange(str, start, end);
-        } else {
-            text = text.substring(0, start) + str + text.substring(end);
         }
+        text = text.substring(0, start) + str + text.substring(end);
     }
 
     /**

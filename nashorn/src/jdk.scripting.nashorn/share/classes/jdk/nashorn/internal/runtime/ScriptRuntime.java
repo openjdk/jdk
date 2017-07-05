@@ -380,8 +380,8 @@ public final class ScriptRuntime {
 
     /**
      * Call a function given self and args. If the number of the arguments is known in advance, you can likely achieve
-     * better performance by {@link Bootstrap#createDynamicInvoker(String, Class, Class...) creating a dynamic invoker}
-     * for operation {@code "dyn:call"}, then using its {@link MethodHandle#invokeExact(Object...)} method instead.
+     * better performance by creating a dynamic invoker using {@link Bootstrap#createDynamicCallInvoker(Class, Class...)}
+     * then using its {@link MethodHandle#invokeExact(Object...)} method instead.
      *
      * @param target ScriptFunction object.
      * @param self   Receiver in call.

@@ -152,12 +152,6 @@ class OptoRuntime : public AllStatic {
   static address _slow_arraycopy_Java;
   static address _register_finalizer_Java;
 
-# ifdef ENABLE_ZAP_DEAD_LOCALS
-  static address _zap_dead_Java_locals_Java;
-  static address _zap_dead_native_locals_Java;
-# endif
-
-
   //
   // Implementation of runtime methods
   // =================================
@@ -212,19 +206,6 @@ private:
 
   static void register_finalizer(oopDesc* obj, JavaThread* thread);
 
-  // zaping dead locals, either from Java frames or from native frames
-# ifdef ENABLE_ZAP_DEAD_LOCALS
-  static void zap_dead_Java_locals_C(   JavaThread* thread);
-  static void zap_dead_native_locals_C( JavaThread* thread);
-
-  static void zap_dead_java_or_native_locals( JavaThread*, bool (*)(frame*));
-
- public:
-   static int ZapDeadCompiledLocals_count;
-
-# endif
-
-
  public:
 
   static bool is_callee_saved_register(MachRegisterNumbers reg);
@@ -255,14 +236,6 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
-
-
-# ifdef ENABLE_ZAP_DEAD_LOCALS
-  static address zap_dead_locals_stub(bool is_native)    { return is_native
-                                                                  ? _zap_dead_native_locals_Java
-                                                                  : _zap_dead_Java_locals_Java; }
-  static MachNode* node_to_call_zap_dead_locals(Node* n, int block_num, bool is_native);
-# endif
 
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
 
@@ -352,10 +325,6 @@ private:
   // Dtrace support
   static const TypeFunc* dtrace_method_entry_exit_Type();
   static const TypeFunc* dtrace_object_alloc_Type();
-
-# ifdef ENABLE_ZAP_DEAD_LOCALS
-  static const TypeFunc* zap_dead_locals_Type();
-# endif
 
  private:
  static NamedCounter * volatile _named_counters;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
  * @test
  * @bug 5057225
  * @summary Remove useless I2L conversions
- *
+ * @library /testlibrary
  * @run main/othervm -Xcomp -XX:CompileOnly=Test5057225.doload Test5057225
  */
 
-import java.net.URLClassLoader;
+import jdk.test.lib.Utils;
 
 public class Test5057225 {
     static byte[]  ba = new byte[]  { -1 };
@@ -89,8 +89,9 @@ public class Test5057225 {
 
     static void loadAndRunClass(String classname) throws Exception {
         Class cl = Class.forName(classname);
-        URLClassLoader apploader = (URLClassLoader) cl.getClassLoader();
-        ClassLoader loader = new URLClassLoader(apploader.getURLs(), apploader.getParent());
+        ClassLoader apploader = cl.getClassLoader();
+        ClassLoader loader
+                = Utils.getTestClassPathURLClassLoader(apploader.getParent());
         Class c = loader.loadClass(classname);
         Runnable r = (Runnable) c.newInstance();
         r.run();

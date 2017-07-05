@@ -895,7 +895,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
     break;
 
   default:
-    fatal(err_msg_res("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
     break;
   }
   return NULL;

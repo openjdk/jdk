@@ -1,12 +1,10 @@
 option,com/oracle/Test.test,MyBoolOption1
 option,com/oracle/Test,test,MyBoolOption2
 option,com.oracle.Test::test,MyBoolOption3
-option,com/oracle/Test::test,MyBoolOption4
 option,com/oracle/Test.test,MyBoolOption5,MyBoolOption6
 option,com/oracle/Test,test,MyBoolOption7,MyBoolOption8
 option,com/oracle/Test.test(I),MyBoolOption9
 option,com/oracle/Test,test,(I),MyBoolOption10
 option,com.oracle.Test::test(I),MyBoolOption11
-option,com/oracle/Test::test(I),MyBoolOption12
 option,com/oracle/Test.test(I),MyBoolOption13,MyBoolOption14
 option,com/oracle/Test,test(I),MyBoolOption15,MyBoolOption16

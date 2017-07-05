@@ -3,11 +3,12 @@
  */
 
 /*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -22,19 +23,19 @@ package com.sun.org.apache.xalan.internal.xsltc.dom;
 
 import com.sun.org.apache.xalan.internal.xsltc.DOM;
 import com.sun.org.apache.xalan.internal.xsltc.StripFilter;
-import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
 import com.sun.org.apache.xalan.internal.xsltc.TransletException;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary;
-import com.sun.org.apache.xalan.internal.xsltc.runtime.Hashtable;
-import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.Axis;
+import com.sun.org.apache.xml.internal.dtm.DTM;
 import com.sun.org.apache.xml.internal.dtm.DTMAxisIterator;
 import com.sun.org.apache.xml.internal.dtm.DTMManager;
 import com.sun.org.apache.xml.internal.dtm.ref.DTMAxisIteratorBase;
 import com.sun.org.apache.xml.internal.dtm.ref.DTMDefaultBase;
 import com.sun.org.apache.xml.internal.dtm.ref.DTMAxisIterNodeList;
+import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
 import com.sun.org.apache.xml.internal.utils.SuballocatedIntVector;
-
+import java.util.HashMap;
+import java.util.Map;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -54,7 +55,7 @@ public final class MultiDOM implements DOM {
     private int _free;
     private int _size;
 
-    private Hashtable _documents = new Hashtable();
+    private Map<String, Integer> _documents = new HashMap<>();
 
     private final class AxisIterator extends DTMAxisIteratorBase {
         // constitutive data
@@ -324,10 +325,10 @@ public final class MultiDOM implements DOM {
             domNo = domPos;
         }
 
-        // Store reference to document (URI) in hashtable
+        // Store reference to document (URI) in the Map
         if (indexByURI) {
             String uri = adapter.getDocumentURI(0);
-            _documents.put(uri, new Integer(domNo));
+            _documents.put(uri, domNo);
         }
 
         // If the dom is an AdaptiveResultTreeImpl, we need to create a
@@ -350,7 +351,7 @@ public final class MultiDOM implements DOM {
     }
 
     public int getDocumentMask(String uri) {
-        Integer domIdx = (Integer)_documents.get(uri);
+        Integer domIdx = _documents.get(uri);
         if (domIdx == null) {
             return(-1);
         } else {
@@ -359,7 +360,7 @@ public final class MultiDOM implements DOM {
     }
 
     public DOM getDOMAdapter(String uri) {
-        Integer domIdx = (Integer)_documents.get(uri);
+        Integer domIdx = _documents.get(uri);
         if (domIdx == null) {
             return(null);
         } else {
@@ -667,7 +668,7 @@ public final class MultiDOM implements DOM {
     }
 
     // %HZ% Does this method make any sense here???
-    public Hashtable getElementsWithIDs() {
+    public Map<String, Integer> getElementsWithIDs() {
         return _main.getElementsWithIDs();
     }
 }

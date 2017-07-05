@@ -30,8 +30,6 @@
 #include "memory/allocation.inline.hpp"
 #include "prims/methodHandles.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #define __ _masm->
 
 #ifdef PRODUCT
@@ -53,7 +51,7 @@ void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_
 
 #ifdef ASSERT
 static int check_nonzero(const char* xname, int x) {
-  assert(x != 0, err_msg("%s should be nonzero", xname));
+  assert(x != 0, "%s should be nonzero", xname);
   return x;
 }
 #define NONZERO(x) check_nonzero(#x, x)
@@ -456,7 +454,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal(err_msg_res("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
       break;
     }
 
@@ -488,7 +486,7 @@ void trace_method_handle_stub(const char* adaptername,
   const char* mh_reg_name = has_mh ? "rcx_mh" : "rcx";
   tty->print_cr("MH %s %s=" PTR_FORMAT " sp=" PTR_FORMAT,
                 adaptername, mh_reg_name,
-                (void *)mh, entry_sp);
+                p2i(mh), p2i(entry_sp));
 
   if (Verbose) {
     tty->print_cr("Registers:");

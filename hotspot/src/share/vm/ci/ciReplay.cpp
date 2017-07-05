@@ -730,7 +730,7 @@ class CompileReplay : public StackObj {
           if (parsed_two_word == i) continue;
 
         default:
-          fatal(err_msg_res("Unexpected tag: %d", cp->tag_at(i).value()));
+          fatal("Unexpected tag: %d", cp->tag_at(i).value());
           break;
       }
 

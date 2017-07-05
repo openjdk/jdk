@@ -36,8 +36,6 @@
 #include "runtime/statSampler.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Prefix of performance data file.
 const char               PERFDATA_NAME[] = "hsperfdata";
 
@@ -96,7 +94,7 @@ void PerfMemory::initialize() {
 
   if (PerfTraceMemOps) {
     tty->print("PerfDataMemorySize = " SIZE_FORMAT ","
-               " os::vm_allocation_granularity = " SIZE_FORMAT ","
+               " os::vm_allocation_granularity = %d,"
                " adjusted size = " SIZE_FORMAT "\n",
                PerfDataMemorySize,
                os::vm_allocation_granularity(),
@@ -129,7 +127,7 @@ void PerfMemory::initialize() {
     if (PerfTraceMemOps) {
       tty->print("PerfMemory created: address = " INTPTR_FORMAT ","
                  " size = " SIZE_FORMAT "\n",
-                 (void*)_start,
+                 p2i(_start),
                  _capacity);
     }
 

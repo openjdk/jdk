@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -22,10 +22,10 @@
  */
 package com.sun.org.apache.xalan.internal.lib;
 
-import java.util.Hashtable;
-
 import com.sun.org.apache.xml.internal.utils.DOMHelper;
 import com.sun.org.apache.xpath.internal.NodeSet;
+import java.util.HashMap;
+import java.util.Map;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -192,7 +192,7 @@ public class ExsltSets extends ExsltBase
     NodeSet dist = new NodeSet();
     dist.setShouldCacheNodes(true);
 
-    Hashtable stringTable = new Hashtable();
+    Map<String, Node> stringTable = new HashMap<>();
 
     for (int i = 0; i < nl.getLength(); i++)
     {

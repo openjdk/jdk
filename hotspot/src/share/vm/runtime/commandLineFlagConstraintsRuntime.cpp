@@ -27,6 +27,7 @@
 #include "runtime/commandLineFlagConstraintsRuntime.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/task.hpp"
 #include "utilities/defaultStream.hpp"
 
 Flag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
@@ -41,7 +42,7 @@ Flag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
   if (value >= (intx)os::vm_page_size()) {
     CommandLineError::print(verbose,
                             "ObjectAlignmentInBytes (" INTX_FORMAT ") must be "
-                            "less than page size " INTX_FORMAT "\n",
+                            "less than page size (" INTX_FORMAT ")\n",
                             value, (intx)os::vm_page_size());
     return Flag::VIOLATES_CONSTRAINT;
   }
@@ -51,11 +52,79 @@ Flag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
 // Need to enforce the padding not to break the existing field alignments.
 // It is sufficient to check against the largest type size.
 Flag::Error ContendedPaddingWidthConstraintFunc(intx value, bool verbose) {
-  if ((value != 0) && ((value % BytesPerLong) != 0)) {
+  if ((value % BytesPerLong) != 0) {
     CommandLineError::print(verbose,
                             "ContendedPaddingWidth (" INTX_FORMAT ") must be "
                             "a multiple of %d\n",
                             value, BytesPerLong);
+    return Flag::VIOLATES_CONSTRAINT;
+  } else {
+    return Flag::SUCCESS;
+  }
+}
+
+Flag::Error BiasedLockingBulkRebiasThresholdFunc(intx value, bool verbose) {
+  if (value > BiasedLockingBulkRevokeThreshold) {
+    CommandLineError::print(verbose,
+                            "BiasedLockingBulkRebiasThreshold (" INTX_FORMAT ") must be "
+                            "less than or equal to BiasedLockingBulkRevokeThreshold (" INTX_FORMAT ")\n",
+                            value, BiasedLockingBulkRevokeThreshold);
+    return Flag::VIOLATES_CONSTRAINT;
+  } else {
+    return Flag::SUCCESS;
+  }
+}
+
+Flag::Error BiasedLockingStartupDelayFunc(intx value, bool verbose) {
+  if ((value % PeriodicTask::interval_gran) != 0) {
+    CommandLineError::print(verbose,
+                            "BiasedLockingStartupDelay (" INTX_FORMAT ") must be "
+                            "evenly divisible by PeriodicTask::interval_gran (" INTX_FORMAT ")\n",
+                            value, PeriodicTask::interval_gran);
+    return Flag::VIOLATES_CONSTRAINT;
+  } else {
+    return Flag::SUCCESS;
+  }
+}
+
+Flag::Error BiasedLockingBulkRevokeThresholdFunc(intx value, bool verbose) {
+  if (value < BiasedLockingBulkRebiasThreshold) {
+    CommandLineError::print(verbose,
+                            "BiasedLockingBulkRevokeThreshold (" INTX_FORMAT ") must be "
+                            "greater than or equal to BiasedLockingBulkRebiasThreshold (" INTX_FORMAT ")\n",
+                            value, BiasedLockingBulkRebiasThreshold);
+    return Flag::VIOLATES_CONSTRAINT;
+  } else if ((double)value/(double)BiasedLockingDecayTime > 0.1) {
+    CommandLineError::print(verbose,
+                            "The ratio of BiasedLockingBulkRevokeThreshold (" INTX_FORMAT ")"
+                            " to BiasedLockingDecayTime (" INTX_FORMAT ") must be "
+                            "less than or equal to 0.1\n",
+                            value, BiasedLockingBulkRebiasThreshold);
+    return Flag::VIOLATES_CONSTRAINT;
+  } else {
+    return Flag::SUCCESS;
+  }
+}
+
+Flag::Error BiasedLockingDecayTimeFunc(intx value, bool verbose) {
+  if (BiasedLockingBulkRebiasThreshold/(double)value > 0.1) {
+    CommandLineError::print(verbose,
+                            "The ratio of BiasedLockingBulkRebiasThreshold (" INTX_FORMAT ")"
+                            " to BiasedLockingDecayTime (" INTX_FORMAT ") must be "
+                            "less than or equal to 0.1\n",
+                            BiasedLockingBulkRebiasThreshold, value);
+    return Flag::VIOLATES_CONSTRAINT;
+  } else {
+    return Flag::SUCCESS;
+  }
+}
+
+Flag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose) {
+  if ((value % PeriodicTask::interval_gran != 0)) {
+    CommandLineError::print(verbose,
+                            "PerfDataSamplingInterval (" INTX_FORMAT ") must be "
+                            "evenly divisible by PeriodicTask::interval_gran (" INTX_FORMAT ")\n",
+                            value, PeriodicTask::interval_gran);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
     return Flag::SUCCESS;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,21 +52,19 @@ public class Method extends Metadata {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type                  = db.lookupType("Method");
+    type                       = db.lookupType("Method");
     constMethod                = type.getAddressField("_constMethod");
     methodData                 = type.getAddressField("_method_data");
     methodCounters             = type.getAddressField("_method_counters");
-    methodSize                 = new CIntField(type.getCIntegerField("_method_size"), 0);
     accessFlags                = new CIntField(type.getCIntegerField("_access_flags"), 0);
     code                       = type.getAddressField("_code");
     vtableIndex                = new CIntField(type.getCIntegerField("_vtable_index"), 0);
-    bytecodeOffset = type.getSize();
 
     /*
-    interpreterEntry           = type.getAddressField("_interpreter_entry");
     fromCompiledCodeEntryPoint = type.getAddressField("_from_compiled_code_entry_point");
-
+    interpreterEntry           = type.getAddressField("_from_interpreted_entry");
     */
+
     objectInitializerName = null;
     classInitializerName = null;
   }
@@ -77,16 +75,22 @@ public class Method extends Metadata {
 
   public boolean isMethod()            { return true; }
 
+  // Not a Method field, used to keep type.
+  private static Type type;
+
   // Fields
   private static AddressField  constMethod;
   private static AddressField  methodData;
   private static AddressField  methodCounters;
-  private static CIntField methodSize;
   private static CIntField accessFlags;
   private static CIntField vtableIndex;
-  private static long      bytecodeOffset;
 
   private static AddressField       code;
+  /*
+  private static AddressCField      fromCompiledCodeEntryPoint;
+  private static AddressField       interpreterEntry;
+  */
+
 
   // constant method names - <init>, <clinit>
   // Initialized lazily to avoid initialization ordering dependencies between Method and SymbolTable
@@ -106,11 +110,6 @@ public class Method extends Metadata {
   }
 
 
-  /*
-  private static AddressCField       interpreterEntry;
-  private static AddressCField       fromCompiledCodeEntryPoint;
-  */
-
   // Accessors for declared fields
   public ConstMethod  getConstMethod()                {
     Address addr = constMethod.getValue(getAddress());
@@ -128,7 +127,6 @@ public class Method extends Metadata {
     return (MethodCounters) VMObjectFactory.newObject(MethodCounters.class, addr);
   }
   /** WARNING: this is in words, not useful in this system; use getObjectSize() instead */
-  public long         getMethodSize()                 { return                methodSize.getValue(this);        }
   public long         getMaxStack()                   { return                getConstMethod().getMaxStack();   }
   public long         getMaxLocals()                  { return                getConstMethod().getMaxLocals();         }
   public long         getSizeOfParameters()           { return                getConstMethod().getSizeOfParameters();  }
@@ -265,7 +263,7 @@ public class Method extends Metadata {
   }
 
   public long getSize() {
-    return getMethodSize();
+    return type.getSize() + (isNative() ? 2: 0);
   }
 
   public void printValueOn(PrintStream tty) {
@@ -273,7 +271,6 @@ public class Method extends Metadata {
   }
 
   public void iterateFields(MetadataVisitor visitor) {
-      visitor.doCInt(methodSize, true);
       visitor.doCInt(accessFlags, true);
     }
 

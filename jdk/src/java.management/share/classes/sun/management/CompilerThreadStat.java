@@ -27,6 +27,7 @@ package sun.management;
 
 /**
  */
+@Deprecated
 public class CompilerThreadStat implements java.io.Serializable {
     private String name;
     private long taskCount;

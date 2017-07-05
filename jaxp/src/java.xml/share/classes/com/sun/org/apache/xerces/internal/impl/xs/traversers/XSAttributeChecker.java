@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,7 +20,6 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs.traversers;
 
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -64,7 +63,7 @@ import org.w3c.dom.Element;
  * - Whether to return non-schema attributes/values
  * - Do we need to update NamespaceScope and ErrorReporter when reset()?
  * - Should have the datatype validators return compiled value
- * - use symbol table instead of many hashtables
+ * - use symbol table instead of many maps
  *
  * @xerces.internal
  *
@@ -1025,9 +1024,7 @@ public class XSAttributeChecker {
             return null;
         }
 
-        //Hashtable attrValues = new Hashtable();
         Object[] attrValues = getAvailableArray();
-        //Hashtable otherValues = new Hashtable();
         long fromDefault = 0;
 
         // clear the "seen" flag.
@@ -1196,7 +1193,7 @@ public class XSAttributeChecker {
                     // maxOccurNodeLimit.
                     int maxOccurNodeLimit = fSchemaHandler.fSecureProcessing.getLimit(XMLSecurityManager.Limit.MAX_OCCUR_NODE_LIMIT);
                     if (max > maxOccurNodeLimit && !fSchemaHandler.fSecureProcessing.isNoLimit(maxOccurNodeLimit)) {
-                        reportSchemaFatalError("maxOccurLimit", new Object[] {new Integer(maxOccurNodeLimit)}, element);
+                        reportSchemaFatalError("MaxOccurLimit", new Object[] {new Integer(maxOccurNodeLimit)}, element);
 
                         // reset max values in case processing continues on error
                         attrValues[ATTIDX_MAXOCCURS] = fXIntPool.getXInt(maxOccurNodeLimit);

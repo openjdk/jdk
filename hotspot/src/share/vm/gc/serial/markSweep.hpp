@@ -196,7 +196,9 @@ public:
   virtual void do_cld(ClassLoaderData* cld);
   void do_cld_nv(ClassLoaderData* cld);
 
-  void set_ref_processor(ReferenceProcessor* rp) { _ref_processor = rp; }
+  void set_ref_processor(ReferenceProcessor* rp) {
+    set_ref_processor_internal(rp);
+  }
 };
 
 class PreservedMark VALUE_OBJ_CLASS_SPEC {

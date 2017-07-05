@@ -25,42 +25,59 @@
  * @test TestG1HeapRegionSize
  * @key gc
  * @bug 8021879
+ * @requires vm.gc=="null" | vm.gc=="G1"
  * @summary Verify that the flag G1HeapRegionSize is updated properly
  * @modules java.management/sun.management
- * @run main/othervm -Xmx64m TestG1HeapRegionSize 1048576
- * @run main/othervm -XX:G1HeapRegionSize=2m -Xmx64m TestG1HeapRegionSize 2097152
- * @run main/othervm -XX:G1HeapRegionSize=3m -Xmx64m TestG1HeapRegionSize 2097152
- * @run main/othervm -XX:G1HeapRegionSize=64m -Xmx256m TestG1HeapRegionSize 33554432
+ * @library /testlibrary
+ * @run main TestG1HeapRegionSize
  */
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
-import java.lang.management.ManagementFactory;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import jdk.test.lib.*;
 
 public class TestG1HeapRegionSize {
 
-  public static void main(String[] args) {
-    HotSpotDiagnosticMXBean diagnostic =
-        ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+  private static void checkG1HeapRegionSize(String[] flags, int expectedValue, int exitValue) throws Exception {
+    ArrayList<String> flagList = new ArrayList<String>();
+    flagList.addAll(Arrays.asList(flags));
+    flagList.add("-XX:+UseG1GC");
+    flagList.add("-XX:+PrintFlagsFinal");
+    flagList.add("-version");
 
-    String expectedValue = getExpectedValue(args);
-    VMOption option = diagnostic.getVMOption("UseG1GC");
-    if (option.getValue().equals("false")) {
-      System.out.println("Skipping this test. It is only a G1 test.");
-      return;
-    }
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(flagList.toArray(new String[0]));
+    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    output.shouldHaveExitValue(exitValue);
 
-    option = diagnostic.getVMOption("G1HeapRegionSize");
-    if (!expectedValue.equals(option.getValue())) {
-      throw new RuntimeException("Wrong value for G1HeapRegionSize. Expected " + expectedValue + " but got " + option.getValue());
+    if (exitValue == 0) {
+      String stdout = output.getStdout();
+      int flagValue = getFlagValue("G1HeapRegionSize", stdout);
+      if (flagValue != expectedValue) {
+        throw new RuntimeException("Wrong value for G1HeapRegionSize. Expected " + expectedValue + " but got " + flagValue);
+      }
     }
   }
 
-  private static String getExpectedValue(String[] args) {
-    if (args.length != 1) {
-      throw new RuntimeException("Wrong number of arguments. Expected 1 but got " + args.length);
+  private static int getFlagValue(String flag, String where) {
+    Matcher m = Pattern.compile(flag + "\\s+:?=\\s+\\d+").matcher(where);
+    if (!m.find()) {
+      throw new RuntimeException("Could not find value for flag " + flag + " in output string");
     }
-    return args[0];
+    String match = m.group();
+    return Integer.parseInt(match.substring(match.lastIndexOf(" ") + 1, match.length()));
   }
 
+  public static void main(String args[]) throws Exception {
+    final int M = 1024 * 1024;
+
+    checkG1HeapRegionSize(new String[] { "-Xmx64m"   /* default is 1m */        },  1*M, 0);
+    checkG1HeapRegionSize(new String[] { "-Xmx64m",  "-XX:G1HeapRegionSize=2m"  },  2*M, 0);
+    checkG1HeapRegionSize(new String[] { "-Xmx64m",  "-XX:G1HeapRegionSize=3m"  },  2*M, 0);
+    checkG1HeapRegionSize(new String[] { "-Xmx256m", "-XX:G1HeapRegionSize=32m" }, 32*M, 0);
+    checkG1HeapRegionSize(new String[] { "-Xmx256m", "-XX:G1HeapRegionSize=64m" }, 32*M, 1);
+  }
 }
