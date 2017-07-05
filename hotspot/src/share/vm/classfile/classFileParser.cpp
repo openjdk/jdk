@@ -2702,13 +2702,15 @@ void ClassFileParser::java_dyn_MethodHandle_fix_pre(constantPoolHandle cp,
       // Adjust the field type from byte to an unmanaged pointer.
       assert(fac_ptr->nonstatic_byte_count > 0, "");
       fac_ptr->nonstatic_byte_count -= 1;
-      (*fields_ptr)->ushort_at_put(i + instanceKlass::signature_index_offset,
-                                   word_sig_index);
-      fac_ptr->nonstatic_word_count += 1;
+
+      (*fields_ptr)->ushort_at_put(i + instanceKlass::signature_index_offset, word_sig_index);
+      assert(wordSize == longSize || wordSize == jintSize, "ILP32 or LP64");
+      if (wordSize == longSize)  fac_ptr->nonstatic_double_count += 1;
+      else                       fac_ptr->nonstatic_word_count   += 1;
 
       FieldAllocationType atype = (FieldAllocationType) (*fields_ptr)->ushort_at(i + instanceKlass::low_offset);
       assert(atype == NONSTATIC_BYTE, "");
-      FieldAllocationType new_atype = NONSTATIC_WORD;
+      FieldAllocationType new_atype = (wordSize == longSize) ? NONSTATIC_DOUBLE : NONSTATIC_WORD;
       (*fields_ptr)->ushort_at_put(i + instanceKlass::low_offset, new_atype);
 
       found_vmentry = true;

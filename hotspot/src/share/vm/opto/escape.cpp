@@ -706,14 +706,15 @@ PhiNode *ConnectionGraph::split_memory_phi(PhiNode *orig_phi, int alias_idx, Gro
 //
 // The next methods are derived from methods in MemNode.
 //
-static Node *step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *tinst) {
+static Node *step_through_mergemem(MergeMemNode *mmem, int alias_idx, const TypeOopPtr *toop) {
   Node *mem = mmem;
-  // TypeInstPtr::NOTNULL+any is an OOP with unknown offset - generally
+  // TypeOopPtr::NOTNULL+any is an OOP with unknown offset - generally
   // means an array I have not precisely typed yet.  Do not do any
   // alias stuff with it any time soon.
-  if( tinst->base() != Type::AnyPtr &&
-      !(tinst->klass()->is_java_lang_Object() &&
-        tinst->offset() == Type::OffsetBot) ) {
+  if( toop->base() != Type::AnyPtr &&
+      !(toop->klass() != NULL &&
+        toop->klass()->is_java_lang_Object() &&
+        toop->offset() == Type::OffsetBot) ) {
     mem = mmem->memory_at(alias_idx);
     // Update input if it is progress over what we have now
   }
@@ -803,8 +804,8 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
   if (orig_mem == NULL)
     return orig_mem;
   Compile* C = phase->C;
-  const TypeOopPtr *tinst = C->get_adr_type(alias_idx)->isa_oopptr();
-  bool is_instance = (tinst != NULL) && tinst->is_known_instance();
+  const TypeOopPtr *toop = C->get_adr_type(alias_idx)->isa_oopptr();
+  bool is_instance = (toop != NULL) && toop->is_known_instance();
   Node *start_mem = C->start()->proj_out(TypeFunc::Memory);
   Node *prev = NULL;
   Node *result = orig_mem;
@@ -827,18 +828,18 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
     // skip over a call which does not affect this memory slice
     if (result->is_Proj() && result->as_Proj()->_con == TypeFunc::Memory) {
       Node *proj_in = result->in(0);
-      if (proj_in->is_Allocate() && proj_in->_idx == (uint)tinst->instance_id()) {
+      if (proj_in->is_Allocate() && proj_in->_idx == (uint)toop->instance_id()) {
         break;  // hit one of our sentinels
       } else if (proj_in->is_Call()) {
         CallNode *call = proj_in->as_Call();
-        if (!call->may_modify(tinst, phase)) {
+        if (!call->may_modify(toop, phase)) {
           result = call->in(TypeFunc::Memory);
         }
       } else if (proj_in->is_Initialize()) {
         AllocateNode* alloc = proj_in->as_Initialize()->allocation();
         // Stop if this is the initialization for the object instance which
         // which contains this memory slice, otherwise skip over it.
-        if (alloc == NULL || alloc->_idx != (uint)tinst->instance_id()) {
+        if (alloc == NULL || alloc->_idx != (uint)toop->instance_id()) {
           result = proj_in->in(TypeFunc::Memory);
         }
       } else if (proj_in->is_MemBar()) {
@@ -846,7 +847,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       }
     } else if (result->is_MergeMem()) {
       MergeMemNode *mmem = result->as_MergeMem();
-      result = step_through_mergemem(mmem, alias_idx, tinst);
+      result = step_through_mergemem(mmem, alias_idx, toop);
       if (result == mmem->base_memory()) {
         // Didn't find instance memory, search through general slice recursively.
         result = mmem->memory_at(C->get_general_index(alias_idx));
@@ -866,7 +867,7 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
         break;
       }
     } else if (result->is_ClearArray()) {
-      if (!ClearArrayNode::step_through(&result, (uint)tinst->instance_id(), phase)) {
+      if (!ClearArrayNode::step_through(&result, (uint)toop->instance_id(), phase)) {
         // Can not bypass initialization of the instance
         // we are looking for.
         break;
