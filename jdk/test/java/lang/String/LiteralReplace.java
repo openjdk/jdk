@@ -24,6 +24,7 @@
 /* @test
  * @bug 8058779 8054307
  * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
  * @run testng LiteralReplace
  * @summary Basic tests of String.replace(CharSequence, CharSequence)
  * @key randomness

@@ -26,6 +26,13 @@
  * @bug 6480981 8160624
  * @summary keytool should be able to import certificates from remote SSL server
  * @library /test/lib
+ * @build jdk.test.lib.SecurityTools
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @run main/othervm PrintSSL
  */
 

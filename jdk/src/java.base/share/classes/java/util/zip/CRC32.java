@@ -38,6 +38,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * a {@link NullPointerException} to be thrown.</p>
  *
  * @author      David Connelly
+ * @since 1.1
  */
 public
 class CRC32 implements Checksum {

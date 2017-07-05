@@ -30,6 +30,7 @@ package java.awt.datatransfer;
  * @see Transferable#getTransferData
  *
  * @author      Amy Fowler
+ * @since 1.1
  */
 public class UnsupportedFlavorException extends Exception {
 

@@ -45,6 +45,7 @@ import sun.security.jca.*;
  * {@code conf/security/java.security} in the Java installation directory.
  *
  * @author Benjamin Renaud
+ * @since 1.1
  */
 
 public final class Security {

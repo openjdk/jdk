@@ -25,8 +25,12 @@
  * @test
  * @bug 4312217 4785473
  * @library /test/lib
- * @build jdk.test.lib.JDKToolLauncher
- * @build jdk.test.lib.process.ProcessTools
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
  * @build NestedTest
  * @run main serialver.NestedTest
  * @summary  To test the use of nested class specification using the '.'
