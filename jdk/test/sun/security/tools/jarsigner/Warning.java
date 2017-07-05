@@ -89,7 +89,7 @@ public class Warning {
         issueCert("c");
         run("jarsigner", "a.jar c")
                 .shouldContain("chain is not validated. " +
-                        "Reason: algorithm constraints check failed");
+                        "Reason: Algorithm constraints check failed");
 
         recreateJar();
 

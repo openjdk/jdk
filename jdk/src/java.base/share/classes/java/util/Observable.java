@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,19 @@ package java.util;
  * @see     java.util.Observer
  * @see     java.util.Observer#update(java.util.Observable, java.lang.Object)
  * @since   1.0
+ *
+ * @deprecated
+ * This class and the {@link Observer} interface have been deprecated.
+ * The event model supported by {@code Observer} and {@code Observable}
+ * is quite limited, the order of notifications delivered by
+ * {@code Observable} is unspecified, and state changes are not in
+ * one-for-one correspondence with notifications.
+ * For a richer event model, consider using the
+ * {@link java.beans} package.  For reliable and ordered
+ * messaging among threads, consider using one of the concurrent data
+ * structures in the {@link java.util.concurrent} package.
  */
+@Deprecated(since="9")
 public class Observable {
     private boolean changed = false;
     private Vector<Observer> obs;

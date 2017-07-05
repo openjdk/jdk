@@ -98,15 +98,26 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
     private native long nativeCreate();
 
     //invocation from the AWTTrayIcon.m
-    public long getPopupMenuModel(){
-        if(popup == null) {
-            PopupMenu popupMenu = target.getPopupMenu();
-            if (popupMenu != null) {
-                popup = popupMenu;
+    public long getPopupMenuModel() {
+        PopupMenu newPopup = target.getPopupMenu();
+
+        if (popup == newPopup) {
+            if (popup == null) {
+                return 0L;
+            }
+        } else {
+            if (newPopup != null) {
+                if (popup != null) {
+                    popup.removeNotify();
+                    popup = newPopup;
+                } else {
+                    popup = newPopup;
+                }
             } else {
                 return 0L;
             }
         }
+
         return checkAndCreatePopupPeer().getModel();
     }
 

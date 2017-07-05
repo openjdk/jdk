@@ -51,6 +51,7 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.stream.Stream;
 import sun.util.logging.PlatformLogger;
+import java.lang.reflect.Module;
 
 /**
  * @test
@@ -164,6 +165,7 @@ public class LoggerBridgeTest {
                     null, null, level, bundle, key,
                     thrown, params);
         }
+
         public static LogEvent of(long sequenceNumber,
                 boolean isLoggable, String name,
                 sun.util.logging.PlatformLogger.Level level, ResourceBundle bundle,
@@ -231,7 +233,7 @@ public class LoggerBridgeTest {
         try {
             // Preload classes before the security manager is on.
             providerClass = ClassLoader.getSystemClassLoader().loadClass("LoggerBridgeTest$LogProducerFinder");
-            ((LoggerFinder)providerClass.newInstance()).getLogger("foo", providerClass);
+            ((LoggerFinder)providerClass.newInstance()).getLogger("foo", providerClass.getModule());
         } catch (Exception ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -415,7 +417,7 @@ public class LoggerBridgeTest {
         }
 
         @Override
-        public Logger getLogger(String name, Class<?> caller) {
+        public Logger getLogger(String name, Module caller) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -427,6 +429,15 @@ public class LoggerBridgeTest {
             } else {
                 return user.computeIfAbsent(name, (n) -> new LoggerImpl(n));
             }
+        }
+    }
+
+    static ClassLoader getClassLoader(Module m) {
+        final boolean before = allowAll.get().getAndSet(true);
+        try {
+            return m.getClassLoader();
+        } finally {
+            allowAll.get().set(before);
         }
     }
 
@@ -497,14 +508,14 @@ public class LoggerBridgeTest {
         try {
             Class<?> bridgeClass = Class.forName("jdk.internal.logger.LazyLoggers");
             lazyGetLogger = bridgeClass.getDeclaredMethod("getLogger",
-                    String.class, Class.class);
+                    String.class, Module.class);
             lazyGetLogger.setAccessible(true);
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
     }
 
-    static Logger getLogger(LoggerFinder provider, String name, Class<?> caller) {
+    static Logger getLogger(LoggerFinder provider, String name, Module caller) {
         Logger logger;
         try {
             logger = Logger.class.cast(lazyGetLogger.invoke(null, name, caller));
@@ -522,14 +533,14 @@ public class LoggerBridgeTest {
         // The method above does not throw exception...
         // call the provider here to verify that an exception would have
         // been thrown by the provider.
-        if (logger != null && caller == Thread.class) {
+        if (logger != null && caller == Thread.class.getModule()) {
             Logger log = provider.getLogger(name, caller);
         }
         return logger;
     }
 
-    static Logger getLogger(LoggerFinder provider, String name, ResourceBundle bundle, Class<?> caller) {
-        if (caller.getClassLoader() != null) {
+    static Logger getLogger(LoggerFinder provider, String name, ResourceBundle bundle, Module caller) {
+        if (getClassLoader(caller) != null) {
             return System.getLogger(name,bundle);
         } else {
             return provider.getLocalizedLogger(name, bundle, caller);
@@ -614,12 +625,12 @@ public class LoggerBridgeTest {
 
 
         Logger appLogger1 = System.getLogger("foo");
-        loggerDescMap.put(appLogger1, "LogProducer.getApplicationLogger(\"foo\")");
+        loggerDescMap.put(appLogger1, "System.getLogger(\"foo\")");
 
         Logger sysLogger1 = null;
         try {
-            sysLogger1 = getLogger(provider, "foo", Thread.class);
-            loggerDescMap.put(sysLogger1, "LogProducer.getSystemLogger(\"foo\")");
+            sysLogger1 = getLogger(provider, "foo", Thread.class.getModule());
+            loggerDescMap.put(sysLogger1, "provider.getLogger(\"foo\", Thread.class.getModule())");
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a system logger without permission");
             }
@@ -636,12 +647,12 @@ public class LoggerBridgeTest {
 
         Logger appLogger2 =
                 System.getLogger("foo", loggerBundle);
-        loggerDescMap.put(appLogger2, "LogProducer.getApplicationLogger(\"foo\", loggerBundle)");
+        loggerDescMap.put(appLogger2, "System.getLogger(\"foo\", loggerBundle)");
 
         Logger sysLogger2 = null;
         try {
-            sysLogger2 = getLogger(provider, "foo", loggerBundle, Thread.class);
-            loggerDescMap.put(sysLogger2, "provider.getSystemLogger(\"foo\", loggerBundle)");
+            sysLogger2 = getLogger(provider, "foo", loggerBundle, Thread.class.getModule());
+            loggerDescMap.put(sysLogger2, "provider.getLogger(\"foo\", loggerBundle, Thread.class.getModule())");
             if (!hasRequiredPermissions) {
                 throw new RuntimeException("Managed to obtain a system logger without permission");
             }
@@ -671,9 +682,9 @@ public class LoggerBridgeTest {
         allowControl.get().set(true);
         try {
            appSink = LogProducerFinder.LoggerImpl.class.cast(
-                   provider.getLogger("foo",  LoggerBridgeTest.class));
+                   provider.getLogger("foo",  LoggerBridgeTest.class.getModule()));
            sysSink = LogProducerFinder.LoggerImpl.class.cast(
-                        provider.getLogger("foo", Thread.class));
+                        provider.getLogger("foo", Thread.class.getModule()));
         } finally {
             allowControl.get().set(old);
         }

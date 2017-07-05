@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,12 @@ import static java.awt.RenderingHints.*;
 import java.awt.color.ColorSpace;
 import java.awt.image.*;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 import sun.security.action.GetIntegerAction;
 import com.sun.java.swing.plaf.gtk.GTKConstants.TextDirection;
 import sun.java2d.opengl.OGLRenderQueue;
+import sun.security.action.GetPropertyAction;
 
 public abstract class UNIXToolkit extends SunToolkit
 {
@@ -41,6 +44,40 @@ public abstract class UNIXToolkit extends SunToolkit
     private static final int[] BAND_OFFSETS = { 0, 1, 2 };
     private static final int[] BAND_OFFSETS_ALPHA = { 0, 1, 2, 3 };
     private static final int DEFAULT_DATATRANSFER_TIMEOUT = 10000;
+
+    // Allowed GTK versions
+    public enum GtkVersions {
+        ANY(0),
+        GTK2(Constants.GTK2_MAJOR_NUMBER),
+        GTK3(Constants.GTK3_MAJOR_NUMBER);
+
+        static class Constants {
+            static final int GTK2_MAJOR_NUMBER = 2;
+            static final int GTK3_MAJOR_NUMBER = 3;
+        }
+
+        final int number;
+
+        GtkVersions(int number) {
+            this.number = number;
+        }
+
+        public static GtkVersions getVersion(int number) {
+            switch (number) {
+                case Constants.GTK2_MAJOR_NUMBER:
+                    return GTK2;
+                case Constants.GTK3_MAJOR_NUMBER:
+                    return GTK3;
+                default:
+                    return ANY;
+            }
+        }
+
+        // major GTK version number
+        public int getNumber() {
+            return number;
+        }
+    };
 
     private Boolean nativeGTKAvailable;
     private Boolean nativeGTKLoaded;
@@ -79,7 +116,7 @@ public abstract class UNIXToolkit extends SunToolkit
                 return nativeGTKAvailable;
 
             } else {
-                boolean success = check_gtk();
+                boolean success = check_gtk(getEnabledGtkVersion().getNumber());
                 nativeGTKAvailable = success;
                 return success;
             }
@@ -97,7 +134,8 @@ public abstract class UNIXToolkit extends SunToolkit
     public boolean loadGTK() {
         synchronized (GTK_LOCK) {
             if (nativeGTKLoaded == null) {
-                nativeGTKLoaded = load_gtk();
+                nativeGTKLoaded = load_gtk(getEnabledGtkVersion().getNumber(),
+                                                                isGtkVerbose());
             }
         }
         return nativeGTKLoaded;
@@ -241,14 +279,15 @@ public abstract class UNIXToolkit extends SunToolkit
         tmpImage = new BufferedImage(colorModel, raster, false, null);
     }
 
-    private static native boolean check_gtk();
-    private static native boolean load_gtk();
+    private static native boolean check_gtk(int version);
+    private static native boolean load_gtk(int version, boolean verbose);
     private static native boolean unload_gtk();
     private native boolean load_gtk_icon(String filename);
     private native boolean load_stock_icon(int widget_type, String stock_id,
             int iconSize, int textDirection, String detail);
 
     private native void nativeSync();
+    private static native int get_gtk_version();
 
     @Override
     public void sync() {
@@ -337,5 +376,27 @@ public abstract class UNIXToolkit extends SunToolkit
             return gtkCheckVersionImpl(major, minor, micro);
         }
         return false;
+    }
+
+    public static GtkVersions getEnabledGtkVersion() {
+        String version = AccessController.doPrivileged(
+                new GetPropertyAction("jdk.gtk.version"));
+        if (version == null) {
+            return GtkVersions.ANY;
+        } else if (version.startsWith("2")) {
+            return GtkVersions.GTK2;
+        } else if("3".equals(version) ){
+            return GtkVersions.GTK3;
+        }
+        return GtkVersions.ANY;
+    }
+
+    public static GtkVersions getGtkVersion() {
+        return GtkVersions.getVersion(get_gtk_version());
+    }
+
+    public static boolean isGtkVerbose() {
+        return AccessController.doPrivileged((PrivilegedAction<Boolean>)()
+                -> Boolean.getBoolean("jdk.gtk.verbose"));
     }
 }

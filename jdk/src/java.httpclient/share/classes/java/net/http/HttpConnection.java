@@ -23,9 +23,8 @@
  */
 package java.net.http;
 
-import java.io.FileOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -42,7 +41,17 @@ import javax.net.ssl.SSLParameters;
  *      SSLConnection: TLS channel direct to server
  *      SSLTunnelConnection: TLS channel via (CONNECT) proxy tunnel
  */
-abstract class HttpConnection implements BufferHandler {
+abstract class HttpConnection implements BufferHandler, Closeable {
+
+    protected final static ByteBuffer emptyBuf = Utils.EMPTY_BYTEBUFFER;
+
+    enum Mode {
+        BLOCKING,
+        NON_BLOCKING,
+        ASYNC
+    }
+
+    protected Mode mode;
 
     // address we are connected to. Could be a server or a proxy
     final InetSocketAddress address;
@@ -52,6 +61,7 @@ abstract class HttpConnection implements BufferHandler {
     HttpConnection(InetSocketAddress address, HttpClientImpl client) {
         this.address = address;
         this.client = client;
+        this.buffer = emptyBuf;
     }
 
     /**
@@ -68,7 +78,21 @@ abstract class HttpConnection implements BufferHandler {
      */
     public static HttpConnection getConnection(InetSocketAddress addr,
                                                HttpRequestImpl request) {
-        return getConnectionImpl(addr, request);
+        return getConnectionImpl(addr, request, null);
+    }
+
+    /**
+     * Called specifically to get an async connection for HTTP/2 over SSL.
+     *
+     * @param addr
+     * @param request
+     * @param http2
+     * @return
+     */
+    public static HttpConnection getConnection(InetSocketAddress addr,
+        HttpRequestImpl request, Http2Connection http2) {
+
+        return getConnectionImpl(addr, request, http2);
     }
 
     public abstract void connect() throws IOException, InterruptedException;
@@ -93,7 +117,7 @@ abstract class HttpConnection implements BufferHandler {
     // at beginning of response.
     ByteBuffer getRemaining() {
         ByteBuffer b = buffer;
-        buffer = null;
+        buffer = emptyBuf;
         return b;
     }
 
@@ -123,17 +147,18 @@ abstract class HttpConnection implements BufferHandler {
     }
 
     private static HttpConnection getSSLConnection(InetSocketAddress addr,
-                                                   InetSocketAddress proxy,
-                                                   HttpRequestImpl request,
-                                                   String[] alpn) {
+            InetSocketAddress proxy, HttpRequestImpl request,
+            String[] alpn, Http2Connection http2) {
         HttpClientImpl client = request.client();
         if (proxy != null) {
             return new SSLTunnelConnection(addr,
                                            client,
                                            proxy,
                                            request.getAccessControlContext());
-        } else {
+        } else if (http2 == null) {
             return new SSLConnection(addr, client, alpn);
+        } else {
+            return new AsyncSSLConnection(addr, client, alpn);
         }
     }
 
@@ -142,7 +167,8 @@ abstract class HttpConnection implements BufferHandler {
      * none available.
      */
     private static HttpConnection getConnectionImpl(InetSocketAddress addr,
-                                                    HttpRequestImpl request) {
+            HttpRequestImpl request, Http2Connection http2) {
+
         HttpConnection c;
         HttpClientImpl client = request.client();
         InetSocketAddress proxy = request.proxy();
@@ -167,7 +193,7 @@ abstract class HttpConnection implements BufferHandler {
             if (c != null) {
                 return c;
             } else {
-                return getSSLConnection(addr, proxy, request, alpn);
+                return getSSLConnection(addr, proxy, request, alpn, http2);
             }
         }
     }
@@ -223,63 +249,15 @@ abstract class HttpConnection implements BufferHandler {
         return address;
     }
 
-    void configureBlocking(boolean mode) throws IOException {
-        channel().configureBlocking(mode);
+    synchronized void configureMode(Mode mode) throws IOException {
+        this.mode = mode;
+        if (mode == Mode.BLOCKING)
+            channel().configureBlocking(true);
+        else
+            channel().configureBlocking(false);
     }
 
     abstract ConnectionPool.CacheKey cacheKey();
-
-    /*
-    static PrintStream ps;
-
-    static {
-        try {
-            String propval = Utils.getNetProperty("java.net.httpclient.showData");
-            if (propval != null && propval.equalsIgnoreCase("true")) {
-                ps = new PrintStream(new FileOutputStream("/tmp/httplog.txt"), false);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    synchronized final void debugPrint(String s, ByteBuffer b) {
-        ByteBuffer[] bufs = new ByteBuffer[1];
-        bufs[0] = b;
-        debugPrint(s, bufs, 0, 1);
-    }
-
-    synchronized final void debugPrint(String s,
-                                       ByteBuffer[] bufs,
-                                       int start,
-                                       int number) {
-        if (ps == null) {
-            return;
-        }
-
-        ps.printf("\n%s:\n", s);
-
-        for (int i=start; i<start+number; i++) {
-            ByteBuffer b = bufs[i].duplicate();
-            while (b.hasRemaining()) {
-                int c = b.get();
-                if (c == 10) {
-                    ps.printf("LF \n");
-                } else if (c == 13) {
-                    ps.printf(" CR ");
-                } else if (c == 0x20) {
-                    ps.printf("_");
-                } else if (c > 0x20 && c <= 0x7F) {
-                    ps.printf("%c", (char)c);
-                } else {
-                    ps.printf("0x%02x ", c);
-                }
-            }
-        }
-        ps.printf("\n---------------------\n");
-    }
-
-    */
 
     // overridden in SSL only
     SSLParameters sslParameters() {
@@ -296,7 +274,8 @@ abstract class HttpConnection implements BufferHandler {
     /**
      * Closes this connection, by returning the socket to its connection pool.
      */
-    abstract void close();
+    @Override
+    public abstract void close();
 
     /**
      * Returns a ByteBuffer with data, or null if EOF.
@@ -356,12 +335,17 @@ abstract class HttpConnection implements BufferHandler {
     }
 
     @Override
-    public final ByteBuffer getBuffer() {
-        return client.getBuffer();
+    public final ByteBuffer getBuffer(int n) {
+        return client.getBuffer(n);
     }
 
     @Override
     public final void returnBuffer(ByteBuffer buffer) {
         client.returnBuffer(buffer);
+    }
+
+    @Override
+    public final void setMinBufferSize(int n) {
+        client.setMinBufferSize(n);
     }
 }

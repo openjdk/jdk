@@ -131,8 +131,8 @@ class PKIXMasterCertPathValidator {
 
                 } catch (CertPathValidatorException cpve) {
                     throw new CertPathValidatorException(cpve.getMessage(),
-                        cpve.getCause(), cpOriginal, cpSize - (i + 1),
-                        cpve.getReason());
+                        (cpve.getCause() != null) ? cpve.getCause() : cpve,
+                            cpOriginal, cpSize - (i + 1), cpve.getReason());
                 }
             }
 

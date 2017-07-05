@@ -100,7 +100,7 @@
             "startPosition": "1181",
             "properties": [
               {
-                "endPosition": "1185",
+                "endPosition": "1187",
                 "kind": "PROPERTY",
                 "value": {
                   "endPosition": "1187",
@@ -2386,7 +2386,7 @@
           "startPosition": "1139",
           "properties": [
             {
-              "endPosition": "1143",
+              "endPosition": "1146",
               "kind": "PROPERTY",
               "value": {
                 "endPosition": "1146",
@@ -2403,7 +2403,7 @@
               }
             },
             {
-              "endPosition": "1150",
+              "endPosition": "1152",
               "kind": "PROPERTY",
               "value": {
                 "endPosition": "1152",
@@ -2443,7 +2443,7 @@
           "startPosition": "1160",
           "properties": [
             {
-              "endPosition": "1166",
+              "endPosition": "1169",
               "kind": "PROPERTY",
               "value": {
                 "endPosition": "1169",
@@ -2460,7 +2460,7 @@
               }
             },
             {
-              "endPosition": "1175",
+              "endPosition": "1177",
               "kind": "PROPERTY",
               "value": {
                 "endPosition": "1177",
@@ -2914,7 +2914,7 @@
         "startPosition": "1178",
         "properties": [
           {
-            "endPosition": "1182",
+            "endPosition": "1184",
             "kind": "PROPERTY",
             "value": {
               "endPosition": "1184",
@@ -3395,7 +3395,7 @@
         "startPosition": "1200",
         "properties": [
           {
-            "endPosition": "1206",
+            "endPosition": "1214",
             "kind": "PROPERTY",
             "value": {
               "endPosition": "1214",
@@ -4709,11 +4709,11 @@
 ,
 {
   "fileName": "parsernegativetests/strict_repeatparam.js",
-  "code": "ident (1119, 1)",
-  "columnNumber": "14",
+  "code": "ident (1122, 1)",
+  "columnNumber": "17",
   "kind": "ERROR",
-  "position": "1119",
-  "message": "parsernegativetests/strict_repeatparam.js:31:14 strict mode function cannot have duplicate parameter name \"x\"\nfunction func(x, x) {}\n              ^",
+  "position": "1122",
+  "message": "parsernegativetests/strict_repeatparam.js:31:17 strict mode function cannot have duplicate parameter name \"x\"\nfunction func(x, x) {}\n                 ^",
   "lineNumber": "31"
 }
 ,

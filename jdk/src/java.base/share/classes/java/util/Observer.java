@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,12 @@ package java.util;
  * @author  Chris Warth
  * @see     java.util.Observable
  * @since   1.0
+ *
+ * @deprecated
+ * This interface has been deprecated. See the {@link Observable}
+ * class for further information.
  */
+@Deprecated(since="9")
 public interface Observer {
     /**
      * This method is called whenever the observed object is changed. An

@@ -1388,6 +1388,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
         Doc doc = new PageableDoc(getPageable());
         if (attributes == null) {
             attributes = new HashPrintRequestAttributeSet();
+            attributes.add(new Copies(getCopies()));
+            attributes.add(new JobName(getJobName(), null));
         }
         try {
             job.print(doc, attributes);

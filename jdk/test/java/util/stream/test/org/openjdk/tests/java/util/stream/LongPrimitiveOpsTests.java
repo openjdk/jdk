@@ -28,13 +28,21 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.Spliterator;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
+/**
+ * @test
+ * @bug 8153293
+ */
 @Test
 public class LongPrimitiveOpsTests {
 
@@ -85,6 +93,22 @@ public class LongPrimitiveOpsTests {
         assertEquals(sum, 15);
     }
 
+    public void testFlags() {
+        assertTrue(LongStream.range(1, 10).boxed().spliterator()
+                      .hasCharacteristics(Spliterator.SORTED | Spliterator.DISTINCT));
+        assertFalse(LongStream.of(1, 10).boxed().spliterator()
+                      .hasCharacteristics(Spliterator.SORTED));
+        assertFalse(LongStream.of(1, 10).boxed().spliterator()
+                      .hasCharacteristics(Spliterator.DISTINCT));
+
+        assertTrue(LongStream.range(1, 10).asDoubleStream().spliterator()
+                      .hasCharacteristics(Spliterator.SORTED));
+        assertFalse(LongStream.range(1, 10).asDoubleStream().spliterator()
+                      .hasCharacteristics(Spliterator.DISTINCT));
+        assertFalse(LongStream.of(1, 10).asDoubleStream().spliterator()
+                      .hasCharacteristics(Spliterator.SORTED));
+    }
+
     public void testToArray() {
         {
             long[] array =  LongStream.range(1, 10).map(i -> i * 2).toArray();
@@ -112,6 +136,30 @@ public class LongPrimitiveOpsTests {
         {
             long[] array =  Arrays.stream(content).parallel().sorted().toArray();
             assertEquals(array, sortedContent);
+        }
+    }
+
+    public void testSortDistinct() {
+        {
+            long[] range = LongStream.range(0, 10).toArray();
+
+            assertEquals(LongStream.range(0, 10).sorted().distinct().toArray(), range);
+            assertEquals(LongStream.range(0, 10).parallel().sorted().distinct().toArray(), range);
+
+            long[] data = {5, 3, 1, 1, 5, 3, 9, 2, 9, 1, 0, 8};
+            long[] expected = {0, 1, 2, 3, 5, 8, 9};
+            assertEquals(LongStream.of(data).sorted().distinct().toArray(), expected);
+            assertEquals(LongStream.of(data).parallel().sorted().distinct().toArray(), expected);
+        }
+
+        {
+            long[] input = new Random().longs(100, -10, 10).map(x -> x+Long.MAX_VALUE).toArray();
+
+            TreeSet<Double> doubles = new TreeSet<>();
+            for(long i : input) doubles.add((double)i);
+            double[] expectedDoubles = doubles.stream().mapToDouble(Double::doubleValue).toArray();
+            assertEquals(LongStream.of(input).sorted().distinct().asDoubleStream()
+                         .sorted().distinct().toArray(), expectedDoubles);
         }
     }
 
