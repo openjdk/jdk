@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package java.lang;
 
 import sun.misc.FloatingDecimal;
 import java.util.Arrays;
+import java.util.Spliterator;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 /**
  * A mutable sequence of characters.
@@ -292,7 +295,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         if (beginIndex < 0 || endIndex > count || beginIndex > endIndex) {
             throw new IndexOutOfBoundsException();
         }
-        return Character.codePointCountImpl(value, beginIndex, endIndex-beginIndex);
+        return Character.codePointCountImpl(value, beginIndex, endIndex - beginIndex);
     }
 
     /**
@@ -1430,6 +1433,34 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      */
     @Override
     public abstract String toString();
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public IntStream chars() {
+        // Reuse String-based spliterator. This requires a supplier to
+        // capture the value and count when the terminal operation is executed
+        return StreamSupport.intStream(
+                () -> new String.IntCharArraySpliterator(value, 0, count, 0),
+                Spliterator.ORDERED | Spliterator.SIZED | Spliterator.SUBSIZED,
+                false);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @since 1.9
+     */
+    @Override
+    public IntStream codePoints() {
+        // Reuse String-based spliterator. This requires a supplier to
+        // capture the value and count when the terminal operation is executed
+        return StreamSupport.intStream(
+                () -> new String.CodePointsSpliterator(value, 0, count, 0),
+                Spliterator.ORDERED,
+                false);
+    }
 
     /**
      * Needed by {@code String} for the contentEquals method.

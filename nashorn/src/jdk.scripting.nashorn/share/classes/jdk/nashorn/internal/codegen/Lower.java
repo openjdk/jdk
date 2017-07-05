@@ -56,9 +56,11 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.JumpStatement;
+import jdk.nashorn.internal.ir.JumpToInlinedFinally;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
+import jdk.nashorn.internal.ir.LiteralNode.PrimitiveLiteralNode;
 import jdk.nashorn.internal.ir.LoopNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ReturnNode;
@@ -115,7 +117,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
                 for (final Statement statement : statements) {
                     if (!terminated) {
                         newStatements.add(statement);
-                        if (statement.isTerminal() || statement instanceof BreakNode || statement instanceof ContinueNode) { //TODO hasGoto? But some Loops are hasGoto too - why?
+                        if (statement.isTerminal() || statement instanceof JumpStatement) { //TODO hasGoto? But some Loops are hasGoto too - why?
                             terminated = true;
                         }
                     } else {
@@ -179,6 +181,12 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     @Override
     public boolean enterContinueNode(final ContinueNode continueNode) {
         addStatement(continueNode);
+        return false;
+    }
+
+    @Override
+    public boolean enterJumpToInlinedFinally(final JumpToInlinedFinally jumpToInlinedFinally) {
+        addStatement(jumpToInlinedFinally);
         return false;
     }
 
@@ -318,8 +326,8 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         return addStatement(throwNode); //ThrowNodes are always terminal, marked as such in constructor
     }
 
-    private static Node ensureUniqueNamesIn(final Node node) {
-        return node.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+    private static <T extends Node> T ensureUniqueNamesIn(final T node) {
+        return (T)node.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public Node leaveFunctionNode(final FunctionNode functionNode) {
                 final String name = functionNode.getName();
@@ -333,15 +341,15 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         });
     }
 
-    private static List<Statement> copyFinally(final Block finallyBody) {
+    private static Block createFinallyBlock(final Block finallyBody) {
         final List<Statement> newStatements = new ArrayList<>();
         for (final Statement statement : finallyBody.getStatements()) {
-            newStatements.add((Statement)ensureUniqueNamesIn(statement));
+            newStatements.add(statement);
             if (statement.hasTerminalFlags()) {
-                return newStatements;
+                break;
             }
         }
-        return newStatements;
+        return finallyBody.setStatements(null, newStatements);
     }
 
     private Block catchAllBlock(final TryNode tryNode) {
@@ -367,28 +375,24 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         return new IdentNode(functionNode.getToken(), functionNode.getFinish(), cc.symbolName());
     }
 
-    private static boolean isTerminal(final List<Statement> statements) {
-        return !statements.isEmpty() && statements.get(statements.size() - 1).hasTerminalFlags();
+    private static boolean isTerminalFinally(final Block finallyBlock) {
+        return finallyBlock.getLastStatement().hasTerminalFlags();
     }
 
     /**
      * Splice finally code into all endpoints of a trynode
      * @param tryNode the try node
-     * @param rethrows list of rethrowing throw nodes from synthetic catch blocks
+     * @param rethrow the rethrowing throw nodes from the synthetic catch block
      * @param finallyBody the code in the original finally block
      * @return new try node after splicing finally code (same if nop)
      */
-    private Node spliceFinally(final TryNode tryNode, final List<ThrowNode> rethrows, final Block finallyBody) {
+    private TryNode spliceFinally(final TryNode tryNode, final ThrowNode rethrow, final Block finallyBody) {
         assert tryNode.getFinallyBody() == null;
 
+        final Block finallyBlock = createFinallyBlock(finallyBody);
+        final ArrayList<Block> inlinedFinallies = new ArrayList<>();
+        final FunctionNode fn = lc.getCurrentFunction();
         final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-            final List<Node> insideTry = new ArrayList<>();
-
-            @Override
-            public boolean enterDefault(final Node node) {
-                insideTry.add(node);
-                return true;
-            }
 
             @Override
             public boolean enterFunctionNode(final FunctionNode functionNode) {
@@ -398,12 +402,8 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
 
             @Override
             public Node leaveThrowNode(final ThrowNode throwNode) {
-                if (rethrows.contains(throwNode)) {
-                    final List<Statement> newStatements = copyFinally(finallyBody);
-                    if (!isTerminal(newStatements)) {
-                        newStatements.add(throwNode);
-                    }
-                    return BlockStatement.createReplacement(throwNode, newStatements);
+                if (rethrow == throwNode) {
+                    return new BlockStatement(prependFinally(finallyBlock, throwNode));
                 }
                 return throwNode;
             }
@@ -419,58 +419,94 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
             }
 
             private Node leaveJumpStatement(final JumpStatement jump) {
-                return copy(jump, (Node)jump.getTarget(Lower.this.lc));
+                // NOTE: leaveJumpToInlinedFinally deliberately does not delegate to this method, only break and
+                // continue are edited. JTIF nodes should not be changed, rather the surroundings of
+                // break/continue/return that were moved into the inlined finally block itself will be changed.
+
+                // If this visitor's lc doesn't find the target of the jump, it means it's external to the try block.
+                if (jump.getTarget(lc) == null) {
+                    return createJumpToInlinedFinally(fn, inlinedFinallies, prependFinally(finallyBlock, jump));
+                }
+                return jump;
             }
 
             @Override
             public Node leaveReturnNode(final ReturnNode returnNode) {
-                final Expression expr  = returnNode.getExpression();
-                final List<Statement> newStatements = new ArrayList<>();
-
-                final Expression resultNode;
-                if (expr != null) {
-                    //we need to evaluate the result of the return in case it is complex while
-                    //still in the try block, store it in a result value and return it afterwards
-                    resultNode = new IdentNode(Lower.this.compilerConstant(RETURN));
-                    newStatements.add(new ExpressionStatement(returnNode.getLineNumber(), returnNode.getToken(), returnNode.getFinish(), new BinaryNode(Token.recast(returnNode.getToken(), TokenType.ASSIGN), resultNode, expr)));
-                } else {
-                    resultNode = null;
-                }
-
-                newStatements.addAll(copyFinally(finallyBody));
-                if (!isTerminal(newStatements)) {
-                    newStatements.add(expr == null ? returnNode : returnNode.setExpression(resultNode));
-                }
-
-                return BlockStatement.createReplacement(returnNode, lc.getCurrentBlock().getFinish(), newStatements);
-            }
-
-            private Node copy(final Statement endpoint, final Node targetNode) {
-                if (!insideTry.contains(targetNode)) {
-                    final List<Statement> newStatements = copyFinally(finallyBody);
-                    if (!isTerminal(newStatements)) {
-                        newStatements.add(endpoint);
+                final Expression expr = returnNode.getExpression();
+                if (isTerminalFinally(finallyBlock)) {
+                    if (expr == null) {
+                        // Terminal finally; no return expression.
+                        return createJumpToInlinedFinally(fn, inlinedFinallies, ensureUniqueNamesIn(finallyBlock));
                     }
-                    return BlockStatement.createReplacement(endpoint, tryNode.getFinish(), newStatements);
+                    // Terminal finally; has a return expression.
+                    final List<Statement> newStatements = new ArrayList<>(2);
+                    final int retLineNumber = returnNode.getLineNumber();
+                    final long retToken = returnNode.getToken();
+                    // Expression is evaluated for side effects.
+                    newStatements.add(new ExpressionStatement(retLineNumber, retToken, returnNode.getFinish(), expr));
+                    newStatements.add(createJumpToInlinedFinally(fn, inlinedFinallies, ensureUniqueNamesIn(finallyBlock)));
+                    return new BlockStatement(retLineNumber, new Block(retToken, finallyBlock.getFinish(), newStatements));
+                } else if (expr == null || expr instanceof PrimitiveLiteralNode<?> || (expr instanceof IdentNode && RETURN.symbolName().equals(((IdentNode)expr).getName()))) {
+                    // Nonterminal finally; no return expression, or returns a primitive literal, or returns :return.
+                    // Just move the return expression into the finally block.
+                    return createJumpToInlinedFinally(fn, inlinedFinallies, prependFinally(finallyBlock, returnNode));
+                } else {
+                    // We need to evaluate the result of the return in case it is complex while still in the try block,
+                    // store it in :return, and return it afterwards.
+                    final List<Statement> newStatements = new ArrayList<>();
+                    final int retLineNumber = returnNode.getLineNumber();
+                    final long retToken = returnNode.getToken();
+                    final int retFinish = returnNode.getFinish();
+                    final Expression resultNode = new IdentNode(expr.getToken(), expr.getFinish(), RETURN.symbolName());
+                    // ":return = <expr>;"
+                    newStatements.add(new ExpressionStatement(retLineNumber, retToken, retFinish, new BinaryNode(Token.recast(returnNode.getToken(), TokenType.ASSIGN), resultNode, expr)));
+                    // inline finally and end it with "return :return;"
+                    newStatements.add(createJumpToInlinedFinally(fn, inlinedFinallies, prependFinally(finallyBlock, returnNode.setExpression(resultNode))));
+                    return new BlockStatement(retLineNumber, new Block(retToken, retFinish, newStatements));
                 }
-                return endpoint;
             }
         });
-
-        addStatement(newTryNode);
-        for (final Node statement : finallyBody.getStatements()) {
-            addStatement((Statement)statement);
-        }
+        addStatement(inlinedFinallies.isEmpty() ? newTryNode : newTryNode.setInlinedFinallies(lc, inlinedFinallies));
+        // TODO: if finallyStatement is terminal, we could just have sites of inlined finallies jump here.
+        addStatement(new BlockStatement(finallyBlock));
 
         return newTryNode;
+    }
+
+    private static JumpToInlinedFinally createJumpToInlinedFinally(final FunctionNode fn, final List<Block> inlinedFinallies, final Block finallyBlock) {
+        final String labelName = fn.uniqueName(":finally");
+        final long token = finallyBlock.getToken();
+        final int finish = finallyBlock.getFinish();
+        inlinedFinallies.add(new Block(token, finish, new LabelNode(finallyBlock.getFirstStatementLineNumber(),
+                token, finish, labelName, finallyBlock)));
+        return new JumpToInlinedFinally(labelName);
+    }
+
+    private static Block prependFinally(final Block finallyBlock, final Statement statement) {
+        final Block inlinedFinally = ensureUniqueNamesIn(finallyBlock);
+        if (isTerminalFinally(finallyBlock)) {
+            return inlinedFinally;
+        }
+        final List<Statement> stmts = inlinedFinally.getStatements();
+        final List<Statement> newStmts = new ArrayList<>(stmts.size() + 1);
+        newStmts.addAll(stmts);
+        newStmts.add(statement);
+        return new Block(inlinedFinally.getToken(), statement.getFinish(), newStmts);
     }
 
     @Override
     public Node leaveTryNode(final TryNode tryNode) {
         final Block finallyBody = tryNode.getFinallyBody();
+        TryNode newTryNode = tryNode.setFinallyBody(lc, null);
 
-        if (finallyBody == null) {
-            return addStatement(ensureUnconditionalCatch(tryNode));
+        // No finally or empty finally
+        if (finallyBody == null || finallyBody.getStatementCount() == 0) {
+            final List<CatchNode> catches = newTryNode.getCatches();
+            if (catches == null || catches.isEmpty()) {
+                // A completely degenerate try block: empty finally, no catches. Replace it with try body.
+                return addStatement(new BlockStatement(tryNode.getBody()));
+            }
+            return addStatement(ensureUnconditionalCatch(newTryNode));
         }
 
         /*
@@ -496,11 +532,9 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
          *   now splice in finally code wherever needed
          *
          */
-        TryNode newTryNode;
-
         final Block catchAll = catchAllBlock(tryNode);
 
-        final List<ThrowNode> rethrows = new ArrayList<>();
+        final List<ThrowNode> rethrows = new ArrayList<>(1);
         catchAll.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public boolean enterThrowNode(final ThrowNode throwNode) {
@@ -510,20 +544,18 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         });
         assert rethrows.size() == 1;
 
-        if (tryNode.getCatchBlocks().isEmpty()) {
-            newTryNode = tryNode.setFinallyBody(null);
-        } else {
-            final Block outerBody = new Block(tryNode.getToken(), tryNode.getFinish(), ensureUnconditionalCatch(tryNode.setFinallyBody(null)));
-            newTryNode = tryNode.setBody(outerBody).setCatchBlocks(null);
+        if (!tryNode.getCatchBlocks().isEmpty()) {
+            final Block outerBody = new Block(newTryNode.getToken(), newTryNode.getFinish(), ensureUnconditionalCatch(newTryNode));
+            newTryNode = newTryNode.setBody(lc, outerBody).setCatchBlocks(lc, null);
         }
 
-        newTryNode = newTryNode.setCatchBlocks(Arrays.asList(catchAll)).setFinallyBody(null);
+        newTryNode = newTryNode.setCatchBlocks(lc, Arrays.asList(catchAll));
 
         /*
          * Now that the transform is done, we have to go into the try and splice
          * the finally block in front of any statement that is outside the try
          */
-        return spliceFinally(newTryNode, rethrows, finallyBody);
+        return (TryNode)lc.replace(tryNode, spliceFinally(newTryNode, rethrows.get(0), finallyBody));
     }
 
     private TryNode ensureUnconditionalCatch(final TryNode tryNode) {
@@ -535,7 +567,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         final List<Block> newCatchBlocks = new ArrayList<>(tryNode.getCatchBlocks());
 
         newCatchBlocks.add(catchAllBlock(tryNode));
-        return tryNode.setCatchBlocks(newCatchBlocks);
+        return tryNode.setCatchBlocks(lc, newCatchBlocks);
     }
 
     @Override

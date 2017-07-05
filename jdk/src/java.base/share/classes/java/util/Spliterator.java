@@ -553,6 +553,12 @@ public interface Spliterator<T> {
      * sub-split size is known and additions or removals to the source are not
      * reflected when traversing.
      *
+     * <p>A top-level Spliterator should not report both {@code CONCURRENT} and
+     * {@code IMMUTABLE}, since they are mutually exclusive. Such a Spliterator
+     * is inconsistent and no guarantees can be made about any computation using
+     * that Spliterator. Sub-spliterators may report {@code IMMUTABLE} if
+     * additions or removals to the source are not reflected when traversing.
+     *
      * @apiNote Most concurrent collections maintain a consistency policy
      * guaranteeing accuracy with respect to elements present at the point of
      * Spliterator construction, but possibly not reflecting subsequent

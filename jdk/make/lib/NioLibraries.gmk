@@ -65,7 +65,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(BUILD_LIBNIO_SRC), \
     EXCLUDE_FILES := $(BUILD_LIBNIO_EXFILES), \
-    EXCLUDES := sctp, \
     LANG := C, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \

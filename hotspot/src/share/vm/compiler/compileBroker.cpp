@@ -1470,7 +1470,9 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
 
   // The method may be explicitly excluded by the user.
   bool quietly;
-  if (CompilerOracle::should_exclude(method, quietly)) {
+  double scale;
+  if (CompilerOracle::should_exclude(method, quietly)
+      || (CompilerOracle::has_option_value(method, "CompileThresholdScaling", scale) && scale == 0)) {
     if (!quietly) {
       // This does not happen quietly...
       ResourceMark rm;

@@ -78,7 +78,7 @@ public class ContinueNode extends JumpStatement {
     }
 
     @Override
-    public Label getTargetLabel(final BreakableNode target) {
+    Label getTargetLabel(final BreakableNode target) {
         return ((LoopNode)target).getContinueLabel();
     }
 }
