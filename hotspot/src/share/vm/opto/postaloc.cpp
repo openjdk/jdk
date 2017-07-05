@@ -89,32 +89,62 @@ int PhaseChaitin::yank( Node *old, Block *current_block, Node_List *value, Node_
   return blk_adjust;
 }
 
+#ifdef ASSERT
+static bool expected_yanked_node(Node *old, Node *orig_old) {
+  // This code is expected only next original nodes:
+  // - load from constant table node which may have next data input nodes:
+  //     MachConstantBase, Phi, MachTemp, MachSpillCopy
+  // - load constant node which may have next data input nodes:
+  //     MachTemp, MachSpillCopy
+  // - MachSpillCopy
+  // - MachProj and Copy dead nodes
+  if (old->is_MachSpillCopy()) {
+    return true;
+  } else if (old->is_Con()) {
+    return true;
+  } else if (old->is_MachProj()) { // Dead kills projection of Con node
+    return (old == orig_old);
+  } else if (old->is_Copy()) {     // Dead copy of a callee-save value
+    return (old == orig_old);
+  } else if (old->is_MachTemp()) {
+    return orig_old->is_Con();
+  } else if (old->is_Phi() || old->is_MachConstantBase()) {
+    return (orig_old->is_Con() && orig_old->is_MachConstant());
+  }
+  return false;
+}
+#endif
+
 //------------------------------yank_if_dead-----------------------------------
-// Removed an edge from 'old'.  Yank if dead.  Return adjustment counts to
+// Removed edges from 'old'.  Yank if dead.  Return adjustment counts to
 // iterators in the current block.
-int PhaseChaitin::yank_if_dead( Node *old, Block *current_block, Node_List *value, Node_List *regnd ) {
+int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current_block,
+                                       Node_List *value, Node_List *regnd) {
   int blk_adjust=0;
-  while (old->outcnt() == 0 && old != C->top()) {
+  if (old->outcnt() == 0 && old != C->top()) {
+#ifdef ASSERT
+    if (!expected_yanked_node(old, orig_old)) {
+      tty->print_cr("==============================================");
+      tty->print_cr("orig_old:");
+      orig_old->dump();
+      tty->print_cr("old:");
+      old->dump();
+      assert(false, "unexpected yanked node");
+    }
+    if (old->is_Con())
+      orig_old = old; // Reset to satisfy expected nodes checks.
+#endif
     blk_adjust += yank(old, current_block, value, regnd);
 
-    Node *tmp = NULL;
     for (uint i = 1; i < old->req(); i++) {
-      if (old->in(i)->is_MachTemp()) {
-        // handle TEMP inputs
-        Node* machtmp = old->in(i);
-        if (machtmp->outcnt() == 1) {
-          assert(machtmp->unique_out() == old, "sanity");
-          blk_adjust += yank(machtmp, current_block, value, regnd);
-          machtmp->disconnect_inputs(NULL);
-        }
-      } else {
-        assert(tmp == NULL, "can't handle more non MachTemp inputs");
-        tmp = old->in(i);
+      Node* n = old->in(i);
+      if (n != NULL) {
+        old->set_req(i, NULL);
+        blk_adjust += yank_if_dead_recurse(n, orig_old, current_block, value, regnd);
       }
     }
+    // Disconnect control and remove precedence edges if any exist
     old->disconnect_inputs(NULL);
-    if( !tmp ) break;
-    old = tmp;
   }
   return blk_adjust;
 }

@@ -150,7 +150,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   assert_different_registers(obj, klass, len);
   if (UseBiasedLocking && !len->is_valid()) {
     assert_different_registers(obj, klass, len, t1, t2);
-    movptr(t1, Address(klass, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()));
+    movptr(t1, Address(klass, Klass::prototype_header_offset()));
     movptr(Address(obj, oopDesc::mark_offset_in_bytes()), t1);
   } else {
     // This assumes that all prototype bits fit in an int32_t

@@ -854,8 +854,9 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
 
     // RC_TRACE_WITH_THREAD macro has an embedded ResourceMark
     RC_TRACE_WITH_THREAD(0x00000001, THREAD,
-      ("loading name=%s (avail_mem=" UINT64_FORMAT "K)",
-      the_class->external_name(), os::available_memory() >> 10));
+      ("loading name=%s kind=%d (avail_mem=" UINT64_FORMAT "K)",
+      the_class->external_name(), _class_load_kind,
+      os::available_memory() >> 10));
 
     ClassFileStream st((u1*) _class_defs[i].class_bytes,
       _class_defs[i].class_byte_count, (char *)"__VM_RedefineClasses__");
@@ -3205,8 +3206,20 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   // with them was cached on the scratch class, move to the_class.
   // Note: we still want to do this if nothing needed caching since it
   // should get cleared in the_class too.
-  the_class->set_cached_class_file(scratch_class->get_cached_class_file_bytes(),
-                                   scratch_class->get_cached_class_file_len());
+  if (the_class->get_cached_class_file_bytes() == 0) {
+    // the_class doesn't have a cache yet so copy it
+    the_class->set_cached_class_file(
+      scratch_class->get_cached_class_file_bytes(),
+      scratch_class->get_cached_class_file_len());
+  }
+#ifndef PRODUCT
+  else {
+    assert(the_class->get_cached_class_file_bytes() ==
+      scratch_class->get_cached_class_file_bytes(), "cache ptrs must match");
+    assert(the_class->get_cached_class_file_len() ==
+      scratch_class->get_cached_class_file_len(), "cache lens must match");
+  }
+#endif
 
   // Replace inner_classes
   typeArrayOop old_inner_classes = the_class->inner_classes();
