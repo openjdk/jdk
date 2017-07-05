@@ -121,7 +121,6 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
      * to change the value. If your override returns a value less than 1, the code will break.
      * @return the maximum number of method handles in the chain.
      */
-    @SuppressWarnings("static-method")
     protected int getMaxChainLength() {
         return 8;
     }

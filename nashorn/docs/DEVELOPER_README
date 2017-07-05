@@ -16,8 +16,9 @@ default value of the flag is false, unless otherwise specified.
 SYSTEM PROPERTY: -Dnashorn.args=<string>
 
 This property takes as its value a space separated list of Nashorn
-command line options that should be passed to Nashorn. This might be useful 
-in environments where it is hard to tell how a nashorn.jar is launched.
+command line options that should be passed to Nashorn. This might be
+useful in environments where it is hard to tell how a nashorn.jar is
+launched.
 
 Example:
 
@@ -43,6 +44,10 @@ The default value is 0x8000 (32768).
 
 SYSTEM PROPERTY: -Dnashorn.compiler.intarithmetic
 
+(and integer arithmetic in general)
+
+<currently disabled - this is being refactored for update releases> 
+
 Arithmetic operations in Nashorn (except bitwise ones) typically
 coerce the operands to doubles (as per the JavaScript spec). To switch
 this off and remain in integer mode, for example for "var x = a&b; var
@@ -65,13 +70,382 @@ is faster than just using doubles directly, even if the int operation
 does not overflow. Getting access to a JVM intrinsic that does branch
 on overflow would probably alleviate this.
 
-There is also a problem with this optimistic approach if the symbol
-happens to reside in a local variable slot in the bytecode, as those
-are strongly typed. Then we would need to split large sections of
-control flow, so this is probably not the right way to go, while range
-analysis is. There is a large difference between integer bytecode
-without overflow checks and double bytecode. The former is
-significantly faster.
+The future:
+
+We are transitioning to an optimistic type system that uses int
+arithmetic everywhere until proven wrong. The problem here is mostly
+catch an overflow exception and rolling back the state to a new method
+with less optimistic assumptions for an operation at a particular
+program point. This will most likely not be in the Java 8.0 release
+but likely end up in an update release
+
+For Java 8, several java.lang.Math methods like addExact, subExact and
+mulExact are available to help us. Experiments intrinsifying these
+show a lot of promise, and we have devised a system that basically
+does on stack replacement with exceptions in bytecode to revert
+erroneous assumptions. An explanation of how this works and what we
+are doing can be found here:
+http://www.slideshare.net/lagergren/lagergren-jvmls2013final
+
+Experiments with this show significant ~x2-3 performance increases on
+pretty much everything, provided that optimistic assumptions don't
+fail much. It will affect warmup time negatively, depending on how
+many erroneous too optimistic assumptions are placed in the code at
+compile time. We don't think this will be much of an issue.
+
+For example for a small benchmark that repeatedly executes this
+method taken from the Crypto Octane benchmark 
+
+function am3(i,x,w,j,c,n) {
+  var this_array = this.array;
+  var w_array    = w.array;
+  var xl = x&0x3fff, xh = x>>14;
+  while(--n >= 0) {
+    var l = this_array[i]&0x3fff;
+    var h = this_array[i++]>>14;
+    var m = xh*l+h*xl;
+    l = xl*l+((m&0x3fff)<<14)+w_array[j]+c;
+    c = (l>>28)+(m>>14)+xh*h;
+    w_array[j++] = l&0xfffffff;
+  }
+
+  return c;
+}
+
+The performance increase more than doubles. We are also working hard
+with the code generation team in the Java Virtual Machine to fix
+things that are lacking in invokedynamic performance, which is another
+area where a lot of ongoing performance work takes place
+
+"Pessimistic" bytecode for am3, guaranteed to be semantically correct:
+
+// access flags 0x9
+  public static am3(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+   L0
+    LINENUMBER 12 L0
+    ALOAD 0
+    INVOKEDYNAMIC dyn:getProp|getElem|getMethod:array(Ljava/lang/Object;)Ljava/lang/Object; [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    ASTORE 8
+   L1
+    LINENUMBER 13 L1
+    ALOAD 3
+    INVOKEDYNAMIC dyn:getProp|getElem|getMethod:array(Ljava/lang/Object;)Ljava/lang/Object; [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    ASTORE 9
+   L2
+    LINENUMBER 14 L2
+    ALOAD 2
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (Ljava/lang/Object;)I
+    SIPUSH 16383
+    IAND
+    ISTORE 10
+    ALOAD 2
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (Ljava/lang/Object;)I
+    BIPUSH 14
+    ISHR
+    ISTORE 11
+   L3
+    LINENUMBER 15 L3
+    GOTO L4
+   L5
+    LINENUMBER 16 L5
+   FRAME FULL [java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Double T java/lang/Object java/lang/Object I I] []
+    ALOAD 8
+    ALOAD 1
+    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;Ljava/lang/Object;)I [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    SIPUSH 16383
+    IAND
+    INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;
+    ASTORE 12
+   L6
+    LINENUMBER 17 L6
+    ALOAD 8
+    ALOAD 1
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
+    DUP2
+    DCONST_1
+    DADD
+    INVOKESTATIC java/lang/Double.valueOf (D)Ljava/lang/Double;
+    ASTORE 1
+    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;D)I [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    BIPUSH 14
+    ISHR
+    ISTORE 13
+   L7
+    LINENUMBER 18 L7
+    ILOAD 11
+    I2D
+    ALOAD 12
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
+    DMUL
+    ILOAD 13
+    I2D
+    ILOAD 10
+    I2D
+    DMUL
+    DADD
+    DSTORE 14
+   L8
+    LINENUMBER 19 L8
+    ILOAD 10
+    I2D
+    ALOAD 12
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
+    DMUL
+    DLOAD 14
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (D)I
+    SIPUSH 16383
+    IAND
+    BIPUSH 14
+    ISHL
+    I2D
+    DADD
+    ALOAD 9
+    ALOAD 4
+    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    INVOKEDYNAMIC ADD:ODO_D(DLjava/lang/Object;)Ljava/lang/Object; [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.runtimeBootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;)
+      // arguments: none
+    ]
+    ALOAD 5
+    INVOKEDYNAMIC ADD:OOO_I(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.runtimeBootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;)
+      // arguments: none
+    ]
+    ASTORE 12
+   L9
+    LINENUMBER 20 L9
+    ALOAD 12
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (Ljava/lang/Object;)I
+    BIPUSH 28
+    ISHR
+    I2D
+    DLOAD 14
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (D)I
+    BIPUSH 14
+    ISHR
+    I2D
+    DADD
+    ILOAD 11
+    I2D
+    ILOAD 13
+    I2D
+    DMUL
+    DADD
+    INVOKESTATIC java/lang/Double.valueOf (D)Ljava/lang/Double;
+    ASTORE 5
+   L10
+    LINENUMBER 21 L10
+    ALOAD 9
+    ALOAD 4
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
+    DUP2
+    DCONST_1
+    DADD
+    INVOKESTATIC java/lang/Double.valueOf (D)Ljava/lang/Double;
+    ASTORE 4
+    ALOAD 12
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toInt32 (Ljava/lang/Object;)I
+    LDC 268435455
+    IAND
+    INVOKEDYNAMIC dyn:setElem|setProp(Ljava/lang/Object;DI)V [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+   L4
+   FRAME FULL [java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object java/lang/Object T java/lang/Object java/lang/Object I I] []
+    ALOAD 6
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.toNumber (Ljava/lang/Object;)D
+    LDC -1.0
+    DADD
+    DUP2
+    INVOKESTATIC java/lang/Double.valueOf (D)Ljava/lang/Double;
+    ASTORE 6
+    DCONST_0
+    DCMPL
+    IFGE L5
+   L11
+    LINENUMBER 24 L11
+    ALOAD 5
+    ARETURN
+
+"Optimistic" bytecode that requires invalidation on e.g overflow. Factor
+x2-3 speedup:
+
+public static am3(Ljava/lang/Object;IILjava/lang/Object;III)I
+   L0
+    LINENUMBER 12 L0
+    ALOAD 0
+    INVOKEDYNAMIC dyn:getProp|getElem|getMethod:array(Ljava/lang/Object;)Ljava/lang/Object; [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    ASTORE 8
+   L1
+    LINENUMBER 13 L1
+    ALOAD 3
+    INVOKEDYNAMIC dyn:getProp|getElem|getMethod:array(Ljava/lang/Object;)Ljava/lang/Object; [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    ASTORE 9
+   L2
+    LINENUMBER 14 L2
+    ILOAD 2
+    SIPUSH 16383
+    IAND
+    ISTORE 10
+    ILOAD 2
+    BIPUSH 14
+    ISHR
+    ISTORE 11
+   L3
+    LINENUMBER 15 L3
+    GOTO L4
+   L5
+    LINENUMBER 16 L5
+   FRAME FULL [java/lang/Object I I java/lang/Object I I I T java/lang/Object java/lang/Object I I] []
+    ALOAD 8
+    ILOAD 1
+    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;I)I [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    SIPUSH 16383
+    IAND
+    ISTORE 12
+   L6
+    LINENUMBER 17 L6
+    ALOAD 8
+    ILOAD 1
+    DUP
+    ICONST_1
+    IADD
+    ISTORE 1
+    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;I)I [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    BIPUSH 14
+    ISHR
+    ISTORE 13
+   L7
+    LINENUMBER 18 L7
+    ILOAD 11
+    ILOAD 12
+    BIPUSH 8
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.mulExact (III)I
+    ILOAD 13
+    ILOAD 10
+    BIPUSH 9
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.mulExact (III)I
+    IADD
+    ISTORE 14
+   L8
+    LINENUMBER 19 L8
+    ILOAD 10
+    ILOAD 12
+    BIPUSH 11
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.mulExact (III)I
+    ILOAD 14
+    SIPUSH 16383
+    IAND
+    BIPUSH 14
+    ISHL
+    IADD
+    ALOAD 9
+    ILOAD 4
+    INVOKEDYNAMIC dyn:getElem|getProp|getMethod(Ljava/lang/Object;I)I [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+    IADD
+    ILOAD 5
+    IADD
+    ISTORE 12
+   L9
+    LINENUMBER 20 L9
+    ILOAD 12
+    BIPUSH 28
+    ISHR
+    ILOAD 14
+    BIPUSH 14
+    ISHR
+    IADD
+    ILOAD 11
+    ILOAD 13
+    BIPUSH 21
+    INVOKESTATIC jdk/nashorn/internal/runtime/JSType.mulExact (III)I
+    IADD
+    ISTORE 5
+   L10
+    LINENUMBER 21 L10
+    ALOAD 9
+    ILOAD 4
+    DUP
+    ICONST_1
+    IADD
+    ISTORE 4
+    ILOAD 12
+    LDC 268435455
+    IAND
+    INVOKEDYNAMIC dyn:setElem|setProp(Ljava/lang/Object;II)V [
+      // handle kind 0x6 : INVOKESTATIC
+      jdk/nashorn/internal/runtime/linker/Bootstrap.bootstrap((Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;I)Ljava/lang/invoke/CallSite;)
+      // arguments:
+      0
+    ]
+   L4
+   FRAME SAME
+    ILOAD 6
+    ICONST_M1
+    IADD
+    DUP
+    ISTORE 6
+    ICONST_0
+    IF_ICMPGE L5
+   L11
+    LINENUMBER 24 L11
+    ILOAD 5
+    IRETURN
 
 
 SYSTEM PROPERTY: -Dnashorn.codegen.debug, -Dnashorn.codegen.debug.trace=<x>
@@ -167,7 +541,7 @@ we can determine by types at compile time is a combinatorial explosion
 of byte code (try it e.g. on all the variants of am3 in the Octane
 benchmark crypto.js). Thus, this needs to be lazy
 
-3) Possibly optimistic callsite writes, something on the form
+3) Optimistic callsite writes, something on the form
 
 x = y; //x is a field known to be a primitive. y is only an object as
 far as we can tell
@@ -188,6 +562,12 @@ only.
 
 We still have to deal with objects vs primitives for local bytecode
 slots, possibly through code copying and versioning.
+
+The Future:
+
+We expect the usefulness of dual fields to increase significantly
+after the optimistic type system described in the section on 
+integer arithmetic above is implemented.
 
 
 SYSTEM PROPERTY: -Dnashorn.compiler.symbol.trace=[<x>[,*]], 
@@ -211,7 +591,7 @@ traces will be displayed upon symbol changes according to the same
 semantics.
 
 
-SYSTEM PROPERTY: nashorn.lexer.xmlliterals
+SYSTEM PROPERTY: -Dnashorn.lexer.xmlliterals
 
 If this property it set, it means that the Lexer should attempt to
 parse XML literals, which would otherwise generate syntax
@@ -222,7 +602,7 @@ XML literals, when this is enabled, end up as standard LiteralNodes in
 the IR.
 
 
-SYSTEM_PROPERTY: nashorn.debug
+SYSTEM_PROPERTY: -Dnashorn.debug
 
 If this property is set to true, Nashorn runs in Debug mode. Debug
 mode is slightly slower, as for example statistics counters are enabled
@@ -269,8 +649,8 @@ when a callsite has to be relinked, due to a previous assumption of
 object layout being invalidated.
 
 
-SYSTEM PROPERTY: nashorn.methodhandles.debug,
-nashorn.methodhandles.debug=create
+SYSTEM PROPERTY: -Dnashorn.methodhandles.debug,
+-Dnashorn.methodhandles.debug=create
 
 If this property is enabled, each MethodHandle related call that uses
 the java.lang.invoke package gets its MethodHandle intercepted and an
@@ -286,7 +666,7 @@ instrumentation will be shown for method handles upon creation time
 rather than at runtime usage.
 
 
-SYSTEM PROPERTY: nashorn.methodhandles.debug.stacktrace
+SYSTEM PROPERTY: -Dnashorn.methodhandles.debug.stacktrace
 
 This does the same as nashorn.methodhandles.debug, but when enabled
 also dumps the stack trace for every instrumented method handle
@@ -297,14 +677,13 @@ See the description of the codegen logger below for a more verbose
 description of this option
 
 
-SYSTEM PROPERTY: nashorn.scriptfunction.specialization.disable
+SYSTEM PROPERTY: -Dnashorn.scriptfunction.specialization.disable
 
 There are several "fast path" implementations of constructors and
 functions in the NativeObject classes that, in their original form,
 take a variable amount of arguments. Said functions are also declared
 to take Object parameters in their original form, as this is what the
 JavaScript specification mandates.
-
 However, we often know quite a lot more at a callsite of one of these
 functions. For example, Math.min is called with a fixed number (2) of
 integer arguments. The overhead of boxing these ints to Objects and
@@ -331,7 +710,7 @@ use any specialized function or constructor for native objects, but
 just call the generic one.
 
 
-SYSTEM PROPERTY: nashorn.tcs.miss.samplePercent=<x>
+SYSTEM PROPERTY: -Dnashorn.tcs.miss.samplePercent=<x>
 
 When running with the trace callsite option (-tcs), Nashorn will count
 and instrument any callsite misses that require relinking. As the
@@ -341,7 +720,7 @@ should be logged. Typically this is set to 1 or 5 (percent). 1% is the
 default value.
 
 
-SYSTEM_PROPERTY: nashorn.profilefile=<filename>
+SYSTEM_PROPERTY: -Dnashorn.profilefile=<filename>
 
 When running with the profile callsite options (-pcs), Nashorn will
 dump profiling data for all callsites to stderr as a shutdown hook. To
@@ -349,14 +728,34 @@ instead redirect this to a file, specify the path to the file using
 this system property.
 
 
-SYSTEM_PROPERTY: nashorn.regexp.impl=[jdk|joni]
+SYSTEM_PROPERTY: -Dnashorn.regexp.impl=[jdk|joni]
 
 This property defines the regular expression engine to be used by
-Nashorn. The default implementation is "jdk" which is based on the
+Nashorn. Set this flag to "jdk" to get an implementation based on the
 JDK's java.util.regex package. Set this property to "joni" to install
 an implementation based on Joni, the regular expression engine used by
-the JRuby project.
+the JRuby project. The default value for this flag is "joni"
 
+
+SYSTEM PROPERTY: -Dnashorn.time
+
+This enables timers for various phases of script compilation. The timers
+will be dumped when the Nashorn process exits. We see a percentage value
+of how much time was spent not executing bytecode (i.e. compilation and
+internal tasks) at the end of the report. 
+
+Here is an example:
+
+[JavaScript Parsing]    61  ms
+[Constant Folding]      11  ms
+[Control Flow Lowering] 26  ms
+[Type Attribution]      81  ms
+[Range Analysis]        0  ms
+[Code Splitting]        29  ms
+[Type Finalization]     19  ms
+[Bytecode Generation]   189  ms
+[Code Installation]     7  ms
+Total runtime: 508 ms (Non-runtime: 423 ms [83%])
 
 ===============
 2. The loggers.
@@ -442,6 +841,9 @@ generated that neg?"
 The --log=codegen option is equivalent to setting the system variable
 "nashorn.codegen.debug" to true.
 
+* fold
+
+Shows constant folding taking place before lowering
 
 * lower
 
@@ -484,3 +886,160 @@ getter and setter in the program, show arguments, return values
 etc. It will also show the internal representation of respective field
 (Object in the normal case, unless running with the dual field
 representation)
+
+
+=======================
+3. Undocumented options
+=======================
+
+Here follows a short description of undocumented options for Nashorn.
+To see a list of all undocumented options, use the (undocumented) flag
+"-xhelp".
+
+i.e. jjs -xhelp or java -jar nashorn.jar -xhelp
+
+Undocumented options are not guaranteed to work, run correctly or be
+bug free. They are experimental and for internal or debugging use.
+They are also subject to change without notice.
+
+In practice, though, all options below not explicitly documented as
+EXPERIMENTAL can be relied upon, for example --dump-on-error is useful
+for any JavaScript/Nashorn developer, but there is no guarantee.
+
+A short summary follows:
+
+	-D (-Dname=value. Set a system property. This option can be repeated.)
+
+	-ccs, --class-cache-size (Size of the Class cache size per global scope.)
+
+	-cp, -classpath (-cp path. Specify where to find user class files.)
+
+	-co, --compile-only (Compile script without running. Exit after compilation)
+		param: [true|false]   default: false
+
+	-d, --dump-debug-dir (specify a destination directory to dump class files. 
+                This must be combined with the --compile-only option to work)
+		param: <path>   
+
+	--debug-lines (Generate line number table in .class files.)
+		param: [true|false]   default: true
+
+	--debug-locals (Generate local variable table in .class files.)
+		param: [true|false]   default: false
+
+	-doe, -dump-on-error (Dump a stack trace on errors.)
+		param: [true|false]   default: false
+
+	--early-lvalue-error (invalid lvalue expressions should be reported as early errors.)
+		param: [true|false]   default: true
+
+	--empty-statements (Preserve empty statements in AST.)
+		param: [true|false]   default: false
+
+	-fv, -fullversion (Print full version info of Nashorn.)
+		param: [true|false]   default: false
+
+	--function-statement-error (Report an error when function declaration is used as a statement.)
+		param: [true|false]   default: false
+
+	--function-statement-warning (Warn when function declaration is used as a statement.)
+		param: [true|false]   default: false
+
+	-fx (Launch script as an fx application.)
+		param: [true|false]   default: false
+
+	--global-per-engine (Use single Global instance per script engine instance.)
+		param: [true|false]   default: false
+
+	-h, -help (Print help for command line flags.)
+		param: [true|false]   default: false
+
+	--lazy-compilation (EXPERIMENTAL: Use lazy code generation strategies - do not compile 
+	                   the entire script at once.)
+		param: [true|false]   default: false
+
+	--loader-per-compile (Create a new class loader per compile.)
+		param: [true|false]   default: true
+
+	-l, --locale (Set Locale for script execution.)
+		param: <locale>   default: en-US
+
+	--log (Enable logging of a given level for a given number of sub systems. 
+	      [for example: --log=fields:finest,codegen:info])
+		param: <module:level>,*   
+
+	-nj, --no-java (No Java support)
+		param: [true|false]   default: false
+
+	-nse, --no-syntax-extensions (No non-standard syntax extensions)
+		param: [true|false]   default: false
+
+	-nta, --no-typed-arrays (No Typed arrays support)
+		param: [true|false]   default: false
+
+	--parse-only (Parse without compiling.)
+		param: [true|false]   default: false
+
+	--print-ast (Print abstract syntax tree.)
+		param: [true|false]   default: false
+
+	--print-code (Print bytecode.)
+		param: [true|false]   default: false
+
+	--print-lower-ast (Print lowered abstract syntax tree.)
+		param: [true|false]   default: false
+
+	--print-lower-parse (Print the parse tree after lowering.)
+		param: [true|false]   default: false
+
+	--print-mem-usage (Print memory usage of IR after each compile stage.)
+		param: [true|false]   default: false
+
+	--print-no-newline (Print function will not print new line char.)
+		param: [true|false]   default: false
+
+	--print-parse (Print the parse tree.)
+		param: [true|false]   default: false
+
+	--print-symbols (Print the symbol table.)
+		param: [true|false]   default: false
+
+	-pcs, --profile-callsites (Dump callsite profile data.)
+		param: [true|false]   default: false
+
+	--range-analysis (EXPERIMENTAL: Do range analysis using known compile time types, 
+	                 and try to narrow number types)
+		param: [true|false]   default: false
+
+	-scripting (Enable scripting features.)
+		param: [true|false]   default: false
+
+	--specialize-calls (EXPERIMENTAL: Specialize all or a set of method according
+	                    to callsite parameter types)
+		param: [=function_1,...,function_n]   
+
+	--stderr (Redirect stderr to a filename or to another tty, e.g. stdout)
+		param: <output console>   
+
+	--stdout (Redirect stdout to a filename or to another tty, e.g. stderr)
+		param: <output console>   
+
+	-strict (Run scripts in strict mode.)
+		param: [true|false]   default: false
+
+	-t, -timezone (Set timezone for script execution.)
+		param: <timezone>   default: Europe/Stockholm
+
+	-tcs, --trace-callsites (Enable callsite trace mode. Options are: miss [trace callsite misses] 
+	                        enterexit [trace callsite enter/exit], objects [print object properties])
+		param: [=[option,]*]   
+
+	--verify-code (Verify byte code before running.)
+		param: [true|false]   default: false
+
+	-v, -version (Print version info of Nashorn.)
+		param: [true|false]   default: false
+
+	-xhelp (Print extended help for command line flags.)
+		param: [true|false]   default: false
+

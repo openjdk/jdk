@@ -153,9 +153,11 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
     // in order to reserve space for the connect toggle.
     public void setUI(TabbedPaneUI ui) {
         Insets insets = (Insets) UIManager.getLookAndFeelDefaults().get("TabbedPane.tabAreaInsets");
-        insets = (Insets) insets.clone();
-        insets.right += connectedIcon24.getIconWidth() + 8;
-        UIManager.put("TabbedPane.tabAreaInsets", insets);
+        if (insets != null) {
+            insets = (Insets) insets.clone();
+            insets.right += connectedIcon24.getIconWidth() + 8;
+            UIManager.put("TabbedPane.tabAreaInsets", insets);
+        }
         super.setUI(ui);
     }
 

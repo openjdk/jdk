@@ -2659,28 +2659,32 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (ys == 0)
             return 1;
 
-        int sdiff = this.scale - val.scale;
+        long sdiff = (long)this.scale - val.scale;
         if (sdiff != 0) {
             // Avoid matching scales if the (adjusted) exponents differ
-            int xae = this.precision() - this.scale;   // [-1]
-            int yae = val.precision() - val.scale;     // [-1]
+            long xae = (long)this.precision() - this.scale;   // [-1]
+            long yae = (long)val.precision() - val.scale;     // [-1]
             if (xae < yae)
                 return -1;
             if (xae > yae)
                 return 1;
             BigInteger rb = null;
             if (sdiff < 0) {
-                if ( (xs == INFLATED ||
-                      (xs = longMultiplyPowerTen(xs, -sdiff)) == INFLATED) &&
+                // The cases sdiff <= Integer.MIN_VALUE intentionally fall through.
+                if ( sdiff > Integer.MIN_VALUE &&
+                      (xs == INFLATED ||
+                      (xs = longMultiplyPowerTen(xs, (int)-sdiff)) == INFLATED) &&
                      ys == INFLATED) {
-                    rb = bigMultiplyPowerTen(-sdiff);
+                    rb = bigMultiplyPowerTen((int)-sdiff);
                     return rb.compareMagnitude(val.intVal);
                 }
             } else { // sdiff > 0
-                if ( (ys == INFLATED ||
-                      (ys = longMultiplyPowerTen(ys, sdiff)) == INFLATED) &&
+                // The cases sdiff > Integer.MAX_VALUE intentionally fall through.
+                if ( sdiff <= Integer.MAX_VALUE &&
+                      (ys == INFLATED ||
+                      (ys = longMultiplyPowerTen(ys, (int)sdiff)) == INFLATED) &&
                      xs == INFLATED) {
-                    rb = val.bigMultiplyPowerTen(sdiff);
+                    rb = val.bigMultiplyPowerTen((int)sdiff);
                     return this.intVal.compareMagnitude(rb);
                 }
             }
@@ -4545,7 +4549,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if(cmp > 0) { // satisfy constraint (b)
             yscale -= 1; // [that is, divisor *= 10]
             int scl = checkScaleNonZero(preferredScale + yscale - xscale + mcp);
-            if (checkScaleNonZero((long) mcp + yscale) > xscale) {
+            if (checkScaleNonZero((long) mcp + yscale - xscale) > 0) {
                 // assert newScale >= xscale
                 int raise = checkScaleNonZero((long) mcp + yscale - xscale);
                 long scaledXs;
@@ -4626,7 +4630,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // return BigDecimal object whose scale will be set to 'scl'.
         int scl = checkScaleNonZero(preferredScale + yscale - xscale + mcp);
         BigDecimal quotient;
-        if (checkScaleNonZero((long) mcp + yscale) > xscale) {
+        if (checkScaleNonZero((long) mcp + yscale - xscale) > 0) {
             int raise = checkScaleNonZero((long) mcp + yscale - xscale);
             long scaledXs;
             if ((scaledXs = longMultiplyPowerTen(xs, raise)) == INFLATED) {
@@ -4673,7 +4677,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // return BigDecimal object whose scale will be set to 'scl'.
         BigDecimal quotient;
         int scl = checkScaleNonZero(preferredScale + yscale - xscale + mcp);
-        if (checkScaleNonZero((long) mcp + yscale) > xscale) {
+        if (checkScaleNonZero((long) mcp + yscale - xscale) > 0) {
             int raise = checkScaleNonZero((long) mcp + yscale - xscale);
             BigInteger rb = bigMultiplyPowerTen(xs,raise);
             quotient = divideAndRound(rb, ys, scl, roundingMode, checkScaleNonZero(preferredScale));
@@ -4714,7 +4718,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // return BigDecimal object whose scale will be set to 'scl'.
         BigDecimal quotient;
         int scl = checkScaleNonZero(preferredScale + yscale - xscale + mcp);
-        if (checkScaleNonZero((long) mcp + yscale) > xscale) {
+        if (checkScaleNonZero((long) mcp + yscale - xscale) > 0) {
             int raise = checkScaleNonZero((long) mcp + yscale - xscale);
             BigInteger rb = bigMultiplyPowerTen(xs,raise);
             quotient = divideAndRound(rb, ys, scl, roundingMode, checkScaleNonZero(preferredScale));
@@ -4745,7 +4749,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // return BigDecimal object whose scale will be set to 'scl'.
         BigDecimal quotient;
         int scl = checkScaleNonZero(preferredScale + yscale - xscale + mcp);
-        if (checkScaleNonZero((long) mcp + yscale) > xscale) {
+        if (checkScaleNonZero((long) mcp + yscale - xscale) > 0) {
             int raise = checkScaleNonZero((long) mcp + yscale - xscale);
             BigInteger rb = bigMultiplyPowerTen(xs,raise);
             quotient = divideAndRound(rb, ys, scl, roundingMode, checkScaleNonZero(preferredScale));

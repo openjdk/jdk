@@ -29,6 +29,7 @@ public final class BitSet {
     final int[] bits = new int[BITSET_SIZE];
 
     private static final int BITS_TO_STRING_WRAP = 4;
+    @Override
     public String toString() {
         StringBuilder buffer = new StringBuilder();
         buffer.append("BitSet");
