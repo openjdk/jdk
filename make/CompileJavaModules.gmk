@@ -247,14 +247,6 @@ java.sql.rowset_CLEAN_FILES := $(wildcard \
 # Exclude building of IIOP transport for RMI Connector
 java.management_EXCLUDES := com/sun/jmx/remote/protocol/iiop
 
-# Why is this in the open source tree?
-ifdef OPENJDK
-  java.management_EXCLUDES := \
-      com/sun/jmx/snmp \
-      sun/management/snmp \
-      #
-endif
-
 ifeq ($(RMICONNECTOR_IIOP), false)
   java.management_EXCLUDES += com/sun/jmx/remote/protocol/iiop
 endif
@@ -479,6 +471,11 @@ define SetupModuleCompilation
   $1_DEPS := $$(call FindDepsForModule, $1)
 
   $1_CLASSPATH := $$(addprefix $(JDK_OUTPUTDIR)/modules/,$$($1_DEPS))
+  # When crypto classes are prebuilt, need to look for classes already in 
+  # output dir.
+  ifneq ($(BUILD_CRYPTO), true)
+    $1_CLASSPATH += $(JDK_OUTPUTDIR)/modules/$1
+  endif
   ifeq ($1, jdk.hotspot.agent)
     ## The source of this module is compiled elsewhere, hotspot, and imported.
     ## Service types are required in the classpath when compiing module-info

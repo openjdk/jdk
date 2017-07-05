@@ -415,24 +415,9 @@ JVM_END
 
 extern volatile jint vm_created;
 
-JVM_ENTRY_NO_ENV(void, JVM_Exit(jint code))
-  if (vm_created != 0 && (code == 0)) {
-    // The VM is about to exit. We call back into Java to check whether finalizers should be run
-    Universe::run_finalizers_on_exit();
-  }
-  before_exit(thread);
-  vm_exit(code);
-JVM_END
-
-
 JVM_ENTRY_NO_ENV(void, JVM_Halt(jint code))
   before_exit(thread);
   vm_exit(code);
-JVM_END
-
-
-JVM_LEAF(void, JVM_OnExit(void (*func)(void)))
-  register_on_exit_function(func);
 JVM_END
 
 
@@ -449,15 +434,6 @@ JVM_LEAF(jlong, JVM_MaxObjectInspectionAge(void))
   return Universe::heap()->millis_since_last_gc();
 JVM_END
 
-
-JVM_LEAF(void, JVM_TraceInstructions(jboolean on))
-  if (PrintJVMWarnings) warning("JVM_TraceInstructions not supported");
-JVM_END
-
-
-JVM_LEAF(void, JVM_TraceMethodCalls(jboolean on))
-  if (PrintJVMWarnings) warning("JVM_TraceMethodCalls not supported");
-JVM_END
 
 static inline jlong convert_size_t_to_jlong(size_t val) {
   // In the 64-bit vm, a size_t can overflow a jlong (which is signed).
@@ -628,60 +604,6 @@ JVM_ENTRY(jobject, JVM_Clone(JNIEnv* env, jobject handle))
   return JNIHandles::make_local(env, oop(new_obj));
 JVM_END
 
-// java.lang.Compiler ////////////////////////////////////////////////////
-
-// The initial cuts of the HotSpot VM will not support JITs, and all existing
-// JITs would need extensive changes to work with HotSpot.  The JIT-related JVM
-// functions are all silently ignored unless JVM warnings are printed.
-
-JVM_LEAF(void, JVM_InitializeCompiler (JNIEnv *env, jclass compCls))
-  if (PrintJVMWarnings) warning("JVM_InitializeCompiler not supported");
-JVM_END
-
-
-JVM_LEAF(jboolean, JVM_IsSilentCompiler(JNIEnv *env, jclass compCls))
-  if (PrintJVMWarnings) warning("JVM_IsSilentCompiler not supported");
-  return JNI_FALSE;
-JVM_END
-
-
-JVM_LEAF(jboolean, JVM_CompileClass(JNIEnv *env, jclass compCls, jclass cls))
-  if (PrintJVMWarnings) warning("JVM_CompileClass not supported");
-  return JNI_FALSE;
-JVM_END
-
-
-JVM_LEAF(jboolean, JVM_CompileClasses(JNIEnv *env, jclass cls, jstring jname))
-  if (PrintJVMWarnings) warning("JVM_CompileClasses not supported");
-  return JNI_FALSE;
-JVM_END
-
-
-JVM_LEAF(jobject, JVM_CompilerCommand(JNIEnv *env, jclass compCls, jobject arg))
-  if (PrintJVMWarnings) warning("JVM_CompilerCommand not supported");
-  return NULL;
-JVM_END
-
-
-JVM_LEAF(void, JVM_EnableCompiler(JNIEnv *env, jclass compCls))
-  if (PrintJVMWarnings) warning("JVM_EnableCompiler not supported");
-JVM_END
-
-
-JVM_LEAF(void, JVM_DisableCompiler(JNIEnv *env, jclass compCls))
-  if (PrintJVMWarnings) warning("JVM_DisableCompiler not supported");
-JVM_END
-
-
-
-// Error message support //////////////////////////////////////////////////////
-
-JVM_LEAF(jint, JVM_GetLastErrorString(char *buf, int len))
-  JVMWrapper("JVM_GetLastErrorString");
-  return (jint)os::lasterror(buf, len);
-JVM_END
-
-
 // java.io.File ///////////////////////////////////////////////////////////////
 
 JVM_LEAF(char*, JVM_NativePath(char* path))
@@ -754,12 +676,6 @@ JVM_ENTRY(jclass, JVM_FindPrimitiveClass(JNIEnv* env, const char* utf))
   } else {
     return (jclass) JNIHandles::make_local(env, mirror);
   }
-JVM_END
-
-
-JVM_ENTRY(void, JVM_ResolveClass(JNIEnv* env, jclass cls))
-  JVMWrapper("JVM_ResolveClass");
-  if (PrintJVMWarnings) warning("JVM_ResolveClass not implemented");
 JVM_END
 
 
@@ -1651,21 +1567,6 @@ static bool jvm_get_field_common(jobject field, fieldDescriptor& fd, TRAPS) {
   return true;
 }
 
-JVM_ENTRY(jbyteArray, JVM_GetFieldAnnotations(JNIEnv *env, jobject field))
-  // field is a handle to a java.lang.reflect.Field object
-  assert(field != NULL, "illegal field");
-  JVMWrapper("JVM_GetFieldAnnotations");
-
-  fieldDescriptor fd;
-  bool gotFd = jvm_get_field_common(field, fd, CHECK_NULL);
-  if (!gotFd) {
-    return NULL;
-  }
-
-  return (jbyteArray) JNIHandles::make_local(env, Annotations::make_java_array(fd.annotations(), THREAD));
-JVM_END
-
-
 static Method* jvm_get_method_common(jobject method) {
   // some of this code was adapted from from jni_FromReflectedMethod
 
@@ -1688,48 +1589,6 @@ static Method* jvm_get_method_common(jobject method) {
   assert(m != NULL, "cannot find method");
   return m;  // caller has to deal with NULL in product mode
 }
-
-
-JVM_ENTRY(jbyteArray, JVM_GetMethodAnnotations(JNIEnv *env, jobject method))
-  JVMWrapper("JVM_GetMethodAnnotations");
-
-  // method is a handle to a java.lang.reflect.Method object
-  Method* m = jvm_get_method_common(method);
-  if (m == NULL) {
-    return NULL;
-  }
-
-  return (jbyteArray) JNIHandles::make_local(env,
-    Annotations::make_java_array(m->annotations(), THREAD));
-JVM_END
-
-
-JVM_ENTRY(jbyteArray, JVM_GetMethodDefaultAnnotationValue(JNIEnv *env, jobject method))
-  JVMWrapper("JVM_GetMethodDefaultAnnotationValue");
-
-  // method is a handle to a java.lang.reflect.Method object
-  Method* m = jvm_get_method_common(method);
-  if (m == NULL) {
-    return NULL;
-  }
-
-  return (jbyteArray) JNIHandles::make_local(env,
-    Annotations::make_java_array(m->annotation_default(), THREAD));
-JVM_END
-
-
-JVM_ENTRY(jbyteArray, JVM_GetMethodParameterAnnotations(JNIEnv *env, jobject method))
-  JVMWrapper("JVM_GetMethodParameterAnnotations");
-
-  // method is a handle to a java.lang.reflect.Method object
-  Method* m = jvm_get_method_common(method);
-  if (m == NULL) {
-    return NULL;
-  }
-
-  return (jbyteArray) JNIHandles::make_local(env,
-    Annotations::make_java_array(m->parameter_annotations(), THREAD));
-JVM_END
 
 /* Type use annotations support (JDK 1.8) */
 
@@ -2717,77 +2576,6 @@ JVM_ENTRY(jboolean, JVM_IsSameClassPackage(JNIEnv *env, jclass class1, jclass cl
   return (jboolean) Reflection::is_same_class_package(klass1, klass2);
 JVM_END
 
-
-// IO functions ////////////////////////////////////////////////////////////////////////////////////////
-
-JVM_LEAF(jint, JVM_Open(const char *fname, jint flags, jint mode))
-  JVMWrapper2("JVM_Open (%s)", fname);
-
-  //%note jvm_r6
-  int result = os::open(fname, flags, mode);
-  if (result >= 0) {
-    return result;
-  } else {
-    switch(errno) {
-      case EEXIST:
-        return JVM_EEXIST;
-      default:
-        return -1;
-    }
-  }
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Close(jint fd))
-  JVMWrapper2("JVM_Close (0x%x)", fd);
-  //%note jvm_r6
-  return os::close(fd);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Read(jint fd, char *buf, jint nbytes))
-  JVMWrapper2("JVM_Read (0x%x)", fd);
-
-  //%note jvm_r6
-  return (jint)os::restartable_read(fd, buf, nbytes);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Write(jint fd, char *buf, jint nbytes))
-  JVMWrapper2("JVM_Write (0x%x)", fd);
-
-  //%note jvm_r6
-  return (jint)os::write(fd, buf, nbytes);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Available(jint fd, jlong *pbytes))
-  JVMWrapper2("JVM_Available (0x%x)", fd);
-  //%note jvm_r6
-  return os::available(fd, pbytes);
-JVM_END
-
-
-JVM_LEAF(jlong, JVM_Lseek(jint fd, jlong offset, jint whence))
-  JVMWrapper4("JVM_Lseek (0x%x, " INT64_FORMAT ", %d)", fd, (int64_t) offset, whence);
-  //%note jvm_r6
-  return os::lseek(fd, offset, whence);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_SetLength(jint fd, jlong length))
-  JVMWrapper3("JVM_SetLength (0x%x, " INT64_FORMAT ")", fd, (int64_t) length);
-  return os::ftruncate(fd, length);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Sync(jint fd))
-  JVMWrapper2("JVM_Sync (0x%x)", fd);
-  //%note jvm_r6
-  return os::fsync(fd);
-JVM_END
-
-
 // Printing support //////////////////////////////////////////////////
 extern "C" {
 
@@ -3459,96 +3247,6 @@ bool force_verify_field_access(Klass* current_class, Klass* field_class, AccessF
   return (!access.is_private() && InstanceKlass::cast(current_class)->is_same_class_package(field_class));
 }
 
-
-// JVM_AllocateNewObject and JVM_AllocateNewArray are unused as of 1.4
-JVM_ENTRY(jobject, JVM_AllocateNewObject(JNIEnv *env, jobject receiver, jclass currClass, jclass initClass))
-  JVMWrapper("JVM_AllocateNewObject");
-  JvmtiVMObjectAllocEventCollector oam;
-  // Receiver is not used
-  oop curr_mirror = JNIHandles::resolve_non_null(currClass);
-  oop init_mirror = JNIHandles::resolve_non_null(initClass);
-
-  // Cannot instantiate primitive types
-  if (java_lang_Class::is_primitive(curr_mirror) || java_lang_Class::is_primitive(init_mirror)) {
-    ResourceMark rm(THREAD);
-    THROW_0(vmSymbols::java_lang_InvalidClassException());
-  }
-
-  // Arrays not allowed here, must use JVM_AllocateNewArray
-  if (java_lang_Class::as_Klass(curr_mirror)->oop_is_array() ||
-      java_lang_Class::as_Klass(init_mirror)->oop_is_array()) {
-    ResourceMark rm(THREAD);
-    THROW_0(vmSymbols::java_lang_InvalidClassException());
-  }
-
-  instanceKlassHandle curr_klass (THREAD, java_lang_Class::as_Klass(curr_mirror));
-  instanceKlassHandle init_klass (THREAD, java_lang_Class::as_Klass(init_mirror));
-
-  assert(curr_klass->is_subclass_of(init_klass()), "just checking");
-
-  // Interfaces, abstract classes, and java.lang.Class classes cannot be instantiated directly.
-  curr_klass->check_valid_for_instantiation(false, CHECK_NULL);
-
-  // Make sure klass is initialized, since we are about to instantiate one of them.
-  curr_klass->initialize(CHECK_NULL);
-
- methodHandle m (THREAD,
-                 init_klass->find_method(vmSymbols::object_initializer_name(),
-                                         vmSymbols::void_method_signature()));
-  if (m.is_null()) {
-    ResourceMark rm(THREAD);
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(),
-                Method::name_and_sig_as_C_string(init_klass(),
-                                          vmSymbols::object_initializer_name(),
-                                          vmSymbols::void_method_signature()));
-  }
-
-  if (curr_klass ==  init_klass && !m->is_public()) {
-    // Calling the constructor for class 'curr_klass'.
-    // Only allow calls to a public no-arg constructor.
-    // This path corresponds to creating an Externalizable object.
-    THROW_0(vmSymbols::java_lang_IllegalAccessException());
-  }
-
-  if (!force_verify_field_access(curr_klass(), init_klass(), m->access_flags(), false)) {
-    // subclass 'curr_klass' does not have access to no-arg constructor of 'initcb'
-    THROW_0(vmSymbols::java_lang_IllegalAccessException());
-  }
-
-  Handle obj = curr_klass->allocate_instance_handle(CHECK_NULL);
-  // Call constructor m. This might call a constructor higher up in the hierachy
-  JavaCalls::call_default_constructor(thread, m, obj, CHECK_NULL);
-
-  return JNIHandles::make_local(obj());
-JVM_END
-
-
-JVM_ENTRY(jobject, JVM_AllocateNewArray(JNIEnv *env, jobject obj, jclass currClass, jint length))
-  JVMWrapper("JVM_AllocateNewArray");
-  JvmtiVMObjectAllocEventCollector oam;
-  oop mirror = JNIHandles::resolve_non_null(currClass);
-
-  if (java_lang_Class::is_primitive(mirror)) {
-    THROW_0(vmSymbols::java_lang_InvalidClassException());
-  }
-  Klass* k = java_lang_Class::as_Klass(mirror);
-  oop result;
-
-  if (k->oop_is_typeArray()) {
-    // typeArray
-    result = TypeArrayKlass::cast(k)->allocate(length, CHECK_NULL);
-  } else if (k->oop_is_objArray()) {
-    // objArray
-    ObjArrayKlass* oak = ObjArrayKlass::cast(k);
-    oak->initialize(CHECK_NULL); // make sure class is initialized (matches Classic VM behavior)
-    result = oak->allocate(length, CHECK_NULL);
-  } else {
-    THROW_0(vmSymbols::java_lang_InvalidClassException());
-  }
-  return JNIHandles::make_local(env, result);
-JVM_END
-
-
 // Return the first non-null class loader up the execution stack, or null
 // if only code from the null class loader is on the stack.
 
@@ -3561,60 +3259,6 @@ JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
     }
   }
   return NULL;
-JVM_END
-
-
-// Load a class relative to the most recent class on the stack  with a non-null
-// classloader.
-// This function has been deprecated and should not be considered part of the
-// specified JVM interface.
-
-JVM_ENTRY(jclass, JVM_LoadClass0(JNIEnv *env, jobject receiver,
-                                 jclass currClass, jstring currClassName))
-  JVMWrapper("JVM_LoadClass0");
-  // Receiver is not used
-  ResourceMark rm(THREAD);
-
-  // Class name argument is not guaranteed to be in internal format
-  Handle classname (THREAD, JNIHandles::resolve_non_null(currClassName));
-  Handle string = java_lang_String::internalize_classname(classname, CHECK_NULL);
-
-  const char* str = java_lang_String::as_utf8_string(string());
-
-  if (str == NULL || (int)strlen(str) > Symbol::max_length()) {
-    // It's impossible to create this class;  the name cannot fit
-    // into the constant pool.
-    THROW_MSG_0(vmSymbols::java_lang_NoClassDefFoundError(), str);
-  }
-
-  TempNewSymbol name = SymbolTable::new_symbol(str, CHECK_NULL);
-  Handle curr_klass (THREAD, JNIHandles::resolve(currClass));
-  // Find the most recent class on the stack with a non-null classloader
-  oop loader = NULL;
-  oop protection_domain = NULL;
-  if (curr_klass.is_null()) {
-    for (vframeStream vfst(thread);
-         !vfst.at_end() && loader == NULL;
-         vfst.next()) {
-      if (!vfst.method()->is_native()) {
-        InstanceKlass* holder = vfst.method()->method_holder();
-        loader             = holder->class_loader();
-        protection_domain  = holder->protection_domain();
-      }
-    }
-  } else {
-    Klass* curr_klass_oop = java_lang_Class::as_Klass(curr_klass());
-    loader            = InstanceKlass::cast(curr_klass_oop)->class_loader();
-    protection_domain = InstanceKlass::cast(curr_klass_oop)->protection_domain();
-  }
-  Handle h_loader(THREAD, loader);
-  Handle h_prot  (THREAD, protection_domain);
-  jclass result =  find_class_from_class_loader(env, name, true, h_loader, h_prot,
-                                                false, thread);
-  if (TraceClassResolution && result != NULL) {
-    trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
-  }
-  return result;
 JVM_END
 
 
@@ -3713,143 +3357,6 @@ JVM_ENTRY(jobject, JVM_NewMultiArray(JNIEnv *env, jclass eltClass, jintArray dim
 JVM_END
 
 
-// Networking library support ////////////////////////////////////////////////////////////////////
-
-JVM_LEAF(jint, JVM_InitializeSocketLibrary())
-  JVMWrapper("JVM_InitializeSocketLibrary");
-  return 0;
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Socket(jint domain, jint type, jint protocol))
-  JVMWrapper("JVM_Socket");
-  return os::socket(domain, type, protocol);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_SocketClose(jint fd))
-  JVMWrapper2("JVM_SocketClose (0x%x)", fd);
-  //%note jvm_r6
-  return os::socket_close(fd);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_SocketShutdown(jint fd, jint howto))
-  JVMWrapper2("JVM_SocketShutdown (0x%x)", fd);
-  //%note jvm_r6
-  return os::socket_shutdown(fd, howto);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Recv(jint fd, char *buf, jint nBytes, jint flags))
-  JVMWrapper2("JVM_Recv (0x%x)", fd);
-  //%note jvm_r6
-  return os::recv(fd, buf, (size_t)nBytes, (uint)flags);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Send(jint fd, char *buf, jint nBytes, jint flags))
-  JVMWrapper2("JVM_Send (0x%x)", fd);
-  //%note jvm_r6
-  return os::send(fd, buf, (size_t)nBytes, (uint)flags);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Timeout(int fd, long timeout))
-  JVMWrapper2("JVM_Timeout (0x%x)", fd);
-  //%note jvm_r6
-  return os::timeout(fd, timeout);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Listen(jint fd, jint count))
-  JVMWrapper2("JVM_Listen (0x%x)", fd);
-  //%note jvm_r6
-  return os::listen(fd, count);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Connect(jint fd, struct sockaddr *him, jint len))
-  JVMWrapper2("JVM_Connect (0x%x)", fd);
-  //%note jvm_r6
-  return os::connect(fd, him, (socklen_t)len);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Bind(jint fd, struct sockaddr *him, jint len))
-  JVMWrapper2("JVM_Bind (0x%x)", fd);
-  //%note jvm_r6
-  return os::bind(fd, him, (socklen_t)len);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_Accept(jint fd, struct sockaddr *him, jint *len))
-  JVMWrapper2("JVM_Accept (0x%x)", fd);
-  //%note jvm_r6
-  socklen_t socklen = (socklen_t)(*len);
-  jint result = os::accept(fd, him, &socklen);
-  *len = (jint)socklen;
-  return result;
-JVM_END
-
-
-JVM_LEAF(jint, JVM_RecvFrom(jint fd, char *buf, int nBytes, int flags, struct sockaddr *from, int *fromlen))
-  JVMWrapper2("JVM_RecvFrom (0x%x)", fd);
-  //%note jvm_r6
-  socklen_t socklen = (socklen_t)(*fromlen);
-  jint result = os::recvfrom(fd, buf, (size_t)nBytes, (uint)flags, from, &socklen);
-  *fromlen = (int)socklen;
-  return result;
-JVM_END
-
-
-JVM_LEAF(jint, JVM_GetSockName(jint fd, struct sockaddr *him, int *len))
-  JVMWrapper2("JVM_GetSockName (0x%x)", fd);
-  //%note jvm_r6
-  socklen_t socklen = (socklen_t)(*len);
-  jint result = os::get_sock_name(fd, him, &socklen);
-  *len = (int)socklen;
-  return result;
-JVM_END
-
-
-JVM_LEAF(jint, JVM_SendTo(jint fd, char *buf, int len, int flags, struct sockaddr *to, int tolen))
-  JVMWrapper2("JVM_SendTo (0x%x)", fd);
-  //%note jvm_r6
-  return os::sendto(fd, buf, (size_t)len, (uint)flags, to, (socklen_t)tolen);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_SocketAvailable(jint fd, jint *pbytes))
-  JVMWrapper2("JVM_SocketAvailable (0x%x)", fd);
-  //%note jvm_r6
-  return os::socket_available(fd, pbytes);
-JVM_END
-
-
-JVM_LEAF(jint, JVM_GetSockOpt(jint fd, int level, int optname, char *optval, int *optlen))
-  JVMWrapper2("JVM_GetSockOpt (0x%x)", fd);
-  //%note jvm_r6
-  socklen_t socklen = (socklen_t)(*optlen);
-  jint result = os::get_sock_opt(fd, level, optname, optval, &socklen);
-  *optlen = (int)socklen;
-  return result;
-JVM_END
-
-
-JVM_LEAF(jint, JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen))
-  JVMWrapper2("JVM_GetSockOpt (0x%x)", fd);
-  //%note jvm_r6
-  return os::set_sock_opt(fd, level, optname, optval, (socklen_t)optlen);
-JVM_END
-
-
-JVM_LEAF(int, JVM_GetHostName(char* name, int namelen))
-  JVMWrapper("JVM_GetHostName");
-  return os::get_host_name(name, namelen);
-JVM_END
-
-
 // Library support ///////////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
@@ -3888,14 +3395,6 @@ JVM_END
 JVM_LEAF(void*, JVM_FindLibraryEntry(void* handle, const char* name))
   JVMWrapper2("JVM_FindLibraryEntry (%s)", name);
   return os::dll_lookup(handle, name);
-JVM_END
-
-
-// Floating point support ////////////////////////////////////////////////////////////////////
-
-JVM_LEAF(jboolean, JVM_IsNaN(jdouble a))
-  JVMWrapper("JVM_IsNaN");
-  return g_isnan(a);
 JVM_END
 
 
@@ -4022,20 +3521,6 @@ JVM_END
 JVM_LEAF(jboolean, JVM_SupportsCX8())
   JVMWrapper("JVM_SupportsCX8");
   return VM_Version::supports_cx8();
-JVM_END
-
-
-JVM_ENTRY(jboolean, JVM_CX8Field(JNIEnv *env, jobject obj, jfieldID fid, jlong oldVal, jlong newVal))
-  JVMWrapper("JVM_CX8Field");
-  jlong res;
-  oop             o       = JNIHandles::resolve(obj);
-  intptr_t        fldOffs = jfieldIDWorkaround::from_instance_jfieldID(o->klass(), fid);
-  volatile jlong* addr    = (volatile jlong*)((address)o + fldOffs);
-
-  assert(VM_Version::supports_cx8(), "cx8 not supported");
-  res = Atomic::cmpxchg(newVal, addr, oldVal);
-
-  return res == oldVal;
 JVM_END
 
 // DTrace ///////////////////////////////////////////////////////////////////
@@ -4189,189 +3674,6 @@ JVM_ENTRY(jobjectArray, JVM_GetEnclosingMethodInfo(JNIEnv *env, jclass ofClass))
     dest->obj_at_put(2, str());
   }
   return (jobjectArray) JNIHandles::make_local(dest());
-}
-JVM_END
-
-JVM_ENTRY(jintArray, JVM_GetThreadStateValues(JNIEnv* env,
-                                              jint javaThreadState))
-{
-  // If new thread states are added in future JDK and VM versions,
-  // this should check if the JDK version is compatible with thread
-  // states supported by the VM.  Return NULL if not compatible.
-  //
-  // This function must map the VM java_lang_Thread::ThreadStatus
-  // to the Java thread state that the JDK supports.
-  //
-
-  typeArrayHandle values_h;
-  switch (javaThreadState) {
-    case JAVA_THREAD_STATE_NEW : {
-      typeArrayOop r = oopFactory::new_typeArray(T_INT, 1, CHECK_NULL);
-      values_h = typeArrayHandle(THREAD, r);
-      values_h->int_at_put(0, java_lang_Thread::NEW);
-      break;
-    }
-    case JAVA_THREAD_STATE_RUNNABLE : {
-      typeArrayOop r = oopFactory::new_typeArray(T_INT, 1, CHECK_NULL);
-      values_h = typeArrayHandle(THREAD, r);
-      values_h->int_at_put(0, java_lang_Thread::RUNNABLE);
-      break;
-    }
-    case JAVA_THREAD_STATE_BLOCKED : {
-      typeArrayOop r = oopFactory::new_typeArray(T_INT, 1, CHECK_NULL);
-      values_h = typeArrayHandle(THREAD, r);
-      values_h->int_at_put(0, java_lang_Thread::BLOCKED_ON_MONITOR_ENTER);
-      break;
-    }
-    case JAVA_THREAD_STATE_WAITING : {
-      typeArrayOop r = oopFactory::new_typeArray(T_INT, 2, CHECK_NULL);
-      values_h = typeArrayHandle(THREAD, r);
-      values_h->int_at_put(0, java_lang_Thread::IN_OBJECT_WAIT);
-      values_h->int_at_put(1, java_lang_Thread::PARKED);
-      break;
-    }
-    case JAVA_THREAD_STATE_TIMED_WAITING : {
-      typeArrayOop r = oopFactory::new_typeArray(T_INT, 3, CHECK_NULL);
-      values_h = typeArrayHandle(THREAD, r);
-      values_h->int_at_put(0, java_lang_Thread::SLEEPING);
-      values_h->int_at_put(1, java_lang_Thread::IN_OBJECT_WAIT_TIMED);
-      values_h->int_at_put(2, java_lang_Thread::PARKED_TIMED);
-      break;
-    }
-    case JAVA_THREAD_STATE_TERMINATED : {
-      typeArrayOop r = oopFactory::new_typeArray(T_INT, 1, CHECK_NULL);
-      values_h = typeArrayHandle(THREAD, r);
-      values_h->int_at_put(0, java_lang_Thread::TERMINATED);
-      break;
-    }
-    default:
-      // Unknown state - probably incompatible JDK version
-      return NULL;
-  }
-
-  return (jintArray) JNIHandles::make_local(env, values_h());
-}
-JVM_END
-
-
-JVM_ENTRY(jobjectArray, JVM_GetThreadStateNames(JNIEnv* env,
-                                                jint javaThreadState,
-                                                jintArray values))
-{
-  // If new thread states are added in future JDK and VM versions,
-  // this should check if the JDK version is compatible with thread
-  // states supported by the VM.  Return NULL if not compatible.
-  //
-  // This function must map the VM java_lang_Thread::ThreadStatus
-  // to the Java thread state that the JDK supports.
-  //
-
-  ResourceMark rm;
-
-  // Check if threads is null
-  if (values == NULL) {
-    THROW_(vmSymbols::java_lang_NullPointerException(), 0);
-  }
-
-  typeArrayOop v = typeArrayOop(JNIHandles::resolve_non_null(values));
-  typeArrayHandle values_h(THREAD, v);
-
-  objArrayHandle names_h;
-  switch (javaThreadState) {
-    case JAVA_THREAD_STATE_NEW : {
-      assert(values_h->length() == 1 &&
-               values_h->int_at(0) == java_lang_Thread::NEW,
-             "Invalid threadStatus value");
-
-      objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
-                                               1, /* only 1 substate */
-                                               CHECK_NULL);
-      names_h = objArrayHandle(THREAD, r);
-      Handle name = java_lang_String::create_from_str("NEW", CHECK_NULL);
-      names_h->obj_at_put(0, name());
-      break;
-    }
-    case JAVA_THREAD_STATE_RUNNABLE : {
-      assert(values_h->length() == 1 &&
-               values_h->int_at(0) == java_lang_Thread::RUNNABLE,
-             "Invalid threadStatus value");
-
-      objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
-                                               1, /* only 1 substate */
-                                               CHECK_NULL);
-      names_h = objArrayHandle(THREAD, r);
-      Handle name = java_lang_String::create_from_str("RUNNABLE", CHECK_NULL);
-      names_h->obj_at_put(0, name());
-      break;
-    }
-    case JAVA_THREAD_STATE_BLOCKED : {
-      assert(values_h->length() == 1 &&
-               values_h->int_at(0) == java_lang_Thread::BLOCKED_ON_MONITOR_ENTER,
-             "Invalid threadStatus value");
-
-      objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
-                                               1, /* only 1 substate */
-                                               CHECK_NULL);
-      names_h = objArrayHandle(THREAD, r);
-      Handle name = java_lang_String::create_from_str("BLOCKED", CHECK_NULL);
-      names_h->obj_at_put(0, name());
-      break;
-    }
-    case JAVA_THREAD_STATE_WAITING : {
-      assert(values_h->length() == 2 &&
-               values_h->int_at(0) == java_lang_Thread::IN_OBJECT_WAIT &&
-               values_h->int_at(1) == java_lang_Thread::PARKED,
-             "Invalid threadStatus value");
-      objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
-                                               2, /* number of substates */
-                                               CHECK_NULL);
-      names_h = objArrayHandle(THREAD, r);
-      Handle name0 = java_lang_String::create_from_str("WAITING.OBJECT_WAIT",
-                                                       CHECK_NULL);
-      Handle name1 = java_lang_String::create_from_str("WAITING.PARKED",
-                                                       CHECK_NULL);
-      names_h->obj_at_put(0, name0());
-      names_h->obj_at_put(1, name1());
-      break;
-    }
-    case JAVA_THREAD_STATE_TIMED_WAITING : {
-      assert(values_h->length() == 3 &&
-               values_h->int_at(0) == java_lang_Thread::SLEEPING &&
-               values_h->int_at(1) == java_lang_Thread::IN_OBJECT_WAIT_TIMED &&
-               values_h->int_at(2) == java_lang_Thread::PARKED_TIMED,
-             "Invalid threadStatus value");
-      objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
-                                               3, /* number of substates */
-                                               CHECK_NULL);
-      names_h = objArrayHandle(THREAD, r);
-      Handle name0 = java_lang_String::create_from_str("TIMED_WAITING.SLEEPING",
-                                                       CHECK_NULL);
-      Handle name1 = java_lang_String::create_from_str("TIMED_WAITING.OBJECT_WAIT",
-                                                       CHECK_NULL);
-      Handle name2 = java_lang_String::create_from_str("TIMED_WAITING.PARKED",
-                                                       CHECK_NULL);
-      names_h->obj_at_put(0, name0());
-      names_h->obj_at_put(1, name1());
-      names_h->obj_at_put(2, name2());
-      break;
-    }
-    case JAVA_THREAD_STATE_TERMINATED : {
-      assert(values_h->length() == 1 &&
-               values_h->int_at(0) == java_lang_Thread::TERMINATED,
-             "Invalid threadStatus value");
-      objArrayOop r = oopFactory::new_objArray(SystemDictionary::String_klass(),
-                                               1, /* only 1 substate */
-                                               CHECK_NULL);
-      names_h = objArrayHandle(THREAD, r);
-      Handle name = java_lang_String::create_from_str("TERMINATED", CHECK_NULL);
-      names_h->obj_at_put(0, name());
-      break;
-    }
-    default:
-      // Unknown state - probably incompatible JDK version
-      return NULL;
-  }
-  return (jobjectArray) JNIHandles::make_local(env, names_h());
 }
 JVM_END
 

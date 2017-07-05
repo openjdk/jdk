@@ -53,8 +53,8 @@ public class TestSummarizeRSetStatsThreads {
 
     // a zero in refinement thread numbers indicates that the value in ParallelGCThreads should be used.
     // Additionally use at least one thread.
-    int expectedNumRefinementThreads = refinementThreads == 0 ? workerThreads : refinementThreads;
-    expectedNumRefinementThreads = Math.max(1, expectedNumRefinementThreads);
+    int expectedNumRefinementThreads = refinementThreads;
+
     // create the pattern made up of n copies of a floating point number pattern
     String numberPattern = String.format("%0" + expectedNumRefinementThreads + "d", 0)
       .replace("0", "\\s+\\d+\\.\\d+");
@@ -73,9 +73,9 @@ public class TestSummarizeRSetStatsThreads {
       return;
     }
     // different valid combinations of number of refinement and gc worker threads
-    runTest(0, 0);
-    runTest(0, 5);
-    runTest(5, 0);
+    runTest(1, 1);
+    runTest(1, 5);
+    runTest(5, 1);
     runTest(10, 10);
     runTest(1, 2);
     runTest(4, 3);

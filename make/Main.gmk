@@ -286,7 +286,7 @@ ALL_TARGETS += docs-javadoc docs-jvmtidoc
 
 test:
 	($(CD) $(SRC_ROOT)/test && $(MAKE) $(MAKE_ARGS) -j1 -k MAKEFLAGS= \
-	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_OUTPUT_DIR) \
+	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_OUTPUTDIR) \
 	    ALT_OUTPUTDIR=$(OUTPUT_ROOT) CONCURRENCY=$(JOBS) $(TEST)) || true
 
 test-make:
