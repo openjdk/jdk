@@ -26,6 +26,9 @@
  * @bug 8132734 8144062
  * @summary Test that URL connections to multi-release jars can be runtime versioned
  * @library /lib/testlibrary/java/util/jar
+ * @modules java.compiler
+ *          jdk.httpserver
+ *          jdk.jartool
  * @build Compiler JarBuilder CreateMultiReleaseTestJars SimpleHttpServer
  * @run testng MultiReleaseJarURLConnection
  */

@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Factory to get ImageReader
@@ -54,6 +55,7 @@ public class ImageReaderFactory {
      * Returns an {@code ImageReader} to read from the given image file
      */
     public static ImageReader get(Path jimage) throws IOException {
+        Objects.requireNonNull(jimage);
         ImageReader reader = readers.get(jimage);
         if (reader != null) {
             return reader;

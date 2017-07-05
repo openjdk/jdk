@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 6614957
  * @summary HttpsURLConnection not using the set SSLSocketFactory for creating all its Sockets
+ * @modules jdk.httpserver
  * @run main/othervm HttpsSocketFacTest
  *
  *     SunJSSE does not support dynamic system properties, no way to re-use

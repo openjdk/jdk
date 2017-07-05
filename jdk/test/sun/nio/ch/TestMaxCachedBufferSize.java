@@ -43,6 +43,7 @@ import java.util.Random;
 /*
  * @test
  * @requires sun.arch.data.model == "64"
+ * @modules java.management
  * @build TestMaxCachedBufferSize
  * @run main/othervm TestMaxCachedBufferSize
  * @run main/othervm -Djdk.nio.maxCachedBufferSize=0 TestMaxCachedBufferSize
