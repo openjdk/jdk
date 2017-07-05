@@ -90,7 +90,7 @@ public final class SunPKCS11 extends AuthProvider {
     }
 
     public SunPKCS11() {
-        super("SunPKCS11", 1.9d, "Unconfigured and unusable PKCS11 provider");
+        super("SunPKCS11", 9.0d, "Unconfigured and unusable PKCS11 provider");
         p11 = null;
         config = null;
         slotID = 0;
@@ -133,7 +133,7 @@ public final class SunPKCS11 extends AuthProvider {
 
     // Used by Secmod
     SunPKCS11(Config c) {
-        super("SunPKCS11-" + c.getName(), 1.9d, c.getDescription());
+        super("SunPKCS11-" + c.getName(), 9.0d, c.getDescription());
         this.config = c;
 
         if (debug != null) {

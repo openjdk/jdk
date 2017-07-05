@@ -74,7 +74,6 @@ static const char *_program_name;
 static const char *_launcher_name;
 static jboolean _is_java_args = JNI_FALSE;
 static const char *_fVersion;
-static const char *_dVersion;
 static jboolean _wc_enabled = JNI_FALSE;
 static jint _ergo_policy = DEFAULT_POLICY;
 
@@ -183,7 +182,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
         int jargc, const char** jargv,          /* java args */
         int appclassc, const char** appclassv,  /* app classpath */
         const char* fullversion,                /* full version defined */
-        const char* dotversion,                 /* dot version defined */
+        const char* dotversion,                 /* UNUSED dot version defined */
         const char* pname,                      /* program name */
         const char* lname,                      /* launcher name */
         jboolean javaargs,                      /* JAVA_ARGS */
@@ -204,7 +203,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
     char jvmcfg[MAXPATHLEN];
 
     _fVersion = fullversion;
-    _dVersion = dotversion;
     _launcher_name = lname;
     _program_name = pname;
     _is_java_args = javaargs;
@@ -1877,12 +1875,6 @@ ShowSplashScreen()
 }
 
 const char*
-GetDotVersion()
-{
-    return _dVersion;
-}
-
-const char*
 GetFullVersion()
 {
     return _fVersion;
@@ -1970,7 +1962,6 @@ DumpState()
     printf("\tlauncher name:%s\n", GetLauncherName());
     printf("\tjavaw:%s\n", (IsJavaw() == JNI_TRUE) ? "on" : "off");
     printf("\tfullversion:%s\n", GetFullVersion());
-    printf("\tdotversion:%s\n", GetDotVersion());
     printf("\tergo_policy:");
     switch(GetErgoPolicy()) {
         case NEVER_SERVER_CLASS:
