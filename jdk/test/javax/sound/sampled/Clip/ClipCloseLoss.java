@@ -36,6 +36,7 @@ import javax.sound.sampled.Mixer;
  * @bug 4946913
  * @summary DirectClip doesn't kill the thread correctly, sometimes
  * @run main/othervm ClipCloseLoss
+ * @key intermittent
  */
 public class ClipCloseLoss {
     static int frameCount = 441000; // lets say 10 seconds

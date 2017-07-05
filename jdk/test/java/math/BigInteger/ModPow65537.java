@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @run main ModPow65537
  * @bug 4891312 8074460 8078672
  * @summary verify that modPow() not broken by the special case for 65537 (use -Dseed=X to set PRNG seed)
@@ -37,7 +36,7 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.spec.*;
 import java.util.Random;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class ModPow65537 {
 
