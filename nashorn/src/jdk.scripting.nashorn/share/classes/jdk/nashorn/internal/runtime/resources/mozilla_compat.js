@@ -105,7 +105,7 @@ Object.defineProperty(this, "sync", {
         if (arguments.length < 1 || arguments.length > 2 ) {
             throw "sync(function [,object]) parameter count mismatch";
         }
-        return Packages.jdk.nashorn.api.scripting.ScriptUtils.makeSynchronizedFunction(func, syncobj);
+        return Java.synchronized(func, syncobj);
     }
 });
 
@@ -160,7 +160,7 @@ Object.defineProperty(Object.prototype, "toSource", {
     configurable: true, enumerable: false, writable: true,
     value: function(state) {
         if (! state) {
-            state = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap());
+            state = java.util.Collections.newSetFromMap(new java.util.HashMap());
         }
         if (state.contains(this)) {
             return "{}";

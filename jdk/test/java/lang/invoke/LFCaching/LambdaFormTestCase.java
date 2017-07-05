@@ -22,6 +22,8 @@
  */
 
 import com.oracle.testlibrary.jsr292.Helper;
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.function.Function;
@@ -37,6 +39,8 @@ public abstract class LambdaFormTestCase {
 
     private final static String METHOD_HANDLE_CLASS_NAME = "java.lang.invoke.MethodHandle";
     private final static String INTERNAL_FORM_METHOD_NAME = "internalForm";
+    private static final double ITERATIONS_TO_CODE_CACHE_SIZE_RATIO
+            = 45 / (128.0 * 1024 * 1024);
 
     /**
      * Reflection link to {@code j.l.i.MethodHandle.internalForm} method. It is
@@ -87,7 +91,35 @@ public abstract class LambdaFormTestCase {
         boolean passed = true;
         int testCounter = 0;
         int failCounter = 0;
-        long iterations = Math.max(1, Helper.TEST_LIMIT / testMethods.size());
+        long testCaseNum = testMethods.size();
+        long iterations = Math.max(1, Helper.TEST_LIMIT / testCaseNum);
+        System.out.printf("Number of iterations according to -DtestLimit is %d (%d cases)%n",
+                iterations, iterations * testCaseNum);
+        HotSpotDiagnosticMXBean hsDiagBean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+        long codeCacheSize = Long.parseLong(
+                hsDiagBean.getVMOption("ReservedCodeCacheSize").getValue());
+        System.out.printf("Code cache size is %d bytes%n", codeCacheSize);
+        long iterationsByCodeCacheSize = (long) (codeCacheSize
+                * ITERATIONS_TO_CODE_CACHE_SIZE_RATIO);
+        long nonProfiledCodeCacheSize = Long.parseLong(
+                hsDiagBean.getVMOption("NonProfiledCodeHeapSize").getValue());
+        System.out.printf("Non-profiled code cache size is %d bytes%n", nonProfiledCodeCacheSize);
+        long iterationsByNonProfiledCodeCacheSize = (long) (nonProfiledCodeCacheSize
+                * ITERATIONS_TO_CODE_CACHE_SIZE_RATIO);
+        System.out.printf("Number of iterations limited by code cache size is %d (%d cases)%n",
+                iterationsByCodeCacheSize, iterationsByCodeCacheSize * testCaseNum);
+        System.out.printf("Number of iterations limited by non-profiled code cache size is %d (%d cases)%n",
+                iterationsByNonProfiledCodeCacheSize, iterationsByNonProfiledCodeCacheSize * testCaseNum);
+        iterations = Math.min(iterationsByCodeCacheSize,
+                Math.min(iterations, iterationsByNonProfiledCodeCacheSize));
+        if (iterations == 0) {
+            System.out.println("Warning: code cache size is too small to provide at"
+                    + " least one iteration! Test will try to do one iteration.");
+            iterations = 1;
+        }
+        System.out.printf("Number of iterations is set to %d (%d cases)%n",
+                iterations, iterations * testCaseNum);
+        System.out.flush();
         for (long i = 0; i < iterations; i++) {
             System.err.println(String.format("Iteration %d:", i));
             for (TestMethods testMethod : testMethods) {

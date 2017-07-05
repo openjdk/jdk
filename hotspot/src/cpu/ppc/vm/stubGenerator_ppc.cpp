@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_ppc.hpp"
@@ -39,9 +38,6 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/top.hpp"
-#ifdef COMPILER2
-#include "opto/runtime.hpp"
-#endif
 #include "runtime/thread.inline.hpp"
 
 #define __ _masm->
@@ -216,7 +212,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       BLOCK_COMMENT("Call frame manager or native entry.");
       // Call frame manager or native entry.
-      Register r_new_arg_entry = R14; // PPC_state;
+      Register r_new_arg_entry = R14;
       assert_different_registers(r_new_arg_entry, r_top_of_arguments_addr,
                                  r_arg_method, r_arg_thread);
 

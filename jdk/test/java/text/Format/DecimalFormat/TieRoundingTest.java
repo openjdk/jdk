@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  *
- * @bug 7131459
+ * @bug 7131459 8039915
  * @summary test various situations of NumberFormat rounding when close to tie
  * @author Olivier Lagneau
  * @run main TieRoundingTest
@@ -56,7 +56,7 @@ public class TieRoundingTest {
         if (!result.equals(expectedOutput)) {
             System.out.println();
             System.out.println("========================================");
-            System.out.println("***Error formatting double value from string : " +
+            System.out.println("***Failure : error formatting value from string : " +
                                inputDigits);
             System.out.println("NumberFormat pattern is  : " +
                                ((DecimalFormat ) nf).toPattern());
@@ -103,7 +103,7 @@ public class TieRoundingTest {
         if (!result.equals(expectedOutput)) {
             System.out.println();
             System.out.println("========================================");
-            System.out.println("***Error formatting double value from string : " +
+            System.out.println("***Failure : error formatting value from string : " +
                                inputDigits);
             System.out.println("NumberFormat pattern is  : " +
                                ((DecimalFormat ) nf).toPattern());
@@ -144,7 +144,7 @@ public class TieRoundingTest {
         if (!result.equals(expectedOutput)) {
             System.out.println();
             System.out.println("========================================");
-            System.out.println("***Error formatting number value from string : " +
+            System.out.println("***Failure : error formatting value from string : " +
                                inputDigits);
             System.out.println("NumberFormat pattern is  : " +
                                ((DecimalFormat ) nf).toPattern());
@@ -174,7 +174,7 @@ public class TieRoundingTest {
 
     public static void main(String[] args) {
 
-        // Only the 3 rounding modes below may be impacted by bug 7131459.
+        // The 3 HALF_* rounding modes are impacted by bugs 7131459, 8039915.
         // So we do not test the other rounding modes.
         RoundingMode[] roundingModes = {
             RoundingMode.HALF_DOWN,
@@ -183,10 +183,14 @@ public class TieRoundingTest {
         };
 
         // Precise the relative position of input value against its closest tie.
+        // The double values tested below for 3 and 5 fractional digits must follow
+        // this scheme (position toward tie).
         String[] tieRelativePositions = {
             "below", "exact", "above",
             "below", "exact", "above",
             "below", "exact", "above",
+            "below", "above", "above",
+            "below", "below", "above",
             "below", "exact", "above"
         };
 
@@ -196,9 +200,13 @@ public class TieRoundingTest {
         double[] values3FractDigits = {
             // unimpacting values close to tie, with less than 3 input fract digits
             1.115d, 1.125d, 1.135d,
-            // impacting close to tie values covering all 6 cases
+            // HALF_* impacting close to tie values covering all 6 tie cases
             0.3115d, 0.3125d, 0.3135d,
             0.6865d, 0.6875d, 0.6885d,
+            // specific HALF_UP close to tie values
+            0.3124d, 0.3126d, 0.3128d,
+            // specific HALF_DOWN close to tie values
+            0.6864d, 0.6865d, 0.6868d,
             // unimpacting values close to tie, with more than 3 input fract digits
             1.46885d, 2.46875d, 1.46865d
         };
@@ -207,6 +215,8 @@ public class TieRoundingTest {
             "1.115d", "1.125d", "1.135d",
             "0.3115d", "0.3125d", "0.3135d",
             "0.6865d", "0.6875d", "0.6885d",
+            "0.3124d", "0.3126d", "0.3128d",
+            "0.6864d", "0.6865d", "0.6868d",
             "1.46885d", "2.46875d", "1.46865d"
         };
 
@@ -214,16 +224,22 @@ public class TieRoundingTest {
             {"1.115", "1.125", "1.135",
              "0.311", "0.312", "0.314",
              "0.686", "0.687", "0.689",
+             "0.312", "0.313", "0.313",
+             "0.686", "0.686", "0.687",
              "1.469", "2.469", "1.469"
             },
             {"1.115", "1.125", "1.135",
              "0.311", "0.312", "0.314",
              "0.686", "0.688", "0.689",
+             "0.312", "0.313", "0.313",
+             "0.686", "0.686", "0.687",
              "1.469", "2.469", "1.469"
             },
             {"1.115", "1.125", "1.135",
              "0.311", "0.313", "0.314",
              "0.686", "0.688", "0.689",
+             "0.312", "0.313", "0.313",
+             "0.686", "0.686", "0.687",
              "1.469", "2.469", "1.469"
             },
         };
@@ -250,9 +266,13 @@ public class TieRoundingTest {
         double[] values5FractDigits = {
             // unimpacting values close to tie, with less than 5 input fract digits
             1.3135d, 1.3125d, 1.3115d,
-            // impacting values close to tie, covering all 6 cases
+            // HALF_* impacting values close to tie, covering all 6 cases
             1.328115d, 1.328125d, 1.328135d,
             1.796865d, 1.796875d, 1.796885d,
+            // specific HALF_UP close to tie values
+            1.328124d, 1.798876d, 1.796889d,
+            // specific HALF_DOWN close to tie values
+            1.328114d, 1.796865d, 1.328138d,
             // unimpacting values close to tie, with more than 5 input fract digits
             1.3281149999999d, 1.75390625d, 1.7968750000001d
         };
@@ -261,6 +281,8 @@ public class TieRoundingTest {
             "1.3135d", "1.3125d", "1.3115d",
             "1.328115d", "1.328125d", "1.328135d",
             "1.796865d", "1.796875d", "1.796885d",
+            "1.328124d", "1.798876d", "1.796889d",
+            "1.328114d", "1.796865d", "1.328138d",
             "1.3281149999999d", "1.75390625d", "1.7968750000001d"
         };
 
@@ -268,16 +290,22 @@ public class TieRoundingTest {
             {"1.3135", "1.3125", "1.3115",
              "1.32811", "1.32812", "1.32814",
              "1.79686", "1.79687", "1.79689",
+             "1.32812", "1.79888", "1.79689",
+             "1.32811", "1.79686", "1.32814",
              "1.32811", "1.75391", "1.79688"
             },
             {"1.3135", "1.3125", "1.3115",
              "1.32811", "1.32812", "1.32814",
              "1.79686", "1.79688", "1.79689",
+             "1.32812", "1.79888", "1.79689",
+             "1.32811", "1.79686", "1.32814",
              "1.32811", "1.75391", "1.79688"
             },
             {"1.3135", "1.3125", "1.3115",
              "1.32811", "1.32813", "1.32814",
              "1.79686", "1.79688", "1.79689",
+             "1.32812", "1.79888", "1.79689",
+             "1.32811", "1.79686", "1.32814",
              "1.32811", "1.75391", "1.79688"
             }
         };

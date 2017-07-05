@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2000-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,12 +19,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.parsers;
-
-import java.io.StringReader;
-import java.util.Locale;
-import java.util.Stack;
-import java.util.StringTokenizer;
-import java.util.Vector;
 
 import com.sun.org.apache.xerces.internal.dom.DOMErrorImpl;
 import com.sun.org.apache.xerces.internal.dom.DOMMessageFormatter;
@@ -55,7 +49,11 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLEntityResolver;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
-import com.sun.org.apache.xerces.internal.parsers.XIncludeAwareParserConfiguration;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Stack;
+import java.util.StringTokenizer;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.DOMErrorHandler;
@@ -152,7 +150,6 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
 
     protected final static boolean DEBUG = false;
 
-    private Vector fSchemaLocations = new Vector ();
     private String fSchemaLocation = null;
         private DOMStringList fRecognizedParameters;
 
@@ -286,17 +283,17 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
      * @throws SAXException Thrown on initialization error.
      */
     public void reset () {
-        super.reset ();
+        super.reset();
 
         // get state of namespace-declarations parameter.
         fNamespaceDeclarations =
             fConfiguration.getFeature(Constants.DOM_NAMESPACE_DECLARATIONS);
 
         // DOM Filter
-        if (fSkippedElemStack!=null) {
-            fSkippedElemStack.removeAllElements ();
+        if (fSkippedElemStack != null) {
+            fSkippedElemStack.removeAllElements();
         }
-        fSchemaLocations.clear ();
+
         fRejectedElementDepth = 0;
         fFilterReject = false;
         fSchemaType = null;
@@ -521,15 +518,15 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
                             // map DOM schema-location to JAXP schemaSource property
                             // tokenize location string
                             StringTokenizer t = new StringTokenizer (fSchemaLocation, " \n\t\r");
-                            if (t.hasMoreTokens ()){
-                                fSchemaLocations.clear ();
-                                fSchemaLocations.add (t.nextToken ());
-                                while (t.hasMoreTokens ()) {
-                                    fSchemaLocations.add (t.nextToken ());
+                            if (t.hasMoreTokens()) {
+                                ArrayList locations = new ArrayList();
+                                locations.add (t.nextToken());
+                                while (t.hasMoreTokens()) {
+                                    locations.add (t.nextToken());
                                 }
                                 fConfiguration.setProperty (
                                 Constants.JAXP_PROPERTY_PREFIX + Constants.SCHEMA_SOURCE,
-                                fSchemaLocations.toArray ());
+                                locations.toArray());
                             }
                             else {
                                 fConfiguration.setProperty (
@@ -865,7 +862,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
      */
     public DOMStringList getParameterNames () {
         if (fRecognizedParameters == null){
-            Vector parameters = new Vector();
+            ArrayList parameters = new ArrayList();
 
             // REVISIT: add Xerces recognized properties/features
             parameters.add(Constants.DOM_NAMESPACES);
@@ -1116,7 +1113,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
     }
 
     /**
-     * @see org.w3c.dom.ls.DOMParser#abort()
+     * @see org.w3c.dom.ls.LSParser#abort()
      */
     public void abort () {
         // If parse operation is in progress then reset it
