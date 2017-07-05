@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.Override;
 import java.lang.ProcessBuilder.Redirect;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,6 +54,9 @@ import java.util.regex.Pattern;
 final class ProcessImpl extends Process {
     private static final sun.misc.JavaIOFileDescriptorAccess fdAccess
         = sun.misc.SharedSecrets.getJavaIOFileDescriptorAccess();
+
+    // Windows platforms support a forcible kill signal.
+    static final boolean SUPPORTS_NORMAL_TERMINATION = false;
 
     /**
      * Open a file for writing. If {@code append} is {@code true} then the file
@@ -306,7 +311,8 @@ final class ProcessImpl extends Process {
     }
 
 
-    private long handle = 0;
+    private final long handle;
+    private final ProcessHandle processHandle;
     private OutputStream stdin_stream;
     private InputStream stdout_stream;
     private InputStream stderr_stream;
@@ -385,6 +391,7 @@ final class ProcessImpl extends Process {
 
         handle = create(cmdstr, envblock, path,
                         stdHandles, redirectErrorStream);
+        processHandle = ProcessHandleImpl.getUnchecked(getProcessId0(handle));
 
         java.security.AccessController.doPrivileged(
         new java.security.PrivilegedAction<Void>() {
@@ -481,7 +488,30 @@ final class ProcessImpl extends Process {
     private static native void waitForTimeoutInterruptibly(
         long handle, long timeout);
 
-    public void destroy() { terminateProcess(handle); }
+    @Override
+    public void destroy() {
+        terminateProcess(handle);
+    }
+
+    @Override
+    public CompletableFuture<Process> onExit() {
+        return ProcessHandleImpl.completion(getPid(), false)
+                .handleAsync((exitStatus, unusedThrowable) -> this);
+    }
+
+    @Override
+    public ProcessHandle toHandle() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("manageProcess"));
+        }
+        return processHandle;
+    }
+
+    @Override
+    public boolean supportsNormalTermination() {
+        return ProcessImpl.SUPPORTS_NORMAL_TERMINATION;
+    }
 
     @Override
     public Process destroyForcibly() {
@@ -493,8 +523,7 @@ final class ProcessImpl extends Process {
 
     @Override
     public long getPid() {
-        int pid = getProcessId0(handle);
-        return pid;
+        return processHandle.getPid();
     }
 
     private static native int getProcessId0(long handle);
@@ -538,7 +567,7 @@ final class ProcessImpl extends Process {
      * Opens a file for atomic append. The file is created if it doesn't
      * already exist.
      *
-     * @param file the file to open or create
+     * @param path the file to open or create
      * @return the native HANDLE
      */
     private static native long openForAtomicAppend(String path)

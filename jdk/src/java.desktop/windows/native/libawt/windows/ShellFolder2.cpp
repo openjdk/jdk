@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,19 @@ DEFINE_SHLGUID(IID_IShellLinkW,         0x000214F9L, 0, 0);
 DEFINE_SHLGUID(IID_IExtractIconW,       0x000214FAL, 0, 0);
 
 //#include <sun_awt_shell_Win32ShellFolder2.h>
+
+#ifndef DASSERT
+#define DASSERT(x)
+#endif
+#define DEFINE_FIELD_ID(var, cls, field, type)                            \
+    jfieldID var = env->GetFieldID(cls, field, type);                     \
+    DASSERT(var != NULL);                                                 \
+    CHECK_NULL_RETURN(var, NULL);
+
+#define EXCEPTION_CHECK                                                   \
+   if(env->ExceptionCheck()) {                                            \
+        throw std::bad_alloc();                                           \
+   }
 
 // Shell Functions
 typedef BOOL (WINAPI *DestroyIconType)(HICON);
@@ -1263,5 +1276,216 @@ JNIEXPORT jint JNICALL
     return 0;
 }
 
+/*
+ * Class:     sun_awt_shell_Win32ShellFolder2
+ * Method:    loadKnownFolders
+ * Signature: (V)[BLsun/awt/shell/Win32ShellFolder2$KnownfolderDefenition;
+ */
+JNIEXPORT jobjectArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_loadKnownFolders
+    (JNIEnv* env, jclass cls )
+{
+    CoInitialize(NULL);
+    IKnownFolderManager* pkfm = NULL;
+    HRESULT hr = CoCreateInstance(CLSID_KnownFolderManager, NULL,
+                                CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pkfm));
+    if (!SUCCEEDED(hr)) return NULL;
+
+    TRY;
+
+    jclass cl = env->FindClass("sun/awt/shell/Win32ShellFolder2$KnownFolderDefinition");
+    CHECK_NULL_RETURN(cl, NULL);
+    DEFINE_FIELD_ID(field_guid, cl, "guid", "Ljava/lang/String;")
+    DEFINE_FIELD_ID(field_name, cl, "name", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_description, cl, "description", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_parent, cl, "parent", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_relativePath, cl, "relativePath", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_parsingName, cl, "parsingName", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_tooltip, cl, "tooltip", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_localizedName, cl, "localizedName", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_icon, cl, "icon", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_security, cl, "security", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_path, cl, "path", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_saveLocation, cl, "saveLocation", "Ljava/lang/String;");
+    DEFINE_FIELD_ID(field_category, cl, "category", "I");
+    DEFINE_FIELD_ID(field_attributes, cl, "attributes", "J");
+    DEFINE_FIELD_ID(field_defenitionFlags, cl, "defenitionFlags", "I");
+    DEFINE_FIELD_ID(field_ftidType, cl, "ftidType", "Ljava/lang/String;");
+
+    jobjectArray result;
+    KNOWNFOLDERID* pFoldersIds = NULL;
+    UINT count = 0;
+    if (SUCCEEDED(pkfm->GetFolderIds(&pFoldersIds, &count))) {
+        jmethodID initMethod;
+        try {
+            result = env->NewObjectArray(count, cl, NULL);
+            initMethod = env->GetMethodID(cl, "<init>", "()V");
+            EXCEPTION_CHECK
+        } catch (std::bad_alloc&) {
+            CoTaskMemFree(pFoldersIds);
+            pkfm->Release();
+            throw;
+        }
+        for(UINT i = 0; i < count; ++i)
+        {
+            jobject fld;
+            const KNOWNFOLDERID& folderId = pFoldersIds[i];
+            LPOLESTR guid = NULL;
+            try {
+                fld = env->NewObject(cl, initMethod);
+                if (fld) {
+                    env->SetObjectArrayElement(result, i, fld);
+                }
+                EXCEPTION_CHECK
+
+                if (SUCCEEDED(StringFromCLSID(folderId, &guid))) {
+                    jstring jstr = JNU_NewStringPlatform(env, guid);
+                    if (jstr) {
+                        env->SetObjectField(fld, field_guid, jstr);
+                    }
+                    CoTaskMemFree(guid);
+                    EXCEPTION_CHECK
+                }
+            } catch (std::bad_alloc&) {
+                CoTaskMemFree(pFoldersIds);
+                pkfm->Release();
+                throw;
+            }
+
+            IKnownFolder* pFolder = NULL;
+            if (SUCCEEDED(pkfm->GetFolder(folderId, &pFolder))) {
+                KNOWNFOLDER_DEFINITION kfDef;
+                if (SUCCEEDED(pFolder->GetFolderDefinition(&kfDef)))
+                {
+                    try {
+                        jstring jstr = JNU_NewStringPlatform(env, kfDef.pszName);
+                        if(jstr) {
+                            env->SetObjectField(fld, field_name, jstr);
+                        }
+                        EXCEPTION_CHECK
+                        if (kfDef.pszDescription) {
+                            jstr = JNU_NewStringPlatform(env, kfDef.pszDescription);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_description, jstr);
+                            }
+                            EXCEPTION_CHECK
+                        }
+                        EXCEPTION_CHECK
+                        if (SUCCEEDED(StringFromCLSID(kfDef.fidParent, &guid))) {
+                            jstr = JNU_NewStringPlatform(env, guid);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_parent, jstr);
+                            }
+                            CoTaskMemFree(guid);
+                            EXCEPTION_CHECK
+                        }
+                        if (kfDef.pszRelativePath) {
+                            jstr = JNU_NewStringPlatform(env, kfDef.pszRelativePath);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_relativePath, jstr);
+                            }
+                            EXCEPTION_CHECK
+                        }
+                        if (kfDef.pszParsingName) {
+                            jstr = JNU_NewStringPlatform(env, kfDef.pszParsingName);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_parsingName, jstr);
+                            }
+                            EXCEPTION_CHECK
+                        }
+                        if (kfDef.pszTooltip) {
+                            jstr = JNU_NewStringPlatform(env, kfDef.pszTooltip);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_tooltip, jstr);
+                            }
+                            EXCEPTION_CHECK
+                        }
+                        if (kfDef.pszLocalizedName) {
+                            jstr = JNU_NewStringPlatform(env, kfDef.pszLocalizedName);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_localizedName, jstr);
+                            }
+                            EXCEPTION_CHECK
+                        }
+                        if (kfDef.pszIcon) {
+                            jstr = JNU_NewStringPlatform(env, kfDef.pszIcon);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_icon, jstr);
+                            }
+                            EXCEPTION_CHECK
+                        }
+                        if (kfDef.pszSecurity) {
+                            jstr = JNU_NewStringPlatform(env, kfDef.pszSecurity);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_security, jstr);
+                            }
+                            EXCEPTION_CHECK
+                        }
+                        if (SUCCEEDED(StringFromCLSID(kfDef.ftidType, &guid))) {
+                            jstr = JNU_NewStringPlatform(env, guid);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_ftidType, jstr);
+                            }
+                            CoTaskMemFree(guid);
+                            EXCEPTION_CHECK
+                        }
+                        env->SetIntField(fld, field_category, kfDef.category);
+                        env->SetIntField(fld, field_defenitionFlags, kfDef.kfdFlags);
+                        env->SetLongField(fld, field_attributes, kfDef.dwAttributes);
+
+                        LPWSTR folderPath = NULL;
+                        if (SUCCEEDED(pFolder->GetPath(KF_FLAG_NO_ALIAS, &folderPath))
+                                    && folderPath) {
+                            jstr = JNU_NewStringPlatform(env, folderPath);
+                            if (jstr) {
+                                env->SetObjectField(fld, field_path, jstr);
+                            }
+                            CoTaskMemFree(folderPath);
+                            EXCEPTION_CHECK
+                        }
+
+                        IShellLibrary *plib = NULL;
+                        hr = CoCreateInstance(CLSID_ShellLibrary, NULL,
+                                         CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&plib));
+                        if (SUCCEEDED(hr)) {
+                            hr = plib->LoadLibraryFromKnownFolder(folderId, STGM_READWRITE);
+                            if (SUCCEEDED(hr)) {
+                                IShellItem *item = NULL;
+                                hr = plib->GetDefaultSaveFolder(DSFT_DETECT,
+                                        IID_PPV_ARGS(&item));
+                                if (SUCCEEDED(hr) && item) {
+                                    LPWSTR loc = NULL;
+                                    hr = item->GetDisplayName(SIGDN_FILESYSPATH, &loc);
+                                    if (SUCCEEDED(hr) && loc)
+                                    {
+                                        jstr = JNU_NewStringPlatform(env, loc);
+                                        if (jstr) {
+                                            env->SetObjectField(fld, field_saveLocation, jstr);
+                                        }
+                                        CoTaskMemFree(loc);
+                                    }
+                                    item->Release();
+                                }
+                            }
+                            plib->Release();
+                            EXCEPTION_CHECK
+                        }
+                        FreeKnownFolderDefinitionFields(&kfDef);
+                    } catch (std::bad_alloc&) {
+                        FreeKnownFolderDefinitionFields(&kfDef);
+                        pFolder->Release();
+                        CoTaskMemFree(pFoldersIds);
+                        pkfm->Release();
+                        throw;
+                    }
+                }
+            }
+            pFolder->Release();
+        }
+        CoTaskMemFree(pFoldersIds);
+    }
+    pkfm->Release();
+    return result;
+    CATCH_BAD_ALLOC_RET(NULL);
+}
 
 } // extern "C"

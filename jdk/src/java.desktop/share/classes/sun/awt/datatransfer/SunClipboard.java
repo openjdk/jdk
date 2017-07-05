@@ -151,7 +151,7 @@ public abstract class SunClipboard extends Clipboard
 
 
     /**
-     * @see java.awt.Clipboard#getAvailableDataFlavors
+     * @see java.awt.datatransfer.Clipboard#getAvailableDataFlavors
      * @since 1.5
      */
     public DataFlavor[] getAvailableDataFlavors() {
@@ -167,7 +167,7 @@ public abstract class SunClipboard extends Clipboard
     }
 
     /**
-     * @see java.awt.Clipboard#isDataFlavorAvailable
+     * @see java.awt.datatransfer.Clipboard#isDataFlavorAvailable
      * @since 1.5
      */
     public boolean isDataFlavorAvailable(DataFlavor flavor) {
@@ -186,7 +186,7 @@ public abstract class SunClipboard extends Clipboard
     }
 
     /**
-     * @see java.awt.Clipboard#getData
+     * @see java.awt.datatransfer.Clipboard#getData
      * @since 1.5
      */
     public Object getData(DataFlavor flavor)

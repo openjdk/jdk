@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,9 @@ typedef enum _ColorType
 typedef enum _Setting
 {
     GTK_FONT_NAME,
-    GTK_ICON_SIZES
+    GTK_ICON_SIZES,
+    GTK_CURSOR_BLINK,
+    GTK_CURSOR_BLINK_TIME
 } Setting;
 
 /* GTK types, here to eliminate need for GTK headers at compile time */

@@ -39,16 +39,11 @@
 void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
                                                              OopsInGenClosure* cl,
                                                              CardTableRS* ct,
-                                                             int n_threads) {
-  assert(n_threads > 0, "Error: expected n_threads > 0");
-  assert((n_threads == 1 && ParallelGCThreads == 0) ||
-         n_threads <= (int)ParallelGCThreads,
-         "# worker threads != # requested!");
-  assert(!Thread::current()->is_VM_thread() || (n_threads == 1), "There is only 1 VM thread");
-  assert(UseDynamicNumberOfGCThreads ||
-         !FLAG_IS_DEFAULT(ParallelGCThreads) ||
-         n_threads == (int)ParallelGCThreads,
-         "# worker threads != # requested!");
+                                                             uint n_threads) {
+  assert(n_threads > 0, "expected n_threads > 0");
+  assert(n_threads <= ParallelGCThreads,
+         err_msg("n_threads: %u > ParallelGCThreads: " UINTX_FORMAT, n_threads, ParallelGCThreads));
+
   // Make sure the LNC array is valid for the space.
   jbyte**   lowest_non_clean;
   uintptr_t lowest_non_clean_base_chunk_index;
@@ -66,7 +61,8 @@ void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegio
 
   uint stride = 0;
   while (!pst->is_task_claimed(/* reference */ stride)) {
-    process_stride(sp, mr, stride, n_strides, cl, ct,
+    process_stride(sp, mr, stride, n_strides,
+                   cl, ct,
                    lowest_non_clean,
                    lowest_non_clean_base_chunk_index,
                    lowest_non_clean_chunk_size);
@@ -132,9 +128,13 @@ process_stride(Space* sp,
     assert(chunk_mr.word_size() > 0, "[chunk_card_start > used_end)");
     assert(used.contains(chunk_mr), "chunk_mr should be subset of used");
 
+    // This function is used by the parallel card table iteration.
+    const bool parallel = true;
+
     DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(),
-                                                     cl->gen_boundary());
-    ClearNoncleanCardWrapper clear_cl(dcto_cl, ct);
+                                                     cl->gen_boundary(),
+                                                     parallel);
+    ClearNoncleanCardWrapper clear_cl(dcto_cl, ct, parallel);
 
 
     // Process the chunk.

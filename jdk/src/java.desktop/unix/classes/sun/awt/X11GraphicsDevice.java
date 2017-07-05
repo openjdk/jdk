@@ -52,10 +52,8 @@ import sun.misc.InnocuousThread;
  * @see GraphicsEnvironment
  * @see GraphicsConfiguration
  */
-public class X11GraphicsDevice
-    extends GraphicsDevice
-    implements DisplayChangedListener
-{
+public final class X11GraphicsDevice extends GraphicsDevice
+        implements DisplayChangedListener {
     int screen;
     HashMap<SurfaceType, Object> x11ProxyKeyMap = new HashMap<>();
 
@@ -201,16 +199,15 @@ public class X11GraphicsDevice
     /*
      * Returns the depth for the given index of graphics configurations.
      */
-    public native int getConfigDepth (int index, int screen);
+    private native int getConfigDepth(int index, int screen);
 
     /*
      * Returns the colormap for the given index of graphics configurations.
      */
-    public native int getConfigColormap (int index, int screen);
-
+    private native int getConfigColormap(int index, int screen);
 
     // Whether or not double-buffering extension is supported
-    public static native boolean isDBESupported();
+    static native boolean isDBESupported();
     // Callback for adding a new double buffer visual into our set
     private void addDoubleBufferVisual(int visNum) {
         doubleBufferVisuals.add(Integer.valueOf(visNum));

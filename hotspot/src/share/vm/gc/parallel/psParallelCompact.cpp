@@ -832,9 +832,9 @@ void PSParallelCompact::post_initialize() {
   _ref_processor =
     new ReferenceProcessor(mr,            // span
                            ParallelRefProcEnabled && (ParallelGCThreads > 1), // mt processing
-                           (int) ParallelGCThreads, // mt processing degree
+                           (uint) ParallelGCThreads, // mt processing degree
                            true,          // mt discovery
-                           (int) ParallelGCThreads, // mt discovery degree
+                           (uint) ParallelGCThreads, // mt discovery degree
                            true,          // atomic_discovery
                            &_is_alive_closure); // non-header is alive closure
   _counters = new CollectorCounters("PSParallelCompact", 1);
@@ -2029,7 +2029,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // Set the number of GC threads to be used in this collection
     gc_task_manager()->set_active_gang();
     gc_task_manager()->task_idle_workers();
-    heap->set_par_threads(gc_task_manager()->active_workers());
 
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     GCTraceTime t1(GCCauseString("Full GC", gc_cause), PrintGC, !PrintGCDetails, NULL, _gc_tracer.gc_id());
