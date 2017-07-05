@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,13 +147,10 @@ BasicType Bytecode_member_ref::result_type() const {
 
 
 methodHandle Bytecode_invoke::static_target(TRAPS) {
-  methodHandle m;
-  KlassHandle resolved_klass;
   constantPoolHandle constants(THREAD, this->constants());
 
   Bytecodes::Code bc = invoke_code();
-  LinkResolver::resolve_method_statically(m, resolved_klass, bc, constants, index(), CHECK_(methodHandle()));
-  return m;
+  return LinkResolver::resolve_method_statically(bc, constants, index(), THREAD);
 }
 
 Handle Bytecode_invoke::appendix(TRAPS) {
