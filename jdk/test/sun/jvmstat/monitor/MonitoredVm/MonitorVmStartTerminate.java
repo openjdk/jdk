@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,8 @@ import sun.jvmstat.monitor.event.VmStatusChangeEvent;
  * @summary attach to external but local JVM processes
  * @library /lib/testlibrary
  * @modules java.management
- *          jdk.jvmstat/sun.jvmstat.monitor
- *          jdk.jvmstat/sun.jvmstat.monitor.event
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor.event
  * @build jdk.testlibrary.*
  * @run main/othervm MonitorVmStartTerminate
  */

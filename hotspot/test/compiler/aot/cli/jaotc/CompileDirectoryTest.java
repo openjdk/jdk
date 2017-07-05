@@ -42,7 +42,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class CompileDirectoryTest {
     public static void main(String[] args) {
-        OutputAnalyzer oa =JaotcTestHelper.compileLibrary(".");
+        OutputAnalyzer oa =JaotcTestHelper.compileLibrary("--directory", ".");
         oa.shouldHaveExitValue(0);
         File compiledLibrary = new File(JaotcTestHelper.DEFAULT_LIB_PATH);
         Asserts.assertTrue(compiledLibrary.exists(), "Compiled library file missing");

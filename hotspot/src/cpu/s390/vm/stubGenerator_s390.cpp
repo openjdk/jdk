@@ -2433,13 +2433,12 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_throw_StackOverflowError_entry          =
       generate_throw_exception("StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError), false);
+    StubRoutines::_throw_delayed_StackOverflowError_entry  =
+      generate_throw_exception("delayed StackOverflowError throw_exception",
+                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError), false);
 
     //----------------------------------------------------------------------
     // Entry points that are platform specific.
-    // Build this early so it's available for the interpreter.
-    StubRoutines::_throw_StackOverflowError_entry          =
-      generate_throw_exception("StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError), false);
 
     if (UseCRC32Intrinsics) {
       // We have no CRC32 table on z/Architecture.

@@ -38,7 +38,7 @@ public class BigBinarySearch {
         extends AbstractList<Integer>
         implements RandomAccess
     {
-        private Map<Integer,Integer> m = new HashMap<Integer,Integer>();
+        private Map<Integer,Integer> m = new HashMap<>();
 
         public Integer get(int i) {
             if (i < 0) throw new IndexOutOfBoundsException(""+i);

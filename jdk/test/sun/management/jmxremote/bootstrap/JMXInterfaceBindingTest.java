@@ -48,8 +48,8 @@ import jdk.testlibrary.ProcessTools;
  * @summary Test JMX agent host address binding. Same ports but different
  *          interfaces to bind to (using plain sockets and SSL sockets).
  *
- * @modules java.management/sun.management
- *          java.management/sun.management.jmxremote
+ * @modules jdk.management.agent/jdk.internal.agent
+ *          jdk.management.agent/sun.management.jmxremote
  * @library /lib/testlibrary
  * @build jdk.testlibrary.* JMXAgentInterfaceBinding
  * @run main/timeout=5 JMXInterfaceBindingTest

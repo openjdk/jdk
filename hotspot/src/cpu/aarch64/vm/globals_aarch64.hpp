@@ -50,7 +50,7 @@ define_pd_global(intx, InlineFrequencyCount,     100);
 // stack if compiled for unix and LP64. To pass stack overflow tests we need
 // 20 shadow pages.
 #define DEFAULT_STACK_SHADOW_PAGES (20 DEBUG_ONLY(+5))
-#define DEFAULT_STACK_RESERVED_PAGES (0)
+#define DEFAULT_STACK_RESERVED_PAGES (1)
 
 #define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
 #define MIN_STACK_RED_PAGES    DEFAULT_STACK_RED_PAGES

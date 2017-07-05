@@ -39,7 +39,7 @@ public class PollUnexpired {
     }
 
     private static void realMain(String[] args) throws Throwable {
-        DelayQueue<Godot> q = new DelayQueue<Godot>();
+        DelayQueue<Godot> q = new DelayQueue<>();
         for (int i = 0; i < 3; i++) {
             equal(q.size(), i);
             equal(q.poll(), null);

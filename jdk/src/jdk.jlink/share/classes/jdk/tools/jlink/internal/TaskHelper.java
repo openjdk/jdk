@@ -227,12 +227,6 @@ public final class TaskHelper {
                     addOrderedPluginOptions(plugin, optionsSeen);
                 }
             }
-            mainOptions.add(new PluginOption(false,
-                    (task, opt, arg) -> {
-                        // This option is handled prior
-                        // to have the options parsed.
-                    },
-                    false, "--plugin-module-path"));
             mainOptions.add(new PluginOption(true, (task, opt, arg) -> {
                     for (Plugin plugin : plugins) {
                         if (plugin.getName().equals(arg)) {

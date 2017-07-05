@@ -28,7 +28,6 @@
 SUNWprivate_1.1 {
 	global:
 	    Java_sun_management_ClassLoadingImpl_setVerboseClass;
-            Java_sun_management_FileSystemImpl_isAccessUserOnly0;
             Java_sun_management_GarbageCollectorImpl_getCollectionCount;
 	    Java_sun_management_GarbageCollectorImpl_getCollectionTime;
 	    Java_sun_management_HotspotThread_getInternalThreadCount;

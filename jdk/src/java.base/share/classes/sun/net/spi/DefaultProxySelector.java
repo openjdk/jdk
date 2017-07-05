@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,19 @@ import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import sun.net.NetProperties;
 import sun.net.SocksProxy;
 import static java.util.regex.Pattern.quote;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Supports proxy settings using system properties This proxy selector
@@ -86,6 +89,8 @@ public class DefaultProxySelector extends ProxySelector {
     private static final String SOCKS_PROXY_VERSION = "socksProxyVersion";
 
     private static boolean hasSystemProxies = false;
+
+    private static final List<Proxy> NO_PROXY_LIST = List.of(Proxy.NO_PROXY);
 
     static {
         final String key = "java.net.useSystemProxies";
@@ -149,8 +154,9 @@ public class DefaultProxySelector extends ProxySelector {
      * select() method. Where all the hard work is done.
      * Build a list of proxies depending on URI.
      * Since we're only providing compatibility with the system properties
-     * from previous releases (see list above), that list will always
-     * contain 1 single proxy, default being NO_PROXY.
+     * from previous releases (see list above), that list will typically
+     * contain one single proxy, default being NO_PROXY.
+     * If we can get a system proxy it might contain more entries.
      */
     public java.util.List<Proxy> select(URI uri) {
         if (uri == null) {
@@ -185,7 +191,6 @@ public class DefaultProxySelector extends ProxySelector {
         if (protocol == null || host == null) {
             throw new IllegalArgumentException("protocol = "+protocol+" host = "+host);
         }
-        List<Proxy> proxyl = new ArrayList<Proxy>(1);
 
         NonProxyInfo pinfo = null;
 
@@ -214,9 +219,9 @@ public class DefaultProxySelector extends ProxySelector {
          * System properties it does help having only 1 call to doPrivileged.
          * Be mindful what you do in here though!
          */
-        Proxy p = AccessController.doPrivileged(
-            new PrivilegedAction<Proxy>() {
-                public Proxy run() {
+        Proxy[] proxyArray = AccessController.doPrivileged(
+            new PrivilegedAction<Proxy[]>() {
+                public Proxy[] run() {
                     int i, j;
                     String phost =  null;
                     int pport = 0;
@@ -239,8 +244,8 @@ public class DefaultProxySelector extends ProxySelector {
                                 /**
                                  * No system property defined for that
                                  * protocol. Let's check System Proxy
-                                 * settings (Gnome & Windows) if we were
-                                 * instructed to.
+                                 * settings (Gnome, MacOsX & Windows) if
+                                 * we were instructed to.
                                  */
                                 if (hasSystemProxies) {
                                     String sproto;
@@ -248,12 +253,9 @@ public class DefaultProxySelector extends ProxySelector {
                                         sproto = "socks";
                                     else
                                         sproto = proto;
-                                    Proxy sproxy = getSystemProxy(sproto, urlhost);
-                                    if (sproxy != null) {
-                                        return sproxy;
-                                    }
+                                    return getSystemProxies(sproto, urlhost);
                                 }
-                                return Proxy.NO_PROXY;
+                                return null;
                             }
                             // If a Proxy Host is defined for that protocol
                             // Let's get the NonProxyHosts property
@@ -281,7 +283,7 @@ public class DefaultProxySelector extends ProxySelector {
                                         }
                                     }
                                     if (shouldNotUseProxyFor(nprop.pattern, urlhost)) {
-                                        return Proxy.NO_PROXY;
+                                        return null;
                                     }
                                 }
                             }
@@ -311,22 +313,24 @@ public class DefaultProxySelector extends ProxySelector {
                             saddr = InetSocketAddress.createUnresolved(phost, pport);
                             // Socks is *always* the last on the list.
                             if (j == (props[i].length - 1)) {
-                                return SocksProxy.create(saddr, socksProxyVersion());
-                            } else {
-                                return new Proxy(Proxy.Type.HTTP, saddr);
+                                return new Proxy[] {SocksProxy.create(saddr, socksProxyVersion())};
                             }
+                            return new Proxy[] {new Proxy(Proxy.Type.HTTP, saddr)};
                         }
                     }
-                    return Proxy.NO_PROXY;
+                    return null;
                 }});
 
-        proxyl.add(p);
 
-        /*
-         * If no specific property was set for that URI, we should be
-         * returning an iterator to an empty List.
-         */
-        return proxyl;
+        if (proxyArray != null) {
+            // Remove duplicate entries, while preserving order.
+            return Stream.of(proxyArray).distinct().collect(
+                    collectingAndThen(toList(), Collections::unmodifiableList));
+        }
+
+        // If no specific proxy was found, return a standard list containing
+        // only one NO_PROXY entry.
+        return NO_PROXY_LIST;
     }
 
     public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
@@ -354,7 +358,7 @@ public class DefaultProxySelector extends ProxySelector {
     }
 
     private static native boolean init();
-    private synchronized native Proxy getSystemProxy(String protocol, String host);
+    private synchronized native Proxy[] getSystemProxies(String protocol, String host);
 
     /**
      * @return {@code true} if given this pattern for non-proxy hosts and this

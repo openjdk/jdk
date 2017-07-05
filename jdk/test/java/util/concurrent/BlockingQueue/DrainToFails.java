@@ -148,7 +148,7 @@ public class DrainToFails {
         System.err.println(q.getClass().getSimpleName());
         for (int i = 0; i < CAPACITY; i++)
             q.add(i);
-        List<Thread> putters = new ArrayList<Thread>();
+        List<Thread> putters = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             Thread putter = new Thread(putter(q, 42 + i));
             putters.add(putter);
