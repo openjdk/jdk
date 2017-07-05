@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -644,7 +644,7 @@ Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative
     for (i=0; i < glyphCnt; i++) {
       GlyphInfo *jginfo = (GlyphInfo *) jlong_to_ptr(glyphInfoPtrs[i]);
 
-      gid[i] = (Glyph) (0xffffffff & ((unsigned int) jginfo->cellInfo));
+      gid[i] = (Glyph) (0x0ffffffffL & ((unsigned long)(jginfo->cellInfo)));
       xginfo[i].x = (-jginfo->topLeftX);
       xginfo[i].y = (-jginfo->topLeftY);
       xginfo[i].width = jginfo->width;
@@ -666,16 +666,56 @@ Java_sun_java2d_xr_XRBackendNative_XRAddGlyphsNative
 JNIEXPORT void JNICALL
 Java_sun_java2d_xr_XRBackendNative_XRFreeGlyphsNative
  (JNIEnv *env, jclass cls, jint glyphSet, jintArray gidArray, jint glyphCnt) {
-    jint *gids;
-    int i;
 
-    if ((gids = (jint *) (*env)->GetPrimitiveArrayCritical(env, gidArray, NULL)) == NULL) {
+    /* The glyph ids are 32 bit but may be stored in a 64 bit long on
+     * a 64 bit architecture. So optimise the 32 bit case to avoid
+     * extra stack or heap allocations by directly referencing the
+     * underlying Java array and only allocate on 64 bit.
+     */
+    if (sizeof(jint) == sizeof(Glyph)) {
+        jint *gids =
+            (*env)->GetPrimitiveArrayCritical(env, gidArray, NULL);
+        if (gids == NULL) {
+            return;
+        } else {
+             XRenderFreeGlyphs(awt_display,
+                               (GlyphSet)glyphSet, (Glyph *)gids, glyphCnt);
+             (*env)->ReleasePrimitiveArrayCritical(env, gidArray,
+                                                   gids, JNI_ABORT);
+        }
         return;
+    } else {
+        Glyph stack_ids[64];
+        Glyph *gids = NULL;
+        jint* jgids = NULL;
+        int i;
+
+        if (glyphCnt <= 64) {
+            gids = stack_ids;
+        } else {
+            gids = (Glyph *)malloc(sizeof(Glyph) * glyphCnt);
+            if (gids == NULL) {
+                return;
+            }
+        }
+        jgids = (*env)->GetPrimitiveArrayCritical(env, gidArray, NULL);
+        if (jgids == NULL) {
+            if (gids != stack_ids) {
+                free(gids);
+            }
+            return;
+        }
+        for (i=0; i < glyphCnt; i++) {
+            gids[i] = jgids[i];
+        }
+        XRenderFreeGlyphs(awt_display,
+                          (GlyphSet) glyphSet, gids, glyphCnt);
+        (*env)->ReleasePrimitiveArrayCritical(env, gidArray,
+                                              jgids, JNI_ABORT);
+        if (gids != stack_ids) {
+            free(gids);
+        }
     }
-
-    XRenderFreeGlyphs (awt_display, (GlyphSet) glyphSet, (Glyph *) gids, glyphCnt);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, gidArray, gids, JNI_ABORT);
 }
 
 JNIEXPORT jint JNICALL
@@ -692,9 +732,9 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
     jint *ids;
     jint *elts;
     XGlyphElt32 *xelts;
-    Glyph *xids;
+    unsigned int *xids;
     XGlyphElt32 selts[24];
-    Glyph sids[256];
+    unsigned int sids[256];
     int charCnt = 0;
 
     if (eltCnt <= 24) {
@@ -709,7 +749,7 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
     if (glyphCnt <= 256) {
       xids = &sids[0];
     } else {
-      xids = (Glyph *) malloc(sizeof(Glyph) * glyphCnt);
+      xids = (unsigned int*)malloc(sizeof(unsigned int) * glyphCnt);
       if (xids == NULL) {
           if (xelts != &selts[0]) {
             free(xelts);
@@ -742,7 +782,7 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
     }
 
     for (i=0; i < glyphCnt; i++) {
-      xids[i] = (Glyph) ids[i];
+      xids[i] = ids[i];
     }
 
     for (i=0; i < eltCnt; i++) {
@@ -750,7 +790,7 @@ Java_sun_java2d_xr_XRBackendNative_XRenderCompositeTextNative
       xelts[i].xOff = elts[i*4 + 1];
       xelts[i].yOff = elts[i*4 + 2];
       xelts[i].glyphset = (GlyphSet) elts[i*4 + 3];
-      xelts[i].chars = (unsigned int *) &xids[charCnt];
+      xelts[i].chars = &xids[charCnt];
 
       charCnt += xelts[i].nchars;
     }

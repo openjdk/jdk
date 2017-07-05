@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,11 +29,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
+
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+
 
 public class CodePointIM {
 
@@ -42,11 +42,11 @@ public class CodePointIM {
     // not correct and encourage their reading README.txt.
     public static void main(String[] args) {
         try {
-            ResourceBundle resource = ResourceBundle.getBundle("resources.codepoint",
-                                                          Locale.getDefault());
+            ResourceBundle resource = ResourceBundle.getBundle(
+                    "resources.codepoint",
+                    Locale.getDefault());
             System.err.println(resource.getString("warning"));
-        }
-        catch (MissingResourceException e) {
+        } catch (MissingResourceException e) {
             System.err.println(e.toString());
         }
 

@@ -142,15 +142,21 @@ public class Version {
                 // non-product VM will have -debug|-release appended
                 cs = cs.subSequence(1, cs.length());
                 String[] res = cs.toString().split("-");
-                for (String s : res) {
+                for (int i = res.length - 1; i >= 0; i--) {
+                    String s = res[i];
                     if (s.charAt(0) == 'b') {
-                        build =
-                            Integer.valueOf(s.substring(1, s.length())).intValue();
-                        break;
+                        try {
+                            build = Integer.parseInt(s.substring(1, s.length()));
+                            break;
+                        } catch (NumberFormatException nfe) {
+                            // ignore
+                        }
                     }
                 }
             }
         }
-        return new VersionInfo(major, minor, micro, update, special, build);
+        VersionInfo vi = new VersionInfo(major, minor, micro, update, special, build);
+        System.out.printf("newVersionInfo: input=%s output=%s\n", version, vi);
+        return vi;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,22 +29,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 /** A fairly conventional 3D matrix object that can transform sets of
-    3D points and perform a variety of manipulations on the transform */
+3D points and perform a variety of manipulations on the transform */
 class Matrix3D {
+
     float xx, xy, xz, xo;
     float yx, yy, yz, yo;
     float zx, zy, zz, zo;
     static final double pi = 3.14159265;
+
     /** Create a new unit matrix */
-    Matrix3D () {
+    Matrix3D() {
         xx = 1.0f;
         yy = 1.0f;
         zz = 1.0f;
     }
+
     /** Scale by f in all dimensions */
     void scale(float f) {
         xx *= f;
@@ -60,6 +61,7 @@ class Matrix3D {
         zz *= f;
         zo *= f;
     }
+
     /** Scale along each axis independently */
     void scale(float xf, float yf, float zf) {
         xx *= xf;
@@ -75,12 +77,14 @@ class Matrix3D {
         zz *= zf;
         zo *= zf;
     }
+
     /** Translate the origin */
     void translate(float x, float y, float z) {
         xo += x;
         yo += y;
         zo += z;
     }
+
     /** rotate theta degrees about the y axis */
     void yrot(double theta) {
         theta *= (pi / 180);
@@ -106,6 +110,7 @@ class Matrix3D {
         zy = Nzy;
         zz = Nzz;
     }
+
     /** rotate theta degrees about the x axis */
     void xrot(double theta) {
         theta *= (pi / 180);
@@ -131,6 +136,7 @@ class Matrix3D {
         zy = Nzy;
         zz = Nzz;
     }
+
     /** rotate theta degrees about the z axis */
     void zrot(double theta) {
         theta *= (pi / 180);
@@ -156,6 +162,7 @@ class Matrix3D {
         xy = Nxy;
         xz = Nxz;
     }
+
     /** Multiply this matrix by a second: M = M*R */
     void mult(Matrix3D rhs) {
         float lxx = xx * rhs.xx + yx * rhs.xy + zx * rhs.xz;
@@ -204,10 +211,11 @@ class Matrix3D {
         zy = 0;
         zz = 1;
     }
+
     /** Transform nvert points from v into tv.  v contains the input
-        coordinates in floating point.  Three successive entries in
-        the array constitute a point.  tv ends up holding the transformed
-        points as integers; three successive entries per point */
+    coordinates in floating point.  Three successive entries in
+    the array constitute a point.  tv ends up holding the transformed
+    points as integers; three successive entries per point */
     void transform(float v[], int tv[], int nvert) {
         float lxx = xx, lxy = xy, lxz = xz, lxo = xo;
         float lyx = yx, lyy = yy, lyz = yz, lyo = yo;
@@ -216,11 +224,13 @@ class Matrix3D {
             float x = v[i];
             float y = v[i + 1];
             float z = v[i + 2];
-            tv[i    ] = (int) (x * lxx + y * lxy + z * lxz + lxo);
+            tv[i] = (int) (x * lxx + y * lxy + z * lxz + lxo);
             tv[i + 1] = (int) (x * lyx + y * lyy + z * lyz + lyo);
             tv[i + 2] = (int) (x * lzx + y * lzy + z * lzz + lzo);
         }
     }
+
+    @Override
     public String toString() {
         return ("[" + xo + "," + xx + "," + xy + "," + xz + ";"
                 + yo + "," + yx + "," + yy + "," + yz + ";"

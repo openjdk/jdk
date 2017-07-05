@@ -41,18 +41,6 @@
 #define SECURITY_WIN32
 #include "sspi.h"
 
-
-/*
- * OS calls loaded from DLL on intialization
- */
-
-static FREE_CREDENTIALS_HANDLE_FN pFreeCredentialsHandle;
-static ACQUIRE_CREDENTIALS_HANDLE_FN pAcquireCredentialsHandle;
-static FREE_CONTEXT_BUFFER_FN pFreeContextBuffer;
-static INITIALIZE_SECURITY_CONTEXT_FN pInitializeSecurityContext;
-static COMPLETE_AUTH_TOKEN_FN pCompleteAuthToken;
-static DELETE_SECURITY_CONTEXT_FN pDeleteSecurityContext;
-
 static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle);
 
 static jfieldID ntlm_ctxHandleID;
@@ -63,48 +51,8 @@ static HINSTANCE lib = NULL;
 JNIEXPORT void JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_initFirst
 (JNIEnv *env, jclass clazz)
 {
-    OSVERSIONINFO   version;
-    UCHAR libName[MAX_PATH];
-
     ntlm_ctxHandleID = (*env)->GetFieldID(env, clazz, "ctxHandle", "J");
     ntlm_crdHandleID = (*env)->GetFieldID(env, clazz, "crdHandle", "J");
-
-    version.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
-    GetVersionEx (&version);
-
-    if (version.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-        strcpy (libName, "security.dll" );
-    }
-    else if (version.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) {
-        strcpy (libName, "secur32.dll" );
-    }
-
-    lib = LoadLibrary (libName);
-
-    pFreeCredentialsHandle
-        = (FREE_CREDENTIALS_HANDLE_FN) GetProcAddress(
-        lib, "FreeCredentialsHandle" );
-
-    pAcquireCredentialsHandle
-        = (ACQUIRE_CREDENTIALS_HANDLE_FN) GetProcAddress(
-        lib, "AcquireCredentialsHandleA" );
-
-    pFreeContextBuffer
-        = (FREE_CONTEXT_BUFFER_FN) GetProcAddress(
-        lib, "FreeContextBuffer" );
-
-    pInitializeSecurityContext
-        = (INITIALIZE_SECURITY_CONTEXT_FN) GetProcAddress(
-        lib, "InitializeSecurityContextA" );
-
-    pCompleteAuthToken
-        = (COMPLETE_AUTH_TOKEN_FN) GetProcAddress(
-        lib, "CompleteAuthToken" );
-
-    pDeleteSecurityContext
-        = (DELETE_SECURITY_CONTEXT_FN) GetProcAddress(
-        lib, "DeleteSecurityContext" );
-
 }
 
 /*
@@ -158,17 +106,17 @@ JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_get
 
         if ( pUser != NULL ) {
             AuthId.User       = (unsigned char *) pUser;
-            AuthId.UserLength = strlen( pUser );
+            AuthId.UserLength = (unsigned long) strlen( pUser );
         }
 
         if ( pPassword != NULL ) {
             AuthId.Password       = (unsigned char *) pPassword;
-            AuthId.PasswordLength = strlen( pPassword );
+            AuthId.PasswordLength = (unsigned long) strlen( pPassword );
         }
 
         if ( pDomain != NULL ) {
             AuthId.Domain       = (unsigned char *) pDomain;
-            AuthId.DomainLength = strlen( pDomain );
+            AuthId.DomainLength = (unsigned long) strlen( pDomain );
         }
 
         AuthId.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
@@ -176,7 +124,7 @@ JNIEXPORT jlong JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequence_get
         pAuthId = NULL;
     }
 
-    ss = pAcquireCredentialsHandle(
+    ss = AcquireCredentialsHandleA(
         NULL, "NTLM", SECPKG_CRED_OUTBOUND,
         NULL, pAuthId, NULL, NULL,
         pCred, &ltime
@@ -258,7 +206,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
      *  need to send the out buffer if there are bytes to send
      */
 
-    ss = pInitializeSecurityContext(
+    ss = InitializeSecurityContextA(
         pCred, pCtx, NULL, 0, 0, SECURITY_NATIVE_DREP,
         lastToken ? &InBuffDesc : NULL, 0, newContext, &OutBuffDesc,
         &ContextAttributes, &ltime
@@ -274,7 +222,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
     }
 
     if ((ss == SEC_I_COMPLETE_NEEDED) || (ss == SEC_I_COMPLETE_AND_CONTINUE) ) {
-        ss = pCompleteAuthToken( pCtx, &OutBuffDesc );
+        ss = CompleteAuthToken( pCtx, &OutBuffDesc );
 
         if (ss < 0) {
             endSequence (pCred, pCtx);
@@ -300,12 +248,12 @@ JNIEXPORT jbyteArray JNICALL Java_sun_net_www_protocol_http_ntlm_NTLMAuthSequenc
 
 static void endSequence (PCredHandle credHand, PCtxtHandle ctxHandle) {
     if (credHand != 0) {
-        pFreeCredentialsHandle (credHand);
-        free (credHand);
+        FreeCredentialsHandle(credHand);
+        free(credHand);
     }
 
     if (ctxHandle != 0) {
-        pDeleteSecurityContext(ctxHandle);
-        free (ctxHandle);
+        DeleteSecurityContext(ctxHandle);
+        free(ctxHandle);
     }
 }
