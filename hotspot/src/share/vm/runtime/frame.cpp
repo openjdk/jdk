@@ -1190,9 +1190,19 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) {
 
 
 void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
-         if (is_interpreted_frame())    { oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
-  } else if (is_entry_frame())          { oops_entry_do      (f, map);
-  } else if (CodeCache::contains(pc())) { oops_code_blob_do  (f, cf, map);
+#ifndef PRODUCT
+  // simulate GC crash here to dump java thread in error report
+  if (CrashGCForDumpingJavaThread) {
+    char *t = NULL;
+    *t = 'c';
+  }
+#endif
+  if (is_interpreted_frame()) {
+    oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
+  } else if (is_entry_frame()) {
+    oops_entry_do(f, map);
+  } else if (CodeCache::contains(pc())) {
+    oops_code_blob_do(f, cf, map);
   } else {
     ShouldNotReachHere();
   }

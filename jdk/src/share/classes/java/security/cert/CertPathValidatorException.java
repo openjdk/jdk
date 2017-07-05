@@ -216,7 +216,7 @@ public class CertPathValidatorException extends GeneralSecurityException {
     /**
      * Returns the reason that the validation failed. The reason is
      * associated with the index of the certificate returned by
-     * {@link getIndex}.
+     * {@link #getIndex}.
      *
      * @return the reason that the validation failed, or
      *    <code>BasicReason.UNSPECIFIED</code> if a reason has not been

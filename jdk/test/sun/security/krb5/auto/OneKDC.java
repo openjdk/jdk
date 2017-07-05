@@ -24,8 +24,6 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.security.Security;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;

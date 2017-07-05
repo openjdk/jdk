@@ -60,8 +60,8 @@ void MemoryService::set_universe_heap(CollectedHeap* heap) {
       break;
     }
     case CollectedHeap::G1CollectedHeap : {
-      G1CollectedHeap::g1_unimplemented();
-      return;
+      add_g1_heap_info(G1CollectedHeap::heap());
+      break;
     }
 #endif // SERIALGC
     default: {
@@ -163,6 +163,19 @@ void MemoryService::add_parallel_scavenge_heap_info(ParallelScavengeHeap* heap) 
   add_psYoung_memory_pool(heap->young_gen(), _major_gc_manager, _minor_gc_manager);
   add_psOld_memory_pool(heap->old_gen(), _major_gc_manager);
   add_psPerm_memory_pool(heap->perm_gen(), _major_gc_manager);
+}
+
+void MemoryService::add_g1_heap_info(G1CollectedHeap* g1h) {
+  assert(UseG1GC, "sanity");
+
+  _minor_gc_manager = MemoryManager::get_g1YoungGen_memory_manager();
+  _major_gc_manager = MemoryManager::get_g1OldGen_memory_manager();
+  _managers_list->append(_minor_gc_manager);
+  _managers_list->append(_major_gc_manager);
+
+  add_g1YoungGen_memory_pool(g1h, _major_gc_manager, _minor_gc_manager);
+  add_g1OldGen_memory_pool(g1h, _major_gc_manager);
+  add_g1PermGen_memory_pool(g1h, _major_gc_manager);
 }
 #endif // SERIALGC
 
@@ -383,6 +396,64 @@ void MemoryService::add_psPerm_memory_pool(PSPermGen* gen, MemoryManager* mgr) {
                                                     true /* support_usage_threshold */);
   mgr->add_pool(perm_gen);
   _pools_list->append(perm_gen);
+}
+
+void MemoryService::add_g1YoungGen_memory_pool(G1CollectedHeap* g1h,
+                                               MemoryManager* major_mgr,
+                                               MemoryManager* minor_mgr) {
+  assert(major_mgr != NULL && minor_mgr != NULL, "should have two managers");
+
+  G1EdenPool* eden = new G1EdenPool(g1h);
+  G1SurvivorPool* survivor = new G1SurvivorPool(g1h);
+
+  major_mgr->add_pool(eden);
+  major_mgr->add_pool(survivor);
+  minor_mgr->add_pool(eden);
+  minor_mgr->add_pool(survivor);
+  _pools_list->append(eden);
+  _pools_list->append(survivor);
+}
+
+void MemoryService::add_g1OldGen_memory_pool(G1CollectedHeap* g1h,
+                                             MemoryManager* mgr) {
+  assert(mgr != NULL, "should have one manager");
+
+  G1OldGenPool* old_gen = new G1OldGenPool(g1h);
+  mgr->add_pool(old_gen);
+  _pools_list->append(old_gen);
+}
+
+void MemoryService::add_g1PermGen_memory_pool(G1CollectedHeap* g1h,
+                                              MemoryManager* mgr) {
+  assert(mgr != NULL, "should have one manager");
+
+  CompactingPermGenGen* perm_gen = (CompactingPermGenGen*) g1h->perm_gen();
+  PermanentGenerationSpec* spec = perm_gen->spec();
+  size_t max_size = spec->max_size() - spec->read_only_size()
+                                     - spec->read_write_size();
+  MemoryPool* pool = add_space(perm_gen->unshared_space(),
+                               "G1 Perm Gen",
+                               false, /* is_heap */
+                               max_size,
+                               true   /* support_usage_threshold */);
+  mgr->add_pool(pool);
+
+  // in case we support CDS in G1
+  if (UseSharedSpaces) {
+    pool = add_space(perm_gen->ro_space(),
+                     "G1 Perm Gen [shared-ro]",
+                     false, /* is_heap */
+                     spec->read_only_size(),
+                     true   /* support_usage_threshold */);
+    mgr->add_pool(pool);
+
+    pool = add_space(perm_gen->rw_space(),
+                     "G1 Perm Gen [shared-rw]",
+                     false, /* is_heap */
+                     spec->read_write_size(),
+                     true   /* support_usage_threshold */);
+    mgr->add_pool(pool);
+  }
 }
 #endif // SERIALGC
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,11 +103,12 @@ public interface GSSName {
      * follows: service@hostname.<p>
      *
      * It represents the following Oid value:<br>
-     * <code>{ 1(iso), 3(org), 6(dod), 1(internet), 5(security),
-     * 6(nametypes), 2(gss-host-based-services) }</code>
+     *  <code>{ iso(1) member-body(2) United
+     * States(840) mit(113554) infosys(1) gssapi(2) generic(1) service_name(4)
+     * }</code>
      */
     public static final Oid NT_HOSTBASED_SERVICE
-        = Oid.getInstance("1.3.6.1.5.6.2");
+        = Oid.getInstance("1.2.840.113554.1.2.1.4");
 
     /**
      * Name type to indicate a named user on a local system.<p>

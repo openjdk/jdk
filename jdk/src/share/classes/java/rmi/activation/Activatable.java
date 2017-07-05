@@ -73,7 +73,7 @@ public abstract class Activatable extends RemoteServer {
      * can be handled properly.
      *
      * <p>This method invokes the {@link
-     * exportObject(Remote,String,MarshalledObject,boolean,port)
+     * #exportObject(Remote,String,MarshalledObject,boolean,int)
      * exportObject} method with this object, and the specified location,
      * data, restart mode, and port.  Subsequent calls to {@link #getID}
      * will return the activation identifier returned from the call to
@@ -120,7 +120,7 @@ public abstract class Activatable extends RemoteServer {
      * can be handled properly.
      *
      * <p>This method invokes the {@link
-     * exportObject(Remote,String,MarshalledObject,boolean,port,RMIClientSocketFactory,RMIServerSocketFactory)
+     * #exportObject(Remote,String,MarshalledObject,boolean,int,RMIClientSocketFactory,RMIServerSocketFactory)
      * exportObject} method with this object, and the specified location,
      * data, restart mode, port, and client and server socket factories.
      * Subsequent calls to {@link #getID} will return the activation
@@ -312,7 +312,7 @@ public abstract class Activatable extends RemoteServer {
      * separately, so that exceptions can be handled properly.
      *
      * <p>This method invokes the {@link
-     * exportObject(Remote,String,MarshalledObject,boolean,port,RMIClientSocketFactory,RMIServerSocketFactory)
+     * #exportObject(Remote,String,MarshalledObject,boolean,int,RMIClientSocketFactory,RMIServerSocketFactory)
      * exportObject} method with the specified object, location, data,
      * restart mode, and port, and <code>null</code> for both client and
      * server socket factories, and then returns the resulting activation
