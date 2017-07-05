@@ -59,7 +59,6 @@ public final class DOMSignatureProperty extends DOMStructure
      *    is defensively copied to protect against subsequent modification.
      * @param target the target URI
      * @param id the Id (may be <code>null</code>)
-     * @return a <code>SignatureProperty</code>
      * @throws ClassCastException if <code>content</code> contains any
      *    entries that are not of type {@link XMLStructure}
      * @throws IllegalArgumentException if <code>content</code> is empty

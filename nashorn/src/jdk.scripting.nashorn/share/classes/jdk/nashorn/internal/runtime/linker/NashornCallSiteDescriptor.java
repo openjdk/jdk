@@ -34,6 +34,7 @@ import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.AbstractCallSiteDescriptor;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.internal.ir.debug.NashornTextifier;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
  * Nashorn-specific implementation of Dynalink's {@link CallSiteDescriptor}. The reason we have our own subclass is that
@@ -150,7 +151,7 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
     public static NashornCallSiteDescriptor get(final MethodHandles.Lookup lookup, final String name,
             final MethodType methodType, final int flags) {
         final String[] tokenizedName = CallSiteDescriptorFactory.tokenizeName(name);
-        assert tokenizedName.length == 2 || tokenizedName.length == 3;
+        assert tokenizedName.length >= 2;
         assert "dyn".equals(tokenizedName[0]);
         assert tokenizedName[1] != null;
         // TODO: see if we can move mangling/unmangling into Dynalink
@@ -245,6 +246,54 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
      */
     public String getOperand() {
         return operand;
+    }
+
+    /**
+     * If this is a dyn:call or dyn:new, this returns function description from callsite.
+     * Caller has to make sure this is a dyn:call or dyn:new call site.
+     *
+     * @return function description if available (or null)
+     */
+    public String getFunctionDescription() {
+        assert getFirstOperator().equals("call") || getFirstOperator().equals("new");
+        return getNameTokenCount() > 2? getNameToken(2) : null;
+    }
+
+    /**
+     * If this is a dyn:call or dyn:new, this returns function description from callsite.
+     * Caller has to make sure this is a dyn:call or dyn:new call site.
+     *
+     * @param desc call site descriptor
+     * @return function description if available (or null)
+     */
+    public static String getFunctionDescription(final CallSiteDescriptor desc) {
+        return desc instanceof NashornCallSiteDescriptor ?
+                ((NashornCallSiteDescriptor)desc).getFunctionDescription() : null;
+    }
+
+
+    /**
+     * Returns the error message to be used when dyn:call or dyn:new is used on a non-function.
+     *
+     * @param obj object on which dyn:call or dyn:new is used
+     * @return error message
+     */
+    public String getFunctionErrorMessage(final Object obj) {
+        final String funcDesc = getFunctionDescription();
+        return funcDesc != null? funcDesc : ScriptRuntime.safeToString(obj);
+    }
+
+    /**
+     * Returns the error message to be used when dyn:call or dyn:new is used on a non-function.
+     *
+     * @param desc call site descriptor
+     * @param obj object on which dyn:call or dyn:new is used
+     * @return error message
+     */
+    public static String getFunctionErrorMessage(final CallSiteDescriptor desc, final Object obj) {
+        return desc instanceof NashornCallSiteDescriptor ?
+                ((NashornCallSiteDescriptor)desc).getFunctionErrorMessage(obj) :
+                ScriptRuntime.safeToString(obj);
     }
 
     /**

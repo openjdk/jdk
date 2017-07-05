@@ -28,6 +28,7 @@ package sun.security.ssl;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.security.*;
 import java.security.cert.*;
 import java.security.interfaces.*;
@@ -36,9 +37,9 @@ import java.math.BigInteger;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-
 import javax.net.ssl.*;
 
+import sun.security.action.GetLongAction;
 import sun.security.util.KeyUtil;
 import sun.security.util.LegacyAlgorithmConstraints;
 import sun.security.action.GetPropertyAction;
@@ -57,11 +58,16 @@ import static sun.security.ssl.CipherSuite.KeyExchange.*;
  */
 final class ServerHandshaker extends Handshaker {
 
+    // The default number of milliseconds the handshaker will wait for
+    // revocation status responses.
+    private static final long DEFAULT_STATUS_RESP_DELAY = 5000;
+
     // is the server going to require the client to authenticate?
     private ClientAuthType      doClientAuth;
 
     // our authentication info
     private X509Certificate[]   certs;
+    private Map<X509Certificate, byte[]> responseMap;
     private PrivateKey          privateKey;
 
     private Object              serviceCreds;
@@ -112,6 +118,13 @@ final class ServerHandshaker extends Handshaker {
                     LegacyAlgorithmConstraints.PROPERTY_TLS_LEGACY_ALGS,
                     new SSLAlgorithmDecomposer());
 
+    // To switch off the status_request[_v2] extensions
+    private final static boolean enableStatusRequestExtension =
+            Debug.getBooleanProperty(
+                    "jdk.tls.server.enableStatusRequestExtension", false);
+    private boolean staplingActive = false;
+    private long statusRespTimeout;
+
     static {
         String property = AccessController.doPrivileged(
                     new GetPropertyAction("jdk.tls.ephemeralDHKeySize"));
@@ -159,6 +172,11 @@ final class ServerHandshaker extends Handshaker {
                 activeProtocolVersion, isInitialHandshake, secureRenegotiation,
                 clientVerifyData, serverVerifyData);
         doClientAuth = clientAuth;
+        statusRespTimeout = AccessController.doPrivileged(
+                    new GetLongAction("jdk.tls.stapling.responseTimeout",
+                        DEFAULT_STATUS_RESP_DELAY));
+        statusRespTimeout = statusRespTimeout >= 0 ? statusRespTimeout :
+                DEFAULT_STATUS_RESP_DELAY;
     }
 
     /*
@@ -176,6 +194,11 @@ final class ServerHandshaker extends Handshaker {
                 activeProtocolVersion, isInitialHandshake, secureRenegotiation,
                 clientVerifyData, serverVerifyData, isDTLS);
         doClientAuth = clientAuth;
+        statusRespTimeout = AccessController.doPrivileged(
+                    new GetLongAction("jdk.tls.stapling.responseTimeout",
+                        DEFAULT_STATUS_RESP_DELAY));
+        statusRespTimeout = statusRespTimeout >= 0 ? statusRespTimeout :
+                DEFAULT_STATUS_RESP_DELAY;
     }
 
     /*
@@ -529,6 +552,16 @@ final class ServerHandshaker extends Handshaker {
             }
         }
 
+        // Check if the client has asserted the status_request[_v2] extension(s)
+        CertStatusReqExtension statReqExt = (CertStatusReqExtension)
+                    mesg.extensions.get(ExtensionType.EXT_STATUS_REQUEST);
+        CertStatusReqListV2Extension statReqExtV2 =
+                (CertStatusReqListV2Extension)mesg.extensions.get(
+                        ExtensionType.EXT_STATUS_REQUEST_V2);
+        // Keep stapling active if at least one of the extensions has been set
+        staplingActive = enableStatusRequestExtension &&
+                (statReqExt != null || statReqExtV2 != null);
+
         /*
          * FIRST, construct the ServerHello using the options and priorities
          * from the ClientHello.  Update the (pending) cipher spec as we do
@@ -825,6 +858,69 @@ final class ServerHandshaker extends Handshaker {
             m1.extensions.add(maxFragLenExt);
         }
 
+        StatusRequestType statReqType = null;
+        StatusRequest statReqData = null;
+        if (staplingActive && !resumingSession) {
+            ExtensionType statusRespExt = ExtensionType.EXT_STATUS_REQUEST;
+
+            // Determine which type of stapling we are doing and assert the
+            // proper extension in the server hello.
+            // Favor status_request_v2 over status_request and ocsp_multi
+            // over ocsp.
+            // If multiple ocsp or ocsp_multi types exist, select the first
+            // instance of a given type
+            if (statReqExtV2 != null) {             // RFC 6961 stapling
+                statusRespExt = ExtensionType.EXT_STATUS_REQUEST_V2;
+                List<CertStatusReqItemV2> reqItems =
+                        statReqExtV2.getRequestItems();
+                int ocspIdx = -1;
+                int ocspMultiIdx = -1;
+                for (int pos = 0; pos < reqItems.size(); pos++) {
+                    CertStatusReqItemV2 item = reqItems.get(pos);
+                    if (ocspIdx < 0 && item.getType() ==
+                            StatusRequestType.OCSP) {
+                        ocspIdx = pos;
+                    } else if (ocspMultiIdx < 0 && item.getType() ==
+                            StatusRequestType.OCSP_MULTI) {
+                        ocspMultiIdx = pos;
+                    }
+                }
+                if (ocspMultiIdx >= 0) {
+                    statReqType = reqItems.get(ocspMultiIdx).getType();
+                    statReqData = reqItems.get(ocspMultiIdx).getRequest();
+                } else if (ocspIdx >= 0) {
+                    statReqType = reqItems.get(ocspIdx).getType();
+                    statReqData = reqItems.get(ocspIdx).getRequest();
+                } else {
+                    // Some unknown type.  We will not do stapling for
+                    // this connection since we cannot understand the
+                    // requested type.
+                    staplingActive = false;
+                }
+            } else {                                // RFC 6066 stapling
+                statReqType = StatusRequestType.OCSP;
+                statReqData = statReqExt.getRequest();
+            }
+
+            if (statReqType != null && statReqData != null) {
+                // Next, attempt to obtain status responses
+                StatusResponseManager statRespMgr =
+                        sslContext.getStatusResponseManager();
+                responseMap = statRespMgr.get(statReqType, statReqData, certs,
+                        statusRespTimeout, TimeUnit.MILLISECONDS);
+                if (!responseMap.isEmpty()) {
+                    // We now can safely assert status_request[_v2] in our
+                    // ServerHello, and know for certain that we can provide
+                    // responses back to this client for this connection.
+                    if (statusRespExt == ExtensionType.EXT_STATUS_REQUEST) {
+                        m1.extensions.add(new CertStatusReqExtension());
+                    } else if (statusRespExt == ExtensionType.EXT_STATUS_REQUEST_V2) {
+                        m1.extensions.add(new CertStatusReqListV2Extension());
+                    }
+                }
+            }
+        }
+
         if (debug != null && Debug.isOn("handshake")) {
             m1.print(System.out);
             System.out.println("Cipher suite:  " + session.getSuite());
@@ -883,6 +979,32 @@ final class ServerHandshaker extends Handshaker {
         } else {
             if (certs != null) {
                 throw new RuntimeException("anonymous keyexchange with certs");
+            }
+        }
+
+        /**
+         * The CertificateStatus message ... only if it is needed.
+         * This would only be needed if we've established that this handshake
+         * supports status stapling and there is at least one response to
+         * return to the client.
+         */
+        if (staplingActive && !responseMap.isEmpty()) {
+            try {
+                CertificateStatus csMsg = new CertificateStatus(statReqType,
+                        certs, responseMap);
+                if (debug != null && Debug.isOn("handshake")) {
+                    csMsg.print(System.out);
+                }
+                csMsg.write(output);
+                handshakeState.update(csMsg, resumingSession);
+                responseMap = null;
+            } catch (SSLException ssle) {
+                // We don't want the exception to be fatal, we just won't
+                // send the message if we fail on construction.
+                if (debug != null && Debug.isOn("handshake")) {
+                    System.out.println("Failed during CertificateStatus " +
+                            "construction: " + ssle);
+                }
             }
         }
 

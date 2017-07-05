@@ -330,7 +330,7 @@ public class Config {
      *
      * @param s the string duration
      * @return time in seconds
-     * @throw KrbException if format is illegal
+     * @throws KrbException if format is illegal
      */
     public static int duration(String s) throws KrbException {
 
@@ -392,7 +392,7 @@ public class Config {
      * @param keys the keys
      * @return the int value, Integer.MIN_VALUE is returned if it cannot be
      * found or the value is not a legal integer.
-     * @throw IllegalArgumentException if any of the keys is illegal
+     * @throws IllegalArgumentException if any of the keys is illegal
      * @see #get(java.lang.String[])
      */
     public int getIntValue(String... keys) {

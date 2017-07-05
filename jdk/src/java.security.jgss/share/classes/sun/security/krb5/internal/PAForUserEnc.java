@@ -36,7 +36,7 @@ import sun.security.util.DerValue;
 /**
  * Implements the ASN.1 PA-FOR-USER type.
  *
- * <xmp>
+ * <pre>{@code
  * padata-type  ::= PA-FOR-USER
  *                  -- value 129
  * padata-value ::= EncryptedData
@@ -47,7 +47,7 @@ import sun.security.util.DerValue;
  *     cksum[2] Checksum,
  *     auth-package[3] KerberosString
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects MS-SFU.

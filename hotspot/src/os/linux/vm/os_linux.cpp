@@ -2043,29 +2043,94 @@ void os::print_os_info(outputStream* st) {
 // Searching for the debian_version file is the last resort.  It contains
 // an informative string like "6.0.6" or "wheezy/sid". Because of this
 // "Debian " is printed before the contents of the debian_version file.
-void os::Linux::print_distro_info(outputStream* st) {
-  if (!_print_ascii_file("/etc/oracle-release", st) &&
-      !_print_ascii_file("/etc/mandriva-release", st) &&
-      !_print_ascii_file("/etc/mandrake-release", st) &&
-      !_print_ascii_file("/etc/sun-release", st) &&
-      !_print_ascii_file("/etc/redhat-release", st) &&
-      !_print_ascii_file("/etc/lsb-release", st) &&
-      !_print_ascii_file("/etc/SuSE-release", st) &&
-      !_print_ascii_file("/etc/turbolinux-release", st) &&
-      !_print_ascii_file("/etc/gentoo-release", st) &&
-      !_print_ascii_file("/etc/ltib-release", st) &&
-      !_print_ascii_file("/etc/angstrom-version", st) &&
-      !_print_ascii_file("/etc/system-release", st) &&
-      !_print_ascii_file("/etc/os-release", st)) {
 
-    if (file_exists("/etc/debian_version")) {
-      st->print("Debian ");
-      _print_ascii_file("/etc/debian_version", st);
-    } else {
-      st->print("Linux");
+const char* distro_files[] = {
+  "/etc/oracle-release",
+  "/etc/mandriva-release",
+  "/etc/mandrake-release",
+  "/etc/sun-release",
+  "/etc/redhat-release",
+  "/etc/lsb-release",
+  "/etc/SuSE-release",
+  "/etc/turbolinux-release",
+  "/etc/gentoo-release",
+  "/etc/ltib-release",
+  "/etc/angstrom-version",
+  "/etc/system-release",
+  "/etc/os-release",
+  NULL };
+
+void os::Linux::print_distro_info(outputStream* st) {
+  for (int i = 0;; i++) {
+    const char* file = distro_files[i];
+    if (file == NULL) {
+      break;  // done
+    }
+    // If file prints, we found it.
+    if (_print_ascii_file(file, st)) {
+      return;
     }
   }
+
+  if (file_exists("/etc/debian_version")) {
+    st->print("Debian ");
+    _print_ascii_file("/etc/debian_version", st);
+  } else {
+    st->print("Linux");
+  }
   st->cr();
+}
+
+static void parse_os_info(char* distro, size_t length, const char* file) {
+  FILE* fp = fopen(file, "r");
+  if (fp != NULL) {
+    char buf[256];
+    // get last line of the file.
+    while (fgets(buf, sizeof(buf), fp)) { }
+    // Edit out extra stuff in expected ubuntu format
+    if (strstr(buf, "DISTRIB_DESCRIPTION=") != NULL) {
+      char* ptr = strstr(buf, "\"");  // the name is in quotes
+      if (ptr != NULL) {
+        ptr++; // go beyond first quote
+        char* nl = strchr(ptr, '\"');
+        if (nl != NULL) *nl = '\0';
+        strncpy(distro, ptr, length);
+      } else {
+        ptr = strstr(buf, "=");
+        ptr++; // go beyond equals then
+        char* nl = strchr(ptr, '\n');
+        if (nl != NULL) *nl = '\0';
+        strncpy(distro, ptr, length);
+      }
+    } else {
+      // if not in expected Ubuntu format, print out whole line minus \n
+      char* nl = strchr(buf, '\n');
+      if (nl != NULL) *nl = '\0';
+      strncpy(distro, buf, length);
+    }
+    // close distro file
+    fclose(fp);
+  }
+}
+
+void os::get_summary_os_info(char* buf, size_t buflen) {
+  for (int i = 0;; i++) {
+    const char* file = distro_files[i];
+    if (file == NULL) {
+      break; // ran out of distro_files
+    }
+    if (file_exists(file)) {
+      parse_os_info(buf, buflen, file);
+      return;
+    }
+  }
+  // special case for debian
+  if (file_exists("/etc/debian_version")) {
+    strncpy(buf, "Debian ", buflen);
+    parse_os_info(&buf[7], buflen-7, "/etc/debian_version");
+  } else {
+    strncpy(buf, "Linux", buflen);
+  }
 }
 
 void os::Linux::print_libversion_info(outputStream* st) {
@@ -2148,6 +2213,48 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
       st->print_cr("  <Not Available>");
     }
   }
+}
+
+const char* search_string = IA32_ONLY("model name") AMD64_ONLY("model name")
+                            IA64_ONLY("") SPARC_ONLY("cpu")
+                            ARM32_ONLY("Processor") PPC_ONLY("Processor") AARCH64_ONLY("Processor");
+
+// Parses the cpuinfo file for string representing the model name.
+void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
+  FILE* fp = fopen("/proc/cpuinfo", "r");
+  if (fp != NULL) {
+    while (!feof(fp)) {
+      char buf[256];
+      if (fgets(buf, sizeof(buf), fp)) {
+        char* start = strstr(buf, search_string);
+        if (start != NULL) {
+          char *ptr = start + strlen(search_string);
+          char *end = buf + strlen(buf);
+          while (ptr != end) {
+             // skip whitespace and colon for the rest of the name.
+             if (*ptr != ' ' && *ptr != '\t' && *ptr != ':') {
+               break;
+             }
+             ptr++;
+          }
+          if (ptr != end) {
+            // reasonable string, get rid of newline and keep the rest
+            char* nl = strchr(buf, '\n');
+            if (nl != NULL) *nl = '\0';
+            strncpy(cpuinfo, ptr, length);
+            fclose(fp);
+            return;
+          }
+        }
+      }
+    }
+    fclose(fp);
+  }
+  // cpuinfo not found or parsing failed, just print generic string.  The entire
+  // /proc/cpuinfo file will be printed later in the file (or enough of it for x86)
+  strncpy(cpuinfo, IA32_ONLY("x86_32") AMD64_ONLY("x86_32")
+                   IA64_ONLY("IA64") SPARC_ONLY("sparcv9")
+                   ARM32_ONLY("ARM") PPC_ONLY("PPC64") AARCH64_ONLY("AArch64"), length);
 }
 
 void os::print_siginfo(outputStream* st, void* siginfo) {

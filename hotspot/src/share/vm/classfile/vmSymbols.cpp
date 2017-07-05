@@ -324,6 +324,319 @@ vmIntrinsics::ID vmIntrinsics::for_raw_conversion(BasicType src, BasicType dest)
   return vmIntrinsics::_none;
 }
 
+bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch(id) {
+#ifdef TRACE_HAVE_INTRINSICS
+  case vmIntrinsics::_classID:
+  case vmIntrinsics::_threadID:
+  case vmIntrinsics::_counterTime:
+#endif
+  case vmIntrinsics::_currentTimeMillis:
+  case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_floatToRawIntBits:
+  case vmIntrinsics::_intBitsToFloat:
+  case vmIntrinsics::_doubleToRawLongBits:
+  case vmIntrinsics::_longBitsToDouble:
+  case vmIntrinsics::_getClass:
+  case vmIntrinsics::_isInstance:
+  case vmIntrinsics::_currentThread:
+  case vmIntrinsics::_dabs:
+  case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsin:
+  case vmIntrinsics::_dcos:
+  case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dlog:
+  case vmIntrinsics::_dlog10:
+  case vmIntrinsics::_dexp:
+  case vmIntrinsics::_dpow:
+  case vmIntrinsics::_checkIndex:
+  case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_updateCRC32:
+  case vmIntrinsics::_updateBytesCRC32:
+  case vmIntrinsics::_updateByteBufferCRC32:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch(id) {
+#ifdef TRACE_HAVE_INTRINSICS
+  case vmIntrinsics::_counterTime:
+#endif
+  case vmIntrinsics::_currentTimeMillis:
+  case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_floatToRawIntBits:
+  case vmIntrinsics::_intBitsToFloat:
+  case vmIntrinsics::_doubleToRawLongBits:
+  case vmIntrinsics::_longBitsToDouble:
+  case vmIntrinsics::_currentThread:
+  case vmIntrinsics::_dabs:
+  case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsin:
+  case vmIntrinsics::_dcos:
+  case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dlog:
+  case vmIntrinsics::_dlog10:
+  case vmIntrinsics::_dexp:
+  case vmIntrinsics::_dpow:
+  case vmIntrinsics::_updateCRC32:
+  case vmIntrinsics::_updateBytesCRC32:
+  case vmIntrinsics::_updateByteBufferCRC32:
+    return false;
+  default:
+    return true;
+  }
+}
+
+bool vmIntrinsics::does_virtual_dispatch(vmIntrinsics::ID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch(id) {
+  case vmIntrinsics::_hashCode:
+  case vmIntrinsics::_clone:
+    return true;
+    break;
+  default:
+    return false;
+  }
+}
+
+int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch (id) {
+  case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
+  case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+    return 1;
+  case vmIntrinsics::_digestBase_implCompressMB:
+    return 3;
+  default:
+    return 0;
+  }
+}
+
+bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  switch (id) {
+  case vmIntrinsics::_isInstance:
+  case vmIntrinsics::_isAssignableFrom:
+  case vmIntrinsics::_getModifiers:
+  case vmIntrinsics::_isInterface:
+  case vmIntrinsics::_isArray:
+  case vmIntrinsics::_isPrimitive:
+  case vmIntrinsics::_getSuperclass:
+  case vmIntrinsics::_Class_cast:
+  case vmIntrinsics::_getLength:
+  case vmIntrinsics::_newArray:
+    if (!InlineClassNatives) return true;
+    break;
+  case vmIntrinsics::_currentThread:
+  case vmIntrinsics::_isInterrupted:
+    if (!InlineThreadNatives) return true;
+    break;
+  case vmIntrinsics::_floatToRawIntBits:
+  case vmIntrinsics::_intBitsToFloat:
+  case vmIntrinsics::_doubleToRawLongBits:
+  case vmIntrinsics::_longBitsToDouble:
+  case vmIntrinsics::_dabs:
+  case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsin:
+  case vmIntrinsics::_dcos:
+  case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dlog:
+  case vmIntrinsics::_dexp:
+  case vmIntrinsics::_dpow:
+  case vmIntrinsics::_dlog10:
+  case vmIntrinsics::_datan2:
+  case vmIntrinsics::_min:
+  case vmIntrinsics::_max:
+  case vmIntrinsics::_floatToIntBits:
+  case vmIntrinsics::_doubleToLongBits:
+    if (!InlineMathNatives) return true;
+    break;
+  case vmIntrinsics::_arraycopy:
+    if (!InlineArrayCopy) return true;
+    break;
+  case vmIntrinsics::_updateCRC32:
+  case vmIntrinsics::_updateBytesCRC32:
+  case vmIntrinsics::_updateByteBufferCRC32:
+    if (!UseCRC32Intrinsics) return true;
+    break;
+  case vmIntrinsics::_getObject:
+  case vmIntrinsics::_getBoolean:
+  case vmIntrinsics::_getByte:
+  case vmIntrinsics::_getShort:
+  case vmIntrinsics::_getChar:
+  case vmIntrinsics::_getInt:
+  case vmIntrinsics::_getLong:
+  case vmIntrinsics::_getFloat:
+  case vmIntrinsics::_getDouble:
+  case vmIntrinsics::_putObject:
+  case vmIntrinsics::_putBoolean:
+  case vmIntrinsics::_putByte:
+  case vmIntrinsics::_putShort:
+  case vmIntrinsics::_putChar:
+  case vmIntrinsics::_putInt:
+  case vmIntrinsics::_putLong:
+  case vmIntrinsics::_putFloat:
+  case vmIntrinsics::_putDouble:
+  case vmIntrinsics::_getObjectVolatile:
+  case vmIntrinsics::_getBooleanVolatile:
+  case vmIntrinsics::_getByteVolatile:
+  case vmIntrinsics::_getShortVolatile:
+  case vmIntrinsics::_getCharVolatile:
+  case vmIntrinsics::_getIntVolatile:
+  case vmIntrinsics::_getLongVolatile:
+  case vmIntrinsics::_getFloatVolatile:
+  case vmIntrinsics::_getDoubleVolatile:
+  case vmIntrinsics::_putObjectVolatile:
+  case vmIntrinsics::_putBooleanVolatile:
+  case vmIntrinsics::_putByteVolatile:
+  case vmIntrinsics::_putShortVolatile:
+  case vmIntrinsics::_putCharVolatile:
+  case vmIntrinsics::_putIntVolatile:
+  case vmIntrinsics::_putLongVolatile:
+  case vmIntrinsics::_putFloatVolatile:
+  case vmIntrinsics::_putDoubleVolatile:
+  case vmIntrinsics::_getByte_raw:
+  case vmIntrinsics::_getShort_raw:
+  case vmIntrinsics::_getChar_raw:
+  case vmIntrinsics::_getInt_raw:
+  case vmIntrinsics::_getLong_raw:
+  case vmIntrinsics::_getFloat_raw:
+  case vmIntrinsics::_getDouble_raw:
+  case vmIntrinsics::_putByte_raw:
+  case vmIntrinsics::_putShort_raw:
+  case vmIntrinsics::_putChar_raw:
+  case vmIntrinsics::_putInt_raw:
+  case vmIntrinsics::_putLong_raw:
+  case vmIntrinsics::_putFloat_raw:
+  case vmIntrinsics::_putDouble_raw:
+  case vmIntrinsics::_putOrderedObject:
+  case vmIntrinsics::_putOrderedLong:
+  case vmIntrinsics::_putOrderedInt:
+  case vmIntrinsics::_getAndAddInt:
+  case vmIntrinsics::_getAndAddLong:
+  case vmIntrinsics::_getAndSetInt:
+  case vmIntrinsics::_getAndSetLong:
+  case vmIntrinsics::_getAndSetObject:
+    if (!InlineUnsafeOps) return true;
+    break;
+  case vmIntrinsics::_getShortUnaligned:
+  case vmIntrinsics::_getCharUnaligned:
+  case vmIntrinsics::_getIntUnaligned:
+  case vmIntrinsics::_getLongUnaligned:
+  case vmIntrinsics::_putShortUnaligned:
+  case vmIntrinsics::_putCharUnaligned:
+  case vmIntrinsics::_putIntUnaligned:
+  case vmIntrinsics::_putLongUnaligned:
+  case vmIntrinsics::_allocateInstance:
+  case vmIntrinsics::_getAddress_raw:
+  case vmIntrinsics::_putAddress_raw:
+    if (!InlineUnsafeOps || !UseUnalignedAccesses) return true;
+    break;
+  case vmIntrinsics::_hashCode:
+    if (!InlineObjectHash) return true;
+    break;
+  case vmIntrinsics::_aescrypt_encryptBlock:
+  case vmIntrinsics::_aescrypt_decryptBlock:
+    if (!UseAESIntrinsics) return true;
+    break;
+  case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
+  case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+    if (!UseAESIntrinsics) return true;
+    break;
+  case vmIntrinsics::_sha_implCompress:
+    if (!UseSHA1Intrinsics) return true;
+    break;
+  case vmIntrinsics::_sha2_implCompress:
+    if (!UseSHA256Intrinsics) return true;
+    break;
+  case vmIntrinsics::_sha5_implCompress:
+    if (!UseSHA512Intrinsics) return true;
+    break;
+  case vmIntrinsics::_digestBase_implCompressMB:
+    if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) return true;
+    break;
+  case vmIntrinsics::_ghash_processBlocks:
+    if (!UseGHASHIntrinsics) return true;
+    break;
+  case vmIntrinsics::_updateBytesCRC32C:
+  case vmIntrinsics::_updateDirectByteBufferCRC32C:
+    if (!UseCRC32CIntrinsics) return true;
+    break;
+  case vmIntrinsics::_copyMemory:
+    if (!InlineArrayCopy || !InlineUnsafeOps) return true;
+    break;
+#ifdef COMPILER1
+  case vmIntrinsics::_checkIndex:
+    if (!InlineNIOCheckIndex) return true;
+    break;
+#endif // COMPILER1
+#ifdef COMPILER2
+  case vmIntrinsics::_clone:
+  case vmIntrinsics::_copyOf:
+  case vmIntrinsics::_copyOfRange:
+    // These intrinsics use both the objectcopy and the arraycopy
+    // intrinsic mechanism.
+    if (!InlineObjectCopy || !InlineArrayCopy) return true;
+    break;
+  case vmIntrinsics::_compareTo:
+     if (!SpecialStringCompareTo) return true;
+     break;
+  case vmIntrinsics::_indexOf:
+    if (!SpecialStringIndexOf) return true;
+    break;
+  case vmIntrinsics::_equals:
+    if (!SpecialStringEquals) return true;
+    break;
+  case vmIntrinsics::_equalsC:
+    if (!SpecialArraysEquals) return true;
+    break;
+  case vmIntrinsics::_encodeISOArray:
+    if (!SpecialEncodeISOArray) return true;
+    break;
+  case vmIntrinsics::_getCallerClass:
+    if (!InlineReflectionGetCallerClass) return true;
+    break;
+  case vmIntrinsics::_multiplyToLen:
+      if (!UseMultiplyToLenIntrinsic) return true;
+      break;
+  case vmIntrinsics::_squareToLen:
+    if (!UseSquareToLenIntrinsic) return true;
+    break;
+  case vmIntrinsics::_mulAdd:
+    if (!UseMulAddIntrinsic) return true;
+    break;
+  case vmIntrinsics::_montgomeryMultiply:
+    if (!UseMontgomeryMultiplyIntrinsic) return true;
+    break;
+  case vmIntrinsics::_montgomerySquare:
+    if (!UseMontgomerySquareIntrinsic) return true;
+    break;
+  case vmIntrinsics::_addExactI:
+  case vmIntrinsics::_addExactL:
+  case vmIntrinsics::_decrementExactI:
+  case vmIntrinsics::_decrementExactL:
+  case vmIntrinsics::_incrementExactI:
+  case vmIntrinsics::_incrementExactL:
+  case vmIntrinsics::_multiplyExactI:
+  case vmIntrinsics::_multiplyExactL:
+  case vmIntrinsics::_negateExactI:
+  case vmIntrinsics::_negateExactL:
+  case vmIntrinsics::_subtractExactI:
+  case vmIntrinsics::_subtractExactL:
+    if (!UseMathExactIntrinsics || !InlineMathNatives) return true;
+    break;
+#endif // COMPILER2
+  default:
+    return false;
+  }
+
+  return false;
+}
 
 #define VM_INTRINSIC_INITIALIZE(id, klass, name, sig, flags) #id "\0"
 static const char* vm_intrinsic_name_bodies =

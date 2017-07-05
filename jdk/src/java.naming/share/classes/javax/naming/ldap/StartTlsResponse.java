@@ -42,7 +42,7 @@ import javax.net.ssl.HostnameVerifier;
  *<p>
  * The Start TLS extended request and response are used to establish
  * a TLS connection over the existing LDAP connection associated with
- * the JNDI context on which <tt>extendedOperation()</tt> is invoked.
+ * the JNDI context on which {@code extendedOperation()} is invoked.
  * Typically, a JNDI program uses the StartTLS extended request and response
  * classes as follows.
  * <blockquote><pre>
@@ -122,7 +122,7 @@ public abstract class StartTlsResponse implements ExtendedResponse {
     /**
      * Overrides the default list of cipher suites enabled for use on the
      * TLS connection. The cipher suites must have already been listed by
-     * <tt>SSLSocketFactory.getSupportedCipherSuites()</tt> as being supported.
+     * {@code SSLSocketFactory.getSupportedCipherSuites()} as being supported.
      * Even if a suite has been enabled, it still might not be used because
      * the peer does not support it, or because the requisite certificates
      * (and private keys) are not available.
@@ -134,13 +134,13 @@ public abstract class StartTlsResponse implements ExtendedResponse {
     public abstract void setEnabledCipherSuites(String[] suites);
 
     /**
-     * Sets the hostname verifier used by <tt>negotiate()</tt>
+     * Sets the hostname verifier used by {@code negotiate()}
      * after the TLS handshake has completed and the default hostname
      * verification has failed.
-     * <tt>setHostnameVerifier()</tt> must be called before
-     * <tt>negotiate()</tt> is invoked for it to have effect.
+     * {@code setHostnameVerifier()} must be called before
+     * {@code negotiate()} is invoked for it to have effect.
      * If called after
-     * <tt>negotiate()</tt>, this method does not do anything.
+     * {@code negotiate()}, this method does not do anything.
      *
      * @param verifier The non-null hostname verifier callback.
      * @see #negotiate
@@ -150,7 +150,7 @@ public abstract class StartTlsResponse implements ExtendedResponse {
     /**
      * Negotiates a TLS session using the default SSL socket factory.
      * <p>
-     * This method is equivalent to <tt>negotiate(null)</tt>.
+     * This method is equivalent to {@code negotiate(null)}.
      *
      * @return The negotiated SSL session
      * @throws IOException If an IO error was encountered while establishing
@@ -167,16 +167,16 @@ public abstract class StartTlsResponse implements ExtendedResponse {
      * attaches it to the existing connection. Performs the TLS handshake
      * and returns the negotiated session information.
      * <p>
-     * If cipher suites have been set via <tt>setEnabledCipherSuites</tt>
+     * If cipher suites have been set via {@code setEnabledCipherSuites}
      * then they are enabled before the TLS handshake begins.
      * <p>
      * Hostname verification is performed after the TLS handshake completes.
      * The default hostname verification performs a match of the server's
      * hostname against the hostname information found in the server's certificate.
      * If this verification fails and no callback has been set via
-     * <tt>setHostnameVerifier</tt> then the negotiation fails.
+     * {@code setHostnameVerifier} then the negotiation fails.
      * If this verification fails and a callback has been set via
-     * <tt>setHostnameVerifier</tt>, then the callback is used to determine whether
+     * {@code setHostnameVerifier}, then the callback is used to determine whether
      * the negotiation succeeds.
      * <p>
      * If an error occurs then the SSL socket is closed and an IOException

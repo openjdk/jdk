@@ -547,8 +547,8 @@ public class GSSCredentialImpl implements GSSCredential {
     /**
      * Returns the specified mechanism's credential-element.
      *
-     * @param mechOid - the oid for mechanism to retrieve
-     * @param throwExcep - boolean indicating if the function is
+     * @param mechOid the oid for mechanism to retrieve
+     * @param initiate boolean indicating if the function is
      *    to throw exception or return null when element is not
      *    found.
      * @return mechanism credential object

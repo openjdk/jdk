@@ -59,26 +59,25 @@ public class Kinit {
      * We currently support only file-based credentials cache to
      * store the tickets obtained from the KDC.
      * By default, for all Unix platforms a cache file named
-     * /tmp/krb5cc_&lt;uid&gt will be generated. The &lt;uid&gt is the
+     * {@code /tmp/krb5cc_<uid>} will be generated. The {@code <uid>} is the
      * numeric user identifier.
      * For all other platforms, a cache file named
-     * &lt;USER_HOME&gt/krb5cc_&lt;USER_NAME&gt would be generated.
+     * {@code <USER_HOME>/krb5cc_<USER_NAME>} would be generated.
      * <p>
-     * &lt;USER_HOME&gt is obtained from <code>java.lang.System</code>
+     * {@code <USER_HOME>} is obtained from {@code java.lang.System}
      * property <i>user.home</i>.
-     * &lt;USER_NAME&gt is obtained from <code>java.lang.System</code>
+     * {@code <USER_NAME>} is obtained from {@code java.lang.System}
      * property <i>user.name</i>.
-     * If &lt;USER_HOME&gt is null the cache file would be stored in
+     * If {@code <USER_HOME>} is null the cache file would be stored in
      * the current directory that the program is running from.
-     * &lt;USER_NAME&gt is operating system's login username.
+     * {@code <USER_NAME>} is operating system's login username.
      * It could be different from user's principal name.
-     *</p>
-     *<p>
+     * <p>
      * For instance, on Windows NT, it could be
-     * c:\winnt\profiles\duke\krb5cc_duke, in
-     * which duke is the &lt;USER_NAME&gt, and c:\winnt\profile\duke is the
-     * &lt;USER_HOME&gt.
-     *<p>
+     * {@code c:\winnt\profiles\duke\krb5cc_duke}, in
+     * which duke is the {@code <USER_NAME>} and {@code c:\winnt\profile\duke} is the
+     * {@code <USER_HOME>}.
+     * <p>
      * A single user could have multiple principal names,
      * but the primary principal of the credentials cache could only be one,
      * which means one cache file could only store tickets for one
@@ -88,10 +87,8 @@ public class Kinit {
      * To avoid overwriting, you need to specify
      * a different cache file name when you request a
      * new ticket.
-     *</p>
-     *<p>
+     * <p>
      * You can specify the location of the cache file by using the -c option
-     *
      */
 
     public static void main(String[] args) {

@@ -37,10 +37,12 @@ import java.security.spec.ECParameterSpec;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.Reason;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import javax.security.auth.x500.X500Principal;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 import javax.net.ssl.*;
 
@@ -78,6 +80,12 @@ final class ClientHandshaker extends Handshaker {
     private CertificateRequest  certRequest;
 
     private boolean serverKeyExchangeReceived;
+
+    private final boolean enableStatusRequestExtension =
+            Debug.getBooleanProperty(
+                    "jdk.tls.client.enableStatusRequestExtension", true);
+    private boolean staplingActive = false;
+    private X509Certificate[] deferredCerts;
 
     /*
      * The RSA PreMasterSecret needs to know the version of
@@ -200,7 +208,16 @@ final class ClientHandshaker extends Handshaker {
     @Override
     void processMessage(byte type, int messageLen) throws IOException {
         // check the handshake state
-        handshakeState.check(type);
+        List<Byte> ignoredOptStates = handshakeState.check(type);
+
+        // If the state machine has skipped over certificate status
+        // and stapling was enabled, we need to check the chain immediately
+        // because it was deferred, waiting for CertificateStatus.
+        if (staplingActive && ignoredOptStates.contains(
+                HandshakeMessage.ht_certificate_status)) {
+            checkServerCerts(deferredCerts);
+            serverKey = session.getPeerCertificates()[0].getPublicKey();
+        }
 
         switch (type) {
         case HandshakeMessage.ht_hello_request:
@@ -241,8 +258,19 @@ final class ClientHandshaker extends Handshaker {
             CertificateMsg certificateMsg = new CertificateMsg(input);
             handshakeState.update(certificateMsg, resumingSession);
             this.serverCertificate(certificateMsg);
-            serverKey =
-                session.getPeerCertificates()[0].getPublicKey();
+            if (!staplingActive) {
+                // If we are not doing stapling, we can set serverKey right
+                // away.  Otherwise, we will wait until verification of the
+                // chain has completed after CertificateStatus;
+                serverKey = session.getPeerCertificates()[0].getPublicKey();
+            }
+            break;
+
+        case HandshakeMessage.ht_certificate_status:
+            CertificateStatus certStatusMsg = new CertificateStatus(input);
+            handshakeState.update(certStatusMsg, resumingSession);
+            this.certificateStatus(certStatusMsg);
+            serverKey = session.getPeerCertificates()[0].getPublicKey();
             break;
 
         case HandshakeMessage.ht_server_key_exchange:
@@ -685,10 +713,22 @@ final class ClientHandshaker extends Handshaker {
             ExtensionType type = ext.type;
             if (type == ExtensionType.EXT_SERVER_NAME) {
                 serverNamesAccepted = true;
+            } else if (type == ExtensionType.EXT_STATUS_REQUEST ||
+                    type == ExtensionType.EXT_STATUS_REQUEST_V2) {
+                // Only enable the stapling feature if the client asserted
+                // these extensions.
+                if (enableStatusRequestExtension) {
+                    staplingActive = true;
+                } else {
+                    fatalSE(Alerts.alert_unexpected_message, "Server set " +
+                            type + " extension when not requested by client");
+                }
             } else if ((type != ExtensionType.EXT_ELLIPTIC_CURVES)
                     && (type != ExtensionType.EXT_EC_POINT_FORMATS)
                     && (type != ExtensionType.EXT_SERVER_NAME)
-                    && (type != ExtensionType.EXT_RENEGOTIATION_INFO)) {
+                    && (type != ExtensionType.EXT_RENEGOTIATION_INFO)
+                    && (type != ExtensionType.EXT_STATUS_REQUEST)
+                    && (type != ExtensionType.EXT_STATUS_REQUEST_V2)) {
                 fatalSE(Alerts.alert_unsupported_extension,
                     "Server sent an unsupported extension: " + type);
             }
@@ -1476,6 +1516,12 @@ final class ClientHandshaker extends Handshaker {
             }
         }
 
+        // Add status_request and status_request_v2 extensions
+        if (enableStatusRequestExtension) {
+            clientHelloMessage.addCertStatusReqListV2Extension();
+            clientHelloMessage.addCertStatusRequestExtension();
+        }
+
         // reset the client random cookie
         clnt_random = clientHelloMessage.clnt_random;
 
@@ -1545,40 +1591,36 @@ final class ClientHandshaker extends Handshaker {
         }
 
         // ask the trust manager to verify the chain
-        X509TrustManager tm = sslContext.getX509TrustManager();
-        try {
-            // find out the key exchange algorithm used
-            // use "RSA" for non-ephemeral "RSA_EXPORT"
-            String keyExchangeString;
-            if (keyExchange == K_RSA_EXPORT && !serverKeyExchangeReceived) {
-                keyExchangeString = K_RSA.name;
-            } else {
-                keyExchangeString = keyExchange.name;
-            }
-
-            if (tm instanceof X509ExtendedTrustManager) {
-                if (conn != null) {
-                    ((X509ExtendedTrustManager)tm).checkServerTrusted(
-                        peerCerts.clone(),
-                        keyExchangeString,
-                        conn);
-                } else {
-                    ((X509ExtendedTrustManager)tm).checkServerTrusted(
-                        peerCerts.clone(),
-                        keyExchangeString,
-                        engine);
-                }
-            } else {
-                // Unlikely to happen, because we have wrapped the old
-                // X509TrustManager with the new X509ExtendedTrustManager.
-                throw new CertificateException(
-                    "Improper X509TrustManager implementation");
-            }
-        } catch (CertificateException e) {
-            // This will throw an exception, so include the original error.
-            fatalSE(Alerts.alert_certificate_unknown, e);
+        if (staplingActive) {
+            // Defer the certificate check until after we've received the
+            // CertificateStatus message.  If that message doesn't come in
+            // immediately following this message we will execute the check
+            // directly from processMessage before any other SSL/TLS processing.
+            deferredCerts = peerCerts;
+        } else {
+            // We're not doing stapling, so perform the check right now
+            checkServerCerts(peerCerts);
         }
-        session.setPeerCertificates(peerCerts);
+    }
+
+    /**
+     * If certificate status stapling has been enabled, the server will send
+     * one or more status messages to the client.
+     *
+     * @param mesg a {@code CertificateStatus} object built from the data
+     *      sent by the server.
+     *
+     * @throws IOException if any parsing errors occur.
+     */
+    private void certificateStatus(CertificateStatus mesg) throws IOException {
+        if (debug != null && Debug.isOn("handshake")) {
+            mesg.print(System.out);
+        }
+
+        // Perform the certificate check using the deferred certificates
+        // and responses that we have obtained.
+        session.setStatusResponses(mesg.getResponses());
+        checkServerCerts(deferredCerts);
     }
 
     /*
@@ -1700,4 +1742,88 @@ final class ClientHandshaker extends Handshaker {
 
         return false;
     }
+
+    /**
+     * Perform client-side checking of server certificates.
+     *
+     * @param certs an array of {@code X509Certificate} objects presented
+     *      by the server in the ServerCertificate message.
+     *
+     * @throws IOException if a failure occurs during validation or
+     *      the trust manager associated with the {@code SSLContext} is not
+     *      an {@code X509ExtendedTrustManager}.
+     */
+    private void checkServerCerts(X509Certificate[] certs)
+            throws IOException {
+        X509TrustManager tm = sslContext.getX509TrustManager();
+
+        // find out the key exchange algorithm used
+        // use "RSA" for non-ephemeral "RSA_EXPORT"
+        String keyExchangeString;
+        if (keyExchange == K_RSA_EXPORT && !serverKeyExchangeReceived) {
+            keyExchangeString = K_RSA.name;
+        } else {
+            keyExchangeString = keyExchange.name;
+        }
+
+        try {
+            if (tm instanceof X509ExtendedTrustManager) {
+                if (conn != null) {
+                    ((X509ExtendedTrustManager)tm).checkServerTrusted(
+                        certs.clone(),
+                        keyExchangeString,
+                        conn);
+                } else {
+                    ((X509ExtendedTrustManager)tm).checkServerTrusted(
+                        certs.clone(),
+                        keyExchangeString,
+                        engine);
+                }
+            } else {
+                // Unlikely to happen, because we have wrapped the old
+                // X509TrustManager with the new X509ExtendedTrustManager.
+                throw new CertificateException(
+                        "Improper X509TrustManager implementation");
+            }
+
+            // Once the server certificate chain has been validated, set
+            // the certificate chain in the TLS session.
+            session.setPeerCertificates(certs);
+        } catch (CertificateException ce) {
+            fatalSE(getCertificateAlert(ce), ce);
+        }
+    }
+
+    /**
+     * When a failure happens during certificate checking from an
+     * {@link X509TrustManager}, determine what TLS alert description to use.
+     *
+     * @param cexc The exception thrown by the {@link X509TrustManager}
+     *
+     * @return A byte value corresponding to a TLS alert description number.
+     */
+    private byte getCertificateAlert(CertificateException cexc) {
+        // The specific reason for the failure will determine how to
+        // set the alert description value
+        byte alertDesc = Alerts.alert_certificate_unknown;
+
+        Throwable baseCause = cexc.getCause();
+        if (baseCause instanceof CertPathValidatorException) {
+            CertPathValidatorException cpve =
+                    (CertPathValidatorException)baseCause;
+            Reason reason = cpve.getReason();
+            if (reason == BasicReason.REVOKED) {
+                alertDesc = staplingActive ?
+                        Alerts.alert_bad_certificate_status_response :
+                        Alerts.alert_certificate_revoked;
+            } else if (reason == BasicReason.UNDETERMINED_REVOCATION_STATUS) {
+                alertDesc = staplingActive ?
+                        Alerts.alert_bad_certificate_status_response :
+                        Alerts.alert_certificate_unknown;
+            }
+        }
+
+        return alertDesc;
+    }
 }
+

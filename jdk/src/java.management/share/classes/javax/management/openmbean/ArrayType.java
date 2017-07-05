@@ -29,7 +29,7 @@ import java.io.ObjectStreamException;
 import java.lang.reflect.Array;
 
 /**
- * The <code>ArrayType</code> class is the <i>open type</i> class whose instances describe
+ * The {@code ArrayType} class is the <i>open type</i> class whose instances describe
  * all <i>open data</i> values which are n-dimensional arrays of <i>open data</i> values.
  * <p>
  * Examples of valid {@code ArrayType} instances are:
@@ -222,22 +222,31 @@ public class ArrayType<T> extends OpenType<T> {
     /* *** Constructor *** */
 
     /**
-     * Constructs an <tt>ArrayType</tt> instance describing <i>open data</i> values which are
-     * arrays with dimension <var>dimension</var> of elements whose <i>open type</i> is <var>elementType</var>.
+     * Constructs an {@code ArrayType} instance describing <i>open data</i> values which are
+     * arrays with dimension <var>dimension</var> of elements
+     * whose <i>open type</i> is <var>elementType</var>.
      * <p>
-     * When invoked on an <tt>ArrayType</tt> instance, the {@link OpenType#getClassName() getClassName} method
-     * returns the class name of the array instances it describes (following the rules defined by the
-     * {@link Class#getName() getName} method of <code>java.lang.Class</code>), not the class name of the array elements
-     * (which is returned by a call to <tt>getElementOpenType().getClassName()</tt>).
+     * When invoked on an {@code ArrayType} instance,
+     * the {@link OpenType#getClassName() getClassName} method
+     * returns the class name of the array instances it describes
+     * (following the rules defined by the
+     * {@link Class#getName() getName} method of {@code java.lang.Class}),
+     * not the class name of the array elements
+     * (which is returned by a call to {@code getElementOpenType().getClassName()}).
      * <p>
-     * The internal field corresponding to the type name of this <code>ArrayType</code> instance is also set to
+     * The internal field corresponding to the type name of this
+     * {@code ArrayType} instance is also set to
      * the class name of the array instances it describes.
-     * In other words, the methods <code>getClassName</code> and <code>getTypeName</code> return the same string value.
-     * The internal field corresponding to the description of this <code>ArrayType</code> instance is set to a string value
+     * In other words, the methods {@code getClassName} and
+     * {@code getTypeName} return the same string value.
+     * The internal field corresponding to the description of this
+     * {@code ArrayType} instance is set to a string value
      * which follows the following template:
      * <ul>
-     * <li>if non-primitive array: <tt><i>&lt;dimension&gt;</i>-dimension array of <i>&lt;element_class_name&gt;</i></tt></li>
-     * <li>if primitive array: <tt><i>&lt;dimension&gt;</i>-dimension array of <i>&lt;primitive_type_of_the_element_class_name&gt;</i></tt></li>
+     * <li>if non-primitive array: <code><i>&lt;dimension&gt;</i>-dimension array
+     *     of <i>&lt;element_class_name&gt;</i></code></li>
+     * <li>if primitive array: <code><i>&lt;dimension&gt;</i>-dimension array
+     *     of <i>&lt;primitive_type_of_the_element_class_name&gt;</i></code></li>
      * </ul>
      * <p>
      * As an example, the following piece of code:
@@ -267,16 +276,16 @@ public class ArrayType<T> extends OpenType<T> {
      * System.out.println("array type description = " + t3.getDescription());
      * }</pre>
      *
-     * @param  dimension  the dimension of arrays described by this <tt>ArrayType</tt> instance;
+     * @param  dimension  the dimension of arrays described by this {@code ArrayType} instance;
      *                    must be greater than or equal to 1.
      *
      * @param  elementType  the <i>open type</i> of element values contained
-     *                      in the arrays described by this <tt>ArrayType</tt>
+     *                      in the arrays described by this {@code ArrayType}
      *                      instance; must be an instance of either
-     *                      <tt>SimpleType</tt>, <tt>CompositeType</tt>,
-     *                      <tt>TabularType</tt> or another <tt>ArrayType</tt>
-     *                      with a <tt>SimpleType</tt>, <tt>CompositeType</tt>
-     *                      or <tt>TabularType</tt> as its <tt>elementType</tt>.
+     *                      {@code SimpleType}, {@code CompositeType},
+     *                      {@code TabularType} or another {@code ArrayType}
+     *                      with a {@code SimpleType}, {@code CompositeType}
+     *                      or {@code TabularType} as its {@code elementType}.
      *
      * @throws IllegalArgumentException if {@code dimension} is not a positive
      *                                  integer.
@@ -318,19 +327,27 @@ public class ArrayType<T> extends OpenType<T> {
      * returns the {@link SimpleType} corresponding to the wrapper
      * type of the primitive type of the array.
      * <p>
-     * When invoked on an <tt>ArrayType</tt> instance, the {@link OpenType#getClassName() getClassName} method
-     * returns the class name of the array instances it describes (following the rules defined by the
-     * {@link Class#getName() getName} method of <code>java.lang.Class</code>), not the class name of the array elements
-     * (which is returned by a call to <tt>getElementOpenType().getClassName()</tt>).
+     * When invoked on an {@code ArrayType} instance,
+     * the {@link OpenType#getClassName() getClassName} method
+     * returns the class name of the array instances it describes
+     * (following the rules defined by the
+     * {@link Class#getName() getName} method of {@code java.lang.Class}),
+     * not the class name of the array elements
+     * (which is returned by a call to {@code getElementOpenType().getClassName()}).
      * <p>
-     * The internal field corresponding to the type name of this <code>ArrayType</code> instance is also set to
+     * The internal field corresponding to the type name of this
+     * {@code ArrayType} instance is also set to
      * the class name of the array instances it describes.
-     * In other words, the methods <code>getClassName</code> and <code>getTypeName</code> return the same string value.
-     * The internal field corresponding to the description of this <code>ArrayType</code> instance is set to a string value
+     * In other words, the methods {@code getClassName} and
+     * {@code getTypeName} return the same string value.
+     * The internal field corresponding to the description
+     * of this {@code ArrayType} instance is set to a string value
      * which follows the following template:
      * <ul>
-     * <li>if non-primitive array: <tt>1-dimension array of <i>&lt;element_class_name&gt;</i></tt></li>
-     * <li>if primitive array: <tt>1-dimension array of <i>&lt;primitive_type_of_the_element_class_name&gt;</i></tt></li>
+     * <li>if non-primitive array: <code>1-dimension array
+     *     of <i>&lt;element_class_name&gt;</i></code></li>
+     * <li>if primitive array: <code>1-dimension array
+     *     of <i>&lt;primitive_type_of_the_element_class_name&gt;</i></code></li>
      * </ul>
      * <p>
      * As an example, the following piece of code:
@@ -483,7 +500,7 @@ public class ArrayType<T> extends OpenType<T> {
     /* *** ArrayType specific information methods *** */
 
     /**
-     * Returns the dimension of arrays described by this <tt>ArrayType</tt> instance.
+     * Returns the dimension of arrays described by this {@code ArrayType} instance.
      *
      * @return the dimension.
      */
@@ -493,7 +510,8 @@ public class ArrayType<T> extends OpenType<T> {
     }
 
     /**
-     * Returns the <i>open type</i> of element values contained in the arrays described by this <tt>ArrayType</tt> instance.
+     * Returns the <i>open type</i> of element values contained
+     * in the arrays described by this {@code ArrayType} instance.
      *
      * @return the element type.
      */
@@ -503,8 +521,8 @@ public class ArrayType<T> extends OpenType<T> {
     }
 
     /**
-     * Returns <code>true</code> if the open data values this open
-     * type describes are primitive arrays, <code>false</code> otherwise.
+     * Returns {@code true} if the open data values this open
+     * type describes are primitive arrays, {@code false} otherwise.
      *
      * @return true if this is a primitive array type.
      *
@@ -516,32 +534,32 @@ public class ArrayType<T> extends OpenType<T> {
     }
 
     /**
-     * Tests whether <var>obj</var> is a value for this <code>ArrayType</code>
+     * Tests whether <var>obj</var> is a value for this {@code ArrayType}
      * instance.
      * <p>
-     * This method returns <code>true</code> if and only if <var>obj</var>
+     * This method returns {@code true} if and only if <var>obj</var>
      * is not null, <var>obj</var> is an array and any one of the following
-     * is <tt>true</tt>:
+     * is {@code true}:
      *
      * <ul>
-     * <li>if this <code>ArrayType</code> instance describes an array of
-     * <tt>SimpleType</tt> elements or their corresponding primitive types,
+     * <li>if this {@code ArrayType} instance describes an array of
+     * {@code SimpleType} elements or their corresponding primitive types,
      * <var>obj</var>'s class name is the same as the className field defined
-     * for this <code>ArrayType</code> instance (i.e. the class name returned
+     * for this {@code ArrayType} instance (i.e. the class name returned
      * by the {@link OpenType#getClassName() getClassName} method, which
      * includes the dimension information),<br>&nbsp;</li>
-     * <li>if this <code>ArrayType</code> instance describes an array of
+     * <li>if this {@code ArrayType} instance describes an array of
      * classes implementing the {@code TabularData} interface or the
      * {@code CompositeData} interface, <var>obj</var> is assignable to
      * such a declared array, and each element contained in {<var>obj</var>
      * is either null or a valid value for the element's open type specified
-     * by this <code>ArrayType</code> instance.</li>
+     * by this {@code ArrayType} instance.</li>
      * </ul>
      *
      * @param obj the object to be tested.
      *
-     * @return <code>true</code> if <var>obj</var> is a value for this
-     * <code>ArrayType</code> instance.
+     * @return {@code true} if <var>obj</var> is a value for this
+     * {@code ArrayType} instance.
      */
     public boolean isValue(Object obj) {
 
@@ -649,21 +667,21 @@ public class ArrayType<T> extends OpenType<T> {
     /* *** Methods overriden from class Object *** */
 
     /**
-     * Compares the specified <code>obj</code> parameter with this
-     * <code>ArrayType</code> instance for equality.
+     * Compares the specified {@code obj} parameter with this
+     * {@code ArrayType} instance for equality.
      * <p>
-     * Two <code>ArrayType</code> instances are equal if and only if they
+     * Two {@code ArrayType} instances are equal if and only if they
      * describe array instances which have the same dimension, elements'
      * open type and primitive array flag.
      *
      * @param obj the object to be compared for equality with this
-     *            <code>ArrayType</code> instance; if <var>obj</var>
-     *            is <code>null</code> or is not an instance of the
-     *            class <code>ArrayType</code> this method returns
-     *            <code>false</code>.
+     *            {@code ArrayType} instance; if <var>obj</var>
+     *            is {@code null} or is not an instance of the
+     *            class {@code ArrayType} this method returns
+     *            {@code false}.
      *
-     * @return <code>true</code> if the specified object is equal to
-     *         this <code>ArrayType</code> instance.
+     * @return {@code true} if the specified object is equal to
+     *         this {@code ArrayType} instance.
      */
     public boolean equals(Object obj) {
 
@@ -697,25 +715,25 @@ public class ArrayType<T> extends OpenType<T> {
     }
 
     /**
-     * Returns the hash code value for this <code>ArrayType</code> instance.
+     * Returns the hash code value for this {@code ArrayType} instance.
      * <p>
-     * The hash code of an <code>ArrayType</code> instance is the sum of the
-     * hash codes of all the elements of information used in <code>equals</code>
+     * The hash code of an {@code ArrayType} instance is the sum of the
+     * hash codes of all the elements of information used in {@code equals}
      * comparisons (i.e. dimension, elements' open type and primitive array flag).
      * The hashcode for a primitive value is the hashcode of the corresponding boxed
-     * object (e.g. the hashcode for <tt>true</tt> is <tt>Boolean.TRUE.hashCode()</tt>).
-     * This ensures that <code> t1.equals(t2) </code> implies that
-     * <code> t1.hashCode()==t2.hashCode() </code> for any two
-     * <code>ArrayType</code> instances <code>t1</code> and <code>t2</code>,
+     * object (e.g. the hashcode for {@code true} is {@code Boolean.TRUE.hashCode()}).
+     * This ensures that {@code t1.equals(t2)} implies that
+     * {@code t1.hashCode()==t2.hashCode()} for any two
+     * {@code ArrayType} instances {@code t1} and {@code t2},
      * as required by the general contract of the method
      * {@link Object#hashCode() Object.hashCode()}.
      * <p>
-     * As <code>ArrayType</code> instances are immutable, the hash
+     * As {@code ArrayType} instances are immutable, the hash
      * code for this instance is calculated once, on the first call
-     * to <code>hashCode</code>, and then the same value is returned
+     * to {@code hashCode}, and then the same value is returned
      * for subsequent calls.
      *
-     * @return  the hash code value for this <code>ArrayType</code> instance
+     * @return  the hash code value for this {@code ArrayType} instance
      */
     public int hashCode() {
 
@@ -735,19 +753,19 @@ public class ArrayType<T> extends OpenType<T> {
     }
 
     /**
-     * Returns a string representation of this <code>ArrayType</code> instance.
+     * Returns a string representation of this {@code ArrayType} instance.
      * <p>
      * The string representation consists of the name of this class (i.e.
-     * <code>javax.management.openmbean.ArrayType</code>), the type name,
+     * {@code javax.management.openmbean.ArrayType}), the type name,
      * the dimension, the elements' open type and the primitive array flag
      * defined for this instance.
      * <p>
-     * As <code>ArrayType</code> instances are immutable, the
+     * As {@code ArrayType} instances are immutable, the
      * string representation for this instance is calculated
-     * once, on the first call to <code>toString</code>, and
+     * once, on the first call to {@code toString}, and
      * then the same value is returned for subsequent calls.
      *
-     * @return a string representation of this <code>ArrayType</code> instance
+     * @return a string representation of this {@code ArrayType} instance
      */
     public String toString() {
 
@@ -795,12 +813,12 @@ public class ArrayType<T> extends OpenType<T> {
      *
      * @param <E> the Java type that described instances must have
      * @param  elementType  the <i>open type</i> of element values contained
-     *                      in the arrays described by this <tt>ArrayType</tt>
+     *                      in the arrays described by this {@code ArrayType}
      *                      instance; must be an instance of either
-     *                      <tt>SimpleType</tt>, <tt>CompositeType</tt>,
-     *                      <tt>TabularType</tt> or another <tt>ArrayType</tt>
-     *                      with a <tt>SimpleType</tt>, <tt>CompositeType</tt>
-     *                      or <tt>TabularType</tt> as its <tt>elementType</tt>.
+     *                      {@code SimpleType}, {@code CompositeType},
+     *                      {@code TabularType} or another {@code ArrayType}
+     *                      with a {@code SimpleType}, {@code CompositeType}
+     *                      or {@code TabularType} as its {@code elementType}.
      * @return an {@code ArrayType} instance
      * @throws OpenDataException if <var>elementType's className</var> is not
      *                           one of the allowed Java class names for open

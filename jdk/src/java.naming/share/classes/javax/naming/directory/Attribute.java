@@ -37,34 +37,34 @@ import javax.naming.OperationNotSupportedException;
   * This interface represents an attribute associated with a named object.
   *<p>
   * In a directory, named objects can have associated with them
-  * attributes.  The <tt>Attribute</tt> interface represents an attribute associated
+  * attributes.  The {@code Attribute} interface represents an attribute associated
   * with a named object.  An attribute contains 0 or more, possibly null, values.
-  * The attribute values can be ordered or unordered (see <tt>isOrdered()</tt>).
+  * The attribute values can be ordered or unordered (see {@code isOrdered()}).
   * If the values are unordered, no duplicates are allowed.
   * If the values are ordered, duplicates are allowed.
   *<p>
   * The content and representation of an attribute and its values is defined by
   * the attribute's <em>schema</em>. The schema contains information
   * about the attribute's syntax and other properties about the attribute.
-  * See <tt>getAttributeDefinition()</tt> and
-  * <tt>getAttributeSyntaxDefinition()</tt>
+  * See {@code getAttributeDefinition()} and
+  * {@code getAttributeSyntaxDefinition()}
   * for details regarding how to get schema information about an attribute
   * if the underlying directory service supports schemas.
   *<p>
   * Equality of two attributes is determined by the implementation class.
-  * A simple implementation can use <tt>Object.equals()</tt> to determine equality
+  * A simple implementation can use {@code Object.equals()} to determine equality
   * of attribute values, while a more sophisticated implementation might
   * make use of schema information to determine equality.
   * Similarly, one implementation might provide a static storage
   * structure which simply returns the values passed to its
-  * constructor, while another implementation might define <tt>get()</tt> and
-  * <tt>getAll()</tt>.
+  * constructor, while another implementation might define {@code get()} and
+  * {@code getAll()}.
   * to get the values dynamically from the directory.
   *<p>
-  * Note that updates to <tt>Attribute</tt> (such as adding or removing a
+  * Note that updates to {@code Attribute} (such as adding or removing a
   * value) do not affect the corresponding representation of the attribute
   * in the directory.  Updates to the directory can only be effected
-  * using operations in the <tt>DirContext</tt> interface.
+  * using operations in the {@code DirContext} interface.
   *
   * @author Rosanna Lee
   * @author Scott Seligman
@@ -129,7 +129,7 @@ public interface Attribute extends Cloneable, java.io.Serializable {
     /**
       * Determines whether a value is in the attribute.
       * Equality is determined by the implementation, which may use
-      * <tt>Object.equals()</tt> or schema information to determine equality.
+      * {@code Object.equals()} or schema information to determine equality.
       *
       * @param attrVal The possibly null value to check. If null, check
       *  whether the attribute has an attribute value whose value is null.
@@ -141,12 +141,12 @@ public interface Attribute extends Cloneable, java.io.Serializable {
     /**
       * Adds a new value to the attribute.
       * If the attribute values are unordered and
-      * <tt>attrVal</tt> is already in the attribute, this method does nothing.
-      * If the attribute values are ordered, <tt>attrVal</tt> is added to the end of
+      * {@code attrVal} is already in the attribute, this method does nothing.
+      * If the attribute values are ordered, {@code attrVal} is added to the end of
       * the list of attribute values.
       *<p>
       * Equality is determined by the implementation, which may use
-      * <tt>Object.equals()</tt> or schema information to determine equality.
+      * {@code Object.equals()} or schema information to determine equality.
       *
       * @param attrVal The new possibly null value to add. If null, null
       *  is added as an attribute value.
@@ -156,15 +156,15 @@ public interface Attribute extends Cloneable, java.io.Serializable {
 
     /**
       * Removes a specified value from the attribute.
-      * If <tt>attrval</tt> is not in the attribute, this method does nothing.
+      * If {@code attrval} is not in the attribute, this method does nothing.
       * If the attribute values are ordered, the first occurrence of
-      * <tt>attrVal</tt> is removed and attribute values at indices greater
+      * {@code attrVal} is removed and attribute values at indices greater
       * than the removed
       * value are shifted up towards the head of the list (and their indices
       * decremented by one).
       *<p>
       * Equality is determined by the implementation, which may use
-      * <tt>Object.equals()</tt> or schema information to determine equality.
+      * {@code Object.equals()} or schema information to determine equality.
       *
       * @param attrval The possibly null value to remove from this attribute.
       * If null, remove the attribute value that is null.
@@ -260,66 +260,66 @@ public interface Attribute extends Cloneable, java.io.Serializable {
 
     /**
      * Retrieves the attribute value from the ordered list of attribute values.
-     * This method returns the value at the <tt>ix</tt> index of the list of
+     * This method returns the value at the {@code ix} index of the list of
      * attribute values.
      * If the attribute values are unordered,
      * this method returns the value that happens to be at that index.
      * @param ix The index of the value in the ordered list of attribute values.
      * {@code 0 <= ix < size()}.
-     * @return The possibly null attribute value at index <tt>ix</tt>;
+     * @return The possibly null attribute value at index {@code ix};
      *   null if the attribute value is null.
      * @exception NamingException If a naming exception was encountered while
      * retrieving the value.
-     * @exception IndexOutOfBoundsException If <tt>ix</tt> is outside the specified range.
+     * @exception IndexOutOfBoundsException If {@code ix} is outside the specified range.
      */
     Object get(int ix) throws NamingException;
 
     /**
      * Removes an attribute value from the ordered list of attribute values.
-     * This method removes the value at the <tt>ix</tt> index of the list of
+     * This method removes the value at the {@code ix} index of the list of
      * attribute values.
      * If the attribute values are unordered,
      * this method removes the value that happens to be at that index.
-     * Values located at indices greater than <tt>ix</tt> are shifted up towards
+     * Values located at indices greater than {@code ix} are shifted up towards
      * the front of the list (and their indices decremented by one).
      *
      * @param ix The index of the value to remove.
      * {@code 0 <= ix < size()}.
-     * @return The possibly null attribute value at index <tt>ix</tt> that was removed;
+     * @return The possibly null attribute value at index {@code ix} that was removed;
      *   null if the attribute value is null.
-     * @exception IndexOutOfBoundsException If <tt>ix</tt> is outside the specified range.
+     * @exception IndexOutOfBoundsException If {@code ix} is outside the specified range.
      */
     Object remove(int ix);
 
     /**
      * Adds an attribute value to the ordered list of attribute values.
-     * This method adds <tt>attrVal</tt> to the list of attribute values at
-     * index <tt>ix</tt>.
-     * Values located at indices at or greater than <tt>ix</tt> are
+     * This method adds {@code attrVal} to the list of attribute values at
+     * index {@code ix}.
+     * Values located at indices at or greater than {@code ix} are
      * shifted down towards the end of the list (and their indices incremented
      * by one).
-     * If the attribute values are unordered and already have <tt>attrVal</tt>,
-     * <tt>IllegalStateException</tt> is thrown.
+     * If the attribute values are unordered and already have {@code attrVal},
+     * {@code IllegalStateException} is thrown.
      *
      * @param ix The index in the ordered list of attribute values to add the new value.
      * {@code 0 <= ix <= size()}.
      * @param attrVal The possibly null attribute value to add; if null, null is
      * the value added.
-     * @exception IndexOutOfBoundsException If <tt>ix</tt> is outside the specified range.
+     * @exception IndexOutOfBoundsException If {@code ix} is outside the specified range.
      * @exception IllegalStateException If the attribute values are unordered and
-     * <tt>attrVal</tt> is one of those values.
+     * {@code attrVal} is one of those values.
      */
     void add(int ix, Object attrVal);
 
 
     /**
      * Sets an attribute value in the ordered list of attribute values.
-     * This method sets the value at the <tt>ix</tt> index of the list of
-     * attribute values to be <tt>attrVal</tt>. The old value is removed.
+     * This method sets the value at the {@code ix} index of the list of
+     * attribute values to be {@code attrVal}. The old value is removed.
      * If the attribute values are unordered,
      * this method sets the value that happens to be at that index
-     * to <tt>attrVal</tt>, unless <tt>attrVal</tt> is already one of the values.
-     * In that case, <tt>IllegalStateException</tt> is thrown.
+     * to {@code attrVal}, unless {@code attrVal} is already one of the values.
+     * In that case, {@code IllegalStateException} is thrown.
      *
      * @param ix The index of the value in the ordered list of attribute values.
      * {@code 0 <= ix < size()}.
@@ -327,8 +327,8 @@ public interface Attribute extends Cloneable, java.io.Serializable {
      * If null, 'null' replaces the old value.
      * @return The possibly null attribute value at index ix that was replaced.
      *   Null if the attribute value was null.
-     * @exception IndexOutOfBoundsException If <tt>ix</tt> is outside the specified range.
-     * @exception IllegalStateException If <tt>attrVal</tt> already exists and the
+     * @exception IndexOutOfBoundsException If {@code ix} is outside the specified range.
+     * @exception IllegalStateException If {@code attrVal} already exists and the
      *    attribute values are unordered.
      */
     Object set(int ix, Object attrVal);

@@ -39,13 +39,13 @@ import sun.security.krb5.internal.util.KerberosString;
 /**
  * Implements the ASN.1 PA-DATA type.
  *
- * <xmp>
+ * <pre>{@code
  * PA-DATA         ::= SEQUENCE {
  *         -- NOTE: first tag is [1], not [0]
  *         padata-type     [1] Int32,
  *         padata-value    [2] OCTET STRING -- might be encoded AP-REQ
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120
@@ -140,11 +140,14 @@ public class PAData {
 
     /**
      * Gets the preferred etype from the PAData array.
-     * 1. ETYPE-INFO2-ENTRY with unknown s2kparams ignored
-     * 2. ETYPE-INFO2 preferred to ETYPE-INFO
-     * 3. multiple entries for same etype in one PA-DATA, use the first one.
-     * 4. Multiple PA-DATA with same type, choose the last one
+     * <ol>
+     * <li>ETYPE-INFO2-ENTRY with unknown s2kparams ignored</li>
+     * <li>ETYPE-INFO2 preferred to ETYPE-INFO</li>
+     * <li>Multiple entries for same etype in one PA-DATA, use the first one.</li>
+     * <li>Multiple PA-DATA with same type, choose the last one.</li>
+     * </ol>
      * (This is useful when PA-DATAs from KRB-ERROR and AS-REP are combined).
+     *
      * @return the etype, or defaultEType if not enough info
      * @throws Asn1Exception|IOException if there is an encoding error
      */

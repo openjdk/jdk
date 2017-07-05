@@ -75,7 +75,7 @@ public final class PBKDF2HmacSHA1Factory extends SecretKeyFactorySpi {
      *
      * @param key the key
      *
-     * @param keySpec the requested format in which the key material shall be
+     * @param keySpecCl the requested format in which the key material shall be
      * returned
      *
      * @return the underlying key specification (key material) in the

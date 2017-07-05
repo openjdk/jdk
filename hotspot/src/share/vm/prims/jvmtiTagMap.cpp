@@ -2824,7 +2824,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
   if (klass->oop_is_instance()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
 
-    // ignore the class if it's has been initialized yet
+    // Ignore the class if it hasn't been initialized yet
     if (!ik->is_linked()) {
       return true;
     }
