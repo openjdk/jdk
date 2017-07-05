@@ -80,5 +80,5 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   void            yield();
 
   // shutdown
-  static void stop();
+  void stop();
 };

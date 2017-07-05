@@ -147,9 +147,6 @@
   develop(bool, G1PrintCTFilterStats, false,                                \
           "If true, print stats on RS filtering effectiveness")             \
                                                                             \
-  develop(bool, G1RSBarrierUseQueue, true,                                  \
-          "If true, use queueing RS barrier")                               \
-                                                                            \
   develop(bool, G1DeferredRSUpdate, true,                                   \
           "If true, use deferred RS updates")                               \
                                                                             \
@@ -253,6 +250,10 @@
                                                                             \
   experimental(bool, G1ParallelRSetScanningEnabled, false,                  \
           "Enables the parallelization of remembered set scanning "         \
-          "during evacuation pauses")
+          "during evacuation pauses")                                       \
+                                                                            \
+  product(uintx, G1ParallelRSetThreads, 0,                                  \
+          "If non-0 is the number of parallel rem set update threads, "     \
+          "otherwise the value is determined ergonomically.")
 
 G1_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG)

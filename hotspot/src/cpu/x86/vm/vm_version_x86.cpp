@@ -284,7 +284,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -301,6 +301,7 @@ void VM_Version::get_processor_features() {
                (supports_mmx_ext() ? ", mmxext" : ""),
                (supports_3dnow()   ? ", 3dnow"  : ""),
                (supports_3dnow2()  ? ", 3dnowext" : ""),
+               (supports_lzcnt()   ? ", lzcnt": ""),
                (supports_sse4a()   ? ", sse4a": ""),
                (supports_ht() ? ", ht": ""));
   _features_str = strdup(buf);
@@ -362,6 +363,13 @@ void VM_Version::get_processor_features() {
         UseXmmI2D = true;
       } else {
         UseXmmI2D = false;
+      }
+    }
+
+    // Use count leading zeros count instruction if available.
+    if (supports_lzcnt()) {
+      if (FLAG_IS_DEFAULT(UseCountLeadingZerosInstruction)) {
+        UseCountLeadingZerosInstruction = true;
       }
     }
   }

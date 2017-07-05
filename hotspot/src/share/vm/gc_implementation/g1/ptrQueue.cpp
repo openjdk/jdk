@@ -172,7 +172,7 @@ void PtrQueueSet::enqueue_complete_buffer(void** buf, size_t index, bool ignore_
   _n_completed_buffers++;
 
   if (!_process_completed &&
-      _n_completed_buffers == _process_completed_threshold) {
+      _n_completed_buffers >= _process_completed_threshold) {
     _process_completed = true;
     if (_notify_when_complete)
       _cbl_mon->notify_all();

@@ -640,7 +640,11 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
     if (klass0 && klass1 &&
         kps != 1 &&             // both or neither are klass pointers
         klass0->is_loaded() && !klass0->is_interface() && // do not trust interfaces
-        klass1->is_loaded() && !klass1->is_interface()) {
+        klass1->is_loaded() && !klass1->is_interface() &&
+        (!klass0->is_obj_array_klass() ||
+         !klass0->as_obj_array_klass()->base_element_klass()->is_interface()) &&
+        (!klass1->is_obj_array_klass() ||
+         !klass1->as_obj_array_klass()->base_element_klass()->is_interface())) {
       bool unrelated_classes = false;
       // See if neither subclasses the other, or if the class on top
       // is precise.  In either of these cases, the compare is known
