@@ -130,7 +130,11 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   void parse_classfile_sourcefile_attribute(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
   void parse_classfile_source_debug_extension_attribute(constantPoolHandle cp,
                                                 instanceKlassHandle k, int length, TRAPS);
-  u2   parse_classfile_inner_classes_attribute(constantPoolHandle cp,
+  u2   parse_classfile_inner_classes_attribute(u1* inner_classes_attribute_start,
+                                               bool parsed_enclosingmethod_attribute,
+                                               u2 enclosing_method_class_index,
+                                               u2 enclosing_method_method_index,
+                                               constantPoolHandle cp,
                                                instanceKlassHandle k, TRAPS);
   void parse_classfile_attributes(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
   void parse_classfile_synthetic_attribute(constantPoolHandle cp, instanceKlassHandle k, TRAPS);
