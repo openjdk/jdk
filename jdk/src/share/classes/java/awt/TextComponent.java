@@ -822,37 +822,6 @@ public class TextComponent extends Component implements Accessible {
 // Accessibility support
 ////////////////
 
-
-    /**
-     *
-     */
-    int getIndexAtPoint(Point p) {
-        return -1;
-/* To be fully implemented in a future release
-        if (peer == null) {
-            return -1;
-        }
-        TextComponentPeer peer = (TextComponentPeer)this.peer;
-        return peer.getIndexAtPoint(p.x, p.y);
-*/
-    }
-
-
-    /**
-     *
-     */
-    Rectangle getCharacterBounds(int i) {
-        return null;
-/* To be fully implemented in a future release
-        if (peer == null) {
-            return null;
-        }
-        TextComponentPeer peer = (TextComponentPeer)this.peer;
-        return peer.getCharacterBounds(i);
-*/
-    }
-
-
     /**
      * Gets the AccessibleContext associated with this TextComponent.
      * For text components, the AccessibleContext takes the form of an
@@ -963,7 +932,7 @@ public class TextComponent extends Component implements Accessible {
          * @return the zero-based index of the character under Point p.
          */
         public int getIndexAtPoint(Point p) {
-            return TextComponent.this.getIndexAtPoint(p);
+            return -1;
         }
 
         /**
@@ -976,7 +945,7 @@ public class TextComponent extends Component implements Accessible {
          * @return the screen coordinates of the character's bounding box
          */
         public Rectangle getCharacterBounds(int i) {
-            return TextComponent.this.getCharacterBounds(i);
+            return null;
         }
 
         /**

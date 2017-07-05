@@ -2045,6 +2045,9 @@ bool Arguments::check_vm_args_consistency() {
   status = status && verify_interval(StringTableSize, minimumStringTableSize,
     (max_uintx / StringTable::bucket_size()), "StringTable size");
 
+  status = status && verify_interval(SymbolTableSize, minimumSymbolTableSize,
+    (max_uintx / SymbolTable::bucket_size()), "SymbolTable size");
+
   if (MinHeapFreeRatio > MaxHeapFreeRatio) {
     jio_fprintf(defaultStream::error_stream(),
                 "MinHeapFreeRatio (" UINTX_FORMAT ") must be less than or "
@@ -2654,16 +2657,16 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
     // -Xmn for compatibility with other JVM vendors
     } else if (match_option(option, "-Xmn", &tail)) {
-      julong long_initial_eden_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &long_initial_eden_size, 1);
+      julong long_initial_young_size = 0;
+      ArgsRange errcode = parse_memory_size(tail, &long_initial_young_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid initial eden size: %s\n", option->optionString);
+                    "Invalid initial young generation size: %s\n", option->optionString);
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_eden_size);
-      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_eden_size);
+      FLAG_SET_CMDLINE(uintx, MaxNewSize, (uintx)long_initial_young_size);
+      FLAG_SET_CMDLINE(uintx, NewSize, (uintx)long_initial_young_size);
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
       julong long_initial_heap_size = 0;
@@ -3662,6 +3665,9 @@ jint Arguments::apply_ergo() {
 #else // INCLUDE_ALL_GCS
   assert(verify_serial_gc_flags(), "SerialGC unset");
 #endif // INCLUDE_ALL_GCS
+
+  // Initialize Metaspace flags and alignments.
+  Metaspace::ergo_initialize();
 
   // Set bytecode rewriting flags
   set_bytecode_flags();

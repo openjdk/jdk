@@ -40,8 +40,8 @@ include profile-includes.txt
 # imported (signed jars) rather than built.
 #
 # The incoming lists, eg PROFILE_1_JRE_JARS_FILES, are the jars to be
-# included in this profile. They have the jar name relative to the lib 
-# directory. We have to turn these into targets by adding the 
+# included in this profile. They have the jar name relative to the lib
+# directory. We have to turn these into targets by adding the
 # $(IMAGES_OUTPUTDIR)/lib prefix
 #
 # Note that some jars may be optional depending on the type of build (jdk vs.
@@ -58,7 +58,7 @@ CUSTOM_PROFILE_JARS := $(addprefix $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/, $(CUSTOM_
 # These are the common jar files built for and included with this profile
 # Filter out the custom jars and turn them into targets.
 
-PROFILE_1_JARS :=  \
+PROFILE_1_JARS := \
     $(addprefix $(IMAGES_OUTPUTDIR)/lib/, $(filter-out $(CUSTOM_JARS), $(PROFILE_1_JRE_JAR_FILES)))
 
 PROFILE_2_JARS := \
@@ -69,12 +69,8 @@ PROFILE_3_JARS := \
     $(addprefix $(IMAGES_OUTPUTDIR)/lib/, $(PROFILE_3_JRE_JAR_FILES)) \
     $(PROFILE_2_JARS)
 
-ifdef OPENJDK
-  FULL_JRE_JAR_FILES := $(filter-out alt-rt.jar, $(FULL_JRE_JAR_FILES))
-endif
-
 ifneq ($(ENABLE_JFR), true)
-  FULL_JRE_JAR_FILES :=  $(filter-out jfr.jar, $(FULL_JRE_JAR_FILES))
+  FULL_JRE_JAR_FILES := $(filter-out jfr.jar, $(FULL_JRE_JAR_FILES))
 endif
 
 FULL_JRE_JARS := \
@@ -87,43 +83,43 @@ FULL_JRE_JARS := \
 # rt.jar and resources.jar that we filtered out above
 
 ALL_JARS := $(FULL_JRE_JARS) \
-        $(IMAGES_OUTPUTDIR)/lib/rt.jar \
-        $(IMAGES_OUTPUTDIR)/lib/resources.jar \
-        $(IMAGES_OUTPUTDIR)/lib/jconsole.jar \
-        $(IMAGES_OUTPUTDIR)/lib/dt.jar \
-        $(IMAGES_OUTPUTDIR)/lib/tools.jar \
-        $(IMAGES_OUTPUTDIR)/lib/ct.sym \
-        $(IMAGES_OUTPUTDIR)/src.zip
+    $(IMAGES_OUTPUTDIR)/lib/rt.jar \
+    $(IMAGES_OUTPUTDIR)/lib/resources.jar \
+    $(IMAGES_OUTPUTDIR)/lib/jconsole.jar \
+    $(IMAGES_OUTPUTDIR)/lib/dt.jar \
+    $(IMAGES_OUTPUTDIR)/lib/tools.jar \
+    $(IMAGES_OUTPUTDIR)/lib/ct.sym \
+    $(IMAGES_OUTPUTDIR)/src.zip
 
-ifeq ($(INCLUDE_SA),true)
-    ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar
+ifeq ($(INCLUDE_SA), true)
+  ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar
 endif
 
-ifeq ($(OPENJDK_TARGET_OS),solaris)
-    ifndef OPENJDK
-        ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/ext/ucrypto.jar
-    endif
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  ifndef OPENJDK
+    ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/ext/ucrypto.jar
+  endif
 endif
 
-ifeq ($(OPENJDK_TARGET_OS),windows)
-    ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/ext/sunmscapi.jar
-endif 
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/ext/sunmscapi.jar
+endif
 
-ifeq ($(OPENJDK_TARGET_OS),macosx)
-    ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/JObjC.jar
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  ALL_JARS += $(IMAGES_OUTPUTDIR)/lib/JObjC.jar
 endif
 
 ifeq ($(PROFILE), profile_1)
-    PROFILE_JARS := $(PROFILE_1_JARS)
+  PROFILE_JARS := $(PROFILE_1_JARS)
 else ifeq ($(PROFILE), profile_2)
-    PROFILE_JARS := $(PROFILE_2_JARS)
+  PROFILE_JARS := $(PROFILE_2_JARS)
 else ifeq ($(PROFILE), profile_3)
-    PROFILE_JARS := $(PROFILE_3_JARS)
+  PROFILE_JARS := $(PROFILE_3_JARS)
 endif
-ifneq ($(PROFILE),)
-    JARS := $(CUSTOM_PROFILE_JARS) $(PROFILE_JARS)
+ifneq ($(PROFILE), )
+  JARS := $(CUSTOM_PROFILE_JARS) $(PROFILE_JARS)
 else
-    JARS := $(ALL_JARS)
+  JARS := $(ALL_JARS)
 endif
 
 ###############################################################################
@@ -132,37 +128,37 @@ endif
 
 
 # we don't need to do anything if not building a profile
-ifneq ($(PROFILE),)
+ifneq ($(PROFILE), )
 
 
 # Need all files to generate the exclude lists
 NEW_ALL_BIN_LIST := $(patsubst $(JDK_OUTPUTDIR)/bin/%,%,$(shell $(FIND) $(JDK_OUTPUTDIR)/bin \( -type f -o -type l \) ! -name "sjavac"))
 
 ALL_JRE_BIN_FILES := \
-   $(PROFILE_1_JRE_BIN_FILES) \
-   $(PROFILE_2_JRE_BIN_FILES) \
-   $(PROFILE_3_JRE_BIN_FILES) \
-   $(FULL_JRE_BIN_FILES) 
+    $(PROFILE_1_JRE_BIN_FILES) \
+    $(PROFILE_2_JRE_BIN_FILES) \
+    $(PROFILE_3_JRE_BIN_FILES) \
+    $(FULL_JRE_BIN_FILES)
 
 NOT_JRE_BIN_FILES := $(filter-out $(ALL_JRE_BIN_FILES), $(NEW_ALL_BIN_LIST))
 
 # Additional exclusions for profile JRE
 ifeq ($(PROFILE), profile_1)
-    NOT_JRE_BIN_FILES += \
-        $(PROFILE_2_JRE_BIN_FILES) \
-        $(PROFILE_3_JRE_BIN_FILES) \
-        $(FULL_JRE_BIN_FILES) 
+  NOT_JRE_BIN_FILES += \
+      $(PROFILE_2_JRE_BIN_FILES) \
+      $(PROFILE_3_JRE_BIN_FILES) \
+      $(FULL_JRE_BIN_FILES)
 endif
 
 ifeq ($(PROFILE), profile_2)
-    NOT_JRE_BIN_FILES += \
-        $(PROFILE_3_JRE_BIN_FILES) \
-        $(FULL_JRE_BIN_FILES) 
+  NOT_JRE_BIN_FILES += \
+      $(PROFILE_3_JRE_BIN_FILES) \
+      $(FULL_JRE_BIN_FILES)
 endif
 
 ifeq ($(PROFILE), profile_3)
-    NOT_JRE_BIN_FILES += \
-        $(FULL_JRE_BIN_FILES) 
+  NOT_JRE_BIN_FILES += \
+      $(FULL_JRE_BIN_FILES)
 endif
 
 NOT_JRE_BIN_FILES := $(addprefix $(JDK_OUTPUTDIR)/bin/, $(NOT_JRE_BIN_FILES))
@@ -172,10 +168,10 @@ NEW_ALL_LIB_LIST := $(patsubst $(JDK_OUTPUTDIR)/lib/%,%,$(shell $(FIND) $(JDK_OU
 NEW_ALL_LIB_LIST += $(patsubst $(IMAGES_OUTPUTDIR)/lib/%,%,$(shell $(FIND) $(IMAGES_OUTPUTDIR)/lib \( -type f -o -type l \) -a ! \( -name "_the*" -o -name "javac_state " \) ))
 
 ALL_JRE_LIB_FILES := \
-   $(PROFILE_1_JRE_LIB_FILES) \
-   $(PROFILE_2_JRE_LIB_FILES) \
-   $(PROFILE_3_JRE_LIB_FILES) \
-   $(FULL_JRE_LIB_FILES) 
+    $(PROFILE_1_JRE_LIB_FILES) \
+    $(PROFILE_2_JRE_LIB_FILES) \
+    $(PROFILE_3_JRE_LIB_FILES) \
+    $(FULL_JRE_LIB_FILES)
 
 NOT_JRE_LIB_FILES := $(filter-out $(ALL_JRE_LIB_FILES), $(NEW_ALL_LIB_LIST))
 
@@ -188,21 +184,21 @@ NOT_JRE_LIB_FILES := $(filter-out $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PRE
 
 # Additional exclusions for profile JREs
 ifeq ($(PROFILE), profile_1)
-    NOT_JRE_LIB_FILES += \
-        $(PROFILE_2_JRE_LIB_FILES) \
-        $(PROFILE_3_JRE_LIB_FILES) \
-        $(FULL_JRE_LIB_FILES) 
+  NOT_JRE_LIB_FILES += \
+      $(PROFILE_2_JRE_LIB_FILES) \
+      $(PROFILE_3_JRE_LIB_FILES) \
+      $(FULL_JRE_LIB_FILES)
 endif
 
 ifeq ($(PROFILE), profile_2)
-    NOT_JRE_LIB_FILES += \
-        $(PROFILE_3_JRE_LIB_FILES) \
-        $(FULL_JRE_LIB_FILES) 
+  NOT_JRE_LIB_FILES += \
+      $(PROFILE_3_JRE_LIB_FILES) \
+      $(FULL_JRE_LIB_FILES)
 endif
 
 ifeq ($(PROFILE), profile_3)
-    NOT_JRE_LIB_FILES += \
-        $(FULL_JRE_LIB_FILES) 
+  NOT_JRE_LIB_FILES += \
+      $(FULL_JRE_LIB_FILES)
 endif
 
 # Exclude the custom jar files as these will be added back via a special rule
@@ -210,7 +206,7 @@ NOT_JRE_LIB_FILES += $(CUSTOM_JARS)
 
 ###############################################################################
 # Customization of rt.jar file contents
-# These are expressed as exclusions from everything found in the 
+# These are expressed as exclusions from everything found in the
 # JDK_OUTPUTDIR/classes directory
 ###############################################################################
 
@@ -231,8 +227,8 @@ NOT_JRE_LIB_FILES += $(CUSTOM_JARS)
 #
 # These are specific types that must be included within a package.
 # There are two cases:
-# - individual types in a package that is otherwise excluded at this 
-#   profile level. The only arises if there are split packages. 
+# - individual types in a package that is otherwise excluded at this
+#   profile level. The only arises if there are split packages.
 #
 # - A higher-level package is included in a high profile where a subpackage
 # is included in a lower profile. Including the package in the high profile
@@ -247,7 +243,7 @@ NOT_JRE_LIB_FILES += $(CUSTOM_JARS)
 # containing package is include. Again this occurs with split packges.
 #
 # So the exclude list for each profile consists of the include lists
-# for all profiles above it, together with any explicitly excluded types. 
+# for all profiles above it, together with any explicitly excluded types.
 # This is then combined with the overall RT_JAR_EXCLUDES list (which covers
 # things that go into other jar files).
 #
@@ -257,7 +253,7 @@ NOT_JRE_LIB_FILES += $(CUSTOM_JARS)
 # profile 3 includes the entire package, but it is harmless to add them
 # explicitly, and complex to determine if we still need to include them.
 #
-# Need a way to express: 
+# Need a way to express:
 #  for (int i = profile+1; i < 4; i++)
 #     RT_JAR_EXCLUDES += PROFILE_$i_RTJAR_INCLUDE_PACKAGES
 #
@@ -267,7 +263,7 @@ NOT_JRE_LIB_FILES += $(CUSTOM_JARS)
 #
 # These are META-INF/services/ entries found in resources.jar. Together
 # resources.jar and rt.jar hold the contents of the classes directory, (the
-# classes in rt.jar and everything else in resources.jar).Hence the 
+# classes in rt.jar and everything else in resources.jar).Hence the
 # include/exclude information for resources.jar is tied to that of rt.jar
 
 include profile-rtjar-includes.txt
@@ -276,58 +272,57 @@ include profile-rtjar-includes.txt
 # NOTE: Classfiles with $ in their name are problematic as that is the
 # meta-character for both make and the shell! Hence the \$$$$ substitution.
 # But note that if you echo these values they will NOT display as expected.
-class_list =  $(patsubst $(JDK_OUTPUTDIR)/classes/%,%,\
-     $(foreach i,$(1), $(subst $$,\$$$$, $(wildcard $(JDK_OUTPUTDIR)/classes/$i))))
+class_list = $(patsubst $(JDK_OUTPUTDIR)/classes/%,%, \
+    $(foreach i, $(1), $(subst $$,\$$$$, $(wildcard $(JDK_OUTPUTDIR)/classes/$i))))
 
 ifeq ($(PROFILE), profile_1)
   RT_JAR_EXCLUDES += \
-    $(call class_list, $(PROFILE_1_RTJAR_EXCLUDE_TYPES)) \
-    $(PROFILE_2_RTJAR_INCLUDE_PACKAGES) \
-    $(call class_list, $(PROFILE_2_RTJAR_INCLUDE_TYPES)) \
-    $(PROFILE_3_RTJAR_INCLUDE_PACKAGES) \
-    $(call class_list, $(PROFILE_3_RTJAR_INCLUDE_TYPES)) \
-    $(FULL_JRE_RTJAR_INCLUDE_PACKAGES) \
-    $(call class_list, $(FULL_JRE_RTJAR_INCLUDE_TYPES))
+      $(call class_list, $(PROFILE_1_RTJAR_EXCLUDE_TYPES)) \
+      $(PROFILE_2_RTJAR_INCLUDE_PACKAGES) \
+      $(call class_list, $(PROFILE_2_RTJAR_INCLUDE_TYPES)) \
+      $(PROFILE_3_RTJAR_INCLUDE_PACKAGES) \
+      $(call class_list, $(PROFILE_3_RTJAR_INCLUDE_TYPES)) \
+      $(FULL_JRE_RTJAR_INCLUDE_PACKAGES) \
+      $(call class_list, $(FULL_JRE_RTJAR_INCLUDE_TYPES))
   RT_JAR_INCLUDE_TYPES := \
-	$(call class_list, $(PROFILE_1_RTJAR_INCLUDE_TYPES))
+      $(call class_list, $(PROFILE_1_RTJAR_INCLUDE_TYPES))
   PROFILE_INCLUDE_METAINF_SERVICES := \
-    $(PROFILE_1_INCLUDE_METAINF_SERVICES)
+      $(PROFILE_1_INCLUDE_METAINF_SERVICES)
 endif
 ifeq ($(PROFILE), profile_2)
   RT_JAR_EXCLUDES += \
-    $(call class_list, $(PROFILE_2_RTJAR_EXCLUDE_TYPES)) \
-    $(PROFILE_3_RTJAR_INCLUDE_PACKAGES) \
-    $(call class_list, $(PROFILE_3_RTJAR_INCLUDE_TYPES)) \
-    $(FULL_JRE_RTJAR_INCLUDE_PACKAGES) \
-    $(call class_list, $(FULL_JRE_RTJAR_INCLUDE_TYPES))
+      $(call class_list, $(PROFILE_2_RTJAR_EXCLUDE_TYPES)) \
+      $(PROFILE_3_RTJAR_INCLUDE_PACKAGES) \
+      $(call class_list, $(PROFILE_3_RTJAR_INCLUDE_TYPES)) \
+      $(FULL_JRE_RTJAR_INCLUDE_PACKAGES) \
+      $(call class_list, $(FULL_JRE_RTJAR_INCLUDE_TYPES))
   RT_JAR_INCLUDE_TYPES := \
-	$(call class_list, $(PROFILE_1_RTJAR_INCLUDE_TYPES)) \
-	$(call class_list, $(PROFILE_2_RTJAR_INCLUDE_TYPES))
+      $(call class_list, $(PROFILE_1_RTJAR_INCLUDE_TYPES)) \
+      $(call class_list, $(PROFILE_2_RTJAR_INCLUDE_TYPES))
   PROFILE_INCLUDE_METAINF_SERVICES := \
-    $(PROFILE_1_INCLUDE_METAINF_SERVICES) \
-    $(PROFILE_2_INCLUDE_METAINF_SERVICES)
+      $(PROFILE_1_INCLUDE_METAINF_SERVICES) \
+      $(PROFILE_2_INCLUDE_METAINF_SERVICES)
 endif
 ifeq ($(PROFILE), profile_3)
   RT_JAR_EXCLUDES += \
-    $(call class_list, $(PROFILE_3_RTJAR_EXCLUDE_TYPES)) \
-    $(FULL_JRE_RTJAR_INCLUDE_PACKAGES) \
-    $(call class_list, $(FULL_JRE_RTJAR_INCLUDE_TYPES))
+      $(call class_list, $(PROFILE_3_RTJAR_EXCLUDE_TYPES)) \
+      $(FULL_JRE_RTJAR_INCLUDE_PACKAGES) \
+      $(call class_list, $(FULL_JRE_RTJAR_INCLUDE_TYPES))
   RT_JAR_INCLUDE_TYPES := \
-	$(call class_list, $(PROFILE_1_RTJAR_INCLUDE_TYPES)) \
-	$(call class_list, $(PROFILE_2_RTJAR_INCLUDE_TYPES)) \
-	$(call class_list, $(PROFILE_3_RTJAR_INCLUDE_TYPES))
+      $(call class_list, $(PROFILE_1_RTJAR_INCLUDE_TYPES)) \
+      $(call class_list, $(PROFILE_2_RTJAR_INCLUDE_TYPES)) \
+      $(call class_list, $(PROFILE_3_RTJAR_INCLUDE_TYPES))
   PROFILE_INCLUDE_METAINF_SERVICES := \
-    $(PROFILE_1_INCLUDE_METAINF_SERVICES) \
-    $(PROFILE_2_INCLUDE_METAINF_SERVICES) \
-    $(PROFILE_3_INCLUDE_METAINF_SERVICES)
+      $(PROFILE_1_INCLUDE_METAINF_SERVICES) \
+      $(PROFILE_2_INCLUDE_METAINF_SERVICES) \
+      $(PROFILE_3_INCLUDE_METAINF_SERVICES)
 endif
 
 # Filter out non-OpenJDK services
 ifdef OPENJDK
-  EXCLUDED_SERVICES := META-INF/services/javax.script.ScriptEngineFactory 
-  PROFILE_INCLUDE_METAINF_SERVICES := $(filter-out $(EXCLUDED_SERVICES),$(PROFILE_INCLUDE_METAINF_SERVICES))
+  EXCLUDED_SERVICES := META-INF/services/javax.script.ScriptEngineFactory
+  PROFILE_INCLUDE_METAINF_SERVICES := $(filter-out $(EXCLUDED_SERVICES), $(PROFILE_INCLUDE_METAINF_SERVICES))
 endif
 
 
 endif # profile
-

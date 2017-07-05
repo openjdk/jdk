@@ -140,7 +140,7 @@ public class MethodHandlesTest {
         Object actual   = calledLog.get(calledLog.size() - 1);
         if (expected.equals(actual) && verbosity < 9)  return;
         System.out.println("assertCalled "+name+":");
-        System.out.println("expected:   "+expected);
+        System.out.println("expected:   "+deepToString(expected));
         System.out.println("actual:     "+actual);
         System.out.println("ex. types:  "+getClasses(expected));
         System.out.println("act. types: "+getClasses(actual));
@@ -148,7 +148,25 @@ public class MethodHandlesTest {
     }
     static void printCalled(MethodHandle target, String name, Object... args) {
         if (verbosity >= 3)
-            System.out.println("calling MH="+target+" to "+name+Arrays.toString(args));
+            System.out.println("calling MH="+target+" to "+name+deepToString(args));
+    }
+    static String deepToString(Object x) {
+        if (x == null)  return "null";
+        if (x instanceof Collection)
+            x = ((Collection)x).toArray();
+        if (x instanceof Object[]) {
+            Object[] ax = (Object[]) x;
+            ax = Arrays.copyOf(ax, ax.length, Object[].class);
+            for (int i = 0; i < ax.length; i++)
+                ax[i] = deepToString(ax[i]);
+            x = Arrays.deepToString(ax);
+        }
+        if (x.getClass().isArray())
+            try {
+                x = Arrays.class.getMethod("toString", x.getClass()).invoke(null, x);
+            } catch (ReflectiveOperationException ex) { throw new Error(ex); }
+        assert(!(x instanceof Object[]));
+        return x.toString();
     }
 
     static Object castToWrapper(Object value, Class<?> dst) {
@@ -230,6 +248,12 @@ public class MethodHandlesTest {
                     { param = c; break; }
             }
         }
+        if (param.isArray()) {
+            Class<?> ctype = param.getComponentType();
+            Object arg = Array.newInstance(ctype, 2);
+            Array.set(arg, 0, randomArg(ctype));
+            return arg;
+        }
         if (param.isInterface() && param.isAssignableFrom(List.class))
             return Arrays.asList("#"+nextArg());
         if (param.isInterface() || param.isAssignableFrom(String.class))
@@ -252,6 +276,9 @@ public class MethodHandlesTest {
         for (int i = 0; i < args.length; i++)
             args[i] = randomArg(param);
         return args;
+    }
+    static Object[] randomArgs(List<Class<?>> params) {
+        return randomArgs(params.toArray(new Class<?>[params.size()]));
     }
 
     @SafeVarargs @SuppressWarnings("varargs")
@@ -323,6 +350,11 @@ public class MethodHandlesTest {
         }
         return list.asType(listType);
     }
+    /** Variation of varargsList, but with the given ptypes and rtype. */
+    static MethodHandle varargsList(List<Class<?>> ptypes, Class<?> rtype) {
+        MethodHandle list = varargsList(ptypes.size(), rtype);
+        return list.asType(MethodType.methodType(rtype, ptypes));
+    }
     private static MethodHandle LIST_TO_STRING, LIST_TO_INT;
     private static String listToString(List<?> x) { return x.toString(); }
     private static int listToInt(List<?> x) { return x.toString().hashCode(); }
@@ -363,6 +395,7 @@ public class MethodHandlesTest {
         protected Example(String name) { this.name = name; }
         @SuppressWarnings("LeakingThisInConstructor")
         protected Example(int x) { this(); called("protected <init>", this, x); }
+        //Example(Void x) { does not exist; lookup elicts NoSuchMethodException }
         @Override public String toString() { return name; }
 
         public void            v0()     { called("v0", this); }
@@ -463,6 +496,9 @@ public class MethodHandlesTest {
         return lookup.in(defc);
     }
 
+    /** Is findVirtual (etc.) of "&lt;init&lt;" supposed to elicit a NoSuchMethodException? */
+    final static boolean INIT_REF_CAUSES_NSME = true;
+
     @Test
     public void testFindStatic() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
@@ -483,6 +519,8 @@ public class MethodHandlesTest {
         testFindStatic(Example.class, Object.class, "s7", float.class, double.class);
 
         testFindStatic(false, PRIVATE, Example.class, void.class, "bogus");
+        testFindStatic(false, PRIVATE, Example.class, void.class, "<init>", int.class);
+        testFindStatic(false, PRIVATE, Example.class, void.class, "<init>", Void.class);
         testFindStatic(false, PRIVATE, Example.class, void.class, "v0");
     }
 
@@ -505,11 +543,12 @@ public class MethodHandlesTest {
             target = maybeMoveIn(lookup, defc).findStatic(defc, methodName, type);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                (name.contains("bogus") || INIT_REF_CAUSES_NSME && name.contains("<init>"))
+                ?   NoSuchMethodException.class
+                :   IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findStatic "+lookup+": "+defc.getName()+"."+name+"/"+type+" => "+target
@@ -525,6 +564,13 @@ public class MethodHandlesTest {
         assertCalled(name, args);
         if (verbosity >= 1)
             System.out.print(':');
+    }
+
+    static void assertExceptionClass(Class<? extends Throwable> expected,
+                                     Throwable actual) {
+        if (expected.isInstance(actual))  return;
+        actual.printStackTrace();
+        assertEquals(expected, actual.getClass());
     }
 
     static final boolean DEBUG_METHOD_HANDLE_NAMES = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
@@ -556,6 +602,8 @@ public class MethodHandlesTest {
         testFindVirtual(PubExample.class, void.class, "Pub/pro_v0");
 
         testFindVirtual(false, PRIVATE, Example.class, Example.class, void.class, "bogus");
+        testFindVirtual(false, PRIVATE, Example.class, Example.class, void.class, "<init>", int.class);
+        testFindVirtual(false, PRIVATE, Example.class, Example.class, void.class, "<init>", Void.class);
         testFindVirtual(false, PRIVATE, Example.class, Example.class, void.class, "s0");
 
         // test dispatch
@@ -566,6 +614,16 @@ public class MethodHandlesTest {
         testFindVirtual(SubExample.class,         Example.class, void.class, "Sub/pkg_v0");
         testFindVirtual(Example.class,         IntExample.class, void.class, "v0");
         testFindVirtual(IntExample.Impl.class, IntExample.class, void.class, "Int/v0");
+    }
+
+    @Test
+    public void testFindVirtualClone() throws Throwable {
+        // test some ad hoc system methods
+        testFindVirtual(false, PUBLIC, Object.class, Object.class, "clone");
+        testFindVirtual(true, PUBLIC, Object[].class, Object.class, "clone");
+        testFindVirtual(true, PUBLIC, int[].class, Object.class, "clone");
+        for (Class<?> cls : new Class<?>[]{ boolean[].class, long[].class, float[].class, char[].class })
+            testFindVirtual(true, PUBLIC, cls, Object.class, "clone");
     }
 
     void testFindVirtual(Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
@@ -580,6 +638,9 @@ public class MethodHandlesTest {
     void testFindVirtual(Lookup lookup, Class<?> rcvc, Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
         testFindVirtual(true, lookup, rcvc, defc, ret, name, params);
     }
+    void testFindVirtual(boolean positive, Lookup lookup, Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
+        testFindVirtual(positive, lookup, defc, defc, ret, name, params);
+    }
     void testFindVirtual(boolean positive, Lookup lookup, Class<?> rcvc, Class<?> defc, Class<?> ret, String name, Class<?>... params) throws Throwable {
         countTest(positive);
         String methodName = name.substring(1 + name.indexOf('/'));  // foo/bar => foo
@@ -591,11 +652,12 @@ public class MethodHandlesTest {
             target = maybeMoveIn(lookup, defc).findVirtual(defc, methodName, type);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                (name.contains("bogus") || INIT_REF_CAUSES_NSME && name.contains("<init>"))
+                ?   NoSuchMethodException.class
+                :   IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findVirtual "+lookup+": "+defc.getName()+"."+name+"/"+type+" => "+target
@@ -618,8 +680,21 @@ public class MethodHandlesTest {
         Object[] argsWithSelf = randomArgs(paramsWithSelf);
         if (selfc.isAssignableFrom(rcvc) && rcvc != selfc)  argsWithSelf[0] = randomArg(rcvc);
         printCalled(target, name, argsWithSelf);
-        target.invokeWithArguments(argsWithSelf);
-        assertCalled(name, argsWithSelf);
+        Object res = target.invokeWithArguments(argsWithSelf);
+        if (Example.class.isAssignableFrom(defc) || IntExample.class.isAssignableFrom(defc)) {
+            assertCalled(name, argsWithSelf);
+        } else if (name.equals("clone")) {
+            // Ad hoc method call outside Example.  For Object[].clone.
+            printCalled(target, name, argsWithSelf);
+            assertEquals(MethodType.methodType(Object.class, rcvc), target.type());
+            Object orig = argsWithSelf[0];
+            assertEquals(orig.getClass(), res.getClass());
+            if (res instanceof Object[])
+                assertArrayEquals((Object[])res, (Object[])argsWithSelf[0]);
+            assert(Arrays.deepEquals(new Object[]{res}, new Object[]{argsWithSelf[0]}));
+        } else {
+            assert(false) : Arrays.asList(positive, lookup, rcvc, defc, ret, name, deepToString(params));
+        }
         if (verbosity >= 1)
             System.out.print(':');
     }
@@ -632,11 +707,11 @@ public class MethodHandlesTest {
         testFindSpecial(SubExample.class, Example.class, void.class, "pkg_v0");
         testFindSpecial(RemoteExample.class, PubExample.class, void.class, "Pub/pro_v0");
         // Do some negative testing:
-        testFindSpecial(false, EXAMPLE, SubExample.class, Example.class, void.class, "bogus");
-        testFindSpecial(false, PRIVATE, SubExample.class, Example.class, void.class, "bogus");
         for (Lookup lookup : new Lookup[]{ PRIVATE, EXAMPLE, PACKAGE, PUBLIC }) {
             testFindSpecial(false, lookup, Object.class, Example.class, void.class, "v0");
+            testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "bogus");
             testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "<init>", int.class);
+            testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "<init>", Void.class);
             testFindSpecial(false, lookup, SubExample.class, Example.class, void.class, "s0");
         }
     }
@@ -662,19 +737,25 @@ public class MethodHandlesTest {
         countTest(positive);
         String methodName = name.substring(1 + name.indexOf('/'));  // foo/bar => foo
         MethodType type = MethodType.methodType(ret, params);
+        Lookup specialLookup = maybeMoveIn(lookup, specialCaller);
+        boolean specialAccessOK = (specialLookup.lookupClass() == specialCaller &&
+                                   (specialLookup.lookupModes() & Lookup.PRIVATE) != 0);
         MethodHandle target = null;
         Exception noAccess = null;
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
-            if (verbosity >= 5)  System.out.println("  lookup => "+maybeMoveIn(lookup, specialCaller));
-            target = maybeMoveIn(lookup, specialCaller).findSpecial(defc, methodName, type, specialCaller);
+            if (verbosity >= 5)  System.out.println("  lookup => "+specialLookup);
+            target = specialLookup.findSpecial(defc, methodName, type, specialCaller);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                (!specialAccessOK)  // this check should happen first
+                ?   IllegalAccessException.class
+                : (name.contains("bogus") || INIT_REF_CAUSES_NSME && name.contains("<init>"))
+                ?   NoSuchMethodException.class
+                : IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findSpecial from "+specialCaller.getName()+" to "+defc.getName()+"."+name+"/"+type+" => "+target
@@ -719,7 +800,7 @@ public class MethodHandlesTest {
             target = lookup.findConstructor(defc, type);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
-            assertTrue(noAccess instanceof IllegalAccessException);
+            assertTrue(noAccess.getClass().getName(), noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("findConstructor "+defc.getName()+".<init>/"+type+" => "+target
@@ -750,6 +831,8 @@ public class MethodHandlesTest {
         testBind(Example.class, Object.class, "v2", int.class, Object.class);
         testBind(Example.class, Object.class, "v2", int.class, int.class);
         testBind(false, PRIVATE, Example.class, void.class, "bogus");
+        testBind(false, PRIVATE, Example.class, void.class, "<init>", int.class);
+        testBind(false, PRIVATE, Example.class, void.class, "<init>", Void.class);
         testBind(SubExample.class, void.class, "Sub/v0");
         testBind(SubExample.class, void.class, "Sub/pkg_v0");
         testBind(IntExample.Impl.class, void.class, "Int/v0");
@@ -773,11 +856,12 @@ public class MethodHandlesTest {
             target = maybeMoveIn(lookup, defc).bind(receiver, methodName, type);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                (name.contains("bogus") || INIT_REF_CAUSES_NSME && name.contains("<init>"))
+                ?   NoSuchMethodException.class
+                :   IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("bind "+receiver+"."+name+"/"+type+" => "+target
@@ -840,6 +924,10 @@ public class MethodHandlesTest {
         countTest(positive);
         String methodName = name.substring(1 + name.indexOf('/'));  // foo/bar => foo
         MethodType type = MethodType.methodType(ret, params);
+        Lookup specialLookup = (specialCaller != null ? maybeMoveIn(lookup, specialCaller) : null);
+        boolean specialAccessOK = (specialCaller != null &&
+                                   specialLookup.lookupClass() == specialCaller &&
+                                   (specialLookup.lookupModes() & Lookup.PRIVATE) != 0);
         Method rmethod = defc.getDeclaredMethod(methodName, params);
         MethodHandle target = null;
         Exception noAccess = null;
@@ -848,16 +936,15 @@ public class MethodHandlesTest {
         try {
             if (verbosity >= 4)  System.out.println("lookup via "+lookup+" of "+defc+" "+name+type);
             if (isSpecial)
-                target = maybeMoveIn(lookup, specialCaller).unreflectSpecial(rmethod, specialCaller);
+                target = specialLookup.unreflectSpecial(rmethod, specialCaller);
             else
                 target = maybeMoveIn(lookup, defc).unreflect(rmethod);
         } catch (ReflectiveOperationException ex) {
             noAccess = ex;
+            assertExceptionClass(
+                IllegalAccessException.class,  // NSME is impossible, since it was already reflected
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (name.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchMethodException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("unreflect"+(isSpecial?"Special":"")+" "+defc.getName()+"."+name+"/"+type
@@ -1091,11 +1178,12 @@ public class MethodHandlesTest {
         } catch (ReflectiveOperationException ex) {
             mh = null;
             noAccess = ex;
+            assertExceptionClass(
+                (fname.contains("bogus"))
+                ?   NoSuchFieldException.class
+                :   IllegalAccessException.class,
+                noAccess);
             if (verbosity >= 5)  ex.printStackTrace(System.out);
-            if (fname.contains("bogus"))
-                assertTrue(noAccess instanceof NoSuchFieldException);
-            else
-                assertTrue(noAccess instanceof IllegalAccessException);
         }
         if (verbosity >= 3)
             System.out.println("find"+(isStatic?"Static":"")+(isGetter?"Getter":"Setter")+" "+fclass.getName()+"."+fname+"/"+ftype
@@ -1753,24 +1841,24 @@ public class MethodHandlesTest {
     }
 
     @Test  // SLOW
-    public void testCollectArguments() throws Throwable {
+    public void testAsCollector() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
-        startTest("collectArguments");
+        startTest("asCollector");
         for (Class<?> argType : new Class<?>[]{Object.class, Integer.class, int.class}) {
             if (verbosity >= 3)
-                System.out.println("collectArguments "+argType);
+                System.out.println("asCollector "+argType);
             for (int nargs = 0; nargs < 50; nargs++) {
                 if (CAN_TEST_LIGHTLY && nargs > 11)  break;
                 for (int pos = 0; pos <= nargs; pos++) {
                     if (CAN_TEST_LIGHTLY && pos > 2 && pos < nargs-2)  continue;
                     if (nargs > 10 && pos > 4 && pos < nargs-4 && pos % 10 != 3)
                         continue;
-                    testCollectArguments(argType, pos, nargs);
+                    testAsCollector(argType, pos, nargs);
                 }
             }
         }
     }
-    public void testCollectArguments(Class<?> argType, int pos, int nargs) throws Throwable {
+    public void testAsCollector(Class<?> argType, int pos, int nargs) throws Throwable {
         countTest();
         // fake up a MH with the same type as the desired adapter:
         MethodHandle fake = varargsArray(nargs);
@@ -1917,37 +2005,108 @@ public class MethodHandlesTest {
     }
 
     @Test
+    public void testCollectArguments() throws Throwable {
+        if (CAN_SKIP_WORKING)  return;
+        startTest("collectArguments");
+        testFoldOrCollectArguments(true);
+    }
+
+    @Test
     public void testFoldArguments() throws Throwable {
         if (CAN_SKIP_WORKING)  return;
         startTest("foldArguments");
-        for (int nargs = 0; nargs <= 4; nargs++) {
-            for (int fold = 0; fold <= nargs; fold++) {
-                for (int pos = 0; pos <= nargs; pos++) {
-                    testFoldArguments(nargs, pos, fold);
+        testFoldOrCollectArguments(false);
+    }
+
+    void testFoldOrCollectArguments(boolean isCollect) throws Throwable {
+        for (Class<?> lastType : new Class<?>[]{ Object.class, String.class, int.class }) {
+            for (Class<?> collectType : new Class<?>[]{ Object.class, String.class, int.class, void.class }) {
+                int maxArity = 10;
+                if (collectType != String.class)  maxArity = 5;
+                if (lastType != Object.class)  maxArity = 4;
+                for (int nargs = 0; nargs <= maxArity; nargs++) {
+                    ArrayList<Class<?>> argTypes = new ArrayList<>(Collections.nCopies(nargs, Object.class));
+                    int maxMix = 20;
+                    if (collectType != Object.class)  maxMix = 0;
+                    Map<Object,Integer> argTypesSeen = new HashMap<>();
+                    for (int mix = 0; mix <= maxMix; mix++) {
+                        if (!mixArgs(argTypes, mix, argTypesSeen))  continue;
+                        for (int collect = 0; collect <= nargs; collect++) {
+                            for (int pos = 0; pos <= nargs - collect; pos++) {
+                                testFoldOrCollectArguments(argTypes, pos, collect, collectType, lastType, isCollect);
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    void testFoldArguments(int nargs, int pos, int fold) throws Throwable {
-        if (pos != 0)  return;  // can fold only at pos=0 for now
+    boolean mixArgs(List<Class<?>> argTypes, int mix, Map<Object,Integer> argTypesSeen) {
+        assert(mix >= 0);
+        if (mix == 0)  return true;  // no change
+        if ((mix >>> argTypes.size()) != 0)  return false;
+        for (int i = 0; i < argTypes.size(); i++) {
+            if (i >= 31)  break;
+            boolean bit = (mix & (1 << i)) != 0;
+            if (bit) {
+                Class<?> type = argTypes.get(i);
+                if (type == Object.class)
+                    type = String.class;
+                else if (type == String.class)
+                    type = int.class;
+                else
+                    type = Object.class;
+                argTypes.set(i, type);
+            }
+        }
+        Integer prev = argTypesSeen.put(new ArrayList<>(argTypes), mix);
+        if (prev != null) {
+            if (verbosity >= 4)  System.out.println("mix "+prev+" repeated "+mix+": "+argTypes);
+            return false;
+        }
+        if (verbosity >= 3)  System.out.println("mix "+mix+" = "+argTypes);
+        return true;
+    }
+
+    void testFoldOrCollectArguments(List<Class<?>> argTypes,  // argument types minus the inserted combineType
+                                    int pos, int fold, // position and length of the folded arguments
+                                    Class<?> combineType, // type returned from the combiner
+                                    Class<?> lastType,  // type returned from the target
+                                    boolean isCollect) throws Throwable {
+        int nargs = argTypes.size();
+        if (pos != 0 && !isCollect)  return;  // can fold only at pos=0 for now
         countTest();
-        MethodHandle target = varargsList(1 + nargs);
-        MethodHandle combine = varargsList(fold).asType(MethodType.genericMethodType(fold));
-        List<Object> argsToPass = Arrays.asList(randomArgs(nargs, Object.class));
+        List<Class<?>> combineArgTypes = argTypes.subList(pos, pos + fold);
+        List<Class<?>> targetArgTypes = new ArrayList<>(argTypes);
+        if (isCollect)  // does targret see arg[pos..pos+cc-1]?
+            targetArgTypes.subList(pos, pos + fold).clear();
+        if (combineType != void.class)
+            targetArgTypes.add(pos, combineType);
+        MethodHandle target = varargsList(targetArgTypes, lastType);
+        MethodHandle combine = varargsList(combineArgTypes, combineType);
+        List<Object> argsToPass = Arrays.asList(randomArgs(argTypes));
         if (verbosity >= 3)
-            System.out.println("fold "+target+" with "+combine);
-        MethodHandle target2 = MethodHandles.foldArguments(target, combine);
+            System.out.println((isCollect ? "collect" : "fold")+" "+target+" with "+combine);
+        MethodHandle target2;
+        if (isCollect)
+            target2 = MethodHandles.collectArguments(target, pos, combine);
+        else
+            target2 = MethodHandles.foldArguments(target, combine);
         // Simulate expected effect of combiner on arglist:
-        List<Object> expected = new ArrayList<>(argsToPass);
-        List<Object> argsToFold = expected.subList(pos, pos + fold);
+        List<Object> expectedList = new ArrayList<>(argsToPass);
+        List<Object> argsToFold = expectedList.subList(pos, pos + fold);
         if (verbosity >= 3)
-            System.out.println("fold: "+argsToFold+" into "+target2);
+            System.out.println((isCollect ? "collect" : "fold")+": "+argsToFold+" into "+target2);
         Object foldedArgs = combine.invokeWithArguments(argsToFold);
-        argsToFold.add(0, foldedArgs);
+        if (isCollect)
+            argsToFold.clear();
+        if (combineType != void.class)
+            argsToFold.add(0, foldedArgs);
         Object result = target2.invokeWithArguments(argsToPass);
         if (verbosity >= 3)
             System.out.println("result: "+result);
+        Object expected = target.invokeWithArguments(expectedList);
         if (!expected.equals(result))
             System.out.println("*** fail at n/p/f = "+nargs+"/"+pos+"/"+fold+": "+argsToPass+" => "+result+" != "+expected);
         assertEquals(expected, result);

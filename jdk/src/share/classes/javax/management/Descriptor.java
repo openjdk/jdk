@@ -319,7 +319,7 @@ import javax.management.openmbean.OpenType;
  * <a href="modelmbean/ModelMBeanOperationInfo.html#descriptor"><!--
  * -->{@code ModelMBeanOperationInfo}</a>, as
  * well as the chapter "Model MBeans" of the <a
- * href="http://java.sun.com/products/JavaManagement/download.html">JMX
+ * href="http://www.oracle.com/technetwork/java/javase/tech/javamanagement-140525.html">JMX
  * Specification</a>.  The following table summarizes these fields.  Note
  * that when the Type in this table is Number, a String that is the decimal
  * representation of a Long can also be used.</p>

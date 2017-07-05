@@ -50,7 +50,7 @@ import java.util.Objects;
  * The result of the lambda is defined as one of the names, often the last one.
  * <p>
  * Here is an approximate grammar:
- * <pre>
+ * <blockquote><pre>{@code
  * LambdaForm = "(" ArgName* ")=>{" TempName* Result "}"
  * ArgName = "a" N ":" T
  * TempName = "t" N ":" T "=" Function "(" Argument* ");"
@@ -60,7 +60,7 @@ import java.util.Objects;
  * NameRef = "a" N | "t" N
  * N = (any whole number)
  * T = "L" | "I" | "J" | "F" | "D" | "V"
- * </pre>
+ * }</pre></blockquote>
  * Names are numbered consecutively from left to right starting at zero.
  * (The letters are merely a taste of syntax sugar.)
  * Thus, the first temporary (if any) is always numbered N (where N=arity).
@@ -69,7 +69,7 @@ import java.util.Objects;
  * A lambda has a void result if and only if its result index is -1.
  * If a temporary has the type "V", it cannot be the subject of a NameRef,
  * even though possesses a number.
- * Note that all reference types are erased to "L", which stands for {@code Object).
+ * Note that all reference types are erased to "L", which stands for {@code Object}.
  * All subword types (boolean, byte, short, char) are erased to "I" which is {@code int}.
  * The other types stand for the usual primitive types.
  * <p>
@@ -89,7 +89,7 @@ import java.util.Objects;
  * encoded by using temporary expressions which call type-transformed identity functions.
  * <p>
  * Examples:
- * <pre>
+ * <blockquote><pre>{@code
  * (a0:J)=>{ a0 }
  *     == identity(long)
  * (a0:I)=>{ t1:V = System.out#println(a0); void }
@@ -113,14 +113,14 @@ import java.util.Objects;
  * (a0:L, a1:L)=>{ t2:L = BoundMethodHandle#argument(a0);
  *                 t3:L = Class#cast(t2,a1); t3 }
  *     == invoker for identity method handle which performs cast
- * </pre>
+ * }</pre></blockquote>
  * <p>
  * @author John Rose, JSR 292 EG
  */
 class LambdaForm {
     final int arity;
     final int result;
-    final Name[] names;
+    @Stable final Name[] names;
     final String debugName;
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
     private boolean isCompiled;
@@ -457,7 +457,7 @@ class LambdaForm {
             isCompiled = true;
             return vmentry;
         } catch (Error | Exception ex) {
-            throw newInternalError(this.toString(), ex);
+            throw newInternalError("compileToBytecode", ex);
         }
     }
 
@@ -683,8 +683,9 @@ class LambdaForm {
     */
 
     static void traceInterpreter(String event, Object obj, Object... args) {
-        if (!TRACE_INTERPRETER)  return;
-        System.out.println("LFI: "+event+" "+(obj != null ? obj : "")+(args != null && args.length != 0 ? Arrays.asList(args) : ""));
+        if (TRACE_INTERPRETER) {
+            System.out.println("LFI: "+event+" "+(obj != null ? obj : "")+(args != null && args.length != 0 ? Arrays.asList(args) : ""));
+        }
     }
     static void traceInterpreter(String event, Object obj) {
         traceInterpreter(event, obj, (Object[])null);
@@ -971,8 +972,8 @@ class LambdaForm {
 
     static class NamedFunction {
         final MemberName member;
-        MethodHandle resolvedHandle;
-        MethodHandle invoker;
+        @Stable MethodHandle resolvedHandle;
+        @Stable MethodHandle invoker;
 
         NamedFunction(MethodHandle resolvedHandle) {
             this(resolvedHandle.internalMemberName(), resolvedHandle);
@@ -981,6 +982,16 @@ class LambdaForm {
             this.member = member;
             //resolvedHandle = eraseSubwordTypes(resolvedHandle);
             this.resolvedHandle = resolvedHandle;
+        }
+        NamedFunction(MethodType basicInvokerType) {
+            assert(basicInvokerType == basicInvokerType.basicType()) : basicInvokerType;
+            if (basicInvokerType.parameterSlotCount() < MethodType.MAX_MH_INVOKER_ARITY) {
+                this.resolvedHandle = basicInvokerType.invokers().basicInvoker();
+                this.member = resolvedHandle.internalMemberName();
+            } else {
+                // necessary to pass BigArityTest
+                this.member = Invokers.invokeBasicMethod(basicInvokerType);
+            }
         }
 
         // The next 3 constructors are used to break circular dependencies on MH.invokeStatic, etc.
@@ -1229,7 +1240,7 @@ class LambdaForm {
         }
 
         public String toString() {
-            if (member == null)  return resolvedHandle.toString();
+            if (member == null)  return String.valueOf(resolvedHandle);
             return member.getDeclaringClass().getSimpleName()+"."+member.getName();
         }
     }
@@ -1267,7 +1278,7 @@ class LambdaForm {
         final char type;
         private short index;
         final NamedFunction function;
-        final Object[] arguments;
+        @Stable final Object[] arguments;
 
         private Name(int index, char type, NamedFunction function, Object[] arguments) {
             this.index = (short)index;
@@ -1278,6 +1289,10 @@ class LambdaForm {
         }
         Name(MethodHandle function, Object... arguments) {
             this(new NamedFunction(function), arguments);
+        }
+        Name(MethodType functionType, Object... arguments) {
+            this(new NamedFunction(functionType), arguments);
+            assert(arguments[0] instanceof Name && ((Name)arguments[0]).type == 'L');
         }
         Name(MemberName function, Object... arguments) {
             this(new NamedFunction(function), arguments);
@@ -1426,8 +1441,6 @@ class LambdaForm {
          * Does this Name precede the given binding node in some canonical order?
          * This predicate is used to order data bindings (via insertion sort)
          * with some stability.
-         * @param binding
-         * @return
          */
         boolean isSiblingBindingBefore(Name binding) {
             assert(!binding.isParam());
@@ -1622,4 +1635,12 @@ class LambdaForm {
  */
 
     static { NamedFunction.initializeInvokers(); }
+
+    // The following hack is necessary in order to suppress TRACE_INTERPRETER
+    // during execution of the static initializes of this class.
+    // Turning on TRACE_INTERPRETER too early will cause
+    // stack overflows and other misbehavior during attempts to trace events
+    // that occur during LambdaForm.<clinit>.
+    // Therefore, do not move this line higher in this file, and do not remove.
+    private static final boolean TRACE_INTERPRETER = MethodHandleStatics.TRACE_INTERPRETER;
 }

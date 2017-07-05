@@ -2128,7 +2128,7 @@ public final class Files {
     /**
      * Tests whether a file is a symbolic link.
      *
-     * <p> Where is it required to distinguish an I/O exception from the case
+     * <p> Where it is required to distinguish an I/O exception from the case
      * that the file is not a symbolic link then the file attributes can be
      * read with the {@link #readAttributes(Path,Class,LinkOption[])
      * readAttributes} method and the file type tested with the {@link
@@ -2164,7 +2164,7 @@ public final class Files {
      * of the link is read. If the option {@link LinkOption#NOFOLLOW_LINKS
      * NOFOLLOW_LINKS} is present then symbolic links are not followed.
      *
-     * <p> Where is it required to distinguish an I/O exception from the case
+     * <p> Where it is required to distinguish an I/O exception from the case
      * that the file is not a directory then the file attributes can be
      * read with the {@link #readAttributes(Path,Class,LinkOption[])
      * readAttributes} method and the file type tested with the {@link
@@ -2201,7 +2201,7 @@ public final class Files {
      * of the link is read. If the option {@link LinkOption#NOFOLLOW_LINKS
      * NOFOLLOW_LINKS} is present then symbolic links are not followed.
      *
-     * <p> Where is it required to distinguish an I/O exception from the case
+     * <p> Where it is required to distinguish an I/O exception from the case
      * that the file is not a regular file then the file attributes can be
      * read with the {@link #readAttributes(Path,Class,LinkOption[])
      * readAttributes} method and the file type tested with the {@link
@@ -3082,13 +3082,13 @@ public final class Files {
      *          method is invoked to check read access to the file.
      */
     public static byte[] readAllBytes(Path path) throws IOException {
-        try (FileChannel fc = FileChannel.open(path);
-             InputStream is = Channels.newInputStream(fc)) {
-            long size = fc.size();
+        try (SeekableByteChannel sbc = Files.newByteChannel(path);
+             InputStream in = Channels.newInputStream(sbc)) {
+            long size = sbc.size();
             if (size > (long)MAX_BUFFER_SIZE)
                 throw new OutOfMemoryError("Required array size too large");
 
-            return read(is, (int)size);
+            return read(in, (int)size);
         }
     }
 

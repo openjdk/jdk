@@ -93,7 +93,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * </pre>
  * <p>
  * For information and examples of using spinner see
- * <a href="http://java.sun.com/doc/books/tutorial/uiswing/components/spinner.html">How to Use Spinners</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/spinner.html">How to Use Spinners</a>,
  * a section in <em>The Java Tutorial.</em>
  * <p>
  * <strong>Warning:</strong> Swing is not thread safe. For more
@@ -106,7 +106,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

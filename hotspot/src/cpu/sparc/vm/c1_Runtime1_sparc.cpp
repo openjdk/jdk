@@ -37,6 +37,9 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_sparc.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif
 
 // Implementation of StubAssembler
 
@@ -912,7 +915,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Register tmp2 = G3_scratch;
         jbyte* byte_map_base = ((CardTableModRefBS*)bs)->byte_map_base;
 
-        Label not_already_dirty, restart, refill;
+        Label not_already_dirty, restart, refill, young_card;
 
 #ifdef _LP64
         __ srlx(addr, CardTableModRefBS::card_shift, addr);
@@ -924,9 +927,15 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ set(rs, cardtable);         // cardtable := <card table base>
         __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
 
+        __ cmp_and_br_short(tmp, G1SATBCardTableModRefBS::g1_young_card_val(), Assembler::equal, Assembler::pt, young_card);
+
+        __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
+        __ ldub(addr, cardtable, tmp); // tmp := [addr + cardtable]
+
         assert(CardTableModRefBS::dirty_card_val() == 0, "otherwise check this code");
         __ cmp_and_br_short(tmp, G0, Assembler::notEqual, Assembler::pt, not_already_dirty);
 
+        __ bind(young_card);
         // We didn't take the branch, so we're already dirty: return.
         // Use return-from-leaf
         __ retl();

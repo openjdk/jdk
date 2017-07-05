@@ -52,7 +52,7 @@ import java.lang.annotation.Native;
  * in the range from {@code ACTION_FIRST} to {@code ACTION_LAST}.
  *
  * @see ActionListener
- * @see <a href="http://java.sun.com/docs/books/tutorial/uiswing/events/actionlistener.html">Tutorial: How to Write an Action Listener</a>
+ * @see <a href="http://docs.oracle.com/javase/tutorial/uiswing/events/actionlistener.html">Tutorial: How to Write an Action Listener</a>
  *
  * @author Carl Quinn
  * @since 1.1

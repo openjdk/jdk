@@ -44,7 +44,7 @@ import sun.awt.AWTAccessor;
  * <p>
  * <img src="doc-files/MenuBar-1.gif"
  * alt="Menu labeled Examples, containing items Basic, Simple, Check, and More Examples. The Check item is a CheckBoxMenuItem instance, in the off state."
- * ALIGN=center HSPACE=10 VSPACE=7>
+ * style="float:center; margin: 7px 10px;">
  * <p>
  * The item labeled <code>Check</code> shows a check box menu item
  * in its "off" state.
