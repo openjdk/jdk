@@ -685,7 +685,7 @@ void LIR_Assembler::emit_op2(LIR_Op2* op) {
       break;
 
     case lir_cmove:
-      cmove(op->condition(), op->in_opr1(), op->in_opr2(), op->result_opr());
+      cmove(op->condition(), op->in_opr1(), op->in_opr2(), op->result_opr(), op->type());
       break;
 
     case lir_shl:
