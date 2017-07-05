@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1392,6 +1392,7 @@ Java_java_net_PlainDatagramSocketImpl_socketSetOption0(JNIEnv *env,
             }
 
         case java_net_SocketOptions_SO_REUSEADDR:
+        case java_net_SocketOptions_SO_REUSEPORT:
         case java_net_SocketOptions_SO_BROADCAST:
             {
                 jclass cls;
@@ -1767,6 +1768,9 @@ Java_java_net_PlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobject this,
 
         case java_net_SocketOptions_SO_BROADCAST:
         case java_net_SocketOptions_SO_REUSEADDR:
+            return createBoolean(env, optval.i);
+
+        case java_net_SocketOptions_SO_REUSEPORT:
             return createBoolean(env, optval.i);
 
         case java_net_SocketOptions_SO_SNDBUF:

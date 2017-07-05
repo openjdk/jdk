@@ -81,7 +81,7 @@ class MethodHandles: AllStatic {
   static void flush_dependent_nmethods(Handle call_site, Handle target);
 
   // Generate MethodHandles adapters.
-  static bool generate_adapters();
+  static void generate_adapters();
 
   // Called from MethodHandlesAdapterGenerator.
   static address generate_method_handle_interpreter_entry(MacroAssembler* _masm, vmIntrinsics::ID iid);

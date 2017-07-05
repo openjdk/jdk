@@ -248,10 +248,7 @@ class ResourceBundleGenerator implements BundleGenerator {
             dir.mkdirs();
         }
         String className =
-            (CLDRConverter.isBaseModule ? "CLDRBaseLocaleDataMetaInfo" :
-                "CLDRLocaleDataMetaInfo_" +
-                CLDRConverter.DESTINATION_DIR.substring(CLDRConverter.DESTINATION_DIR.lastIndexOf('/')+1)
-                    .replaceAll("\\.", "_"));
+            (CLDRConverter.isBaseModule ? "CLDRBaseLocaleDataMetaInfo" : "CLDRLocaleDataMetaInfo");
         File file = new File(dir, className + ".java");
         if (!file.exists()) {
             file.createNewFile();

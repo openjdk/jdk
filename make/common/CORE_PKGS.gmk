@@ -103,6 +103,7 @@ CORE_PKGS = \
     java.lang.reflect \
     java.math \
     java.net \
+    java.net.http \
     java.net.spi \
     java.nio \
     java.nio.channels \

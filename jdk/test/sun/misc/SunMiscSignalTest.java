@@ -180,6 +180,12 @@ public class SunMiscSignalTest {
         return newArray;
     }
 
+    // Return true if the signal is one of the shutdown signals known to the VM
+    private static boolean isShutdownSignal(Signal signal) {
+        String name = signal.getName();
+        return name.equals("INT") || name.equals("HUP") || name.equals("TERM");
+    }
+
     /**
      * Quick verification of supported signals using sun.misc.Signal.
      *
@@ -201,14 +207,24 @@ public class SunMiscSignalTest {
             Assert.assertEquals(signal.toString(), "SIG" + name, "toString() mismatch, ");
 
             try {
-                SignalHandler old = Signal.handle(signal, h);
+                orig = Signal.handle(signal, h);
+                printf("oldHandler: %s%n", orig);
                 Assert.assertEquals(CanRegister.YES, register, "Unexpected handle succeeded " + name);
                 try {
                     Signal.raise(signal);
                     Assert.assertEquals(CanRaise.YES, raise, "Unexpected raise success for " + name);
                     Invoked inv = h.semaphore().tryAcquire(Utils.adjustTimeout(100L),
                             TimeUnit.MILLISECONDS) ? Invoked.YES : Invoked.NO;
-                    Assert.assertEquals(inv, invoked, "handler not invoked;");
+                    if (!isShutdownSignal(signal)) {
+                        // Normal case
+                        Assert.assertEquals(inv, invoked, "handler not invoked;");
+                    } else {
+                        if (orig == SignalHandler.SIG_IGN) {
+                            Assert.assertEquals(inv, Invoked.NO, "handler should not be invoked");
+                        } else {
+                            Assert.assertEquals(inv, invoked, "handler not invoked;");
+                        }
+                    }
                 } catch (IllegalArgumentException uoe3) {
                     Assert.assertNotEquals(CanRaise.YES, raise, "raise failed for " + name +
                             ": " + uoe3.getMessage());
@@ -270,14 +286,22 @@ public class SunMiscSignalTest {
     }
 
     // Test expected exception when raising a signal when no handler defined
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     static void testRaiseNoConsumer() {
         Signal signal = new Signal("INT");
         SignalHandler orig = null;
         try {
-            Signal.handle(signal, SignalHandler.SIG_DFL);
+            orig = Signal.handle(signal, SignalHandler.SIG_DFL);
+            printf("oldHandler: %s%n", orig);
+            if (orig == SignalHandler.SIG_IGN) {
+                // SIG_IGN for TERM means it cannot be handled
+                return;
+            }
             Signal.raise(signal);
-        }  finally {
+            Assert.fail("Should have thrown IllegalArgumentException");
+        } catch (IllegalArgumentException iae) {
+            printf("IAE message: %s%n", iae.getMessage());
+        } finally {
             // Restore original signal handler
             if (orig != null && signal != null) {
                 Signal.handle(signal, orig);
@@ -296,7 +320,13 @@ public class SunMiscSignalTest {
         }
         Handler handler = new Handler();
         Signal signal = new Signal("INT");
-        Signal.handle(signal, handler);
+        SignalHandler orig = Signal.handle(signal, handler);
+        printf("oldHandler: %s%n", orig);
+        if (orig == SignalHandler.SIG_IGN) {
+            // SIG_IGN for INT means it cannot be handled
+            return;
+        }
+
         Signal.raise(signal);
         boolean handled = handler.semaphore()
                 .tryAcquire(Utils.adjustTimeout(100L), TimeUnit.MILLISECONDS);
@@ -332,6 +362,10 @@ public class SunMiscSignalTest {
         Handler h1 = new Handler();
         Handler h2 = new Handler();
         SignalHandler orig = Signal.handle(signal, h1);
+        if (orig == SignalHandler.SIG_IGN) {
+            // SIG_IGN for TERM means it cannot be handled
+            return;
+        }
 
         try {
             SignalHandler prev = Signal.handle(signal, h2);

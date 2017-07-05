@@ -34,7 +34,7 @@
 #if INCLUDE_ALL_GCS
 
 // Unit test
-#ifdef ASSERT
+#ifndef PRODUCT
 
 static unsigned line_byte(const char* line, size_t i) {
   return unsigned(line[i]) & 0xFF;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -646,5 +646,13 @@ public class Attributes implements Map<Object,Object>, Cloneable {
          * manifest attribute used for package versioning.
          */
         public static final Name SPECIFICATION_VENDOR = new Name("Specification-Vendor");
+
+        /**
+         * {@code Name} object for {@code Multi-Release}
+         * manifest attribute that indicates this is a multi-release JAR file.
+         *
+         * @since   9
+         */
+        public static final Name MULTI_RELEASE = new Name("Multi-Release");
     }
 }

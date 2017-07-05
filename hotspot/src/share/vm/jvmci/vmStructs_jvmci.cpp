@@ -151,6 +151,7 @@
   nonstatic_field(JavaThread,                  _pending_failed_speculation,                   oop)                                   \
   nonstatic_field(JavaThread,                  _pending_transfer_to_interpreter,              bool)                                  \
   nonstatic_field(JavaThread,                  _jvmci_counters,                               jlong*)                                \
+  nonstatic_field(JavaThread,                  _reserved_stack_activation,                    address)                               \
                                                                                                                                      \
   static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
   static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
@@ -209,6 +210,8 @@
   volatile_nonstatic_field(OSThread,           _interrupted,                                  jint)                                  \
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
+                                                                                                                                     \
+  static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _jbyte_arraycopy,                                 address)                               \
   static_field(StubRoutines,                _jshort_arraycopy,                                address)                               \
@@ -471,6 +474,7 @@
   declare_constant(Method::_force_inline)                                 \
   declare_constant(Method::_dont_inline)                                  \
   declare_constant(Method::_hidden)                                       \
+  declare_constant(Method::_reserved_stack_access)                        \
                                                                           \
   declare_constant(Method::nonvirtual_vtable_index)                       \
   declare_constant(Method::invalid_vtable_index)                          \
@@ -517,6 +521,7 @@
   declare_function(SharedRuntime::register_finalizer)                     \
   declare_function(SharedRuntime::exception_handler_for_return_address)   \
   declare_function(SharedRuntime::OSR_migration_end)                      \
+  declare_function(SharedRuntime::enable_stack_reserved_zone)             \
   declare_function(SharedRuntime::dsin)                                   \
   declare_function(SharedRuntime::dcos)                                   \
   declare_function(SharedRuntime::dtan)                                   \

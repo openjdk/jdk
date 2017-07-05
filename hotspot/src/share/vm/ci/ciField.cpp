@@ -211,6 +211,12 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   // so there is no hacking of finals going on with them.
   if (holder->is_anonymous())
     return true;
+  // Trust final fields in all boxed classes
+  if (holder->is_box_klass())
+    return true;
+  // Trust final fields in String
+  if (holder->name() == ciSymbol::java_lang_String())
+    return true;
   // Trust Atomic*FieldUpdaters: they are very important for performance, and make up one
   // more reason not to use Unsafe, if their final fields are trusted. See more in JDK-8140483.
   if (holder->name() == ciSymbol::java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl() ||

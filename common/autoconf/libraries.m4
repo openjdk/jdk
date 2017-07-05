@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -160,10 +160,14 @@ AC_DEFUN_ONCE([LIB_SETUP_LLVM],
 AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
 [
   # Setup libm (the maths library)
-  AC_CHECK_LIB(m, cos, [], [
-      AC_MSG_NOTICE([Maths library was not found])
-  ])
-  LIBM=-lm
+  if test "x$OPENJDK_TARGET_OS" != "xwindows"; then
+    AC_CHECK_LIB(m, cos, [], [
+        AC_MSG_NOTICE([Maths library was not found])
+    ])
+    LIBM="-lm"
+  else
+    LIBM=""
+  fi
   AC_SUBST(LIBM)
 
   # Setup libdl (for dynamic library loading)

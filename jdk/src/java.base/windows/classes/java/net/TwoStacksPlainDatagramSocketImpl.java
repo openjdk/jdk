@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,9 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
             return socketLocalAddress(family);
         } else if (optID == SO_REUSEADDR && reuseAddressEmulated) {
             return isReuseAddress;
+        } else if (optID == SO_REUSEPORT) {
+            // SO_REUSEPORT is not supported on Windows.
+            throw new UnsupportedOperationException("unsupported option");
         } else {
             return super.getOption(optID);
         }
@@ -142,6 +145,9 @@ class TwoStacksPlainDatagramSocketImpl extends AbstractPlainDatagramSocketImpl
             // socket already bound, emulate
             reuseAddressEmulated = true;
             isReuseAddress = (Boolean)val;
+        } else if (opt == SO_REUSEPORT) {
+            // SO_REUSEPORT is not supported on Windows.
+            throw new UnsupportedOperationException("unsupported option");
         } else {
             socketNativeSetOption(opt, val);
         }

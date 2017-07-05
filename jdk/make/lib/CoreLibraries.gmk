@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -137,12 +137,6 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   endif
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
-  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
-    BUILD_LIBJAVA_Bits.c_CFLAGS := $(C_O_FLAG_NORM)
-  endif
-endif
-
 $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LIBRARY := java, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -163,7 +157,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LIBS_unix := -ljvm -lverify, \
     LIBS_linux := $(LIBDL) $(BUILD_LIBFDLIBM), \
     LIBS_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc, \
-    LIBS_aix := $(LIBDL) $(BUILD_LIBFDLIBM) -lm,\
+    LIBS_aix := $(LIBDL) $(BUILD_LIBFDLIBM) $(LIBM),\
     LIBS_macosx := -lfdlibm \
         -framework CoreFoundation \
         -framework Foundation \

@@ -29,6 +29,8 @@
 #include "code/pcDesc.hpp"
 #include "oops/metadata.hpp"
 
+class DirectiveSet;
+
 // This class is used internally by nmethods, to cache
 // exception/pc/handler information.
 
@@ -714,6 +716,8 @@ public:
   void print_nul_chk_table()                      PRODUCT_RETURN;
   void print_recorded_oops()                      PRODUCT_RETURN;
   void print_recorded_metadata()                  PRODUCT_RETURN;
+
+  void maybe_print_nmethod(DirectiveSet* directive);
   void print_nmethod(bool print_code);
 
   // need to re-define this from CodeBlob else the overload hides it

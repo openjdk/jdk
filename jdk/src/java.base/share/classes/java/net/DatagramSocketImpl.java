@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,6 +287,9 @@ public abstract class DatagramSocketImpl implements SocketOptions {
             setOption(SocketOptions.SO_RCVBUF, value);
         } else if (name == StandardSocketOptions.SO_REUSEADDR) {
             setOption(SocketOptions.SO_REUSEADDR, value);
+        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
+            supportedOptions().contains(name)) {
+            setOption(SocketOptions.SO_REUSEPORT, value);
         } else if (name == StandardSocketOptions.IP_TOS) {
             setOption(SocketOptions.IP_TOS, value);
         } else if (name == StandardSocketOptions.IP_MULTICAST_IF &&
@@ -329,6 +332,9 @@ public abstract class DatagramSocketImpl implements SocketOptions {
             return (T) getOption(SocketOptions.SO_RCVBUF);
         } else if (name == StandardSocketOptions.SO_REUSEADDR) {
             return (T) getOption(SocketOptions.SO_REUSEADDR);
+        } else if (name == StandardSocketOptions.SO_REUSEPORT &&
+            supportedOptions().contains(name)) {
+            return (T) getOption(SocketOptions.SO_REUSEPORT);
         } else if (name == StandardSocketOptions.IP_TOS) {
             return (T) getOption(SocketOptions.IP_TOS);
         } else if (name == StandardSocketOptions.IP_MULTICAST_IF &&
