@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,6 +307,8 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *             sequence.
      */
     public int codePointAt(int index) {
+        int count = this.count;
+        byte[] value = this.value;
         checkIndex(index, count);
         if (isLatin1()) {
             return value[index] & 0xff;
@@ -560,11 +562,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             val[count++] = 'l';
             val[count++] = 'l';
         } else {
-            checkOffset(count + 4, val.length >> 1);
-            StringUTF16.putChar(val, count++, 'n');
-            StringUTF16.putChar(val, count++, 'u');
-            StringUTF16.putChar(val, count++, 'l');
-            StringUTF16.putChar(val, count++, 'l');
+            count = StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
         }
         this.count = count;
         return this;
@@ -695,18 +693,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
             }
         } else {
             if (b) {
-                checkOffset(count + 4, val.length >> 1);
-                StringUTF16.putChar(val, count++, 't');
-                StringUTF16.putChar(val, count++, 'r');
-                StringUTF16.putChar(val, count++, 'u');
-                StringUTF16.putChar(val, count++, 'e');
+                count = StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
             } else {
-                checkOffset(count + 5, val.length >> 1);
-                StringUTF16.putChar(val, count++, 'f');
-                StringUTF16.putChar(val, count++, 'a');
-                StringUTF16.putChar(val, count++, 'l');
-                StringUTF16.putChar(val, count++, 's');
-                StringUTF16.putChar(val, count++, 'e');
+                count = StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
             }
         }
         this.count = count;
@@ -755,16 +744,15 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(int i) {
+        int count = this.count;
         int spaceNeeded = count + Integer.stringSize(i);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             Integer.getChars(i, spaceNeeded, value);
         } else {
-            byte[] val = this.value;
-            checkOffset(spaceNeeded, val.length >> 1);
-            Integer.getCharsUTF16(i, spaceNeeded, val);
+            StringUTF16.getChars(i, count, spaceNeeded, value);
         }
-        count = spaceNeeded;
+        this.count = spaceNeeded;
         return this;
     }
 
@@ -781,16 +769,15 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(long l) {
+        int count = this.count;
         int spaceNeeded = count + Long.stringSize(l);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             Long.getChars(l, spaceNeeded, value);
         } else {
-            byte[] val = this.value;
-            checkOffset(spaceNeeded, val.length >> 1);
-            Long.getCharsUTF16(l, spaceNeeded, val);
+            StringUTF16.getChars(l, count, spaceNeeded, value);
         }
-        count = spaceNeeded;
+        this.count = spaceNeeded;
         return this;
     }
 
@@ -843,6 +830,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *             greater than {@code end}.
      */
     public AbstractStringBuilder delete(int start, int end) {
+        int count = this.count;
         if (end > count) {
             end = count;
         }
@@ -850,7 +838,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         int len = end - start;
         if (len > 0) {
             shift(end, -len);
-            count -= len;
+            this.count = count - len;
         }
         return this;
     }
@@ -925,6 +913,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *             greater than {@code end}.
      */
     public AbstractStringBuilder replace(int start, int end, String str) {
+        int count = this.count;
         if (end > count) {
             end = count;
         }
@@ -933,7 +922,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         int newCount = count + len - (end - start);
         ensureCapacityInternal(newCount);
         shift(end, newCount - count);
-        count = newCount;
+        this.count = newCount;
         putStringAt(start, str);
         return this;
     }
@@ -1500,38 +1489,9 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                 val[k] = cj;
             }
         } else {
-            checkOffset(count, val.length >> 1);
-            boolean hasSurrogates = false;
-            for (int j = (n-1) >> 1; j >= 0; j--) {
-                int k = n - j;
-                char cj = StringUTF16.getChar(val, j);
-                char ck = StringUTF16.getChar(val, k);
-                StringUTF16.putChar(val, j, ck);
-                StringUTF16.putChar(val, k, cj);
-                if (Character.isSurrogate(cj) ||
-                    Character.isSurrogate(ck)) {
-                    hasSurrogates = true;
-                }
-            }
-            if (hasSurrogates) {
-                reverseAllValidSurrogatePairs(val, count);
-            }
+            StringUTF16.reverse(val, count);
         }
         return this;
-    }
-
-    /** Outlined helper method for reverse() */
-    private void reverseAllValidSurrogatePairs(byte[] val, int count) {
-        for (int i = 0; i < count - 1; i++) {
-            char c2 = StringUTF16.getChar(val, i);
-            if (Character.isLowSurrogate(c2)) {
-                char c1 = StringUTF16.getChar(val, i + 1);
-                if (Character.isHighSurrogate(c1)) {
-                    StringUTF16.putChar(val, i++, c1);
-                    StringUTF16.putChar(val, i, c2);
-                }
-            }
-        }
     }
 
     /**
@@ -1682,6 +1642,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     private final void appendChars(char[] s, int off, int end) {
+        int count = this.count;
         if (isLatin1()) {
             byte[] val = this.value;
             for (int i = off, j = count; i < end; i++) {
@@ -1689,17 +1650,17 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
                 if (StringLatin1.canEncode(c)) {
                     val[j++] = (byte)c;
                 } else {
-                    count = j;
+                    this.count = count = j;
                     inflate();
                     StringUTF16.putCharsSB(this.value, j, s, i, end);
-                    count += end - i;
+                    this.count = count + end - i;
                     return;
                 }
             }
         } else {
             StringUTF16.putCharsSB(this.value, count, s, off, end);
         }
-        count += end - off;
+        this.count = count + end - off;
     }
 
     private final void appendChars(CharSequence s, int off, int end) {

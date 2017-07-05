@@ -30,7 +30,7 @@
 #include "interpreter/invocationCounter.hpp"
 #include "runtime/arguments.hpp"
 
-class MethodCounters: public MetaspaceObj {
+class MethodCounters : public Metadata {
  friend class VMStructs;
  friend class JVMCIVMStructs;
  private:
@@ -109,16 +109,17 @@ class MethodCounters: public MetaspaceObj {
   }
 
  public:
+  virtual bool is_methodCounters() const volatile { return true; }
+
   static MethodCounters* allocate(methodHandle mh, TRAPS);
 
   void deallocate_contents(ClassLoaderData* loader_data) {}
-  DEBUG_ONLY(bool on_stack() { return false; })  // for template
 
   AOT_ONLY(Method* method() const { return _method; })
 
-  static int size() { return sizeof(MethodCounters) / wordSize; }
-
-  bool is_klass() const { return false; }
+  static int size() {
+    return align_size_up(sizeof(MethodCounters), wordSize) / wordSize;
+  }
 
   void clear_counters();
 
@@ -251,5 +252,9 @@ class MethodCounters: public MetaspaceObj {
   static ByteSize backedge_mask_offset() {
     return byte_offset_of(MethodCounters, _backedge_mask);
   }
+
+  virtual const char* internal_name() const { return "{method counters}"; }
+  virtual void print_value_on(outputStream* st) const;
+
 };
 #endif //SHARE_VM_OOPS_METHODCOUNTERS_HPP

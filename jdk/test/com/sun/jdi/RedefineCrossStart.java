@@ -22,29 +22,28 @@
  */
 
 /**
- *  @test
- *  @bug 4628726
- *  @summary Test class redefinition at start only (they use breakpoint
- *  or resumeTo()) cross tested with other tests.
- *  ExceptionEvents/StackOverflowUncaughtTarg are here because they hit
- *  an unrelated crash in event testing.
+ * @test
+ * @bug 4628726
+ * @summary Test class redefinition at start only (they use breakpoint
+ * or resumeTo()) cross tested with other tests.
+ * ExceptionEvents/StackOverflowUncaughtTarg are here because they hit
+ * an unrelated crash in event testing.
  *
- *  @author Robert Field
+ * @author Robert Field
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g CountEvent.java
- *  @run compile -g CountFilterTest.java
- *  @run compile -g FramesTest.java
- *  @run compile -g InvokeTest.java
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g CountEvent.java
+ * @run compile -g CountFilterTest.java
+ * @run compile -g FramesTest.java
+ * @run compile -g InvokeTest.java
  *
- *  @run driver CountEvent -redefstart
- *  @run driver CountFilterTest -redefstart
- *  @run driver FramesTest -redefstart
- *  @run driver InvokeTest -redefstart
+ * @run driver CountEvent -redefstart
+ * @run driver CountFilterTest -redefstart
+ * @run driver FramesTest -redefstart
+ * @run driver InvokeTest -redefstart
  *
- *  @run driver ExceptionEvents -redefstart U A StackOverflowUncaughtTarg null
- *  @run driver ExceptionEvents -redefstart U A StackOverflowUncaughtTarg java.lang.Error
- *  @run driver ExceptionEvents -redefstart U A StackOverflowUncaughtTarg java.lang.StackOverflowError
- *  @run driver PopSynchronousTest -redefstart
+ * @run driver ExceptionEvents -redefstart U A StackOverflowUncaughtTarg null
+ * @run driver ExceptionEvents -redefstart U A StackOverflowUncaughtTarg java.lang.Error
+ * @run driver ExceptionEvents -redefstart U A StackOverflowUncaughtTarg java.lang.StackOverflowError
+ * @run driver PopSynchronousTest -redefstart
  */

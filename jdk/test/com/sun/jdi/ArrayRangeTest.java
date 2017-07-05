@@ -22,18 +22,16 @@
  */
 
 /**
- *  @test
- *  @bug 4439631
- *  @bug 4448721
- *  @bug 4448603
- *  @summary Test access to ranges within ArrayReferences
+ * @test
+ * @bug 4439631
+ * @bug 4448721
+ * @bug 4448603
+ * @summary Test access to ranges within ArrayReferences
+ * @author Robert Field
  *
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g ArrayRangeTest.java
- *  @run driver ArrayRangeTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g ArrayRangeTest.java
+ * @run driver ArrayRangeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

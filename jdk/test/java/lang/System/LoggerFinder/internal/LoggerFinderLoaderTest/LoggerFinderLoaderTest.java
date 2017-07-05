@@ -53,7 +53,6 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
 import jdk.internal.logger.SimpleConsoleLogger;
-import java.lang.reflect.Module;
 
 /**
  * @test
