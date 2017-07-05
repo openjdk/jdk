@@ -37,8 +37,8 @@ public class PrintEvent extends java.util.EventObject {
     /**
      * Constructs a PrintEvent object.
      * @param source is the source of the event
-     * @throws IllegalArgumentException if <code>source</code> is
-     *         <code>null</code>.
+     * @throws IllegalArgumentException if {@code source} is
+     *         {@code null}.
      */
     public PrintEvent (Object source) {
         super(source);

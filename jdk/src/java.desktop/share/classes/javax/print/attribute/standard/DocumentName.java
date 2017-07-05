@@ -42,7 +42,7 @@ import javax.print.attribute.DocAttribute;
  * <P>
  * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
- * <CODE>getName()</CODE> gives the IPP attribute name.
+ * {@code getName()} gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
  */
@@ -57,10 +57,10 @@ public final class DocumentName extends TextSyntax implements DocAttribute {
      * @param  documentName  Document name.
      * @param  locale        Natural language of the text string. null
      * is interpreted to mean the default locale as returned
-     * by <code>Locale.getDefault()</code>
+     * by {@code Locale.getDefault()}
      *
      * @exception  NullPointerException
-     *   (unchecked exception) Thrown if <CODE>documentName</CODE> is null.
+     *   (unchecked exception) Thrown if {@code documentName} is null.
      */
     public DocumentName(String documentName, Locale locale) {
         super (documentName, locale);
@@ -72,20 +72,20 @@ public final class DocumentName extends TextSyntax implements DocAttribute {
      * To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class DocumentName.
+     * {@code object} is an instance of class DocumentName.
      * <LI>
      * This document name attribute's underlying string and
-     * <CODE>object</CODE>'s underlying string are equal.
+     * {@code object}'s underlying string are equal.
      * <LI>
-     * This document name attribute's locale and <CODE>object</CODE>'s locale
+     * This document name attribute's locale and {@code object}'s locale
      * are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this document
+     * @return  True if {@code object} is equivalent to this document
      *          name attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -109,7 +109,7 @@ public final class DocumentName extends TextSyntax implements DocAttribute {
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class DocumentName, the category name is <CODE>"document-name"</CODE>.
+     * For class DocumentName, the category name is {@code "document-name"}.
      *
      * @return  Attribute category name.
      */

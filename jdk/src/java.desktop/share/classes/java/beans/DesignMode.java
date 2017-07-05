@@ -63,9 +63,9 @@ public interface DesignMode {
      * PropertyChangeEvent, to its registered BeanContextMembershipListeners, with
      * parameters:
      * <ul>
-     *    <li><code>propertyName</code> - <code>java.beans.DesignMode.PROPERTYNAME</code>
-     *    <li><code>oldValue</code> - previous value of "designTime"
-     *    <li><code>newValue</code> - current value of "designTime"
+     *    <li>{@code propertyName} - {@code java.beans.DesignMode.PROPERTYNAME}
+     *    <li>{@code oldValue} - previous value of "designTime"
+     *    <li>{@code newValue} - current value of "designTime"
      * </ul>
      * Note it is illegal for a BeanContextChild to invoke this method
      * associated with a BeanContext that it is nested within.

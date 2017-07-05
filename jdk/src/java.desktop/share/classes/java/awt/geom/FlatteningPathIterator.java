@@ -28,7 +28,7 @@ package java.awt.geom;
 import java.util.*;
 
 /**
- * The <code>FlatteningPathIterator</code> class returns a flattened view of
+ * The {@code FlatteningPathIterator} class returns a flattened view of
  * another {@link PathIterator} object.  Other {@link java.awt.Shape Shape}
  * classes can use this class to provide flattening behavior for their paths
  * without having to perform the interpolation calculations themselves.
@@ -82,7 +82,7 @@ public class FlatteningPathIterator implements PathIterator {
     boolean done;                       // True when iteration is done
 
     /**
-     * Constructs a new <code>FlatteningPathIterator</code> object that
+     * Constructs a new {@code FlatteningPathIterator} object that
      * flattens a path as it iterates over it.  The iterator does not
      * subdivide any curve read from the source iterator to more than
      * 10 levels of subdivision which yields a maximum of 1024 line
@@ -96,21 +96,21 @@ public class FlatteningPathIterator implements PathIterator {
     }
 
     /**
-     * Constructs a new <code>FlatteningPathIterator</code> object
+     * Constructs a new {@code FlatteningPathIterator} object
      * that flattens a path as it iterates over it.
-     * The <code>limit</code> parameter allows you to control the
+     * The {@code limit} parameter allows you to control the
      * maximum number of recursive subdivisions that the iterator
      * can make before it assumes that the curve is flat enough
-     * without measuring against the <code>flatness</code> parameter.
+     * without measuring against the {@code flatness} parameter.
      * The flattened iteration therefore never generates more than
-     * a maximum of <code>(2^limit)</code> line segments per curve.
+     * a maximum of {@code (2^limit)} line segments per curve.
      * @param src the original unflattened path being iterated over
      * @param flatness the maximum allowable distance between the
      * control points and the flattened curve
      * @param limit the maximum number of recursive subdivisions
      * allowed for any curved segment
      * @exception IllegalArgumentException if
-     *          <code>flatness</code> or <code>limit</code>
+     *          {@code flatness} or {@code limit}
      *          is less than zero
      */
     public FlatteningPathIterator(PathIterator src, double flatness,
@@ -131,7 +131,7 @@ public class FlatteningPathIterator implements PathIterator {
 
     /**
      * Returns the flatness of this iterator.
-     * @return the flatness of this <code>FlatteningPathIterator</code>.
+     * @return the flatness of this {@code FlatteningPathIterator}.
      */
     public double getFlatness() {
         return Math.sqrt(squareflat);
@@ -140,7 +140,7 @@ public class FlatteningPathIterator implements PathIterator {
     /**
      * Returns the recursion limit of this iterator.
      * @return the recursion limit of this
-     * <code>FlatteningPathIterator</code>.
+     * {@code FlatteningPathIterator}.
      */
     public int getRecursionLimit() {
         return limit;
@@ -160,8 +160,8 @@ public class FlatteningPathIterator implements PathIterator {
 
     /**
      * Tests if the iteration is complete.
-     * @return <code>true</code> if all the segments have
-     * been read; <code>false</code> otherwise.
+     * @return {@code true} if all the segments have
+     * been read; {@code false} otherwise.
      */
     public boolean isDone() {
         return done;

@@ -363,7 +363,7 @@ void SafepointSynchronize::begin() {
 #endif // ASSERT
 
   // Update the count of active JNI critical regions
-  GC_locker::set_jni_lock_count(_current_jni_active_count);
+  GCLocker::set_jni_lock_count(_current_jni_active_count);
 
   if (log_is_enabled(Debug, safepoint)) {
     VM_Operation *op = VMThread::vm_operation();
@@ -563,7 +563,7 @@ void SafepointSynchronize::check_for_lazy_critical_native(JavaThread *thread, Ja
       if (!thread->do_critical_native_unlock()) {
 #ifdef ASSERT
         if (!thread->in_critical()) {
-          GC_locker::increment_debug_jni_lock_count();
+          GCLocker::increment_debug_jni_lock_count();
         }
 #endif
         thread->enter_critical();

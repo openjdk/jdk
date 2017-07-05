@@ -32,9 +32,9 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 
-inline HeapWord* G1OffsetTableContigSpace::allocate_impl(size_t min_word_size,
-                                                         size_t desired_word_size,
-                                                         size_t* actual_size) {
+inline HeapWord* G1ContiguousSpace::allocate_impl(size_t min_word_size,
+                                                  size_t desired_word_size,
+                                                  size_t* actual_size) {
   HeapWord* obj = top();
   size_t available = pointer_delta(end(), obj);
   size_t want_to_allocate = MIN2(available, desired_word_size);
@@ -49,9 +49,9 @@ inline HeapWord* G1OffsetTableContigSpace::allocate_impl(size_t min_word_size,
   }
 }
 
-inline HeapWord* G1OffsetTableContigSpace::par_allocate_impl(size_t min_word_size,
-                                                             size_t desired_word_size,
-                                                             size_t* actual_size) {
+inline HeapWord* G1ContiguousSpace::par_allocate_impl(size_t min_word_size,
+                                                      size_t desired_word_size,
+                                                      size_t* actual_size) {
   do {
     HeapWord* obj = top();
     size_t available = pointer_delta(end(), obj);
@@ -73,22 +73,22 @@ inline HeapWord* G1OffsetTableContigSpace::par_allocate_impl(size_t min_word_siz
   } while (true);
 }
 
-inline HeapWord* G1OffsetTableContigSpace::allocate(size_t min_word_size,
-                                                    size_t desired_word_size,
-                                                    size_t* actual_size) {
+inline HeapWord* G1ContiguousSpace::allocate(size_t min_word_size,
+                                             size_t desired_word_size,
+                                             size_t* actual_size) {
   HeapWord* res = allocate_impl(min_word_size, desired_word_size, actual_size);
   if (res != NULL) {
-    _offsets.alloc_block(res, *actual_size);
+    _bot_part.alloc_block(res, *actual_size);
   }
   return res;
 }
 
-inline HeapWord* G1OffsetTableContigSpace::allocate(size_t word_size) {
+inline HeapWord* G1ContiguousSpace::allocate(size_t word_size) {
   size_t temp;
   return allocate(word_size, word_size, &temp);
 }
 
-inline HeapWord* G1OffsetTableContigSpace::par_allocate(size_t word_size) {
+inline HeapWord* G1ContiguousSpace::par_allocate(size_t word_size) {
   size_t temp;
   return par_allocate(word_size, word_size, &temp);
 }
@@ -96,20 +96,20 @@ inline HeapWord* G1OffsetTableContigSpace::par_allocate(size_t word_size) {
 // Because of the requirement of keeping "_offsets" up to date with the
 // allocations, we sequentialize these with a lock.  Therefore, best if
 // this is used for larger LAB allocations only.
-inline HeapWord* G1OffsetTableContigSpace::par_allocate(size_t min_word_size,
-                                                        size_t desired_word_size,
-                                                        size_t* actual_size) {
+inline HeapWord* G1ContiguousSpace::par_allocate(size_t min_word_size,
+                                                 size_t desired_word_size,
+                                                 size_t* actual_size) {
   MutexLocker x(&_par_alloc_lock);
   return allocate(min_word_size, desired_word_size, actual_size);
 }
 
-inline HeapWord* G1OffsetTableContigSpace::block_start(const void* p) {
-  return _offsets.block_start(p);
+inline HeapWord* G1ContiguousSpace::block_start(const void* p) {
+  return _bot_part.block_start(p);
 }
 
 inline HeapWord*
-G1OffsetTableContigSpace::block_start_const(const void* p) const {
-  return _offsets.block_start_const(p);
+G1ContiguousSpace::block_start_const(const void* p) const {
+  return _bot_part.block_start_const(p);
 }
 
 inline bool

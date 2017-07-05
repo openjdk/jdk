@@ -127,8 +127,6 @@ class arrayOopDesc : public oopDesc {
 // for unit testing
 #ifndef PRODUCT
   static bool check_max_length_overflow(BasicType type);
-  static int32_t old_max_array_length(BasicType type);
-  static void test_max_array_length();
 #endif
 };
 

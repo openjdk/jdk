@@ -93,7 +93,7 @@ import javax.print.attribute.DocAttributeSet;
  * Doc.
  * <p>
  * If print data is obtained from the client as a stream, by calling Doc's
- * <code>getReaderForText()</code> or <code>getStreamForBytes()</code>
+ * {@code getReaderForText()} or {@code getStreamForBytes()}
  * methods, or because the print data source is already an InputStream or
  * Reader, then the print service should always close these streams for the
  * client on all job completion conditions. With the following caveat.
@@ -120,11 +120,11 @@ public interface Doc {
      * Obtains the print data representation object that contains this doc
      * object's piece of print data in the format corresponding to the
      * supported doc flavor.
-     * The <CODE>getPrintData()</CODE> method returns an instance of
-     * the representation class whose name is given by <CODE>{@link
+     * The {@code getPrintData()} method returns an instance of
+     * the representation class whose name is given by {@link
      * #getDocFlavor() getDocFlavor()}.{@link
      * DocFlavor#getRepresentationClassName()
-     * getRepresentationClassName()}</CODE>, and the return value can be cast
+     * getRepresentationClassName()}, and the return value can be cast
      * from class Object to that representation class.
      *
      * @return  Print data representation object.

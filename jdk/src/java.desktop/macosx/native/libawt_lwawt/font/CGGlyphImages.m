@@ -562,6 +562,17 @@ CGGI_CreateImageForGlyph
     (CGGI_GlyphCanvas *canvas, const CGGlyph glyph,
      GlyphInfo *info, const CGGI_RenderingMode *mode)
 {
+    if (isnan(info->topLeftX) || isnan(info->topLeftY)) {
+        // Explicitly set glyphInfo width/height to be 0 to ensure
+        // zero length glyph image is copied into GlyphInfo from canvas
+        info->width = 0;
+        info->height = 0;
+
+        // copy the "empty" glyph from the canvas into the info
+        (*mode->glyphDescriptor->copyFxnPtr)(canvas, info);
+        return;
+    }
+
     // clean the canvas
     CGGI_ClearCanvas(canvas, info);
 
@@ -570,7 +581,6 @@ CGGI_CreateImageForGlyph
                                -info->topLeftX,
                                canvas->image->height + info->topLeftY,
                                &glyph, 1);
-
     // copy the glyph from the canvas into the info
     (*mode->glyphDescriptor->copyFxnPtr)(canvas, info);
 }

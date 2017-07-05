@@ -58,7 +58,7 @@ public class AltSecurityManager implements Runnable {
 
     public AltSecurityManager(int port) {
         if (port <= 0) {
-            TestLibrary.bomb("Port must be greater then 0.");
+            TestLibrary.bomb("Port must be greater than 0.");
         }
 
         this.regPort = port;

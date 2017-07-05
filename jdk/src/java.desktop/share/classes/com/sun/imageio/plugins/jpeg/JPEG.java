@@ -36,7 +36,7 @@ import java.awt.color.ICC_ColorSpace;
 /**
  * A class containing JPEG-related constants, definitions, and
  * static methods.  This class and its constants must be public so that
- * <code>JPEGImageWriteParam</code> can see it.
+ * {@code JPEGImageWriteParam} can see it.
  */
 public class JPEG {
 
@@ -234,10 +234,10 @@ public class JPEG {
     public static final float DEFAULT_QUALITY = 0.75F;
 
     /**
-     * Returns <code>true</code> if the given <code>ColorSpace</code>
+     * Returns {@code true} if the given {@code ColorSpace}
      * object is an instance of ICC_ColorSpace but is not one of the
-     * standard <code>ColorSpaces</code> returned by
-     * <code>ColorSpace.getInstance()</code>.
+     * standard {@code ColorSpaces} returned by
+     * {@code ColorSpace.getInstance()}.
      */
     static boolean isNonStandardICC(ColorSpace cs) {
         boolean retval = false;
@@ -255,8 +255,8 @@ public class JPEG {
 
 
     /**
-     * Returns <code>true</code> if the given imageType can be used
-     * in a JFIF file.  If <code>input</code> is true, then the
+     * Returns {@code true} if the given imageType can be used
+     * in a JFIF file.  If {@code input} is true, then the
      * image type is considered before colorspace conversion.
      */
     static boolean isJFIFcompliant(ImageTypeSpecifier imageType,
@@ -295,7 +295,7 @@ public class JPEG {
     /**
      * Given an image type, return the Adobe transform corresponding to
      * that type, or ADOBE_IMPOSSIBLE if the image type is incompatible
-     * with an Adobe marker segment.  If <code>input</code> is true, then
+     * with an Adobe marker segment.  If {@code input} is true, then
      * the image type is considered before colorspace conversion.
      */
     static int transformForType(ImageTypeSpecifier imageType, boolean input) {

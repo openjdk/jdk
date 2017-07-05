@@ -74,7 +74,7 @@ import com.sun.imageio.plugins.common.I18N;
 /** This class is the Java Image IO plugin reader for BMP images.
  *  It may subsample the image, clip the image, select sub-bands,
  *  and shift the decoded image origin if the proper decoding parameter
- *  are set in the provided <code>ImageReadParam</code>.
+ *  are set in the provided {@code ImageReadParam}.
  *
  *  This class supports Microsoft Windows Bitmap Version 3-5,
  *  as well as OS/2 Bitmap Version 2.x (for single-image BMP file).
@@ -159,8 +159,8 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
     /** source and destination bands. */
     private int[] sourceBands, destBands;
 
-    /** Constructs <code>BMPImageReader</code> from the provided
-     *  <code>ImageReaderSpi</code>.
+    /** Constructs {@code BMPImageReader} from the provided
+     *  {@code ImageReaderSpi}.
      */
     public BMPImageReader(ImageReaderSpi originator) {
         super(originator);
@@ -1681,8 +1681,8 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
     /** Decodes the jpeg/png image embedded in the bitmap using any jpeg
      *  ImageIO-style plugin.
      *
-     * @param bi The destination <code>BufferedImage</code>.
-     * @param bmpParam The <code>ImageReadParam</code> for decoding this
+     * @param bi The destination {@code BufferedImage}.
+     * @param bmpParam The {@code ImageReadParam} for decoding this
      *          BMP image.  The parameters for subregion, band selection and
      *          subsampling are used in decoding the jpeg image.
      */

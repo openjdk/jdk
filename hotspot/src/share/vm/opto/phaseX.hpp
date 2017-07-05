@@ -330,6 +330,9 @@ public:
   // Delayed node rehash if this is an IGVN phase
   virtual void igvn_rehash_node_delayed(Node* n) {}
 
+  // true if CFG node d dominates CFG node n
+  virtual bool is_dominator(Node *d, Node *n) { fatal("unimplemented for this pass"); return false; };
+
 #ifndef PRODUCT
   void dump_old2new_map() const;
   void dump_new( uint new_lidx ) const;
@@ -397,6 +400,9 @@ public:
 //------------------------------PhaseGVN---------------------------------------
 // Phase for performing local, pessimistic GVN-style optimizations.
 class PhaseGVN : public PhaseValues {
+protected:
+  bool is_dominator_helper(Node *d, Node *n, bool linear_only);
+
 public:
   PhaseGVN( Arena *arena, uint est_max_size ) : PhaseValues( arena, est_max_size ) {}
   PhaseGVN( PhaseGVN *gvn ) : PhaseValues( gvn ) {}
@@ -414,6 +420,8 @@ public:
     _table.replace_with(&gvn->_table);
     _types = gvn->_types;
   }
+
+  bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, true); }
 
   // Check for a simple dead loop when a data node references itself.
   DEBUG_ONLY(void dead_loop_check(Node *n);)
@@ -544,6 +552,8 @@ public:
   void check_no_speculative_types() {
     _table.check_no_speculative_types();
   }
+
+  bool is_dominator(Node *d, Node *n) { return is_dominator_helper(d, n, false); }
 
 #ifndef PRODUCT
 protected:

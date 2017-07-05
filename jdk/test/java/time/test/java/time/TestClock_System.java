@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,11 +179,17 @@ public class TestClock_System {
 
             int count=0;
             // let's preheat the system a bit:
+            int lastNanos = 0;
             for (int i = 0; i < 1000 ; i++) {
                 system1 = Instant.ofEpochMilli(System.currentTimeMillis());
-                highest1 = highestUTC.instant();
                 final int sysnan = system1.getNano();
-                final int nanos = highest1.getNano();
+                int nanos;
+                do {
+                    highest1 = highestUTC.instant();
+                    nanos = highest1.getNano();
+                } while (nanos == lastNanos); // Repeat to get a different value
+                lastNanos = nanos;
+
                 if ((nanos % 1000000) > 0) {
                     count++; // we have micro seconds
                 }

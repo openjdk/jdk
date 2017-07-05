@@ -634,7 +634,9 @@ class GraphKit : public Phase {
   // Return addressing for an array element.
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt,
                               // Optional constraint on the array size:
-                              const TypeInt* sizetype = NULL);
+                              const TypeInt* sizetype = NULL,
+                              // Optional control dependency (for example, on range check)
+                              Node* ctrl = NULL);
 
   // Return a load of array element at idx.
   Node* load_array_element(Node* ctl, Node* ary, Node* idx, const TypeAryPtr* arytype);
@@ -881,8 +883,9 @@ class GraphKit : public Phase {
   Node* load_String_coder(Node* ctrl, Node* str);
   void store_String_value(Node* ctrl, Node* str, Node* value);
   void store_String_coder(Node* ctrl, Node* str, Node* value);
-  Node* compress_string(Node* src, Node* dst, Node* count);
-  void inflate_string(Node* src, Node* dst, Node* count);
+  Node* capture_memory(const TypePtr* src_type, const TypePtr* dst_type);
+  Node* compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count);
+  void inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count);
   void inflate_string_slow(Node* src, Node* dst, Node* start, Node* count);
 
   // Handy for making control flow

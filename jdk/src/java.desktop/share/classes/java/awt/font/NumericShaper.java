@@ -34,18 +34,18 @@ import java.util.Set;
 import jdk.internal.misc.SharedSecrets;
 
 /**
- * The <code>NumericShaper</code> class is used to convert Latin-1 (European)
+ * The {@code NumericShaper} class is used to convert Latin-1 (European)
  * digits to other Unicode decimal digits.  Users of this class will
  * primarily be people who wish to present data using
  * national digit shapes, but find it more convenient to represent the
  * data internally using Latin-1 (European) digits.  This does not
  * interpret the deprecated numeric shape selector character (U+206E).
  * <p>
- * Instances of <code>NumericShaper</code> are typically applied
+ * Instances of {@code NumericShaper} are typically applied
  * as attributes to text with the
  * {@link TextAttribute#NUMERIC_SHAPING NUMERIC_SHAPING} attribute
- * of the <code>TextAttribute</code> class.
- * For example, this code snippet causes a <code>TextLayout</code> to
+ * of the {@code TextAttribute} class.
+ * For example, this code snippet causes a {@code TextLayout} to
  * shape European digits to Arabic in an Arabic context:<br>
  * <blockquote><pre>
  * Map map = new HashMap();
@@ -57,7 +57,7 @@ import jdk.internal.misc.SharedSecrets;
  * </pre></blockquote>
  * <br>
  * It is also possible to perform numeric shaping explicitly using instances
- * of <code>NumericShaper</code>, as this code snippet demonstrates:<br>
+ * of {@code NumericShaper}, as this code snippet demonstrates:<br>
  * <blockquote><pre>
  * char[] text = ...;
  * // shape all EUROPEAN digits (except zero) to ARABIC digits
@@ -109,7 +109,7 @@ import jdk.internal.misc.SharedSecrets;
  * <table border=1 cellspacing=3 cellpadding=0 summary="NumericShaper constants precedence.">
  *    <tr>
  *       <th class="TableHeadingColor">Unicode Range</th>
- *       <th class="TableHeadingColor"><code>NumericShaper</code> Constants</th>
+ *       <th class="TableHeadingColor">{@code NumericShaper} Constants</th>
  *       <th class="TableHeadingColor">Precedence</th>
  *    </tr>
  *    <tr>
@@ -149,7 +149,7 @@ public final class NumericShaper implements java.io.Serializable {
      * NumericShaper.Range#THAI} range has the Thai digits, THAI DIGIT
      * ZERO (U+0E50) to THAI DIGIT NINE (U+0E59).
      *
-     * <p>The <code>Range</code> enum replaces the traditional bit
+     * <p>The {@code Range} enum replaces the traditional bit
      * mask-based values (e.g., {@link NumericShaper#ARABIC}), and
      * supports more Unicode ranges than the bit mask-based ones. For
      * example, the following code using the bit mask:
@@ -411,7 +411,7 @@ public final class NumericShaper implements java.io.Serializable {
 
     /**
      * rangeSet.toArray() value. Sorted by Range.base when the number
-     * of elements is greater then BSEARCH_THRESHOLD.
+     * of elements is greater than BSEARCH_THRESHOLD.
      */
     private transient Range[] rangeArray;
 
@@ -1358,7 +1358,7 @@ public final class NumericShaper implements java.io.Serializable {
      * corresponding to the range of the preceding text, if the
      * range is one of the provided ranges.  Multiple ranges are
      * represented by or-ing the values together, such as,
-     * <code>NumericShaper.ARABIC | NumericShaper.THAI</code>.  The
+     * {@code NumericShaper.ARABIC | NumericShaper.THAI}.  The
      * shaper assumes EUROPEAN as the starting context, that is, if
      * EUROPEAN digits are encountered before any strong directional
      * text in the string, the context is presumed to be EUROPEAN, and
@@ -1399,14 +1399,14 @@ public final class NumericShaper implements java.io.Serializable {
      * corresponding to the range of the preceding text, if the
      * range is one of the provided ranges.  Multiple ranges are
      * represented by or-ing the values together, for example,
-     * <code>NumericShaper.ARABIC | NumericShaper.THAI</code>.  The
+     * {@code NumericShaper.ARABIC | NumericShaper.THAI}.  The
      * shaper uses defaultContext as the starting context.
      * @param ranges the specified Unicode ranges
      * @param defaultContext the starting context, such as
-     * <code>NumericShaper.EUROPEAN</code>
+     * {@code NumericShaper.EUROPEAN}
      * @return a shaper for the specified Unicode ranges.
      * @throws IllegalArgumentException if the specified
-     * <code>defaultContext</code> is not a single valid range.
+     * {@code defaultContext} is not a single valid range.
      */
     public static NumericShaper getContextualShaper(int ranges, int defaultContext) {
         int key = getKeyFromMask(defaultContext);
@@ -1481,9 +1481,9 @@ public final class NumericShaper implements java.io.Serializable {
      * Converts the digits in the text that occur between start and
      * start + count.
      * @param text an array of characters to convert
-     * @param start the index into <code>text</code> to start
+     * @param start the index into {@code text} to start
      *        converting
-     * @param count the number of characters in <code>text</code>
+     * @param count the number of characters in {@code text}
      *        to convert
      * @throws IndexOutOfBoundsException if start or start + count is
      *        out of bounds
@@ -1507,17 +1507,17 @@ public final class NumericShaper implements java.io.Serializable {
      * start + count, using the provided context.
      * Context is ignored if the shaper is not a contextual shaper.
      * @param text an array of characters
-     * @param start the index into <code>text</code> to start
+     * @param start the index into {@code text} to start
      *        converting
-     * @param count the number of characters in <code>text</code>
+     * @param count the number of characters in {@code text}
      *        to convert
      * @param context the context to which to convert the
-     *        characters, such as <code>NumericShaper.EUROPEAN</code>
+     *        characters, such as {@code NumericShaper.EUROPEAN}
      * @throws IndexOutOfBoundsException if start or start + count is
      *        out of bounds
      * @throws NullPointerException if text is null
      * @throws IllegalArgumentException if this is a contextual shaper
-     * and the specified <code>context</code> is not a single valid
+     * and the specified {@code context} is not a single valid
      * range.
      */
     public void shape(char[] text, int start, int count, int context) {
@@ -1588,17 +1588,17 @@ public final class NumericShaper implements java.io.Serializable {
     }
 
     /**
-     * Returns a <code>boolean</code> indicating whether or not
+     * Returns a {@code boolean} indicating whether or not
      * this shaper shapes contextually.
-     * @return <code>true</code> if this shaper is contextual;
-     *         <code>false</code> otherwise.
+     * @return {@code true} if this shaper is contextual;
+     *         {@code false} otherwise.
      */
     public boolean isContextual() {
         return (mask & CONTEXTUAL_MASK) != 0;
     }
 
     /**
-     * Returns an <code>int</code> that ORs together the values for
+     * Returns an {@code int} that ORs together the values for
      * all the ranges that will be shaped.
      * <p>
      * For example, to check if a shaper shapes to Arabic, you would use the
@@ -1748,7 +1748,7 @@ public final class NumericShaper implements java.io.Serializable {
 
     /**
      * Returns {@code true} if the specified object is an instance of
-     * <code>NumericShaper</code> and shapes identically to this one,
+     * {@code NumericShaper} and shapes identically to this one,
      * regardless of the range representations, the bit mask or the
      * enum. For example, the following code produces {@code "true"}.
      * <blockquote><pre>
@@ -1758,10 +1758,10 @@ public final class NumericShaper implements java.io.Serializable {
      * </pre></blockquote>
      *
      * @param o the specified object to compare to this
-     *          <code>NumericShaper</code>
-     * @return <code>true</code> if <code>o</code> is an instance
-     *         of <code>NumericShaper</code> and shapes in the same way;
-     *         <code>false</code> otherwise.
+     *          {@code NumericShaper}
+     * @return {@code true} if {@code o} is an instance
+     *         of {@code NumericShaper} and shapes in the same way;
+     *         {@code false} otherwise.
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object o) {
@@ -1793,9 +1793,9 @@ public final class NumericShaper implements java.io.Serializable {
     }
 
     /**
-     * Returns a <code>String</code> that describes this shaper. This method
+     * Returns a {@code String} that describes this shaper. This method
      * is used for debugging purposes only.
-     * @return a <code>String</code> describing this shaper.
+     * @return a {@code String} describing this shaper.
      */
     public String toString() {
         StringBuilder buf = new StringBuilder(super.toString());

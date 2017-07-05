@@ -165,7 +165,7 @@ bool AdvancedThresholdPolicy::is_method_profiled(Method* method) {
 // Called with the queue locked and with at least one element
 CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
 #if INCLUDE_JVMCI
-  CompileTask *max_non_jvmci_task = NULL;
+  CompileTask *max_blocking_task = NULL;
 #endif
   CompileTask *max_task = NULL;
   Method* max_method = NULL;
@@ -197,13 +197,25 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
         max_method = method;
       }
     }
+#if INCLUDE_JVMCI
+    if (UseJVMCICompiler && task->is_blocking()) {
+      if (max_blocking_task == NULL || compare_methods(method, max_blocking_task->method())) {
+        max_blocking_task = task;
+      }
+    }
+#endif
     task = next_task;
   }
 
 #if INCLUDE_JVMCI
   if (UseJVMCICompiler) {
-    if (max_non_jvmci_task != NULL) {
-      max_task = max_non_jvmci_task;
+    if (max_blocking_task != NULL) {
+      // In blocking compilation mode, the CompileBroker will make
+      // compilations submitted by a JVMCI compiler thread non-blocking. These
+      // compilations should be scheduled after all blocking compilations
+      // to service non-compiler related compilations sooner and reduce the
+      // chance of such compilations timing out.
+      max_task = max_blocking_task;
       max_method = max_task->method();
     }
   }

@@ -47,7 +47,7 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
 
     /**
      * Creates and returns a Container containin the buttons. The buttons
-     * are created by calling <code>getButtons</code>.
+     * are created by calling {@code getButtons}.
      */
     protected Container createButtonArea() {
         final Container bottom = super.createButtonArea();
@@ -140,6 +140,28 @@ public class AquaOptionPaneUI extends BasicOptionPaneUI {
                 children[i].setBounds(xLocation, yLocation, maxSize.width, maxSize.height);
                 xLocation += xOffset;
             }
+        }
+
+        @Override
+        public Dimension minimumLayoutSize(Container c) {
+            if (c != null) {
+                Component[] children = c.getComponents();
+                if (children != null && children.length > 0) {
+                    int numChildren = children.length;
+                    Insets cInsets = c.getInsets();
+                    int extraHeight = cInsets.top + cInsets.bottom;
+                    int extraWidth = cInsets.left + cInsets.right;
+                    int okCancelButtonWidth = extraWidth
+                            + (kOKCancelButtonWidth * numChildren)
+                            + (numChildren - 1) * padding;
+                    int okbuttonHeight = extraHeight + kButtonHeight;
+                    Dimension minSize = super.minimumLayoutSize(c);
+                    return new Dimension(Math.max(minSize.width,
+                            okCancelButtonWidth),
+                            Math.max(minSize.height, okbuttonHeight));
+                }
+            }
+            return new Dimension(0, 0);
         }
     }
 }

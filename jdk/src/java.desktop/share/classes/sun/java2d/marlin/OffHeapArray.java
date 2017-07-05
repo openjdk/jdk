@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,9 @@
 
 package sun.java2d.marlin;
 
-import java.lang.ref.PhantomReference;
-import java.lang.ref.ReferenceQueue;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Vector;
 import static sun.java2d.marlin.MarlinConst.logUnsafeMalloc;
-import sun.awt.util.ThreadGroupUtils;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.ref.CleanerFactory;
 
 /**
  *
@@ -45,36 +40,9 @@ final class OffHeapArray  {
     // size of int / float
     static final int SIZE_INT;
 
-    // RendererContext reference queue
-    private static final ReferenceQueue<Object> rdrQueue
-        = new ReferenceQueue<Object>();
-    // reference list
-    private static final Vector<OffHeapReference> refList
-        = new Vector<OffHeapReference>(32);
-
     static {
         unsafe   = Unsafe.getUnsafe();
         SIZE_INT = Unsafe.ARRAY_INT_INDEX_SCALE;
-
-        // Mimics Java2D Disposer:
-        AccessController.doPrivileged(
-            (PrivilegedAction<Void>) () -> {
-                /*
-                 * The thread must be a member of a thread group
-                 * which will not get GCed before VM exit.
-                 * Make its parent the top-level thread group.
-                 */
-                final ThreadGroup rootTG
-                    = ThreadGroupUtils.getRootThreadGroup();
-                final Thread t = new Thread(rootTG, new OffHeapDisposer(),
-                    "MarlinRenderer Disposer");
-                t.setContextClassLoader(null);
-                t.setDaemon(true);
-                t.setPriority(Thread.MAX_PRIORITY);
-                t.start();
-                return null;
-            }
-        );
     }
 
     /* members */
@@ -89,12 +57,12 @@ final class OffHeapArray  {
         this.used    = 0;
         if (logUnsafeMalloc) {
             MarlinUtils.logInfo(System.currentTimeMillis()
-                                + ": OffHeapArray.allocateMemory = "
+                                + ": OffHeapArray.allocateMemory =   "
                                 + len + " to addr = " + this.address);
         }
 
-        // Create the phantom reference to ensure freeing off-heap memory:
-        refList.add(new OffHeapReference(parent, this));
+        // Register a cleaning function to ensure freeing off-heap memory:
+        CleanerFactory.cleaner().register(parent, () -> this.free());
     }
 
     /*
@@ -117,7 +85,7 @@ final class OffHeapArray  {
         unsafe.freeMemory(this.address);
         if (logUnsafeMalloc) {
             MarlinUtils.logInfo(System.currentTimeMillis()
-                                + ": OffHeapEdgeArray.free = "
+                                + ": OffHeapArray.freeMemory =       "
                                 + this.length
                                 + " at addr = " + this.address);
         }
@@ -125,42 +93,5 @@ final class OffHeapArray  {
 
     void fill(final byte val) {
         unsafe.setMemory(this.address, this.length, val);
-    }
-
-    static final class OffHeapReference extends PhantomReference<Object> {
-
-        private final OffHeapArray array;
-
-        OffHeapReference(final Object parent, final OffHeapArray edges) {
-            super(parent, rdrQueue);
-            this.array = edges;
-        }
-
-        void dispose() {
-            // free off-heap blocks
-            this.array.free();
-        }
-    }
-
-    static final class OffHeapDisposer implements Runnable {
-        @Override
-        public void run() {
-            final Thread currentThread = Thread.currentThread();
-            OffHeapReference ref;
-
-            // check interrupted:
-            for (; !currentThread.isInterrupted();) {
-                try {
-                    ref = (OffHeapReference)rdrQueue.remove();
-                    ref.dispose();
-
-                    refList.remove(ref);
-
-                } catch (InterruptedException ie) {
-                    MarlinUtils.logException("OffHeapDisposer interrupted:",
-                                             ie);
-                }
-            }
-        }
     }
 }

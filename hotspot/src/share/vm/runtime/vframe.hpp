@@ -406,6 +406,7 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
     // as it were a native compiled frame (no Java-level assumptions).
 #ifdef ASSERT
     if (WizardMode) {
+      ttyLocker ttyl;
       tty->print_cr("Error in fill_from_frame: pc_desc for "
                     INTPTR_FORMAT " not found or invalid at %d",
                     p2i(_frame.pc()), decode_offset);

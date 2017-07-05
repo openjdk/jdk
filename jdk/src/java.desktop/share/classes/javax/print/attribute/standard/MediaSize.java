@@ -42,7 +42,7 @@ import javax.print.attribute.Attribute;
  * MediaSize is not yet used to specify media. Its current role is
  * as a mapping for named media (see {@link MediaSizeName MediaSizeName}).
  * Clients can use the mapping method
- * <code>MediaSize.getMediaSizeForName(MediaSizeName)</code>
+ * {@code MediaSize.getMediaSizeForName(MediaSizeName)}
  * to find the physical dimensions of the MediaSizeName instances
  * enumerated in this API. This is useful for clients which need this
  * information to format {@literal &} paginate printing.
@@ -66,8 +66,8 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @param  x  X dimension.
      * @param  y  Y dimension.
      * @param  units
-     *     Unit conversion factor, e.g. <CODE>Size2DSyntax.INCH</CODE> or
-     *     <CODE>Size2DSyntax.MM</CODE>.
+     *     Unit conversion factor, e.g. {@code Size2DSyntax.INCH} or
+     *     {@code Size2DSyntax.MM}.
      *
      * @exception  IllegalArgumentException
      *   (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0} or
@@ -87,8 +87,8 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @param  x  X dimension.
      * @param  y  Y dimension.
      * @param  units
-     *     Unit conversion factor, e.g. <CODE>Size2DSyntax.INCH</CODE> or
-     *     <CODE>Size2DSyntax.MM</CODE>.
+     *     Unit conversion factor, e.g. {@code Size2DSyntax.INCH} or
+     *     {@code Size2DSyntax.MM}.
      *
      * @exception  IllegalArgumentException
      *   (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0} or
@@ -109,8 +109,8 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @param  x  X dimension.
      * @param  y  Y dimension.
      * @param  units
-     *     Unit conversion factor, e.g. <CODE>Size2DSyntax.INCH</CODE> or
-     *     <CODE>Size2DSyntax.MM</CODE>.
+     *     Unit conversion factor, e.g. {@code Size2DSyntax.INCH} or
+     *     {@code Size2DSyntax.MM}.
      * @param media a media name to associate with this MediaSize
      *
      * @exception  IllegalArgumentException
@@ -135,8 +135,8 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @param  x  X dimension.
      * @param  y  Y dimension.
      * @param  units
-     *     Unit conversion factor, e.g. <CODE>Size2DSyntax.INCH</CODE> or
-     *     <CODE>Size2DSyntax.MM</CODE>.
+     *     Unit conversion factor, e.g. {@code Size2DSyntax.INCH} or
+     *     {@code Size2DSyntax.MM}.
      * @param media a media name to associate with this MediaSize
      *
      * @exception  IllegalArgumentException
@@ -168,7 +168,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
     /**
      * Get the MediaSize for the specified named media.
      *
-     * @param media - the name of the media for which the size is sought
+     * @param media the name of the media for which the size is sought
      * @return size of the media, or null if this media is not associated
      * with any size.
      */
@@ -187,11 +187,11 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * <p>
      * This method is useful for clients which have only dimensions and
      * want to find a Media which corresponds to the dimensions.
-     * @param x - X dimension
-     * @param y - Y dimension.
+     * @param x X dimension
+     * @param y Y dimension.
      * @param  units
-     *     Unit conversion factor, e.g. <CODE>Size2DSyntax.INCH</CODE> or
-     *     <CODE>Size2DSyntax.MM</CODE>
+     *     Unit conversion factor, e.g. {@code Size2DSyntax.INCH} or
+     *     {@code Size2DSyntax.MM}
      * @return MediaSizeName matching these dimensions, or null.
      * @exception IllegalArgumentException if {@code x <= 0},
      *      {@code y <= 0}, or {@code units < 1}.
@@ -237,20 +237,20 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * To be equivalent, all of the following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class MediaSize.
+     * {@code object} is an instance of class MediaSize.
      * <LI>
      * This media size attribute's X dimension is equal to
-     * <CODE>object</CODE>'s X dimension.
+     * {@code object}'s X dimension.
      * <LI>
      * This media size attribute's Y dimension is equal to
-     * <CODE>object</CODE>'s Y dimension.
+     * {@code object}'s Y dimension.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this media size
+     * @return  True if {@code object} is equivalent to this media size
      *          attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -276,7 +276,7 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * instance.
      * <P>
      * For class MediaSize and any vendor-defined subclasses, the category
-     * name is <CODE>"media-size"</CODE>.
+     * name is {@code "media-size"}.
      *
      * @return  Attribute category name.
      */

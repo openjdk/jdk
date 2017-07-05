@@ -42,7 +42,7 @@ import javax.print.attribute.SupportedValuesAttribute;
  * priority values equally among the available job priority levels.
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value.
- * The category name returned by <CODE>getName()</CODE> gives the IPP
+ * The category name returned by {@code getName()} gives the IPP
  * attribute name.
  *
  * @author  Alan Kaminsky
@@ -60,7 +60,7 @@ public final class JobPrioritySupported extends IntegerSyntax
      * @param  value  Number of different job priority levels supported.
      *
      * @exception  IllegalArgumentException
-     *     (Unchecked exception) Thrown if <CODE>value</CODE> is less than 1
+     *     (Unchecked exception) Thrown if {@code value} is less than 1
      *     or greater than 100.
      */
     public JobPrioritySupported(int value) {
@@ -73,17 +73,17 @@ public final class JobPrioritySupported extends IntegerSyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class JobPrioritySupported.
+     * {@code object} is an instance of class JobPrioritySupported.
      * <LI>
      * This job priority supported attribute's value and
-     * <CODE>object</CODE>'s value are equal.
+     * {@code object}'s value are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this job
+     * @return  True if {@code object} is equivalent to this job
      *          priority supported attribute, false otherwise.
      */
     public boolean equals (Object object) {
@@ -112,7 +112,7 @@ public final class JobPrioritySupported extends IntegerSyntax
      * instance.
      * <P>
      * For class JobPrioritySupported, the
-     * category name is <CODE>"job-priority-supported"</CODE>.
+     * category name is {@code "job-priority-supported"}.
      *
      * @return  Attribute category name.
      */

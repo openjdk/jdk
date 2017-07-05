@@ -87,7 +87,6 @@ void Relocation::pd_set_call_destination(address x) {
       return;
     }
   }
-  assert(addr() != x, "call instruction in an infinite loop");
   MacroAssembler::pd_patch_instruction(addr(), x);
   assert(pd_call_destination(addr()) == x, "fail in reloc");
 }

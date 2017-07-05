@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@
 package java.time;
 
 import static java.time.LocalTime.MINUTES_PER_HOUR;
+import static java.time.LocalTime.NANOS_PER_MILLI;
 import static java.time.LocalTime.NANOS_PER_SECOND;
 import static java.time.LocalTime.SECONDS_PER_DAY;
 import static java.time.LocalTime.SECONDS_PER_HOUR;
@@ -1214,8 +1215,16 @@ public final class Duration
      * @throws ArithmeticException if numeric overflow occurs
      */
     public long toMillis() {
-        long millis = Math.multiplyExact(seconds, 1000);
-        millis = Math.addExact(millis, nanos / 1000_000);
+        long tempSeconds = seconds;
+        long tempNanos = nanos;
+        if (tempSeconds < 0) {
+            // change the seconds and nano value to
+            // handle Long.MIN_VALUE case
+            tempSeconds = tempSeconds + 1;
+            tempNanos = tempNanos - NANOS_PER_SECOND;
+        }
+        long millis = Math.multiplyExact(tempSeconds, 1000);
+        millis = Math.addExact(millis, tempNanos / NANOS_PER_MILLI);
         return millis;
     }
 
@@ -1229,8 +1238,16 @@ public final class Duration
      * @throws ArithmeticException if numeric overflow occurs
      */
     public long toNanos() {
-        long totalNanos = Math.multiplyExact(seconds, NANOS_PER_SECOND);
-        totalNanos = Math.addExact(totalNanos, nanos);
+        long tempSeconds = seconds;
+        long tempNanos = nanos;
+        if (tempSeconds < 0) {
+            // change the seconds and nano value to
+            // handle Long.MIN_VALUE case
+            tempSeconds = tempSeconds + 1;
+            tempNanos = tempNanos - NANOS_PER_SECOND;
+        }
+        long totalNanos = Math.multiplyExact(tempSeconds, NANOS_PER_SECOND);
+        totalNanos = Math.addExact(totalNanos, tempNanos);
         return totalNanos;
     }
 

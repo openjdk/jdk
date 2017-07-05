@@ -113,7 +113,7 @@ public abstract class PrintServiceLookup {
      * @param attributes attributes that the print service must support.
      * If null this constraint is not used.
      *
-     * @return array of matching <code>PrintService</code> objects
+     * @return array of matching {@code PrintService} objects
      * representing print services that support the specified flavor
      * attributes.  If no services match, the array is zero-length.
      */
@@ -129,9 +129,9 @@ public abstract class PrintServiceLookup {
      * Locates MultiDoc print Services capable of printing MultiDocs
      * containing all the specified doc flavors.
      * <P> This method is useful to help locate a service that can print
-     * a <code>MultiDoc</code> in which the elements may be different
+     * a {@code MultiDoc} in which the elements may be different
      * flavors. An application could perform this itself by multiple lookups
-     * on each <code>DocFlavor</code> in turn and collating the results,
+     * on each {@code DocFlavor} in turn and collating the results,
      * but the lookup service may be able to do this more efficiently.
      *
      * @param flavors the flavors to print. If null or empty this
@@ -201,8 +201,8 @@ public abstract class PrintServiceLookup {
      * the method returns false.
      *
      * @param sp an implementation of a lookup service.
-     * @return <code>true</code> if the new lookup service is newly
-     *         registered; <code>false</code> otherwise.
+     * @return {@code true} if the new lookup service is newly
+     *         registered; {@code false} otherwise.
      */
     public static boolean registerServiceProvider(PrintServiceLookup sp) {
         synchronized (PrintServiceLookup.class) {
@@ -232,15 +232,15 @@ public abstract class PrintServiceLookup {
      * values and classes reported by the service.
      * This may be less efficient than a lookup
      * service tuned for that service.
-     * Therefore registering a <code>PrintServiceLookup</code> instance
+     * Therefore registering a {@code PrintServiceLookup} instance
      * instead is recommended.
      * The method returns true if this service is not previously
      * registered and is now successfully registered.
      * This method should not be called with StreamPrintService instances.
      * They will always fail to register and the method will return false.
      * @param service an implementation of a print service.
-     * @return <code>true</code> if the service is newly
-     *         registered; <code>false</code> otherwise.
+     * @return {@code true} if the service is newly
+     *         registered; {@code false} otherwise.
      */
 
     public static boolean registerService(PrintService service) {

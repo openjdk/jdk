@@ -101,7 +101,32 @@ void PhaseCFG::replace_block_proj_ctrl( Node *n ) {
   }
 }
 
-static bool is_dominator(Block* d, Block* n) {
+bool PhaseCFG::is_dominator(Node* dom_node, Node* node) {
+  if (dom_node == node) {
+    return true;
+  }
+  Block* d = get_block_for_node(dom_node);
+  Block* n = get_block_for_node(node);
+  if (d == n) {
+    if (dom_node->is_block_start()) {
+      return true;
+    }
+    if (node->is_block_start()) {
+      return false;
+    }
+    if (dom_node->is_block_proj()) {
+      return false;
+    }
+    if (node->is_block_proj()) {
+      return true;
+    }
+#ifdef ASSERT
+    node->dump();
+    dom_node->dump();
+#endif
+    fatal("unhandled");
+    return false;
+  }
   return d->dom_lca(n) == d;
 }
 
@@ -145,19 +170,15 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
           if (n == NULL) {
             n = m;
           } else {
-            Block* bn = get_block_for_node(n);
-            Block* bm = get_block_for_node(m);
-            assert(is_dominator(bn, bm) || is_dominator(bm, bn), "one must dominate the other");
-            n = is_dominator(bn, bm) ? m : n;
+            assert(is_dominator(n, m) || is_dominator(m, n), "one must dominate the other");
+            n = is_dominator(n, m) ? m : n;
           }
         }
       }
       if (n != NULL) {
         assert(node->in(0), "control should have been set");
-        Block* bn = get_block_for_node(n);
-        Block* bnode = get_block_for_node(node->in(0));
-        assert(is_dominator(bn, bnode) || is_dominator(bnode, bn), "one must dominate the other");
-        if (!is_dominator(bn, bnode)) {
+        assert(is_dominator(n, node->in(0)) || is_dominator(node->in(0), n), "one must dominate the other");
+        if (!is_dominator(n, node->in(0))) {
           node->set_req(0, n);
         }
       }

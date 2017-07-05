@@ -348,17 +348,17 @@ public abstract class EmbeddedFrame extends Frame
 
     /**
      * Synthesize native message to activate or deactivate EmbeddedFrame window
-     * depending on the value of parameter <code>b</code>.
+     * depending on the value of parameter {@code b}.
      * Peers should override this method if they are to implement
      * this functionality.
-     * @param doActivate  if <code>true</code>, activates the window;
+     * @param doActivate  if {@code true}, activates the window;
      * otherwise, deactivates the window
      */
     public void synthesizeWindowActivation(boolean doActivate) {}
 
     /**
      * Moves this embedded frame to a new location. The top-left corner of
-     * the new location is specified by the <code>x</code> and <code>y</code>
+     * the new location is specified by the {@code x} and {@code y}
      * parameters relative to the native parent component.
      * <p>
      * setLocation() and setBounds() for EmbeddedFrame really don't move it
@@ -418,9 +418,9 @@ public abstract class EmbeddedFrame extends Frame
 
     /**
      * Moves and resizes this embedded frame. The new location of the top-left
-     * corner is specified by <code>x</code> and <code>y</code> parameters
+     * corner is specified by {@code x} and {@code y} parameters
      * relative to the native parent component. The new size is specified by
-     * <code>width</code> and <code>height</code>.
+     * {@code width} and {@code height}.
      * <p>
      * setLocation() and setBounds() for EmbeddedFrame really don't move it
      * within the native parent. These methods always put embedded frame to
@@ -437,8 +437,8 @@ public abstract class EmbeddedFrame extends Frame
      * </p>
      * @param x the new <i>x</i>-coordinate relative to the parent component
      * @param y the new <i>y</i>-coordinate relative to the parent component
-     * @param width the new <code>width</code> of this embedded frame
-     * @param height the new <code>height</code> of this embedded frame
+     * @param width the new {@code width} of this embedded frame
+     * @param height the new {@code height} of this embedded frame
      * @see java.awt.Component#setBounds
      * @see #setLocationPrivate
      * @see #getLocationPrivate

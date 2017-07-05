@@ -392,17 +392,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  A string representation of this {@code UUID}
      */
     public String toString() {
-        char[] chars = new char[36];
-        jla.formatUnsignedLong(mostSigBits >> 32, 4, chars, 0, 8);
-        chars[8] = '-';
-        jla.formatUnsignedLong(mostSigBits >> 16, 4, chars, 9, 4);
-        chars[13] = '-';
-        jla.formatUnsignedLong(mostSigBits, 4, chars, 14, 4);
-        chars[18] = '-';
-        jla.formatUnsignedLong(leastSigBits >> 48, 4, chars, 19, 4);
-        chars[23] = '-';
-        jla.formatUnsignedLong(leastSigBits, 4, chars, 24, 12);
-        return jla.newStringUnsafe(chars);
+        return jla.fastUUID(leastSigBits, mostSigBits);
     }
 
     /**
