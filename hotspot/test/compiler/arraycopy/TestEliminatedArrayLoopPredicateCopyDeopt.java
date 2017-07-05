@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/*
+ * @test
+ * @bug 8134974
+ * @summary Cannot pin eliminated arraycopy loads for deopt state in uncommon trap path if it is a loop predicate unc
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestEliminatedArrayLoopPredicateCopyDeopt
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1ParScanThreadState.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+public class TestEliminatedArrayLoopPredicateCopyDeopt {
 
-bool G1CollectedHeap::copy_allocation_context_stats(const jint* contexts,
-                                                    jlong* totals,
-                                                    jbyte* accuracy,
-                                                    jint len) {
-  return false;
-}
+    static boolean test(int[] array_src) {
+        int[] array_dst = new int[10];
+        System.arraycopy(array_src, 0, array_dst, 0, 10);
 
-HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
-                                             MemRegion mr) {
-  return new HeapRegion(hrs_index, bot_shared(), mr);
+        for (int i = 0; i < 100; i++) {
+            array_src[i] = i;
+        }
+        if (array_dst[0] == 0) {
+            return true;
+        }
+        return false;
+    }
+
+    static public void main(String[] args) {
+        int[] array_src = new int[100];
+        for (int i = 0; i < 20000; i++) {
+            test(array_src);
+        }
+    }
 }

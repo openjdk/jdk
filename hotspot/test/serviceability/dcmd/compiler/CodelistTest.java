@@ -90,6 +90,9 @@ public class CodelistTest {
             if (methodPrintedInLogFormat.contains("MethodHandle")) {
                 continue;
             }
+            if (methodPrintedInLogFormat.contains("sun.misc.Unsafe.getUnsafe")) {
+                continue;
+            }
 
             MethodIdentifierParser mf = new MethodIdentifierParser(methodPrintedInLogFormat);
             Method m = null;
