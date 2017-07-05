@@ -927,11 +927,9 @@ void ParNewGeneration::collect(bool   full,
                                    workers->active_workers(),
                                    Threads::number_of_non_daemon_threads());
   workers->set_active_workers(active_workers);
-  _next_gen = gch->next_gen(this);
-  assert(_next_gen != NULL,
-    "This must be the youngest gen, and not the only gen");
   assert(gch->n_gens() == 2,
          "Par collection currently only works with single older gen.");
+  _next_gen = gch->next_gen(this);
   // Do we have to avoid promotion_undo?
   if (gch->collector_policy()->is_concurrent_mark_sweep_policy()) {
     set_avoid_promotion_undo(true);

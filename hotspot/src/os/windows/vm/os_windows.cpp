@@ -1642,6 +1642,8 @@ void os::print_os_info(outputStream* st) {
 
 void os::win32::print_windows_version(outputStream* st) {
   OSVERSIONINFOEX osvi;
+  SYSTEM_INFO si;
+
   ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 
@@ -1651,6 +1653,18 @@ void os::win32::print_windows_version(outputStream* st) {
   }
 
   int os_vers = osvi.dwMajorVersion * 1000 + osvi.dwMinorVersion;
+
+  ZeroMemory(&si, sizeof(SYSTEM_INFO));
+  if (os_vers >= 5002) {
+    // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
+    // find out whether we are running on 64 bit processor or not.
+    if (os::Kernel32Dll::GetNativeSystemInfoAvailable()) {
+      os::Kernel32Dll::GetNativeSystemInfo(&si);
+    } else {
+      GetSystemInfo(&si);
+    }
+  }
+
   if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) {
     switch (os_vers) {
     case 3051: st->print(" Windows NT 3.51"); break;
@@ -1658,57 +1672,48 @@ void os::win32::print_windows_version(outputStream* st) {
     case 5000: st->print(" Windows 2000"); break;
     case 5001: st->print(" Windows XP"); break;
     case 5002:
-    case 6000:
-    case 6001:
-    case 6002: {
-      // Retrieve SYSTEM_INFO from GetNativeSystemInfo call so that we could
-      // find out whether we are running on 64 bit processor or not.
-      SYSTEM_INFO si;
-      ZeroMemory(&si, sizeof(SYSTEM_INFO));
-        if (!os::Kernel32Dll::GetNativeSystemInfoAvailable()){
-          GetSystemInfo(&si);
+      if (osvi.wProductType == VER_NT_WORKSTATION &&
+          si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+        st->print(" Windows XP x64 Edition");
       } else {
-        os::Kernel32Dll::GetNativeSystemInfo(&si);
-      }
-      if (os_vers == 5002) {
-        if (osvi.wProductType == VER_NT_WORKSTATION &&
-            si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-          st->print(" Windows XP x64 Edition");
-        else
-            st->print(" Windows Server 2003 family");
-      } else if (os_vers == 6000) {
-        if (osvi.wProductType == VER_NT_WORKSTATION)
-            st->print(" Windows Vista");
-        else
-            st->print(" Windows Server 2008");
-        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-            st->print(" , 64 bit");
-      } else if (os_vers == 6001) {
-        if (osvi.wProductType == VER_NT_WORKSTATION) {
-            st->print(" Windows 7");
-        } else {
-            // Unrecognized windows, print out its major and minor versions
-            st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-        }
-        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-            st->print(" , 64 bit");
-      } else if (os_vers == 6002) {
-        if (osvi.wProductType == VER_NT_WORKSTATION) {
-            st->print(" Windows 8");
-        } else {
-            st->print(" Windows Server 2012");
-        }
-        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-            st->print(" , 64 bit");
-      } else { // future os
-        // Unrecognized windows, print out its major and minor versions
-        st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
-        if (si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-            st->print(" , 64 bit");
+        st->print(" Windows Server 2003 family");
       }
       break;
-    }
-    default: // future windows, print out its major and minor versions
+
+    case 6000:
+      if (osvi.wProductType == VER_NT_WORKSTATION) {
+        st->print(" Windows Vista");
+      } else {
+        st->print(" Windows Server 2008");
+      }
+      break;
+
+    case 6001:
+      if (osvi.wProductType == VER_NT_WORKSTATION) {
+        st->print(" Windows 7");
+      } else {
+        st->print(" Windows Server 2008 R2");
+      }
+      break;
+
+    case 6002:
+      if (osvi.wProductType == VER_NT_WORKSTATION) {
+        st->print(" Windows 8");
+      } else {
+        st->print(" Windows Server 2012");
+      }
+      break;
+
+    case 6003:
+      if (osvi.wProductType == VER_NT_WORKSTATION) {
+        st->print(" Windows 8.1");
+      } else {
+        st->print(" Windows Server 2012 R2");
+      }
+      break;
+
+    default: // future os
+      // Unrecognized windows, print out its major and minor versions
       st->print(" Windows NT %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
     }
   } else {
@@ -1720,6 +1725,11 @@ void os::win32::print_windows_version(outputStream* st) {
       st->print(" Windows %d.%d", osvi.dwMajorVersion, osvi.dwMinorVersion);
     }
   }
+
+  if (os_vers >= 6000 && si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) {
+    st->print(" , 64 bit");
+  }
+
   st->print(" Build %d", osvi.dwBuildNumber);
   st->print(" %s", osvi.szCSDVersion);           // service pack
   st->cr();

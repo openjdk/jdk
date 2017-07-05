@@ -2262,7 +2262,7 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
       tty->print("%3.3x   ", pcs[n->_idx]);
     else
       tty->print("      ");
-    b->dump_head( &_cfg->_bbs );
+    b->dump_head(_cfg);
     if (b->is_connector()) {
       tty->print_cr("        # Empty connector block");
     } else if (b->num_preds() == 2 && b->pred(1)->is_CatchProj() && b->pred(1)->as_CatchProj()->_con == CatchProjNode::fall_through_index) {
@@ -3525,7 +3525,7 @@ void Compile::ConstantTable::add(Constant& con) {
 }
 
 Compile::Constant Compile::ConstantTable::add(MachConstantNode* n, BasicType type, jvalue value) {
-  Block* b = Compile::current()->cfg()->_bbs[n->_idx];
+  Block* b = Compile::current()->cfg()->get_block_for_node(n);
   Constant con(type, value, b->_freq);
   add(con);
   return con;
