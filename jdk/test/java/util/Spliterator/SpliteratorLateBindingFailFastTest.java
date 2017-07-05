@@ -214,7 +214,7 @@ public class SpliteratorLateBindingFailFastTest {
 
         db.addMap(LinkedHashMap::new);
 
-        // This fails when run through jrteg but passes when run though
+        // This fails when run through jtreg but passes when run through
         // ant
 //        db.addMap(IdentityHashMap::new);
 

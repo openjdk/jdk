@@ -1302,11 +1302,22 @@ ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry)
 jint
 ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len)
 {
-    jlong entry_size = (entry->csize != 0) ? entry->csize : entry->size;
+    jlong entry_size;
     jlong start;
+
+    if (zip == 0) {
+        return -1;
+    }
 
     /* Clear previous zip error */
     zip->msg = NULL;
+
+    if (entry == 0) {
+        zip->msg = "ZIP_Read: jzentry is NULL";
+        return -1;
+    }
+
+    entry_size = (entry->csize != 0) ? entry->csize : entry->size;
 
     /* Check specified position */
     if (pos < 0 || pos > entry_size - 1) {
@@ -1439,6 +1450,11 @@ ZIP_ReadEntry(jzfile *zip, jzentry *entry, unsigned char *buf, char *entryname)
 {
     char *msg;
     char tmpbuf[1024];
+
+    if (entry == 0) {
+        jio_fprintf(stderr, "jzentry was invalid");
+        return JNI_FALSE;
+    }
 
     strcpy(entryname, entry->name);
     if (entry->csize == 0) {

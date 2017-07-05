@@ -27,7 +27,6 @@ import org.testng.annotations.Test;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
-
 /**
  * @test
  * @bug 8029164

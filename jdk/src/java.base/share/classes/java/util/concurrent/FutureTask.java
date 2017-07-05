@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent;
+
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -395,7 +396,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
         throws InterruptedException {
         // The code below is very delicate, to achieve these goals:
         // - call nanoTime exactly once for each call to park
-        // - if nanos <= 0, return promptly without allocation or nanoTime
+        // - if nanos <= 0L, return promptly without allocation or nanoTime
         // - if nanos == Long.MIN_VALUE, don't underflow
         // - if nanos == Long.MAX_VALUE, and nanoTime is non-monotonic
         //   and we suffer a spurious wakeup, we will do no worse than
@@ -404,19 +405,20 @@ public class FutureTask<V> implements RunnableFuture<V> {
         WaitNode q = null;
         boolean queued = false;
         for (;;) {
-            if (Thread.interrupted()) {
-                removeWaiter(q);
-                throw new InterruptedException();
-            }
-
             int s = state;
             if (s > COMPLETING) {
                 if (q != null)
                     q.thread = null;
                 return s;
             }
-            else if (s == COMPLETING) // cannot time out yet
+            else if (s == COMPLETING)
+                // We may have already promised (via isDone) that we are done
+                // so never return empty-handed or throw InterruptedException
                 Thread.yield();
+            else if (Thread.interrupted()) {
+                removeWaiter(q);
+                throw new InterruptedException();
+            }
             else if (q == null) {
                 if (timed && nanos <= 0L)
                     return s;
@@ -440,7 +442,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
                     }
                     parkNanos = nanos - elapsed;
                 }
-                LockSupport.parkNanos(this, parkNanos);
+                // nanoTime may be slow; recheck before parking
+                if (state < COMPLETING)
+                    LockSupport.parkNanos(this, parkNanos);
             }
             else
                 LockSupport.park(this);
@@ -480,20 +484,25 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     // Unsafe mechanics
-    private static final sun.misc.Unsafe U;
+    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
     private static final long STATE;
     private static final long RUNNER;
     private static final long WAITERS;
     static {
         try {
-            U = sun.misc.Unsafe.getUnsafe();
-            Class<?> k = FutureTask.class;
-            STATE   = U.objectFieldOffset(k.getDeclaredField("state"));
-            RUNNER  = U.objectFieldOffset(k.getDeclaredField("runner"));
-            WAITERS = U.objectFieldOffset(k.getDeclaredField("waiters"));
-        } catch (Exception e) {
+            STATE = U.objectFieldOffset
+                (FutureTask.class.getDeclaredField("state"));
+            RUNNER = U.objectFieldOffset
+                (FutureTask.class.getDeclaredField("runner"));
+            WAITERS = U.objectFieldOffset
+                (FutureTask.class.getDeclaredField("waiters"));
+        } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
+
+        // Reduce the risk of rare disastrous classloading in first call to
+        // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
+        Class<?> ensureLoaded = LockSupport.class;
     }
 
 }

@@ -41,16 +41,16 @@ public class BiggernYours {
         Object[] c2Array = c2.toArray();
 
         check(c1Array.length == c2Array.length);
-        for(Object aC1 : c1Array) {
+        for (Object aC1 : c1Array) {
             boolean found = false;
-            for(Object aC2 : c2Array) {
-                if(Objects.equals(aC1, aC2)) {
+            for (Object aC2 : c2Array) {
+                if (Objects.equals(aC1, aC2)) {
                     found = true;
                     break;
                 }
             }
 
-            if(!found)
+            if (!found)
                 fail(aC1 + " not found in " + Arrays.toString(c2Array));
         }
     }

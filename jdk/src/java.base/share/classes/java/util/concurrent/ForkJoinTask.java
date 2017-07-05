@@ -36,21 +36,13 @@
 package java.util.concurrent;
 
 import java.io.Serializable;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.List;
 import java.util.RandomAccess;
-import java.lang.ref.WeakReference;
-import java.lang.ref.ReferenceQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RunnableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
-import java.lang.reflect.Constructor;
 
 /**
  * Abstract base class for tasks that run within a {@link ForkJoinPool}.
@@ -442,7 +434,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         ExceptionNode next;
         final long thrower;  // use id not ref to avoid weak cycles
         final int hashCode;  // store task hashCode before weak ref disappears
-        ExceptionNode(ForkJoinTask<?> task, Throwable ex, ExceptionNode next) {
+        ExceptionNode(ForkJoinTask<?> task, Throwable ex, ExceptionNode next,
+                      ReferenceQueue<Object> exceptionTableRefQueue) {
             super(task, exceptionTableRefQueue);
             this.ex = ex;
             this.next = next;
@@ -468,7 +461,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 int i = h & (t.length - 1);
                 for (ExceptionNode e = t[i]; ; e = e.next) {
                     if (e == null) {
-                        t[i] = new ExceptionNode(this, ex, t[i]);
+                        t[i] = new ExceptionNode(this, ex, t[i],
+                                                 exceptionTableRefQueue);
                         break;
                     }
                     if (e.get() == this) // already present
@@ -561,8 +555,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the exception, or null if none
      */
     private Throwable getThrowableException() {
-        if ((status & DONE_MASK) != EXCEPTIONAL)
-            return null;
         int h = System.identityHashCode(this);
         ExceptionNode e;
         final ReentrantLock lock = exceptionTableLock;
@@ -608,7 +600,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Poll stale refs and remove them. Call only while holding lock.
+     * Polls stale refs and removes them. Call only while holding lock.
      */
     private static void expungeStaleExceptions() {
         for (Object x; (x = exceptionTableRefQueue.poll()) != null;) {
@@ -635,7 +627,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * If lock is available, poll stale refs and remove them.
+     * If lock is available, polls stale refs and removes them.
      * Called from ForkJoinPool when pools become quiescent.
      */
     static final void helpExpungeStaleExceptions() {
@@ -650,21 +642,23 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * A version of "sneaky throw" to relay exceptions
+     * A version of "sneaky throw" to relay exceptions.
      */
     static void rethrow(Throwable ex) {
-        if (ex != null)
-            ForkJoinTask.<RuntimeException>uncheckedThrow(ex);
+        ForkJoinTask.<RuntimeException>uncheckedThrow(ex);
     }
 
     /**
      * The sneaky part of sneaky throw, relying on generics
      * limitations to evade compiler complaints about rethrowing
-     * unchecked exceptions
+     * unchecked exceptions.
      */
     @SuppressWarnings("unchecked") static <T extends Throwable>
-        void uncheckedThrow(Throwable t) throws T {
-        throw (T)t; // rely on vacuous cast
+    void uncheckedThrow(Throwable t) throws T {
+        if (t != null)
+            throw (T)t; // rely on vacuous cast
+        else
+            throw new Error("Unknown Exception");
     }
 
     /**
@@ -999,11 +993,10 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     public final V get() throws InterruptedException, ExecutionException {
         int s = (Thread.currentThread() instanceof ForkJoinWorkerThread) ?
             doJoin() : externalInterruptibleAwaitDone();
-        Throwable ex;
         if ((s &= DONE_MASK) == CANCELLED)
             throw new CancellationException();
-        if (s == EXCEPTIONAL && (ex = getThrowableException()) != null)
-            throw new ExecutionException(ex);
+        if (s == EXCEPTIONAL)
+            throw new ExecutionException(getThrowableException());
         return getRawResult();
     }
 
@@ -1058,13 +1051,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         if (s >= 0)
             s = status;
         if ((s &= DONE_MASK) != NORMAL) {
-            Throwable ex;
             if (s == CANCELLED)
                 throw new CancellationException();
             if (s != EXCEPTIONAL)
                 throw new TimeoutException();
-            if ((ex = getThrowableException()) != null)
-                throw new ExecutionException(ex);
+            throw new ExecutionException(getThrowableException());
         }
         return getRawResult();
     }
@@ -1090,10 +1081,10 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     /**
      * Possibly executes tasks until the pool hosting the current task
-     * {@link ForkJoinPool#isQuiescent is quiescent}. This method may
-     * be of use in designs in which many tasks are forked, but none
-     * are explicitly joined, instead executing them until all are
-     * processed.
+     * {@linkplain ForkJoinPool#isQuiescent is quiescent}.  This
+     * method may be of use in designs in which many tasks are forked,
+     * but none are explicitly joined, instead executing them until
+     * all are processed.
      */
     public static void helpQuiesce() {
         Thread t;
@@ -1129,10 +1120,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Returns the pool hosting the current task execution, or null
-     * if this task is executing outside of any ForkJoinPool.
+     * Returns the pool hosting the current thread, or {@code null}
+     * if the current thread is executing outside of any ForkJoinPool.
      *
-     * @see #inForkJoinPool
+     * <p>This method returns {@code null} if and only if {@link
+     * #inForkJoinPool} returns {@code false}.
+     *
      * @return the pool, or {@code null} if none
      */
     public static ForkJoinPool getPool() {
@@ -1299,6 +1292,23 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             null;
     }
 
+    /**
+     * If the current thread is operating in a ForkJoinPool,
+     * unschedules and returns, without executing, a task externally
+     * submitted to the pool, if one is available. Availability may be
+     * transient, so a {@code null} result does not necessarily imply
+     * quiescence of the pool.  This method is designed primarily to
+     * support extensions, and is unlikely to be useful otherwise.
+     *
+     * @return a task, or {@code null} if none are available
+     * @since 1.9
+     */
+    protected static ForkJoinTask<?> pollSubmission() {
+        Thread t;
+        return ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) ?
+            ((ForkJoinWorkerThread)t).pool.pollSubmission() : null;
+    }
+
     // tag operations
 
     /**
@@ -1312,16 +1322,16 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Atomically sets the tag value for this task.
+     * Atomically sets the tag value for this task and returns the old value.
      *
-     * @param tag the tag value
+     * @param newValue the new tag value
      * @return the previous value of the tag
      * @since 1.8
      */
-    public final short setForkJoinTaskTag(short tag) {
+    public final short setForkJoinTaskTag(short newValue) {
         for (int s;;) {
             if (U.compareAndSwapInt(this, STATUS, s = status,
-                                    (s & ~SMASK) | (tag & SMASK)))
+                                    (s & ~SMASK) | (newValue & SMASK)))
                 return (short)s;
         }
     }
@@ -1334,24 +1344,24 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * before processing, otherwise exiting because the node has
      * already been visited.
      *
-     * @param e the expected tag value
-     * @param tag the new tag value
+     * @param expect the expected tag value
+     * @param update the new tag value
      * @return {@code true} if successful; i.e., the current value was
-     * equal to e and is now tag.
+     * equal to {@code expect} and was changed to {@code update}.
      * @since 1.8
      */
-    public final boolean compareAndSetForkJoinTaskTag(short e, short tag) {
+    public final boolean compareAndSetForkJoinTaskTag(short expect, short update) {
         for (int s;;) {
-            if ((short)(s = status) != e)
+            if ((short)(s = status) != expect)
                 return false;
             if (U.compareAndSwapInt(this, STATUS, s,
-                                    (s & ~SMASK) | (tag & SMASK)))
+                                    (s & ~SMASK) | (update & SMASK)))
                 return true;
         }
     }
 
     /**
-     * Adaptor for Runnables. This implements RunnableFuture
+     * Adapter for Runnables. This implements RunnableFuture
      * to be compliant with AbstractExecutorService constraints
      * when used in ForkJoinPool.
      */
@@ -1372,7 +1382,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Adaptor for Runnables without results
+     * Adapter for Runnables without results.
      */
     static final class AdaptedRunnableAction extends ForkJoinTask<Void>
         implements RunnableFuture<Void> {
@@ -1389,7 +1399,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Adaptor for Runnables in which failure forces worker exception
+     * Adapter for Runnables in which failure forces worker exception.
      */
     static final class RunnableExecuteAction extends ForkJoinTask<Void> {
         final Runnable runnable;
@@ -1407,7 +1417,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Adaptor for Callables
+     * Adapter for Callables.
      */
     static final class AdaptedCallable<T> extends ForkJoinTask<T>
         implements RunnableFuture<T> {
@@ -1423,8 +1433,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             try {
                 result = callable.call();
                 return true;
-            } catch (Error err) {
-                throw err;
             } catch (RuntimeException rex) {
                 throw rex;
             } catch (Exception ex) {
@@ -1509,7 +1517,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     // Unsafe mechanics
-    private static final sun.misc.Unsafe U;
+    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
     private static final long STATUS;
 
     static {
@@ -1517,11 +1525,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         exceptionTableRefQueue = new ReferenceQueue<Object>();
         exceptionTable = new ExceptionNode[EXCEPTION_MAP_CAPACITY];
         try {
-            U = sun.misc.Unsafe.getUnsafe();
-            Class<?> k = ForkJoinTask.class;
             STATUS = U.objectFieldOffset
-                (k.getDeclaredField("status"));
-        } catch (Exception e) {
+                (ForkJoinTask.class.getDeclaredField("status"));
+        } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
     }

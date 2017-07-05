@@ -53,9 +53,9 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
     private static final long serialVersionUID = -6209656149925076980L;
 
     private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final long ARRAY;
     private static final int ABASE;
     private static final int ASHIFT;
-    private static final long ARRAY;
     private final Object[] array; // must have exact type Object[]
 
     static {
