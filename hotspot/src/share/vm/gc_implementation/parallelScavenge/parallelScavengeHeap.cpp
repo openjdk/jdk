@@ -909,10 +909,6 @@ void ParallelScavengeHeap::verify(bool allow_dirty, bool silent, VerifyOption op
     }
     young_gen()->verify(allow_dirty);
   }
-  if (!silent) {
-    gclog_or_tty->print("ref_proc ");
-  }
-  ReferenceProcessor::verify();
 }
 
 void ParallelScavengeHeap::print_heap_change(size_t prev_used) {

@@ -135,8 +135,8 @@ public:
   // T4 and newer Sparc have fast RDPC instruction.
   static bool has_fast_rdpc()           { return is_T4(); }
 
-  // T4 and newer Sparc have Most-Recently-Used (MRU) BIS.
-  static bool has_mru_blk_init()        { return has_blk_init() && is_T4(); }
+  // On T4 and newer Sparc BIS to the beginning of cache line always zeros it.
+  static bool has_block_zeroing()       { return has_blk_init() && is_T4(); }
 
   static const char* cpu_features()     { return _features_str; }
 

@@ -57,8 +57,8 @@ public class ResolverConfigurationImpl
     private static String os_nameservers;
 
     // Cached lists
-    private static LinkedList searchlist;
-    private static LinkedList nameservers;
+    private static LinkedList<String> searchlist;
+    private static LinkedList<String> nameservers;
 
     // Parse string that consists of token delimited by space or commas
     // and return LinkedHashMap
@@ -111,21 +111,23 @@ public class ResolverConfigurationImpl
         opts = new OptionsImpl();
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public List<String> searchlist() {
         synchronized (lock) {
             loadConfig();
 
             // List is mutable so return a shallow copy
-            return (List)searchlist.clone();
+            return (List<String>)searchlist.clone();
         }
     }
 
+    @SuppressWarnings("unchecked") // clone()
     public List<String> nameservers() {
         synchronized (lock) {
             loadConfig();
 
             // List is mutable so return a shallow copy
-            return (List)nameservers.clone();
+            return (List<String>)nameservers.clone();
          }
     }
 

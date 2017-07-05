@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,10 +96,6 @@ void G1MMUTrackerQueue::add_pause(double start, double end, bool gc_thread) {
     // uncommon; in such cases, we can, without much loss of precision
     // or performance (we are GC'ing most of the time anyway!),
     // simply overwrite the oldest entry in the tracker.
-
-    if (G1PolicyVerbose > 1) {
-      warning("MMU Tracker Queue overflow. Replacing earliest entry.");
-    }
 
     _head_index = trim_index(_head_index + 1);
     assert(_head_index == _tail_index, "Because we have a full circular buffer");

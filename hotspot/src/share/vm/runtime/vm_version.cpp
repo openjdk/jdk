@@ -167,7 +167,8 @@ const char* Abstract_VM_Version::vm_release() {
 
 #define OS       LINUX_ONLY("linux")             \
                  WINDOWS_ONLY("windows")         \
-                 SOLARIS_ONLY("solaris")
+                 SOLARIS_ONLY("solaris")         \
+                 BSD_ONLY("bsd")
 
 #ifdef ZERO
 #define CPU      ZERO_LIBARCH

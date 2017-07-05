@@ -29,7 +29,6 @@
  */
 
 import java.util.regex.*;
-import sun.misc.FpUtils;
 import sun.misc.DoubleConsts;
 
 public class ToHexString {

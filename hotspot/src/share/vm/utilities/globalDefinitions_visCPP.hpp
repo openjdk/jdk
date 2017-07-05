@@ -207,6 +207,20 @@ inline int vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
 // Formatting.
 #define FORMAT64_MODIFIER "I64"
 
+// Visual Studio doesn't provide inttypes.h so provide appropriate definitions here.
+// The 32 bits ones might need I32 but seem to work ok without it.
+#define PRId32       "d"
+#define PRIu32       "u"
+#define PRIx32       "x"
+
+#define PRId64       "I64d"
+#define PRIu64       "I64u"
+#define PRIx64       "I64x"
+
+#define PRIdPTR       "d"
+#define PRIuPTR       "u"
+#define PRIxPTR       "x"
+
 #define offset_of(klass,field) offsetof(klass,field)
 
 #endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_VISCPP_HPP

@@ -66,6 +66,7 @@ class AttachOperation;
 // This class contains the JVMTI interface for the rest of hotspot.
 //
 class JvmtiExport : public AllStatic {
+  friend class VMStructs;
  private:
   static int         _field_access_count;
   static int         _field_modification_count;

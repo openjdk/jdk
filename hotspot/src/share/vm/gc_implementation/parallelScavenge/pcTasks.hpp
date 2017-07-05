@@ -98,8 +98,7 @@ class MarkFromRootsTask : public GCTask {
     management            = 6,
     jvmti                 = 7,
     system_dictionary     = 8,
-    reference_processing  = 9,
-    code_cache            = 10
+    code_cache            = 9
   };
  private:
   RootType _root_type;

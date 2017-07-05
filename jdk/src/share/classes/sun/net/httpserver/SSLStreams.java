@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,10 @@ import java.net.*;
 import java.nio.*;
 import java.io.*;
 import java.nio.channels.*;
-import java.util.*;
-import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
 
 /**
  * given a non-blocking SocketChannel, it produces
@@ -448,6 +445,7 @@ class SSLStreams {
      * on the wrapper methods being idempotent. eg. if wrapAndSend()
      * is called with no data to send then there must be no problem
      */
+    @SuppressWarnings("fallthrough")
     void doHandshake (HandshakeStatus hs_status) throws IOException {
         try {
             handshaking.lock();

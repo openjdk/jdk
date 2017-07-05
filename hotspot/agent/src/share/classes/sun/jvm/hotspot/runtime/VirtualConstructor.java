@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package sun.jvm.hotspot.runtime;
 
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.types.*;
 
 /** This class provides generalized "virtual constructor"
@@ -39,7 +38,7 @@ import sun.jvm.hotspot.types.*;
     type "DefNewGeneration" to class
     sun.jvm.hotspot.memory.DefNewGeneration has been set up. */
 
-public class VirtualConstructor {
+public class VirtualConstructor extends InstanceConstructor<VMObject> {
   private TypeDataBase db;
   private Map          map; // Map<String, Class>
 
@@ -78,20 +77,6 @@ public class VirtualConstructor {
       }
     }
 
-    String message = "No suitable match for type of address " + addr;
-    CDebugger cdbg = VM.getVM().getDebugger().getCDebugger();
-    if (cdbg != null) {
-      // Most common case: V-table pointer is the first field
-      Address vtblPtr = addr.getAddressAt(0);
-      LoadObject lo = cdbg.loadObjectContainingPC(vtblPtr);
-      if (lo != null) {
-        ClosestSymbol symbol = lo.closestSymbolToPC(vtblPtr);
-        if (symbol != null) {
-          message += " (nearest symbol is " + symbol.getName() + ")";
-        }
-      }
-    }
-
-    throw new WrongTypeException(message);
+    throw newWrongTypeException(addr);
   }
 }

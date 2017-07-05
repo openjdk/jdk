@@ -121,7 +121,7 @@ void LIR_Assembler::append_patching_stub(PatchingStub* stub) {
 
 void LIR_Assembler::check_codespace() {
   CodeSection* cs = _masm->code_section();
-  if (cs->remaining() < (int)(1*K)) {
+  if (cs->remaining() < (int)(NOT_LP64(1*K)LP64_ONLY(2*K))) {
     BAILOUT("CodeBuffer overflow");
   }
 }

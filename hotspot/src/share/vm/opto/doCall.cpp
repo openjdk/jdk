@@ -136,15 +136,9 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
       str.force_bci(jvms->bci());  // Set the stream to the invokedynamic bci.
       ciCallSite* call_site = str.get_call_site();
 
-      // Inline constant and mutable call sites.  We don't inline
-      // volatile call sites optimistically since they are specified
-      // to change their value often and that would result in a lot of
-      // deoptimizations and recompiles.
-      if (call_site->is_constant_call_site() || call_site->is_mutable_call_site()) {
-        CallGenerator* cg = CallGenerator::for_invokedynamic_inline(call_site, jvms, caller, call_method, profile);
-        if (cg != NULL) {
-          return cg;
-        }
+      CallGenerator* cg = CallGenerator::for_invokedynamic_inline(call_site, jvms, caller, call_method, profile);
+      if (cg != NULL) {
+        return cg;
       }
       // If something failed, generate a normal dynamic call.
       return CallGenerator::for_dynamic_call(call_method);

@@ -82,6 +82,7 @@ import java.lang.annotation.*;
  *
  * </ul>
  *
+ * @since 1.7
  * @jls 4.7 Reifiable Types
  * @jls 8.4.1 Formal Parameters
  */

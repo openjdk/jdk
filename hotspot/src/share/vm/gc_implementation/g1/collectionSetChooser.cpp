@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc_implementation/g1/collectionSetChooser.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/g1ErgoVerbose.hpp"
 #include "memory/space.inline.hpp"
 
 CSetChooserCache::CSetChooserCache() {
@@ -358,6 +359,9 @@ CollectionSetChooser::getNextMarkedRegion(double time_remaining,
   if (_cache.is_empty()) {
     assert(_curMarkedIndex == _numMarkedRegions,
            "if cache is empty, list should also be empty");
+    ergo_verbose0(ErgoCSetConstruction,
+                  "stop adding old regions to CSet",
+                  ergo_format_reason("cache is empty"));
     return NULL;
   }
 
@@ -368,10 +372,23 @@ CollectionSetChooser::getNextMarkedRegion(double time_remaining,
   if (g1p->adaptive_young_list_length()) {
     if (time_remaining - predicted_time < 0.0) {
       g1h->check_if_region_is_too_expensive(predicted_time);
+      ergo_verbose2(ErgoCSetConstruction,
+                    "stop adding old regions to CSet",
+                    ergo_format_reason("predicted old region time higher than remaining time")
+                    ergo_format_ms("predicted old region time")
+                    ergo_format_ms("remaining time"),
+                    predicted_time, time_remaining);
       return NULL;
     }
   } else {
-    if (predicted_time > 2.0 * avg_prediction) {
+    double threshold = 2.0 * avg_prediction;
+    if (predicted_time > threshold) {
+      ergo_verbose2(ErgoCSetConstruction,
+                    "stop adding old regions to CSet",
+                    ergo_format_reason("predicted old region time higher than threshold")
+                    ergo_format_ms("predicted old region time")
+                    ergo_format_ms("threshold"),
+                    predicted_time, threshold);
       return NULL;
     }
   }
