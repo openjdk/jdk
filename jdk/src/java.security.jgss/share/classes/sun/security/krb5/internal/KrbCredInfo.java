@@ -38,7 +38,7 @@ import java.io.IOException;
 /**
  * Implements the ASN.1 KrbCredInfo type.
  *
- * <xmp>
+ * <pre>{@code
  * KrbCredInfo  ::= SEQUENCE {
  *      key             [0] EncryptionKey,
  *      prealm          [1] Realm OPTIONAL,
@@ -52,7 +52,7 @@ import java.io.IOException;
  *      sname           [9] PrincipalName OPTIONAL,
  *      caddr           [10] HostAddresses OPTIONAL
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

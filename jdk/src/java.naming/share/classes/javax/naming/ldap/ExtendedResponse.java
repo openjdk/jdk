@@ -78,7 +78,7 @@ public interface ExtendedResponse extends java.io.Serializable {
       * If the server does not send it, the response will contain no ID (i.e. null).
       *
       * @return A possibly null object identifier string representing the LDAP
-      *         <tt>ExtendedResponse.responseName</tt> component.
+      *         {@code ExtendedResponse.responseName} component.
       */
     public String getID();
 
@@ -90,7 +90,7 @@ public interface ExtendedResponse extends java.io.Serializable {
       * the response value. It does not include the response OID.
       *
       * @return A possibly null byte array representing the ASN.1 BER encoded
-      *         contents of the LDAP <tt>ExtendedResponse.response</tt>
+      *         contents of the LDAP {@code ExtendedResponse.response}
       *         component.
       */
     public byte[] getEncodedValue();

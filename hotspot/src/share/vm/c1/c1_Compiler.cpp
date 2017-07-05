@@ -99,6 +99,164 @@ BufferBlob* Compiler::init_buffer_blob() {
   return buffer_blob;
 }
 
+bool Compiler::is_intrinsic_supported(methodHandle method) {
+  vmIntrinsics::ID id = method->intrinsic_id();
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+
+  if (method->is_synchronized()) {
+    // C1 does not support intrinsification of synchronized methods.
+    return false;
+  }
+
+  switch (id) {
+  case vmIntrinsics::_compareAndSwapLong:
+    if (!VM_Version::supports_cx8()) return false;
+    break;
+  case vmIntrinsics::_getAndAddInt:
+    if (!VM_Version::supports_atomic_getadd4()) return false;
+    break;
+  case vmIntrinsics::_getAndAddLong:
+    if (!VM_Version::supports_atomic_getadd8()) return false;
+    break;
+  case vmIntrinsics::_getAndSetInt:
+    if (!VM_Version::supports_atomic_getset4()) return false;
+    break;
+  case vmIntrinsics::_getAndSetLong:
+    if (!VM_Version::supports_atomic_getset8()) return false;
+    break;
+  case vmIntrinsics::_getAndSetObject:
+#ifdef _LP64
+    if (!UseCompressedOops && !VM_Version::supports_atomic_getset8()) return false;
+    if (UseCompressedOops && !VM_Version::supports_atomic_getset4()) return false;
+#else
+    if (!VM_Version::supports_atomic_getset4()) return false;
+#endif
+    break;
+  case vmIntrinsics::_arraycopy:
+  case vmIntrinsics::_currentTimeMillis:
+  case vmIntrinsics::_nanoTime:
+  case vmIntrinsics::_Reference_get:
+    // Use the intrinsic version of Reference.get() so that the value in
+    // the referent field can be registered by the G1 pre-barrier code.
+    // Also to prevent commoning reads from this field across safepoint
+    // since GC can change its value.
+  case vmIntrinsics::_loadFence:
+  case vmIntrinsics::_storeFence:
+  case vmIntrinsics::_fullFence:
+  case vmIntrinsics::_floatToRawIntBits:
+  case vmIntrinsics::_intBitsToFloat:
+  case vmIntrinsics::_doubleToRawLongBits:
+  case vmIntrinsics::_longBitsToDouble:
+  case vmIntrinsics::_getClass:
+  case vmIntrinsics::_isInstance:
+  case vmIntrinsics::_currentThread:
+  case vmIntrinsics::_dabs:
+  case vmIntrinsics::_dsqrt:
+  case vmIntrinsics::_dsin:
+  case vmIntrinsics::_dcos:
+  case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dlog:
+  case vmIntrinsics::_dlog10:
+  case vmIntrinsics::_dexp:
+  case vmIntrinsics::_dpow:
+  case vmIntrinsics::_getObject:
+  case vmIntrinsics::_getBoolean:
+  case vmIntrinsics::_getByte:
+  case vmIntrinsics::_getShort:
+  case vmIntrinsics::_getChar:
+  case vmIntrinsics::_getInt:
+  case vmIntrinsics::_getLong:
+  case vmIntrinsics::_getFloat:
+  case vmIntrinsics::_getDouble:
+  case vmIntrinsics::_putObject:
+  case vmIntrinsics::_putBoolean:
+  case vmIntrinsics::_putByte:
+  case vmIntrinsics::_putShort:
+  case vmIntrinsics::_putChar:
+  case vmIntrinsics::_putInt:
+  case vmIntrinsics::_putLong:
+  case vmIntrinsics::_putFloat:
+  case vmIntrinsics::_putDouble:
+  case vmIntrinsics::_getObjectVolatile:
+  case vmIntrinsics::_getBooleanVolatile:
+  case vmIntrinsics::_getByteVolatile:
+  case vmIntrinsics::_getShortVolatile:
+  case vmIntrinsics::_getCharVolatile:
+  case vmIntrinsics::_getIntVolatile:
+  case vmIntrinsics::_getLongVolatile:
+  case vmIntrinsics::_getFloatVolatile:
+  case vmIntrinsics::_getDoubleVolatile:
+  case vmIntrinsics::_putObjectVolatile:
+  case vmIntrinsics::_putBooleanVolatile:
+  case vmIntrinsics::_putByteVolatile:
+  case vmIntrinsics::_putShortVolatile:
+  case vmIntrinsics::_putCharVolatile:
+  case vmIntrinsics::_putIntVolatile:
+  case vmIntrinsics::_putLongVolatile:
+  case vmIntrinsics::_putFloatVolatile:
+  case vmIntrinsics::_putDoubleVolatile:
+  case vmIntrinsics::_getByte_raw:
+  case vmIntrinsics::_getShort_raw:
+  case vmIntrinsics::_getChar_raw:
+  case vmIntrinsics::_getInt_raw:
+  case vmIntrinsics::_getLong_raw:
+  case vmIntrinsics::_getFloat_raw:
+  case vmIntrinsics::_getDouble_raw:
+  case vmIntrinsics::_putByte_raw:
+  case vmIntrinsics::_putShort_raw:
+  case vmIntrinsics::_putChar_raw:
+  case vmIntrinsics::_putInt_raw:
+  case vmIntrinsics::_putLong_raw:
+  case vmIntrinsics::_putFloat_raw:
+  case vmIntrinsics::_putDouble_raw:
+  case vmIntrinsics::_putOrderedObject:
+  case vmIntrinsics::_putOrderedInt:
+  case vmIntrinsics::_putOrderedLong:
+  case vmIntrinsics::_getShortUnaligned:
+  case vmIntrinsics::_getCharUnaligned:
+  case vmIntrinsics::_getIntUnaligned:
+  case vmIntrinsics::_getLongUnaligned:
+  case vmIntrinsics::_putShortUnaligned:
+  case vmIntrinsics::_putCharUnaligned:
+  case vmIntrinsics::_putIntUnaligned:
+  case vmIntrinsics::_putLongUnaligned:
+  case vmIntrinsics::_checkIndex:
+  case vmIntrinsics::_updateCRC32:
+  case vmIntrinsics::_updateBytesCRC32:
+  case vmIntrinsics::_updateByteBufferCRC32:
+  case vmIntrinsics::_compareAndSwapInt:
+  case vmIntrinsics::_compareAndSwapObject:
+#ifdef TRACE_HAVE_INTRINSICS
+  case vmIntrinsics::_classID:
+  case vmIntrinsics::_threadID:
+  case vmIntrinsics::_counterTime:
+#endif
+    break;
+  default:
+    return false; // Intrinsics not on the previous list are not available.
+  }
+
+  return true;
+}
+
+bool Compiler::is_intrinsic_disabled_by_flag(methodHandle method) {
+  vmIntrinsics::ID id = method->intrinsic_id();
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+
+  if (vmIntrinsics::is_disabled_by_flags(id)) {
+    return true;
+  }
+
+  if (!InlineNatives && id != vmIntrinsics::_Reference_get) {
+    return true;
+  }
+
+  if (!InlineClassNatives && id == vmIntrinsics::_getClass) {
+    return true;
+  }
+
+  return false;
+}
 
 void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci) {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
@@ -116,4 +274,8 @@ void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci) {
 
 void Compiler::print_timers() {
   Compilation::print_timers();
+}
+
+bool Compiler::is_intrinsic_available(methodHandle method, methodHandle compilation_context) {
+  return is_intrinsic_supported(method) && !is_intrinsic_disabled_by_flag(method);
 }

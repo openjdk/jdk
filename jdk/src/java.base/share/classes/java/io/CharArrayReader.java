@@ -62,13 +62,13 @@ public class CharArrayReader extends Reader {
      * Creates a CharArrayReader from the specified array of chars.
      *
      * <p> The resulting reader will start reading at the given
-     * <tt>offset</tt>.  The total number of <tt>char</tt> values that can be
-     * read from this reader will be either <tt>length</tt> or
-     * <tt>buf.length-offset</tt>, whichever is smaller.
+     * {@code offset}.  The total number of {@code char} values that can be
+     * read from this reader will be either {@code length} or
+     * {@code buf.length-offset}, whichever is smaller.
      *
      * @throws IllegalArgumentException
-     *         If <tt>offset</tt> is negative or greater than
-     *         <tt>buf.length</tt>, or if <tt>length</tt> is negative, or if
+     *         If {@code offset} is negative or greater than
+     *         {@code buf.length}, or if {@code length} is negative, or if
      *         the sum of these two values is negative.
      *
      * @param buf       Input buffer (not copied)

@@ -60,7 +60,7 @@ public class NameClassPair implements java.io.Serializable {
     /**
      * Contains the name of this NameClassPair.
      * It is initialized by the constructor and can be updated using
-     * <tt>setName()</tt>.
+     * {@code setName()}.
      * @serial
      * @see #getName
      * @see #setName
@@ -70,7 +70,7 @@ public class NameClassPair implements java.io.Serializable {
     /**
      *Contains the class name contained in this NameClassPair.
      * It is initialized by the constructor and can be updated using
-     * <tt>setClassName()</tt>.
+     * {@code setClassName()}.
      * @serial
      * @see #getClassName
      * @see #setClassName
@@ -80,7 +80,7 @@ public class NameClassPair implements java.io.Serializable {
     /**
      * Contains the full name of this NameClassPair within its
      * own namespace.
-     * It is initialized using <tt>setNameInNamespace()</tt>
+     * It is initialized using {@code setNameInNamespace()}
      * @serial
      * @see #getNameInNamespace
      * @see #setNameInNamespace
@@ -89,10 +89,10 @@ public class NameClassPair implements java.io.Serializable {
 
 
     /**
-     * Records whether the name of this <tt>NameClassPair</tt>
+     * Records whether the name of this {@code NameClassPair}
      * is relative to the target context.
      * It is initialized by the constructor and can be updated using
-     * <tt>setRelative()</tt>.
+     * {@code setRelative()}.
      * @serial
      * @see #isRelative
      * @see #setRelative
@@ -148,7 +148,7 @@ public class NameClassPair implements java.io.Serializable {
      * Retrieves the class name of the object bound to the name of this binding.
      * If a reference or some other indirect information is bound,
      * retrieves the class name of the eventual object that
-     * will be returned by <tt>Binding.getObject()</tt>.
+     * will be returned by {@code Binding.getObject()}.
      *
      * @return  The possibly null class name of object bound.
      *          It is null if the object bound is null.
@@ -162,10 +162,10 @@ public class NameClassPair implements java.io.Serializable {
 
     /**
      * Retrieves the name of this binding.
-     * If <tt>isRelative()</tt> is true, this name is relative to the
+     * If {@code isRelative()} is true, this name is relative to the
      * target context (which is named by the first parameter of the
-     * <tt>list()</tt>).
-     * If <tt>isRelative()</tt> is false, this name is a URL string.
+     * {@code list()}).
+     * If {@code isRelative()} is false, this name is a URL string.
      *
      * @return  The non-null name of this binding.
      * @see #isRelative
@@ -190,7 +190,7 @@ public class NameClassPair implements java.io.Serializable {
      * Sets the class name of this binding.
      *
      * @param   name the possibly null string to use as the class name.
-     * If null, <tt>Binding.getClassName()</tt> will return
+     * If null, {@code Binding.getClassName()} will return
      * the actual class name of the object in the binding.
      * The class name will be null if the object bound is null.
      * @see #getClassName
@@ -236,7 +236,7 @@ public class NameClassPair implements java.io.Serializable {
      * <p>
      *
      * In naming systems for which the notion of full name does not
-     * apply to this binding an <tt>UnsupportedOperationException</tt>
+     * apply to this binding an {@code UnsupportedOperationException}
      * is thrown.
      * This exception is also thrown when a service provider written before
      * the introduction of the method is in use.
@@ -261,11 +261,11 @@ public class NameClassPair implements java.io.Serializable {
     /**
      * Sets the full name of this binding.
      * This method must be called to set the full name whenever a
-     * <tt>NameClassPair</tt> is created and a full name is
+     * {@code NameClassPair} is created and a full name is
      * applicable to this binding.
      * <p>
      * Setting the full name to null, or not setting it at all, will
-     * cause <tt>getNameInNamespace()</tt> to throw an exception.
+     * cause {@code getNameInNamespace()} to throw an exception.
      *
      * @param fullName The full name to use.
      * @since 1.5

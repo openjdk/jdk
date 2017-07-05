@@ -40,14 +40,14 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 KRBSafe type.
  *
- * <xmp>
+ * <pre>{@code
  * KRB-SAFE        ::= [APPLICATION 20] SEQUENCE {
  *         pvno            [0] INTEGER (5),
  *         msg-type        [1] INTEGER (20),
  *         safe-body       [2] KRB-SAFE-BODY,
  *         cksum           [3] Checksum
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

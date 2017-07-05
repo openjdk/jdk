@@ -37,7 +37,7 @@ import java.util.Collection;
 
 
 /**
- * The <tt>TabularData</tt> interface specifies the behavior of a specific type of complex <i>open data</i> objects
+ * The {@code TabularData} interface specifies the behavior of a specific type of complex <i>open data</i> objects
  * which represent <i>tabular data</i> structures.
  *
  * @since 1.5
@@ -50,7 +50,7 @@ public interface TabularData /*extends Map*/ {
 
     /**
      * Returns the <i>tabular type</i> describing this
-     * <tt>TabularData</tt> instance.
+     * {@code TabularData} instance.
      *
      * @return the tabular type.
      */
@@ -58,21 +58,21 @@ public interface TabularData /*extends Map*/ {
 
 
     /**
-     * Calculates the index that would be used in this <tt>TabularData</tt> instance to refer to the specified
+     * Calculates the index that would be used in this {@code TabularData} instance to refer to the specified
      * composite data <var>value</var> parameter if it were added to this instance.
      * This method checks for the type validity of the specified <var>value</var>,
-     * but does not check if the calculated index is already used to refer to a value in this <tt>TabularData</tt> instance.
+     * but does not check if the calculated index is already used to refer to a value in this {@code TabularData} instance.
      *
      * @param  value                      the composite data value whose index in this
-     *                                    <tt>TabularData</tt> instance is to be calculated;
+     *                                    {@code TabularData} instance is to be calculated;
      *                                    must be of the same composite type as this instance's row type;
      *                                    must not be null.
      *
-     * @return the index that the specified <var>value</var> would have in this <tt>TabularData</tt> instance.
+     * @return the index that the specified <var>value</var> would have in this {@code TabularData} instance.
      *
-     * @throws NullPointerException       if <var>value</var> is <tt>null</tt>
+     * @throws NullPointerException       if <var>value</var> is {@code null}
      *
-     * @throws InvalidOpenTypeException   if <var>value</var> does not conform to this <tt>TabularData</tt> instance's
+     * @throws InvalidOpenTypeException   if <var>value</var> does not conform to this {@code TabularData} instance's
      *                                    row type definition.
      */
     public Object[] calculateIndex(CompositeData value) ;
@@ -83,8 +83,8 @@ public interface TabularData /*extends Map*/ {
     /* *** Content information query methods *** */
 
     /**
-     * Returns the number of <tt>CompositeData</tt> values (ie the
-     * number of rows) contained in this <tt>TabularData</tt>
+     * Returns the number of {@code CompositeData} values (ie the
+     * number of rows) contained in this {@code TabularData}
      * instance.
      *
      * @return the number of values contained.
@@ -92,50 +92,50 @@ public interface TabularData /*extends Map*/ {
     public int size() ;
 
     /**
-     * Returns <tt>true</tt> if the number of <tt>CompositeData</tt>
+     * Returns {@code true} if the number of {@code CompositeData}
      * values (ie the number of rows) contained in this
-     * <tt>TabularData</tt> instance is zero.
+     * {@code TabularData} instance is zero.
      *
-     * @return true if this <tt>TabularData</tt> is empty.
+     * @return true if this {@code TabularData} is empty.
      */
     public boolean isEmpty() ;
 
     /**
-     * Returns <tt>true</tt> if and only if this <tt>TabularData</tt> instance contains a <tt>CompositeData</tt> value
-     * (ie a row) whose index is the specified <var>key</var>. If <var>key</var> is <tt>null</tt> or does not conform to
-     * this <tt>TabularData</tt> instance's <tt>TabularType</tt> definition, this method simply returns <tt>false</tt>.
+     * Returns {@code true} if and only if this {@code TabularData} instance contains a {@code CompositeData} value
+     * (ie a row) whose index is the specified <var>key</var>. If <var>key</var> is {@code null} or does not conform to
+     * this {@code TabularData} instance's {@code TabularType} definition, this method simply returns {@code false}.
      *
-     * @param  key  the index value whose presence in this <tt>TabularData</tt> instance is to be tested.
+     * @param  key  the index value whose presence in this {@code TabularData} instance is to be tested.
      *
-     * @return  <tt>true</tt> if this <tt>TabularData</tt> indexes a row value with the specified key.
+     * @return  {@code true} if this {@code TabularData} indexes a row value with the specified key.
      */
     public boolean containsKey(Object[] key) ;
 
     /**
-     * Returns <tt>true</tt> if and only if this <tt>TabularData</tt> instance contains the specified
-     * <tt>CompositeData</tt> value. If <var>value</var> is <tt>null</tt> or does not conform to
-     * this <tt>TabularData</tt> instance's row type definition, this method simply returns <tt>false</tt>.
+     * Returns {@code true} if and only if this {@code TabularData} instance contains the specified
+     * {@code CompositeData} value. If <var>value</var> is {@code null} or does not conform to
+     * this {@code TabularData} instance's row type definition, this method simply returns {@code false}.
      *
-     * @param  value  the row value whose presence in this <tt>TabularData</tt> instance is to be tested.
+     * @param  value  the row value whose presence in this {@code TabularData} instance is to be tested.
      *
-     * @return  <tt>true</tt> if this <tt>TabularData</tt> instance contains the specified row value.
+     * @return  {@code true} if this {@code TabularData} instance contains the specified row value.
      */
     public boolean containsValue(CompositeData value) ;
 
     /**
-     * Returns the <tt>CompositeData</tt> value whose index is
-     * <var>key</var>, or <tt>null</tt> if there is no value mapping
-     * to <var>key</var>, in this <tt>TabularData</tt> instance.
+     * Returns the {@code CompositeData} value whose index is
+     * <var>key</var>, or {@code null} if there is no value mapping
+     * to <var>key</var>, in this {@code TabularData} instance.
      *
      * @param key the key of the row to return.
      *
      * @return the value corresponding to <var>key</var>.
      *
      * @throws NullPointerException if the <var>key</var> is
-     * <tt>null</tt>
+     * {@code null}
      * @throws InvalidKeyException if the <var>key</var> does not
-     * conform to this <tt>TabularData</tt> instance's *
-     * <tt>TabularType</tt> definition
+     * conform to this {@code TabularData} instance's *
+     * {@code TabularType} definition
      */
     public CompositeData get(Object[] key) ;
 
@@ -146,45 +146,45 @@ public interface TabularData /*extends Map*/ {
 
 
     /**
-     * Adds <var>value</var> to this <tt>TabularData</tt> instance.
+     * Adds <var>value</var> to this {@code TabularData} instance.
      * The composite type of <var>value</var> must be the same as this
      * instance's row type (ie the composite type returned by
-     * <tt>this.getTabularType().{@link TabularType#getRowType
-     * getRowType()}</tt>), and there must not already be an existing
-     * value in this <tt>TabularData</tt> instance whose index is the
+     * <code>this.getTabularType().{@link TabularType#getRowType
+     * getRowType()}</code>), and there must not already be an existing
+     * value in this {@code TabularData} instance whose index is the
      * same as the one calculated for the <var>value</var> to be
      * added. The index for <var>value</var> is calculated according
-     * to this <tt>TabularData</tt> instance's <tt>TabularType</tt>
-     * definition (see <tt>TabularType.{@link
-     * TabularType#getIndexNames getIndexNames()}</tt>).
+     * to this {@code TabularData} instance's {@code TabularType}
+     * definition (see <code>TabularType.{@link
+     * TabularType#getIndexNames getIndexNames()}</code>).
      *
-     * @param  value                      the composite data value to be added as a new row to this <tt>TabularData</tt> instance;
+     * @param  value                      the composite data value to be added as a new row to this {@code TabularData} instance;
      *                                    must be of the same composite type as this instance's row type;
      *                                    must not be null.
      *
-     * @throws NullPointerException       if <var>value</var> is <tt>null</tt>
-     * @throws InvalidOpenTypeException   if <var>value</var> does not conform to this <tt>TabularData</tt> instance's
+     * @throws NullPointerException       if <var>value</var> is {@code null}
+     * @throws InvalidOpenTypeException   if <var>value</var> does not conform to this {@code TabularData} instance's
      *                                    row type definition.
      * @throws KeyAlreadyExistsException  if the index for <var>value</var>, calculated according to
-     *                                    this <tt>TabularData</tt> instance's <tt>TabularType</tt> definition
+     *                                    this {@code TabularData} instance's {@code TabularType} definition
      *                                    already maps to an existing value in the underlying HashMap.
      */
     public void put(CompositeData value) ;
 
     /**
-     * Removes the <tt>CompositeData</tt> value whose index is <var>key</var> from this <tt>TabularData</tt> instance,
-     * and returns the removed value, or returns <tt>null</tt> if there is no value whose index is <var>key</var>.
+     * Removes the {@code CompositeData} value whose index is <var>key</var> from this {@code TabularData} instance,
+     * and returns the removed value, or returns {@code null} if there is no value whose index is <var>key</var>.
      *
-     * @param  key  the index of the value to get in this <tt>TabularData</tt> instance;
-     *              must be valid with this <tt>TabularData</tt> instance's row type definition;
+     * @param  key  the index of the value to get in this {@code TabularData} instance;
+     *              must be valid with this {@code TabularData} instance's row type definition;
      *              must not be null.
      *
-     * @return previous value associated with specified key, or <tt>null</tt>
+     * @return previous value associated with specified key, or {@code null}
      *         if there was no mapping for key.
      *
-     * @throws NullPointerException  if the <var>key</var> is <tt>null</tt>
-     * @throws InvalidKeyException   if the <var>key</var> does not conform to this <tt>TabularData</tt> instance's
-     *                               <tt>TabularType</tt> definition
+     * @throws NullPointerException  if the <var>key</var> is {@code null}
+     * @throws InvalidKeyException   if the <var>key</var> does not conform to this {@code TabularData} instance's
+     *                               {@code TabularType} definition
      */
     public CompositeData remove(Object[] key) ;
 
@@ -195,27 +195,27 @@ public interface TabularData /*extends Map*/ {
 
 
     /**
-     * Add all the elements in <var>values</var> to this <tt>TabularData</tt> instance.
-     * If any  element in <var>values</var> does not satisfy the constraints defined in {@link #put(CompositeData) <tt>put</tt>},
-     * or if any two elements in <var>values</var> have the same index calculated according to this <tt>TabularData</tt>
-     * instance's <tt>TabularType</tt> definition, then an exception describing the failure is thrown
-     * and no element of <var>values</var> is added,  thus leaving this <tt>TabularData</tt> instance unchanged.
+     * Add all the elements in <var>values</var> to this {@code TabularData} instance.
+     * If any  element in <var>values</var> does not satisfy the constraints defined in {@link #put(CompositeData) put},
+     * or if any two elements in <var>values</var> have the same index calculated according to this {@code TabularData}
+     * instance's {@code TabularType} definition, then an exception describing the failure is thrown
+     * and no element of <var>values</var> is added,  thus leaving this {@code TabularData} instance unchanged.
      *
-     * @param  values  the array of composite data values to be added as new rows to this <tt>TabularData</tt> instance;
-     *                 if <var>values</var> is <tt>null</tt> or empty, this method returns without doing anything.
+     * @param  values  the array of composite data values to be added as new rows to this {@code TabularData} instance;
+     *                 if <var>values</var> is {@code null} or empty, this method returns without doing anything.
      *
-     * @throws NullPointerException       if an element of <var>values</var> is <tt>null</tt>
+     * @throws NullPointerException       if an element of <var>values</var> is {@code null}
      * @throws InvalidOpenTypeException   if an element of <var>values</var> does not conform to
-     *                                    this <tt>TabularData</tt> instance's row type definition
+     *                                    this {@code TabularData} instance's row type definition
      * @throws KeyAlreadyExistsException  if the index for an element of <var>values</var>, calculated according to
-     *                                    this <tt>TabularData</tt> instance's <tt>TabularType</tt> definition
+     *                                    this {@code TabularData} instance's {@code TabularType} definition
      *                                    already maps to an existing value in this instance,
      *                                    or two elements of <var>values</var> have the same index.
      */
     public void putAll(CompositeData[] values) ;
 
     /**
-     * Removes all <tt>CompositeData</tt> values (ie rows) from this <tt>TabularData</tt> instance.
+     * Removes all {@code CompositeData} values (ie rows) from this {@code TabularData} instance.
      */
     public void clear();
 
@@ -257,47 +257,47 @@ public interface TabularData /*extends Map*/ {
 
 
     /**
-     * Compares the specified <var>obj</var> parameter with this <code>TabularData</code> instance for equality.
+     * Compares the specified <var>obj</var> parameter with this {@code TabularData} instance for equality.
      * <p>
-     * Returns <tt>true</tt> if and only if all of the following statements are true:
+     * Returns {@code true} if and only if all of the following statements are true:
      * <ul>
      * <li><var>obj</var> is non null,</li>
-     * <li><var>obj</var> also implements the <code>TabularData</code> interface,</li>
+     * <li><var>obj</var> also implements the {@code TabularData} interface,</li>
      * <li>their row types are equal</li>
      * <li>their contents (ie index to value mappings) are equal</li>
      * </ul>
-     * This ensures that this <tt>equals</tt> method works properly for <var>obj</var> parameters which are
-     * different implementations of the <code>TabularData</code> interface.
+     * This ensures that this {@code equals} method works properly for <var>obj</var> parameters which are
+     * different implementations of the {@code TabularData} interface.
      * <br>&nbsp;
-     * @param  obj  the object to be compared for equality with this <code>TabularData</code> instance;
+     * @param  obj  the object to be compared for equality with this {@code TabularData} instance;
      *
-     * @return  <code>true</code> if the specified object is equal to this <code>TabularData</code> instance.
+     * @return  {@code true} if the specified object is equal to this {@code TabularData} instance.
      */
     public boolean equals(Object obj);
 
     /**
-     * Returns the hash code value for this <code>TabularData</code> instance.
+     * Returns the hash code value for this {@code TabularData} instance.
      * <p>
-     * The hash code of a <code>TabularData</code> instance is the sum of the hash codes
-     * of all elements of information used in <code>equals</code> comparisons
+     * The hash code of a {@code TabularData} instance is the sum of the hash codes
+     * of all elements of information used in {@code equals} comparisons
      * (ie: its <i>tabular type</i> and its content, where the content is defined as all the index to value mappings).
      * <p>
-     * This ensures that <code> t1.equals(t2) </code> implies that <code> t1.hashCode()==t2.hashCode() </code>
-     * for any two <code>TabularDataSupport</code> instances <code>t1</code> and <code>t2</code>,
+     * This ensures that {@code t1.equals(t2)} implies that {@code t1.hashCode()==t2.hashCode()}
+     * for any two {@code TabularDataSupport} instances {@code t1} and {@code t2},
      * as required by the general contract of the method
      * {@link Object#hashCode() Object.hashCode()}.
      *
-     * @return  the hash code value for this <code>TabularDataSupport</code> instance
+     * @return  the hash code value for this {@code TabularDataSupport} instance
      */
     public int hashCode();
 
     /**
-     * Returns a string representation of this <code>TabularData</code> instance.
+     * Returns a string representation of this {@code TabularData} instance.
      * <p>
      * The string representation consists of the name of the implementing class,
      * and the tabular type of this instance.
      *
-     * @return  a string representation of this <code>TabularData</code> instance
+     * @return  a string representation of this {@code TabularData} instance
      */
     public String toString();
 

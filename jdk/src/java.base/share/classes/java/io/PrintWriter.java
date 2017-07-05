@@ -34,13 +34,13 @@ import java.nio.charset.UnsupportedCharsetException;
 
 /**
  * Prints formatted representations of objects to a text-output stream.  This
- * class implements all of the <tt>print</tt> methods found in {@link
+ * class implements all of the {@code print} methods found in {@link
  * PrintStream}.  It does not contain methods for writing raw bytes, for which
  * a program should use unencoded byte streams.
  *
  * <p> Unlike the {@link PrintStream} class, if automatic flushing is enabled
- * it will be done only when one of the <tt>println</tt>, <tt>printf</tt>, or
- * <tt>format</tt> methods is invoked, rather than whenever a newline character
+ * it will be done only when one of the {@code println}, {@code printf}, or
+ * {@code format} methods is invoked, rather than whenever a newline character
  * happens to be output.  These methods use the platform's own notion of line
  * separator rather than the newline character.
  *
@@ -57,7 +57,7 @@ public class PrintWriter extends Writer {
 
     /**
      * The underlying character-output stream of this
-     * <code>PrintWriter</code>.
+     * {@code PrintWriter}.
      *
      * @since 1.2
      */
@@ -98,8 +98,8 @@ public class PrintWriter extends Writer {
      * Creates a new PrintWriter.
      *
      * @param  out        A character-output stream
-     * @param  autoFlush  A boolean; if true, the <tt>println</tt>,
-     *                    <tt>printf</tt>, or <tt>format</tt> methods will
+     * @param  autoFlush  A boolean; if true, the {@code println},
+     *                    {@code printf}, or {@code format} methods will
      *                    flush the output buffer
      */
     public PrintWriter(Writer out,
@@ -130,8 +130,8 @@ public class PrintWriter extends Writer {
      * default character encoding.
      *
      * @param  out        An output stream
-     * @param  autoFlush  A boolean; if true, the <tt>println</tt>,
-     *                    <tt>printf</tt>, or <tt>format</tt> methods will
+     * @param  autoFlush  A boolean; if true, the {@code println},
+     *                    {@code printf}, or {@code format} methods will
      *                    flush the output buffer
      *
      * @see java.io.OutputStreamWriter#OutputStreamWriter(java.io.OutputStream)
@@ -340,7 +340,7 @@ public class PrintWriter extends Writer {
     /**
      * Flushes the stream if it's not closed and checks its error state.
      *
-     * @return <code>true</code> if the print stream has encountered an error,
+     * @return {@code true} if the print stream has encountered an error,
      *          either on the underlying output stream or during a format
      *          conversion.
      */
@@ -361,7 +361,7 @@ public class PrintWriter extends Writer {
      * Indicates that an error has occurred.
      *
      * <p> This method will cause subsequent invocations of {@link
-     * #checkError()} to return <tt>true</tt> until {@link
+     * #checkError()} to return {@code true} until {@link
      * #clearError()} is invoked.
      */
     protected void setError() {
@@ -372,7 +372,7 @@ public class PrintWriter extends Writer {
      * Clears the error state of this stream.
      *
      * <p> This method will cause subsequent invocations of {@link
-     * #checkError()} to return <tt>false</tt> until another write
+     * #checkError()} to return {@code false} until another write
      * operation fails and invokes {@link #setError()}.
      *
      * @since 1.6
@@ -485,13 +485,13 @@ public class PrintWriter extends Writer {
     /* Methods that do not terminate lines */
 
     /**
-     * Prints a boolean value.  The string produced by <code>{@link
-     * java.lang.String#valueOf(boolean)}</code> is translated into bytes
+     * Prints a boolean value.  The string produced by {@link
+     * java.lang.String#valueOf(boolean)} is translated into bytes
      * according to the platform's default character encoding, and these bytes
-     * are written in exactly the manner of the <code>{@link
-     * #write(int)}</code> method.
+     * are written in exactly the manner of the {@link
+     * #write(int)} method.
      *
-     * @param      b   The <code>boolean</code> to be printed
+     * @param      b   The {@code boolean} to be printed
      */
     public void print(boolean b) {
         write(b ? "true" : "false");
@@ -500,23 +500,23 @@ public class PrintWriter extends Writer {
     /**
      * Prints a character.  The character is translated into one or more bytes
      * according to the platform's default character encoding, and these bytes
-     * are written in exactly the manner of the <code>{@link
-     * #write(int)}</code> method.
+     * are written in exactly the manner of the {@link
+     * #write(int)} method.
      *
-     * @param      c   The <code>char</code> to be printed
+     * @param      c   The {@code char} to be printed
      */
     public void print(char c) {
         write(c);
     }
 
     /**
-     * Prints an integer.  The string produced by <code>{@link
-     * java.lang.String#valueOf(int)}</code> is translated into bytes according
+     * Prints an integer.  The string produced by {@link
+     * java.lang.String#valueOf(int)} is translated into bytes according
      * to the platform's default character encoding, and these bytes are
-     * written in exactly the manner of the <code>{@link #write(int)}</code>
+     * written in exactly the manner of the {@link #write(int)}
      * method.
      *
-     * @param      i   The <code>int</code> to be printed
+     * @param      i   The {@code int} to be printed
      * @see        java.lang.Integer#toString(int)
      */
     public void print(int i) {
@@ -524,13 +524,13 @@ public class PrintWriter extends Writer {
     }
 
     /**
-     * Prints a long integer.  The string produced by <code>{@link
-     * java.lang.String#valueOf(long)}</code> is translated into bytes
+     * Prints a long integer.  The string produced by {@link
+     * java.lang.String#valueOf(long)} is translated into bytes
      * according to the platform's default character encoding, and these bytes
-     * are written in exactly the manner of the <code>{@link #write(int)}</code>
+     * are written in exactly the manner of the {@link #write(int)}
      * method.
      *
-     * @param      l   The <code>long</code> to be printed
+     * @param      l   The {@code long} to be printed
      * @see        java.lang.Long#toString(long)
      */
     public void print(long l) {
@@ -538,13 +538,13 @@ public class PrintWriter extends Writer {
     }
 
     /**
-     * Prints a floating-point number.  The string produced by <code>{@link
-     * java.lang.String#valueOf(float)}</code> is translated into bytes
+     * Prints a floating-point number.  The string produced by {@link
+     * java.lang.String#valueOf(float)} is translated into bytes
      * according to the platform's default character encoding, and these bytes
-     * are written in exactly the manner of the <code>{@link #write(int)}</code>
+     * are written in exactly the manner of the {@link #write(int)}
      * method.
      *
-     * @param      f   The <code>float</code> to be printed
+     * @param      f   The {@code float} to be printed
      * @see        java.lang.Float#toString(float)
      */
     public void print(float f) {
@@ -553,12 +553,12 @@ public class PrintWriter extends Writer {
 
     /**
      * Prints a double-precision floating-point number.  The string produced by
-     * <code>{@link java.lang.String#valueOf(double)}</code> is translated into
+     * {@link java.lang.String#valueOf(double)} is translated into
      * bytes according to the platform's default character encoding, and these
-     * bytes are written in exactly the manner of the <code>{@link
-     * #write(int)}</code> method.
+     * bytes are written in exactly the manner of the {@link
+     * #write(int)} method.
      *
-     * @param      d   The <code>double</code> to be printed
+     * @param      d   The {@code double} to be printed
      * @see        java.lang.Double#toString(double)
      */
     public void print(double d) {
@@ -568,25 +568,25 @@ public class PrintWriter extends Writer {
     /**
      * Prints an array of characters.  The characters are converted into bytes
      * according to the platform's default character encoding, and these bytes
-     * are written in exactly the manner of the <code>{@link #write(int)}</code>
+     * are written in exactly the manner of the {@link #write(int)}
      * method.
      *
      * @param      s   The array of chars to be printed
      *
-     * @throws  NullPointerException  If <code>s</code> is <code>null</code>
+     * @throws  NullPointerException  If {@code s} is {@code null}
      */
     public void print(char s[]) {
         write(s);
     }
 
     /**
-     * Prints a string.  If the argument is <code>null</code> then the string
-     * <code>"null"</code> is printed.  Otherwise, the string's characters are
+     * Prints a string.  If the argument is {@code null} then the string
+     * {@code "null"} is printed.  Otherwise, the string's characters are
      * converted into bytes according to the platform's default character
      * encoding, and these bytes are written in exactly the manner of the
-     * <code>{@link #write(int)}</code> method.
+     * {@link #write(int)} method.
      *
-     * @param      s   The <code>String</code> to be printed
+     * @param      s   The {@code String} to be printed
      */
     public void print(String s) {
         if (s == null) {
@@ -596,13 +596,13 @@ public class PrintWriter extends Writer {
     }
 
     /**
-     * Prints an object.  The string produced by the <code>{@link
-     * java.lang.String#valueOf(Object)}</code> method is translated into bytes
+     * Prints an object.  The string produced by the {@link
+     * java.lang.String#valueOf(Object)} method is translated into bytes
      * according to the platform's default character encoding, and these bytes
-     * are written in exactly the manner of the <code>{@link #write(int)}</code>
+     * are written in exactly the manner of the {@link #write(int)}
      * method.
      *
-     * @param      obj   The <code>Object</code> to be printed
+     * @param      obj   The {@code Object} to be printed
      * @see        java.lang.Object#toString()
      */
     public void print(Object obj) {
@@ -614,8 +614,8 @@ public class PrintWriter extends Writer {
     /**
      * Terminates the current line by writing the line separator string.  The
      * line separator string is defined by the system property
-     * <code>line.separator</code>, and is not necessarily a single newline
-     * character (<code>'\n'</code>).
+     * {@code line.separator}, and is not necessarily a single newline
+     * character ({@code '\n'}).
      */
     public void println() {
         newLine();
@@ -623,10 +623,10 @@ public class PrintWriter extends Writer {
 
     /**
      * Prints a boolean value and then terminates the line.  This method behaves
-     * as though it invokes <code>{@link #print(boolean)}</code> and then
-     * <code>{@link #println()}</code>.
+     * as though it invokes {@link #print(boolean)} and then
+     * {@link #println()}.
      *
-     * @param x the <code>boolean</code> value to be printed
+     * @param x the {@code boolean} value to be printed
      */
     public void println(boolean x) {
         synchronized (lock) {
@@ -637,10 +637,10 @@ public class PrintWriter extends Writer {
 
     /**
      * Prints a character and then terminates the line.  This method behaves as
-     * though it invokes <code>{@link #print(char)}</code> and then <code>{@link
-     * #println()}</code>.
+     * though it invokes {@link #print(char)} and then {@link
+     * #println()}.
      *
-     * @param x the <code>char</code> value to be printed
+     * @param x the {@code char} value to be printed
      */
     public void println(char x) {
         synchronized (lock) {
@@ -651,10 +651,10 @@ public class PrintWriter extends Writer {
 
     /**
      * Prints an integer and then terminates the line.  This method behaves as
-     * though it invokes <code>{@link #print(int)}</code> and then <code>{@link
-     * #println()}</code>.
+     * though it invokes {@link #print(int)} and then {@link
+     * #println()}.
      *
-     * @param x the <code>int</code> value to be printed
+     * @param x the {@code int} value to be printed
      */
     public void println(int x) {
         synchronized (lock) {
@@ -665,10 +665,10 @@ public class PrintWriter extends Writer {
 
     /**
      * Prints a long integer and then terminates the line.  This method behaves
-     * as though it invokes <code>{@link #print(long)}</code> and then
-     * <code>{@link #println()}</code>.
+     * as though it invokes {@link #print(long)} and then
+     * {@link #println()}.
      *
-     * @param x the <code>long</code> value to be printed
+     * @param x the {@code long} value to be printed
      */
     public void println(long x) {
         synchronized (lock) {
@@ -679,10 +679,10 @@ public class PrintWriter extends Writer {
 
     /**
      * Prints a floating-point number and then terminates the line.  This method
-     * behaves as though it invokes <code>{@link #print(float)}</code> and then
-     * <code>{@link #println()}</code>.
+     * behaves as though it invokes {@link #print(float)} and then
+     * {@link #println()}.
      *
-     * @param x the <code>float</code> value to be printed
+     * @param x the {@code float} value to be printed
      */
     public void println(float x) {
         synchronized (lock) {
@@ -693,10 +693,10 @@ public class PrintWriter extends Writer {
 
     /**
      * Prints a double-precision floating-point number and then terminates the
-     * line.  This method behaves as though it invokes <code>{@link
-     * #print(double)}</code> and then <code>{@link #println()}</code>.
+     * line.  This method behaves as though it invokes {@link
+     * #print(double)} and then {@link #println()}.
      *
-     * @param x the <code>double</code> value to be printed
+     * @param x the {@code double} value to be printed
      */
     public void println(double x) {
         synchronized (lock) {
@@ -707,10 +707,10 @@ public class PrintWriter extends Writer {
 
     /**
      * Prints an array of characters and then terminates the line.  This method
-     * behaves as though it invokes <code>{@link #print(char[])}</code> and then
-     * <code>{@link #println()}</code>.
+     * behaves as though it invokes {@link #print(char[])} and then
+     * {@link #println()}.
      *
-     * @param x the array of <code>char</code> values to be printed
+     * @param x the array of {@code char} values to be printed
      */
     public void println(char x[]) {
         synchronized (lock) {
@@ -721,10 +721,10 @@ public class PrintWriter extends Writer {
 
     /**
      * Prints a String and then terminates the line.  This method behaves as
-     * though it invokes <code>{@link #print(String)}</code> and then
-     * <code>{@link #println()}</code>.
+     * though it invokes {@link #print(String)} and then
+     * {@link #println()}.
      *
-     * @param x the <code>String</code> value to be printed
+     * @param x the {@code String} value to be printed
      */
     public void println(String x) {
         synchronized (lock) {
@@ -737,10 +737,10 @@ public class PrintWriter extends Writer {
      * Prints an Object and then terminates the line.  This method calls
      * at first String.valueOf(x) to get the printed object's string value,
      * then behaves as
-     * though it invokes <code>{@link #print(String)}</code> and then
-     * <code>{@link #println()}</code>.
+     * though it invokes {@link #print(String)} and then
+     * {@link #println()}.
      *
-     * @param x  The <code>Object</code> to be printed.
+     * @param x  The {@code Object} to be printed.
      */
     public void println(Object x) {
         String s = String.valueOf(x);
@@ -755,11 +755,13 @@ public class PrintWriter extends Writer {
      * the specified format string and arguments.  If automatic flushing is
      * enabled, calls to this method will flush the output buffer.
      *
-     * <p> An invocation of this method of the form <tt>out.printf(format,
-     * args)</tt> behaves in exactly the same way as the invocation
+     * <p> An invocation of this method of the form
+     * {@code out.printf(format, args)}
+     * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     out.format(format, args) </pre>
+     * <pre>{@code
+     *     out.format(format, args)
+     * }</pre>
      *
      * @param  format
      *         A format string as described in <a
@@ -773,7 +775,7 @@ public class PrintWriter extends Writer {
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *         The behaviour on a
-     *         <tt>null</tt> argument depends on the <a
+     *         {@code null} argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
      * @throws  java.util.IllegalFormatException
@@ -786,7 +788,7 @@ public class PrintWriter extends Writer {
      *          formatter class specification.
      *
      * @throws  NullPointerException
-     *          If the <tt>format</tt> is <tt>null</tt>
+     *          If the {@code format} is {@code null}
      *
      * @return  This writer
      *
@@ -801,15 +803,17 @@ public class PrintWriter extends Writer {
      * the specified format string and arguments.  If automatic flushing is
      * enabled, calls to this method will flush the output buffer.
      *
-     * <p> An invocation of this method of the form <tt>out.printf(l, format,
-     * args)</tt> behaves in exactly the same way as the invocation
+     * <p> An invocation of this method of the form
+     * {@code out.printf(l, format, args)}
+     * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     out.format(l, format, args) </pre>
+     * <pre>{@code
+     *     out.format(l, format, args)
+     * }</pre>
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
-     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         formatting.  If {@code l} is {@code null} then no localization
      *         is applied.
      *
      * @param  format
@@ -824,7 +828,7 @@ public class PrintWriter extends Writer {
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *         The behaviour on a
-     *         <tt>null</tt> argument depends on the <a
+     *         {@code null} argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
      * @throws  java.util.IllegalFormatException
@@ -837,7 +841,7 @@ public class PrintWriter extends Writer {
      *          formatter class specification.
      *
      * @throws  NullPointerException
-     *          If the <tt>format</tt> is <tt>null</tt>
+     *          If the {@code format} is {@code null}
      *
      * @return  This writer
      *
@@ -868,7 +872,7 @@ public class PrintWriter extends Writer {
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *         The behaviour on a
-     *         <tt>null</tt> argument depends on the <a
+     *         {@code null} argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
      * @throws  java.util.IllegalFormatException
@@ -881,7 +885,7 @@ public class PrintWriter extends Writer {
      *          Formatter class specification.
      *
      * @throws  NullPointerException
-     *          If the <tt>format</tt> is <tt>null</tt>
+     *          If the {@code format} is {@code null}
      *
      * @return  This writer
      *
@@ -913,7 +917,7 @@ public class PrintWriter extends Writer {
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
-     *         formatting.  If <tt>l</tt> is <tt>null</tt> then no localization
+     *         formatting.  If {@code l} is {@code null} then no localization
      *         is applied.
      *
      * @param  format
@@ -928,7 +932,7 @@ public class PrintWriter extends Writer {
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *         The behaviour on a
-     *         <tt>null</tt> argument depends on the <a
+     *         {@code null} argument depends on the <a
      *         href="../util/Formatter.html#syntax">conversion</a>.
      *
      * @throws  java.util.IllegalFormatException
@@ -941,7 +945,7 @@ public class PrintWriter extends Writer {
      *          formatter class specification.
      *
      * @throws  NullPointerException
-     *          If the <tt>format</tt> is <tt>null</tt>
+     *          If the {@code format} is {@code null}
      *
      * @return  This writer
      *
@@ -968,21 +972,22 @@ public class PrintWriter extends Writer {
     /**
      * Appends the specified character sequence to this writer.
      *
-     * <p> An invocation of this method of the form <tt>out.append(csq)</tt>
+     * <p> An invocation of this method of the form {@code out.append(csq)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     out.write(csq.toString()) </pre>
+     * <pre>{@code
+     *     out.write(csq.toString())
+     * }</pre>
      *
-     * <p> Depending on the specification of <tt>toString</tt> for the
-     * character sequence <tt>csq</tt>, the entire sequence may not be
-     * appended. For instance, invoking the <tt>toString</tt> method of a
+     * <p> Depending on the specification of {@code toString} for the
+     * character sequence {@code csq}, the entire sequence may not be
+     * appended. For instance, invoking the {@code toString} method of a
      * character buffer will return a subsequence whose content depends upon
      * the buffer's position and limit.
      *
      * @param  csq
-     *         The character sequence to append.  If <tt>csq</tt> is
-     *         <tt>null</tt>, then the four characters <tt>"null"</tt> are
+     *         The character sequence to append.  If {@code csq} is
+     *         {@code null}, then the four characters {@code "null"} are
      *         appended to this writer.
      *
      * @return  This writer
@@ -1000,18 +1005,20 @@ public class PrintWriter extends Writer {
     /**
      * Appends a subsequence of the specified character sequence to this writer.
      *
-     * <p> An invocation of this method of the form <tt>out.append(csq, start,
-     * end)</tt> when <tt>csq</tt> is not <tt>null</tt>, behaves in
+     * <p> An invocation of this method of the form
+     * {@code out.append(csq, start, end)}
+     * when {@code csq} is not {@code null}, behaves in
      * exactly the same way as the invocation
      *
-     * <pre>
-     *     out.write(csq.subSequence(start, end).toString()) </pre>
+     * <pre>{@code
+     *     out.write(csq.subSequence(start, end).toString())
+     * }</pre>
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
-     *         appended.  If <tt>csq</tt> is <tt>null</tt>, then characters
-     *         will be appended as if <tt>csq</tt> contained the four
-     *         characters <tt>"null"</tt>.
+     *         appended.  If {@code csq} is {@code null}, then characters
+     *         will be appended as if {@code csq} contained the four
+     *         characters {@code "null"}.
      *
      * @param  start
      *         The index of the first character in the subsequence
@@ -1023,9 +1030,9 @@ public class PrintWriter extends Writer {
      * @return  This writer
      *
      * @throws  IndexOutOfBoundsException
-     *          If <tt>start</tt> or <tt>end</tt> are negative, <tt>start</tt>
-     *          is greater than <tt>end</tt>, or <tt>end</tt> is greater than
-     *          <tt>csq.length()</tt>
+     *          If {@code start} or {@code end} are negative, {@code start}
+     *          is greater than {@code end}, or {@code end} is greater than
+     *          {@code csq.length()}
      *
      * @since  1.5
      */
@@ -1038,11 +1045,12 @@ public class PrintWriter extends Writer {
     /**
      * Appends the specified character to this writer.
      *
-     * <p> An invocation of this method of the form <tt>out.append(c)</tt>
+     * <p> An invocation of this method of the form {@code out.append(c)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     out.write(c) </pre>
+     * <pre>{@code
+     *     out.write(c)
+     * }</pre>
      *
      * @param  c
      *         The 16-bit character to append

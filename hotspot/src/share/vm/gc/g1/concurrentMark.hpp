@@ -246,9 +246,10 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   // Make sure that we have not added any entries to the stack during GC.
   void note_end_of_gc();
 
-  // iterate over the oops in the mark stack, up to the bound recorded via
-  // the call above.
-  void oops_do(OopClosure* f);
+  // Apply fn to each oop in the mark stack, up to the bound recorded
+  // via one of the above "note" functions.  The mark stack must not
+  // be modified while iterating.
+  template<typename Fn> void iterate(Fn fn);
 };
 
 class ForceOverflowSettings VALUE_OBJ_CLASS_SPEC {

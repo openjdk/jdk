@@ -59,7 +59,7 @@ import java.io.IOException;
  *      characters (unescaped) are accepted.
  * </ul>
  *<p>
- * String names passed to <code>LdapName</code> or returned by it
+ * String names passed to {@code LdapName} or returned by it
  * use the full Unicode character set. They may also contain
  * characters encoded into UTF-8 with each octet represented by a
  * three-character substring such as "\\B4".
@@ -67,7 +67,7 @@ import java.io.IOException;
  * each octet represented by a single character in the string:  the
  * meaning would be ambiguous.
  *<p>
- * <code>LdapName</code> will properly parse all valid names, but
+ * {@code LdapName} will properly parse all valid names, but
  * does not attempt to detect all possible violations when parsing
  * invalid names.  It is "generous" in accepting invalid names.
  * The "validity" of a name is determined ultimately when it
@@ -92,7 +92,7 @@ import java.io.IOException;
  * empty LDAP name is represented by an empty RDN list.
  *<p>
  * Concurrent multithreaded read-only access of an instance of
- * <tt>LdapName</tt> need not be synchronized.
+ * {@code LdapName} need not be synchronized.
  *<p>
  * Unless otherwise noted, the behavior of passing a null argument
  * to a constructor or method in this class will cause a
@@ -129,7 +129,7 @@ public class LdapName implements Name {
      * The indexing of RDNs in the list follows the numbering of
      * RDNs described in the class description.
      *
-     * @param rdns The non-null list of <tt>Rdn</tt>s forming this LDAP name.
+     * @param rdns The non-null list of {@code Rdn}s forming this LDAP name.
      */
     public LdapName(List<Rdn> rdns) {
 
@@ -240,7 +240,7 @@ public class LdapName implements Name {
      * that is returned and vice versa.
      * @param  posn     The 0-based index of the component at which to stop.
      *                  Must be in the range [0,size()].
-     * @return  An instance of <tt>LdapName</tt> consisting of the
+     * @return  An instance of {@code LdapName} consisting of the
      *          components at indexes in the range [0,posn).
      *          If posn is zero, an empty LDAP name is returned.
      * @exception   IndexOutOfBoundsException
@@ -263,7 +263,7 @@ public class LdapName implements Name {
      *
      * @param  posn     The 0-based index of the component at which to start.
      *                  Must be in the range [0,size()].
-     * @return  An instance of <tt>LdapName</tt> consisting of the
+     * @return  An instance of {@code LdapName} consisting of the
      *          components at indexes in the range [posn,size()).
      *          If posn is equal to size(), an empty LDAP name is
      *          returned.
@@ -282,13 +282,13 @@ public class LdapName implements Name {
     /**
      * Determines whether this LDAP name starts with a specified LDAP name
      * prefix.
-     * A name <tt>n</tt> is a prefix if it is equal to
-     * <tt>getPrefix(n.size())</tt>--in other words this LDAP
+     * A name {@code n} is a prefix if it is equal to
+     * {@code getPrefix(n.size())}--in other words this LDAP
      * name starts with 'n'. If n is null or not a RFC2253 formatted name
      * as described in the class description, false is returned.
      *
      * @param n The LDAP name to check.
-     * @return  true if <tt>n</tt> is a prefix of this LDAP name,
+     * @return  true if {@code n} is a prefix of this LDAP name,
      * false otherwise.
      * @see #getPrefix(int posn)
      */
@@ -309,8 +309,8 @@ public class LdapName implements Name {
      * getRdn(p) matches rdns.get(p). Returns false otherwise. If rdns is
      * null, false is returned.
      *
-     * @param rdns The sequence of <tt>Rdn</tt>s to check.
-     * @return  true if <tt>rdns</tt> form a prefix of this LDAP name,
+     * @param rdns The sequence of {@code Rdn}s to check.
+     * @return  true if {@code rdns} form a prefix of this LDAP name,
      *          false otherwise.
      */
     public boolean startsWith(List<Rdn> rdns) {
@@ -326,13 +326,13 @@ public class LdapName implements Name {
     /**
      * Determines whether this LDAP name ends with a specified
      * LDAP name suffix.
-     * A name <tt>n</tt> is a suffix if it is equal to
-     * <tt>getSuffix(size()-n.size())</tt>--in other words this LDAP
+     * A name {@code n} is a suffix if it is equal to
+     * {@code getSuffix(size()-n.size())}--in other words this LDAP
      * name ends with 'n'. If n is null or not a RFC2253 formatted name
      * as described in the class description, false is returned.
      *
      * @param n The LDAP name to check.
-     * @return true if <tt>n</tt> is a suffix of this name, false otherwise.
+     * @return true if {@code n} is a suffix of this name, false otherwise.
      * @see #getSuffix(int posn)
      */
     public boolean endsWith(Name n) {
@@ -352,8 +352,8 @@ public class LdapName implements Name {
      * the component getRdn(p) matches rdns.get(p). Returns false otherwise.
      * If rdns is null, false is returned.
      *
-     * @param rdns The sequence of <tt>Rdn</tt>s to check.
-     * @return  true if <tt>rdns</tt> form a suffix of this LDAP name,
+     * @param rdns The sequence of {@code Rdn}s to check.
+     * @return  true if {@code rdns} form a suffix of this LDAP name,
      *          false otherwise.
      */
     public boolean endsWith(List<Rdn> rdns) {
@@ -409,7 +409,7 @@ public class LdapName implements Name {
      * @param   suffix The non-null components to add.
      * @return  The updated name (not a new instance).
      *
-     * @throws  InvalidNameException if <tt>suffix</tt> is not a valid LDAP
+     * @throws  InvalidNameException if {@code suffix} is not a valid LDAP
      *          name, or if the addition of the components would violate the
      *          syntax rules of this LDAP name.
      */
@@ -421,7 +421,7 @@ public class LdapName implements Name {
     /**
      * Adds the RDNs of a name -- in order -- to the end of this name.
      *
-     * @param   suffixRdns The non-null suffix <tt>Rdn</tt>s to add.
+     * @param   suffixRdns The non-null suffix {@code Rdn}s to add.
      * @return  The updated name (not a new instance).
      */
     public Name addAll(List<Rdn> suffixRdns) {
@@ -440,7 +440,7 @@ public class LdapName implements Name {
      *
      * @return  The updated name (not a new instance).
      *
-     * @throws  InvalidNameException if <tt>suffix</tt> is not a valid LDAP
+     * @throws  InvalidNameException if {@code suffix} is not a valid LDAP
      *          name, or if the addition of the components would violate the
      *          syntax rules of this LDAP name.
      * @throws  IndexOutOfBoundsException
@@ -469,7 +469,7 @@ public class LdapName implements Name {
      * index (if any) of the first new RDN are shifted up (away from index 0) to
      * accommodate the new RDNs.
      *
-     * @param suffixRdns        The non-null suffix <tt>Rdn</tt>s to add.
+     * @param suffixRdns        The non-null suffix {@code Rdn}s to add.
      * @param posn              The index at which to add the suffix RDNs.
      *                          Must be in the range [0,size()].
      *

@@ -108,6 +108,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private String[]            localSupportedSignAlgs;
     private String[]            peerSupportedSignAlgs;
     private List<SNIServerName>    requestedServerNames;
+    private List<byte[]>        statusResponses;
 
     private int                 negotiatedMaxFragLen;
     private int                 maximumPacketSize;
@@ -180,6 +181,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         localSupportedSignAlgs =
             SignatureAndHashAlgorithm.getAlgorithmNames(algorithms);
         negotiatedMaxFragLen = -1;
+        statusResponses = null;
 
         if (debug != null && Debug.isOn("session")) {
             System.out.println("%% Initialized:  " + this);
@@ -223,6 +225,19 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     void setRequestedServerNames(List<SNIServerName> requestedServerNames) {
         this.requestedServerNames = new ArrayList<>(requestedServerNames);
+    }
+
+    /**
+     * Provide status response data obtained during the SSL handshake.
+     *
+     * @param responses a {@link List} of responses in binary form.
+     */
+    void setStatusResponses(List<byte[]> responses) {
+        if (responses != null && !responses.isEmpty()) {
+            statusResponses = responses;
+        } else {
+            statusResponses = Collections.emptyList();
+        }
     }
 
     /**
@@ -528,6 +543,30 @@ final class SSLSessionImpl extends ExtendedSSLSession {
             return peerCerts.clone();
         } else {
             throw new SSLPeerUnverifiedException("peer not authenticated");
+        }
+    }
+
+    /**
+     * Return a List of status responses presented by the peer.
+     * Note: This method can be used only when using certificate-based
+     * server authentication; otherwise an empty {@code List} will be returned.
+     *
+     * @return an unmodifiable {@code List} of byte arrays, each consisting
+     * of a DER-encoded OCSP response (see RFC 6960).  If no responses have
+     * been presented by the server or non-certificate based server
+     * authentication is used then an empty {@code List} is returned.
+     */
+    @Override
+    public List<byte[]> getStatusResponses() {
+        if (statusResponses == null || statusResponses.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            // Clone both the list and the contents
+            List<byte[]> responses = new ArrayList<>(statusResponses.size());
+            for (byte[] respBytes : statusResponses) {
+                responses.add(respBytes.clone());
+            }
+            return Collections.unmodifiableList(responses);
         }
     }
 

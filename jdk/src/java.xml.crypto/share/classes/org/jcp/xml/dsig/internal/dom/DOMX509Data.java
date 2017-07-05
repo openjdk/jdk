@@ -65,7 +65,6 @@ public final class DOMX509Data extends DOMStructure implements X509Data {
      *    or {@link javax.xml.dsig.XMLStructure} ({@link X509IssuerSerial}
      *    objects or elements from an external namespace). The list is
      *    defensively copied to protect against subsequent modification.
-     * @return a <code>X509Data</code>
      * @throws NullPointerException if <code>content</code> is <code>null</code>
      * @throws IllegalArgumentException if <code>content</code> is empty
      * @throws ClassCastException if <code>content</code> contains any entries

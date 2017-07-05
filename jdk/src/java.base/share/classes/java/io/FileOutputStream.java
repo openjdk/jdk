@@ -37,7 +37,7 @@ import sun.nio.ch.FileChannelImpl;
  * <code>File</code> or to a <code>FileDescriptor</code>. Whether or not
  * a file is available or may be created depends upon the underlying
  * platform.  Some platforms, in particular, allow a file to be opened
- * for writing by only one <tt>FileOutputStream</tt> (or other
+ * for writing by only one {@code FileOutputStream} (or other
  * file-writing object) at a time.  In such situations the constructors in
  * this class will fail if the file involved is already open.
  *

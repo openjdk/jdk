@@ -38,12 +38,12 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 PAEncTSEnc type.
  *
- * <xmp>
+ * <pre>{@code
  * PA-ENC-TS-ENC                ::= SEQUENCE {
  *      patimestamp     [0] KerberosTime -- client's time --,
  *      pausec          [1] Microseconds OPTIONAL
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120
