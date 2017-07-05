@@ -31,9 +31,9 @@ abstract class WObjectPeer {
     }
 
     // The Windows handle for the native widget.
-    long pData;
+    volatile long pData;
     // if the native peer has been destroyed
-    boolean destroyed = false;
+    volatile boolean destroyed = false;
     // The associated AWT object.
     Object target;
 

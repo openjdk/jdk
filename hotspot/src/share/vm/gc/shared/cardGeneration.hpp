@@ -89,7 +89,7 @@ class CardGeneration: public Generation {
 
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);
 
-  void younger_refs_iterate(OopsInGenClosure* blk);
+  void younger_refs_iterate(OopsInGenClosure* blk, uint n_threads);
 
   bool is_in(const void* p) const;
 

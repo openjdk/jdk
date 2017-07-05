@@ -88,13 +88,13 @@ public class SunCompositeContext implements CompositeContext {
      * @param src2 The second source tile for the compositing operation.
      * @param dst The tile where the result of the operation is stored.
      */
-    public void compose(Raster srcArg, Raster dstIn, WritableRaster dstOut) {
+    public void compose(Raster src1, Raster src2, WritableRaster dst) {
         WritableRaster src;
         int w;
         int h;
 
-        if (dstIn != dstOut) {
-            dstOut.setDataElements(0, 0, dstIn);
+        if (src2 != dst) {
+            dst.setDataElements(0, 0, src2);
         }
 
         // REMIND: We should be able to create a SurfaceData from just
@@ -102,20 +102,20 @@ public class SunCompositeContext implements CompositeContext {
         // create a SurfaceData from a BufferedImage then we need to
         // make a WritableRaster since it is needed to construct a
         // BufferedImage.
-        if (srcArg instanceof WritableRaster) {
-            src = (WritableRaster) srcArg;
+        if (src1 instanceof WritableRaster) {
+            src = (WritableRaster) src1;
         } else {
-            src = srcArg.createCompatibleWritableRaster();
-            src.setDataElements(0, 0, srcArg);
+            src = src1.createCompatibleWritableRaster();
+            src.setDataElements(0, 0, src1);
         }
 
-        w = Math.min(src.getWidth(), dstIn.getWidth());
-        h = Math.min(src.getHeight(), dstIn.getHeight());
+        w = Math.min(src.getWidth(), src2.getWidth());
+        h = Math.min(src.getHeight(), src2.getHeight());
 
         BufferedImage srcImg = new BufferedImage(srcCM, src,
                                                  srcCM.isAlphaPremultiplied(),
                                                  null);
-        BufferedImage dstImg = new BufferedImage(dstCM, dstOut,
+        BufferedImage dstImg = new BufferedImage(dstCM, dst,
                                                  dstCM.isAlphaPremultiplied(),
                                                  null);
 

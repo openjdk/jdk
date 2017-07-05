@@ -27,6 +27,7 @@
 #include "classfile/javaClasses.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
+#include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -132,33 +133,9 @@ int InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closur
   return oop_size(obj);
 }
 
-
-#define InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)              \
-                                                                                         \
-int InstanceMirrorKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {  \
-  return oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                          \
-}
-
-#if INCLUDE_ALL_GCS
-#define InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
-                                                                                                   \
-int InstanceMirrorKlass::oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {  \
-  return oop_oop_iterate_reverse<nvs_to_bool(nv_suffix)>(obj, closure);                            \
-}
-#else
-#define InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-#endif
-
-
-#define InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)                              \
-                                                                                                           \
-int InstanceMirrorKlass::oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr) {  \
-  return oop_oop_iterate_bounded<nvs_to_bool(nv_suffix)>(obj, closure, mr);                                \
-}
-
 #define ALL_INSTANCE_MIRROR_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
-  InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN(          OopClosureType, nv_suffix)    \
-  InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN_m(        OopClosureType, nv_suffix)    \
-  InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
+  OOP_OOP_ITERATE_DEFN(          InstanceMirrorKlass, OopClosureType, nv_suffix)   \
+  OOP_OOP_ITERATE_DEFN_BOUNDED(  InstanceMirrorKlass, OopClosureType, nv_suffix)   \
+  OOP_OOP_ITERATE_DEFN_BACKWARDS(InstanceMirrorKlass, OopClosureType, nv_suffix)
 
 #endif // SHARE_VM_OOPS_INSTANCEMIRRORKLASS_INLINE_HPP

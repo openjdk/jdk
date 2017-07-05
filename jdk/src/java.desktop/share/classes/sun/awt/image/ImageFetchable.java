@@ -33,7 +33,7 @@ package sun.awt.image;
  * threads which manage the applications User Interface.
  *
  * @see ImageFetcher
- * @see ImageProducer
+ * @see java.awt.image.ImageProducer
  *
  * @author      Jim Graham
  */
@@ -42,7 +42,7 @@ public interface ImageFetchable {
      * This method is called by one of the ImageFetcher threads to start
      * the flow of information from the ImageProducer to the ImageConsumer.
      * @see ImageFetcher
-     * @see ImageProducer
+     * @see java.awt.image.ImageProducer
      */
     public void doFetch();
 }

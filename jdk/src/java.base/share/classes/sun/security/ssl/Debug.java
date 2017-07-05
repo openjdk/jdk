@@ -29,6 +29,9 @@ import java.io.PrintStream;
 import java.security.AccessController;
 import java.util.Locale;
 
+import sun.misc.HexDumpEncoder;
+import java.nio.ByteBuffer;
+
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -197,5 +200,48 @@ public class Debug {
 
     static String toString(byte[] b) {
         return sun.security.util.Debug.toString(b);
+    }
+
+    static void printHex(String prefix, byte[] bytes) {
+        HexDumpEncoder dump = new HexDumpEncoder();
+
+        synchronized (System.out) {
+            System.out.println(prefix);
+            try {
+                dump.encodeBuffer(bytes, System.out);
+            } catch (Exception e) {
+                // ignore
+            }
+            System.out.flush();
+        }
+    }
+
+    static void printHex(String prefix, ByteBuffer bb) {
+        HexDumpEncoder dump = new HexDumpEncoder();
+
+        synchronized (System.out) {
+            System.out.println(prefix);
+            try {
+                dump.encodeBuffer(bb.slice(), System.out);
+            } catch (Exception e) {
+                // ignore
+            }
+            System.out.flush();
+        }
+    }
+
+    static void printHex(String prefix, byte[] bytes, int offset, int length) {
+        HexDumpEncoder dump = new HexDumpEncoder();
+
+        synchronized (System.out) {
+            System.out.println(prefix);
+            try {
+                ByteBuffer bb = ByteBuffer.wrap(bytes, offset, length);
+                dump.encodeBuffer(bb, System.out);
+            } catch (Exception e) {
+                // ignore
+            }
+            System.out.flush();
+        }
     }
 }

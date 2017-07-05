@@ -437,7 +437,7 @@ public class XMenuItemPeer implements MenuItemPeer {
      * Sets mapping of item to window.
      * @param bounds bounds of item in container's coordinates
      * @param textOrigin point for drawString in container's coordinates
-     * @see XBaseMenuWindow.map()
+     * @see XBaseMenuWindow#map()
      */
     void map(Rectangle bounds, Point textOrigin) {
         this.bounds = bounds;

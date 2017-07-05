@@ -54,7 +54,6 @@ import javax.swing.Action;
  * <code>isEnabled(Component)</code>, and be aware that the passed in
  * <code>Component</code> may be null.
  *
- * @see com.sun.java.swing.ExtendedAction
  * @see javax.swing.Action
  * @author Scott Violet
  */

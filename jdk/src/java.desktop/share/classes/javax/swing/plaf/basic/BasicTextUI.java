@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -936,10 +936,11 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             ((AbstractDocument)doc).readLock();
         }
         try {
-            if ((d.width > (i.left + i.right)) && (d.height > (i.top + i.bottom))) {
-                rootView.setSize(d.width - i.left - i.right, d.height - i.top - i.bottom);
+            if ((d.width > (i.left + i.right + caretMargin)) && (d.height > (i.top + i.bottom))) {
+                rootView.setSize(d.width - i.left - i.right -
+                        caretMargin, d.height - i.top - i.bottom);
             }
-            else if (d.width == 0 && d.height == 0) {
+            else if (d.width == 0 || d.height == 0) {
                 // Probably haven't been layed out yet, force some sort of
                 // initial sizing.
                 rootView.setSize(Integer.MAX_VALUE, Integer.MAX_VALUE);
