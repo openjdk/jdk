@@ -16,6 +16,9 @@ grant {
     permission java.lang.RuntimePermission "getClassLoader";
     permission java.lang.RuntimePermission "setContextClassLoader";
 
+    permission java.lang.reflect.ReflectPermission "newProxyInPackage.";
+    permission java.lang.reflect.ReflectPermission "newProxyInPackage.java.util.zip";
+
     // used by TestLibrary to determine test environment
     permission java.util.PropertyPermission "test.classes", "read";
     permission java.util.PropertyPermission "test.src", "read";

@@ -76,11 +76,11 @@
 
 package sun.text.resources.ja;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_ja extends ListResourceBundle {
+public class FormatData_ja extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {
@@ -182,16 +182,7 @@ public class FormatData_ja extends ListResourceBundle {
                     "\u4ecf\u66a6",       // Butsureki
                 }
             },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "GGGGy\u5e74M\u6708d\u65e5EEEE",
-                    "GGGGy\u5e74M\u6708d\u65e5",
-                    "Gy/MM/dd",
-                    "Gy/MM/dd",
-                }
-            },
             { "japanese.Eras", japaneseEras },
-            { "cldr.japanese.short.Eras", japaneseEras },
             { "japanese.FirstYear",
                 new String[] {  // first year name
                     "\u5143",   // "Gan"-nen
@@ -233,14 +224,6 @@ public class FormatData_ja extends ListResourceBundle {
                     "{1} {0}"                          // date-time pattern
                 }
             },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gyy/MM/dd",
-                }
-            },
             { "japanese.DatePatterns",
                 new String[] {
                     "GGGGyyyy'\u5e74'M'\u6708'd'\u65e5'", // full date pattern
@@ -263,42 +246,6 @@ public class FormatData_ja extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "roc.Eras", rocEras },
-            { "roc.short.Eras", rocEras },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gy/MM/dd",
-                    "Gy/MM/dd",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "GGGGy\u5e74M\u6708d\u65e5EEEE",
-                    "GGGGy\u5e74M\u6708d\u65e5",
-                    "GGGGy/MM/dd",
-                    "GGGGy/MM/dd",
-                }
-            },
-            { "calendarname.islamic-civil", "\u592a\u967d\u30a4\u30b9\u30e9\u30e0\u66a6" },
-            { "calendarname.islamicc", "\u592a\u967d\u30a4\u30b9\u30e9\u30e0\u66a6" },
-            { "calendarname.islamic", "\u30a4\u30b9\u30e9\u30e0\u66a6" },
-            { "calendarname.japanese", "\u548c\u66a6" },
-            { "calendarname.gregorian", "\u897f\u66a6[\u30b0\u30ec\u30b4\u30ea\u30aa\u66a6]" },
-            { "calendarname.gregory", "\u897f\u66a6[\u30b0\u30ec\u30b4\u30ea\u30aa\u66a6]" },
-            { "calendarname.roc", "\u4e2d\u83ef\u6c11\u56fd\u66a6" },
-            { "calendarname.buddhist", "\u30bf\u30a4\u4ecf\u6559\u66a6" },
-            { "field.era", "\u6642\u4ee3" },
-            { "field.year", "\u5e74" },
-            { "field.month", "\u6708" },
-            { "field.week", "\u9031" },
-            { "field.weekday", "\u66dc\u65e5" },
-            { "field.dayperiod", "\u5348\u524d/\u5348\u5f8c" },
-            { "field.hour", "\u6642" },
-            { "field.minute", "\u5206" },
-            { "field.second", "\u79d2" },
-            { "field.zone", "\u30bf\u30a4\u30e0\u30be\u30fc\u30f3" },
         };
     }
 }

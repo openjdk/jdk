@@ -66,11 +66,14 @@ import static java.time.DayOfWeek.WEDNESDAY;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.fail;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.time.temporal.IsoFields;
 import java.time.temporal.ValueRange;
 
@@ -80,7 +83,7 @@ import org.testng.annotations.Test;
 /**
  * Test.
  */
-@Test(groups={"tck"})
+@Test
 public class TCKIsoFields {
 
     @DataProvider(name="quarter")
@@ -115,32 +118,130 @@ public class TCKIsoFields {
     //-----------------------------------------------------------------------
     // DAY_OF_QUARTER
     //-----------------------------------------------------------------------
-    @Test(dataProvider="quarter")
+    @Test(dataProvider = "quarter")
     public void test_DOQ(LocalDate date, int doq, int qoy) {
         assertEquals(IsoFields.DAY_OF_QUARTER.getFrom(date), doq);
         assertEquals(date.get(IsoFields.DAY_OF_QUARTER), doq);
     }
 
+    public void test_DOQ_basics() {
+        assertEquals(IsoFields.DAY_OF_QUARTER.isDateBased(), true);
+        assertEquals(IsoFields.DAY_OF_QUARTER.isTimeBased(), false);
+    }
+
     //-----------------------------------------------------------------------
     // QUARTER_OF_YEAR
     //-----------------------------------------------------------------------
-    @Test(dataProvider="quarter")
+    @Test(dataProvider = "quarter")
     public void test_QOY(LocalDate date, int doq, int qoy) {
         assertEquals(IsoFields.QUARTER_OF_YEAR.getFrom(date), qoy);
         assertEquals(date.get(IsoFields.QUARTER_OF_YEAR), qoy);
     }
 
+    public void test_QOY_basics() {
+        assertEquals(IsoFields.QUARTER_OF_YEAR.isDateBased(), true);
+        assertEquals(IsoFields.QUARTER_OF_YEAR.isTimeBased(), false);
+    }
+
     //-----------------------------------------------------------------------
     // parse quarters
     //-----------------------------------------------------------------------
-    @Test(dataProvider="quarter")
+    @Test(dataProvider = "quarter")
     public void test_parse_quarters(LocalDate date, int doq, int qoy) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(YEAR).appendLiteral('-')
                 .appendValue(IsoFields.QUARTER_OF_YEAR).appendLiteral('-')
-                .appendValue(IsoFields.DAY_OF_QUARTER).toFormatter();
+                .appendValue(IsoFields.DAY_OF_QUARTER)
+                .toFormatter().withResolverStyle(ResolverStyle.STRICT);
         LocalDate parsed = LocalDate.parse(date.getYear() + "-" + qoy + "-" + doq, f);
         assertEquals(parsed, date);
+    }
+
+    @Test(dataProvider = "quarter")
+    public void test_parse_quarters_SMART(LocalDate date, int doq, int qoy) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral('-')
+                .appendValue(IsoFields.QUARTER_OF_YEAR).appendLiteral('-')
+                .appendValue(IsoFields.DAY_OF_QUARTER)
+                .toFormatter().withResolverStyle(ResolverStyle.SMART);
+        LocalDate parsed = LocalDate.parse(date.getYear() + "-" + qoy + "-" + doq, f);
+        assertEquals(parsed, date);
+    }
+
+    @Test(dataProvider = "quarter")
+    public void test_parse_quarters_LENIENT(LocalDate date, int doq, int qoy) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral('-')
+                .appendValue(IsoFields.QUARTER_OF_YEAR).appendLiteral('-')
+                .appendValue(IsoFields.DAY_OF_QUARTER)
+                .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
+        LocalDate parsed = LocalDate.parse(date.getYear() + "-" + qoy + "-" + doq, f);
+        assertEquals(parsed, date);
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="parseLenientQuarter")
+    Object[][] data_parseLenientQuarter() {
+        return new Object[][] {
+                {"2012:0:1", LocalDate.of(2011, 10, 1), false},
+                {"2012:5:1", LocalDate.of(2013, 1, 1), false},
+
+                {"2012:1:-1", LocalDate.of(2011, 12, 30), false},
+                {"2012:1:0", LocalDate.of(2011, 12, 31), false},
+                {"2012:0:0", LocalDate.of(2011, 9, 30), false},
+
+                {"2012:1:92", LocalDate.of(2012, 4, 1), true},
+                {"2012:2:92", LocalDate.of(2012, 7, 1), true},
+                {"2012:2:93", LocalDate.of(2012, 7, 2), false},
+                {"2012:3:93", LocalDate.of(2012, 10, 1), false},
+                {"2012:4:93", LocalDate.of(2013, 1, 1), false},
+                {"2012:4:182", LocalDate.of(2013, 3, 31), false},
+                {"2012:4:183", LocalDate.of(2013, 4, 1), false},
+
+                {"2011:1:91", LocalDate.of(2011, 4, 1), true},
+                {"2011:1:92", LocalDate.of(2011, 4, 2), true},
+        };
+    }
+
+    @Test(dataProvider = "parseLenientQuarter", expectedExceptions = DateTimeParseException.class)
+    public void test_parse_parseLenientQuarter_STRICT(String str, LocalDate expected, boolean smart) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral(':')
+                .appendValue(IsoFields.QUARTER_OF_YEAR).appendLiteral(':')
+                .appendValue(IsoFields.DAY_OF_QUARTER)
+                .toFormatter().withResolverStyle(ResolverStyle.STRICT);
+        LocalDate.parse(str, f);
+    }
+
+    @Test(dataProvider = "parseLenientQuarter")
+    public void test_parse_parseLenientQuarter_SMART(String str, LocalDate expected, boolean smart) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral(':')
+                .appendValue(IsoFields.QUARTER_OF_YEAR).appendLiteral(':')
+                .appendValue(IsoFields.DAY_OF_QUARTER)
+                .toFormatter().withResolverStyle(ResolverStyle.SMART);
+        if (smart) {
+            LocalDate parsed = LocalDate.parse(str, f);
+            assertEquals(parsed, expected);
+        } else {
+            try {
+                LocalDate.parse(str, f);
+                fail("Should have failed");
+            } catch (DateTimeParseException ex) {
+                // expected
+            }
+        }
+    }
+
+    @Test(dataProvider = "parseLenientQuarter")
+    public void test_parse_parseLenientQuarter_LENIENT(String str, LocalDate expected, boolean smart) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral(':')
+                .appendValue(IsoFields.QUARTER_OF_YEAR).appendLiteral(':')
+                .appendValue(IsoFields.DAY_OF_QUARTER)
+                .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
+        LocalDate parsed = LocalDate.parse(str, f);
+        assertEquals(parsed, expected);
     }
 
     //-----------------------------------------------------------------------
@@ -214,6 +315,11 @@ public class TCKIsoFields {
         assertEquals(date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR), week);
     }
 
+    public void test_WOWBY_basics() {
+        assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.isDateBased(), true);
+        assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.isTimeBased(), false);
+    }
+
     //-----------------------------------------------------------------------
     // WEEK_BASED_YEAR
     //-----------------------------------------------------------------------
@@ -224,17 +330,103 @@ public class TCKIsoFields {
         assertEquals(date.get(IsoFields.WEEK_BASED_YEAR), wby);
     }
 
+    public void test_WBY_basics() {
+        assertEquals(IsoFields.WEEK_BASED_YEAR.isDateBased(), true);
+        assertEquals(IsoFields.WEEK_BASED_YEAR.isTimeBased(), false);
+    }
+
     //-----------------------------------------------------------------------
     // parse weeks
     //-----------------------------------------------------------------------
     @Test(dataProvider="week")
-    public void test_parse_weeks(LocalDate date, DayOfWeek dow, int week, int wby) {
+    public void test_parse_weeks_STRICT(LocalDate date, DayOfWeek dow, int week, int wby) {
         DateTimeFormatter f = new DateTimeFormatterBuilder()
                 .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral('-')
                 .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral('-')
-                .appendValue(DAY_OF_WEEK).toFormatter();
+                .appendValue(DAY_OF_WEEK)
+                .toFormatter().withResolverStyle(ResolverStyle.STRICT);
         LocalDate parsed = LocalDate.parse(wby + "-" + week + "-" + dow.getValue(), f);
         assertEquals(parsed, date);
+    }
+
+    @Test(dataProvider="week")
+    public void test_parse_weeks_SMART(LocalDate date, DayOfWeek dow, int week, int wby) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral('-')
+                .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral('-')
+                .appendValue(DAY_OF_WEEK)
+                .toFormatter().withResolverStyle(ResolverStyle.SMART);
+        LocalDate parsed = LocalDate.parse(wby + "-" + week + "-" + dow.getValue(), f);
+        assertEquals(parsed, date);
+    }
+
+    @Test(dataProvider="week")
+    public void test_parse_weeks_LENIENT(LocalDate date, DayOfWeek dow, int week, int wby) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral('-')
+                .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral('-')
+                .appendValue(DAY_OF_WEEK)
+                .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
+        LocalDate parsed = LocalDate.parse(wby + "-" + week + "-" + dow.getValue(), f);
+        assertEquals(parsed, date);
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="parseLenientWeek")
+    Object[][] data_parseLenientWeek() {
+        return new Object[][] {
+                {"2012:52:-1", LocalDate.of(2012, 12, 22), false},
+                {"2012:52:0", LocalDate.of(2012, 12, 23), false},
+                {"2012:52:8", LocalDate.of(2012, 12, 31), false},
+                {"2012:52:9", LocalDate.of(2013, 1, 1), false},
+
+                {"2012:53:1", LocalDate.of(2012, 12, 31), true},
+                {"2012:54:1", LocalDate.of(2013, 1, 7), false},
+
+                {"2013:0:1", LocalDate.of(2012, 12, 24), false},
+                {"2013:0:0", LocalDate.of(2012, 12, 23), false},
+        };
+    }
+
+    @Test(dataProvider = "parseLenientWeek", expectedExceptions = DateTimeParseException.class)
+    public void test_parse_parseLenientWeek_STRICT(String str, LocalDate expected, boolean smart) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral(':')
+                .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral(':')
+                .appendValue(DAY_OF_WEEK)
+                .toFormatter().withResolverStyle(ResolverStyle.STRICT);
+        LocalDate.parse(str, f);
+    }
+
+    @Test(dataProvider = "parseLenientWeek")
+    public void test_parse_parseLenientWeek_SMART(String str, LocalDate expected, boolean smart) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral(':')
+                .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral(':')
+                .appendValue(DAY_OF_WEEK)
+                .toFormatter().withResolverStyle(ResolverStyle.SMART);
+        if (smart) {
+            LocalDate parsed = LocalDate.parse(str, f);
+            assertEquals(parsed, expected);
+        } else {
+            try {
+                LocalDate.parse(str, f);
+                fail("Should have failed");
+            } catch (DateTimeParseException ex) {
+                // expected
+            }
+        }
+    }
+
+    @Test(dataProvider = "parseLenientWeek")
+    public void test_parse_parseLenientWeek_LENIENT(String str, LocalDate expected, boolean smart) {
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(IsoFields.WEEK_BASED_YEAR).appendLiteral(':')
+                .appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral(':')
+                .appendValue(DAY_OF_WEEK)
+                .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
+        LocalDate parsed = LocalDate.parse(str, f);
+        assertEquals(parsed, expected);
     }
 
     //-----------------------------------------------------------------------

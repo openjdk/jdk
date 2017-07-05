@@ -76,11 +76,11 @@
 
 package sun.text.resources.zh;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_zh extends ListResourceBundle {
+public class FormatData_zh extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     @Override
     protected final Object[][] getContents() {
@@ -106,6 +106,23 @@ public class FormatData_zh extends ListResourceBundle {
                     "" // month 13 if applicable
                 }
             },
+            { "standalone.MonthNames",
+                new String[] {
+                    "\u4e00\u6708",
+                    "\u4e8c\u6708",
+                    "\u4e09\u6708",
+                    "\u56db\u6708",
+                    "\u4e94\u6708",
+                    "\u516d\u6708",
+                    "\u4e03\u6708",
+                    "\u516b\u6708",
+                    "\u4e5d\u6708",
+                    "\u5341\u6708",
+                    "\u5341\u4e00\u6708",
+                    "\u5341\u4e8c\u6708",
+                    "",
+                }
+            },
             { "MonthAbbreviations",
                 new String[] {
                     "\u4e00\u6708", // abb january
@@ -121,6 +138,40 @@ public class FormatData_zh extends ListResourceBundle {
                     "\u5341\u4e00\u6708", // abb november
                     "\u5341\u4e8c\u6708", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "standalone.MonthAbbreviations",
+                new String[] {
+                    "\u4e00\u6708",
+                    "\u4e8c\u6708",
+                    "\u4e09\u6708",
+                    "\u56db\u6708",
+                    "\u4e94\u6708",
+                    "\u516d\u6708",
+                    "\u4e03\u6708",
+                    "\u516b\u6708",
+                    "\u4e5d\u6708",
+                    "\u5341\u6708",
+                    "\u5341\u4e00\u6708",
+                    "\u5341\u4e8c\u6708",
+                    "",
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                    "6",
+                    "7",
+                    "8",
+                    "9",
+                    "10",
+                    "11",
+                    "12",
+                    "",
                 }
             },
             { "standalone.MonthNarrows",
@@ -151,6 +202,17 @@ public class FormatData_zh extends ListResourceBundle {
                     "\u661f\u671f\u516d" // Saturday
                 }
             },
+            { "standalone.DayNames",
+                new String[] {
+                    "\u661f\u671f\u65e5",
+                    "\u661f\u671f\u4e00",
+                    "\u661f\u671f\u4e8c",
+                    "\u661f\u671f\u4e09",
+                    "\u661f\u671f\u56db",
+                    "\u661f\u671f\u4e94",
+                    "\u661f\u671f\u516d",
+                }
+            },
             { "DayAbbreviations",
                 new String[] {
                     "\u661f\u671f\u65e5", // abb Sunday
@@ -162,7 +224,29 @@ public class FormatData_zh extends ListResourceBundle {
                     "\u661f\u671f\u516d" // abb Saturday
                 }
             },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "\u5468\u65e5",
+                    "\u5468\u4e00",
+                    "\u5468\u4e8c",
+                    "\u5468\u4e09",
+                    "\u5468\u56db",
+                    "\u5468\u4e94",
+                    "\u5468\u516d",
+                }
+            },
             { "DayNarrows",
+                new String[] {
+                    "\u65e5",
+                    "\u4e00",
+                    "\u4e8c",
+                    "\u4e09",
+                    "\u56db",
+                    "\u4e94",
+                    "\u516d",
+                }
+            },
+            { "standalone.DayNarrows",
                 new String[] {
                     "\u65e5",
                     "\u4e00",
@@ -183,6 +267,21 @@ public class FormatData_zh extends ListResourceBundle {
                 new String[] { // era strings
                     "\u516c\u5143\u524d",
                     "\u516c\u5143"
+                }
+            },
+            { "buddhist.Eras",
+                new String[] {
+                    "BC",
+                    "\u4f5b\u5386",
+                }
+            },
+            { "japanese.Eras",
+                new String[] {
+                    "\u516c\u5143",
+                    "\u660e\u6cbb",
+                    "\u5927\u6b63",
+                    "\u662d\u548c",
+                    "\u5e73\u6210",
                 }
             },
             { "TimePatterns",
@@ -206,49 +305,15 @@ public class FormatData_zh extends ListResourceBundle {
                     "{1} {0}" // date-time pattern
                 }
             },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gyyyy-M-d",
-                    "Gy-M-d",
-                }
-            },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gyy-MM-dd",
-                }
-            },
-            { "roc.Eras", rocEras },
-            { "roc.short.Eras", rocEras },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gy-M-d",
-                    "Gy-M-d",
-                }
-            },
-            { "roc.DatePatterns",
+            { "buddhist.DatePatterns",
                 new String[] {
                     "GGGGy\u5e74M\u6708d\u65e5EEEE",
                     "GGGGy\u5e74M\u6708d\u65e5",
-                    "GGGGy-M-d",
+                    "GGGGyyyy-M-d",
                     "GGGGy-M-d",
                 }
             },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "Gy\u5e74M\u6708d\u65e5EEEE",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gy\u5e74M\u6708d\u65e5",
-                    "Gyy-MM-dd",
-                }
-            },
-            { "islamic.DatePatterns",
+            { "japanese.DatePatterns",
                 new String[] {
                     "GGGGy\u5e74M\u6708d\u65e5EEEE",
                     "GGGGy\u5e74M\u6708d\u65e5",
@@ -256,24 +321,6 @@ public class FormatData_zh extends ListResourceBundle {
                     "GGGGyy-MM-dd",
                 }
             },
-            { "calendarname.islamic-civil", "\u4f0a\u65af\u5170\u5e0c\u5409\u6765\u5386" },
-            { "calendarname.islamicc", "\u4f0a\u65af\u5170\u5e0c\u5409\u6765\u5386" },
-            { "calendarname.islamic", "\u4f0a\u65af\u5170\u65e5\u5386" },
-            { "calendarname.japanese", "\u65e5\u672c\u65e5\u5386" },
-            { "calendarname.gregorian", "\u516c\u5386" },
-            { "calendarname.gregory", "\u516c\u5386" },
-            { "calendarname.roc", "\u6c11\u56fd\u65e5\u5386" },
-            { "calendarname.buddhist", "\u4f5b\u6559\u65e5\u5386" },
-            { "field.era", "\u65f6\u671f" },
-            { "field.year", "\u5e74" },
-            { "field.month", "\u6708" },
-            { "field.week", "\u5468" },
-            { "field.weekday", "\u5468\u5929" },
-            { "field.dayperiod", "\u4e0a\u5348/\u4e0b\u5348" },
-            { "field.hour", "\u5c0f\u65f6" },
-            { "field.minute", "\u5206\u949f" },
-            { "field.second", "\u79d2\u949f" },
-            { "field.zone", "\u533a\u57df" },
         };
     }
 }

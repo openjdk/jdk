@@ -63,6 +63,7 @@ package java.time.temporal;
 
 import java.time.DateTimeException;
 import java.time.ZoneId;
+import java.util.Objects;
 
 /**
  * Framework-level interface defining read-only access to a temporal object,
@@ -80,8 +81,8 @@ import java.time.ZoneId;
  * <p>
  * Two pieces of date/time information cannot be represented by numbers,
  * the {@linkplain java.time.chrono.Chronology chronology} and the {@linkplain ZoneId time-zone}.
- * These can be accessed via {@link #query(TemporalQuery) queries} using
- * the static methods defined on {@link Queries}.
+ * These can be accessed via {@linkplain #query(TemporalQuery) queries} using
+ * the static methods defined on {@link TemporalQuery}.
  * <p>
  * A sub-interface, {@link Temporal}, extends this definition to one that also
  * supports adjustment and manipulation on more complete temporal objects.
@@ -139,7 +140,7 @@ public interface TemporalAccessor {
      * <h3>Specification for implementors</h3>
      * Implementations must check and handle all fields defined in {@link ChronoField}.
      * If the field is supported, then the range of the field must be returned.
-     * If unsupported, then a {@code DateTimeException} must be thrown.
+     * If unsupported, then an {@code UnsupportedTemporalTypeException} must be thrown.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessorl)}
@@ -153,7 +154,7 @@ public interface TemporalAccessor {
      *    if (isSupported(field)) {
      *      return field.range();
      *    }
-     *    throw new DateTimeException("Unsupported field: " + field.getName());
+     *    throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
      *  }
      *  return field.rangeRefinedBy(this);
      * </pre>
@@ -161,14 +162,16 @@ public interface TemporalAccessor {
      * @param field  the field to query the range for, not null
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      */
-    public default ValueRange range(TemporalField field) {
+    default ValueRange range(TemporalField field) {
         if (field instanceof ChronoField) {
             if (isSupported(field)) {
                 return field.range();
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
+        Objects.requireNonNull(field, "field");
         return field.rangeRefinedBy(this);
     }
 
@@ -184,28 +187,40 @@ public interface TemporalAccessor {
      * Implementations must check and handle all fields defined in {@link ChronoField}.
      * If the field is supported and has an {@code int} range, then the value of
      * the field must be returned.
-     * If unsupported, then a {@code DateTimeException} must be thrown.
+     * If unsupported, then an {@code UnsupportedTemporalTypeException} must be thrown.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
      * passing {@code this} as the argument.
      * <p>
-     * Implementations must not alter either this object.
+     * Implementations must not alter this object.
      * <p>
      * The default implementation must behave equivalent to this code:
      * <pre>
-     *  return range(field).checkValidIntValue(getLong(field), field);
+     *  if (range(field).isIntValue()) {
+     *    return range(field).checkValidIntValue(getLong(field), field);
+     *  }
+     *  throw new UnsupportedTemporalTypeException("Invalid field " + field + " + for get() method, use getLong() instead");
      * </pre>
      *
      * @param field  the field to get, not null
      * @return the value for the field, within the valid range of values
-     * @throws DateTimeException if a value for the field cannot be obtained
-     * @throws DateTimeException if the range of valid values for the field exceeds an {@code int}
-     * @throws DateTimeException if the value is outside the range of valid values for the field
+     * @throws DateTimeException if a value for the field cannot be obtained or
+     *         the value is outside the range of valid values for the field
+     * @throws UnsupportedTemporalTypeException if the field is not supported or
+     *         the range of values exceeds an {@code int}
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public default int get(TemporalField field) {
-        return range(field).checkValidIntValue(getLong(field), field);
+    default int get(TemporalField field) {
+        ValueRange range = range(field);
+        if (range.isIntValue() == false) {
+            throw new UnsupportedTemporalTypeException("Invalid field " + field + " + for get() method, use getLong() instead");
+        }
+        long value = getLong(field);
+        if (range.isValidValue(value) == false) {
+            throw new DateTimeException("Invalid value for " + field + " (valid values " + range + "): " + value);
+        }
+        return (int) value;
     }
 
     /**
@@ -219,7 +234,7 @@ public interface TemporalAccessor {
      * <h3>Specification for implementors</h3>
      * Implementations must check and handle all fields defined in {@link ChronoField}.
      * If the field is supported, then the value of the field must be returned.
-     * If unsupported, then a {@code DateTimeException} must be thrown.
+     * If unsupported, then an {@code UnsupportedTemporalTypeException} must be thrown.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -230,6 +245,7 @@ public interface TemporalAccessor {
      * @param field  the field to get, not null
      * @return the value for the field
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     long getLong(TemporalField field);
@@ -247,13 +263,13 @@ public interface TemporalAccessor {
      * <p>
      * The most common query implementations are method references, such as
      * {@code LocalDate::from} and {@code ZoneId::from}.
-     * Further implementations are on {@link Queries}.
-     * Queries may also be defined by applications.
+     * Additional implementations are provided as static methods on {@link TemporalQuery}.
      *
      * <h3>Specification for implementors</h3>
      * The default implementation must behave equivalent to this code:
      * <pre>
-     *  if (query == Queries.zoneId() || query == Queries.chronology() || query == Queries.precision()) {
+     *  if (query == TemporalQuery.zoneId() ||
+     *        query == TemporalQuery.chronology() || query == TemporalQuery.precision()) {
      *    return null;
      *  }
      *  return query.queryFrom(this);
@@ -270,7 +286,7 @@ public interface TemporalAccessor {
      * For example, an application-defined {@code HourMin} class storing the hour
      * and minute must override this method as follows:
      * <pre>
-     *  if (query == Queries.precision()) {
+     *  if (query == TemporalQuery.precision()) {
      *    return MINUTES;
      *  }
      *  return TemporalAccessor.super.query(query);
@@ -282,8 +298,8 @@ public interface TemporalAccessor {
      * @throws DateTimeException if unable to query
      * @throws ArithmeticException if numeric overflow occurs
      */
-    public default <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.zoneId() || query == Queries.chronology() || query == Queries.precision()) {
+    default <R> R query(TemporalQuery<R> query) {
+        if (query == TemporalQuery.zoneId() || query == TemporalQuery.chronology() || query == TemporalQuery.precision()) {
             return null;
         }
         return query.queryFrom(this);

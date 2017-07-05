@@ -3641,4 +3641,9 @@ const le_uint8 CanonShaping::glyphDefinitionTable[] = {
     0x00, 0xE6, 0xD2, 0x42, 0xD2, 0x44, 0x00, 0xE6
 };
 
+
+const size_t CanonShaping::glyphSubstitutionTableLen = sizeof(glyphSubstitutionTable)/sizeof(glyphSubstitutionTable[0]);
+
+const size_t CanonShaping::glyphDefinitionTableLen = sizeof(glyphDefinitionTable)/sizeof(glyphDefinitionTable[0]);
+
 U_NAMESPACE_END

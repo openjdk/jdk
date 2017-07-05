@@ -48,6 +48,7 @@ public final class ObjectFactory {
     //
     // Constants
     //
+    private static final String DEFAULT_INTERNAL_CLASSES = "com.sun.org.apache.";
 
     // name of default properties file to look for in JDK's jre/lib directory
     private static final String DEFAULT_PROPERTIES_FILENAME = "xerces.properties";
@@ -305,10 +306,14 @@ public final class ObjectFactory {
         //restrict the access to package as speicified in java.security policy
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            final int lastDot = className.lastIndexOf(".");
-            String packageName = className;
-            if (lastDot != -1) packageName = className.substring(0, lastDot);
-            security.checkPackageAccess(packageName);
+            if (className.startsWith(DEFAULT_INTERNAL_CLASSES)) {
+                cl = null;
+            } else {
+                final int lastDot = className.lastIndexOf(".");
+                String packageName = className;
+                if (lastDot != -1) packageName = className.substring(0, lastDot);
+                security.checkPackageAccess(packageName);
+            }
         }
         Class providerClass;
         if (cl == null) {

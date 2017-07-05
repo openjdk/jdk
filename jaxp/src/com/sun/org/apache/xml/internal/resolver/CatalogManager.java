@@ -23,6 +23,7 @@
 
 package com.sun.org.apache.xml.internal.resolver;
 
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.io.InputStream;
 
 import java.net.URL;
@@ -142,8 +143,8 @@ public class CatalogManager {
 
   /** Flag to ignore missing property files and/or properties */
   private boolean ignoreMissingProperties
-    = (System.getProperty(pIgnoreMissing) != null
-       || System.getProperty(pFiles) != null);
+    = (SecuritySupport.getSystemProperty(pIgnoreMissing) != null
+       || SecuritySupport.getSystemProperty(pFiles) != null);
 
   /** Holds the resources after they are loaded from the file. */
   private ResourceBundle resources;
@@ -338,7 +339,7 @@ public class CatalogManager {
   private int queryVerbosity () {
     String defaultVerbStr = Integer.toString(defaultVerbosity);
 
-    String verbStr = System.getProperty(pVerbosity);
+    String verbStr = SecuritySupport.getSystemProperty(pVerbosity);
 
     if (verbStr == null) {
       if (resources==null) readProperties();
@@ -473,7 +474,7 @@ public class CatalogManager {
    * @return A semicolon delimited list of catlog file URIs
    */
   private String queryCatalogFiles () {
-    String catalogList = System.getProperty(pFiles);
+    String catalogList = SecuritySupport.getSystemProperty(pFiles);
     fromPropertiesFile = false;
 
     if (catalogList == null) {
@@ -558,7 +559,7 @@ public class CatalogManager {
    * defaultPreferSetting.
    */
   private boolean queryPreferPublic () {
-    String prefer = System.getProperty(pPrefer);
+    String prefer = SecuritySupport.getSystemProperty(pPrefer);
 
     if (prefer == null) {
       if (resources==null) readProperties();
@@ -617,7 +618,7 @@ public class CatalogManager {
    * defaultUseStaticCatalog.
    */
   private boolean queryUseStaticCatalog () {
-    String staticCatalog = System.getProperty(pStatic);
+    String staticCatalog = SecuritySupport.getSystemProperty(pStatic);
 
     if (staticCatalog == null) {
       if (resources==null) readProperties();
@@ -748,7 +749,7 @@ public class CatalogManager {
    * defaultOasisXMLCatalogPI.
    */
   public boolean queryAllowOasisXMLCatalogPI () {
-    String allow = System.getProperty(pAllowPI);
+    String allow = SecuritySupport.getSystemProperty(pAllowPI);
 
     if (allow == null) {
       if (resources==null) readProperties();
@@ -804,7 +805,7 @@ public class CatalogManager {
    *
    */
   public String queryCatalogClassName () {
-    String className = System.getProperty(pClassname);
+    String className = SecuritySupport.getSystemProperty(pClassname);
 
     if (className == null) {
       if (resources==null) readProperties();

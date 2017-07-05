@@ -56,7 +56,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
     // from simultaneous creation and destruction
     // reduces possibility of deadlock, compared to
     // synchronizing to the class instance
-    private Object traRecLock = new Object();
+    private final Object traRecLock = new Object();
 
     // DEVICE ATTRIBUTES
 
@@ -474,7 +474,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         This is necessary for Receivers retrieved via MidiSystem.getReceiver()
         (which opens the device implicitely).
      */
-    protected abstract class AbstractReceiver implements MidiDeviceReceiver {
+    abstract class AbstractReceiver implements MidiDeviceReceiver {
         private boolean open = true;
 
 
@@ -483,24 +483,24 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             Receiver. Therefore, subclasses should not override this method.
             Instead, they should implement implSend().
         */
-        public synchronized void send(MidiMessage message, long timeStamp) {
-            if (open) {
-                implSend(message, timeStamp);
-            } else {
+        @Override
+        public final synchronized void send(final MidiMessage message,
+                                            final long timeStamp) {
+            if (!open) {
                 throw new IllegalStateException("Receiver is not open");
             }
+            implSend(message, timeStamp);
         }
 
-
-        protected abstract void implSend(MidiMessage message, long timeStamp);
-
+        abstract void implSend(MidiMessage message, long timeStamp);
 
         /** Close the Receiver.
          * Here, the call to the magic method closeInternal() takes place.
          * Therefore, subclasses that override this method must call
          * 'super.close()'.
          */
-        public void close() {
+        @Override
+        public final void close() {
             open = false;
             synchronized (AbstractMidiDevice.this.traRecLock) {
                 AbstractMidiDevice.this.getReceiverList().remove(this);
@@ -508,11 +508,12 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             AbstractMidiDevice.this.closeInternal(this);
         }
 
-        public MidiDevice getMidiDevice() {
+        @Override
+        public final MidiDevice getMidiDevice() {
             return AbstractMidiDevice.this;
         }
 
-        protected boolean isOpen() {
+        final boolean isOpen() {
             return open;
         }
 

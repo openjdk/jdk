@@ -389,17 +389,13 @@ public final class DESedeWrapCipher extends CipherSpi {
         if (iv != null) {
             String algo = cipherKey.getAlgorithm();
             try {
-                params = AlgorithmParameters.getInstance(algo, "SunJCE");
+                params = AlgorithmParameters.getInstance(algo,
+                    SunJCE.getInstance());
+                params.init(new IvParameterSpec(iv));
             } catch (NoSuchAlgorithmException nsae) {
                 // should never happen
                 throw new RuntimeException("Cannot find " + algo +
                     " AlgorithmParameters implementation in SunJCE provider");
-            } catch (NoSuchProviderException nspe) {
-                // should never happen
-                throw new RuntimeException("Cannot find SunJCE provider");
-            }
-            try {
-                params.init(new IvParameterSpec(iv));
             } catch (InvalidParameterSpecException ipse) {
                 // should never happen
                 throw new RuntimeException("IvParameterSpec not supported");

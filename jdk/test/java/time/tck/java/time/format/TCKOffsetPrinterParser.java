@@ -62,11 +62,13 @@ package tck.java.time.format;
 import static org.testng.Assert.assertEquals;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
@@ -200,6 +202,34 @@ public class TCKOffsetPrinterParser {
         };
     }
 
+    @DataProvider(name="print_localized")
+    Object[][] data_print_localized() {
+        return new Object[][] {
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_UTC, "GMT"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_P0100, "GMT+01:00"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_P0123, "GMT+01:23"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_P0023, "GMT+00:23"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_P012345, "GMT+01:23:45"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_M000045, "GMT-00:00:45"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_M0100, "GMT-01:00"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_M0123, "GMT-01:23"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_M0023, "GMT-00:23"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_M012345, "GMT-01:23:45"},
+                {TextStyle.FULL, DT_2012_06_30_12_30_40, OFFSET_M000045, "GMT-00:00:45"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_UTC, "GMT"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_P0100, "GMT+1"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_P0123, "GMT+1:23"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_P0023, "GMT+0:23"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_P012345, "GMT+1:23:45"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_M000045, "GMT-0:00:45"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_M0100, "GMT-1"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_M0123, "GMT-1:23"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_M0023, "GMT-0:23"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_M012345, "GMT-1:23:45"},
+                {TextStyle.SHORT, DT_2012_06_30_12_30_40, OFFSET_M000045, "GMT-0:00:45"},
+        };
+    }
+
     @Test(dataProvider="print")
     public void test_print(String offsetPattern, String noOffset, LocalDateTime ldt, ZoneId zone, String expected) {
         ZonedDateTime zdt = ldt.atZone(zone);
@@ -275,6 +305,45 @@ public class TCKOffsetPrinterParser {
             DateTimeFormatter f3 = new DateTimeFormatterBuilder().appendPattern("ZZZ").toFormatter();
             String output3 = f3.format(zdt);
             assertEquals(output3, (expected.equals("Z") ? "+0000" : expected));
+        } else if (offsetPattern.equals("+HH:MM:ss") && noOffset.equals("Z")) {
+            ZonedDateTime zdt = ldt.atZone(zone);
+            DateTimeFormatter f = new DateTimeFormatterBuilder().appendPattern("ZZZZZ").toFormatter();
+            String output = f.format(zdt);
+            assertEquals(output, expected);
+        }
+    }
+
+    @Test(dataProvider="print_localized")
+    public void test_print_localized(TextStyle style, LocalDateTime ldt, ZoneOffset offset, String expected) {
+        OffsetDateTime odt = OffsetDateTime.of(ldt, offset);
+        ZonedDateTime zdt = ldt.atZone(offset);
+
+        DateTimeFormatter f = new DateTimeFormatterBuilder().appendLocalizedOffset(style)
+                                                            .toFormatter();
+        assertEquals(f.format(odt), expected);
+        assertEquals(f.format(zdt), expected);
+        assertEquals(f.parse(expected, ZoneOffset::from), offset);
+
+        if (style == TextStyle.FULL) {
+            f = new DateTimeFormatterBuilder().appendPattern("ZZZZ")
+                                              .toFormatter();
+            assertEquals(f.format(odt), expected);
+            assertEquals(f.format(zdt), expected);
+            assertEquals(f.parse(expected, ZoneOffset::from), offset);
+
+            f = new DateTimeFormatterBuilder().appendPattern("OOOO")
+                                              .toFormatter();
+            assertEquals(f.format(odt), expected);
+            assertEquals(f.format(zdt), expected);
+            assertEquals(f.parse(expected, ZoneOffset::from), offset);
+        }
+
+        if (style == TextStyle.SHORT) {
+            f = new DateTimeFormatterBuilder().appendPattern("O")
+                                              .toFormatter();
+            assertEquals(f.format(odt), expected);
+            assertEquals(f.format(zdt), expected);
+            assertEquals(f.parse(expected, ZoneOffset::from), offset);
         }
     }
 
@@ -290,8 +359,43 @@ public class TCKOffsetPrinterParser {
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
-    public void test_print_pattern_Z4rejected() {
-        builder.appendPattern("ZZZZ");
+    public void test_print_pattern_Z6rejected() {
+        builder.appendPattern("ZZZZZZ");
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_print_pattern_O2rejected() {
+        builder.appendPattern("OO");
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_print_pattern_O3rejected() {
+        builder.appendPattern("OOO");
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_print_pattern_O5rejected() {
+        builder.appendPattern("OOOOO");
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_print_pattern_localzed_full_standline() {
+        builder.appendLocalizedOffset(TextStyle.FULL_STANDALONE);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_print_pattern_localzed_short_standalone() {
+        builder.appendLocalizedOffset(TextStyle.SHORT_STANDALONE);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_print_pattern_localzed_narrow() {
+        builder.appendLocalizedOffset(TextStyle.NARROW);
+    }
+
+    @Test(expectedExceptions=IllegalArgumentException.class)
+    public void test_print_pattern_localzed_narrow_standalone() {
+        builder.appendLocalizedOffset(TextStyle.NARROW_STANDALONE);
     }
 
 }

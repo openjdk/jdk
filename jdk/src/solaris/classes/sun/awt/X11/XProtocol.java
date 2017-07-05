@@ -54,7 +54,9 @@ class XProtocol {
         } finally {
             if (firstCheck) {
                 firstCheck = false;
-                log.fine("{0}:{1} supports {2}", this, listName, protocols);
+                if (log.isLoggable(PlatformLogger.FINE)) {
+                    log.fine("{0}:{1} supports {2}", this, listName, protocols);
+                }
             }
         }
     }

@@ -108,6 +108,9 @@ public class RMID extends JavaVM {
         if (!TestParams.testClasses.equals("")) {
             args += " -C-Dtest.classes=" + TestParams.testClasses;
         }
+
+        args += " -C-Djava.rmi.server.useCodebaseOnly=false ";
+
         args += " " + getCodeCoverageArgs();
         return args;
     }

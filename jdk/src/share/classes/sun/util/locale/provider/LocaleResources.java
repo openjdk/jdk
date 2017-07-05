@@ -54,6 +54,7 @@ import java.util.concurrent.ConcurrentMap;
 import sun.util.calendar.ZoneInfo;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 import sun.util.resources.TimeZoneNamesBundle;
 
 /**
@@ -331,6 +332,25 @@ public class LocaleResources {
         return names;
     }
 
+    String[] getJavaTimeNames(String key) {
+        String[] names = null;
+        String cacheKey = CALENDAR_NAMES + key;
+
+        removeEmptyReferences();
+        ResourceReference data = cache.get(cacheKey);
+
+        if (data == null || ((names = (String[]) data.get()) == null)) {
+            ResourceBundle rb = getJavaTimeFormatData();
+            if (rb.containsKey(key)) {
+                names = rb.getStringArray(key);
+                cache.put(cacheKey,
+                          new ResourceReference(cacheKey, (Object) names, referenceQueue));
+            }
+        }
+
+        return names;
+    }
+
     public String getDateTimePattern(int timeStyle, int dateStyle, Calendar cal) {
         if (cal == null) {
             cal = Calendar.getInstance(locale);
@@ -347,10 +367,10 @@ public class LocaleResources {
      * @param calType   the calendar type for the pattern
      * @return the pattern string
      */
-    public String getCldrDateTimePattern(int timeStyle, int dateStyle, String calType) {
+    public String getJavaTimeDateTimePattern(int timeStyle, int dateStyle, String calType) {
         calType = CalendarDataUtility.normalizeCalendarType(calType);
         String pattern;
-        pattern = getDateTimePattern("cldr.", timeStyle, dateStyle, calType);
+        pattern = getDateTimePattern("java.time.", timeStyle, dateStyle, calType);
         if (pattern == null) {
             pattern = getDateTimePattern(null, timeStyle, dateStyle, calType);
         }
@@ -430,8 +450,12 @@ public class LocaleResources {
      * The FormatData should be used only for accessing extra
      * resources required by JSR 310.
      */
-    public ResourceBundle getFormatData() {
-        return localeData.getDateFormatData(locale);
+    public ResourceBundle getJavaTimeFormatData() {
+        ResourceBundle rb = localeData.getDateFormatData(locale);
+        if (rb instanceof ParallelListResourceBundle) {
+            localeData.setSupplementary((ParallelListResourceBundle) rb);
+        }
+        return rb;
     }
 
     private String getDateTimePattern(String prefix, String key, int styleIndex, String calendarType) {
@@ -451,7 +475,7 @@ public class LocaleResources {
         Object value = NULLOBJECT;
 
         if (data == null || ((value = data.get()) == null)) {
-            ResourceBundle r = localeData.getDateFormatData(locale);
+            ResourceBundle r = (prefix != null) ? getJavaTimeFormatData() : localeData.getDateFormatData(locale);
             if (r.containsKey(resourceKey)) {
                 value = r.getStringArray(resourceKey);
             } else {

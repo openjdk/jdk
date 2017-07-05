@@ -59,10 +59,11 @@
  */
 package test.java.time;
 
-import java.time.*;
-
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertSame;
+
+import java.time.Clock;
+import java.time.ZoneId;
 
 import org.testng.annotations.Test;
 

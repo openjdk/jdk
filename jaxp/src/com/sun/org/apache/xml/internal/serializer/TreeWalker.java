@@ -22,6 +22,7 @@
  */
 package com.sun.org.apache.xml.internal.serializer;
 
+import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import java.io.File;
 
 import com.sun.org.apache.xml.internal.serializer.utils.AttList;
@@ -104,7 +105,7 @@ public final class TreeWalker
       else {
           try {
             // Bug see Bugzilla  26741
-            m_locator.setSystemId(System.getProperty("user.dir") + File.separator + "dummy.xsl");
+            m_locator.setSystemId(SecuritySupport.getSystemProperty("user.dir") + File.separator + "dummy.xsl");
            }
            catch (SecurityException se) {// user.dir not accessible from applet
            }
@@ -115,7 +116,7 @@ public final class TreeWalker
                         m_contentHandler.setDocumentLocator(m_locator);
                 try {
                    // Bug see Bugzilla  26741
-                  m_locator.setSystemId(System.getProperty("user.dir") + File.separator + "dummy.xsl");
+                  m_locator.setSystemId(SecuritySupport.getSystemProperty("user.dir") + File.separator + "dummy.xsl");
                 }
                 catch (SecurityException se){// user.dir not accessible from applet
 
