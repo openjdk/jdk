@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,8 @@ import javax.management.openmbean.TabularType;
       Standard MBean concept.  Here is how a managed object might be
       represented as a Standard MBean, and as an MXBean:</p>
 
-    <table border="1" cellpadding="5" summary="Standard Bean vs. MXBean">
+    <table border="1" cellpadding="5">
+    <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
       </tr>
@@ -133,7 +134,8 @@ public interface MemoryPool<b>MXBean</b> {
 
     <p>So, we might define <code>MemoryUsage</code> like this:</p>
 
-    <table border="1" cellpadding="5" summary="Standard Bean vs. MXBean">
+    <table border="1" cellpadding="5">
+    <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
       </tr>
@@ -195,7 +197,8 @@ public class MemoryUsage {
     <p>This becomes clearer if we compare what the clients of the two
       models might look like:</p>
 
-    <table border="1" cellpadding="5" summary="Standard Bean vs. MXBean">
+    <table border="1" cellpadding="5">
+    <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
       </tr>
@@ -232,7 +235,8 @@ String name = (String)
       managed objects when you know the model beforehand, regardless
       of whether you are using Standard MBeans or MXBeans:</p>
 
-    <table border="1" cellpadding="5" summary="Standard Bean vs. MXBean">
+    <table border="1" cellpadding="5">
+    <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
       </tr>
@@ -265,7 +269,8 @@ long used = usage.getUsed();
     <p>Implementing the MemoryPool object works similarly for both
       Standard MBeans and MXBeans.</p>
 
-    <table border="1" cellpadding="5" summary="Standard Bean vs. MXBean">
+    <table border="1" cellpadding="5">
+    <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
       </tr>
@@ -292,7 +297,8 @@ public class MemoryPool
     <p>Registering the MBean in the MBean Server works in the same way
       in both cases:</p>
 
-    <table border="1" cellpadding="5" summary="Standard Bean vs. MXBean">
+    <table border="1" cellpadding="5">
+    <caption style="display:none">Standard Bean vs. MXBean</caption>
       <tr>
         <th>Standard MBean</th><th>MXBean</th>
       </tr>
@@ -478,13 +484,14 @@ public class MemoryPool
 
     <p>The following table summarizes the type mapping rules.</p>
 
-    <table border="1" cellpadding="5" summary="Type Mapping Rules">
+    <table border="1" cellpadding="5">
+    <caption style="display:none">Type Mapping Rules</caption>
       <tr>
         <th>Java type <em>J</em></th>
         <th><em>opentype(J)</em></th>
         <th><em>opendata(J)</em></th>
       </tr>
-      <tbody valign="top">
+      <tbody style="vertical-align:top">
         <tr>
           <td>{@code int}, {@code boolean}, etc<br>
             (the 8 primitive Java types)</td>

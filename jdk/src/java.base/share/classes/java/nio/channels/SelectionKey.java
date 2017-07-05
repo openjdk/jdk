@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * next selection operation.  The validity of a key may be tested by invoking
  * its {@link #isValid isValid} method.
  *
- * <a name="opsets"></a>
+ * <a id="opsets"></a>
  *
  * <p> A selection key contains two <i>operation sets</i> represented as
  * integer values.  Each bit of an operation set denotes a category of

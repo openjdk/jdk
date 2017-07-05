@@ -28,8 +28,6 @@
 
 package jdk.test;
 
-import java.lang.reflect.Module;
-
 public class Main {
 
     public static void main(String[] args) throws Exception {
