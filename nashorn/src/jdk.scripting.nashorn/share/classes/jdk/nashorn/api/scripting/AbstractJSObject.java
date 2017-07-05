@@ -39,7 +39,6 @@ import java.util.Set;
  *
  * @since 1.8u40
  */
-@jdk.Exported
 public abstract class AbstractJSObject implements JSObject {
     /**
      * Call this object as a JavaScript function. This is equivalent to

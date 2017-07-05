@@ -32,7 +32,6 @@ package com.sun.jdi;
  * @author Jim Holmlund
  * @since  1.5
  */
-@jdk.Exported
 public class VMCannotBeModifiedException extends UnsupportedOperationException {
     private static final long serialVersionUID = -4063879815130164009L;
     public VMCannotBeModifiedException() {

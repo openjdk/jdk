@@ -35,8 +35,6 @@ import java.util.Vector;
 import java.util.Enumeration;
 import java.net.URL;
 
-import sun.misc.MessageUtils;
-
 /**
  * A simple DTD-driven HTML parser. The parser reads an
  * HTML file from an InputStream and calls various methods

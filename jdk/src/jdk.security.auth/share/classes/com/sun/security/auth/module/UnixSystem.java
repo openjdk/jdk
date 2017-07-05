@@ -29,7 +29,6 @@ package com.sun.security.auth.module;
  * This class implementation retrieves and makes available Unix
  * UID/GID/groups information for the current user.
  */
-@jdk.Exported
 public class UnixSystem {
 
     private native void getUnixInfo();

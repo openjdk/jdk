@@ -35,7 +35,6 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
-@jdk.Exported
 public interface ClassObjectReference extends ObjectReference {
 
     /**

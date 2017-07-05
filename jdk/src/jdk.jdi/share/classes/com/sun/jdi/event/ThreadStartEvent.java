@@ -52,7 +52,6 @@ import com.sun.jdi.*;
  * @author Robert Field
  * @since  1.3
  */
-@jdk.Exported
 public interface ThreadStartEvent extends Event {
     /**
      * Returns the thread which has started.

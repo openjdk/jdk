@@ -44,7 +44,6 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  *
  * @since 1.8u40
  */
-@jdk.Exported
 @SuppressWarnings("serial")
 public abstract class NashornException extends RuntimeException {
     // script file name

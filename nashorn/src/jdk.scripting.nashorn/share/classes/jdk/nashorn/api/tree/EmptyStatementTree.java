@@ -35,5 +35,4 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface EmptyStatementTree extends StatementTree {}

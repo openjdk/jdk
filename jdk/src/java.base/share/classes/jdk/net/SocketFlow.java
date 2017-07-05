@@ -45,7 +45,6 @@ import java.lang.annotation.Native;
  *
  * @since 1.8
  */
-@jdk.Exported
 public class SocketFlow {
 
     private static final int UNSET = -1;
@@ -68,7 +67,6 @@ public class SocketFlow {
      *
      * @since 1.8
      */
-    @jdk.Exported
     public enum Status {
         /**
          * Set or get socket option has not been called yet. Status

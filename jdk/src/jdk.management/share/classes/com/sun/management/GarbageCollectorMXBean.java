@@ -37,7 +37,6 @@ import javax.management.openmbean.CompositeType;
  * @author  Mandy Chung
  * @since   1.5
  */
-@jdk.Exported
 public interface GarbageCollectorMXBean
     extends java.lang.management.GarbageCollectorMXBean {
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8142508
+ * @bug 8142508 8146431
  * @summary Tests various ZipFile apis
  * @run main/manual TestZipFile
  */
@@ -216,6 +216,13 @@ public class TestZipFile {
     }
 
     static void doTest0(Zip zip, ZipFile zf) throws Throwable {
+        // (0) check zero-length entry name, no AIOOBE
+        try {
+            check(zf.getEntry("") == null);;
+        } catch (Throwable t) {
+            unexpected(t);
+        }
+
         List<ZipEntry> list = new ArrayList(zip.entries.keySet());
         // (1) check entry list, in expected order
         if (!check(Arrays.equals(
