@@ -98,12 +98,12 @@ address os::Aix::ucontext_get_pc(const ucontext_t * uc) {
   return (address)uc->uc_mcontext.jmp_context.iar;
 }
 
-intptr_t* os::Aix::ucontext_get_sp(ucontext_t * uc) {
+intptr_t* os::Aix::ucontext_get_sp(const ucontext_t * uc) {
   // gpr1 holds the stack pointer on aix
   return (intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/];
 }
 
-intptr_t* os::Aix::ucontext_get_fp(ucontext_t * uc) {
+intptr_t* os::Aix::ucontext_get_fp(const ucontext_t * uc) {
   return NULL;
 }
 
@@ -111,11 +111,11 @@ void os::Aix::ucontext_set_pc(ucontext_t* uc, address new_pc) {
   uc->uc_mcontext.jmp_context.iar = (uint64_t) new_pc;
 }
 
-ExtendedPC os::fetch_frame_from_context(void* ucVoid,
+ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
                                         intptr_t** ret_sp, intptr_t** ret_fp) {
 
   ExtendedPC  epc;
-  ucontext_t* uc = (ucontext_t*)ucVoid;
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
     epc = ExtendedPC(os::Aix::ucontext_get_pc(uc));
@@ -131,7 +131,7 @@ ExtendedPC os::fetch_frame_from_context(void* ucVoid,
   return epc;
 }
 
-frame os::fetch_frame_from_context(void* ucVoid) {
+frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
@@ -238,8 +238,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
   if (thread != NULL) {
 
     // Handle ALL stack overflow variations here
-    if (sig == SIGSEGV && (addr < thread->stack_base() &&
-                           addr >= thread->stack_base() - thread->stack_size())) {
+    if (sig == SIGSEGV && thread->on_local_stack(addr)) {
       // stack overflow
       //
       // If we are in a yellow zone and we are inside java, we disable the yellow zone and
@@ -247,8 +246,8 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
       // If we are in native code or VM C code, we report-and-die. The original coding tried
       // to continue with yellow zone disabled, but that doesn't buy us much and prevents
       // hs_err_pid files.
-      if (thread->in_stack_yellow_zone(addr)) {
-        thread->disable_stack_yellow_zone();
+      if (thread->in_stack_yellow_reserved_zone(addr)) {
+        thread->disable_stack_yellow_reserved_zone();
         if (thread->thread_state() == _thread_in_Java) {
           // Throw a stack overflow exception.
           // Guard pages will be reenabled while unwinding the stack.
@@ -507,10 +506,10 @@ size_t os::Aix::default_guard_size(os::ThreadType thr_type) {
 /////////////////////////////////////////////////////////////////////////////
 // helper functions for fatal error handler
 
-void os::print_context(outputStream *st, void *context) {
+void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  ucontext_t* uc = (ucontext_t*)context;
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
   st->print("pc =" INTPTR_FORMAT "  ", uc->uc_mcontext.jmp_context.iar);
@@ -544,9 +543,23 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, void *context) {
+void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
-  st->print("Not ported - print_register_info\n");
+
+  ucontext_t *uc = (ucontext_t*)context;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.iar);
+  st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.lr);
+  st->print("sp ="); print_location(st, (intptr_t)os::Aix::ucontext_get_sp(uc));
+  for (int i = 0; i < 32; i++) {
+    st->print("r%-2d=", i);
+    print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.gpr[i]);
+  }
+
+  st->cr();
 }
 
 extern "C" {
@@ -565,3 +578,4 @@ int os::extra_bang_size_in_bytes() {
   // PPC does not require the additional stack bang.
   return 0;
 }
+

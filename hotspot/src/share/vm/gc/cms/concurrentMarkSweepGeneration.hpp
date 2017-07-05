@@ -35,6 +35,7 @@
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "logging/log.hpp"
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/iterator.hpp"
 #include "memory/virtualspace.hpp"
@@ -308,9 +309,8 @@ class ChunkArray: public CHeapObj<mtGC> {
 
   void reset() {
     _index = 0;
-    if (_overflows > 0 && PrintCMSStatistics > 1) {
-      warning("CMS: ChunkArray[" SIZE_FORMAT "] overflowed " SIZE_FORMAT " times",
-              _capacity, _overflows);
+    if (_overflows > 0) {
+      log_trace(gc)("CMS: ChunkArray[" SIZE_FORMAT "] overflowed " SIZE_FORMAT " times", _capacity, _overflows);
     }
     _overflows = 0;
   }
@@ -451,7 +451,7 @@ class CMSStats VALUE_OBJ_CLASS_SPEC {
 
   // Debugging.
   void print_on(outputStream* st) const PRODUCT_RETURN;
-  void print() const { print_on(gclog_or_tty); }
+  void print() const { print_on(tty); }
 };
 
 // A closure related to weak references processing which
@@ -935,7 +935,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   void    startTimer() { assert(!_timer.is_active(), "Error"); _timer.start();   }
   void    stopTimer()  { assert( _timer.is_active(), "Error"); _timer.stop();    }
   void    resetTimer() { assert(!_timer.is_active(), "Error"); _timer.reset();   }
-  double  timerValue() { assert(!_timer.is_active(), "Error"); return _timer.seconds(); }
+  jlong   timerTicks() { assert(!_timer.is_active(), "Error"); return _timer.ticks(); }
 
   int  yields()          { return _numYields; }
   void resetYields()     { _numYields = 0;    }
@@ -961,7 +961,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Debugging
   void verify();
-  bool verify_after_remark(bool silent = VerifySilently);
+  bool verify_after_remark();
   void verify_ok_to_terminate() const PRODUCT_RETURN;
   void verify_work_stacks_empty() const PRODUCT_RETURN;
   void verify_overflow_empty() const PRODUCT_RETURN;
@@ -978,6 +978,8 @@ class CMSCollector: public CHeapObj<mtGC> {
   bool completed_initialization() { return _completed_initialization; }
 
   void print_eden_and_survivor_chunk_arrays();
+
+  ConcurrentGCTimer* gc_timer_cm() const { return _gc_timer_cm; }
 };
 
 class CMSExpansionCause : public AllStatic  {
@@ -1234,7 +1236,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   const char* name() const;
   virtual const char* short_name() const { return "CMS"; }
   void        print() const;
-  void printOccupancy(const char* s);
 
   // Resize the generation after a compacting GC.  The
   // generation can be treated as a contiguous space

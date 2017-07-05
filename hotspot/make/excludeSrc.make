@@ -107,8 +107,8 @@ ifeq ($(INCLUDE_NMT), false)
 	 memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp
 endif
 
-ifneq (,$(findstring $(Platform_arch_model), x86_64, sparc))
-      # JVMCI is supported only on x86_64 and SPARC.
+ifneq (,$(findstring $(Platform_arch_model), aarch64, arm_64, sparc, x86_64))
+      # JVMCI is supported
 else
       INCLUDE_JVMCI := false
 endif

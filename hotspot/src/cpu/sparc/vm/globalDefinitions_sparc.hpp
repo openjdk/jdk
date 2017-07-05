@@ -30,6 +30,10 @@ const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = (2*wordSize);
 
+// Indicates whether the C calling conventions require that
+// 32-bit integer argument values are extended to 64 bits.
+const bool CCallingConventionRequiresIntsAsLongs = false;
+
 #define SUPPORTS_NATIVE_CX8
 
 // The expected size in bytes of a cache line, used to pad data structures.
@@ -52,6 +56,10 @@ const int StackAlignmentInBytes = (2*wordSize);
     // pure C2, 32-bit, medium machine
     #define DEFAULT_CACHE_LINE_SIZE 64
   #endif
+#endif
+
+#if defined(SOLARIS)
+#define SUPPORT_RESERVED_STACK_AREA
 #endif
 
 #endif // CPU_SPARC_VM_GLOBALDEFINITIONS_SPARC_HPP

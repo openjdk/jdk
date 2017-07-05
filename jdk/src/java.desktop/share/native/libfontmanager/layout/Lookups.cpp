@@ -42,6 +42,7 @@ const LEReferenceTo<LookupTable> LookupListTable::getLookupTable(const LEReferen
   LEReferenceToArrayOf<Offset> lookupTableOffsetArrayRef(base, success, (const Offset*)&lookupTableOffsetArray, SWAPW(lookupCount));
 
   if(LE_FAILURE(success) || lookupTableIndex>lookupTableOffsetArrayRef.getCount()) {
+    success = LE_INDEX_OUT_OF_BOUNDS_ERROR;
     return LEReferenceTo<LookupTable>();
   } else {
     return LEReferenceTo<LookupTable>(base, success, SWAPW(lookupTableOffsetArrayRef.getObject(lookupTableIndex, success)));
@@ -53,6 +54,7 @@ const LEReferenceTo<LookupSubtable> LookupTable::getLookupSubtable(const LERefer
   LEReferenceToArrayOf<Offset> subTableOffsetArrayRef(base, success, (const Offset*)&subTableOffsetArray, SWAPW(subTableCount));
 
   if(LE_FAILURE(success) || subtableIndex>subTableOffsetArrayRef.getCount()) {
+    success = LE_INDEX_OUT_OF_BOUNDS_ERROR;
     return LEReferenceTo<LookupSubtable>();
   } else {
     return LEReferenceTo<LookupSubtable>(base, success, SWAPW(subTableOffsetArrayRef.getObject(subtableIndex, success)));

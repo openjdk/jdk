@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.security.spec.*;
 import java.io.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
-import com.sun.crypto.provider.*;
 
 public class PerformanceTest {
 
@@ -81,8 +80,6 @@ public class PerformanceTest {
 
         byte[] in;
 
-        SunJCE jce = new SunJCE();
-        Security.addProvider(jce);
         col = new StringBuffer();
 
         printHeadings();

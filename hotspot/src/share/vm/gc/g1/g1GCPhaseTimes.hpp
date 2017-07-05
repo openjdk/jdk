@@ -119,16 +119,14 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_verify_after_time_ms;
 
   // Helper methods for detailed logging
-  void print_stats(int level, const char* str, double value);
-  void print_stats(int level, const char* str, size_t value);
-  void print_stats(int level, const char* str, double value, uint workers);
+  void print_stats(const char*, const char* str, double value);
 
   void note_gc_end();
 
  public:
   G1GCPhaseTimes(uint max_gc_threads);
   void note_gc_start(uint active_gc_threads);
-  void print(double pause_time_sec);
+  void print(double pause_time_ms);
 
   // record the time a phase took in seconds
   void record_time_secs(GCParPhases phase, uint worker_i, double secs);

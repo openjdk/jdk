@@ -24,7 +24,7 @@
  /*
  * @test
  * @bug 8026041
- * @run main/othervm -XX:+PrintGCApplicationConcurrentTime -Xcomp PrintGCApplicationConcurrentTime
+ * @run main/othervm -Xlog:safepoint -Xcomp PrintGCApplicationConcurrentTime
  */
 
 public class PrintGCApplicationConcurrentTime {

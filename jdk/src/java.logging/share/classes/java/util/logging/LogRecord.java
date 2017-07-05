@@ -138,7 +138,7 @@ public class LogRecord implements java.io.Serializable {
 
     /**
      * Event time.
-     * @since 1.9
+     * @since 9
      */
     private Instant instant;
 
@@ -158,7 +158,7 @@ public class LogRecord implements java.io.Serializable {
      *               The event time instant can be reconstructed using
      * <code>Instant.ofEpochSecond(millis/1000, (millis % 1000) * 1000_000 + nanoAdjustment)</code>
      *              <p>
-     *              Since: 1.9
+     *              Since: 9
      * @serialField thrown Throwable The Throwable (if any) associated with log
      *              message
      * @serialField loggerName String Name of the source Logger
@@ -207,7 +207,7 @@ public class LogRecord implements java.io.Serializable {
      * The sequence property will be initialized with a new unique value.
      * These sequence values are allocated in increasing order within a VM.
      * <p>
-     * Since JDK 1.9, the event time is represented by an {@link Instant}.
+     * Since JDK 9, the event time is represented by an {@link Instant}.
      * The instant property will be initialized to the {@linkplain
      * Instant#now() current instant}, using the best available
      * {@linkplain Clock#systemUTC() clock} on the system.
@@ -505,7 +505,7 @@ public class LogRecord implements java.io.Serializable {
      *
      * @return the instant that the event occurred.
      *
-     * @since 1.9
+     * @since 9
      */
     public Instant getInstant() {
         return instant;
@@ -525,7 +525,7 @@ public class LogRecord implements java.io.Serializable {
      * @throws ArithmeticException if numeric overflow would occur while
      *         calling {@link Instant#toEpochMilli() instant.toEpochMilli()}.
      *
-     * @since 1.9
+     * @since 9
      */
     public void setInstant(Instant instant) {
         instant.toEpochMilli();

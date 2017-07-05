@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.BitSet;
+import java.util.Locale;
 import java.util.StringTokenizer;
 
 /**
@@ -168,7 +169,7 @@ public class JMXServiceURL implements Serializable {
         final int protoStart = requiredPrefixLength;
         final int protoEnd = indexOf(serviceURL, ':', protoStart);
         this.protocol =
-            serviceURL.substring(protoStart, protoEnd).toLowerCase();
+            serviceURL.substring(protoStart, protoEnd).toLowerCase(Locale.ENGLISH);
 
         if (!serviceURL.regionMatches(protoEnd, "://", 0, 3)) {
             throw new MalformedURLException("Missing \"://\" after " +
@@ -328,7 +329,7 @@ public class JMXServiceURL implements Serializable {
                 throw new MalformedURLException("More than one [[...]]");
         }
 
-        this.protocol = protocol.toLowerCase();
+        this.protocol = protocol.toLowerCase(Locale.ENGLISH);
         this.host = host;
         this.port = port;
 

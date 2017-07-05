@@ -39,9 +39,12 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
 #include "adfiles/ad_aarch64.hpp"
 #include "opto/runtime.hpp"
+#endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciJavaClasses.hpp"
 #endif
 
 #ifdef BUILTIN_SIM
@@ -109,14 +112,14 @@ class RegisterSaver {
 };
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_vectors) {
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
   if (save_vectors) {
     // Save upper half of vector registers
     int vect_words = 32 * 8 / wordSize;
     additional_frame_words += vect_words;
   }
 #else
-  assert(!save_vectors, "vectors are generated only by C2");
+  assert(!save_vectors, "vectors are generated only by C2 and JVMCI");
 #endif
 
   int frame_size_in_bytes = round_to(additional_frame_words*wordSize +
@@ -166,7 +169,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_vectors) {
 #ifndef COMPILER2
-  assert(!restore_vectors, "vectors are generated only by C2");
+  assert(!restore_vectors, "vectors are generated only by C2 and JVMCI");
 #endif
   __ pop_CPU_state(restore_vectors);
   __ leave();
@@ -546,6 +549,18 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // Will jump to the compiled code just as if compiled code was doing it.
   // Pre-load the register-jump target early, to schedule it better.
   __ ldr(rscratch1, Address(rmethod, in_bytes(Method::from_compiled_offset())));
+
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    // check if this call should be routed towards a specific entry point
+    __ ldr(rscratch2, Address(rthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    Label no_alternative_target;
+    __ cbz(rscratch2, no_alternative_target);
+    __ mov(rscratch1, rscratch2);
+    __ str(zr, Address(rthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ bind(no_alternative_target);
+  }
+#endif // INCLUDE_JVMCI
 
   // Now generate the shuffle code.
   for (int i = 0; i < total_args_passed; i++) {
@@ -1542,7 +1557,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Generate stack overflow check
   if (UseStackBanging) {
-    __ bang_stack_with_offset(StackShadowPages*os::vm_page_size());
+    __ bang_stack_with_offset(JavaThread::stack_shadow_zone_size());
   } else {
     Unimplemented();
   }
@@ -1949,7 +1964,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label reguard;
   Label reguard_done;
   __ ldrb(rscratch1, Address(rthread, JavaThread::stack_guard_state_offset()));
-  __ cmpw(rscratch1, JavaThread::stack_guard_yellow_disabled);
+  __ cmpw(rscratch1, JavaThread::stack_guard_yellow_reserved_disabled);
   __ br(Assembler::EQ, reguard);
   __ bind(reguard_done);
 
@@ -2237,7 +2252,13 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  CodeBuffer buffer("deopt_blob", 2048, 1024);
+  int pad = 0;
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    pad += 512; // Increase the buffer size when compiling for JVMCI
+  }
+#endif
+  CodeBuffer buffer("deopt_blob", 2048+pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words;
   OopMap* map = NULL;
@@ -2294,6 +2315,12 @@ void SharedRuntime::generate_deopt_blob() {
   __ b(cont);
 
   int reexecute_offset = __ pc() - start;
+#if defined(INCLUDE_JVMCI) && !defined(COMPILER1)
+  if (EnableJVMCI && UseJVMCICompiler) {
+    // JVMCI does not use this kind of deoptimization
+    __ should_not_reach_here();
+  }
+#endif
 
   // Reexecute case
   // return address is the pc describes what bci to do re-execute at
@@ -2303,6 +2330,44 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ movw(rcpool, Deoptimization::Unpack_reexecute); // callee-saved
   __ b(cont);
+
+#if INCLUDE_JVMCI
+  Label after_fetch_unroll_info_call;
+  int implicit_exception_uncommon_trap_offset = 0;
+  int uncommon_trap_offset = 0;
+
+  if (EnableJVMCI) {
+    implicit_exception_uncommon_trap_offset = __ pc() - start;
+
+    __ ldr(lr, Address(rthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+    __ str(zr, Address(rthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+
+    uncommon_trap_offset = __ pc() - start;
+
+    // Save everything in sight.
+    RegisterSaver::save_live_registers(masm, 0, &frame_size_in_words);
+    // fetch_unroll_info needs to call last_java_frame()
+    Label retaddr;
+    __ set_last_Java_frame(sp, noreg, retaddr, rscratch1);
+
+    __ ldrw(c_rarg1, Address(rthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+    __ movw(rscratch1, -1);
+    __ strw(rscratch1, Address(rthread, in_bytes(JavaThread::pending_deoptimization_offset())));
+
+    __ movw(rcpool, (int32_t)Deoptimization::Unpack_reexecute);
+    __ mov(c_rarg0, rthread);
+    __ lea(rscratch1,
+           RuntimeAddress(CAST_FROM_FN_PTR(address,
+                                           Deoptimization::uncommon_trap)));
+    __ blrt(rscratch1, 2, 0, MacroAssembler::ret_type_integral);
+    __ bind(retaddr);
+    oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
+
+    __ reset_last_Java_frame(false, false);
+
+    __ b(after_fetch_unroll_info_call);
+  } // EnableJVMCI
+#endif // INCLUDE_JVMCI
 
   int exception_offset = __ pc() - start;
 
@@ -2395,7 +2460,13 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ reset_last_Java_frame(false, true);
 
-  // Load UnrollBlock* into rdi
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    __ bind(after_fetch_unroll_info_call);
+  }
+#endif
+
+  // Load UnrollBlock* into r5
   __ mov(r5, r0);
 
   __ ldrw(rcpool, Address(r5, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
@@ -2547,7 +2618,12 @@ void SharedRuntime::generate_deopt_blob() {
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
-
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
+    _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
+  }
+#endif
 #ifdef BUILTIN_SIM
   if (NotifySimulator) {
     unsigned char *base = _deopt_blob->code_begin();
@@ -2560,7 +2636,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
   return 0;
 }
 
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
 //------------------------------generate_uncommon_trap_blob--------------------
 void SharedRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
@@ -2943,7 +3019,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 }
 
 
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
 // This is here instead of runtime_x86_64.cpp because it uses SimpleRuntimeFrame
 //
 //------------------------------generate_exception_blob---------------------------

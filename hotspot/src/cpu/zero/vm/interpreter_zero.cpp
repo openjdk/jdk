@@ -26,8 +26,8 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#include "interpreter/cppInterpreterGenerator.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/templateTable.hpp"
 #include "oops/arrayOop.hpp"
@@ -57,7 +57,7 @@ address AbstractInterpreterGenerator::generate_slow_signature_handler() {
   return (address) InterpreterRuntime::slow_signature_handler;
 }
 
-address InterpreterGenerator::generate_math_entry(
+address CppInterpreterGenerator::generate_math_entry(
     AbstractInterpreter::MethodKind kind) {
   if (!InlineIntrinsics)
     return NULL;
@@ -66,7 +66,7 @@ address InterpreterGenerator::generate_math_entry(
   return NULL;
 }
 
-address InterpreterGenerator::generate_abstract_entry() {
+address CppInterpreterGenerator::generate_abstract_entry() {
   return generate_entry((address) ShouldNotCallThisEntry());
 }
 

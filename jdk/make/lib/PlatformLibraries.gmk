@@ -54,7 +54,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework IOSurface \
           -framework QuartzCore, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosxapp, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+  ))
 
   TARGETS += $(BUILD_LIBOSXAPP)
 

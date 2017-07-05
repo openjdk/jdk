@@ -243,14 +243,14 @@ le_uint32 ContextualSubstitutionFormat1Subtable::process(const LETableReference 
         le_uint16 srSetCount = SWAPW(subRuleSetCount);
 
         if (coverageIndex < srSetCount) {
-            LEReferenceToArrayOf<Offset> subRuleSetTableOffsetArrayRef(base, success,
-                    &subRuleSetTableOffsetArray[coverageIndex], 1);
+            LEReferenceToArrayOf<Offset>
+                subRuleSetTableOffsetArrayRef(base, success, subRuleSetTableOffsetArray, srSetCount);
             if (LE_FAILURE(success)) {
                 return 0;
             }
             Offset subRuleSetTableOffset = SWAPW(subRuleSetTableOffsetArray[coverageIndex]);
-            LEReferenceTo<SubRuleSetTable>
-                 subRuleSetTable(base, success, (const SubRuleSetTable *) ((char *) this + subRuleSetTableOffset));
+            LEReferenceTo<SubRuleSetTable> subRuleSetTable(base, success, subRuleSetTableOffset);
+            if (LE_FAILURE(success)) { return 0; }
             le_uint16 subRuleCount = SWAPW(subRuleSetTable->subRuleCount);
             le_int32 position = glyphIterator->getCurrStreamPosition();
 
@@ -264,6 +264,7 @@ le_uint32 ContextualSubstitutionFormat1Subtable::process(const LETableReference 
                     SWAPW(subRuleSetTable->subRuleTableOffsetArray[subRule]);
                 LEReferenceTo<SubRuleTable>
                      subRuleTable(subRuleSetTable, success, subRuleTableOffset);
+                if (LE_FAILURE(success)) { return 0; }
                 le_uint16 matchCount = SWAPW(subRuleTable->glyphCount) - 1;
                 le_uint16 substCount = SWAPW(subRuleTable->substCount);
                 LEReferenceToArrayOf<TTGlyphID> inputGlyphArray(base, success, subRuleTable->inputGlyphArray, matchCount+2);
@@ -304,8 +305,8 @@ le_uint32 ContextualSubstitutionFormat2Subtable::process(const LETableReference 
     }
 
     if (coverageIndex >= 0) {
-        LEReferenceTo<ClassDefinitionTable> classDefinitionTable(base, success,
-                                                                 (const ClassDefinitionTable *) ((char *) this + SWAPW(classDefTableOffset)));
+        LEReferenceTo<ClassDefinitionTable> classDefinitionTable(base, success, SWAPW(classDefTableOffset));
+        if (LE_FAILURE(success)) { return 0; }
         le_uint16 scSetCount = SWAPW(subClassSetCount);
         le_int32 setClass = classDefinitionTable->getGlyphClass(classDefinitionTable,
                                                                 glyphIterator->getCurrGlyphID(),
@@ -313,13 +314,13 @@ le_uint32 ContextualSubstitutionFormat2Subtable::process(const LETableReference 
 
         if (setClass < scSetCount) {
             LEReferenceToArrayOf<Offset>
-                 subClassSetTableOffsetArrayRef(base, success, subClassSetTableOffsetArray, setClass);
+                subClassSetTableOffsetArrayRef(base, success, subClassSetTableOffsetArray, scSetCount);
             if (LE_FAILURE(success)) { return 0; }
             if (subClassSetTableOffsetArray[setClass] != 0) {
 
                 Offset subClassSetTableOffset = SWAPW(subClassSetTableOffsetArray[setClass]);
-                LEReferenceTo<SubClassSetTable>
-                    subClassSetTable(base, success, (const SubClassSetTable *) ((char *) this + subClassSetTableOffset));
+                LEReferenceTo<SubClassSetTable> subClassSetTable(base, success, subClassSetTableOffset);
+                if (LE_FAILURE(success)) { return 0; }
                 le_uint16 subClassRuleCount = SWAPW(subClassSetTable->subClassRuleCount);
                 le_int32 position = glyphIterator->getCurrStreamPosition();
                 LEReferenceToArrayOf<Offset>
@@ -332,6 +333,7 @@ le_uint32 ContextualSubstitutionFormat2Subtable::process(const LETableReference 
                         SWAPW(subClassSetTable->subClassRuleTableOffsetArray[scRule]);
                     LEReferenceTo<SubClassRuleTable>
                         subClassRuleTable(subClassSetTable, success, subClassRuleTableOffset);
+                    if (LE_FAILURE(success)) { return 0; }
                     le_uint16 matchCount = SWAPW(subClassRuleTable->glyphCount) - 1;
                     le_uint16 substCount = SWAPW(subClassRuleTable->substCount);
 
@@ -463,13 +465,13 @@ le_uint32 ChainingContextualSubstitutionFormat1Subtable::process(const LETableRe
 
         if (coverageIndex < srSetCount) {
             LEReferenceToArrayOf<Offset>
-                chainSubRuleSetTableOffsetArrayRef(base, success, chainSubRuleSetTableOffsetArray, coverageIndex);
+                chainSubRuleSetTableOffsetArrayRef(base, success, chainSubRuleSetTableOffsetArray, srSetCount);
             if (LE_FAILURE(success)) {
                 return 0;
             }
             Offset chainSubRuleSetTableOffset = SWAPW(chainSubRuleSetTableOffsetArray[coverageIndex]);
-            LEReferenceTo<ChainSubRuleSetTable>
-                 chainSubRuleSetTable(base, success, (const ChainSubRuleSetTable *) ((char *) this + chainSubRuleSetTableOffset));
+            LEReferenceTo<ChainSubRuleSetTable> chainSubRuleSetTable(base, success, chainSubRuleSetTableOffset);
+            if (LE_FAILURE(success)) { return 0; }
             le_uint16 chainSubRuleCount = SWAPW(chainSubRuleSetTable->chainSubRuleCount);
             le_int32 position = glyphIterator->getCurrStreamPosition();
             GlyphIterator tempIterator(*glyphIterator, emptyFeatureList);
@@ -550,17 +552,17 @@ le_uint32 ChainingContextualSubstitutionFormat2Subtable::process(const LETableRe
 
     if (coverageIndex >= 0) {
         LEReferenceTo<ClassDefinitionTable>
-             backtrackClassDefinitionTable(base, success, (const ClassDefinitionTable *) ((char *) this + SWAPW(backtrackClassDefTableOffset)));
+             backtrackClassDefinitionTable(base, success, SWAPW(backtrackClassDefTableOffset));
         LEReferenceTo<ClassDefinitionTable>
-             inputClassDefinitionTable(base, success, (const ClassDefinitionTable *) ((char *) this + SWAPW(inputClassDefTableOffset)));
+             inputClassDefinitionTable(base, success, SWAPW(inputClassDefTableOffset));
         LEReferenceTo<ClassDefinitionTable>
-             lookaheadClassDefinitionTable(base, success, (const ClassDefinitionTable *) ((char *) this + SWAPW(lookaheadClassDefTableOffset)));
+             lookaheadClassDefinitionTable(base, success, SWAPW(lookaheadClassDefTableOffset));
         le_uint16 scSetCount = SWAPW(chainSubClassSetCount);
         le_int32 setClass = inputClassDefinitionTable->getGlyphClass(inputClassDefinitionTable,
                                                                      glyphIterator->getCurrGlyphID(),
                                                                      success);
         LEReferenceToArrayOf<Offset>
-            chainSubClassSetTableOffsetArrayRef(base, success, chainSubClassSetTableOffsetArray, setClass);
+            chainSubClassSetTableOffsetArrayRef(base, success, chainSubClassSetTableOffsetArray, scSetCount);
         if (LE_FAILURE(success)) {
             return 0;
         }
@@ -568,7 +570,8 @@ le_uint32 ChainingContextualSubstitutionFormat2Subtable::process(const LETableRe
         if (setClass < scSetCount && chainSubClassSetTableOffsetArray[setClass] != 0) {
             Offset chainSubClassSetTableOffset = SWAPW(chainSubClassSetTableOffsetArray[setClass]);
             LEReferenceTo<ChainSubClassSetTable>
-                 chainSubClassSetTable(base, success, (const ChainSubClassSetTable *) ((char *) this + chainSubClassSetTableOffset));
+                 chainSubClassSetTable(base, success, chainSubClassSetTableOffset);
+            if (LE_FAILURE(success)) { return 0; }
             le_uint16 chainSubClassRuleCount = SWAPW(chainSubClassSetTable->chainSubClassRuleCount);
             le_int32 position = glyphIterator->getCurrStreamPosition();
             GlyphIterator tempIterator(*glyphIterator, emptyFeatureList);
@@ -582,6 +585,7 @@ le_uint32 ChainingContextualSubstitutionFormat2Subtable::process(const LETableRe
                     SWAPW(chainSubClassSetTable->chainSubClassRuleTableOffsetArray[scRule]);
                 LEReferenceTo<ChainSubClassRuleTable>
                      chainSubClassRuleTable(chainSubClassSetTable, success, chainSubClassRuleTableOffset);
+                if (LE_FAILURE(success)) { return 0; }
                 le_uint16 backtrackGlyphCount = SWAPW(chainSubClassRuleTable->backtrackGlyphCount);
                 LEReferenceToArrayOf<le_uint16>   backtrackClassArray(base, success, chainSubClassRuleTable->backtrackClassArray, backtrackGlyphCount);
                 if( LE_FAILURE(success) ) { return 0; }

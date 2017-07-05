@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,19 @@ package java.lang.ref;
 /**
  * Phantom reference objects, which are enqueued after the collector
  * determines that their referents may otherwise be reclaimed.  Phantom
- * references are most often used for scheduling pre-mortem cleanup actions in
- * a more flexible way than is possible with the Java finalization mechanism.
+ * references are most often used to schedule post-mortem cleanup actions.
  *
- * <p> If the garbage collector determines at a certain point in time that the
- * referent of a phantom reference is <a
- * href="package-summary.html#reachability">phantom reachable</a>, then at that
- * time or at some later time it will enqueue the reference.
+ * <p> Suppose the garbage collector determines at a certain point in time
+ * that an object is <a href="package-summary.html#reachability">
+ * phantom reachable</a>.  At that time it will atomically clear
+ * all phantom references to that object and all phantom references to
+ * any other phantom-reachable objects from which that object is reachable.
+ * At the same time or at some later time it will enqueue those newly-cleared
+ * phantom references that are registered with reference queues.
  *
  * <p> In order to ensure that a reclaimable object remains so, the referent of
  * a phantom reference may not be retrieved: The {@code get} method of a
  * phantom reference always returns {@code null}.
- *
- * <p> Unlike soft and weak references, phantom references are not
- * automatically cleared by the garbage collector as they are enqueued.  An
- * object that is reachable via phantom references will remain so until all
- * such references are cleared or themselves become unreachable.
  *
  * @author   Mark Reinhold
  * @since    1.2
@@ -69,8 +66,8 @@ public class PhantomReference<T> extends Reference<T> {
      *
      * <p> It is possible to create a phantom reference with a {@code null}
      * queue, but such a reference is completely useless: Its {@code get}
-     * method will always return null and, since it does not have a queue, it
-     * will never be enqueued.
+     * method will always return {@code null} and, since it does not have a queue,
+     * it will never be enqueued.
      *
      * @param referent the object the new phantom reference will refer to
      * @param q the queue with which the reference is to be registered,

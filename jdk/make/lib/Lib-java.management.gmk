@@ -40,7 +40,7 @@ LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include
 
 LIBMANAGEMENT_OPTIMIZATION := HIGH
 ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
-  ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
+  ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
     LIBMANAGEMENT_OPTIMIZATION := LOW
   endif
 endif
@@ -64,7 +64,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
         -D "JDK_INTERNAL_NAME=management" \
         -D "JDK_FTYPE=0x2L", \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libmanagement, \
-    DEBUG_SYMBOLS := true))
+))
 
 $(BUILD_LIBMANAGEMENT): $(call FindLib, java.base, java)
 

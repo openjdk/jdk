@@ -34,7 +34,7 @@ import java.util.List;
  * TIFFImageReadParam.addAllowedTagSet} method if Exif
  * support is desired.
  *
- * @since 1.9
+ * @since 9
  */
 public class ExifParentTIFFTagSet extends TIFFTagSet {
 

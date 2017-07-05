@@ -51,7 +51,7 @@ public interface Checksum {
      * @throws NullPointerException
      *         if {@code b} is {@code null}
      *
-     * @since 1.9
+     * @since 9
      */
     default public void update(byte[] b) {
         update(b, 0, b.length);
@@ -99,7 +99,7 @@ public interface Checksum {
      * @throws NullPointerException
      *         if {@code buffer} is {@code null}
      *
-     * @since 1.9
+     * @since 9
      */
     default public void update(ByteBuffer buffer) {
         int pos = buffer.position();

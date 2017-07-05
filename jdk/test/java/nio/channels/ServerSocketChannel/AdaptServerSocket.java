@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 /* @test
+ * @bug 4286936 8146213
  * @summary Unit test for server-socket-channel adaptors
- * @key intermittent
  */
 
 import java.io.*;
@@ -77,6 +77,9 @@ public class AdaptServerSocket {
     static void test(int clientDally, int timeout, boolean shouldTimeout)
         throws Exception
     {
+        boolean needClient = !shouldTimeout;
+        client = null;
+        clientException = null;
         clientStarted = false;
         out.println();
 
@@ -90,9 +93,11 @@ public class AdaptServerSocket {
             sso.bind(null);
             out.println("bound:   " + ssc);
             out.println("         " + sso);
-            startClient(sso.getLocalPort(), clientDally);
-            while (!clientStarted) {
-                Thread.sleep(20);
+            if (needClient) {
+                startClient(sso.getLocalPort(), clientDally);
+                while (!clientStarted) {
+                    Thread.sleep(20);
+                }
             }
             Socket so = null;
             try {
@@ -115,10 +120,12 @@ public class AdaptServerSocket {
                 out.println("server:  read " + b);
             }
         }
-        client.interrupt();
-        client.join();
-        if (clientException != null)
-            throw clientException;
+        if (needClient) {
+            client.interrupt();
+            client.join();
+            if (clientException != null)
+                throw clientException;
+        }
     }
 
     public static void main(String[] args) throws Exception {

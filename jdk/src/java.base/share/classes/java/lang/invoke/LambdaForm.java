@@ -25,18 +25,24 @@
 
 package java.lang.invoke;
 
-import java.lang.annotation.*;
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.Stable;
+import sun.invoke.util.Wrapper;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Arrays;
 import java.util.HashMap;
-
-import sun.invoke.util.Wrapper;
-import java.lang.reflect.Field;
+import java.util.List;
 
 import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.MethodHandleStatics.*;
-import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.REF_invokeStatic;
+import static java.lang.invoke.MethodHandleStatics.debugEnabled;
+import static java.lang.invoke.MethodHandleStatics.newInternalError;
 
 /**
  * The symbolic, non-executable form of a method handle's invocation semantics.

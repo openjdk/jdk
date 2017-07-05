@@ -30,13 +30,11 @@ void WorkerDataArray_test() {
   const uint length = 3;
   const char* title = "Test array";
   const bool print_sum = false;
-  const int log_level = 3;
   const uint indent_level = 2;
 
-  WorkerDataArray<size_t> array(length, title, print_sum, log_level, indent_level);
+  WorkerDataArray<size_t> array(length, title, print_sum, indent_level);
   assert(strncmp(array.title(), title, strlen(title)) == 0 , "Expected titles to match");
   assert(array.should_print_sum() == print_sum, "Expected should_print_sum to match print_sum");
-  assert(array.log_level() == log_level, "Expected log levels to match");
   assert(array.indentation() == indent_level, "Expected indentation to match");
 
   const size_t expected[length] = {5, 3, 7};

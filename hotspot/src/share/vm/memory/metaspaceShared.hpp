@@ -97,6 +97,26 @@ public:
   CompactHashtableStats string;
 };
 
+class SharedMiscRegion VALUE_OBJ_CLASS_SPEC {
+private:
+  VirtualSpace _vs;
+  char* _alloc_top;
+  SharedSpaceType _space_type;
+
+public:
+  void initialize(ReservedSpace rs, size_t committed_byte_size,  SharedSpaceType space_type);
+  VirtualSpace* virtual_space() {
+    return &_vs;
+  }
+  char* low() const {
+    return _vs.low();
+  }
+  char* alloc_top() const {
+    return _alloc_top;
+  }
+  char* alloc(size_t num_bytes) NOT_CDS_RETURN_(NULL);
+};
+
 // Class Data Sharing Support
 class MetaspaceShared : AllStatic {
 
@@ -108,6 +128,10 @@ class MetaspaceShared : AllStatic {
   static bool _check_classes_made_progress;
   static bool _has_error_classes;
   static bool _archive_loading_failed;
+
+  // Used only during dumping.
+  static SharedMiscRegion _md;
+  static SharedMiscRegion _mc;
  public:
   enum {
     vtbl_list_size         = DEFAULT_VTBL_LIST_SIZE,
@@ -149,9 +173,7 @@ class MetaspaceShared : AllStatic {
     NOT_CDS(return NULL);
   }
 
-  static void set_shared_rs(ReservedSpace* rs) {
-    CDS_ONLY(_shared_rs = rs;)
-  }
+  static void initialize_shared_rs(ReservedSpace* rs) NOT_CDS_RETURN;
 
   static void set_archive_loading_failed() {
     _archive_loading_failed = true;
@@ -191,7 +213,17 @@ class MetaspaceShared : AllStatic {
   static int count_class(const char* classlist_file);
   static void estimate_regions_size() NOT_CDS_RETURN;
 
-  // Allocate a block of memory from the "md" region.
-  static char* misc_data_space_alloc(size_t num_bytes);
+  // Allocate a block of memory from the "mc" or "md" regions.
+  static char* misc_code_space_alloc(size_t num_bytes) {  return _mc.alloc(num_bytes); }
+  static char* misc_data_space_alloc(size_t num_bytes) {  return _md.alloc(num_bytes); }
+
+  static SharedMiscRegion* misc_code_region() {
+    assert(DumpSharedSpaces, "used during dumping only");
+    return &_mc;
+  }
+  static SharedMiscRegion* misc_data_region() {
+    assert(DumpSharedSpaces, "used during dumping only");
+    return &_md;
+  }
 };
 #endif // SHARE_VM_MEMORY_METASPACESHARED_HPP

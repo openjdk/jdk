@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8136421
- * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library /testlibrary /
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *      -Dcompiler.jvmci.compilerToVM.JVM_RegisterJVMCINatives.positive=true

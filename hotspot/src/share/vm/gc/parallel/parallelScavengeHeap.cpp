@@ -38,6 +38,7 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -307,10 +308,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         if (limit_exceeded && softrefs_clear) {
           *gc_overhead_limit_was_exceeded = true;
           size_policy()->set_gc_overhead_limit_exceeded(false);
-          if (PrintGCDetails && Verbose) {
-            gclog_or_tty->print_cr("ParallelScavengeHeap::mem_allocate: "
-              "return NULL because gc_overhead_limit_exceeded is set");
-          }
+          log_trace(gc)("ParallelScavengeHeap::mem_allocate: return NULL because gc_overhead_limit_exceeded is set");
           if (op.result() != NULL) {
             CollectedHeap::fill_with_object(op.result(), size);
           }
@@ -584,32 +582,14 @@ void ParallelScavengeHeap::print_tracing_info() const {
 }
 
 
-void ParallelScavengeHeap::verify(bool silent, VerifyOption option /* ignored */) {
+void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
   // Why do we need the total_collections()-filter below?
   if (total_collections() > 0) {
-    if (!silent) {
-      gclog_or_tty->print("tenured ");
-    }
+    log_debug(gc, verify)("Tenured");
     old_gen()->verify();
 
-    if (!silent) {
-      gclog_or_tty->print("eden ");
-    }
+    log_debug(gc, verify)("Eden");
     young_gen()->verify();
-  }
-}
-
-void ParallelScavengeHeap::print_heap_change(size_t prev_used) {
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print(" "  SIZE_FORMAT
-                        "->" SIZE_FORMAT
-                        "("  SIZE_FORMAT ")",
-                        prev_used, used(), capacity());
-  } else {
-    gclog_or_tty->print(" "  SIZE_FORMAT "K"
-                        "->" SIZE_FORMAT "K"
-                        "("  SIZE_FORMAT "K)",
-                        prev_used / K, used() / K, capacity() / K);
   }
 }
 

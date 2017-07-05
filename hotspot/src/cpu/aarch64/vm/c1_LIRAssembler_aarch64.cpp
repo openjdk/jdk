@@ -173,6 +173,7 @@ static jlong as_long(LIR_Opr data) {
     break;
   default:
     ShouldNotReachHere();
+    result = 0;  // unreachable
   }
   return result;
 }
@@ -720,6 +721,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
     break;
   default:
     ShouldNotReachHere();
+    insn = &Assembler::str;  // unreachable
   }
 
   if (info) add_debug_info_for_null_check_here(info);
@@ -1110,6 +1112,7 @@ void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
       case lir_cond_greaterEqual: acond = (is_unordered ? Assembler::HS : Assembler::GE); break;
       case lir_cond_greater:      acond = (is_unordered ? Assembler::HI : Assembler::GT); break;
       default:                    ShouldNotReachHere();
+        acond = Assembler::EQ;  // unreachable
       }
     } else {
       switch (op->cond()) {
@@ -1121,7 +1124,8 @@ void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
         case lir_cond_greater:      acond = Assembler::GT; break;
         case lir_cond_belowEqual:   acond = Assembler::LS; break;
         case lir_cond_aboveEqual:   acond = Assembler::HS; break;
-        default:                         ShouldNotReachHere();
+        default:                    ShouldNotReachHere();
+          acond = Assembler::EQ;  // unreachable
       }
     }
     __ br(acond,*(op->label()));
@@ -1313,7 +1317,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   ciMethodData* md;
   ciProfileData* data;
 
-  if (op->should_profile()) {
+  const bool should_profile = op->should_profile();
+
+  if (should_profile) {
     ciMethod* method = op->profiled_method();
     assert(method != NULL, "Should have method");
     int bci = op->profiled_bci();
@@ -1324,8 +1330,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
   }
   Label profile_cast_success, profile_cast_failure;
-  Label *success_target = op->should_profile() ? &profile_cast_success : success;
-  Label *failure_target = op->should_profile() ? &profile_cast_failure : failure;
+  Label *success_target = should_profile ? &profile_cast_success : success;
+  Label *failure_target = should_profile ? &profile_cast_failure : failure;
 
   if (obj == k_RInfo) {
     k_RInfo = dst;
@@ -1341,7 +1347,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
-    if (op->should_profile()) {
+    if (should_profile) {
       Label not_null;
       __ cbnz(obj, not_null);
       // Object is null; update MDO and exit
@@ -1413,7 +1419,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // successful cast, fall through to profile or jump
     }
   }
-  if (op->should_profile()) {
+  if (should_profile) {
     Register mdo  = klass_RInfo, recv = k_RInfo;
     __ bind(profile_cast_success);
     __ mov_metadata(mdo, md->constant_encoding());
@@ -1438,6 +1444,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
 
 void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
+  const bool should_profile = op->should_profile();
+
   LIR_Code code = op->code();
   if (code == lir_store_check) {
     Register value = op->object()->as_register();
@@ -1452,7 +1460,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     ciMethodData* md;
     ciProfileData* data;
 
-    if (op->should_profile()) {
+    if (should_profile) {
       ciMethod* method = op->profiled_method();
       assert(method != NULL, "Should have method");
       int bci = op->profiled_bci();
@@ -1463,10 +1471,10 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       assert(data->is_ReceiverTypeData(), "need ReceiverTypeData for type check");
     }
     Label profile_cast_success, profile_cast_failure, done;
-    Label *success_target = op->should_profile() ? &profile_cast_success : &done;
-    Label *failure_target = op->should_profile() ? &profile_cast_failure : stub->entry();
+    Label *success_target = should_profile ? &profile_cast_success : &done;
+    Label *failure_target = should_profile ? &profile_cast_failure : stub->entry();
 
-    if (op->should_profile()) {
+    if (should_profile) {
       Label not_null;
       __ cbnz(value, not_null);
       // Object is null; update MDO and exit
@@ -1502,7 +1510,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ cbzw(k_RInfo, *failure_target);
     // fall through to the success case
 
-    if (op->should_profile()) {
+    if (should_profile) {
       Register mdo  = klass_RInfo, recv = k_RInfo;
       __ bind(profile_cast_success);
       __ mov_metadata(mdo, md->constant_encoding());
@@ -1621,9 +1629,10 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
   case lir_cond_lessEqual:    acond = Assembler::LE; ncond = Assembler::GT; break;
   case lir_cond_greaterEqual: acond = Assembler::GE; ncond = Assembler::LT; break;
   case lir_cond_greater:      acond = Assembler::GT; ncond = Assembler::LE; break;
-  case lir_cond_belowEqual:   Unimplemented(); break;
-  case lir_cond_aboveEqual:   Unimplemented(); break;
+  case lir_cond_belowEqual:
+  case lir_cond_aboveEqual:
   default:                    ShouldNotReachHere();
+    acond = Assembler::EQ; ncond = Assembler::NE;  // unreachable
   }
 
   assert(result->is_single_cpu() || result->is_double_cpu(),
@@ -1724,6 +1733,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
         break;
       default:
         ShouldNotReachHere();
+        c = 0;  // unreachable
         break;
       }
 
@@ -1926,6 +1936,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
         break;
       default:
         ShouldNotReachHere();
+        imm = 0;  // unreachable
         break;
       }
 
@@ -3123,6 +3134,9 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
     break;
   default:
     ShouldNotReachHere();
+    lda = &MacroAssembler::ldaxr;
+    add = &MacroAssembler::add;
+    stl = &MacroAssembler::stlxr;  // unreachable
   }
 
   switch (code) {

@@ -65,7 +65,7 @@ public interface AnnotatedWildcardType extends AnnotatedType {
      *
      * @return {@code null}
      *
-     * @since 1.9
+     * @since 9
      */
     @Override
     AnnotatedType getAnnotatedOwnerType();

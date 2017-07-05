@@ -38,6 +38,7 @@ import sun.invoke.util.Wrapper;
  * @bug 8060483 8066746
  * @key randomness
  * @library /lib/testlibrary /lib/testlibrary/jsr292
+ * @modules java.base/sun.invoke.util
  * @summary unit tests for MethodHandles.explicitCastArguments()
  * @run main ExplicitCastArgumentsTest
  */

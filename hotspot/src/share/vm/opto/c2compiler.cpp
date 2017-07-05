@@ -432,6 +432,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_aescrypt_decryptBlock:
   case vmIntrinsics::_cipherBlockChaining_encryptAESCrypt:
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
+  case vmIntrinsics::_counterMode_AESCrypt:
   case vmIntrinsics::_sha_implCompress:
   case vmIntrinsics::_sha2_implCompress:
   case vmIntrinsics::_sha5_implCompress:
@@ -441,6 +442,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_mulAdd:
   case vmIntrinsics::_montgomeryMultiply:
   case vmIntrinsics::_montgomerySquare:
+  case vmIntrinsics::_vectorizedMismatch:
   case vmIntrinsics::_ghash_processBlocks:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:

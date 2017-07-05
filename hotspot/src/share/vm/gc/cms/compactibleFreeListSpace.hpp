@@ -29,6 +29,7 @@
 #include "gc/cms/promotionInfo.hpp"
 #include "gc/shared/blockOffsetTable.hpp"
 #include "gc/shared/space.hpp"
+#include "logging/log.hpp"
 #include "memory/binaryTreeDictionary.hpp"
 #include "memory/freeList.hpp"
 
@@ -275,8 +276,8 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void       verify_objects_initialized() const;
 
   // Statistics reporting helper functions
-  void       reportFreeListStatistics() const;
-  void       reportIndexedFreeListStatistics() const;
+  void       reportFreeListStatistics(const char* title) const;
+  void       reportIndexedFreeListStatistics(outputStream* st) const;
   size_t     maxChunkSizeInIndexedFreeLists() const;
   size_t     numFreeBlocksInIndexedFreeLists() const;
   // Accessor
@@ -450,11 +451,9 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void save_sweep_limit() {
     _sweep_limit = BlockOffsetArrayUseUnallocatedBlock ?
                    unallocated_block() : end();
-    if (CMSTraceSweeper) {
-      gclog_or_tty->print_cr(">>>>> Saving sweep limit " PTR_FORMAT
-                             "  for space [" PTR_FORMAT "," PTR_FORMAT ") <<<<<<",
-                             p2i(_sweep_limit), p2i(bottom()), p2i(end()));
-    }
+    log_develop_trace(gc, sweep)(">>>>> Saving sweep limit " PTR_FORMAT
+                                 "  for space [" PTR_FORMAT "," PTR_FORMAT ") <<<<<<",
+                                 p2i(_sweep_limit), p2i(bottom()), p2i(end()));
   }
   NOT_PRODUCT(
     void clear_sweep_limit() { _sweep_limit = NULL; }

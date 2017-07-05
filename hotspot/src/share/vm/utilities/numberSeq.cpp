@@ -234,7 +234,7 @@ double TruncatedSeq::predict_next() const {
 
 // Printing/Debugging Support
 
-void AbsSeq::dump() { dump_on(gclog_or_tty); }
+void AbsSeq::dump() { dump_on(tty); }
 
 void AbsSeq::dump_on(outputStream* s) {
   s->print_cr("\t _num = %d, _sum = %7.3f, _sum_of_squares = %7.3f",
