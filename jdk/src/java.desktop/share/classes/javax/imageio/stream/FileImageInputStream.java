@@ -34,8 +34,8 @@ import com.sun.imageio.stream.StreamFinalizer;
 import sun.java2d.Disposer;
 
 /**
- * An implementation of <code>ImageInputStream</code> that gets its
- * input from a <code>File</code> or <code>RandomAccessFile</code>.
+ * An implementation of {@code ImageInputStream} that gets its
+ * input from a {@code File} or {@code RandomAccessFile}.
  * The file contents are assumed to be stable during the lifetime of
  * the object.
  *
@@ -51,20 +51,20 @@ public class FileImageInputStream extends ImageInputStreamImpl {
     private final CloseableDisposerRecord disposerRecord;
 
     /**
-     * Constructs a <code>FileImageInputStream</code> that will read
-     * from a given <code>File</code>.
+     * Constructs a {@code FileImageInputStream} that will read
+     * from a given {@code File}.
      *
      * <p> The file contents must not change between the time this
      * object is constructed and the time of the last call to a read
      * method.
      *
-     * @param f a <code>File</code> to read from.
+     * @param f a {@code File} to read from.
      *
-     * @exception IllegalArgumentException if <code>f</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code f} is
+     * {@code null}.
      * @exception SecurityException if a security manager exists
      * and does not allow read access to the file.
-     * @exception FileNotFoundException if <code>f</code> is a
+     * @exception FileNotFoundException if {@code f} is a
      * directory or cannot be opened for reading for any other reason.
      * @exception IOException if an I/O error occurs.
      */
@@ -74,17 +74,17 @@ public class FileImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Constructs a <code>FileImageInputStream</code> that will read
-     * from a given <code>RandomAccessFile</code>.
+     * Constructs a {@code FileImageInputStream} that will read
+     * from a given {@code RandomAccessFile}.
      *
      * <p> The file contents must not change between the time this
      * object is constructed and the time of the last call to a read
      * method.
      *
-     * @param raf a <code>RandomAccessFile</code> to read from.
+     * @param raf a {@code RandomAccessFile} to read from.
      *
-     * @exception IllegalArgumentException if <code>raf</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code raf} is
+     * {@code null}.
      */
     public FileImageInputStream(RandomAccessFile raf) {
         if (raf == null) {
@@ -122,11 +122,11 @@ public class FileImageInputStream extends ImageInputStreamImpl {
     }
 
     /**
-     * Returns the length of the underlying file, or <code>-1</code>
+     * Returns the length of the underlying file, or {@code -1}
      * if it is unknown.
      *
-     * @return the file length as a <code>long</code>, or
-     * <code>-1</code>.
+     * @return the file length as a {@code long}, or
+     * {@code -1}.
      */
     public long length() {
         try {

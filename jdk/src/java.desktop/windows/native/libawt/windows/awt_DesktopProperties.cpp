@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,7 +388,7 @@ void CheckFontSmoothingSettings(HWND hWnd) {
     }
 
     BOOL fontSmoothing = FALSE, settingsChanged;
-    UINT fontSmoothingType=0, fontSmoothingContrast=0, subPixelOrder;
+    UINT fontSmoothingType=0, fontSmoothingContrast=0, subPixelOrder=0;
 
     if (firstTime) {
         SystemParametersInfo(SPI_GETFONTSMOOTHING, 0, &fontSmoothing, 0);

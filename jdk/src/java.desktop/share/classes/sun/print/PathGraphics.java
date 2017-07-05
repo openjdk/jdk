@@ -177,9 +177,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     /**
      * Draws the outline of the specified rectangle.
      * The left and right edges of the rectangle are at
-     * <code>x</code> and <code>x&nbsp;+&nbsp;width</code>.
+     * {@code x} and <code>x&nbsp;+&nbsp;width</code>.
      * The top and bottom edges are at
-     * <code>y</code> and <code>y&nbsp;+&nbsp;height</code>.
+     * {@code y} and <code>y&nbsp;+&nbsp;height</code>.
      * The rectangle is drawn using the graphics context's current color.
      * @param         x   the <i>x</i> coordinate
      *                         of the rectangle to be drawn.
@@ -211,12 +211,12 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     /**
      * Fills the specified rectangle.
      * The left and right edges of the rectangle are at
-     * <code>x</code> and <code>x&nbsp;+&nbsp;width&nbsp;-&nbsp;1</code>.
+     * {@code x} and <code>x&nbsp;+&nbsp;width&nbsp;-&nbsp;1</code>.
      * The top and bottom edges are at
-     * <code>y</code> and <code>y&nbsp;+&nbsp;height&nbsp;-&nbsp;1</code>.
+     * {@code y} and <code>y&nbsp;+&nbsp;height&nbsp;-&nbsp;1</code>.
      * The resulting rectangle covers an area
-     * <code>width</code> pixels wide by
-     * <code>height</code> pixels tall.
+     * {@code width} pixels wide by
+     * {@code height} pixels tall.
      * The rectangle is filled using the graphics context's current color.
      * @param         x   the <i>x</i> coordinate
      *                         of the rectangle to be filled.
@@ -251,7 +251,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * <p>
      * Beginning with Java&nbsp;1.1, the background color
      * of offscreen images may be system dependent. Applications should
-     * use <code>setColor</code> followed by <code>fillRect</code> to
+     * use {@code setColor} followed by {@code fillRect} to
      * ensure that an offscreen image is cleared to a specific color.
      * @param       x the <i>x</i> coordinate of the rectangle to clear.
      * @param       y the <i>y</i> coordinate of the rectangle to clear.
@@ -271,9 +271,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
         /**
      * Draws an outlined round-cornered rectangle using this graphics
      * context's current color. The left and right edges of the rectangle
-     * are at <code>x</code> and <code>x&nbsp;+&nbsp;width</code>,
+     * are at {@code x} and <code>x&nbsp;+&nbsp;width</code>,
      * respectively. The top and bottom edges of the rectangle are at
-     * <code>y</code> and <code>y&nbsp;+&nbsp;height</code>.
+     * {@code y} and <code>y&nbsp;+&nbsp;height</code>.
      * @param      x the <i>x</i> coordinate of the rectangle to be drawn.
      * @param      y the <i>y</i> coordinate of the rectangle to be drawn.
      * @param      width the width of the rectangle to be drawn.
@@ -296,9 +296,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     /**
      * Fills the specified rounded corner rectangle with the current color.
      * The left and right edges of the rectangle
-     * are at <code>x</code> and <code>x&nbsp;+&nbsp;width&nbsp;-&nbsp;1</code>,
+     * are at {@code x} and <code>x&nbsp;+&nbsp;width&nbsp;-&nbsp;1</code>,
      * respectively. The top and bottom edges of the rectangle are at
-     * <code>y</code> and <code>y&nbsp;+&nbsp;height&nbsp;-&nbsp;1</code>.
+     * {@code y} and <code>y&nbsp;+&nbsp;height&nbsp;-&nbsp;1</code>.
      * @param       x the <i>x</i> coordinate of the rectangle to be filled.
      * @param       y the <i>y</i> coordinate of the rectangle to be filled.
      * @param       width the width of the rectangle to be filled.
@@ -320,8 +320,8 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     /**
      * Draws the outline of an oval.
      * The result is a circle or ellipse that fits within the
-     * rectangle specified by the <code>x</code>, <code>y</code>,
-     * <code>width</code>, and <code>height</code> arguments.
+     * rectangle specified by the {@code x}, {@code y},
+     * {@code width}, and {@code height} arguments.
      * <p>
      * The oval covers an area that is
      * <code>width&nbsp;+&nbsp;1</code> pixels wide
@@ -359,8 +359,8 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * Draws the outline of a circular or elliptical arc
      * covering the specified rectangle.
      * <p>
-     * The resulting arc begins at <code>startAngle</code> and extends
-     * for <code>arcAngle</code> degrees, using the current color.
+     * The resulting arc begins at {@code startAngle} and extends
+     * for {@code arcAngle} degrees, using the current color.
      * Angles are interpreted such that 0&nbsp;degrees
      * is at the 3&nbsp;o'clock position.
      * A positive value indicates a counter-clockwise rotation
@@ -368,7 +368,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * <p>
      * The center of the arc is the center of the rectangle whose origin
      * is (<i>x</i>,&nbsp;<i>y</i>) and whose size is specified by the
-     * <code>width</code> and <code>height</code> arguments.
+     * {@code width} and {@code height} arguments.
      * <p>
      * The resulting arc covers an area
      * <code>width&nbsp;+&nbsp;1</code> pixels wide
@@ -403,8 +403,8 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     /**
      * Fills a circular or elliptical arc covering the specified rectangle.
      * <p>
-     * The resulting arc begins at <code>startAngle</code> and extends
-     * for <code>arcAngle</code> degrees.
+     * The resulting arc begins at {@code startAngle} and extends
+     * for {@code arcAngle} degrees.
      * Angles are interpreted such that 0&nbsp;degrees
      * is at the 3&nbsp;o'clock position.
      * A positive value indicates a counter-clockwise rotation
@@ -412,7 +412,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * <p>
      * The center of the arc is the center of the rectangle whose origin
      * is (<i>x</i>,&nbsp;<i>y</i>) and whose size is specified by the
-     * <code>width</code> and <code>height</code> arguments.
+     * {@code width} and {@code height} arguments.
      * <p>
      * The resulting arc covers an area
      * <code>width&nbsp;+&nbsp;1</code> pixels wide
@@ -478,16 +478,16 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * arrays of <i>x</i> and <i>y</i> coordinates.
      * Each pair of (<i>x</i>,&nbsp;<i>y</i>) coordinates defines a point.
      * <p>
-     * This method draws the polygon defined by <code>nPoint</code> line
+     * This method draws the polygon defined by {@code nPoint} line
      * segments, where the first <code>nPoint&nbsp;-&nbsp;1</code>
      * line segments are line segments from
      * <code>(xPoints[i&nbsp;-&nbsp;1],&nbsp;yPoints[i&nbsp;-&nbsp;1])</code>
      * to <code>(xPoints[i],&nbsp;yPoints[i])</code>, for
-     * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;<code>nPoints</code>.
+     * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;{@code nPoints}.
      * The figure is automatically closed by drawing a line connecting
      * the final point to the first point, if those points are different.
-     * @param        xPoints   a an array of <code>x</code> coordinates.
-     * @param        yPoints   a an array of <code>y</code> coordinates.
+     * @param        xPoints   a an array of {@code x} coordinates.
+     * @param        yPoints   a an array of {@code y} coordinates.
      * @param        nPoints   a the total number of points.
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
@@ -500,7 +500,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
     /**
      * Draws the outline of a polygon defined by the specified
-     * <code>Polygon</code> object.
+     * {@code Polygon} object.
      * @param        p the polygon to draw.
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
@@ -513,19 +513,19 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * Fills a closed polygon defined by
      * arrays of <i>x</i> and <i>y</i> coordinates.
      * <p>
-     * This method draws the polygon defined by <code>nPoint</code> line
+     * This method draws the polygon defined by {@code nPoint} line
      * segments, where the first <code>nPoint&nbsp;-&nbsp;1</code>
      * line segments are line segments from
      * <code>(xPoints[i&nbsp;-&nbsp;1],&nbsp;yPoints[i&nbsp;-&nbsp;1])</code>
      * to <code>(xPoints[i],&nbsp;yPoints[i])</code>, for
-     * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;<code>nPoints</code>.
+     * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;{@code nPoints}.
      * The figure is automatically closed by drawing a line connecting
      * the final point to the first point, if those points are different.
      * <p>
      * The area inside the polygon is defined using an
      * even-odd fill rule, also known as the alternating rule.
-     * @param        xPoints   a an array of <code>x</code> coordinates.
-     * @param        yPoints   a an array of <code>y</code> coordinates.
+     * @param        xPoints   a an array of {@code x} coordinates.
+     * @param        yPoints   a an array of {@code y} coordinates.
      * @param        nPoints   a the total number of points.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      */
@@ -1089,7 +1089,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     }
 
     /**
-     * Fill the path defined by <code>pathIter</code>
+     * Fill the path defined by {@code pathIter}
      * with the specified color.
      * The path is provided in device coordinates.
      */
@@ -1097,7 +1097,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
     /*
      * Set the clipping path to that defined by
-     * the passed in <code>PathIterator</code>.
+     * the passed in {@code PathIterator}.
      */
     protected abstract void deviceClip(PathIterator pathIter);
 
@@ -1326,16 +1326,16 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
 
     /**
-     * The various <code>drawImage()</code> methods for
-     * <code>PathGraphics</code> are all decomposed
-     * into an invocation of <code>drawImageToPlatform</code>.
+     * The various {@code drawImage()} methods for
+     * {@code PathGraphics} are all decomposed
+     * into an invocation of {@code drawImageToPlatform}.
      * The portion of the passed in image defined by
-     * <code>srcX, srcY, srcWidth, and srcHeight</code>
+     * {@code srcX, srcY, srcWidth, and srcHeight}
      * is transformed by the supplied AffineTransform and
      * drawn using PS to the printer context.
      *
      * @param   img     The image to be drawn.
-     *                  This method does nothing if <code>img</code> is null.
+     *                  This method does nothing if {@code img} is null.
      * @param   xform   Used to transform the image before drawing.
      *                  This can be null.
      * @param   bgcolor This color is drawn where the image has transparent
@@ -1373,7 +1373,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * and converted for the current output device.
      * <p>
      * If the image has not yet been completely loaded, then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * @param    img the specified image to be drawn.
@@ -1405,9 +1405,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * entire image has not yet been scaled, dithered, and converted
      * for the current output device.
      * If the current output representation is not yet complete, then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
-     * the image observer by calling its <code>imageUpdate</code> method.
+     * the image observer by calling its {@code imageUpdate} method.
      * <p>
      * A scaled version of an image will not necessarily be
      * available immediately just because an unscaled version of the
@@ -1450,11 +1450,11 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * and converted for the current output device.
      * <p>
      * If the image has not yet been completely loaded, then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * @param    img    the specified image to be drawn.
-     *                  This method does nothing if <code>img</code> is null.
+     *                  This method does nothing if {@code img} is null.
      * @param    x      the <i>x</i> coordinate.
      * @param    y      the <i>y</i> coordinate.
      * @param    bgcolor the background color to paint under the
@@ -1507,7 +1507,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * entire image has not yet been scaled, dithered, and converted
      * for the current output device.
      * If the current output representation is not yet complete then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * <p>
@@ -1517,7 +1517,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * the image may be cached separately and generated from the original
      * data in a separate image production sequence.
      * @param    img       the specified image to be drawn.
-     *                     This method does nothing if <code>img</code> is null.
+     *                     This method does nothing if {@code img} is null.
      * @param    x         the <i>x</i> coordinate.
      * @param    y         the <i>y</i> coordinate.
      * @param    width     the width of the rectangle.
@@ -1566,7 +1566,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * image area to be drawn has not yet been scaled, dithered, and converted
      * for the current output device.
      * If the current output representation is not yet complete then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * <p>
@@ -1628,7 +1628,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * image area to be drawn has not yet been scaled, dithered, and converted
      * for the current output device.
      * If the current output representation is not yet complete then
-     * <code>drawImage</code> returns <code>false</code>. As more of
+     * {@code drawImage} returns {@code false}. As more of
      * the image becomes available, the process that draws the image notifies
      * the specified image observer.
      * <p>
@@ -1642,7 +1642,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * mapped to the second destination coordinate. The subimage is
      * scaled and flipped as needed to preserve those mappings.
      * @param       img the specified image to be drawn
-     *                  This method does nothing if <code>img</code> is null.
+     *                  This method does nothing if {@code img} is null.
      * @param       dx1 the <i>x</i> coordinate of the first corner of the
      *                    destination rectangle.
      * @param       dy1 the <i>y</i> coordinate of the first corner of the
@@ -1767,7 +1767,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * and composite attributes. Note that the result is
      * undefined, if the given transform is noninvertible.
      * @param img The image to be drawn.
-     *            This method does nothing if <code>img</code> is null.
+     *            This method does nothing if {@code img} is null.
      * @param xform The transformation from image space into user space.
      * @param obs The image observer to be notified as more of the image
      * is converted.
@@ -1809,7 +1809,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * </pre>
      * @param op The filter to be applied to the image before drawing.
      * @param img The BufferedImage to be drawn.
-     *            This method does nothing if <code>img</code> is null.
+     *            This method does nothing if {@code img} is null.
      * @param x,y The location in user space where the image should be drawn.
      * @see #transform
      * @see #setTransform
@@ -1853,7 +1853,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
      * and composite attributes. Note that the result is
      * undefined, if the given transform is noninvertible.
      * @param img The image to be drawn.
-     *            This method does nothing if <code>img</code> is null.
+     *            This method does nothing if {@code img} is null.
      * @param xform The transformation from image space into user space.
      * @see #transform
      * @see #setTransform

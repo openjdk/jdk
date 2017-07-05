@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,11 +134,8 @@ public final class BooleanType extends Type {
     @Override
     public Type add(final MethodVisitor method, final int programPoint) {
         // Adding booleans in JavaScript is perfectly valid, they add as if false=0 and true=1
-        if(programPoint == INVALID_PROGRAM_POINT) {
-            method.visitInsn(IADD);
-        } else {
-            method.visitInvokeDynamicInsn("iadd", "(II)I", MATHBOOTSTRAP, programPoint);
-        }
+        assert programPoint == INVALID_PROGRAM_POINT;
+        method.visitInsn(IADD);
         return INT;
     }
 }

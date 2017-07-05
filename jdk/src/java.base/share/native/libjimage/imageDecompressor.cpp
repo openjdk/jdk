@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ void ImageDecompressor::image_decompressor_init() {
 }
 
 void ImageDecompressor::image_decompressor_close() {
-    delete _decompressors;
+    delete[] _decompressors;
 }
 
 /*
@@ -135,13 +135,13 @@ void ImageDecompressor::decompress_resource(u1* compressed, u1* uncompressed,
             decompressor->decompress_resource(compressed_resource, decompressed_resource,
                 &_header, strings);
             if (compressed_resource_base != compressed) {
-                delete compressed_resource_base;
+                delete[] compressed_resource_base;
             }
             compressed_resource = decompressed_resource;
         }
     } while (has_header);
     memcpy(uncompressed, decompressed_resource, uncompressed_size);
-    delete decompressed_resource;
+    delete[] decompressed_resource;
 }
 
 // Zip decompressor
@@ -190,8 +190,8 @@ void SharedStringDecompressor::decompress_resource(u1* data,
             { // String in Strings table
                 *uncompressed_resource = 1;
                 uncompressed_resource += 1;
-                int i = decompress_int(data);
-                const char * string = strings->get(i);
+                int k = decompress_int(data);
+                const char * string = strings->get(k);
                 int str_length = (int) strlen(string);
                 Endian::set_java(uncompressed_resource, str_length);
                 uncompressed_resource += 2;
@@ -241,7 +241,7 @@ void SharedStringDecompressor::decompress_resource(u1* data,
                                 *fullpkg = '/';
                                 memcpy(uncompressed_resource, pkg_base, len);
                                 uncompressed_resource += len;
-                                delete pkg_base;
+                                delete[] pkg_base;
                                 desc_length += len;
                             } else { // Empty package
                                 // Nothing to do.

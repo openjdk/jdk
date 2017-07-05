@@ -53,9 +53,9 @@ import java.util.EventListener;
 @Deprecated
 public interface ApplicationListener extends EventListener {
     /**
-     * Called when the user selects the About item in the application menu. If <code>event</code> is not handled by
-     * setting <code>isHandled(true)</code>, a default About window consisting of the application's name and icon is
-     * displayed. To display a custom About window, designate the <code>event</code> as being handled and display the
+     * Called when the user selects the About item in the application menu. If {@code event} is not handled by
+     * setting {@code isHandled(true)}, a default About window consisting of the application's name and icon is
+     * displayed. To display a custom About window, designate the {@code event} as being handled and display the
      * appropriate About window.
      *
      * @param event an ApplicationEvent initiated by the user choosing About in the application menu
@@ -99,7 +99,7 @@ public interface ApplicationListener extends EventListener {
      * Called when the Preference item in the application menu is selected. Native Mac OS X applications make their
      * Preferences window available through the application menu. Java applications are automatically given an application
      * menu in Mac OS X. By default, the Preferences item is disabled in that menu. If you are deploying an application
-     * on Mac OS X, you should enable the preferences item with <code>setEnabledPreferencesMenu(true)</code> in the
+     * on Mac OS X, you should enable the preferences item with {@code setEnabledPreferencesMenu(true)} in the
      * Application object and then display your Preferences window in this handler.
      *
      * @param event triggered when the user selects Preferences from the application menu
@@ -130,8 +130,8 @@ public interface ApplicationListener extends EventListener {
      * application menu, when the user types Command-Q, or when the user control clicks on your application icon in the
      * Dock and chooses Quit. You can either accept or reject the request to quit. You might want to reject the request
      * to quit if the user has unsaved work. Reject the request, move into your code to save changes, then quit your
-     * application. To accept the request to quit, and terminate the application, set <code>isHandled(true)</code> for the
-     * <code>event</code>. To reject the quit, set <code>isHandled(false)</code>.
+     * application. To accept the request to quit, and terminate the application, set {@code isHandled(true)} for the
+     * {@code event}. To reject the quit, set {@code isHandled(false)}.
      *
      * @param event a Quit Application event
      * @deprecated use {@link QuitHandler} and {@link QuitResponse}

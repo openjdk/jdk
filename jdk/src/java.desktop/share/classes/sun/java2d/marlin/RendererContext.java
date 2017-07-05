@@ -68,6 +68,8 @@ final class RendererContext implements MarlinConst {
      * @see MarlinRenderingEngine#REF_TYPE
      */
     final Object reference;
+    // Smallest object used as Cleaner's parent reference
+    final Object cleanerObj = new Object();
     // dirty flag indicating an exception occured during pipeline in pathTo()
     boolean dirty = false;
     // dynamic array caches kept using weak reference (low memory footprint)
@@ -187,10 +189,10 @@ final class RendererContext implements MarlinConst {
                 if (USE_CACHE_HARD_REF) {
                     // update hard reference:
                     hardRefArrayCaches = holder;
+                } else {
+                    // update weak reference:
+                    refArrayCaches = new WeakReference<ArrayCachesHolder>(holder);
                 }
-
-                // update weak reference:
-                refArrayCaches = new WeakReference<ArrayCachesHolder>(holder);
             }
         }
         return holder;

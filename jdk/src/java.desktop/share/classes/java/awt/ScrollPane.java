@@ -47,8 +47,8 @@ import java.io.IOException;
  * </OL>
  * <P>
  * The state of the horizontal and vertical scrollbars is represented
- * by two <code>ScrollPaneAdjustable</code> objects (one for each
- * dimension) which implement the <code>Adjustable</code> interface.
+ * by two {@code ScrollPaneAdjustable} objects (one for each
+ * dimension) which implement the {@code Adjustable} interface.
  * The API provides methods to access those objects such that the
  * attributes on the Adjustable object (such as unitIncrement, value,
  * etc.) can be manipulated.
@@ -71,7 +71,7 @@ import java.io.IOException;
  * be reset using setSize().
  * <P>
  * Scrolling with the wheel on a wheel-equipped mouse is enabled by default.
- * This can be disabled using <code>setWheelScrollingEnabled</code>.
+ * This can be disabled using {@code setWheelScrollingEnabled}.
  * Wheel scrolling can be customized by setting the block and
  * unit increment of the horizontal and vertical Adjustables.
  * For information on how mouse wheel events are dispatched, see
@@ -136,9 +136,9 @@ public class ScrollPane extends Container implements Accessible {
     /**
      * An adjustable vertical scrollbar.
      * It is important to note that you must <em>NOT</em> call 3
-     * <code>Adjustable</code> methods, namely:
-     * <code>setMinimum()</code>, <code>setMaximum()</code>,
-     * <code>setVisibleAmount()</code>.
+     * {@code Adjustable} methods, namely:
+     * {@code setMinimum()}, {@code setMaximum()},
+     * {@code setVisibleAmount()}.
      *
      * @serial
      * @see #getVAdjustable
@@ -148,9 +148,9 @@ public class ScrollPane extends Container implements Accessible {
     /**
      * An adjustable horizontal scrollbar.
      * It is important to note that you must <em>NOT</em> call 3
-     * <code>Adjustable</code> methods, namely:
-     * <code>setMinimum()</code>, <code>setMaximum()</code>,
-     * <code>setVisibleAmount()</code>.
+     * {@code Adjustable} methods, namely:
+     * {@code setMinimum()}, {@code setMaximum()},
+     * {@code setVisibleAmount()}.
      *
      * @serial
      * @see #getHAdjustable
@@ -318,10 +318,10 @@ public class ScrollPane extends Container implements Accessible {
     }
 
     /**
-     * Returns the <code>ScrollPaneAdjustable</code> object which
+     * Returns the {@code ScrollPaneAdjustable} object which
      * represents the state of the vertical scrollbar.
      * The declared return type of this method is
-     * <code>Adjustable</code> to maintain backward compatibility.
+     * {@code Adjustable} to maintain backward compatibility.
      *
      * @see java.awt.ScrollPaneAdjustable
      * @return the vertical scrollbar state
@@ -331,10 +331,10 @@ public class ScrollPane extends Container implements Accessible {
     }
 
     /**
-     * Returns the <code>ScrollPaneAdjustable</code> object which
+     * Returns the {@code ScrollPaneAdjustable} object which
      * represents the state of the horizontal scrollbar.
      * The declared return type of this method is
-     * <code>Adjustable</code> to maintain backward compatibility.
+     * {@code Adjustable} to maintain backward compatibility.
      *
      * @see java.awt.ScrollPaneAdjustable
      * @return the horizontal scrollbar state
@@ -488,7 +488,7 @@ public class ScrollPane extends Container implements Accessible {
 
     /**
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>doLayout()</code>.
+     * replaced by {@code doLayout()}.
      */
     @Deprecated
     public void layout() {
@@ -573,11 +573,11 @@ public class ScrollPane extends Container implements Accessible {
 
     /**
      * Returns a string representing the state of this
-     * <code>ScrollPane</code>. This
+     * {@code ScrollPane}. This
      * method is intended to be used only for debugging purposes, and the
      * content and format of the returned string may vary between
      * implementations. The returned string may be empty but may not be
-     * <code>null</code>.
+     * {@code null}.
      *
      * @return the parameter string of this scroll pane
      */
@@ -610,8 +610,8 @@ public class ScrollPane extends Container implements Accessible {
 
     /**
      * Process mouse wheel events that are delivered to this
-     * <code>ScrollPane</code> by scrolling an appropriate amount.
-     * <p>Note that if the event parameter is <code>null</code>
+     * {@code ScrollPane} by scrolling an appropriate amount.
+     * <p>Note that if the event parameter is {@code null}
      * the behavior is unspecified and may result in an
      * exception.
      *
@@ -643,9 +643,9 @@ public class ScrollPane extends Container implements Accessible {
      * Enables/disables scrolling in response to movement of the mouse wheel.
      * Wheel scrolling is enabled by default.
      *
-     * @param handleWheel   <code>true</code> if scrolling should be done
+     * @param handleWheel   {@code true} if scrolling should be done
      *                      automatically for a MouseWheelEvent,
-     *                      <code>false</code> otherwise.
+     *                      {@code false} otherwise.
      * @see #isWheelScrollingEnabled
      * @see java.awt.event.MouseWheelEvent
      * @see java.awt.event.MouseWheelListener
@@ -683,8 +683,8 @@ public class ScrollPane extends Container implements Accessible {
     /**
      * Reads default serializable fields to stream.
      * @exception HeadlessException if
-     * <code>GraphicsEnvironment.isHeadless()</code> returns
-     * <code>true</code>
+     * {@code GraphicsEnvironment.isHeadless()} returns
+     * {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     private void readObject(ObjectInputStream s)
@@ -779,7 +779,7 @@ public class ScrollPane extends Container implements Accessible {
 
     /**
      * This class implements accessibility support for the
-     * <code>ScrollPane</code> class.  It provides an implementation of the
+     * {@code ScrollPane} class.  It provides an implementation of the
      * Java Accessibility API appropriate to scroll pane user-interface
      * elements.
      * @since 1.3

@@ -38,7 +38,7 @@ public interface PrintJobAttributeListener {
      * One example of an occurrence triggering this event is if the
      * {@link javax.print.attribute.standard.JobState JobState}
      * attribute changed from
-     * <code>PROCESSING</code> to <code>PROCESSING_STOPPED</code>.
+     * {@code PROCESSING} to {@code PROCESSING_STOPPED}.
      * @param pjae the event.
      */
     public void attributeUpdate(PrintJobAttributeEvent pjae) ;

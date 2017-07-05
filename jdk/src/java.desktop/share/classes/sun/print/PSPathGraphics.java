@@ -72,8 +72,8 @@ class PSPathGraphics extends PathGraphics {
     }
 
     /**
-     * Creates a new <code>Graphics</code> object that is
-     * a copy of this <code>Graphics</code> object.
+     * Creates a new {@code Graphics} object that is
+     * a copy of this {@code Graphics} object.
      * @return     a new graphics context that is a copy of
      *                       this graphics context.
      * @since      1.0
@@ -115,19 +115,19 @@ class PSPathGraphics extends PathGraphics {
     }
 
     /**
-     * Renders the text specified by the specified <code>String</code>,
-     * using the current <code>Font</code> and <code>Paint</code> attributes
-     * in the <code>Graphics2D</code> context.
+     * Renders the text specified by the specified {@code String},
+     * using the current {@code Font} and {@code Paint} attributes
+     * in the {@code Graphics2D} context.
      * The baseline of the first character is at position
      * (<i>x</i>,&nbsp;<i>y</i>) in the User Space.
-     * The rendering attributes applied include the <code>Clip</code>,
-     * <code>Transform</code>, <code>Paint</code>, <code>Font</code> and
-     * <code>Composite</code> attributes. For characters in script systems
+     * The rendering attributes applied include the {@code Clip},
+     * {@code Transform}, {@code Paint}, {@code Font} and
+     * {@code Composite} attributes. For characters in script systems
      * such as Hebrew and Arabic, the glyphs can be rendered from right to
      * left, in which case the coordinate supplied is the location of the
      * leftmost character on the baseline.
-     * @param str the <code>String</code> to be rendered
-     * @param x,&nbsp;y the coordinates where the <code>String</code>
+     * @param str the {@code String} to be rendered
+     * @param x,&nbsp;y the coordinates where the {@code String}
      * should be rendered
      * @see #setPaint
      * @see java.awt.Graphics#setColor
@@ -248,16 +248,16 @@ class PSPathGraphics extends PathGraphics {
     }
 
     /**
-     * The various <code>drawImage()</code> methods for
-     * <code>WPathGraphics</code> are all decomposed
-     * into an invocation of <code>drawImageToPlatform</code>.
+     * The various {@code drawImage()} methods for
+     * {@code WPathGraphics} are all decomposed
+     * into an invocation of {@code drawImageToPlatform}.
      * The portion of the passed in image defined by
-     * <code>srcX, srcY, srcWidth, and srcHeight</code>
+     * {@code srcX, srcY, srcWidth, and srcHeight}
      * is transformed by the supplied AffineTransform and
      * drawn using PS to the printer context.
      *
      * @param   image   The image to be drawn.
-     *                  This method does nothing if <code>img</code> is null.
+     *                  This method does nothing if {@code img} is null.
      * @param   xform   Used to transform the image before drawing.
      *                  This can be null.
      * @param   bgcolor This color is drawn where the image has transparent
@@ -730,7 +730,7 @@ class PSPathGraphics extends PathGraphics {
 
 
     /*
-     * Fill the path defined by <code>pathIter</code>
+     * Fill the path defined by {@code pathIter}
      * with the specified color.
      * The path is provided in current user space.
      */

@@ -127,7 +127,7 @@ public class Desktop {
     }
 
     /**
-     * Returns the <code>Desktop</code> instance of the current
+     * Returns the {@code Desktop} instance of the current
      * browser context.  On some platforms the Desktop API may not be
      * supported; use the {@link #isDesktopSupported} method to
      * determine if the current desktop is supported.
@@ -162,8 +162,8 @@ public class Desktop {
      * If it's supported, use {@link #getDesktop()} to retrieve an
      * instance.
      *
-     * @return <code>true</code> if this class is supported on the
-     *         current platform; <code>false</code> otherwise
+     * @return {@code true} if this class is supported on the
+     *         current platform; {@code false} otherwise
      * @see #getDesktop()
      */
     public static boolean isDesktopSupported(){
@@ -186,8 +186,8 @@ public class Desktop {
      * action method will throw an {@link IOException}.
      *
      * @param action the specified {@link Action}
-     * @return <code>true</code> if the specified action is supported on
-     *         the current platform; <code>false</code> otherwise
+     * @return {@code true} if the specified action is supported on
+     *         the current platform; {@code false} otherwise
      * @see Desktop.Action
      */
     public boolean isSupported(Action action) {
@@ -230,8 +230,8 @@ public class Desktop {
 
 
     /**
-     *  Calls to the security manager's <code>checkPermission</code> method with
-     *  an <code>AWTPermission("showWindowWithoutWarningBanner")</code>
+     *  Calls to the security manager's {@code checkPermission} method with
+     *  an {@code AWTPermission("showWindowWithoutWarningBanner")}
      *  permission.
      */
     private void checkAWTPermission(){
@@ -259,7 +259,7 @@ public class Desktop {
      * @throws SecurityException if a security manager exists and its
      * {@link java.lang.SecurityManager#checkRead(java.lang.String)}
      * method denies read access to the file, or it denies the
-     * <code>AWTPermission("showWindowWithoutWarningBanner")</code>
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
      * permission, or the calling thread is not allowed to create a
      * subprocess
      * @see java.awt.AWTPermission
@@ -290,7 +290,7 @@ public class Desktop {
      * method denies read access to the file, or {@link
      * java.lang.SecurityManager#checkWrite(java.lang.String)} method
      * denies write access to the file, or it denies the
-     * <code>AWTPermission("showWindowWithoutWarningBanner")</code>
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
      * permission, or the calling thread is not allowed to create a
      * subprocess
      * @see java.awt.AWTPermission
@@ -361,7 +361,7 @@ public class Desktop {
      * failed to be launched
      * @throws SecurityException if a security manager exists and it
      * denies the
-     * <code>AWTPermission("showWindowWithoutWarningBanner")</code>
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
      * permission, or the calling thread is not allowed to create a
      * subprocess; and not invoked from within an applet or Java Web Started
      * application
@@ -415,7 +415,7 @@ public class Desktop {
      * found, or it fails to be launched
      * @throws SecurityException if a security manager exists and it
      * denies the
-     * <code>AWTPermission("showWindowWithoutWarningBanner")</code>
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
      * permission, or the calling thread is not allowed to create a
      * subprocess
      * @see java.awt.AWTPermission
@@ -438,7 +438,7 @@ public class Desktop {
      * client, filling the message fields specified by a {@code
      * mailto:} URI.
      *
-     * <p> A <code>mailto:</code> URI can specify message fields
+     * <p> A {@code mailto:} URI can specify message fields
      * including <i>"to"</i>, <i>"cc"</i>, <i>"subject"</i>,
      * <i>"body"</i>, etc.  See <a
      * href="http://www.ietf.org/rfc/rfc2368.txt">The mailto URL
@@ -449,14 +449,14 @@ public class Desktop {
      * @throws NullPointerException if the specified URI is {@code
      * null}
      * @throws IllegalArgumentException if the URI scheme is not
-     *         <code>"mailto"</code>
+     *         {@code "mailto"}
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#MAIL} action
      * @throws IOException if the user default mail client is not
      * found or fails to be launched
      * @throws SecurityException if a security manager exists and it
      * denies the
-     * <code>AWTPermission("showWindowWithoutWarningBanner")</code>
+     * {@code AWTPermission("showWindowWithoutWarningBanner")}
      * permission, or the calling thread is not allowed to create a
      * subprocess
      * @see java.net.URI

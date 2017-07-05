@@ -157,15 +157,15 @@ public class JPEGHuffmanTable {
      * The arrays must describe a possible Huffman table.
      * For example, 3 codes cannot be expressed with a single bit.
      *
-     * @param lengths an array of {@code short}s where <code>lengths[k]</code>
+     * @param lengths an array of {@code short}s where {@code lengths[k]}
      * is equal to the number of values with corresponding codes of
-     * length <code>k + 1</code> bits.
+     * length {@code k + 1} bits.
      * @param values an array of shorts containing the values in
      * order of increasing code length.
-     * @throws IllegalArgumentException if <code>lengths</code> or
-     * <code>values</code> are null, the length of <code>lengths</code> is
-     * greater than 16, the length of <code>values</code> is greater than 256,
-     * if any value in <code>lengths</code> or <code>values</code> is less
+     * @throws IllegalArgumentException if {@code lengths} or
+     * {@code values} are null, the length of {@code lengths} is
+     * greater than 16, the length of {@code values} is greater than 256,
+     * if any value in {@code lengths} or {@code values} is less
      * than zero, or if the arrays do not describe a valid Huffman table.
      */
     public JPEGHuffmanTable(short[] lengths, short[] values) {
@@ -212,11 +212,11 @@ public class JPEGHuffmanTable {
     }
 
     /**
-     * Returns an array of <code>short</code>s containing the number of values
+     * Returns an array of {@code short}s containing the number of values
      * for each length in the Huffman table. The returned array is a copy.
      *
-     * @return a <code>short</code> array where <code>array[k-1]</code>
-     * is equal to the number of values in the table of length <code>k</code>.
+     * @return a {@code short} array where {@code array[k-1]}
+     * is equal to the number of values in the table of length {@code k}.
      * @see #getValues
      */
     public short[] getLengths() {
@@ -224,12 +224,12 @@ public class JPEGHuffmanTable {
     }
 
     /**
-     * Returns an array of <code>short</code>s containing the values arranged
+     * Returns an array of {@code short}s containing the values arranged
      * by increasing length of their corresponding codes.
      * The interpretation of the array is dependent on the values returned
-     * from <code>getLengths</code>. The returned array is a copy.
+     * from {@code getLengths}. The returned array is a copy.
      *
-     * @return a <code>short</code> array of values.
+     * @return a {@code short} array of values.
      * @see #getLengths
      */
     public short[] getValues() {

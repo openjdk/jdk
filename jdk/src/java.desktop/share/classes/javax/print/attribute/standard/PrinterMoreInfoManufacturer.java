@@ -46,8 +46,8 @@ import javax.print.attribute.PrintServiceAttribute;
  * general kind of printer.
  * <P>
  * <B>IPP Compatibility:</B> The string form returned by
- * <CODE>toString()</CODE> gives the IPP uri value.
- * The category name returned by <CODE>getName()</CODE>
+ * {@code toString()} gives the IPP uri value.
+ * The category name returned by {@code getName()}
  * gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
@@ -64,7 +64,7 @@ public final class PrinterMoreInfoManufacturer extends URISyntax
      * @param  uri  URI.
      *
      * @exception  NullPointerException
-     *     (unchecked exception) Thrown if <CODE>uri</CODE> is null.
+     *     (unchecked exception) Thrown if {@code uri} is null.
      */
     public PrinterMoreInfoManufacturer(URI uri) {
         super (uri);
@@ -76,18 +76,18 @@ public final class PrinterMoreInfoManufacturer extends URISyntax
      * following conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class
+     * {@code object} is an instance of class
      * PrinterMoreInfoManufacturer.
      * <LI>
      * This printer more info manufacturer attribute's URI and
-     * <CODE>object</CODE>'s URI are equal.
+     * {@code object}'s URI are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this printer
+     * @return  True if {@code object} is equivalent to this printer
      *          more info manufacturer attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -114,7 +114,7 @@ public final class PrinterMoreInfoManufacturer extends URISyntax
      * instance.
      * <P>
      * For class PrinterMoreInfoManufacturer, the category name is
-     * <CODE>"printer-more-info-manufacturer"</CODE>.
+     * {@code "printer-more-info-manufacturer"}.
      *
      * @return  Attribute category name.
      */

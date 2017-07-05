@@ -457,7 +457,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If the divisor is 1, we are an identity on the dividend.
-Node *DivINode::Identity( PhaseTransform *phase ) {
+Node* DivINode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) )->higher_equal(TypeInt::ONE)) ? in(1) : this;
 }
 
@@ -493,7 +493,7 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------Value------------------------------------------
 // A DivINode divides its inputs.  The third input is a Control input, used to
 // prevent hoisting the divide above an unsafe test.
-const Type *DivINode::Value( PhaseTransform *phase ) const {
+const Type* DivINode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -559,7 +559,7 @@ const Type *DivINode::Value( PhaseTransform *phase ) const {
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If the divisor is 1, we are an identity on the dividend.
-Node *DivLNode::Identity( PhaseTransform *phase ) {
+Node* DivLNode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) )->higher_equal(TypeLong::ONE)) ? in(1) : this;
 }
 
@@ -595,7 +595,7 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
 //------------------------------Value------------------------------------------
 // A DivLNode divides its inputs.  The third input is a Control input, used to
 // prevent hoisting the divide above an unsafe test.
-const Type *DivLNode::Value( PhaseTransform *phase ) const {
+const Type* DivLNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -662,7 +662,7 @@ const Type *DivLNode::Value( PhaseTransform *phase ) const {
 //------------------------------Value------------------------------------------
 // An DivFNode divides its inputs.  The third input is a Control input, used to
 // prevent hoisting the divide above an unsafe test.
-const Type *DivFNode::Value( PhaseTransform *phase ) const {
+const Type* DivFNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -705,7 +705,7 @@ const Type *DivFNode::Value( PhaseTransform *phase ) const {
 //------------------------------isA_Copy---------------------------------------
 // Dividing by self is 1.
 // If the divisor is 1, we are an identity on the dividend.
-Node *DivFNode::Identity( PhaseTransform *phase ) {
+Node* DivFNode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) ) == TypeF::ONE) ? in(1) : this;
 }
 
@@ -750,7 +750,7 @@ Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------Value------------------------------------------
 // An DivDNode divides its inputs.  The third input is a Control input, used to
 // prevent hoisting the divide above an unsafe test.
-const Type *DivDNode::Value( PhaseTransform *phase ) const {
+const Type* DivDNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -800,7 +800,7 @@ const Type *DivDNode::Value( PhaseTransform *phase ) const {
 //------------------------------isA_Copy---------------------------------------
 // Dividing by self is 1.
 // If the divisor is 1, we are an identity on the dividend.
-Node *DivDNode::Identity( PhaseTransform *phase ) {
+Node* DivDNode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) ) == TypeD::ONE) ? in(1) : this;
 }
 
@@ -972,7 +972,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type *ModINode::Value( PhaseTransform *phase ) const {
+const Type* ModINode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -1145,7 +1145,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type *ModLNode::Value( PhaseTransform *phase ) const {
+const Type* ModLNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -1186,7 +1186,7 @@ const Type *ModLNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-const Type *ModFNode::Value( PhaseTransform *phase ) const {
+const Type* ModFNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );
@@ -1230,7 +1230,7 @@ const Type *ModFNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-const Type *ModDNode::Value( PhaseTransform *phase ) const {
+const Type* ModDNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type *t1 = phase->type( in(1) );
   const Type *t2 = phase->type( in(2) );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,7 @@ public class DefaultProvider {
         out.println("TEST: Default provider with constructor");
         SecureRandom secureRandom = new SecureRandom();
         String provider = secureRandom.getProvider().getName();
-        if (OS_NAME.startsWith(SUNOS)) {
-            if (!provider.startsWith("SunPKCS11-")) {
-                throw new RuntimeException("Unexpected provider name: "
-                        + provider);
-            }
-        } else if (!provider.equals("SUN")) {
+        if (!provider.equals("SUN")) {
             throw new RuntimeException("Unexpected provider name: "
                     + provider);
         }
@@ -77,16 +72,6 @@ public class DefaultProvider {
         instance = SecureRandom.getInstance(algorithm);
         assertInstance(instance, algorithm, provider);
         out.println("Passed.");
-
-        if (OS_NAME.startsWith(SUNOS)) {
-            out.println(
-                    "TEST: PKCS11 is supported on Solaris by SunPKCS11 provider");
-            algorithm = "PKCS11";
-            provider = "SunPKCS11-Solaris";
-            instance = SecureRandom.getInstance(algorithm);
-            assertInstance(instance, algorithm, provider);
-            out.println("Passed.");
-        }
     }
 
     private static void assertInstance(SecureRandom instance,

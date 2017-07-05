@@ -31,20 +31,20 @@ import javax.imageio.stream.ImageInputStream;
 
 /**
  * The service provider interface (SPI) for
- * <code>ImageInputStream</code>s.  For more information on service
+ * {@code ImageInputStream}s.  For more information on service
  * provider interfaces, see the class comment for the
- * <code>IIORegistry</code> class.
+ * {@code IIORegistry} class.
  *
  * <p> This interface allows arbitrary objects to be "wrapped" by
- * instances of <code>ImageInputStream</code>.  For example,
- * a particular <code>ImageInputStreamSpi</code> might allow
- * a generic <code>InputStream</code> to be used as an input source;
- * another might take input from a <code>URL</code>.
+ * instances of {@code ImageInputStream}.  For example,
+ * a particular {@code ImageInputStreamSpi} might allow
+ * a generic {@code InputStream} to be used as an input source;
+ * another might take input from a {@code URL}.
  *
- * <p> By treating the creation of <code>ImageInputStream</code>s as a
+ * <p> By treating the creation of {@code ImageInputStream}s as a
  * pluggable service, it becomes possible to handle future input
  * sources without changing the API.  Also, high-performance
- * implementations of <code>ImageInputStream</code> (for example,
+ * implementations of {@code ImageInputStream} (for example,
  * native implementations for a particular platform) can be installed
  * and used transparently by applications.
  *
@@ -55,13 +55,13 @@ import javax.imageio.stream.ImageInputStream;
 public abstract class ImageInputStreamSpi extends IIOServiceProvider {
 
     /**
-     * A <code>Class</code> object indicating the legal object type
-     * for use by the <code>createInputStreamInstance</code> method.
+     * A {@code Class} object indicating the legal object type
+     * for use by the {@code createInputStreamInstance} method.
      */
     protected Class<?> inputClass;
 
     /**
-     * Constructs a blank <code>ImageInputStreamSpi</code>.  It is up
+     * Constructs a blank {@code ImageInputStreamSpi}.  It is up
      * to the subclass to initialize instance variables and/or
      * override method implementations in order to provide working
      * versions of all methods.
@@ -70,19 +70,19 @@ public abstract class ImageInputStreamSpi extends IIOServiceProvider {
     }
 
     /**
-     * Constructs an <code>ImageInputStreamSpi</code> with a given set
+     * Constructs an {@code ImageInputStreamSpi} with a given set
      * of values.
      *
      * @param vendorName the vendor name.
      * @param version a version identifier.
-     * @param inputClass a <code>Class</code> object indicating the
+     * @param inputClass a {@code Class} object indicating the
      * legal object type for use by the
-     * <code>createInputStreamInstance</code> method.
+     * {@code createInputStreamInstance} method.
      *
-     * @exception IllegalArgumentException if <code>vendorName</code>
-     * is <code>null</code>.
-     * @exception IllegalArgumentException if <code>version</code>
-     * is <code>null</code>.
+     * @exception IllegalArgumentException if {@code vendorName}
+     * is {@code null}.
+     * @exception IllegalArgumentException if {@code version}
+     * is {@code null}.
      */
     public ImageInputStreamSpi(String vendorName,
                                String version,
@@ -92,16 +92,16 @@ public abstract class ImageInputStreamSpi extends IIOServiceProvider {
     }
 
     /**
-     * Returns a <code>Class</code> object representing the class or
+     * Returns a {@code Class} object representing the class or
      * interface type that must be implemented by an input source in
-     * order to be "wrapped" in an <code>ImageInputStream</code> via
-     * the <code>createInputStreamInstance</code> method.
+     * order to be "wrapped" in an {@code ImageInputStream} via
+     * the {@code createInputStreamInstance} method.
      *
      * <p> Typical return values might include
-     * <code>InputStream.class</code> or <code>URL.class</code>, but
+     * {@code InputStream.class} or {@code URL.class}, but
      * any class may be used.
      *
-     * @return a <code>Class</code> variable.
+     * @return a {@code Class} variable.
      *
      * @see #createInputStreamInstance(Object, boolean, File)
      */
@@ -110,16 +110,16 @@ public abstract class ImageInputStreamSpi extends IIOServiceProvider {
     }
 
     /**
-     * Returns <code>true</code> if the <code>ImageInputStream</code>
+     * Returns {@code true} if the {@code ImageInputStream}
      * implementation associated with this service provider can
      * optionally make use of a cache file for improved performance
-     * and/or memory footrprint.  If <code>false</code>, the value of
-     * the <code>useCache</code> argument to
-     * <code>createInputStreamInstance</code> will be ignored.
+     * and/or memory footrprint.  If {@code false}, the value of
+     * the {@code useCache} argument to
+     * {@code createInputStreamInstance} will be ignored.
      *
-     * <p> The default implementation returns <code>false</code>.
+     * <p> The default implementation returns {@code false}.
      *
-     * @return <code>true</code> if a cache file can be used by the
+     * @return {@code true} if a cache file can be used by the
      * input streams created by this service provider.
      */
     public boolean canUseCacheFile() {
@@ -127,15 +127,15 @@ public abstract class ImageInputStreamSpi extends IIOServiceProvider {
     }
 
     /**
-     * Returns <code>true</code> if the <code>ImageInputStream</code>
+     * Returns {@code true} if the {@code ImageInputStream}
      * implementation associated with this service provider requires
-     * the use of a cache <code>File</code>.  If <code>true</code>,
-     * the value of the <code>useCache</code> argument to
-     * <code>createInputStreamInstance</code> will be ignored.
+     * the use of a cache {@code File}.  If {@code true},
+     * the value of the {@code useCache} argument to
+     * {@code createInputStreamInstance} will be ignored.
      *
-     * <p> The default implementation returns <code>false</code>.
+     * <p> The default implementation returns {@code false}.
      *
-     * @return <code>true</code> if a cache file is needed by the
+     * @return {@code true} if a cache file is needed by the
      * input streams created by this service provider.
      */
     public boolean needsCacheFile() {
@@ -143,26 +143,26 @@ public abstract class ImageInputStreamSpi extends IIOServiceProvider {
     }
 
     /**
-     * Returns an instance of the <code>ImageInputStream</code>
+     * Returns an instance of the {@code ImageInputStream}
      * implementation associated with this service provider.  If the
-     * use of a cache file is optional, the <code>useCache</code>
+     * use of a cache file is optional, the {@code useCache}
      * parameter will be consulted.  Where a cache is required, or
-     * not applicable, the value of <code>useCache</code> will be ignored.
+     * not applicable, the value of {@code useCache} will be ignored.
      *
      * @param input an object of the class type returned by
-     * <code>getInputClass</code>.
-     * @param useCache a <code>boolean</code> indicating whether a
+     * {@code getInputClass}.
+     * @param useCache a {@code boolean} indicating whether a
      * cache file should be used, in cases where it is optional.
-     * @param cacheDir a <code>File</code> indicating where the
-     * cache file should be created, or <code>null</code> to use the
+     * @param cacheDir a {@code File} indicating where the
+     * cache file should be created, or {@code null} to use the
      * system directory.
      *
-     * @return an <code>ImageInputStream</code> instance.
+     * @return an {@code ImageInputStream} instance.
      *
-     * @exception IllegalArgumentException if <code>input</code> is
-     * not an instance of the correct class or is <code>null</code>.
+     * @exception IllegalArgumentException if {@code input} is
+     * not an instance of the correct class or is {@code null}.
      * @exception IllegalArgumentException if a cache file is needed
-     * but <code>cacheDir</code> is non-<code>null</code> and is not a
+     * but {@code cacheDir} is non-{@code null} and is not a
      * directory.
      * @exception IOException if a cache file is needed but cannot be
      * created.
@@ -177,18 +177,18 @@ public abstract class ImageInputStreamSpi extends IIOServiceProvider {
                                   File cacheDir) throws IOException;
 
     /**
-     * Returns an instance of the <code>ImageInputStream</code>
+     * Returns an instance of the {@code ImageInputStream}
      * implementation associated with this service provider.  A cache
      * file will be created in the system-dependent default
      * temporary-file directory, if needed.
      *
      * @param input an object of the class type returned by
-     * <code>getInputClass</code>.
+     * {@code getInputClass}.
      *
-     * @return an <code>ImageInputStream</code> instance.
+     * @return an {@code ImageInputStream} instance.
      *
-     * @exception IllegalArgumentException if <code>input</code> is
-     * not an instance of the correct class or is <code>null</code>.
+     * @exception IllegalArgumentException if {@code input} is
+     * not an instance of the correct class or is {@code null}.
      * @exception IOException if a cache file is needed but cannot be
      * created.
      *

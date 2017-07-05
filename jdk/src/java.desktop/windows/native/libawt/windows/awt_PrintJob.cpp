@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1108,7 +1108,7 @@ Java_sun_awt_windows_WPrinterJob_initPrinter(JNIEnv *env, jobject self) {
     // check for collation
     HGLOBAL hDevNames = AwtPrintControl::getPrintHDName(env, self);
     if (hDevNames != NULL) {
-        DWORD dmFields;
+        DWORD dmFields = 0;
         DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(hDevNames);
 
         if (devnames != NULL) {

@@ -48,8 +48,8 @@ import javax.print.attribute.Attribute;
  * JobState} also changed.
  * <P>
  * <B>IPP Compatibility:</B> The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Alan Kaminsky
@@ -259,7 +259,7 @@ public class JobStateReason extends EnumSyntax implements Attribute {
      * The job was aborted by the system because the document data's document
      * format (doc flavor) is not among those supported by the printer. If the
      * client specifies a doc flavor with a MIME type of
-     * <CODE>"application/octet-stream"</CODE>, the printer may abort the job if
+     * {@code "application/octet-stream"}, the printer may abort the job if
      * the printer cannot determine the document data's actual format through
      * auto-sensing (even if the printer supports the document format if
      * specified explicitly). This value must be supported, since a doc flavor
@@ -449,7 +449,7 @@ public class JobStateReason extends EnumSyntax implements Attribute {
      * instance.
      * <P>
      * For class JobStateReason and any vendor-defined subclasses, the
-     * category name is <CODE>"job-state-reason"</CODE>.
+     * category name is {@code "job-state-reason"}.
      *
      * @return  Attribute category name.
      */

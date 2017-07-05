@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.DefaultProfilingInfo;
@@ -417,8 +418,6 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         return false;
     }
 
-    private static final String TraceMethodDataFilter = System.getProperty("jvmci.traceMethodDataFilter");
-
     @Override
     public ProfilingInfo getProfilingInfo(boolean includeNormal, boolean includeOSR) {
         ProfilingInfo info;
@@ -427,7 +426,8 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
             long metaspaceMethodData = UNSAFE.getAddress(metaspaceMethod + config().methodDataOffset);
             if (metaspaceMethodData != 0) {
                 methodData = new HotSpotMethodData(metaspaceMethodData, this);
-                if (TraceMethodDataFilter != null && this.format("%H.%n").contains(TraceMethodDataFilter)) {
+                String methodDataFilter = Option.TraceMethodDataFilter.getString();
+                if (methodDataFilter != null && this.format("%H.%n").contains(methodDataFilter)) {
                     System.out.println("Raw method data for " + this.format("%H.%n(%p)") + ":");
                     System.out.println(methodData.toString());
                 }

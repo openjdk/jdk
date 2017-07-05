@@ -88,21 +88,21 @@ class IIONamedNodeMap implements NamedNodeMap {
     }
 
     /**
-     * Equivalent to <code>getNamedItem(localName)</code>.
+     * Equivalent to {@code getNamedItem(localName)}.
      */
     public Node getNamedItemNS(String namespaceURI, String localName) {
         return getNamedItem(localName);
     }
 
     /**
-     * Equivalent to <code>setNamedItem(arg)</code>.
+     * Equivalent to {@code setNamedItem(arg)}.
      */
     public Node setNamedItemNS(Node arg) {
         return setNamedItem(arg);
     }
 
     /**
-     * Equivalent to <code>removeNamedItem(localName)</code>.
+     * Equivalent to {@code removeNamedItem(localName)}.
      */
     public Node removeNamedItemNS(String namespaceURI, String localName) {
         return removeNamedItem(localName);
@@ -200,14 +200,14 @@ class IIOAttr extends IIOMetadataNode implements Attr {
  * A class representing a node in a meta-data tree, which implements
  * the <a
  * href="../../../../api/org/w3c/dom/Element.html">
- * <code>org.w3c.dom.Element</code></a> interface and additionally allows
+ * {@code org.w3c.dom.Element}</a> interface and additionally allows
  * for the storage of non-textual objects via the
- * <code>getUserObject</code> and <code>setUserObject</code> methods.
+ * {@code getUserObject} and {@code setUserObject} methods.
  *
  * <p> This class is not intended to be used for general XML
- * processing. In particular, <code>Element</code> nodes created
+ * processing. In particular, {@code Element} nodes created
  * within the Image I/O API are not compatible with those created by
- * Sun's standard implementation of the <code>org.w3.dom</code> API.
+ * Sun's standard implementation of the {@code org.w3.dom} API.
  * In particular, the implementation is tuned for simple uses and may
  * not perform well for intensive processing.
  *
@@ -231,23 +231,23 @@ class IIOAttr extends IIOMetadataNode implements Attr {
 public class IIOMetadataNode implements Element, NodeList {
 
     /**
-     * The name of the node as a <code>String</code>.
+     * The name of the node as a {@code String}.
      */
     private String nodeName = null;
 
     /**
-     * The value of the node as a <code>String</code>.  The Image I/O
+     * The value of the node as a {@code String}.  The Image I/O
      * API typically does not make use of the node value.
      */
     private String nodeValue = null;
 
     /**
-     * The <code>Object</code> value associated with this node.
+     * The {@code Object} value associated with this node.
      */
     private Object userObject = null;
 
     /**
-     * The parent node of this node, or <code>null</code> if this node
+     * The parent node of this node, or {@code null} if this node
      * forms the root of its own tree.
      */
     private IIOMetadataNode parent = null;
@@ -259,52 +259,52 @@ public class IIOMetadataNode implements Element, NodeList {
 
     /**
      * The first (leftmost) child node of this node, or
-     * <code>null</code> if this node is a leaf node.
+     * {@code null} if this node is a leaf node.
      */
     private IIOMetadataNode firstChild = null;
 
     /**
      * The last (rightmost) child node of this node, or
-     * <code>null</code> if this node is a leaf node.
+     * {@code null} if this node is a leaf node.
      */
     private IIOMetadataNode lastChild = null;
 
     /**
      * The next (right) sibling node of this node, or
-     * <code>null</code> if this node is its parent's last child node.
+     * {@code null} if this node is its parent's last child node.
      */
     private IIOMetadataNode nextSibling = null;
 
     /**
      * The previous (left) sibling node of this node, or
-     * <code>null</code> if this node is its parent's first child node.
+     * {@code null} if this node is its parent's first child node.
      */
     private IIOMetadataNode previousSibling = null;
 
     /**
-     * A <code>List</code> of <code>IIOAttr</code> nodes representing
+     * A {@code List} of {@code IIOAttr} nodes representing
      * attributes.
      */
     private List<IIOAttr> attributes = new ArrayList<>();
 
     /**
-     * Constructs an empty <code>IIOMetadataNode</code>.
+     * Constructs an empty {@code IIOMetadataNode}.
      */
     public IIOMetadataNode() {}
 
     /**
-     * Constructs an <code>IIOMetadataNode</code> with a given node
+     * Constructs an {@code IIOMetadataNode} with a given node
      * name.
      *
-     * @param nodeName the name of the node, as a <code>String</code>.
+     * @param nodeName the name of the node, as a {@code String}.
      */
     public IIOMetadataNode(String nodeName) {
         this.nodeName = nodeName;
     }
 
     /**
-     * Check that the node is either <code>null</code> or an
-     * <code>IIOMetadataNode</code>.
+     * Check that the node is either {@code null} or an
+     * {@code IIOMetadataNode}.
      *
      * @throws DOMException if {@code node} is not {@code null} and not an
      * instance of {@code IIOMetadataNode}
@@ -324,7 +324,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Returns the node name associated with this node.
      *
-     * @return the node name, as a <code>String</code>.
+     * @return the node name, as a {@code String}.
      */
     public String getNodeName() {
         return nodeName;
@@ -333,14 +333,14 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Returns the value associated with this node.
      *
-     * @return the node value, as a <code>String</code>.
+     * @return the node value, as a {@code String}.
      */
     public String getNodeValue(){
         return nodeValue;
     }
 
     /**
-     * Sets the <code>String</code> value associated with this node.
+     * Sets the {@code String} value associated with this node.
      */
     public void setNodeValue(String nodeValue) {
         this.nodeValue = nodeValue;
@@ -348,22 +348,22 @@ public class IIOMetadataNode implements Element, NodeList {
 
     /**
      * Returns the node type, which is always
-     * <code>ELEMENT_NODE</code>.
+     * {@code ELEMENT_NODE}.
      *
-     * @return the <code>short</code> value <code>ELEMENT_NODE</code>.
+     * @return the {@code short} value {@code ELEMENT_NODE}.
      */
     public short getNodeType() {
         return ELEMENT_NODE;
     }
 
     /**
-     * Returns the parent of this node.  A <code>null</code> value
+     * Returns the parent of this node.  A {@code null} value
      * indicates that the node is the root of its own tree.  To add a
      * node to an existing tree, use one of the
-     * <code>insertBefore</code>, <code>replaceChild</code>, or
-     * <code>appendChild</code> methods.
+     * {@code insertBefore}, {@code replaceChild}, or
+     * {@code appendChild} methods.
      *
-     * @return the parent, as a <code>Node</code>.
+     * @return the parent, as a {@code Node}.
      *
      * @see #insertBefore
      * @see #replaceChild
@@ -374,65 +374,65 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Returns a <code>NodeList</code> that contains all children of this node.
-     * If there are no children, this is a <code>NodeList</code> containing
+     * Returns a {@code NodeList} that contains all children of this node.
+     * If there are no children, this is a {@code NodeList} containing
      * no nodes.
      *
-     * @return the children as a <code>NodeList</code>
+     * @return the children as a {@code NodeList}
      */
     public NodeList getChildNodes() {
         return this;
     }
 
     /**
-     * Returns the first child of this node, or <code>null</code> if
+     * Returns the first child of this node, or {@code null} if
      * the node has no children.
      *
-     * @return the first child, as a <code>Node</code>, or
-     * <code>null</code>
+     * @return the first child, as a {@code Node}, or
+     * {@code null}
      */
     public Node getFirstChild() {
         return firstChild;
     }
 
     /**
-     * Returns the last child of this node, or <code>null</code> if
+     * Returns the last child of this node, or {@code null} if
      * the node has no children.
      *
-     * @return the last child, as a <code>Node</code>, or
-     * <code>null</code>.
+     * @return the last child, as a {@code Node}, or
+     * {@code null}.
      */
     public Node getLastChild() {
         return lastChild;
     }
 
     /**
-     * Returns the previous sibling of this node, or <code>null</code>
+     * Returns the previous sibling of this node, or {@code null}
      * if this node has no previous sibling.
      *
-     * @return the previous sibling, as a <code>Node</code>, or
-     * <code>null</code>.
+     * @return the previous sibling, as a {@code Node}, or
+     * {@code null}.
      */
     public Node getPreviousSibling() {
         return previousSibling;
     }
 
     /**
-     * Returns the next sibling of this node, or <code>null</code> if
+     * Returns the next sibling of this node, or {@code null} if
      * the node has no next sibling.
      *
-     * @return the next sibling, as a <code>Node</code>, or
-     * <code>null</code>.
+     * @return the next sibling, as a {@code Node}, or
+     * {@code null}.
      */
     public Node getNextSibling() {
         return nextSibling;
     }
 
     /**
-     * Returns a <code>NamedNodeMap</code> containing the attributes of
+     * Returns a {@code NamedNodeMap} containing the attributes of
      * this node.
      *
-     * @return a <code>NamedNodeMap</code> containing the attributes of
+     * @return a {@code NamedNodeMap} containing the attributes of
      * this node.
      */
     public NamedNodeMap getAttributes() {
@@ -440,28 +440,28 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Returns <code>null</code>, since <code>IIOMetadataNode</code>s
-     * do not belong to any <code>Document</code>.
+     * Returns {@code null}, since {@code IIOMetadataNode}s
+     * do not belong to any {@code Document}.
      *
-     * @return <code>null</code>.
+     * @return {@code null}.
      */
     public Document getOwnerDocument() {
         return null;
     }
 
     /**
-     * Inserts the node <code>newChild</code> before the existing
-     * child node <code>refChild</code>. If <code>refChild</code> is
-     * <code>null</code>, insert <code>newChild</code> at the end of
+     * Inserts the node {@code newChild} before the existing
+     * child node {@code refChild}. If {@code refChild} is
+     * {@code null}, insert {@code newChild} at the end of
      * the list of children.
      *
-     * @param newChild the <code>Node</code> to insert.
-     * @param refChild the reference <code>Node</code>.
+     * @param newChild the {@code Node} to insert.
+     * @param refChild the reference {@code Node}.
      *
      * @return the node being inserted.
      *
-     * @exception IllegalArgumentException if <code>newChild</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code newChild} is
+     * {@code null}.
      */
     public Node insertBefore(Node newChild,
                              Node refChild) {
@@ -509,17 +509,17 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Replaces the child node <code>oldChild</code> with
-     * <code>newChild</code> in the list of children, and returns the
-     * <code>oldChild</code> node.
+     * Replaces the child node {@code oldChild} with
+     * {@code newChild} in the list of children, and returns the
+     * {@code oldChild} node.
      *
-     * @param newChild the <code>Node</code> to insert.
-     * @param oldChild the <code>Node</code> to be replaced.
+     * @param newChild the {@code Node} to insert.
+     * @param oldChild the {@code Node} to be replaced.
      *
      * @return the node replaced.
      *
-     * @exception IllegalArgumentException if <code>newChild</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code newChild} is
+     * {@code null}.
      */
     public Node replaceChild(Node newChild,
                              Node oldChild) {
@@ -562,15 +562,15 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Removes the child node indicated by <code>oldChild</code> from
+     * Removes the child node indicated by {@code oldChild} from
      * the list of children, and returns it.
      *
-     * @param oldChild the <code>Node</code> to be removed.
+     * @param oldChild the {@code Node} to be removed.
      *
      * @return the node removed.
      *
-     * @exception IllegalArgumentException if <code>oldChild</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code oldChild} is
+     * {@code null}.
      */
     public Node removeChild(Node oldChild) {
         if (oldChild == null) {
@@ -606,15 +606,15 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Adds the node <code>newChild</code> to the end of the list of
+     * Adds the node {@code newChild} to the end of the list of
      * children of this node.
      *
-     * @param newChild the <code>Node</code> to insert.
+     * @param newChild the {@code Node} to insert.
      *
      * @return the node added.
      *
-     * @exception IllegalArgumentException if <code>newChild</code> is
-     * <code>null</code>.
+     * @exception IllegalArgumentException if {@code newChild} is
+     * {@code null}.
      */
     public Node appendChild(Node newChild) {
         if (newChild == null) {
@@ -627,9 +627,9 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Returns <code>true</code> if this node has child nodes.
+     * Returns {@code true} if this node has child nodes.
      *
-     * @return <code>true</code> if this node has children.
+     * @return {@code true} if this node has children.
      */
     public boolean hasChildNodes() {
         return numChildren > 0;
@@ -637,14 +637,14 @@ public class IIOMetadataNode implements Element, NodeList {
 
     /**
      * Returns a duplicate of this node.  The duplicate node has no
-     * parent (<code>getParentNode</code> returns <code>null</code>).
-     * If a shallow clone is being performed (<code>deep</code> is
-     * <code>false</code>), the new node will not have any children or
+     * parent ({@code getParentNode} returns {@code null}).
+     * If a shallow clone is being performed ({@code deep} is
+     * {@code false}), the new node will not have any children or
      * siblings.  If a deep clone is being performed, the new node
      * will form the root of a complete cloned subtree.
      *
-     * @param deep if <code>true</code>, recursively clone the subtree
-     * under the specified node; if <code>false</code>, clone only the
+     * @param deep if {@code true}, recursively clone the subtree
+     * under the specified node; if {@code false}, clone only the
      * node itself.
      *
      * @return the duplicate node.
@@ -666,36 +666,36 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Does nothing, since <code>IIOMetadataNode</code>s do not
-     * contain <code>Text</code> children.
+     * Does nothing, since {@code IIOMetadataNode}s do not
+     * contain {@code Text} children.
      */
     public void normalize() {
     }
 
     /**
-     * Returns <code>false</code> since DOM features are not
+     * Returns {@code false} since DOM features are not
      * supported.
      *
-     * @return <code>false</code>.
+     * @return {@code false}.
      *
-     * @param feature a <code>String</code>, which is ignored.
-     * @param version a <code>String</code>, which is ignored.
+     * @param feature a {@code String}, which is ignored.
+     * @param version a {@code String}, which is ignored.
      */
     public boolean isSupported(String feature, String version) {
         return false;
     }
 
     /**
-     * Returns <code>null</code>, since namespaces are not supported.
+     * Returns {@code null}, since namespaces are not supported.
      */
     public String getNamespaceURI() throws DOMException {
         return null;
     }
 
     /**
-     * Returns <code>null</code>, since namespaces are not supported.
+     * Returns {@code null}, since namespaces are not supported.
      *
-     * @return <code>null</code>.
+     * @return {@code null}.
      *
      * @see #setPrefix
      */
@@ -706,7 +706,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Does nothing, since namespaces are not supported.
      *
-     * @param prefix a <code>String</code>, which is ignored.
+     * @param prefix a {@code String}, which is ignored.
      *
      * @see #getPrefix
      */
@@ -714,9 +714,9 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Equivalent to <code>getNodeName</code>.
+     * Equivalent to {@code getNodeName}.
      *
-     * @return the node name, as a <code>String</code>.
+     * @return the node name, as a {@code String}.
      */
     public String getLocalName() {
         return nodeName;
@@ -726,9 +726,9 @@ public class IIOMetadataNode implements Element, NodeList {
 
 
     /**
-     * Equivalent to <code>getNodeName</code>.
+     * Equivalent to {@code getNodeName}.
      *
-     * @return the node name, as a <code>String</code>
+     * @return the node name, as a {@code String}
      */
     public String getTagName() {
         return nodeName;
@@ -737,7 +737,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Retrieves an attribute value by name.
      * @param name The name of the attribute to retrieve.
-     * @return The <code>Attr</code> value as a string, or the empty string
+     * @return The {@code Attr} value as a string, or the empty string
      * if that attribute does not have a specified or default value.
      */
     public String getAttribute(String name) {
@@ -749,7 +749,7 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Equivalent to <code>getAttribute(localName)</code>.
+     * Equivalent to {@code getAttribute(localName)}.
      *
      * @see #setAttributeNS
      */
@@ -776,7 +776,7 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Equivalent to <code>setAttribute(qualifiedName, value)</code>.
+     * Equivalent to {@code setAttribute(qualifiedName, value)}.
      *
      * @see #getAttributeNS
      */
@@ -808,7 +808,7 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Equivalent to <code>removeAttribute(localName)</code>.
+     * Equivalent to {@code removeAttribute(localName)}.
      */
     public void removeAttributeNS(String namespaceURI,
                                   String localName) {
@@ -821,7 +821,7 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Equivalent to <code>getAttributeNode(localName)</code>.
+     * Equivalent to {@code getAttributeNode(localName)}.
      *
      * @see #setAttributeNodeNS
      */
@@ -862,7 +862,7 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Equivalent to <code>setAttributeNode(newAttr)</code>.
+     * Equivalent to {@code setAttributeNode(newAttr)}.
      *
      * @see #getAttributeNodeNS
      */
@@ -894,7 +894,7 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Equivalent to <code>getElementsByTagName(localName)</code>.
+     * Equivalent to {@code getElementsByTagName(localName)}.
      */
     public NodeList getElementsByTagNameNS(String namespaceURI,
                                            String localName) {
@@ -910,7 +910,7 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Equivalent to <code>hasAttribute(localName)</code>.
+     * Equivalent to {@code hasAttribute(localName)}.
      */
     public boolean hasAttributeNS(String namespaceURI,
                                   String localName) {
@@ -936,9 +936,9 @@ public class IIOMetadataNode implements Element, NodeList {
     }
 
     /**
-     * Returns the <code>Object</code> value associated with this node.
+     * Returns the {@code Object} value associated with this node.
      *
-     * @return the user <code>Object</code>.
+     * @return the user {@code Object}.
      *
      * @see #setUserObject
      */
@@ -949,7 +949,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Sets the value associated with this node.
      *
-     * @param userObject the user <code>Object</code>.
+     * @param userObject the user {@code Object}.
      *
      * @see #getUserObject
      */
@@ -962,7 +962,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public void setIdAttribute(String name,
                                boolean isId)
@@ -974,7 +974,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public void setIdAttributeNS(String namespaceURI,
                                  String localName,
@@ -987,7 +987,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public void setIdAttributeNode(Attr idAttr,
                                    boolean isId)
@@ -999,7 +999,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public TypeInfo getSchemaTypeInfo() throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1009,7 +1009,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public Object setUserData(String key,
                               Object data,
@@ -1021,7 +1021,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public Object getUserData(String key) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1031,7 +1031,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public Object getFeature(String feature, String version)
                               throws DOMException {
@@ -1042,7 +1042,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public boolean isSameNode(Node node) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1052,7 +1052,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public boolean isEqualNode(Node node) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1062,7 +1062,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public String lookupNamespaceURI(String prefix) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1072,7 +1072,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public boolean isDefaultNamespace(String namespaceURI)
                                                throws DOMException {
@@ -1083,7 +1083,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public String lookupPrefix(String namespaceURI) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1093,7 +1093,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public String getTextContent() throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1103,7 +1103,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public void setTextContent(String textContent) throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,
@@ -1113,7 +1113,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public short compareDocumentPosition(Node other)
                                          throws DOMException {
@@ -1124,7 +1124,7 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * This DOM Level 3 method is not supported for {@code IIOMetadataNode}
      * and will throw a {@code DOMException}.
-     * @throws DOMException - always.
+     * @throws DOMException always.
      */
     public String getBaseURI() throws DOMException {
         throw new DOMException(DOMException.NOT_SUPPORTED_ERR,

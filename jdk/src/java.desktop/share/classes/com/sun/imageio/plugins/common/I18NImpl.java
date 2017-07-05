@@ -37,9 +37,9 @@ import java.net.URL;
  * the file from the jar as the package name is included automatically.
  *
  * <p>Extenders need only provide a static method
- * <code>getString(String)</code> which calls the static method in this
+ * {@code getString(String)} which calls the static method in this
  * class with the name of the invoking class and returns a
- * <code>String</code>.
+ * {@code String}.
  */
 public class I18NImpl {
     /**

@@ -166,7 +166,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
 
     /**
      * Create and return the screen device with the specified number. The
-     * device with number <code>0</code> will be the default device (returned
+     * device with number {@code 0} will be the default device (returned
      * by {@link #getDefaultScreenDevice()}.
      *
      * @param screennum the number of the screen to create

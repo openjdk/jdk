@@ -32,7 +32,7 @@ import org.w3c.dom.Node;
 
 /**
  * Class which adds utility DOM element attribute access methods to
- * <code>IIOMetadata</code> for subclass use.
+ * {@code IIOMetadata} for subclass use.
  */
 abstract class GIFMetadata extends IIOMetadata {
 

@@ -52,8 +52,8 @@ public interface Attribute extends Serializable {
    * <P>
    * <I>Note:</I> This method is intended to provide a default, nonlocalized
    * string for the attribute's category. If two attribute objects return the
-   * same category from the <CODE>getCategory()</CODE> method, they should
-   * return the same name from the <CODE>getName()</CODE> method.
+   * same category from the {@code getCategory()} method, they should
+   * return the same name from the {@code getName()} method.
    *
    * @return  Attribute category name.
    */

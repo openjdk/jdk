@@ -233,6 +233,9 @@ class CompileBroker: AllStatic {
                                           const char*         comment,
                                           bool                blocking);
   static void wait_for_completion(CompileTask* task);
+#if INCLUDE_JVMCI
+  static bool wait_for_jvmci_completion(CompileTask* task, JavaThread* thread);
+#endif
 
   static void invoke_compiler_on_method(CompileTask* task);
   static void post_compile(CompilerThread* thread, CompileTask* task, EventCompilation& event, bool success, ciEnv* ci_env);

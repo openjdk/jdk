@@ -39,7 +39,7 @@ import sun.lwawt.LWWindowPeer;
 import sun.lwawt.macosx.CPlatformWindow;
 
 /**
- * The <code>Application</code> class allows you to integrate your Java application with the native Mac OS X environment.
+ * The {@code Application} class allows you to integrate your Java application with the native Mac OS X environment.
  * You can provide your Mac OS X users a greatly enhanced experience by implementing a few basic handlers for standard system events.
  *
  * For example:
@@ -142,7 +142,7 @@ public class Application {
     /**
      * Installs a handler to show a custom About window for your application.
      *
-     * Setting the {@link AboutHandler} to <code>null</code> reverts it to the default Cocoa About window.
+     * Setting the {@link AboutHandler} to {@code null} reverts it to the default Cocoa About window.
      *
      * @param aboutHandler the handler to respond to the {@link AboutHandler#handleAbout()} message
      * @since Java for Mac OS X 10.6 Update 3
@@ -155,7 +155,7 @@ public class Application {
     /**
      * Installs a handler to create the Preferences menu item in your application's app menu.
      *
-     * Setting the {@link PreferencesHandler} to <code>null</code> will remove the Preferences item from the app menu.
+     * Setting the {@link PreferencesHandler} to {@code null} will remove the Preferences item from the app menu.
      *
      * @param preferencesHandler
      * @since Java for Mac OS X 10.6 Update 3
@@ -167,8 +167,8 @@ public class Application {
 
     /**
      * Installs the handler which is notified when the application is asked to open a list of files.
-     * The {@link OpenFilesHandler#openFiles(AppEvent.OpenFilesEvent)} notifications are only sent if the Java app is a bundled application, with a <code>CFBundleDocumentTypes</code> array present in it's Info.plist.
-     * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a <code>CFBundleDocumentTypes</code> key to your app's Info.plist.
+     * The {@link OpenFilesHandler#openFiles(AppEvent.OpenFilesEvent)} notifications are only sent if the Java app is a bundled application, with a {@code CFBundleDocumentTypes} array present in it's Info.plist.
+     * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a {@code CFBundleDocumentTypes} key to your app's Info.plist.
      *
      * @param openFileHandler
      * @since Java for Mac OS X 10.6 Update 3
@@ -180,8 +180,8 @@ public class Application {
 
     /**
      * Installs the handler which is notified when the application is asked to print a list of files.
-     * The {@link PrintFilesHandler#printFiles(AppEvent.PrintFilesEvent)} notifications are only sent if the Java app is a bundled application, with a <code>CFBundleDocumentTypes</code> array present in it's Info.plist.
-     * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a <code>CFBundleDocumentTypes</code> key to your app's Info.plist.
+     * The {@link PrintFilesHandler#printFiles(AppEvent.PrintFilesEvent)} notifications are only sent if the Java app is a bundled application, with a {@code CFBundleDocumentTypes} array present in it's Info.plist.
+     * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a {@code CFBundleDocumentTypes} key to your app's Info.plist.
      *
      * @param printFileHandler
      * @since Java for Mac OS X 10.6 Update 3
@@ -193,10 +193,10 @@ public class Application {
 
     /**
      * Installs the handler which is notified when the application is asked to open a URL.
-     * The {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} notifications are only sent if the Java app is a bundled application, with a <code>CFBundleURLTypes</code> array present in it's Info.plist.
-     * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a <code>CFBundleURLTypes</code> key to your app's Info.plist.
+     * The {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} notifications are only sent if the Java app is a bundled application, with a {@code CFBundleURLTypes} array present in it's Info.plist.
+     * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a {@code CFBundleURLTypes} key to your app's Info.plist.
      *
-     * Setting the handler to <code>null</code> causes all {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} requests to be enqueued until another handler is set.
+     * Setting the handler to {@code null} causes all {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} requests to be enqueued until another handler is set.
      *
      * @param openURIHandler
      * @since Java for Mac OS X 10.6 Update 3
@@ -209,7 +209,7 @@ public class Application {
     /**
      * Installs the handler which determines if the application should quit.
      * The handler is passed a one-shot {@link QuitResponse} which can cancel or proceed with the quit.
-     * Setting the handler to <code>null</code> causes all quit requests to directly perform the default {@link QuitStrategy}.
+     * Setting the handler to {@code null} causes all quit requests to directly perform the default {@link QuitStrategy}.
      *
      * @param quitHandler the handler that is called when the application is asked to quit
      * @since Java for Mac OS X 10.6 Update 3
@@ -432,11 +432,11 @@ public class Application {
 
     /**
      * Enables the Preferences item in the application menu. The ApplicationListener receives a callback for
-     * selection of the Preferences item in the application menu only if this is set to <code>true</code>.
+     * selection of the Preferences item in the application menu only if this is set to {@code true}.
      *
      * If a Preferences item isn't present, this method adds and enables it.
      *
-     * @param enable specifies whether the Preferences item in the application menu should be enabled (<code>true</code>) or not (<code>false</code>)
+     * @param enable specifies whether the Preferences item in the application menu should be enabled ({@code true}) or not ({@code false})
      *
      * @deprecated no replacement
      * @since 1.4
@@ -449,12 +449,12 @@ public class Application {
 
     /**
      * Enables the About item in the application menu. The ApplicationListener receives a callback for
-     * selection of the About item in the application menu only if this is set to <code>true</code>. Because AWT supplies
-     * a standard About window when an application may not, by default this is set to <code>true</code>.
+     * selection of the About item in the application menu only if this is set to {@code true}. Because AWT supplies
+     * a standard About window when an application may not, by default this is set to {@code true}.
      *
      * If the About item isn't present, this method adds and enables it.
      *
-     * @param enable specifies whether the About item in the application menu should be enabled (<code>true</code>) or not (<code>false</code>)
+     * @param enable specifies whether the About item in the application menu should be enabled ({@code true}) or not ({@code false})
      *
      * @deprecated no replacement
      * @since 1.4
@@ -553,7 +553,7 @@ public class Application {
     }
 
     /**
-     * @deprecated Use <code>java.awt.MouseInfo.getPointerInfo().getLocation()</code>.
+     * @deprecated Use {@code java.awt.MouseInfo.getPointerInfo().getLocation()}.
      *
      * @since 1.4
      */

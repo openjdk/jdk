@@ -27,7 +27,6 @@
  @requires (os.family == "windows")
  @run main bug8067346
  */
-import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 import java.awt.Insets;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -56,8 +55,16 @@ public class bug8067346 {
                 bug8067346 test = new bug8067346();
                 try {
                     // set windows look and feel
-                    UIManager.setLookAndFeel(new WindowsLookAndFeel());
+                    String lnf =
+                           "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
+                    UIManager.setLookAndFeel(lnf);
                 } catch (UnsupportedLookAndFeelException e) {
+                    runTest = false;
+                } catch (ClassNotFoundException e) {
+                    runTest = false;
+                } catch (InstantiationException e) {
+                    runTest = false;
+                } catch (IllegalAccessException e) {
                     runTest = false;
                 }
                 if(runTest) {

@@ -341,9 +341,6 @@
   develop(bool, PrintCFGToFile, false,                                      \
           "print control flow graph to a separate file during compilation") \
                                                                             \
-  diagnostic(bool, C1PatchInvokeDynamic, true,                              \
-             "Patch invokedynamic appendix not known at compile time")      \
-                                                                            \
 // Read default values for c1 globals
 
 C1_FLAGS(DECLARE_DEVELOPER_FLAG, \

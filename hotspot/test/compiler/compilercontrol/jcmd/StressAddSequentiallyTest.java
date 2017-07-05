@@ -26,7 +26,8 @@
  * @bug 8137167
  * @summary Tests jcmd to be able to add a lot of huge directives
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
- * @build StressAddSequentiallyTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ * @build compiler.compilercontrol.jcmd.StressAddSequentiallyTest
+ *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils
  *        compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -321,6 +321,8 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, StubRoutines::dexp());
   FUNCTION_CASE(entry, StubRoutines::dlog());
   FUNCTION_CASE(entry, StubRoutines::dpow());
+  FUNCTION_CASE(entry, StubRoutines::dsin());
+  FUNCTION_CASE(entry, StubRoutines::dcos());
 
 #undef FUNCTION_CASE
 
@@ -552,12 +554,11 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
     // tracing
     if (log_is_enabled(Info, exceptions)) {
       ResourceMark rm;
-      log_info(exceptions)("Exception <%s> (" INTPTR_FORMAT
-                           ") thrown in compiled method <%s> at PC " INTPTR_FORMAT
-                           " for thread " INTPTR_FORMAT,
-                           exception->print_value_string(),
-                           p2i((address)exception()),
-                           nm->method()->print_value_string(), p2i(pc), p2i(thread));
+      stringStream tempst;
+      tempst.print("compiled method <%s>\n"
+                   " at PC" INTPTR_FORMAT " for thread " INTPTR_FORMAT,
+                   nm->method()->print_value_string(), p2i(pc), p2i(thread));
+      Exceptions::log_exception(exception, tempst);
     }
     // for AbortVMOnException flag
     Exceptions::debug_check_abort(exception);
@@ -956,16 +957,19 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
     constantPoolHandle pool(thread, caller_method->constants());
     int index = bytecode.index();
     LinkResolver::resolve_invoke(info, Handle(), pool, index, bc, CHECK);
-    appendix = info.resolved_appendix();
     switch (bc) {
       case Bytecodes::_invokehandle: {
         int cache_index = ConstantPool::decode_cpcache_index(index, true);
         assert(cache_index >= 0 && cache_index < pool->cache()->length(), "unexpected cache index");
-        pool->cache()->entry_at(cache_index)->set_method_handle(pool, info);
+        ConstantPoolCacheEntry* cpce = pool->cache()->entry_at(cache_index);
+        cpce->set_method_handle(pool, info);
+        appendix = cpce->appendix_if_resolved(pool); // just in case somebody already resolved the entry
         break;
       }
       case Bytecodes::_invokedynamic: {
-        pool->invokedynamic_cp_cache_entry_at(index)->set_dynamic_call(pool, info);
+        ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(index);
+        cpce->set_dynamic_call(pool, info);
+        appendix = cpce->appendix_if_resolved(pool); // just in case somebody already resolved the entry
         break;
       }
       default: fatal("unexpected bytecode for load_appendix_patching_id");
@@ -1032,6 +1036,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
         address copy_buff = stub_location - *byte_skip - *byte_count;
         address being_initialized_entry = stub_location - *being_initialized_entry_offset;
         if (TracePatching) {
+          ttyLocker ttyl;
           tty->print_cr(" Patching %s at bci %d at address " INTPTR_FORMAT "  (%s)", Bytecodes::name(code), bci,
                         p2i(instr_pc), (stub_id == Runtime1::access_field_patching_id) ? "field" : "klass");
           nmethod* caller_code = CodeCache::find_nmethod(caller_frame.pc());

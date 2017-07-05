@@ -30,18 +30,18 @@ package java.awt.event;
  * The methods in this class are empty. This class exists as
  * convenience for creating listener objects.
  * <P>
- * Extend this class to create a <code>WindowEvent</code> listener
+ * Extend this class to create a {@code WindowEvent} listener
  * and override the methods for the events of interest. (If you implement the
- * <code>WindowListener</code> interface, you have to define all of
+ * {@code WindowListener} interface, you have to define all of
  * the methods in it. This abstract class defines null methods for them
  * all, so you can only have to define methods for events you care about.)
  * <P>
  * Create a listener object using the extended class and then register it with
- * a Window using the window's <code>addWindowListener</code>
+ * a Window using the window's {@code addWindowListener}
  * method. When the window's status changes by virtue of being opened,
  * closed, activated or deactivated, iconified or deiconified,
  * the relevant method in the listener
- * object is invoked, and the <code>WindowEvent</code> is passed to it.
+ * object is invoked, and the {@code WindowEvent} is passed to it.
  *
  * @see WindowEvent
  * @see WindowListener

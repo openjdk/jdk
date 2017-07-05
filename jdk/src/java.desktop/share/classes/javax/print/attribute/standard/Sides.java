@@ -110,8 +110,8 @@ import javax.print.attribute.PrintJobAttribute;
  * </UL>
  * <P>
  * <B>IPP Compatibility:</B> The category name returned by
- * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
- * integer value is the IPP enum value.  The <code>toString()</code> method
+ * {@code getName()} is the IPP attribute name.  The enumeration's
+ * integer value is the IPP enum value.  The {@code toString()} method
  * returns the IPP string representation of the attribute value.
  *
  * @author  Alan Kaminsky
@@ -210,7 +210,7 @@ public final class Sides extends EnumSyntax
      * Get the name of the category of which this attribute value is an
      * instance.
      * <P>
-     * For class Sides, the category name is <CODE>"sides"</CODE>.
+     * For class Sides, the category name is {@code "sides"}.
      *
      * @return  Attribute category name.
      */

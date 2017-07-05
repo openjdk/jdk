@@ -30,7 +30,7 @@ import java.lang.annotation.Native;
 import sun.java2d.SunCompositeContext;
 
 /**
- * The <code>AlphaComposite</code> class implements basic alpha
+ * The {@code AlphaComposite} class implements basic alpha
  * compositing rules for combining source and destination colors
  * to achieve blending and transparency effects with graphics and
  * images.
@@ -44,7 +44,7 @@ import sun.java2d.SunCompositeContext;
  * <p>
  * This class extends the standard equations defined by Porter and
  * Duff to include one additional factor.
- * An instance of the <code>AlphaComposite</code> class can contain
+ * An instance of the {@code AlphaComposite} class can contain
  * an alpha value that is used to modify the opacity or coverage of
  * every source pixel before it is used in the blending equations.
  *
@@ -52,7 +52,7 @@ import sun.java2d.SunCompositeContext;
  * It is important to note that the equations defined by the Porter
  * and Duff paper are all defined to operate on color components
  * that are premultiplied by their corresponding alpha components.
- * Since the <code>ColorModel</code> and <code>Raster</code> classes
+ * Since the {@code ColorModel} and {@code Raster} classes
  * allow the storage of pixel data in either premultiplied or
  * non-premultiplied form, all input data must be normalized into
  * premultiplied form before applying the equations and all results
@@ -96,7 +96,7 @@ import sun.java2d.SunCompositeContext;
  * that specify visual effects.
  * For example,
  * the description for
- * <a href="#SRC_OVER"><code>SRC_OVER</code></a>
+ * <a href="#SRC_OVER">{@code SRC_OVER}</a>
  * specifies that <em>F<sub>s</sub></em> = 1 and <em>F<sub>d</sub></em> = (1-<em>A<sub>s</sub></em>).
  * Once a set of equations for determining the blending factors is
  * known they can then be applied to each pixel to produce a result
@@ -128,12 +128,12 @@ import sun.java2d.SunCompositeContext;
  * <h3>Preparing Inputs</h3>
  *
  * <p>
- * The <code>AlphaComposite</code> class defines an additional alpha
+ * The {@code AlphaComposite} class defines an additional alpha
  * value that is applied to the source alpha.
  * This value is applied as if an implicit SRC_IN rule were first
  * applied to the source pixel against a pixel with the indicated
  * alpha by multiplying both the raw source alpha and the raw
- * source colors by the alpha in the <code>AlphaComposite</code>.
+ * source colors by the alpha in the {@code AlphaComposite}.
  * This leads to the following equation for producing the alpha
  * used in the Porter and Duff blending equation:
  *
@@ -141,7 +141,7 @@ import sun.java2d.SunCompositeContext;
  *      <em>A<sub>s</sub></em> = <em>A<sub>sr</sub></em> * <em>A<sub>ac</sub></em> </pre>
  *
  * All of the raw source color components need to be multiplied
- * by the alpha in the <code>AlphaComposite</code> instance.
+ * by the alpha in the {@code AlphaComposite} instance.
  * Additionally, if the source was not in premultiplied form
  * then the color components also need to be multiplied by the
  * source alpha.
@@ -196,11 +196,11 @@ import sun.java2d.SunCompositeContext;
  *
  * <p>
  * For performance reasons, it is preferable that
- * <code>Raster</code> objects passed to the <code>compose</code>
+ * {@code Raster} objects passed to the {@code compose}
  * method of a {@link CompositeContext} object created by the
- * <code>AlphaComposite</code> class have premultiplied data.
- * If either the source <code>Raster</code>
- * or the destination <code>Raster</code>
+ * {@code AlphaComposite} class have premultiplied data.
+ * If either the source {@code Raster}
+ * or the destination {@code Raster}
  * is not premultiplied, however,
  * appropriate conversions are performed before and after the compositing
  * operation.
@@ -210,7 +210,7 @@ import sun.java2d.SunCompositeContext;
  * <ul>
  * <li>
  * Many sources, such as some of the opaque image types listed
- * in the <code>BufferedImage</code> class, do not store alpha values
+ * in the {@code BufferedImage} class, do not store alpha values
  * for their pixels.  Such sources supply an alpha of 1.0 for
  * all of their pixels.
  *
@@ -237,7 +237,7 @@ import sun.java2d.SunCompositeContext;
  * that does not separately store
  * color components is not a
  * good candidate for any type of translucent blending.
- * For example, <code>BufferedImage.TYPE_BYTE_INDEXED</code>
+ * For example, {@code BufferedImage.TYPE_BYTE_INDEXED}
  * should not be used as a destination for a blending operation
  * because every operation
  * can introduce large errors, due to
@@ -277,7 +277,7 @@ import sun.java2d.SunCompositeContext;
  * <p>
  * If integer math were being used and this value were being
  * composited in
- * <a href="#SRC"><code>SRC</code></a>
+ * <a href="#SRC">{@code SRC}</a>
  * mode with no extra alpha, then the math would
  * indicate that the results were (in integer format):
  *
@@ -510,21 +510,21 @@ public final class AlphaComposite implements Composite {
     @Native public static final int     XOR             = 12;
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque CLEAR rule
+     * {@code AlphaComposite} object that implements the opaque CLEAR rule
      * with an alpha of 1.0f.
      * @see #CLEAR
      */
     public static final AlphaComposite Clear    = new AlphaComposite(CLEAR);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque SRC rule
+     * {@code AlphaComposite} object that implements the opaque SRC rule
      * with an alpha of 1.0f.
      * @see #SRC
      */
     public static final AlphaComposite Src      = new AlphaComposite(SRC);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque DST rule
+     * {@code AlphaComposite} object that implements the opaque DST rule
      * with an alpha of 1.0f.
      * @see #DST
      * @since 1.4
@@ -532,49 +532,49 @@ public final class AlphaComposite implements Composite {
     public static final AlphaComposite Dst      = new AlphaComposite(DST);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque SRC_OVER rule
+     * {@code AlphaComposite} object that implements the opaque SRC_OVER rule
      * with an alpha of 1.0f.
      * @see #SRC_OVER
      */
     public static final AlphaComposite SrcOver  = new AlphaComposite(SRC_OVER);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque DST_OVER rule
+     * {@code AlphaComposite} object that implements the opaque DST_OVER rule
      * with an alpha of 1.0f.
      * @see #DST_OVER
      */
     public static final AlphaComposite DstOver  = new AlphaComposite(DST_OVER);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque SRC_IN rule
+     * {@code AlphaComposite} object that implements the opaque SRC_IN rule
      * with an alpha of 1.0f.
      * @see #SRC_IN
      */
     public static final AlphaComposite SrcIn    = new AlphaComposite(SRC_IN);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque DST_IN rule
+     * {@code AlphaComposite} object that implements the opaque DST_IN rule
      * with an alpha of 1.0f.
      * @see #DST_IN
      */
     public static final AlphaComposite DstIn    = new AlphaComposite(DST_IN);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque SRC_OUT rule
+     * {@code AlphaComposite} object that implements the opaque SRC_OUT rule
      * with an alpha of 1.0f.
      * @see #SRC_OUT
      */
     public static final AlphaComposite SrcOut   = new AlphaComposite(SRC_OUT);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque DST_OUT rule
+     * {@code AlphaComposite} object that implements the opaque DST_OUT rule
      * with an alpha of 1.0f.
      * @see #DST_OUT
      */
     public static final AlphaComposite DstOut   = new AlphaComposite(DST_OUT);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque SRC_ATOP rule
+     * {@code AlphaComposite} object that implements the opaque SRC_ATOP rule
      * with an alpha of 1.0f.
      * @see #SRC_ATOP
      * @since 1.4
@@ -582,7 +582,7 @@ public final class AlphaComposite implements Composite {
     public static final AlphaComposite SrcAtop  = new AlphaComposite(SRC_ATOP);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque DST_ATOP rule
+     * {@code AlphaComposite} object that implements the opaque DST_ATOP rule
      * with an alpha of 1.0f.
      * @see #DST_ATOP
      * @since 1.4
@@ -590,7 +590,7 @@ public final class AlphaComposite implements Composite {
     public static final AlphaComposite DstAtop  = new AlphaComposite(DST_ATOP);
 
     /**
-     * <code>AlphaComposite</code> object that implements the opaque XOR rule
+     * {@code AlphaComposite} object that implements the opaque XOR rule
      * with an alpha of 1.0f.
      * @see #XOR
      * @since 1.4
@@ -620,11 +620,11 @@ public final class AlphaComposite implements Composite {
     }
 
     /**
-     * Creates an <code>AlphaComposite</code> object with the specified rule.
+     * Creates an {@code AlphaComposite} object with the specified rule.
      *
      * @param rule the compositing rule
      * @return the {@code AlphaComposite} object created
-     * @throws IllegalArgumentException if <code>rule</code> is not one of
+     * @throws IllegalArgumentException if {@code rule} is not one of
      *         the following:  {@link #CLEAR}, {@link #SRC}, {@link #DST},
      *         {@link #SRC_OVER}, {@link #DST_OVER}, {@link #SRC_IN},
      *         {@link #DST_IN}, {@link #SRC_OUT}, {@link #DST_OUT},
@@ -662,19 +662,19 @@ public final class AlphaComposite implements Composite {
     }
 
     /**
-     * Creates an <code>AlphaComposite</code> object with the specified rule and
+     * Creates an {@code AlphaComposite} object with the specified rule and
      * the constant alpha to multiply with the alpha of the source.
      * The source is multiplied with the specified alpha before being composited
      * with the destination.
      *
      * @param rule the compositing rule
      * @param alpha the constant alpha to be multiplied with the alpha of
-     * the source. <code>alpha</code> must be a floating point number in the
+     * the source. {@code alpha} must be a floating point number in the
      * inclusive range [0.0,&nbsp;1.0].
      * @return the {@code AlphaComposite} object created
      * @throws IllegalArgumentException if
-     *         <code>alpha</code> is less than 0.0 or greater than 1.0, or if
-     *         <code>rule</code> is not one of
+     *         {@code alpha} is less than 0.0 or greater than 1.0, or if
+     *         {@code rule} is not one of
      *         the following:  {@link #CLEAR}, {@link #SRC}, {@link #DST},
      *         {@link #SRC_OVER}, {@link #DST_OVER}, {@link #SRC_IN},
      *         {@link #DST_IN}, {@link #SRC_OUT}, {@link #DST_OUT},
@@ -692,8 +692,8 @@ public final class AlphaComposite implements Composite {
      * The context contains state that is used in performing
      * the compositing operation.
      * @param srcColorModel  the {@link ColorModel} of the source
-     * @param dstColorModel  the <code>ColorModel</code> of the destination
-     * @return the <code>CompositeContext</code> object to be used to perform
+     * @param dstColorModel  the {@code ColorModel} of the destination
+     * @return the {@code CompositeContext} object to be used to perform
      * compositing operations.
      */
     public CompositeContext createContext(ColorModel srcColorModel,
@@ -703,32 +703,32 @@ public final class AlphaComposite implements Composite {
     }
 
     /**
-     * Returns the alpha value of this <code>AlphaComposite</code>.  If this
-     * <code>AlphaComposite</code> does not have an alpha value, 1.0 is returned.
-     * @return the alpha value of this <code>AlphaComposite</code>.
+     * Returns the alpha value of this {@code AlphaComposite}.  If this
+     * {@code AlphaComposite} does not have an alpha value, 1.0 is returned.
+     * @return the alpha value of this {@code AlphaComposite}.
      */
     public float getAlpha() {
         return extraAlpha;
     }
 
     /**
-     * Returns the compositing rule of this <code>AlphaComposite</code>.
-     * @return the compositing rule of this <code>AlphaComposite</code>.
+     * Returns the compositing rule of this {@code AlphaComposite}.
+     * @return the compositing rule of this {@code AlphaComposite}.
      */
     public int getRule() {
         return rule;
     }
 
     /**
-     * Returns a similar <code>AlphaComposite</code> object that uses
+     * Returns a similar {@code AlphaComposite} object that uses
      * the specified compositing rule.
      * If this object already uses the specified compositing rule,
      * this object is returned.
-     * @return an <code>AlphaComposite</code> object derived from
+     * @return an {@code AlphaComposite} object derived from
      * this object that uses the specified compositing rule.
      * @param rule the compositing rule
      * @throws IllegalArgumentException if
-     *         <code>rule</code> is not one of
+     *         {@code rule} is not one of
      *         the following:  {@link #CLEAR}, {@link #SRC}, {@link #DST},
      *         {@link #SRC_OVER}, {@link #DST_OVER}, {@link #SRC_IN},
      *         {@link #DST_IN}, {@link #SRC_OUT}, {@link #DST_OUT},
@@ -742,17 +742,17 @@ public final class AlphaComposite implements Composite {
     }
 
     /**
-     * Returns a similar <code>AlphaComposite</code> object that uses
+     * Returns a similar {@code AlphaComposite} object that uses
      * the specified alpha value.
      * If this object already has the specified alpha value,
      * this object is returned.
-     * @return an <code>AlphaComposite</code> object derived from
+     * @return an {@code AlphaComposite} object derived from
      * this object that uses the specified alpha value.
      * @param alpha the constant alpha to be multiplied with the alpha of
-     * the source. <code>alpha</code> must be a floating point number in the
+     * the source. {@code alpha} must be a floating point number in the
      * inclusive range [0.0,&nbsp;1.0].
      * @throws IllegalArgumentException if
-     *         <code>alpha</code> is less than 0.0 or greater than 1.0
+     *         {@code alpha} is less than 0.0 or greater than 1.0
      * @since 1.6
      */
     public AlphaComposite derive(float alpha) {
@@ -771,16 +771,16 @@ public final class AlphaComposite implements Composite {
 
     /**
      * Determines whether the specified object is equal to this
-     * <code>AlphaComposite</code>.
+     * {@code AlphaComposite}.
      * <p>
-     * The result is <code>true</code> if and only if
-     * the argument is not <code>null</code> and is an
-     * <code>AlphaComposite</code> object that has the same
+     * The result is {@code true} if and only if
+     * the argument is not {@code null} and is an
+     * {@code AlphaComposite} object that has the same
      * compositing rule and alpha value as this object.
      *
-     * @param obj the <code>Object</code> to test for equality
-     * @return <code>true</code> if <code>obj</code> equals this
-     * <code>AlphaComposite</code>; <code>false</code> otherwise.
+     * @param obj the {@code Object} to test for equality
+     * @return {@code true} if {@code obj} equals this
+     * {@code AlphaComposite}; {@code false} otherwise.
      */
     public boolean equals(Object obj) {
         if (!(obj instanceof AlphaComposite)) {

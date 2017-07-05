@@ -863,7 +863,7 @@ public:
 
   virtual const Type *bottom_type() const;
   virtual bool  pinned() const { return false; }
-  virtual const Type *Value( PhaseTransform *phase ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const RegMask &in_RegMask(uint) const;
   virtual int ret_addr_offset() { return 0; }
 
