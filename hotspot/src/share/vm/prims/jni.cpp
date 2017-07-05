@@ -5042,7 +5042,8 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
     assert(QuickSort::test_quick_sort(), "test_quick_sort failed");
-    tty->print_cr("All tests passed");
+    assert(arrayOopDesc::test_max_array_length(), "test_max_array_length failed");
+    tty->print_cr("All internal VM tests passed");
   }
 }
 

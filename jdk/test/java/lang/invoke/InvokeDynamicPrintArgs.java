@@ -38,8 +38,6 @@
 
 package test.java.lang.invoke;
 
-import org.junit.Test;
-
 import java.util.*;
 import java.io.*;
 
@@ -97,21 +95,6 @@ public class InvokeDynamicPrintArgs {
             }
         }
         System.setSecurityManager(new SM());
-    }
-
-    @Test
-    public void testInvokeDynamicPrintArgs() throws IOException {
-        System.err.println(System.getProperties());
-        String testClassPath = System.getProperty("build.test.classes.dir");
-        if (testClassPath == null)  throw new RuntimeException();
-        String[] args = new String[]{
-            "--verify-specifier-count=3",
-            "--verbose",
-            "--expand-properties", "--classpath", testClassPath,
-            "--java", "test.java.lang.invoke.InvokeDynamicPrintArgs", "--check-output"
-        };
-        System.err.println("Indify: "+Arrays.toString(args));
-        indify.Indify.main(args);
     }
 
     private static PrintStream oldOut;

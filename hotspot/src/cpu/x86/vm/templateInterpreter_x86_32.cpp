@@ -1609,6 +1609,12 @@ int AbstractInterpreter::layout_activation(methodOop method,
     // and sender_sp is fp+8
     intptr_t* locals = interpreter_frame->sender_sp() + max_locals - 1;
 
+#ifdef ASSERT
+    if (caller->is_interpreted_frame()) {
+      assert(locals < caller->fp() + frame::interpreter_frame_initial_sp_offset, "bad placement");
+    }
+#endif
+
     interpreter_frame->interpreter_frame_set_locals(locals);
     BasicObjectLock* montop = interpreter_frame->interpreter_frame_monitor_begin();
     BasicObjectLock* monbot = montop - moncount;

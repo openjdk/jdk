@@ -1421,6 +1421,12 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     const TypeOopPtr *t_oop = addr_t->isa_oopptr();
     if (can_reshape && opt_mem->is_Phi() &&
         (t_oop != NULL) && t_oop->is_known_instance_field()) {
+      PhaseIterGVN *igvn = phase->is_IterGVN();
+      if (igvn != NULL && igvn->_worklist.member(opt_mem)) {
+        // Delay this transformation until memory Phi is processed.
+        phase->is_IterGVN()->_worklist.push(this);
+        return NULL;
+      }
       // Split instance field load through Phi.
       Node* result = split_through_phi(phase);
       if (result != NULL) return result;
