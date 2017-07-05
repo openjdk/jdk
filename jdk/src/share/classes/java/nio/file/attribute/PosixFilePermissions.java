@@ -35,7 +35,7 @@ import java.util.*;
  * @since 1.7
  */
 
-public class PosixFilePermissions {
+public final class PosixFilePermissions {
     private PosixFilePermissions() { }
 
     // Write string representation of permission bits to {@code sb}.
@@ -58,7 +58,9 @@ public class PosixFilePermissions {
     }
 
     /**
-     * Returns the {@code String} representation of a set of permissions.
+     * Returns the {@code String} representation of a set of permissions. It
+     * is guaranteed that the returned {@code String} can be parsed by the
+     * {@link #fromString} method.
      *
      * <p> If the set contains {@code null} or elements that are not of type
      * {@code PosixFilePermission} then these elements are ignored.
@@ -67,8 +69,6 @@ public class PosixFilePermissions {
      *          the set of permissions
      *
      * @return  the string representation of the permission set
-     *
-     * @see #fromString
      */
     public static String toString(Set<PosixFilePermission> perms) {
         StringBuilder sb = new StringBuilder(9);

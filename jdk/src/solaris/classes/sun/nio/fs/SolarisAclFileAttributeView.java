@@ -98,7 +98,7 @@ class SolarisAclFileAttributeView
 
             // map UserPrincipal to uid and flags
             UserPrincipal who = ace.principal();
-            if (!(who instanceof UnixUserPrincipals))
+            if (!(who instanceof UnixUserPrincipals.User))
                 throw new ProviderMismatchException();
             UnixUserPrincipals.User user = (UnixUserPrincipals.User)who;
             int uid;

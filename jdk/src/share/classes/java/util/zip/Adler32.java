@@ -43,18 +43,18 @@ class Adler32 implements Checksum {
     public Adler32() {
     }
 
-
     /**
-     * Updates checksum with specified byte.
+     * Updates the checksum with the specified byte (the low eight
+     * bits of the argument b).
      *
-     * @param b an array of bytes
+     * @param b the byte to update the checksum with
      */
     public void update(int b) {
         adler = update(adler, b);
     }
 
     /**
-     * Updates checksum with specified array of bytes.
+     * Updates the checksum with the specified array of bytes.
      */
     public void update(byte[] b, int off, int len) {
         if (b == null) {
@@ -67,21 +67,23 @@ class Adler32 implements Checksum {
     }
 
     /**
-     * Updates checksum with specified array of bytes.
+     * Updates the checksum with the specified array of bytes.
+     *
+     * @param b the byte array to update the checksum with
      */
     public void update(byte[] b) {
         adler = updateBytes(adler, b, 0, b.length);
     }
 
     /**
-     * Resets checksum to initial value.
+     * Resets the checksum to initial value.
      */
     public void reset() {
         adler = 1;
     }
 
     /**
-     * Returns checksum value.
+     * Returns the checksum value.
      */
     public long getValue() {
         return (long)adler & 0xffffffffL;

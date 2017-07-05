@@ -280,6 +280,9 @@ SUNWprivate_1.1 {
                 Java_sun_misc_VM_initialize;
 		Java_sun_misc_VMSupport_initAgentProperties;
 
+                # ZipFile.c needs this one
+		throwFileNotFoundException;
+
 #		Java_sun_misc_VM_getState;			threads.c
 #		Java_sun_misc_VM_threadsSuspended;		threads.c
 #		Java_sun_misc_VM_unsuspendSomeThreads;		threads.c

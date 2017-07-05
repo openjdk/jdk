@@ -40,6 +40,8 @@
 #include "zip_util.h"
 #ifdef WIN32
 #include "io_util_md.h"
+#else
+#include "io_util.h"
 #endif
 
 #include "java_util_zip_ZipFile.h"
@@ -102,11 +104,12 @@ Java_java_util_zip_ZipFile_open(JNIEnv *env, jclass cls, jstring name,
             }
 #else
             zfd = JVM_Open(path, flag, 0);
-#endif
-
-            if (zfd >= 0) {
-                zip = ZIP_Put_In_Cache(path, zfd, &msg, lastModified);
+            if (zfd < 0) {
+                throwFileNotFoundException(env, name);
+                goto finally;
             }
+#endif
+            zip = ZIP_Put_In_Cache(path, zfd, &msg, lastModified);
         }
 
         if (zip != 0) {
@@ -118,7 +121,6 @@ Java_java_util_zip_ZipFile_open(JNIEnv *env, jclass cls, jstring name,
         } else {
             ThrowZipException(env, "error in opening zip file");
         }
-
 finally:
         JNU_ReleaseStringPlatformChars(env, name, path);
     }
@@ -231,7 +233,25 @@ Java_java_util_zip_ZipFile_getEntryCrc(JNIEnv *env, jclass cls, jlong zentry)
 }
 
 JNIEXPORT jbyteArray JNICALL
-Java_java_util_zip_ZipFile_getEntryBytes(JNIEnv *env, jclass cls, jlong zentry, jint type)
+Java_java_util_zip_ZipFile_getCommentBytes(JNIEnv *env,
+                                           jclass cls,
+                                           jlong zfile)
+{
+    jzfile *zip = jlong_to_ptr(zfile);
+    jbyteArray jba = NULL;
+
+    if (zip->comment != NULL) {
+        if ((jba = (*env)->NewByteArray(env, zip->clen)) == NULL)
+            return NULL;
+        (*env)->SetByteArrayRegion(env, jba, 0, zip->clen, (jbyte*)zip->comment);
+    }
+    return jba;
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_java_util_zip_ZipFile_getEntryBytes(JNIEnv *env,
+                                         jclass cls,
+                                         jlong zentry, jint type)
 {
     jzentry *ze = jlong_to_ptr(zentry);
     int len = 0;

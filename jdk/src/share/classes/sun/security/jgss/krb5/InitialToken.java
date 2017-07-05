@@ -33,6 +33,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import sun.security.krb5.*;
 import sun.security.jgss.HttpCaller;
 import sun.security.krb5.internal.Krb5;
@@ -219,43 +220,35 @@ abstract class InitialToken extends Krb5Token {
                         "Incorrect checksum");
             }
 
-            byte[] remoteBindingBytes = new byte[CHECKSUM_BINDINGS_SIZE];
-            System.arraycopy(checksumBytes, 4, remoteBindingBytes, 0,
-                             CHECKSUM_BINDINGS_SIZE);
-
-            byte[] noBindings = new byte[CHECKSUM_BINDINGS_SIZE];
-            boolean tokenContainsBindings =
-                (!java.util.Arrays.equals(noBindings, remoteBindingBytes));
-
             ChannelBinding localBindings = context.getChannelBinding();
 
-            if (tokenContainsBindings ||
-                localBindings != null) {
+            // Ignore remote channel binding info when not requested at
+            // local side (RFC 4121 4.1.1.2: the acceptor MAY ignore...).
+            //
+            // All major krb5 implementors implement this "MAY",
+            // and some applications depend on it as a workaround
+            // for not having a way to negotiate the use of channel
+            // binding -- the initiator application always uses CB
+            // and hopes the acceptor will ignore the CB if the
+            // acceptor doesn't support CB.
+            if (localBindings != null) {
+                byte[] remoteBindingBytes = new byte[CHECKSUM_BINDINGS_SIZE];
+                System.arraycopy(checksumBytes, 4, remoteBindingBytes, 0,
+                                 CHECKSUM_BINDINGS_SIZE);
 
-                boolean badBindings = false;
-                String errorMessage = null;
-
-                if (tokenContainsBindings &&
-                    localBindings != null) {
+                byte[] noBindings = new byte[CHECKSUM_BINDINGS_SIZE];
+                if (!Arrays.equals(noBindings, remoteBindingBytes)) {
                     byte[] localBindingsBytes =
                         computeChannelBinding(localBindings);
-                    //              System.out.println("ChannelBinding hash: "
-                    //         + getHexBytes(localBindingsBytes));
-                    badBindings =
-                        (!java.util.Arrays.equals(localBindingsBytes,
-                                                remoteBindingBytes));
-                    errorMessage = "Bytes mismatch!";
-                } else if (localBindings == null) {
-                    errorMessage = "ChannelBinding not provided!";
-                    badBindings = true;
+                    if (!Arrays.equals(localBindingsBytes,
+                                                remoteBindingBytes)) {
+                        throw new GSSException(GSSException.BAD_BINDINGS, -1,
+                                               "Bytes mismatch!");
+                    }
                 } else {
-                    errorMessage = "Token missing ChannelBinding!";
-                    badBindings = true;
-                }
-
-                if (badBindings)
                     throw new GSSException(GSSException.BAD_BINDINGS, -1,
-                                           errorMessage);
+                                           "Token missing ChannelBinding!");
+                }
             }
 
             flags = readLittleEndian(checksumBytes, 20, 4);

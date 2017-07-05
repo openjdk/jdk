@@ -28,6 +28,7 @@ package java.awt;
 import java.awt.peer.PopupMenuPeer;
 import javax.accessibility.*;
 
+import sun.awt.AWTAccessor;
 
 /**
  * A class that implements a menu which can be dynamically popped up
@@ -47,6 +48,15 @@ public class PopupMenu extends Menu {
     static int nameCounter = 0;
 
     transient boolean isTrayIconPopup = false;
+
+    static {
+        AWTAccessor.setPopupMenuAccessor(
+            new AWTAccessor.PopupMenuAccessor() {
+                public boolean isTrayIconPopup(PopupMenu popupMenu) {
+                    return popupMenu.isTrayIconPopup;
+                }
+            });
+    }
 
     /*
      * JDK 1.1 serialVersionUID

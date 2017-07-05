@@ -30,6 +30,7 @@ import java.util.Hashtable;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import sun.awt.SunToolkit;
 
 import javax.accessibility.*;
 
@@ -195,9 +196,12 @@ public class JLayeredPane extends JComponent implements Accessible {
 
             for (Component c : getComponents()) {
                 layer = null;
-                if(c instanceof JInternalFrame || (c instanceof JComponent &&
-                         (layer = (Integer)((JComponent)c).getClientProperty(
-                          LAYER_PROPERTY)) != null)) {
+
+                if(SunToolkit.isInstanceOf(c, "javax.swing.JInternalFrame") ||
+                       (c instanceof JComponent &&
+                        (layer = (Integer)((JComponent)c).
+                                     getClientProperty(LAYER_PROPERTY)) != null))
+                {
                     if(layer != null && layer.equals(FRAME_CONTENT_LAYER))
                         continue;
                     layeredComponentFound = true;

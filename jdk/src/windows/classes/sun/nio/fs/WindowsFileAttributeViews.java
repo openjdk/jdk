@@ -28,7 +28,6 @@ package sun.nio.fs;
 
 import java.nio.file.attribute.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
@@ -56,9 +55,24 @@ class WindowsFileAttributeViews {
         }
 
         /**
+         * Adjusts a Windows time for the FAT epoch.
+         */
+        private long adjustForFatEpoch(long time) {
+            // 1/1/1980 in Windows Time
+            final long FAT_EPOCH = 119600064000000000L;
+            if (time != -1L && time < FAT_EPOCH) {
+                return FAT_EPOCH;
+            } else {
+                return time;
+            }
+        }
+
+        /**
          * Parameter values in Windows times.
          */
-        void setFileTimes(long createTime, long lastAccessTime, long lastWriteTime)
+        void setFileTimes(long createTime,
+                          long lastAccessTime,
+                          long lastWriteTime)
             throws IOException
         {
             long handle = -1L;
@@ -76,24 +90,43 @@ class WindowsFileAttributeViews {
                 x.rethrowAsIOException(file);
             }
 
-            // update attributes
+            // update times
             try {
-                SetFileTime(handle, createTime, lastAccessTime, lastWriteTime);
+                SetFileTime(handle,
+                            createTime,
+                            lastAccessTime,
+                            lastWriteTime);
             } catch (WindowsException x) {
-                x.rethrowAsIOException(file);
+                // If ERROR_INVALID_PARAMATER is returned and the volume is
+                // FAT then adjust to the FAT epoch and retry.
+                if (followLinks && x.lastError() == ERROR_INVALID_PARAMATER) {
+                    try {
+                        if (WindowsFileStore.create(file).type().equals("FAT")) {
+                            SetFileTime(handle,
+                                        adjustForFatEpoch(createTime),
+                                        adjustForFatEpoch(lastAccessTime),
+                                        adjustForFatEpoch(lastWriteTime));
+                            // retry succeeded
+                            x = null;
+                        }
+                    } catch (SecurityException ignore) {
+                    } catch (WindowsException ignore) {
+                    } catch (IOException ignore) {
+                        // ignore exceptions to let original exception be thrown
+                    }
+                }
+                if (x != null)
+                    x.rethrowAsIOException(file);
             } finally {
                 CloseHandle(handle);
             }
         }
 
         @Override
-        public void setTimes(Long lastModifiedTime,
-                             Long lastAccessTime,
-                             Long createTime,
-                             TimeUnit unit) throws IOException
+        public void setTimes(FileTime lastModifiedTime,
+                             FileTime lastAccessTime,
+                             FileTime createTime) throws IOException
         {
-            file.checkWrite();
-
             // if all null then do nothing
             if (lastModifiedTime == null && lastAccessTime == null &&
                 createTime == null)
@@ -102,42 +135,17 @@ class WindowsFileAttributeViews {
                 return;
             }
 
-            // null => no change
-            // -1 => change to current time
-            long now = System.currentTimeMillis();
-            long modTime = 0L, accTime = 0L, crTime = 0L;
-            if (lastModifiedTime != null) {
-                if (lastModifiedTime < 0L) {
-                    if (lastModifiedTime != -1L)
-                        throw new IllegalArgumentException();
-                    modTime = now;
-                } else {
-                    modTime = TimeUnit.MILLISECONDS.convert(lastModifiedTime, unit);
-                }
-                modTime = WindowsFileAttributes.toWindowsTime(modTime);
-            }
-            if (lastAccessTime != null) {
-                if (lastAccessTime < 0L) {
-                    if (lastAccessTime != -1L)
-                        throw new IllegalArgumentException();
-                    accTime = now;
-                } else {
-                    accTime = TimeUnit.MILLISECONDS.convert(lastAccessTime, unit);
-                }
-                accTime = WindowsFileAttributes.toWindowsTime(accTime);
-            }
-            if (createTime != null) {
-                if (createTime < 0L) {
-                    if (createTime != -1L)
-                        throw new IllegalArgumentException();
-                    crTime = now;
-                } else {
-                    crTime = TimeUnit.MILLISECONDS.convert(createTime, unit);
-                }
-                crTime = WindowsFileAttributes.toWindowsTime(crTime);
-            }
+            // permission check
+            file.checkWrite();
 
-            setFileTimes(crTime, accTime, modTime);
+            // update times
+            long t1 = (createTime == null) ? -1L :
+                WindowsFileAttributes.toWindowsTime(createTime);
+            long t2 = (lastAccessTime == null) ? -1L :
+                WindowsFileAttributes.toWindowsTime(lastAccessTime);
+            long t3 = (lastModifiedTime == null) ? -1L :
+                WindowsFileAttributes.toWindowsTime(lastModifiedTime);
+            setFileTimes(t1, t2, t3);
         }
     }
 
@@ -197,10 +205,10 @@ class WindowsFileAttributeViews {
         }
 
         @Override
-        public Map<String,?> readAttributes(String first, String[] rest)
+        public Map<String,?> readAttributes(String[] attributes)
             throws IOException
         {
-            AttributesBuilder builder = AttributesBuilder.create(first, rest);
+            AttributesBuilder builder = AttributesBuilder.create(attributes);
             WindowsFileAttributes attrs = readAttributes();
             addBasicAttributesToBuilder(attrs, builder);
             if (builder.match(READONLY_NAME))
@@ -286,11 +294,11 @@ class WindowsFileAttributeViews {
         }
     }
 
-    static BasicFileAttributeView createBasicView(WindowsPath file, boolean followLinks) {
+    static Basic createBasicView(WindowsPath file, boolean followLinks) {
         return new Basic(file, followLinks);
     }
 
-    static WindowsFileAttributeViews.Dos createDosView(WindowsPath file, boolean followLinks) {
+    static Dos createDosView(WindowsPath file, boolean followLinks) {
         return new Dos(file, followLinks);
     }
 }

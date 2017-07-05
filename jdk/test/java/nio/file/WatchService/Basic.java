@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.WatchService
  * @library ..
  * @run main/timeout=120 Basic
@@ -114,7 +114,7 @@ public class Basic {
                 throw new RuntimeException("register did not return existing key");
 
             System.out.format("delete %s\n", file);
-            file.delete(false);
+            file.delete();
             takeExpectedKey(watcher, myKey);
             checkExpectedEvent(myKey.pollEvents(),
                 StandardWatchEventKind.ENTRY_DELETE, name);
@@ -137,7 +137,7 @@ public class Basic {
                 throw new RuntimeException("register did not return existing key");
 
             System.out.format("update: %s\n", file);
-            OutputStream out = file.newOutputStream(EnumSet.of(StandardOpenOption.APPEND));
+            OutputStream out = file.newOutputStream(StandardOpenOption.APPEND);
             try {
                 out.write("I am a small file".getBytes("UTF-8"));
             } finally {
@@ -151,7 +151,7 @@ public class Basic {
             System.out.println("OKAY");
 
             // done
-            file.delete(false);
+            file.delete();
 
         } finally {
             watcher.close();
@@ -190,7 +190,7 @@ public class Basic {
             }
 
             // done
-            file.delete(false);
+            file.delete();
 
             System.out.println("OKAY");
 
@@ -216,7 +216,7 @@ public class Basic {
                 new WatchEvent.Kind<?>[]{ ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY });
 
             System.out.format("delete: %s\n", subdir);
-            subdir.delete(false);
+            subdir.delete();
             takeExpectedKey(watcher, myKey);
 
             System.out.println("reset key");
@@ -439,7 +439,7 @@ public class Basic {
                 throw new RuntimeException("key not expected");
 
             // delete gus1
-            file1.delete(false);
+            file1.delete();
 
             // check that key2 got ENTRY_DELETE
             takeExpectedKey(watcher2, key2);

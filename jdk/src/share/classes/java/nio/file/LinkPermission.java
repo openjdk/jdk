@@ -95,7 +95,7 @@ public final class LinkPermission extends BasicPermission {
      *          {@code null}
      *
      * @throws  IllegalArgumentException
-     *          if name is empty or invalid
+     *          if name is empty or invalid, or actions is a non-empty string
      */
     public LinkPermission(String name, String actions) {
         super(name);

@@ -123,10 +123,10 @@ $(ACTUAL_PROGRAM):: classes $(JVMCFG) $(INIT)
 #
 ifeq ($(PLATFORM), windows)
 
-# J2SE name required here
-RC_FLAGS += /D "J2SE_FNAME=$(PROGRAM)$(EXE_SUFFIX)" \
-	    /D "J2SE_INTERNAL_NAME=$(PROGRAM)" \
-	    /D "J2SE_FTYPE=0x1L"
+# JDK name required here
+RC_FLAGS += /D "JDK_FNAME=$(PROGRAM)$(EXE_SUFFIX)" \
+	    /D "JDK_INTERNAL_NAME=$(PROGRAM)" \
+	    /D "JDK_FTYPE=0x1L"
 
 $(OBJDIR)/$(PROGRAM).res: $(VERSIONINFO_RESOURCE)
 	@$(prep-target)

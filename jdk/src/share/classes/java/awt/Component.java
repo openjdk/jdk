@@ -861,6 +861,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
             public boolean isVisible_NoClientCode(Component comp) {
                 return comp.isVisible_NoClientCode();
             }
+            public void setRequestFocusController
+                (RequestFocusController requestController)
+            {
+                 Component.setRequestFocusController(requestController);
+            }
+            public AppContext getAppContext(Component comp) {
+                 return comp.appContext;
+            }
+            public void setAppContext(Component comp, AppContext appContext) {
+                 comp.appContext = appContext;
+            }
         });
     }
 
@@ -9823,31 +9834,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     // ****************** END OF MIXING CODE ********************************
-
-    private static boolean doesClassImplement(Class cls, String interfaceName) {
-        if (cls == null) return false;
-
-        for (Class c : cls.getInterfaces()) {
-            if (c.getName().equals(interfaceName)) {
-                return true;
-            }
-        }
-        return doesClassImplement(cls.getSuperclass(), interfaceName);
-    }
-
-    /**
-     * Checks that the given object implements the given interface.
-     * @param obj Object to be checked
-     * @param interfaceName The name of the interface. Must be fully-qualified interface name.
-     * @return true, if this object implements the given interface,
-     *         false, otherwise, or if obj or interfaceName is null
-     */
-    static boolean doesImplement(Object obj, String interfaceName) {
-        if (obj == null) return false;
-        if (interfaceName == null) return false;
-
-        return doesClassImplement(obj.getClass(), interfaceName);
-    }
 
     // Note that the method is overriden in the Window class,
     // a window doesn't need to be updated in the Z-order.

@@ -1,5 +1,5 @@
 #
-# Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -464,11 +464,48 @@ JDK_RC_NAME = \
 JDK_RC_FVER = \
     $(JDK_MINOR_VERSION),$(JDK_MICRO_VERSION),$(JDK_UPDATE_VER),$(COOKED_BUILD_NUMBER)
 
-# J2SE name required here
-RC_FLAGS += -d "J2SE_BUILD_ID=$(JDK_RC_BUILD_ID)" \
-            -d "J2SE_COMPANY=$(JDK_RC_COMPANY)" \
-            -d "J2SE_COMPONENT=$(JDK_RC_COMPONENT)" \
-            -d "J2SE_VER=$(JDK_RC_VER)" \
-            -d "J2SE_COPYRIGHT=$(JDK_RC_COPYRIGHT)" \
-            -d "J2SE_NAME=$(JDK_RC_NAME)" \
-            -d "J2SE_FVER=$(JDK_RC_FVER)"
+# JDK name required here
+RC_FLAGS += -d "JDK_BUILD_ID=$(JDK_RC_BUILD_ID)" \
+            -d "JDK_COMPANY=$(JDK_RC_COMPANY)" \
+            -d "JDK_COMPONENT=$(JDK_RC_COMPONENT)" \
+            -d "JDK_VER=$(JDK_RC_VER)" \
+            -d "JDK_COPYRIGHT=$(JDK_RC_COPYRIGHT)" \
+            -d "JDK_NAME=$(JDK_RC_NAME)" \
+            -d "JDK_FVER=$(JDK_RC_FVER)"
+
+# Enable 7-Zip LZMA file (de)compression for Java Kernel if it is available
+ifeq ($(ARCH_DATA_MODEL), 32)
+  ifneq ($(KERNEL), off)
+    # This is a hack to use until  7-Zip (and UPX) bundles can be put
+    # under /java/devtools.
+    ifndef DEPLOY_TOPDIR
+      DEPLOY_TOPDIR=$(JDK_TOPDIR)/../deploy
+    endif
+    # Uncomment this block to cause build failure if above assumption false
+    #DCHK = $(shell if [ ! -d $(DEPLOY_TOPDIR) ] ; then \
+    #  $(ECHO) deploy_not_a_peer_of_j2se ; \
+    #fi )
+    #ifeq ($(DCHK), deploy_not_a_peer_of_j2se)
+    #  If a build failure points to control coming here it means
+    #  it means deploy is not in the same directory
+    #  as j2se. Java Kernel can't tolerate that for the time being.
+    #endif
+    EC_TMP = $(shell if [ -d $(DEPLOY_TOPDIR)/make/lzma ] ; then \
+      $(ECHO) true ; \
+    else \
+      $(ECHO) false ; \
+    fi )
+    ifeq ($(EC_TMP), true)
+      EXTRA_COMP_INSTALL_PATH = lib\\\\deploy\\\\lzma.dll
+      # Crazy but true: deploy/make/plugin/jinstall/Makefile.jkernel does
+      # not include deploy/make/common/Defs-windows.gmk, either directly
+      # or indirectly. But it does include this file, so redundantly declare
+      # these variables that are in deploy/make/common/Defs-windows.gmk for
+      # the sake of the Java Kernel part of the deploy build. Whew!
+      EXTRA_COMP_LIB_NAME = lzma.dll
+      EXTRA_COMP_PATH = $(OUTPUTDIR)/tmp/deploy/lzma/win32/obj
+      EXTRA_COMP_CMD_PATH = $(EXTRA_COMP_PATH)/lzma.exe
+      EXTRA_COMP_LIB_PATH = $(EXTRA_COMP_PATH)/$(EXTRA_COMP_LIB_NAME)
+    endif
+  endif
+endif
