@@ -1225,6 +1225,7 @@ class java_lang_ClassLoader : AllStatic {
   static bool offsets_computed;
   static int parent_offset;
   static int parallelCapable_offset;
+  static int name_offset;
   static int unnamedModule_offset;
 
  public:
@@ -1234,6 +1235,7 @@ class java_lang_ClassLoader : AllStatic {
   static ClassLoaderData* loader_data(oop loader);
 
   static oop parent(oop loader);
+  static oop name(oop loader);
   static bool isAncestor(oop loader, oop cl);
 
   // Support for parallelCapable field
@@ -1291,14 +1293,18 @@ class java_lang_System : AllStatic {
 class java_lang_StackTraceElement: AllStatic {
  private:
   enum {
-    hc_moduleName_offset = 0,
-    hc_moduleVersion_offset = 1,
-    hc_declaringClass_offset = 2,
-    hc_methodName_offset = 3,
-    hc_fileName_offset   = 4,
-    hc_lineNumber_offset = 5
+    hc_classOrLoaderModuleClassName_offset = 0,
+    hc_classLoaderName_offset      = 1,
+    hc_moduleName_offset           = 2,
+    hc_moduleVersion_offset        = 3,
+    hc_declaringClass_offset       = 4,
+    hc_methodName_offset           = 5,
+    hc_fileName_offset             = 6,
+    hc_lineNumber_offset           = 7
   };
 
+  static int classOrLoaderModuleClassName_offset;
+  static int classLoaderName_offset;
   static int moduleName_offset;
   static int moduleVersion_offset;
   static int declaringClass_offset;
@@ -1307,12 +1313,14 @@ class java_lang_StackTraceElement: AllStatic {
   static int lineNumber_offset;
 
   // Setters
+  static void set_classLoaderName(oop element, oop value);
   static void set_moduleName(oop element, oop value);
   static void set_moduleVersion(oop element, oop value);
   static void set_declaringClass(oop element, oop value);
   static void set_methodName(oop element, oop value);
   static void set_fileName(oop element, oop value);
   static void set_lineNumber(oop element, int value);
+  static void set_declaringClassObject(oop element, oop value);
 
  public:
   // Create an instance of StackTraceElement

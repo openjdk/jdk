@@ -5093,7 +5093,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1478079760
+DATE_WHEN_GENERATED=1478524503
 
 ###############################################################################
 #
@@ -49070,7 +49070,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$$$ORIGIN$1'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN$1'
       SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-soname=$1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=$1'
@@ -49095,7 +49095,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # Default works for linux, might work on other platforms as well.
       PICFLAG='-fPIC'
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$$$ORIGIN$1'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN$1'
       SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-soname=$1'
       SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=$1'
@@ -49105,7 +49105,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     C_FLAG_REORDER='-xF'
     CXX_FLAG_REORDER='-xF'
     SHARED_LIBRARY_FLAGS="-G"
-    SET_EXECUTABLE_ORIGIN='-R\$$$$ORIGIN$1'
+    SET_EXECUTABLE_ORIGIN='-R\$$ORIGIN$1'
     SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
     SET_SHARED_LIBRARY_NAME='-h $1'
     SET_SHARED_LIBRARY_MAPFILE='-M$1'
