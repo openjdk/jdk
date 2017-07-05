@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,15 +211,7 @@ public class Reflection {
         if (currentModule == memberModule)
            return true;  // same module (named or unnamed)
 
-        // memberClass may be primitive or array class
-        Class<?> c = memberClass;
-        while (c.isArray()) {
-            c = c.getComponentType();
-        }
-        if (c.isPrimitive())
-            return true;
-
-        String pkg = c.getPackageName();
+        String pkg = memberClass.getPackageName();
         boolean allowed = memberModule.isExported(pkg, currentModule);
         if (allowed && memberModule.isNamed() && printStackTraceWhenAccessSucceeds()) {
             if (!SharedSecrets.getJavaLangReflectModuleAccess()
@@ -237,10 +229,6 @@ public class Reflection {
     private static boolean isSameClassPackage(Class<?> c1, Class<?> c2) {
         if (c1.getClassLoader() != c2.getClassLoader())
             return false;
-        while (c1.isArray())
-            c1 = c1.getComponentType();
-        while (c2.isArray())
-            c2 = c2.getComponentType();
         return Objects.equals(c1.getPackageName(), c2.getPackageName());
     }
 
@@ -378,12 +366,6 @@ public class Reflection {
         }
     }
 
-    public static void enableStackTraces() {
-        printStackWhenAccessFails = true;
-        printStackWhenAccessSucceeds = true;
-        printStackPropertiesSet = true;
-    }
-
     public static boolean printStackTraceWhenAccessFails() {
         ensurePrintStackPropertiesSet();
         return printStackWhenAccessFails;
@@ -413,11 +395,7 @@ public class Reflection {
         if (m2.isNamed())
             memberSuffix = " (in " + m2 + ")";
 
-        Class<?> c = memberClass;
-        while (c.isArray()) {
-            c = c.getComponentType();
-        }
-        String memberPackageName = c.getPackageName();
+        String memberPackageName = memberClass.getPackageName();
 
         String msg = currentClass + currentSuffix + " cannot access ";
         if (m2.isExported(memberPackageName, m1)) {

@@ -157,8 +157,7 @@ class GNUStyleOptions {
                     for (String dir : dirs) {
                         paths[i++] = Paths.get(dir);
                     }
-                    jartool.moduleFinder =
-                        new ModulePath(Runtime.version(), true, paths);
+                    jartool.moduleFinder = ModulePath.of(Runtime.version(), true, paths);
                 }
             },
             new Option(false, OptionType.CREATE_UPDATE, "--do-not-resolve-by-default") {
