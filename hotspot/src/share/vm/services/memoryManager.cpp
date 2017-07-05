@@ -61,6 +61,10 @@ MemoryManager* MemoryManager::get_code_cache_memory_manager() {
   return (MemoryManager*) new CodeCacheMemoryManager();
 }
 
+MemoryManager* MemoryManager::get_metaspace_memory_manager() {
+  return (MemoryManager*) new MetaspaceMemoryManager();
+}
+
 GCMemoryManager* MemoryManager::get_copy_memory_manager() {
   return (GCMemoryManager*) new CopyMemoryManager();
 }

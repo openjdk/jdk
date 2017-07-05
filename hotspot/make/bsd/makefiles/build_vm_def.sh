@@ -7,6 +7,6 @@ else
 NM=nm
 fi
 
-$NM --defined-only $* | awk '
-   { if ($3 ~ /^_ZTV/ || $3 ~ /^gHotSpotVM/) print "\t" $3 ";" }
+$NM -Uj $* | awk '
+   { if ($3 ~ /^_ZTV/ || $3 ~ /^gHotSpotVM/) print "\t" $3 }
    '

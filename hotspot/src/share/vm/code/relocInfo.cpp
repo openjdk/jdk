@@ -338,31 +338,6 @@ void RelocIterator::set_limit(address limit) {
   _limit = limit;
 }
 
-
-void PatchingRelocIterator:: prepass() {
-  // turn breakpoints off during patching
-  _init_state = (*this);        // save cursor
-  while (next()) {
-    if (type() == relocInfo::breakpoint_type) {
-      breakpoint_reloc()->set_active(false);
-    }
-  }
-  (RelocIterator&)(*this) = _init_state;        // reset cursor for client
-}
-
-
-void PatchingRelocIterator:: postpass() {
-  // turn breakpoints back on after patching
-  (RelocIterator&)(*this) = _init_state;        // reset cursor again
-  while (next()) {
-    if (type() == relocInfo::breakpoint_type) {
-      breakpoint_Relocation* bpt = breakpoint_reloc();
-      bpt->set_active(bpt->enabled());
-    }
-  }
-}
-
-
 // All the strange bit-encodings are in here.
 // The idea is to encode relocation data which are small integers
 // very efficiently (a single extra halfword).  Larger chunks of
@@ -704,51 +679,6 @@ void section_word_Relocation::unpack_data() {
   _target  = address_from_scaled_offset(offset, base);
 }
 
-
-void breakpoint_Relocation::pack_data_to(CodeSection* dest) {
-  short* p = (short*) dest->locs_end();
-  address point = dest->locs_point();
-
-  *p++ = _bits;
-
-  assert(_target != NULL, "sanity");
-
-  if (internal())  normalize_address(_target, dest);
-
-  jint target_bits =
-    (jint)( internal() ? scaled_offset           (_target, point)
-                       : runtime_address_to_index(_target) );
-  if (settable()) {
-    // save space for set_target later
-    p = add_jint(p, target_bits);
-  } else {
-    p = add_var_int(p, target_bits);
-  }
-
-  for (int i = 0; i < instrlen(); i++) {
-    // put placeholder words until bytes can be saved
-    p = add_short(p, (short)0x7777);
-  }
-
-  dest->set_locs_end((relocInfo*) p);
-}
-
-
-void breakpoint_Relocation::unpack_data() {
-  _bits = live_bits();
-
-  int targetlen = datalen() - 1 - instrlen();
-  jint target_bits = 0;
-  if (targetlen == 0)       target_bits = 0;
-  else if (targetlen == 1)  target_bits = *(data()+1);
-  else if (targetlen == 2)  target_bits = relocInfo::jint_from_data(data()+1);
-  else                      { ShouldNotReachHere(); }
-
-  _target = internal() ? address_from_scaled_offset(target_bits, addr())
-                       : index_to_runtime_address  (target_bits);
-}
-
-
 //// miscellaneous methods
 oop* oop_Relocation::oop_addr() {
   int n = _oop_index;
@@ -932,81 +862,6 @@ address internal_word_Relocation::target() {
   }
   return target;
 }
-
-
-breakpoint_Relocation::breakpoint_Relocation(int kind, address target, bool internal) {
-  bool active    = false;
-  bool enabled   = (kind == initialization);
-  bool removable = (kind != safepoint);
-  bool settable  = (target == NULL);
-
-  int bits = kind;
-  if (enabled)    bits |= enabled_state;
-  if (internal)   bits |= internal_attr;
-  if (removable)  bits |= removable_attr;
-  if (settable)   bits |= settable_attr;
-
-  _bits = bits | high_bit;
-  _target = target;
-
-  assert(this->kind()      == kind,      "kind encoded");
-  assert(this->enabled()   == enabled,   "enabled encoded");
-  assert(this->active()    == active,    "active encoded");
-  assert(this->internal()  == internal,  "internal encoded");
-  assert(this->removable() == removable, "removable encoded");
-  assert(this->settable()  == settable,  "settable encoded");
-}
-
-
-address breakpoint_Relocation::target() const {
-  return _target;
-}
-
-
-void breakpoint_Relocation::set_target(address x) {
-  assert(settable(), "must be settable");
-  jint target_bits =
-    (jint)(internal() ? scaled_offset           (x, addr())
-                      : runtime_address_to_index(x));
-  short* p = &live_bits() + 1;
-  p = add_jint(p, target_bits);
-  assert(p == instrs(), "new target must fit");
-  _target = x;
-}
-
-
-void breakpoint_Relocation::set_enabled(bool b) {
-  if (enabled() == b) return;
-
-  if (b) {
-    set_bits(bits() | enabled_state);
-  } else {
-    set_active(false);          // remove the actual breakpoint insn, if any
-    set_bits(bits() & ~enabled_state);
-  }
-}
-
-
-void breakpoint_Relocation::set_active(bool b) {
-  assert(!b || enabled(), "cannot activate a disabled breakpoint");
-
-  if (active() == b) return;
-
-  // %%% should probably seize a lock here (might not be the right lock)
-  //MutexLockerEx ml_patch(Patching_lock, true);
-  //if (active() == b)  return;         // recheck state after locking
-
-  if (b) {
-    set_bits(bits() | active_state);
-    if (instrlen() == 0)
-      fatal("breakpoints in original code must be undoable");
-    pd_swap_in_breakpoint (addr(), instrs(), instrlen());
-  } else {
-    set_bits(bits() & ~active_state);
-    pd_swap_out_breakpoint(addr(), instrs(), instrlen());
-  }
-}
-
 
 //---------------------------------------------------------------------------------
 // Non-product code
