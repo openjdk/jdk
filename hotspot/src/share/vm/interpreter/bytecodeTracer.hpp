@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ class BytecodeTracer: AllStatic {
   static BytecodeClosure* closure()                                                   { return _closure; }
   static void             set_closure(BytecodeClosure* closure) { _closure = closure; }
 
-  static void             trace(methodHandle method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st = tty);
-  static void             trace(methodHandle method, address bcp, outputStream* st = tty);
+  static void             trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st = tty);
+  static void             trace(const methodHandle& method, address bcp, outputStream* st = tty);
 };
 
 
@@ -55,8 +55,8 @@ class BytecodeTracer: AllStatic {
 
 class BytecodeClosure {
  public:
-  virtual void trace(methodHandle method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) = 0;
-  virtual void trace(methodHandle method, address bcp, outputStream* st) = 0;
+  virtual void trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) = 0;
+  virtual void trace(const methodHandle& method, address bcp, outputStream* st) = 0;
 };
 
 #endif // SHARE_VM_INTERPRETER_BYTECODETRACER_HPP

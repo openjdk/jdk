@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,12 @@ static jfieldID jzfileID;
 
 static int OPEN_READ = java_util_zip_ZipFile_OPEN_READ;
 static int OPEN_DELETE = java_util_zip_ZipFile_OPEN_DELETE;
+
+
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 JNIEXPORT void JNICALL
 Java_java_util_zip_ZipFile_initIDs(JNIEnv *env, jclass cls)

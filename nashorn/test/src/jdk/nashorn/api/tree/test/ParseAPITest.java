@@ -37,17 +37,38 @@ import org.testng.annotations.Test;
 
 /**
  * Test for nashorn Parser API (jdk.nashorn.api.tree.*)
+ *
+ * @test
+ * @run testng jdk.nashorn.api.tree.test.ParseAPITest
  */
 public class ParseAPITest {
 
     private static final boolean VERBOSE   = Boolean.valueOf(System.getProperty("parserapitest.verbose"));
     private static final boolean TEST262   = Boolean.valueOf(System.getProperty("parserapitest.test262"));
 
-    private static final String TEST_BASIC_DIR     = System.getProperty("test.basic.dir");
-    private static final String TEST_MAPTESTS_DIR  = System.getProperty("test.maptests.dir");
-    private static final String TEST_SANDBOX_DIR   = System.getProperty("test.sandbox.dir");
-    private static final String TEST_TRUSTED_DIR   = System.getProperty("test.trusted.dir");
-    private static final String TEST262_SUITE_DIR  = System.getProperty("test262.suite.dir");
+    private static final String TEST_BASIC_DIR;
+    private static final String TEST_MAPTESTS_DIR;
+    private static final String TEST_SANDBOX_DIR;
+    private static final String TEST_TRUSTED_DIR;
+    private static final String TEST262_SUITE_DIR;
+
+    static {
+        String testSrc = System.getProperty("test.src");
+        if (testSrc != null) {
+            String testScriptDir = testSrc + "/../../../../../../script/";
+            TEST_BASIC_DIR    = testScriptDir + "basic";
+            TEST_MAPTESTS_DIR = testScriptDir + "maptests";
+            TEST_SANDBOX_DIR  = testScriptDir + "sandbox";
+            TEST_TRUSTED_DIR  = testScriptDir + "trusted";
+            TEST262_SUITE_DIR = testScriptDir + "external/test262/test/suite";
+        } else {
+            TEST_BASIC_DIR     = System.getProperty("test.basic.dir");
+            TEST_MAPTESTS_DIR  = System.getProperty("test.maptests.dir");
+            TEST_SANDBOX_DIR   = System.getProperty("test.sandbox.dir");
+            TEST_TRUSTED_DIR   = System.getProperty("test.trusted.dir");
+            TEST262_SUITE_DIR  = System.getProperty("test262.suite.dir");
+        }
+    }
 
     interface TestFilter {
         public boolean exclude(File file, String content);

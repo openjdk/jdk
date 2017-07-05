@@ -22,10 +22,14 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import jdk.vm.ci.common.*;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Signature;
 
 /**
  * Represents a method signature.
@@ -131,7 +135,7 @@ public class HotSpotSignature implements Signature {
             JavaKind kind = JavaKind.fromPrimitiveOrVoidTypeChar(name.charAt(0));
             return runtime.getHostJVMCIBackend().getMetaAccess().lookupJavaType(kind.toJavaClass());
         }
-        return new HotSpotUnresolvedJavaType(name, runtime);
+        return HotSpotUnresolvedJavaType.create(runtime, name);
     }
 
     @Override

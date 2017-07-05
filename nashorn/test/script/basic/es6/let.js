@@ -26,7 +26,8 @@
  *
  * @test
  * @run
- * @option --language=es6 */
+ * @option --language=es6
+ */
 
 "use strict";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -235,7 +235,7 @@ vmDeath(jvmtiEnv *jvmti, JNIEnv *env)
 
 /* Agent_OnLoad() is called first, we prepare for a VM_INIT event here. */
 JNIEXPORT jint JNICALL
-Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
+DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 {
     jint                rc;
     jvmtiError          err;
@@ -283,6 +283,6 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 
 /* Agent_OnUnload() is called last */
 JNIEXPORT void JNICALL
-Agent_OnUnload(JavaVM *vm)
+DEF_Agent_OnUnload(JavaVM *vm)
 {
 }

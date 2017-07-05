@@ -51,7 +51,7 @@ public class ManagementFactoryHelper {
     static {
         // make sure that the management lib is loaded within
         // java.lang.management.ManagementFactory
-        sun.misc.Unsafe.getUnsafe().ensureClassInitialized(ManagementFactory.class);
+        jdk.internal.misc.Unsafe.getUnsafe().ensureClassInitialized(ManagementFactory.class);
     }
 
     private static final VMManagement jvm = new VMManagementImpl();

@@ -22,10 +22,10 @@
  */
 package jdk.vm.ci.options;
 
-import java.io.*;
-import java.util.function.*;
+import java.io.Serializable;
+import java.util.function.Supplier;
 
-import jdk.vm.ci.options.OptionValue.*;
+import jdk.vm.ci.options.OptionValue.OverrideScope;
 
 /**
  * A cached value that needs to be recomputed when an option changes.

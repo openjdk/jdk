@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,18 +276,6 @@ typedef struct ObjectBatch {
  * Additional modifiers not defined as such in the JVM spec
  */
 #define MOD_SYNTHETIC    0xf0000000  /* not in source code */
-
-/*
- * jlong conversion macros
- */
-#define jlong_zero       ((jlong) 0)
-#define jlong_one        ((jlong) 1)
-
-#define jlong_to_ptr(a)  ((void*)(intptr_t)(a))
-#define ptr_to_jlong(a)  ((jlong)(intptr_t)(a))
-#define jint_to_jlong(a) ((jlong)(a))
-#define jlong_to_jint(a) ((jint)(a))
-
 
 /*
  * util funcs

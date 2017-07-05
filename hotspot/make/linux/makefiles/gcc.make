@@ -61,6 +61,11 @@ else
   CC_VER_MAJOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f1)
   CC_VER_MINOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
   CC_VER_MICRO := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f3)
+  # Workaround Ubuntu bug where -dumpversion doesn't print a micro version
+  # https://bugs.launchpad.net/ubuntu/+source/gcc-4.8/+bug/1360404
+  ifeq ($(CC_VER_MICRO),)
+    CC_VER_MICRO := "0"
+  endif
 endif
 
 ifeq ($(USE_CLANG), true)
@@ -224,6 +229,8 @@ ifeq ($(USE_CLANG),)
     WARNING_FLAGS += -Wtype-limits
     # GCC < 4.8 don't accept this flag for C++.
     WARNING_FLAGS += -Wno-format-zero-length
+    # GCC 4.8 reports less false positives than the older compilers.
+    WARNING_FLAGS += -Wuninitialized
   endif
 endif
 

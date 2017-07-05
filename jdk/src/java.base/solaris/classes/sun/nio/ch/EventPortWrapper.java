@@ -31,7 +31,7 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import sun.security.action.GetIntegerAction;
 import static sun.nio.ch.SolarisEventPort.*;
 

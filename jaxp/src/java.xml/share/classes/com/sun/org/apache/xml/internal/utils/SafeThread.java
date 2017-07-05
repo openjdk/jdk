@@ -24,8 +24,6 @@
  */
 package com.sun.org.apache.xml.internal.utils;
 
-import sun.misc.Unsafe;
-
 /**
  * This is a combination of ThreadControllerWrapper's inner class SafeThread
  * that was introduced as a fix for CR 6607339
@@ -35,7 +33,7 @@ import sun.misc.Unsafe;
  */
 public class SafeThread extends Thread {
 
-    private static final Unsafe UNSAFE;
+    private static final jdk.internal.misc.Unsafe UNSAFE;
     private static final long THREAD_LOCALS;
     private static final long INHERITABLE_THREAD_LOCALS;
 
@@ -81,7 +79,7 @@ public class SafeThread extends Thread {
     }
 
     static {
-        UNSAFE = Unsafe.getUnsafe();
+        UNSAFE = jdk.internal.misc.Unsafe.getUnsafe();
         Class<?> t = Thread.class;
         try {
             THREAD_LOCALS = UNSAFE.objectFieldOffset(t.getDeclaredField("threadLocals"));

@@ -47,6 +47,9 @@ import org.testng.annotations.Test;
  *
  * JDK-8024615: Refactor ScriptObjectMirror and JSObject to support external
  * JSObject implementations.
+ *
+ * @test
+ * @run testng jdk.nashorn.api.scripting.test.PluggableJSObjectTest
  */
 @SuppressWarnings("javadoc")
 public class PluggableJSObjectTest {

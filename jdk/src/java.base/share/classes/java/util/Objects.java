@@ -295,7 +295,7 @@ public final class Objects {
      *        {@code defaultObj} is {@code null}
      * @since 9
      */
-    public static <T> T nonNullElse(T obj, T defaultObj) {
+    public static <T> T requireNonNullElse(T obj, T defaultObj) {
         return (obj != null) ? obj : requireNonNull(defaultObj, "defaultObj");
     }
 
@@ -314,8 +314,9 @@ public final class Objects {
      *        the {@code supplier.get()} value is {@code null}
      * @since 9
      */
-    public static <T> T nonNullElseGet(T obj, Supplier<? extends T> supplier) {
-        return (obj != null) ? obj : requireNonNull(requireNonNull(supplier, "supplier").get(), "supplier.get()");
+    public static <T> T requireNonNullElseGet(T obj, Supplier<? extends T> supplier) {
+        return (obj != null) ? obj
+                : requireNonNull(requireNonNull(supplier, "supplier").get(), "supplier.get()");
     }
 
     /**

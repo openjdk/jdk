@@ -120,7 +120,7 @@ public final class UserAccessorProperty extends SpillProperty {
      * @param flags property flags
      * @param slot  spill slot
      */
-    UserAccessorProperty(final String key, final int flags, final int slot) {
+    UserAccessorProperty(final Object key, final int flags, final int slot) {
         super(key, flags, slot);
     }
 
@@ -226,7 +226,7 @@ public final class UserAccessorProperty extends SpillProperty {
     @Override
     public void setValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict) {
         try {
-            invokeObjectSetter(getAccessors((owner != null) ? owner : self), getObjectSetterInvoker(), strict ? getKey() : null, self, value);
+            invokeObjectSetter(getAccessors((owner != null) ? owner : self), getObjectSetterInvoker(), strict ? getKey().toString() : null, self, value);
         } catch (final Error | RuntimeException t) {
             throw t;
         } catch (final Throwable t) {
