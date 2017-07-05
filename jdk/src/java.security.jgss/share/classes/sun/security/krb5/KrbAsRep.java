@@ -160,7 +160,7 @@ class KrbAsRep extends KrbKdcRep {
         creds = new Credentials(
                                 rep.ticket,
                                 req.reqBody.cname,
-                                rep.ticket.sname,
+                                enc_part.sname,
                                 enc_part.key,
                                 enc_part.flags,
                                 enc_part.authtime,

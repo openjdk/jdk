@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,17 +88,12 @@ public interface NamespaceContext {
      * table describes the returned Namespace URI value for all
      * possible prefix values:
      *
-     * <table border="2" rules="all" cellpadding="4">
+     * <table class="striped">
+     *   <caption>Return value for specified prefixes</caption>
      *   <thead>
      *     <tr>
-     *       <td align="center" colspan="2">
-     *         {@code getNamespaceURI(prefix)}
-     *         return value for specified prefixes
-     *       </td>
-     *     </tr>
-     *     <tr>
-     *       <td>prefix parameter</td>
-     *       <td>Namespace URI return value</td>
+     *       <th>prefix parameter</th>
+     *       <th>Namespace URI return value</th>
      *     </tr>
      *   </thead>
      *   <tbody>
@@ -158,14 +153,9 @@ public interface NamespaceContext {
      * table describes the returned prefix value for all Namespace URI
      * values:
      *
-     * <table border="2" rules="all" cellpadding="4">
+     * <table class="striped">
+     * <caption>Return value for specified Namespace URIs</caption>
      *   <thead>
-     *     <tr>
-     *       <th align="center" colspan="2">
-     *         {@code getPrefix(namespaceURI)} return value for
-     *         specified Namespace URIs
-     *       </th>
-     *     </tr>
      *     <tr>
      *       <th>Namespace URI parameter</th>
      *       <th>prefix value returned</th>
@@ -230,13 +220,9 @@ public interface NamespaceContext {
      * table describes the returned prefixes value for all Namespace
      * URI values:
      *
-     * <table border="2" rules="all" cellpadding="4">
+     * <table class="striped">
+     *   <caption>Return value for specified Namespace URIs</caption>
      *   <thead>
-     *     <tr>
-     *       <th align="center" colspan="2">{@code
-     *         getPrefixes(namespaceURI)} return value for
-     *         specified Namespace URIs</th>
-     *     </tr>
      *     <tr>
      *       <th>Namespace URI parameter</th>
      *       <th>prefixes value returned</th>

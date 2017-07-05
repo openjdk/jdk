@@ -31,18 +31,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
+import static java.util.stream.Collectors.*;
 
 /**
  * Build tool to generate the docs bundle index page.
@@ -104,59 +109,33 @@ public class GenDocsBundlePage {
     }
 
     private static final String HEADER_TITLE = "@HEADER_TITLE@";
+
+
     final Path outputfile;
     final String title;
-    final Map<String, String> moduleGroups;
-
+    final Map<String, Set<ModuleDescriptor>> moduleGroups = new HashMap<>();
     GenDocsBundlePage(String title, Path outputfile) throws IOException
     {
         this.outputfile = outputfile;
         this.title = title;
-        this.moduleGroups = moduleGroups();
-    }
 
-    static Map<String, String> moduleGroups() throws IOException {
+        // read module groups
         ModuleFinder finder = ModuleFinder.ofSystem();
-        Map<String, String> groups = new HashMap<>();
         try (InputStream in = GenDocsBundlePage.class.getResourceAsStream(MODULE_GROUPS_PROPS)) {
             Properties props = new Properties();
             props.load(in);
             for (String key: props.stringPropertyNames()) {
-                Set<String> mods = Stream.of(props.getProperty(key).split("\\s+"))
-                                         .filter(mn -> finder.find(mn).isPresent())
-                                         .map(String::trim)
-                                         .collect(Collectors.toSet());
+                Set<ModuleDescriptor> mods =
+                    Stream.of(props.getProperty(key).split("\\s+"))
+                          .map(String::trim)
+                          .flatMap(mn -> finder.find(mn).stream())
+                          .map(ModuleReference::descriptor)
+                          .collect(toSet());
 
-                // divide into 3 columns: Java SE, JDK, JavaFX
-                StringBuilder sb = new StringBuilder();
-                sb.append(mods.stream()
-                              .filter(mn -> mn.startsWith("java."))
-                              .sorted()
-                              .map(GenDocsBundlePage::toHRef)
-                              .collect(Collectors.joining("\n")));
-                sb.append("</td>\n<td>")
-                  .append(mods.stream()
-                              .filter(mn -> mn.startsWith("jdk."))
-                              .sorted()
-                              .map(GenDocsBundlePage::toHRef)
-                              .collect(Collectors.joining("\n")));
-                sb.append("</td>\n<td>");
-                if (mods.stream().anyMatch(mn -> mn.startsWith("javafx."))) {
-                    sb.append(mods.stream()
-                                  .filter(mn -> mn.startsWith("javafx."))
-                                  .sorted()
-                                  .map(GenDocsBundlePage::toHRef)
-                                  .collect(Collectors.joining("\n")));
-                }
                 String name = "@" + key.toUpperCase(Locale.ENGLISH) + "@";
-                groups.put(name, sb.toString());
-            }
+                moduleGroups.put(name, mods);
+            };
         }
-        return groups;
-    }
-
-    static String toHRef(String mn) {
-        return String.format("<a href=\"api/%s-summary.html\">%s</a><br>", mn, mn);
     }
 
     void run(BufferedReader reader) throws IOException {
@@ -174,13 +153,95 @@ public class GenDocsBundlePage {
         if (line.contains(HEADER_TITLE)) {
             line = line.replace(HEADER_TITLE, title);
         }
-        if (line.contains("@")) {
-            for (Map.Entry<String,String> e: moduleGroups.entrySet()) {
-                if (line.contains(e.getKey())) {
-                    line = line.replace(e.getKey(), e.getValue());
-                }
+        int i = line.indexOf('@');
+        int j = line.indexOf('@', i+1);
+        if (i >= 0 && i < j) {
+            String name = line.substring(i, j+1);
+            if (moduleGroups.containsKey(name)) {
+                line = line.replace(name, formatModuleGroup(name));
             }
         }
         return line;
+    }
+
+    String toHRef(ModuleDescriptor md) {
+        String mn = md.name();
+        String formattedName;
+        if (hasExportedAPIs(md)) {
+            // has exported APIs
+            formattedName = mn;
+        } else if (!md.provides().isEmpty()) {
+            // a provider
+            formattedName = "<i>" + mn + "</i>";
+        } else {
+            // a tool
+            formattedName = "<i>" + mn + "</i>";
+        }
+        return String.format("<a href=\"api/%s-summary.html\">%s</a>",
+                             mn, formattedName);
+    }
+
+    String formatModuleGroup(String groupName) {
+        StringBuilder sb = new StringBuilder();
+        // organize in Java SE, JDK, JavaFX, JCP groups
+        Set<ModuleDescriptor> modules = moduleGroups.get(groupName);
+        Arrays.stream(ModuleGroup.values())
+            .forEach(g -> {
+                Set<ModuleDescriptor> mods = modules.stream()
+                    .filter(md -> g.predicate.test(md.name()))
+                    .collect(toSet());
+                if (!mods.isEmpty()) {
+                    sb.append("<div class=" + g.cssClass + ">\n");
+                    // modules with exported API
+                    mods.stream()
+                        .filter(this::hasExportedAPIs)
+                        .sorted(Comparator.comparing(ModuleDescriptor::name))
+                        .map(this::toHRef)
+                        .forEach(m -> sb.append(m).append("\n"));
+
+                    // tools and providers
+                    mods.stream()
+                        .filter(md -> !hasExportedAPIs(md))
+                        .sorted(Comparator.comparing(ModuleDescriptor::name))
+                        .map(this::toHRef)
+                        .forEach(m -> sb.append(m).append("\n"));
+                    sb.append("</div>");
+                }
+            });
+        return sb.toString();
+    }
+
+    private boolean hasExportedAPIs(ModuleDescriptor md) {
+        if (md.exports().stream().anyMatch(e -> !e.isQualified())) {
+            return true;
+        }
+        // this should check if any indirect exports
+        // checking requires transitive would be sufficient for JDK modules
+        if (md.requires().stream()
+              .map(ModuleDescriptor.Requires::modifiers)
+              .anyMatch(mods -> mods.contains(ModuleDescriptor.Requires.Modifier.TRANSITIVE))) {
+            return true;
+        }
+        return false;
+    }
+
+    private static final Set<String> NON_JAVA_SE_MODULES =
+        Set.of("java.jnlp", "java.smartcardio");
+
+    /**
+     * CSS class names are defined in docs-bundle-page.html
+     */
+    enum ModuleGroup {
+        JAVA_SE("javase", mn -> mn.startsWith("java.") && !NON_JAVA_SE_MODULES.contains(mn)),
+        JDK("jdk", mn -> mn.startsWith("jdk.")),
+        JAVAFX("javafx", mn -> mn.startsWith("javafx.")),
+        NON_JAVA_SE("jcp", NON_JAVA_SE_MODULES::contains);
+
+        final String cssClass;
+        final Predicate<String> predicate;
+        ModuleGroup(String cssClass, Predicate<String> predicate) {
+            this.cssClass = cssClass;
+            this.predicate = predicate;
+        }
     }
 }
