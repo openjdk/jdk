@@ -2,10 +2,6 @@
  * security policy used by the test process
  */
 
-grant codeBase "file:${java.home}/lib/ext/*" {
-    permission java.security.AllPermission;
-};
-
 grant {
   // Needed because of bug#: 4182104
   permission java.lang.RuntimePermission "modifyThreadGroup";

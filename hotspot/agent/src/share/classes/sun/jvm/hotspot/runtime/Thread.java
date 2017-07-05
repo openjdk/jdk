@@ -41,6 +41,8 @@ public class Thread extends VMObject {
   private static AddressField currentPendingMonitorField;
   private static AddressField currentWaitingMonitorField;
 
+  private static JLongField allocatedBytesField;
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -61,6 +63,7 @@ public class Thread extends VMObject {
     activeHandlesField = type.getAddressField("_active_handles");
     currentPendingMonitorField = type.getAddressField("_current_pending_monitor");
     currentWaitingMonitorField = type.getAddressField("_current_waiting_monitor");
+    allocatedBytesField = type.getJLongField("_allocated_bytes");
   }
 
   public Thread(Address addr) {
@@ -102,6 +105,10 @@ public class Thread extends VMObject {
       return null;
     }
     return new JNIHandleBlock(a);
+  }
+
+  public long allocatedBytes() {
+    return allocatedBytesField.getValue(addr);
   }
 
   public boolean   isVMThread()                { return false; }

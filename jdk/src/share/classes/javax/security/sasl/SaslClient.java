@@ -204,6 +204,10 @@ public abstract interface SaslClient {
      * This method can be called only after the authentication exchange has
      * completed (i.e., when {@code isComplete()} returns true); otherwise, an
      * {@code IllegalStateException} is thrown.
+     * <p>
+     * The {@link Sasl} class includes several well-known property names
+     * (For example, {@link Sasl#QOP}). A SASL provider can support other
+     * properties which are specific to the vendor and/or a mechanism.
      *
      * @param propName The non-null property name.
      * @return The value of the negotiated property. If null, the property was

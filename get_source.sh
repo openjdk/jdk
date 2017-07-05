@@ -25,11 +25,34 @@
 # questions.
 #
 
+to_stderr() {
+    echo "$@" >&2
+}
+
+error() {
+    to_stderr "ERROR: $1"
+    exit ${2:-126}
+}
+
+warning() {
+    to_stderr "WARNING: $1"
+}
+
+version_field() {
+  # rev is typically omitted for minor and major releases
+  field=`echo ${1}.0 | cut -f ${2} -d .`
+  if expr 1 + $field >/dev/null 2> /dev/null; then
+    echo $field
+  else
+    echo -1
+  fi
+}
+
 # Version check
 
 # required
 reqdmajor=1
-reqdminor=5
+reqdminor=4
 reqdrev=0
 
 # requested
@@ -37,33 +60,38 @@ rqstmajor=2
 rqstminor=6
 rqstrev=3
 
+
 # installed
-hgwhere="`which hg 2> /dev/null | grep -v '^no hg in '`"
+hgwhere="`command -v hg`"
 if [ "x$hgwhere" = "x" ]; then
-  echo "ERROR: Could not locate Mercurial command" >&2
-  exit 126
+  error "Could not locate Mercurial command"
 fi
 
-hgversion="`hg --version 2> /dev/null | sed -n -e 's@^Mercurial Distributed SCM (version \(.*\))\$@\1@p'`"
+hgversion="`hg --version 2> /dev/null | sed -n -e 's@^Mercurial Distributed SCM (version \([^+]*\).*)\$@\1@p'`"
 if [ "x${hgversion}" = "x" ] ; then
-  echo "ERROR: Could not determine Mercurial version" >&2
-  exit 126
+  error "Could not determine Mercurial version of $hgwhere"
 fi
 
-hgmajor="`echo $hgversion | cut -f 1 -d .`"
-hgminor="`echo $hgversion | cut -f 2 -d .`"
-hgrev="`echo $hgversion.0 | cut -f 3 -d .`" # rev is omitted for minor and major releases
+hgmajor="`version_field $hgversion 1`"
+hgminor="`version_field $hgversion 2`"
+hgrev="`version_field $hgversion 3`"
+
+if [ $hgmajor -eq -1 -o $hgminor -eq -1 -o $hgrev -eq -1 ] ; then
+  error "Could not determine Mercurial version of $hgwhere from \"$hgversion\""
+fi
+
 
 # Require
 if [ $hgmajor -lt $reqdmajor -o \( $hgmajor -eq $reqdmajor -a $hgminor -lt $reqdminor \) -o \( $hgmajor -eq $reqdmajor -a $hgminor -eq $reqdminor -a $hgrev -lt $reqdrev \) ] ; then
-  echo "ERROR: Mercurial version $reqdmajor.$reqdminor.$reqdrev or later is required. $hgwhere is version $hgversion" >&2
-  exit 126
+  error "Mercurial version $reqdmajor.$reqdminor.$reqdrev or later is required. $hgwhere is version $hgversion"
 fi
+
 
 # Request
 if [ $hgmajor -lt $rqstmajor -o \( $hgmajor -eq $rqstmajor -a $hgminor -lt $rqstminor \) -o \( $hgmajor -eq $rqstmajor -a $hgminor -eq $rqstminor -a $hgrev -lt $rqstrev \) ] ; then
-  echo "WARNING: Mercurial version $rqstmajor.$rqstminor.$rqstrev or later is recommended. $hgwhere is version $hgversion" >&2
+  warning "Mercurial version $rqstmajor.$rqstminor.$rqstrev or later is recommended. $hgwhere is version $hgversion"
 fi
+
 
 # Get clones of all absent nested repositories (harmless if already exist)
 sh ./common/bin/hgforest.sh clone "$@" || exit $?

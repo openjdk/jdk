@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,27 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "interpreter/bytecodes.hpp"
+package sun.jvm.hotspot.runtime;
 
-void Bytecodes::pd_initialize() {
-  // No ppc specific initialization.
+//These definitions should be kept in sync with the definitions in the HotSpot code.
+
+public enum Flags {
+  // value origin
+  DEFAULT ("Default"),
+  COMMAND_LINE ("Command line"),
+  ENVIRON_VAR ("Environment variable"),
+  CONFIG_FILE ("Config file"),
+  MANAGEMENT ("Management"),
+  ERGONOMIC ("Ergonomic"),
+  ATTACH_ON_DEMAND ("Attach on demand"),
+  INTERNAL ("Internal");
+
+  private final String value;
+
+  Flags(String val) {
+    this.value = val;
+  }
+  public String value() {
+    return value;
+  }
 }

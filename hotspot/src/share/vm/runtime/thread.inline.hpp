@@ -27,6 +27,7 @@
 
 #define SHARE_VM_RUNTIME_THREAD_INLINE_HPP_SCOPE
 
+#include "runtime/atomic.inline.hpp"
 #include "runtime/thread.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
@@ -46,6 +47,40 @@
 
 #undef SHARE_VM_RUNTIME_THREAD_INLINE_HPP_SCOPE
 
+inline void Thread::set_suspend_flag(SuspendFlags f) {
+  assert(sizeof(jint) == sizeof(_suspend_flags), "size mismatch");
+  uint32_t flags;
+  do {
+    flags = _suspend_flags;
+  }
+  while (Atomic::cmpxchg((jint)(flags | f),
+                         (volatile jint*)&_suspend_flags,
+                         (jint)flags) != (jint)flags);
+}
+inline void Thread::clear_suspend_flag(SuspendFlags f) {
+  assert(sizeof(jint) == sizeof(_suspend_flags), "size mismatch");
+  uint32_t flags;
+  do {
+    flags = _suspend_flags;
+  }
+  while (Atomic::cmpxchg((jint)(flags & ~f),
+                         (volatile jint*)&_suspend_flags,
+                         (jint)flags) != (jint)flags);
+}
+
+inline void Thread::set_has_async_exception() {
+  set_suspend_flag(_has_async_exception);
+}
+inline void Thread::clear_has_async_exception() {
+  clear_suspend_flag(_has_async_exception);
+}
+inline void Thread::set_critical_native_unlock() {
+  set_suspend_flag(_critical_native_unlock);
+}
+inline void Thread::clear_critical_native_unlock() {
+  clear_suspend_flag(_critical_native_unlock);
+}
+
 inline jlong Thread::cooked_allocated_bytes() {
   jlong allocated_bytes = OrderAccess::load_acquire(&_allocated_bytes);
   if (UseTLAB) {
@@ -57,6 +92,33 @@ inline jlong Thread::cooked_allocated_bytes() {
     }
   }
   return allocated_bytes;
+}
+
+inline void JavaThread::set_ext_suspended() {
+  set_suspend_flag (_ext_suspended);
+}
+inline void JavaThread::clear_ext_suspended() {
+  clear_suspend_flag(_ext_suspended);
+}
+
+inline void JavaThread::set_external_suspend() {
+  set_suspend_flag(_external_suspend);
+}
+inline void JavaThread::clear_external_suspend() {
+  clear_suspend_flag(_external_suspend);
+}
+
+inline void JavaThread::set_deopt_suspend() {
+  set_suspend_flag(_deopt_suspend);
+}
+inline void JavaThread::clear_deopt_suspend() {
+  clear_suspend_flag(_deopt_suspend);
+}
+
+inline void JavaThread::set_pending_async_exception(oop e) {
+  _pending_async_exception = e;
+  _special_runtime_exit_condition = _async_exception;
+  set_has_async_exception();
 }
 
 #ifdef PPC64

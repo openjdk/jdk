@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
         final GcInfoBuilder builder = AccessController.doPrivileged (new PrivilegedAction<GcInfoBuilder>() {
                         public GcInfoBuilder run() {
                             try {
-                                Class cl = Class.forName("com.sun.management.GcInfo");
+                                Class<?> cl = Class.forName("com.sun.management.GcInfo");
                                 Field f = cl.getDeclaredField("builder");
                                 f.setAccessible(true);
                                 return (GcInfoBuilder)f.get(info);
@@ -84,7 +84,7 @@ public class GcInfoCompositeData extends LazyCompositeData {
         final Object[] extAttr = AccessController.doPrivileged (new PrivilegedAction<Object[]>() {
                         public Object[] run() {
                             try {
-                                Class cl = Class.forName("com.sun.management.GcInfo");
+                                Class<?> cl = Class.forName("com.sun.management.GcInfo");
                                 Field f = cl.getDeclaredField("extAttributes");
                                 f.setAccessible(true);
                                 return (Object[])f.get(info);
@@ -182,8 +182,8 @@ public class GcInfoCompositeData extends LazyCompositeData {
         return baseGcInfoItemNames;
     }
 
-    private static OpenType[] baseGcInfoItemTypes = null;
-    static synchronized OpenType[] getBaseGcInfoItemTypes() {
+    private static OpenType<?>[] baseGcInfoItemTypes = null;
+    static synchronized OpenType<?>[] getBaseGcInfoItemTypes() {
         if (baseGcInfoItemTypes == null) {
             OpenType<?> memoryUsageOpenType = memoryUsageMapType.getOpenType();
             baseGcInfoItemTypes = new OpenType<?>[] {

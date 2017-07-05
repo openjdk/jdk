@@ -21,11 +21,7 @@
  * questions.
  */
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
 import sun.hotspot.WhiteBox;
-import sun.management.ManagementFactoryHelper;
-
 import java.lang.reflect.Method;
 
 /*
@@ -40,6 +36,7 @@ import java.lang.reflect.Method;
 public class Test8009761 {
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    private static int COMP_LEVEL_SIMPLE = 1;
     private static int COMP_LEVEL_FULL_OPTIMIZATION = 4;
     private static Method m3 = null;
 
@@ -236,7 +233,7 @@ public class Test8009761 {
 
     static public void main(String[] args) {
         // Make sure background compilation is disabled
-        if (backgroundCompilationEnabled()) {
+        if (WHITE_BOX.getBooleanVMFlag("BackgroundCompilation")) {
             throw new RuntimeException("Background compilation enabled");
         }
 
@@ -256,7 +253,11 @@ public class Test8009761 {
         c1 = count;
 
         // Force the compilation of m3() that will inline m1()
-        WHITE_BOX.enqueueMethodForCompilation(m3, COMP_LEVEL_FULL_OPTIMIZATION);
+        if(!WHITE_BOX.enqueueMethodForCompilation(m3, COMP_LEVEL_FULL_OPTIMIZATION)) {
+            // C2 compiler not available, compile with C1
+            WHITE_BOX.enqueueMethodForCompilation(m3, COMP_LEVEL_SIMPLE);
+        }
+
         // Because background compilation is disabled, method should now be compiled
         if(!WHITE_BOX.isMethodCompiled(m3)) {
             throw new RuntimeException(m3 + " not compiled");
@@ -277,20 +278,5 @@ public class Test8009761 {
         } else {
             System.out.println("PASSED " + c1);
         }
-    }
-
-    /**
-     * Checks if background compilation (-XX:+BackgroundCompilation) is enabled.
-     * @return True if background compilation is enabled, false otherwise
-     */
-    private static boolean backgroundCompilationEnabled() {
-      HotSpotDiagnosticMXBean diagnostic = ManagementFactoryHelper.getDiagnosticMXBean();
-      VMOption backgroundCompilation;
-      try {
-          backgroundCompilation = diagnostic.getVMOption("BackgroundCompilation");
-      } catch (IllegalArgumentException e) {
-          return false;
-      }
-      return Boolean.valueOf(backgroundCompilation.getValue());
     }
 }

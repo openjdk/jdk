@@ -1444,7 +1444,7 @@ class Par_MarkFromRootsClosure: public BitMapClosure {
 
 // The following closures are used to do certain kinds of verification of
 // CMS marking.
-class PushAndMarkVerifyClosure: public CMSOopClosure {
+class PushAndMarkVerifyClosure: public MetadataAwareOopClosure {
   CMSCollector*    _collector;
   MemRegion        _span;
   CMSBitMap*       _verification_bm;
