@@ -542,8 +542,17 @@ class UnixNativeDispatcher {
      */
     static native byte[] strerror(int errnum);
 
-    // initialize field IDs
-    private static native void initIDs();
+    // indicates if openat, unlinkat, etc. is supported
+    private static final boolean hasAtSysCalls;
+    static boolean supportsAtSysCalls() {
+        return hasAtSysCalls;
+    }
+
+    // initialize syscalls and fieldIDs
+    private static native int init();
+
+    // flags returned by init to indicate capabilities
+    private static final int HAS_AT_SYSCALLS = 0x1;
 
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
@@ -551,6 +560,8 @@ class UnixNativeDispatcher {
                 System.loadLibrary("nio");
                 return null;
         }});
-        initIDs();
+        int flags = init();
+
+        hasAtSysCalls = (flags & HAS_AT_SYSCALLS) > 0;
     }
 }

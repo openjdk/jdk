@@ -1181,6 +1181,38 @@ JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_VendorRelease
     AWT_CHECK_HAVE_LOCK();
     return VendorRelease((Display*)jlong_to_ptr(display));
 }
+/*
+ * Class:     sun_awt_X11_XlibWrapper
+ * Method:    IsXsunKPBehavior
+ * Signature: (J)Z;
+ */
+JNIEXPORT jboolean JNICALL Java_sun_awt_X11_XlibWrapper_IsXsunKPBehavior
+(JNIEnv *env, jclass clazz, jlong display)
+{
+    // Xsun without XKB uses keysymarray[2] keysym to determine if it is KP event.
+    // Otherwise, it is [1] or sometimes [0].
+    // This sniffer first tries to determine what is a keycode for XK_KP_7
+    // using XKeysymToKeycode;
+    // second, in which place in the keysymarray is XK_KP_7
+    // using XKeycodeToKeysym.
+    int kc7;
+    AWT_CHECK_HAVE_LOCK();
+    kc7 = XKeysymToKeycode((Display*)jlong_to_ptr(display), XK_KP_7);
+    if( !kc7 ) {
+        // keycode is not defined. Why, it's a reduced keyboard perhaps:
+        // report arbitrarily false.
+        return JNI_FALSE;
+    } else {
+        long ks2 = XKeycodeToKeysym((Display*)jlong_to_ptr(display), kc7, 2);
+        if( ks2 == XK_KP_7 ) {
+            //XXX If some Xorg server would put XK_KP_7 in keysymarray[2] as well,
+            //XXX for yet unknown to me reason, the sniffer would lie.
+            return JNI_TRUE;
+        }else{
+            return JNI_FALSE;
+        }
+    }
+}
 
 JavaVM* jvm = NULL;
 static int ToolkitErrorHandler(Display * dpy, XErrorEvent * event) {

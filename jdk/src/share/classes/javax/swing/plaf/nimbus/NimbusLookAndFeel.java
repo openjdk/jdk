@@ -436,15 +436,13 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
      */
     static int deriveARGB(Color color1, Color color2, float midPoint) {
         int r = color1.getRed() +
-                (int) ((color2.getRed() - color1.getRed()) * midPoint + 0.5f);
+                Math.round((color2.getRed() - color1.getRed()) * midPoint);
         int g = color1.getGreen() +
-                (int) ((color2.getGreen() - color1.getGreen()) * midPoint +
-                        0.5f);
+                Math.round((color2.getGreen() - color1.getGreen()) * midPoint);
         int b = color1.getBlue() +
-                (int) ((color2.getBlue() - color1.getBlue()) * midPoint + 0.5f);
+                Math.round((color2.getBlue() - color1.getBlue()) * midPoint);
         int a = color1.getAlpha() +
-                (int) ((color2.getAlpha() - color1.getAlpha()) * midPoint +
-                        0.5f);
+                Math.round((color2.getAlpha() - color1.getAlpha()) * midPoint);
         return ((a & 0xFF) << 24) |
                 ((r & 0xFF) << 16) |
                 ((g & 0xFF) << 8) |

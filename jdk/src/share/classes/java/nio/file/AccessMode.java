@@ -30,7 +30,7 @@ package java.nio.file;
  *
  * @since 1.7
  *
- * @see FileRef#checkAccess
+ * @see Path#checkAccess
  */
 
 public enum AccessMode {

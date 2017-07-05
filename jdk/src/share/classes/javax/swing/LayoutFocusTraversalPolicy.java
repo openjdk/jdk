@@ -29,6 +29,7 @@ import java.awt.Container;
 import java.awt.ComponentOrientation;
 import java.util.Comparator;
 import java.io.*;
+import sun.awt.SunToolkit;
 
 
 /**
@@ -226,11 +227,11 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
      protected boolean accept(Component aComponent) {
         if (!super.accept(aComponent)) {
             return false;
-        } else if (aComponent instanceof JTable) {
+        } else if (SunToolkit.isInstanceOf(aComponent, "javax.swing.JTable")) {
             // JTable only has ancestor focus bindings, we thus force it
             // to be focusable by returning true here.
             return true;
-        } else if (aComponent instanceof JComboBox) {
+        } else if (SunToolkit.isInstanceOf(aComponent, "javax.swing.JComboBox")) {
             JComboBox box = (JComboBox)aComponent;
             return box.getUI().isFocusTraversable(box);
         } else if (aComponent instanceof JComponent) {

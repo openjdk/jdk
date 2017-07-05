@@ -46,7 +46,7 @@ class SolarisFileSystem extends UnixFileSystem {
         // check os.version
         String osversion = AccessController
             .doPrivileged(new GetPropertyAction("os.version"));
-        String[] vers = osversion.split("\\.", 0);
+        String[] vers = Util.split(osversion, '.');
         assert vers.length >= 2;
         int majorVersion = Integer.parseInt(vers[0]);
         int minorVersion = Integer.parseInt(vers[1]);
@@ -85,13 +85,13 @@ class SolarisFileSystem extends UnixFileSystem {
     }
 
     @Override
-    protected FileAttributeView newFileAttributeView(String name,
-                                                     UnixPath file,
-                                                     LinkOption... options)
+    protected DynamicFileAttributeView newFileAttributeView(String name,
+                                                            UnixPath file,
+                                                            LinkOption... options)
     {
         if (name.equals("acl"))
             return new SolarisAclFileAttributeView(file, followLinks(options));
-        if (name.equals("xattr"))
+        if (name.equals("user"))
             return new SolarisUserDefinedFileAttributeView(file, followLinks(options));
         return super.newFileAttributeView(name, file, options);
     }
@@ -105,7 +105,7 @@ class SolarisFileSystem extends UnixFileSystem {
             result.addAll(UnixFileSystem.standardFileAttributeViews());
             // additional Solaris-specific views
             result.add("acl");
-            result.add("xattr");
+            result.add("user");
             return Collections.unmodifiableSet(result);
         }
     }
@@ -119,11 +119,6 @@ class SolarisFileSystem extends UnixFileSystem {
     void copyNonPosixAttributes(int ofd, int nfd) {
         SolarisUserDefinedFileAttributeView.copyExtendedAttributes(ofd, nfd);
         // TDB: copy ACL from source to target
-    }
-
-    @Override
-    boolean supportsSecureDirectoryStreams() {
-        return true;
     }
 
     /**

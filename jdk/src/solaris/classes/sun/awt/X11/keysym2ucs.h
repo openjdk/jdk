@@ -183,7 +183,7 @@ tojava     public static boolean isKPEvent( XKeyEvent ev )
 tojava     {
 tojava         // Xsun without XKB uses keysymarray[2] keysym to determine if it is KP event.
 tojava         // Otherwise, it is [1].
-tojava         int ndx = XToolkit.isXsunServer() &&
+tojava         int ndx = XToolkit.isXsunKPBehavior() &&
 tojava                   ! XToolkit.isXKBenabled() ? 2 : 1;
 tojava         // Even if XKB is enabled, we have another problem: some symbol tables (e.g. cz) force
 tojava         // a regular comma instead of KP_comma for a decimal separator. Result is,
@@ -231,7 +231,7 @@ tojava     */
 tojava     private static long getKeypadKeysym( XKeyEvent ev ) {
 tojava         int ndx = 0;
 tojava         long keysym = XConstants.NoSymbol;
-tojava         if( XToolkit.isXsunServer() &&
+tojava         if( XToolkit.isXsunKPBehavior() &&
 tojava             ! XToolkit.isXKBenabled() ) {
 tojava             if( (ev.get_state() & XConstants.ShiftMask) != 0 ) { // shift modifier is on
 tojava                 ndx = 3;

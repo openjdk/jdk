@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,12 +200,12 @@ extends ByteArrayOutputStream implements DerEncoder {
         // Reduce them to the least number of bytes needed to
         // represent this int
 
-        if (bytes[0] == 0xff) {
+        if (bytes[0] == (byte)0xff) {
 
             // Eliminate redundant 0xff
 
             for (int j = 0; j < 3; j++) {
-                if ((bytes[j] == 0xff) &&
+                if ((bytes[j] == (byte)0xff) &&
                     ((bytes[j+1] & 0x80) == 0x80))
                     start++;
                 else

@@ -96,6 +96,13 @@ jboolean loadSocketExtensionFuncs
         return JNI_FALSE;
     }
 
+    if ((nio_sctp_peeloff = (sctp_peeloff_func*)
+            dlsym(RTLD_DEFAULT, "sctp_peeloff")) == NULL) {
+        JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
+              dlerror());
+        return JNI_FALSE;
+    }
+
     funcsLoaded = JNI_TRUE;
     return JNI_TRUE;
 }
@@ -440,12 +447,10 @@ JNIEXPORT int JNICALL Java_sun_nio_ch_SctpNet_getIntOption0
 JNIEXPORT jobject JNICALL Java_sun_nio_ch_SctpNet_getPrimAddrOption0
   (JNIEnv *env, jclass klass, jint fd, jint assocId) {
     struct sctp_setprim prim;
-    struct sockaddr_storage ss;
-    int ss_len = sizeof(ss);
     unsigned int prim_len = sizeof(prim);
+    struct sockaddr* sap = (struct sockaddr*)&prim.ssp_addr;
 
     prim.ssp_assoc_id = assocId;
-    prim.ssp_addr = ss;
 
     if (getsockopt(fd, IPPROTO_SCTP, SCTP_PRIMARY_ADDR, &prim, &prim_len) < 0) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
@@ -453,7 +458,7 @@ JNIEXPORT jobject JNICALL Java_sun_nio_ch_SctpNet_getPrimAddrOption0
         return NULL;
     }
 
-    return SockAddrToInetSocketAddress(env, (struct sockaddr*)&ss);
+    return SockAddrToInetSocketAddress(env, sap);
 }
 
 /*
@@ -464,16 +469,15 @@ JNIEXPORT jobject JNICALL Java_sun_nio_ch_SctpNet_getPrimAddrOption0
 JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_setPrimAddrOption0
   (JNIEnv *env, jclass klass, jint fd, jint assocId, jobject iaObj, jint port) {
     struct sctp_setprim prim;
-    struct sockaddr_storage ss;
-    int ss_len = sizeof(ss);
+    struct sockaddr* sap = (struct sockaddr*)&prim.ssp_addr;
+    int sap_len;
 
-    if (NET_InetAddressToSockaddr(env, iaObj, port, (struct sockaddr *)&ss,
-                                  &ss_len, JNI_TRUE) != 0) {
+    if (NET_InetAddressToSockaddr(env, iaObj, port, sap,
+                                  &sap_len, JNI_TRUE) != 0) {
         return;
     }
 
     prim.ssp_assoc_id = assocId;
-    prim.ssp_addr = ss;
 
     if (setsockopt(fd, IPPROTO_SCTP, SCTP_PRIMARY_ADDR, &prim, sizeof(prim)) < 0) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
@@ -607,3 +611,17 @@ JNIEXPORT void JNICALL Java_sun_nio_ch_SctpNet_shutdown0
     }
 }
 
+/*
+ * Class:     sun_nio_ch_SctpNet
+ * Method:    branch
+ * Signature: (II)I
+ */
+JNIEXPORT int JNICALL Java_sun_nio_ch_SctpNet_branch0
+  (JNIEnv *env, jclass klass, jint fd, jint assocId) {
+    int newfd = 0;
+    if ((newfd = nio_sctp_peeloff(fd, assocId)) < 0) {
+        handleSocketError(env, errno);
+    }
+
+    return newfd;
+}

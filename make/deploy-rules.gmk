@@ -27,11 +27,7 @@
 # DEPLOY TARGETS
 ################################################################
 
-ifeq ($(ARCH_DATA_MODEL), 32)
 deploy:  deploy-build
-else
-deploy:
-endif
 
 DEPLOY = deploy
 
@@ -45,7 +41,51 @@ else
   IMAGES_TARGET = images
 endif
 
-DEPLOY_BUILD_TARGETS = sanity javaws-all plugin-all
+DEPLOY_BUILD_TARGETS = sanity javaws-all plugin-all 
+# Only build 7-Zip LZMA file compression if it is available
+# Enable 7-Zip LZMA file (de)compression for Java Kernel if it is available
+ifeq ($(ARCH_DATA_MODEL), 32)
+  ifeq ($(PLATFORM), windows)
+    ifneq ($(KERNEL), off)
+      EC_TMP = $(shell if [ -d $(DEPLOY_TOPDIR)/make/lzma ] ; then \
+        $(ECHO) true ; \
+      else \
+  $(ECHO) false ; \
+      fi )
+  ifeq ($(EC_TMP), true)
+        DEPLOY_BUILD_TARGETS += extra-comp-all
+      endif
+    endif
+  endif
+endif
+
+ifneq ($(JQS), off)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    ifeq ($(PLATFORM), windows)
+      DEPLOY_BUILD_TARGETS += jqs-all
+    endif
+  endif
+endif
+  
+ifneq ($(KERNEL), off)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    ifeq ($(PLATFORM), windows)
+      # Only set up to use UPX compression if it is available
+      UP_TMP = $(shell if [ -d $(DEPLOY_TOPDIR)/make/upx ] ; then \
+        $(ECHO) true ; \
+      else \
+        $(ECHO) false ; \
+      fi )
+      ifeq ($(UP_TMP), true)
+        DEPLOY_BUILD_TARGETS += cmd-comp-all
+      endif
+      DEPLOY_BUILD_TARGETS += kernel-all
+    endif
+  endif
+endif
+
+
+
 ifndef DEV_ONLY
   DEPLOY_BUILD_TARGETS += images
 else
@@ -80,27 +120,21 @@ ifdef PKEY
 endif
 
 deploy-build:
-ifeq ($(ARCH_DATA_MODEL), 32)
-  ifeq ($(BUILD_DEPLOY), true)
+ifeq ($(BUILD_DEPLOY), true)
 	($(CD) $(DEPLOY_TOPDIR)/make && \
-	  $(MAKE) $(DEPLOY_BUILD_TARGETS) $(DEPLOY_BUILD_ARGUMENTS))
-  endif
+	$(MAKE) $(DEPLOY_BUILD_TARGETS) $(DEPLOY_BUILD_ARGUMENTS))
 endif
 
 deploy-clobber::
-ifeq ($(ARCH_DATA_MODEL), 32)
-  ifeq ($(BUILD_DEPLOY), true)
+ifeq ($(BUILD_DEPLOY), true)
 	($(CD) $(DEPLOY_TOPDIR)/make && \
-	  $(MAKE) clobber $(DEPLOY_BUILD_ARGUMENTS))
-  endif 
+	$(MAKE) clobber $(DEPLOY_BUILD_ARGUMENTS))
 endif 
 
 deploy-sanity::
-ifeq ($(ARCH_DATA_MODEL), 32)
-  ifeq ($(BUILD_DEPLOY), true)
+ifeq ($(BUILD_DEPLOY), true)
 	($(CD) $(DEPLOY_TOPDIR)/make && \
-	  $(MAKE) sanity $(DEPLOY_BUILD_ARGUMENTS))
-  endif
+	$(MAKE) sanity $(DEPLOY_BUILD_ARGUMENTS))
 endif
 
 .PHONY: deploy deploy-build deploy-clobber deploy-sanity

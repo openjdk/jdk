@@ -217,6 +217,7 @@ typedef struct jzfile {   /* Zip file */
     ZFILE zfd;            /* open file descriptor */
     void *lock;           /* read lock */
     char *comment;        /* zip file comment */
+    jint clen;            /* length of the zip file comment */
     char *msg;            /* zip error message */
     jzcell *entries;      /* array of hash cells */
     jint total;           /* total number of entries */

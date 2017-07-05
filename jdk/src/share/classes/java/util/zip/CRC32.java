@@ -43,14 +43,17 @@ class CRC32 implements Checksum {
 
 
     /**
-     * Updates CRC-32 with specified byte.
+     * Updates the CRC-32 checksum with the specified byte (the low
+     * eight bits of the argument b).
+     *
+     * @param b the byte to update the checksum with
      */
     public void update(int b) {
         crc = update(crc, b);
     }
 
     /**
-     * Updates CRC-32 with specified array of bytes.
+     * Updates the CRC-32 checksum with the specified array of bytes.
      */
     public void update(byte[] b, int off, int len) {
         if (b == null) {
@@ -63,7 +66,7 @@ class CRC32 implements Checksum {
     }
 
     /**
-     * Updates checksum with specified array of bytes.
+     * Updates the CRC-32 checksum with the specified array of bytes.
      *
      * @param b the array of bytes to update the checksum with
      */

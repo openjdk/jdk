@@ -92,14 +92,12 @@ typedef int fstatat64_func(int, const char *, struct stat64 *, int);
 typedef int unlinkat_func(int, const char*, int);
 typedef int renameat_func(int, const char*, int, const char*);
 typedef int futimesat_func(int, const char *, const struct timeval *);
-typedef DIR* fdopendir_func(int);
 
 static openat64_func* my_openat64_func = NULL;
 static fstatat64_func* my_fstatat64_func = NULL;
 static unlinkat_func* my_unlinkat_func = NULL;
 static renameat_func* my_renameat_func = NULL;
 static futimesat_func* my_futimesat_func = NULL;
-static fdopendir_func* my_fdopendir_func = NULL;
 
 /**
  * fstatat missing from glibc on Linux. Temporary workaround
@@ -142,16 +140,17 @@ static void throwUnixException(JNIEnv* env, int errnum) {
 }
 
 /**
- * Initialize jfieldIDs
+ * Initialization
  */
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_UnixNativeDispatcher_initIDs(JNIEnv* env, jclass this)
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 {
+    jint flags = 0;
     jclass clazz;
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileAttributes");
     if (clazz == NULL) {
-        return;
+        return 0;
     }
     attrs_st_mode = (*env)->GetFieldID(env, clazz, "st_mode", "I");
     attrs_st_ino = (*env)->GetFieldID(env, clazz, "st_ino", "J");
@@ -167,7 +166,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_initIDs(JNIEnv* env, jclass this)
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileStoreAttributes");
     if (clazz == NULL) {
-        return;
+        return 0;
     }
     attrs_f_frsize = (*env)->GetFieldID(env, clazz, "f_frsize", "J");
     attrs_f_blocks = (*env)->GetFieldID(env, clazz, "f_blocks", "J");
@@ -176,7 +175,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_initIDs(JNIEnv* env, jclass this)
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixMountEntry");
     if (clazz == NULL) {
-        return;
+        return 0;
     }
     entry_name = (*env)->GetFieldID(env, clazz, "name", "[B");
     entry_dir = (*env)->GetFieldID(env, clazz, "dir", "[B");
@@ -197,13 +196,21 @@ Java_sun_nio_fs_UnixNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
     my_futimesat_func = (futimesat_func*) dlsym(RTLD_DEFAULT, "futimesat");
-    my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
 
 #if defined(FSTATAT64_SYSCALL_AVAILABLE)
     /* fstatat64 missing from glibc */
     if (my_fstatat64_func == NULL)
         my_fstatat64_func = (fstatat64_func*)&fstatat64_wrapper;
 #endif
+
+    if (my_openat64_func != NULL &&  my_fstatat64_func != NULL &&
+        my_unlinkat_func != NULL && my_renameat_func != NULL &&
+        my_futimesat_func != NULL)
+    {
+        flags |= sun_nio_fs_UnixNativeDispatcher_HAS_AT_SYSCALLS;
+    }
+
+    return flags;
 }
 
 JNIEXPORT jbyteArray JNICALL
@@ -364,9 +371,9 @@ static void prepAttributes(JNIEnv* env, struct stat64* buf, jobject attrs) {
     (*env)->SetIntField(env, attrs, attrs_st_uid, (jint)buf->st_uid);
     (*env)->SetIntField(env, attrs, attrs_st_gid, (jint)buf->st_gid);
     (*env)->SetLongField(env, attrs, attrs_st_size, (jlong)buf->st_size);
-    (*env)->SetLongField(env, attrs, attrs_st_atime, (jlong)buf->st_atime * 1000);
-    (*env)->SetLongField(env, attrs, attrs_st_mtime, (jlong)buf->st_mtime * 1000);
-    (*env)->SetLongField(env, attrs, attrs_st_ctime, (jlong)buf->st_ctime * 1000);
+    (*env)->SetLongField(env, attrs, attrs_st_atime, (jlong)buf->st_atime);
+    (*env)->SetLongField(env, attrs, attrs_st_mtime, (jlong)buf->st_mtime);
+    (*env)->SetLongField(env, attrs, attrs_st_ctime, (jlong)buf->st_ctime);
 }
 
 JNIEXPORT void JNICALL
@@ -506,11 +513,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_utimes0(JNIEnv* env, jclass this,
     struct timeval times[2];
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
-    times[0].tv_sec = accessTime / 1000;
-    times[0].tv_usec = (accessTime % 1000) * 1000;
+    times[0].tv_sec = accessTime / 1000000;
+    times[0].tv_usec = accessTime % 1000000;
 
-    times[1].tv_sec = modificationTime / 1000;
-    times[1].tv_usec = (modificationTime % 1000) * 1000;
+    times[1].tv_sec = modificationTime / 1000000;
+    times[1].tv_usec = modificationTime % 1000000;
 
     RESTARTABLE(utimes(path, &times[0]), err);
     if (err == -1) {
@@ -525,11 +532,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_futimes(JNIEnv* env, jclass this, jint file
     struct timeval times[2];
     int err = 0;
 
-    times[0].tv_sec = accessTime / 1000;
-    times[0].tv_usec = (accessTime % 1000) * 1000;
+    times[0].tv_sec = accessTime / 1000000;
+    times[0].tv_usec = accessTime % 1000000;
 
-    times[1].tv_sec = modificationTime / 1000;
-    times[1].tv_usec = (modificationTime % 1000) * 1000;
+    times[1].tv_sec = modificationTime / 1000000;
+    times[1].tv_usec = modificationTime % 1000000;
 
     if (my_futimesat_func != NULL) {
         RESTARTABLE((*my_futimesat_func)(filedes, NULL, &times[0]), err);
@@ -558,13 +565,8 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_fdopendir(JNIEnv* env, jclass this, int dfd) {
     DIR* dir;
 
-    if (my_fdopendir_func == NULL) {
-        JNU_ThrowInternalError(env, "should not reach here");
-        return (jlong)-1;
-    }
-
     /* EINTR not listed as a possible error */
-    dir = (*my_fdopendir_func)((int)dfd);
+    dir = fdopendir((int)dfd);
     if (dir == NULL) {
         throwUnixException(env, errno);
     }
