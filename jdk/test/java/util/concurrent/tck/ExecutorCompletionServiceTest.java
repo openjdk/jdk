@@ -37,8 +37,11 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -59,7 +62,7 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
     }
 
     /**
-     * Creating a new ECS with null Executor throw NPE
+     * new ExecutorCompletionService(null) throws NullPointerException
      */
     public void testConstructorNPE() {
         try {
@@ -69,111 +72,147 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
     }
 
     /**
-     * Creating a new ECS with null queue throw NPE
+     * new ExecutorCompletionService(e, null) throws NullPointerException
      */
     public void testConstructorNPE2() {
         try {
-            ExecutorService e = Executors.newCachedThreadPool();
-            new ExecutorCompletionService(e, null);
+            new ExecutorCompletionService(cachedThreadPool, null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }
 
     /**
-     * Submitting a null callable throws NPE
+     * ecs.submit(null) throws NullPointerException
      */
-    public void testSubmitNPE() {
-        final ExecutorService e = Executors.newCachedThreadPool();
-        final ExecutorCompletionService ecs = new ExecutorCompletionService(e);
-        try (PoolCleaner cleaner = cleaner(e)) {
-            Callable c = null;
-            try {
-                ecs.submit(c);
-                shouldThrow();
-            } catch (NullPointerException success) {}
-        }
+    public void testSubmitNullCallable() {
+        CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
+        try {
+            cs.submit((Callable) null);
+            shouldThrow();
+        } catch (NullPointerException success) {}
     }
 
     /**
-     * Submitting a null runnable throws NPE
+     * ecs.submit(null, val) throws NullPointerException
      */
-    public void testSubmitNPE2() {
-        final ExecutorService e = Executors.newCachedThreadPool();
-        final ExecutorCompletionService ecs = new ExecutorCompletionService(e);
-        try (PoolCleaner cleaner = cleaner(e)) {
-            Runnable r = null;
-            try {
-                ecs.submit(r, Boolean.TRUE);
-                shouldThrow();
-            } catch (NullPointerException success) {}
-        }
+    public void testSubmitNullRunnable() {
+        CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
+        try {
+            cs.submit((Runnable) null, Boolean.TRUE);
+            shouldThrow();
+        } catch (NullPointerException success) {}
     }
 
     /**
      * A taken submitted task is completed
      */
-    public void testTake() throws InterruptedException {
-        final ExecutorService e = Executors.newCachedThreadPool();
-        final ExecutorCompletionService ecs = new ExecutorCompletionService(e);
-        try (PoolCleaner cleaner = cleaner(e)) {
-            Callable c = new StringTask();
-            ecs.submit(c);
-            Future f = ecs.take();
-            assertTrue(f.isDone());
-        }
+    public void testTake()
+        throws InterruptedException, ExecutionException {
+        CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
+        cs.submit(new StringTask());
+        Future f = cs.take();
+        assertTrue(f.isDone());
+        assertSame(TEST_STRING, f.get());
     }
 
     /**
      * Take returns the same future object returned by submit
      */
     public void testTake2() throws InterruptedException {
-        final ExecutorService e = Executors.newCachedThreadPool();
-        final ExecutorCompletionService ecs = new ExecutorCompletionService(e);
-        try (PoolCleaner cleaner = cleaner(e)) {
-            Callable c = new StringTask();
-            Future f1 = ecs.submit(c);
-            Future f2 = ecs.take();
-            assertSame(f1, f2);
-        }
+        CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
+        Future f1 = cs.submit(new StringTask());
+        Future f2 = cs.take();
+        assertSame(f1, f2);
     }
 
     /**
-     * If poll returns non-null, the returned task is completed
+     * poll returns non-null when the returned task is completed
      */
-    public void testPoll1() throws Exception {
-        final ExecutorService e = Executors.newCachedThreadPool();
-        final ExecutorCompletionService ecs = new ExecutorCompletionService(e);
-        try (PoolCleaner cleaner = cleaner(e)) {
-            assertNull(ecs.poll());
-            Callable c = new StringTask();
-            ecs.submit(c);
+    public void testPoll1()
+        throws InterruptedException, ExecutionException {
+        CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
+        assertNull(cs.poll());
+        cs.submit(new StringTask());
 
-            long startTime = System.nanoTime();
-            Future f;
-            while ((f = ecs.poll()) == null) {
-                if (millisElapsedSince(startTime) > LONG_DELAY_MS)
-                    fail("timed out");
-                Thread.yield();
+        long startTime = System.nanoTime();
+        Future f;
+        while ((f = cs.poll()) == null) {
+            if (millisElapsedSince(startTime) > LONG_DELAY_MS)
+                fail("timed out");
+            Thread.yield();
+        }
+        assertTrue(f.isDone());
+        assertSame(TEST_STRING, f.get());
+    }
+
+    /**
+     * timed poll returns non-null when the returned task is completed
+     */
+    public void testPoll2()
+        throws InterruptedException, ExecutionException {
+        CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
+        assertNull(cs.poll());
+        cs.submit(new StringTask());
+
+        long startTime = System.nanoTime();
+        Future f;
+        while ((f = cs.poll(SHORT_DELAY_MS, MILLISECONDS)) == null) {
+            if (millisElapsedSince(startTime) > LONG_DELAY_MS)
+                fail("timed out");
+            Thread.yield();
+        }
+        assertTrue(f.isDone());
+        assertSame(TEST_STRING, f.get());
+    }
+
+    /**
+     * poll returns null before the returned task is completed
+     */
+    public void testPollReturnsNull()
+        throws InterruptedException, ExecutionException {
+        CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
+        final CountDownLatch proceed = new CountDownLatch(1);
+        cs.submit(new Callable() { public String call() throws Exception {
+            proceed.await();
+            return TEST_STRING;
+        }});
+        assertNull(cs.poll());
+        assertNull(cs.poll(0L, MILLISECONDS));
+        assertNull(cs.poll(Long.MIN_VALUE, MILLISECONDS));
+        long startTime = System.nanoTime();
+        assertNull(cs.poll(timeoutMillis(), MILLISECONDS));
+        assertTrue(millisElapsedSince(startTime) >= timeoutMillis());
+        proceed.countDown();
+        assertSame(TEST_STRING, cs.take().get());
+    }
+
+    /**
+     * successful and failed tasks are both returned
+     */
+    public void testTaskAssortment()
+        throws InterruptedException, ExecutionException {
+        CompletionService cs = new ExecutorCompletionService(cachedThreadPool);
+        ArithmeticException ex = new ArithmeticException();
+        for (int i = 0; i < 2; i++) {
+            cs.submit(new StringTask());
+            cs.submit(callableThrowing(ex));
+            cs.submit(runnableThrowing(ex), null);
+        }
+        int normalCompletions = 0;
+        int exceptionalCompletions = 0;
+        for (int i = 0; i < 3 * 2; i++) {
+            try {
+                if (cs.take().get() == TEST_STRING)
+                    normalCompletions++;
             }
-            assertTrue(f.isDone());
-            assertSame(TEST_STRING, f.get());
+            catch (ExecutionException expected) {
+                assertTrue(expected.getCause() instanceof ArithmeticException);
+                exceptionalCompletions++;
+            }
         }
-    }
-
-    /**
-     * If timed poll returns non-null, the returned task is completed
-     */
-    public void testPoll2() throws InterruptedException {
-        final ExecutorService e = Executors.newCachedThreadPool();
-        final ExecutorCompletionService ecs = new ExecutorCompletionService(e);
-        try (PoolCleaner cleaner = cleaner(e)) {
-            assertNull(ecs.poll());
-            Callable c = new StringTask();
-            ecs.submit(c);
-            Future f = ecs.poll(SHORT_DELAY_MS, MILLISECONDS);
-            if (f != null)
-                assertTrue(f.isDone());
-        }
+        assertEquals(2 * 1, normalCompletions);
+        assertEquals(2 * 2, exceptionalCompletions);
+        assertNull(cs.poll());
     }
 
     /**
@@ -184,7 +223,7 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
         final AtomicBoolean done = new AtomicBoolean(false);
         class MyCallableFuture<V> extends FutureTask<V> {
             MyCallableFuture(Callable<V> c) { super(c); }
-            protected void done() { done.set(true); }
+            @Override protected void done() { done.set(true); }
         }
         final ExecutorService e =
             new ThreadPoolExecutor(1, 1,
@@ -193,15 +232,14 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
                 protected <T> RunnableFuture<T> newTaskFor(Callable<T> c) {
                     return new MyCallableFuture<T>(c);
                 }};
-        ExecutorCompletionService<String> ecs =
-            new ExecutorCompletionService<String>(e);
+        CompletionService<String> cs = new ExecutorCompletionService<>(e);
         try (PoolCleaner cleaner = cleaner(e)) {
-            assertNull(ecs.poll());
+            assertNull(cs.poll());
             Callable<String> c = new StringTask();
-            Future f1 = ecs.submit(c);
+            Future f1 = cs.submit(c);
             assertTrue("submit must return MyCallableFuture",
                        f1 instanceof MyCallableFuture);
-            Future f2 = ecs.take();
+            Future f2 = cs.take();
             assertSame("submit and take must return same objects", f1, f2);
             assertTrue("completed task must have set done", done.get());
         }
@@ -215,7 +253,7 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
         final AtomicBoolean done = new AtomicBoolean(false);
         class MyRunnableFuture<V> extends FutureTask<V> {
             MyRunnableFuture(Runnable t, V r) { super(t, r); }
-            protected void done() { done.set(true); }
+            @Override protected void done() { done.set(true); }
         }
         final ExecutorService e =
             new ThreadPoolExecutor(1, 1,
@@ -224,15 +262,14 @@ public class ExecutorCompletionServiceTest extends JSR166TestCase {
                 protected <T> RunnableFuture<T> newTaskFor(Runnable t, T r) {
                     return new MyRunnableFuture<T>(t, r);
                 }};
-        final ExecutorCompletionService<String> ecs =
-            new ExecutorCompletionService<String>(e);
+        CompletionService<String> cs = new ExecutorCompletionService<>(e);
         try (PoolCleaner cleaner = cleaner(e)) {
-            assertNull(ecs.poll());
+            assertNull(cs.poll());
             Runnable r = new NoOpRunnable();
-            Future f1 = ecs.submit(r, null);
+            Future f1 = cs.submit(r, null);
             assertTrue("submit must return MyRunnableFuture",
                        f1 instanceof MyRunnableFuture);
-            Future f2 = ecs.take();
+            Future f2 = cs.take();
             assertSame("submit and take must return same objects", f1, f2);
             assertTrue("completed task must have set done", done.get());
         }

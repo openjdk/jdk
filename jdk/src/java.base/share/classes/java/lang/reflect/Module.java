@@ -513,7 +513,7 @@ public final class Module {
      * package {@code pn} to the given module.
      *
      * <p> This method has no effect if the package is already exported to the
-     * given module. If also has no effect if invoked on an unnamed module (as
+     * given module. It also has no effect if invoked on an unnamed module (as
      * unnamed modules export all packages). </p>
      *
      * @param  pn
@@ -866,7 +866,7 @@ public final class Module {
             URI uri = mref.location().orElse(null);
 
             Module m;
-            if (loader == null && name.equals("java.base")) {
+            if (loader == null && name.equals("java.base") && Layer.boot() == null) {
                 m = Object.class.getModule();
             } else {
                 m = new Module(layer, loader, descriptor, uri);
