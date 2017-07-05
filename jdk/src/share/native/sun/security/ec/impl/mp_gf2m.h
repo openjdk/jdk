@@ -58,8 +58,6 @@
 #ifndef _MP_GF2M_H_
 #define _MP_GF2M_H_
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "mpi.h"
 
 mp_err mp_badd(const mp_int *a, const mp_int *b, mp_int *c);

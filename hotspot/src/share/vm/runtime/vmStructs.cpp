@@ -93,6 +93,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/perfMemory.hpp"
+#include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/virtualspace.hpp"
@@ -107,6 +108,12 @@
 #endif
 #ifdef TARGET_ARCH_zero
 # include "vmStructs_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "vmStructs_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vmStructs_ppc.hpp"
 #endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
@@ -134,6 +141,12 @@
 #endif
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "vmStructs_windows_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "vmStructs_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "vmStructs_linux_ppc.hpp"
 #endif
 #ifndef SERIALGC
 #include "gc_implementation/concurrentMarkSweep/cmsPermGen.hpp"
@@ -165,6 +178,12 @@
 #endif
 #ifdef TARGET_ARCH_MODEL_zero
 # include "adfiles/adGlobals_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "adfiles/adGlobals_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "adfiles/adGlobals_ppc.hpp"
 #endif
 #endif
 
@@ -1232,7 +1251,7 @@ static inline uint64_t cast_uint64_t(size_t x)
            declare_type(WatcherThread, Thread)                            \
            declare_type(JavaThread, Thread)                               \
            declare_type(JvmtiAgentThread, JavaThread)                     \
-           declare_type(LowMemoryDetectorThread, JavaThread)              \
+           declare_type(ServiceThread, JavaThread)                        \
   declare_type(CompilerThread, JavaThread)                        \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \

@@ -54,8 +54,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "ecl-priv.h"
 
 /* Returns 2^e as an integer. This is meant to be used for small powers of

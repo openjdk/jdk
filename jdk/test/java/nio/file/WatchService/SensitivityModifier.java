@@ -51,6 +51,7 @@ public class SensitivityModifier {
         }
     }
 
+    @SuppressWarnings("unchecked")
     static void doTest(Path top) throws Exception {
         FileSystem fs = top.getFileSystem();
         WatchService watcher = fs.newWatchService();
@@ -61,11 +62,11 @@ public class SensitivityModifier {
         Path[] dirs = new Path[nDirs];
         Path[] files = new Path[nFiles];
         for (int i=0; i<nDirs; i++) {
-            dirs[i] = top.resolve("dir" + i).createDirectory();
+            dirs[i] = Files.createDirectory(top.resolve("dir" + i));
         }
         for (int i=0; i<nFiles; i++) {
             Path dir = dirs[rand.nextInt(nDirs)];
-            files[i] = dir.resolve("file" + i).createFile();
+            files[i] = Files.createFile(dir.resolve("file" + i));
         }
 
         // register the directories (random sensitivity)
@@ -80,11 +81,8 @@ public class SensitivityModifier {
         for (int i=0; i<10; i++) {
             Path file = files[rand.nextInt(nFiles)];
             System.out.println("Modify: " + file);
-            OutputStream out = file.newOutputStream();
-            try {
+            try (OutputStream out = Files.newOutputStream(file)) {
                 out.write(new byte[100]);
-            } finally {
-                out.close();
             }
             System.out.println("Waiting for event...");
             WatchKey key = watcher.take();
@@ -92,7 +90,7 @@ public class SensitivityModifier {
             if (event.kind() != ENTRY_MODIFY)
                 throw new RuntimeException("Unexpected event: " + event);
             Path name = ((WatchEvent<Path>)event).context();
-            if (!name.equals(file.getName()))
+            if (!name.equals(file.getFileName()))
                 throw new RuntimeException("Unexpected context: " + name);
             System.out.println("Event OK");
 

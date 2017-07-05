@@ -54,11 +54,12 @@ include $(JDK_MAKE_SHARED_DIR)/Defs-utils.gmk
 # Assumes ARCH, PLATFORM, ARCH_VM_SUBDIR, JDK_TOPDIR, etc. have been defined.
 
 # Simple pwd path
+# NOTE: Just use the shell's cd and pwd here, more reliable at sanity time.
 define PwdPath
-$(shell $(CD) $1 2> $(DEV_NULL) && $(PWD))
+$(shell cd $1 2> $(DEV_NULL) && pwd)
 endef
 define AbsPwdPathCheck
-$(shell $(CD) .. 2> $(DEV_NULL) && $(CD) $1 2> $(DEV_NULL) && $(PWD))
+$(shell cd .. 2> $(DEV_NULL) && cd $1 2> $(DEV_NULL) && pwd)
 endef
 
 # Checks an ALT value for spaces (should be one word), 
