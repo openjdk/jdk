@@ -47,6 +47,7 @@ public class CloseAvailable implements Runnable {
         t.start();
 
         Socket  soc = ss.accept();
+        ss.close();
 
         DataInputStream is = new DataInputStream(soc.getInputStream());
         is.close();
@@ -64,7 +65,7 @@ public class CloseAvailable implements Runnable {
     public void run() {
         try {
             Socket s = new Socket(addr, port);
-
+            s.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

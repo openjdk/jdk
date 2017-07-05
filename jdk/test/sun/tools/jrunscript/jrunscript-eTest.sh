@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ fi
 rm -f jrunscript-eTest.out 2>/dev/null
 ${JRUNSCRIPT} -e "println('hello')" > jrunscript-eTest.out 2>&1
 
-diff jrunscript-eTest.out ${TESTSRC}/dash-e.out
+$golden_diff jrunscript-eTest.out ${TESTSRC}/dash-e.out
 if [ $? != 0 ]
 then
   echo "Output of jrunscript -e differ from expected output. Failed."
@@ -55,7 +55,7 @@ fi
 rm -f jrunscript-eTest.out 2>/dev/null
 ${JRUNSCRIPT} -l js -e "println('hello')" > jrunscript-eTest.out 2>&1
 
-diff jrunscript-eTest.out ${TESTSRC}/dash-e.out
+$golden_diff jrunscript-eTest.out ${TESTSRC}/dash-e.out
 if [ $? != 0 ]
 then
   echo "Output of jrunscript -e differ from expected output. Failed."

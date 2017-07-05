@@ -46,7 +46,7 @@ public class B6373555 {
     private static Object lock;
     static HttpServer httpServer;
     static ExecutorService pool, execs;
-    static int NUM = 4000;
+    static int NUM = 1000;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -125,7 +125,7 @@ public class B6373555 {
                 }
             }
             catch(Exception e) {
-                //e.printStackTrace();
+                e.printStackTrace();
                 System.out.print (".");
                 error = true;
             }

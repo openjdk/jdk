@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4631471
+ * @bug 4631471 6972468
  * @summary Tests DefaultTreeModel encoding
  * @author Sergey Malenkov, Mark Davidson
  */
@@ -37,6 +37,12 @@ import javax.swing.tree.TreeNode;
 
 public abstract class Test4631471 extends AbstractTest {
     public static void main(String[] args) throws Exception {
+        main();
+        System.setSecurityManager(new SecurityManager());
+        main();
+    }
+
+    private static void main() throws Exception {
         // the DefaultMutableTreeNode will archive correctly
         new Test4631471() {
             protected Object getObject() {

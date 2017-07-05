@@ -34,7 +34,7 @@ import com.sun.net.httpserver.*;
 
 public class Test implements HttpHandler {
 
-    static int count = 0;
+    static volatile int count = 0;
 
     static final String str1 = "Helloworld1234567890abcdefghijklmnopqrstuvwxyz"+
                                 "1234567890abcdefkjsdlkjflkjsldkfjlsdkjflkj"+
@@ -46,9 +46,9 @@ public class Test implements HttpHandler {
     public void handle(HttpExchange exchange) {
         String reqbody;
         try {
-            switch (count) {
-            case 0: /* test1 -- keeps conn alive */
-            case 1: /* test2 -- closes conn */
+            switch (exchange.getRequestURI().toString()) {
+            case "/test/test1": /* test1 -- keeps conn alive */
+            case "/test/test2": /* test2 -- closes conn */
                 printRequestURI(exchange);
                 reqbody = read(exchange.getRequestBody());
                 if (!reqbody.equals(str1)) {
@@ -72,7 +72,7 @@ public class Test implements HttpHandler {
                     resHeaders.set("Connection", "close");
                 }
                 break;
-            case 2: /* test 3 */
+            case "/test/test3": /* test 3 */
                 printRequestURI(exchange);
                 reqbody = read(exchange.getRequestBody());
 
@@ -93,19 +93,19 @@ public class Test implements HttpHandler {
                 exchange.sendResponseHeaders(200, reqbody.length());
                 write(exchange.getResponseBody(), reqbody);
                 break;
-            case 3: /* test 4 */
-            case 4: /* test 5 */
+            case "/test/test4": /* test 4 */
+            case "/test/test5": /* test 5 */
                 printRequestURI(exchange);
                 break;
-            case 5: /* test 6 */
+            case "/test/test6": /* test 6 */
                 printRequestURI(exchange);
                 resHeaders = exchange.getResponseHeaders() ;
                 resHeaders.set("Location", "http://foo.bar/");
                 resHeaders.set("Connection", "close");
                 exchange.sendResponseHeaders(307, 0);
                 break;
-            case 6: /* test 7 */
-            case 7: /* test 8 */
+            case "/test/test7": /* test 7 */
+            case "/test/test8": /* test 8 */
                 printRequestURI(exchange);
                 reqbody = read(exchange.getRequestBody());
                 if (reqbody != null && !"".equals(reqbody)) {
@@ -116,7 +116,7 @@ public class Test implements HttpHandler {
                 resHeaders.set("Connection", "close");
                 exchange.sendResponseHeaders(200, 0);
                 break;
-            case 8: /* test 9 */
+            case "/test/test9": /* test 9 */
                 printRequestURI(exchange);
                 reqbody = read(exchange.getRequestBody());
                 if (!reqbody.equals(str1)) {
@@ -134,7 +134,7 @@ public class Test implements HttpHandler {
                 exchange.sendResponseHeaders(200, reqbody.length());
                 write(exchange.getResponseBody(), reqbody);
                 break;
-            case 9: /* test10 */
+            case "/test/test10": /* test10 */
                 printRequestURI(exchange);
                 InputStream is = exchange.getRequestBody();
                 String s = read (is, str1.length());
@@ -158,7 +158,7 @@ public class Test implements HttpHandler {
                     exchange.sendResponseHeaders(200, 0);
                 }
                 break;
-            case 10: /* test11 */
+            case "/test/test11": /* test11 */
                 printRequestURI(exchange);
                 is = exchange.getRequestBody();
                 s = read (is, str1.length());
@@ -182,7 +182,7 @@ public class Test implements HttpHandler {
                     exchange.sendResponseHeaders(200, 0);
                 }
                 break;
-            case 11: /* test12 */
+            case "/test/test12": /* test12 */
                 printRequestURI(exchange);
                 is = exchange.getRequestBody();
 
@@ -203,8 +203,8 @@ public class Test implements HttpHandler {
                 }
                 break;
             }
-            exchange.close();
             count ++;
+            exchange.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.GeneralNameInterface;
 import sun.security.x509.URIName;
@@ -162,7 +163,7 @@ class URICertStore extends CertStoreSpi {
         }
         this.uri = ((URICertStoreParameters) params).uri;
         // if ldap URI, use an LDAPCertStore to fetch certs and CRLs
-        if (uri.getScheme().toLowerCase().equals("ldap")) {
+        if (uri.getScheme().toLowerCase(Locale.ENGLISH).equals("ldap")) {
             if (LDAP.helper() == null)
                 throw new NoSuchAlgorithmException("LDAP not present");
             ldap = true;

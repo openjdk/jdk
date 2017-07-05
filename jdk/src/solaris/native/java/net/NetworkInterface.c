@@ -131,7 +131,7 @@ static struct  sockaddr *getBroadcast(JNIEnv *env, int sock, const char *name, s
 static short   getSubnet(JNIEnv *env, int sock, const char *ifname);
 static int     getIndex(int sock, const char *ifname);
 
-static int     getFlags(JNIEnv *env, int sock, const char *ifname);
+static int     getFlags(int sock, const char *ifname);
 static int     getMacAddress(JNIEnv *env, int sock,  const char* ifname, const struct in_addr* addr, unsigned char *buf);
 static int     getMTU(JNIEnv *env, int sock, const char *ifname);
 
@@ -550,7 +550,7 @@ static int getFlags0(JNIEnv *env, jstring name) {
 
     name_utf = (*env)->GetStringUTFChars(env, name, &isCopy);
 
-    ret = getFlags(env, sock, name_utf);
+    ret = getFlags(sock, name_utf);
 
     close(sock);
     (*env)->ReleaseStringUTFChars(env, name, name_utf);
@@ -753,19 +753,27 @@ static netif *enumInterfaces(JNIEnv *env) {
      * If IPv6 is available then enumerate IPv6 addresses.
      */
 #ifdef AF_INET6
-        sock =  openSocket(env, AF_INET6);
-        if (sock < 0 && (*env)->ExceptionOccurred(env)) {
-            freeif(ifs);
-            return NULL;
-        }
 
-        ifs = enumIPv6Interfaces(env, sock, ifs);
-        close(sock);
+        /* User can disable ipv6 expicitly by -Djava.net.preferIPv4Stack=true,
+         * so we have to call ipv6_available()
+         */
+        if (ipv6_available()) {
 
-        if ((*env)->ExceptionOccurred(env)) {
-            freeif(ifs);
-            return NULL;
-        }
+           sock =  openSocket(env, AF_INET6);
+           if (sock < 0 && (*env)->ExceptionOccurred(env)) {
+               freeif(ifs);
+               return NULL;
+           }
+
+           ifs = enumIPv6Interfaces(env, sock, ifs);
+           close(sock);
+
+           if ((*env)->ExceptionOccurred(env)) {
+              freeif(ifs);
+              return NULL;
+           }
+
+       }
 #endif
 
     return ifs;
@@ -877,7 +885,7 @@ netif *addif(JNIEnv *env, int sock, const char * if_name, netif *ifs, struct soc
        * the 'parent' interface with the new records.
        */
         *name_colonP = 0;
-        if (getFlags(env,sock,name) < 0) {
+        if (getFlags(sock, name) < 0) {
             // failed to access parent interface do not create parent.
             // We are a virtual interface with no parent.
             isVirtual = 1;
@@ -1249,7 +1257,7 @@ static int getMTU(JNIEnv *env, int sock,  const char *ifname) {
     return  if2.ifr_mtu;
 }
 
-static int getFlags(JNIEnv *env, int sock, const char *ifname) {
+static int getFlags(int sock, const char *ifname) {
   struct ifreq if2;
   int ret = -1;
 
@@ -1625,13 +1633,12 @@ static int getMTU(JNIEnv *env, int sock,  const char *ifname) {
 }
 
 
-static int getFlags(JNIEnv *env, int sock, const char *ifname) {
+static int getFlags(int sock, const char *ifname) {
      struct   lifreq lifr;
      memset((caddr_t)&lifr, 0, sizeof(lifr));
      strcpy((caddr_t)&(lifr.lifr_name), ifname);
 
      if (ioctl(sock, SIOCGLIFFLAGS, (char *)&lifr) < 0) {
-         NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", "IOCTL SIOCGLIFFLAGS failed");
          return -1;
      }
 

@@ -31,26 +31,24 @@ import java.net.*;
 import java.io.*;
 
 public class SocketTimeout  {
+    static final int TIMEOUT = 1000;
+
     public static void main(String args[]) throws Exception {
-    InetAddress  sin = null;
+    InetAddress  sin = InetAddress.getLocalHost();
     Socket       soc = null,soc1 = null;
     InputStream  is = null;
-    OutputStream os = null;
     ServerSocket srv = null;
     int          port = 0;
-    int          tout = 1000;
 
-    sin = InetAddress.getLocalHost();
-    srv = new ServerSocket(port);
+    srv = new ServerSocket(0);
     port = srv.getLocalPort();
     soc = new Socket(sin, port);
     soc1 = srv.accept();
-    soc.setSoTimeout(tout);
-    srv.setSoTimeout(tout);
+    soc.setSoTimeout(TIMEOUT);
+    srv.setSoTimeout(TIMEOUT);
 
     try {
       is = soc.getInputStream();
-      os = soc1.getOutputStream();
       is.read();
     } catch(InterruptedIOException e) {
         try {
@@ -59,6 +57,9 @@ public class SocketTimeout  {
         } catch(NoClassDefFoundError e1) {
             throw new Exception ("SocketTimeoutException: not found");
         }
+    } finally {
+        soc.close();
+        soc1.close();
     }
 
     // now check accept
@@ -72,12 +73,14 @@ public class SocketTimeout  {
         } catch(NoClassDefFoundError e1) {
             throw new Exception ("SocketTimeoutException: not found");
         }
+    } finally {
+        srv.close();
     }
 
     // Now check DatagramSocket.receive()
 
     DatagramSocket dg = new DatagramSocket ();
-    dg.setSoTimeout (tout);
+    dg.setSoTimeout (TIMEOUT);
 
     try {
       dg.receive (new DatagramPacket (new byte [64], 64));
@@ -88,11 +91,8 @@ public class SocketTimeout  {
         } catch(NoClassDefFoundError e1) {
             throw new Exception ("SocketTimeoutException: not found");
         }
+    } finally {
+        dg.close();
     }
-
-    soc.close();
-    soc1.close();
-    srv.close();
-    dg.close();
   }
 }
