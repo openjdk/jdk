@@ -38,7 +38,7 @@ package javax.sound.midi;
  *
  * @author Kara Kytle
  */
-public interface Receiver {
+public interface Receiver extends AutoCloseable {
 
 
     //$$fb 2002-04-12: fix for 4662090: Contradiction in Receiver specification

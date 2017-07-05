@@ -54,14 +54,34 @@ public class ByteCodeRewriter
 
     }
 
-    protected short getConstantPoolIndex(int bci) {
+    protected short getConstantPoolIndex(int rawcode, int bci) {
        // get ConstantPool index from ConstantPoolCacheIndex at given bci
-       short cpCacheIndex = method.getBytecodeShortArg(bci);
+       String fmt = Bytecodes.format(rawcode);
+       int cpCacheIndex;
+       switch (fmt.length()) {
+       case 2: cpCacheIndex = method.getBytecodeByteArg(bci); break;
+       case 3: cpCacheIndex = method.getBytecodeShortArg(bci); break;
+       case 5:
+           if (fmt.indexOf("__") >= 0)
+               cpCacheIndex = method.getBytecodeShortArg(bci);
+           else
+               cpCacheIndex = method.getBytecodeIntArg(bci);
+           break;
+       default: throw new IllegalArgumentException();
+       }
        if (cpCache == null) {
-          return cpCacheIndex;
-       } else {
+          return (short) cpCacheIndex;
+       } else if (fmt.indexOf("JJJJ") >= 0) {
+          // change byte-ordering and go via secondary cache entry
+          return (short) cpCache.getMainEntryAt(bytes.swapInt(cpCacheIndex)).getConstantPoolIndex();
+       } else if (fmt.indexOf("JJ") >= 0) {
           // change byte-ordering and go via cache
-          return (short) cpCache.getEntryAt((int) (0xFFFF & bytes.swapShort(cpCacheIndex))).getConstantPoolIndex();
+          return (short) cpCache.getEntryAt((int) (0xFFFF & bytes.swapShort((short)cpCacheIndex))).getConstantPoolIndex();
+       } else if (fmt.indexOf("j") >= 0) {
+          // go via cache
+          return (short) cpCache.getEntryAt((int) (0xFF & cpCacheIndex)).getConstantPoolIndex();
+       } else {
+          return (short) cpCacheIndex;
        }
     }
 
@@ -100,10 +120,31 @@ public class ByteCodeRewriter
                 case Bytecodes._invokespecial:
                 case Bytecodes._invokestatic:
                 case Bytecodes._invokeinterface: {
-                    cpoolIndex = getConstantPoolIndex(bci + 1);
+                    cpoolIndex = getConstantPoolIndex(hotspotcode, bci + 1);
                     writeShort(code, bci + 1, cpoolIndex);
                     break;
                 }
+
+                case Bytecodes._invokedynamic:
+                    cpoolIndex = getConstantPoolIndex(hotspotcode, bci + 1);
+                    writeShort(code, bci + 1, cpoolIndex);
+                    writeShort(code, bci + 3, (short)0);  // clear out trailing bytes
+                    break;
+
+                case Bytecodes._ldc_w:
+                    if (hotspotcode != bytecode) {
+                        // fast_aldc_w puts constant in CP cache
+                        cpoolIndex = getConstantPoolIndex(hotspotcode, bci + 1);
+                        writeShort(code, bci + 1, cpoolIndex);
+                    }
+                    break;
+                case Bytecodes._ldc:
+                    if (hotspotcode != bytecode) {
+                        // fast_aldc puts constant in CP cache
+                        cpoolIndex = getConstantPoolIndex(hotspotcode, bci + 1);
+                        code[bci + 1] = (byte)(cpoolIndex);
+                    }
+                    break;
             }
 
             len = Bytecodes.lengthFor(bytecode);

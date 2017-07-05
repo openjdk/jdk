@@ -38,25 +38,33 @@ public class LocalAddress {
 
     static void test1() throws Exception {
         InetAddress bogus = InetAddress.getByName("0.0.0.0");
-        SocketChannel sc = SocketChannel.open();
         InetSocketAddress saddr = new InetSocketAddress(
             InetAddress.getByName(TestUtil.HOST), 23);
 
         //Test1: connect only
-        sc.connect(saddr);
-        InetAddress isa = sc.socket().getLocalAddress();
-        if (isa == null || isa.equals(bogus))
-            throw new RuntimeException("test failed");
+        SocketChannel sc = SocketChannel.open();
+        try {
+            sc.connect(saddr);
+            InetAddress ia = sc.socket().getLocalAddress();
+            if (ia == null || ia.equals(bogus))
+                throw new RuntimeException("test failed");
+        } finally {
+            sc.close();
+        }
 
         //Test2: bind and connect
         sc = SocketChannel.open();
-        sc.socket().bind(new InetSocketAddress(0));
-        if (sc.socket().getLocalPort() == 0)
-            throw new RuntimeException("test failed");
-        sc.socket().connect(saddr);
-        isa = sc.socket().getLocalAddress();
-        if (isa == null || isa.isAnyLocalAddress())
-            throw new RuntimeException("test failed");
+        try {
+            sc.socket().bind(new InetSocketAddress(0));
+            if (sc.socket().getLocalPort() == 0)
+                throw new RuntimeException("test failed");
+            sc.socket().connect(saddr);
+            InetAddress ia = sc.socket().getLocalAddress();
+            if (ia == null || ia.isAnyLocalAddress())
+                throw new RuntimeException("test failed");
+        } finally {
+            sc.close();
+        }
 
     }
 }

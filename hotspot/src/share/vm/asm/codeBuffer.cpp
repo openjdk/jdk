@@ -404,7 +404,7 @@ void CodeSection::expand_locs(int new_capacity) {
       locs_start = REALLOC_RESOURCE_ARRAY(relocInfo, _locs_start, old_capacity, new_capacity);
     } else {
       locs_start = NEW_RESOURCE_ARRAY(relocInfo, new_capacity);
-      Copy::conjoint_bytes(_locs_start, locs_start, old_capacity * sizeof(relocInfo));
+      Copy::conjoint_jbytes(_locs_start, locs_start, old_capacity * sizeof(relocInfo));
       _locs_own = true;
     }
     _locs_start    = locs_start;
@@ -581,7 +581,7 @@ csize_t CodeBuffer::copy_relocations_to(CodeBlob* dest) const {
                              (HeapWord*)(buf+buf_offset),
                              (lsize + HeapWordSize-1) / HeapWordSize);
       } else {
-        Copy::conjoint_bytes(lstart, buf+buf_offset, lsize);
+        Copy::conjoint_jbytes(lstart, buf+buf_offset, lsize);
       }
     }
     buf_offset += lsize;

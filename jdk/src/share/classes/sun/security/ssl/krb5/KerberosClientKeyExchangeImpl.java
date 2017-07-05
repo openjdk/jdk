@@ -212,7 +212,7 @@ public final class KerberosClientKeyExchangeImpl
             byte[] bytes = encPart.decrypt(secretKey, KeyUsage.KU_TICKET);
 
             // Reset data stream after decryption, remove redundant bytes
-            byte[] temp = encPart.reset(bytes, true);
+            byte[] temp = encPart.reset(bytes);
             EncTicketPart encTicketPart = new EncTicketPart(temp);
 
             // Record the Kerberos Principals

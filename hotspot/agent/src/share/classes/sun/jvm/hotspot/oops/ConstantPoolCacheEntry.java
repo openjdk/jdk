@@ -28,6 +28,7 @@ import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
 
 public class ConstantPoolCacheEntry {
   private static long          size;
@@ -67,7 +68,21 @@ public class ConstantPoolCacheEntry {
   }
 
   public int getConstantPoolIndex() {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(!isSecondaryEntry(), "must not be a secondary CP entry");
+    }
     return (int) (getIndices() & 0xFFFF);
+  }
+
+  public boolean isSecondaryEntry() {
+    return (getIndices() & 0xFFFF) == 0;
+  }
+
+  public int getMainEntryIndex() {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(isSecondaryEntry(), "must be a secondary CP entry");
+    }
+    return (int) (getIndices() >>> 16);
   }
 
   private long getIndices() {

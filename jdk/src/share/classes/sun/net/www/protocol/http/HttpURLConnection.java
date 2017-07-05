@@ -2331,7 +2331,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
      * closed the connection to the web server.
      */
     private void disconnectWeb() throws IOException {
-        if (usingProxy()) {
+        if (usingProxy() && http.isKeepingAlive()) {
             responseCode = -1;
             // clean up, particularly, skip the content part
             // of a 401 error response

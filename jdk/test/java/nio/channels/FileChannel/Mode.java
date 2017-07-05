@@ -24,6 +24,7 @@
 /* @test
    @bug 4462298
  * @summary Test FileChannel maps with different accesses
+ * @run main/othervm Mode
  */
 
 import java.nio.channels.*;

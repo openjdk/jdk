@@ -189,6 +189,10 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
+#ifdef ASSERT
+  // Helper function to allow a raw load without control edge for some cases
+  static bool is_immutable_value(Node* adr);
+#endif
 protected:
   const Type* load_array_final_field(const TypeKlassPtr *tkls,
                                      ciKlass* klass) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ class GCTaskQueue;
 class CardTableExtension : public CardTableModRefBS {
  private:
   // Support methods for resizing the card table.
-  void resize_commit_uncommit(int changed_region, MemRegion new_region);
+  // resize_commit_uncommit() returns true if the pages were committed or
+  // uncommitted
+  bool resize_commit_uncommit(int changed_region, MemRegion new_region);
   void resize_update_card_table_entries(int changed_region,
                                         MemRegion new_region);
   void resize_update_committed_table(int changed_region, MemRegion new_region);

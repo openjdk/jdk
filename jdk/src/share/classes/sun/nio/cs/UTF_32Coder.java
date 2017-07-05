@@ -86,22 +86,21 @@ class UTF_32Coder {
                         src.position(mark);
                     }
                 }
-                while (src.remaining() > 3) {
+                while (src.remaining() >= 4) {
                     cp = getCP(src);
-                    if (cp < 0 || cp > Surrogate.UCS4_MAX) {
-                        return CoderResult.malformedForLength(4);
-                    }
-                    if (cp < Surrogate.UCS4_MIN) {
+                    if (Character.isBmpCodePoint(cp)) {
                         if (!dst.hasRemaining())
                             return CoderResult.OVERFLOW;
                         mark += 4;
-                        dst.put((char)cp);
-                    } else {
+                        dst.put((char) cp);
+                    } else if (Character.isValidCodePoint(cp)) {
                         if (dst.remaining() < 2)
                             return CoderResult.OVERFLOW;
                         mark += 4;
-                        dst.put(Surrogate.high(cp));
-                        dst.put(Surrogate.low(cp));
+                        dst.put(Character.highSurrogate(cp));
+                        dst.put(Character.lowSurrogate(cp));
+                    } else {
+                        return CoderResult.malformedForLength(4);
                     }
                 }
                 return CoderResult.UNDERFLOW;
@@ -154,7 +153,12 @@ class UTF_32Coder {
             try {
                 while (src.hasRemaining()) {
                     char c = src.get();
-                    if (Character.isHighSurrogate(c)) {
+                    if (!Character.isSurrogate(c)) {
+                        if (dst.remaining() < 4)
+                            return CoderResult.OVERFLOW;
+                        mark++;
+                        put(c, dst);
+                    } else if (Character.isHighSurrogate(c)) {
                         if (!src.hasRemaining())
                             return CoderResult.UNDERFLOW;
                         char low = src.get();
@@ -162,17 +166,13 @@ class UTF_32Coder {
                             if (dst.remaining() < 4)
                                 return CoderResult.OVERFLOW;
                             mark += 2;
-                            put(Surrogate.toUCS4(c, low), dst);
+                            put(Character.toCodePoint(c, low), dst);
                         } else {
                             return CoderResult.malformedForLength(1);
                         }
-                    } else if (Character.isLowSurrogate(c)) {
-                        return CoderResult.malformedForLength(1);
                     } else {
-                        if (dst.remaining() < 4)
-                            return CoderResult.OVERFLOW;
-                        mark++;
-                        put(c, dst);
+                        // assert Character.isLowSurrogate(c);
+                        return CoderResult.malformedForLength(1);
                     }
                 }
                 return CoderResult.UNDERFLOW;

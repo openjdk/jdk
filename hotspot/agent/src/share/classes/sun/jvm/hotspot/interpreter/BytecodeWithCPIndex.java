@@ -37,12 +37,19 @@ public abstract class BytecodeWithCPIndex extends Bytecode {
   // the constant pool index for this bytecode
   public int index() { return 0xFFFF & javaShortAt(1); }
 
+  public int getSecondaryIndex() {
+     throw new IllegalArgumentException("must be invokedynamic");
+  }
+
   protected int indexForFieldOrMethod() {
      ConstantPoolCache cpCache = method().getConstants().getCache();
      // get ConstantPool index from ConstantPoolCacheIndex at given bci
      int cpCacheIndex = index();
      if (cpCache == null) {
         return cpCacheIndex;
+     } else if (code() == Bytecodes._invokedynamic) {
+        int secondaryIndex = getSecondaryIndex();
+        return cpCache.getMainEntryAt(secondaryIndex).getConstantPoolIndex();
      } else {
         // change byte-ordering and go via cache
         return cpCache.getEntryAt((int) (0xFFFF & VM.getVM().getBytes().swapShort((short) cpCacheIndex))).getConstantPoolIndex();

@@ -39,6 +39,7 @@ private:
   GrowableArray<ciObject*>* _ci_objects;
   GrowableArray<ciMethod*>* _unloaded_methods;
   GrowableArray<ciKlass*>* _unloaded_klasses;
+  GrowableArray<ciInstance*>* _unloaded_instances;
   GrowableArray<ciReturnAddress*>* _return_addresses;
   int                       _next_ident;
 
@@ -73,6 +74,8 @@ private:
 
   void print_contents_impl();
 
+  ciInstance* get_unloaded_instance(ciInstanceKlass* klass);
+
 public:
   static bool is_initialized() { return _initialized; }
 
@@ -97,6 +100,18 @@ public:
   ciKlass* get_unloaded_klass(ciKlass* accessing_klass,
                               ciSymbol* name,
                               bool create_if_not_found);
+
+  // Get a ciInstance representing an unresolved klass mirror.
+  ciInstance* get_unloaded_klass_mirror(ciKlass* type);
+
+  // Get a ciInstance representing an unresolved method handle constant.
+  ciInstance* get_unloaded_method_handle_constant(ciKlass*  holder,
+                                                  ciSymbol* name,
+                                                  ciSymbol* signature,
+                                                  int       ref_kind);
+
+  // Get a ciInstance representing an unresolved method type constant.
+  ciInstance* get_unloaded_method_type_constant(ciSymbol* signature);
 
 
   // Get the ciMethodData representing the methodData for a method

@@ -66,6 +66,10 @@ public class ReceiveISA {
             rb.clear();
         }
 
+        dc1.close();
+        dc2.close();
+        dc3.close();
+
         /*
          * Check that sa[0] equals sa[1] (both from dc1)
          * Check that sa[1] not equal to sa[2] (one from dc1, one from dc2)

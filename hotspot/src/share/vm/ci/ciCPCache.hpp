@@ -29,6 +29,18 @@
 // Note: This class is called ciCPCache as ciConstantPoolCache is used
 // for something different.
 class ciCPCache : public ciObject {
+private:
+  constantPoolCacheOop get_cpCacheOop() {   // must be called inside a VM_ENTRY_MARK
+    return (constantPoolCacheOop) get_oop();
+  }
+
+  ConstantPoolCacheEntry* entry_at(int i) {
+    int raw_index = i;
+    if (constantPoolCacheOopDesc::is_secondary_index(i))
+      raw_index = constantPoolCacheOopDesc::decode_secondary_index(i);
+    return get_cpCacheOop()->entry_at(raw_index);
+  }
+
 public:
   ciCPCache(constantPoolCacheHandle cpcache) : ciObject(cpcache) {}
 
@@ -40,6 +52,8 @@ public:
   size_t get_f1_offset(int index);
 
   bool is_f1_null_at(int index);
+
+  int get_pool_index(int index);
 
   void print();
 };

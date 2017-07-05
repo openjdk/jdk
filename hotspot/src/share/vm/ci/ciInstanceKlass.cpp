@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   _flags = ciFlags(access_flags);
   _has_finalizer = access_flags.has_finalizer();
   _has_subklass = ik->subklass() != NULL;
-  _is_initialized = ik->is_initialized();
-  // Next line must follow and use the result of the previous line:
-  _is_linked = _is_initialized || ik->is_linked();
+  _init_state = (instanceKlass::ClassState)ik->get_init_state();
   _nonstatic_field_size = ik->nonstatic_field_size();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
   _nonstatic_fields = NULL; // initialized lazily by compute_nonstatic_fields:
@@ -91,8 +89,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
   : ciKlass(name, ciInstanceKlassKlass::make())
 {
   assert(name->byte_at(0) != '[', "not an instance klass");
-  _is_initialized = false;
-  _is_linked = false;
+  _init_state = (instanceKlass::ClassState)0;
   _nonstatic_field_size = -1;
   _has_nonstatic_fields = false;
   _nonstatic_fields = NULL;
@@ -109,21 +106,10 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
 
 // ------------------------------------------------------------------
 // ciInstanceKlass::compute_shared_is_initialized
-bool ciInstanceKlass::compute_shared_is_initialized() {
+void ciInstanceKlass::compute_shared_init_state() {
   GUARDED_VM_ENTRY(
     instanceKlass* ik = get_instanceKlass();
-    _is_initialized = ik->is_initialized();
-    return _is_initialized;
-  )
-}
-
-// ------------------------------------------------------------------
-// ciInstanceKlass::compute_shared_is_linked
-bool ciInstanceKlass::compute_shared_is_linked() {
-  GUARDED_VM_ENTRY(
-    instanceKlass* ik = get_instanceKlass();
-    _is_linked = ik->is_linked();
-    return _is_linked;
+    _init_state = (instanceKlass::ClassState)ik->get_init_state();
   )
 }
 
@@ -323,8 +309,8 @@ ciInstanceKlass* ciInstanceKlass::super() {
 // ciInstanceKlass::java_mirror
 //
 // Get the instance of java.lang.Class corresponding to this klass.
+// Cache it on this->_java_mirror.
 ciInstance* ciInstanceKlass::java_mirror() {
-  assert(is_loaded(), "must be loaded");
   if (_java_mirror == NULL) {
     _java_mirror = ciKlass::java_mirror();
   }
