@@ -28,6 +28,7 @@
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
@@ -1818,7 +1819,10 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled)
-  : CallNode(arraycopy_type(), NULL, TypeRawPtr::BOTTOM), _alloc_tightly_coupled(alloc_tightly_coupled), _kind(ArrayCopy) {
+  : CallNode(arraycopy_type(), NULL, TypeRawPtr::BOTTOM),
+    _alloc_tightly_coupled(alloc_tightly_coupled),
+    _kind(None),
+    _arguments_validated(false) {
   init_class_id(Class_ArrayCopy);
   init_flags(Flag_is_macro);
   C->add_macro_node(this);
@@ -1870,3 +1874,136 @@ void ArrayCopyNode::dump_spec(outputStream *st) const {
   st->print(" (%s%s)", _kind_names[_kind], _alloc_tightly_coupled ? ", tightly coupled allocation" : "");
 }
 #endif
+
+int ArrayCopyNode::get_count(PhaseGVN *phase) const {
+  Node* src = in(ArrayCopyNode::Src);
+  const Type* src_type = phase->type(src);
+
+  assert(is_clonebasic(), "unexpected arraycopy type");
+  if (src_type->isa_instptr()) {
+    const TypeInstPtr* inst_src = src_type->is_instptr();
+    ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
+    // ciInstanceKlass::nof_nonstatic_fields() doesn't take injected
+    // fields into account. They are rare anyway so easier to simply
+    // skip instances with injected fields.
+    if ((!inst_src->klass_is_exact() && (ik->is_interface() || ik->has_subklass())) || ik->has_injected_fields()) {
+      return -1;
+    }
+    int nb_fields = ik->nof_nonstatic_fields();
+    return nb_fields;
+  }
+  return -1;
+}
+
+Node* ArrayCopyNode::try_clone_instance(PhaseGVN *phase, bool can_reshape, int count) {
+  assert(is_clonebasic(), "unexpected arraycopy type");
+
+  Node* src = in(ArrayCopyNode::Src);
+  Node* dest = in(ArrayCopyNode::Dest);
+  Node* ctl = in(TypeFunc::Control);
+  Node* in_mem = in(TypeFunc::Memory);
+
+  const Type* src_type = phase->type(src);
+  const Type* dest_type = phase->type(dest);
+
+  assert(src->is_AddP(), "should be base + off");
+  assert(dest->is_AddP(), "should be base + off");
+  Node* base_src = src->in(AddPNode::Base);
+  Node* base_dest = dest->in(AddPNode::Base);
+
+  MergeMemNode* mem = MergeMemNode::make(in_mem);
+
+  const TypeInstPtr* inst_src = src_type->is_instptr();
+
+  if (!inst_src->klass_is_exact()) {
+    ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
+    assert(!ik->is_interface() && !ik->has_subklass(), "inconsistent klass hierarchy");
+    phase->C->dependencies()->assert_leaf_type(ik);
+  }
+
+  ciInstanceKlass* ik = inst_src->klass()->as_instance_klass();
+  assert(ik->nof_nonstatic_fields() <= ArrayCopyLoadStoreMaxElem, "too many fields");
+
+  for (int i = 0; i < count; i++) {
+    ciField* field = ik->nonstatic_field_at(i);
+    int fieldidx = phase->C->alias_type(field)->index();
+    const TypePtr* adr_type = phase->C->alias_type(field)->adr_type();
+    Node* off = phase->MakeConX(field->offset());
+    Node* next_src = phase->transform(new AddPNode(base_src,base_src,off));
+    Node* next_dest = phase->transform(new AddPNode(base_dest,base_dest,off));
+    BasicType bt = field->layout_type();
+
+    const Type *type;
+    if (bt == T_OBJECT) {
+      if (!field->type()->is_loaded()) {
+        type = TypeInstPtr::BOTTOM;
+      } else {
+        ciType* field_klass = field->type();
+        type = TypeOopPtr::make_from_klass(field_klass->as_klass());
+      }
+    } else {
+      type = Type::get_const_basic_type(bt);
+    }
+
+    Node* v = LoadNode::make(*phase, ctl, mem->memory_at(fieldidx), next_src, adr_type, type, bt, MemNode::unordered);
+    v = phase->transform(v);
+    Node* s = StoreNode::make(*phase, ctl, mem->memory_at(fieldidx), next_dest, adr_type, v, bt, MemNode::unordered);
+    s = phase->transform(s);
+    mem->set_memory_at(fieldidx, s);
+  }
+
+  if (!finish_transform(phase, can_reshape, ctl, mem)) {
+    return NULL;
+  }
+
+  return mem;
+}
+
+bool ArrayCopyNode::finish_transform(PhaseGVN *phase, bool can_reshape,
+                                     Node* ctl, Node *mem) {
+  if (can_reshape) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    assert(is_clonebasic(), "unexpected arraycopy type");
+    Node* out_mem = proj_out(TypeFunc::Memory);
+
+    if (out_mem->outcnt() != 1 || !out_mem->raw_out(0)->is_MergeMem() ||
+        out_mem->raw_out(0)->outcnt() != 1 || !out_mem->raw_out(0)->raw_out(0)->is_MemBar()) {
+      assert(!GraphKit::use_ReduceInitialCardMarks(), "can only happen with card marking");
+      return false;
+    }
+
+    igvn->replace_node(out_mem->raw_out(0), mem);
+
+    Node* out_ctl = proj_out(TypeFunc::Control);
+    igvn->replace_node(out_ctl, ctl);
+  }
+  return true;
+}
+
+
+Node *ArrayCopyNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+
+  if (StressArrayCopyMacroNode && !can_reshape) return NULL;
+
+  // See if it's a small array copy and we can inline it as
+  // loads/stores
+  // Here we can only do:
+  // - clone for which we don't need to do card marking
+
+  if (!is_clonebasic()) {
+    return NULL;
+  }
+
+  if (in(TypeFunc::Control)->is_top() || in(TypeFunc::Memory)->is_top()) {
+    return NULL;
+  }
+
+  int count = get_count(phase);
+
+  if (count < 0 || count > ArrayCopyLoadStoreMaxElem) {
+    return NULL;
+  }
+
+  Node* mem = try_clone_instance(phase, can_reshape, count);
+  return mem;
+}

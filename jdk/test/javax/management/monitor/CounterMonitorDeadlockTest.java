@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@
 
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.management.Attribute;
 import javax.management.JMX;
 import javax.management.MBeanServer;
 import javax.management.Notification;
@@ -95,18 +94,16 @@ public class CounterMonitorDeadlockTest {
             monitorProxy.setInitThreshold(100);
             monitorProxy.setGranularityPeriod(10L); // 10 ms
             monitorProxy.setNotify(true);
-            monitorProxy.start();
 
             final int initGetCount = observedProxy.getGetCount();
-            int getCount;
+            monitorProxy.start();
+
             System.out.println("Checking GetCount, possible deadlock if timeout.");
             do { // 8038322. Until timeout of testing harness
                 Thread.sleep(200);
-            } while ((getCount=observedProxy.getGetCount()) == initGetCount);
+            } while ((observedProxy.getGetCount()) == initGetCount);
             System.out.println("Done!");
 
-            if (getCount <= initGetCount)
-                throw new Exception("Test failed: presumable deadlock");
             // This won't show up as a deadlock in CTRL-\ or in
             // ThreadMXBean.findDeadlockedThreads(), because they don't
             // see that thread A is waiting for thread B (B.join()), and

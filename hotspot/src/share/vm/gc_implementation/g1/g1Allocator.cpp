@@ -99,8 +99,8 @@ void G1DefaultAllocator::release_gc_alloc_regions(uint no_of_gc_workers, Evacuat
   }
 
   if (ResizePLAB) {
-    _g1h->_survivor_plab_stats.adjust_desired_plab_sz(no_of_gc_workers);
-    _g1h->_old_plab_stats.adjust_desired_plab_sz(no_of_gc_workers);
+    _g1h->alloc_buffer_stats(InCSetState::Young)->adjust_desired_plab_sz(no_of_gc_workers);
+    _g1h->alloc_buffer_stats(InCSetState::Old)->adjust_desired_plab_sz(no_of_gc_workers);
   }
 }
 
