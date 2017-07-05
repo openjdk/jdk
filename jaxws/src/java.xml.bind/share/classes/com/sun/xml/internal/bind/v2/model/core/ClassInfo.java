@@ -143,8 +143,8 @@ public interface ClassInfo<T,C> extends MaybeElement<T,C> {
      * False if it't not.
      *
      * <p>
-     * In RELAX NG context, ordered properties mean &lt;group> and
-     * unordered properties mean &lt;interleave>.
+     * In RELAX NG context, ordered properties mean {@code <group>} and
+     * unordered properties mean {@code <interleave>}.
      */
     boolean isOrdered();
 

@@ -111,7 +111,7 @@ public interface XMLStreamReaderEx extends XMLStreamReader {
     // *      if the parser is not pointing at characters infoset item.
     // * @throws XMLStreamException
     // *      if the parser points to text but text is not base64-encoded text,
-    // *      or if some other parsing error occurs (such as if the &lt;xop:Include>
+    // *      or if some other parsing error occurs (such as if the {@code <xop:Include>}
     // *      points to a non-existing attachment.)
     // *
     // *      <p>

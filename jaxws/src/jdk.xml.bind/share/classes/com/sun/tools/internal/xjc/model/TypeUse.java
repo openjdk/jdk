@@ -88,7 +88,7 @@ public interface TypeUse {
      * Creates a constant for the given lexical value.
      *
      * <p>
-     * For example, to create a constant 1 for <tt>xs:int</tt>, you'd do:
+     * For example, to create a constant 1 for {@code xs:int}, you'd do:
      * <pre>
      * CBuiltinLeafInfo.INT.createConstant( codeModel, "1", null );
      * </pre>

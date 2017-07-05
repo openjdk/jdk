@@ -74,7 +74,7 @@ public abstract class JAXBIntrospector {
      *
      * <p>Convenience method to abstract whether working with either
      *    a javax.xml.bind.JAXBElement instance or an instance of
-     *    <tt>@XmlRootElement</tt> annotated Java class.</p>
+     *    {@code @XmlRootElement} annotated Java class.</p>
      *
      * @param jaxbElement  object that #isElement(Object) returns true.
      *

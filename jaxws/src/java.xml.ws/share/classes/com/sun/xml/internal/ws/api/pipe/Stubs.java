@@ -75,9 +75,9 @@ import java.lang.reflect.Proxy;
  * <h3>Pipe next</h3>
  * <p>
  * Stubs turn a method invocation into a {@link Pipe#process(com.sun.xml.internal.ws.api.message.Packet)} invocation,
- * and this pipe passed in as the <tt>next</tt> parameter will receive a {@link Message}
+ * and this pipe passed in as the {@code next} parameter will receive a {@link Message}
  * from newly created stub. All the methods taking Tube <<next>> parameter are deprecated. JAX-WS Runtime takes care of
- * creating the tubeline when the <tt>next</tt> parameter is not passed. This gives flexibility for the JAX-WS Runtime
+ * creating the tubeline when the {@code next} parameter is not passed. This gives flexibility for the JAX-WS Runtime
  * to pass extra information during the tube line creation via {@link ClientTubeAssemblerContext}.
  *
  * <h3>WSPortInfo portInfo</h3>
@@ -87,7 +87,7 @@ import java.lang.reflect.Proxy;
  * <h3>BindingImpl binding</h3>
  * <p>
  * Stubs implement {@link BindingProvider}, and its {@link BindingProvider#getBinding()}
- * will return this <tt>binding</tt> object. Stubs often also use this information
+ * will return this {@code binding} object. Stubs often also use this information
  * to decide which SOAP version a {@link Message} should be created in.
  *
  * <h3>{@link WSService} service</h3>
@@ -98,7 +98,7 @@ import java.lang.reflect.Proxy;
  * <h3>{@link WSEndpointReference} epr</h3>
  * <p>
  * If you want the created {@link Dispatch} to talk to the given EPR, specify the parameter.
- * Otherwise leave it <tt>null</tt>. Note that the addressing needs to be enabled separately
+ * Otherwise leave it {@code null}. Note that the addressing needs to be enabled separately
  * for this to take effect.
  *
  * @author Kohsuke Kawaguchi

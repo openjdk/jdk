@@ -30,7 +30,7 @@ package javax.xml.bind;
  *
  * <p>
  * This exception differs from {@link JAXBException} in that
- * this is an unchecked exception, while <tt>JAXBException</tt>
+ * this is an unchecked exception, while {@code JAXBException}
  * is a checked exception.
  *
  * @see JAXB

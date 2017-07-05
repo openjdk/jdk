@@ -51,9 +51,9 @@ import java.lang.annotation.Target;
  *
  * <p>
  * The user would be required to create {@link JAXBContext} as
- * <tt>JAXBContext.newInstance(Dog.class,Cat.class)</tt>
- * (<tt>Animal</tt> will be automatically picked up since <tt>Dog</tt>
- * and <tt>Cat</tt> refers to it.)
+ * {@code JAXBContext.newInstance(Dog.class,Cat.class)}
+ * ({@code Animal} will be automatically picked up since {@code Dog}
+ * and {@code Cat} refers to it.)
  *
  * <p>
  * {@link XmlSeeAlso} annotation would allow you to write:
@@ -65,9 +65,9 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * <p>
- * This would allow you to do <tt>JAXBContext.newInstance(Animal.class)</tt>.
+ * This would allow you to do {@code JAXBContext.newInstance(Animal.class)}.
  * By the help of this annotation, JAXB implementations will be able to
- * correctly bind <tt>Dog</tt> and <tt>Cat</tt>.
+ * correctly bind {@code Dog} and {@code Cat}.
  *
  * @author Kohsuke Kawaguchi
  * @since 1.6, JAXB 2.1

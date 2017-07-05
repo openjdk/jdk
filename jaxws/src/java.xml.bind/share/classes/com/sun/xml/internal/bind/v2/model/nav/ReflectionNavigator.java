@@ -418,7 +418,7 @@ import com.sun.xml.internal.bind.v2.runtime.Location;
     }
 
     /**
-     * Returns the {@link Type} object that represents {@code clazz&lt;T1,T2,T3>}.
+     * Returns the {@link Type} object that represents {@code clazz<T1,T2,T3>}.
      */
     public Type createParameterizedType(Class rawType, Type... arguments) {
         return new ParameterizedTypeImpl(rawType, arguments, null);

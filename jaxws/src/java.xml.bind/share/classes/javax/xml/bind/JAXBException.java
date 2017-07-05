@@ -160,7 +160,7 @@ public class JAXBException extends Exception {
 
     /**
      * Prints this JAXBException and its stack trace (including the stack trace
-     * of the linkedException if it is non-null) to <tt>System.err</tt>.
+     * of the linkedException if it is non-null) to {@code System.err}.
      *
      */
     public void printStackTrace() {

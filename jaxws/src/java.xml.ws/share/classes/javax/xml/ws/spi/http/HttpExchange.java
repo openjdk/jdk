@@ -259,7 +259,7 @@ public abstract class HttpExchange {
      *         It is the path that comes
      *         after the web service path but before the query string in the
      *         request URI
-     *         <tt>null</tt> if there is no extra path in the request URI
+     *         {@code null} if there is no extra path in the request URI
      */
     public abstract String getPathInfo();
 
@@ -271,7 +271,7 @@ public abstract class HttpExchange {
      * This can be used for {@link MessageContext#QUERY_STRING}
      *
      * @return undecoded query string of request URI, or
-     *         <tt>null</tt> if the request URI doesn't have one
+     *         {@code null} if the request URI doesn't have one
      */
     public abstract String getQueryString();
 
@@ -292,7 +292,7 @@ public abstract class HttpExchange {
      * be exposed using {@link #REQUEST_X509CERTIFICATE}
      *
      * @param name attribute name
-     * @return the attribute value, or <tt>null</tt> if the attribute doesn't
+     * @return the attribute value, or {@code null} if the attribute doesn't
      *         exist
      */
     public abstract Object getAttribute(String name);
@@ -311,7 +311,7 @@ public abstract class HttpExchange {
      * user for this {@code HttpExchange}.
      *
      * @return Principal for an authenticated user, or
-     *         <tt>null</tt> if not authenticated
+     *         {@code null} if not authenticated
      */
     public abstract Principal getUserPrincipal();
 
@@ -320,7 +320,7 @@ public abstract class HttpExchange {
      * logical "role".
      *
      * @param role specifies the name of the role
-     * @return <tt>true</tt> if the user making this request belongs to a
+     * @return {@code true} if the user making this request belongs to a
      *         given role
      */
     public abstract boolean isUserInRole(String role);

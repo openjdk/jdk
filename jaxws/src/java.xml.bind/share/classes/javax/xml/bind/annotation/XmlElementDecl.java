@@ -170,19 +170,19 @@ public @interface XmlElementDecl {
      * namespace name of a substitution group's head XML element.
      * <p>
      * This specifies the namespace name of the XML element whose local
-     * name is specified by <tt>substitutionHeadName()</tt>.
+     * name is specified by {@code substitutionHeadName()}.
      * <p>
-     * If <tt>susbtitutionHeadName()</tt> is "", then this
+     * If {@code susbtitutionHeadName()} is "", then this
      * value can only be "##default". But the value is ignored since
      * since this element is not part of susbtitution group when the
-     * value of <tt>susbstitutionHeadName()</tt> is "".
+     * value of {@code susbstitutionHeadName()} is "".
      * <p>
-     * If <tt>susbtitutionHeadName()</tt> is not "" and the value is
+     * If {@code susbtitutionHeadName()} is not "" and the value is
      * "##default", then the namespace name is the namespace name to
      * which the package of the containing class, marked with {@link
      * XmlRegistry }, is mapped.
      * <p>
-     * If <tt>susbtitutionHeadName()</tt> is not "" and the value is
+     * If {@code susbtitutionHeadName()} is not "" and the value is
      * not "##default", then the value is the namespace name.
      *
      * @see #substitutionHeadName()

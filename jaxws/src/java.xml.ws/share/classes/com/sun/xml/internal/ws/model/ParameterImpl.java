@@ -161,7 +161,7 @@ public class ParameterImpl implements Parameter {
     }
 
     /**
-     * @return true if <tt>this instanceof {@link WrapperParameter}</tt>.
+     * @return true if {@code this instanceof} {@link WrapperParameter}.
      */
     public boolean isWrapperStyle() {
         return false;
@@ -223,7 +223,7 @@ public class ParameterImpl implements Parameter {
      * <p>
      * {@link JavaMethodImpl#getResponseParameters()} is guaranteed to have
      * at most one such {@link ParameterImpl}. Note that there coule be none,
-     * in which case the method returns <tt>void</tt>.
+     * in which case the method returns {@code void}.
      */
     public boolean isResponse() {
         return index == -1;

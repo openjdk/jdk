@@ -81,7 +81,7 @@ public interface Parameter {
     int getIndex();
 
     /**
-     * @return true if <tt>this instanceof {@link com.sun.xml.internal.ws.model.WrapperParameter}</tt>.
+     * @return true if {@code this instanceof} {@link com.sun.xml.internal.ws.model.WrapperParameter}.
      */
     boolean isWrapperStyle();
 
@@ -89,7 +89,7 @@ public interface Parameter {
      * Returns true if this parameter is bound to the return value from the {@link JavaMethod}.
      *
      * <p>
-     * Just the convenience method for <tt>getIndex()==-1</tt>
+     * Just the convenience method for {@code getIndex()==-1}
      */
     boolean isReturnValue();
 
@@ -138,7 +138,7 @@ public interface Parameter {
      * <p>
      * {@link JavaMethod#getResponseParameters()} is guaranteed to have
      * at most one such {@link Parameter}. Note that there coule be none,
-     * in which case the method returns <tt>void</tt>.
+     * in which case the method returns {@code void}.
      *
      * <p>
      * Other response parameters are bound to {@link Holder}.

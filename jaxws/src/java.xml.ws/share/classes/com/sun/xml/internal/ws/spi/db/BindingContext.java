@@ -257,7 +257,7 @@ public interface BindingContext {
 
     /**
      * The property that you can specify to {@link JAXBContext#newInstance}
-     * to allow unmarshaller to honor <tt>xsi:nil</tt> anywhere, even if they are
+     * to allow unmarshaller to honor {@code xsi:nil} anywhere, even if they are
      * not specifically allowed by the schema.
      *
      * @since 2.1.3

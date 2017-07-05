@@ -28,10 +28,10 @@ package javax.xml.bind.annotation.adapters;
 import javax.xml.bind.DatatypeConverter;
 
 /**
- * {@link XmlAdapter} for <tt>xs:hexBinary</tt>.
+ * {@link XmlAdapter} for {@code xs:hexBinary}.
  *
  * <p>
- * This {@link XmlAdapter} binds <tt>byte[]</tt> to the hexBinary representation in XML.
+ * This {@link XmlAdapter} binds {@code byte[]} to the hexBinary representation in XML.
  *
  * @author Kohsuke Kawaguchi
  * @since 1.6, JAXB 2.0

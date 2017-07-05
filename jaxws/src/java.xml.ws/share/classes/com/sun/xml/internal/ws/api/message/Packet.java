@@ -347,7 +347,7 @@ public final class Packet
      * <p>
      * Transports may choose to ignore certain headers that interfere with
      * its correct operation, such as
-     * <tt>Content-Type</tt> and <tt>Content-Length</tt>.
+     * {@code Content-Type} and {@code Content-Length}.
      */
     public static final String OUTBOUND_TRANSPORT_HEADERS = "com.sun.xml.internal.ws.api.message.packet.outbound.transport.headers";
 
@@ -588,7 +588,7 @@ public final class Packet
      *
      * <p>
      * For outgoing messages, the transport may sends out this value.
-     * If this field is null, the transport may choose to send <tt>""</tt>
+     * If this field is null, the transport may choose to send {@code ""}
      * (quoted empty string.)
      *
      * For incoming messages, the transport will set this field.

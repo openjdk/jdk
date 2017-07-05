@@ -500,7 +500,8 @@ public abstract class Process {
 
     /**
      * Returns a snapshot of the direct children of the process.
-     * A process that is {@link #isAlive not alive} has zero children.
+     * The parent of a direct child process is the process.
+     * Typically, a process that is {@link #isAlive not alive} has no children.
      * <p>
      * <em>Note that processes are created and terminate asynchronously.
      * There is no guarantee that a process is {@link #isAlive alive}.
@@ -510,8 +511,8 @@ public abstract class Process {
      * This implementation returns the direct children as:
      * {@link #toHandle toHandle().children()}.
      *
-     * @return a Stream of ProcessHandles for processes that are direct children
-     *         of the process
+     * @return a sequential Stream of ProcessHandles for processes that are
+     *         direct children of the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
      * @throws SecurityException if a security manager has been installed and
@@ -524,7 +525,9 @@ public abstract class Process {
 
     /**
      * Returns a snapshot of the direct and indirect children of the process.
-     * A process that is {@link #isAlive not alive} has zero children.
+     * An indirect child is one whose parent is either a direct child or
+     * another indirect child.
+     * Typically, a process that is {@link #isAlive not alive} has no children.
      * <p>
      * <em>Note that processes are created and terminate asynchronously.
      * There is no guarantee that a process is {@link #isAlive alive}.
@@ -534,8 +537,8 @@ public abstract class Process {
      * This implementation returns all children as:
      * {@link #toHandle toHandle().allChildren()}.
      *
-     * @return a Stream of ProcessHandles for processes that are direct and
-     *         indirect children of the process
+     * @return a sequential Stream of ProcessHandles for processes that are
+     *         direct and indirect children of the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
      * @throws SecurityException if a security manager has been installed and

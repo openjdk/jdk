@@ -38,7 +38,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  *
  * <p> <b>Usage</b>
  * <p>
- * <tt>@XmlElement</tt> annotation can be used with the following program
+ * {@code @XmlElement} annotation can be used with the following program
  * elements:
  * <ul>
  *   <li> a JavaBean property </li>
@@ -62,7 +62,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  *   <li> if the type of JavaBean property is a collection type of
  *        array, an indexed property, or a parameterized list, and
  *        this annotation is used with {@link XmlElements} then,
- *        <tt>@XmlElement.type()</tt> must be DEFAULT.class since the
+ *        {@code @XmlElement.type()} must be DEFAULT.class since the
  *        collection item type is already known. </li>
  * </ul>
  *

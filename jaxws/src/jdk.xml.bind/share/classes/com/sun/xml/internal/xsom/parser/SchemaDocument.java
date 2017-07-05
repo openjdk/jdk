@@ -33,7 +33,7 @@ import java.util.Set;
  * Represents a parsed XML schema document.
  *
  * <p>
- * Unlike schema components defined in <tt>XS****</tt> interfaces,
+ * Unlike schema components defined in {@code XS****} interfaces,
  * which are inherently de-coupled from where it was loaded from,
  * {@link SchemaDocument} represents a single XML infoset that
  * is a schema document.
@@ -58,7 +58,7 @@ public interface SchemaDocument {
      * The namespace that this schema defines.
      *
      * <p>
-     * More precisely, this method simply returns the <tt>targetNamespace</tt> attribute
+     * More precisely, this method simply returns the {@code targetNamespace} attribute
      * of the schema document. When schemas are referenced in certain ways
      * (AKA chameleon schema), schema components in this schema document
      * may end up defining components in other namespaces.

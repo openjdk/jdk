@@ -42,7 +42,7 @@ import java.util.logging.Logger;
  * <p/>
  * To create a tubeline,
  * the JAX-WS runtime locates {@link TubelineAssemblerFactory}s through
- * the <tt>META-INF/services/com.sun.xml.internal.ws.api.pipe.TubelineAssemblerFactory</tt> files.
+ * the {@code META-INF/services/com.sun.xml.internal.ws.api.pipe.TubelineAssemblerFactory} files.
  * Factories found are checked to see if it supports the given binding ID one by one,
  * and the first valid {@link TubelineAssembler} returned will be used to create
  * a tubeline.

@@ -30,7 +30,7 @@ package javax.xml.bind;
  * a validate operation.
  *
  * <p>
- * The <tt>ValidationEventHandler</tt> can cause this exception to be thrown
+ * The {@code ValidationEventHandler} can cause this exception to be thrown
  * during the validate operations.  See
  * {@link ValidationEventHandler#handleEvent(ValidationEvent)
  * ValidationEventHandler.handleEvent(ValidationEvent)}.

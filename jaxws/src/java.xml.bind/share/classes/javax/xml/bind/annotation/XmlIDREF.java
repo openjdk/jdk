@@ -38,12 +38,12 @@ import static java.lang.annotation.RetentionPolicy.*;
  * To preserve referential integrity of an object graph across XML
  * serialization followed by a XML deserialization, requires an object
  * reference to be marshaled by reference or containment
- * appropriately. Annotations <tt>&#64;XmlID</tt> and <tt>&#64;XmlIDREF</tt>
+ * appropriately. Annotations {@code @XmlID} and {@code @XmlIDREF}
  * together allow a customized mapping of a JavaBean property's
  * type by containment or reference.
  *
  * <p><b>Usage</b> </p>
- * The <tt>&#64;XmlIDREF</tt> annotation can be used with the following
+ * The {@code @XmlIDREF} annotation can be used with the following
  * program elements:
  * <ul>
  *   <li> a JavaBean property </li>
@@ -58,21 +58,21 @@ import static java.lang.annotation.RetentionPolicy.*;
  *
  *   <li> If the type of the field or property is a collection type,
  *        then the collection item type must contain a property or
- *        field annotated with <tt>&#64;XmlID</tt>.  </li>
+ *        field annotated with {@code @XmlID}.  </li>
  *   <li> If the field or property is single valued, then the type of
  *        the property or field must contain a property or field
- *        annotated with <tt>&#64;XmlID</tt>.
+ *        annotated with {@code @XmlID}.
  *        <p>Note: If the collection item type or the type of the
  *        property (for non collection type) is java.lang.Object, then
  *        the instance must contain a property/field annotated with
- *        <tt>&#64;XmlID</tt> attribute.
+ *        {@code @XmlID} attribute.
  *        </li>
  *   <li> This annotation can be used with the following annotations:
  *        {@link XmlElement}, {@link XmlAttribute}, {@link XmlList},
  *        and {@link XmlElements}.</li>
  *
  * </ul>
- * <p><b>Example:</b> Map a JavaBean property to <tt>xs:IDREF</tt>
+ * <p><b>Example:</b> Map a JavaBean property to {@code xs:IDREF}
  *   (i.e. by reference rather than by containment)</p>
  * <pre>
  *
@@ -101,10 +101,10 @@ import static java.lang.annotation.RetentionPolicy.*;
  * containment versus reference.
  *
  * <pre>
- *    // By default, Customer maps to complex type <tt>xs:Customer</tt>
+ *    // By default, Customer maps to complex type {@code xs:Customer}
  *    public class Customer {
  *
- *        // map JavaBean property type to <tt>xs:ID</tt>
+ *        // map JavaBean property type to {@code xs:ID}
  *        &#64;XmlID public String getCustomerID();
  *        public void setCustomerID(String id);
  *
@@ -112,7 +112,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  *    }
  *
  *
- *   // By default, Invoice maps to a complex type <tt>xs:Invoice</tt>
+ *   // By default, Invoice maps to a complex type {@code xs:Invoice}
  *   public class Invoice {
  *
  *       // map by reference
@@ -122,7 +122,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  *      // .... other properties not shown here
  *   }
  *
- *   // By default, Shipping maps to complex type <tt>xs:Shipping</tt>
+ *   // By default, Shipping maps to complex type {@code xs:Shipping}
  *   public class Shipping {
  *
  *       // map by reference

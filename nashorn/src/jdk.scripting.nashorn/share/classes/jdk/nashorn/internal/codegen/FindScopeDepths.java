@@ -275,15 +275,11 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         final Set<Symbol> symbols = new HashSet<>();
         block.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
-            public final boolean enterDefault(final Node node) {
-                if (!compiler.isOnDemandCompilation()) {
-                    if (node instanceof IdentNode) {
-                        final Symbol symbol = ((IdentNode)node).getSymbol();
-                        if (symbol != null && symbol.isScope()) {
-                            //if this is an internal symbol, skip it.
-                            symbols.add(symbol);
-                        }
-                    }
+            public boolean enterIdentNode(final IdentNode identNode) {
+                final Symbol symbol = identNode.getSymbol();
+                if (symbol != null && symbol.isScope()) {
+                    //if this is an internal symbol, skip it.
+                    symbols.add(symbol);
                 }
                 return true;
             }

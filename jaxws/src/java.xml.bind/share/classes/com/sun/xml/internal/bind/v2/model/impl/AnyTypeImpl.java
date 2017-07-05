@@ -35,7 +35,7 @@ import com.sun.xml.internal.bind.v2.model.nav.Navigator;
 import com.sun.xml.internal.bind.v2.model.annotation.Locatable;
 
 /**
- * {@link TypeInfo} implementation for <tt>xs:anyType</tt>.
+ * {@link TypeInfo} implementation for {@code xs:anyType}.
  *
  * @author Kohsuke Kawaguchi
  */

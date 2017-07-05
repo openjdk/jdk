@@ -128,7 +128,7 @@ public abstract class AbstractHeaderImpl implements Header {
     }
 
     /**
-     * Parses a string that looks like <tt>xs:boolean</tt> into boolean.
+     * Parses a string that looks like {@code xs:boolean} into boolean.
      *
      * This method assumes that the whilespace normalization has already taken place.
      */

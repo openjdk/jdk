@@ -48,7 +48,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
- * {@link JaxBeanInfo} for handling <tt>xs:anyType</tt>.
+ * {@link JaxBeanInfo} for handling {@code xs:anyType}.
  *
  * @author Kohsuke Kawaguchi
  */

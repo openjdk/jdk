@@ -57,9 +57,9 @@ import java.util.logging.Logger;
  *     +- X.class
  * </pre>
  * <p>
- * {@link ParallelWorldClassLoader}("foo/") would load <tt>X.class<tt> from
- * <tt>/foo/X.class</tt> (note that X is defined in the root package, not
- * <tt>foo.X</tt>.
+ * {@link ParallelWorldClassLoader}("foo/") would load {@code X.class} from
+ * {@code /foo/X.class} (note that X is defined in the root package, not
+ * {@code foo.X}.
  *
  * <p>
  * This can be combined with  {@link MaskingClassLoader} to mask classes which are loaded by the parent
@@ -77,11 +77,13 @@ import java.util.logging.Logger;
  *        +- X.class
  * </pre>
  * <p>
- * {@link ParallelWorldClassLoader}(MaskingClassLoader.class.getClassLoader()) would load <tt>foo.X.class<tt> from
- * <tt>/bar/foo.X.class</tt> not the <tt>foo.X.class<tt> in the publicly visible place in the jar file, thus
- * masking the parent classLoader from loading the class from  <tt>foo.X.class<tt>
+ * {@link ParallelWorldClassLoader}(MaskingClassLoader.class.getClassLoader())
+ * would load {@code foo.X.class}  from
+ * {@code /bar/foo.X.class} not the {@code foo.X.class}
+ * in the publicly visible place in the jar file, thus
+ * masking the parent classLoader from loading the class from {@code foo.X.class}
  * (note that X is defined in the  package foo, not
- * <tt>bar.foo.X</tt>.
+ * {@code bar.foo.X}.
  *
  * @author Kohsuke Kawaguchi
  */

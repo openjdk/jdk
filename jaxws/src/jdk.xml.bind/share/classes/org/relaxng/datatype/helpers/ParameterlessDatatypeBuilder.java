@@ -43,7 +43,7 @@ import org.relaxng.datatype.*;
  *
  * <p>
  * Typical usage would be:
- * <PRE><XMP>
+ * <PRE>{@code
  * class MyDatatypeLibrary implements DatatypeLibrary {
  *     ....
  *     DatatypeBuilder createDatatypeBuilder( String typeName ) {
@@ -51,7 +51,7 @@ import org.relaxng.datatype.*;
  *     }
  *     ....
  * }
- * </XMP></PRE>
+ * }</PRE>
  *
  * @author <a href="mailto:kohsuke.kawaguchi@sun.com">Kohsuke KAWAGUCHI</a>
  */

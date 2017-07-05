@@ -76,12 +76,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * zero-argument constructor so that they may be instantiated during lookup.
  * <p/>
  * <p> A service provider identifies itself by placing a provider-configuration
- * file in the resource directory <tt>META-INF/services</tt>.  The file's name
+ * file in the resource directory {@code META-INF/services}.  The file's name
  * should consist of the fully-qualified name of the abstract service class.
  * The file should contain a list of fully-qualified concrete provider-class
  * names, one per line.  Space and tab characters surrounding each name, as
- * well as blank lines, are ignored.  The comment character is <tt>'#'</tt>
- * (<tt>0x23</tt>); on each line all characters following the first comment
+ * well as blank lines, are ignored.  The comment character is {@code '#'}
+ * ({@code 0x23}); on each line all characters following the first comment
  * character are ignored.  The file must be encoded in UTF-8.
  * <p/>
  * <p> If a particular concrete provider class is named in more than one
@@ -93,20 +93,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * note that this is not necessarily the class loader that found the file.
  * <p/>
  * <p> <b>Example:</b> Suppose we have a service class named
- * <tt>java.io.spi.CharCodec</tt>.  It has two abstract methods:
+ * {@code java.io.spi.CharCodec}.  It has two abstract methods:
  * <p/>
  * <pre>
  *   public abstract CharEncoder getEncoder(String encodingName);
  *   public abstract CharDecoder getDecoder(String encodingName);
  * </pre>
  * <p/>
- * Each method returns an appropriate object or <tt>null</tt> if it cannot
- * translate the given encoding.  Typical <tt>CharCodec</tt> providers will
+ * Each method returns an appropriate object or {@code null} if it cannot
+ * translate the given encoding.  Typical {@code CharCodec} providers will
  * support more than one encoding.
  * <p/>
- * <p> If <tt>sun.io.StandardCodec</tt> is a provider of the <tt>CharCodec</tt>
+ * <p> If {@code sun.io.StandardCodec} is a provider of the {@code CharCodec}
  * service then its jar file would contain the file
- * <tt>META-INF/services/java.io.spi.CharCodec</tt>.  This file would contain
+ * {@code META-INF/services/java.io.spi.CharCodec}.  This file would contain
  * the single line:
  * <p/>
  * <pre>
@@ -169,7 +169,7 @@ public final class ServiceFinder<T> implements Iterable<T> {
      * <p/>
      * <p> This method transforms the name of the given service class into a
      * provider-configuration filename as described above and then uses the
-     * <tt>getResources</tt> method of the given class loader to find all
+     * {@code getResources} method of the given class loader to find all
      * available files with that name.  These files are then read and parsed to
      * produce a list of provider-class names.  The iterator that is returned
      * uses the given class loader to lookup and then instantiate each element
@@ -181,7 +181,7 @@ public final class ServiceFinder<T> implements Iterable<T> {
      *
      * @param service The service's abstract service class
      * @param loader  The class loader to be used to load provider-configuration files
-     *                and instantiate provider classes, or <tt>null</tt> if the system
+     *                and instantiate provider classes, or {@code null} if the system
      *                class loader (or, failing that the bootstrap class loader) is to
      *                be used
      * @throws ServiceConfigurationError If a provider-configuration file violates the specified format
@@ -227,9 +227,9 @@ public final class ServiceFinder<T> implements Iterable<T> {
     /**
      * Returns discovered objects incrementally.
      *
-     * @return An <tt>Iterator</tt> that yields provider objects for the given
+     * @return An {@code Iterator} that yields provider objects for the given
      *         service, in some arbitrary order.  The iterator will throw a
-     *         <tt>ServiceConfigurationError</tt> if a provider-configuration
+     *         {@code ServiceConfigurationError} if a provider-configuration
      *         file violates the specified format or if a provider class cannot
      *         be found and instantiated.
      */
@@ -319,8 +319,8 @@ public final class ServiceFinder<T> implements Iterable<T> {
      * @param u        The URL naming the configuration file to be parsed
      * @param returned A Set containing the names of provider classes that have already
      *                 been returned.  This set will be updated to contain the names
-     *                 that will be yielded from the returned <tt>Iterator</tt>.
-     * @return A (possibly empty) <tt>Iterator</tt> that will yield the
+     *                 that will be yielded from the returned {@code Iterator}.
+     * @return A (possibly empty) {@code Iterator} that will yield the
      *         provider-class names in the given configuration file that are
      *         not yet members of the returned set
      * @throws ServiceConfigurationError If an I/O error occurs while reading from the given URL, or

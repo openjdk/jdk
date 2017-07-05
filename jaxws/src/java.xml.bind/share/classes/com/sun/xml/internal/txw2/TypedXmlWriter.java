@@ -45,7 +45,7 @@ public interface TypedXmlWriter {
      * Commits this element (and all its descendants) to the output.
      *
      * <p>
-     * Short for <tt>_commit(true)</tt>.
+     * Short for {@code _commit(true)}.
      */
     void commit();
 

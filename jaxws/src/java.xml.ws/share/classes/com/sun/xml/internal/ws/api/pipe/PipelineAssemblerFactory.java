@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * <p>
  * To create a pipeline,
  * the JAX-WS runtime locates {@link PipelineAssemblerFactory}s through
- * the <tt>META-INF/services/com.sun.xml.internal.ws.api.pipe.PipelineAssemblerFactory</tt> files.
+ * the {@code META-INF/services/com.sun.xml.internal.ws.api.pipe.PipelineAssemblerFactory} files.
  * Factories found are checked to see if it supports the given binding ID one by one,
  * and the first valid {@link PipelineAssembler} returned will be used to create
  * a pipeline.

@@ -61,7 +61,7 @@ import java.lang.annotation.Target;
  *
  * <p> <b>Usage</b> </p>
  * <p>
- * The <tt>@XmlElementWrapper</tt> annotation can be used with the
+ * The {@code @XmlElementWrapper} annotation can be used with the
  * following program elements:
  * <ul>
  *   <li> JavaBean property </li>
@@ -120,7 +120,7 @@ public @interface XmlElementWrapper {
 
     /**
      * If true, the absence of the collection is represented by
-     * using <tt>xsi:nil='true'</tt>. Otherwise, it is represented by
+     * using {@code xsi:nil='true'}. Otherwise, it is represented by
      * the absence of the element.
      */
     boolean nillable() default false;
@@ -130,7 +130,7 @@ public @interface XmlElementWrapper {
      *
      * <p>
      * If required() is true, then the corresponding generated
-     * XML schema element declaration will have <tt>minOccurs="1"</tt>,
+     * XML schema element declaration will have {@code minOccurs="1"},
      * to indicate that the wrapper element is always expected.
      *
      * <p>

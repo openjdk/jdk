@@ -72,7 +72,7 @@ enum Form {
     }
 
     /**
-     * Writes the attribute on the generated &lt;schema> element.
+     * Writes the attribute on the generated {@code <schema>} element.
      */
     abstract void declare(String attName, Schema schema);
 

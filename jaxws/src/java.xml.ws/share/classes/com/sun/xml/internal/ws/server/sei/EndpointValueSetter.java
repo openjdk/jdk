@@ -53,10 +53,10 @@ public abstract class EndpointValueSetter {
      * @param obj
      *      The unmarshalled object.
      * @param args
-     *      The arguments that need to be given to the Java method invocation. If <tt>obj</tt>
-     *      is supposed to be returned as a {@link Holder} value, a suitable
-     *      {@link Holder} is obtained from this argument list and <tt>obj</tt>
-     *      is set.
+     *      The arguments that need to be given to the Java method invocation.
+     *      If {@code obj} is supposed to be returned as a {@link Holder}
+     *      value, a suitable {@link Holder} is obtained from
+     *      this argument list and {@code obj} is set.
      *
      */
     abstract void put(Object obj, Object[] args);
