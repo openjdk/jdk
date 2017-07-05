@@ -33,12 +33,15 @@ class Deoptimization : AllStatic {
   enum DeoptReason {
     Reason_many = -1,             // indicates presence of several reasons
     Reason_none = 0,              // indicates absence of a relevant deopt.
+    // Next 7 reasons are recorded per bytecode in DataLayout::trap_bits
     Reason_null_check,            // saw unexpected null or zero divisor (@bci)
     Reason_null_assert,           // saw unexpected non-null or non-zero (@bci)
     Reason_range_check,           // saw unexpected array index (@bci)
     Reason_class_check,           // saw unexpected object class (@bci)
     Reason_array_check,           // saw unexpected array class (aastore @bci)
     Reason_intrinsic,             // saw unexpected operand to intrinsic (@bci)
+    Reason_bimorphic,             // saw unexpected object class in bimorphic inlining (@bci)
+
     Reason_unloaded,              // unloaded class or constant pool entry
     Reason_uninitialized,         // bad class state (uninitialized)
     Reason_unreached,             // code is not reached, compiler
@@ -49,7 +52,7 @@ class Deoptimization : AllStatic {
     Reason_predicate,             // compiler generated predicate failed
     Reason_LIMIT,
     // Note:  Keep this enum in sync. with _trap_reason_name.
-    Reason_RECORDED_LIMIT = Reason_unloaded   // some are not recorded per bc
+    Reason_RECORDED_LIMIT = Reason_bimorphic  // some are not recorded per bc
     // Note:  Reason_RECORDED_LIMIT should be < 8 to fit into 3 bits of
     // DataLayout::trap_bits.  This dependency is enforced indirectly
     // via asserts, to avoid excessive direct header-to-header dependencies.
@@ -279,7 +282,7 @@ class Deoptimization : AllStatic {
                                        int trap_state);
 
   static bool reason_is_recorded_per_bytecode(DeoptReason reason) {
-    return reason > Reason_none && reason < Reason_RECORDED_LIMIT;
+    return reason > Reason_none && reason <= Reason_RECORDED_LIMIT;
   }
 
   static DeoptReason reason_recorded_per_bytecode_if_any(DeoptReason reason) {
