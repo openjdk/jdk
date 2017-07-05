@@ -1709,38 +1709,10 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
             // unsafe field access may not have a constant offset
             C->has_unsafe_access(),
             "Field accesses must be precise" );
-    // For oop loads, we expect the _type to be precise
-    if (klass == env->String_klass() &&
-        adr->is_AddP() && off != Type::OffsetBot) {
-      // For constant Strings treat the final fields as compile time constants.
-      // While we can list what field types java.lang.String has, it is more
-      // future-proof to handle all possible field types, anticipating future
-      // changes and experiments in String code.
-      Node* base = adr->in(AddPNode::Base);
-      const TypeOopPtr* t = phase->type(base)->isa_oopptr();
-      if (t != NULL && t->singleton()) {
-        ciField* field = env->String_klass()->get_field_by_offset(off, false);
-        if (field != NULL && field->is_final()) {
-          ciObject* string = t->const_oop();
-          ciConstant constant = string->as_instance()->field_value(field);
-          // Type::make_from_constant does not handle narrow oops, so handle it here.
-          // Everything else can use the factory method.
-          if ((constant.basic_type() == T_ARRAY || constant.basic_type() == T_OBJECT)
-                  && adr->bottom_type()->is_ptr_to_narrowoop()) {
-            return TypeNarrowOop::make_from_constant(constant.as_object(), true);
-          } else {
-            return Type::make_from_constant(constant, true);
-          }
-        }
-      }
-    }
+    // For oop loads, we expect the _type to be precise.
     // Optimizations for constant objects
     ciObject* const_oop = tinst->const_oop();
     if (const_oop != NULL) {
-      // For constant Boxed value treat the target field as a compile time constant.
-      if (tinst->is_ptr_to_boxed_value()) {
-        return tinst->get_const_boxed_value();
-      } else
       // For constant CallSites treat the target field as a compile time constant.
       if (const_oop->is_call_site()) {
         ciCallSite* call_site = const_oop->as_call_site();

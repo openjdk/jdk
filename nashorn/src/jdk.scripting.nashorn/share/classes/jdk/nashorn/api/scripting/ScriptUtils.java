@@ -74,9 +74,15 @@ public final class ScriptUtils {
      * @param func the function to wrap
      * @param sync the object to synchronize on
      * @return a synchronizing wrapper function
+     * @throws IllegalArgumentException if func does not represent a script function
      */
-    public static Object makeSynchronizedFunction(final ScriptFunction func, final Object sync) {
-        return func.createSynchronized(unwrap(sync));
+    public static Object makeSynchronizedFunction(final Object func, final Object sync) {
+        final Object unwrapped = unwrap(func);
+        if (unwrapped instanceof ScriptFunction) {
+            return ((ScriptFunction)unwrapped).createSynchronized(unwrap(sync));
+        }
+
+        throw new IllegalArgumentException();
     }
 
     /**
@@ -84,9 +90,19 @@ public final class ScriptUtils {
      *
      * @param obj object to be wrapped
      * @return wrapped object
+     * @throws IllegalArgumentException if obj cannot be wrapped
      */
-    public static ScriptObjectMirror wrap(final ScriptObject obj) {
-        return (ScriptObjectMirror) ScriptObjectMirror.wrap(obj, Context.getGlobal());
+    public static ScriptObjectMirror wrap(final Object obj) {
+        if (obj instanceof ScriptObjectMirror) {
+            return (ScriptObjectMirror)obj;
+        }
+
+        if (obj instanceof ScriptObject) {
+            final ScriptObject sobj = (ScriptObject)obj;
+            return (ScriptObjectMirror) ScriptObjectMirror.wrap(sobj, Context.getGlobal());
+        }
+
+        throw new IllegalArgumentException();
     }
 
     /**
@@ -135,7 +151,8 @@ public final class ScriptUtils {
      * Convert the given object to the given type.
      *
      * @param obj object to be converted
-     * @param type destination type to convert to
+     * @param type destination type to convert to. type is either a Class
+     * or nashorn representation of a Java type returned by Java.type() call in script.
      * @return converted object
      */
     public static Object convert(final Object obj, final Object type) {

@@ -28,7 +28,7 @@
 #include "asm/assembler.hpp"
 #include "memory/allocation.hpp"
 
-// All the basic framework for stubcode generation/debugging/printing.
+// All the basic framework for stub code generation/debugging/printing.
 
 
 // A StubCodeDesc describes a piece of generated code (usually stubs).
@@ -37,9 +37,10 @@
 // this may have to change if searching becomes too slow.
 
 class StubCodeDesc: public CHeapObj<mtCode> {
- protected:
+ private:
   static StubCodeDesc* _list;                  // the list of all descriptors
   static int           _count;                 // length of list
+  static bool          _frozen;                // determines whether _list modifications are allowed
 
   StubCodeDesc*        _next;                  // the next element in the linked list
   const char*          _group;                 // the group to which the stub code belongs
@@ -68,6 +69,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   static const char*   name_for(address pc);     // returns the name of the code containing pc or NULL
 
   StubCodeDesc(const char* group, const char* name, address begin, address end = NULL) {
+    assert(!_frozen, "no modifications allowed");
     assert(name != NULL, "no name specified");
     _next           = _list;
     _group          = group;
@@ -77,6 +79,8 @@ class StubCodeDesc: public CHeapObj<mtCode> {
     _end            = end;
     _list           = this;
   };
+
+  static void freeze();
 
   const char* group() const                      { return _group; }
   const char* name() const                       { return _name; }
@@ -117,7 +121,7 @@ class StubCodeGenerator: public StackObj {
 // later via an address pointing into it.
 
 class StubCodeMark: public StackObj {
- protected:
+ private:
   StubCodeGenerator* _cgen;
   StubCodeDesc*      _cdesc;
 

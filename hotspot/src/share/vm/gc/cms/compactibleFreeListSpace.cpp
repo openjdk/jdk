@@ -2206,13 +2206,13 @@ class VerifyAllBlksClosure: public BlkClosure {
     }
     if (res == 0) {
       LogHandle(gc, verify) log;
-      log.info("Livelock: no rank reduction!");
-      log.info(" Current:  addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n"
-               " Previous: addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n",
+      log.error("Livelock: no rank reduction!");
+      log.error(" Current:  addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n"
+                " Previous: addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n",
         p2i(addr),       res,        was_obj      ?"true":"false", was_live      ?"true":"false",
         p2i(_last_addr), _last_size, _last_was_obj?"true":"false", _last_was_live?"true":"false");
       ResourceMark rm;
-      _sp->print_on(log.info_stream());
+      _sp->print_on(log.error_stream());
       guarantee(false, "Verification failed.");
     }
     _last_addr = addr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@ BytecodeStream *MethodComparator::_s_old;
 BytecodeStream *MethodComparator::_s_new;
 ConstantPool* MethodComparator::_old_cp;
 ConstantPool* MethodComparator::_new_cp;
-BciMap *MethodComparator::_bci_map;
-bool MethodComparator::_switchable_test;
-GrowableArray<int> *MethodComparator::_fwd_jmps;
 
 bool MethodComparator::methods_EMCP(Method* old_method, Method* new_method) {
   if (old_method->code_size() != new_method->code_size())
@@ -55,7 +52,6 @@ bool MethodComparator::methods_EMCP(Method* old_method, Method* new_method) {
   BytecodeStream s_new(new_method);
   _s_old = &s_old;
   _s_new = &s_new;
-  _switchable_test = false;
   Bytecodes::Code c_old, c_new;
 
   while ((c_old = s_old.next()) >= 0) {
@@ -67,64 +63,6 @@ bool MethodComparator::methods_EMCP(Method* old_method, Method* new_method) {
   }
   return true;
 }
-
-
-bool MethodComparator::methods_switchable(Method* old_method, Method* new_method,
-                                          BciMap &bci_map) {
-  if (old_method->code_size() > new_method->code_size())
-    // Something has definitely been deleted in the new method, compared to the old one.
-    return false;
-
-  if (! check_stack_and_locals_size(old_method, new_method))
-    return false;
-
-  _old_cp = old_method->constants();
-  _new_cp = new_method->constants();
-  BytecodeStream s_old(old_method);
-  BytecodeStream s_new(new_method);
-  _s_old = &s_old;
-  _s_new = &s_new;
-  _bci_map = &bci_map;
-  _switchable_test = true;
-  GrowableArray<int> fwd_jmps(16);
-  _fwd_jmps = &fwd_jmps;
-  Bytecodes::Code c_old, c_new;
-
-  while ((c_old = s_old.next()) >= 0) {
-    if ((c_new = s_new.next()) < 0)
-      return false;
-    if (! (c_old == c_new && args_same(c_old, c_new))) {
-      int old_bci = s_old.bci();
-      int new_st_bci = s_new.bci();
-      bool found_match = false;
-      do {
-        c_new = s_new.next();
-        if (c_new == c_old && args_same(c_old, c_new)) {
-          found_match = true;
-          break;
-        }
-      } while (c_new >= 0);
-      if (! found_match)
-        return false;
-      int new_end_bci = s_new.bci();
-      bci_map.store_fragment_location(old_bci, new_st_bci, new_end_bci);
-    }
-  }
-
-  // Now we can test all forward jumps
-  for (int i = 0; i < fwd_jmps.length() / 2; i++) {
-    if (! bci_map.old_and_new_locations_same(fwd_jmps.at(i*2), fwd_jmps.at(i*2+1))) {
-      RC_TRACE(0x00800000,
-        ("Fwd jump miss: old dest = %d, calc new dest = %d, act new dest = %d",
-        fwd_jmps.at(i*2), bci_map.new_bci_for_old(fwd_jmps.at(i*2)),
-        fwd_jmps.at(i*2+1)));
-      return false;
-    }
-  }
-
-  return true;
-}
-
 
 bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   // BytecodeStream returns the correct standard Java bytecodes for various "fast"
@@ -275,22 +213,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_jsr       : {
     int old_ofs = _s_old->bytecode().get_offset_s2(c_old);
     int new_ofs = _s_new->bytecode().get_offset_s2(c_new);
-    if (_switchable_test) {
-      int old_dest = _s_old->bci() + old_ofs;
-      int new_dest = _s_new->bci() + new_ofs;
-      if (old_ofs < 0 && new_ofs < 0) {
-        if (! _bci_map->old_and_new_locations_same(old_dest, new_dest))
-          return false;
-      } else if (old_ofs > 0 && new_ofs > 0) {
-        _fwd_jmps->append(old_dest);
-        _fwd_jmps->append(new_dest);
-      } else {
-        return false;
-      }
-    } else {
-      if (old_ofs != new_ofs)
-        return false;
-    }
+    if (old_ofs != new_ofs)
+      return false;
     break;
   }
 
@@ -312,73 +236,19 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_jsr_w  : {
     int old_ofs = _s_old->bytecode().get_offset_s4(c_old);
     int new_ofs = _s_new->bytecode().get_offset_s4(c_new);
-    if (_switchable_test) {
-      int old_dest = _s_old->bci() + old_ofs;
-      int new_dest = _s_new->bci() + new_ofs;
-      if (old_ofs < 0 && new_ofs < 0) {
-        if (! _bci_map->old_and_new_locations_same(old_dest, new_dest))
-          return false;
-      } else if (old_ofs > 0 && new_ofs > 0) {
-        _fwd_jmps->append(old_dest);
-        _fwd_jmps->append(new_dest);
-      } else {
-        return false;
-      }
-    } else {
-      if (old_ofs != new_ofs)
-        return false;
-    }
+    if (old_ofs != new_ofs)
+      return false;
     break;
   }
 
   case Bytecodes::_lookupswitch : // fall through
   case Bytecodes::_tableswitch  : {
-    if (_switchable_test) {
-      address aligned_bcp_old = (address) round_to((intptr_t)_s_old->bcp() + 1, jintSize);
-      address aligned_bcp_new = (address) round_to((intptr_t)_s_new->bcp() + 1, jintSize);
-      int default_old = (int) Bytes::get_Java_u4(aligned_bcp_old);
-      int default_new = (int) Bytes::get_Java_u4(aligned_bcp_new);
-      _fwd_jmps->append(_s_old->bci() + default_old);
-      _fwd_jmps->append(_s_new->bci() + default_new);
-      if (c_old == Bytecodes::_lookupswitch) {
-        int npairs_old = (int) Bytes::get_Java_u4(aligned_bcp_old + jintSize);
-        int npairs_new = (int) Bytes::get_Java_u4(aligned_bcp_new + jintSize);
-        if (npairs_old != npairs_new)
-          return false;
-        for (int i = 0; i < npairs_old; i++) {
-          int match_old = (int) Bytes::get_Java_u4(aligned_bcp_old + (2+2*i)*jintSize);
-          int match_new = (int) Bytes::get_Java_u4(aligned_bcp_new + (2+2*i)*jintSize);
-          if (match_old != match_new)
-            return false;
-          int ofs_old = (int) Bytes::get_Java_u4(aligned_bcp_old + (2+2*i+1)*jintSize);
-          int ofs_new = (int) Bytes::get_Java_u4(aligned_bcp_new + (2+2*i+1)*jintSize);
-          _fwd_jmps->append(_s_old->bci() + ofs_old);
-          _fwd_jmps->append(_s_new->bci() + ofs_new);
-        }
-      } else if (c_old == Bytecodes::_tableswitch) {
-        int lo_old = (int) Bytes::get_Java_u4(aligned_bcp_old + jintSize);
-        int lo_new = (int) Bytes::get_Java_u4(aligned_bcp_new + jintSize);
-        if (lo_old != lo_new)
-          return false;
-        int hi_old = (int) Bytes::get_Java_u4(aligned_bcp_old + 2*jintSize);
-        int hi_new = (int) Bytes::get_Java_u4(aligned_bcp_new + 2*jintSize);
-        if (hi_old != hi_new)
-          return false;
-        for (int i = 0; i < hi_old - lo_old + 1; i++) {
-          int ofs_old = (int) Bytes::get_Java_u4(aligned_bcp_old + (3+i)*jintSize);
-          int ofs_new = (int) Bytes::get_Java_u4(aligned_bcp_new + (3+i)*jintSize);
-          _fwd_jmps->append(_s_old->bci() + ofs_old);
-          _fwd_jmps->append(_s_new->bci() + ofs_new);
-        }
-      }
-    } else { // !_switchable_test, can use fast rough compare
-      int len_old = _s_old->instruction_size();
-      int len_new = _s_new->instruction_size();
-      if (len_old != len_new)
-        return false;
-      if (memcmp(_s_old->bcp(), _s_new->bcp(), len_old) != 0)
-        return false;
-    }
+    int len_old = _s_old->instruction_size();
+    int len_new = _s_new->instruction_size();
+    if (len_old != len_new)
+      return false;
+    if (memcmp(_s_old->bcp(), _s_new->bcp(), len_old) != 0)
+      return false;
     break;
   }
   }

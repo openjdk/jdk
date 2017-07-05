@@ -287,22 +287,21 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         });
     }
 
-
     @Override
-    public boolean isInstance(final Object obj) {
-        if (! (obj instanceof ScriptObjectMirror)) {
+    public boolean isInstance(final Object instance) {
+        if (! (instance instanceof ScriptObjectMirror)) {
             return false;
         }
 
-        final ScriptObjectMirror instance = (ScriptObjectMirror)obj;
+        final ScriptObjectMirror mirror = (ScriptObjectMirror)instance;
         // if not belongs to my global scope, return false
-        if (global != instance.global) {
+        if (global != mirror.global) {
             return false;
         }
 
         return inGlobal(new Callable<Boolean>() {
             @Override public Boolean call() {
-                return sobj.isInstance(instance.sobj);
+                return sobj.isInstance(mirror.sobj);
             }
         });
     }
@@ -653,10 +652,10 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     }
 
     /**
-     * Make a script object mirror on given object if needed. Also converts ConsString instances to Strings.
+     * Make a script object mirror on given object if needed.
      *
      * @param obj object to be wrapped/converted
-     * @param homeGlobal global to which this object belongs. Not used for ConsStrings.
+     * @param homeGlobal global to which this object belongs.
      * @return wrapped/converted object
      */
     public static Object wrap(final Object obj, final Object homeGlobal) {
@@ -664,13 +663,13 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     }
 
     /**
-     * Make a script object mirror on given object if needed. Also converts ConsString instances to Strings. The
-     * created wrapper will implement the Java {@code List} interface if {@code obj} is a JavaScript
-     * {@code Array} object; this is compatible with Java JSON libraries expectations. Arrays retrieved through its
+     * Make a script object mirror on given object if needed. The created wrapper will implement
+     * the Java {@code List} interface if {@code obj} is a JavaScript {@code Array} object;
+     * this is compatible with Java JSON libraries expectations. Arrays retrieved through its
      * properties (transitively) will also implement the list interface.
      *
      * @param obj object to be wrapped/converted
-     * @param homeGlobal global to which this object belongs. Not used for ConsStrings.
+     * @param homeGlobal global to which this object belongs.
      * @return wrapped/converted object
      */
     public static Object wrapAsJSONCompatible(final Object obj, final Object homeGlobal) {
@@ -678,10 +677,10 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     }
 
     /**
-     * Make a script object mirror on given object if needed. Also converts ConsString instances to Strings.
+     * Make a script object mirror on given object if needed.
      *
      * @param obj object to be wrapped/converted
-     * @param homeGlobal global to which this object belongs. Not used for ConsStrings.
+     * @param homeGlobal global to which this object belongs.
      * @param jsonCompatible if true, the created wrapper will implement the Java {@code List} interface if
      * {@code obj} is a JavaScript {@code Array} object. Arrays retrieved through its properties (transitively)
      * will also implement the list interface.

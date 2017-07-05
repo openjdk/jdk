@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,7 @@ jint init_globals() {
   }
   javaClasses_init();   // must happen after vtable initialization
   stubRoutines_init2(); // note: StubRoutines need 2-phase init
+  MethodHandles::generate_adapters();
   CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::StubRoutines2);
 
 #if INCLUDE_NMT
@@ -181,8 +182,7 @@ void exit_globals() {
   }
 }
 
-
-static bool _init_completed = false;
+static volatile bool _init_completed = false;
 
 bool is_init_completed() {
   return _init_completed;

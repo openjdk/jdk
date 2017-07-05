@@ -54,6 +54,9 @@
 
 #else
 
+/*SO_REUSEPORT is not supported on Windows, define it to 0*/
+#define SO_REUSEPORT 0
+
 /* Retain this code a little longer to support building in
  * old environments.  _MSC_VER is defined as:
  *     1200 for MSVC++ 6.0
@@ -353,3 +356,4 @@ JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0_XP
 
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0_XP
 (JNIEnv *env, jclass cls, jstring name, jint index);
+

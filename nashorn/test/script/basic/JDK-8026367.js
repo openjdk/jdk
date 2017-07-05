@@ -37,10 +37,12 @@ var obj = {
     // Sync called with one argument will synchronize on this-object of invocation
     inc: sync(function(d) {
         this.count += d;
+        Assert.assertTrue(java.lang.Thread.holdsLock(this));
     }),
     // Pass explicit object to synchronize on as second argument
     dec: sync(function(d) {
         this.count -= d;
+        Assert.assertTrue(java.lang.Thread.holdsLock(obj));
     }, obj)
 };
 

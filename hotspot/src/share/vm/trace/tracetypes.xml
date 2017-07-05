@@ -126,6 +126,11 @@ Now we can use the content + data type in declaring event fields.
       <value type="UTF8" field="when" label="when" />
     </content_type>
 
+    <content_type id="G1HeapRegionType" hr_name="G1 Heap Region Type"
+                  type="U1" jvm_type="G1HEAPREGIONTYPE">
+      <value type="UTF8" field="type" label="type" />
+    </content_type>
+    
     <content_type id="G1YCType" hr_name="G1 YC Type"
                   type="U1" jvm_type="G1YCTYPE">
       <value type="UTF8" field="type" label="type" />
@@ -343,6 +348,10 @@ Now we can use the content + data type in declaring event fields.
 
     <!-- GCWHEN -->
     <primary_type symbol="GCWHEN" datatype="U1" contenttype="GCWHEN"
+                  type="u1" sizeop="sizeof(u1)" />
+
+    <!-- G1HEAPREGIONTYPE -->
+    <primary_type symbol="G1HEAPREGIONTYPE" datatype="U1" contenttype="G1HEAPREGIONTYPE"
                   type="u1" sizeop="sizeof(u1)" />
 
     <!-- G1YCType -->
