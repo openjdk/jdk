@@ -26,8 +26,6 @@
 package com.sun.tools.jdeps;
 
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.Exports;
-import java.lang.module.ModuleDescriptor.Opens;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,6 +53,7 @@ class Module extends Archive {
 
     private final ModuleDescriptor descriptor;
     private final Map<String, Set<String>> exports;
+    private final Map<String, Set<String>> opens;
     private final boolean isSystem;
     private final URI location;
 
@@ -63,6 +62,7 @@ class Module extends Archive {
         this.descriptor = null;
         this.location = null;
         this.exports = Collections.emptyMap();
+        this.opens = Collections.emptyMap();
         this.isSystem = true;
     }
 
@@ -70,12 +70,14 @@ class Module extends Archive {
                    URI location,
                    ModuleDescriptor descriptor,
                    Map<String, Set<String>> exports,
+                   Map<String, Set<String>> opens,
                    boolean isSystem,
                    ClassFileReader reader) {
         super(name, location, reader);
         this.descriptor = descriptor;
         this.location = location;
         this.exports = Collections.unmodifiableMap(exports);
+        this.opens = Collections.unmodifiableMap(opens);
         this.isSystem = isSystem;
     }
 
@@ -124,35 +126,52 @@ class Module extends Archive {
         return descriptor.packages();
     }
 
-    /**
-     * Tests if the package of the given name is exported.
-     */
-    public boolean isExported(String pn) {
-        return exports.containsKey(pn) ? exports.get(pn).isEmpty() : false;
-    }
-
     public boolean isJDKUnsupported() {
         return JDK_UNSUPPORTED.equals(this.name());
     }
 
     /**
-     * Converts this module to a strict module with the given dependences
+     * Converts this module to a normal module with the given dependences
      *
      * @throws IllegalArgumentException if this module is not an automatic module
      */
-    public Module toStrictModule(Map<String, Boolean> requires) {
+    public Module toNormalModule(Map<String, Boolean> requires) {
         if (!isAutomatic()) {
-            throw new IllegalArgumentException(name() + " already a strict module");
+            throw new IllegalArgumentException(name() + " not an automatic module");
         }
-        return new StrictModule(this, requires);
+        return new NormalModule(this, requires);
     }
 
     /**
-     * Tests if the package of the given name is qualifiedly exported
-     * to the target.
+     * Tests if the package of the given name is exported.
+     */
+    public boolean isExported(String pn) {
+        return exports.containsKey(pn) && exports.get(pn).isEmpty();
+    }
+
+    /**
+     * Tests if the package of the given name is exported to the target
+     * in a qualified fashion.
      */
     public boolean isExported(String pn, String target) {
-        return isExported(pn) || exports.containsKey(pn) && exports.get(pn).contains(target);
+        return isExported(pn)
+                || exports.containsKey(pn) && exports.get(pn).contains(target);
+    }
+
+    /**
+     * Tests if the package of the given name is open.
+     */
+    public boolean isOpen(String pn) {
+        return opens.containsKey(pn) && opens.get(pn).isEmpty();
+    }
+
+    /**
+     * Tests if the package of the given name is open to the target
+     * in a qualified fashion.
+     */
+    public boolean isOpen(String pn, String target) {
+        return isOpen(pn)
+            || opens.containsKey(pn) && opens.get(pn).contains(target);
     }
 
     @Override
@@ -193,19 +212,28 @@ class Module extends Archive {
             }
 
             Map<String, Set<String>> exports = new HashMap<>();
+            Map<String, Set<String>> opens = new HashMap<>();
 
-            descriptor.exports().stream()
-                .forEach(exp -> exports.computeIfAbsent(exp.source(), _k -> new HashSet<>())
-                                    .addAll(exp.targets()));
-
-            return new Module(name, location, descriptor, exports, isSystem, reader);
+            if (descriptor.isAutomatic()) {
+                // ModuleDescriptor::exports and opens returns an empty set
+                descriptor.packages().forEach(pn -> exports.put(pn, Collections.emptySet()));
+                descriptor.packages().forEach(pn -> opens.put(pn, Collections.emptySet()));
+            } else {
+                descriptor.exports().stream()
+                          .forEach(exp -> exports.computeIfAbsent(exp.source(), _k -> new HashSet<>())
+                                                 .addAll(exp.targets()));
+                descriptor.opens().stream()
+                    .forEach(exp -> opens.computeIfAbsent(exp.source(), _k -> new HashSet<>())
+                        .addAll(exp.targets()));
+            }
+            return new Module(name, location, descriptor, exports, opens, isSystem, reader);
         }
     }
 
     private static class UnnamedModule extends Module {
         private UnnamedModule() {
             super("unnamed", null, null,
-                  Collections.emptyMap(),
+                  Collections.emptyMap(), Collections.emptyMap(),
                   false, null);
         }
 
@@ -230,19 +258,22 @@ class Module extends Archive {
         }
     }
 
-    private static class StrictModule extends Module {
+    /**
+     * A normal module has a module-info.class
+     */
+    private static class NormalModule extends Module {
         private final ModuleDescriptor md;
 
         /**
-         * Converts the given automatic module to a strict module.
+         * Converts the given automatic module to a normal module.
          *
          * Replace this module's dependences with the given requires and also
          * declare service providers, if specified in META-INF/services configuration file
          */
-        private StrictModule(Module m, Map<String, Boolean> requires) {
-            super(m.name(), m.location, m.descriptor, m.exports, m.isSystem, m.reader());
+        private NormalModule(Module m, Map<String, Boolean> requires) {
+            super(m.name(), m.location, m.descriptor, m.exports, m.opens, m.isSystem, m.reader());
 
-            ModuleDescriptor.Builder builder = ModuleDescriptor.module(m.name());
+            ModuleDescriptor.Builder builder = ModuleDescriptor.newModule(m.name());
             requires.keySet().forEach(mn -> {
                 if (requires.get(mn).equals(Boolean.TRUE)) {
                     builder.requires(Set.of(ModuleDescriptor.Requires.Modifier.TRANSITIVE), mn);
@@ -250,16 +281,10 @@ class Module extends Archive {
                     builder.requires(mn);
                 }
             });
-            m.descriptor.exports().forEach(e -> builder.exports(e));
-            m.descriptor.opens().forEach(o -> builder.opens(o));
-            m.descriptor.uses().forEach(s -> builder.uses(s));
-            m.descriptor.provides().forEach(p -> builder.provides(p));
-
-            Set<String> concealed = new HashSet<>(m.descriptor.packages());
-            m.descriptor.exports().stream().map(Exports::source).forEach(concealed::remove);
-            m.descriptor.opens().stream().map(Opens::source).forEach(concealed::remove);
-            concealed.forEach(builder::contains);
-
+            // exports all packages
+            m.descriptor.packages().forEach(builder::exports);
+            m.descriptor.uses().forEach(builder::uses);
+            m.descriptor.provides().forEach(builder::provides);
             this.md = builder.build();
         }
 

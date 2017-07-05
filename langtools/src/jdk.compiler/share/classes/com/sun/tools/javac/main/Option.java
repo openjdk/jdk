@@ -579,7 +579,7 @@ public enum Option {
         }
     },
 
-    XMODULE("-Xmodule:", "opt.arg.module", "opt.module", EXTENDED, BASIC) {
+    XMODULE("-Xmodule:", "opt.arg.module", "opt.module", HIDDEN, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String arg) throws InvalidValueException {
             String prev = helper.get(XMODULE);
