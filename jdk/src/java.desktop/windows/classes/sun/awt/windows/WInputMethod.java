@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.im.InputMethodAdapter;
 
 final class WInputMethod extends InputMethodAdapter
@@ -606,18 +609,17 @@ final class WInputMethod extends InputMethodAdapter
 
     // java.awt.Toolkit#getNativeContainer() is not available
     //  from this package
-    @SuppressWarnings("deprecation")
     private WComponentPeer getNearestNativePeer(Component comp)
     {
         if (comp==null)     return null;
-
-        ComponentPeer peer = comp.getPeer();
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        ComponentPeer peer = acc.getPeer(comp);
         if (peer==null)     return null;
 
         while (peer instanceof java.awt.peer.LightweightPeer) {
             comp = comp.getParent();
             if (comp==null) return null;
-            peer = comp.getPeer();
+            peer = acc.getPeer(comp);
             if (peer==null) return null;
         }
 

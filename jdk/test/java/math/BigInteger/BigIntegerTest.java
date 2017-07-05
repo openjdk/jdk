@@ -40,6 +40,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.util.Random;
+import jdk.testlibrary.RandomFactory;
 
 /**
  * This is a simple test class created to ensure that the results

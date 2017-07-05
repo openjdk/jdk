@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,12 +290,14 @@ AwtCheckbox::OwnerDrawItem(UINT /*ctrlId*/, DRAWITEMSTRUCT& drawInfo)
     if ((drawInfo.itemState & ODS_FOCUS) &&
         ((drawInfo.itemAction & ODA_FOCUS)||
          (drawInfo.itemAction &ODA_DRAWENTIRE))) {
-        VERIFY(::DrawFocusRect(hDC, &focusRect));
+        if(::DrawFocusRect(hDC, &focusRect) == 0)
+            VERIFY(::GetLastError() == 0);
     }
     /*  erase focus rect */
     else if (!(drawInfo.itemState & ODS_FOCUS) &&
              (drawInfo.itemAction & ODA_FOCUS)) {
-        VERIFY(::DrawFocusRect(hDC, &focusRect));
+        if(::DrawFocusRect(hDC, &focusRect) == 0)
+            VERIFY(::GetLastError() == 0);
     }
 
     /*  Notify any subclasses */

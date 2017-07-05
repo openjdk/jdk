@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,13 +155,12 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * change the look of the checkbox item without changing its
      * functionality.
      * Most applications do not call this method directly.
-     * @see     java.awt.Toolkit#createCheckboxMenuItem(java.awt.CheckboxMenuItem)
      * @see     java.awt.Component#getToolkit()
      */
     public void addNotify() {
         synchronized (getTreeLock()) {
             if (peer == null)
-                peer = Toolkit.getDefaultToolkit().createCheckboxMenuItem(this);
+                peer = getComponentFactory().createCheckboxMenuItem(this);
             super.addNotify();
         }
     }

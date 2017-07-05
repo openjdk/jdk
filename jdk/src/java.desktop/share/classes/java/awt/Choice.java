@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,13 +143,12 @@ public class Choice extends Component implements ItemSelectable, Accessible {
      * Creates the <code>Choice</code>'s peer.  This peer allows us
      * to change the look
      * of the <code>Choice</code> without changing its functionality.
-     * @see     java.awt.Toolkit#createChoice(java.awt.Choice)
      * @see     java.awt.Component#getToolkit()
      */
     public void addNotify() {
         synchronized (getTreeLock()) {
             if (peer == null)
-                peer = getToolkit().createChoice(this);
+                peer = getComponentFactory().createChoice(this);
             super.addNotify();
         }
     }

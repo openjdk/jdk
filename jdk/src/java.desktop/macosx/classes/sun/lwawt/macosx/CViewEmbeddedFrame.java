@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.AWTKeyStroke;
 import java.awt.Toolkit;
 import java.lang.reflect.InvocationTargetException;
 
+import sun.awt.AWTAccessor;
 import sun.awt.EmbeddedFrame;
 import sun.lwawt.LWWindowPeer;
 
@@ -48,10 +49,9 @@ public class CViewEmbeddedFrame extends EmbeddedFrame {
         this.nsViewPtr = nsViewPtr;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void addNotify() {
-        if (getPeer() == null) {
+        if (!isDisplayable()) {
             LWCToolkit toolkit = (LWCToolkit) Toolkit.getDefaultToolkit();
             setPeer(toolkit.createEmbeddedFrame(this));
         }
@@ -78,11 +78,12 @@ public class CViewEmbeddedFrame extends EmbeddedFrame {
      * Synthetic event delivery for focus management
      */
     @Override
-    @SuppressWarnings("deprecation")
     public void synthesizeWindowActivation(boolean activated) {
         if (isActive != activated) {
             isActive = activated;
-            ((LWWindowPeer)getPeer()).notifyActivation(activated, null);
+            final LWWindowPeer peer = AWTAccessor.getComponentAccessor()
+                                                 .getPeer(this);
+            peer.notifyActivation(activated, null);
         }
     }
 
@@ -91,13 +92,14 @@ public class CViewEmbeddedFrame extends EmbeddedFrame {
      * Designed to be called from the main thread
      * This method should be called once from the initialization of the SWT_AWT Bridge
      */
-    @SuppressWarnings("deprecation")
     public void validateWithBounds(final int x, final int y, final int width, final int height) {
         try {
+            final LWWindowPeer peer = AWTAccessor.getComponentAccessor()
+                                                 .getPeer(this);
             LWCToolkit.invokeAndWait(new Runnable() {
                 @Override
                 public void run() {
-                    ((LWWindowPeer) getPeer()).setBoundsPrivate(0, 0, width, height);
+                    peer.setBoundsPrivate(0, 0, width, height);
                     validate();
                     setVisible(true);
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.util.ThreadGroupUtils;
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.windows.WComponentPeer;
@@ -531,11 +532,11 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * @param comp component to check for hw children
      * @return true if Component has heavyweight children
      */
-    @SuppressWarnings("deprecation")
     private static boolean hasHWChildren(Component comp) {
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         if (comp instanceof Container) {
             for (Component c : ((Container)comp).getComponents()) {
-                if (c.getPeer() instanceof WComponentPeer || hasHWChildren(c)) {
+                if (acc.getPeer(c) instanceof WComponentPeer || hasHWChildren(c)) {
                     return true;
                 }
             }

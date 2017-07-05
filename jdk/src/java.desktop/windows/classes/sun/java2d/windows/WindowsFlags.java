@@ -126,7 +126,6 @@ public class WindowsFlags {
     private static boolean disableRegistry;
     private static boolean magPresent;
     private static boolean setHighDPIAware;
-    private static String javaVersion;
     // TODO: other flags, including nopixfmt
 
     static {
@@ -240,17 +239,6 @@ public class WindowsFlags {
                     getBooleanProp("sun.java2d.checkRegistry", false);
                 disableRegistry =
                     getBooleanProp("sun.java2d.disableRegistry", false);
-                javaVersion = System.getProperty("java.version");
-                if (javaVersion == null) {
-                    // Cannot be true, nonetheless...
-                    javaVersion = "default";
-                } else {
-                    int dashIndex = javaVersion.indexOf('-');
-                    if (dashIndex >= 0) {
-                        // an interim release; use only the part preceding the -
-                        javaVersion = javaVersion.substring(0, dashIndex);
-                    }
-                }
                 String dpiOverride = System.getProperty("sun.java2d.dpiaware");
                 if (dpiOverride != null) {
                     setHighDPIAware = dpiOverride.equalsIgnoreCase("true");

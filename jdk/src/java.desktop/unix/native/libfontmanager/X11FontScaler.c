@@ -234,7 +234,7 @@ Java_sun_font_NativeFont_getGlyphAdvance
 
     NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
     AWTFont xFont = (AWTFont)context->xFont;
-    AWTChar xcs;
+    AWTChar xcs = NULL;
     jfloat advance = 0.0f;
 
     if (xFont == NULL || context->ptSize == NO_POINTSIZE) {

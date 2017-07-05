@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,17 @@ public class LineBorder extends AbstractBorder
     private static Border blackLine;
     private static Border grayLine;
 
+    /**
+     * Thickness of the border.
+     */
     protected int thickness;
+    /**
+     * Color of the border.
+     */
     protected Color lineColor;
+    /**
+     * Whether or not the border has rounded corners.
+     */
     protected boolean roundedCorners;
 
     /**

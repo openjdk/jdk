@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -381,6 +381,7 @@ public abstract class View implements SwingConstants {
     /**
      * Removes one of the children at the given position.
      * This is a convenience call to <code>replace</code>.
+     * @param i the position
      * @since 1.3
      */
     public void remove(int i) {
@@ -444,6 +445,7 @@ public abstract class View implements SwingConstants {
      * position.
      *
      * @param pos the position &gt;= 0
+     * @param b the bias
      * @return  index of the view representing the given position, or
      *   -1 if no view represents that position
      * @since 1.3
@@ -480,6 +482,7 @@ public abstract class View implements SwingConstants {
      * the {@code BadLocationException} will be thrown.
      *
      * @param pos the position to convert
+     * @param b the bias
      * @param a the allocated region in which to render
      * @param direction the direction from the current position that can
      *  be thought of as the arrow keys typically found on a keyboard.
@@ -490,6 +493,7 @@ public abstract class View implements SwingConstants {
      * <li>SwingConstants.NORTH
      * <li>SwingConstants.SOUTH
      * </ul>
+     * @param biasRet the returned bias
      * @return the location within the model that best represents the next
      *  location visual position
      * @exception BadLocationException the given position is not a valid
@@ -662,6 +666,7 @@ public abstract class View implements SwingConstants {
      * @param x the X coordinate &gt;= 0
      * @param y the Y coordinate &gt;= 0
      * @param a the allocated region in which to render
+     * @param biasReturn the returned bias
      * @return the location within the model that best represents the
      *  given point in the view &gt;= 0.  The <code>biasReturn</code>
      *  argument will be
@@ -864,6 +869,7 @@ public abstract class View implements SwingConstants {
      * for the purpose of rendering or layout, and should always
      * access them through the <code>AttributeSet</code> returned
      * by this method.
+     * @return the attributes to use when rendering
      */
     public AttributeSet getAttributes() {
         return elem.getAttributes();
@@ -1026,6 +1032,10 @@ public abstract class View implements SwingConstants {
      * Returns the tooltip text at the specified location. The default
      * implementation returns the value from the child View identified by
      * the passed in location.
+     * @param x the x coordinate
+     * @param y the y coordinate
+     * @param allocation current allocation of the View.
+     * @return the tooltip text at the specified location
      *
      * @since 1.4
      * @see JTextComponent#getToolTipText

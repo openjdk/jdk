@@ -1226,7 +1226,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             Window owner = XWindowPeer.getDecoratedOwner(actualFocusedWindow);
 
             if (owner != null && owner == target) {
-                setActualFocusedWindow((XWindowPeer) AWTAccessor.getComponentAccessor().getPeer(actualFocusedWindow));
+                setActualFocusedWindow(AWTAccessor.getComponentAccessor().getPeer(actualFocusedWindow));
             }
         }
         super.handleWindowFocusOut(oppositeWindow, serial);

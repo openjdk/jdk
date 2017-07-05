@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,6 @@ public class DefaultFocusTraversalPolicy
      * @return <code>true</code> if aComponent meets the above requirements;
      *         <code>false</code> otherwise
      */
-    @SuppressWarnings("deprecation")
     protected boolean accept(Component aComponent) {
         if (!(aComponent.isVisible() && aComponent.isDisplayable() &&
               aComponent.isEnabled()))
@@ -123,7 +122,7 @@ public class DefaultFocusTraversalPolicy
             return focusable;
         }
 
-        ComponentPeer peer = aComponent.getPeer();
+        ComponentPeer peer = aComponent.peer;
         return (peer != null && peer.isFocusable());
     }
 }

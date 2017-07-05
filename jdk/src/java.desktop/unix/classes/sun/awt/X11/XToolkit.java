@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,6 +175,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return uidefaults;
     }
 
+    @Override
     public void loadSystemColors(int[] systemColors) {
         nativeLoadSystemColors(systemColors);
         MotifColorUtilities.loadSystemColors(systemColors);
@@ -347,18 +348,21 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
+    @Override
     public ButtonPeer createButton(Button target) {
         ButtonPeer peer = new XButtonPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public FramePeer createLightweightFrame(LightweightFrame target) {
         FramePeer peer = new XLightweightFramePeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public FramePeer createFrame(Frame target) {
         FramePeer peer = new XFramePeer(target);
         targetCreatedPeer(target, peer);
@@ -540,6 +544,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     static native void awt_toolkit_init();
 
+    @Override
     public void run() {
         awt_toolkit_init();
         run(PRIMARY_LOOP);
@@ -605,7 +610,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     Component owner =
                         XKeyboardFocusManagerPeer.getInstance().getCurrentFocusOwner();
                     if (owner != null) {
-                        XWindow ownerWindow = (XWindow) AWTAccessor.getComponentAccessor().getPeer(owner);
+                        XWindow ownerWindow = AWTAccessor.getComponentAccessor().getPeer(owner);
                         if (ownerWindow != null) {
                             w = ownerWindow.getContentWindow();
                         }
@@ -680,10 +685,12 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return screenHeight;
     }
 
+    @Override
     protected int getScreenWidth() {
         return getDefaultScreenWidth();
     }
 
+    @Override
     protected int getScreenHeight() {
         return getDefaultScreenHeight();
     }
@@ -724,6 +731,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * not set, we try to calculate the insets ourselves using
      * getScreenInsetsManually method.
      */
+    @Override
     public Insets getScreenInsets(GraphicsConfiguration gc)
     {
         XNETProtocol netProto = XWM.getWM().getNETProtocol();
@@ -911,6 +919,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         SunToolkit.targetDisposedPeer(target, peer);
     }
 
+    @Override
     public RobotPeer createRobot(Robot target, GraphicsDevice screen) {
         return new XRobotPeer(screen.getDefaultConfiguration());
     }
@@ -922,10 +931,12 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * automatically.  The setter method for this property is
      * irrelevant on X.
      */
+    @Override
     public void setDynamicLayout(boolean b) {
         dynamicLayoutSetting = b;
     }
 
+    @Override
     protected boolean isDynamicLayoutSet() {
         return dynamicLayoutSetting;
     }
@@ -937,15 +948,17 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return XWM.getWM().supportsDynamicLayout();
     }
 
+    @Override
     public boolean isDynamicLayoutActive() {
         return isDynamicLayoutSupported();
     }
 
-
+    @Override
     public FontPeer getFontPeer(String name, int style){
         return new XFontPeer(name, style);
     }
 
+    @Override
     public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException {
         final LightweightFrame f = SunToolkit.getLightweightFrame(dge.getComponent());
         if (f != null) {
@@ -955,6 +968,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return XDragSourceContextPeer.createDragSourceContextPeer(dge);
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T extends DragGestureRecognizer> T
     createDragGestureRecognizer(Class<T> recognizerClass,
@@ -974,6 +988,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             return null;
     }
 
+    @Override
     public CheckboxMenuItemPeer createCheckboxMenuItem(CheckboxMenuItem target) {
         XCheckboxMenuItemPeer peer = new XCheckboxMenuItemPeer(target);
         //vb157120: looks like we don't need to map menu items
@@ -982,6 +997,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return peer;
     }
 
+    @Override
     public MenuItemPeer createMenuItem(MenuItem target) {
         XMenuItemPeer peer = new XMenuItemPeer(target);
         //vb157120: looks like we don't need to map menu items
@@ -990,72 +1006,84 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return peer;
     }
 
+    @Override
     public TextFieldPeer createTextField(TextField target) {
         TextFieldPeer  peer = new XTextFieldPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public LabelPeer createLabel(Label target) {
         LabelPeer  peer = new XLabelPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public ListPeer createList(java.awt.List target) {
         ListPeer peer = new XListPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public CheckboxPeer createCheckbox(Checkbox target) {
         CheckboxPeer peer = new XCheckboxPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public ScrollbarPeer createScrollbar(Scrollbar target) {
         XScrollbarPeer peer = new XScrollbarPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public ScrollPanePeer createScrollPane(ScrollPane target) {
         XScrollPanePeer peer = new XScrollPanePeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public TextAreaPeer createTextArea(TextArea target) {
         TextAreaPeer peer = new XTextAreaPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public ChoicePeer createChoice(Choice target) {
         XChoicePeer peer = new XChoicePeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public CanvasPeer createCanvas(Canvas target) {
         XCanvasPeer peer = (isXEmbedServerRequested() ? new XEmbedCanvasPeer(target) : new XCanvasPeer(target));
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public PanelPeer createPanel(Panel target) {
         PanelPeer peer = new XPanelPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public WindowPeer createWindow(Window target) {
         WindowPeer peer = new XWindowPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public DialogPeer createDialog(Dialog target) {
         DialogPeer peer = new XDialogPeer(target);
         targetCreatedPeer(target, peer);
@@ -1076,6 +1104,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return sunAwtDisableGtkFileDialogs.booleanValue();
     }
 
+    @Override
     public FileDialogPeer createFileDialog(FileDialog target) {
         FileDialogPeer peer = null;
         // The current GtkFileChooser is available from GTK+ 2.4
@@ -1088,12 +1117,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return peer;
     }
 
+    @Override
     public MenuBarPeer createMenuBar(MenuBar target) {
         XMenuBarPeer peer = new XMenuBarPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public MenuPeer createMenu(Menu target) {
         XMenuPeer peer = new XMenuPeer(target);
         //vb157120: looks like we don't need to map menu items
@@ -1102,12 +1133,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return peer;
     }
 
+    @Override
     public PopupMenuPeer createPopupMenu(PopupMenu target) {
         XPopupMenuPeer peer = new XPopupMenuPeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }
 
+    @Override
     public synchronized MouseInfoPeer getMouseInfoPeer() {
         if (xPeer == null) {
             xPeer = new XMouseInfoPeer();
@@ -1128,6 +1161,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return peer;
     }
 
+    @Override
     public KeyboardFocusManagerPeer getKeyboardFocusManagerPeer() throws HeadlessException {
         return XKeyboardFocusManagerPeer.getInstance();
     }
@@ -1135,11 +1169,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     /**
      * Returns a new custom cursor.
      */
+    @Override
     public Cursor createCustomCursor(Image cursor, Point hotSpot, String name)
       throws IndexOutOfBoundsException {
         return new XCustomCursor(cursor, hotSpot, name);
     }
 
+    @Override
     public TrayIconPeer createTrayIcon(TrayIcon target)
       throws HeadlessException, AWTException
     {
@@ -1148,11 +1184,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return peer;
     }
 
+    @Override
     public SystemTrayPeer createSystemTray(SystemTray target) throws HeadlessException {
         SystemTrayPeer peer = new XSystemTrayPeer(target);
         return peer;
     }
 
+    @Override
     public boolean isTraySupported() {
         XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
         if (peer != null) {
@@ -1169,16 +1207,19 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     /**
      * Returns the supported cursor size
      */
+    @Override
     public Dimension getBestCursorSize(int preferredWidth, int preferredHeight) {
         return XCustomCursor.getBestCursorSize(
                                                java.lang.Math.max(1,preferredWidth), java.lang.Math.max(1,preferredHeight));
     }
 
 
+    @Override
     public int getMaximumCursorColors() {
         return 2;  // Black and white.
     }
 
+    @Override
     public Map<TextAttribute, ?> mapInputMethodHighlight( InputMethodHighlight highlight) {
         return XInputMethod.mapInputMethodHighlight(highlight);
     }
@@ -1196,6 +1237,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
+    @Override
     public  Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
@@ -1209,6 +1251,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return clipboard;
     }
 
+    @Override
     public Clipboard getSystemSelection() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
@@ -1222,6 +1265,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return selection;
     }
 
+    @Override
     public void beep() {
         awtLock();
         try {
@@ -1232,6 +1276,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
+    @Override
     public PrintJob getPrintJob(final Frame frame, final String doctitle,
                                 final Properties props) {
 
@@ -1247,6 +1292,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return printJob;
     }
 
+    @Override
     public PrintJob getPrintJob(final Frame frame, final String doctitle,
                 final JobAttributes jobAttributes,
                 final PageAttributes pageAttributes)
@@ -1274,6 +1320,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
+    @Override
     public int getScreenResolution() {
         long display = getDisplay();
         awtLock();
@@ -1299,6 +1346,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return screenmodel;
     }
 
+    @Override
     public ColorModel getColorModel() {
         return getStaticColorModel();
     }
@@ -1306,6 +1354,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     /**
      * Returns a new input method adapter descriptor for native input methods.
      */
+    @Override
     public InputMethodDescriptor getInputMethodAdapterDescriptor() throws AWTException {
         return new XInputMethodDescriptor();
     }
@@ -1357,6 +1406,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
+    @Override
     public boolean isFrameStateSupported(int state)
       throws HeadlessException
     {
@@ -1399,6 +1449,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     private static final XEventDispatcher timeFetcher =
     new XEventDispatcher() {
+            @Override
             public void dispatchEvent(XEvent ev) {
                 switch (ev.get_type()) {
                   case XConstants.PropertyNotify:
@@ -1467,6 +1518,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
         return timeStamp;
     }
+    @Override
     protected void initializeDesktopProperties() {
         desktopProperties.put("DnD.Autoscroll.initialDelay",
                               Integer.valueOf(50));
@@ -1525,6 +1577,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private final static String postfix = ".32x32";
     private static final String dndPrefix  = "DnD.";
 
+    @Override
     protected Object lazilyLoadDesktopProperty(String name) {
         if (name.startsWith(prefix)) {
             String cursorName = name.substring(prefix.length(), name.length()) + postfix;
@@ -1547,6 +1600,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return super.lazilyLoadDesktopProperty(name);
     }
 
+    @Override
     public synchronized void addPropertyChangeListener(String name, PropertyChangeListener pcl) {
         if (name == null) {
             // See JavaDoc for the Toolkit.addPropertyChangeListener() method
@@ -2045,12 +2099,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     /**
      * @see sun.awt.SunToolkit#needsXEmbedImpl
      */
+    @Override
     protected boolean needsXEmbedImpl() {
         // XToolkit implements supports for XEmbed-client protocol and
         // requires the supports from the embedding host for it to work.
         return true;
     }
 
+    @Override
     public boolean isModalityTypeSupported(Dialog.ModalityType modalityType) {
         return (modalityType == null) ||
                (modalityType == Dialog.ModalityType.MODELESS) ||
@@ -2059,6 +2115,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                (modalityType == Dialog.ModalityType.TOOLKIT_MODAL);
     }
 
+    @Override
     public boolean isModalExclusionTypeSupported(Dialog.ModalExclusionType exclusionType) {
         return (exclusionType == null) ||
                (exclusionType == Dialog.ModalExclusionType.NO_EXCLUDE) ||
@@ -2081,6 +2138,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             .removeSourceEvents(queue, source, removeAllEvents);
     }
 
+    @Override
     public boolean isAlwaysOnTopSupported() {
         for (XLayerProtocol proto : XWM.getWM().getProtocols(XLayerProtocol.class)) {
             if (proto.supportsLayer(XLayerProtocol.LAYER_ALWAYS_ON_TOP)) {
@@ -2090,6 +2148,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return false;
     }
 
+    @Override
     public boolean useBufferPerWindow() {
         return XToolkit.getBackingStoreType() == XConstants.NotUseful;
     }
@@ -2398,11 +2457,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     /**
      * @inheritDoc
      */
+    @Override
     protected boolean syncNativeQueue(final long timeout) {
         XBaseWindow win = XBaseWindow.getXAWTRootWindow();
 
         if (oops_waiter == null) {
             oops_waiter = new XEventDispatcher() {
+                    @Override
                     public void dispatchEvent(XEvent e) {
                         if (e.get_type() == XConstants.ConfigureNotify) {
                             // OOPS ConfigureNotify event catched
@@ -2449,17 +2510,19 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             awtUnlock();
         }
     }
-    @SuppressWarnings("deprecation")
+    @Override
     public void grab(Window w) {
-        if (w.getPeer() != null) {
-            ((XWindowPeer)w.getPeer()).setGrab(true);
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((XWindowPeer) peer).setGrab(true);
         }
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
     public void ungrab(Window w) {
-        if (w.getPeer() != null) {
-           ((XWindowPeer)w.getPeer()).setGrab(false);
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((XWindowPeer) peer).setGrab(false);
         }
     }
     /**
@@ -2469,14 +2532,17 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * The methods of java.awt.Desktop class are supported on the Gnome desktop.
      * Check if the running desktop is Gnome by checking the window manager.
      */
+    @Override
     public boolean isDesktopSupported(){
         return XDesktopPeer.isDesktopSupported();
     }
 
+    @Override
     public DesktopPeer createDesktopPeer(Desktop target){
         return new XDesktopPeer();
     }
 
+    @Override
     public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
         return areExtraMouseButtonsEnabled;
     }

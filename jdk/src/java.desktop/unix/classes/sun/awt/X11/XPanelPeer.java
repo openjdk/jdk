@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.peer.*;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.SunGraphicsCallback;
 
 public class XPanelPeer extends XCanvasPeer implements PanelPeer {
@@ -76,17 +78,17 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
 
     }
 
-    @SuppressWarnings("deprecation")
     public void setBackground(Color c) {
         Component comp;
         int i;
 
         Container cont = (Container) target;
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         synchronized(target.getTreeLock()) {
             int n = cont.getComponentCount();
             for(i=0; i < n; i++) {
                 comp = cont.getComponent(i);
-                ComponentPeer peer = comp.getPeer();
+                ComponentPeer peer = acc.getPeer(comp);
                 if (peer != null) {
                     Color color = comp.getBackground();
                     if (color == null || color.equals(c)) {
@@ -102,15 +104,15 @@ public class XPanelPeer extends XCanvasPeer implements PanelPeer {
         setForegroundForHierarchy((Container) target, c);
     }
 
-    @SuppressWarnings("deprecation")
     private void setForegroundForHierarchy(Container cont, Color c) {
         synchronized(target.getTreeLock()) {
+            final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
             int n = cont.getComponentCount();
             for(int i=0; i < n; i++) {
                 Component comp = cont.getComponent(i);
                 Color color = comp.getForeground();
                 if (color == null || color.equals(c)) {
-                    ComponentPeer cpeer = comp.getPeer();
+                    ComponentPeer cpeer = acc.getPeer(comp);
                     if (cpeer != null) {
                         cpeer.setForeground(c);
                     }

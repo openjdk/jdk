@@ -26,8 +26,11 @@
 package sun.awt.X11;
 
 import java.awt.AWTKeyStroke;
+import java.awt.Component;
 import java.awt.Toolkit;
+import java.awt.peer.ComponentPeer;
 
+import sun.awt.AWTAccessor;
 import sun.awt.EmbeddedFrame;
 import sun.util.logging.PlatformLogger;
 
@@ -63,10 +66,9 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void addNotify()
     {
-        if (getPeer() == null) {
+        if (!isDisplayable()) {
             XToolkit toolkit = (XToolkit)Toolkit.getDefaultToolkit();
             setPeer(toolkit.createEmbeddedFrame(this));
         }
@@ -80,9 +82,9 @@ public class XEmbeddedFrame extends EmbeddedFrame {
     /*
      * The method shouldn't be called in case of active XEmbed.
      */
-    @SuppressWarnings("deprecation")
     public boolean traverseIn(boolean direction) {
-        XEmbeddedFramePeer peer = (XEmbeddedFramePeer)getPeer();
+        XEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
+                                             .getPeer(this);
         if (peer != null) {
             if (peer.supportsXEmbed() && peer.isXEmbedActive()) {
                 log.fine("The method shouldn't be called when XEmbed is active!");
@@ -93,9 +95,9 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         return false;
     }
 
-    @SuppressWarnings("deprecation")
     protected boolean traverseOut(boolean direction) {
-        XEmbeddedFramePeer xefp = (XEmbeddedFramePeer) getPeer();
+        XEmbeddedFramePeer xefp = AWTAccessor.getComponentAccessor()
+                                             .getPeer(this);
         if (direction == FORWARD) {
             xefp.traverseOutForward();
         }
@@ -108,9 +110,9 @@ public class XEmbeddedFrame extends EmbeddedFrame {
     /*
      * The method shouldn't be called in case of active XEmbed.
      */
-    @SuppressWarnings("deprecation")
     public void synthesizeWindowActivation(boolean doActivate) {
-        XEmbeddedFramePeer peer = (XEmbeddedFramePeer)getPeer();
+        XEmbeddedFramePeer peer = AWTAccessor.getComponentAccessor()
+                                             .getPeer(this);
         if (peer != null) {
             if (peer.supportsXEmbed() && peer.isXEmbedActive()) {
                 log.fine("The method shouldn't be called when XEmbed is active!");
@@ -120,16 +122,17 @@ public class XEmbeddedFrame extends EmbeddedFrame {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void registerAccelerator(AWTKeyStroke stroke) {
-        XEmbeddedFramePeer xefp = (XEmbeddedFramePeer) getPeer();
+        XEmbeddedFramePeer xefp = AWTAccessor.getComponentAccessor()
+                                             .getPeer(this);
         if (xefp != null) {
             xefp.registerAccelerator(stroke);
         }
     }
-    @SuppressWarnings("deprecation")
+
     public void unregisterAccelerator(AWTKeyStroke stroke) {
-        XEmbeddedFramePeer xefp = (XEmbeddedFramePeer) getPeer();
+        XEmbeddedFramePeer xefp = AWTAccessor.getComponentAccessor()
+                                             .getPeer(this);
         if (xefp != null) {
             xefp.unregisterAccelerator(stroke);
         }

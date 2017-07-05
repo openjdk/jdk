@@ -103,7 +103,7 @@ final class WDialogPeer extends WWindowPeer implements DialogPeer {
     @Override
     public void blockWindows(java.util.List<Window> toBlock) {
         for (Window w : toBlock) {
-            WWindowPeer wp = (WWindowPeer)AWTAccessor.getComponentAccessor().getPeer(w);
+            WWindowPeer wp = AWTAccessor.getComponentAccessor().getPeer(w);
             if (wp != null) {
                 wp.setModalBlocked((Dialog)target, true);
             }
