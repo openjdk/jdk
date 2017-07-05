@@ -287,6 +287,7 @@ bool CompiledIC::is_call_to_compiled() const {
   assert( is_c1_method ||
          !is_monomorphic ||
          is_optimized() ||
+         !caller->is_alive() ||
          (cached_metadata() != NULL && cached_metadata()->is_klass()), "sanity check");
 #endif // ASSERT
   return is_monomorphic;
@@ -321,7 +322,7 @@ bool CompiledIC::is_call_to_interpreted() const {
 }
 
 
-void CompiledIC::set_to_clean() {
+void CompiledIC::set_to_clean(bool in_use) {
   assert(SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->is_locked() , "MT-unsafe call");
   if (TraceInlineCacheClearing || TraceICs) {
     tty->print_cr("IC@" INTPTR_FORMAT ": set to clean", p2i(instruction_address()));
@@ -337,7 +338,7 @@ void CompiledIC::set_to_clean() {
 
   // A zombie transition will always be safe, since the metadata has already been set to NULL, so
   // we only need to patch the destination
-  bool safe_transition = is_optimized() || SafepointSynchronize::is_at_safepoint();
+  bool safe_transition = !in_use || is_optimized() || SafepointSynchronize::is_at_safepoint();
 
   if (safe_transition) {
     // Kill any leftover stub we might have too

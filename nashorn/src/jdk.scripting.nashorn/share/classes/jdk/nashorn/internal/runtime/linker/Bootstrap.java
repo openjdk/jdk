@@ -49,7 +49,6 @@ import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
-import jdk.nashorn.internal.objects.ScriptFunctionImpl;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.OptimisticReturnFilters;
@@ -396,8 +395,8 @@ public final class Bootstrap {
      * @throws ECMAException with {@code TypeError} if the object is not a callable.
      */
     public static Object bindCallable(final Object callable, final Object boundThis, final Object[] boundArgs) {
-        if (callable instanceof ScriptFunctionImpl) {
-            return ((ScriptFunctionImpl)callable).makeBoundFunction(boundThis, boundArgs);
+        if (callable instanceof ScriptFunction) {
+            return ((ScriptFunction)callable).createBound(boundThis, boundArgs);
         } else if (callable instanceof BoundCallable) {
             return ((BoundCallable)callable).bind(boundArgs);
         } else if (isCallable(callable)) {

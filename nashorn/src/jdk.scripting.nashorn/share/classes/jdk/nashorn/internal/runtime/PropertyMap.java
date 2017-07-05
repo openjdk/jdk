@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.LongAdder;
 import jdk.nashorn.internal.scripts.JO;
 
 /**
@@ -114,7 +115,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         }
 
         if (Context.DEBUG) {
-            count++;
+            count.increment();
         }
     }
 
@@ -135,8 +136,8 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         this.freeSlots    = propertyMap.freeSlots;
 
         if (Context.DEBUG) {
-            count++;
-            clonedCount++;
+            count.increment();
+            clonedCount.increment();
         }
     }
 
@@ -328,7 +329,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
             if (sp != null) {
                 protoGetSwitches.remove(key);
                 if (Context.DEBUG) {
-                    protoInvalidations++;
+                    protoInvalidations.increment();
                 }
                 SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
             }
@@ -343,7 +344,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
             final int size = protoGetSwitches.size();
             if (size > 0) {
                 if (Context.DEBUG) {
-                    protoInvalidations += size;
+                    protoInvalidations.add(size);
                 }
                 SwitchPoint.invalidateAll(protoGetSwitches.values().toArray(new SwitchPoint[size]));
                 protoGetSwitches.clear();
@@ -713,7 +714,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         }
 
         if (Context.DEBUG && cachedMap != null) {
-            protoHistoryHit++;
+            protoHistoryHit.increment();
         }
 
         return cachedMap;
@@ -762,7 +763,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
 
             if (historicMap != null) {
                 if (Context.DEBUG) {
-                    historyHit++;
+                    historyHit.increment();
                 }
 
                 return historicMap;
@@ -910,7 +911,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         }
 
         if (Context.DEBUG) {
-            setProtoNewMapCount++;
+            setProtoNewMapCount.increment();
         }
 
         final PropertyMap newMap = new PropertyMap(this);
@@ -1030,52 +1031,62 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     }
 
     // counters updated only in debug mode
-    private static int count;
-    private static int clonedCount;
-    private static int historyHit;
-    private static int protoInvalidations;
-    private static int protoHistoryHit;
-    private static int setProtoNewMapCount;
+    private static LongAdder count;
+    private static LongAdder clonedCount;
+    private static LongAdder historyHit;
+    private static LongAdder protoInvalidations;
+    private static LongAdder protoHistoryHit;
+    private static LongAdder setProtoNewMapCount;
+    static {
+        if (Context.DEBUG) {
+            count = new LongAdder();
+            clonedCount = new LongAdder();
+            historyHit = new LongAdder();
+            protoInvalidations = new LongAdder();
+            protoHistoryHit = new LongAdder();
+            setProtoNewMapCount = new LongAdder();
+        }
+    }
 
     /**
      * @return Total number of maps.
      */
-    public static int getCount() {
-        return count;
+    public static long getCount() {
+        return count.longValue();
     }
 
     /**
      * @return The number of maps that were cloned.
      */
-    public static int getClonedCount() {
-        return clonedCount;
+    public static long getClonedCount() {
+        return clonedCount.longValue();
     }
 
     /**
      * @return The number of times history was successfully used.
      */
-    public static int getHistoryHit() {
-        return historyHit;
+    public static long getHistoryHit() {
+        return historyHit.longValue();
     }
 
     /**
      * @return The number of times prototype changes caused invalidation.
      */
-    public static int getProtoInvalidations() {
-        return protoInvalidations;
+    public static long getProtoInvalidations() {
+        return protoInvalidations.longValue();
     }
 
     /**
      * @return The number of times proto history was successfully used.
      */
-    public static int getProtoHistoryHit() {
-        return protoHistoryHit;
+    public static long getProtoHistoryHit() {
+        return protoHistoryHit.longValue();
     }
 
     /**
      * @return The number of times prototypes were modified.
      */
-    public static int getSetProtoNewMapCount() {
-        return setProtoNewMapCount;
+    public static long getSetProtoNewMapCount() {
+        return setProtoNewMapCount.longValue();
     }
 }

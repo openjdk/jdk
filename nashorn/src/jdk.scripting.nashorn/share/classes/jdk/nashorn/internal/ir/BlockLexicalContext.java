@@ -34,7 +34,7 @@ import java.util.List;
  * This is a subclass of lexical context used for filling
  * blocks (and function nodes) with statements. When popping
  * a block from the lexical context, any statements that have
- * been generated in it are commited to the block. This saves
+ * been generated in it are committed to the block. This saves
  * unnecessary object mutations and lexical context replacement
  */
 public class BlockLexicalContext extends LexicalContext {

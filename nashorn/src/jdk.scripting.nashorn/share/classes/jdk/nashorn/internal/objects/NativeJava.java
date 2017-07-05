@@ -96,7 +96,7 @@ public final class NativeJava {
     @Function(name="synchronized", attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object synchronizedFunc(final Object self, final Object func, final Object obj) {
         if (func instanceof ScriptFunction) {
-            return ((ScriptFunction)func).makeSynchronizedFunction(obj);
+            return ((ScriptFunction)func).createSynchronized(obj);
         }
 
         throw typeError("not.a.function", ScriptRuntime.safeToString(func));

@@ -54,10 +54,9 @@ import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_FIEL
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_NEWMAP;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_NEWMAP_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.PROPERTYMAP_TYPE;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTIONIMPL_MAKEFUNCTION;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTIONIMPL_MAKEFUNCTION_DESC;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTIONIMPL_MAKEFUNCTION_SPECS_DESC;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTIONIMPL_TYPE;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_CREATEBUILTIN;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_CREATEBUILTIN_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_CREATEBUILTIN_SPECS_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_SETARITY_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTFUNCTION_TYPE;
@@ -282,9 +281,9 @@ public class ClassGenerator {
         assert specs != null;
         if (!specs.isEmpty()) {
             mi.memberInfoArray(className, specs);
-            mi.invokeStatic(SCRIPTFUNCTIONIMPL_TYPE, SCRIPTFUNCTIONIMPL_MAKEFUNCTION, SCRIPTFUNCTIONIMPL_MAKEFUNCTION_SPECS_DESC);
+            mi.invokeStatic(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_CREATEBUILTIN, SCRIPTFUNCTION_CREATEBUILTIN_SPECS_DESC);
         } else {
-            mi.invokeStatic(SCRIPTFUNCTIONIMPL_TYPE, SCRIPTFUNCTIONIMPL_MAKEFUNCTION, SCRIPTFUNCTIONIMPL_MAKEFUNCTION_DESC);
+            mi.invokeStatic(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_CREATEBUILTIN, SCRIPTFUNCTION_CREATEBUILTIN_DESC);
         }
 
         if (arityFound) {

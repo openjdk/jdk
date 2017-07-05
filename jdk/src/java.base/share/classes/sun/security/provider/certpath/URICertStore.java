@@ -44,9 +44,7 @@ import java.security.cert.CRLException;
 import java.security.cert.CRLSelector;
 import java.security.cert.URICertStoreParameters;
 import java.security.cert.X509Certificate;
-import java.security.cert.X509CertSelector;
 import java.security.cert.X509CRL;
-import java.security.cert.X509CRLSelector;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -160,12 +158,11 @@ class URICertStore extends CertStoreSpi {
             throw new InvalidAlgorithmParameterException
                 ("params must be instanceof URICertStoreParameters");
         }
-        this.uri = ((URICertStoreParameters) params).uri;
+        this.uri = ((URICertStoreParameters) params).getURI();
         // if ldap URI, use an LDAPCertStore to fetch certs and CRLs
         if (uri.getScheme().toLowerCase(Locale.ENGLISH).equals("ldap")) {
             ldap = true;
-            URICertStoreParameters lparams = new URICertStoreParameters(uri);
-            ldapCertStore = CertStore.getInstance("LDAP", lparams);
+            ldapCertStore = CertStore.getInstance("LDAP", params);
         }
         try {
             factory = CertificateFactory.getInstance("X.509");
@@ -183,7 +180,7 @@ class URICertStore extends CertStoreSpi {
     static synchronized CertStore getInstance(URICertStoreParameters params)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         if (debug != null) {
-            debug.println("CertStore URI:" + params.uri);
+            debug.println("CertStore URI:" + params.getURI());
         }
         CertStore ucs = certStoreCache.get(params);
         if (ucs == null) {
@@ -212,8 +209,7 @@ class URICertStore extends CertStoreSpi {
         }
         URI uri = ((URIName) gn).getURI();
         try {
-            return URICertStore.getInstance
-                (new URICertStore.URICertStoreParameters(uri));
+            return URICertStore.getInstance(new URICertStoreParameters(uri));
         } catch (Exception ex) {
             if (debug != null) {
                 debug.println("exception creating CertStore: " + ex);
@@ -417,40 +413,6 @@ class URICertStore extends CertStoreSpi {
             return Collections.singletonList(crl);
         } else {
             return Collections.emptyList();
-        }
-    }
-
-    /**
-     * CertStoreParameters for the URICertStore.
-     */
-    static class URICertStoreParameters implements CertStoreParameters {
-        private final URI uri;
-        private volatile int hashCode = 0;
-        URICertStoreParameters(URI uri) {
-            this.uri = uri;
-        }
-        @Override public boolean equals(Object obj) {
-            if (!(obj instanceof URICertStoreParameters)) {
-                return false;
-            }
-            URICertStoreParameters params = (URICertStoreParameters) obj;
-            return uri.equals(params.uri);
-        }
-        @Override public int hashCode() {
-            if (hashCode == 0) {
-                int result = 17;
-                result = 37*result + uri.hashCode();
-                hashCode = result;
-            }
-            return hashCode;
-        }
-        @Override public Object clone() {
-            try {
-                return super.clone();
-            } catch (CloneNotSupportedException e) {
-                /* Cannot happen */
-                throw new InternalError(e.toString(), e);
-            }
         }
     }
 

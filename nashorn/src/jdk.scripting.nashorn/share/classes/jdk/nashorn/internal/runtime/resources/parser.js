@@ -55,7 +55,7 @@ function parse(/*code, [name], [location]*/) {
                 // do not start with '/'. If regexp, then eval it to make RegExp object
                 return value.startsWith('/')? eval(value) : value.substring(1);
             } else {
-                // anythin else is returned "as is""
+                // anything else is returned "as is"
                 return value;
             }
         });

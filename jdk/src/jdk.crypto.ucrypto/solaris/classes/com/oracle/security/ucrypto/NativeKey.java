@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,19 +31,9 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.lang.ref.*;
 
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.KeyFactorySpi;
-import java.security.interfaces.RSAPrivateCrtKey;
-import java.security.interfaces.RSAPublicKey;
-
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.security.spec.RSAPrivateCrtKeySpec;
-import java.security.spec.RSAPublicKeySpec;
+import java.security.*;
+import java.security.interfaces.*;
+import java.security.spec.*;
 
 /**
  * Wrapper class for native keys needed for using ucrypto APIs.
@@ -87,6 +77,41 @@ abstract class NativeKey implements Key {
         return b;
     }
 
+    static final class RSAPrivate extends NativeKey implements RSAPrivateKey {
+
+        private static final long serialVersionUID = 1622705588904302831L;
+
+        private final RSAPrivateKeySpec keySpec;
+        private final long keyId;
+
+        RSAPrivate(KeySpec keySpec) throws InvalidKeySpecException {
+            super(2);
+            long pKey = 0L;
+            if (keySpec instanceof RSAPrivateKeySpec) {
+                RSAPrivateKeySpec ks = (RSAPrivateKeySpec) keySpec;
+                BigInteger mod = ks.getModulus();
+                BigInteger privateExp =  ks.getPrivateExponent();
+                pKey = nativeInit(NativeKey.getMagnitude(mod),
+                                  NativeKey.getMagnitude(privateExp));
+            } else {
+                throw new InvalidKeySpecException("Only supports RSAPrivateKeySpec");
+            }
+            if (pKey == 0L) {
+                throw new UcryptoException("Error constructing RSA PrivateKey");
+            }
+            // track native resource clean up
+            new KeyRef(this, pKey);
+            this.keySpec = (RSAPrivateKeySpec) keySpec;
+            this.keyId = pKey;
+        }
+
+        long value() { return keyId; }
+        public BigInteger getModulus() { return keySpec.getModulus(); };
+        public BigInteger getPrivateExponent() { return keySpec.getPrivateExponent(); };
+
+        private native static long nativeInit(byte[] mod, byte[] privExp);
+    }
+
     static final class RSAPrivateCrt extends NativeKey implements RSAPrivateCrtKey {
 
         private static final long serialVersionUID = 6812507588904302831L;
@@ -119,7 +144,7 @@ abstract class NativeKey implements Key {
                 throw new InvalidKeySpecException("Only supports RSAPrivateCrtKeySpec");
             }
             if (pKey == 0L) {
-                throw new UcryptoException("Error constructing RSA PrivateKey");
+                throw new UcryptoException("Error constructing RSA PrivateCrtKey");
             }
             // track native resource clean up
             new KeyRef(this, pKey);

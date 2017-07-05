@@ -30,25 +30,6 @@
 #   (called @OPENJDK_BUILD_AUTOCONF_NAME@ by autoconf)
 # using 'configure @CONFIGURE_COMMAND_LINE@'
 
-# When calling macros, the spaces between arguments are
-# often semantically important! Sometimes we need to subst
-# spaces and commas, therefore we need the following macros.
-X:=
-SPACE:=$(X) $(X)
-COMMA:=,
-DOLLAR:=$$
-HASH:=\#
-LEFT_PAREN:=(
-RIGHT_PAREN:=)
-SQUOTE:='
-#'
-DQUOTE:="
-#"
-define NEWLINE
-
-
-endef
-
 # The command line given to configure.
 CONFIGURE_COMMAND_LINE:=@CONFIGURE_COMMAND_LINE@
 
