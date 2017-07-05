@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,26 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_iterator.cpp.incl"
+/**
+ * @test
+ * @bug 6795465
+ * @summary Crash in assembler_sparc.cpp with client compiler on solaris-sparc
+ *
+ * @run main Test6795465
+ */
 
-#ifdef ASSERT
-bool OopClosure::_must_remember_klasses = false;
-#endif
+public class Test6795465 {
+    static long var_1 = -1;
 
-void ObjectToOopClosure::do_object(oop obj) {
-  obj->oop_iterate(_cl);
+    void test() {
+        long var_2 = var_1 * 1;
+        var_2 = var_2 + (new byte[1])[0];
+    }
+
+    public static void main(String[] args) {
+        Test6795465 t = new Test6795465();
+        for (int i = 0; i < 200000; i++) {
+            t.test();
+        }
+    }
 }
-
-void VoidClosure::do_void() {
-  ShouldNotCallThis();
-}
-
-#ifdef ASSERT
-bool OopClosure::must_remember_klasses() {
-  return _must_remember_klasses;
-}
-void OopClosure::set_must_remember_klasses(bool v) {
-  _must_remember_klasses = v;
-}
-#endif
-

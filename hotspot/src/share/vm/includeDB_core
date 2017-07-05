@@ -2684,6 +2684,7 @@ markOop.inline.hpp                      klassOop.hpp
 markOop.inline.hpp                      markOop.hpp
 
 markSweep.cpp                           compileBroker.hpp
+markSweep.cpp                           methodDataOop.hpp
 
 markSweep.hpp                           collectedHeap.hpp
 

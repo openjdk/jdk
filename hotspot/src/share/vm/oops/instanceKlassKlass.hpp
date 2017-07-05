@@ -39,7 +39,7 @@ class instanceKlassKlass : public klassKlass {
   klassOop allocate_instance_klass(int vtable_len,
                                    int itable_len,
                                    int static_field_size,
-                                   int nonstatic_oop_map_size,
+                                   unsigned int nonstatic_oop_map_count,
                                    ReferenceType rt,
                                    TRAPS);
 

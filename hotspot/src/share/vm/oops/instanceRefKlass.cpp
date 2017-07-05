@@ -400,26 +400,26 @@ void instanceRefKlass::update_nonstatic_oop_maps(klassOop k) {
   assert(k == SystemDictionary::reference_klass() && first_time,
          "Invalid update of maps");
   debug_only(first_time = false);
-  assert(ik->nonstatic_oop_map_size() == 1, "just checking");
+  assert(ik->nonstatic_oop_map_count() == 1, "just checking");
 
   OopMapBlock* map = ik->start_of_nonstatic_oop_maps();
 
   // Check that the current map is (2,4) - currently points at field with
   // offset 2 (words) and has 4 map entries.
   debug_only(int offset = java_lang_ref_Reference::referent_offset);
-  debug_only(int length = ((java_lang_ref_Reference::discovered_offset -
+  debug_only(unsigned int count = ((java_lang_ref_Reference::discovered_offset -
     java_lang_ref_Reference::referent_offset)/heapOopSize) + 1);
 
   if (UseSharedSpaces) {
     assert(map->offset() == java_lang_ref_Reference::queue_offset &&
-           map->length() == 1, "just checking");
+           map->count() == 1, "just checking");
   } else {
-    assert(map->offset() == offset && map->length() == length,
+    assert(map->offset() == offset && map->count() == count,
            "just checking");
 
     // Update map to (3,1) - point to offset of 3 (words) with 1 map entry.
     map->set_offset(java_lang_ref_Reference::queue_offset);
-    map->set_length(1);
+    map->set_count(1);
   }
 }
 

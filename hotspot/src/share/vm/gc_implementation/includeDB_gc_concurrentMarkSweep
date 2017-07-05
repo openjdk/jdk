@@ -145,6 +145,7 @@ concurrentMarkSweepGeneration.cpp       genOopClosures.inline.hpp
 concurrentMarkSweepGeneration.cpp       globals_extension.hpp
 concurrentMarkSweepGeneration.cpp       handles.inline.hpp
 concurrentMarkSweepGeneration.cpp       isGCActiveMark.hpp
+concurrentMarkSweepGeneration.cpp       iterator.hpp
 concurrentMarkSweepGeneration.cpp       java.hpp
 concurrentMarkSweepGeneration.cpp       jvmtiExport.hpp
 concurrentMarkSweepGeneration.cpp       oop.inline.hpp

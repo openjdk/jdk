@@ -493,7 +493,8 @@ void JVMState::dump_spec(outputStream *st) const {
     if (!printed)
       _method->print_short_name(st);
     st->print(" @ bci:%d",_bci);
-    st->print(" reexecute:%s", _reexecute==Reexecute_True?"true":"false");
+    if(_reexecute == Reexecute_True)
+      st->print(" reexecute");
   } else {
     st->print(" runtime stub");
   }

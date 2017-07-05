@@ -35,8 +35,7 @@ int ConcurrentZFThread::_zf_waits = 0;
 int ConcurrentZFThread::_regions_filled = 0;
 
 ConcurrentZFThread::ConcurrentZFThread() :
-  ConcurrentGCThread(),
-  _co_tracker(G1ZFGroup)
+  ConcurrentGCThread()
 {
   create_and_start();
 }
@@ -71,8 +70,6 @@ void ConcurrentZFThread::run() {
   Thread* thr_self = Thread::current();
   _vtime_start = os::elapsedVTime();
   wait_for_universe_init();
-  _co_tracker.enable();
-  _co_tracker.start();
 
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   _sts.join();
@@ -135,10 +132,7 @@ void ConcurrentZFThread::run() {
     }
     _vtime_accum = (os::elapsedVTime() - _vtime_start);
     _sts.join();
-
-    _co_tracker.update();
   }
-  _co_tracker.update(false);
   _sts.leave();
 
   assert(_should_terminate, "just checking");
