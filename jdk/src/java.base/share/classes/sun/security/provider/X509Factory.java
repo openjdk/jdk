@@ -28,6 +28,8 @@ package sun.security.provider;
 import java.io.*;
 import java.util.*;
 import java.security.cert.*;
+
+import sun.security.util.Pem;
 import sun.security.x509.X509CertImpl;
 import sun.security.x509.X509CRLImpl;
 import sun.security.pkcs.PKCS7;
@@ -633,7 +635,7 @@ public class X509Factory extends CertificateFactorySpi {
 
             checkHeaderFooter(header.toString(), footer.toString());
 
-            return Base64.getMimeDecoder().decode(new String(data, 0, pos));
+            return Pem.decode(new String(data, 0, pos));
         }
     }
 

@@ -21,22 +21,15 @@
  * questions.
  */
 
-/* @test
- * @bug 6306165 6432567
- * @summary Check that a bad handshake doesn't cause a debuggee to abort
- * @library /lib/testlibrary
- *
- * @build jdk.testlibrary.* VMConnection BadHandshakeTest Exit0
- * @run driver BadHandshakeTest
- *
- */
 import java.net.Socket;
-import java.net.InetAddress;
+
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.*;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.AttachingConnector;
+import com.sun.jdi.connect.Connector.Argument;
+
 import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
@@ -46,13 +39,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jdk.testlibrary.Utils;
 import jdk.testlibrary.ProcessTools;
 
+/* @test
+ * @bug 6306165 6432567
+ * @summary Check that a bad handshake doesn't cause a debuggee to abort
+ * @library /lib/testlibrary
+ *
+ * @build jdk.testlibrary.* VMConnection BadHandshakeTest Exit0
+ * @run driver BadHandshakeTest
+ */
 public class BadHandshakeTest {
+
     /*
      * Find a connector by name
      */
     private static Connector findConnector(String name) {
-        List connectors = Bootstrap.virtualMachineManager().allConnectors();
-        Iterator iter = connectors.iterator();
+        List<Connector> connectors = Bootstrap.virtualMachineManager().allConnectors();
+        Iterator<Connector> iter = connectors.iterator();
         while (iter.hasNext()) {
             Connector connector = (Connector)iter.next();
             if (connector.name().equals(name)) {
@@ -65,7 +67,7 @@ public class BadHandshakeTest {
     /*
      * Launch a server debuggee with the given address
      */
-    private static Process launch(String address, String class_name) throws Exception {
+    private static LaunchResult launch(String address, String class_name) throws Exception {
         String[] args = VMConnection.insertDebuggeeVMOptions(new String[] {
             "-agentlib:jdwp=transport=dt_socket" +
             ",server=y" + ",suspend=y" + ",address=" + address,
@@ -75,6 +77,7 @@ public class BadHandshakeTest {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
 
         final AtomicBoolean success = new AtomicBoolean();
+        final AtomicBoolean bindFailed = new AtomicBoolean();
         Process p = ProcessTools.startProcess(
             class_name,
             pb,
@@ -83,13 +86,17 @@ public class BadHandshakeTest {
                 //    Listening for transport dt_socket at address: xxxxx
                 // which shows the debuggee is ready to accept connections.
                 success.set(line.contains("Listening for transport dt_socket at address:"));
+                // If the first line contains 'Address already in use'
+                // that means the debuggee has failed to start due to busy port
+                bindFailed.set(line.contains("Address already in use"));
                 return true;
             },
             Integer.MAX_VALUE,
             TimeUnit.MILLISECONDS
         );
 
-        return success.get() ? p : null;
+        return new LaunchResult(success.get() ? p : null,
+                bindFailed.get());
     }
 
     /*
@@ -99,14 +106,20 @@ public class BadHandshakeTest {
      * - verify we saw no error
      */
     public static void main(String args[]) throws Exception {
-        int port = Utils.getFreePort();
-
-        String address = String.valueOf(port);
-
-        // launch the server debuggee
-        Process process = launch(address, "Exit0");
-        if (process == null) {
-            throw new RuntimeException("Unable to start debugee");
+        // Launch the server debuggee
+        int port = 0;
+        Process process = null;
+        while (process == null) {
+            port = Utils.getFreePort();
+            String address = String.valueOf(port);
+            LaunchResult launchResult = launch(address, "Exit0");
+            process = launchResult.getProcess();
+            if (launchResult.isBindFailed()) {
+                System.out.println("Port " + port + " already in use. Trying to restart debuggee with a new one...");
+                Thread.sleep(100);
+            } else if (process == null ) {
+                throw new RuntimeException("Unable to start debugee");
+            }
         }
 
         // Connect to the debuggee and handshake with garbage
@@ -119,9 +132,9 @@ public class BadHandshakeTest {
         s.getOutputStream().write("JDWP-".getBytes("UTF-8"));
 
 
-        // attach to server debuggee and resume it so it can exit
+        // Attach to server debuggee and resume it so it can exit
         AttachingConnector conn = (AttachingConnector)findConnector("com.sun.jdi.SocketAttach");
-        Map conn_args = conn.defaultArguments();
+        Map<String, Argument> conn_args = conn.defaultArguments();
         Connector.IntegerArgument port_arg =
             (Connector.IntegerArgument)conn_args.get("port");
         port_arg.setValue(port);
@@ -141,6 +154,26 @@ public class BadHandshakeTest {
         vm.resume();
 
         process.waitFor();
+    }
+
+    private static class LaunchResult {
+
+        private final Process p;
+        private final boolean bindFailed;
+
+        public LaunchResult(Process p, boolean bindFailed) {
+            this.p = p;
+            this.bindFailed = bindFailed;
+        }
+
+        public Process getProcess() {
+            return p;
+        }
+
+        public boolean isBindFailed() {
+            return bindFailed;
+        }
+
     }
 
 }

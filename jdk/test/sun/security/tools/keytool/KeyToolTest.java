@@ -56,6 +56,8 @@
  * NSS PKCS11 config file are changed, DSA not supported now.
  */
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.KeyStore;
 import sun.security.x509.*;
 import java.io.*;
@@ -1222,6 +1224,24 @@ public class KeyToolTest {
         remove("mykey.cert");
     }
 
+    // 8074935: jdk8 keytool doesn't validate pem files for RFC 1421 correctness
+    static void checkPem(String file) throws Exception {
+        boolean maybeLast = false;
+        for (String s: Files.readAllLines(Paths.get(file))) {
+            if (s.isEmpty()) continue;
+            if (s.startsWith("---")) continue;
+            if (maybeLast) {
+                throw new Exception("Last line already seen");
+            }
+            if (s.length() > 64) {
+                throw new Exception(s);
+            }
+            if (s.length() < 64) {
+                maybeLast = true;
+            }
+        }
+    }
+
     void v3extTest(String keyAlg) throws Exception {
         KeyStore ks;
         remove("x.jks");
@@ -1588,12 +1608,14 @@ public class KeyToolTest {
                 "-rfc -file test.req");
         // printcertreq
         testOK("", "-printcertreq -file test.req");
+        checkPem("test.req");
         // issue: deny KU, change criticality of 1.2.3 and 1.2.4,
         // change content of BC, add 2.3.4
         testOK("", simple+"-gencert -alias ca -infile test.req -ext " +
                 "honored=all,-KU,1.2.3:critical,1.2.4:non-critical " +
                 "-ext BC=2 -ext 2.3.4=01020304 " +
                 "-debug -rfc -outfile test.cert");
+        checkPem("test.cert");
         testOK("", simple+"-importcert -file test.cert -alias a");
         ks = loadStore("x.jks", "changeit", "JKS");
         X509CertImpl a = (X509CertImpl)ks.getCertificate("a");
