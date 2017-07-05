@@ -194,7 +194,6 @@ $(eval $(call add_properties_to_clean,COM_SUN_ROWSET_HK,\
 	$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/rowset)),\
 	%zh_TW,%zh_HK))
 
-#com/sun/servicetag/resources
 #com/sun/swing/internal/plaf/basic/resources
 $(eval $(call add_properties_to_compile,COM_SUN_SWING_PLAF_BASIC,\
 	$(filter %.properties,\

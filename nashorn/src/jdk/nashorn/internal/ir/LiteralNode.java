@@ -46,7 +46,7 @@ import jdk.nashorn.internal.runtime.Undefined;
  */
 public abstract class LiteralNode<T> extends Node implements PropertyKey {
     /** Literal value */
-    protected T value;
+    protected final T value;
 
      /**
      * Constructor
@@ -67,8 +67,17 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @param literalNode source node
      */
     protected LiteralNode(final LiteralNode<T> literalNode) {
+        this(literalNode, literalNode.value);
+    }
+
+    /**
+     * A copy constructor with value change.
+     * @param literalNode the original literal node
+     * @param newValue new value for this node
+     */
+    protected LiteralNode(final LiteralNode<T> literalNode, final T newValue) {
         super(literalNode);
-        this.value = literalNode.value;
+        this.value = newValue;
     }
 
     @Override
@@ -217,8 +226,8 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            return visitor.leave(this);
+        if (visitor.enterLiteralNode(this) != null) {
+            return visitor.leaveLiteralNode(this);
         }
 
         return this;
@@ -544,6 +553,10 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
             super(literalNode);
         }
 
+        private NodeLiteralNode(final LiteralNode<Node> literalNode, final Node value) {
+            super(literalNode, value);
+        }
+
         @Override
         protected Node copy(final CopyState cs) {
             return new NodeLiteralNode(this);
@@ -551,11 +564,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
 
         @Override
         public Node accept(final NodeVisitor visitor) {
-            if (visitor.enter(this) != null) {
+            if (visitor.enterLiteralNode(this) != null) {
                 if (value != null) {
-                    value = value.accept(visitor);
+                    final Node newValue = value.accept(visitor);
+                    if(value != newValue) {
+                        return visitor.leaveLiteralNode(new NodeLiteralNode(this, newValue));
+                    }
                 }
-                return visitor.leave(this);
+                return visitor.leaveLiteralNode(this);
             }
 
             return this;
@@ -878,14 +894,14 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
 
         @Override
         public Node accept(final NodeVisitor visitor) {
-            if (visitor.enter(this) != null) {
+            if (visitor.enterLiteralNode(this) != null) {
                 for (int i = 0; i < value.length; i++) {
                     final Node element = value[i];
                     if (element != null) {
                         value[i] = element.accept(visitor);
                     }
                 }
-                return visitor.leave(this);
+                return visitor.leaveLiteralNode(this);
             }
             return this;
         }

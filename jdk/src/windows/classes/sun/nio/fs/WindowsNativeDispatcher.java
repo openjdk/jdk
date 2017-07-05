@@ -844,6 +844,23 @@ class WindowsNativeDispatcher {
     static native void AdjustTokenPrivileges(long token, long luid, int attributes)
         throws WindowsException;
 
+
+    /**
+     * AccessCheck(
+     *   PSECURITY_DESCRIPTOR pSecurityDescriptor,
+     *   HANDLE ClientToken,
+     *   DWORD DesiredAccess,
+     *   PGENERIC_MAPPING GenericMapping,
+     *   PPRIVILEGE_SET PrivilegeSet,
+     *   LPDWORD PrivilegeSetLength,
+     *   LPDWORD GrantedAccess,
+     *   LPBOOL AccessStatus
+     * )
+     */
+    static native boolean AccessCheck(long token, long securityInfo, int accessMask,
+        int genericRead, int genericWrite, int genericExecute, int genericAll)
+        throws WindowsException;
+
     /**
      */
     static long LookupPrivilegeValue(String name) throws WindowsException {
@@ -855,28 +872,6 @@ class WindowsNativeDispatcher {
         }
     }
     private static native long LookupPrivilegeValue0(long lpName)
-        throws WindowsException;
-
-    /**
-     * BuildTrusteeWithSid(
-     *   PTRUSTEE pTrustee,
-     *   PSID pSid
-     * )
-     *
-     * @return  pTrustee
-     */
-    static native long BuildTrusteeWithSid(long pSid);
-
-    /**
-     * GetEffectiveRightsFromAcl(
-     *   PACL pacl,
-     *   PTRUSTEE pTrustee,
-     *   PACCESS_MASK pAccessRights
-     * )
-     *
-     * @return  AccessRights
-     */
-    static native int GetEffectiveRightsFromAcl(long pAcl, long pTrustee)
         throws WindowsException;
 
     /**

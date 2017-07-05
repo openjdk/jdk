@@ -84,6 +84,7 @@ class MemTracker : AllStatic {
    static inline bool baseline() { return false; }
    static inline bool has_baseline() { return false; }
 
+   static inline void set_autoShutdown(bool value) { }
    static void shutdown(ShutdownReason reason) { }
    static inline bool shutdown_in_progress() {  }
    static bool print_memory_usage(BaselineOutputer& out, size_t unit,
@@ -237,6 +238,16 @@ class MemTracker : AllStatic {
 
   // if native memory tracking tracks callsite
   static inline bool track_callsite() { return _tracking_level == NMT_detail; }
+
+  // NMT automatically shuts itself down under extreme situation by default.
+  // When the value is set to false,  NMT will try its best to stay alive,
+  // even it has to slow down VM.
+  static inline void set_autoShutdown(bool value) {
+    AutoShutdownNMT = value;
+    if (AutoShutdownNMT && _slowdown_calling_thread) {
+      _slowdown_calling_thread = false;
+    }
+  }
 
   // shutdown native memory tracking capability. Native memory tracking
   // can be shutdown by VM when it encounters low memory scenarios.
@@ -507,6 +518,10 @@ class MemTracker : AllStatic {
   // although NMT is still procesing current generation, but
   // there is not more recorder to process, set idle state
   static volatile bool             _worker_thread_idle;
+
+  // if NMT should slow down calling thread to allow
+  // worker thread to catch up
+  static volatile bool             _slowdown_calling_thread;
 };
 
 #endif // !INCLUDE_NMT

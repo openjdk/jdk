@@ -46,4 +46,11 @@ public interface Assignment<D extends Node> {
      * @return get the assignment source node
      */
     public Node getAssignmentSource();
+
+    /**
+     * Set assignment destination node.
+     * @param n the assignment destination node.
+     * @return a node equivalent to this one except for the requested change.
+     */
+    public Node setAssignmentDest(D n);
 }

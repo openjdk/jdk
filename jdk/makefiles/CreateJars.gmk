@@ -76,8 +76,6 @@ $(eval $(call SetupArchive,BUILD_DNS_JAR,,\
 $(IMAGES_OUTPUTDIR)/lib/tzdb.jar: $(JDK_OUTPUTDIR)/lib/tzdb.jar
 	$(install-file)
 
-JARS += $(IMAGES_OUTPUTDIR)/lib/tzdb.jar 
-
 ##########################################################################################
 
 LOCALEDATA_INCLUDE_LOCALES := ar be bg ca cs da de el es et fi fr ga hi hr hu in is it \
@@ -213,28 +211,28 @@ RT_JAR_EXCLUDES += \
 	org/relaxng/datatype \
 	sun/awt/HKSCS.class \
 	sun/awt/motif/X11GB2312.class \
-	sun/awt/motif/X11GB2312\$$Decoder.class \
-	sun/awt/motif/X11GB2312\$$Encoder.class \
+	sun/awt/motif/X11GB2312\$$$$Decoder.class \
+	sun/awt/motif/X11GB2312\$$$$Encoder.class \
 	sun/awt/motif/X11GBK.class \
-	sun/awt/motif/X11GBK\$$Encoder.class \
+	sun/awt/motif/X11GBK\$$$$Encoder.class \
 	sun/awt/motif/X11KSC5601.class \
-	sun/awt/motif/X11KSC5601\$$Decoder.class \
-	sun/awt/motif/X11KSC5601\$$Encoder.class \
+	sun/awt/motif/X11KSC5601\$$$$Decoder.class \
+	sun/awt/motif/X11KSC5601\$$$$Encoder.class \
 	sun/jvmstat \
 	sun/net/spi/nameservice/dns \
 	sun/nio/cs/ext \
 	sun/rmi/rmic \
 	sun/security/ec/ECDHKeyAgreement.class \
 	sun/security/ec/ECDSASignature.class \
-	sun/security/ec/ECDSASignature\$$Raw.class \
-	sun/security/ec/ECDSASignature\$$SHA1.class \
-	sun/security/ec/ECDSASignature\$$SHA224.class \
-	sun/security/ec/ECDSASignature\$$SHA256.class \
-	sun/security/ec/ECDSASignature\$$SHA384.class \
-	sun/security/ec/ECDSASignature\$$SHA512.class \
+	sun/security/ec/ECDSASignature\$$$$Raw.class \
+	sun/security/ec/ECDSASignature\$$$$SHA1.class \
+	sun/security/ec/ECDSASignature\$$$$SHA224.class \
+	sun/security/ec/ECDSASignature\$$$$SHA256.class \
+	sun/security/ec/ECDSASignature\$$$$SHA384.class \
+	sun/security/ec/ECDSASignature\$$$$SHA512.class \
 	sun/security/ec/ECKeyFactory.class \
 	sun/security/ec/ECKeyPairGenerator.class \
-	sun/security/ec/SunEC\$$1.class \
+	sun/security/ec/SunEC\$$$$1.class \
 	sun/security/ec/SunEC.class \
 	sun/security/ec/SunECEntries.class \
 	sun/security/internal \
@@ -357,23 +355,25 @@ $(PROFILE_VERSION_CLASS_TARGETS) : $(PROFILE_VERSION_JAVA_TARGETS)
 
 
 # Support for removing the addPropertyChangeListener and removePropertyChangeListener
-# methods from classes that only go into the profile builds. For now the Pack200.Packer
-# and Packer200.Unpacker classes have special handling because of the $ in the file
-# name.
+# methods from classes that only go into the profile builds. 
 BEANLESS_CLASSES = $(IMAGES_OUTPUTDIR)/beanless
 
+# When there are $ characters in filenames we have some very subtle interactions between
+# make expansion and shell expansion. In this particular case $< will contain a single $ while
+# $@ will contain \$. So we have to pass $< in single-quotes to avoid shell expansion
 $(BEANLESS_CLASSES)/%: $(JDK_OUTPUTDIR)/classes/%
 	$(MKDIR) -p $(@D)
-	$(TOOL_REMOVEMETHODS) $< $@ addPropertyChangeListener removePropertyChangeListener
+	$(TOOL_REMOVEMETHODS) '$<' $@ addPropertyChangeListener removePropertyChangeListener
 
 CLASSES_TO_DEBEAN = \
     java/util/logging/LogManager.class \
+    java/util/jar/Pack200\$$Packer.class \
+    java/util/jar/Pack200\$$Unpacker.class \
     com/sun/java/util/jar/pack/PackerImpl.class \
-    com/sun/java/util/jar/pack/UnpackerImpl.class
+    com/sun/java/util/jar/pack/UnpackerImpl.class 
 
-BEANLESS_CLASSES_TARGETS =
 ifneq ($(PROFILE),)
-    BEANLESS_CLASSES_TARGETS := $(foreach c, $(CLASSES_TO_DEBEAN), $(BEANLESS_CLASSES)/$c)
+    BEANLESS_CLASSES_TARGETS := $(addprefix $(BEANLESS_CLASSES)/, $(CLASSES_TO_DEBEAN))
 endif
 
 
@@ -400,13 +400,8 @@ $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/rt.jar: $(IMAGES_OUTPUTDIR)/lib$(PROFILE)/_the
 	      $(ECHO)  Updating rt.jar $(PROFILE) && \
 	      $(CD) $(patsubst %$(VERSION_CLASS_PATH),%,$(CLASS_FILE)) && \
                 $(JAR) $(RT_JAR_UPDATE_OPTIONS) $@.tmp $(VERSION_CLASS_PATH); \
-	      $(MKDIR) -p $(BEANLESS_CLASSES)/java/util/jar; \
-	      $(TOOL_REMOVEMETHODS) $(JDK_OUTPUTDIR)/classes/java/util/jar/Pack200\$$Packer.class \
-		$(BEANLESS_CLASSES)/java/util/jar/Pack200\$$Packer.class addPropertyChangeListener removePropertyChangeListener; \
-	      $(TOOL_REMOVEMETHODS) $(JDK_OUTPUTDIR)/classes/java/util/jar/Pack200\$$Unpacker.class \
-		$(BEANLESS_CLASSES)/java/util/jar/Pack200\$$Unpacker.class addPropertyChangeListener removePropertyChangeListener; \
 	      $(CD) $(BEANLESS_CLASSES) && \
-		$(JAR) $(RT_JAR_UPDATE_OPTIONS) $@.tmp $(CLASSES_TO_DEBEAN) java/util/jar/* ; \
+		$(JAR) $(RT_JAR_UPDATE_OPTIONS) $@.tmp $(CLASSES_TO_DEBEAN); \
             fi
 	$(MV) $@.tmp $@
 
@@ -871,8 +866,7 @@ EXCLUDE_PROPWARN_PKGS = com.sun.java.swing.plaf.windows  \
 # This is an interim solution until the ct.sym is replaced
 # with a new module system (being discussed for JDK 8).
 #
-EXPORTED_PRIVATE_PKGS = com.sun.servicetag \
-                        com.oracle.net \
+EXPORTED_PRIVATE_PKGS = com.oracle.net \
                         com.oracle.nio
 
 $(IMAGES_OUTPUTDIR)/symbols/_the.symbols: $(IMAGES_OUTPUTDIR)/lib/rt.jar
@@ -1122,8 +1116,6 @@ endif
 # Import nashorn.jar from nashorn dist dir.
 $(IMAGES_OUTPUTDIR)/lib/ext/nashorn.jar: $(NASHORN_DIST)/nashorn.jar
 	$(install-file)
-
-JARS += $(IMAGES_OUTPUTDIR)/lib/ext/nashorn.jar
 
 ##########################################################################################
 

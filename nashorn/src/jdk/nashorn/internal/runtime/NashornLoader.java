@@ -30,6 +30,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Permissions;
 import java.security.SecureClassLoader;
 import jdk.nashorn.tools.Shell;
 
@@ -40,6 +44,28 @@ import jdk.nashorn.tools.Shell;
  *
  */
 abstract class NashornLoader extends SecureClassLoader {
+    private static final String OBJECTS_PKG = "jdk.nashorn.internal.objects";
+    private static final String RUNTIME_PKG = "jdk.nashorn.internal.runtime";
+    private static final String RUNTIME_LINKER_PKG = "jdk.nashorn.internal.runtime.linker";
+    private static final String SCRIPTS_PKG = "jdk.nashorn.internal.scripts";
+
+    private static final Permission[] SCRIPT_PERMISSIONS;
+    static {
+        SCRIPT_PERMISSIONS = new Permission[4];
+
+        /*
+         * Generated classes get access to runtime, runtime.linker, objects, scripts packages.
+         * Note that the actual scripts can not access these because Java.type, Packages
+         * prevent these restricted packages. And Java reflection and JSR292 access is prevented
+         * for scripts. In other words, nashorn generated portions of script classes can access
+         * clases in these implementation packages.
+         */
+        SCRIPT_PERMISSIONS[0] = new RuntimePermission("accessClassInPackage." + RUNTIME_PKG);
+        SCRIPT_PERMISSIONS[1] = new RuntimePermission("accessClassInPackage." + RUNTIME_LINKER_PKG);
+        SCRIPT_PERMISSIONS[2] = new RuntimePermission("accessClassInPackage." + OBJECTS_PKG);
+        SCRIPT_PERMISSIONS[3] = new RuntimePermission("accessClassInPackage." + SCRIPTS_PKG);
+    }
+
     private final Context context;
 
     final Context getContext() {
@@ -68,9 +94,28 @@ abstract class NashornLoader extends SecureClassLoader {
         if (i != -1) {
             final SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPackageAccess(name.substring(0, i));
+                final String pkgName = name.substring(0, i);
+                switch (pkgName) {
+                    case RUNTIME_PKG:
+                    case RUNTIME_LINKER_PKG:
+                    case OBJECTS_PKG:
+                    case SCRIPTS_PKG:
+                        // allow it.
+                        break;
+                    default:
+                        sm.checkPackageAccess(pkgName);
+                }
             }
         }
+    }
+
+    @Override
+    protected PermissionCollection getPermissions(CodeSource codesource) {
+        final Permissions permCollection = new Permissions();
+        for (final Permission perm : SCRIPT_PERMISSIONS) {
+            permCollection.add(perm);
+        }
+        return permCollection;
     }
 
     /**

@@ -53,7 +53,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
     }
 
     @Override
-    public final Node enter(final UnaryNode unaryNode) {
+    public final Node enterUnaryNode(final UnaryNode unaryNode) {
         switch (unaryNode.tokenType()) {
         case ADD:
             return enterADD(unaryNode);
@@ -81,12 +81,12 @@ public class NodeOperatorVisitor extends NodeVisitor {
         case INCPOSTFIX:
             return enterDECINC(unaryNode);
         default:
-            return super.enter(unaryNode);
+            return super.enterUnaryNode(unaryNode);
         }
     }
 
     @Override
-    public final Node leave(final UnaryNode unaryNode) {
+    public final Node leaveUnaryNode(final UnaryNode unaryNode) {
         switch (unaryNode.tokenType()) {
         case ADD:
             return leaveADD(unaryNode);
@@ -114,12 +114,12 @@ public class NodeOperatorVisitor extends NodeVisitor {
         case INCPOSTFIX:
             return leaveDECINC(unaryNode);
         default:
-            return super.leave(unaryNode);
+            return super.leaveUnaryNode(unaryNode);
         }
     }
 
     @Override
-    public final Node enter(final BinaryNode binaryNode) {
+    public final Node enterBinaryNode(final BinaryNode binaryNode) {
         switch (binaryNode.tokenType()) {
         case ADD:
             return enterADD(binaryNode);
@@ -198,12 +198,12 @@ public class NodeOperatorVisitor extends NodeVisitor {
         case SUB:
             return enterSUB(binaryNode);
         default:
-            return super.enter(binaryNode);
+            return super.enterBinaryNode(binaryNode);
         }
     }
 
     @Override
-    public final Node leave(final BinaryNode binaryNode) {
+    public final Node leaveBinaryNode(final BinaryNode binaryNode) {
         switch (binaryNode.tokenType()) {
         case ADD:
             return leaveADD(binaryNode);
@@ -282,7 +282,7 @@ public class NodeOperatorVisitor extends NodeVisitor {
         case SUB:
             return leaveSUB(binaryNode);
         default:
-            return super.leave(binaryNode);
+            return super.leaveBinaryNode(binaryNode);
         }
     }
 

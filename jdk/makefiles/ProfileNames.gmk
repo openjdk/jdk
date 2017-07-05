@@ -30,9 +30,8 @@
 
 PROFILE_NAMES := compact1 compact2 compact3
 
-# The include files use 1,2,3,4 for simplicity and conciseness. Internally we
-# use profile_1, profile_2 and profile_3. Note that profile_4 is a full JRE so
-# we never have to use it directly.
+# The include files use 1,2,3 for simplicity and conciseness. Internally we
+# use profile_1, profile_2 and profile_3. 
 
 ALL_PROFILES := profile_1 profile_2 profile_3
 

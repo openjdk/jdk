@@ -651,11 +651,10 @@ public class MethodEmitter implements Emitter {
 
     /**
      * Load the constants array
-     * @param unitClassName name of the compile unit from which to load constants
      * @return this method emitter
      */
-    MethodEmitter loadConstants(final String unitClassName) {
-        getStatic(unitClassName, CONSTANTS.tag(), CONSTANTS.descriptor());
+    MethodEmitter loadConstants() {
+        getStatic(classEmitter.getUnitClassName(), CONSTANTS.tag(), CONSTANTS.descriptor());
         assert peekType().isArray() : peekType();
         return this;
     }

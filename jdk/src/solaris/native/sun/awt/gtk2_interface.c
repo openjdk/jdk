@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,6 +435,39 @@ gboolean gtk2_check_version()
 
         return result;
     }
+}
+
+/**
+ * Functions for awt_Desktop.c
+ */
+gboolean gtk2_show_uri_load() {
+     gboolean success = FALSE;
+     dlerror();
+     const char *gtk_version = fp_gtk_check_version(2, 14, 0);
+     if (gtk_version != NULL) {
+         // The gtk_show_uri is available from GTK+ 2.14
+#ifdef INTERNAL_BUILD
+         fprintf (stderr, "The version of GTK is %s. "
+             "The gtk_show_uri function is supported "
+             "since GTK+ 2.14.\n", gtk_version);
+#endif /* INTERNAL_BUILD */
+     } else {
+         // Loading symbols only if the GTK version is 2.14 and higher
+         fp_gtk_show_uri = dl_symbol("gtk_show_uri");
+         const char *dlsym_error = dlerror();
+         if (dlsym_error) {
+#ifdef INTERNAL_BUILD
+             fprintf (stderr, "Cannot load symbol: %s \n", dlsym_error);
+#endif /* INTERNAL_BUILD */
+         } else if (fp_gtk_show_uri == NULL) {
+#ifdef INTERNAL_BUILD
+             fprintf(stderr, "dlsym(gtk_show_uri) returned NULL\n");
+#endif /* INTERNAL_BUILD */
+         } else {
+             success = TRUE;
+         }
+     }
+     return success;
 }
 
 /**

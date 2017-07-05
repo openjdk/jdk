@@ -112,7 +112,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final AccessNode accessNode) {
+    public Node enterAccessNode(final AccessNode accessNode) {
         enterDefault(accessNode);
 
         type("MemberExpression");
@@ -132,7 +132,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final Block block) {
+    public Node enterBlock(final Block block) {
         enterDefault(block);
 
         type("BlockStatement");
@@ -154,7 +154,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final BinaryNode binaryNode) {
+    public Node enterBinaryNode(final BinaryNode binaryNode) {
         enterDefault(binaryNode);
 
         final String name;
@@ -183,7 +183,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final BreakNode breakNode) {
+    public Node enterBreakNode(final BreakNode breakNode) {
         enterDefault(breakNode);
 
         type("BreakStatement");
@@ -201,7 +201,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final CallNode callNode) {
+    public Node enterCallNode(final CallNode callNode) {
         enterDefault(callNode);
 
         type("CallExpression");
@@ -217,7 +217,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final CaseNode caseNode) {
+    public Node enterCaseNode(final CaseNode caseNode) {
         enterDefault(caseNode);
 
         type("SwitchCase");
@@ -238,7 +238,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final CatchNode catchNode) {
+    public Node enterCatchNode(final CatchNode catchNode) {
         enterDefault(catchNode);
 
         type("CatchClause");
@@ -264,7 +264,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final ContinueNode continueNode) {
+    public Node enterContinueNode(final ContinueNode continueNode) {
         enterDefault(continueNode);
 
         type("ContinueStatement");
@@ -282,7 +282,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final DoWhileNode doWhileNode) {
+    public Node enterDoWhileNode(final DoWhileNode doWhileNode) {
         enterDefault(doWhileNode);
 
         type("DoWhileStatement");
@@ -299,7 +299,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final EmptyNode emptyNode) {
+    public Node enterEmptyNode(final EmptyNode emptyNode) {
         enterDefault(emptyNode);
 
         type("EmptyStatement");
@@ -308,7 +308,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final ExecuteNode executeNode) {
+    public Node enterExecuteNode(final ExecuteNode executeNode) {
         enterDefault(executeNode);
 
         type("ExpressionStatement");
@@ -321,7 +321,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final ForNode forNode) {
+    public Node enterForNode(final ForNode forNode) {
         enterDefault(forNode);
 
         if (forNode.isForIn() || (forNode.isForEach() && forNode.getInit() != null)) {
@@ -384,14 +384,14 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final FunctionNode functionNode) {
+    public Node enterFunctionNode(final FunctionNode functionNode) {
         enterDefault(functionNode);
 
-        final boolean program = functionNode.isScript();
+        final boolean program = functionNode.isProgram();
         final String name;
         if (program) {
             name = "Program";
-        } else if (functionNode.isStatement()) {
+        } else if (functionNode.isDeclared()) {
             name = "FunctionDeclaration";
         } else {
             name = "FunctionExpression";
@@ -419,19 +419,10 @@ public final class JSONWriter extends NodeVisitor {
         }
 
         // body consists of nested functions and statements
-        final List<FunctionNode> funcs = functionNode.getFunctions();
         final List<Node> stats = functionNode.getStatements();
-        final int size = stats.size() + funcs.size();
+        final int size = stats.size();
         int idx = 0;
         arrayStart("body");
-
-        for (final Node func : funcs) {
-            func.accept(this);
-            if (idx != (size - 1)) {
-                comma();
-            }
-            idx++;
-        }
 
         for (final Node stat : stats) {
             if (! stat.isDebug()) {
@@ -448,7 +439,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final IdentNode identNode) {
+    public Node enterIdentNode(final IdentNode identNode) {
         enterDefault(identNode);
 
         final String name = identNode.getName();
@@ -464,7 +455,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final IfNode ifNode) {
+    public Node enterIfNode(final IfNode ifNode) {
         enterDefault(ifNode);
 
         type("IfStatement");
@@ -490,7 +481,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final IndexNode indexNode) {
+    public Node enterIndexNode(final IndexNode indexNode) {
         enterDefault(indexNode);
 
         type("MemberExpression");
@@ -510,7 +501,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final LabelNode labelNode) {
+    public Node enterLabelNode(final LabelNode labelNode) {
         enterDefault(labelNode);
 
         type("LabeledStatement");
@@ -527,13 +518,13 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final LineNumberNode lineNumberNode) {
+    public Node enterLineNumberNode(final LineNumberNode lineNumberNode) {
         return null;
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public Node enter(final LiteralNode literalNode) {
+    public Node enterLiteralNode(final LiteralNode literalNode) {
         enterDefault(literalNode);
 
         if (literalNode instanceof LiteralNode.ArrayLiteralNode) {
@@ -569,7 +560,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final ObjectNode objectNode) {
+    public Node enterObjectNode(final ObjectNode objectNode) {
         enterDefault(objectNode);
 
         type("ObjectExpression");
@@ -581,7 +572,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final PropertyNode propertyNode) {
+    public Node enterPropertyNode(final PropertyNode propertyNode) {
         final Node key = propertyNode.getKey();
 
         final Node value = propertyNode.getValue();
@@ -647,7 +638,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final ReturnNode returnNode) {
+    public Node enterReturnNode(final ReturnNode returnNode) {
         enterDefault(returnNode);
 
         type("ReturnStatement");
@@ -665,7 +656,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final RuntimeNode runtimeNode) {
+    public Node enterRuntimeNode(final RuntimeNode runtimeNode) {
         final RuntimeNode.Request req = runtimeNode.getRequest();
 
         if (req == RuntimeNode.Request.DEBUGGER) {
@@ -680,12 +671,12 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final SplitNode splitNode) {
+    public Node enterSplitNode(final SplitNode splitNode) {
         return null;
     }
 
     @Override
-    public Node enter(final SwitchNode switchNode) {
+    public Node enterSwitchNode(final SwitchNode switchNode) {
         enterDefault(switchNode);
 
         type("SwitchStatement");
@@ -701,7 +692,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final TernaryNode ternaryNode) {
+    public Node enterTernaryNode(final TernaryNode ternaryNode) {
         enterDefault(ternaryNode);
 
         type("ConditionalExpression");
@@ -722,7 +713,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final ThrowNode throwNode) {
+    public Node enterThrowNode(final ThrowNode throwNode) {
         enterDefault(throwNode);
 
         type("ThrowStatement");
@@ -735,7 +726,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final TryNode tryNode) {
+    public Node enterTryNode(final TryNode tryNode) {
         enterDefault(tryNode);
 
         type("TryStatement");
@@ -760,7 +751,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final UnaryNode unaryNode) {
+    public Node enterUnaryNode(final UnaryNode unaryNode) {
         enterDefault(unaryNode);
 
         final TokenType tokenType = unaryNode.tokenType();
@@ -816,7 +807,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final VarNode varNode) {
+    public Node enterVarNode(final VarNode varNode) {
         enterDefault(varNode);
 
         type("VariableDeclaration");
@@ -852,7 +843,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final WhileNode whileNode) {
+    public Node enterWhileNode(final WhileNode whileNode) {
         enterDefault(whileNode);
 
         type("WhileStatement");
@@ -869,7 +860,7 @@ public final class JSONWriter extends NodeVisitor {
     }
 
     @Override
-    public Node enter(final WithNode withNode) {
+    public Node enterWithNode(final WithNode withNode) {
         enterDefault(withNode);
 
         type("WithStatement");

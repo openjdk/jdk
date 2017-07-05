@@ -38,7 +38,7 @@ import jdk.nashorn.internal.runtime.Source;
  * IR representation for a runtime call.
  *
  */
-public class RuntimeNode extends Node implements TypeOverride {
+public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
 
     /**
      * Request enum used for meta-information about the runtime request
@@ -393,8 +393,9 @@ public class RuntimeNode extends Node implements TypeOverride {
     }
 
     @Override
-    public void setType(final Type type) {
+    public RuntimeNode setType(final Type type) {
         this.callSiteType = type;
+        return this;
     }
 
     @Override
@@ -408,12 +409,12 @@ public class RuntimeNode extends Node implements TypeOverride {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
+        if (visitor.enterRuntimeNode(this) != null) {
             for (int i = 0, count = args.size(); i < count; i++) {
                 args.set(i, args.get(i).accept(visitor));
             }
 
-            return visitor.leave(this);
+            return visitor.leaveRuntimeNode(this);
         }
 
         return this;
