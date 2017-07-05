@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,7 @@ void LogConfiguration::post_initialize() {
 
 void LogConfiguration::initialize(jlong vm_start_time) {
   LogFileOutput::set_file_name_parameters(vm_start_time);
-  LogDecorations::set_vm_start_time_millis(vm_start_time);
-
+  LogDecorations::initialize(vm_start_time);
   assert(_outputs == NULL, "Should not initialize _outputs before this function, initialize called twice?");
   _outputs = NEW_C_HEAP_ARRAY(LogOutput*, 2, mtLogging);
   _outputs[0] = LogOutput::Stdout;

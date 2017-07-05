@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @test
  * @bug 8136473
  * @summary Mismatched stores on same slice possible with Unsafe.Put*Unaligned methods
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation TestUnsafeUnalignedMismatchedAccesses
  * @run main/othervm -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses TestUnsafeUnalignedMismatchedAccesses
  *

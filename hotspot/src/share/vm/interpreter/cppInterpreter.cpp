@@ -27,6 +27,7 @@
 #include "interpreter/cppInterpreterGenerator.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "runtime/logTimer.hpp"
 
 #ifdef CC_INTERP
 
@@ -42,7 +43,7 @@ void CppInterpreter::initialize() {
 
   // generate interpreter
   { ResourceMark rm;
-    TraceTime timer("Interpreter generation", TraceStartupTime);
+    TraceStartupTime timer("Interpreter generation");
     int code_size = InterpreterCodeSize;
     NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
     _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,

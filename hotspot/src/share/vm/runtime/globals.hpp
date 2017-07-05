@@ -1482,17 +1482,11 @@ public:
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
                                                                             \
-  develop(bool, TraceStartupTime, false,                                    \
-          "Trace setup time")                                               \
-                                                                            \
   develop(bool, TraceProtectionDomainVerification, false,                   \
           "Trace protection domain verification")                           \
                                                                             \
   develop(bool, TraceClearedExceptions, false,                              \
           "Print when an exception is forcibly cleared")                    \
-                                                                            \
-  product(bool, TraceBiasedLocking, false,                                  \
-          "Trace biased locking in JVM")                                    \
                                                                             \
   /* gc */                                                                  \
                                                                             \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public final class RSAKeyPairGenerator extends KeyPairGeneratorSpi {
     // Supported by Microsoft Base, Strong and Enhanced Cryptographic Providers
     static final int KEY_SIZE_MIN = 512; // disallow MSCAPI min. of 384
     static final int KEY_SIZE_MAX = 16384;
-    private static final int KEY_SIZE_DEFAULT = 1024;
+    private static final int KEY_SIZE_DEFAULT = 2048;
 
     // size of the key to generate, KEY_SIZE_MIN <= keySize <= KEY_SIZE_MAX
     private int keySize;

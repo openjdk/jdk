@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import jdk.internal.logger.LazyLoggers;
             Tests the behavior of bootstrap loggers (and SimpleConsoleLoggers
  *          too).
  * @modules java.base/jdk.internal.logger
+ *          java.logging
  * @build BootstrapLoggerUtils LogStream
  * @run main/othervm BootstrapLoggerTest NO_SECURITY
  * @run main/othervm BootstrapLoggerTest SECURE

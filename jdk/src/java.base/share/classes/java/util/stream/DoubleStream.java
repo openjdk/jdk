@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -949,24 +949,100 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      */
     public static DoubleStream iterate(final double seed, final DoubleUnaryOperator f) {
         Objects.requireNonNull(f);
-        final PrimitiveIterator.OfDouble iterator = new PrimitiveIterator.OfDouble() {
-            double t = seed;
+        Spliterator.OfDouble spliterator = new Spliterators.AbstractDoubleSpliterator(Long.MAX_VALUE,
+               Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL) {
+            double prev;
+            boolean started;
 
             @Override
-            public boolean hasNext() {
+            public boolean tryAdvance(DoubleConsumer action) {
+                Objects.requireNonNull(action);
+                double t;
+                if (started)
+                    t = f.applyAsDouble(prev);
+                else {
+                    t = seed;
+                    started = true;
+                }
+                action.accept(prev = t);
+                return true;
+            }
+        };
+        return StreamSupport.doubleStream(spliterator, false);
+    }
+
+    /**
+     * Returns a sequential ordered {@code DoubleStream} produced by iterative
+     * application of a function to an initial element, conditioned on
+     * satisfying the supplied predicate.  The stream terminates as soon as
+     * the predicate returns false.
+     *
+     * <p>
+     * {@code DoubleStream.iterate} should produce the same sequence of
+     * elements as produced by the corresponding for-loop:
+     * <pre>{@code
+     *     for (double index=seed; predicate.test(index); index = f.apply(index)) {
+     *         ...
+     *     }
+     * }</pre>
+     *
+     * <p>
+     * The resulting sequence may be empty if the predicate does not hold on
+     * the seed value.  Otherwise the first element will be the supplied seed
+     * value, the next element (if present) will be the result of applying the
+     * function f to the seed value, and so on iteratively until the predicate
+     * indicates that the stream should terminate.
+     *
+     * @param seed the initial element
+     * @param predicate a predicate to apply to elements to determine when the
+     *          stream must terminate.
+     * @param f a function to be applied to the previous element to produce
+     *          a new element
+     * @return a new sequential {@code DoubleStream}
+     * @since 9
+     */
+    public static DoubleStream iterate(double seed, DoublePredicate predicate, DoubleUnaryOperator f) {
+        Objects.requireNonNull(f);
+        Objects.requireNonNull(predicate);
+        Spliterator.OfDouble spliterator = new Spliterators.AbstractDoubleSpliterator(Long.MAX_VALUE,
+               Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL) {
+            double prev;
+            boolean started, finished;
+
+            @Override
+            public boolean tryAdvance(DoubleConsumer action) {
+                Objects.requireNonNull(action);
+                if (finished)
+                    return false;
+                double t;
+                if (started)
+                    t = f.applyAsDouble(prev);
+                else {
+                    t = seed;
+                    started = true;
+                }
+                if (!predicate.test(t)) {
+                    finished = true;
+                    return false;
+                }
+                action.accept(prev = t);
                 return true;
             }
 
             @Override
-            public double nextDouble() {
-                double v = t;
-                t = f.applyAsDouble(t);
-                return v;
+            public void forEachRemaining(DoubleConsumer action) {
+                Objects.requireNonNull(action);
+                if (finished)
+                    return;
+                finished = true;
+                double t = started ? f.applyAsDouble(prev) : seed;
+                while (predicate.test(t)) {
+                    action.accept(t);
+                    t = f.applyAsDouble(t);
+                }
             }
         };
-        return StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(
-                iterator,
-                Spliterator.ORDERED | Spliterator.IMMUTABLE | Spliterator.NONNULL), false);
+        return StreamSupport.doubleStream(spliterator, false);
     }
 
     /**

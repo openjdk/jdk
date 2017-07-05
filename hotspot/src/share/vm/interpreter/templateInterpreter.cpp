@@ -31,6 +31,7 @@
 #include "interpreter/templateInterpreterGenerator.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/logTimer.hpp"
 
 #ifndef CC_INTERP
 
@@ -48,7 +49,7 @@ void TemplateInterpreter::initialize() {
 
   // generate interpreter
   { ResourceMark rm;
-    TraceTime timer("Interpreter generation", TraceStartupTime);
+    TraceStartupTime timer("Interpreter generation");
     int code_size = InterpreterCodeSize;
     NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
 #if INCLUDE_JVMTI

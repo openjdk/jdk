@@ -25,11 +25,11 @@
  * @test
  * @bug 6253848 6366811
  * @summary Basic tests for CyclicBarrier
+ * @library /lib/testlibrary/
  * @author Martin Buchholz, David Holmes
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -39,8 +39,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import jdk.testlibrary.Utils;
 
 public class Basic {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
 
     private static void checkBroken(final CyclicBarrier barrier) {
         check(barrier.isBroken());
@@ -77,7 +79,7 @@ public class Basic {
     private static final CyclicBarrier atTheStartingGate = new CyclicBarrier(3);
 
     private static void toTheStartingGate() {
-        try { atTheStartingGate.await(10, SECONDS); pass(); }
+        try { atTheStartingGate.await(LONG_DELAY_MS, MILLISECONDS); pass(); }
         catch (Throwable t) {
             unexpected(t);
             reset(atTheStartingGate);
@@ -314,13 +316,13 @@ public class Basic {
             Throwable throwable() { return this.throwable; }
             boolean interruptBit() { return this.interrupted; }
             void realRun() throws Throwable {
-                startingGate.await(10, SECONDS);
+                startingGate.await(LONG_DELAY_MS, MILLISECONDS);
                 try {
-                    if (timed) barrier.await(10, SECONDS);
+                    if (timed) barrier.await(LONG_DELAY_MS, MILLISECONDS);
                     else barrier.await(); }
                 catch (Throwable throwable) { this.throwable = throwable; }
 
-                try { doneSignal.await(10, SECONDS); }
+                try { doneSignal.await(LONG_DELAY_MS, MILLISECONDS); }
                 catch (InterruptedException e) { interrupted = true; }
             }
         }
@@ -354,7 +356,7 @@ public class Basic {
                 waiter.start();
                 waiters.add(waiter);
             }
-            startingGate.await(10, SECONDS);
+            startingGate.await(LONG_DELAY_MS, MILLISECONDS);
             while (barrier.getNumberWaiting() < N) Thread.yield();
             barrier.await();
             doneSignal.countDown();
@@ -383,7 +385,7 @@ public class Basic {
                 waiter.start();
                 waiters.add(waiter);
             }
-            startingGate.await(10, SECONDS);
+            startingGate.await(LONG_DELAY_MS, MILLISECONDS);
             while (barrier.getNumberWaiting() < N) Thread.yield();
             for (int i = 0; i < N/2; i++)
                 waiters.get(i).interrupt();

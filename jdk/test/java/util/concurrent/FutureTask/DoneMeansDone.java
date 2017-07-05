@@ -36,7 +36,10 @@
  * @bug 8073704
  * @summary Checks that once isDone() returns true,
  * get() never throws InterruptedException or TimeoutException
+ * @library /lib/testlibrary/
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
@@ -49,8 +52,11 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import jdk.testlibrary.Utils;
 
 public class DoneMeansDone {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+
     public static void main(String[] args) throws Throwable {
         final int iters = 1000;
         final int nThreads = 2;
@@ -92,7 +98,7 @@ public class DoneMeansDone {
         }
         done.set(true);
         pool.shutdown();
-        if (!pool.awaitTermination(10L, TimeUnit.SECONDS))
+        if (!pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
             throw new AssertionError();
         for (Future<?> future : futures)
             future.get();

@@ -35,7 +35,10 @@
  * @test
  * @bug 4486658
  * @summary Checks for responsiveness of blocking queues to cancellation.
+ * @library /lib/testlibrary/
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,8 +56,10 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import jdk.testlibrary.Utils;
 
 public class CancelledProducerConsumerLoops {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     static ExecutorService pool;
 
     public static void main(String[] args) throws Exception {
@@ -73,7 +78,7 @@ public class CancelledProducerConsumerLoops {
                 new CancelledProducerConsumerLoops(i, queue).run();
         }
         pool.shutdown();
-        if (! pool.awaitTermination(10L, TimeUnit.SECONDS))
+        if (! pool.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
             throw new AssertionError("timed out");
         pool = null;
     }
@@ -117,18 +122,18 @@ public class CancelledProducerConsumerLoops {
             assertCancelled(cons[i]);
         }
 
-        if (!producersInterrupted.await(10L, TimeUnit.SECONDS))
+        if (!producersInterrupted.await(LONG_DELAY_MS, MILLISECONDS))
             throw new AssertionError("timed out");
-        if (!consumersInterrupted.await(10L, TimeUnit.SECONDS))
+        if (!consumersInterrupted.await(LONG_DELAY_MS, MILLISECONDS))
             throw new AssertionError("timed out");
         if (prods[0].isDone() || prods[0].isCancelled())
             throw new AssertionError("completed too early");
 
         done = true;
 
-        if (! (prods[0].get(10L, TimeUnit.SECONDS) instanceof Integer))
+        if (! (prods[0].get(LONG_DELAY_MS, MILLISECONDS) instanceof Integer))
             throw new AssertionError("expected Integer");
-        if (! (cons[0].get(10L, TimeUnit.SECONDS) instanceof Integer))
+        if (! (cons[0].get(LONG_DELAY_MS, MILLISECONDS) instanceof Integer))
             throw new AssertionError("expected Integer");
     }
 
@@ -138,7 +143,7 @@ public class CancelledProducerConsumerLoops {
         if (!future.isCancelled())
             throw new AssertionError("not cancelled");
         try {
-            future.get(10L, TimeUnit.SECONDS);
+            future.get(LONG_DELAY_MS, MILLISECONDS);
             throw new AssertionError("should throw CancellationException");
         } catch (CancellationException success) {}
     }

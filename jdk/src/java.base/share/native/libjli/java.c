@@ -1470,7 +1470,7 @@ PrintJavaVersion(JNIEnv *env, jboolean extraLF)
     jclass ver;
     jmethodID print;
 
-    NULL_CHECK(ver = FindBootStrapClass(env, "sun/misc/Version"));
+    NULL_CHECK(ver = FindBootStrapClass(env, "java/lang/VersionProps"));
     NULL_CHECK(print = (*env)->GetStaticMethodID(env,
                                                  ver,
                                                  (extraLF == JNI_TRUE) ? "println" : "print",
