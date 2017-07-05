@@ -365,7 +365,7 @@ public class RMIConnectorServer extends JMXConnectorServer {
                 // Access file property specified, create an instance
                 // of the MBeanServerFileAccessController class
                 //
-                MBeanServerForwarder mbsf = null;
+                MBeanServerForwarder mbsf;
                 try {
                     mbsf = new MBeanServerFileAccessController(accessFile);
                 } catch (IOException e) {

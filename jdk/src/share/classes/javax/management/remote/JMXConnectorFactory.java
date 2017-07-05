@@ -435,7 +435,7 @@ public class JMXConnectorFactory {
 
         Iterator<JMXConnectorProvider> providers =
                 getProviderIterator(JMXConnectorProvider.class, loader);
-        JMXConnector connection = null;
+        JMXConnector connection;
         IOException exception = null;
         while(providers.hasNext()) {
             try {
@@ -450,7 +450,7 @@ public class JMXConnectorFactory {
                                  "] Service provider exception: " + e);
                 if (!(e instanceof MalformedURLException)) {
                     if (exception == null) {
-                        if (exception instanceof IOException) {
+                        if (e instanceof IOException) {
                             exception = (IOException) e;
                         } else {
                             exception = EnvHelp.initCause(

@@ -215,12 +215,10 @@ public class JMXConnectorServerFactory {
                 JMXConnectorFactory.
                 getProviderIterator(JMXConnectorServerProvider.class, loader);
 
-        JMXConnectorServer connection = null;
         IOException exception = null;
         while (providers.hasNext()) {
             try {
-                connection = providers.next().newJMXConnectorServer(url, map, mbs);
-                return connection;
+                return providers.next().newJMXConnectorServer(url, map, mbs);
             } catch (JMXProviderException e) {
                 throw e;
             } catch (Exception e) {
@@ -230,7 +228,7 @@ public class JMXConnectorServerFactory {
                                  "] Service provider exception: " + e);
                 if (!(e instanceof MalformedURLException)) {
                     if (exception == null) {
-                        if (exception instanceof IOException) {
+                        if (e instanceof IOException) {
                             exception = (IOException) e;
                         } else {
                             exception = EnvHelp.initCause(

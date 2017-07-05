@@ -591,8 +591,6 @@ public class DescriptorSupport
         Set returnedSet = descriptorMap.entrySet();
 
         int i = 0;
-        Object currValue = null;
-        Map.Entry currElement = null;
 
         if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
             MODELMBEAN_LOGGER.logp(Level.FINEST,
@@ -600,7 +598,7 @@ public class DescriptorSupport
                     "getFields()", "Returning " + numberOfEntries + " fields");
         }
         for (Iterator iter = returnedSet.iterator(); iter.hasNext(); i++) {
-            currElement = (Map.Entry) iter.next();
+            Map.Entry currElement = (Map.Entry) iter.next();
 
             if (currElement == null) {
                 if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {
@@ -609,7 +607,7 @@ public class DescriptorSupport
                             "getFields()", "Element is null");
                 }
             } else {
-                currValue = currElement.getValue();
+                Object currValue = currElement.getValue();
                 if (currValue == null) {
                     responseFields[i] = currElement.getKey() + "=";
                 } else {
@@ -1127,7 +1125,7 @@ public class DescriptorSupport
             final char c = entities[i].charAt(0);
             final String entity = entities[i].substring(1);
             charToEntityMap[c] = entity;
-            entityToCharMap.put(entity, new Character(c));
+            entityToCharMap.put(entity, c);
         }
     }
 
@@ -1325,13 +1323,11 @@ public class DescriptorSupport
     // utility to convert to int, returns -2 if bogus.
 
     private long toNumeric(String inStr) {
-        long result = -2;
         try {
-            result = java.lang.Long.parseLong(inStr);
+            return java.lang.Long.parseLong(inStr);
         } catch (Exception e) {
             return -2;
         }
-        return result;
     }
 
 

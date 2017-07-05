@@ -769,7 +769,6 @@ public class OpenMBeanAttributeInfoSupport
                 "array with same dimensions";
             throw new IllegalArgumentException(msg);
         }
-        Class<?> targetComponentClass = targetArrayClass.getComponentType();
         OpenType<?> componentOpenType;
         if (dim == 1)
             componentOpenType = baseType;

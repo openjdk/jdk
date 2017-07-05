@@ -352,7 +352,7 @@ public class OpenMBeanOperationInfoSupport
             value += Arrays.asList(this.getSignature()).hashCode();
             value += this.getReturnOpenType().hashCode();
             value += this.getImpact();
-            myHashCode = new Integer(value);
+            myHashCode = Integer.valueOf(value);
         }
 
         // return always the same hash code for this instance (immutable)

@@ -347,7 +347,7 @@ public class OpenMBeanInfoSupport
             value += arraySetHash(this.getConstructors());
             value += arraySetHash(this.getOperations());
             value += arraySetHash(this.getNotifications());
-            myHashCode = new Integer(value);
+            myHashCode = Integer.valueOf(value);
         }
 
         // return always the same hash code for this instance (immutable)

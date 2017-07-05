@@ -28,23 +28,11 @@ PACKAGE = java.awt
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
-# WARNING: Make sure the OPENJDK plugs are up-to-date, see make/common/internal/BinaryPlugs.gmk
 
 #
 # Files
 #
 AUTO_FILES_JAVA_DIRS = java/awt sun/awt/geom
-
-#
-# Specific to OPENJDK
-#
-ifdef OPENJDK
-
-build: import-binary-plug-awt-classes
-
-include $(BUILDDIR)/common/internal/BinaryPlugs.gmk
-
-endif
 
 build: properties cursors
 

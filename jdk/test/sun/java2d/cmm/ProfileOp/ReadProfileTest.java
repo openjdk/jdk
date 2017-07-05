@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6476665
+ * @bug 6476665 6523403
  * @summary Verifies reading profiles of the standard color spaces
  * @run main ReadProfileTest
  */

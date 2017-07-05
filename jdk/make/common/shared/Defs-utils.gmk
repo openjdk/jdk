@@ -148,13 +148,15 @@ ifeq ($(PLATFORM),windows)
     ECHO = $(UNIXCOMMAND_PATH)echo -e
     ZIPEXE = $(UNIXCOMMAND_PATH)zip
     UNZIP  = $(UNIXCOMMAND_PATH)unzip
+    # Some CYGWIN nawk versions require BINMODE=w for proper '\r' interpretation
+    NAWK   = $(UNIXCOMMAND_PATH)awk -v BINMODE=w
   else
     ZIPEXE = $(UTILS_DEVTOOL_PATH)zip
     UNZIP  = $(UTILS_DEVTOOL_PATH)unzip
+    NAWK   = $(UNIXCOMMAND_PATH)awk
   endif
   # Re-define some utilities
   LEX            =# override GNU Make intrinsic: no lex on windows
-  NAWK           = $(UNIXCOMMAND_PATH)awk
 endif
 
 # Linux specific
