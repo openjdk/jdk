@@ -174,4 +174,9 @@ public interface JavaLangAccess {
      * Invokes Long.fastUUID
      */
     String fastUUID(long lsb, long msb);
+
+    /**
+     * Invalidate package access cache
+     */
+    void invalidatePackageAccessCache();
 }

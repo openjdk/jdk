@@ -118,7 +118,7 @@ public class JdepsConfiguration implements AutoCloseable {
         }
 
         this.configuration = Configuration.empty()
-                .resolveRequires(finder, ModuleFinder.of(), mods);
+                .resolve(finder, ModuleFinder.of(), mods);
 
         this.configuration.modules().stream()
                 .map(ResolvedModule::reference)
@@ -272,7 +272,7 @@ public class JdepsConfiguration implements AutoCloseable {
             return nameToModule.values().stream();
         } else {
             return Configuration.empty()
-                    .resolveRequires(finder, ModuleFinder.of(), roots)
+                    .resolve(finder, ModuleFinder.of(), roots)
                     .modules().stream()
                     .map(ResolvedModule::name)
                     .map(nameToModule::get);
@@ -422,18 +422,13 @@ public class JdepsConfiguration implements AutoCloseable {
         }
 
         private ModuleDescriptor dropHashes(ModuleDescriptor md) {
-            ModuleDescriptor.Builder builder = ModuleDescriptor.module(md.name());
+            ModuleDescriptor.Builder builder = ModuleDescriptor.newModule(md.name());
             md.requires().forEach(builder::requires);
             md.exports().forEach(builder::exports);
             md.opens().forEach(builder::opens);
             md.provides().stream().forEach(builder::provides);
             md.uses().stream().forEach(builder::uses);
-
-            Set<String> concealed = new HashSet<>(md.packages());
-            md.exports().stream().map(Exports::source).forEach(concealed::remove);
-            md.opens().stream().map(Opens::source).forEach(concealed::remove);
-            concealed.forEach(builder::contains);
-
+            builder.packages(md.packages());
             return builder.build();
         }
 
