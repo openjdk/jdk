@@ -25,7 +25,7 @@
  * @test NullCheckDroppingsTest
  * @bug 8054492
  * @summary "Casting can result in redundant null checks in generated code"
- * @library /testlibrary /testlibrary/whitebox /testlibrary/com/oracle/java/testlibrary
+ * @library /testlibrary /../../test/lib /testlibrary/com/oracle/java/testlibrary
  * @build NullCheckDroppingsTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

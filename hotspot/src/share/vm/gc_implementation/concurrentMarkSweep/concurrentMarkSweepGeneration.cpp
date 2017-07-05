@@ -42,6 +42,7 @@
 #include "gc_implementation/shared/isGCActiveMark.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/allocation.hpp"
+#include "memory/cardGeneration.inline.hpp"
 #include "memory/cardTableRS.hpp"
 #include "memory/collectorPolicy.hpp"
 #include "memory/gcLocker.inline.hpp"
@@ -479,7 +480,9 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
   _restart_addr(NULL),
   _overflow_list(NULL),
   _stats(cmsGen),
-  _eden_chunk_lock(new Mutex(Mutex::leaf + 1, "CMS_eden_chunk_lock", true)),
+  _eden_chunk_lock(new Mutex(Mutex::leaf + 1, "CMS_eden_chunk_lock", true,
+                             //verify that this lock should be acquired with safepoint check.
+                             Monitor::_safepoint_check_sometimes)),
   _eden_chunk_array(NULL),     // may be set in ctor body
   _eden_chunk_capacity(0),     // -- ditto --
   _eden_chunk_index(0),        // -- ditto --
@@ -1608,14 +1611,15 @@ void CMSCollector::acquire_control_and_collect(bool full,
 
   // If the collection is being acquired from the background
   // collector, there may be references on the discovered
-  // references lists that have NULL referents (being those
-  // that were concurrently cleared by a mutator) or
-  // that are no longer active (having been enqueued concurrently
-  // by the mutator).
-  // Scrub the list of those references because Mark-Sweep-Compact
-  // code assumes referents are not NULL and that all discovered
-  // Reference objects are active.
-  ref_processor()->clean_up_discovered_references();
+  // references lists.  Abandon those references, since some
+  // of them may have become unreachable after concurrent
+  // discovery; the STW compacting collector will redo discovery
+  // more precisely, without being subject to floating garbage.
+  // Leaving otherwise unreachable references in the discovered
+  // lists would require special handling.
+  ref_processor()->disable_discovery();
+  ref_processor()->abandon_partial_discovery();
+  ref_processor()->verify_no_references_recorded();
 
   if (first_state > Idling) {
     save_heap_summary();
@@ -1681,7 +1685,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   ReferenceProcessorMTDiscoveryMutator rp_mut_discovery(ref_processor(), false);
 
   ref_processor()->set_enqueuing_is_done(false);
-  ref_processor()->enable_discovery(false /*verify_disabled*/, false /*check_no_refs*/);
+  ref_processor()->enable_discovery();
   ref_processor()->setup_policy(clear_all_soft_refs);
   // If an asynchronous collection finishes, the _modUnionTable is
   // all clear.  If we are assuming the collection from an asynchronous
@@ -2998,7 +3002,7 @@ void CMSCollector::checkpointRootsInitial() {
                     Mutex::_no_safepoint_check_flag);
     checkpointRootsInitialWork();
     // enable ("weak") refs discovery
-    rp->enable_discovery(true /*verify_disabled*/, true /*check_no_refs*/);
+    rp->enable_discovery();
     _collectorState = Marking;
   }
   SpecializationStats::print();
@@ -5945,7 +5949,8 @@ HeapWord* CMSCollector::next_card_start_after_block(HeapWord* addr) const {
 CMSBitMap::CMSBitMap(int shifter, int mutex_rank, const char* mutex_name):
   _bm(),
   _shifter(shifter),
-  _lock(mutex_rank >= 0 ? new Mutex(mutex_rank, mutex_name, true) : NULL)
+  _lock(mutex_rank >= 0 ? new Mutex(mutex_rank, mutex_name, true,
+                                    Monitor::_safepoint_check_sometimes) : NULL)
 {
   _bmStartWord = 0;
   _bmWordSize  = 0;

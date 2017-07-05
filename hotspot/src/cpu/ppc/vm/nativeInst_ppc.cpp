@@ -100,10 +100,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
   MacroAssembler* a = new MacroAssembler(&cb);
 
   // Patch the call.
-  if (ReoptimizeCallSequences &&
-      a->is_within_range_of_b(dest, addr_call)) {
-    a->bl(dest);
-  } else {
+  if (!ReoptimizeCallSequences || !a->is_within_range_of_b(dest, addr_call)) {
     address trampoline_stub_addr = get_trampoline();
 
     // We did not find a trampoline stub because the current codeblob
@@ -115,9 +112,12 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
 
     // Patch the constant in the call's trampoline stub.
     NativeCallTrampolineStub_at(trampoline_stub_addr)->set_destination(dest);
-
-    a->bl(trampoline_stub_addr);
+    dest = trampoline_stub_addr;
   }
+
+  OrderAccess::release();
+  a->bl(dest);
+
   ICache::ppc64_flush_icache_bytes(addr_call, code_size);
 }
 

@@ -1588,6 +1588,11 @@ bool os::release_memory(char* addr, size_t bytes) {
   return res;
 }
 
+void os::pretouch_memory(char* start, char* end) {
+  for (volatile char *p = start; p < end; p += os::vm_page_size()) {
+    *p = 0;
+  }
+}
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only,
