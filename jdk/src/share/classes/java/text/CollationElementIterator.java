@@ -119,7 +119,7 @@ public final class CollationElementIterator
      * on the predefined collation rules.  If the source string is empty,
      * NULLORDER will be returned on the calls to next().
      * @param sourceText the source string.
-     * @param order the collation object.
+     * @param owner the collation object.
      */
     CollationElementIterator(String sourceText, RuleBasedCollator owner) {
         this.owner = owner;
@@ -137,7 +137,7 @@ public final class CollationElementIterator
      * on the predefined collation rules.  If the source string is empty,
      * NULLORDER will be returned on the calls to next().
      * @param sourceText the source string.
-     * @param order the collation object.
+     * @param owner the collation object.
      */
     CollationElementIterator(CharacterIterator sourceText, RuleBasedCollator owner) {
         this.owner = owner;

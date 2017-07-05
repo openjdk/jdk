@@ -80,6 +80,10 @@ class DummyAddress implements Address {
     return new DummyAddress(debugger, badLong);
   }
 
+  public Address getCompKlassAddressAt(long offset) throws UnalignedAddressException, UnmappedAddressException {
+    return new DummyAddress(debugger, badLong);
+  }
+
   //
   // Java-related routines
   //

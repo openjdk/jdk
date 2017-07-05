@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -484,7 +484,7 @@ public class ObjectOutputStream
      * stream.  The state is reset to be the same as a new ObjectOutputStream.
      * The current point in the stream is marked as reset so the corresponding
      * ObjectInputStream will be reset at the same point.  Objects previously
-     * written to the stream will not be refered to as already being in the
+     * written to the stream will not be referred to as already being in the
      * stream.  They will be written to the stream again.
      *
      * @throws  IOException if reset() is invoked while serializing an object.

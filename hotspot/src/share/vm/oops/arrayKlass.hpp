@@ -30,9 +30,9 @@
 
 class klassVtable;
 
-// arrayKlass is the abstract baseclass for all array classes
+// ArrayKlass is the abstract baseclass for all array classes
 
-class arrayKlass: public Klass {
+class ArrayKlass: public Klass {
   friend class VMStructs;
  private:
   int      _dimension;         // This is n'th-dimensional array.
@@ -46,8 +46,8 @@ class arrayKlass: public Klass {
   // Constructors
   // The constructor with the Symbol argument does the real array
   // initialization, the other is a dummy
-  arrayKlass(Symbol* name);
-  arrayKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  ArrayKlass(Symbol* name);
+  ArrayKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
 
  public:
   // Testing operation
@@ -80,7 +80,7 @@ class arrayKlass: public Klass {
   oop* adr_component_mirror()           { return (oop*)&this->_component_mirror;}
 
   // Compiler/Interpreter offset
-  static ByteSize component_mirror_offset() { return in_ByteSize(offset_of(arrayKlass, _component_mirror)); }
+  static ByteSize component_mirror_offset() { return in_ByteSize(offset_of(ArrayKlass, _component_mirror)); }
 
   virtual Klass* java_super() const;//{ return SystemDictionary::Object_klass(); }
 
@@ -94,16 +94,16 @@ class arrayKlass: public Klass {
   Method* uncached_lookup_method(Symbol* name, Symbol* signature) const;
 
   // Casting from Klass*
-  static arrayKlass* cast(Klass* k) {
-    assert(k->oop_is_array(), "cast to arrayKlass");
-    return (arrayKlass*) k;
+  static ArrayKlass* cast(Klass* k) {
+    assert(k->oop_is_array(), "cast to ArrayKlass");
+    return (ArrayKlass*) k;
   }
 
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots);
   bool compute_is_subtype_of(Klass* k);
 
   // Sizing
-  static int header_size()                 { return sizeof(arrayKlass)/HeapWordSize; }
+  static int header_size()                 { return sizeof(ArrayKlass)/HeapWordSize; }
   static int static_size(int header_size);
 
   // Java vtable
@@ -124,7 +124,7 @@ class arrayKlass: public Klass {
   virtual void oops_do(OopClosure* cl);
 
   // Return a handle.
-  static void     complete_create_array_klass(arrayKlass* k, KlassHandle super_klass, TRAPS);
+  static void     complete_create_array_klass(ArrayKlass* k, KlassHandle super_klass, TRAPS);
 
 
   // jvm support

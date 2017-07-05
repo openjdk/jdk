@@ -192,13 +192,12 @@ final class RBCollationTables {
       *
       * @see CollationElementIterator#getMaxExpansion
       */
-    int getMaxExpansion(int order)
-    {
+    int getMaxExpansion(int order) {
         int result = 1;
 
         if (expandTable != null) {
             // Right now this does a linear search through the entire
-            // expandsion table.  If a collator had a large number of expansions,
+            // expansion table.  If a collator had a large number of expansions,
             // this could cause a performance problem, but in practise that
             // rarely happens
             for (int i = 0; i < expandTable.size(); i++) {
@@ -215,20 +214,19 @@ final class RBCollationTables {
     }
 
     /**
-     *  Get the entry of hash table of the expanding string in the collation
-     *  table.
-     *  @param idx the index of the expanding string value list
+     * Get the entry of hash table of the expanding string in the collation
+     * table.
+     * @param idx the index of the expanding string value list
      */
-    final int[] getExpandValueList(int order) {
-        return expandTable.elementAt(order - EXPANDCHARINDEX);
+    final int[] getExpandValueList(int idx) {
+        return expandTable.elementAt(idx - EXPANDCHARINDEX);
     }
 
     /**
-     *  Get the comarison order of a character from the collation table.
-     *  @return the comparison order of a character.
+     * Get the comarison order of a character from the collation table.
+     * @return the comparison order of a character.
      */
-    int getUnicodeOrder(int ch)
-    {
+    int getUnicodeOrder(int ch) {
         return mapping.elementAt(ch);
     }
 

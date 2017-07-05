@@ -97,8 +97,8 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     jint inst2;
     guarantee(Assembler::inv_op2(inst)==Assembler::sethi_op2, "must be sethi");
     if (format() != 0) {
-      assert(type() == relocInfo::oop_type, "only narrow oops case");
-      jint np = oopDesc::encode_heap_oop((oop)x);
+      assert(type() == relocInfo::oop_type || type() == relocInfo::metadata_type, "only narrow oops or klasses case");
+      jint np = type() == relocInfo::oop_type ? oopDesc::encode_heap_oop((oop)x) : oopDesc::encode_klass((Klass*)x);
       inst &= ~Assembler::hi22(-1);
       inst |=  Assembler::hi22((intptr_t)np);
       if (verify_only) {

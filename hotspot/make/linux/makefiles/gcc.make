@@ -116,11 +116,6 @@ ifdef CC_INTERP
   CFLAGS += -DCC_INTERP
 endif
 
-# Build for embedded targets
-ifdef JAVASE_EMBEDDED
-  CFLAGS += -DJAVASE_EMBEDDED
-endif
-
 # Keep temporary files (.ii, .s)
 ifdef NEED_ASM
   CFLAGS += -save-temps
@@ -146,10 +141,23 @@ CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(ACCEPTABLE_WARNINGS)
 CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@)) 
 
 # The flags to use for an Optimized g++ build
-OPT_CFLAGS += -O3
+OPT_CFLAGS/SIZE=-Os
+OPT_CFLAGS/SPEED=-O3
 
 # Hotspot uses very unstrict aliasing turn this optimization off
-OPT_CFLAGS += -fno-strict-aliasing
+# This option is added to CFLAGS rather than OPT_CFLAGS
+# so that OPT_CFLAGS overrides get this option too.
+CFLAGS += -fno-strict-aliasing 
+
+OPT_CFLAGS_DEFAULT ?= SPEED
+
+ifdef OPT_CFLAGS
+  ifneq ("$(origin OPT_CFLAGS)", "command line")
+    $(error " Use OPT_EXTRAS instead of OPT_CFLAGS to add extra flags to OPT_CFLAGS.")
+  endif
+endif
+
+OPT_CFLAGS = $(OPT_CFLAGS/$(OPT_CFLAGS_DEFAULT)) $(OPT_EXTRAS)
 
 # The gcc compiler segv's on ia64 when compiling bytecodeInterpreter.cpp 
 # if we use expensive-optimizations

@@ -53,7 +53,7 @@ public class Instance extends Oop {
 
   // Returns header size in bytes.
   public static long getHeaderSize() {
-    if (VM.getVM().isCompressedHeadersEnabled()) {
+    if (VM.getVM().isCompressedKlassPointersEnabled()) {
       return typeSize - VM.getVM().getIntSize();
     } else {
       return typeSize;

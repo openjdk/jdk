@@ -28,19 +28,19 @@
 #include "classfile/classLoaderData.hpp"
 #include "oops/arrayKlass.hpp"
 
-// A typeArrayKlass is the klass of a typeArray
+// A TypeArrayKlass is the klass of a typeArray
 // It contains the type and size of the elements
 
-class typeArrayKlass : public arrayKlass {
+class TypeArrayKlass : public ArrayKlass {
   friend class VMStructs;
  private:
   jint _max_length;            // maximum number of elements allowed in an array
 
   // Constructor
-  typeArrayKlass(BasicType type, Symbol* name);
-  static typeArrayKlass* allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS);
+  TypeArrayKlass(BasicType type, Symbol* name);
+  static TypeArrayKlass* allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS);
  public:
-  typeArrayKlass() {} // For dummy objects.
+  TypeArrayKlass() {} // For dummy objects.
 
   // instance variables
   jint max_length()                     { return _max_length; }
@@ -50,10 +50,10 @@ class typeArrayKlass : public arrayKlass {
   bool oop_is_typeArray_slow() const    { return true; }
 
   // klass allocation
-  static typeArrayKlass* create_klass(BasicType type, const char* name_str,
+  static TypeArrayKlass* create_klass(BasicType type, const char* name_str,
                                TRAPS);
   static inline Klass* create_klass(BasicType type, int scale, TRAPS) {
-    typeArrayKlass* tak = create_klass(type, external_name(type), CHECK_NULL);
+    TypeArrayKlass* tak = create_klass(type, external_name(type), CHECK_NULL);
     assert(scale == (1 << tak->log2_element_size()), "scale must check out");
     return tak;
   }
@@ -90,17 +90,17 @@ class typeArrayKlass : public arrayKlass {
 
  public:
   // Casting from Klass*
-  static typeArrayKlass* cast(Klass* k) {
-    assert(k->oop_is_typeArray(), "cast to typeArrayKlass");
-    return (typeArrayKlass*) k;
+  static TypeArrayKlass* cast(Klass* k) {
+    assert(k->oop_is_typeArray(), "cast to TypeArrayKlass");
+    return (TypeArrayKlass*) k;
   }
 
   // Naming
   static const char* external_name(BasicType type);
 
   // Sizing
-  static int header_size()  { return sizeof(typeArrayKlass)/HeapWordSize; }
-  int size() const          { return arrayKlass::static_size(header_size()); }
+  static int header_size()  { return sizeof(TypeArrayKlass)/HeapWordSize; }
+  int size() const          { return ArrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)
   void initialize(TRAPS);

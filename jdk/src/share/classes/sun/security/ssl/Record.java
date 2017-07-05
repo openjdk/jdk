@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,4 +110,10 @@ interface Record {
                                     + maxPadding        // padding
                                     + trailerSize;      // MAC
 
+    /*
+     * The overflow values of integers of 8, 16 and 24 bits.
+     */
+    static final int OVERFLOW_OF_INT08 = (1 << 8);
+    static final int OVERFLOW_OF_INT16 = (1 << 16);
+    static final int OVERFLOW_OF_INT24 = (1 << 24);
 }

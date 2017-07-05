@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,9 +286,20 @@ public abstract class NumberFormat extends Format  {
      * @see java.text.Format#format
      */
     public final String format(double number) {
+        // Use fast-path for double result if that works
+        String result = fastFormat(number);
+        if (result != null)
+            return result;
+
         return format(number, new StringBuffer(),
                       DontCareFieldPosition.INSTANCE).toString();
     }
+
+    /*
+     * fastFormat() is supposed to be implemented in concrete subclasses only.
+     * Default implem always returns null.
+     */
+    String fastFormat(double number) { return null; }
 
    /**
      * Specialization of format.

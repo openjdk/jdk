@@ -41,3 +41,20 @@ AUTO_FILES_JAVA_DIRS = sun/util/xml
 #
 include $(BUILDDIR)/common/Classes.gmk
 
+#
+# Rules for XML properties provider configuration file
+#
+SERVICEDIR = $(CLASSBINDIR)/META-INF/services
+FILES_copy = $(SERVICEDIR)/sun.util.spi.XmlPropertiesProvider
+
+copy-files: $(FILES_copy)
+
+$(SERVICEDIR)/%: $(SHARE_SRC)/classes/sun/util/xml/META-INF/services/%
+	$(install-file)
+
+build: copy-files
+
+clean::
+	$(RM) $(FILES_copy)
+
+

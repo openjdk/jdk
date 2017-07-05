@@ -1058,7 +1058,7 @@ Node *Matcher::xform( Node *n, int max_stack ) {
         Node *m = n->in(i);          // Get input
         int op = m->Opcode();
         assert((op == Op_BoxLock) == jvms->is_monitor_use(i), "boxes only at monitor sites");
-        if( op == Op_ConI || op == Op_ConP || op == Op_ConN ||
+        if( op == Op_ConI || op == Op_ConP || op == Op_ConN || op == Op_ConNKlass ||
             op == Op_ConF || op == Op_ConD || op == Op_ConL
             // || op == Op_BoxLock  // %%%% enable this and remove (+++) in chaitin.cpp
             ) {
@@ -1450,7 +1450,8 @@ static bool match_into_reg( const Node *n, Node *m, Node *control, int i, bool s
       if (j == max_scan)        // No post-domination before scan end?
         return true;            // Then break the match tree up
     }
-    if (m->is_DecodeN() && Matcher::narrow_oop_use_complex_address()) {
+    if ((m->is_DecodeN() && Matcher::narrow_oop_use_complex_address()) ||
+        (m->is_DecodeNKlass() && Matcher::narrow_klass_use_complex_address())) {
       // These are commonly used in address expressions and can
       // efficiently fold into them on X64 in some cases.
       return false;
@@ -1574,14 +1575,14 @@ Node *Matcher::Label_Root( const Node *n, State *svec, Node *control, const Node
 // program.  The register allocator is free to split uses later to
 // split live ranges.
 MachNode* Matcher::find_shared_node(Node* leaf, uint rule) {
-  if (!leaf->is_Con() && !leaf->is_DecodeN()) return NULL;
+  if (!leaf->is_Con() && !leaf->is_DecodeNarrowPtr()) return NULL;
 
   // See if this Con has already been reduced using this rule.
   if (_shared_nodes.Size() <= leaf->_idx) return NULL;
   MachNode* last = (MachNode*)_shared_nodes.at(leaf->_idx);
   if (last != NULL && rule == last->rule()) {
     // Don't expect control change for DecodeN
-    if (leaf->is_DecodeN())
+    if (leaf->is_DecodeNarrowPtr())
       return last;
     // Get the new space root.
     Node* xroot = new_node(C->root());
@@ -1671,12 +1672,12 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
       // DecodeN node consumed by an address may have different type
       // then its input. Don't compare types for such case.
       if (m->adr_type() != mach_at &&
-          (m->in(MemNode::Address)->is_DecodeN() ||
+          (m->in(MemNode::Address)->is_DecodeNarrowPtr() ||
            m->in(MemNode::Address)->is_AddP() &&
-           m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeN() ||
+           m->in(MemNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr() ||
            m->in(MemNode::Address)->is_AddP() &&
            m->in(MemNode::Address)->in(AddPNode::Address)->is_AddP() &&
-           m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeN())) {
+           m->in(MemNode::Address)->in(AddPNode::Address)->in(AddPNode::Address)->is_DecodeNarrowPtr())) {
         mach_at = m->adr_type();
       }
       if (m->adr_type() != mach_at) {
@@ -1721,7 +1722,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     guarantee(_proj_list.size() == num_proj, "no allocation during spill generation");
   }
 
-  if (leaf->is_Con() || leaf->is_DecodeN()) {
+  if (leaf->is_Con() || leaf->is_DecodeNarrowPtr()) {
     // Record the con for sharing
     _shared_nodes.map(leaf->_idx, ex);
   }
@@ -2038,7 +2039,7 @@ void Matcher::find_shared( Node *n ) {
           continue; // for(int i = ...)
         }
 
-        if( mop == Op_AddP && m->in(AddPNode::Base)->Opcode() == Op_DecodeN ) {
+        if( mop == Op_AddP && m->in(AddPNode::Base)->is_DecodeNarrowPtr()) {
           // Bases used in addresses must be shared but since
           // they are shared through a DecodeN they may appear
           // to have a single use so force sharing here.
@@ -2277,7 +2278,7 @@ void Matcher::validate_null_checks( ) {
     if (has_new_node(val)) {
       Node* new_val = new_node(val);
       if (is_decoden) {
-        assert(val->is_DecodeN() && val->in(0) == NULL, "sanity");
+        assert(val->is_DecodeNarrowPtr() && val->in(0) == NULL, "sanity");
         // Note: new_val may have a control edge if
         // the original ideal node DecodeN was matched before
         // it was unpinned in Matcher::collect_null_checks().

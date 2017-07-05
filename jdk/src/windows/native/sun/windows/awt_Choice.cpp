@@ -79,6 +79,10 @@ BOOL AwtChoice::sm_isMouseMoveInList = FALSE;
 
 static const UINT MINIMUM_NUMBER_OF_VISIBLE_ITEMS = 8;
 
+namespace {
+    jfieldID selectedIndexID;
+}
+
 /*************************************************************************
  * AwtChoice class methods
  */
@@ -86,7 +90,6 @@ static const UINT MINIMUM_NUMBER_OF_VISIBLE_ITEMS = 8;
 AwtChoice::AwtChoice() {
     m_hList = NULL;
     m_listDefWindowProc = NULL;
-    m_selectedItem = -1;
 }
 
 LPCTSTR AwtChoice::GetClassName() {
@@ -101,7 +104,6 @@ void AwtChoice::Dispose() {
 }
 
 AwtChoice* AwtChoice::Create(jobject peer, jobject parent) {
-
 
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
@@ -438,10 +440,14 @@ LRESULT CALLBACK AwtChoice::ListWindowProc(HWND hwnd, UINT message,
 MsgRouting AwtChoice::WmNotify(UINT notifyCode)
 {
     if (notifyCode == CBN_SELCHANGE) {
-        int selectedItem = (int)SendMessage(CB_GETCURSEL);
-        if (selectedItem != CB_ERR && m_selectedItem != selectedItem){
-            m_selectedItem = selectedItem;
-            DoCallback("handleAction", "(I)V", selectedItem);
+        int selectedIndex = (int)SendMessage(CB_GETCURSEL);
+
+        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+        jobject target = GetTarget(env);
+        int previousIndex = env->GetIntField(target, selectedIndexID);
+
+        if (selectedIndex != CB_ERR && selectedIndex != previousIndex){
+            DoCallback("handleAction", "(I)V", selectedIndex);
         }
     } else if (notifyCode == CBN_DROPDOWN) {
 
@@ -694,6 +700,15 @@ done:
  */
 
 extern "C" {
+
+JNIEXPORT void JNICALL
+Java_java_awt_Choice_initIDs(JNIEnv *env, jclass cls)
+{
+    TRY;
+    selectedIndexID = env->GetFieldID(cls, "selectedIndex", "I");
+    DASSERT(selectedIndexID);
+    CATCH_BAD_ALLOC;
+}
 
 /*
  * Class:     sun_awt_windows_WChoicePeer

@@ -31,10 +31,14 @@
 using namespace std;
 
 // STRUCTURE FOR HANDLING INPUT AND OUTPUT FILES
-typedef struct {
+
+class BufferedFile {
+ public:
   const char *_name;
   FILE *_fp;
-} BufferedFile;
+  inline BufferedFile() { _name = NULL; _fp = NULL; };
+  inline ~BufferedFile() {};
+};
 
 class ArchDesc;
 

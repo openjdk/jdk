@@ -333,12 +333,14 @@ void Dependencies::encode_content_bytes() {
       for (int j = 0; j < stride; j++) {
         if (j == skipj)  continue;
         ciBaseObject* v = deps->at(i+j);
+        int idx;
         if (v->is_object()) {
-          bytes.write_int(_oop_recorder->find_index(v->as_object()->constant_encoding()));
+          idx = _oop_recorder->find_index(v->as_object()->constant_encoding());
         } else {
           ciMetadata* meta = v->as_metadata();
-          bytes.write_int(_oop_recorder->find_index(meta->constant_encoding()));
+          idx = _oop_recorder->find_index(meta->constant_encoding());
         }
+        bytes.write_int(idx);
       }
     }
   }
@@ -573,8 +575,8 @@ void Dependencies::DepStream::log_dependency(Klass* witness) {
     if (type() == call_site_target_value) {
       args[j] = argument_oop(j);
     } else {
-    args[j] = argument(j);
-  }
+      args[j] = argument(j);
+    }
   }
   if (_deps != NULL && _deps->log() != NULL) {
     Dependencies::write_dependency_to(_deps->log(),
@@ -665,6 +667,14 @@ inline oop Dependencies::DepStream::recorded_oop_at(int i) {
 
 Metadata* Dependencies::DepStream::argument(int i) {
   Metadata* result = recorded_metadata_at(argument_index(i));
+
+  if (result == NULL) { // Explicit context argument can be compressed
+    int ctxkj = dep_context_arg(type());  // -1 if no explicit context arg
+    if (ctxkj >= 0 && i == ctxkj && ctxkj+1 < argument_count()) {
+      result = ctxk_encoded_as_null(type(), argument(ctxkj+1));
+    }
+  }
+
   assert(result == NULL || result->is_klass() || result->is_method(), "must be");
   return result;
 }
@@ -680,25 +690,21 @@ Klass* Dependencies::DepStream::context_type() {
 
   // Most dependencies have an explicit context type argument.
   {
-    int ctxkj = dep_context_arg(_type);  // -1 if no explicit context arg
+    int ctxkj = dep_context_arg(type());  // -1 if no explicit context arg
     if (ctxkj >= 0) {
       Metadata* k = argument(ctxkj);
-      if (k != NULL) {       // context type was not compressed away
-        assert(k->is_klass(), "type check");
-        return (Klass*) k;
-      }
-      // recompute "default" context type
-      return ctxk_encoded_as_null(_type, argument(ctxkj+1));
+      assert(k != NULL && k->is_klass(), "type check");
+      return (Klass*)k;
     }
   }
 
   // Some dependencies are using the klass of the first object
   // argument as implicit context type (e.g. call_site_target_value).
   {
-    int ctxkj = dep_implicit_context_arg(_type);
+    int ctxkj = dep_implicit_context_arg(type());
     if (ctxkj >= 0) {
       Klass* k = argument_oop(ctxkj)->klass();
-      assert(k->is_klass(), "type check");
+      assert(k != NULL && k->is_klass(), "type check");
       return (Klass*) k;
     }
   }

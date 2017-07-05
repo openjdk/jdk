@@ -135,6 +135,8 @@ class Metaspace : public CHeapObj<mtClass> {
   MetaWord* expand_and_allocate(size_t size,
                                 MetadataType mdtype);
 
+  static bool is_initialized() { return _class_space_list != NULL; }
+
 #ifndef PRODUCT
   bool contains(const void *ptr) const;
   bool contains_class(const void *ptr) const;

@@ -189,7 +189,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   if (UseCompressedKlassPointers) {
     // Save klass
     mov(klass, t1);
-    encode_heap_oop_not_null(t1);
+    encode_klass_not_null(t1);
     stw(t1, obj, oopDesc::klass_offset_in_bytes());
   } else {
     st_ptr(klass, obj, oopDesc::klass_offset_in_bytes());
