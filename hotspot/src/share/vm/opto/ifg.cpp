@@ -319,7 +319,7 @@ void PhaseChaitin::build_ifg_virtual( ) {
     // value is then removed from the live-ness set and it's inputs are
     // added to the live-ness set.
     for (uint j = block->end_idx() + 1; j > 1; j--) {
-      Node* n = block->_nodes[j - 1];
+      Node* n = block->get_node(j - 1);
 
       // Get value being defined
       uint r = _lrg_map.live_range_id(n);
@@ -456,7 +456,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     // Compute first nonphi node index
     uint first_inst;
     for (first_inst = 1; first_inst < last_inst; first_inst++) {
-      if (!block->_nodes[first_inst]->is_Phi()) {
+      if (!block->get_node(first_inst)->is_Phi()) {
         break;
       }
     }
@@ -464,15 +464,15 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     // Spills could be inserted before CreateEx node which should be
     // first instruction in block after Phis. Move CreateEx up.
     for (uint insidx = first_inst; insidx < last_inst; insidx++) {
-      Node *ex = block->_nodes[insidx];
+      Node *ex = block->get_node(insidx);
       if (ex->is_SpillCopy()) {
         continue;
       }
       if (insidx > first_inst && ex->is_Mach() && ex->as_Mach()->ideal_Opcode() == Op_CreateEx) {
         // If the CreateEx isn't above all the MachSpillCopies
         // then move it to the top.
-        block->_nodes.remove(insidx);
-        block->_nodes.insert(first_inst, ex);
+        block->remove_node(insidx);
+        block->insert_node(ex, first_inst);
       }
       // Stop once a CreateEx or any other node is found
       break;
@@ -523,7 +523,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
     // to the live-ness set.
     uint j;
     for (j = last_inst + 1; j > 1; j--) {
-      Node* n = block->_nodes[j - 1];
+      Node* n = block->get_node(j - 1);
 
       // Get value being defined
       uint r = _lrg_map.live_range_id(n);
@@ -541,7 +541,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           if( !n->is_Proj() ||
               // Could also be a flags-projection of a dead ADD or such.
               (_lrg_map.live_range_id(def) && !liveout.member(_lrg_map.live_range_id(def)))) {
-            block->_nodes.remove(j - 1);
+            block->remove_node(j - 1);
             if (lrgs(r)._def == n) {
               lrgs(r)._def = 0;
             }
@@ -605,7 +605,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
             // (j - 1) is index for current instruction 'n'
             Node *m = n;
             for (uint i = j; i <= last_inst && m->is_SpillCopy(); ++i) {
-              m = block->_nodes[i];
+              m = block->get_node(i);
             }
             if (m == single_use) {
               lrgs(r)._area = 0.0;
@@ -772,20 +772,20 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
 
     // Compute high pressure indice; avoid landing in the middle of projnodes
     j = hrp_index[0];
-    if (j < block->_nodes.size() && j < block->end_idx() + 1) {
-      Node* cur = block->_nodes[j];
+    if (j < block->number_of_nodes() && j < block->end_idx() + 1) {
+      Node* cur = block->get_node(j);
       while (cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch()) {
         j--;
-        cur = block->_nodes[j];
+        cur = block->get_node(j);
       }
     }
     block->_ihrp_index = j;
     j = hrp_index[1];
-    if (j < block->_nodes.size() && j < block->end_idx() + 1) {
-      Node* cur = block->_nodes[j];
+    if (j < block->number_of_nodes() && j < block->end_idx() + 1) {
+      Node* cur = block->get_node(j);
       while (cur->is_Proj() || (cur->is_MachNullCheck()) || cur->is_Catch()) {
         j--;
-        cur = block->_nodes[j];
+        cur = block->get_node(j);
       }
     }
     block->_fhrp_index = j;

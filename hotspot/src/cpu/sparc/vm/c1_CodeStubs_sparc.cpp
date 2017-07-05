@@ -307,7 +307,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
       assert(a_byte == *start++, "should be the same code");
     }
 #endif
-  } else if (_id == load_mirror_id) {
+  } else if (_id == load_mirror_id || _id == load_appendix_id) {
     // produce a copy of the load mirror instruction for use by the being initialized case
 #ifdef ASSERT
     address start = __ pc();
@@ -384,6 +384,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
     case access_field_id:  target = Runtime1::entry_for(Runtime1::access_field_patching_id); break;
     case load_klass_id:    target = Runtime1::entry_for(Runtime1::load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
     case load_mirror_id:   target = Runtime1::entry_for(Runtime1::load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
+    case load_appendix_id: target = Runtime1::entry_for(Runtime1::load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
     default: ShouldNotReachHere();
   }
   __ bind(call_patch);
@@ -397,7 +398,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   ce->add_call_info_here(_info);
   __ br(Assembler::always, false, Assembler::pt, _patch_site_entry);
   __ delayed()->nop();
-  if (_id == load_klass_id || _id == load_mirror_id) {
+  if (_id == load_klass_id || _id == load_mirror_id || _id == load_appendix_id) {
     CodeSection* cs = __ code_section();
     address pc = (address)_pc_start;
     RelocIterator iter(cs, pc, pc + 1);

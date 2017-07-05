@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ class VtableStub {
   bool           _is_vtable_stub;    // True if vtable stub, false, is itable stub
   /* code follows here */            // The vtableStub code
 
-  void* operator new(size_t size, int code_size);
+  void* operator new(size_t size, int code_size) throw();
 
   VtableStub(bool is_vtable_stub, int index)
         : _next(NULL), _is_vtable_stub(is_vtable_stub),
