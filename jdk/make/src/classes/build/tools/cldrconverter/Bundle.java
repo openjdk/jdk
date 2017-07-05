@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,6 +386,18 @@ class Bundle {
                     myMap.put(key, names);
                 } else {
                     it.remove();
+                }
+            }
+        }
+        // replace empty era names with parentMap era names
+        for (String key : ERA_KEYS) {
+            Object value = myMap.get(key);
+            if (value != null && value instanceof String[]) {
+                String[] eraStrings = (String[]) value;
+                for (String eraString : eraStrings) {
+                    if (eraString == null || eraString.isEmpty()) {
+                        fillInElements(parentsMap, key, value);
+                    }
                 }
             }
         }

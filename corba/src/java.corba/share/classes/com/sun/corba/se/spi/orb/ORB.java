@@ -31,9 +31,6 @@ import java.util.Properties ;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger ;
 
-import java.security.AccessController ;
-import java.security.PrivilegedAction ;
-
 import org.omg.CORBA.TCKind ;
 
 import com.sun.corba.se.pept.broker.Broker ;
@@ -88,9 +85,6 @@ import com.sun.corba.se.impl.logging.ORBUtilSystemException ;
 import com.sun.corba.se.impl.logging.OMGSystemException ;
 
 import com.sun.corba.se.impl.presentation.rmi.PresentationManagerImpl ;
-
-import jdk.internal.misc.JavaAWTAccess;
-import jdk.internal.misc.SharedSecrets;
 
 public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
     implements Broker, TypeCodeFactory
@@ -164,11 +158,8 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
 
     static class Holder {
         static final PresentationManager defaultPresentationManager =
-            setupPresentationManager();
+                                         setupPresentationManager();
     }
-
-    private static final Map<Object, PresentationManager> pmContexts =
-            new ConcurrentHashMap<>();
 
     private static Map<StringPair, LogWrapperBase> staticWrapperMap =
             new ConcurrentHashMap<>();
@@ -198,23 +189,10 @@ public abstract class ORB extends com.sun.corba.se.org.omg.CORBA.ORB
         byteBufferPool = null;
     }
 
-    /**
-     * Returns the Presentation Manager for the current thread group, using the ThreadGroup-specific
-     * AppContext to hold it. Creates and records one if needed.
+    /** Get the single instance of the PresentationManager
      */
     public static PresentationManager getPresentationManager()
     {
-        SecurityManager sm = System.getSecurityManager();
-        JavaAWTAccess javaAwtAccess = SharedSecrets.getJavaAWTAccess();
-        if (sm != null && javaAwtAccess != null) {
-            final Object appletContext = javaAwtAccess.getAppletContext();
-            if (appletContext != null) {
-                return pmContexts.computeIfAbsent(appletContext,
-                    x -> setupPresentationManager());
-            }
-        }
-
-        // No security manager or AppletAppContext
         return Holder.defaultPresentationManager;
     }
 

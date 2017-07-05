@@ -1005,15 +1005,15 @@ final class DirectAudioDevice extends AbstractMixer {
     private static final class DirectClip extends DirectDL
             implements Clip, Runnable, AutoClosingClip {
 
-        private Thread thread;
-        private byte[] audioData = null;
-        private int frameSize;         // size of one frame in bytes
-        private int m_lengthInFrames;
-        private int loopCount;
-        private int clipBytePosition;   // index in the audioData array at current playback
-        private int newFramePosition;   // set in setFramePosition()
-        private int loopStartFrame;
-        private int loopEndFrame;      // the last sample included in the loop
+        private volatile Thread thread;
+        private volatile byte[] audioData = null;
+        private volatile int frameSize;         // size of one frame in bytes
+        private volatile int m_lengthInFrames;
+        private volatile int loopCount;
+        private volatile int clipBytePosition;   // index in the audioData array at current playback
+        private volatile int newFramePosition;   // set in setFramePosition()
+        private volatile int loopStartFrame;
+        private volatile int loopEndFrame;      // the last sample included in the loop
 
         // auto closing clip support
         private boolean autoclosing = false;
@@ -1345,7 +1345,8 @@ final class DirectAudioDevice extends AbstractMixer {
         @Override
         public void run() {
             if (Printer.trace) Printer.trace(">>> DirectClip: run() threadID="+Thread.currentThread().getId());
-            while (thread != null) {
+            Thread curThread = Thread.currentThread();
+            while (thread == curThread) {
                 // doIO is volatile, but we could check it, then get
                 // pre-empted while another thread changes doIO and notifies,
                 // before we wait (so we sleep in wait forever).
@@ -1353,7 +1354,12 @@ final class DirectAudioDevice extends AbstractMixer {
                     if (!doIO) {
                         try {
                             lock.wait();
-                        } catch(InterruptedException ie) {}
+                        } catch(InterruptedException ie) {
+                        } finally {
+                            if (thread != curThread) {
+                                break;
+                            }
+                        }
                     }
                 }
                 while (doIO) {

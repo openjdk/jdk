@@ -735,7 +735,7 @@ public class ScriptFunction extends ScriptObject {
     /**
      * Name getter - ECMA Function.name
      *
-     * @param self self refence
+     * @param self self reference
      * @return the name, or undefined if none
      */
     public static Object G$name(final Object self) {
@@ -1120,12 +1120,19 @@ public class ScriptFunction extends ScriptObject {
         assert appliedRequest != null; // Bootstrap.isCallable() returned true for args[1], so it must produce a linkage.
 
         final Class<?> applyFnType = descType.parameterType(0);
-        MethodHandle inv = appliedInvocation.getInvocation(); //method handle from apply invocation. the applied function invocation
+        // Invocation and guard handles from apply invocation.
+        MethodHandle inv = appliedInvocation.getInvocation();
+        MethodHandle guard = appliedInvocation.getGuard();
 
         if (isApply && !isFailedApplyToCall) {
             if (passesArgs) {
                 // Make sure that the passed argArray is converted to Object[] the same way NativeFunction.apply() would do it.
                 inv = MH.filterArguments(inv, 2, NativeFunction.TO_APPLY_ARGS);
+                // Some guards (non-strict functions with non-primitive this) have a this-object parameter, so we
+                // need to apply this transformations to them as well.
+                if (guard.type().parameterCount() > 2) {
+                    guard = MH.filterArguments(guard, 2, NativeFunction.TO_APPLY_ARGS);
+                }
             } else {
                 // If the original call site doesn't pass argArray, pass in an empty array
                 inv = MH.insertArguments(inv, 2, (Object) ScriptRuntime.EMPTY_ARRAY);
@@ -1144,12 +1151,25 @@ public class ScriptFunction extends ScriptObject {
 
         if (!passesThis) {
             // If the original call site doesn't pass in a thisArg, pass in Global/undefined as needed
-            inv = bindImplicitThis(appliedFn, inv);
+            inv = bindImplicitThis(appliedFnNeedsWrappedThis, inv);
+            // guard may have this-parameter that needs to be inserted
+            if (guard.type().parameterCount() > 1) {
+                guard = bindImplicitThis(appliedFnNeedsWrappedThis, guard);
+            }
         } else if (appliedFnNeedsWrappedThis) {
             // target function needs a wrapped this, so make sure we filter for that
             inv = MH.filterArguments(inv, 1, WRAP_THIS);
+            // guard may have this-parameter that needs to be wrapped
+            if (guard.type().parameterCount() > 1) {
+                guard = MH.filterArguments(guard, 1, WRAP_THIS);
+            }
         }
+
+        final MethodType guardType = guard.type(); // Needed for combining guards below
+
+        // We need to account for the dropped (apply|call) function argument.
         inv = MH.dropArguments(inv, 0, applyFnType);
+        guard = MH.dropArguments(guard, 0, applyFnType);
 
         /*
          * Dropargs can only be non-()V in the case of isApply && !isFailedApplyToCall, which
@@ -1160,15 +1180,6 @@ public class ScriptFunction extends ScriptObject {
             inv = MH.dropArguments(inv, 4 + i, dropArgs.parameterType(i));
         }
 
-        MethodHandle guard = appliedInvocation.getGuard();
-        // If the guard checks the value of "this" but we aren't passing thisArg, insert the default one
-        if (!passesThis && guard.type().parameterCount() > 1) {
-            guard = bindImplicitThis(appliedFn, guard);
-        }
-        final MethodType guardType = guard.type();
-
-        // We need to account for the dropped (apply|call) function argument.
-        guard = MH.dropArguments(guard, 0, descType.parameterType(0));
         // Take the "isApplyFunction" guard, and bind it to this function.
         MethodHandle applyFnGuard = MH.insertArguments(IS_APPLY_FUNCTION, 2, this); //TODO replace this with switchpoint
         // Adapt the guard to receive all the arguments that the original guard does.
@@ -1244,9 +1255,9 @@ public class ScriptFunction extends ScriptObject {
         return ScriptObject.adaptHandleToVarArgCallSite(arrayConvertingGuard, descParamCount);
     }
 
-    private static MethodHandle bindImplicitThis(final Object fn, final MethodHandle mh) {
+    private static MethodHandle bindImplicitThis(final boolean needsWrappedThis, final MethodHandle mh) {
         final MethodHandle bound;
-        if (fn instanceof ScriptFunction && ((ScriptFunction) fn).needsWrappedThis()) {
+        if (needsWrappedThis) {
             bound = MH.filterArguments(mh, 1, SCRIPTFUNCTION_GLOBALFILTER);
         } else {
             bound = mh;

@@ -272,14 +272,16 @@ isWildcard(const char *filename)
         (! exists(filename));
 }
 
-static void
+static int
 FileList_expandWildcards(JLI_List fl)
 {
     size_t i, j;
+    int expandedCnt = 0;
     for (i = 0; i < fl->size; i++) {
         if (isWildcard(fl->elements[i])) {
             JLI_List expanded = wildcardFileList(fl->elements[i]);
             if (expanded != NULL && expanded->size > 0) {
+                expandedCnt++;
                 JLI_MemFree(fl->elements[i]);
                 JLI_List_ensureCapacity(fl, fl->size + expanded->size);
                 for (j = fl->size - 1; j >= i+1; j--)
@@ -294,19 +296,20 @@ FileList_expandWildcards(JLI_List fl)
             JLI_List_free(expanded);
         }
     }
+    return expandedCnt;
 }
 
 const char *
 JLI_WildcardExpandClasspath(const char *classpath)
 {
-    char *expanded;
+    const char *expanded;
     JLI_List fl;
 
     if (JLI_StrChr(classpath, '*') == NULL)
         return classpath;
     fl = JLI_List_split(classpath, PATH_SEPARATOR);
-    FileList_expandWildcards(fl);
-    expanded = JLI_List_join(fl, PATH_SEPARATOR);
+    expanded = FileList_expandWildcards(fl) ?
+        JLI_List_join(fl, PATH_SEPARATOR) : classpath;
     JLI_List_free(fl);
     if (getenv(JLDEBUG_ENV_ENTRY) != 0)
         printf("Expanded wildcards:\n"
