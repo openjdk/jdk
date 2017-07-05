@@ -519,12 +519,13 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
       // Calc address range within we try to attach (range of possible start addresses).
       char *const highest_start = (char *)align_ptr_down(zerobased_max - size, attach_point_alignment);
-      // SS10 and SS12u1 cannot compile "(char *)UnscaledOopHeapMax - size" on solaris sparc 32-bit:
-      // "Cannot use int to initialize char*." Introduce aux variable.
-      char *unscaled_end = (char *)UnscaledOopHeapMax;
-      unscaled_end -= size;
-      char *lowest_start = (size < UnscaledOopHeapMax) ?
-        MAX2(unscaled_end, aligned_heap_base_min_address) : aligned_heap_base_min_address;
+      // Need to be careful about size being guaranteed to be less
+      // than UnscaledOopHeapMax due to type constraints.
+      char *lowest_start = aligned_heap_base_min_address;
+      uint64_t unscaled_end = UnscaledOopHeapMax - size;
+      if (unscaled_end < UnscaledOopHeapMax) { // unscaled_end wrapped if size is large
+        lowest_start = MAX2(lowest_start, (char*)unscaled_end);
+      }
       lowest_start  = (char *)align_ptr_up(lowest_start, attach_point_alignment);
       try_reserve_range(highest_start, lowest_start, attach_point_alignment,
                         aligned_heap_base_min_address, zerobased_max, size, alignment, large);

@@ -149,31 +149,28 @@ static const char* nbasename(const char* progname) {
   return progname;
 }
 
-static const char* usage_lines[] = {
-  "Usage:  %s [-opt... | --option=value]... x.pack[.gz] y.jar\n",
-    "\n",
-    "Unpacking Options\n",
-    "  -H{h}, --deflate-hint={h}     override transmitted deflate hint: true, false, or keep (default)\n",
-    "  -r, --remove-pack-file        remove input file after unpacking\n",
-    "  -v, --verbose                 increase program verbosity\n",
-    "  -q, --quiet                   set verbosity to lowest level\n",
-    "  -l{F}, --log-file={F}         output to the given log file, or '-' for standard output (default)\n",
-    "  -?, -h, --help                print this message\n",
-    "  -V, --version                 print program version\n",
-    "  -J{X}                         Java VM argument (ignored)\n",
-    null
-};
+#define USAGE_HEADER "Usage:  %s [-opt... | --option=value]... x.pack[.gz] y.jar\n"
+#define USAGE_OPTIONS \
+    "\n" \
+    "Unpacking Options\n" \
+    "  -H{h}, --deflate-hint={h}     override transmitted deflate hint: true, false, or keep (default)\n" \
+    "  -r, --remove-pack-file        remove input file after unpacking\n" \
+    "  -v, --verbose                 increase program verbosity\n" \
+    "  -q, --quiet                   set verbosity to lowest level\n" \
+    "  -l{F}, --log-file={F}         output to the given log file, or '-' for standard output (default)\n" \
+    "  -?, -h, --help                print this message\n" \
+    "  -V, --version                 print program version\n" \
+    "  -J{X}                         Java VM argument (ignored)\n"
 
 static void usage(unpacker* u, const char* progname, bool full = false) {
   // WinMain does not set argv[0] to the progrname
   progname = (progname != null) ? nbasename(progname) : "unpack200";
-  for (int i = 0; usage_lines[i] != null; i++) {
-    fprintf(u->errstrm, usage_lines[i], progname);
-    if (!full) {
-      fprintf(u->errstrm,
-              "(For more information, run %s --help .)\n", progname);
-      break;
-    }
+
+  fprintf(u->errstrm, USAGE_HEADER, progname);
+  if (full) {
+    fprintf(u->errstrm, USAGE_OPTIONS);
+  } else {
+    fprintf(u->errstrm, "(For more information, run %s --help .)\n", progname);
   }
 }
 

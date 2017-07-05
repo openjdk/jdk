@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,6 @@ void YieldingFlexibleWorkGang::start_task(YieldingFlexibleGangTask* new_task) {
   _sequence_number++;
 
   uint requested_size = new_task->requested_size();
-  assert(requested_size >= 0, "Should be non-negative");
   if (requested_size != 0) {
     _active_workers = MIN2(requested_size, total_workers());
   } else {

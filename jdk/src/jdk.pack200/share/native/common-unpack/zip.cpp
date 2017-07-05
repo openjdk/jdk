@@ -84,7 +84,7 @@ void jar::init(unpacker* u_) {
 }
 
 // Write data to the ZIP output stream.
-void jar::write_data(void* buff, int len) {
+void jar::write_data(void* buff, size_t len) {
   while (len > 0) {
     int rc = (int)fwrite(buff, 1, len, jarfp);
     if (rc <= 0) {
@@ -323,12 +323,12 @@ void jar::write_central_directory() {
     // Total number of disks (int)
     header64[36] = (ushort)SWAP_BYTES(1);
     header64[37] = 0;
-    write_data(header64, (int)sizeof(header64));
+    write_data(header64, sizeof(header64));
   }
 
   // Write the End of Central Directory structure.
   PRINTCR((2, "end-of-directory at %d\n", output_file_offset));
-  write_data(header, (int)sizeof(header));
+  write_data(header, sizeof(header));
 
   PRINTCR((2, "writing zip comment\n"));
   // Write the comment.
@@ -590,7 +590,7 @@ void gunzip::init(unpacker* u_) {
   zstream = NEW(z_stream, 1);
   u->gzin = this;
   u->read_input_fn = read_input_via_gzip;
-  u->gzcrc = crc32(0L, Z_NULL, 0);
+  u->gzcrc = crc32(0, Z_NULL, 0);
 }
 
 void gunzip::start(int magic) {

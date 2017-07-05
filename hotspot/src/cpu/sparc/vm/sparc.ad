@@ -3758,13 +3758,9 @@ operand immD() %{
   interface(CONST_INTER);
 %}
 
+// Double Immediate: +0.0d
 operand immD0() %{
-#ifdef _LP64
-  // on 64-bit architectures this comparision is faster
   predicate(jlong_cast(n->getd()) == 0);
-#else
-  predicate((n->getd() == 0) && (fpclass(n->getd()) == FP_PZERO));
-#endif
   match(ConD);
 
   op_cost(0);
@@ -3781,9 +3777,9 @@ operand immF() %{
   interface(CONST_INTER);
 %}
 
-// Float Immediate: 0
+// Float Immediate: +0.0f
 operand immF0() %{
-  predicate((n->getf() == 0) && (fpclass(n->getf()) == FP_PZERO));
+  predicate(jint_cast(n->getf()) == 0);
   match(ConF);
 
   op_cost(0);

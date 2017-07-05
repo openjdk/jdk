@@ -100,6 +100,10 @@ address os::Linux::ucontext_get_pc(ucontext_t* uc) {
   ShouldNotCallThis();
 }
 
+void os::Linux::ucontext_set_pc(ucontext_t * uc, address pc) {
+  ShouldNotCallThis();
+}
+
 ExtendedPC os::fetch_frame_from_context(void* ucVoid,
                                         intptr_t** ret_sp,
                                         intptr_t** ret_fp) {

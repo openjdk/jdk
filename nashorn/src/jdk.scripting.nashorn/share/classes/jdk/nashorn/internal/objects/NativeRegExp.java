@@ -78,8 +78,8 @@ public final class NativeRegExp extends ScriptObject {
         this.globalObject = global;
     }
 
-    NativeRegExp(final String input, final String flagString, final Global global) {
-        this(global);
+    NativeRegExp(final String input, final String flagString, final Global global, final ScriptObject proto) {
+        super(proto, $nasgenmap$);
         try {
             this.regexp = RegExpFactory.create(input, flagString);
         } catch (final ParserException e) {
@@ -87,8 +87,12 @@ public final class NativeRegExp extends ScriptObject {
             e.throwAsEcmaException();
             throw new AssertionError(); //guard against null warnings below
         }
-
+        this.globalObject = global;
         this.setLastIndex(0);
+    }
+
+    NativeRegExp(final String input, final String flagString, final Global global) {
+        this(input, flagString, global, global.getRegExpPrototype());
     }
 
     NativeRegExp(final String input, final String flagString) {
@@ -928,7 +932,7 @@ public final class NativeRegExp extends ScriptObject {
         if (self instanceof NativeRegExp) {
             return (NativeRegExp)self;
         } else if (self != null && self == Global.instance().getRegExpPrototype()) {
-            return Global.instance().DEFAULT_REGEXP;
+            return Global.instance().getDefaultRegExp();
         } else {
             throw typeError("not.a.regexp", ScriptRuntime.safeToString(self));
         }

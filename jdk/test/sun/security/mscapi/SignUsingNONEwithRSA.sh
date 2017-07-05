@@ -28,6 +28,7 @@
 # @bug 6578658
 # @run shell SignUsingNONEwithRSA.sh
 # @summary Sign using the NONEwithRSA signature algorithm from SunMSCAPI
+# @key intermittent
 
 # set a few environment variables so that the shell-script can run stand-alone
 # in the source directory
