@@ -1332,7 +1332,7 @@ Zone Pacific/Easter	-7:17:28 -	LMT	1890
 # Palmer used to be supplied from Argentina.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Antarctica/Palmer	0	-	zzz	1965
+Zone Antarctica/Palmer	0	-	-00	1965
 			-4:00	Arg	AR%sT	1969 Oct  5
 			-3:00	Arg	AR%sT	1982 May
 			-4:00	Chile	CL%sT
@@ -1782,16 +1782,16 @@ Zone America/Montevideo	-3:44:44 -	LMT	1898 Jun 28
 # https://actualidad.rt.com/actualidad/204758-venezuela-modificar-huso-horario-sequia-elnino
 #
 # From Paul Eggert (2016-04-15):
-# Clocks advance 30 minutes on 2016-05-01 at 02:30. See:
-# Barboza AD. Huso horario en Venezuela volverá a 4 horas menos con
-# respecto al "Greenwich". Panorama 2016-04-15 12:20 -0430.
-# http://www.panorama.com.ve/ciudad/Huso-horario-en-Venezuela-volvera-a-4-horas-menos-con-respecto-al-Greenwich-20160415-0032.html
-#
+# Clocks advance 30 minutes on 2016-05-01 at 02:30....
 # "'Venezuela's new time-zone: hours without light, hours without water,
-# hours of presidential broadcasts, hours of lines," quipped comedian
-# Jean Mary Curro ...". See: Cawthorne A, Kai D. Venezuela scraps
+# hours of presidential broadcasts, hours of lines,' quipped comedian
+# Jean Mary Curró ...". See: Cawthorne A, Kai D. Venezuela scraps
 # half-hour time difference set by Chavez. Reuters 2016-04-15 14:50 -0400
 # http://www.reuters.com/article/us-venezuela-timezone-idUSKCN0XC2BE
+#
+# From Matt Johnson (2016-04-20):
+# ... published in the official Gazette [2016-04-18], here:
+# http://historico.tsj.gob.ve/gaceta_ext/abril/1842016/E-1842016-4551.pdf
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Caracas	-4:27:44 -	LMT	1890

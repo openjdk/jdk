@@ -2214,39 +2214,39 @@ Rule	NT_YK	1980	2006	-	Oct	lastSun	2:00	0	S
 Rule	NT_YK	1987	2006	-	Apr	Sun>=1	2:00	1:00	D
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 # aka Panniqtuuq
-Zone America/Pangnirtung 0	-	zzz	1921 # trading post est.
+Zone America/Pangnirtung 0	-	-00	1921 # trading post est.
 			-4:00	NT_YK	A%sT	1995 Apr Sun>=1  2:00
 			-5:00	Canada	E%sT	1999 Oct 31  2:00
 			-6:00	Canada	C%sT	2000 Oct 29  2:00
 			-5:00	Canada	E%sT
 # formerly Frobisher Bay
-Zone America/Iqaluit	0	-	zzz	1942 Aug # Frobisher Bay est.
+Zone America/Iqaluit	0	-	-00	1942 Aug # Frobisher Bay est.
 			-5:00	NT_YK	E%sT	1999 Oct 31  2:00
 			-6:00	Canada	C%sT	2000 Oct 29  2:00
 			-5:00	Canada	E%sT
 # aka Qausuittuq
-Zone America/Resolute	0	-	zzz	1947 Aug 31 # Resolute founded
+Zone America/Resolute	0	-	-00	1947 Aug 31 # Resolute founded
 			-6:00	NT_YK	C%sT	2000 Oct 29  2:00
 			-5:00	-	EST	2001 Apr  1  3:00
 			-6:00	Canada	C%sT	2006 Oct 29  2:00
 			-5:00	-	EST	2007 Mar 11  3:00
 			-6:00	Canada	C%sT
 # aka Kangiqiniq
-Zone America/Rankin_Inlet 0	-	zzz	1957 # Rankin Inlet founded
+Zone America/Rankin_Inlet 0	-	-00	1957 # Rankin Inlet founded
 			-6:00	NT_YK	C%sT	2000 Oct 29  2:00
 			-5:00	-	EST	2001 Apr  1  3:00
 			-6:00	Canada	C%sT
 # aka Iqaluktuuttiaq
-Zone America/Cambridge_Bay 0	-	zzz	1920 # trading post est.?
+Zone America/Cambridge_Bay 0	-	-00	1920 # trading post est.?
 			-7:00	NT_YK	M%sT	1999 Oct 31  2:00
 			-6:00	Canada	C%sT	2000 Oct 29  2:00
 			-5:00	-	EST	2000 Nov  5  0:00
 			-6:00	-	CST	2001 Apr  1  3:00
 			-7:00	Canada	M%sT
-Zone America/Yellowknife 0	-	zzz	1935 # Yellowknife founded?
+Zone America/Yellowknife 0	-	-00	1935 # Yellowknife founded?
 			-7:00	NT_YK	M%sT	1980
 			-7:00	Canada	M%sT
-Zone America/Inuvik	0	-	zzz	1953 # Inuvik founded
+Zone America/Inuvik	0	-	-00	1953 # Inuvik founded
 			-8:00	NT_YK	P%sT	1979 Apr lastSun  2:00
 			-7:00	NT_YK	M%sT	1980
 			-7:00	Canada	M%sT

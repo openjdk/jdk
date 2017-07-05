@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,7 @@ import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.ObjectStreamField;
 import java.io.ObjectInputStream;
-import java.io.ObjectInputStream.GetField;
 import java.io.ObjectOutputStream;
-import java.io.ObjectOutputStream.PutField;
 import java.io.IOException;
 
 /**
@@ -132,15 +130,18 @@ implements Serializable {
      *
      * @see isReadOnly
      */
+    @Override
     public void add(Permission permission) {
 
-        if (isReadOnly())
+        if (isReadOnly()) {
             throw new SecurityException("Attempt to add a Permission " +
                                         "to a readonly CryptoPermissions " +
                                         "object");
+        }
 
-        if (!(permission instanceof CryptoPermission))
+        if (!(permission instanceof CryptoPermission)) {
             return;
+        }
 
         CryptoPermission cryptoPerm = (CryptoPermission)permission;
         PermissionCollection pc =
@@ -161,6 +162,7 @@ implements Serializable {
      * in the PermissionCollection it belongs to, false if not.
      *
      */
+    @Override
     public boolean implies(Permission permission) {
         if (!(permission instanceof CryptoPermission)) {
             return false;
@@ -170,7 +172,13 @@ implements Serializable {
 
         PermissionCollection pc =
             getPermissionCollection(cryptoPerm.getAlgorithm());
-        return pc.implies(cryptoPerm);
+
+        if (pc != null) {
+            return pc.implies(cryptoPerm);
+        } else {
+            // none found
+            return false;
+        }
     }
 
     /**
@@ -179,6 +187,7 @@ implements Serializable {
      *
      * @return an enumeration of all the Permissions.
      */
+    @Override
     public Enumeration<Permission> elements() {
         // go through each Permissions in the hash table
         // and call their elements() function.
@@ -453,7 +462,7 @@ implements Serializable {
 final class PermissionsEnumerator implements Enumeration<Permission> {
 
     // all the perms
-    private Enumeration<PermissionCollection> perms;
+    private final Enumeration<PermissionCollection> perms;
     // the current set
     private Enumeration<Permission> permset;
 
@@ -462,17 +471,20 @@ final class PermissionsEnumerator implements Enumeration<Permission> {
         permset = getNextEnumWithMore();
     }
 
+    @Override
     public synchronized boolean hasMoreElements() {
         // if we enter with permissionimpl null, we know
         // there are no more left.
 
-        if (permset == null)
+        if (permset == null) {
             return  false;
+        }
 
         // try to see if there are any left in the current one
 
-        if (permset.hasMoreElements())
+        if (permset.hasMoreElements()) {
             return true;
+        }
 
         // get the next one that has something in it...
         permset = getNextEnumWithMore();
@@ -481,6 +493,7 @@ final class PermissionsEnumerator implements Enumeration<Permission> {
         return (permset != null);
     }
 
+    @Override
     public synchronized Permission nextElement() {
         // hasMoreElements will update permset to the next permset
         // with something in it...
@@ -496,8 +509,9 @@ final class PermissionsEnumerator implements Enumeration<Permission> {
         while (perms.hasMoreElements()) {
             PermissionCollection pc = perms.nextElement();
             Enumeration<Permission> next = pc.elements();
-            if (next.hasMoreElements())
+            if (next.hasMoreElements()) {
                 return next;
+            }
         }
         return null;
     }

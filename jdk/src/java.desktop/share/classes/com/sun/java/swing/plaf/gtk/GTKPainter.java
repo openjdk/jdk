@@ -1339,14 +1339,14 @@ class GTKPainter extends SynthPainter {
             Graphics g, int state, int x, int y, int w, int h) {
         ENGINE.paintExpander(g, context, Region.TREE,
                 GTKLookAndFeel.synthStateToGTKState(context.getRegion(), state),
-                ExpanderStyle.EXPANDED, "treeview", x, y, w, h);
+                ExpanderStyle.EXPANDED, "expander", x, y, w, h);
     }
 
     public void paintTreeCollapsedIcon(SynthContext context,
             Graphics g, int state, int x, int y, int w, int h) {
         ENGINE.paintExpander(g, context, Region.TREE,
                 GTKLookAndFeel.synthStateToGTKState(context.getRegion(), state),
-                ExpanderStyle.COLLAPSED, "treeview", x, y, w, h);
+                ExpanderStyle.COLLAPSED, "expander", x, y, w, h);
     }
 
     public void paintCheckBoxIcon(SynthContext context,

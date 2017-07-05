@@ -26,8 +26,7 @@
 #include <signal.h>
 #include <stdlib.h>
 
-int getNativeScaleFactor();
-int getScale(const char *uiScale);
+double getNativeScaleFactor();
 
 #endif
 

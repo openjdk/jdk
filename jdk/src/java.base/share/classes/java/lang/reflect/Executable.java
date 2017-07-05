@@ -122,7 +122,7 @@ public abstract class Executable extends AccessibleObject
             sb.append(')');
 
             if (exceptionTypes.length > 0) {
-                StringJoiner joiner = new StringJoiner(",", "throws ", "");
+                StringJoiner joiner = new StringJoiner(",", " throws ", "");
                 for (Class<?> exceptionType : exceptionTypes) {
                     joiner.add(exceptionType.getTypeName());
                 }

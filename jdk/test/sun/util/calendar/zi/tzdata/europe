@@ -778,6 +778,14 @@ Zone	Europe/Vienna	1:05:21 -	LMT	1893 Apr
 			1:00	EU	CE%sT
 
 # Belarus
+#
+# From Stepan Golosunov (2016-07-02):
+# http://www.lawbelarus.com/repub/sub30/texf9611.htm
+# (Act of the Cabinet of Ministers of the Republic of Belarus from
+# 1992-03-25 No. 157) ... says clocks were to be moved forward at 2:00
+# on last Sunday of March and backward at 3:00 on last Sunday of September
+# (the same as previous USSR and contemporary Russian regulations).
+#
 # From Yauhen Kharuzhy (2011-09-16):
 # By latest Belarus government act Europe/Minsk timezone was changed to
 # GMT+3 without DST (was GMT+2 with DST).
@@ -801,9 +809,6 @@ Zone	Europe/Minsk	1:50:16 -	LMT	1880
 			1:00	C-Eur	CE%sT	1944 Jul  3
 			3:00	Russia	MSK/MSD	1990
 			3:00	-	MSK	1991 Mar 31  2:00s
-			2:00	1:00	EEST	1991 Sep 29  2:00s
-			2:00	-	EET	1992 Mar 29  0:00s
-			2:00	1:00	EEST	1992 Sep 27  0:00s
 			2:00	Russia	EE%sT	2011 Mar 27  2:00s
 			3:00	-	FET	2014 Oct 26  1:00s
 			3:00	-	MSK
@@ -2746,14 +2751,22 @@ Zone Asia/Barnaul	 5:35:00 -	LMT	1919 Dec 10
 # Asia/Novosibirsk covers:
 # 54	RU-NVS	Novosibirsk Oblast
 
+# From Stepan Golosunov (2016-05-30):
+# http://asozd2.duma.gov.ru/main.nsf/(Spravka)?OpenAgent&RN=1085784-6
+# moves Novosibirsk oblast from UTC+6 to UTC+7.
+# From Stepan Golosunov (2016-07-04):
+# The law was signed yesterday and published today on
+# http://publication.pravo.gov.ru/Document/View/0001201607040064
+
 Zone Asia/Novosibirsk	 5:31:40 -	LMT	1919 Dec 14  6:00
-			 6:00	-	NOVT	1930 Jun 21 # Novosibirsk Time
-			 7:00	Russia	NOV%sT	1991 Mar 31  2:00s
-			 6:00	Russia	NOV%sT	1992 Jan 19  2:00s
-			 7:00	Russia	NOV%sT	1993 May 23 # say Shanks & P.
-			 6:00	Russia	NOV%sT	2011 Mar 27  2:00s
-			 7:00	-	NOVT	2014 Oct 26  2:00s
-			 6:00	-	NOVT
+			 6:00	-	+06	1930 Jun 21
+			 7:00	Russia	+07/+08	1991 Mar 31  2:00s
+			 6:00	Russia	+06/+07	1992 Jan 19  2:00s
+			 7:00	Russia	+07/+08	1993 May 23 # say Shanks & P.
+			 6:00	Russia	+06/+07	2011 Mar 27  2:00s
+			 7:00	-	+07	2014 Oct 26  2:00s
+			 6:00	-	+06	2016 Jul 24  2:00s
+			 7:00	-	+07
 
 # From Paul Eggert (2016-03-18):
 # Asia/Tomsk covers:
@@ -2794,6 +2807,9 @@ Zone Asia/Novosibirsk	 5:31:40 -	LMT	1919 Dec 14  6:00
 # approved by the Federation Council on 2016-04-20, signed by the President and
 # published as a law around 2016-04-26.
 
+# From Matt Johnson (2016-04-26):
+# http://publication.pravo.gov.ru/Document/View/0001201604260048
+
 Zone	Asia/Tomsk	 5:39:51 -	LMT	1919 Dec 22
 			 6:00	-	+06	1930 Jun 21
 			 7:00	Russia	+07/+08	1991 Mar 31  2:00s
@@ -2833,14 +2849,12 @@ Zone	Asia/Tomsk	 5:39:51 -	LMT	1919 Dec 22
 # realigning itself with KRAT.
 
 Zone Asia/Novokuznetsk	 5:48:48 -	LMT	1924 May  1
-			 6:00	-	KRAT	1930 Jun 21 # Krasnoyarsk Time
-			 7:00	Russia	KRA%sT	1991 Mar 31  2:00s
-			 6:00	Russia	KRA%sT	1992 Jan 19  2:00s
-			 7:00	Russia	KRA%sT	2010 Mar 28  2:00s
-			 6:00	Russia	NOV%sT	2011 Mar 27  2:00s # Novosibirsk
-			 7:00	-	NOVT	2014 Oct 26  2:00s
-			 7:00	-	KRAT	# Krasnoyarsk Time
-
+			 6:00	-	+06	1930 Jun 21
+			 7:00	Russia	+07/+08	1991 Mar 31  2:00s
+			 6:00	Russia	+06/+07	1992 Jan 19  2:00s
+			 7:00	Russia	+07/+08	2010 Mar 28  2:00s
+			 6:00	Russia	+06/+07	2011 Mar 27  2:00s
+			 7:00	-	+07
 
 # From Tim Parenti (2014-07-03), per Oscar van Vlijmen (2001-08-25):
 # Asia/Krasnoyarsk covers...
