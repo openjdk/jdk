@@ -33,8 +33,6 @@
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 class CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
   friend class G1CodeRootSetTest;
   typedef HashtableEntry<nmethod*, mtGC> Entry;

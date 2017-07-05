@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,7 +479,7 @@ module PortableInterceptor {
      * On the client:
      * <ul>
      *   <li>Within the <code>receive_reply</code> interception point, this 
-     *       will only return <code>SUCCESSFUL</code></li>.
+     *       will only return <code>SUCCESSFUL</code>.</li>
      *   <li>Within the <code>receive_exception</code> interception point, 
      *       this will be either <code>SYSTEM_EXCEPTION</code> or 
      *       <code>USER_EXCEPTION</code>.</li>
@@ -545,7 +545,7 @@ module PortableInterceptor {
     /**
      * Returns a copy of the service context with the given ID that 
      * is associated with the request. 
-     * <p>
+     *
      * @param id The <code>IOP.ServiceId</code> of the service context 
      *     which is to be returned. 
      * @return The <code>IOP.ServiceContext</code> obtained with the 
@@ -579,7 +579,6 @@ module PortableInterceptor {
    * validity of each attribute or operation.  If it is not valid, attempting 
    * to access it will result in a <code>BAD_INV_ORDER</code> being thrown
    * with a standard minor code of 14.
-   * <p>
    *
    * <table border=1 summary="Shows the validity of each attribute or operation">
    *  <thead>
@@ -934,7 +933,6 @@ module PortableInterceptor {
    * of each attribute or operation.  If it is not valid, attempting to access 
    * it will result in a <code>BAD_INV_ORDER</code> being thrown with a 
    * standard minor code of 14.
-   * <p>
    *
    *
    * <table border=1 summary="Shows the validity of each attribute or operation">
@@ -1028,7 +1026,7 @@ module PortableInterceptor {
    *    <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td> <td>yes</td></tr>
    * 
    *    <tr><td><b>arguments</b></td>
-   *    <td>no </td> <td>yes<sub>1</sub</td> 
+   *    <td>no </td> <td>yes<sub>1</sub></td>
    *                              <td>yes</td> <td>no<sub>2</sub></td> 
    *                                                        <td>no<sub>2</sub>
    *                                                        </td></tr>
@@ -1133,7 +1131,7 @@ module PortableInterceptor {
    *       servant, which may no longer be available to the ORB. For example, 
    *       if the object's adapter is a POA that uses a 
    *       <code>ServantLocator</code>, then the ORB invokes the interception 
-   *       point after it calls <code>ServantLocator.postinvoke()</code></li>.
+   *       point after it calls <code>ServantLocator.postinvoke()</code>.</li>
    * </ol>
    *
    * @see ServerRequestInterceptor
@@ -1889,7 +1887,7 @@ module PortableInterceptor {
      * @param type An int specifying the type of policy being created. 
      * @param value An any containing data with which to construct the 
      *     <code>CORBA.Policy</code>. 
-     * @return A <code>CORBA.Policy<code> object of the specified type and 
+     * @return A <code>CORBA.Policy</code> object of the specified type and
      *     value.
      */
     CORBA::Policy create_policy 
@@ -2124,7 +2122,7 @@ module PortableInterceptor {
    * <p>
    * A client-side logging service written by company X, for example, may 
    * have the following ORBInitializer implementation: 
-   * <code><pre>
+   * <pre><code>
    * package com.x.logging;
    * 
    * import org.omg.PortableInterceptor.Interceptor; 
@@ -2144,7 +2142,7 @@ module PortableInterceptor {
    *         // This service does not need two init points. 
    *     } 
    * } 
-   * </pre></code>
+   * </code></pre>
    * To run a program called <code>MyApp</code> using this logging 
    * service, the user could type: 
    *   <blockquote><code>

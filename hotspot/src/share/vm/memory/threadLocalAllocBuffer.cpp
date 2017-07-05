@@ -31,8 +31,6 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Thread-Local Edens support
 
 // static member initialization
@@ -154,7 +152,7 @@ void ThreadLocalAllocBuffer::resize() {
   if (PrintTLAB && Verbose) {
     gclog_or_tty->print("TLAB new size: thread: " INTPTR_FORMAT " [id: %2d]"
                         " refills %d  alloc: %8.6f desired_size: " SIZE_FORMAT " -> " SIZE_FORMAT "\n",
-                        myThread(), myThread()->osthread()->thread_id(),
+                        p2i(myThread()), myThread()->osthread()->thread_id(),
                         _target_refills, _allocation_fraction.average(), desired_size(), aligned_new_size);
   }
   set_desired_size(aligned_new_size);
@@ -263,7 +261,7 @@ void ThreadLocalAllocBuffer::print_stats(const char* tag) {
                       " slow allocs: %d  refill waste: " SIZE_FORMAT "B"
                       " alloc:%8.5f %8.0fKB refills: %d waste %4.1f%% gc: %dB"
                       " slow: %dB fast: %dB\n",
-                      tag, thrd, thrd->osthread()->thread_id(),
+                      tag, p2i(thrd), thrd->osthread()->thread_id(),
                       _desired_size / (K / HeapWordSize),
                       _slow_allocations, _refill_waste_limit * HeapWordSize,
                       _allocation_fraction.average(),
