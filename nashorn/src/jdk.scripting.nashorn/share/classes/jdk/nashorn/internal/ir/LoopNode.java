@@ -34,6 +34,8 @@ import jdk.nashorn.internal.codegen.Label;
  * A loop node, for example a while node, do while node or for node
  */
 public abstract class LoopNode extends BreakableStatement {
+    private static final long serialVersionUID = 1L;
+
     /** loop continue label. */
     protected final Label continueLabel;
 

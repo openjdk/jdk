@@ -32,6 +32,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * Represents a block used as a statement.
  */
 public class BlockStatement extends Statement {
+    private static final long serialVersionUID = 1L;
+
     /** Block to execute. */
     private final Block block;
 

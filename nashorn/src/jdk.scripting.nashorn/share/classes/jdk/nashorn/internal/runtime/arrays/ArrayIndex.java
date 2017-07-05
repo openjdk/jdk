@@ -182,15 +182,15 @@ public final class ArrayIndex {
     }
 
     /**
-     * Convert an index to a long value. This basically amounts to ANDing it
-     * with {@link JSType#MAX_UINT}, as the maximum array index in JavaScript
+     * Convert an index to a long value. This basically amounts to converting it into a
+     * {@link JSType#toUint32(int)} uint32} as the maximum array index in JavaScript
      * is 0xfffffffe
      *
      * @param index index to convert to long form
      * @return index as uint32 in a long
      */
     public static long toLongIndex(final int index) {
-        return index & JSType.MAX_UINT;
+        return JSType.toUint32(index);
     }
 
     /**
@@ -201,7 +201,7 @@ public final class ArrayIndex {
      * @return index as string
      */
     public static String toKey(final int index) {
-        return Long.toString(index & JSType.MAX_UINT);
+        return Long.toString(JSType.toUint32(index));
     }
 
 }

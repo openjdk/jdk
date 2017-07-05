@@ -99,6 +99,11 @@ public final class NativeFloat64Array extends ArrayBufferView {
             return double.class;
         }
 
+        @Override
+        public Class<?> getBoxedElementType() {
+            return Double.class;
+        }
+
         private double getElem(final int index) {
             try {
                 return nb.get(index);

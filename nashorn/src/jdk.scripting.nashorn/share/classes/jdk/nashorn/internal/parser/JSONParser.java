@@ -32,7 +32,6 @@ import static jdk.nashorn.internal.parser.TokenType.ESCSTRING;
 import static jdk.nashorn.internal.parser.TokenType.RBRACE;
 import static jdk.nashorn.internal.parser.TokenType.RBRACKET;
 import static jdk.nashorn.internal.parser.TokenType.STRING;
-
 import java.util.ArrayList;
 import java.util.List;
 import jdk.nashorn.internal.ir.Expression;

@@ -32,6 +32,7 @@ import jdk.nashorn.internal.ir.annotations.Immutable;
 
 @Immutable
 abstract class BreakableStatement extends LexicalContextStatement implements BreakableNode {
+    private static final long serialVersionUID = 1L;
 
     /** break label. */
     protected final Label breakLabel;

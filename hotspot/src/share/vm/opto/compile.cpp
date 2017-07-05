@@ -827,7 +827,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   // Drain the list.
   Finish_Warm();
 #ifndef PRODUCT
-  if (_printer) {
+  if (_printer && _printer->should_print(_method)) {
     _printer->print_inlining(this);
   }
 #endif

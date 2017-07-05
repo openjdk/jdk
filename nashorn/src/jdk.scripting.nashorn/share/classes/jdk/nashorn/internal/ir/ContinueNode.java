@@ -34,6 +34,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public class ContinueNode extends JumpStatement {
+    private static final long serialVersionUID = 1L;
+
     /**
      * Constructor
      *
@@ -80,4 +82,3 @@ public class ContinueNode extends JumpStatement {
         return ((LoopNode)target).getContinueLabel();
     }
 }
-
