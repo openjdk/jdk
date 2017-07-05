@@ -95,6 +95,7 @@ class StubGenerator: public StubCodeGenerator {
 #define inc_counter_np(counter) (0)
 #else
   void inc_counter_np_(int& counter) {
+    // This can destroy rscratch1 if counter is far from the code cache
     __ incrementl(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
@@ -1268,7 +1269,7 @@ class StubGenerator: public StubCodeGenerator {
            __ subptr(end, start); // number of bytes to copy
 
           intptr_t disp = (intptr_t) ct->byte_map_base;
-          if (__ is_simm32(disp)) {
+          if (Assembler::is_simm32(disp)) {
             Address cardtable(noreg, noreg, Address::no_scale, disp);
             __ lea(scratch, cardtable);
           } else {
@@ -1466,8 +1467,8 @@ class StubGenerator: public StubCodeGenerator {
     __ movb(Address(end_to, 8), rax);
 
   __ BIND(L_exit);
-    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1555,8 +1556,8 @@ class StubGenerator: public StubCodeGenerator {
     __ decrement(qword_count);
     __ jcc(Assembler::notZero, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1564,8 +1565,8 @@ class StubGenerator: public StubCodeGenerator {
     // Copy in 32-bytes chunks
     copy_32_bytes_backward(from, to, qword_count, rax, L_copy_32_bytes, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jbyte_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1658,8 +1659,8 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(Address(end_to, 8), rax);
 
   __ BIND(L_exit);
-    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1759,8 +1760,8 @@ class StubGenerator: public StubCodeGenerator {
     __ decrement(qword_count);
     __ jcc(Assembler::notZero, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1768,8 +1769,8 @@ class StubGenerator: public StubCodeGenerator {
     // Copy in 32-bytes chunks
     copy_32_bytes_backward(from, to, qword_count, rax, L_copy_32_bytes, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jshort_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1859,8 +1860,8 @@ class StubGenerator: public StubCodeGenerator {
       __ leaq(end_to, Address(saved_to, dword_count, Address::times_4, -4));
       gen_write_ref_array_post_barrier(saved_to, end_to, rax);
     }
-    inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1940,11 +1941,11 @@ class StubGenerator: public StubCodeGenerator {
     __ decrement(qword_count);
     __ jcc(Assembler::notZero, L_copy_8_bytes);
 
-    inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
     if (is_oop) {
       __ jmp(L_exit);
     }
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -1952,7 +1953,6 @@ class StubGenerator: public StubCodeGenerator {
     // Copy in 32-bytes chunks
     copy_32_bytes_backward(from, to, qword_count, rax, L_copy_32_bytes, L_copy_8_bytes);
 
-   inc_counter_np(SharedRuntime::_jint_array_copy_ctr);
    __ bind(L_exit);
      if (is_oop) {
        Register end_to = rdx;
@@ -1960,6 +1960,7 @@ class StubGenerator: public StubCodeGenerator {
        gen_write_ref_array_post_barrier(to, end_to, rax);
      }
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -2032,8 +2033,8 @@ class StubGenerator: public StubCodeGenerator {
     if (is_oop) {
       __ jmp(L_exit);
     } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr);
       restore_arg_regs();
+      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);
@@ -2045,11 +2046,13 @@ class StubGenerator: public StubCodeGenerator {
     if (is_oop) {
     __ BIND(L_exit);
       gen_write_ref_array_post_barrier(saved_to, end_to, rax);
-      inc_counter_np(SharedRuntime::_oop_array_copy_ctr);
-    } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr);
     }
     restore_arg_regs();
+    if (is_oop) {
+      inc_counter_np(SharedRuntime::_oop_array_copy_ctr); // Update counter after rscratch1 is free
+    } else {
+      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
+    }
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -2113,8 +2116,8 @@ class StubGenerator: public StubCodeGenerator {
     if (is_oop) {
       __ jmp(L_exit);
     } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr);
       restore_arg_regs();
+      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
       __ leave(); // required for proper stackwalking of RuntimeStub frame
       __ ret(0);
@@ -2127,11 +2130,13 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_exit);
       __ lea(rcx, Address(to, saved_count, Address::times_8, -8));
       gen_write_ref_array_post_barrier(to, rcx, rax);
-      inc_counter_np(SharedRuntime::_oop_array_copy_ctr);
-    } else {
-      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr);
     }
     restore_arg_regs();
+    if (is_oop) {
+      inc_counter_np(SharedRuntime::_oop_array_copy_ctr); // Update counter after rscratch1 is free
+    } else {
+      inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
+    }
     __ xorptr(rax, rax); // return 0
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
@@ -2331,8 +2336,8 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_done);
     __ movptr(r13, Address(rsp, saved_r13_offset * wordSize));
     __ movptr(r14, Address(rsp, saved_r14_offset * wordSize));
-    inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr);
     restore_arg_regs();
+    inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr); // Update counter after rscratch1 is free
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
 

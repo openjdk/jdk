@@ -360,7 +360,7 @@ class ConcurrentMark: public CHeapObj {
   friend class ConcurrentMarkThread;
   friend class CMTask;
   friend class CMBitMapClosure;
-  friend class CSMarkOopClosure;
+  friend class CSetMarkOopClosure;
   friend class CMGlobalObjectClosure;
   friend class CMRemarkTask;
   friend class CMConcurrentMarkingTask;
@@ -375,7 +375,9 @@ protected:
   ConcurrentMarkThread* _cmThread;   // the thread doing the work
   G1CollectedHeap*      _g1h;        // the heap.
   size_t                _parallel_marking_threads; // the number of marking
-                                                   // threads we'll use
+                                                   // threads we're use
+  size_t                _max_parallel_marking_threads; // max number of marking
+                                                   // threads we'll ever use
   double                _sleep_factor; // how much we have to sleep, with
                                        // respect to the work we just did, to
                                        // meet the marking overhead goal
@@ -473,7 +475,7 @@ protected:
 
   double*   _accum_task_vtime;   // accumulated task vtime
 
-  WorkGang* _parallel_workers;
+  FlexibleWorkGang* _parallel_workers;
 
   ForceOverflowSettings _force_overflow_conc;
   ForceOverflowSettings _force_overflow_stw;
@@ -504,6 +506,7 @@ protected:
 
   // accessor methods
   size_t parallel_marking_threads() { return _parallel_marking_threads; }
+  size_t max_parallel_marking_threads() { return _max_parallel_marking_threads;}
   double sleep_factor()             { return _sleep_factor; }
   double marking_task_overhead()    { return _marking_task_overhead;}
   double cleanup_sleep_factor()     { return _cleanup_sleep_factor; }
@@ -708,6 +711,14 @@ public:
 
   CMBitMapRO* prevMarkBitMap() const { return _prevMarkBitMap; }
   CMBitMap*   nextMarkBitMap() const { return _nextMarkBitMap; }
+
+  // Returns the number of GC threads to be used in a concurrent
+  // phase based on the number of GC threads being used in a STW
+  // phase.
+  size_t scale_parallel_threads(size_t n_par_threads);
+
+  // Calculates the number of GC threads to be used in a concurrent phase.
+  int calc_parallel_marking_threads();
 
   // The following three are interaction between CM and
   // G1CollectedHeap

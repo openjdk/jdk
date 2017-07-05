@@ -435,9 +435,6 @@ public:
   MemRegion dirty_card_range_after_reset(MemRegion mr, bool reset,
                                          int reset_val);
 
-  // Set all the dirty cards in the given region to precleaned state.
-  void preclean_dirty_cards(MemRegion mr);
-
   // Provide read-only access to the card table array.
   const jbyte* byte_for_const(const void* p) const {
     return byte_for(p);
