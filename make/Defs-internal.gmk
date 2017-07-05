@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -354,3 +354,12 @@ ifdef ANT_HOME
   COMMON_BUILD_ARGUMENTS += ANT_HOME="$(ANT_HOME)"
 endif
 
+# When all repos support FULL_DEBUG_SYMBOLS and ZIP_DEBUGINFO_FILES,
+# then these can be set here:
+#ifdef FULL_DEBUG_SYMBOLS
+#  COMMON_BUILD_ARGUMENTS += FULL_DEBUG_SYMBOLS=$(FULL_DEBUG_SYMBOLS)
+#endif
+#
+#ifdef ZIP_DEBUGINFO_FILES
+#  COMMON_BUILD_ARGUMENTS += ZIP_DEBUGINFO_FILES="$(ZIP_DEBUGINFO_FILES)"
+#endif

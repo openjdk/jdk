@@ -1,0 +1,277 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# When you read this source. Remember that $(sort ...) has the side effect
+# of removing duplicates. It is actually this side effect that is
+# desired whenever sort is used below!
+
+ifeq  (,$(_MAKEBASE_GMK))
+    $(error You must include MakeBase.gmk prior to including JavaCompilation.gmk)
+endif
+
+ifeq ($(COMPILER_TYPE),CC)
+    COMPILING_MSG=echo Compiling $1
+    LINKING_MSG=echo Linking $1
+    LINKING_EXE_MSG=echo Linking executable $1
+    ARCHIVING_MSG=echo Archiving $1
+else
+    COMPILING_MSG=
+    LINKING_MSG=
+    LINKING_EXE_MSG=
+    ARCHIVING_MSG=
+endif
+
+define add_native_source
+    # param 1 = BUILD_MYPACKAGE
+    # parma 2 = the source file name (..../alfa.c or .../beta.cpp)
+    # param 3 = the bin dir that stores all .o (.obj) and .d files.
+    # param 4 = the c flags to the compiler
+    # param 5 = the c compiler
+    # param 6 = the c++ flags to the compiler
+    # param 7 = the c++ compiler
+
+    ifneq (,$$(filter %.c,$2))
+        # Compile as a C file
+        $1_$2_FLAGS=$4
+        $1_$2_COMP=$5
+    else
+        # Compile as a C++ file
+        $1_$2_FLAGS=$6
+        $1_$2_COMP=$7
+    endif
+    # Generate the .o (.obj) file name and place it in the bin dir.
+    $1_$2_OBJ:=$3/$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(notdir $2)))
+    # Only continue if this object file hasn't been processed already. This lets the first found
+    # source file override any other with the same name.
+    ifeq (,$$(findstring $$($1_$2_OBJ),$$($1_OBJS_SO_FAR)))
+        $1_OBJS_SO_FAR+=$$($1_$2_OBJ)
+        # And this is the dependency file for this obj file.
+        $1_$2_DEP:=$$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_$2_OBJ))
+        # Include previously generated dependency information. (if it exists)
+        -include $$($1_$2_DEP)
+
+        ifeq ($(COMPILER_TYPE),CL)
+            $1_$2_DEBUG_OUT_FLAGS:=-Fd$$(patsubst %$(OBJ_SUFFIX),%.pdb,$$($1_$2_OBJ)) \
+				   -Fm$$(patsubst %$(OBJ_SUFFIX),%.map,$$($1_$2_OBJ))
+        endif
+
+        $$($1_$2_OBJ) : $2
+        ifeq ($(COMPILER_TYPE),CC)
+		$$(call COMPILING_MSG,$$(notdir $2))
+		$$($1_$2_COMP) $$($1_$2_FLAGS) -MMD -MF $$($1_$2_DEP) -c $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
+        endif
+        ifeq ($(COMPILER_TYPE),CL)
+		$$(call COMPILING_MSG,$$(notdir $2))
+		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEBUG_OUT_FLAGS) -c $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
+        endif
+    endif
+endef
+
+define SetupNativeCompilation
+    # param 1 is for example BUILD_MYPACKAGE
+    # param 2,3,4,5,6,7,8 are named args.
+    #    SRC one or more directory roots to scan for C/C++ files.
+    #    LANG C or C++
+    #    CFLAGS the compiler flags to be used, used both for C and C++.
+    #    CXXFLAGS the compiler flags to be used for c++, if set overrides CFLAGS.
+    #    LDFLAGS the linker flags to be used, used both for C and C++.
+    #    LDFLAGS_SUFFIX the linker flags to be added last on the commandline
+    #        typically the libraries linked to.
+    #    ARFLAGS the archiver flags to be used
+    #    BIN the directory where we store the object files
+    #    LIB the resulting library file
+    #    EXE the resulting exec file
+    #    INCLUDES only pick source from these directories
+    #    EXCLUDES do not pick source from these directories
+    #    INCLUDE_FILES only compile exactly these files!
+    #    EXCLUDE_FILES with these names
+    #    VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
+    #    RC_FLAGS flags for RC.
+    $(if $2,$1_$(strip $2))
+    $(if $3,$1_$(strip $3))
+    $(if $4,$1_$(strip $4))
+    $(if $5,$1_$(strip $5))
+    $(if $6,$1_$(strip $6))
+    $(if $7,$1_$(strip $7))
+    $(if $8,$1_$(strip $8))
+    $(if $9,$1_$(strip $9))
+    $(if $(10),$1_$(strip $(10)))
+    $(if $(11),$1_$(strip $(11)))
+    $(if $(12),$1_$(strip $(12)))
+    $(if $(13),$1_$(strip $(13)))
+    $(if $(14),$1_$(strip $(14)))
+    $(if $(15),$1_$(strip $(15)))
+    $(if $(16),$1_$(strip $(16)))
+    $(if $(17),$1_$(strip $(17)))
+    $(if $(18),$1_$(strip $(18)))
+    $(if $(19),$1_$(strip $(19)))
+    $(if $(20),$1_$(strip $(20)))
+
+    ifeq (,$$($1_LANG))
+        $$(error You have to specify LANG for native compilation $1)
+    endif
+    ifeq (C,$$($1_LANG))
+	$1_LD:=$(LD)
+	$1_LDEXE:=$(LDEXE)
+    else
+       ifeq (C++,$$($1_LANG))
+           $1_LD:=$(LDCXX)
+	   $1_LDEXE:=$(LDEXECXX)
+       else
+           $$(error Unknown native language $$($1_LANG) for $1)
+       endif
+    endif
+
+    # Make sure the dirs exist.
+    $$(shell $(MKDIR) -p $$($1_SRC) $$($1_BIN) $$(dir $$($1_LIB)) $$(dir $$($1_EXE)))
+    # Find all files in the source trees. Sort to remove duplicates.
+    $1_ALL_SRCS := $$(sort $$(foreach i,$$($1_SRC), $$(shell $(FIND) $$i -type f)))
+    # Extract the C/C++ files.
+    $1_EXCLUDE_FILES:=$$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$($1_EXCLUDE_FILES)))
+    $1_INCLUDE_FILES:=$$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
+    ifneq ($$($1_EXCLUDE_FILES),)
+        $1_EXCLUDE_FILES:=$$(addprefix %,$$($1_EXCLUDE_FILES))
+    endif
+    $1_SRCS     := $$(filter-out $$($1_EXCLUDE_FILES),$$(filter %.c %.cpp,$$($1_ALL_SRCS)))
+    ifneq (,$$(strip $$($1_INCLUDE_FILES)))
+        $1_SRCS := $$(filter $$($1_INCLUDE_FILES),$$($1_SRCS))
+    endif
+    ifeq (,$$($1_SRCS))
+        $$(error No sources found for $1 when looking inside the dirs $$($1_SRC))
+    endif
+    # There can be only a single bin dir root, no need to foreach over the roots.
+    $1_BINS     := $$(wildcard $$($1_BIN)/*$(OBJ_SUFFIX))
+    # Now we have a list of all c/c++ files to compile: $$($1_SRCS)
+    # and we have a list of all existing object files: $$($1_BINS)
+
+    # Prepend the source/bin path to the filter expressions. Then do the filtering.
+    ifneq ($$($1_INCLUDES),)
+        $1_SRC_INCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_INCLUDES))))
+        $1_SRCS         := $$(filter $$($1_SRC_INCLUDES),$$($1_SRCS))
+    endif
+    ifneq ($$($1_EXCLUDES),)
+        $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
+        $1_SRCS         := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_SRCS))
+    endif
+
+    # Calculate the expected output from compiling the sources (sort to remove duplicates. Also provides
+    # a reproducable order on the input files to the linker).
+    $1_EXPECTED_OBJS:=$$(sort $$(addprefix $$($1_BIN)/,$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(notdir $$($1_SRCS))))))
+    $1 := $$($1_EXPECTED_OBJS)
+    # Are there too many object files on disk? Perhaps because some source file was removed?
+    $1_SUPERFLOUS_OBJS:=$$(sort $$(filter-out $$($1_EXPECTED_OBJS),$$($1_BINS)))
+    # Clean out the superfluous object files.
+    $$(shell $(RM) -f $$($1_SUPERFLUOUS_OBJS))
+
+    # Pickup extra HOST_OS_API and/or PLATFORM dependent variables for CFLAGS.
+    $1_EXTRA_CFLAGS:=$$($1_CFLAGS_$(HOST_OS_API)) $$($1_CFLAGS_$(PLATFORM))
+    ifneq ($(DEBUG_LEVEL),release)
+        # Pickup extra debug dependent variables for CFLAGS
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_debug)
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(HOST_OS_API)_debug)
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(PLATFORM)_debug)
+    else
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_release)
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(HOST_OS_API)_release)
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(PLATFORM)_release)
+    endif
+
+    # Pickup extra HOST_OS_API and/or PLATFORM dependent variables for CXXFLAGS.
+    $1_EXTRA_CXXFLAGS:=$$($1_CXXFLAGS_$(HOST_OS_API)) $$($1_CXXFLAGS_$(PLATFORM))
+    ifneq ($(DEBUG_LEVEL),release)
+        # Pickup extra debug dependent variables for CXXFLAGS
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_debug)
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(HOST_OS_API)_debug)
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(PLATFORM)_debug)
+    else
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_release)
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(HOST_OS_API)_release)
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(PLATFORM)_release)
+    endif
+
+    ifeq ($$($1_CXXFLAGS),)
+        $1_CXXFLAGS:=$$($1_CFLAGS)
+    endif
+    ifeq ($$(strip $$($1_EXTRA_CXXFLAGS)),)
+        $1_EXTRA_CXXFLAGS:=$$($1_EXTRA_CFLAGS)
+    endif
+
+    # Now create a list of the packages that are about to compile. Used when sending source
+    # in a batch to the compiler.
+    $$(shell $(RM) $$($1_BIN)/_the.list_of_sources)
+    $$(eval $$(call ListPathsSafelyNow,$1_SRCS,\n, >> $$($1_BIN)/_the.list_of_sources))
+
+    # Now call add_native_source for each source file we are going to compile.
+    $$(foreach p,$$($1_SRCS),\
+        $$(eval $$(call add_native_source,$1,$$p,$$($1_BIN),\
+                        $$($1_CFLAGS) $$($1_EXTRA_CFLAGS),$(CC),\
+			$$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS),$(CXX))))
+
+    # On windows we need to create a resource file
+    ifeq ($(HOST_OS_API), winapi)
+        ifneq (,$$($1_VERSIONINFO_RESOURCE))
+            ifneq (,$$($1_LIB))
+                ifeq (dynamic,$$(patsubst %$(SHARED_LIBRARY_SUFFIX),dynamic,$$($1_LIB)))
+                    $1_RES:=$$(patsubst %$(SHARED_LIBRARY_SUFFIX),%.res,$$($1_LIB))
+                else
+                    $1_RES:=$$(patsubst %$(STATIC_LIBRARY_SUFFIX),%.res,$$($1_LIB))
+                endif
+            endif
+            ifneq (,$$($1_EXE))
+                $1_RES:=$$(patsubst %$(EXE_SUFFIX),%.res,$$($1_EXE))
+            endif
+            $$($1_RES): $$($1_VERSIONINFO_RESOURCE)
+		$(RC) $$($1_RC_FLAGS) $(CC_OUT_OPTION)$$@ $$($1_VERSIONINFO_RESOURCE)
+        endif
+    endif
+
+    # Pickup extra HOST_OS_API dependent variables (posix or winapi) and 
+    # (linux,solaris,windows,bsd) for LDFLAGS and LDFLAGS_SUFFIX
+    $1_EXTRA_LDFLAGS:=$$($1_LDFLAGS_$(HOST_OS_API)) $$($1_LDFLAGS_$(PLATFORM))
+    $1_EXTRA_LDFLAGS_SUFFIX:=$$($1_LDFLAGS_SUFFIX_$(HOST_OS_API)) $$($1_LDFLAGS_SUFFIX_$(PLATFORM))
+    ifneq (,$$($1_LIB))
+        ifeq (dynamic,$$(patsubst %$(SHARED_LIBRARY_SUFFIX),dynamic,$$($1_LIB)))
+            # Generating a dynamic library.
+            $1_EXTRA_LDFLAGS+=$$(call SET_SHARED_LIBRARY_NAME,$$(notdir $$($1_LIB)))
+            $$($1_LIB) : $$($1_EXPECTED_OBJS) $$($1_RES)
+	    	$$(call LINKING_MSG,$$(notdir $$($1_LIB)))
+		$$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(LD_OUT_OPTION)$$($1_LIB) \
+			$$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+        else
+            # Generating a static library, ie object file archive.
+            $$($1_LIB) : $$($1_EXPECTED_OBJS) $$($1_RES)
+	    	$$(call ARCHIVING_MSG,$$(notdir $$($1_LIB)))
+		$(AR) $$($1_AR_FLAGS) $(AR_OUT_OPTION)$$($1_LIB) $$($1_EXPECTED_OBJS) \
+			$$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+       endif
+    endif
+    ifneq (,$$($1_EXE))
+        # A executable binary has been specified, setup the target for it.
+        $$($1_EXE) : $$($1_EXPECTED_OBJS) $$($1_RES)
+	    	$$(call LINKING_EXE_MSG,$$(notdir $$($1_EXE)))
+		$$($1_LDEXE) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(EXE_OUT_OPTION)$$($1_EXE) \
+			$$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+    endif
+endef
