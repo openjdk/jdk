@@ -370,18 +370,27 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 
   # Maximum amount of heap memory.
   # Maximum stack size.
+  JVM_MAX_HEAP=`expr $MEMORY_SIZE / 2`
   if test "x$BUILD_NUM_BITS" = x32; then
-    JVM_MAX_HEAP=1100M
+    if test "$JVM_MAX_HEAP" -gt "1100"; then
+      JVM_MAX_HEAP=1100
+    elif test "$JVM_MAX_HEAP" -lt "512"; then
+      JVM_MAX_HEAP=512
+    fi
     STACK_SIZE=768
   else
     # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
     # pointers are used. Apparently, we need to increase the heap and stack
     # space for the jvm. More specifically, when running javac to build huge
     # jdk batch
-    JVM_MAX_HEAP=1600M
+    if test "$JVM_MAX_HEAP" -gt "1600"; then
+      JVM_MAX_HEAP=1600
+    elif test "$JVM_MAX_HEAP" -lt "512"; then
+      JVM_MAX_HEAP=512
+    fi
     STACK_SIZE=1536
   fi
-  ADD_JVM_ARG_IF_OK([-Xmx$JVM_MAX_HEAP],boot_jdk_jvmargs_big,[$JAVA])
+  ADD_JVM_ARG_IF_OK([-Xmx${JVM_MAX_HEAP}M],boot_jdk_jvmargs_big,[$JAVA])
   ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],boot_jdk_jvmargs_big,[$JAVA])
 
   AC_MSG_RESULT([$boot_jdk_jvmargs_big])

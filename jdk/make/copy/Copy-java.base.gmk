@@ -32,17 +32,17 @@ $(eval $(call IncludeCustomExtension, jdk, copy/Copy-java.base.gmk))
 # Copy exported header files to outputdir.
 #
 JAVA_BASE_HEADERS := \
-    $(INCLUDEDIR)/jni.h \
-    $(INCLUDEDIR)/jvmti.h \
-    $(INCLUDEDIR)/jvmticmlr.h \
-    $(INCLUDEDIR)/classfile_constants.h \
-    $(OPENJDK_TARGET_OS_INCLUDE)/jni_md.h \
+    $(INCLUDE_DST_DIR)/jni.h \
+    $(INCLUDE_DST_DIR)/jvmti.h \
+    $(INCLUDE_DST_DIR)/jvmticmlr.h \
+    $(INCLUDE_DST_DIR)/classfile_constants.h \
+    $(INCLUDE_DST_OS_DIR)/jni_md.h \
     #
 
-$(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/java.base/share/native/include/%.h
+$(INCLUDE_DST_DIR)/%.h: $(JDK_TOPDIR)/src/java.base/share/native/include/%.h
 	$(call install-file)
 
-$(OPENJDK_TARGET_OS_INCLUDE)/%.h: \
+$(INCLUDE_DST_OS_DIR)/%.h: \
     $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include/%.h
 	$(call install-file)
 
@@ -50,17 +50,17 @@ $(OPENJDK_TARGET_OS_INCLUDE)/%.h: \
 
 CALENDARS_SRC := $(JDK_TOPDIR)/src/java.base/share/conf
 
-$(LIBDIR)/calendars.properties: $(CALENDARS_SRC)/calendars.properties
+$(LIB_DST_DIR)/calendars.properties: $(CALENDARS_SRC)/calendars.properties
 	$(call install-file)
 
-BASE_CONF_FILES += $(LIBDIR)/calendars.properties
+BASE_CONF_FILES += $(LIB_DST_DIR)/calendars.properties
 
-$(LIBDIR)/hijrah-config-umalqura.properties: $(CALENDARS_SRC)/hijrah-config-umalqura.properties
+$(LIB_DST_DIR)/hijrah-config-umalqura.properties: $(CALENDARS_SRC)/hijrah-config-umalqura.properties
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $< $@
 
-BASE_CONF_FILES += $(LIBDIR)/hijrah-config-umalqura.properties
+BASE_CONF_FILES += $(LIB_DST_DIR)/hijrah-config-umalqura.properties
 
 ################################################################################
 
@@ -68,10 +68,10 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), windows aix),)
 
   TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/conf
 
-  $(LIBDIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
+  $(LIB_DST_DIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
 	$(call install-file)
 
-  BASE_CONF_FILES += $(LIBDIR)/tzmappings
+  BASE_CONF_FILES += $(LIB_DST_DIR)/tzmappings
 
 endif
 

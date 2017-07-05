@@ -26,7 +26,6 @@
  * @key nmt jcmd
  * @summary Verify that jcmd correctly reports that baseline succeeds with NMT enabled with detailed tracking.
  * @library /testlibrary
- * @ignore
  * @run main/othervm -XX:NativeMemoryTracking=detail JcmdBaselineDetail
  */
 

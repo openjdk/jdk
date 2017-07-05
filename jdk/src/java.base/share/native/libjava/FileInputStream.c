@@ -57,7 +57,7 @@ Java_java_io_FileInputStream_initIDs(JNIEnv *env, jclass fdClass) {
  */
 
 JNIEXPORT void JNICALL
-Java_java_io_FileInputStream_open(JNIEnv *env, jobject this, jstring path) {
+Java_java_io_FileInputStream_open0(JNIEnv *env, jobject this, jstring path) {
     fileOpen(env, this, path, fis_fd, O_RDONLY);
 }
 

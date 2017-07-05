@@ -27,8 +27,6 @@
  * @summary Check for correct implementation of Math.rint(double)
  */
 
-import sun.misc.DoubleConsts;
-
 public class Rint {
 
     static int testRintCase(double input, double expected) {
@@ -51,8 +49,8 @@ public class Rint {
         double [][] testCases = {
             {0.0,                               0.0},
             {Double.MIN_VALUE,                  0.0},
-            {Math.nextDown(DoubleConsts.MIN_NORMAL), 0.0},
-            {DoubleConsts.MIN_NORMAL,           0.0},
+            {Math.nextDown(Double.MIN_NORMAL),  0.0},
+            {Double.MIN_NORMAL,                 0.0},
 
             {0.2,                               0.0},
 

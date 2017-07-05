@@ -50,8 +50,9 @@ $(eval $(call SetupJavaCompilation,BUILD_IDLJ, \
     INCLUDES := com/sun/tools/corba/se/idl, \
     EXCLUDE_FILES := ResourceBundleUtil.java))
 
+# Force the language to english for predictable source code generation.
 TOOL_IDLJ_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/idlj_classes \
-    com.sun.tools.corba.se.idl.toJavaPortable.Compile
+    -Duser.language=en com.sun.tools.corba.se.idl.toJavaPortable.Compile
 
 ################################################################################
 

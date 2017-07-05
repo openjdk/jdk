@@ -26,6 +26,7 @@
 #include "classfile/dictionary.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
+#include "classfile/sharedClassUtil.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
@@ -47,6 +48,10 @@ int MetaspaceShared::_max_alignment = 0;
 
 ReservedSpace* MetaspaceShared::_shared_rs = NULL;
 
+bool MetaspaceShared::_link_classes_made_progress;
+bool MetaspaceShared::_check_classes_made_progress;
+bool MetaspaceShared::_has_error_classes;
+bool MetaspaceShared::_archive_loading_failed = false;
 // Read/write a data stream for restoring/preserving metadata pointers and
 // miscellaneous data from/to the shared archive file.
 
@@ -446,6 +451,23 @@ void VM_PopulateDumpSharedSpace::doit() {
   SystemDictionary::classes_do(collect_classes);
 
   tty->print_cr("Number of classes %d", _global_klass_objects->length());
+  {
+    int num_type_array = 0, num_obj_array = 0, num_inst = 0;
+    for (int i = 0; i < _global_klass_objects->length(); i++) {
+      Klass* k = _global_klass_objects->at(i);
+      if (k->oop_is_instance()) {
+        num_inst ++;
+      } else if (k->oop_is_objArray()) {
+        num_obj_array ++;
+      } else {
+        assert(k->oop_is_typeArray(), "sanity");
+        num_type_array ++;
+      }
+    }
+    tty->print_cr("    instance classes   = %5d", num_inst);
+    tty->print_cr("    obj array classes  = %5d", num_obj_array);
+    tty->print_cr("    type array classes = %5d", num_type_array);
+  }
 
   // Update all the fingerprints in the shared methods.
   tty->print("Calculating fingerprints ... ");
@@ -611,38 +633,58 @@ void VM_PopulateDumpSharedSpace::doit() {
 #undef fmt_space
 }
 
-static void link_shared_classes(Klass* obj, TRAPS) {
+
+void MetaspaceShared::link_one_shared_class(Klass* obj, TRAPS) {
   Klass* k = obj;
   if (k->oop_is_instance()) {
     InstanceKlass* ik = (InstanceKlass*) k;
     // Link the class to cause the bytecodes to be rewritten and the
-    // cpcache to be created.
-    if (ik->init_state() < InstanceKlass::linked) {
-      ik->link_class(THREAD);
-      guarantee(!HAS_PENDING_EXCEPTION, "exception in class rewriting");
+    // cpcache to be created. Class verification is done according
+    // to -Xverify setting.
+    _link_classes_made_progress |= try_link_class(ik, THREAD);
+    guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
+  }
+}
+
+void MetaspaceShared::check_one_shared_class(Klass* k) {
+  if (k->oop_is_instance() && InstanceKlass::cast(k)->check_sharing_error_state()) {
+    _check_classes_made_progress = true;
+  }
+}
+
+void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
+  // We need to iterate because verification may cause additional classes
+  // to be loaded.
+  do {
+    _link_classes_made_progress = false;
+    SystemDictionary::classes_do(link_one_shared_class, THREAD);
+    guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
+  } while (_link_classes_made_progress);
+
+  if (_has_error_classes) {
+    // Mark all classes whose super class or interfaces failed verification.
+    do {
+      // Not completely sure if we need to do this iteratively. Anyway,
+      // we should come here only if there are unverifiable classes, which
+      // shouldn't happen in normal cases. So better safe than sorry.
+      _check_classes_made_progress = false;
+      SystemDictionary::classes_do(check_one_shared_class);
+    } while (_check_classes_made_progress);
+
+    if (IgnoreUnverifiableClassesDuringDump) {
+      // This is useful when running JCK or SQE tests. You should not
+      // enable this when running real apps.
+      SystemDictionary::remove_classes_in_error_state();
+    } else {
+      tty->print_cr("Please remove the unverifiable classes from your class list and try again");
+      exit(1);
     }
   }
 }
 
-
-// Support for a simple checksum of the contents of the class list
-// file to prevent trivial tampering. The algorithm matches that in
-// the MakeClassList program used by the J2SE build process.
-#define JSUM_SEED ((jlong)CONST64(0xcafebabebabecafe))
-static jlong
-jsum(jlong start, const char *buf, const int len)
-{
-    jlong h = start;
-    char *p = (char *)buf, *e = p + len;
-    while (p < e) {
-        char c = *p++;
-        if (c <= ' ') {
-            /* Skip spaces and control characters */
-            continue;
-        }
-        h = 31 * h + c;
-    }
-    return h;
+void MetaspaceShared::prepare_for_dumping() {
+  ClassLoader::initialize_shared_path();
+  FileMapInfo::allocate_classpath_entry_table();
 }
 
 // Preload classes from a list, populate the shared spaces and dump to a
@@ -651,71 +693,111 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   TraceTime timer("Dump Shared Spaces", TraceStartupTime);
   ResourceMark rm;
 
+  tty->print_cr("Allocated shared space: %d bytes at " PTR_FORMAT,
+                MetaspaceShared::shared_rs()->size(),
+                MetaspaceShared::shared_rs()->base());
+
   // Preload classes to be shared.
   // Should use some os:: method rather than fopen() here. aB.
-  // Construct the path to the class list (in jre/lib)
-  // Walk up two directories from the location of the VM and
-  // optionally tack on "lib" (depending on platform)
-  char class_list_path[JVM_MAXPATHLEN];
-  os::jvm_path(class_list_path, sizeof(class_list_path));
-  for (int i = 0; i < 3; i++) {
-    char *end = strrchr(class_list_path, *os::file_separator());
-    if (end != NULL) *end = '\0';
-  }
-  int class_list_path_len = (int)strlen(class_list_path);
-  if (class_list_path_len >= 3) {
-    if (strcmp(class_list_path + class_list_path_len - 3, "lib") != 0) {
-      strcat(class_list_path, os::file_separator());
-      strcat(class_list_path, "lib");
+  const char* class_list_path;
+  if (SharedClassListFile == NULL) {
+    // Construct the path to the class list (in jre/lib)
+    // Walk up two directories from the location of the VM and
+    // optionally tack on "lib" (depending on platform)
+    char class_list_path_str[JVM_MAXPATHLEN];
+    os::jvm_path(class_list_path_str, sizeof(class_list_path_str));
+    for (int i = 0; i < 3; i++) {
+      char *end = strrchr(class_list_path_str, *os::file_separator());
+      if (end != NULL) *end = '\0';
     }
+    int class_list_path_len = (int)strlen(class_list_path_str);
+    if (class_list_path_len >= 3) {
+      if (strcmp(class_list_path_str + class_list_path_len - 3, "lib") != 0) {
+        strcat(class_list_path_str, os::file_separator());
+        strcat(class_list_path_str, "lib");
+      }
+    }
+    strcat(class_list_path_str, os::file_separator());
+    strcat(class_list_path_str, "classlist");
+    class_list_path = class_list_path_str;
+  } else {
+    class_list_path = SharedClassListFile;
   }
-  strcat(class_list_path, os::file_separator());
-  strcat(class_list_path, "classlist");
 
+  int class_count = 0;
+  GrowableArray<Klass*>* class_promote_order = new GrowableArray<Klass*>();
+
+  // sun.io.Converters
+  static const char obj_array_sig[] = "[[Ljava/lang/Object;";
+  SymbolTable::new_permanent_symbol(obj_array_sig, THREAD);
+
+  // java.util.HashMap
+  static const char map_entry_array_sig[] = "[Ljava/util/Map$Entry;";
+  SymbolTable::new_permanent_symbol(map_entry_array_sig, THREAD);
+
+  tty->print_cr("Loading classes to share ...");
+  _has_error_classes = false;
+  class_count += preload_and_dump(class_list_path, class_promote_order,
+                                  THREAD);
+  if (ExtraSharedClassListFile) {
+    class_count += preload_and_dump(ExtraSharedClassListFile, class_promote_order,
+                                    THREAD);
+  }
+  tty->print_cr("Loading classes to share: done.");
+
+  if (PrintSharedSpaces) {
+    tty->print_cr("Shared spaces: preloaded %d classes", class_count);
+  }
+
+  // Rewrite and link classes
+  tty->print_cr("Rewriting and linking classes ...");
+
+  // Link any classes which got missed. This would happen if we have loaded classes that
+  // were not explicitly specified in the classlist. E.g., if an interface implemented by class K
+  // fails verification, all other interfaces that were not specified in the classlist but
+  // are implemented by K are not verified.
+  link_and_cleanup_shared_classes(CATCH);
+  tty->print_cr("Rewriting and linking classes: done");
+
+  // Create and dump the shared spaces.   Everything so far is loaded
+  // with the null class loader.
+  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+  VM_PopulateDumpSharedSpace op(loader_data, class_promote_order);
+  VMThread::execute(&op);
+
+  // Since various initialization steps have been undone by this process,
+  // it is not reasonable to continue running a java process.
+  exit(0);
+}
+
+int MetaspaceShared::preload_and_dump(const char * class_list_path,
+                                      GrowableArray<Klass*>* class_promote_order,
+                                      TRAPS) {
   FILE* file = fopen(class_list_path, "r");
+  char class_name[256];
+  int class_count = 0;
+
   if (file != NULL) {
-    jlong computed_jsum  = JSUM_SEED;
-    jlong file_jsum      = 0;
-
-    char class_name[256];
-    int class_count = 0;
-    GrowableArray<Klass*>* class_promote_order = new GrowableArray<Klass*>();
-
-    // sun.io.Converters
-    static const char obj_array_sig[] = "[[Ljava/lang/Object;";
-    SymbolTable::new_permanent_symbol(obj_array_sig, THREAD);
-
-    // java.util.HashMap
-    static const char map_entry_array_sig[] = "[Ljava/util/Map$Entry;";
-    SymbolTable::new_permanent_symbol(map_entry_array_sig, THREAD);
-
-    tty->print("Loading classes to share ... ");
     while ((fgets(class_name, sizeof class_name, file)) != NULL) {
-      if (*class_name == '#') {
-        jint fsh, fsl;
-        if (sscanf(class_name, "# %8x%8x\n", &fsh, &fsl) == 2) {
-          file_jsum = ((jlong)(fsh) << 32) | (fsl & 0xffffffff);
-        }
-
+      if (*class_name == '#') { // comment
         continue;
       }
       // Remove trailing newline
       size_t name_len = strlen(class_name);
-      class_name[name_len-1] = '\0';
-
-      computed_jsum = jsum(computed_jsum, class_name, (const int)name_len - 1);
+      if (class_name[name_len-1] == '\n') {
+        class_name[name_len-1] = '\0';
+      }
 
       // Got a class name - load it.
       TempNewSymbol class_name_symbol = SymbolTable::new_permanent_symbol(class_name, THREAD);
       guarantee(!HAS_PENDING_EXCEPTION, "Exception creating a symbol.");
       Klass* klass = SystemDictionary::resolve_or_null(class_name_symbol,
                                                          THREAD);
-      guarantee(!HAS_PENDING_EXCEPTION, "Exception resolving a class.");
+      CLEAR_PENDING_EXCEPTION;
       if (klass != NULL) {
         if (PrintSharedSpaces && Verbose && WizardMode) {
           tty->print_cr("Shared spaces preloaded: %s", class_name);
         }
-
 
         InstanceKlass* ik = InstanceKlass::cast(klass);
 
@@ -726,52 +808,14 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
         // cpcache to be created. The linking is done as soon as classes
         // are loaded in order that the related data structures (klass and
         // cpCache) are located together.
-
-        if (ik->init_state() < InstanceKlass::linked) {
-          ik->link_class(THREAD);
-          guarantee(!(HAS_PENDING_EXCEPTION), "exception in class rewriting");
-        }
-
-        // TODO: Resolve klasses in constant pool
-        ik->constants()->resolve_class_constants(THREAD);
+        try_link_class(ik, THREAD);
+        guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
 
         class_count++;
       } else {
-        if (PrintSharedSpaces && Verbose && WizardMode) {
-          tty->cr();
-          tty->print_cr(" Preload failed: %s", class_name);
-        }
+        //tty->print_cr("Preload failed: %s", class_name);
       }
-      file_jsum = 0; // Checksum must be on last line of file
     }
-    if (computed_jsum != file_jsum) {
-      tty->cr();
-      tty->print_cr("Preload failed: checksum of class list was incorrect.");
-      exit(1);
-    }
-
-    tty->print_cr("done. ");
-
-    if (PrintSharedSpaces) {
-      tty->print_cr("Shared spaces: preloaded %d classes", class_count);
-    }
-
-    // Rewrite and unlink classes.
-    tty->print("Rewriting and linking classes ... ");
-
-    // Link any classes which got missed.  (It's not quite clear why
-    // they got missed.)  This iteration would be unsafe if we weren't
-    // single-threaded at this point; however we can't do it on the VM
-    // thread because it requires object allocation.
-    SystemDictionary::classes_do(link_shared_classes, CATCH);
-    tty->print_cr("done. ");
-
-    // Create and dump the shared spaces.   Everything so far is loaded
-    // with the null class loader.
-    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-    VM_PopulateDumpSharedSpace op(loader_data, class_promote_order);
-    VMThread::execute(&op);
-
   } else {
     char errmsg[JVM_MAXPATHLEN];
     os::lasterror(errmsg, JVM_MAXPATHLEN);
@@ -779,11 +823,39 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     exit(1);
   }
 
-  // Since various initialization steps have been undone by this process,
-  // it is not reasonable to continue running a java process.
-  exit(0);
+  return class_count;
 }
 
+// Returns true if the class's status has changed
+bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
+  assert(DumpSharedSpaces, "should only be called during dumping");
+  if (ik->init_state() < InstanceKlass::linked) {
+    bool saved = BytecodeVerificationLocal;
+    if (!SharedClassUtil::is_shared_boot_class(ik)) {
+      // The verification decision is based on BytecodeVerificationRemote
+      // for non-system classes. Since we are using the NULL classloader
+      // to load non-system classes during dumping, we need to temporarily
+      // change BytecodeVerificationLocal to be the same as
+      // BytecodeVerificationRemote. Note this can cause the parent system
+      // classes also being verified. The extra overhead is acceptable during
+      // dumping.
+      BytecodeVerificationLocal = BytecodeVerificationRemote;
+    }
+    ik->link_class(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      ResourceMark rm;
+      tty->print_cr("Preload Error: Verification failed for %s",
+                    ik->external_name());
+      CLEAR_PENDING_EXCEPTION;
+      ik->set_in_error_state();
+      _has_error_classes = true;
+    }
+    BytecodeVerificationLocal = saved;
+    return true;
+  } else {
+    return false;
+  }
+}
 
 // Closure for serializing initialization data in from a data area
 // (ptr_array) read from the shared file.
@@ -867,7 +939,8 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
       (_rw_base = mapinfo->map_region(rw)) != NULL &&
       (_md_base = mapinfo->map_region(md)) != NULL &&
       (_mc_base = mapinfo->map_region(mc)) != NULL &&
-      (image_alignment == (size_t)max_alignment())) {
+      (image_alignment == (size_t)max_alignment()) &&
+      mapinfo->validate_classpath_entry_table()) {
     // Success (no need to do anything)
     return true;
   } else {
@@ -884,7 +957,7 @@ bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
     // If -Xshare:on is specified, print out the error message and exit VM,
     // otherwise, set UseSharedSpaces to false and continue.
     if (RequireSharedSpaces) {
-      vm_exit_during_initialization("Unable to use shared archive.", NULL);
+      vm_exit_during_initialization("Unable to use shared archive.", "Failed map_region for using -Xshare:on.");
     } else {
       FLAG_SET_DEFAULT(UseSharedSpaces, false);
     }
@@ -984,6 +1057,20 @@ void MetaspaceShared::initialize_shared_spaces() {
 
   // Close the mapinfo file
   mapinfo->close();
+
+  if (PrintSharedArchiveAndExit) {
+    if (PrintSharedDictionary) {
+      tty->print_cr("\nShared classes:\n");
+      SystemDictionary::print_shared(false);
+    }
+    if (_archive_loading_failed) {
+      tty->print_cr("archive is invalid");
+      vm_exit(1);
+    } else {
+      tty->print_cr("archive is valid");
+      vm_exit(0);
+    }
+  }
 }
 
 // JVM/TI RedefineClasses() support:

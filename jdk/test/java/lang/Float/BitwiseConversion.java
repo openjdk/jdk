@@ -25,21 +25,23 @@
  * @test
  * @bug 5037596
  * @summary Verify bitwise conversion works for non-canonical NaN values
+ * @library ../Math
+ * @build FloatConsts
+ * @run main BitwiseConversion
  * @author Joseph D. Darcy
  */
 
 import static java.lang.Float.*;
-import static sun.misc.FloatConsts.*;
 
 public class BitwiseConversion {
     static int testNanCase(int x) {
         int errors  = 0;
         // Strip out sign and exponent bits
-        int y = x & SIGNIF_BIT_MASK;
+        int y = x & FloatConsts.SIGNIF_BIT_MASK;
 
         float values[] = {
-            intBitsToFloat(EXP_BIT_MASK | y),
-            intBitsToFloat(SIGN_BIT_MASK | EXP_BIT_MASK | y)
+            intBitsToFloat(FloatConsts.EXP_BIT_MASK | y),
+            intBitsToFloat(FloatConsts.SIGN_BIT_MASK | FloatConsts.EXP_BIT_MASK | y)
         };
 
         for(float value: values) {
@@ -60,7 +62,7 @@ public class BitwiseConversion {
     public static void main(String... argv) {
         int errors = 0;
 
-        for (int i = 0; i < SIGNIFICAND_WIDTH-1; i++) {
+        for (int i = 0; i < FloatConsts.SIGNIFICAND_WIDTH-1; i++) {
             errors += testNanCase(1<<i);
         }
 

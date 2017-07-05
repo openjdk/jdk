@@ -485,7 +485,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         if (functionNode.isDeclared()) {
             final Iterator<Block> blocks = lc.getBlocks();
             if (blocks.hasNext()) {
-                defineSymbol(blocks.next(), functionNode.getIdent().getName(), IS_VAR);
+                defineSymbol(blocks.next(), functionNode.getIdent().getName(), IS_VAR | (functionNode.isAnonymous()? IS_INTERNAL : 0));
             }
         }
 

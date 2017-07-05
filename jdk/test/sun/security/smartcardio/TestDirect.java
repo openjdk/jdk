@@ -30,6 +30,7 @@
 
 // This test requires special hardware.
 
+import java.util.List;
 import javax.smartcardio.Card;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CardTerminals;
@@ -38,8 +39,12 @@ import javax.smartcardio.TerminalFactory;
 public class TestDirect {
     public static void main(String[] args) throws Exception {
         TerminalFactory terminalFactory = TerminalFactory.getDefault();
-        CardTerminals cardTerminals = terminalFactory.terminals();
-        CardTerminal cardTerminal = cardTerminals.list().get(0);
+        List<CardTerminal> cardTerminals = terminalFactory.terminals().list();
+        System.out.println("Terminals: " + cardTerminals);
+        if (cardTerminals.isEmpty()) {
+            throw new Exception("No card terminals available");
+        }
+        CardTerminal cardTerminal = cardTerminals.get(0);
         Card card = cardTerminal.connect("DIRECT");
         card.disconnect(true);
 

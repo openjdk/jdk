@@ -271,6 +271,11 @@ public class ScriptEngineSecurityTest {
 
     @Test
     public static void proxyStaticAccessCheckTest() throws ScriptException {
+        if (System.getSecurityManager() == null) {
+            // pass vacuously
+            return;
+        }
+
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
         final Runnable r = (Runnable)Proxy.newProxyInstance(
@@ -296,5 +301,44 @@ public class ScriptEngineSecurityTest {
                 fail("SecurityException expected, got " + exp);
             }
         }
+    }
+
+
+    @Test
+    public void nashornConfigSecurityTest() {
+        if (System.getSecurityManager() == null) {
+            // pass vacuously
+            return;
+        }
+
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        try {
+            fac.getScriptEngine(new ClassFilter() {
+               @Override
+               public boolean exposeToScripts(final String name) {
+                   return true;
+               }
+            });
+            fail("SecurityException should have been thrown");
+        } catch (final SecurityException exp) {}
+    }
+
+    @Test
+    public void nashornConfigSecurityTest2() {
+        if (System.getSecurityManager() == null) {
+            // pass vacuously
+            return;
+        }
+
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        try {
+            fac.getScriptEngine(new String[0], null, new ClassFilter() {
+               @Override
+               public boolean exposeToScripts(final String name) {
+                   return true;
+               }
+            });
+            fail("SecurityException should have been thrown");
+        } catch (final SecurityException exp) {}
     }
 }

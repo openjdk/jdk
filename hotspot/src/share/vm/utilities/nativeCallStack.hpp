@@ -52,6 +52,9 @@
  *    from it.
  */
 class NativeCallStack : public StackObj {
+ public:
+  static const NativeCallStack EMPTY_STACK;
+
  private:
   address   _stack[NMT_TrackingStackDepth];
   int       _hash_value;

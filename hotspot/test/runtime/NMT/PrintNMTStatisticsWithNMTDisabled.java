@@ -26,7 +26,6 @@
  * @key nmt
  * @summary Trying to enable PrintNMTStatistics should result in a warning
  * @library /testlibrary
- * @ignore
  */
 
 import com.oracle.java.testlibrary.*;
