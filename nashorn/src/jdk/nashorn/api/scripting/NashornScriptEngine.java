@@ -397,10 +397,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             }
 
             setContextVariables(ctxt);
-            final Object val = ctxt.getAttribute(ScriptEngine.FILENAME);
-            final String fileName = (val != null) ? val.toString() : "<eval>";
-            Object res = ScriptRuntime.apply(script, ctxtGlobal);
-            return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(res, ctxtGlobal));
+            return ScriptObjectMirror.translateUndefined(ScriptObjectMirror.wrap(ScriptRuntime.apply(script, ctxtGlobal), ctxtGlobal));
         } catch (final Exception e) {
             throwAsScriptException(e);
             throw new AssertionError("should not reach here");

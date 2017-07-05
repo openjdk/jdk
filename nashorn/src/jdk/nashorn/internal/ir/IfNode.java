@@ -25,22 +25,23 @@
 
 package jdk.nashorn.internal.ir;
 
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for an IF statement.
- *
  */
-public class IfNode extends Node {
+@Immutable
+public final class IfNode extends Node {
     /** Test expression. */
-    private Node test;
+    private final Node test;
 
     /** Pass statements. */
-    private Block pass;
+    private final Block pass;
 
     /** Fail statements. */
-    private Block fail;
+    private final Block fail;
 
     /**
      * Constructor
@@ -54,37 +55,30 @@ public class IfNode extends Node {
      */
     public IfNode(final Source source, final long token, final int finish, final Node test, final Block pass, final Block fail) {
         super(source, token, finish);
-
         this.test = test;
         this.pass = pass;
         this.fail = fail;
     }
 
-    private IfNode(final IfNode ifNode, final CopyState cs) {
+    private IfNode(final IfNode ifNode, final Node test, final Block pass, final Block fail) {
         super(ifNode);
-
-        this.test = cs.existingOrCopy(ifNode.test);
-        this.pass = (Block)cs.existingOrCopy(ifNode.pass);
-        this.fail = (Block)cs.existingOrCopy(ifNode.fail);
+        this.test = test;
+        this.pass = pass;
+        this.fail = fail;
     }
 
     @Override
-    protected Node copy(final CopyState cs) {
-        return new IfNode(this, cs);
+    public boolean isTerminal() {
+        return pass.isTerminal() && fail != null && fail.isTerminal();
     }
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterIfNode(this) != null) {
-            test = test.accept(visitor);
-
-            pass = (Block)pass.accept(visitor);
-
-            if (fail != null) {
-                fail = (Block)fail.accept(visitor);
-            }
-
-            return visitor.leaveIfNode(this);
+        if (visitor.enterIfNode(this)) {
+            return visitor.leaveIfNode(
+                setTest(test.accept(visitor)).
+                setPass((Block)pass.accept(visitor)).
+                setFail(fail == null ? null : (Block)fail.accept(visitor)));
         }
 
         return this;
@@ -105,12 +99,26 @@ public class IfNode extends Node {
         return fail;
     }
 
+    private IfNode setFail(final Block fail) {
+        if (this.fail == fail) {
+            return this;
+        }
+        return new IfNode(this, test, pass, fail);
+    }
+
     /**
      * Get the then block for this IfNode
      * @return the then block
      */
     public Block getPass() {
         return pass;
+    }
+
+    private IfNode setPass(final Block pass) {
+        if (this.pass == pass) {
+            return this;
+        }
+        return new IfNode(this, test, pass, fail);
     }
 
     /**
@@ -124,8 +132,12 @@ public class IfNode extends Node {
     /**
      * Reset the test expression for this IfNode
      * @param test a new test expression
+     * @return new or same IfNode
      */
-    public void setTest(final Node test) {
-        this.test = test;
+    public IfNode setTest(final Node test) {
+        if (this.test == test) {
+            return this;
+        }
+        return new IfNode(this, test, pass, fail);
     }
 }

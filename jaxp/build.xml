@@ -176,4 +176,42 @@
         <echo message="+---------------------------------------+"/>
     </target>
 
+    <target name="javadoc" depends="init" description="Build basic Javadoc for public packages.">
+        <property name="javadoc.options" value=""/> <!-- default, can be overridden per user or per project -->
+        <!-- Note: even with this default value, includes/excludes
+         from share.src.dir get javadoc'd; see packageset below -->
+        <property name="javadoc.packagenames" value="none"/> <!-- default, can be overridden per user or per project -->
+        <property name="javadoc.dir" value="${build.dir}/docs/api"/>
+        <property name="includes" value="**"/>
+        <javadoc destdir="${javadoc.dir}" source="1.5"
+            windowtitle="UNOFFICIAL" failonerror="true" use="true"
+            author="false" version="false"
+            packagenames="${javadoc.packagenames}">
+            <header><![CDATA[<strong>Unofficial Javadoc</strong> generated from developer sources for preview purposes only]]></header>
+            <arg line="${javadoc.options}"/>
+            <bootclasspath>
+                <path location="${java.home}/lib/rt.jar"/>
+                <path location="${build.classes.dir}"/>
+            </bootclasspath>
+            <sourcepath>
+                <pathelement location="${jaxp.src.dir}"/>
+            </sourcepath>
+            <!-- XXX just <fileset> (restricted further to **/*.java) and no <packageset> -->
+            <!-- means that {@link some.package} will not work, which is no good. -->
+            <!-- (It correctly skips excluded single classes, but not if packageset is also included, -->
+            <!-- which also causes duplicates in the class index for included files.) -->
+            <packageset dir="${jaxp.src.dir}" includes="${includes}" excludes="${excludes}">
+                <or>
+                    <filename name="javax/"/>
+                    <filename name="org/w3c/"/>
+                    <filename name="org/xml/sax/"/>
+                </or>
+            </packageset>
+        </javadoc>
+    </target>
+    <target name="javadoc-nb" depends="javadoc" if="netbeans.home">
+        <property name="javadoc.dir=" value="${build.dir}/docs/api"/>
+        <nbbrowse file="${javadoc.dir}/index.html"/>
+    </target>
+
 </project>

@@ -25,28 +25,27 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.ir.annotations.Reference;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of an object literal property.
  */
-public class PropertyNode extends Node {
+@Immutable
+public final class PropertyNode extends Node {
 
     /** Property key. */
-    private PropertyKey key;
+    private final PropertyKey key;
 
     /** Property value. */
-    private Node value;
+    private final Node value;
 
     /** Property getter. */
-    @Reference
-    private Node getter;
+    private final FunctionNode getter;
 
     /** Property getter. */
-    @Reference
-    private Node setter;
+    private final FunctionNode setter;
 
     /**
      * Constructor
@@ -56,26 +55,23 @@ public class PropertyNode extends Node {
      * @param finish  finish
      * @param key     the key of this property
      * @param value   the value of this property
+     * @param getter  getter function body
+     * @param setter  setter function body
      */
-    public PropertyNode(final Source source, final long token, final int finish, final PropertyKey key, final Node value) {
+    public PropertyNode(final Source source, final long token, final int finish, final PropertyKey key, final Node value, final FunctionNode getter, final FunctionNode setter) {
         super(source, token, finish);
-
         this.key    = key;
         this.value  = value;
+        this.getter = getter;
+        this.setter = setter;
     }
 
-    private PropertyNode(final PropertyNode propertyNode, final CopyState cs) {
+    private PropertyNode(final PropertyNode propertyNode, final PropertyKey key, final Node value, final FunctionNode getter, final FunctionNode setter) {
         super(propertyNode);
-
-        this.key    = (PropertyKey)cs.existingOrCopy((Node)propertyNode.key);
-        this.value  = cs.existingOrCopy(propertyNode.value);
-        this.getter = cs.existingOrSame(propertyNode.getter);
-        this.setter = cs.existingOrSame(propertyNode.setter);
-    }
-
-    @Override
-    protected Node copy(final CopyState cs) {
-        return new PropertyNode(this, cs);
+        this.key    = key;
+        this.value  = value;
+        this.getter = getter;
+        this.setter = setter;
     }
 
     /**
@@ -88,22 +84,12 @@ public class PropertyNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterPropertyNode(this) != null) {
-            key = (PropertyKey)((Node)key).accept(visitor);
-
-            if (value != null) {
-                value = value.accept(visitor);
-            }
-
-            if (getter != null) {
-                getter = getter.accept(visitor);
-            }
-
-            if (setter != null) {
-                setter = setter.accept(visitor);
-            }
-
-            return visitor.leavePropertyNode(this);
+        if (visitor.enterPropertyNode(this)) {
+            return visitor.leavePropertyNode(
+                setKey((PropertyKey)((Node)key).accept(visitor)).
+                setValue(value == null ? null : value.accept(visitor)).
+                setGetter(getter == null ? null : (FunctionNode)getter.accept(visitor)).
+                setSetter(setter == null ? null : (FunctionNode)setter.accept(visitor)));
         }
 
         return this;
@@ -136,16 +122,20 @@ public class PropertyNode extends Node {
      * Get the getter for this property
      * @return getter or null if none exists
      */
-    public Node getGetter() {
+    public FunctionNode getGetter() {
         return getter;
     }
 
     /**
      * Set the getter of this property, null if none
      * @param getter getter
+     * @return same node or new node if state changed
      */
-    public void setGetter(final Node getter) {
-        this.getter = getter;
+    public PropertyNode setGetter(final FunctionNode getter) {
+        if (this.getter == getter) {
+            return this;
+        }
+        return new PropertyNode(this, key, value, getter, setter);
     }
 
     /**
@@ -156,20 +146,31 @@ public class PropertyNode extends Node {
         return (Node)key;
     }
 
+    private PropertyNode setKey(final PropertyKey key) {
+        if (this.key == key) {
+            return this;
+        }
+        return new PropertyNode(this, key, value, getter, setter);
+    }
+
     /**
      * Get the setter for this property
      * @return setter or null if none exists
      */
-    public Node getSetter() {
+    public FunctionNode getSetter() {
         return setter;
     }
 
     /**
      * Set the setter for this property, null if none
      * @param setter setter
+     * @return same node or new node if state changed
      */
-    public void setSetter(final Node setter) {
-        this.setter = setter;
+    public PropertyNode setSetter(final FunctionNode setter) {
+        if (this.setter == setter) {
+            return this;
+        }
+        return new PropertyNode(this, key, value, getter, setter);
     }
 
     /**
@@ -183,8 +184,12 @@ public class PropertyNode extends Node {
     /**
      * Set the value of this property
      * @param value new value
+     * @return same node or new node if state changed
      */
-    public void setValue(final Node value) {
-        this.value = value;
-    }
+    public PropertyNode setValue(final Node value) {
+        if (this.value == value) {
+            return this;
+        }
+        return new PropertyNode(this, key, value, getter, setter);
+   }
 }

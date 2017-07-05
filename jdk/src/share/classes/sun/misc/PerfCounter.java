@@ -62,7 +62,7 @@ public class PerfCounter {
 
     private PerfCounter(String name, int type) {
         this.name = name;
-        ByteBuffer bb = perf.createLong(name, U_None, type, 0L);
+        ByteBuffer bb = perf.createLong(name, type, U_None, 0L);
         bb.order(ByteOrder.nativeOrder());
         this.lb = bb.asLongBuffer();
     }

@@ -105,9 +105,7 @@ public final class JSONFunctions {
     // This is the abstract "Walk" operation from the spec.
     private static Object walk(final ScriptObject holder, final Object name, final ScriptFunction reviver) {
         final Object val = holder.get(name);
-        if (val == ScriptRuntime.UNDEFINED) {
-            return val;
-        } else if (val instanceof ScriptObject) {
+        if (val instanceof ScriptObject) {
             final ScriptObject     valueObj = (ScriptObject)val;
             final boolean          strict   = valueObj.isStrictContext();
             final Iterator<String> iter     = valueObj.propertyIterator();
@@ -122,33 +120,15 @@ public final class JSONFunctions {
                     valueObj.set(key, newElement, strict);
                 }
             }
+        }
 
-            return valueObj;
-        } else if (isArray(val)) {
-            final ScriptObject      valueArray = (ScriptObject)val;
-            final boolean          strict     = valueArray.isStrictContext();
-            final Iterator<String> iter       = valueArray.propertyIterator();
-
-            while (iter.hasNext()) {
-                final String key        = iter.next();
-                final Object newElement = walk(valueArray, valueArray.get(key), reviver);
-
-                if (newElement == ScriptRuntime.UNDEFINED) {
-                    valueArray.delete(key, strict);
-                } else {
-                    valueArray.set(key, newElement, strict);
-                }
-            }
-            return valueArray;
-        } else {
-            try {
-                // Object.class, ScriptFunction.class, ScriptObject.class, String.class, Object.class);
-                return REVIVER_INVOKER.invokeExact(reviver, holder, JSType.toString(name), val);
-            } catch(Error|RuntimeException t) {
-                throw t;
-            } catch(final Throwable t) {
-                throw new RuntimeException(t);
-            }
+        try {
+             // Object.class, ScriptFunction.class, ScriptObject.class, String.class, Object.class);
+             return REVIVER_INVOKER.invokeExact(reviver, holder, JSType.toString(name), val);
+        } catch(Error|RuntimeException t) {
+            throw t;
+        } catch(final Throwable t) {
+            throw new RuntimeException(t);
         }
     }
 

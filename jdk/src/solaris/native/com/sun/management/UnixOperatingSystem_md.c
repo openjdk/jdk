@@ -372,7 +372,7 @@ Java_com_sun_management_UnixOperatingSystem_getOpenFileDescriptorCount
     size_t fds_size;
 
     kres = pid_for_task(mach_task_self(), &my_pid);
-    if (res != KERN_SUCCESS) {
+    if (kres != KERN_SUCCESS) {
         throw_internal_error(env, "pid_for_task failed");
         return -1;
     }

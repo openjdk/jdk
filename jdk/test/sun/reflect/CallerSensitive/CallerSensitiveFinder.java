@@ -46,10 +46,10 @@ import java.util.concurrent.FutureTask;
  * @bug 8010117
  * @summary Verify if CallerSensitive methods are annotated with
  *          sun.reflect.CallerSensitive annotation
- * @build CallerSensitiveFinder MethodFinder
+ * @build CallerSensitiveFinder
  * @run main/othervm/timeout=900 -mx600m CallerSensitiveFinder
  */
-public class CallerSensitiveFinder extends MethodFinder {
+public class CallerSensitiveFinder {
     private static int numThreads = 3;
     private static boolean verbose = false;
     public static void main(String[] args) throws Exception {
@@ -71,8 +71,7 @@ public class CallerSensitiveFinder extends MethodFinder {
         if (classes.isEmpty()) {
             classes.addAll(PlatformClassPath.getJREClasses());
         }
-        final String method = "sun/reflect/Reflection.getCallerClass";
-        CallerSensitiveFinder csfinder = new CallerSensitiveFinder(method);
+        CallerSensitiveFinder csfinder = new CallerSensitiveFinder();
 
         List<String> errors = csfinder.run(classes);
         if (!errors.isEmpty()) {
@@ -82,8 +81,46 @@ public class CallerSensitiveFinder extends MethodFinder {
     }
 
     private final List<String> csMethodsMissingAnnotation = new ArrayList<>();
-    public CallerSensitiveFinder(String... methods) {
-        super(methods);
+    private final ReferenceFinder finder;
+    public CallerSensitiveFinder() {
+        this.finder = new ReferenceFinder(getFilter(), getVisitor());
+    }
+
+    private ReferenceFinder.Filter getFilter() {
+        final String classname = "sun/reflect/Reflection";
+        final String method = "getCallerClass";
+        return new ReferenceFinder.Filter() {
+            public boolean accept(ConstantPool cpool, CPRefInfo cpref) {
+                try {
+                    CONSTANT_NameAndType_info nat = cpref.getNameAndTypeInfo();
+                    return cpref.getClassName().equals(classname) && nat.getName().equals(method);
+                } catch (ConstantPoolException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        };
+    }
+
+    private ReferenceFinder.Visitor getVisitor() {
+        return new ReferenceFinder.Visitor() {
+            public void visit(ClassFile cf, Method m,  List<CPRefInfo> refs) {
+                try {
+                    String name = String.format("%s#%s %s", cf.getName(),
+                                                m.getName(cf.constant_pool),
+                                                m.descriptor.getValue(cf.constant_pool));
+                    if (!CallerSensitiveFinder.isCallerSensitive(m, cf.constant_pool)) {
+                        csMethodsMissingAnnotation.add(name);
+                        System.err.println("Missing @CallerSensitive: " + name);
+                    } else {
+                        if (verbose) {
+                            System.out.format("@CS  %s%n", name);
+                        }
+                    }
+                } catch (ConstantPoolException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        };
     }
 
     public List<String> run(List<Path> classes) throws IOException, InterruptedException,
@@ -125,27 +162,12 @@ public class CallerSensitiveFinder extends MethodFinder {
         return false;
     }
 
-    public void referenceFound(ClassFile cf, Method m, Set<Integer> refs)
-            throws ConstantPoolException
-    {
-        String name = String.format("%s#%s %s", cf.getName(),
-                                    m.getName(cf.constant_pool),
-                                    m.descriptor.getValue(cf.constant_pool));
-        if (!CallerSensitiveFinder.isCallerSensitive(m, cf.constant_pool)) {
-            csMethodsMissingAnnotation.add(name);
-            System.err.println("Missing @CallerSensitive: " + name);
-        } else {
-            if (verbose) {
-                System.out.format("@CS  %s%n", name);
-            }
-        }
-    }
-
-    private final List<FutureTask<String>> tasks = new ArrayList<FutureTask<String>>();
-    private FutureTask<String> getTask(final ClassFile cf) {
-        FutureTask<String> task = new FutureTask<String>(new Callable<String>() {
-            public String call() throws Exception {
-                return parse(cf);
+    private final List<FutureTask<Void>> tasks = new ArrayList<FutureTask<Void>>();
+    private FutureTask<Void> getTask(final ClassFile cf) {
+        FutureTask<Void> task = new FutureTask<Void>(new Callable<Void>() {
+            public Void call() throws Exception {
+                finder.parse(cf);
+                return null;
             }
         });
         tasks.add(task);
@@ -153,8 +175,8 @@ public class CallerSensitiveFinder extends MethodFinder {
     }
 
     private void waitForCompletion() throws InterruptedException, ExecutionException {
-        for (FutureTask<String> t : tasks) {
-            String s = t.get();
+        for (FutureTask<Void> t : tasks) {
+            t.get();
         }
         System.out.println("Parsed " + tasks.size() + " classfiles");
     }

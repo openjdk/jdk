@@ -105,4 +105,89 @@ public class JSTypeTest {
         // FIXME: add more number-to-string test cases
         // FIXME: add case for Object type (JSObject with getDefaultValue)
     }
+
+    /**
+     * Test of JSType.toUint32(double)
+     */
+    @Test
+    public void testToUint32() {
+        assertEquals(JSType.toUint32(+0.0), 0);
+        assertEquals(JSType.toUint32(-0.0), 0);
+        assertEquals(JSType.toUint32(Double.NaN), 0);
+        assertEquals(JSType.toUint32(Double.POSITIVE_INFINITY), 0);
+        assertEquals(JSType.toUint32(Double.NEGATIVE_INFINITY), 0);
+        assertEquals(JSType.toUint32(9223372036854775807.0d), 0);
+        assertEquals(JSType.toUint32(-9223372036854775807.0d), 0);
+        assertEquals(JSType.toUint32(1099511627776.0d), 0);
+        assertEquals(JSType.toUint32(-1099511627776.0d), 0);
+        assertEquals(JSType.toUint32(4294967295.0d), 4294967295l);
+        assertEquals(JSType.toUint32(4294967296.0d), 0);
+        assertEquals(JSType.toUint32(4294967297.0d), 1);
+        assertEquals(JSType.toUint32(-4294967295.0d), 1);
+        assertEquals(JSType.toUint32(-4294967296.0d), 0);
+        assertEquals(JSType.toUint32(-4294967297.0d), 4294967295l);
+        assertEquals(JSType.toUint32(4294967295.6d), 4294967295l);
+        assertEquals(JSType.toUint32(4294967296.6d), 0);
+        assertEquals(JSType.toUint32(4294967297.6d), 1);
+        assertEquals(JSType.toUint32(-4294967295.6d), 1);
+        assertEquals(JSType.toUint32(-4294967296.6d), 0);
+        assertEquals(JSType.toUint32(-4294967297.6d), 4294967295l);
+    }
+
+    /**
+     * Test of JSType.toInt32(double)
+     */
+    @Test
+    public void testToInt32() {
+        assertEquals(JSType.toInt32(+0.0), 0);
+        assertEquals(JSType.toInt32(-0.0), 0);
+        assertEquals(JSType.toInt32(Double.NaN), 0);
+        assertEquals(JSType.toInt32(Double.POSITIVE_INFINITY), 0);
+        assertEquals(JSType.toInt32(Double.NEGATIVE_INFINITY), 0);
+        assertEquals(JSType.toInt32(9223372036854775807.0d), 0);
+        assertEquals(JSType.toInt32(-9223372036854775807.0d), 0);
+        assertEquals(JSType.toInt32(1099511627776.0d), 0);
+        assertEquals(JSType.toInt32(-1099511627776.0d), 0);
+        assertEquals(JSType.toInt32(4294967295.0d), -1);
+        assertEquals(JSType.toInt32(4294967296.0d), 0);
+        assertEquals(JSType.toInt32(4294967297.0d), 1);
+        assertEquals(JSType.toInt32(-4294967295.0d), 1);
+        assertEquals(JSType.toInt32(-4294967296.0d), 0);
+        assertEquals(JSType.toInt32(-4294967297.d), -1);
+        assertEquals(JSType.toInt32(4294967295.6d), -1);
+        assertEquals(JSType.toInt32(4294967296.6d), 0);
+        assertEquals(JSType.toInt32(4294967297.6d), 1);
+        assertEquals(JSType.toInt32(-4294967295.6d), 1);
+        assertEquals(JSType.toInt32(-4294967296.6d), 0);
+        assertEquals(JSType.toInt32(-4294967297.6d), -1);
+    }
+
+    /**
+     * Test of JSType.toUint16(double)
+     */
+    @Test
+    public void testToUint16() {
+        assertEquals(JSType.toUint16(+0.0), 0);
+        assertEquals(JSType.toUint16(-0.0), 0);
+        assertEquals(JSType.toUint16(Double.NaN), 0);
+        assertEquals(JSType.toUint16(Double.POSITIVE_INFINITY), 0);
+        assertEquals(JSType.toUint16(Double.NEGATIVE_INFINITY), 0);
+        assertEquals(JSType.toUint16(9223372036854775807.0d), 0);
+        assertEquals(JSType.toUint16(-9223372036854775807.0d), 0);
+        assertEquals(JSType.toUint16(1099511627776.0d), 0);
+        assertEquals(JSType.toUint16(-1099511627776.0d), 0);
+        assertEquals(JSType.toUint16(4294967295.0d), 65535);
+        assertEquals(JSType.toUint16(4294967296.0d), 0);
+        assertEquals(JSType.toUint16(4294967297.0d), 1);
+        assertEquals(JSType.toUint16(-4294967295.0d), 1);
+        assertEquals(JSType.toUint16(-4294967296.0d), 0);
+        assertEquals(JSType.toUint16(-4294967297.0d), 65535);
+        assertEquals(JSType.toUint16(4294967295.6d), 65535);
+        assertEquals(JSType.toUint16(4294967296.6d), 0);
+        assertEquals(JSType.toUint16(4294967297.6d), 1);
+        assertEquals(JSType.toUint16(-4294967295.6d), 1);
+        assertEquals(JSType.toUint16(-4294967296.6d), 0);
+        assertEquals(JSType.toUint16(-4294967297.6d), 65535);
+    }
+
 }

@@ -89,12 +89,6 @@ class NumberType extends NumericType {
     }
 
     @Override
-    public Type loadEmpty(final MethodVisitor method) {
-        assert false : "unsupported operation";
-        return null;
-    }
-
-    @Override
     public Type ldc(final MethodVisitor method, final Object c) {
         assert c instanceof Double;
 

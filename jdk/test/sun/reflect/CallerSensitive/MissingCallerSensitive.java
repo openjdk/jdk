@@ -27,7 +27,7 @@
  * @bug 8010117
  * @summary Test CallerSensitiveFinder to find missing annotation
  * @compile -XDignore.symbol.file MissingCallerSensitive.java
- * @build CallerSensitiveFinder MethodFinder
+ * @build CallerSensitiveFinder
  * @run main MissingCallerSensitive
  */
 
@@ -40,8 +40,7 @@ public class MissingCallerSensitive {
         List<Path> classes = new ArrayList<>();
         classes.add(Paths.get(testclasses, "MissingCallerSensitive.class"));
 
-        final String method = "sun/reflect/Reflection.getCallerClass";
-        CallerSensitiveFinder csfinder = new CallerSensitiveFinder(method);
+        CallerSensitiveFinder csfinder = new CallerSensitiveFinder();
         List<String> errors = csfinder.run(classes);
         if (errors.size() != 1) {
             throw new RuntimeException("Unexpected number of methods found: " + errors.size());

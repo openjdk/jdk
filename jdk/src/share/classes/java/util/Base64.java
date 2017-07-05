@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,9 @@ public class Base64 {
              if (base64[b & 0xff] != -1)
                  throw new IllegalArgumentException(
                      "Illegal base64 line separator character 0x" + Integer.toString(b, 16));
+         }
+         if (lineLength <= 0) {
+             return Encoder.RFC4648;
          }
          return new Encoder(false, lineSeparator, lineLength >> 2 << 2);
     }

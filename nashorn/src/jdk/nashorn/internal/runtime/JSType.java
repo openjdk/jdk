@@ -102,6 +102,8 @@ public enum JSType {
     /** JavaScript compliant conversion function from Object to primitive */
     public static final Call TO_PRIMITIVE = staticCall(JSType.class, "toPrimitive", Object.class,  Object.class);
 
+    private static final double INT32_LIMIT = 4294967296.0;
+
     /**
      * The external type name as returned by ECMAScript "typeof" operator
      *
@@ -612,10 +614,7 @@ public enum JSType {
      * @return an int32
      */
     public static int toInt32(final double num) {
-        if (Double.isInfinite(num)) {
-            return 0;
-        }
-        return (int)(long)num;
+        return (int)doubleToInt32(num);
     }
 
     /**
@@ -658,10 +657,7 @@ public enum JSType {
      * @return a uint32
      */
     public static long toUint32(final double num) {
-        if (Double.isInfinite(num)) {
-            return 0L;
-        }
-        return ((long)num) & 0xffff_ffffL;
+        return doubleToInt32(num) & MAX_UINT;
     }
 
     /**
@@ -702,10 +698,22 @@ public enum JSType {
      * @return a uint16
      */
     public static int toUint16(final double num) {
-        if (Double.isInfinite(num)) {
+        return ((int)doubleToInt32(num)) & 0xffff;
+    }
+
+    private static long doubleToInt32(final double num) {
+        final int exponent = Math.getExponent(num);
+        if (exponent < 31) {
+            return (long) num;  // Fits into 32 bits
+        }
+        if (exponent >= 84) {
+            // Either infinite or NaN or so large that shift / modulo will produce 0
+            // (52 bit mantissa + 32 bit target width).
             return 0;
         }
-        return ((int)(long)num) & 0xffff;
+        // This is rather slow and could probably be sped up using bit-fiddling.
+        final double d = (num >= 0) ? Math.floor(num) : Math.ceil(num);
+        return (long)(d % INT32_LIMIT);
     }
 
     /**

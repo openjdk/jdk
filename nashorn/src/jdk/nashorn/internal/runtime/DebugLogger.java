@@ -135,7 +135,16 @@ public final class DebugLogger {
      * @param str the string to log
      */
     public void finest(final String str) {
-        log(str, Level.FINEST);
+        log(Level.FINEST, str);
+    }
+
+    /**
+     * Shorthand for outputting a log string as log level
+     * {@link java.util.logging.Level#FINEST} on this logger
+     * @param objs object array to log - use this to perform lazy concatenation to avoid unconditional toString overhead
+     */
+    public void finest(final Object... objs) {
+        log(Level.FINEST, objs);
     }
 
     /**
@@ -144,7 +153,16 @@ public final class DebugLogger {
      * @param str the string to log
      */
     public void finer(final String str) {
-        log(str, Level.FINER);
+        log(Level.FINER, str);
+    }
+
+    /**
+     * Shorthand for outputting a log string as log level
+     * {@link java.util.logging.Level#FINER} on this logger
+     * @param objs object array to log - use this to perform lazy concatenation to avoid unconditional toString overhead
+     */
+    public void finer(final Object... objs) {
+        log(Level.FINER, objs);
     }
 
     /**
@@ -153,7 +171,16 @@ public final class DebugLogger {
      * @param str the string to log
      */
     public void fine(final String str) {
-        log(str, Level.FINE);
+        log(Level.FINE, str);
+    }
+
+    /**
+     * Shorthand for outputting a log string as log level
+     * {@link java.util.logging.Level#FINE} on this logger
+     * @param objs object array to log - use this to perform lazy concatenation to avoid unconditional toString overhead
+     */
+    public void fine(final Object... objs) {
+        log(Level.FINE, objs);
     }
 
     /**
@@ -162,7 +189,16 @@ public final class DebugLogger {
      * @param str the string to log
      */
     public void config(final String str) {
-        log(str, Level.CONFIG);
+        log(Level.CONFIG, str);
+    }
+
+    /**
+     * Shorthand for outputting a log string as log level
+     * {@link java.util.logging.Level#CONFIG} on this logger
+     * @param objs object array to log - use this to perform lazy concatenation to avoid unconditional toString overhead
+     */
+    public void config(final Object... objs) {
+        log(Level.CONFIG, objs);
     }
 
     /**
@@ -171,7 +207,16 @@ public final class DebugLogger {
      * @param str the string to log
      */
     public void info(final String str) {
-        log(str, Level.INFO);
+        log(Level.INFO, str);
+    }
+
+    /**
+     * Shorthand for outputting a log string as log level
+     * {@link java.util.logging.Level#FINE} on this logger
+     * @param objs object array to log - use this to perform lazy concatenation to avoid unconditional toString overhead
+     */
+    public void info(final Object... objs) {
+        log(Level.INFO, objs);
     }
 
     /**
@@ -180,7 +225,16 @@ public final class DebugLogger {
      * @param str the string to log
      */
     public void warning(final String str) {
-        log(str, Level.WARNING);
+        log(Level.WARNING, str);
+    }
+
+    /**
+     * Shorthand for outputting a log string as log level
+     * {@link java.util.logging.Level#FINE} on this logger
+     * @param objs object array to log - use this to perform lazy concatenation to avoid unconditional toString overhead
+     */
+    public void warning(final Object... objs) {
+        log(Level.WARNING, objs);
     }
 
     /**
@@ -189,24 +243,52 @@ public final class DebugLogger {
      * @param str the string to log
      */
     public void severe(final String str) {
-        log(str, Level.SEVERE);
+        log(Level.SEVERE, str);
+    }
+
+    /**
+     * Shorthand for outputting a log string as log level
+     * {@link java.util.logging.Level#FINE} on this logger
+     * @param objs object array to log - use this to perform lazy concatenation to avoid unconditional toString overhead
+     */
+    public void severe(final Object... objs) {
+        log(Level.SEVERE, objs);
     }
 
     /**
      * Output log line on this logger at a given level of verbosity
      * @see java.util.logging.Level
      *
-     * @param str   string to log
      * @param level minimum log level required for logging to take place
+     * @param str   string to log
      */
-    public void log(final String str, final Level level) {
+    public void log(final Level level, final String str) {
         if (isEnabled) {
             final StringBuilder sb = new StringBuilder();
-
             for (int i = 0 ; i < indent ; i++) {
                 sb.append(' ');
             }
             sb.append(str);
+            logger.log(level, sb.toString());
+        }
+    }
+
+    /**
+     * Output log line on this logger at a given level of verbosity
+     * @see java.util.logging.Level
+     *
+     * @param level minimum log level required for logging to take place
+     * @param objs  objects for which to invoke toString and concatenate to log
+     */
+    public void log(final Level level, final Object... objs) {
+        if (isEnabled) {
+            final StringBuilder sb = new StringBuilder();
+            for (int i = 0 ; i < indent ; i++) {
+                sb.append(' ');
+            }
+            for (final Object obj : objs) {
+                sb.append(obj);
+            }
             logger.log(level, sb.toString());
         }
     }

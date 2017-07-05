@@ -32,9 +32,23 @@ import java.util.*;
 
 public class CreateFileTree {
 
-    static final Random rand = new Random();
+    private static final Random rand = new Random();
 
-    public static void main(String[] args) throws IOException {
+    private static boolean supportsLinks(Path dir) {
+        Path link = dir.resolve("testlink");
+        Path target = dir.resolve("testtarget");
+        try {
+            Files.createSymbolicLink(link, target);
+            Files.delete(link);
+            return true;
+        } catch (UnsupportedOperationException x) {
+            return false;
+        } catch (IOException x) {
+            return false;
+        }
+    }
+
+    static Path create() throws IOException {
         Path top = Files.createTempDirectory("tree");
         List<Path> dirs = new ArrayList<Path>();
 
@@ -53,7 +67,6 @@ public class CreateFileTree {
                 dirs.add(subdir);
             }
         }
-        assert dirs.size() >= 2;
 
         // create a few regular files in the file tree
         int files = dirs.size() * 3;
@@ -64,20 +77,26 @@ public class CreateFileTree {
         }
 
         // create a few sym links in the file tree so as to create cycles
-        int links = 1 + rand.nextInt(5);
-        for (int i=0; i<links; i++) {
-            int x = rand.nextInt(dirs.size());
-            int y;
-            do {
-                y = rand.nextInt(dirs.size());
-            } while (y != x);
-            String name = "link" + (i+1);
-            Path link = dirs.get(x).resolve(name);
-            Path target = dirs.get(y);
-            Files.createSymbolicLink(link, target);
+        if (supportsLinks(top)) {
+            int links = 1 + rand.nextInt(5);
+            for (int i=0; i<links; i++) {
+                int x = rand.nextInt(dirs.size());
+                int y;
+                do {
+                    y = rand.nextInt(dirs.size());
+                } while (y != x);
+                String name = "link" + (i+1);
+                Path link = dirs.get(x).resolve(name);
+                Path target = dirs.get(y);
+                Files.createSymbolicLink(link, target);
+            }
         }
 
-        // done
+         return top;
+    }
+
+    public static void main(String[] args) throws IOException {
+        Path top = create();
         System.out.println(top);
     }
 }

@@ -148,19 +148,15 @@ public final class Parameter implements AnnotatedElement {
     }
 
     /**
-     * Returns the name of the parameter.  The names of the parameters
-     * of a single executable must all the be distinct.  When names
-     * from the originating source are available, they are returned.
-     * Otherwise, an implementation of this method is free to create a
-     * name of this parameter, subject to the unquiness requirments.
+     * Returns the name of the parameter.  If the parameter's name is
+     * defined in a class file, then that name will be returned by
+     * this method.  Otherwise, this method will synthesize a name of
+     * the form argN, where N is the index of the parameter.
      */
     public String getName() {
-        // As per the spec, if a parameter has no name, return argX,
-        // where x is the index.
-        //
-        // Note: spec updates now outlaw empty strings as parameter
-        // names.  The .equals("") is for compatibility with current
-        // JVM behavior.  It may be removed at some point.
+        // Note: empty strings as paramete names are now outlawed.
+        // The .equals("") is for compatibility with current JVM
+        // behavior.  It may be removed at some point.
         if(name == null || name.equals(""))
             return "arg" + index;
         else
@@ -311,6 +307,6 @@ public final class Parameter implements AnnotatedElement {
                 declaredAnnotations.put(ann[i].annotationType(), ann[i]);
         }
         return declaredAnnotations;
-    }
+   }
 
 }

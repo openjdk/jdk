@@ -44,13 +44,16 @@ import java.util.logging.Logger;
  *
  * <P>When a Driver class is loaded, it should create an instance of
  * itself and register it with the DriverManager. This means that a
- * user can load and register a driver by calling
- * <pre>
- *   <code>Class.forName("foo.bah.Driver")</code>
- * </pre>
- *
+ * user can load and register a driver by calling:
+ * <p>
+ * {@code Class.forName("foo.bah.Driver")}
+ * <p>
+ * A JDBC driver may create a {@linkplain DriverAction} implementation in order
+ * to receive notifications when {@linkplain DriverManager#deregisterDriver} has
+ * been called.
  * @see DriverManager
  * @see Connection
+ * @see DriverAction
  */
 public interface Driver {
 
