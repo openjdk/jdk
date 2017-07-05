@@ -45,7 +45,7 @@ DEMO_SHARE_SRC := $(JDK_TOPDIR)/src/demo/share
 DEMO_CLOSED_SHARE_SRC := $(JDK_TOPDIR)/src/closed/demo/share
 DEMO_SOLARIS_SRC := $(JDK_TOPDIR)/src/demo/solaris
 DEMO_OS_TYPE_SRC := $(JDK_TOPDIR)/src/demo/$(OPENJDK_TARGET_OS_TYPE)
-VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/common/version.rc
+GLOBAL_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/common/version.rc
 
 ##################################################################################################
 
@@ -230,11 +230,8 @@ define SetupJVMTIDemo
       $$(wildcard $$(patsubst %, $(DEMO_SHARE_SRC)/jvmti/%/README.txt, $2)) \
       $$(wildcard $$(patsubst %, $(DEMO_SHARE_SRC)/jvmti/%/sample.makefile.txt, $2))
   BUILD_DEMO_JVMTI_$1_EXTRA_INC := $$(addprefix -I, $$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC))
-  BUILD_DEMO_JVMTI_$1_LANG := C
-  ifneq (, $4)
-    BUILD_DEMO_JVMTI_$1_LANG := $4
-  endif
   ifeq (C++, $4)
+    BUILD_DEMO_JVMTI_$1_TOOLCHAIN := TOOLCHAIN_LINK_CXX
     $1_EXTRA_CXX := $(LDFLAGS_CXX_JDK) $(LIBCXX)
   endif
 
@@ -254,7 +251,7 @@ define SetupJVMTIDemo
   # Remove the -incremental:no setting to get .ilk-files like in the old build.
   $$(eval $$(call SetupNativeCompilation,BUILD_DEMO_JVMTI_$1, \
       SRC := $(DEMO_SHARE_SRC)/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC), \
-      LANG := $$(BUILD_DEMO_JVMTI_$1_LANG), \
+      TOOLCHAIN := $$(BUILD_DEMO_JVMTI_$1_TOOLCHAIN), \
       OPTIMIZATION := LOW, \
       CXXFLAGS := $$($1_CXXFLAGS), \
       DISABLED_WARNINGS_gcc := $(10), \
@@ -267,7 +264,7 @@ define SetupJVMTIDemo
       LDFLAGS_SUFFIX_windows := $6, \
       LDFLAGS_SUFFIX_solaris := $7 -lc, \
       LDFLAGS_SUFFIX_linux := $8, \
-      VERSIONINFO_RESOURCE := $(VERSION_INFO_RESOURCE), \
+      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
       RC_FLAGS := $$(RC_FLAGS) \
           -D "JDK_FNAME=$1.dll" \
           -D "JDK_INTERNAL_NAME=$1" \
@@ -398,7 +395,6 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBPOLLER, \
       SRC := $(DEMO_SOLARIS_SRC)/jni/Poller, \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) $(SHARED_LIBRARY_FLAGS) \
           -I$(SUPPORT_OUTPUTDIR)/demo/classes/jni/Poller, \

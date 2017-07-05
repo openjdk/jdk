@@ -34,6 +34,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
+import sun.misc.InnocuousThread;
 import sun.util.logging.PlatformLogger;
 import sun.awt.util.ThreadGroupUtils;
 
@@ -340,7 +341,13 @@ public final class AWTAutoShutdown implements Runnable {
      * Must be called with {@link sun.security.util.SecurityConstants#MODIFY_THREADGROUP_PERMISSION}
      */
     private void activateBlockerThread() {
-        Thread thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), this, "AWT-Shutdown");
+        Thread thread;
+        String name =  "AWT-Shutdown";
+        if (System.getSecurityManager() == null) {
+            thread = new Thread(ThreadGroupUtils.getRootThreadGroup(), this, name);
+        } else {
+            thread = new InnocuousThread(this, name);
+        }
         thread.setContextClassLoader(null);
         thread.setDaemon(false);
         blockerThread = thread;

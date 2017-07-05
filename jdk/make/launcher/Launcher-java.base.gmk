@@ -103,7 +103,6 @@ ifneq ($(BUILD_JEXEC_SRC), )
   $(eval $(call SetupNativeCompilation,BUILD_JEXEC, \
       SRC := $(BUILD_JEXEC_SRC), \
       INCLUDE_FILES := jexec.c, \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKEXE) \
           $(BUILD_JEXEC_INC), \
@@ -144,7 +143,6 @@ ifeq ($(BUILD_JSPAWNHELPER), 1)
   $(eval $(call SetupNativeCompilation,BUILD_JSPAWNHELPER, \
       SRC := $(BUILD_JSPAWNHELPER_SRC), \
       INCLUDE_FILES := jspawnhelper.c, \
-      LANG := C, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKEXE) $(JSPAWNHELPER_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKEXE) $(LINK_JSPAWNHELPER_FLAGS), \

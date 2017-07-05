@@ -48,6 +48,7 @@ import sun.java2d.SurfaceData;
 import sun.java2d.windows.GDIWindowSurfaceData;
 import sun.java2d.d3d.D3DSurfaceData.D3DWindowSurfaceData;
 import sun.java2d.windows.WindowsFlags;
+import sun.misc.InnocuousThread;
 
 /**
  * This class handles rendering to the screen with the D3D pipeline.
@@ -92,22 +93,25 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
 
     public D3DScreenUpdateManager() {
         done = false;
-        AccessController.doPrivileged(
-                (PrivilegedAction<Void>) () -> {
-                    ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                    Thread shutdown = new Thread(rootTG, () -> {
-                        done = true;
-                        wakeUpUpdateThread();
-                    });
-                    shutdown.setContextClassLoader(null);
-                    try {
-                        Runtime.getRuntime().addShutdownHook(shutdown);
-                    } catch (Exception e) {
-                        done = true;
-                    }
-                    return null;
-                }
-        );
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            Runnable shutdownRunnable = () -> {
+                done = true;
+                wakeUpUpdateThread();
+            };
+            Thread shutdown;
+            if (System.getSecurityManager() == null) {
+                shutdown = new Thread(ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable);
+            } else {
+                shutdown = new InnocuousThread(shutdownRunnable);
+            }
+            shutdown.setContextClassLoader(null);
+            try {
+                Runtime.getRuntime().addShutdownHook(shutdown);
+            } catch (Exception e) {
+                done = true;
+            }
+            return null;
+        });
     }
 
     /**
@@ -345,17 +349,21 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      */
     private synchronized void startUpdateThread() {
         if (screenUpdater == null) {
-            screenUpdater = AccessController.doPrivileged(
-                    (PrivilegedAction<Thread>) () -> {
-                        ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
-                        Thread t = new Thread(rootTG,
-                                D3DScreenUpdateManager.this,
-                                "D3D Screen Updater");
-                        // REMIND: should it be higher?
-                        t.setPriority(Thread.NORM_PRIORITY + 2);
-                        t.setDaemon(true);
-                        return t;
-                    });
+            screenUpdater = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
+                Thread t;
+                String name = "D3D Screen Updater";
+                if (System.getSecurityManager() == null) {
+                    t = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                            D3DScreenUpdateManager.this,
+                            name);
+                } else {
+                    t = new InnocuousThread(D3DScreenUpdateManager.this, name);
+                }
+                // REMIND: should it be higher?
+                t.setPriority(Thread.NORM_PRIORITY + 2);
+                t.setDaemon(true);
+                return t;
+            });
             screenUpdater.start();
         } else {
             wakeUpUpdateThread();

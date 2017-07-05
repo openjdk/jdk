@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ public abstract class Card {
      * Returns the CardChannel for the basic logical channel. The basic
      * logical channel has a channel number of 0.
      *
+     * @return the CardChannel for the basic logical channel
      * @throws SecurityException if a SecurityManager exists and the
      *   caller does not have the required
      *   {@linkplain CardPermission permission}
@@ -82,6 +83,7 @@ public abstract class Card {
      * opened by issuing a <code>MANAGE CHANNEL</code> command that should use
      * the format <code>[00 70 00 00 01]</code>.
      *
+     * @return the logical channel which has been opened
      * @throws SecurityException if a SecurityManager exists and the
      *   caller does not have the required
      *   {@linkplain CardPermission permission}
@@ -137,6 +139,7 @@ public abstract class Card {
      *
      * @param controlCode the control code of the command
      * @param command the command data
+     * @return the response from the terminal device
      *
      * @throws SecurityException if a SecurityManager exists and the
      *   caller does not have the required

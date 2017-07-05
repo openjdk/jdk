@@ -40,7 +40,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
     LIBRARY := dt_socket, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBDT_SOCKET_SRC), \
-    LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_CFLAGS_WARNINGS_ARE_ERRORS) -DUSE_MMAP \
         $(LIBDT_SOCKET_CPPFLAGS), \
@@ -77,7 +76,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
     LIBRARY := jdwp, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBJDWP_SRC), \
-    LANG := C, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) -DJDWP_LOGGING \
         $(LIBJDWP_CPPFLAGS) \

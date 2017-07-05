@@ -31,7 +31,6 @@ import java.awt.datatransfer.*;
 import java.awt.dnd.*;
 import java.awt.event.*;
 import java.awt.image.*;
-import java.awt.peer.*;
 
 import javax.swing.*;
 import javax.swing.text.*;
@@ -44,6 +43,7 @@ import sun.awt.dnd.*;
 import sun.lwawt.LWComponentPeer;
 import sun.lwawt.LWWindowPeer;
 import sun.lwawt.PlatformWindow;
+import sun.misc.ManagedLocalsThread;
 
 
 public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
@@ -164,28 +164,29 @@ public final class CDragSourceContextPeer extends SunDragSourceContextPeer {
         // are posted during dragging by native event handlers.
 
         try {
-            Thread dragThread = new Thread() {
-                public void run() {
-                    final long nativeDragSource = getNativeContext();
-                    try {
-                        doDragging(nativeDragSource);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        releaseNativeDragSource(nativeDragSource);
-                        fDragImage = null;
-                        if (fDragCImage != null) {
-                            fDragCImage.dispose();
-                            fDragCImage = null;
-                        }
+            Runnable dragRunnable = () -> {
+                final long nativeDragSource = getNativeContext();
+                try {
+                    doDragging(nativeDragSource);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    releaseNativeDragSource(nativeDragSource);
+                    fDragImage = null;
+                    if (fDragCImage != null) {
+                        fDragCImage.dispose();
+                        fDragCImage = null;
                     }
                 }
             };
-
+            Thread dragThread;
+            if (System.getSecurityManager() == null) {
+                dragThread = new Thread(dragRunnable);
+            } else {
+                dragThread = new ManagedLocalsThread(dragRunnable);
+            }
             dragThread.start();
-        }
-
-        catch (Exception e) {
+        } catch (Exception e) {
             final long nativeDragSource = getNativeContext();
             setNativeContext(0);
             releaseNativeDragSource(nativeDragSource);

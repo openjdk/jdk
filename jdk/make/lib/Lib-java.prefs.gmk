@@ -37,7 +37,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
     LIBRARY := prefs, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     SRC := $(LIBPREF_SRC_DIRS), \
-    LANG := C, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBPREF_SRC_DIRS)) \
         $(LIBJAVA_HEADER_FLAGS), \

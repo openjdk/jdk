@@ -36,9 +36,6 @@ import com.sun.xml.internal.bind.marshaller.SAX2DOMEx;
 //TODO DOMHeader DOMMessage SAAJMessage StatefulInstanceResolver
 import com.sun.xml.internal.bind.unmarshaller.DOMScanner;
 
-//TODO MtomCodec
-import com.sun.xml.internal.bind.v2.runtime.output.Encoded;
-
 //TODO ExceptionBean
 import com.sun.xml.internal.bind.marshaller.NamespacePrefixMapper;
 
