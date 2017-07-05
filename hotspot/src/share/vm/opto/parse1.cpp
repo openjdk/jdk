@@ -1604,7 +1604,16 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           continue;
         default:                // All normal stuff
           if (phi == NULL) {
-            if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
+            const JVMState* jvms = map()->jvms();
+            if (EliminateNestedLocks &&
+                jvms->is_mon(j) && jvms->is_monitor_box(j)) {
+              // BoxLock nodes are not commoning.
+              // Use old BoxLock node as merged box.
+              assert(newin->jvms()->is_monitor_box(j), "sanity");
+              // This assert also tests that nodes are BoxLock.
+              assert(BoxLockNode::same_slot(n, m), "sanity");
+              C->gvn_replace_by(n, m);
+            } else if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
               phi = ensure_phi(j, nophi);
             }
           }
@@ -1911,7 +1920,7 @@ void Parse::call_register_finalizer() {
   Node* klass_addr = basic_plus_adr( receiver, receiver, oopDesc::klass_offset_in_bytes() );
   Node* klass = _gvn.transform( LoadKlassNode::make(_gvn, immutable_memory(), klass_addr, TypeInstPtr::KLASS) );
 
-  Node* access_flags_addr = basic_plus_adr(klass, klass, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc));
+  Node* access_flags_addr = basic_plus_adr(klass, klass, in_bytes(Klass::access_flags_offset()));
   Node* access_flags = make_load(NULL, access_flags_addr, TypeInt::INT, T_INT);
 
   Node* mask  = _gvn.transform(new (C, 3) AndINode(access_flags, intcon(JVM_ACC_HAS_FINALIZER)));
