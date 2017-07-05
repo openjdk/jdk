@@ -644,7 +644,7 @@ public final class TextAttribute extends Attribute {
      * be no other attributes in the <code>Map</code> except the
      * <code>FONT</code> attribute.  With <code>Map</code>-based APIs
      * the common case is to specify all attributes individually, so
-     * <code>FONT</code> is not needed or desireable.
+     * <code>FONT</code> is not needed or desirable.
      *
      * <p>However, if both <code>FONT</code> and other attributes are
      * present in the <code>Map</code>, the rendering system will
@@ -686,7 +686,7 @@ public final class TextAttribute extends Attribute {
     /**
      * Attribute key for a user-defined glyph to display in lieu
      * of the font's standard glyph for a character.  Values are
-     * intances of GraphicAttribute.  The default value is null,
+     * instances of GraphicAttribute.  The default value is null,
      * indicating that the standard glyphs provided by the font
      * should be used.
      *
@@ -1098,7 +1098,7 @@ public final class TextAttribute extends Attribute {
      * tracking values will inhibit formation of optional ligatures.
      * Tracking values are typically between <code>-0.1</code> and
      * <code>0.3</code>; values outside this range are generally not
-     * desireable.
+     * desirable.
      *
      * @since 1.6
      */

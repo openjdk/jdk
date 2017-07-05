@@ -2498,7 +2498,7 @@ public final class Formatter implements Closeable, Flushable {
         // last ordinary index
         int lasto = -1;
 
-        FormatString[] fsa = parse(format);
+        List<FormatString> fsa = parse(format);
         for (FormatString fs : fsa) {
             int index = fs.index();
             try {
@@ -2541,7 +2541,7 @@ public final class Formatter implements Closeable, Flushable {
     /**
      * Finds format specifiers in the format string.
      */
-    private FormatString[] parse(String s) {
+    private List<FormatString> parse(String s) {
         ArrayList<FormatString> al = new ArrayList<>();
         Matcher m = fsPattern.matcher(s);
         for (int i = 0, len = s.length(); i < len; ) {
@@ -2553,21 +2553,21 @@ public final class Formatter implements Closeable, Flushable {
                     // Make sure we didn't miss any invalid format specifiers
                     checkText(s, i, m.start());
                     // Assume previous characters were fixed text
-                    al.add(new FixedString(s.substring(i, m.start())));
+                    al.add(new FixedString(s, i, m.start()));
                 }
 
-                al.add(new FormatSpecifier(m));
+                al.add(new FormatSpecifier(s, m));
                 i = m.end();
             } else {
                 // No more valid format specifiers.  Check for possible invalid
                 // format specifiers.
                 checkText(s, i, len);
                 // The rest of the string is fixed text
-                al.add(new FixedString(s.substring(i)));
+                al.add(new FixedString(s, i, s.length()));
                 break;
             }
         }
-        return al.toArray(new FormatString[al.size()]);
+        return al;
     }
 
     private static void checkText(String s, int start, int end) {
@@ -2588,11 +2588,17 @@ public final class Formatter implements Closeable, Flushable {
 
     private class FixedString implements FormatString {
         private String s;
-        FixedString(String s) { this.s = s; }
+        private int start;
+        private int end;
+        FixedString(String s, int start, int end) {
+            this.s = s;
+            this.start = start;
+            this.end = end;
+        }
         public int index() { return -2; }
         public void print(Object arg, Locale l)
-            throws IOException { a.append(s); }
-        public String toString() { return s; }
+            throws IOException { a.append(s, start, end); }
+        public String toString() { return s.substring(start, end); }
     }
 
     /**
@@ -2635,14 +2641,10 @@ public final class Formatter implements Closeable, Flushable {
             return index;
         }
 
-        private Flags flags(String s) {
-            f = Flags.parse(s);
+        private Flags flags(String s, int start, int end) {
+            f = Flags.parse(s, start, end);
             if (f.contains(Flags.PREVIOUS))
                 index = -1;
-            return f;
-        }
-
-        Flags flags() {
             return f;
         }
 
@@ -2657,10 +2659,6 @@ public final class Formatter implements Closeable, Flushable {
                     assert(false);
                 }
             }
-            return width;
-        }
-
-        int width() {
             return width;
         }
 
@@ -2679,44 +2677,41 @@ public final class Formatter implements Closeable, Flushable {
             return precision;
         }
 
-        int precision() {
-            return precision;
-        }
-
-        private char conversion(String s) {
-            c = s.charAt(0);
+        private char conversion(char conv) {
+            c = conv;
             if (!dt) {
-                if (!Conversion.isValid(c))
+                if (!Conversion.isValid(c)) {
                     throw new UnknownFormatConversionException(String.valueOf(c));
-                if (Character.isUpperCase(c))
+                }
+                if (Character.isUpperCase(c)) {
                     f.add(Flags.UPPERCASE);
-                c = Character.toLowerCase(c);
-                if (Conversion.isText(c))
+                    c = Character.toLowerCase(c);
+                }
+                if (Conversion.isText(c)) {
                     index = -2;
+                }
             }
             return c;
         }
 
-        private char conversion() {
-            return c;
-        }
-
-        FormatSpecifier(Matcher m) {
+        FormatSpecifier(String s, Matcher m) {
             int idx = 1;
 
             index(m.group(idx++));
-            flags(m.group(idx++));
+            flags(s, m.start(idx), m.end(idx++));
             width(m.group(idx++));
             precision(m.group(idx++));
 
-            String tT = m.group(idx++);
-            if (tT != null) {
+            int tTStart = m.start(idx);
+            int tTEnd = m.end(idx++);
+            if (tTStart != -1 && tTEnd != -1) {
                 dt = true;
-                if (tT.equals("T"))
+                if (tTStart == tTEnd - 1 && s.charAt(tTStart) == 'T') {
                     f.add(Flags.UPPERCASE);
+                }
             }
 
-            conversion(m.group(idx));
+            conversion(s.charAt(m.start(idx)));
 
             if (dt)
                 checkDateTime();
@@ -2909,21 +2904,25 @@ public final class Formatter implements Closeable, Flushable {
                 s = s.substring(0, precision);
             if (f.contains(Flags.UPPERCASE))
                 s = s.toUpperCase();
-            a.append(justify(s));
+            appendJustified(a, s);
         }
 
-        private String justify(String s) {
-            if (width == -1)
-                return s;
-            StringBuilder sb = new StringBuilder();
-            boolean pad = f.contains(Flags.LEFT_JUSTIFY);
-            int sp = width - s.length();
-            if (!pad)
-                for (int i = 0; i < sp; i++) sb.append(' ');
-            sb.append(s);
-            if (pad)
-                for (int i = 0; i < sp; i++) sb.append(' ');
-            return sb.toString();
+        private Appendable appendJustified(Appendable a, CharSequence cs) throws IOException {
+             if (width == -1) {
+                 return a.append(cs);
+             }
+             boolean padRight = f.contains(Flags.LEFT_JUSTIFY);
+             int sp = width - cs.length();
+             if (padRight) {
+                 a.append(cs);
+             }
+             for (int i = 0; i < sp; i++) {
+                 a.append(' ');
+             }
+             if (!padRight) {
+                 a.append(cs);
+             }
+             return a;
         }
 
         public String toString() {
@@ -3088,17 +3087,13 @@ public final class Formatter implements Closeable, Flushable {
 
             if (c == Conversion.DECIMAL_INTEGER) {
                 boolean neg = value < 0;
-                char[] va;
-                if (value < 0)
-                    va = Long.toString(value, 10).substring(1).toCharArray();
-                else
-                    va = Long.toString(value, 10).toCharArray();
+                String valueStr = Long.toString(value, 10);
 
                 // leading sign indicator
                 leadingSign(sb, neg);
 
                 // the value
-                localizedMagnitude(sb, va, f, adjustWidth(width, f, neg), l);
+                localizedMagnitude(sb, valueStr, neg ? 1 : 0, f, adjustWidth(width, f, neg), l);
 
                 // trailing sign indicator
                 trailingSign(sb, neg);
@@ -3113,8 +3108,9 @@ public final class Formatter implements Closeable, Flushable {
                 // apply ALTERNATE (radix indicator for octal) before ZERO_PAD
                 if (f.contains(Flags.ALTERNATE))
                     sb.append('0');
-                if (f.contains(Flags.ZERO_PAD))
-                    for (int i = 0; i < width - len; i++) sb.append('0');
+                if (f.contains(Flags.ZERO_PAD)) {
+                    trailingZeros(sb, width - len);
+                }
                 sb.append(s);
             } else if (c == Conversion.HEXADECIMAL_INTEGER) {
                 checkBadFlags(Flags.PARENTHESES, Flags.LEADING_SPACE,
@@ -3127,15 +3123,16 @@ public final class Formatter implements Closeable, Flushable {
                 // apply ALTERNATE (radix indicator for hex) before ZERO_PAD
                 if (f.contains(Flags.ALTERNATE))
                     sb.append(f.contains(Flags.UPPERCASE) ? "0X" : "0x");
-                if (f.contains(Flags.ZERO_PAD))
-                    for (int i = 0; i < width - len; i++) sb.append('0');
+                if (f.contains(Flags.ZERO_PAD)) {
+                    trailingZeros(sb, width - len);
+                }
                 if (f.contains(Flags.UPPERCASE))
                     s = s.toUpperCase();
                 sb.append(s);
             }
 
             // justify based on width
-            a.append(justify(sb.toString()));
+            appendJustified(a, sb);
         }
 
         // neg := val < 0
@@ -3172,8 +3169,7 @@ public final class Formatter implements Closeable, Flushable {
 
             // the value
             if (c == Conversion.DECIMAL_INTEGER) {
-                char[] va = v.toString().toCharArray();
-                localizedMagnitude(sb, va, f, adjustWidth(width, f, neg), l);
+                localizedMagnitude(sb, v.toString(), 0, f, adjustWidth(width, f, neg), l);
             } else if (c == Conversion.OCTAL_INTEGER) {
                 String s = v.toString(8);
 
@@ -3187,8 +3183,7 @@ public final class Formatter implements Closeable, Flushable {
                     sb.append('0');
                 }
                 if (f.contains(Flags.ZERO_PAD)) {
-                    for (int i = 0; i < width - len; i++)
-                        sb.append('0');
+                    trailingZeros(sb, width - len);
                 }
                 sb.append(s);
             } else if (c == Conversion.HEXADECIMAL_INTEGER) {
@@ -3203,9 +3198,9 @@ public final class Formatter implements Closeable, Flushable {
                     len += 2;
                     sb.append(f.contains(Flags.UPPERCASE) ? "0X" : "0x");
                 }
-                if (f.contains(Flags.ZERO_PAD))
-                    for (int i = 0; i < width - len; i++)
-                        sb.append('0');
+                if (f.contains(Flags.ZERO_PAD)) {
+                    trailingZeros(sb, width - len);
+                }
                 if (f.contains(Flags.UPPERCASE))
                     s = s.toUpperCase();
                 sb.append(s);
@@ -3215,7 +3210,7 @@ public final class Formatter implements Closeable, Flushable {
             trailingSign(sb, (value.signum() == -1));
 
             // justify based on width
-            a.append(justify(sb.toString()));
+            appendJustified(a, sb);
         }
 
         private void print(float value, Locale l) throws IOException {
@@ -3246,7 +3241,7 @@ public final class Formatter implements Closeable, Flushable {
             }
 
             // justify based on width
-            a.append(justify(sb.toString()));
+            appendJustified(a, sb);
         }
 
         // !Double.isInfinite(value) && !Double.isNaN(value)
@@ -3263,31 +3258,31 @@ public final class Formatter implements Closeable, Flushable {
                         = FormattedFloatingDecimal.valueOf(value, prec,
                           FormattedFloatingDecimal.Form.SCIENTIFIC);
 
-                char[] mant = addZeros(fd.getMantissa(), prec);
+                StringBuilder mant = new StringBuilder().append(fd.getMantissa());
+                addZeros(mant, prec);
 
                 // If the precision is zero and the '#' flag is set, add the
                 // requested decimal point.
-                if (f.contains(Flags.ALTERNATE) && (prec == 0))
-                    mant = addDot(mant);
+                if (f.contains(Flags.ALTERNATE) && (prec == 0)) {
+                    mant.append('.');
+                }
 
                 char[] exp = (value == 0.0)
                     ? new char[] {'+','0','0'} : fd.getExponent();
 
                 int newW = width;
-                if (width != -1)
+                if (width != -1) {
                     newW = adjustWidth(width - exp.length - 1, f, neg);
-                localizedMagnitude(sb, mant, f, newW, l);
+                }
+                localizedMagnitude(sb, mant, 0, f, newW, l);
 
                 sb.append(f.contains(Flags.UPPERCASE) ? 'E' : 'e');
 
-                Flags flags = f.dup().remove(Flags.GROUP);
                 char sign = exp[0];
                 assert(sign == '+' || sign == '-');
                 sb.append(sign);
 
-                char[] tmp = new char[exp.length - 1];
-                System.arraycopy(exp, 1, tmp, 0, exp.length - 1);
-                sb.append(localizedMagnitude(null, tmp, flags, -1, l));
+                localizedMagnitudeExp(sb, exp, 1, l);
             } else if (c == Conversion.DECIMAL_FLOAT) {
                 // Create a new FormattedFloatingDecimal with the desired
                 // precision.
@@ -3297,17 +3292,18 @@ public final class Formatter implements Closeable, Flushable {
                         = FormattedFloatingDecimal.valueOf(value, prec,
                           FormattedFloatingDecimal.Form.DECIMAL_FLOAT);
 
-                char[] mant = addZeros(fd.getMantissa(), prec);
+                StringBuilder mant = new StringBuilder().append(fd.getMantissa());
+                addZeros(mant, prec);
 
                 // If the precision is zero and the '#' flag is set, add the
                 // requested decimal point.
                 if (f.contains(Flags.ALTERNATE) && (prec == 0))
-                    mant = addDot(mant);
+                    mant.append('.');
 
                 int newW = width;
                 if (width != -1)
                     newW = adjustWidth(width, f, neg);
-                localizedMagnitude(sb, mant, f, newW, l);
+                localizedMagnitude(sb, mant, 0, f, newW, l);
             } else if (c == Conversion.GENERAL) {
                 int prec = precision;
                 if (precision == -1)
@@ -3316,18 +3312,18 @@ public final class Formatter implements Closeable, Flushable {
                     prec = 1;
 
                 char[] exp;
-                char[] mant;
+                StringBuilder mant = new StringBuilder();
                 int expRounded;
                 if (value == 0.0) {
                     exp = null;
-                    mant = new char[] {'0'};
+                    mant.append('0');
                     expRounded = 0;
                 } else {
                     FormattedFloatingDecimal fd
                         = FormattedFloatingDecimal.valueOf(value, prec,
                           FormattedFloatingDecimal.Form.GENERAL);
                     exp = fd.getExponent();
-                    mant = fd.getMantissa();
+                    mant.append(fd.getMantissa());
                     expRounded = fd.getExponentRounded();
                 }
 
@@ -3337,11 +3333,12 @@ public final class Formatter implements Closeable, Flushable {
                     prec -= expRounded + 1;
                 }
 
-                mant = addZeros(mant, prec);
+                addZeros(mant, prec);
                 // If the precision is zero and the '#' flag is set, add the
                 // requested decimal point.
-                if (f.contains(Flags.ALTERNATE) && (prec == 0))
-                    mant = addDot(mant);
+                if (f.contains(Flags.ALTERNATE) && (prec == 0)) {
+                    mant.append('.');
+                }
 
                 int newW = width;
                 if (width != -1) {
@@ -3350,19 +3347,16 @@ public final class Formatter implements Closeable, Flushable {
                     else
                         newW = adjustWidth(width, f, neg);
                 }
-                localizedMagnitude(sb, mant, f, newW, l);
+                localizedMagnitude(sb, mant, 0, f, newW, l);
 
                 if (exp != null) {
                     sb.append(f.contains(Flags.UPPERCASE) ? 'E' : 'e');
 
-                    Flags flags = f.dup().remove(Flags.GROUP);
                     char sign = exp[0];
                     assert(sign == '+' || sign == '-');
                     sb.append(sign);
 
-                    char[] tmp = new char[exp.length - 1];
-                    System.arraycopy(exp, 1, tmp, 0, exp.length - 1);
-                    sb.append(localizedMagnitude(null, tmp, flags, -1, l));
+                    localizedMagnitudeExp(sb, exp, 1, l);
                 }
             } else if (c == Conversion.HEXADECIMAL_FLOAT) {
                 int prec = precision;
@@ -3374,74 +3368,71 @@ public final class Formatter implements Closeable, Flushable {
 
                 String s = hexDouble(value, prec);
 
-                char[] va;
+                StringBuilder va = new StringBuilder();
                 boolean upper = f.contains(Flags.UPPERCASE);
                 sb.append(upper ? "0X" : "0x");
 
-                if (f.contains(Flags.ZERO_PAD))
-                    for (int i = 0; i < width - s.length() - 2; i++)
-                        sb.append('0');
+                if (f.contains(Flags.ZERO_PAD)) {
+                    trailingZeros(sb, width - s.length() - 2);
+                }
 
                 int idx = s.indexOf('p');
-                va = s.substring(0, idx).toCharArray();
                 if (upper) {
-                    String tmp = new String(va);
+                    String tmp = s.substring(0, idx);
                     // don't localize hex
                     tmp = tmp.toUpperCase(Locale.US);
-                    va = tmp.toCharArray();
+                    va.append(tmp);
+                } else {
+                    va.append(s, 0, idx);
                 }
-                sb.append(prec != 0 ? addZeros(va, prec) : va);
+                if (prec != 0) {
+                    addZeros(va, prec);
+                }
+                sb.append(va);
                 sb.append(upper ? 'P' : 'p');
-                sb.append(s.substring(idx+1));
+                sb.append(s, idx+1, s.length());
             }
         }
 
         // Add zeros to the requested precision.
-        private char[] addZeros(char[] v, int prec) {
+        private void addZeros(StringBuilder sb, int prec) {
             // Look for the dot.  If we don't find one, the we'll need to add
             // it before we add the zeros.
+            int len = sb.length();
             int i;
-            for (i = 0; i < v.length; i++) {
-                if (v[i] == '.')
+            for (i = 0; i < len; i++) {
+                if (sb.charAt(i) == '.') {
                     break;
+                }
             }
             boolean needDot = false;
-            if (i == v.length) {
+            if (i == len) {
                 needDot = true;
             }
 
             // Determine existing precision.
-            int outPrec = v.length - i - (needDot ? 0 : 1);
+            int outPrec = len - i - (needDot ? 0 : 1);
             assert (outPrec <= prec);
-            if (outPrec == prec)
-                return v;
-
-            // Create new array with existing contents.
-            char[] tmp
-                = new char[v.length + prec - outPrec + (needDot ? 1 : 0)];
-            System.arraycopy(v, 0, tmp, 0, v.length);
+            if (outPrec == prec) {
+                return;
+            }
 
             // Add dot if previously determined to be necessary.
-            int start = v.length;
             if (needDot) {
-                tmp[v.length] = '.';
-                start++;
+                sb.append('.');
             }
 
             // Add zeros.
-            for (int j = start; j < tmp.length; j++)
-                tmp[j] = '0';
-
-            return tmp;
+            trailingZeros(sb, prec - outPrec);
         }
 
         // Method assumes that d > 0.
         private String hexDouble(double d, int prec) {
             // Let Double.toHexString handle simple cases
-            if(!Double.isFinite(d) || d == 0.0 || prec == 0 || prec >= 13)
+            if (!Double.isFinite(d) || d == 0.0 || prec == 0 || prec >= 13) {
                 // remove "0x"
                 return Double.toHexString(d).substring(2);
-            else {
+            } else {
                 assert(prec >= 1 && prec <= 12);
 
                 int exponent  = Math.getExponent(d);
@@ -3534,7 +3525,7 @@ public final class Formatter implements Closeable, Flushable {
             trailingSign(sb, neg);
 
             // justify based on width
-            a.append(justify(sb.toString()));
+            appendJustified(a, sb);
         }
 
         // value > 0
@@ -3565,7 +3556,7 @@ public final class Formatter implements Closeable, Flushable {
                     = new BigDecimalLayout(v.unscaledValue(), v.scale(),
                                            BigDecimalLayoutForm.SCIENTIFIC);
 
-                char[] mant = bdl.mantissa();
+                StringBuilder mant = bdl.mantissa();
 
                 // Add a decimal point if necessary.  The mantissa may not
                 // contain a decimal point if the scale is zero (the internal
@@ -3573,29 +3564,29 @@ public final class Formatter implements Closeable, Flushable {
                 // precision is one. Append a decimal point if '#' is set or if
                 // we require zero padding to get to the requested precision.
                 if ((origPrec == 1 || !bdl.hasDot())
-                    && (nzeros > 0 || (f.contains(Flags.ALTERNATE))))
-                    mant = addDot(mant);
+                        && (nzeros > 0 || (f.contains(Flags.ALTERNATE)))) {
+                    mant.append('.');
+                }
 
                 // Add trailing zeros in the case precision is greater than
                 // the number of available digits after the decimal separator.
-                mant = trailingZeros(mant, nzeros);
+                trailingZeros(mant, nzeros);
 
-                char[] exp = bdl.exponent();
+                StringBuilder exp = bdl.exponent();
                 int newW = width;
-                if (width != -1)
-                    newW = adjustWidth(width - exp.length - 1, f, neg);
-                localizedMagnitude(sb, mant, f, newW, l);
+                if (width != -1) {
+                    newW = adjustWidth(width - exp.length() - 1, f, neg);
+                }
+                localizedMagnitude(sb, mant, 0, f, newW, l);
 
                 sb.append(f.contains(Flags.UPPERCASE) ? 'E' : 'e');
 
                 Flags flags = f.dup().remove(Flags.GROUP);
-                char sign = exp[0];
+                char sign = exp.charAt(0);
                 assert(sign == '+' || sign == '-');
-                sb.append(exp[0]);
+                sb.append(sign);
 
-                char[] tmp = new char[exp.length - 1];
-                System.arraycopy(exp, 1, tmp, 0, exp.length - 1);
-                sb.append(localizedMagnitude(null, tmp, flags, -1, l));
+                sb.append(localizedMagnitude(null, exp, 1, flags, -1, l));
             } else if (c == Conversion.DECIMAL_FLOAT) {
                 // Create a new BigDecimal with the desired precision.
                 int prec = (precision == -1 ? 6 : precision);
@@ -3619,7 +3610,7 @@ public final class Formatter implements Closeable, Flushable {
                                            value.scale(),
                                            BigDecimalLayoutForm.DECIMAL_FLOAT);
 
-                char mant[] = bdl.mantissa();
+                StringBuilder mant = bdl.mantissa();
                 int nzeros = (bdl.scale() < prec ? prec - bdl.scale() : 0);
 
                 // Add a decimal point if necessary.  The mantissa may not
@@ -3627,14 +3618,16 @@ public final class Formatter implements Closeable, Flushable {
                 // representation has no fractional part).  Append a decimal
                 // point if '#' is set or we require zero padding to get to the
                 // requested precision.
-                if (bdl.scale() == 0 && (f.contains(Flags.ALTERNATE) || nzeros > 0))
-                    mant = addDot(bdl.mantissa());
+                if (bdl.scale() == 0 && (f.contains(Flags.ALTERNATE)
+                        || nzeros > 0)) {
+                    mant.append('.');
+                }
 
                 // Add trailing zeros if the precision is greater than the
                 // number of available digits after the decimal separator.
-                mant = trailingZeros(mant, nzeros);
+                trailingZeros(mant, nzeros);
 
-                localizedMagnitude(sb, mant, f, adjustWidth(width, f, neg), l);
+                localizedMagnitude(sb, mant, 0, f, adjustWidth(width, f, neg), l);
             } else if (c == Conversion.GENERAL) {
                 int prec = precision;
                 if (precision == -1)
@@ -3693,36 +3686,18 @@ public final class Formatter implements Closeable, Flushable {
                 return scale;
             }
 
-            // char[] with canonical string representation
-            public char[] layoutChars() {
-                StringBuilder sb = new StringBuilder(mant);
-                if (exp != null) {
-                    sb.append('E');
-                    sb.append(exp);
-                }
-                return toCharArray(sb);
-            }
-
-            public char[] mantissa() {
-                return toCharArray(mant);
+            public StringBuilder mantissa() {
+                return mant;
             }
 
             // The exponent will be formatted as a sign ('+' or '-') followed
             // by the exponent zero-padded to include at least two digits.
-            public char[] exponent() {
-                return toCharArray(exp);
-            }
-
-            private char[] toCharArray(StringBuilder sb) {
-                if (sb == null)
-                    return null;
-                char[] result = new char[sb.length()];
-                sb.getChars(0, result.length, result, 0);
-                return result;
+            public StringBuilder exponent() {
+                return exp;
             }
 
             private void layout(BigInteger intVal, int scale, BigDecimalLayoutForm form) {
-                char coeff[] = intVal.toString().toCharArray();
+                String coeff = intVal.toString();
                 this.scale = scale;
 
                 // Construct a buffer, with sufficient capacity for all cases.
@@ -3730,71 +3705,73 @@ public final class Formatter implements Closeable, Flushable {
                 // if '.' needed, +2 for "E+", + up to 10 for adjusted
                 // exponent.  Otherwise it could have +1 if negative, plus
                 // leading "0.00000"
-                mant = new StringBuilder(coeff.length + 14);
+                int len = coeff.length();
+                mant = new StringBuilder(len + 14);
 
                 if (scale == 0) {
-                    int len = coeff.length;
                     if (len > 1) {
-                        mant.append(coeff[0]);
+                        mant.append(coeff.charAt(0));
                         if (form == BigDecimalLayoutForm.SCIENTIFIC) {
                             mant.append('.');
                             dot = true;
-                            mant.append(coeff, 1, len - 1);
+                            mant.append(coeff, 1, len);
                             exp = new StringBuilder("+");
-                            if (len < 10)
-                                exp.append("0").append(len - 1);
-                            else
+                            if (len < 10) {
+                                exp.append('0').append(len - 1);
+                            } else {
                                 exp.append(len - 1);
+                            }
                         } else {
-                            mant.append(coeff, 1, len - 1);
+                            mant.append(coeff, 1, len);
                         }
                     } else {
                         mant.append(coeff);
-                        if (form == BigDecimalLayoutForm.SCIENTIFIC)
+                        if (form == BigDecimalLayoutForm.SCIENTIFIC) {
                             exp = new StringBuilder("+00");
+                        }
                     }
                     return;
                 }
-                long adjusted = -(long) scale + (coeff.length - 1);
+                long adjusted = -(long) scale + (len - 1);
                 if (form == BigDecimalLayoutForm.DECIMAL_FLOAT) {
                     // count of padding zeros
-                    int pad = scale - coeff.length;
+                    int pad = scale - len;
                     if (pad >= 0) {
                         // 0.xxx form
                         mant.append("0.");
                         dot = true;
-                        for (; pad > 0 ; pad--) mant.append('0');
+                        trailingZeros(mant, pad);
                         mant.append(coeff);
                     } else {
-                        if (-pad < coeff.length) {
+                        if (-pad < len) {
                             // xx.xx form
                             mant.append(coeff, 0, -pad);
                             mant.append('.');
                             dot = true;
-                            mant.append(coeff, -pad, scale);
+                            mant.append(coeff, -pad, -pad + scale);
                         } else {
                             // xx form
-                            mant.append(coeff, 0, coeff.length);
-                            for (int i = 0; i < -scale; i++)
-                                mant.append('0');
+                            mant.append(coeff, 0, len);
+                            trailingZeros(mant, -scale);
                             this.scale = 0;
                         }
                     }
                 } else {
                     // x.xxx form
-                    mant.append(coeff[0]);
-                    if (coeff.length > 1) {
+                    mant.append(coeff.charAt(0));
+                    if (len > 1) {
                         mant.append('.');
                         dot = true;
-                        mant.append(coeff, 1, coeff.length-1);
+                        mant.append(coeff, 1, len);
                     }
                     exp = new StringBuilder();
                     if (adjusted != 0) {
                         long abs = Math.abs(adjusted);
                         // require sign
                         exp.append(adjusted < 0 ? '-' : '+');
-                        if (abs < 10)
+                        if (abs < 10) {
                             exp.append('0');
+                        }
                         exp.append(abs);
                     } else {
                         exp.append("+00");
@@ -3810,45 +3787,27 @@ public final class Formatter implements Closeable, Flushable {
             return newW;
         }
 
-        // Add a '.' to th mantissa if required
-        private char[] addDot(char[] mant) {
-            char[] tmp = mant;
-            tmp = new char[mant.length + 1];
-            System.arraycopy(mant, 0, tmp, 0, mant.length);
-            tmp[tmp.length - 1] = '.';
-            return tmp;
-        }
-
-        // Add trailing zeros in the case precision is greater than the number
-        // of available digits after the decimal separator.
-        private char[] trailingZeros(char[] mant, int nzeros) {
-            char[] tmp = mant;
-            if (nzeros > 0) {
-                tmp = new char[mant.length + nzeros];
-                System.arraycopy(mant, 0, tmp, 0, mant.length);
-                for (int i = mant.length; i < tmp.length; i++)
-                    tmp[i] = '0';
+        // Add trailing zeros
+        private void trailingZeros(StringBuilder sb, int nzeros) {
+            for (int i = 0; i < nzeros; i++) {
+                sb.append('0');
             }
-            return tmp;
         }
 
-        private void print(Calendar t, char c, Locale l)  throws IOException
-        {
+        private void print(Calendar t, char c, Locale l)  throws IOException {
             StringBuilder sb = new StringBuilder();
             print(sb, t, c, l);
 
             // justify based on width
-            String s = justify(sb.toString());
-            if (f.contains(Flags.UPPERCASE))
-                s = s.toUpperCase();
-
-            a.append(s);
+            if (f.contains(Flags.UPPERCASE)) {
+                appendJustified(a, sb.toString().toUpperCase());
+            } else {
+                appendJustified(a, sb);
+            }
         }
 
-        private Appendable print(StringBuilder sb, Calendar t, char c,
-                                 Locale l)
-            throws IOException
-        {
+        private Appendable print(StringBuilder sb, Calendar t, char c, Locale l)
+                throws IOException {
             if (sb == null)
                 sb = new StringBuilder();
             switch (c) {
@@ -4021,6 +3980,7 @@ public final class Formatter implements Closeable, Flushable {
                 // this may be in wrong place for some locales
                 StringBuilder tsb = new StringBuilder();
                 print(tsb, t, DateTime.AM_PM, l);
+
                 sb.append(tsb.toString().toUpperCase(l != null ? l : Locale.US));
                 break;
             }
@@ -4058,10 +4018,11 @@ public final class Formatter implements Closeable, Flushable {
             StringBuilder sb = new StringBuilder();
             print(sb, t, c, l);
             // justify based on width
-            String s = justify(sb.toString());
-            if (f.contains(Flags.UPPERCASE))
-                s = s.toUpperCase();
-            a.append(s);
+            if (f.contains(Flags.UPPERCASE)) {
+                appendJustified(a, sb.toString().toUpperCase());
+            } else {
+                appendJustified(a, sb);
+            }
         }
 
         private Appendable print(StringBuilder sb, TemporalAccessor t, char c,
@@ -4309,20 +4270,17 @@ public final class Formatter implements Closeable, Flushable {
             return zero;
         }
 
-        private StringBuilder
-            localizedMagnitude(StringBuilder sb, long value, Flags f,
-                               int width, Locale l)
-        {
-            char[] va = Long.toString(value, 10).toCharArray();
-            return localizedMagnitude(sb, va, f, width, l);
+        private StringBuilder localizedMagnitude(StringBuilder sb,
+                long value, Flags f, int width, Locale l) {
+            return localizedMagnitude(sb, Long.toString(value, 10), 0, f, width, l);
         }
 
-        private StringBuilder
-            localizedMagnitude(StringBuilder sb, char[] value, Flags f,
-                               int width, Locale l)
-        {
-            if (sb == null)
+        private StringBuilder localizedMagnitude(StringBuilder sb,
+                CharSequence value, final int offset, Flags f, int width,
+                Locale l) {
+            if (sb == null) {
                 sb = new StringBuilder();
+            }
             int begin = sb.length();
 
             char zero = getZero(l);
@@ -4332,10 +4290,10 @@ public final class Formatter implements Closeable, Flushable {
             int  grpSize = -1;
             char decSep = '\0';
 
-            int len = value.length;
+            int len = value.length();
             int dot = len;
-            for (int j = 0; j < len; j++) {
-                if (value[j] == '.') {
+            for (int j = offset; j < len; j++) {
+                if (value.charAt(j) == '.') {
                     dot = j;
                     break;
                 }
@@ -4363,7 +4321,7 @@ public final class Formatter implements Closeable, Flushable {
             }
 
             // localize the digits inserting group separators as necessary
-            for (int j = 0; j < len; j++) {
+            for (int j = offset; j < len; j++) {
                 if (j == dot) {
                     sb.append(decSep);
                     // no more group separators after the decimal separator
@@ -4371,19 +4329,35 @@ public final class Formatter implements Closeable, Flushable {
                     continue;
                 }
 
-                char c = value[j];
+                char c = value.charAt(j);
                 sb.append((char) ((c - '0') + zero));
-                if (grpSep != '\0' && j != dot - 1 && ((dot - j) % grpSize == 1))
+                if (grpSep != '\0' && j != dot - 1 && ((dot - j) % grpSize == 1)) {
                     sb.append(grpSep);
+                }
             }
 
             // apply zero padding
-            len = sb.length();
-            if (width != -1 && f.contains(Flags.ZERO_PAD))
-                for (int k = 0; k < width - len; k++)
+            if (width != -1 && f.contains(Flags.ZERO_PAD)) {
+                for (int k = sb.length(); k < width; k++) {
                     sb.insert(begin, zero);
+                }
+            }
 
             return sb;
+        }
+
+        // Specialized localization of exponents, where the source value can only
+        // contain characters '0' through '9', starting at index offset, and no
+        // group separators is added for any locale.
+        private void localizedMagnitudeExp(StringBuilder sb, char[] value,
+                final int offset, Locale l) {
+            char zero = getZero(l);
+
+            int len = value.length;
+            for (int j = offset; j < len; j++) {
+                char c = value[j];
+                sb.append((char) ((c - '0') + zero));
+            }
         }
     }
 
@@ -4433,10 +4407,10 @@ public final class Formatter implements Closeable, Flushable {
             return this;
         }
 
-        public static Flags parse(String s) {
-            char[] ca = s.toCharArray();
+        public static Flags parse(String s, int start, int end) {
             Flags f = new Flags(0);
-            for (char c : ca) {
+            for (int i = start; i < end; i++) {
+                char c = s.charAt(i);
                 Flags v = parse(c);
                 if (f.contains(v))
                     throw new DuplicateFormatFlagsException(v.toString());

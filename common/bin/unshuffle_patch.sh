@@ -35,11 +35,11 @@ usage() {
       exit 1
 }
 
-SCRIPT_DIR=`pwd`/`dirname $0`
+SCRIPT_DIR=`dirname $0`
 UNSHUFFLE_LIST=$SCRIPT_DIR"/unshuffle_list.txt"
 
 if [ ! -f "$UNSHUFFLE_LIST" ] ; then
-  echo "FATAL: cannot find $UNSHUFFLE_LIST"
+  echo "FATAL: cannot find $UNSHUFFLE_LIST" >&2
   exit 1
 fi
 
@@ -68,7 +68,7 @@ done
 
 # Make sure we have the right number of arguments
 if [ ! $# -eq 3 ] ; then
-  echo "ERROR: Invalid number of arguments."
+  echo "ERROR: Invalid number of arguments." >&2
   usage
 fi
 
@@ -83,21 +83,28 @@ for r in $repos ; do
   fi 
 done
 if [ $found = "false" ] ; then
-  echo "ERROR: Unknown repo: $repo. Should be one of [$repos]."
+  echo "ERROR: Unknown repo: $repo. Should be one of [$repos]." >&2
   usage
 fi
 
 # Check given input/output files
 input="$2"
-output="$3"
+if [ "x$input" = "x-" ] ; then
+  input="/dev/stdin"
+fi
 
-if [ ! -f $input ] ; then
-  echo "ERROR: Cannot find input patch file: $input"
+if [ ! -f $input -a "x$input" != "x/dev/stdin" ] ; then
+  echo "ERROR: Cannot find input patch file: $input" >&2
   exit 1
 fi
 
-if [ -f $output ] ; then
-  echo "ERROR: Output patch already exists: $output"
+output="$3"
+if [ "x$output" = "x-" ] ; then
+  output="/dev/stdout"
+fi
+
+if [ -f $output -a "x$output" != "x/dev/stdout" ] ; then
+  echo "ERROR: Output patch already exists: $output" >&2
   exit 1
 fi
 
@@ -105,7 +112,7 @@ what=""  ## shuffle or unshuffle
 
 verbose() {
   if [ ${vflag} = "true" ] ; then
-    echo "$@"
+    echo "$@" >&2
   fi
 }
 
@@ -117,7 +124,7 @@ unshuffle() {
   path=
   if echo "$line" | egrep '^diff' > /dev/null ; then
     if ! echo "$line" | egrep '\-\-git' > /dev/null ; then
-      echo "ERROR: Only git patches supported. Please use 'hg export --git ...'."
+      echo "ERROR: Only git patches supported. Please use 'hg export --git ...'." >&2
       exit 1
     fi
     path="`echo "$line" | sed -e s@'diff --git a/'@@ -e s@' b/.*$'@@`"

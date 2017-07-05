@@ -1674,9 +1674,9 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ beq(CCR0, Lforward);
 
       // Has the nmethod been invalidated already?
-      __ lwz(R0, nmethod::entry_bci_offset(), R3_RET);
-      __ cmpwi(CCR0, R0, InvalidOSREntryBci);
-      __ beq(CCR0, Lforward);
+      __ lbz(R0, nmethod::state_offset(), R3_RET);
+      __ cmpwi(CCR0, R0, nmethod::in_use);
+      __ bne(CCR0, Lforward);
 
       // Migrate the interpreter frame off of the stack.
       // We can use all registers because we will not return to interpreter from this point.

@@ -37,7 +37,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 import test.java.awt.regtesthelpers.Sysout;
 
 public class DblClickActionEventTest extends Applet {

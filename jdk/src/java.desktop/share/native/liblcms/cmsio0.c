@@ -1167,34 +1167,6 @@ cmsHPROFILE CMSEXPORT cmsOpenProfileFromMem(const void* MemPtr, cmsUInt32Number 
     return cmsOpenProfileFromMemTHR(NULL, MemPtr, dwSize);
 }
 
-static
-cmsBool SanityCheck(_cmsICCPROFILE* profile)
-{
-    cmsIOHANDLER* io;
-
-    if (!profile) {
-        return FALSE;
-    }
-
-    io = profile->IOhandler;
-    if (!io) {
-        return FALSE;
-    }
-
-    if (!io->Seek ||
-        !(io->Seek==NULLSeek || io->Seek==MemorySeek || io->Seek==FileSeek))
-    {
-        return FALSE;
-    }
-    if (!io->Read ||
-        !(io->Read==NULLRead || io->Read==MemoryRead || io->Read==FileRead))
-    {
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
 // Dump tag contents. If the profile is being modified, untouched tags are copied from FileOrig
 static
 cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
@@ -1225,7 +1197,7 @@ cmsBool SaveTags(_cmsICCPROFILE* Icc, _cmsICCPROFILE* FileOrig)
 
             // Reach here if we are copying a tag from a disk-based ICC profile which has not been modified by user.
             // In this case a blind copy of the block data is performed
-            if (SanityCheck(FileOrig) && Icc -> TagOffsets[i]) {
+            if (FileOrig != NULL && FileOrig->IOhandler != NULL && Icc -> TagOffsets[i]) {
 
                 cmsUInt32Number TagSize   = FileOrig -> TagSizes[i];
                 cmsUInt32Number TagOffset = FileOrig -> TagOffsets[i];
@@ -1880,6 +1852,7 @@ cmsBool CMSEXPORT cmsWriteRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, cons
 {
     _cmsICCPROFILE* Icc = (_cmsICCPROFILE*) hProfile;
     int i;
+    cmsBool ret = TRUE;
 
     if (!_cmsLockMutex(Icc->ContextID, Icc ->UsrMutex)) return 0;
 
@@ -1895,10 +1868,11 @@ cmsBool CMSEXPORT cmsWriteRawTag(cmsHPROFILE hProfile, cmsTagSignature sig, cons
 
     // Keep a copy of the block
     Icc ->TagPtrs[i]  = _cmsDupMem(Icc ->ContextID, data, Size);
+    if (!Icc ->TagPtrs[i]) ret = FALSE;
     Icc ->TagSizes[i] = Size;
 
     _cmsUnlockMutex(Icc->ContextID, Icc ->UsrMutex);
-    return TRUE;
+    return ret;
 }
 
 // Using this function you can collapse several tag entries to the same block in the profile

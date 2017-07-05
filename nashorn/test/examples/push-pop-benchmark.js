@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,14 +19,41 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-public class WinGammaPlatformVC9 extends WinGammaPlatformVC8 {
+/**
+ * Simple benchmark to measure push/pop specialized method performance
+ */
 
-    String projectVersion() {return "9.00";};
+var a = [];
 
+var RESULT = 15;
+
+function bench() {
+    var sum = 0;
+    for (var i=0;i<10;i++) {
+	a.push(i);
+    }
+    for (var i=0;i<10;i++) {
+	sum |= a.pop();
+    }
+    return sum;
 }
 
-class CompilerInterfaceVC9 extends CompilerInterfaceVC8 {
+function runbench() {
+    var sum = 0;
+    for (var iters = 0; iters<1e8; iters++) {
+	sum |= bench();
+    }
+    return sum;
+}
+
+var d = new Date;
+var res = runbench();
+print((new Date - d) + " ms");
+print();
+if (res != RESULT) {
+    print("ERROR: Wrong result - should be " + RESULT);
+} else {
+    print("Verified OK - result is correct");
 }

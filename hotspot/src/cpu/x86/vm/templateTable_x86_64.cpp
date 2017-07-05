@@ -1751,9 +1751,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ testptr(rax, rax);                        // test result
       __ jcc(Assembler::zero, dispatch);         // no osr if null
       // nmethod may have been invalidated (VM may block upon call_VM return)
-      __ movl(rcx, Address(rax, nmethod::entry_bci_offset()));
-      __ cmpl(rcx, InvalidOSREntryBci);
-      __ jcc(Assembler::equal, dispatch);
+      __ cmpb(Address(rax, nmethod::state_offset()), nmethod::in_use);
+      __ jcc(Assembler::notEqual, dispatch);
 
       // We have the address of an on stack replacement routine in eax
       // We need to prepare to execute the OSR method. First we must

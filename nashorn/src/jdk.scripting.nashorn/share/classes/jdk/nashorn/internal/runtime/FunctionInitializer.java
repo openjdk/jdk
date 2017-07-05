@@ -60,6 +60,17 @@ public final class FunctionInitializer implements Serializable {
     }
 
     /**
+     * Copy constructor.
+     *
+     * @param init original initializer
+     */
+    FunctionInitializer(final FunctionInitializer init) {
+        this.className = init.getClassName();
+        this.methodType = init.getMethodType();
+        this.flags = init.getFlags();
+    }
+
+    /**
      * Constructor.
      *
      * @param functionNode the function node

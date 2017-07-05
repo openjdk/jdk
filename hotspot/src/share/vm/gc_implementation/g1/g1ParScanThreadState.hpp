@@ -84,20 +84,6 @@ class G1ParScanThreadState : public StackObj {
   DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
   G1SATBCardTableModRefBS* ctbs()                { return _ct_bs; }
 
-  template <class T> inline void immediate_rs_update(HeapRegion* from, T* p, int tid);
-
-  template <class T> void deferred_rs_update(HeapRegion* from, T* p, int tid) {
-    // If the new value of the field points to the same region or
-    // is the to-space, we don't need to include it in the Rset updates.
-    if (!from->is_in_reserved(oopDesc::load_decode_heap_oop(p)) && !from->is_survivor()) {
-      size_t card_index = ctbs()->index_for(p);
-      // If the card hasn't been added to the buffer, do it.
-      if (ctbs()->mark_card_deferred(card_index)) {
-        dirty_card_queue().enqueue((jbyte*)ctbs()->byte_for_index(card_index));
-      }
-    }
-  }
-
  public:
   G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp);
   ~G1ParScanThreadState();
@@ -124,8 +110,17 @@ class G1ParScanThreadState : public StackObj {
     _refs->push(ref);
   }
 
-  template <class T> inline void update_rs(HeapRegion* from, T* p, int tid);
-
+  template <class T> void update_rs(HeapRegion* from, T* p, int tid) {
+    // If the new value of the field points to the same region or
+    // is the to-space, we don't need to include it in the Rset updates.
+    if (!from->is_in_reserved(oopDesc::load_decode_heap_oop(p)) && !from->is_survivor()) {
+      size_t card_index = ctbs()->index_for(p);
+      // If the card hasn't been added to the buffer, do it.
+      if (ctbs()->mark_card_deferred(card_index)) {
+        dirty_card_queue().enqueue((jbyte*)ctbs()->byte_for_index(card_index));
+      }
+    }
+  }
  private:
 
   inline HeapWord* allocate(GCAllocPurpose purpose, size_t word_sz);

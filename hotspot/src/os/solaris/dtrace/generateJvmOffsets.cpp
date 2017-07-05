@@ -250,6 +250,7 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   printf("\n");
 
   GEN_OFFS(nmethod, _method);
+  GEN_OFFS(nmethod, _dependencies_offset);
   GEN_OFFS(nmethod, _metadata_offset);
   GEN_OFFS(nmethod, _scopes_data_offset);
   GEN_OFFS(nmethod, _scopes_pcs_offset);

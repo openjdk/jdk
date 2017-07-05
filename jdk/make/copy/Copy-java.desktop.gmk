@@ -68,7 +68,7 @@ ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
   endif
 
   $(FREETYPE_TARGET_LIB): $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype)
-	$(CP) $(FREETYPE_BUNDLE_LIB_PATH)/$(call SHARED_LIBRARY,freetype) $@
+	$(install-file)
         ifeq ($(OPENJDK_BUILD_OS), windows)
 	  $(CHMOD) +rx $@
         endif

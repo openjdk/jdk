@@ -37,7 +37,6 @@ import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Setter;
-import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.tools.nasgen.MemberInfo.Kind;
@@ -57,7 +56,7 @@ public final class ScriptClassInfo {
     static final String PROPERTY_ANNO_DESC      = Type.getDescriptor(Property.class);
     static final String WHERE_ENUM_DESC         = Type.getDescriptor(Where.class);
     static final String SPECIALIZED_FUNCTION    = Type.getDescriptor(SpecializedFunction.class);
-    static final String SPECIALIZED_CONSTRUCTOR = Type.getDescriptor(SpecializedConstructor.class);
+    static final String LINK_LOGIC_DESC         = "Ljdk/nashorn/internal/objects/annotations/SpecializedFunction$LinkLogic;";
 
     static final Map<String, Kind> annotations = new HashMap<>();
 
@@ -69,7 +68,6 @@ public final class ScriptClassInfo {
         annotations.put(SETTER_ANNO_DESC, Kind.SETTER);
         annotations.put(PROPERTY_ANNO_DESC, Kind.PROPERTY);
         annotations.put(SPECIALIZED_FUNCTION, Kind.SPECIALIZED_FUNCTION);
-        annotations.put(SPECIALIZED_CONSTRUCTOR, Kind.SPECIALIZED_CONSTRUCTOR);
     }
 
     // name of the script class
@@ -119,11 +117,12 @@ public final class ScriptClassInfo {
     List<MemberInfo> getSpecializedConstructors() {
         final List<MemberInfo> res = new LinkedList<>();
         for (final MemberInfo memInfo : members) {
-            if (memInfo.getKind() == Kind.SPECIALIZED_CONSTRUCTOR) {
+            if (memInfo.isSpecializedConstructor()) {
+                assert memInfo.getKind() == Kind.SPECIALIZED_FUNCTION;
                 res.add(memInfo);
             }
         }
-        return res;
+        return Collections.unmodifiableList(res);
     }
 
     int getPrototypeMemberCount() {
@@ -175,7 +174,7 @@ public final class ScriptClassInfo {
                 res.add(memInfo);
             }
         }
-        return res;
+        return Collections.unmodifiableList(res);
     }
 
     MemberInfo findSetter(final MemberInfo getter) {

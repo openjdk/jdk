@@ -60,13 +60,13 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
      * @param specs specializations
      * @param flags {@link ScriptFunctionData} flags
      */
-    FinalScriptFunctionData(final String name, final MethodHandle mh, final MethodHandle[] specs, final int flags) {
+    FinalScriptFunctionData(final String name, final MethodHandle mh, final Specialization[] specs, final int flags) {
         super(name, methodHandleArity(mh), flags);
 
         addInvoker(mh);
         if (specs != null) {
-            for (final MethodHandle spec : specs) {
-                addInvoker(spec);
+            for (final Specialization spec : specs) {
+                addInvoker(spec.getMethodHandle(), spec);
             }
         }
     }
@@ -114,16 +114,25 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
         return MethodType.genericMethodType(max + 1);
     }
 
-    private void addInvoker(final MethodHandle mh) {
+    private CompiledFunction addInvoker(final MethodHandle mh, final Specialization specialization) {
         assert !needsCallee(mh);
+
+        final CompiledFunction invoker;
         if (isConstructor(mh)) {
             // only nasgen constructors: (boolean, self, args) are subject to binding a boolean newObj. isConstructor
             // is too conservative a check. However, isConstructor(mh) always implies isConstructor param
             assert isConstructor();
-            code.add(CompiledFunction.createBuiltInConstructor(mh));
+            invoker = CompiledFunction.createBuiltInConstructor(mh);
         } else {
-            code.add(new CompiledFunction(mh));
+            invoker = new CompiledFunction(mh, null, specialization);
         }
+        code.add(invoker);
+
+        return invoker;
+    }
+
+    private CompiledFunction addInvoker(final MethodHandle mh) {
+        return addInvoker(mh, null);
     }
 
     private static int methodHandleArity(final MethodHandle mh) {

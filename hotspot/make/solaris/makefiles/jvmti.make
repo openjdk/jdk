@@ -74,34 +74,34 @@ $(JvmtiEnvFillClass): $(JvmtiEnvFillSource)
 	$(QUIETLY) $(COMPILE.JAVAC) -d $(JvmtiOutDir) $(JvmtiEnvFillSource)
 
 $(JvmtiOutDir)/jvmtiEnter.cpp: $(both) $(JvmtiSrcDir)/jvmtiEnter.xsl
-	@echo Generating $@
+	@echo $(LOG_INFO) Generating $@
 	$(XSLT) -IN $(JvmtiSrcDir)/jvmti.xml -XSL $(JvmtiSrcDir)/jvmtiEnter.xsl -OUT $(JvmtiOutDir)/jvmtiEnter.cpp -PARAM interface jvmti
 
 $(JvmtiOutDir)/bytecodeInterpreterWithChecks.cpp: $(JvmtiGenClass) $(InterpreterSrcDir)/bytecodeInterpreter.cpp $(InterpreterSrcDir)/bytecodeInterpreterWithChecks.xml $(InterpreterSrcDir)/bytecodeInterpreterWithChecks.xsl
-	@echo Generating $@
+	@echo $(LOG_INFO) Generating $@
 	$(XSLT) -IN $(InterpreterSrcDir)/bytecodeInterpreterWithChecks.xml -XSL $(InterpreterSrcDir)/bytecodeInterpreterWithChecks.xsl -OUT $(JvmtiOutDir)/bytecodeInterpreterWithChecks.cpp 
 
 $(JvmtiOutDir)/jvmtiEnterTrace.cpp: $(both) $(JvmtiSrcDir)/jvmtiEnter.xsl
-	@echo Generating $@
+	@echo $(LOG_INFO) Generating $@
 	$(XSLT) -IN $(JvmtiSrcDir)/jvmti.xml -XSL $(JvmtiSrcDir)/jvmtiEnter.xsl -OUT $(JvmtiOutDir)/jvmtiEnterTrace.cpp -PARAM interface jvmti -PARAM trace Trace
 
 $(JvmtiOutDir)/jvmtiEnvRecommended.cpp: $(both) $(JvmtiSrcDir)/jvmtiEnv.xsl $(JvmtiSrcDir)/jvmtiEnv.cpp $(JvmtiEnvFillClass)
-	@echo Generating $@
+	@echo $(LOG_INFO) Generating $@
 	$(XSLT) -IN $(JvmtiSrcDir)/jvmti.xml -XSL $(JvmtiSrcDir)/jvmtiEnv.xsl -OUT $(JvmtiOutDir)/jvmtiEnvStub.cpp
 	$(QUIETLY) $(RUN.JAVA) -classpath $(JvmtiOutDir) jvmtiEnvFill $(JvmtiSrcDir)/jvmtiEnv.cpp $(JvmtiOutDir)/jvmtiEnvStub.cpp $(JvmtiOutDir)/jvmtiEnvRecommended.cpp
 
 $(JvmtiOutDir)/jvmtiEnv.hpp: $(both) $(JvmtiSrcDir)/jvmtiHpp.xsl
-	@echo Generating $@
+	@echo $(LOG_INFO) Generating $@
 	$(XSLT) -IN $(JvmtiSrcDir)/jvmti.xml -XSL $(JvmtiSrcDir)/jvmtiHpp.xsl -OUT $(JvmtiOutDir)/jvmtiEnv.hpp
 
 $(JvmtiOutDir)/jvmti.h: $(both) $(JvmtiSrcDir)/jvmtiH.xsl
-	@echo Generating $@
+	@echo $(LOG_INFO) Generating $@
 	$(XSLT) -IN $(JvmtiSrcDir)/jvmti.xml -XSL $(JvmtiSrcDir)/jvmtiH.xsl -OUT $(JvmtiOutDir)/jvmti.h
 
 jvmtidocs:  $(JvmtiOutDir)/jvmti.html
 
 $(JvmtiOutDir)/jvmti.html: $(both) $(JvmtiSrcDir)/jvmti.xsl
-	@echo Generating $@
+	@echo $(LOG_INFO) Generating $@
 	$(XSLT) -IN $(JvmtiSrcDir)/jvmti.xml -XSL $(JvmtiSrcDir)/jvmti.xsl -OUT $(JvmtiOutDir)/jvmti.html
 
 # #########################################################################
@@ -113,4 +113,3 @@ cleanall :
 	rm $(JvmtiGenClass) $(JvmtiEnvFillClass) $(JvmtiGeneratedFiles)
 
 # #########################################################################
-

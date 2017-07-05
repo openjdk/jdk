@@ -79,13 +79,4 @@ inline void UpdateRSOopClosure::do_oop_work(T* p) {
   _rs->par_write_ref(_from, p, _worker_i);
 }
 
-template <class T>
-inline void UpdateRSetImmediate::do_oop_work(T* p) {
-  assert(_from->is_in_reserved(p), "paranoia");
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop) && !_from->is_survivor()) {
-    _g1_rem_set->par_write_ref(_from, p, 0);
-  }
-}
-
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_INLINE_HPP

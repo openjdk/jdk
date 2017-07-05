@@ -28,7 +28,6 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -81,8 +80,8 @@ final class SetMethodCreator {
      * Creates the actual guarded invocation that represents the dynamic setter method for the property.
      * @return the actual guarded invocation that represents the dynamic setter method for the property.
      */
-    GuardedInvocation createGuardedInvocation() {
-        return createSetMethod().createGuardedInvocation();
+    GuardedInvocation createGuardedInvocation(final SwitchPoint builtinSwitchPoint) {
+        return createSetMethod(builtinSwitchPoint).createGuardedInvocation();
     }
 
     /**
@@ -119,7 +118,7 @@ final class SetMethodCreator {
         }
     }
 
-    private SetMethod createSetMethod() {
+    private SetMethod createSetMethod(final SwitchPoint builtinSwitchPoint) {
         if (find != null) {
             return createExistingPropertySetter();
         }
@@ -130,7 +129,7 @@ final class SetMethodCreator {
             return createGlobalPropertySetter();
         }
 
-        return createNewPropertySetter();
+        return createNewPropertySetter(builtinSwitchPoint);
     }
 
     private void checkStrictCreateNewVariable() {
@@ -185,8 +184,8 @@ final class SetMethodCreator {
         return new SetMethod(MH.filterArguments(global.addSpill(type, getName()), 0, ScriptObject.GLOBALFILTER), null);
     }
 
-    private SetMethod createNewPropertySetter() {
-        final SetMethod sm = map.getFreeFieldSlot() > -1 ? createNewFieldSetter() : createNewSpillPropertySetter();
+    private SetMethod createNewPropertySetter(final SwitchPoint builtinSwitchPoint) {
+        final SetMethod sm = map.getFreeFieldSlot() > -1 ? createNewFieldSetter(builtinSwitchPoint) : createNewSpillPropertySetter(builtinSwitchPoint);
         final PropertyListeners listeners = map.getListeners();
         if (listeners != null) {
             listeners.propertyAdded(sm.property);
@@ -194,7 +193,9 @@ final class SetMethodCreator {
         return sm;
     }
 
-    private SetMethod createNewSetter(final Property property) {
+    private SetMethod createNewSetter(final Property property, final SwitchPoint builtinSwitchPoint) {
+        property.setBuiltinSwitchPoint(builtinSwitchPoint);
+
         final PropertyMap oldMap   = getMap();
         final PropertyMap newMap   = getNewMap(property);
         final boolean     isStrict = NashornCallSiteDescriptor.isStrict(desc);
@@ -205,7 +206,7 @@ final class SetMethodCreator {
 
         //slow setter, that calls ScriptObject.set with appropraite type and key name
         MethodHandle slowSetter = ScriptObject.SET_SLOW[getAccessorTypeIndex(type)];
-        slowSetter = MH.insertArguments(slowSetter, 3, NashornCallSiteDescriptor.isStrict(desc));
+        slowSetter = MH.insertArguments(slowSetter, 3, NashornCallSiteDescriptor.getFlags(desc));
         slowSetter = MH.insertArguments(slowSetter, 1, name);
         slowSetter = MH.asType(slowSetter, slowSetter.type().changeParameterType(0, Object.class));
 
@@ -230,12 +231,12 @@ final class SetMethodCreator {
         return new SetMethod(MH.asType(MH.guardWithTest(extCheck, casGuard, nop), fastSetter.type()), property);
     }
 
-    private SetMethod createNewFieldSetter() {
-        return createNewSetter(new AccessorProperty(getName(), 0, sobj.getClass(), getMap().getFreeFieldSlot(), type));
+    private SetMethod createNewFieldSetter(final SwitchPoint builtinSwitchPoint) {
+        return createNewSetter(new AccessorProperty(getName(), 0, sobj.getClass(), getMap().getFreeFieldSlot(), type), builtinSwitchPoint);
     }
 
-    private SetMethod createNewSpillPropertySetter() {
-        return createNewSetter(new SpillProperty(getName(), 0, getMap().getFreeSpillSlot(), type));
+    private SetMethod createNewSpillPropertySetter(final SwitchPoint builtinSwitchPoint) {
+        return createNewSetter(new SpillProperty(getName(), 0, getMap().getFreeSpillSlot(), type), builtinSwitchPoint);
     }
 
     private PropertyMap getNewMap(final Property property) {

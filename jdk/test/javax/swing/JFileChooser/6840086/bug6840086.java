@@ -25,10 +25,12 @@
    @bug 6840086
    @summary JFileChooser lacks icons on top right when running on Windows 7
    @author Pavel Porvatov
+   @library ../../../../lib/testlibrary
+   @build jdk.testlibrary.OSInfo
    @run main bug6840086
 */
 
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 import sun.awt.shell.ShellFolder;
 
 import java.awt.*;
