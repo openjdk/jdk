@@ -27,7 +27,6 @@ package sun.security.provider;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -36,14 +35,12 @@ import java.util.Arrays;
 
 public class HmacDrbg extends AbstractHashDrbg {
 
-    private static final long serialVersionUID = 9L;
-
-    private transient Mac mac;
+    private Mac mac;
 
     private String macAlg;
 
-    private transient byte[] v;
-    private transient byte[] k;
+    private byte[] v;
+    private byte[] k;
 
     public HmacDrbg(SecureRandomParameters params) {
         mechName = "HMAC_DRBG";
@@ -101,6 +98,10 @@ public class HmacDrbg extends AbstractHashDrbg {
     protected void initEngine() {
         macAlg = "HmacSHA" + algorithm.substring(4);
         try {
+            /*
+             * Use the local SunJCE implementation to avoid native
+             * performance overhead.
+             */
             mac = Mac.getInstance(macAlg, "SunJCE");
         } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
             // Fallback to any available.
@@ -193,11 +194,5 @@ public class HmacDrbg extends AbstractHashDrbg {
         //status();
 
         // Step 8. Return
-    }
-
-    private void readObject(java.io.ObjectInputStream s)
-            throws IOException, ClassNotFoundException {
-        s.defaultReadObject ();
-        initEngine();
     }
 }

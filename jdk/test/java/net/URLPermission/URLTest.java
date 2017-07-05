@@ -27,6 +27,7 @@ import java.net.URLPermission;
  *
  * @test
  * @bug 8010464
+ * @modules jdk.httpserver
  * @key intermittent
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.SimpleSSLContext

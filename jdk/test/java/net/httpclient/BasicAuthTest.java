@@ -25,6 +25,8 @@
 /**
  * @test
  * @bug 8087112
+ * @modules java.httpclient
+ *          jdk.httpserver
  * @run main/othervm BasicAuthTest
  * @summary Basic Authentication Test
  */

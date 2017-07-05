@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ public interface ScriptEngineFactory {
      * of &quot;MULTITHREADED&quot;, and also, the engine maintains independent values
      * for symbols in scripts executing on different threads.
      * <li><code>&quot;STATELESS&quot;</code> - The implementation satisfies the requirements of
-     * <li><code>&quot;THREAD-ISOLATED&quot;</code>.  In addition, script executions do not alter the
+     * <code>&quot;THREAD-ISOLATED&quot;</code>.  In addition, script executions do not alter the
      * mappings in the <code>Bindings</code> which is the engine scope of the
      * <code>ScriptEngine</code>.  In particular, the keys in the <code>Bindings</code>
      * and their associated values are the same before and after the execution of the script.

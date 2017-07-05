@@ -28,6 +28,7 @@ import sun.net.httpclient.hpack.HeaderTable.HeaderField;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -35,7 +36,10 @@ import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 import static org.testng.Assert.assertEquals;
-import static sun.net.httpclient.hpack.TestHelper.*;
+import static sun.net.httpclient.hpack.TestHelper.assertExceptionMessageContains;
+import static sun.net.httpclient.hpack.TestHelper.assertThrows;
+import static sun.net.httpclient.hpack.TestHelper.assertVoidThrows;
+import static sun.net.httpclient.hpack.TestHelper.newRandom;
 
 public class HeaderTableTest {
 
@@ -317,10 +321,24 @@ public class HeaderTableTest {
 
     @Test
     public void testToString() {
+        testToString0();
+    }
+
+    @Test
+    public void testToStringDifferentLocale() {
+        Locale.setDefault(Locale.FRENCH);
+        String s = format("%.1f", 3.1);
+        assertEquals("3,1", s); // assumption of the test, otherwise the test is useless
+        testToString0();
+    }
+
+    private void testToString0() {
         HeaderTable table = new HeaderTable(0);
         {
             table.setMaxSize(2048);
-            assertEquals("entries: 0; used 0/2048 (0.0%)", table.toString());
+            String expected =
+                    format("entries: %d; used %s/%s (%.1f%%)", 0, 0, 2048, 0.0);
+            assertEquals(expected, table.toString());
         }
 
         {
@@ -335,7 +353,8 @@ public class HeaderTableTest {
             int used = name.length() + value.length() + 32;
             double ratio = used * 100.0 / size;
 
-            String expected = format("entries: 1; used %s/%s (%.1f%%)", used, size, ratio);
+            String expected =
+                    format("entries: 1; used %s/%s (%.1f%%)", used, size, ratio);
             assertEquals(expected, s);
         }
 
@@ -344,7 +363,9 @@ public class HeaderTableTest {
             table.put(":method", "");
             table.put(":status", "");
             String s = table.toString();
-            assertEquals("entries: 2; used 78/78 (100.0%)", s);
+            String expected =
+                    format("entries: %d; used %s/%s (%.1f%%)", 2, 78, 78, 100.0);
+            assertEquals(expected, s);
         }
     }
 
