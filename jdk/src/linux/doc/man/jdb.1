@@ -1,4 +1,4 @@
-." Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,16 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH jdb 1 "02 Jun 2010"
+.TH jdb 1 "10 May 2011"
 
 .LP
 .SH "Name"
 jdb \- The Java Debugger
 .LP
-.RS 3
-
-.LP
 .LP
 \f3jdb\fP helps you find and fix bugs in Java language programs.
 .LP
-.RE
 .SH "SYNOPSIS"
-.LP
-
 .LP
 .nf
 \f3
@@ -42,9 +36,6 @@ jdb \- The Java Debugger
 \fP\f3jdb\fP [ options ] [ class ] [ arguments ] 
 .fl
 .fi
-
-.LP
-.RS 3
 
 .LP
 .RS 3
@@ -60,23 +51,17 @@ Arguments passed to the \f2main()\fP method of \f2class\fP.
 .RE
 
 .LP
-.RE
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The Java Debugger, \f3jdb\fP, is a simple command\-line debugger for Java classes. It is a demonstration of the 
 .na
 \f2Java Platform Debugger Architecture\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jpda/index.html that provides inspection and debugging of a local or remote Java Virtual Machine.
+http://download.oracle.com/javase/7/docs/technotes/guides/jpda/index.html that provides inspection and debugging of a local or remote Java Virtual Machine.
 .LP
 .SS 
 Starting a jdb Session
-.LP
-.RS 3
-
 .LP
 .LP
 There are many ways to start a jdb session. The most frequently used way is to have \f3jdb\fP launch a new Java Virtual Machine (VM) with the main class of the application to be debugged. This is done by substituting the command \f3jdb\fP for \f3java\fP in the command line. For example, if your application's main class is MyClass, you use the following command to debug it under JDB:
@@ -137,7 +122,7 @@ There are many other ways to connect the debugger to a VM, and all of them are s
 .na
 \f2documentation\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.html on these connection options. For information on starting a J2SE 1.4.2 or early VM for use with \f3jdb\fP see the 
+http://download.oracle.com/javase/7/docs/technotes/guides/jpda/conninv.html on these connection options. For information on starting a J2SE 1.4.2 or early VM for use with \f3jdb\fP see the 
 .na
 \f21.4.2 documentation\fP @
 .fi
@@ -148,9 +133,6 @@ Basic jdb Commands
 .LP
 .LP
 The following is a list of the basic \f3jdb\fP commands. The Java debugger supports other commands which you can list using \f3jdb\fP's \f2help\fP command.
-.LP
-.RS 3
-
 .LP
 .RS 3
 .TP 3
@@ -164,10 +146,12 @@ cont
 Continues execution of the debugged application after a breakpoint, exception, or step. 
 .TP 3
 print 
-Displays Java objects and primitive values. For variables or fields of primitive types, the actual value is printed. For objects, a short description is printed. See the \f2dump\fP command below for getting more information about an object. 
-.LP
-\f2NOTE: To display local variables, the containing class must have been compiled with the \fP\f2javac(1)\fP\f2 \fP\f2\-g\fP option. 
-.LP
+Displays Java objects and primitive values. For variables or fields of primitive types, the actual value is printed. For objects, a short description is printed. See the \f2dump\fP command below for getting more information about an object.
+.br
+.br
+\f2NOTE: To display local variables, the containing class must have been compiled with the \fP\f2javac(1)\fP\f2 \fP\f2\-g\fP option.
+.br
+.br
 \f2print\fP supports many simple Java expressions including those with method invocations, for example: 
 .RS 3
 .TP 2
@@ -188,15 +172,13 @@ o
 .RE
 .TP 3
 dump 
-For primitive values, this command is identical to \f2print\fP. For objects, it prints the current value of each field defined in the object. Static and instance fields are included. 
-.LP
-The \f2dump\fP command supports the same set of expressions as the \f2print\fP command.  
+For primitive values, this command is identical to \f2print\fP. For objects, it prints the current value of each field defined in the object. Static and instance fields are included.
+.br
+.br
+The \f2dump\fP command supports the same set of expressions as the \f2print\fP command. 
 .TP 3
 threads 
 List the threads that are currently running. For each thread, its name and current status are printed, as well as an index that can be used for other commands, for example: 
-.RS 3
-
-.LP
 .nf
 \f3
 .fl
@@ -204,25 +186,21 @@ List the threads that are currently running. For each thread, its name and curre
 .fl
 \fP
 .fi
-.RE
 In this example, the thread index is 4, the thread is an instance of java.lang.Thread, the thread name is "main", and it is currently running, 
 .TP 3
 thread 
 Select a thread to be the current thread. Many \f3jdb\fP commands are based on the setting of the current thread. The thread is specified with the thread index described in the \f2threads\fP command above. 
 .TP 3
 where 
-\f2where\fP with no arguments dumps the stack of the current thread. \f2where all\fP dumps the stack of all threads in the current thread group. \f2where\fP \f2threadindex\fP dumps the stack of the specified thread. 
-.LP
-If the current thread is suspended (either through an event such as a breakpoint or through the \f2suspend\fP command), local variables and fields can be displayed with the \f2print\fP and \f2dump\fP commands. The \f2up\fP and \f2down\fP commands select which stack frame is current.  
+\f2where\fP with no arguments dumps the stack of the current thread. \f2where all\fP dumps the stack of all threads in the current thread group. \f2where\fP \f2threadindex\fP dumps the stack of the specified thread.
+.br
+.br
+If the current thread is suspended (either through an event such as a breakpoint or through the \f2suspend\fP command), local variables and fields can be displayed with the \f2print\fP and \f2dump\fP commands. The \f2up\fP and \f2down\fP commands select which stack frame is current. 
 .RE
 
 .LP
-.RE
 .SS 
 Breakpoints
-.LP
-.RS 3
-
 .LP
 .LP
 Breakpoints can be set in \f3jdb\fP at line numbers or at the first instruction of a method, for example:
@@ -249,22 +227,14 @@ If a method is overloaded, you must also specify its argument types so that the 
 .LP
 The \f2clear\fP command removes breakpoints using a syntax as in "\f2clear\ MyClass:45\fP". Using the \f2clear\fP or command with no argument displays a list of all breakpoints currently set. The \f2cont\fP command continues execution.
 .LP
-.RE
 .SS 
 Stepping
-.LP
-.RS 3
-
 .LP
 .LP
 The \f2step\fP commands advances execution to the next line whether it is in the current stack frame or a called method. The \f2next\fP command advances execution to the next line in the current stack frame.
 .LP
-.RE
 .SS 
 Exceptions
-.LP
-.RS 3
-
 .LP
 .LP
 When an exception occurs for which there isn't a catch statement anywhere in the throwing thread's call stack, the VM normally prints an exception trace and exits. When running under \f3jdb\fP, however, control returns to \f3jdb\fP at the offending throw. You can then use \f3jdb\fP to diagnose the cause of the exception.
@@ -278,11 +248,7 @@ The \f2ignore\fP command negates the effect of a previous \f2catch\fP command.
 .LP
 \f2NOTE: The \fP\f2ignore\fP command does not cause the debugged VM to ignore specific exceptions, only the debugger.
 .LP
-.RE
-.RE
 .SH "Command Line Options"
-.LP
-
 .LP
 .LP
 When you use \f3jdb\fP in place of the Java application launcher on the command line, \f3jdb\fP accepts many of the same options as the java command, including \f2\-D\fP, \f2\-classpath\fP, and \f2\-X<option>\fP.
@@ -335,7 +301,7 @@ Other options are supported for alternate mechanisms for connecting the debugger
 .na
 \f2documentation\fP @
 .fi
-http://java.sun.com/javase/6/docs/technotes/guides/jpda/conninv.html on these connection alternatives.
+http://download.oracle.com/javase/7/docs/technotes/guides/jpda/conninv.html on these connection alternatives.
 .LP
 .SS 
 Options Forwarded to Debuggee Process
@@ -357,8 +323,6 @@ Non\-standard target VM option
 
 .LP
 .SH "SEE ALSO"
-.LP
-
 .LP
 .LP
 javac(1), java(1), javah(1), javap(1), javadoc(1).

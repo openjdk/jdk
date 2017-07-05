@@ -1,4 +1,4 @@
-." Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,18 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH rmiregistry 1 "02 Jun 2010"
+.TH rmiregistry 1 "10 May 2011"
 
 .LP
 .SH "Name"
 rmiregistry \- The Java Remote Object Registry
 .LP
 .RS 3
-
-.LP
-.LP
-The \f3rmiregistry\fP command starts a remote object registry on the specified port on the current host.
-.LP
+The \f3rmiregistry\fP command starts a remote object registry on the specified port on the current host. 
 .RE
-.SH "SYNOPSIS"
-.LP
 
+.LP
+.SH "SYNOPSIS"
 .LP
 .nf
 \f3
@@ -46,8 +42,6 @@ rmiregistry [\fP\f4port\fP\f3]
 
 .LP
 .SH "DESCRIPTION"
-.LP
-
 .LP
 .LP
 The \f3rmiregistry\fP command creates and starts a remote object registry on the specified \f2port\fP on the current host. If \f2port\fP is omitted, the registry is started on port 1099. The \f3rmiregistry\fP command produces no output and is typically run in the background. For example:
@@ -69,8 +63,6 @@ The URL\-based methods of the \f2java.rmi.Naming\fP class operate on a registry 
 .LP
 .SH "OPTIONS"
 .LP
-
-.LP
 .RS 3
 .TP 3
 \-J 
@@ -80,17 +72,12 @@ Used in conjunction with any \f2java\fP option, it passes the option following t
 .LP
 .SH "SEE ALSO"
 .LP
-
-.LP
-.LP
 java(1), 
 .na
 \f2java.rmi.registry.LocateRegistry\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/java/rmi/registry/LocateRegistry.html and 
+http://download.oracle.com/javase/7/docs/api/java/rmi/registry/LocateRegistry.html and 
 .na
 \f2java.rmi.Naming\fP @
 .fi
-http://java.sun.com/javase/6/docs/api/java/rmi/Naming.html
-.LP
- 
+http://download.oracle.com/javase/7/docs/api/java/rmi/Naming.html  

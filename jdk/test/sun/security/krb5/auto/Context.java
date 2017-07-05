@@ -44,6 +44,7 @@ import com.sun.security.jgss.InquireType;
 import com.sun.security.jgss.AuthorizationDataEntry;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import javax.security.auth.kerberos.KeyTab;
 
 /**
  * Context of a JGSS subject, encapsulating Subject and GSSContext.
@@ -107,15 +108,19 @@ public class Context {
         return out;
     }
 
+    public static Context fromUserPass(
+            String user, char[] pass, boolean storeKey) throws Exception {
+        return fromUserPass(null, user, pass, storeKey);
+    }
     /**
      * Logins with a username and a password, using Krb5LoginModule directly
      * @param storeKey true if key should be saved, used on acceptor side
      */
-    public static Context fromUserPass(String user, char[] pass, boolean storeKey)
-            throws Exception {
+    public static Context fromUserPass(Subject s,
+            String user, char[] pass, boolean storeKey) throws Exception {
         Context out = new Context();
         out.name = user;
-        out.s = new Subject();
+        out.s = s == null ? new Subject() : s;
         Krb5LoginModule krb5 = new Krb5LoginModule();
         Map<String, String> map = new HashMap<>();
         Map<String, Object> shared = new HashMap<>();
@@ -198,12 +203,25 @@ public class Context {
      * @throws java.lang.Exception
      */
     public void startAsServer(final Oid mech) throws Exception {
+        startAsServer(null, mech);
+    }
+
+    /**
+     * Starts as a server with the specified service name
+     * @param name the service name
+     * @param mech GSS mech
+     * @throws java.lang.Exception
+     */
+    public void startAsServer(final String name, final Oid mech) throws Exception {
         doAs(new Action() {
             @Override
             public byte[] run(Context me, byte[] dummy) throws Exception {
                 GSSManager m = GSSManager.getInstance();
                 me.x = (ExtendedGSSContext)m.createContext(m.createCredential(
-                        null,
+                        name == null ? null :
+                          (name.indexOf('@') < 0 ?
+                            m.createName(name, null) :
+                            m.createName(name, GSSName.NT_HOSTBASED_SERVICE)),
                         GSSCredential.INDEFINITE_LIFETIME,
                         mech,
                         GSSCredential.ACCEPT_ONLY));
@@ -227,6 +245,14 @@ public class Context {
      */
     public ExtendedGSSContext x() {
         return x;
+    }
+
+    /**
+     * Accesses the internal subject.
+     * @return the subject
+     */
+    public Subject s() {
+        return s;
     }
 
     /**
@@ -297,7 +323,7 @@ public class Context {
         } catch (Exception e) {
             ;// Don't care
         }
-        System.out.println("=====================================");
+        System.out.println("====== Private Credentials Set ======");
         for (Object o : s.getPrivateCredentials()) {
             System.out.println("    " + o.getClass());
             if (o instanceof KerberosTicket) {
@@ -315,6 +341,8 @@ public class Context {
                 for (Object k : map.keySet()) {
                     System.out.println("        " + k + ": " + map.get(k));
                 }
+            } else {
+                System.out.println("        " + o);
             }
         }
         if (x != null && x instanceof ExtendedGSSContext) {

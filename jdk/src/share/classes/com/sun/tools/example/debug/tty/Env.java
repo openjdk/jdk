@@ -29,7 +29,6 @@ import com.sun.jdi.*;
 import com.sun.jdi.request.StepRequest;
 import com.sun.jdi.request.MethodEntryRequest;
 import com.sun.jdi.request.MethodExitRequest;
-import com.sun.tools.jdi.*;
 import java.util.*;
 import java.io.*;
 

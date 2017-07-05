@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,75 +152,50 @@ public class NegTokenInit extends SpNegoToken {
                                 "did not have the Sequence tag");
             }
 
-            // parse SEQUENCE of mechTypes, if present
-            if (tmp1.data.available() > 0) {
+            // parse various fields if present
+            int lastField = -1;
+            while (tmp1.data.available() > 0) {
                 DerValue tmp2 = tmp1.data.getDerValue();
-                if (!tmp2.isContextSpecific((byte)0x00)) {
-                    throw new IOException("SPNEGO NegoTokenInit : " +
-                        "did not have the right context tag for mechTypes");
-                }
-                // get the DER-encoded sequence of mechTypes
-                DerInputStream mValue = tmp2.data;
-                mechTypes = mValue.toByteArray();
+                if (tmp2.isContextSpecific((byte)0x00)) {
+                    // get the DER-encoded sequence of mechTypes
+                    lastField = checkNextField(lastField, 0);
+                    DerInputStream mValue = tmp2.data;
+                    mechTypes = mValue.toByteArray();
 
-                // read all the mechTypes
-                DerValue[] mList = mValue.getSequence(0);
-                mechTypeList = new Oid[mList.length];
-                ObjectIdentifier mech = null;
-                for (int i = 0; i < mList.length; i++) {
-                    mech = mList[i].getOID();
+                    // read all the mechTypes
+                    DerValue[] mList = mValue.getSequence(0);
+                    mechTypeList = new Oid[mList.length];
+                    ObjectIdentifier mech = null;
+                    for (int i = 0; i < mList.length; i++) {
+                        mech = mList[i].getOID();
+                        if (DEBUG) {
+                            System.out.println("SpNegoToken NegTokenInit: " +
+                                    "reading Mechanism Oid = " + mech);
+                        }
+                        mechTypeList[i] = new Oid(mech.toString());
+                    }
+                } else if (tmp2.isContextSpecific((byte)0x01)) {
+                    lastField = checkNextField(lastField, 1);
+                    // received reqFlags, skip it
+                } else if (tmp2.isContextSpecific((byte)0x02)) {
+                    lastField = checkNextField(lastField, 2);
                     if (DEBUG) {
                         System.out.println("SpNegoToken NegTokenInit: " +
-                                "reading Mechanism Oid = " + mech);
+                                            "reading Mech Token");
                     }
-                    mechTypeList[i] = new Oid(mech.toString());
-                }
-            }
-
-            // parse mechToken, if present (skip reqFlags)
-            if (tmp1.data.available() > 0) {
-                DerValue tmp3 = tmp1.data.getDerValue();
-                if (tmp3.isContextSpecific((byte)0x01)) {
-                    // received reqFlags, skip it
-                    // now parse next field mechToken
-                    if (tmp1.data.available() > 0) {
-                        tmp3 = tmp1.data.getDerValue();
+                    mechToken = tmp2.data.getOctetString();
+                } else if (tmp2.isContextSpecific((byte)0x03)) {
+                    lastField = checkNextField(lastField, 3);
+                    if (!GSSUtil.useMSInterop()) {
+                        mechListMIC = tmp2.data.getOctetString();
+                        if (DEBUG) {
+                            System.out.println("SpNegoToken NegTokenInit: " +
+                                    "MechListMIC Token = " +
+                                    getHexBytes(mechListMIC));
+                        }
                     }
                 }
-                if (!tmp3.isContextSpecific((byte)0x02)) {
-                    throw new IOException("SPNEGO NegoTokenInit : " +
-                        "did not have the right context tag for mechToken");
-                }
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenInit: " +
-                                        "reading Mech Token");
-                }
-                mechToken = tmp3.data.getOctetString();
             }
-
-            // parse mechListMIC, if present and not in MS interop mode
-            if (!GSSUtil.useMSInterop() && (tmp1.data.available() > 0)) {
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenInit: " +
-                                        "receiving MechListMIC");
-                }
-                DerValue tmp6 = tmp1.data.getDerValue();
-                if (!tmp6.isContextSpecific((byte)0x03)) {
-                    throw new IOException("SPNEGO NegoTokenInit : " +
-                        "did not have the right context tag for MICToken");
-                }
-                mechListMIC = tmp6.data.getOctetString();
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenInit: " +
-                        "MechListMIC Token = " + getHexBytes(mechListMIC));
-                }
-            } else {
-                if (DEBUG) {
-                    System.out.println("SpNegoToken NegTokenInit : " +
-                                        "no MIC token included");
-                }
-            }
-
         } catch (IOException e) {
             throw new GSSException(GSSException.DEFECTIVE_TOKEN, -1,
                 "Invalid SPNEGO NegTokenInit token : " + e.getMessage());

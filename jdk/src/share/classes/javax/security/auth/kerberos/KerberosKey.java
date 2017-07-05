@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,15 @@ import javax.security.auth.DestroyFailedException;
  * principal.<p>
  *
  * All Kerberos JAAS login modules that obtain a principal's password and
- * generate the secret key from it should use this class. Where available,
- * the login module might even read this secret key directly from a
- * Kerberos "keytab". Sometimes, such as when authenticating a server in
+ * generate the secret key from it should use this class.
+ * Sometimes, such as when authenticating a server in
  * the absence of user-to-user authentication, the login module will store
  * an instance of this class in the private credential set of a
  * {@link javax.security.auth.Subject Subject} during the commit phase of the
  * authentication process.<p>
+ *
+ * A Kerberos service using a keytab to read secret keys should use
+ * the {@link KeyTab} class, where latest keys can be read when needed.<p>
  *
  * It might be necessary for the application to be granted a
  * {@link javax.security.auth.PrivateCredentialPermission
