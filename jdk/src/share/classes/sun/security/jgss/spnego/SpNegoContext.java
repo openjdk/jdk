@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,13 +52,6 @@ public class SpNegoContext implements GSSContextSpi {
     private static final int STATE_DELETED = 4;
 
     private int state = STATE_NEW;
-
-    private static final int CHECKSUM_DELEG_FLAG    = 1;
-    private static final int CHECKSUM_MUTUAL_FLAG   = 2;
-    private static final int CHECKSUM_REPLAY_FLAG   = 4;
-    private static final int CHECKSUM_SEQUENCE_FLAG = 8;
-    private static final int CHECKSUM_CONF_FLAG     = 16;
-    private static final int CHECKSUM_INTEG_FLAG    = 32;
 
     /*
      * Optional features that the application can set and their default
@@ -697,25 +690,17 @@ public class SpNegoContext implements GSSContextSpi {
     /**
      * get the context flags
      */
-    private byte[] getContextFlags() {
-        int flags = 0;
+    private BitArray getContextFlags() {
+        BitArray out = new BitArray(7);
 
-        if (getCredDelegState())
-            flags |= CHECKSUM_DELEG_FLAG;
-        if (getMutualAuthState())
-            flags |= CHECKSUM_MUTUAL_FLAG;
-        if (getReplayDetState())
-            flags |= CHECKSUM_REPLAY_FLAG;
-        if (getSequenceDetState())
-            flags |= CHECKSUM_SEQUENCE_FLAG;
-        if (getIntegState())
-            flags |= CHECKSUM_INTEG_FLAG;
-        if (getConfState())
-            flags |= CHECKSUM_CONF_FLAG;
+        if (getCredDelegState()) out.set(0, true);
+        if (getMutualAuthState()) out.set(1, true);
+        if (getReplayDetState()) out.set(2, true);
+        if (getSequenceDetState()) out.set(3, true);
+        if (getConfState()) out.set(5, true);
+        if (getIntegState()) out.set(6, true);
 
-        byte[] temp = new byte[1];
-        temp[0] = (byte)(flags & 0xff);
-        return temp;
+        return out;
     }
 
     private void setContextFlags() {
