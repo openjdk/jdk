@@ -39,7 +39,11 @@ inline VMReg FloatRegisterImpl::as_VMReg() {
 }
 
 inline VMReg XMMRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding() << 3) + ConcreteRegisterImpl::max_fpr);
+  return VMRegImpl::as_VMReg((encoding() << 4) + ConcreteRegisterImpl::max_fpr);
+}
+
+inline VMReg KRegisterImpl::as_VMReg() {
+  return VMRegImpl::as_VMReg(encoding() + ConcreteRegisterImpl::max_xmm);
 }
 
 #endif // CPU_X86_VM_VMREG_X86_INLINE_HPP

@@ -31,7 +31,7 @@
  *          java.management
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.util.*;
 import java.util.regex.*;
 

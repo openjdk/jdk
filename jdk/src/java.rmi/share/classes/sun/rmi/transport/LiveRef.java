@@ -56,7 +56,7 @@ public class LiveRef implements Cloneable {
 
     /**
      * Construct a "well-known" live reference to a remote object
-     * @param isLocalServer If true, indicates this ref specifies a local
+     * @param isLocal If true, indicates this ref specifies a local
      * server in this address space; if false, the ref is for a remote
      * object (hence a surrogate or proxy) in another address space.
      */

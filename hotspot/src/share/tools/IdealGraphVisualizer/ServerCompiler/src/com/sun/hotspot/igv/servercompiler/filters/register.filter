@@ -1,3 +1,4 @@
+// Register coloring
 colorize("reg", "EAX", green);
 colorize("reg", "EFLAGS", gray);
 colorize("reg", "EBP", orange);

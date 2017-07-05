@@ -33,8 +33,8 @@
  * @run main/othervm -showversion -Xbatch Test7068051
  */
 
-import com.oracle.java.testlibrary.JDKToolLauncher;
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.OutputAnalyzer;
 
 import java.io.IOException;
 import java.io.InputStream;

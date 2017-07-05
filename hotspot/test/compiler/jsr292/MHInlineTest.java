@@ -29,8 +29,8 @@
  * @run main/othervm MHInlineTest
  */
 import java.lang.invoke.*;
-import com.oracle.java.testlibrary.*;
-import static com.oracle.java.testlibrary.Asserts.*;
+import jdk.test.lib.*;
+import static jdk.test.lib.Asserts.*;
 
 public class MHInlineTest {
     public static void main(String[] args) throws Exception {

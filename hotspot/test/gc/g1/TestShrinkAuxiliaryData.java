@@ -21,11 +21,11 @@
  * questions.
  */
 
-import com.oracle.java.testlibrary.Asserts;
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.Platform;
-import com.oracle.java.testlibrary.ProcessTools;
-import com.oracle.java.testlibrary.Utils;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.Utils;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
@@ -76,7 +76,6 @@ public class TestShrinkAuxiliaryData {
         printTestInfo(maxCacheSize);
 
         vmOpts.add("-XX:G1ConcRSLogCacheSize=" + hotCardTableSize);
-        vmOpts.addAll(Arrays.asList(Utils.getTestJavaOpts()));
 
         // for 32 bits ObjectAlignmentInBytes is not a option
         if (Platform.is32bit()) {
@@ -98,7 +97,7 @@ public class TestShrinkAuxiliaryData {
 
     private void performTest(List<String> opts) throws Exception {
         ProcessBuilder pb
-                = ProcessTools.createJavaProcessBuilder(
+                = ProcessTools.createJavaProcessBuilder(true,
                         opts.toArray(new String[opts.size()])
                 );
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,7 @@
  */
 package com.sun.hotspot.igv.filter;
 
-import com.sun.hotspot.igv.graph.Connection;
-import com.sun.hotspot.igv.graph.Diagram;
-import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.InputSlot;
-import com.sun.hotspot.igv.graph.OutputSlot;
-import com.sun.hotspot.igv.graph.Selector;
+import com.sun.hotspot.igv.graph.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,13 +38,15 @@ public class RemoveInputsFilter extends AbstractFilter {
 
     public RemoveInputsFilter(String name) {
         this.name = name;
-        rules = new ArrayList<RemoveInputsRule>();
+        rules = new ArrayList<>();
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void apply(Diagram diagram) {
 
         for (RemoveInputsRule r : rules) {
@@ -57,7 +54,7 @@ public class RemoveInputsFilter extends AbstractFilter {
             List<Figure> list = r.getSelector().selected(diagram);
             for (Figure f : list) {
                 int z = 0;
-                List<InputSlot> last = new ArrayList<InputSlot>();
+                List<InputSlot> last = new ArrayList<>();
                 for (InputSlot is : f.getInputSlots()) {
                     if (z >= r.getStartingIndex() && z <= r.getEndIndex() && is.getConnections().size() > 0) {
                         StringBuilder sb = new StringBuilder();
@@ -73,7 +70,7 @@ public class RemoveInputsFilter extends AbstractFilter {
                         }
                         is.removeAllConnections();
                         is.setShortName("X");
-                        is.setName(sb.toString());
+                        is.setText(sb.toString());
                         last.add(is);
                     } else {
                         last.clear();
@@ -91,10 +88,10 @@ public class RemoveInputsFilter extends AbstractFilter {
                         if (i != 0) {
                             sb.append("<BR>");
                         }
-                        sb.append(is2.getName());
+                        sb.append(is2.getText());
                     }
 
-                    first.setName(sb.toString());
+                    first.setText(sb.toString());
 
                     for (int i = 1; i < last.size(); i++) {
                         f.removeSlot(last.get(i));

@@ -28,8 +28,6 @@
 
 ALT_MAKE ?= closed
 
--include $(ALT_MAKE)/Makefile
-
 GETMIXEDPATH=echo
 
 # Utilities used
@@ -306,6 +304,8 @@ else
 endif
 JTREG_BASIC_OPTIONS += $(JTREG_KEY_OPTION)
 
+-include $(ALT_MAKE)/Makefile
+
 # Make sure jtreg exists
 $(JTREG): $(JT_HOME)
 
@@ -368,6 +368,10 @@ hotspot_basicvmtest:
 	for variant in $(JVM_VARIANTS);                                           \
 	do                                                                        \
 	    $(MAKE) JAVA_ARGS="$(JAVA_ARGS) -$$variant" hotspot_$${variant}test;  \
+	    res=$$?;                                                              \
+	    if [ $$res -ne 0 ]; then                                              \
+	        exit $$res;                                                       \
+	    fi;                                                                   \
 	done
 
 PHONY_LIST += hotspot_basicvmtest
@@ -398,15 +402,6 @@ PHONY_LIST += hotspot_minimaltest minimaltest
 hotspot_servertest servertest: sanitytest
 
 PHONY_LIST += hotspot_servertest servertest
-
-################################################################
-
-# internalvmtests (run internal unit tests inside the VM)
-
-hotspot_internalvmtests internalvmtests: prep $(PRODUCT_HOME)
-	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -XX:+ExecuteInternalVMTests -version
-
-PHONY_LIST += hotspot_internalvmtests internalvmtests
 
 ################################################################
 

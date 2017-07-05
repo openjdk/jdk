@@ -85,7 +85,7 @@ class ArrayPrefixHelpers {
      *
      * As usual for this sort of utility, there are 4 versions, that
      * are simple copy/paste/adapt variants of each other.  (The
-     * double and int versions differ from long version soley by
+     * double and int versions differ from long version solely by
      * replacing "long" (with case-matching)).
      */
 

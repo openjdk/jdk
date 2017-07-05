@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.bytecodes;
 import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
+import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.BorderLayout;
 import java.io.Serializable;
 import javax.swing.SwingUtilities;
@@ -33,11 +34,7 @@ import org.openide.ErrorManager;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
-import org.openide.util.Lookup;
-import org.openide.util.LookupEvent;
-import org.openide.util.LookupListener;
-import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
+import org.openide.util.*;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
@@ -91,6 +88,7 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
     }// </editor-fold>//GEN-END:initComponents
     // Variables declaration - do not modify//GEN-BEGIN:variables
     // End of variables declaration//GEN-END:variables
+
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
@@ -126,7 +124,7 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
 
     @Override
     public void componentOpened() {
-        Lookup.Template tpl = new Lookup.Template(Object.class);
+        Lookup.Template<InputGraphProvider> tpl = new Lookup.Template<>(InputGraphProvider.class);
         result = Utilities.actionsGlobalContext().lookup(tpl);
         result.addLookupListener(this);
     }
@@ -147,23 +145,47 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
         return PREFERRED_ID;
     }
 
+    @Override
     public ExplorerManager getExplorerManager() {
         return manager;
     }
 
+    @Override
+    public void requestActive() {
+        super.requestActive();
+        this.treeView.requestFocus();
+    }
+
+    @Override
+    public boolean requestFocus(boolean temporary) {
+        this.treeView.requestFocus();
+        return super.requestFocus(temporary);
+    }
+
+    @Override
+    protected boolean requestFocusInWindow(boolean temporary) {
+        this.treeView.requestFocus();
+        return super.requestFocusInWindow(temporary);
+    }
+
+    @Override
     public void resultChanged(LookupEvent lookupEvent) {
-        final InputGraphProvider p = Lookup.getDefault().lookup(InputGraphProvider.class);
-        if (p != null) {
+        final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);//)Utilities.actionsGlobalContext().lookup(InputGraphProvider.class);
             SwingUtilities.invokeLater(new Runnable() {
+                @Override
                 public void run() {
-            InputGraph graph = p.getGraph();
-            if (graph != null) {
-                Group g = graph.getGroup();
-                rootNode.update(graph, g.getMethod());
-            }
-        }
+                if (p != null) {
+                    InputGraph graph = p.getGraph();
+                    if (graph != null) {
+                        Group g = graph.getGroup();
+                        rootNode.update(graph, g.getMethod());
+                        return;
+                    }
+                }
+                        rootNode.update(null, null);
+                    }
             });
-        }
+
     }
 
     final static class ResolvableHelper implements Serializable {

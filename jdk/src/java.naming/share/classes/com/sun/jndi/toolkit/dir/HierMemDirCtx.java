@@ -32,8 +32,8 @@ import java.util.*;
 /**
  * A sample service provider that implements a hierarchical directory in memory.
  * Every operation begins by doing a lookup on the name passed to it and then
- * calls a corresponding "do<OperationName>" on the result of the lookup. The
- * "do<OperationName>" does the work without any further resolution (it assumes
+ * calls a corresponding "{@code do<OperationName>}" on the result of the lookup. The
+ * "{@code do<OperationName>}" does the work without any further resolution (it assumes
  * that it is the target context).
  */
 

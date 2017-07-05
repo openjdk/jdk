@@ -45,10 +45,12 @@ class RegisterImpl: public AbstractRegisterImpl {
   enum {
 #ifndef AMD64
     number_of_registers      = 8,
-    number_of_byte_registers = 4
+    number_of_byte_registers = 4,
+    max_slots_per_register   = 1
 #else
     number_of_registers      = 16,
-    number_of_byte_registers = 16
+    number_of_byte_registers = 16,
+    max_slots_per_register   = 1
 #endif // AMD64
   };
 
@@ -143,9 +145,11 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
  public:
   enum {
 #ifndef AMD64
-    number_of_registers = 8
+    number_of_registers = 8,
+    max_slots_per_register = 16   // 512-bit
 #else
-    number_of_registers = 16
+    number_of_registers = 32,
+    max_slots_per_register = 16   // 512-bit
 #endif // AMD64
   };
 
@@ -183,6 +187,22 @@ CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm12,    (12));
 CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm13,    (13));
 CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm14,    (14));
 CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm15,    (15));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm16,    (16));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm17,    (17));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm18,    (18));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm19,    (19));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm20,    (20));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm21,    (21));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm22,    (22));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm23,    (23));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm24,    (24));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm25,    (25));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm26,    (26));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm27,    (27));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm28,    (28));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm29,    (29));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm30,    (30));
+CONSTANT_REGISTER_DECLARATION(XMMRegister, xmm31,    (31));
 #endif // AMD64
 
 // Only used by the 32bit stubGenerator. These can't be described by vmreg and hence
@@ -200,6 +220,46 @@ CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx5 , ( 5));
 CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx6 , ( 6));
 CONSTANT_REGISTER_DECLARATION(MMXRegister, mmx7 , ( 7));
 
+// Use XMMRegister as shortcut
+class KRegisterImpl;
+typedef KRegisterImpl* KRegister;
+
+inline KRegister as_KRegister(int encoding) {
+  return (KRegister)(intptr_t)encoding;
+}
+
+// The implementation of XMM registers for the IA32 architecture
+class KRegisterImpl : public AbstractRegisterImpl {
+public:
+  enum {
+    number_of_registers = 8,
+    max_slots_per_register = 1
+  };
+
+  // construction
+  friend KRegister as_KRegister(int encoding);
+
+  inline VMReg as_VMReg();
+
+  // derived registers, offsets, and addresses
+  KRegister successor() const                          { return as_KRegister(encoding() + 1); }
+
+  // accessors
+  int   encoding() const                          { assert(is_valid(), err_msg("invalid register (%d)", (int)(intptr_t)this)); return (intptr_t)this; }
+  bool  is_valid() const                          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
+  const char* name() const;
+};
+
+// The Mask registers, for AVX3 enabled and up chips
+CONSTANT_REGISTER_DECLARATION(KRegister, knoreg, (-1));
+CONSTANT_REGISTER_DECLARATION(KRegister, k0, (0));
+CONSTANT_REGISTER_DECLARATION(KRegister, k1, (1));
+CONSTANT_REGISTER_DECLARATION(KRegister, k2, (2));
+CONSTANT_REGISTER_DECLARATION(KRegister, k3, (3));
+CONSTANT_REGISTER_DECLARATION(KRegister, k4, (4));
+CONSTANT_REGISTER_DECLARATION(KRegister, k5, (5));
+CONSTANT_REGISTER_DECLARATION(KRegister, k6, (6));
+CONSTANT_REGISTER_DECLARATION(KRegister, k7, (7));
 
 // Need to know the total number of registers of all sorts for SharedInfo.
 // Define a class that exports it.
@@ -211,18 +271,20 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   // There is no requirement that any ordering here matches any ordering c2 gives
   // it's optoregs.
 
-    number_of_registers =      RegisterImpl::number_of_registers +
+    number_of_registers = RegisterImpl::number_of_registers +
 #ifdef AMD64
-                               RegisterImpl::number_of_registers +  // "H" half of a 64bit register
+      RegisterImpl::number_of_registers +  // "H" half of a 64bit register
 #endif // AMD64
-                           2 * FloatRegisterImpl::number_of_registers +
-                           8 * XMMRegisterImpl::number_of_registers +
-                           1 // eflags
+      2 * FloatRegisterImpl::number_of_registers +
+      XMMRegisterImpl::max_slots_per_register * XMMRegisterImpl::number_of_registers +
+      KRegisterImpl::number_of_registers + // mask registers
+      1 // eflags
   };
 
   static const int max_gpr;
   static const int max_fpr;
   static const int max_xmm;
+  static const int max_kpr;
 
 };
 

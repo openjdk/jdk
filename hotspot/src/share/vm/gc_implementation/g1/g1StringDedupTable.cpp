@@ -310,11 +310,11 @@ void G1StringDedupTable::deduplicate(oop java_string, G1StringDedupStat& stat) {
     // Compute hash
     hash = hash_code(value);
     stat.inc_hashed();
-  }
 
-  if (use_java_hash() && hash != 0) {
-    // Store hash code in cache
-    java_lang_String::set_hash(java_string, hash);
+    if (use_java_hash() && hash != 0) {
+      // Store hash code in cache
+      java_lang_String::set_hash(java_string, hash);
+    }
   }
 
   typeArrayOop existing_value = lookup_or_add(value, hash);

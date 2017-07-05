@@ -107,8 +107,8 @@ import java.util.TreeSet;
  *     </tr>
  *     <tr>
  *       <td nowrap valign="top" align="left"><code>[a{ab}{ac}]</code></td>
- *       <td valign="top">The character 'a' and the multicharacter strings &quot;ab&quot; and
- *       &quot;ac&quot;</td>
+ *       <td valign="top">The character 'a' and the multicharacter strings "ab" and
+ *       "ac"</td>
  *     </tr>
  *     <tr>
  *       <td nowrap valign="top" align="left"><code>[\p{Lu}]</code></td>
@@ -148,10 +148,10 @@ import java.util.TreeSet;
  * literal.  Thus "[a\\-b]", "[-ab]", and "[ab-]" all indicate the same
  * set of three characters, 'a', 'b', and '-'.
  *
- * <p>Sets may be intersected using the '&' operator or the asymmetric
+ * <p>Sets may be intersected using the {@literal '&'} operator or the asymmetric
  * set difference may be taken using the '-' operator, for example,
- * "[[:L:]&[\\u0000-\\u0FFF]]" indicates the set of all Unicode letters
- * with values less than 4096.  Operators ('&' and '|') have equal
+ * "{@code [[:L:]&[\\u0000-\\u0FFF]]}" indicates the set of all Unicode letters
+ * with values less than 4096.  Operators ({@literal '&'} and '|') have equal
  * precedence and bind left-to-right.  Thus
  * "[[:L:]-[a-z]-[\\u0100-\\u01FF]]" is equivalent to
  * "[[[:L:]-[a-z]]-[\\u0100-\\u01FF]]".  This only really matters for
@@ -166,7 +166,7 @@ import java.util.TreeSet;
  * that is, U+0000 through 'a'-1 and 'z'+1 through U+10FFFF
  * <tr valign=top><td nowrap><code>[[<em>pat1</em>][<em>pat2</em>]]</code>
  * <td>The union of sets specified by <em>pat1</em> and <em>pat2</em>
- * <tr valign=top><td nowrap><code>[[<em>pat1</em>]&[<em>pat2</em>]]</code>
+ * <tr valign=top><td nowrap><code>[[<em>pat1</em>]&amp;[<em>pat2</em>]]</code>
  * <td>The intersection of sets specified by <em>pat1</em> and <em>pat2</em>
  * <tr valign=top><td nowrap><code>[[<em>pat1</em>]-[<em>pat2</em>]]</code>
  * <td>The asymmetric difference of sets specified by <em>pat1</em> and
@@ -227,7 +227,7 @@ import java.util.TreeSet;
  *     </tr>
  *     <tr>
  *       <td nowrap valign="top" align="right"><code>property :=&nbsp; </code></td>
- *       <td valign="top"><em>a Unicode property set pattern</td>
+ *       <td valign="top"><em>a Unicode property set pattern</em></td>
  *     </tr>
  *   </table>
  *   <br>
@@ -337,8 +337,8 @@ public class UnicodeSet implements UnicodeMatcher {
     }
 
     /**
-     * Constructs a set containing the given range. If <code>end >
-     * start</code> then an empty set is created.
+     * Constructs a set containing the given range.
+     * If {@code end > start} then an empty set is created.
      *
      * @param start first character, inclusive, of range
      * @param end last character, inclusive, of range
@@ -651,7 +651,7 @@ public class UnicodeSet implements UnicodeMatcher {
      * Adds the specified multicharacter to this set if it is not already
      * present.  If this set already contains the multicharacter,
      * the call leaves this set unchanged.
-     * Thus "ch" => {"ch"}
+     * Thus {@code "ch" => {"ch"}}
      * <br><b>Warning: you cannot add an empty string ("") to a UnicodeSet.</b>
      * @param s the source string
      * @return this object, for chaining
@@ -691,7 +691,7 @@ public class UnicodeSet implements UnicodeMatcher {
     /**
      * Complements the specified range in this set.  Any character in
      * the range will be removed if it is in this set, or will be
-     * added if it is not in this set.  If <code>end > start</code>
+     * added if it is not in this set.  If {@code end > start}
      * then an empty range is complemented, leaving the set unchanged.
      *
      * @param start first character, inclusive, of range to be removed
@@ -1698,8 +1698,8 @@ public class UnicodeSet implements UnicodeMatcher {
      * Modifies this set to contain those code points which have the
      * given value for the given property.  Prior contents of this
      * set are lost.
-     * @param propertyAlias
-     * @param valueAlias
+     * @param propertyAlias the property alias
+     * @param valueAlias the value alias
      * @param symbols if not null, then symbols are first called to see if a property
      * is available. If true, then everything else is skipped.
      * @return this set

@@ -148,6 +148,13 @@ Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
     jint fd = fdval(env, fdo);
     int result = 0;
 
+#ifdef MACOSX
+    result = fcntl(fd, F_FULLFSYNC);
+    if (result == -1 && errno == ENOTSUP) {
+        /* Try fsync() in case F_FULLSYUNC is not implemented on the file system. */
+        result = fsync(fd);
+    }
+#else /* end MACOSX, begin not-MACOSX */
     if (md == JNI_FALSE) {
         result = fdatasync(fd);
     } else {
@@ -163,9 +170,10 @@ Java_sun_nio_ch_FileDispatcherImpl_force0(JNIEnv *env, jobject this,
         if (getfl >= 0 && (getfl & O_ACCMODE) == O_RDONLY) {
             return 0;
         }
-#endif
+#endif /* _AIX */
         result = fsync(fd);
     }
+#endif /* not-MACOSX */
     return handle(env, result, "Force failed");
 }
 

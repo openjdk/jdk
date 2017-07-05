@@ -57,6 +57,7 @@ class     TypeVectS;
 class     TypeVectD;
 class     TypeVectX;
 class     TypeVectY;
+class     TypeVectZ;
 class   TypePtr;
 class     TypeRawPtr;
 class     TypeOopPtr;
@@ -90,6 +91,7 @@ public:
     VectorD,                    //  64bit Vector types
     VectorX,                    // 128bit Vector types
     VectorY,                    // 256bit Vector types
+    VectorZ,                    // 512bit Vector types
 
     AnyPtr,                     // Any old raw, klass, inst, or array pointer
     RawPtr,                     // Raw (non-oop) pointers
@@ -729,6 +731,7 @@ public:
   static const TypeVect *VECTD;
   static const TypeVect *VECTX;
   static const TypeVect *VECTY;
+  static const TypeVect *VECTZ;
 
 #ifndef PRODUCT
   virtual void dump2(Dict &d, uint, outputStream *st) const; // Specialized per-Type dumping
@@ -753,6 +756,11 @@ class TypeVectX : public TypeVect {
 class TypeVectY : public TypeVect {
   friend class TypeVect;
   TypeVectY(const Type* elem, uint length) : TypeVect(VectorY, elem, length) {}
+};
+
+class TypeVectZ : public TypeVect {
+  friend class TypeVect;
+  TypeVectZ(const Type* elem, uint length) : TypeVect(VectorZ, elem, length) {}
 };
 
 //------------------------------TypePtr----------------------------------------
@@ -1568,12 +1576,12 @@ inline const TypeAry *Type::is_ary() const {
 }
 
 inline const TypeVect *Type::is_vect() const {
-  assert( _base >= VectorS && _base <= VectorY, "Not a Vector" );
+  assert( _base >= VectorS && _base <= VectorZ, "Not a Vector" );
   return (TypeVect*)this;
 }
 
 inline const TypeVect *Type::isa_vect() const {
-  return (_base >= VectorS && _base <= VectorY) ? (TypeVect*)this : NULL;
+  return (_base >= VectorS && _base <= VectorZ) ? (TypeVect*)this : NULL;
 }
 
 inline const TypePtr *Type::is_ptr() const {

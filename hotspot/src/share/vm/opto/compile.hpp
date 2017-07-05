@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ class Block;
 class Bundle;
 class C2Compiler;
 class CallGenerator;
+class CloneMap;
 class ConnectionGraph;
 class InlineTree;
 class Int_Array;
@@ -59,6 +60,7 @@ class MachSafePointNode;
 class Node;
 class Node_Array;
 class Node_Notes;
+class NodeCloneInfo;
 class OptoReg;
 class PhaseCFG;
 class PhaseGVN;
@@ -83,6 +85,62 @@ class nmethod;
 class WarmCallInfo;
 class Node_Stack;
 struct Final_Reshape_Counts;
+
+typedef unsigned int node_idx_t;
+class NodeCloneInfo {
+ private:
+  uint64_t  _idx_clone_orig;
+ public:
+
+  void set_idx(node_idx_t idx) {
+    _idx_clone_orig = _idx_clone_orig & 0xFFFFFFFF00000000 | idx;
+  }
+  node_idx_t idx() const { return (node_idx_t)(_idx_clone_orig & 0xFFFFFFFF); }
+
+  void set_gen(int generation) {
+    uint64_t  g = (uint64_t)generation << 32;
+    _idx_clone_orig = _idx_clone_orig & 0xFFFFFFFF | g;
+  }
+  int gen() const { return (int)(_idx_clone_orig >> 32); }
+
+  void set(uint64_t x) {  _idx_clone_orig = x; }
+  void set(node_idx_t x, int g) {  set_idx(x); set_gen(g); }
+  uint64_t get() const { return _idx_clone_orig; }
+
+  NodeCloneInfo(uint64_t idx_clone_orig) : _idx_clone_orig(idx_clone_orig) {}
+  NodeCloneInfo(node_idx_t x, int g) {set(x, g);}
+
+  void dump() const;
+};
+
+class CloneMap {
+  friend class Compile;
+ private:
+  bool      _debug;
+  Dict*     _dict;
+  int       _clone_idx;   // current cloning iteration/generation in loop unroll
+ public:
+  void*     _2p(node_idx_t key)   const          { return (void*)(intptr_t)key; } // 2 conversion functions to make gcc happy
+  node_idx_t _2_node_idx_t(const void* k) const  { return (node_idx_t)(intptr_t)k; }
+  Dict*     dict()                const          { return _dict; }
+  void insert(node_idx_t key, uint64_t val)      { assert(_dict->operator[](_2p(key)) == NULL, "key existed"); _dict->Insert(_2p(key), (void*)val); }
+  void insert(node_idx_t key, NodeCloneInfo& ci) { insert(key, ci.get()); }
+  void remove(node_idx_t key)                    { _dict->Delete(_2p(key)); }
+  uint64_t value(node_idx_t key)  const          { return (uint64_t)_dict->operator[](_2p(key)); }
+  node_idx_t idx(node_idx_t key)  const          { return NodeCloneInfo(value(key)).idx(); }
+  int gen(node_idx_t key)         const          { return NodeCloneInfo(value(key)).gen(); }
+  int gen(const void* k)          const          { return gen(_2_node_idx_t(k)); }
+  int max_gen()                   const;
+  void clone(Node* old, Node* nnn, int gen);
+  void verify_insert_and_clone(Node* old, Node* nnn, int gen);
+  void dump(node_idx_t key)       const;
+
+  int  clone_idx() const                         { return _clone_idx; }
+  void set_clone_idx(int x)                      { _clone_idx = x; }
+  bool is_debug()                 const          { return _debug; }
+  void set_debug(bool debug)                     { _debug = debug; }
+  static const char* debug_option_name;
+};
 
 //------------------------------Compile----------------------------------------
 // This class defines a top-level Compiler invocation.
@@ -312,6 +370,7 @@ class Compile : public Phase {
   bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
   bool                  _do_count_invocations;  // True if we generate code to count invocations
   bool                  _do_method_data_update; // True if we generate code to update MethodData*s
+  bool                  _do_vector_loop;        // True if allowed to execute loop in parallel iterations
   bool                  _age_code;              // True if we need to profile code age (decrement the aging counter)
   int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
@@ -380,6 +439,7 @@ class Compile : public Phase {
   Arena                 _Compile_types;         // Arena for all types
   Arena*                _type_arena;            // Alias for _Compile_types except in Initialize_shared()
   Dict*                 _type_dict;             // Intern table
+  CloneMap              _clone_map;             // used for recording history of cloned nodes
   void*                 _type_hwm;              // Last allocation (see Type::operator new/delete)
   size_t                _type_last_size;        // Last allocation size (see Type::operator new/delete)
   ciMethod*             _last_tf_m;             // Cache for
@@ -586,6 +646,8 @@ class Compile : public Phase {
   void          set_do_count_invocations(bool z){ _do_count_invocations = z; }
   bool              do_method_data_update() const { return _do_method_data_update; }
   void          set_do_method_data_update(bool z) { _do_method_data_update = z; }
+  bool              do_vector_loop() const      { return _do_vector_loop; }
+  void          set_do_vector_loop(bool z)      { _do_vector_loop = z; }
   bool              age_code() const             { return _age_code; }
   void          set_age_code(bool z)             { _age_code = z; }
   int               AliasLevel() const           { return _AliasLevel; }
@@ -1228,6 +1290,11 @@ class Compile : public Phase {
 
   // Auxiliary method for randomized fuzzing/stressing
   static bool randomized_select(int count);
+
+  // supporting clone_map
+  CloneMap&     clone_map();
+  void          set_clone_map(Dict* d);
+
 };
 
 #endif // SHARE_VM_OPTO_COMPILE_HPP

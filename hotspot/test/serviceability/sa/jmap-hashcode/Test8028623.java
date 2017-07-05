@@ -30,15 +30,15 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build com.oracle.java.testlibrary.*
+ * @build jdk.test.lib.*
  * @compile -encoding utf8 Test8028623.java
  * @run main Test8028623
  */
 
-import com.oracle.java.testlibrary.JDKToolLauncher;
-import com.oracle.java.testlibrary.OutputBuffer;
-import com.oracle.java.testlibrary.Platform;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.OutputBuffer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
 
 import java.io.File;
 

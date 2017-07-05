@@ -49,7 +49,7 @@ package sun.text;
  * Han ideographs have the same value.  However, lookup is much faster than a
  * hash table.
  * A compact array of any primitive data type serves two purposes:
- * <UL type = round>
+ * <UL type = circle>
  *     <LI>Fast access of the indexed values.
  *     <LI>Smaller memory footprint.
  * </UL>

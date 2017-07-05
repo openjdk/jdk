@@ -291,40 +291,47 @@ public class X509CRLEntryImpl extends X509CRLEntry
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append(serialNumber.toString());
-        sb.append("  On: " + revocationDate.toString());
+        sb.append(serialNumber)
+            .append("  On: ")
+            .append(revocationDate);
         if (certIssuer != null) {
-            sb.append("\n    Certificate issuer: " + certIssuer);
+            sb.append("\n    Certificate issuer: ")
+                .append(certIssuer);
         }
         if (extensions != null) {
             Collection<Extension> allEntryExts = extensions.getAllExtensions();
             Extension[] exts = allEntryExts.toArray(new Extension[0]);
 
-            sb.append("\n    CRL Entry Extensions: " + exts.length);
+            sb.append("\n    CRL Entry Extensions: ")
+                .append(exts.length);
             for (int i = 0; i < exts.length; i++) {
-                sb.append("\n    [" + (i+1) + "]: ");
+                sb.append("\n    [")
+                    .append(i+1)
+                    .append("]: ");
                 Extension ext = exts[i];
                 try {
                     if (OIDMap.getClass(ext.getExtensionId()) == null) {
-                        sb.append(ext.toString());
+                        sb.append(ext);
                         byte[] extValue = ext.getExtensionValue();
                         if (extValue != null) {
                             DerOutputStream out = new DerOutputStream();
                             out.putOctetString(extValue);
                             extValue = out.toByteArray();
                             HexDumpEncoder enc = new HexDumpEncoder();
-                            sb.append("Extension unknown: "
-                                      + "DER encoded OCTET string =\n"
-                                      + enc.encodeBuffer(extValue) + "\n");
+                            sb.append("Extension unknown: ")
+                                .append("DER encoded OCTET string =\n")
+                                .append(enc.encodeBuffer(extValue))
+                                .append('\n');
                         }
-                    } else
-                        sb.append(ext.toString()); //sub-class exists
+                    } else {
+                        sb.append(ext); //sub-class exists
+                    }
                 } catch (Exception e) {
                     sb.append(", Error parsing this extension");
                 }
             }
         }
-        sb.append("\n");
+        sb.append('\n');
         return sb.toString();
     }
 

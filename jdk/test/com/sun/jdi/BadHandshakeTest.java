@@ -84,14 +84,19 @@ public class BadHandshakeTest {
             class_name,
             pb,
             (line) -> {
-                // The first thing that will get read is
-                //    Listening for transport dt_socket at address: xxxxx
-                // which shows the debuggee is ready to accept connections.
-                success.set(line.contains("Listening for transport dt_socket at address:"));
-                // If the first line contains 'Address already in use'
-                // that means the debuggee has failed to start due to busy port
-                bindFailed.set(line.contains("Address already in use"));
-                return true;
+                // 'Listening for transport dt_socket at address: xxxxx'
+                // indicates the debuggee is ready to accept connections
+                if (line.contains("Listening for transport dt_socket at address:")) {
+                    success.set(true);
+                    return true;
+                }
+                // 'Address already in use' indicates
+                // the debuggee has failed to start due to busy port.
+                if (line.contains("Address already in use")) {
+                    bindFailed.set(true);
+                    return true;
+                }
+                return false;
             },
             Integer.MAX_VALUE,
             TimeUnit.MILLISECONDS
