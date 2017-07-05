@@ -69,7 +69,7 @@ class FileOutputStream extends OutputStream
     private final Object closeLock = new Object();
     private volatile boolean closed = false;
     private static final ThreadLocal<Boolean> runningFinalize =
-        new ThreadLocal<Boolean>();
+        new ThreadLocal<>();
 
     private static boolean isRunningFinalize() {
         Boolean val;

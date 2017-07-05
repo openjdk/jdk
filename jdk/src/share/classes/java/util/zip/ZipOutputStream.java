@@ -52,8 +52,8 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
     }
 
     private XEntry current;
-    private Vector<XEntry> xentries = new Vector<XEntry>();
-    private HashSet<String> names = new HashSet<String>();
+    private Vector<XEntry> xentries = new Vector<>();
+    private HashSet<String> names = new HashSet<>();
     private CRC32 crc = new CRC32();
     private long written = 0;
     private long locoff = 0;

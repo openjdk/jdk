@@ -50,6 +50,10 @@ import sun.java2d.SurfaceData;
 public class MaskFill extends GraphicsPrimitive
 {
     public static final String methodSignature = "MaskFill(...)".toString();
+    public static final String fillPgramSignature =
+        "FillAAPgram(...)".toString();
+    public static final String drawPgramSignature =
+        "DrawAAPgram(...)".toString();
 
     public static final int primTypeID = makePrimTypeID();
 
@@ -92,6 +96,14 @@ public class MaskFill extends GraphicsPrimitive
         return fill;
     }
 
+    protected MaskFill(String alternateSignature,
+                       SurfaceType srctype,
+                       CompositeType comptype,
+                       SurfaceType dsttype)
+    {
+        super(alternateSignature, primTypeID, srctype, comptype, dsttype);
+    }
+
     protected MaskFill(SurfaceType srctype,
                        CompositeType comptype,
                        SurfaceType dsttype)
@@ -114,6 +126,23 @@ public class MaskFill extends GraphicsPrimitive
                                 Composite comp,
                                 int x, int y, int w, int h,
                                 byte[] mask, int maskoff, int maskscan);
+
+    public native void FillAAPgram(SunGraphics2D sg2d, SurfaceData sData,
+                                   Composite comp,
+                                   double x, double y,
+                                   double dx1, double dy1,
+                                   double dx2, double dy2);
+
+    public native void DrawAAPgram(SunGraphics2D sg2d, SurfaceData sData,
+                                   Composite comp,
+                                   double x, double y,
+                                   double dx1, double dy1,
+                                   double dx2, double dy2,
+                                   double lw1, double lw2);
+
+    public boolean canDoParallelograms() {
+        return (getNativePrim() != 0);
+    }
 
     static {
         GraphicsPrimitiveMgr.registerGeneral(new MaskFill(null, null, null));
@@ -182,12 +211,22 @@ public class MaskFill extends GraphicsPrimitive
 
     private static class TraceMaskFill extends MaskFill {
         MaskFill target;
+        MaskFill fillPgramTarget;
+        MaskFill drawPgramTarget;
 
         public TraceMaskFill(MaskFill target) {
             super(target.getSourceType(),
                   target.getCompositeType(),
                   target.getDestType());
             this.target = target;
+            this.fillPgramTarget = new MaskFill(fillPgramSignature,
+                                                target.getSourceType(),
+                                                target.getCompositeType(),
+                                                target.getDestType());
+            this.drawPgramTarget = new MaskFill(drawPgramSignature,
+                                                target.getSourceType(),
+                                                target.getCompositeType(),
+                                                target.getDestType());
         }
 
         public GraphicsPrimitive traceWrap() {
@@ -202,6 +241,33 @@ public class MaskFill extends GraphicsPrimitive
             tracePrimitive(target);
             target.MaskFill(sg2d, sData, comp, x, y, w, h,
                             mask, maskoff, maskscan);
+        }
+
+        public void FillAAPgram(SunGraphics2D sg2d, SurfaceData sData,
+                                Composite comp,
+                                double x, double y,
+                                double dx1, double dy1,
+                                double dx2, double dy2)
+        {
+            tracePrimitive(fillPgramTarget);
+            target.FillAAPgram(sg2d, sData, comp,
+                               x, y, dx1, dy1, dx2, dy2);
+        }
+
+        public void DrawAAPgram(SunGraphics2D sg2d, SurfaceData sData,
+                                Composite comp,
+                                double x, double y,
+                                double dx1, double dy1,
+                                double dx2, double dy2,
+                                double lw1, double lw2)
+        {
+            tracePrimitive(drawPgramTarget);
+            target.DrawAAPgram(sg2d, sData, comp,
+                               x, y, dx1, dy1, dx2, dy2, lw1, lw2);
+        }
+
+        public boolean canDoParallelograms() {
+            return target.canDoParallelograms();
         }
     }
 }
