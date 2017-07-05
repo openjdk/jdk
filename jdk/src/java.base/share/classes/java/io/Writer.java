@@ -221,7 +221,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *
      * @param  csq
      *         The character sequence to append.  If {@code csq} is
-     *         {@code null}, then the four characters "{@code null}" are
+     *         {@code null}, then the four characters {@code "null"} are
      *         appended to this writer.
      *
      * @return  This writer
@@ -232,10 +232,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * @since  1.5
      */
     public Writer append(CharSequence csq) throws IOException {
-        if (csq == null)
-            write("null");
-        else
-            write(csq.toString());
+        write(String.valueOf(csq));
         return this;
     }
 
@@ -256,7 +253,7 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      *         The character sequence from which a subsequence will be
      *         appended.  If {@code csq} is {@code null}, then characters
      *         will be appended as if {@code csq} contained the four
-     *         characters "{@code null}".
+     *         characters {@code "null"}.
      *
      * @param  start
      *         The index of the first character in the subsequence
@@ -278,9 +275,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * @since  1.5
      */
     public Writer append(CharSequence csq, int start, int end) throws IOException {
-        CharSequence cs = (csq == null ? "null" : csq);
-        write(cs.subSequence(start, end).toString());
-        return this;
+        if (csq == null) csq = "null";
+        return append(csq.subSequence(start, end));
     }
 
     /**

@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines an API for XML cryptography.
+ */
 module java.xml.crypto {
     requires public java.xml;
     requires java.logging;

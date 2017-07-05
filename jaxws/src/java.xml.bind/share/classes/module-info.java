@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the Java Architecture for XML Binding (JAXB) API.
+ */
 module java.xml.bind {
     requires public java.activation;
     requires public java.xml;

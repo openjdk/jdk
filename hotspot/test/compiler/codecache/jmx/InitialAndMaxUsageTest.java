@@ -36,6 +36,11 @@
  *     -XX:CompileCommand=compileonly,null::* -XX:-UseLargePages
  *     -XX:+SegmentedCodeCache
  *     compiler.codecache.jmx.InitialAndMaxUsageTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:CompileCommand=compileonly,null::* -XX:-UseLargePages
+ *     -XX:-SegmentedCodeCache
+ *     compiler.codecache.jmx.InitialAndMaxUsageTest
  */
 
 package compiler.codecache.jmx;
@@ -70,10 +75,16 @@ public class InitialAndMaxUsageTest {
         }
     }
 
-    private void fillWithSize(long size, List<Long> blobs) {
+    private void fillWithSize(long size, List<Long> blobs, MemoryPoolMXBean bean) {
         long blob;
-        while ((blob = CodeCacheUtils.WB.allocateCodeBlob(size, btype.id))
-                != 0L) {
+        /* Don't fill too much to have space for adapters. So, stop after crossing 95% and
+           don't allocate in case we'll cross 97% on next allocation. We can hit situation
+           like 94% -> (1 allocation) -> 100% otherwise. So, check if
+           <Usage + allocatedSize> is less than 97%, then allocate in case it is, then, stop
+           further allocations with given size in case <Usage> more than 95% */
+        while (((double) bean.getUsage().getUsed() + size <= (CACHE_USAGE_COEF + 0.02d)  * maxSize)
+                && (blob = CodeCacheUtils.WB.allocateCodeBlob(size, btype.id)) != 0L
+                && ((double) bean.getUsage().getUsed() <= CACHE_USAGE_COEF * maxSize)) {
             blobs.add(blob);
         }
     }
@@ -90,13 +101,13 @@ public class InitialAndMaxUsageTest {
             Asserts.assertEQ(initialUsage, 0L, "Unexpected initial usage");
         }
         ArrayList<Long> blobs = new ArrayList<>();
-        long minAllocationUnit = Math.max(0, CodeCacheUtils.MIN_ALLOCATION - headerSize);
+        long minAllocationUnit = Math.max(1, CodeCacheUtils.MIN_ALLOCATION - headerSize);
         /* now filling code cache with large-sized allocation first, since
          lots of small allocations takes too much time, so, just a small
          optimization */
         try {
             for (int coef = 1000000; coef > 0; coef /= 10) {
-                fillWithSize(coef * minAllocationUnit, blobs);
+                fillWithSize(coef * minAllocationUnit, blobs, bean);
             }
             Asserts.assertGT((double) bean.getUsage().getUsed(),
                     CACHE_USAGE_COEF * maxSize, String.format("Unable to fill "

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.security.*;
 import java.security.cert.CertStoreParameters;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
  * Provider class for the JdkLDAP provider.
@@ -69,7 +70,7 @@ public final class JdkLDAP extends Provider {
     }
 
     public JdkLDAP() {
-        super("JdkLDAP", 9.0d, "JdkLDAP Provider (implements LDAP CertStore)");
+        super("JdkLDAP", PROVIDER_VER, "JdkLDAP Provider (implements LDAP CertStore)");
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

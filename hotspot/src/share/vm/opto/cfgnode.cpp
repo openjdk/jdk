@@ -1703,29 +1703,51 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     if (uncasted) {
-      // Add a cast node between the phi to be removed and its unique input.
+      // Add cast nodes between the phi to be removed and its unique input.
       // Wait until after parsing for the type information to propagate from the casts.
       assert(can_reshape, "Invalid during parsing");
       const Type* phi_type = bottom_type();
       assert(phi_type->isa_int() || phi_type->isa_ptr(), "bad phi type");
-      int opcode;
-      // Determine the type of cast to be added.
+      // Add casts to carry the control dependency of the Phi that is
+      // going away
+      Node* cast = NULL;
       if (phi_type->isa_int()) {
-        opcode = Op_CastII;
+        cast = ConstraintCastNode::make_cast(Op_CastII, r, uin, phi_type, true);
       } else {
         const Type* uin_type = phase->type(uin);
-        if ((phi_type->join(TypePtr::NOTNULL) == uin_type->join(TypePtr::NOTNULL)) ||
-            (!phi_type->isa_oopptr() && !uin_type->isa_oopptr())) {
-          opcode = Op_CastPP;
+        if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
+          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, true);
         } else {
-          opcode = Op_CheckCastPP;
+          // Use a CastPP for a cast to not null and a CheckCastPP for
+          // a cast to a new klass (and both if both null-ness and
+          // klass change).
+
+          // If the type of phi is not null but the type of uin may be
+          // null, uin's type must be casted to not null
+          if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
+              uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
+            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL, true);
+          }
+
+          // If the type of phi and uin, both casted to not null,
+          // differ the klass of uin must be (check)cast'ed to match
+          // that of phi
+          if (phi_type->join_speculative(TypePtr::NOTNULL) != uin_type->join_speculative(TypePtr::NOTNULL)) {
+            Node* n = uin;
+            if (cast != NULL) {
+              cast = phase->transform(cast);
+              n = cast;
+            }
+            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, true);
+          }
+          if (cast == NULL) {
+            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, true);
+          }
         }
       }
-      // Add a cast to carry the control dependency of the Phi that is
-      // going away
-      Node* cast = ConstraintCastNode::make_cast(opcode, r, uin, phi_type, true);
+      assert(cast != NULL, "cast should be set");
       cast = phase->transform(cast);
-      // set all inputs to the new cast so the Phi is removed by Identity
+      // set all inputs to the new cast(s) so the Phi is removed by Identity
       PhaseIterGVN* igvn = phase->is_IterGVN();
       for (uint i = 1; i < req(); i++) {
         set_req_X(i, cast, igvn);

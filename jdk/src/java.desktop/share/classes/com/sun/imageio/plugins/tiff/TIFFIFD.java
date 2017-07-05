@@ -49,6 +49,45 @@ public class TIFFIFD extends TIFFDirectory {
     private long stripOrTileOffsetsPosition = -1;
     private long lastPosition = -1;
 
+
+    /**
+     * Converts a {@code TIFFDirectory} to a {@code TIFFIFD}.
+     */
+    public static TIFFIFD getDirectoryAsIFD(TIFFDirectory dir) {
+        if(dir instanceof TIFFIFD) {
+            return (TIFFIFD)dir;
+        }
+
+        TIFFIFD ifd = new TIFFIFD(Arrays.asList(dir.getTagSets()),
+                                  dir.getParentTag());
+        TIFFField[] fields = dir.getTIFFFields();
+        int numFields = fields.length;
+        for(int i = 0; i < numFields; i++) {
+            TIFFField f = fields[i];
+            TIFFTag tag = f.getTag();
+            if(tag.isIFDPointer()) {
+                TIFFDirectory subDir = null;
+                if (f.hasDirectory()) {
+                    subDir = f.getDirectory();
+                } else if (f.getData() instanceof TIFFDirectory) {
+                    subDir = (TIFFDirectory)f.getData();
+                }
+                if (subDir != null) {
+                    TIFFDirectory subIFD = getDirectoryAsIFD(subDir);
+                    f = new TIFFField(tag, f.getType(), (long)f.getCount(),
+                                      subIFD);
+                } else {
+                    f = null;
+                }
+            }
+            if (f != null) {
+                ifd.addTIFFField(f);
+            }
+        }
+
+        return ifd;
+    }
+
     public static TIFFTag getTag(int tagNumber, List<TIFFTagSet> tagSets) {
         Iterator<TIFFTagSet> iter = tagSets.iterator();
         while (iter.hasNext()) {
@@ -704,7 +743,7 @@ public class TIFFIFD extends TIFFDirectory {
                 pos = nextSpace;
 
                 if (tag.isIFDPointer() && f.hasDirectory()) {
-                    TIFFIFD subIFD = (TIFFIFD)f.getDirectory();
+                    TIFFIFD subIFD = getDirectoryAsIFD(f.getDirectory());
                     subIFD.writeToStream(stream);
                     nextSpace = subIFD.lastPosition;
                 } else {

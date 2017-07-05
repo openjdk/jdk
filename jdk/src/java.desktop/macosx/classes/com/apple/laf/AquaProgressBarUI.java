@@ -124,7 +124,9 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
             if (!progressBar.isIndeterminate()) return;
             stopAnimationTimer();
             // start the animation thread
-            startAnimationTimer();
+            if (progressBar.isDisplayable()) {
+              startAnimationTimer();
+            }
         }
 
         if ("JProgressBar.style".equals(prop)) {
@@ -141,7 +143,9 @@ public class AquaProgressBarUI extends ProgressBarUI implements ChangeListener, 
 
     public void ancestorAdded(final AncestorEvent e) {
         if (!progressBar.isIndeterminate()) return;
-        startAnimationTimer();
+        if (progressBar.isDisplayable()) {
+          startAnimationTimer();
+        }
     }
 
     public void ancestorMoved(final AncestorEvent e) { }

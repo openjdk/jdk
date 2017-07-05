@@ -23,6 +23,13 @@
  * questions.
  */
 
+/**
+ * Defines Java support for the IETF Simple Authentication and Security Layer
+ * (SASL).
+ * <P>
+ * This module also contains SASL mechanisms including DIGEST-MD5,
+ * CRAM-MD5, and NTLM.
+ */
 module java.security.sasl {
     requires java.logging;
 

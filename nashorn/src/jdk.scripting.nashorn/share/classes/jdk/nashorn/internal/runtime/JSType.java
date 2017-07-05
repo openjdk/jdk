@@ -474,6 +474,8 @@ public enum JSType {
             return toPrimitive((ScriptObject)obj, hint);
         } else if (isPrimitive(obj)) {
             return obj;
+        } else if (hint == Number.class && obj instanceof Number) {
+            return ((Number) obj).doubleValue();
         } else if (obj instanceof JSObject) {
             return toPrimitive((JSObject)obj, hint);
         } else if (obj instanceof StaticClass) {

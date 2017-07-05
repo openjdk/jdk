@@ -23,6 +23,12 @@
  * questions.
  */
 
+/**
+ * Defines the Java Management Extensions (JMX) API.
+ * <P>
+ * The JMX API consists of interfaces for monitoring and management of the
+ * JVM and other components in the Java runtime.
+ */
 module java.management {
     requires public java.rmi;
     requires java.logging;

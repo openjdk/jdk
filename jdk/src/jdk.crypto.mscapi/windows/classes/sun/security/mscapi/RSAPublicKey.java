@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,15 @@ class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
      */
     RSAPublicKey(long hCryptProv, long hCryptKey, int keyLength)
     {
-        super(hCryptProv, hCryptKey, keyLength);
+        super(new NativeHandles(hCryptProv, hCryptKey), keyLength);
+    }
+
+    /**
+     * Construct an RSAPublicKey object.
+     */
+    RSAPublicKey(NativeHandles handles, int keyLength)
+    {
+        super(handles, keyLength);
     }
 
     /**
@@ -77,8 +85,8 @@ class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
         StringBuffer sb = new StringBuffer();
 
         sb.append("RSAPublicKey [size=").append(keyLength)
-            .append(" bits, type=").append(getKeyType(hCryptKey))
-            .append(", container=").append(getContainerName(hCryptProv))
+            .append(" bits, type=").append(getKeyType(handles.hCryptKey))
+            .append(", container=").append(getContainerName(handles.hCryptProv))
             .append("]\n  modulus: ").append(getModulus())
             .append("\n  public exponent: ").append(getPublicExponent());
 
@@ -93,7 +101,7 @@ class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
         if (exponent == null) {
 
             try {
-                publicKeyBlob = getPublicKeyBlob(hCryptKey);
+                publicKeyBlob = getPublicKeyBlob(handles.hCryptKey);
                 exponent = new BigInteger(1, getExponent(publicKeyBlob));
 
             } catch (KeyException e) {
@@ -112,7 +120,7 @@ class RSAPublicKey extends Key implements java.security.interfaces.RSAPublicKey
         if (modulus == null) {
 
             try {
-                publicKeyBlob = getPublicKeyBlob(hCryptKey);
+                publicKeyBlob = getPublicKeyBlob(handles.hCryptKey);
                 modulus = new BigInteger(1, getModulus(publicKeyBlob));
 
             } catch (KeyException e) {

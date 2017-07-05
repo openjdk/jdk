@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the Remote Method Invocation (RMI) API.
+ */
 module java.rmi {
     requires java.logging;
 

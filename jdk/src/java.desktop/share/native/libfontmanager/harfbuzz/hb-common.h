@@ -98,16 +98,22 @@ typedef uint32_t hb_tag_t;
 #define HB_TAG_MAX_SIGNED HB_TAG(0x7f,0xff,0xff,0xff)
 
 /* len=-1 means str is NUL-terminated. */
-hb_tag_t
+HB_EXTERN hb_tag_t
 hb_tag_from_string (const char *str, int len);
 
 /* buf should have 4 bytes. */
-void
+HB_EXTERN void
 hb_tag_to_string (hb_tag_t tag, char *buf);
 
 
-/* hb_direction_t */
-
+/**
+ * hb_direction_t:
+ * @HB_DIRECTION_INVALID: Initial, unset direction.
+ * @HB_DIRECTION_LTR: Text is set horizontally from left to right.
+ * @HB_DIRECTION_RTL: Text is set horizontally from right to left.
+ * @HB_DIRECTION_TTB: Text is set vertically from top to bottom.
+ * @HB_DIRECTION_BTT: Text is set vertically from bottom to top.
+ */
 typedef enum {
   HB_DIRECTION_INVALID = 0,
   HB_DIRECTION_LTR = 4,
@@ -117,10 +123,10 @@ typedef enum {
 } hb_direction_t;
 
 /* len=-1 means str is NUL-terminated */
-hb_direction_t
+HB_EXTERN hb_direction_t
 hb_direction_from_string (const char *str, int len);
 
-const char *
+HB_EXTERN const char *
 hb_direction_to_string (hb_direction_t direction);
 
 #define HB_DIRECTION_IS_VALID(dir)      ((((unsigned int) (dir)) & ~3U) == 4)
@@ -136,16 +142,15 @@ hb_direction_to_string (hb_direction_t direction);
 
 typedef const struct hb_language_impl_t *hb_language_t;
 
-/* len=-1 means str is NUL-terminated */
-hb_language_t
+HB_EXTERN hb_language_t
 hb_language_from_string (const char *str, int len);
 
-const char *
+HB_EXTERN const char *
 hb_language_to_string (hb_language_t language);
 
 #define HB_LANGUAGE_INVALID ((hb_language_t) NULL)
 
-hb_language_t
+HB_EXTERN hb_language_t
 hb_language_get_default (void);
 
 
@@ -306,6 +311,16 @@ typedef enum
   /*8.0*/ HB_SCRIPT_OLD_HUNGARIAN               = HB_TAG ('H','u','n','g'),
   /*8.0*/ HB_SCRIPT_SIGNWRITING                 = HB_TAG ('S','g','n','w'),
 
+  /*
+   * Since 1.3.0
+   */
+  /*9.0*/ HB_SCRIPT_ADLAM                       = HB_TAG ('A','d','l','m'),
+  /*9.0*/ HB_SCRIPT_BHAIKSUKI                   = HB_TAG ('B','h','k','s'),
+  /*9.0*/ HB_SCRIPT_MARCHEN                     = HB_TAG ('M','a','r','c'),
+  /*9.0*/ HB_SCRIPT_OSAGE                       = HB_TAG ('O','s','g','e'),
+  /*9.0*/ HB_SCRIPT_TANGUT                      = HB_TAG ('T','a','n','g'),
+  /*9.0*/ HB_SCRIPT_NEWA                        = HB_TAG ('N','e','w','a'),
+
   /* No script set. */
   HB_SCRIPT_INVALID                             = HB_TAG_NONE,
 
@@ -324,18 +339,16 @@ typedef enum
 
 /* Script functions */
 
-hb_script_t
+HB_EXTERN hb_script_t
 hb_script_from_iso15924_tag (hb_tag_t tag);
 
-/* sugar for tag_from_string() then script_from_iso15924_tag */
-/* len=-1 means s is NUL-terminated */
-hb_script_t
-hb_script_from_string (const char *s, int len);
+HB_EXTERN hb_script_t
+hb_script_from_string (const char *str, int len);
 
-hb_tag_t
+HB_EXTERN hb_tag_t
 hb_script_to_iso15924_tag (hb_script_t script);
 
-hb_direction_t
+HB_EXTERN hb_direction_t
 hb_script_get_horizontal_direction (hb_script_t script);
 
 

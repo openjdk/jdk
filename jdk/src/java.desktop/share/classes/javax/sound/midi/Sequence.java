@@ -118,7 +118,7 @@ public class Sequence {
      *
      * @see #getTracks
      */
-    protected Vector<Track> tracks = new Vector<Track>();
+    protected Vector<Track> tracks = new Vector<>();
 
     /**
      * Constructs a new MIDI sequence with the specified timing division type

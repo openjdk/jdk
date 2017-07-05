@@ -17,9 +17,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id: XSLTErrorResources.java,v 1.2.4.1 2005/09/13 09:55:37 pvedula Exp $
- */
 package com.sun.org.apache.xalan.internal.res;
 
 import java.util.ListResourceBundle;

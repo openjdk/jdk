@@ -46,6 +46,9 @@ HB_SHAPER_IMPLEMENT (ot) /* <--- This is our main OpenType shaper. */
 #ifdef HAVE_UNISCRIBE
 HB_SHAPER_IMPLEMENT (uniscribe)
 #endif
+#ifdef HAVE_DIRECTWRITE
+HB_SHAPER_IMPLEMENT (directwrite)
+#endif
 #ifdef HAVE_CORETEXT
 HB_SHAPER_IMPLEMENT (coretext)
 #endif

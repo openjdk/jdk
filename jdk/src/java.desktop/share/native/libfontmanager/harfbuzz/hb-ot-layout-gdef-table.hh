@@ -409,7 +409,7 @@ struct GDEF
 
 
   protected:
-  FixedVersion  version;                /* Version of the GDEF table--currently
+  FixedVersion<>version;                /* Version of the GDEF table--currently
                                          * 0x00010002u */
   OffsetTo<ClassDef>
                 glyphClassDef;          /* Offset to class definition table

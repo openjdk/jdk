@@ -32,7 +32,6 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineUnavailableException;
 
-
 /**
  * AbstractDataLine
  *
@@ -147,36 +146,35 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         }
     }
 
-
     public final void open(AudioFormat format) throws LineUnavailableException {
         open(format, AudioSystem.NOT_SPECIFIED);
     }
 
-
     /**
      * This implementation always returns 0.
      */
+    @Override
     public int available() {
         return 0;
     }
 
-
     /**
      * This implementation does nothing.
      */
+    @Override
     public void drain() {
         if (Printer.trace) Printer.trace("AbstractDataLine: drain");
     }
 
-
     /**
      * This implementation does nothing.
      */
+    @Override
     public void flush() {
         if (Printer.trace) Printer.trace("AbstractDataLine: flush");
     }
 
-
+    @Override
     public final void start() {
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized(mixer) {
@@ -200,7 +198,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         if (Printer.trace) Printer.trace("< "+getClass().getName()+".start() - AbstractDataLine");
     }
 
-
+    @Override
     public final void stop() {
 
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
@@ -245,15 +243,17 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     // in MixerSourceLine and MixerClip, and I want to touch as little
     // code as possible to change isStarted() back to isRunning().
 
+    @Override
     public final boolean isRunning() {
         return started;
     }
 
+    @Override
     public final boolean isActive() {
         return active;
     }
 
-
+    @Override
     public final long getMicrosecondPosition() {
 
         long microseconds = getLongFramePosition();
@@ -263,12 +263,12 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         return microseconds;
     }
 
-
+    @Override
     public final AudioFormat getFormat() {
         return format;
     }
 
-
+    @Override
     public final int getBufferSize() {
         return bufferSize;
     }
@@ -283,10 +283,10 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
     /**
      * This implementation returns AudioSystem.NOT_SPECIFIED.
      */
+    @Override
     public final float getLevel() {
         return (float)AudioSystem.NOT_SPECIFIED;
     }
-
 
     // HELPER METHODS
 
@@ -317,18 +317,11 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
 
         synchronized (this) {
 
-            //if (Printer.debug) Printer.debug("    AbstractDataLine: setActive: this.active: " + this.active);
-            //if (Printer.debug) Printer.debug("                                 active: " + active);
-
             if (this.active != active) {
                 this.active = active;
                 //sendEvents = true;
             }
         }
-
-        //if (Printer.debug) Printer.debug("                                 this.active: " + this.active);
-        //if (Printer.debug) Printer.debug("                                 sendEvents: " + sendEvents);
-
 
         // $$kk: 11.19.99: take ACTIVE / INACTIVE / EOM events out;
         // putting them in is technically an API change.
@@ -356,17 +349,11 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
 
         synchronized (this) {
 
-            //if (Printer.debug) Printer.debug("    AbstractDataLine: setStarted: this.started: " + this.started);
-            //if (Printer.debug) Printer.debug("                                  started: " + started);
-
             if (this.started != started) {
                 this.started = started;
                 sendEvents = true;
             }
         }
-
-        //if (Printer.debug) Printer.debug("                                  this.started: " + this.started);
-        //if (Printer.debug) Printer.debug("                                  sendEvents: " + sendEvents);
 
         if (sendEvents) {
 
@@ -378,7 +365,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         }
         if (Printer.trace) Printer.trace("< AbstractDataLine: setStarted completed");
     }
-
 
     /**
      * This method generates a STOP event and sets the started state to false.
@@ -393,9 +379,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         if (Printer.trace) Printer.trace("< AbstractDataLine: setEOM() completed");
     }
 
-
-
-
     // OVERRIDES OF ABSTRACT LINE METHODS
 
     /**
@@ -404,6 +387,7 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
      * line is open, this should return quietly because the values
      * requested will match the current ones.
      */
+    @Override
     public final void open() throws LineUnavailableException {
 
         if (Printer.trace) Printer.trace("> "+getClass().getName()+".open() - AbstractDataLine");
@@ -413,11 +397,11 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         if (Printer.trace) Printer.trace("< "+getClass().getName()+".open() - AbstractDataLine");
     }
 
-
     /**
      * This should also stop the line.  The closed line should not be running or active.
      * After we close the line, we reset the format and buffer size to the defaults.
      */
+    @Override
     public final void close() {
         //$$fb 2001-10-09: Bug #4517739: avoiding deadlock by synchronizing to mixer !
         synchronized (mixer) {
@@ -444,12 +428,6 @@ abstract class AbstractDataLine extends AbstractLine implements DataLine {
         }
         if (Printer.trace) Printer.trace("< "+getClass().getName()+".close() - in AbstractDataLine");
     }
-
-
-    // IMPLEMENTATIONS OF ABSTRACT LINE ABSTRACE METHODS
-
-
-    // ABSTRACT METHODS
 
     abstract void implOpen(AudioFormat format, int bufferSize) throws LineUnavailableException;
     abstract void implClose();
