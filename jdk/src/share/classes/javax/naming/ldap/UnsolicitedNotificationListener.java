@@ -30,7 +30,7 @@ import javax.naming.event.NamingListener;
 /**
  * This interface is for handling <tt>UnsolicitedNotificationEvent</tt>.
  * "Unsolicited notification" is defined in
- * <A HREF="ftp://ftp.isi.edu/in-notes/rfc2251.txt">RFC 2251</A>.
+ * <A HREF="http://www.ietf.org/rfc/rfc2251.txt">RFC 2251</A>.
  * It allows the server to send unsolicited notifications to the client.
  * A <tt>UnsolicitedNotificationListener</tt> must:
  *<ol>

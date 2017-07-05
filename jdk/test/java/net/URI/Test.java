@@ -1091,6 +1091,7 @@ public class Test {
         test("").p("").sp("").z();
 
 
+
         header("Emptiness");
 
         // Components that may be empty
@@ -1321,6 +1322,11 @@ public class Test {
             .sp("//host/foo%20bar/a/b/c/resolve").s("http")
             .pd("/foo bar/a/b/c/resolve").h("host")
             .p("/foo%20bar/a/b/c/resolve").z();
+
+        // 6773270: java.net.URI fails to escape u0000
+        test("s", "a", "/\u0000", null)
+            .s("s").p("/%00").h("a")
+            .ta("s://a/%00").z();
     }
 
 

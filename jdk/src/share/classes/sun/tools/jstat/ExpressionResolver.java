@@ -26,7 +26,6 @@
 package sun.tools.jstat;
 
 import sun.jvmstat.monitor.*;
-import sun.management.counter.Variability;
 
 /**
  * A class implementing the ExpressionEvaluator to resolve unresolved

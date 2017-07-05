@@ -429,7 +429,7 @@ public class BatchEnvironment extends sun.tools.javac.BatchEnvironment {
                         st.hasMoreTokens();) {
                         String elt = st.nextToken();
                         if (jarParent != null)
-                            elt = new File(jarParent, elt).toString();
+                            elt = new File(jarParent, elt).getCanonicalPath();
                         addFile(elt, warn);
                     }
                 } finally {

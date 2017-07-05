@@ -25,9 +25,6 @@
 
 package sun.jvmstat.monitor;
 
-import sun.management.counter.Units;
-import sun.management.counter.Variability;
-
 /**
  * Interface provided by Instrumentation Monitoring Objects.
  *

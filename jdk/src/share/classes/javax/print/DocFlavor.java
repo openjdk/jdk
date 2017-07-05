@@ -83,7 +83,7 @@ import java.io.Serializable;
  * doc flavor's MIME type is one of the standard media types telling how to
  * interpret the sequence of characters or bytes. For a list of standard media
  * types, see the Internet Assigned Numbers Authority's (IANA's) <A
- * HREF="http://www.isi.edu/in-notes/iana/assignments/media-types/">Media Types
+ * HREF="http://www.iana.org/assignments/media-types/">Media Types
  * Directory</A>. Interface {@link Doc Doc} provides two utility operations,
  * {@link Doc#getReaderForText() getReaderForText} and
  * {@link Doc#getStreamForBytes() getStreamForBytes()}, to help a

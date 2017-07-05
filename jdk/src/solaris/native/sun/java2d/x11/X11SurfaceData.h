@@ -30,6 +30,8 @@
 
 #include <jdga.h>
 
+#include <X11/extensions/Xrender.h>
+
 /**
  * This include file contains support declarations for loops using the
  * X11 extended SurfaceData interface to talk to an X11 drawable from
@@ -110,6 +112,7 @@ struct _X11SDOps {
     jboolean            isBgInitialized; /* whether the bg pixel is valid */
     jint                pmWidth;       /* width, height of the */
     jint                pmHeight;      /* pixmap */
+    Picture             xrPic;
 #ifdef MITSHM
     ShmPixmapData       shmPMData;     /* data for switching between shm/nonshm pixmaps*/
 #endif /* MITSHM */
@@ -135,6 +138,9 @@ void     X11SD_DisposeOrCacheXImage (XImage * image);
 void     X11SD_DisposeXImage(XImage * image);
 void     X11SD_DirectRenderNotify(JNIEnv *env, X11SDOps *xsdo);
 #endif /* !HEADLESS */
+
+jboolean XShared_initIDs(JNIEnv *env, jboolean allowShmPixmaps);
+jboolean XShared_initSurface(JNIEnv *env, X11SDOps *xsdo, jint depth, jint width, jint height, jlong drawable);
 
 /*
  * This function returns a pointer to a native X11SDOps structure

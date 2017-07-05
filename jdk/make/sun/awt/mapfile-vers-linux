@@ -425,6 +425,7 @@ SUNWprivate_1.1 {
 		Java_sun_awt_X11GraphicsEnvironment_initDisplay;
 		Java_sun_awt_X11GraphicsEnvironment_pRunningXinerama;
 		Java_sun_awt_X11GraphicsEnvironment_getXineramaCenterPoint;
+		Java_sun_awt_X11GraphicsEnvironment_initXRender;
         
         
 
