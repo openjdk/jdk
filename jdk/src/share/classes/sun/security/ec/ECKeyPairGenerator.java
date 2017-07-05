@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import sun.security.ec.ECParameters;
 import sun.security.ec.ECPrivateKeyImpl;
 import sun.security.ec.ECPublicKeyImpl;
 import sun.security.jca.JCAUtil;
+import sun.security.util.ECUtil;
 
 /**
  * EC keypair generator.
@@ -72,7 +73,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
     public void initialize(int keySize, SecureRandom random) {
 
         checkKeySize(keySize);
-        this.params = NamedCurve.getECParameterSpec(keySize);
+        this.params = ECUtil.getECParameterSpec(null, keySize);
         if (params == null) {
             throw new InvalidParameterException(
                 "No EC parameters available for key size " + keySize + " bits");
@@ -86,14 +87,15 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
             throws InvalidAlgorithmParameterException {
 
         if (params instanceof ECParameterSpec) {
-            this.params = ECParameters.getNamedCurve((ECParameterSpec)params);
+            this.params = ECUtil.getECParameterSpec(null,
+                                                    (ECParameterSpec)params);
             if (this.params == null) {
                 throw new InvalidAlgorithmParameterException(
                     "Unsupported curve: " + params);
             }
         } else if (params instanceof ECGenParameterSpec) {
             String name = ((ECGenParameterSpec)params).getName();
-            this.params = NamedCurve.getECParameterSpec(name);
+            this.params = ECUtil.getECParameterSpec(null, name);
             if (this.params == null) {
                 throw new InvalidAlgorithmParameterException(
                     "Unknown curve name: " + name);
@@ -112,7 +114,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
     public KeyPair generateKeyPair() {
 
         byte[] encodedParams =
-            ECParameters.encodeParameters((ECParameterSpec)params);
+            ECUtil.encodeECParameterSpec(null, (ECParameterSpec)params);
 
         // seed is twice the key size (in bytes) plus 1
         byte[] seed = new byte[(((keySize + 7) >> 3) + 1) * 2];
@@ -135,7 +137,7 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
                 new ECPrivateKeyImpl(s, (ECParameterSpec)params);
 
             // handles[1] points to the native public key
-            ECPoint w = ECParameters.decodePoint(getEncodedBytes(handles[1]),
+            ECPoint w = ECUtil.decodePoint(getEncodedBytes(handles[1]),
                 ((ECParameterSpec)params).getCurve());
             PublicKey publicKey =
                 new ECPublicKeyImpl(w, (ECParameterSpec)params);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 /**
  * @test
- * @bug 6581254 6986789
- * @summary Allow '~' and '+' in config file
+ * @bug 6581254 6986789 7196009
+ * @summary Allow '~', '+' and quoted paths in config file
  * @author Valerie Peng
  */
 
@@ -33,7 +33,9 @@ import java.lang.reflect.*;
 
 public class ConfigShortPath {
 
-    private static final String[] configNames = { "csp.cfg", "cspPlus.cfg" };
+    private static final String[] configNames = {
+        "csp.cfg", "cspPlus.cfg", "cspQuotedPath.cfg"
+    };
 
     public static void main(String[] args) throws Exception {
         Constructor cons = null;
@@ -53,12 +55,22 @@ public class ConfigShortPath {
                 Object obj = cons.newInstance(configFile);
             } catch (InvocationTargetException ite) {
                 Throwable cause = ite.getCause();
+                System.out.println(cause);
                 if (cause instanceof ProviderException) {
-                    String causeMsg = cause.getCause().getMessage();
-                    // Indicate failure if due to parsing config
-                    if (causeMsg.indexOf("Unexpected token") != -1) {
-                        throw (ProviderException) cause;
+                    while ((cause = cause.getCause()) != null) {
+                        System.out.println(cause);
+                        String causeMsg = cause.getMessage();
+                        // Indicate failure if due to parsing config
+                        if (causeMsg.indexOf("Unexpected") != -1) {
+                            throw (ProviderException) cause;
+                        }
                     }
+                    // Consider the test passes if the exception is
+                    // thrown after parsing, i.e. due to the absolute
+                    // path requirement or the non-existent path.
+                } else {
+                    // unexpected exception
+                    throw new RuntimeException("Unexpected Exception", cause);
                 }
             }
         }

@@ -42,7 +42,6 @@ import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
-import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
@@ -451,26 +450,6 @@ public abstract class NodeVisitor {
      */
     public Node leaveLabelNode(final LabelNode labelNode) {
         return leaveDefault(labelNode);
-    }
-
-    /**
-     * Callback for entering a LineNumberNode
-     *
-     * @param  lineNumberNode the node
-     * @return true if traversal should continue and node children be traversed, false otherwise
-     */
-    public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
-        return enterDefault(lineNumberNode);
-    }
-
-    /**
-     * Callback for leaving a LineNumberNode
-     *
-     * @param  lineNumberNode the node
-     * @return processed node, which will replace the original one, or the original node
-     */
-    public Node leaveLineNumberNode(final LineNumberNode lineNumberNode) {
-        return leaveDefault(lineNumberNode);
     }
 
     /**

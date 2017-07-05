@@ -87,7 +87,7 @@
 //      parts of the_class
 //    - adjusting constant pool caches and vtables in other classes
 //      that refer to methods in the_class. These adjustments use the
-//      SystemDictionary::classes_do() facility which only allows
+//      ClassLoaderDataGraph::classes_do() facility which only allows
 //      a helper method to be specified. The interesting parameters
 //      that we would like to pass to the helper method are saved in
 //      static global fields in the VM operation.
@@ -333,8 +333,8 @@
 
 class VM_RedefineClasses: public VM_Operation {
  private:
-  // These static fields are needed by SystemDictionary::classes_do()
-  // facility and the adjust_cpool_cache_and_vtable() helper:
+  // These static fields are needed by ClassLoaderDataGraph::classes_do()
+  // facility and the AdjustCpoolCacheAndVtable helper:
   static Array<Method*>* _old_methods;
   static Array<Method*>* _new_methods;
   static Method**      _matching_old_methods;
@@ -408,13 +408,6 @@ class VM_RedefineClasses: public VM_Operation {
          int * emcp_method_count_p);
   void transfer_old_native_function_registrations(instanceKlassHandle the_class);
 
-  // Unevolving classes may point to methods of the_class directly
-  // from their constant pool caches, itables, and/or vtables. We
-  // use the SystemDictionary::classes_do() facility and this helper
-  // to fix up these pointers.
-  static void adjust_cpool_cache_and_vtable(Klass* k_oop, ClassLoaderData* initiating_loader, TRAPS);
-  static void adjust_array_vtable(Klass* k_oop);
-
   // Install the redefinition of a class
   void redefine_single_class(jclass the_jclass,
     Klass* scratch_class_oop, TRAPS);
@@ -480,9 +473,26 @@ class VM_RedefineClasses: public VM_Operation {
 
   void flush_dependent_code(instanceKlassHandle k_h, TRAPS);
 
-  static void check_class(Klass* k_oop, ClassLoaderData* initiating_loader,
-                TRAPS);
   static void dump_methods();
+
+  // Check that there are no old or obsolete methods
+  class CheckClass : public KlassClosure {
+    Thread* _thread;
+   public:
+    CheckClass(Thread* t) : _thread(t) {}
+    void do_klass(Klass* k);
+  };
+
+  // Unevolving classes may point to methods of the_class directly
+  // from their constant pool caches, itables, and/or vtables. We
+  // use the ClassLoaderDataGraph::classes_do() facility and this helper
+  // to fix up these pointers.
+  class AdjustCpoolCacheAndVtable : public KlassClosure {
+    Thread* _thread;
+   public:
+    AdjustCpoolCacheAndVtable(Thread* t) : _thread(t) {}
+    void do_klass(Klass* k);
+  };
 
  public:
   VM_RedefineClasses(jint class_count,

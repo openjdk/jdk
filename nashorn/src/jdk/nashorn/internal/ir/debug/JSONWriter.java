@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir.debug;
 
 import java.util.Arrays;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BinaryNode;
@@ -44,7 +45,6 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LabelNode;
-import jdk.nashorn.internal.ir.LineNumberNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ObjectNode;
@@ -52,6 +52,7 @@ import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.SplitNode;
+import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.ThrowNode;
@@ -406,17 +407,15 @@ public final class JSONWriter extends NodeVisitor {
         }
 
         // body consists of nested functions and statements
-        final List<Node> stats = functionNode.getBody().getStatements();
+        final List<Statement> stats = functionNode.getBody().getStatements();
         final int size = stats.size();
         int idx = 0;
         arrayStart("body");
 
         for (final Node stat : stats) {
-            if (! stat.isDebug()) {
-                stat.accept(this);
-                if (idx != (size - 1)) {
-                    comma();
-                }
+            stat.accept(this);
+            if (idx != (size - 1)) {
+                comma();
             }
             idx++;
         }
@@ -502,11 +501,6 @@ public final class JSONWriter extends NodeVisitor {
         labelNode.getBody().accept(this);
 
         return leave();
-    }
-
-    @Override
-    public boolean enterLineNumberNode(final LineNumberNode lineNumberNode) {
-        return false;
     }
 
     @SuppressWarnings("rawtypes")
@@ -931,15 +925,13 @@ public final class JSONWriter extends NodeVisitor {
         int idx = 0;
         arrayStart(name);
         for (final Node node : nodes) {
-            if (node == null || !node.isDebug()) {
-                if (node != null) {
-                    node.accept(this);
-                } else {
-                    nullValue();
-                }
-                if (idx != (size - 1)) {
-                    comma();
-                }
+            if (node != null) {
+                node.accept(this);
+            } else {
+                nullValue();
+            }
+            if (idx != (size - 1)) {
+                comma();
             }
             idx++;
         }
@@ -971,7 +963,7 @@ public final class JSONWriter extends NodeVisitor {
             objectStart("loc");
 
             // source name
-            final Source src = node.getSource();
+            final Source src = getLexicalContext().getCurrentFunction().getSource();
             property("source", src.getName());
             comma();
 

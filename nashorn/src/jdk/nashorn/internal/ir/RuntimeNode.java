@@ -33,7 +33,6 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for a runtime call.
@@ -280,14 +279,13 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
     /**
      * Constructor
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param request the request
      * @param args    arguments to request
      */
-    public RuntimeNode(final Source source, final long token, final int finish, final Request request, final List<Node> args) {
-        super(source, token, finish);
+    public RuntimeNode(final long token, final int finish, final Request request, final List<Node> args) {
+        super(token, finish);
 
         this.request      = request;
         this.args         = args;
@@ -307,14 +305,13 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
     /**
      * Constructor
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param request the request
      * @param args    arguments to request
      */
-    public RuntimeNode(final Source source, final long token, final int finish, final Request request, final Node... args) {
-        this(source, token, finish, request, Arrays.asList(args));
+    public RuntimeNode(final long token, final int finish, final Request request, final Node... args) {
+        this(token, finish, request, Arrays.asList(args));
     }
 
     /**
@@ -393,7 +390,7 @@ public class RuntimeNode extends Node implements TypeOverride<RuntimeNode> {
     }
 
     @Override
-    public RuntimeNode setType(final Type type) {
+    public RuntimeNode setType(final TemporarySymbols ts, final LexicalContext lc, final Type type) {
         if (this.callSiteType == type) {
             return this;
         }

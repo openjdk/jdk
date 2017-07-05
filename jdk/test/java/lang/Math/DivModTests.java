@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,8 @@ public class DivModTests {
             int tmp = x / y;     // Force ArithmeticException for divide by zero
             double ff = x - Math.floor((double)x / (double)y) * y;
             int fr = (int)ff;
-            if (fr != result) {
+            boolean t = (fr == ((Integer)result));
+            if (!result.equals(fr)) {
                 fail("FAIL: Math.floorMod(%d, %d) = %s differs from Math.floor(x, y): %d%n", x, y, result, fr);
             }
         } catch (ArithmeticException ae) {
@@ -240,8 +241,8 @@ public class DivModTests {
             resultD = resultD.multiply(yD);
             resultD = xD.subtract(resultD);
             long fr = resultD.longValue();
-            if (fr != result) {
-                fail("FAIL: Long.floorMod(%d, %d) = %d is different than BigDecimal result: %d%n",x, y, result, fr);
+            if (!result.equals(fr)) {
+                fail("FAIL: Long.floorMod(%d, %d) = %d is different than BigDecimal result: %d%n", x, y, result, fr);
 
             }
         } catch (ArithmeticException ae) {

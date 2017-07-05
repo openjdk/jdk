@@ -95,6 +95,7 @@ public final class ErrorMsg {
     public static final String UNSUPPORTED_EXT_ERR = "UNSUPPORTED_EXT_ERR";
     public static final String MISSING_XSLT_URI_ERR = "MISSING_XSLT_URI_ERR";
     public static final String MISSING_XSLT_TARGET_ERR = "MISSING_XSLT_TARGET_ERR";
+    public static final String ACCESSING_XSLT_TARGET_ERR = "ACCESSING_XSLT_TARGET_ERR";
     public static final String NOT_IMPLEMENTED_ERR = "NOT_IMPLEMENTED_ERR";
     public static final String NOT_STYLESHEET_ERR = "NOT_STYLESHEET_ERR";
     public static final String ELEMENT_PARSE_ERR = "ELEMENT_PARSE_ERR";

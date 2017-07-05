@@ -21,6 +21,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.TemporarySymbols;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
@@ -42,7 +43,7 @@ enum CompilationPhase {
      */
     LAZY_INITIALIZATION_PHASE(EnumSet.of(INITIALIZED, PARSED)) {
         @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn0) {
+        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
 
             /*
              * For lazy compilation, we might be given a node previously marked
@@ -58,8 +59,7 @@ enum CompilationPhase {
              * function from a trampoline
              */
 
-            final FunctionNode outermostFunctionNode = compiler.getFunctionNode();
-            assert outermostFunctionNode == fn0;
+            final FunctionNode outermostFunctionNode = fn;
 
             final Set<FunctionNode> neverLazy = new HashSet<>();
             final Set<FunctionNode> lazy      = new HashSet<>();
@@ -172,20 +172,31 @@ enum CompilationPhase {
     ATTRIBUTION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED)) {
         @Override
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            return (FunctionNode)initReturnTypes(fn).accept(new Attr());
+            final TemporarySymbols ts = compiler.getTemporarySymbols();
+            final FunctionNode newFunctionNode = (FunctionNode)enterAttr(fn, ts).accept(new Attr(ts));
+            if(compiler.getEnv()._print_mem_usage) {
+                Compiler.LOG.info("Attr temporary symbol count: " + ts.getTotalSymbolCount());
+            }
+            return newFunctionNode;
         }
 
         /**
          * Pessimistically set all lazy functions' return types to Object
+         * and the function symbols to object
          * @param functionNode node where to start iterating
          */
-        private FunctionNode initReturnTypes(final FunctionNode functionNode) {
+        private FunctionNode enterAttr(final FunctionNode functionNode, final TemporarySymbols ts) {
             return (FunctionNode)functionNode.accept(new NodeVisitor() {
                 @Override
                 public Node leaveFunctionNode(final FunctionNode node) {
-                    return node.isLazy() ?
-                           node.setReturnType(getLexicalContext(), Type.OBJECT) :
-                           node.setReturnType(getLexicalContext(), Type.UNKNOWN);
+                    final LexicalContext lc = getLexicalContext();
+                    if (node.isLazy()) {
+                        FunctionNode newNode = node.setReturnType(getLexicalContext(), Type.OBJECT);
+                        return ts.ensureSymbol(lc, Type.OBJECT, newNode);
+                    }
+                    //node may have a reference here that needs to be nulled if it was referred to by
+                    //its outer context, if it is lazy and not attributed
+                    return node.setReturnType(lc, Type.UNKNOWN).setSymbol(lc, null);
                 }
             });
         }
@@ -207,6 +218,7 @@ enum CompilationPhase {
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             final CompileUnit outermostCompileUnit = compiler.addCompileUnit(compiler.firstCompileUnitName());
 
+//            assert fn.isProgram() ;
             final FunctionNode newFunctionNode = new Splitter(compiler, fn, outermostCompileUnit).split(fn);
 
             assert newFunctionNode.getCompileUnit() == outermostCompileUnit : "fn.compileUnit (" + newFunctionNode.getCompileUnit() + ") != " + outermostCompileUnit;
@@ -215,15 +227,6 @@ enum CompilationPhase {
                 assert compiler.getStrictMode();
                 compiler.setStrictMode(true);
             }
-
-            /*
-            newFunctionNode.accept(new NodeVisitor() {
-                @Override
-                public boolean enterFunctionNode(final FunctionNode functionNode) {
-                    assert functionNode.getCompileUnit() != null : functionNode.getName() + " " + Debug.id(functionNode) + " has no compile unit";
-                    return true;
-                }
-            });*/
 
             return newFunctionNode;
         }
@@ -252,7 +255,7 @@ enum CompilationPhase {
         FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
             final ScriptEnvironment env = compiler.getEnv();
 
-            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new FinalizeTypes());
+            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new FinalizeTypes(compiler.getTemporarySymbols()));
 
             if (env._print_lower_ast) {
                 env.getErr().println(new ASTWriter(newFunctionNode));

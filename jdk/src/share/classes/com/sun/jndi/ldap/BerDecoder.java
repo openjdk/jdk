@@ -42,7 +42,7 @@ public final class BerDecoder extends Ber {
      */
     public BerDecoder(byte buf[], int offset, int bufsize) {
 
-        this.buf = buf;
+        this.buf = buf;         // shared buffer, be careful to use this class
         this.bufsize = bufsize;
         this.origOffset = offset;
 

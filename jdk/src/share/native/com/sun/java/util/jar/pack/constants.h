@@ -133,6 +133,8 @@ enum {
     X_ATTR_Deprecated                  = 20,
     X_ATTR_RuntimeVisibleAnnotations   = 21,
     X_ATTR_RuntimeInvisibleAnnotations = 22,
+    X_ATTR_RuntimeVisibleTypeAnnotations   = 27,
+    X_ATTR_RuntimeInvisibleTypeAnnotations = 28,
     X_ATTR_OVERFLOW                    = 16,
     X_ATTR_LIMIT_NO_FLAGS_HI           = 32,
     X_ATTR_LIMIT_FLAGS_HI              = 63,
@@ -146,6 +148,8 @@ enum {
         F(X_ATTR_Deprecated,Deprecated) \
         F(X_ATTR_RuntimeVisibleAnnotations,RuntimeVisibleAnnotations) \
         F(X_ATTR_RuntimeInvisibleAnnotations,RuntimeInvisibleAnnotations) \
+        F(X_ATTR_RuntimeVisibleTypeAnnotations,RuntimeVisibleTypeAnnotations) \
+        F(X_ATTR_RuntimeInvisibleTypeAnnotations,RuntimeInvisibleTypeAnnotations) \
         /*F(X_ATTR_Synthetic,Synthetic)*/ \
           /*(end)*/
 #define CLASS_ATTR_DO(F) \

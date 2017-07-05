@@ -31,12 +31,7 @@ package sun.net.www;
 
 import java.io.*;
 import java.util.Collections;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /** An RFC 844 or MIME message header.  Includes methods
     for parsing headers from incoming streams, fetching
@@ -57,6 +52,17 @@ class MessageHeader {
 
     public MessageHeader (InputStream is) throws java.io.IOException {
         parseHeader(is);
+    }
+
+    /**
+     * Returns list of header names in a comma separated list
+     */
+    public synchronized String getHeaderNamesInList() {
+        StringJoiner joiner = new StringJoiner(",");
+        for (int i=0; i<nkeys; i++) {
+            joiner.add(keys[i]);
+        }
+        return joiner.toString();
     }
 
     /**

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4227192
+ * @bug 4227192 4487672
  * @summary This is a basic functional test of the dynamic proxy API (part 1).
  * @author Peter Jones
  *
@@ -42,15 +42,15 @@ public class Basic1 {
             "\nBasic functional test of dynamic proxy API, part 1\n");
 
         try {
-            Class[] interfaces =
-                new Class[] { Runnable.class, Observer.class };
+            Class<?>[] interfaces =
+                new Class<?>[] { Runnable.class, Observer.class };
 
             ClassLoader loader = ClassLoader.getSystemClassLoader();
 
             /*
              * Generate a proxy class.
              */
-            Class proxyClass = Proxy.getProxyClass(loader, interfaces);
+            Class<?> proxyClass = Proxy.getProxyClass(loader, interfaces);
             System.err.println("+ generated proxy class: " + proxyClass);
 
             /*
@@ -72,19 +72,19 @@ public class Basic1 {
             /*
              * Verify that it is assignable to the proxy interfaces.
              */
-            for (int i = 0; i < interfaces.length; i++) {
-                if (!interfaces[i].isAssignableFrom(proxyClass)) {
+            for (Class<?> intf : interfaces) {
+                if (!intf.isAssignableFrom(proxyClass)) {
                     throw new RuntimeException(
                         "proxy class not assignable to proxy interface " +
-                        interfaces[i].getName());
+                        intf.getName());
                 }
             }
 
             /*
              * Verify that it has the given permutation of interfaces.
              */
-            List l1 = Arrays.asList(interfaces);
-            List l2 = Arrays.asList(proxyClass.getInterfaces());
+            List<Class<?>> l1 = Arrays.asList(interfaces);
+            List<Class<?>> l2 = Arrays.asList(proxyClass.getInterfaces());
             System.err.println("+ proxy class's interfaces: " + l2);
             if (!l1.equals(l2)) {
                 throw new RuntimeException(
@@ -118,14 +118,26 @@ public class Basic1 {
              * Verify that it has a constructor that takes an
              * InvocationHandler instance.
              */
-            Constructor cons = proxyClass.getConstructor(
-                new Class[] { InvocationHandler.class });
+            Constructor<?> cons = proxyClass.getConstructor(InvocationHandler.class);
+
+            /*
+             * Test constructor with null InvocationHandler
+             */
+            try {
+                cons.newInstance(new Object[] { null });
+                throw new RuntimeException("Expected NullPointerException thrown");
+            } catch (InvocationTargetException e) {
+                Throwable t = e.getTargetException();
+                if (!(t instanceof NullPointerException)) {
+                    throw t;
+                }
+            }
 
             /*
              * Construct a proxy instance.
              */
             Handler handler = new Handler();
-            Object proxy = cons.newInstance(new Object[] { handler });
+            Object proxy = cons.newInstance(handler);
             handler.currentProxy = proxy;
 
             /*
@@ -141,7 +153,7 @@ public class Basic1 {
 
             System.err.println("\nTEST PASSED");
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.err.println("\nTEST FAILED:");
             e.printStackTrace();
             throw new RuntimeException("TEST FAILED: " + e.toString());

@@ -27,26 +27,25 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for CONTINUE statements.
  */
 @Immutable
-public class ContinueNode extends Node {
+public class ContinueNode extends Statement {
 
     private IdentNode label;
 
     /**
      * Constructor
      *
-     * @param source source code
-     * @param token  token
-     * @param finish finish
-     * @param label  label for break or null if none
+     * @param lineNumber line number
+     * @param token      token
+     * @param finish     finish
+     * @param label      label for break or null if none
      */
-    public ContinueNode(final Source source, final long token, final int finish, final IdentNode label) {
-        super(source, token, finish);
+    public ContinueNode(final int lineNumber, final long token, final int finish, final IdentNode label) {
+        super(lineNumber, token, finish);
         this.label = label;
     }
 

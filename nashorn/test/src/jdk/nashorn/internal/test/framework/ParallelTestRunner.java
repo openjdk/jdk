@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.test.framework;
 
+import static jdk.nashorn.internal.test.framework.TestConfig.TEST_FAILED_LIST_FILE;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_ENABLE_STRICT_MODE;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_EXCLUDES_FILE;
 import static jdk.nashorn.internal.test.framework.TestConfig.TEST_JS_EXCLUDE_LIST;
@@ -37,6 +38,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -324,7 +326,8 @@ public class ParallelTestRunner {
         });
     }
 
-    public void run() {
+    @SuppressWarnings("resource")
+    public boolean run() throws IOException {
         final int testCount = tests.size();
         int passCount = 0;
         int doneCount = 0;
@@ -371,23 +374,36 @@ public class ParallelTestRunner {
         });
 
         boolean hasFailed = false;
-        for (final ScriptRunnable.Result result : results) {
-            if (!result.passed()) {
-                if (hasFailed == false) {
-                    hasFailed = true;
-                    System.out.println();
-                    System.out.println("FAILED TESTS");
-                }
+        final String failedList = System.getProperty(TEST_FAILED_LIST_FILE);
+        final boolean hasFailedList = failedList != null;
+        final boolean hadPreviouslyFailingTests = hasFailedList && new File(failedList).length() > 0;
+        final FileWriter failedFileWriter = hasFailedList ? new FileWriter(failedList) : null;
+        try {
+            final PrintWriter failedListWriter = failedFileWriter == null ? null : new PrintWriter(failedFileWriter);
+            for (final ScriptRunnable.Result result : results) {
+                if (!result.passed()) {
+                    if (hasFailed == false) {
+                        hasFailed = true;
+                        System.out.println();
+                        System.out.println("FAILED TESTS");
+                    }
 
-                System.out.println(result.getTest());
-                if (result.exception != null) {
-                    final String exceptionString = result.exception instanceof TestFailedError ? result.exception.getMessage() : result.exception.toString();
-                    System.out.print(exceptionString.endsWith("\n") ? exceptionString : exceptionString + "\n");
-                    System.out.print(result.out != null ? result.out : "");
+                    System.out.println(result.getTest());
+                    if(failedFileWriter != null) {
+                        failedListWriter.println(result.getTest().testFile.getPath());
+                    }
+                    if (result.exception != null) {
+                        final String exceptionString = result.exception instanceof TestFailedError ? result.exception.getMessage() : result.exception.toString();
+                        System.out.print(exceptionString.endsWith("\n") ? exceptionString : exceptionString + "\n");
+                        System.out.print(result.out != null ? result.out : "");
+                    }
                 }
             }
+        } finally {
+            if(failedFileWriter != null) {
+                failedFileWriter.close();
+            }
         }
-
         final double timeElapsed = (System.nanoTime() - startTime) / 1e9; // [s]
         System.out.printf("Tests run: %d/%d tests, passed: %d (%.2f%%), failed: %d. Time elapsed: %.0fmin %.0fs.\n", doneCount, testCount, passCount, 100d * passCount / doneCount, doneCount - passCount, timeElapsed / 60, timeElapsed % 60);
         System.out.flush();
@@ -397,12 +413,25 @@ public class ParallelTestRunner {
         if (hasFailed) {
             throw new AssertionError("TEST FAILED");
         }
+
+        if(hasFailedList) {
+            new File(failedList).delete();
+        }
+
+        if(hadPreviouslyFailingTests) {
+            System.out.println();
+            System.out.println("Good job on getting all your previously failing tests pass!");
+            System.out.println("NOW re-running all tests to make sure you haven't caused any NEW test failures.");
+            System.out.println();
+        }
+
+        return hadPreviouslyFailingTests;
     }
 
     public static void main(final String[] args) throws Exception {
         parseArgs(args);
 
-        new ParallelTestRunner().run();
+        while(new ParallelTestRunner().run());
     }
 
     private static void parseArgs(final String[] args) {

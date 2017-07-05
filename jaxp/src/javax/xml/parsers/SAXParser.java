@@ -441,6 +441,29 @@ public abstract class SAXParser {
      * A list of the core features and properties can be found at
      * <a href="http://sax.sourceforge.net/?selected=get-set">
      * http://sax.sourceforge.net/?selected=get-set</a>.</p>
+     * <p>
+     * All implementations that implement JAXP 1.5 or newer are required to
+     * support the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} and
+     * {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} properties.
+     * </p>
+     * <ul>
+     *   <li>
+     *      <p>
+     *      Setting the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_DTD} property
+     *      restricts the access to external DTDs, external Entity References to
+     *      the protocols specified by the property.  If access is denied during parsing
+     *      due to the restriction of this property, {@link org.xml.sax.SAXException}
+     *      will be thrown by the parse methods defined by {@link javax.xml.parsers.SAXParser}.
+     *      </p>
+     *      <p>
+     *      Setting the {@link javax.xml.XMLConstants#ACCESS_EXTERNAL_SCHEMA} property
+     *      restricts the access to external Schema set by the schemaLocation attribute to
+     *      the protocols specified by the property.  If access is denied during parsing
+     *      due to the restriction of this property, {@link org.xml.sax.SAXException}
+     *      will be thrown by the parse methods defined by the {@link javax.xml.parsers.SAXParser}.
+     *      </p>
+     *   </li>
+     * </ul>
      *
      * @param name The name of the property to be set.
      * @param value The value of the property to be set.

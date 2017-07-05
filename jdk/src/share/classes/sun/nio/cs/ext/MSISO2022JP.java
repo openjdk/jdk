@@ -46,16 +46,17 @@ public class MSISO2022JP extends ISO2022_JP
     }
 
     public CharsetDecoder newDecoder() {
-        return new Decoder(this, DEC0208, null);
+        return new Decoder(this, CoderHolder.DEC0208, null);
     }
 
     public CharsetEncoder newEncoder() {
-        return new Encoder(this, ENC0208, null, true);
+        return new Encoder(this, CoderHolder.ENC0208, null, true);
     }
 
-    private final static DoubleByte.Decoder DEC0208 =
-        (DoubleByte.Decoder)new JIS_X_0208_MS932().newDecoder();
-
-    private final static DoubleByte.Encoder ENC0208 =
-        (DoubleByte.Encoder)new JIS_X_0208_MS932().newEncoder();
+    private static class CoderHolder {
+        final static DoubleByte.Decoder DEC0208 =
+            (DoubleByte.Decoder)new JIS_X_0208_MS932().newDecoder();
+        final static DoubleByte.Encoder ENC0208 =
+            (DoubleByte.Encoder)new JIS_X_0208_MS932().newEncoder();
+    }
 }

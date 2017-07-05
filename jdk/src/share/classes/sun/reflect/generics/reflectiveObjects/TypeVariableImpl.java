@@ -170,13 +170,8 @@ public class TypeVariableImpl<D extends GenericDeclaration>
             GenericDeclaration thatDecl = that.getGenericDeclaration();
             String thatName = that.getName();
 
-            return
-                (genericDeclaration == null ?
-                 thatDecl == null :
-                 genericDeclaration.equals(thatDecl)) &&
-                (name == null ?
-                 thatName == null :
-                 name.equals(thatName));
+            return Objects.equals(genericDeclaration, thatDecl) &&
+                Objects.equals(name, thatName);
 
         } else
             return false;

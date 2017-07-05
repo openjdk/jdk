@@ -26,6 +26,8 @@ package test.java.time.chrono;
 
 import java.time.Duration;
 import java.time.chrono.Chronology;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.HijrahDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Set;
 
@@ -42,7 +44,19 @@ public class TestChronologyPerf {
         Set<Chronology> chronos = Chronology.getAvailableChronologies();
         long end = System.nanoTime();
         Duration d = Duration.of(end - start, ChronoUnit.NANOS);
-        System.out.printf(" Duration of Chronology.getAvailableChronologies(): %s%n", d);
+        System.out.printf(" Cold Duration of Chronology.getAvailableChronologies(): %s%n", d);
+
+        start = System.nanoTime();
+        chronos = Chronology.getAvailableChronologies();
+        end = System.nanoTime();
+        d = Duration.of(end - start, ChronoUnit.NANOS);
+        System.out.printf(" Warm Duration of Chronology.getAvailableChronologies(): %s%n", d);
+
+        start = System.nanoTime();
+        HijrahChronology.INSTANCE.date(1434, 1, 1);
+        end = System.nanoTime();
+        d = Duration.of(end - start, ChronoUnit.NANOS);
+        System.out.printf(" Warm Duration of HijrahDate.date(1434, 1, 1): %s%n", d);
     }
 
 }

@@ -1747,13 +1747,6 @@ void SystemDictionary::classes_do(void f(Klass*, ClassLoaderData*)) {
   dictionary()->classes_do(f);
 }
 
-//   All classes, and their class loaders
-//   (added for helpers that use HandleMarks and ResourceMarks)
-// Don't iterate over placeholders
-void SystemDictionary::classes_do(void f(Klass*, ClassLoaderData*, TRAPS), TRAPS) {
-  dictionary()->classes_do(f, CHECK);
-}
-
 void SystemDictionary::placeholders_do(void f(Symbol*)) {
   placeholders()->entries_do(f);
 }

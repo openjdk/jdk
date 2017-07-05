@@ -45,6 +45,7 @@ import com.sun.org.apache.xerces.internal.util.SecurityManager;
 import com.sun.org.apache.xerces.internal.util.StAXInputSource;
 import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.XMLGrammarPoolImpl;
+import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
@@ -81,6 +82,12 @@ public final class XMLSchemaFactory extends SchemaFactory {
     /** Property identifier: SecurityManager. */
     private static final String SECURITY_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
+
+    /** property identifier: access external dtd. */
+    public static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+
+    /** Property identifier: access to external schema  */
+    public static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
 
     //
     // Data
@@ -132,6 +139,14 @@ public final class XMLSchemaFactory extends SchemaFactory {
         // Enable secure processing feature by default
         fSecurityManager = new SecurityManager();
         fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
+
+        //by default, the secure feature is set to true, otherwise the default would have been 'file'
+        String accessExternal = SecuritySupport.getDefaultAccessProperty(
+                Constants.SP_ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT);
+        fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_DTD, accessExternal);
+        accessExternal = SecuritySupport.getDefaultAccessProperty(
+                Constants.SP_ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT);
+        fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_SCHEMA, accessExternal);
     }
 
     /**
@@ -274,6 +289,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
         // Use a Schema that uses the system id as the equality source.
         AbstractXMLSchema schema = new WeakReferenceXMLSchema();
         propagateFeatures(schema);
+        propagateProperties(schema);
         return schema;
     }
 
@@ -350,6 +366,8 @@ public final class XMLSchemaFactory extends SchemaFactory {
             }
             fSecurityManager = value ? new SecurityManager() : null;
             fXMLSchemaLoader.setProperty(SECURITY_MANAGER, fSecurityManager);
+            fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+            fXMLSchemaLoader.setProperty(ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
             return;
         } else if (name.equals(Constants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
             //in secure mode, let _useServicesMechanism be determined by the constructor
@@ -417,6 +435,15 @@ public final class XMLSchemaFactory extends SchemaFactory {
             schema.setFeature(features[i], state);
         }
     }
+
+    private void propagateProperties(AbstractXMLSchema schema) {
+        String[] properties = fXMLSchemaLoader.getRecognizedProperties();
+        for (int i = 0; i < properties.length; ++i) {
+            Object state = fXMLSchemaLoader.getProperty(properties[i]);
+            schema.setProperty(properties[i], state);
+        }
+    }
+
 
     /**
      * Extension of XMLGrammarPoolImpl which exposes the number of

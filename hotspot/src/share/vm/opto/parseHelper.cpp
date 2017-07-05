@@ -284,6 +284,11 @@ void Parse::do_new() {
        klass == C->env()->StringBuffer_klass())) {
     C->set_has_stringbuilder(true);
   }
+
+  // Keep track of boxed values for EliminateAutoBox optimizations.
+  if (C->eliminate_boxing() && klass->is_box_klass()) {
+    C->set_has_boxed_value(true);
+  }
 }
 
 #ifndef PRODUCT

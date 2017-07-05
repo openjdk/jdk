@@ -191,8 +191,6 @@ import sun.reflect.Reflection;
  *
  * @since 1.4
  */
-
-
 public class Logger {
     private static final Handler emptyHandlers[] = new Handler[0];
     private static final int offValue = Level.OFF.intValue();
@@ -218,6 +216,7 @@ public class Logger {
     private ArrayList<LogManager.LoggerWeakRef> kids;   // WeakReferences to loggers that have us as parent
     private volatile Level levelObject;
     private volatile int levelValue;  // current effective level value
+    private WeakReference<ClassLoader> callersClassLoaderRef;
 
     /**
      * GLOBAL_LOGGER_NAME is a name for the global logger.
@@ -278,16 +277,29 @@ public class Logger {
      *             no corresponding resource can be found.
      */
     protected Logger(String name, String resourceBundleName) {
+        this(name, resourceBundleName, null);
+    }
+
+    Logger(String name, String resourceBundleName, Class<?> caller) {
         this.manager = LogManager.getLogManager();
-        if (resourceBundleName != null) {
-            // MissingResourceException or IllegalArgumentException can
-            // be thrown by setupResourceInfo(). Since this is the Logger
-            // constructor, the resourceBundleName field is null so
-            // IllegalArgumentException cannot happen here.
-            setupResourceInfo(resourceBundleName);
-        }
+        setupResourceInfo(resourceBundleName, caller);
         this.name = name;
         levelValue = Level.INFO.intValue();
+    }
+
+    private void setCallersClassLoaderRef(Class<?> caller) {
+        ClassLoader callersClassLoader = ((caller != null)
+                                         ? caller.getClassLoader()
+                                         : null);
+        if (callersClassLoader != null) {
+            this.callersClassLoaderRef = new WeakReference(callersClassLoader);
+        }
+    }
+
+    private ClassLoader getCallersClassLoader() {
+        return (callersClassLoaderRef != null)
+                ? callersClassLoaderRef.get()
+                : null;
     }
 
     // This constructor is used only to create the global Logger.
@@ -343,7 +355,9 @@ public class Logger {
                 return manager.demandSystemLogger(name, resourceBundleName);
             }
         }
-        return manager.demandLogger(name, resourceBundleName);
+        return manager.demandLogger(name, resourceBundleName, caller);
+        // ends up calling new Logger(name, resourceBundleName, caller)
+        // iff the logger doesn't exist already
     }
 
     /**
@@ -436,11 +450,19 @@ public class Logger {
     // adding a new Logger object is handled by LogManager.addLogger().
     @CallerSensitive
     public static Logger getLogger(String name, String resourceBundleName) {
-        Logger result = demandLogger(name, resourceBundleName, Reflection.getCallerClass());
+        Class<?> callerClass = Reflection.getCallerClass();
+        Logger result = demandLogger(name, resourceBundleName, callerClass);
 
         // MissingResourceException or IllegalArgumentException can be
         // thrown by setupResourceInfo().
-        result.setupResourceInfo(resourceBundleName);
+        // We have to set the callers ClassLoader here in case demandLogger
+        // above found a previously created Logger.  This can happen, for
+        // example, if Logger.getLogger(name) is called and subsequently
+        // Logger.getLogger(name, resourceBundleName) is called.  In this case
+        // we won't necessarily have the correct classloader saved away, so
+        // we need to set it here, too.
+
+        result.setupResourceInfo(resourceBundleName, callerClass);
         return result;
     }
 
@@ -507,11 +529,13 @@ public class Logger {
 
     // Synchronization is not required here. All synchronization for
     // adding a new anonymous Logger object is handled by doSetParent().
+    @CallerSensitive
     public static Logger getAnonymousLogger(String resourceBundleName) {
         LogManager manager = LogManager.getLogManager();
         // cleanup some Loggers that have been GC'ed
         manager.drainLoggerRefQueueBounded();
-        Logger result = new Logger(null, resourceBundleName);
+        Logger result = new Logger(null, resourceBundleName,
+                                   Reflection.getCallerClass());
         result.anonymous = true;
         Logger root = manager.getLogger("");
         result.doSetParent(root);
@@ -527,7 +551,7 @@ public class Logger {
      * @return localization bundle (may be null)
      */
     public ResourceBundle getResourceBundle() {
-        return findResourceBundle(getResourceBundleName());
+        return findResourceBundle(getResourceBundleName(), true);
     }
 
     /**
@@ -609,7 +633,7 @@ public class Logger {
         String ebname = getEffectiveResourceBundleName();
         if (ebname != null && !ebname.equals(SYSTEM_LOGGER_RB_NAME)) {
             lr.setResourceBundleName(ebname);
-            lr.setResourceBundle(findResourceBundle(ebname));
+            lr.setResourceBundle(findResourceBundle(ebname, true));
         }
         log(lr);
     }
@@ -936,7 +960,7 @@ public class Logger {
         lr.setLoggerName(name);
         if (rbname != null) {
             lr.setResourceBundleName(rbname);
-            lr.setResourceBundle(findResourceBundle(rbname));
+            lr.setResourceBundle(findResourceBundle(rbname, false));
         }
         log(lr);
     }
@@ -960,7 +984,6 @@ public class Logger {
      *                         can be null
      * @param   msg     The string message (or a key in the message catalog)
      */
-
     public void logrb(Level level, String sourceClass, String sourceMethod,
                                 String bundleName, String msg) {
         if (level.intValue() < levelValue || levelValue == offValue) {
@@ -1609,9 +1632,18 @@ public class Logger {
      * there is no suitable previous cached value.
      *
      * @param name the ResourceBundle to locate
+     * @param userCallersClassLoader if true search using the caller's ClassLoader
      * @return ResourceBundle specified by name or null if not found
      */
-    private synchronized ResourceBundle findResourceBundle(String name) {
+    private synchronized ResourceBundle findResourceBundle(String name,
+                                                           boolean useCallersClassLoader) {
+        // For all lookups, we first check the thread context class loader
+        // if it is set.  If not, we use the system classloader.  If we
+        // still haven't found it we use the callersClassLoaderRef if it
+        // is set and useCallersClassLoader is true.  We set
+        // callersClassLoaderRef initially upon creating the logger with a
+        // non-null resource bundle name.
+
         // Return a null bundle for a null name.
         if (name == null) {
             return null;
@@ -1644,17 +1676,40 @@ public class Logger {
             catalogLocale = currentLocale;
             return catalog;
         } catch (MissingResourceException ex) {
+            // We can't find the ResourceBundle in the default
+            // ClassLoader.  Drop through.
+        }
+
+        if (useCallersClassLoader) {
+            // Try with the caller's ClassLoader
+            ClassLoader callersClassLoader = getCallersClassLoader();
+
+            if (callersClassLoader == null || callersClassLoader == cl) {
+                return null;
+            }
+
+            try {
+                catalog = ResourceBundle.getBundle(name, currentLocale,
+                                                   callersClassLoader);
+                catalogName = name;
+                catalogLocale = currentLocale;
+                return catalog;
+            } catch (MissingResourceException ex) {
+                return null; // no luck
+            }
+        } else {
             return null;
         }
     }
 
     // Private utility method to initialize our one entry
-    // resource bundle name cache.
+    // resource bundle name cache and the callers ClassLoader
     // Note: for consistency reasons, we are careful to check
     // that a suitable ResourceBundle exists before setting the
     // resourceBundleName field.
-    // Synchronized to prevent races in setting the field.
-    private synchronized void setupResourceInfo(String name) {
+    // Synchronized to prevent races in setting the fields.
+    private synchronized void setupResourceInfo(String name,
+                                                Class<?> callersClass) {
         if (name == null) {
             return;
         }
@@ -1672,9 +1727,14 @@ public class Logger {
                 resourceBundleName + " != " + name);
         }
 
-        if (findResourceBundle(name) == null) {
+        setCallersClassLoaderRef(callersClass);
+        if (findResourceBundle(name, true) == null) {
             // We've failed to find an expected ResourceBundle.
-            throw new MissingResourceException("Can't find " + name + " bundle", name, "");
+            // unset the caller's ClassLoader since we were unable to find the
+            // the bundle using it
+            this.callersClassLoaderRef = null;
+            throw new MissingResourceException("Can't find " + name + " bundle",
+                                                name, "");
         }
         resourceBundleName = name;
     }

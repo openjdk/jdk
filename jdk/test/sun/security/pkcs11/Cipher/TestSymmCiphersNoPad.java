@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4898484 6604496
+ * @bug 4898484 6604496 8001284
  * @summary basic test for symmetric ciphers with no padding
  * @author Valerie Peng
  * @library ..
@@ -60,7 +60,8 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
         new CI("DESede/CBC/NoPadding", "DESede", 160),
         new CI("AES/CBC/NoPadding", "AES", 4800),
         new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
-        new CI("AES/CTR/NoPadding", "AES", 1600)
+        new CI("AES/CTR/NoPadding", "AES", 1600),
+        new CI("AES/CTR/NoPadding", "AES", 65)
     };
 
     private static StringBuffer debugBuf;
@@ -181,6 +182,29 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
         debugBuf.append("(post) inputBuf: " + inBuf + "\n");
         debugBuf.append("(post) outputBuf: " + outDirectBuf + "\n");
         match(outDirectBuf, answer);
+
+        // test#6: Streams
+        debugBuf.append("Test#6: Streaming\n");
+        outBuf.position(0);
+        InputStream stream =
+            new CipherInputStream(new ByteArrayInputStream(in), cipher);
+        byte[] data = new byte[1024];
+        int bytesRead = 0;
+        try {
+            while (bytesRead >= 0) {
+                bytesRead = stream.read(data);
+                if (bytesRead == -1)
+                    break;
+                debugBuf.append("bytesRead: " + bytesRead);
+                debugBuf.append("\toutBuf.position(): " + outBuf.position() +
+                    "\n");
+                outBuf.put(data, 0 , bytesRead);
+            }
+        } catch (Exception ex) {
+            debugBuf.append("Caught Exception during stream reading\n");
+            throw ex;
+        }
+        match(outBuf, answer);
 
         debugBuf = null;
     }

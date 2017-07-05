@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,7 +37,6 @@
  * this sample code.
  */
 
-
 /*
  * This script serves as a simple "monitored application".
  * Start this script using memory.bat or memory.sh in the
@@ -45,12 +44,11 @@
  */
 
 java.lang.System.out.print("Enter a number and press enter:");
-java.lang.System["in"].read();        
+var input = java.lang.System["in"].read();
 
 // allocate an integer array of "big enough" size!
 var a = java.lang.reflect.Array.newInstance(
-            java.lang.Integer.TYPE, 1024*1024);  
+    java.lang.Integer.TYPE, input * 1024 * 1024);
 
-// loop forever!
-while (true);
-
+// sleep some time...
+java.lang.Thread.sleep(10*60*1000);

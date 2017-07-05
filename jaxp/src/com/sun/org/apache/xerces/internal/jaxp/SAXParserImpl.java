@@ -92,6 +92,12 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
     private static final String SECURITY_MANAGER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY;
 
+    /** property identifier: access external dtd. */
+    public static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
+
+    /** Property identifier: access to external schema */
+    public static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
+
     private final JAXPSAXParser xmlReader;
     private String schemaLanguage = null;     // null means DTD
     private final Schema grammar;
@@ -146,6 +152,22 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
         // If the secure processing feature is on set a security manager.
         if (secureProcessing) {
             xmlReader.setProperty0(SECURITY_MANAGER, new SecurityManager());
+            /**
+             * By default, secure processing is set, no external access is allowed.
+             * However, we need to check if it is actively set on the factory since we
+             * allow the use of the System Property or jaxp.properties to override
+             * the default value
+             */
+            if (features != null) {
+                Object temp = features.get(XMLConstants.FEATURE_SECURE_PROCESSING);
+                if (temp != null) {
+                    boolean value = ((Boolean) temp).booleanValue();
+                    if (value) {
+                        xmlReader.setProperty0(ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                        xmlReader.setProperty0(ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                    }
+                }
+            }
         }
 
         // Set application's features, followed by validation features.
@@ -220,6 +242,10 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 String feature = (String) entry.getKey();
                 boolean value = ((Boolean) entry.getValue()).booleanValue();
                 xmlReader.setFeature0(feature, value);
+                if (feature.equals(XMLConstants.FEATURE_SECURE_PROCESSING) && value) {
+                    xmlReader.setProperty0(ACCESS_EXTERNAL_DTD, "");
+                    xmlReader.setProperty0(ACCESS_EXTERNAL_SCHEMA, "");
+                }
             }
         }
     }

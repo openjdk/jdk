@@ -116,7 +116,7 @@ class PackageReader extends BandStructure {
             int nr = super.read(b, off, len);
             servedPos = pos;
             if (nr >= 0)  served += nr;
-            assert(served <= limit || limit == -1);
+            //assert(served <= limit || limit == -1);
             return nr;
         }
         public long skip(long n) throws IOException {
@@ -1500,6 +1500,7 @@ class PackageReader extends BandStructure {
         //        ic_local_bands
         //        *class_ClassFile_version_minor_H :UNSIGNED5
         //        *class_ClassFile_version_major_H :UNSIGNED5
+        //        class_type_metadata_bands
         //
         //  field_attr_bands:
         //        *field_flags :UNSIGNED5
@@ -1509,6 +1510,7 @@ class PackageReader extends BandStructure {
         //        *field_Signature_RS :UNSIGNED5 (cp_Signature)
         //        field_metadata_bands
         //        *field_ConstantValue_KQ :UNSIGNED5 (cp_Int, etc.; see note)
+        //        field_type_metadata_bands
         //
         //  method_attr_bands:
         //        *method_flags :UNSIGNED5
@@ -1522,6 +1524,7 @@ class PackageReader extends BandStructure {
         //        *method_MethodParameters_NB: BYTE1
         //        *method_MethodParameters_RUN: UNSIGNED5 (cp_Utf8)
         //        *method_MethodParameters_FH:  UNSIGNED5 (flag)
+        //        method_type_metadata_bands
         //
         //  code_attr_bands:
         //        *code_flags :UNSIGNED5
@@ -1537,6 +1540,7 @@ class PackageReader extends BandStructure {
         //        *code_LocalVariableTable_name_RU :UNSIGNED5 (cp_Utf8)
         //        *code_LocalVariableTable_type_RS :UNSIGNED5 (cp_Signature)
         //        *code_LocalVariableTable_slot :UNSIGNED5
+        //        code_type_metadata_bands
 
         countAttrs(ctype, holders);
         readAttrs(ctype, holders);
@@ -1703,8 +1707,9 @@ class PackageReader extends BandStructure {
                     class_InnerClasses_outer_RCN.readFrom(in);
                     class_InnerClasses_name_RUN.expectLength(tupleCount);
                     class_InnerClasses_name_RUN.readFrom(in);
-                } else if (totalCount == 0) {
-                    // Expect no elements at all.  Skip quickly.
+                } else if (!optDebugBands && totalCount == 0) {
+                    // Expect no elements at all.  Skip quickly. however if we
+                    // are debugging bands, read all bands regardless
                     for (int j = 0; j < ab.length; j++) {
                         ab[j].doneWithUnusedBand();
                     }
@@ -1723,9 +1728,15 @@ class PackageReader extends BandStructure {
                             assert(cbles[j].kind == Attribute.EK_CBLE);
                             int entryCount = forwardCounts[j];
                             forwardCounts[j] = -1;  // No more, please!
-                            if (cbles[j].flagTest(Attribute.EF_BACK))
+                            if (totalCount > 0 && cbles[j].flagTest(Attribute.EF_BACK))
                                 entryCount += xxx_attr_calls.getInt();
                             readAttrBands(cbles[j].body, entryCount, forwardCounts, ab);
+                        }
+                    }
+                    // mark them read,  to satisfy asserts
+                    if (optDebugBands && totalCount == 0) {
+                        for (int j = 0; j < ab.length; j++) {
+                            ab[j].doneDisbursing();
                         }
                     }
                 }
@@ -2154,11 +2165,10 @@ class PackageReader extends BandStructure {
                         if (size == 1)  ldcRefSet.add(ref);
                         int fmt;
                         switch (size) {
-                        case 1: fmt = Fixups.U1_FORMAT; break;
-                        case 2: fmt = Fixups.U2_FORMAT; break;
+                        case 1: fixupBuf.addU1(pc, ref); break;
+                        case 2: fixupBuf.addU2(pc, ref); break;
                         default: assert(false); fmt = 0;
                         }
-                        fixupBuf.add(pc, fmt, ref);
                         buf[pc+0] = buf[pc+1] = 0;
                         pc += size;
                     }
@@ -2193,7 +2203,7 @@ class PackageReader extends BandStructure {
                         int coding = bc_initref.getInt();
                         // Find the nth overloading of <init> in classRef.
                         MemberEntry ref = pkg.cp.getOverloadingForIndex(CONSTANT_Methodref, classRef, "<init>", coding);
-                        fixupBuf.add(pc, Fixups.U2_FORMAT, ref);
+                        fixupBuf.addU2(pc, ref);
                         buf[pc+0] = buf[pc+1] = 0;
                         pc += 2;
                         assert(Instruction.opLength(origBC) == (pc - curPC));
@@ -2226,7 +2236,7 @@ class PackageReader extends BandStructure {
                             insnMap[numInsns++] = curPC;
                         }
                         buf[pc++] = (byte) origBC;
-                        fixupBuf.add(pc, Fixups.U2_FORMAT, ref);
+                        fixupBuf.addU2(pc, ref);
                         buf[pc+0] = buf[pc+1] = 0;
                         pc += 2;
                         assert(Instruction.opLength(origBC) == (pc - curPC));
@@ -2289,11 +2299,10 @@ class PackageReader extends BandStructure {
                         buf[pc++] = (byte) origBC;
                         int fmt;
                         switch (size) {
-                        case 1: fmt = Fixups.U1_FORMAT; break;
-                        case 2: fmt = Fixups.U2_FORMAT; break;
+                        case 1: fixupBuf.addU1(pc, ref); break;
+                        case 2: fixupBuf.addU2(pc, ref); break;
                         default: assert(false); fmt = 0;
                         }
-                        fixupBuf.add(pc, fmt, ref);
                         buf[pc+0] = buf[pc+1] = 0;
                         pc += size;
                         if (origBC == _multianewarray) {

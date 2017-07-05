@@ -54,6 +54,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ReferenceType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import java.util.Objects;
 
 /**
  * @author Jacek Ambroziak
@@ -156,8 +157,15 @@ class FunctionCall extends Expression {
             this.type = type;
             this.distance = distance;
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(this.type);
+        }
+
+        @Override
         public boolean equals(Object query){
-            return query.equals(type);
+            return query != null && query.equals(type);
         }
     }
 
@@ -277,6 +285,7 @@ class FunctionCall extends Expression {
         return(_fname.toString());
     }
 
+    @Override
     public void setParser(Parser parser) {
         super.setParser(parser);
         if (_arguments != null) {
@@ -319,6 +328,7 @@ class FunctionCall extends Expression {
      * Type check a function call. Since different type conversions apply,
      * type checking is different for standard and external (Java) functions.
      */
+    @Override
     public Type typeCheck(SymbolTable stable)
         throws TypeCheckError
     {
@@ -680,6 +690,7 @@ class FunctionCall extends Expression {
      * Compile the function call and treat as an expression
      * Update true/false-lists.
      */
+    @Override
     public void translateDesynthesized(ClassGenerator classGen,
                                        MethodGenerator methodGen)
     {
@@ -700,6 +711,7 @@ class FunctionCall extends Expression {
      * Translate a function call. The compiled code will leave the function's
      * return value on the JVM's stack.
      */
+    @Override
     public void translate(ClassGenerator classGen, MethodGenerator methodGen) {
         final int n = argumentCount();
         final ConstantPoolGen cpg = classGen.getConstantPool();
@@ -857,6 +869,7 @@ class FunctionCall extends Expression {
         }
     }
 
+    @Override
     public String toString() {
         return "funcall(" + _fname + ", " + _arguments + ')';
     }
@@ -1069,7 +1082,7 @@ class FunctionCall extends Expression {
     protected static String replaceDash(String name)
     {
         char dash = '-';
-        StringBuffer buff = new StringBuffer("");
+        final StringBuilder buff = new StringBuilder("");
         for (int i = 0; i < name.length(); i++) {
         if (i > 0 && name.charAt(i-1) == dash)
             buff.append(Character.toUpperCase(name.charAt(i)));
