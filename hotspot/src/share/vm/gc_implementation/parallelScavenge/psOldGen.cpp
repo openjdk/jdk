@@ -152,9 +152,7 @@ void PSOldGen::precompact() {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   // Reset start array first.
-  debug_only(if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {)
   start_array()->reset();
-  debug_only(})
 
   object_mark_sweep()->precompact();
 

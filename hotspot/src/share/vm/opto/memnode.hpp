@@ -241,6 +241,7 @@ public:
   virtual int Opcode() const;
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual Node *Identity( PhaseTransform *phase );
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 //------------------------------LoadLNode--------------------------------------

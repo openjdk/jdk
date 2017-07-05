@@ -100,7 +100,7 @@ public:
 
   enum {
     vtbl_list_size = 16, // number of entries in the shared space vtable list.
-    num_virtuals = 100   // number of virtual methods in Klass (or
+    num_virtuals = 200   // number of virtual methods in Klass (or
                          // subclass) objects, or greater.
   };
 

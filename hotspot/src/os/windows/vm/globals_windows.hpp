@@ -37,5 +37,6 @@
 // platforms, but they may have different default values on other platforms.
 //
 define_pd_global(bool, UseLargePages, false);
+define_pd_global(bool, UseLargePagesIndividualAllocation, true);
 define_pd_global(bool, UseOSErrorReporting, false);  // for now.
 define_pd_global(bool, UseThreadPriorities, true) ;

@@ -80,7 +80,7 @@ import sun.management.AgentConfigurationError;
 import static sun.management.AgentConfigurationError.*;
 import sun.management.ConnectorAddressLink;
 import sun.management.FileSystem;
-import sun.management.snmp.util.MibLogger;
+import com.sun.jmx.remote.util.ClassLogger;
 
 import com.sun.jmx.remote.internal.RMIExporter;
 import com.sun.jmx.remote.security.JMXPluggableAuthenticator;
@@ -99,6 +99,7 @@ public final class ConnectorBootstrap {
         public static final String PORT = "0";
         public static final String CONFIG_FILE_NAME = "management.properties";
         public static final String USE_SSL = "true";
+        public static final String USE_LOCAL_ONLY = "true";
         public static final String USE_REGISTRY_SSL = "false";
         public static final String USE_AUTHENTICATION = "true";
         public static final String PASSWORD_FILE_NAME = "jmxremote.password";
@@ -115,6 +116,8 @@ public final class ConnectorBootstrap {
                 "com.sun.management.jmxremote.port";
         public static final String CONFIG_FILE_NAME =
                 "com.sun.management.config.file";
+        public static final String USE_LOCAL_ONLY =
+                "com.sun.management.jmxremote.local.only";
         public static final String USE_SSL =
                 "com.sun.management.jmxremote.ssl";
         public static final String USE_REGISTRY_SSL =
@@ -384,7 +387,7 @@ public final class ConnectorBootstrap {
             checkAccessFile(accessFileName);
         }
 
-        if (log.isDebugOn()) {
+        if (log.debugOn()) {
             log.debug("initialize",
                     Agent.getText("jmxremote.ConnectorBootstrap.initialize") +
                     "\n\t" + PropertyNames.PORT + "=" + port +
@@ -477,6 +480,18 @@ public final class ConnectorBootstrap {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {
             JMXServiceURL url = new JMXServiceURL("rmi", localhost, 0);
+            // Do we accept connections from local interfaces only?
+            Properties props = Agent.getManagementProperties();
+            if (props ==  null) {
+                props = new Properties();
+            }
+            String useLocalOnlyStr = props.getProperty(
+                    PropertyNames.USE_LOCAL_ONLY, DefaultValues.USE_LOCAL_ONLY);
+            boolean useLocalOnly = Boolean.valueOf(useLocalOnlyStr).booleanValue();
+            if (useLocalOnly) {
+                env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE,
+                        new LocalRMIServerSocketFactory());
+            }
             JMXConnectorServer server =
                     JMXConnectorServerFactory.newJMXConnectorServer(url, env, mbs);
             server.start();
@@ -764,7 +779,7 @@ public final class ConnectorBootstrap {
     private ConnectorBootstrap() {
     }
 
-    // XXX Revisit: should probably clone this MibLogger....
-    private static final MibLogger log =
-            new MibLogger(ConnectorBootstrap.class);
+    private static final ClassLogger log =
+        new ClassLogger(ConnectorBootstrap.class.getPackage().getName(),
+                        "ConnectorBootstrap");
 }

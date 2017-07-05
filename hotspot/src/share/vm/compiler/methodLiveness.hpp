@@ -29,7 +29,7 @@ class MethodLivenessResult : public BitMap {
   bool _is_valid;
 
  public:
-  MethodLivenessResult(uintptr_t* map, idx_t size_in_bits)
+  MethodLivenessResult(BitMap::bm_word_t* map, idx_t size_in_bits)
     : BitMap(map, size_in_bits)
     , _is_valid(false)
   {}

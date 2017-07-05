@@ -28,13 +28,19 @@
 // Definitions of WorkGang methods.
 
 AbstractWorkGang::AbstractWorkGang(const char* name,
-                                   bool  are_GC_threads) :
+                                   bool  are_GC_task_threads,
+                                   bool  are_ConcurrentGC_threads) :
   _name(name),
-  _are_GC_threads(are_GC_threads) {
+  _are_GC_task_threads(are_GC_task_threads),
+  _are_ConcurrentGC_threads(are_ConcurrentGC_threads) {
+
+  assert(!(are_GC_task_threads && are_ConcurrentGC_threads),
+         "They cannot both be STW GC and Concurrent threads" );
+
   // Other initialization.
   _monitor = new Monitor(/* priority */       Mutex::leaf,
                          /* name */           "WorkGroup monitor",
-                         /* allow_vm_block */ are_GC_threads);
+                         /* allow_vm_block */ are_GC_task_threads);
   assert(monitor() != NULL, "Failed to allocate monitor");
   _terminate = false;
   _task = NULL;
@@ -44,16 +50,21 @@ AbstractWorkGang::AbstractWorkGang(const char* name,
 }
 
 WorkGang::WorkGang(const char* name,
-                   int           workers,
-                   bool          are_GC_threads) :
-  AbstractWorkGang(name, are_GC_threads) {
+                   int         workers,
+                   bool        are_GC_task_threads,
+                   bool        are_ConcurrentGC_threads) :
+  AbstractWorkGang(name, are_GC_task_threads, are_ConcurrentGC_threads)
+{
   // Save arguments.
   _total_workers = workers;
+
   if (TraceWorkGang) {
     tty->print_cr("Constructing work gang %s with %d threads", name, workers);
   }
   _gang_workers = NEW_C_HEAP_ARRAY(GangWorker*, workers);
-  assert(gang_workers() != NULL, "Failed to allocate gang workers");
+  if (gang_workers() == NULL) {
+    vm_exit_out_of_memory(0, "Cannot create GangWorker array.");
+  }
   for (int worker = 0; worker < total_workers(); worker += 1) {
     GangWorker* new_worker = new GangWorker(this, worker);
     assert(new_worker != NULL, "Failed to allocate GangWorker");
@@ -285,7 +296,11 @@ void GangWorker::loop() {
 }
 
 bool GangWorker::is_GC_task_thread() const {
-  return gang()->are_GC_threads();
+  return gang()->are_GC_task_threads();
+}
+
+bool GangWorker::is_ConcurrentGC_thread() const {
+  return gang()->are_ConcurrentGC_threads();
 }
 
 void GangWorker::print_on(outputStream* st) const {
@@ -312,26 +327,43 @@ const char* AbstractGangTask::name() const {
 
 WorkGangBarrierSync::WorkGangBarrierSync()
   : _monitor(Mutex::safepoint, "work gang barrier sync", true),
-    _n_workers(0), _n_completed(0) {
+    _n_workers(0), _n_completed(0), _should_reset(false) {
 }
 
 WorkGangBarrierSync::WorkGangBarrierSync(int n_workers, const char* name)
   : _monitor(Mutex::safepoint, name, true),
-    _n_workers(n_workers), _n_completed(0) {
+    _n_workers(n_workers), _n_completed(0), _should_reset(false) {
 }
 
 void WorkGangBarrierSync::set_n_workers(int n_workers) {
   _n_workers   = n_workers;
   _n_completed = 0;
+  _should_reset = false;
 }
 
 void WorkGangBarrierSync::enter() {
   MutexLockerEx x(monitor(), Mutex::_no_safepoint_check_flag);
+  if (should_reset()) {
+    // The should_reset() was set and we are the first worker to enter
+    // the sync barrier. We will zero the n_completed() count which
+    // effectively resets the barrier.
+    zero_completed();
+    set_should_reset(false);
+  }
   inc_completed();
   if (n_completed() == n_workers()) {
+    // At this point we would like to reset the barrier to be ready in
+    // case it is used again. However, we cannot set n_completed() to
+    // 0, even after the notify_all(), given that some other workers
+    // might still be waiting for n_completed() to become ==
+    // n_workers(). So, if we set n_completed() to 0, those workers
+    // will get stuck (as they will wake up, see that n_completed() !=
+    // n_workers() and go back to sleep). Instead, we raise the
+    // should_reset() flag and the barrier will be reset the first
+    // time a worker enters it again.
+    set_should_reset(true);
     monitor()->notify_all();
-  }
-  else {
+  } else {
     while (n_completed() != n_workers()) {
       monitor()->wait(/* no_safepoint_check */ true);
     }
@@ -441,4 +473,123 @@ bool SequentialSubTasksDone::all_tasks_completed() {
     return true;
   }
   return false;
+}
+
+bool FreeIdSet::_stat_init = false;
+FreeIdSet* FreeIdSet::_sets[NSets];
+bool FreeIdSet::_safepoint;
+
+FreeIdSet::FreeIdSet(int sz, Monitor* mon) :
+  _sz(sz), _mon(mon), _hd(0), _waiters(0), _index(-1), _claimed(0)
+{
+  _ids = new int[sz];
+  for (int i = 0; i < sz; i++) _ids[i] = i+1;
+  _ids[sz-1] = end_of_list; // end of list.
+  if (_stat_init) {
+    for (int j = 0; j < NSets; j++) _sets[j] = NULL;
+    _stat_init = true;
+  }
+  // Add to sets.  (This should happen while the system is still single-threaded.)
+  for (int j = 0; j < NSets; j++) {
+    if (_sets[j] == NULL) {
+      _sets[j] = this;
+      _index = j;
+      break;
+    }
+  }
+  guarantee(_index != -1, "Too many FreeIdSets in use!");
+}
+
+FreeIdSet::~FreeIdSet() {
+  _sets[_index] = NULL;
+}
+
+void FreeIdSet::set_safepoint(bool b) {
+  _safepoint = b;
+  if (b) {
+    for (int j = 0; j < NSets; j++) {
+      if (_sets[j] != NULL && _sets[j]->_waiters > 0) {
+        Monitor* mon = _sets[j]->_mon;
+        mon->lock_without_safepoint_check();
+        mon->notify_all();
+        mon->unlock();
+      }
+    }
+  }
+}
+
+#define FID_STATS 0
+
+int FreeIdSet::claim_par_id() {
+#if FID_STATS
+  thread_t tslf = thr_self();
+  tty->print("claim_par_id[%d]: sz = %d, claimed = %d\n", tslf, _sz, _claimed);
+#endif
+  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
+  while (!_safepoint && _hd == end_of_list) {
+    _waiters++;
+#if FID_STATS
+    if (_waiters > 5) {
+      tty->print("claim_par_id waiting[%d]: %d waiters, %d claimed.\n",
+                 tslf, _waiters, _claimed);
+    }
+#endif
+    _mon->wait(Mutex::_no_safepoint_check_flag);
+    _waiters--;
+  }
+  if (_hd == end_of_list) {
+#if FID_STATS
+    tty->print("claim_par_id[%d]: returning EOL.\n", tslf);
+#endif
+    return -1;
+  } else {
+    int res = _hd;
+    _hd = _ids[res];
+    _ids[res] = claimed;  // For debugging.
+    _claimed++;
+#if FID_STATS
+    tty->print("claim_par_id[%d]: returning %d, claimed = %d.\n",
+               tslf, res, _claimed);
+#endif
+    return res;
+  }
+}
+
+bool FreeIdSet::claim_perm_id(int i) {
+  assert(0 <= i && i < _sz, "Out of range.");
+  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
+  int prev = end_of_list;
+  int cur = _hd;
+  while (cur != end_of_list) {
+    if (cur == i) {
+      if (prev == end_of_list) {
+        _hd = _ids[cur];
+      } else {
+        _ids[prev] = _ids[cur];
+      }
+      _ids[cur] = claimed;
+      _claimed++;
+      return true;
+    } else {
+      prev = cur;
+      cur = _ids[cur];
+    }
+  }
+  return false;
+
+}
+
+void FreeIdSet::release_par_id(int id) {
+  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
+  assert(_ids[id] == claimed, "Precondition.");
+  _ids[id] = _hd;
+  _hd = id;
+  _claimed--;
+#if FID_STATS
+  tty->print("[%d] release_par_id(%d), waiters =%d,  claimed = %d.\n",
+             thr_self(), id, _waiters, _claimed);
+#endif
+  if (_waiters > 0)
+    // Notify all would be safer, but this is OK, right?
+    _mon->notify_all();
 }
