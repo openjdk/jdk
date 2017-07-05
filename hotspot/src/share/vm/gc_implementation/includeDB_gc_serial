@@ -93,11 +93,13 @@ markSweep.cpp                           oop.inline.hpp
 markSweep.hpp                           growableArray.hpp
 markSweep.hpp                           markOop.hpp
 markSweep.hpp                           oop.hpp
+markSweep.hpp                           stack.hpp
 markSweep.hpp                           timer.hpp
 markSweep.hpp                           universe.hpp
 
 markSweep.inline.hpp                    collectedHeap.hpp
 markSweep.inline.hpp                    markSweep.hpp
+markSweep.inline.hpp                    stack.inline.hpp
 
 mutableSpace.hpp                        immutableSpace.hpp
 mutableSpace.hpp                        memRegion.hpp
