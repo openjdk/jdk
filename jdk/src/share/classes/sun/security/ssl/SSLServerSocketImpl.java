@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,14 +304,18 @@ class SSLServerSocketImpl extends SSLServerSocket
                          enabledCipherSuites, doClientAuth,
                          enableSessionCreation, enabledProtocols);
 
-            ServerHandshaker handshaker = tmp.getServerHandshaker();
+            try {
+                ServerHandshaker handshaker = tmp.getServerHandshaker();
 
-            for (Iterator t = enabledCipherSuites.iterator(); t.hasNext(); ) {
-                CipherSuite suite = (CipherSuite)t.next();
-                if (handshaker.trySetCipherSuite(suite)) {
-                    checkedEnabled = true;
-                    return;
+                for (Iterator t = enabledCipherSuites.iterator(); t.hasNext(); ) {
+                    CipherSuite suite = (CipherSuite)t.next();
+                    if (handshaker.trySetCipherSuite(suite)) {
+                        checkedEnabled = true;
+                        return;
+                    }
                 }
+            } finally {
+                tmp.closeSocket();
             }
 
             //
