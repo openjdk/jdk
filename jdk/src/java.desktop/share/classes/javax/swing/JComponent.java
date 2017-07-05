@@ -3735,7 +3735,7 @@ public abstract class JComponent extends Container implements Serializable,
          * @since 1.3
          * @deprecated This class is no longer used or needed.
          * {@code java.awt.Component.AccessibleAWTComponent} provides
-         * the same functionality and it is handled in {@Component}.
+         * the same functionality and it is handled in {@code Component}.
          */
         @Deprecated
         protected class AccessibleFocusHandler implements FocusListener {

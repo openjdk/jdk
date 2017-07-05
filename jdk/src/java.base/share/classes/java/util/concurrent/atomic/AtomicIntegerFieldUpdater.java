@@ -481,12 +481,12 @@ public abstract class AtomicIntegerFieldUpdater<T> {
 
         public final boolean compareAndSet(T obj, int expect, int update) {
             accessCheck(obj);
-            return U.compareAndSwapInt(obj, offset, expect, update);
+            return U.compareAndSetInt(obj, offset, expect, update);
         }
 
         public final boolean weakCompareAndSet(T obj, int expect, int update) {
             accessCheck(obj);
-            return U.compareAndSwapInt(obj, offset, expect, update);
+            return U.compareAndSetInt(obj, offset, expect, update);
         }
 
         public final void set(T obj, int newValue) {

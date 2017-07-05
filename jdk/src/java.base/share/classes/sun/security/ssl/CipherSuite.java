@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import static sun.security.ssl.CipherSuite.CipherType.*;
 import static sun.security.ssl.CipherSuite.MacAlg.*;
 import static sun.security.ssl.CipherSuite.BulkCipher.*;
 import static sun.security.ssl.JsseJce.*;
+import static sun.security.ssl.NamedGroupType.*;
 
 /**
  * An SSL/TLS CipherSuite. Constants for the standard key exchange, cipher,
@@ -376,38 +377,38 @@ final class CipherSuite implements Comparable<CipherSuite> {
     static enum KeyExchange {
 
         // key exchange algorithms
-        K_NULL       ("NULL",       false,      false),
-        K_RSA        ("RSA",        true,       false),
-        K_RSA_EXPORT ("RSA_EXPORT", true,       false),
-        K_DH_RSA     ("DH_RSA",     false,      false),
-        K_DH_DSS     ("DH_DSS",     false,      false),
-        K_DHE_DSS    ("DHE_DSS",    true,       false),
-        K_DHE_RSA    ("DHE_RSA",    true,       false),
-        K_DH_ANON    ("DH_anon",    true,       false),
+        K_NULL       ("NULL",       false,      NAMED_GROUP_NONE),
+        K_RSA        ("RSA",        true,       NAMED_GROUP_NONE),
+        K_RSA_EXPORT ("RSA_EXPORT", true,       NAMED_GROUP_NONE),
+        K_DH_RSA     ("DH_RSA",     false,      NAMED_GROUP_NONE),
+        K_DH_DSS     ("DH_DSS",     false,      NAMED_GROUP_NONE),
+        K_DHE_DSS    ("DHE_DSS",    true,       NAMED_GROUP_FFDHE),
+        K_DHE_RSA    ("DHE_RSA",    true,       NAMED_GROUP_FFDHE),
+        K_DH_ANON    ("DH_anon",    true,       NAMED_GROUP_FFDHE),
 
-        K_ECDH_ECDSA ("ECDH_ECDSA",  ALLOW_ECC, true),
-        K_ECDH_RSA   ("ECDH_RSA",    ALLOW_ECC, true),
-        K_ECDHE_ECDSA("ECDHE_ECDSA", ALLOW_ECC, true),
-        K_ECDHE_RSA  ("ECDHE_RSA",   ALLOW_ECC, true),
-        K_ECDH_ANON  ("ECDH_anon",   ALLOW_ECC, true),
+        K_ECDH_ECDSA ("ECDH_ECDSA",  ALLOW_ECC, NAMED_GROUP_ECDHE),
+        K_ECDH_RSA   ("ECDH_RSA",    ALLOW_ECC, NAMED_GROUP_ECDHE),
+        K_ECDHE_ECDSA("ECDHE_ECDSA", ALLOW_ECC, NAMED_GROUP_ECDHE),
+        K_ECDHE_RSA  ("ECDHE_RSA",   ALLOW_ECC, NAMED_GROUP_ECDHE),
+        K_ECDH_ANON  ("ECDH_anon",   ALLOW_ECC, NAMED_GROUP_ECDHE),
 
         // Kerberos cipher suites
-        K_KRB5       ("KRB5", true,             false),
-        K_KRB5_EXPORT("KRB5_EXPORT", true,      false),
+        K_KRB5       ("KRB5", true,             NAMED_GROUP_NONE),
+        K_KRB5_EXPORT("KRB5_EXPORT", true,      NAMED_GROUP_NONE),
 
         // renegotiation protection request signaling cipher suite
-        K_SCSV       ("SCSV",        true,      false);
+        K_SCSV       ("SCSV",        true,      NAMED_GROUP_NONE);
 
         // name of the key exchange algorithm, e.g. DHE_DSS
         final String name;
         final boolean allowed;
-        final boolean isEC;
+        final NamedGroupType groupType;
         private final boolean alwaysAvailable;
 
-        KeyExchange(String name, boolean allowed, boolean isEC) {
+        KeyExchange(String name, boolean allowed, NamedGroupType groupType) {
             this.name = name;
             this.allowed = allowed;
-            this.isEC = isEC;
+            this.groupType = groupType;
             this.alwaysAvailable = allowed &&
                 (!name.startsWith("EC")) && (!name.startsWith("KRB"));
         }
@@ -417,7 +418,7 @@ final class CipherSuite implements Comparable<CipherSuite> {
                 return true;
             }
 
-            if (isEC) {
+            if (groupType == NAMED_GROUP_ECDHE) {
                 return (allowed && JsseJce.isEcAvailable());
             } else if (name.startsWith("KRB")) {
                 return (allowed && JsseJce.isKerberosAvailable());

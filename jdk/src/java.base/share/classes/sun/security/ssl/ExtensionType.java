@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,9 @@ final class ExtensionType {
     static final ExtensionType EXT_CERT_TYPE =
             e(0x0009, "cert_type");              // IANA registry value: 9
 
-    // extensions defined in RFC 4492 (ECC)
-    static final ExtensionType EXT_ELLIPTIC_CURVES =
-            e(0x000A, "elliptic_curves");        // IANA registry value: 10
+    // extensions defined in RFC 4492 (ECC) and RFC 7919 (FFDHE)
+    static final ExtensionType EXT_SUPPORTED_GROUPS =
+            e(0x000A, "supported_groups");       // IANA registry value: 10
     static final ExtensionType EXT_EC_POINT_FORMATS =
             e(0x000B, "ec_point_formats");       // IANA registry value: 11
 

@@ -996,8 +996,9 @@ OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
 OPENJDK_TARGET_CPU_LEGACY_LIB
 OPENJDK_TARGET_CPU_LEGACY
-OPENJDK_MODULE_TARGET_OS_ARCH
-OPENJDK_MODULE_TARGET_OS_NAME
+RELEASE_FILE_OS_ARCH
+RELEASE_FILE_OS_NAME
+OPENJDK_MODULE_TARGET_PLATFORM
 COMPILE_TYPE
 OPENJDK_TARGET_CPU_ENDIAN
 OPENJDK_TARGET_CPU_BITS
@@ -4900,6 +4901,8 @@ VALID_JVM_VARIANTS="server client minimal core zero zeroshark custom"
 
 
 
+
+
 #%%% Build and target systems %%%
 
 
@@ -5183,7 +5186,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1492975963
+DATE_WHEN_GENERATED=1494615666
 
 ###############################################################################
 #
@@ -16042,6 +16045,27 @@ $as_echo "$COMPILE_TYPE" >&6; }
   else
     OPENJDK_MODULE_TARGET_OS_ARCH="$OPENJDK_TARGET_CPU"
   fi
+
+  OPENJDK_MODULE_TARGET_PLATFORM="${OPENJDK_MODULE_TARGET_OS_NAME}-${OPENJDK_MODULE_TARGET_OS_ARCH}"
+
+
+
+  if test "x$OPENJDK_TARGET_OS" = "xsolaris"; then
+    RELEASE_FILE_OS_NAME=SunOS
+  fi
+  if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+    RELEASE_FILE_OS_NAME=Linux
+  fi
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+    RELEASE_FILE_OS_NAME=Windows
+  fi
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    RELEASE_FILE_OS_NAME="Darwin"
+  fi
+  if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    RELEASE_FILE_OS_NAME="AIX"
+  fi
+  RELEASE_FILE_OS_ARCH=${OPENJDK_TARGET_CPU}
 
 
 
@@ -31392,7 +31416,7 @@ $as_echo "no" >&6; }
 
 
   # Check if the boot jdk is 32 or 64 bit
-  if "$JAVA" -d64 -version > /dev/null 2>&1; then
+  if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
     BOOT_JDK_BITS="64"
   else
     BOOT_JDK_BITS="32"
@@ -65910,24 +65934,8 @@ fi
 
 
   if test "$MEMORY_SIZE" -gt "3000"; then
-
-  $ECHO "Check if jvm arg is ok: -d64" >&5
-  $ECHO "Command: $SJAVAC_SERVER_JAVA -d64 -version" >&5
-  OUTPUT=`$SJAVAC_SERVER_JAVA -d64 -version 2>&1`
-  FOUND_WARN=`$ECHO "$OUTPUT" | $GREP -i warn`
-  FOUND_VERSION=`$ECHO $OUTPUT | $GREP " version \""`
-  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA_FLAGS="$SJAVAC_SERVER_JAVA_FLAGS -d64"
-    JVM_ARG_OK=true
-  else
-    $ECHO "Arg failed:" >&5
-    $ECHO "$OUTPUT" >&5
-    JVM_ARG_OK=false
-  fi
-
-    if test "$JVM_ARG_OK" = true; then
+    if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
       JVM_64BIT=true
-      JVM_ARG_OK=false
     fi
   fi
 
