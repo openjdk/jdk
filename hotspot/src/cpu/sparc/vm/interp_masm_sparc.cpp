@@ -359,7 +359,7 @@ void InterpreterMacroAssembler::store_unaligned_long(Register l, Register r1, in
 #ifdef _LP64
   stx(l, r1, offset);
   // store something more useful here
-  debug_only(stx(G0, r1, offset+Interpreter::stackElementSize);)
+  stx(G0, r1, offset+Interpreter::stackElementSize);
 #else
   st(l, r1, offset);
   st(l->successor(), r1, offset + Interpreter::stackElementSize);

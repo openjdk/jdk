@@ -49,7 +49,6 @@ import compiler.testlibrary.rtm.predicate.SupportedVM;
 import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;
 
@@ -142,7 +141,7 @@ public class TestRTMLockingThreshold extends CommandLineOptionTest {
         @SuppressWarnings("UnsuedDeclaration")
         private static int field = 0;
         private static final int TOTAL_ITERATIONS = 10000;
-        private static final Unsafe UNSAFE = UnsafeHelper.getUnsafe();
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
         private final Object monitor = new Object();
 
 

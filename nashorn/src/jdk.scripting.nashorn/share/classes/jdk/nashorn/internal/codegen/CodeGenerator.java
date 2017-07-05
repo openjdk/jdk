@@ -2512,7 +2512,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final List<PropertyNode> elements = objectNode.getElements();
 
         final List<MapTuple<Expression>> tuples = new ArrayList<>();
-        final List<PropertyNode> gettersSetters = new ArrayList<>();
+        // List below will contain getter/setter properties and properties with computed keys (ES6)
+        final List<PropertyNode> specialProperties = new ArrayList<>();
         final int ccp = getCurrentContinuationEntryPoint();
         final List<Splittable.SplitRange> ranges = objectNode.getSplitRanges();
 
@@ -2522,11 +2523,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         for (final PropertyNode propertyNode : elements) {
             final Expression value = propertyNode.getValue();
             final String key = propertyNode.getKeyName();
-            // Just use a pseudo-symbol. We just need something non null; use the name and zero flags.
-            final Symbol symbol = value == null ? null : new Symbol(key, 0);
+            final boolean isComputedOrAccessor = propertyNode.isComputed() || value == null;
 
-            if (value == null) {
-                gettersSetters.add(propertyNode);
+            // Just use a pseudo-symbol. We just need something non null; use the name and zero flags.
+            final Symbol symbol = isComputedOrAccessor ? null : new Symbol(key, 0);
+
+            if (isComputedOrAccessor) {
+                // Properties with computed names or getter/setters need special handling.
+                specialProperties.add(propertyNode);
             } else if (propertyNode.getKey() instanceof IdentNode &&
                        key.equals(ScriptObject.PROTO_PROPERTY_NAME)) {
                 // ES6 draft compliant __proto__ inside object literal
@@ -2542,7 +2546,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             //for literals, a value of null means object type, i.e. the value null or getter setter function
             //(I think)
-            final Class<?> valueType = (!useDualFields() || value == null || value.getType().isBoolean()) ? Object.class : value.getType().getTypeClass();
+            final Class<?> valueType = (!useDualFields() || isComputedOrAccessor || value.getType().isBoolean()) ? Object.class : value.getType().getTypeClass();
             tuples.add(new MapTuple<Expression>(key, symbol, Type.typeFor(valueType), value) {
                 @Override
                 public Class<?> getValueType() {
@@ -2590,26 +2594,41 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             method.invoke(ScriptObject.SET_GLOBAL_OBJECT_PROTO);
         }
 
-        for (final PropertyNode propertyNode : gettersSetters) {
-            final FunctionNode getter = propertyNode.getGetter();
-            final FunctionNode setter = propertyNode.getSetter();
+        for (final PropertyNode propertyNode : specialProperties) {
 
-            assert getter != null || setter != null;
+            method.dup();
 
-            method.dup().loadKey(propertyNode.getKey());
-            if (getter == null) {
-                method.loadNull();
+            if (propertyNode.isComputed()) {
+                assert propertyNode.getKeyName() == null;
+                loadExpressionAsObject(propertyNode.getKey());
             } else {
-                getter.accept(this);
+                method.loadKey(propertyNode.getKey());
             }
 
-            if (setter == null) {
-                method.loadNull();
+            if (propertyNode.getValue() != null) {
+                loadExpressionAsObject(propertyNode.getValue());
+                method.load(0);
+                method.invoke(ScriptObject.GENERIC_SET);
             } else {
-                setter.accept(this);
-            }
+                final FunctionNode getter = propertyNode.getGetter();
+                final FunctionNode setter = propertyNode.getSetter();
 
-            method.invoke(ScriptObject.SET_USER_ACCESSORS);
+                assert getter != null || setter != null;
+
+                if (getter == null) {
+                    method.loadNull();
+                } else {
+                    getter.accept(this);
+                }
+
+                if (setter == null) {
+                    method.loadNull();
+                } else {
+                    setter.accept(this);
+                }
+
+                method.invoke(ScriptObject.SET_USER_ACCESSORS);
+            }
         }
     }
 

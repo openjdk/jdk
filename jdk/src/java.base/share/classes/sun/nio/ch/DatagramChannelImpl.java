@@ -328,8 +328,6 @@ class DatagramChannelImpl
     public SocketAddress receive(ByteBuffer dst) throws IOException {
         if (dst.isReadOnly())
             throw new IllegalArgumentException("Read-only buffer");
-        if (dst == null)
-            throw new NullPointerException();
         synchronized (readLock) {
             ensureOpen();
             // Socket was not bound before attempting receive
@@ -716,8 +714,6 @@ class DatagramChannelImpl
 
     @Override
     public DatagramChannel connect(SocketAddress sa) throws IOException {
-        int localPort = 0;
-
         synchronized(readLock) {
             synchronized(writeLock) {
                 synchronized (stateLock) {

@@ -294,14 +294,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   fi
   AC_SUBST(TOOLCHAIN_VERSION)
 
-  # For solaris we really need solaris tools, and not the GNU equivalent.
-  # The build tools on Solaris reside in /usr/ccs (C Compilation System),
-  # so add that to path before starting to probe.
-  # FIXME: This was originally only done for AS,NM,GNM,STRIP,OBJCOPY,OBJDUMP.
-  if test "x$OPENJDK_BUILD_OS" = xsolaris; then
-    PATH="/usr/ccs/bin:$PATH"
-  fi
-
   # Finally add TOOLCHAIN_PATH at the beginning, to allow --with-tools-dir to
   # override all other locations.
   if test "x$TOOLCHAIN_PATH" != x; then

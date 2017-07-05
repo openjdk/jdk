@@ -38,7 +38,7 @@
  * We cannot use direct Java class (via dynalink bean linker) to Compiler
  * and FunctionNode because of package-access check and so reflective calls.
  */
-
+var Reflector           = Java.type("jdk.nashorn.test.models.Reflector");
 var forName             = java.lang.Class["forName(String)"];
 var Parser              = forName("jdk.nashorn.internal.parser.Parser").static
 var Compiler            = forName("jdk.nashorn.internal.codegen.Compiler").static
@@ -69,7 +69,11 @@ var rhsMethod = UnaryNode.class.getMethod("getExpression")
 var lhsMethod = BinaryNode.class.getMethod("lhs")
 var binaryRhsMethod = BinaryNode.class.getMethod("rhs")
 var debugIdMethod = Debug.class.getMethod("id", java.lang.Object.class)
-var compilePhases = CompilationPhases.class.getField("COMPILE_UPTO_BYTECODE").get(null);
+var compilePhases = Reflector.get(CompilationPhases.class.getField("COMPILE_UPTO_BYTECODE"), null);
+
+function invoke(m, obj) {
+    return Reflector.invoke(m, obj);
+}
 
 // These are method names of methods in FunctionNode class
 var allAssertionList = ['isVarArg', 'needsParentScope', 'needsCallee', 'hasScopeBlock', 'usesSelfSymbol', 'isSplit', 'hasEval', 'allVarsInScope', 'isStrict']
@@ -86,7 +90,7 @@ var functionNodeMethods = {};
 
 // returns functionNode.getBody().getStatements().get(0)
 function getFirstFunction(functionNode) {
-    var f = findFunction(getBodyMethod.invoke(functionNode))
+    var f = findFunction(invoke(getBodyMethod, functionNode))
     if (f == null) {
         throw new Error();
     }
@@ -95,7 +99,7 @@ function getFirstFunction(functionNode) {
 
 function findFunction(node) {
     if(node instanceof Block) {
-        var stmts = getStatementsMethod.invoke(node)
+        var stmts = invoke(getStatementsMethod, node)
         for(var i = 0; i < stmts.size(); ++i) {
             var retval = findFunction(stmts.get(i))
             if(retval != null) {
@@ -103,13 +107,13 @@ function findFunction(node) {
             }
         }
     } else if(node instanceof VarNode) {
-        return findFunction(getInitMethod.invoke(node))
+        return findFunction(invoke(getInitMethod, node))
     } else if(node instanceof UnaryNode) {
-        return findFunction(rhsMethod.invoke(node))
+        return findFunction(invoke(rhsMethod, node))
     } else if(node instanceof BinaryNode) {
-        return findFunction(lhsMethod.invoke(node)) || findFunction(binaryRhsMethod.invoke(node))
+        return findFunction(invoke(lhsMethod, node)) || findFunction(invoke(binaryRhsMethod, node))
     } else if(node instanceof ExpressionStatement) {
-        return findFunction(getExpressionMethod.invoke(node))
+        return findFunction(invoke(getExpressionMethod, node))
     } else if(node instanceof FunctionNode) {
         return node
     }
@@ -131,12 +135,12 @@ function compile(source, phases) {
     var ctxt = getContextMethod.invoke(null);
     var env = getEnvMethod.invoke(ctxt);
 
-    var parser   = ParserConstructor.newInstance(env, source, ThrowErrorManager.class.newInstance());
-    var func     = parseMethod.invoke(parser);
+    var parser   = Reflector.newInstance(ParserConstructor, env, source, ThrowErrorManager.class.newInstance());
+    var func     = invoke(parseMethod, parser);
 
-    var compiler = CompilerConstructor.invoke(null, ctxt, source, false);
+    var compiler = Reflector.invoke(CompilerConstructor, null, ctxt, source, false);
 
-    return compileMethod.invoke(compiler, func, phases);
+    return Reflector.invoke(compileMethod, compiler, func, phases);
 };
 
 var allAssertions = (function() {
@@ -161,9 +165,10 @@ function test(f) {
     }
     for(var assertion in allAssertions) {
         var expectedValue = !!assertions[assertion]
-        var actualValue = functionNodeMethods[assertion].invoke(f)
+        var actualValue = invoke(functionNodeMethods[assertion], f)
         if(actualValue !== expectedValue) {
-            throw "Expected " + assertion + " === " + expectedValue + ", got " + actualValue + " for " + f + ":" + debugIdMethod.invoke(null, f);
+            throw "Expected " + assertion + " === " + expectedValue + ", got " + actualValue + " for " + f + ":" 
+                + invoke(debugIdMethod, null, f);
         }
     }
 }

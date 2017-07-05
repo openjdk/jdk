@@ -21,11 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6239117
  * @summary test connect works correctly if called multiple times/card removed
  * @author Andreas Sterbenz
+ * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestConnectAgain
  */
 
