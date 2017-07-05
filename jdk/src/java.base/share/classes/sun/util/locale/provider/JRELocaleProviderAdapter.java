@@ -114,20 +114,20 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
         }
     }
 
-    private volatile BreakIteratorProvider breakIteratorProvider = null;
-    private volatile CollatorProvider collatorProvider = null;
-    private volatile DateFormatProvider dateFormatProvider = null;
-    private volatile DateFormatSymbolsProvider dateFormatSymbolsProvider = null;
-    private volatile DecimalFormatSymbolsProvider decimalFormatSymbolsProvider = null;
-    private volatile NumberFormatProvider numberFormatProvider = null;
+    private volatile BreakIteratorProvider breakIteratorProvider;
+    private volatile CollatorProvider collatorProvider;
+    private volatile DateFormatProvider dateFormatProvider;
+    private volatile DateFormatSymbolsProvider dateFormatSymbolsProvider;
+    private volatile DecimalFormatSymbolsProvider decimalFormatSymbolsProvider;
+    private volatile NumberFormatProvider numberFormatProvider;
 
-    private volatile CurrencyNameProvider currencyNameProvider = null;
-    private volatile LocaleNameProvider localeNameProvider = null;
-    private volatile TimeZoneNameProvider timeZoneNameProvider = null;
-    private volatile CalendarDataProvider calendarDataProvider = null;
-    private volatile CalendarNameProvider calendarNameProvider = null;
+    private volatile CurrencyNameProvider currencyNameProvider;
+    private volatile LocaleNameProvider localeNameProvider;
+    private volatile TimeZoneNameProvider timeZoneNameProvider;
+    private volatile CalendarDataProvider calendarDataProvider;
+    private volatile CalendarNameProvider calendarNameProvider;
 
-    private volatile CalendarProvider calendarProvider = null;
+    private volatile CalendarProvider calendarProvider;
 
     /*
      * Getter methods for java.text.spi.* providers

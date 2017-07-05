@@ -630,7 +630,9 @@ public class DateFormatSymbols implements Serializable, Cloneable {
             hashCode = 11 * hashCode + Arrays.hashCode(ampms);
             hashCode = 11 * hashCode + Arrays.deepHashCode(getZoneStringsWrapper());
             hashCode = 11 * hashCode + Objects.hashCode(localPatternChars);
-            cachedHashCode = hashCode;
+            if (hashCode != 0) {
+                cachedHashCode = hashCode;
+            }
         }
 
         return hashCode;
@@ -670,12 +672,12 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     private static final ConcurrentMap<Locale, SoftReference<DateFormatSymbols>> cachedInstances
         = new ConcurrentHashMap<>(3);
 
-    private transient int lastZoneIndex = 0;
+    private transient int lastZoneIndex;
 
     /**
      * Cached hash code
      */
-    transient volatile int cachedHashCode = 0;
+    transient volatile int cachedHashCode;
 
     private void initializeData(Locale desiredLocale) {
         locale = desiredLocale;

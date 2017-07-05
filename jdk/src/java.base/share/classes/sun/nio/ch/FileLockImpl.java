@@ -31,7 +31,7 @@ import java.nio.channels.*;
 public class FileLockImpl
     extends FileLock
 {
-    private volatile boolean valid = true;
+    private volatile boolean invalid;
 
     FileLockImpl(FileChannel channel, long position, long size, boolean shared)
     {
@@ -44,25 +44,25 @@ public class FileLockImpl
     }
 
     public boolean isValid() {
-        return valid;
+        return !invalid;
     }
 
     void invalidate() {
         assert Thread.holdsLock(this);
-        valid = false;
+        invalid = true;
     }
 
     public synchronized void release() throws IOException {
         Channel ch = acquiredBy();
         if (!ch.isOpen())
             throw new ClosedChannelException();
-        if (valid) {
+        if (isValid()) {
             if (ch instanceof FileChannelImpl)
                 ((FileChannelImpl)ch).release(this);
             else if (ch instanceof AsynchronousFileChannelImpl)
                 ((AsynchronousFileChannelImpl)ch).release(this);
             else throw new AssertionError();
-            valid = false;
+            invalidate();
         }
     }
 }

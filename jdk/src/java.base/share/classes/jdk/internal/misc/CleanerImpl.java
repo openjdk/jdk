@@ -39,7 +39,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 
 import sun.misc.InnocuousThread;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * CleanerImpl manages a set of object references and corresponding cleaning actions.
@@ -130,8 +129,8 @@ public final class CleanerImpl implements Runnable {
      */
     public void run() {
         Thread t = Thread.currentThread();
-        ManagedLocalsThread mlThread = (t instanceof ManagedLocalsThread)
-                ? (ManagedLocalsThread) t
+        InnocuousThread mlThread = (t instanceof InnocuousThread)
+                ? (InnocuousThread) t
                 : null;
         while (!phantomCleanableList.isListEmpty() ||
                 !weakCleanableList.isListEmpty() ||
@@ -787,4 +786,3 @@ public final class CleanerImpl implements Runnable {
     }
 
 }
-

@@ -176,6 +176,13 @@ public class TrueTypeFont extends FileFont {
     private String localeFamilyName;
     private String localeFullName;
 
+    public TrueTypeFont(String platname, Object nativeNames, int fIndex,
+                 boolean javaRasterizer)
+        throws FontFormatException
+    {
+        this(platname, nativeNames, fIndex, javaRasterizer, true);
+    }
+
     /**
      * - does basic verification of the file
      * - reads the header table for this font (within a collection)
@@ -186,14 +193,17 @@ public class TrueTypeFont extends FileFont {
      * or fails verification,  or there's no usable cmap
      */
     public TrueTypeFont(String platname, Object nativeNames, int fIndex,
-                 boolean javaRasterizer)
+                 boolean javaRasterizer, boolean useFilePool)
         throws FontFormatException {
         super(platname, nativeNames);
         useJavaRasterizer = javaRasterizer;
         fontRank = Font2D.TTF_RANK;
         try {
-            verify();
+            verify(useFilePool);
             init(fIndex);
+            if (!useFilePool) {
+               close();
+            }
         } catch (Throwable t) {
             close();
             if (t instanceof FontFormatException) {
@@ -280,6 +290,10 @@ public class TrueTypeFont extends FileFont {
     }
 
 
+    private synchronized FileChannel open() throws FontFormatException {
+        return open(true);
+     }
+
     /* This is intended to be called, and the returned value used,
      * from within a block synchronized on this font object.
      * ie the channel returned may be nulled out at any time by "close()"
@@ -287,7 +301,8 @@ public class TrueTypeFont extends FileFont {
      * Deadlock warning: FontManager.addToPool(..) acquires a global lock,
      * which means nested locks may be in effect.
      */
-    private synchronized FileChannel open() throws FontFormatException {
+    private synchronized FileChannel open(boolean usePool)
+                                     throws FontFormatException {
         if (disposerRecord.channel == null) {
             if (FontUtilities.isLogging()) {
                 FontUtilities.getLogger().info("open TTF: " + platName);
@@ -306,9 +321,11 @@ public class TrueTypeFont extends FileFont {
                 });
                 disposerRecord.channel = raf.getChannel();
                 fileSize = (int)disposerRecord.channel.size();
-                FontManager fm = FontManagerFactory.getInstance();
-                if (fm instanceof SunFontManager) {
-                    ((SunFontManager) fm).addToPool(this);
+                if (usePool) {
+                    FontManager fm = FontManagerFactory.getInstance();
+                    if (fm instanceof SunFontManager) {
+                        ((SunFontManager) fm).addToPool(this);
+                    }
                 }
             } catch (NullPointerException e) {
                 close();
@@ -492,8 +509,8 @@ public class TrueTypeFont extends FileFont {
         }
     }
 
-    private void verify() throws FontFormatException {
-        open();
+    private void verify(boolean usePool) throws FontFormatException {
+        open(usePool);
     }
 
     /* sizes, in bytes, of TT/TTC header records */
