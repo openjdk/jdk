@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -891,6 +891,10 @@ void ParNewGeneration::collect(bool   full,
       to()->mangle_unused_area();
     }
     swap_spaces();
+
+    // A successful scavenge should restart the GC time limit count which is
+    // for full GC's.
+    size_policy->reset_gc_overhead_limit_count();
 
     assert(to()->is_empty(), "to space should be empty now");
   } else {

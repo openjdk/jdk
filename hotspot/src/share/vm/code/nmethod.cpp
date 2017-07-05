@@ -685,6 +685,7 @@ nmethod::nmethod(
     _exception_offset        = 0;
     _deoptimize_offset       = 0;
     _deoptimize_mh_offset    = 0;
+    _unwind_handler_offset   = -1;
     _trap_offset             = offsets->value(CodeOffsets::Dtrace_trap);
     _orig_pc_offset          = 0;
     _stub_offset             = data_offset();
@@ -798,6 +799,11 @@ nmethod::nmethod(
     _exception_offset        = _stub_offset + offsets->value(CodeOffsets::Exceptions);
     _deoptimize_offset       = _stub_offset + offsets->value(CodeOffsets::Deopt);
     _deoptimize_mh_offset    = _stub_offset + offsets->value(CodeOffsets::DeoptMH);
+    if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
+      _unwind_handler_offset   = instructions_offset() + offsets->value(CodeOffsets::UnwindHandler);
+    } else {
+      _unwind_handler_offset   = -1;
+    }
     _consts_offset           = instructions_offset() + code_buffer->total_offset_of(code_buffer->consts()->start());
     _scopes_data_offset      = data_offset();
     _scopes_pcs_offset       = _scopes_data_offset   + round_to(debug_info->data_size         (), oopSize);

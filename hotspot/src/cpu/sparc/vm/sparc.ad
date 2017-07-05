@@ -923,38 +923,6 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
 #endif
 }
 
-void emit_form3_mem_reg_asi(CodeBuffer &cbuf, const MachNode* n, int primary, int tertiary,
-                        int src1_enc, int disp32, int src2_enc, int dst_enc, int asi) {
-
-  uint instr;
-  instr = (Assembler::ldst_op << 30)
-        | (dst_enc        << 25)
-        | (primary        << 19)
-        | (src1_enc       << 14);
-
-  int disp = disp32;
-  int index    = src2_enc;
-
-  if (src1_enc == R_SP_enc || src1_enc == R_FP_enc)
-    disp += STACK_BIAS;
-
-  // We should have a compiler bailout here rather than a guarantee.
-  // Better yet would be some mechanism to handle variable-size matches correctly.
-  guarantee(Assembler::is_simm13(disp), "Do not match large constant offsets" );
-
-  if( disp != 0 ) {
-    // use reg-reg form
-    // set src2=R_O7 contains offset
-    index = R_O7_enc;
-    emit3_simm13( cbuf, Assembler::arith_op, index, Assembler::or_op3, 0, disp);
-  }
-  instr |= (asi << 5);
-  instr |= index;
-  uint *code = (uint*)cbuf.code_end();
-  *code = instr;
-  cbuf.set_code_end(cbuf.code_end() + BytesPerInstWord);
-}
-
 void emit_call_reloc(CodeBuffer &cbuf, intptr_t entry_point, relocInfo::relocType rtype, bool preserve_g2 = false, bool force_far_call = false) {
   // The method which records debug information at every safepoint
   // expects the call to be the first instruction in the snippet as
@@ -1952,11 +1920,6 @@ encode %{
   enc_class simple_form3_mem_reg( memory mem, iRegI dst ) %{
     emit_form3_mem_reg(cbuf, this, $primary, -1,
                        $mem$$base, $mem$$disp, $mem$$index, $dst$$reg);
-  %}
-
-  enc_class form3_mem_reg_little( memory mem, iRegI dst) %{
-    emit_form3_mem_reg_asi(cbuf, this, $primary, -1,
-                     $mem$$base, $mem$$disp, $mem$$index, $dst$$reg, Assembler::ASI_PRIMARY_LITTLE);
   %}
 
   enc_class form3_mem_prefetch_read( memory mem ) %{
@@ -4311,8 +4274,8 @@ operand cmpOp_commute() %{
 // instructions for every form of operand when the instruction accepts
 // multiple operand types with the same basic encoding and format.  The classic
 // case of this is memory operands.
-// Indirect is not included since its use is limited to Compare & Swap
 opclass memory( indirect, indOffset13, indIndex );
+opclass indIndexMemory( indIndex );
 
 //----------PIPELINE-----------------------------------------------------------
 pipeline %{
@@ -9666,84 +9629,179 @@ instruct popCountL(iRegI dst, iRegL src) %{
 
 instruct bytes_reverse_int(iRegI dst, stackSlotI src) %{
   match(Set dst (ReverseBytesI src));
-  effect(DEF dst, USE src);
 
   // Op cost is artificially doubled to make sure that load or store
   // instructions are preferred over this one which requires a spill
   // onto a stack slot.
   ins_cost(2*DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
   format %{ "LDUWA  $src, $dst\t!asi=primary_little" %}
-  opcode(Assembler::lduwa_op3);
-  ins_encode( form3_mem_reg_little(src, dst) );
+
+  ins_encode %{
+    __ set($src$$disp + STACK_BIAS, O7);
+    __ lduwa($src$$base$$Register, O7, Assembler::ASI_PRIMARY_LITTLE, $dst$$Register);
+  %}
   ins_pipe( iload_mem );
 %}
 
 instruct bytes_reverse_long(iRegL dst, stackSlotL src) %{
   match(Set dst (ReverseBytesL src));
-  effect(DEF dst, USE src);
 
   // Op cost is artificially doubled to make sure that load or store
   // instructions are preferred over this one which requires a spill
   // onto a stack slot.
   ins_cost(2*DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
   format %{ "LDXA   $src, $dst\t!asi=primary_little" %}
 
-  opcode(Assembler::ldxa_op3);
-  ins_encode( form3_mem_reg_little(src, dst) );
+  ins_encode %{
+    __ set($src$$disp + STACK_BIAS, O7);
+    __ ldxa($src$$base$$Register, O7, Assembler::ASI_PRIMARY_LITTLE, $dst$$Register);
+  %}
+  ins_pipe( iload_mem );
+%}
+
+instruct bytes_reverse_unsigned_short(iRegI dst, stackSlotI src) %{
+  match(Set dst (ReverseBytesUS src));
+
+  // Op cost is artificially doubled to make sure that load or store
+  // instructions are preferred over this one which requires a spill
+  // onto a stack slot.
+  ins_cost(2*DEFAULT_COST + MEMORY_REF_COST);
+  format %{ "LDUHA  $src, $dst\t!asi=primary_little\n\t" %}
+
+  ins_encode %{
+    // the value was spilled as an int so bias the load
+    __ set($src$$disp + STACK_BIAS + 2, O7);
+    __ lduha($src$$base$$Register, O7, Assembler::ASI_PRIMARY_LITTLE, $dst$$Register);
+  %}
+  ins_pipe( iload_mem );
+%}
+
+instruct bytes_reverse_short(iRegI dst, stackSlotI src) %{
+  match(Set dst (ReverseBytesS src));
+
+  // Op cost is artificially doubled to make sure that load or store
+  // instructions are preferred over this one which requires a spill
+  // onto a stack slot.
+  ins_cost(2*DEFAULT_COST + MEMORY_REF_COST);
+  format %{ "LDSHA  $src, $dst\t!asi=primary_little\n\t" %}
+
+  ins_encode %{
+    // the value was spilled as an int so bias the load
+    __ set($src$$disp + STACK_BIAS + 2, O7);
+    __ ldsha($src$$base$$Register, O7, Assembler::ASI_PRIMARY_LITTLE, $dst$$Register);
+  %}
   ins_pipe( iload_mem );
 %}
 
 // Load Integer reversed byte order
-instruct loadI_reversed(iRegI dst, memory src) %{
+instruct loadI_reversed(iRegI dst, indIndexMemory src) %{
   match(Set dst (ReverseBytesI (LoadI src)));
 
   ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
+  size(4);
   format %{ "LDUWA  $src, $dst\t!asi=primary_little" %}
 
-  opcode(Assembler::lduwa_op3);
-  ins_encode( form3_mem_reg_little( src, dst) );
+  ins_encode %{
+    __ lduwa($src$$base$$Register, $src$$index$$Register, Assembler::ASI_PRIMARY_LITTLE, $dst$$Register);
+  %}
   ins_pipe(iload_mem);
 %}
 
 // Load Long - aligned and reversed
-instruct loadL_reversed(iRegL dst, memory src) %{
+instruct loadL_reversed(iRegL dst, indIndexMemory src) %{
   match(Set dst (ReverseBytesL (LoadL src)));
 
-  ins_cost(DEFAULT_COST + MEMORY_REF_COST);
-  size(8);
+  ins_cost(MEMORY_REF_COST);
+  size(4);
   format %{ "LDXA   $src, $dst\t!asi=primary_little" %}
 
-  opcode(Assembler::ldxa_op3);
-  ins_encode( form3_mem_reg_little( src, dst ) );
+  ins_encode %{
+    __ ldxa($src$$base$$Register, $src$$index$$Register, Assembler::ASI_PRIMARY_LITTLE, $dst$$Register);
+  %}
+  ins_pipe(iload_mem);
+%}
+
+// Load unsigned short / char reversed byte order
+instruct loadUS_reversed(iRegI dst, indIndexMemory src) %{
+  match(Set dst (ReverseBytesUS (LoadUS src)));
+
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "LDUHA  $src, $dst\t!asi=primary_little" %}
+
+  ins_encode %{
+    __ lduha($src$$base$$Register, $src$$index$$Register, Assembler::ASI_PRIMARY_LITTLE, $dst$$Register);
+  %}
+  ins_pipe(iload_mem);
+%}
+
+// Load short reversed byte order
+instruct loadS_reversed(iRegI dst, indIndexMemory src) %{
+  match(Set dst (ReverseBytesS (LoadS src)));
+
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "LDSHA  $src, $dst\t!asi=primary_little" %}
+
+  ins_encode %{
+    __ ldsha($src$$base$$Register, $src$$index$$Register, Assembler::ASI_PRIMARY_LITTLE, $dst$$Register);
+  %}
   ins_pipe(iload_mem);
 %}
 
 // Store Integer reversed byte order
-instruct storeI_reversed(memory dst, iRegI src) %{
+instruct storeI_reversed(indIndexMemory dst, iRegI src) %{
   match(Set dst (StoreI dst (ReverseBytesI src)));
 
   ins_cost(MEMORY_REF_COST);
-  size(8);
+  size(4);
   format %{ "STWA   $src, $dst\t!asi=primary_little" %}
 
-  opcode(Assembler::stwa_op3);
-  ins_encode( form3_mem_reg_little( dst, src) );
+  ins_encode %{
+    __ stwa($src$$Register, $dst$$base$$Register, $dst$$index$$Register, Assembler::ASI_PRIMARY_LITTLE);
+  %}
   ins_pipe(istore_mem_reg);
 %}
 
 // Store Long reversed byte order
-instruct storeL_reversed(memory dst, iRegL src) %{
+instruct storeL_reversed(indIndexMemory dst, iRegL src) %{
   match(Set dst (StoreL dst (ReverseBytesL src)));
 
   ins_cost(MEMORY_REF_COST);
-  size(8);
+  size(4);
   format %{ "STXA   $src, $dst\t!asi=primary_little" %}
 
-  opcode(Assembler::stxa_op3);
-  ins_encode( form3_mem_reg_little( dst, src) );
+  ins_encode %{
+    __ stxa($src$$Register, $dst$$base$$Register, $dst$$index$$Register, Assembler::ASI_PRIMARY_LITTLE);
+  %}
+  ins_pipe(istore_mem_reg);
+%}
+
+// Store unsighed short/char reversed byte order
+instruct storeUS_reversed(indIndexMemory dst, iRegI src) %{
+  match(Set dst (StoreC dst (ReverseBytesUS src)));
+
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "STHA   $src, $dst\t!asi=primary_little" %}
+
+  ins_encode %{
+    __ stha($src$$Register, $dst$$base$$Register, $dst$$index$$Register, Assembler::ASI_PRIMARY_LITTLE);
+  %}
+  ins_pipe(istore_mem_reg);
+%}
+
+// Store short reversed byte order
+instruct storeS_reversed(indIndexMemory dst, iRegI src) %{
+  match(Set dst (StoreC dst (ReverseBytesS src)));
+
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "STHA   $src, $dst\t!asi=primary_little" %}
+
+  ins_encode %{
+    __ stha($src$$Register, $dst$$base$$Register, $dst$$index$$Register, Assembler::ASI_PRIMARY_LITTLE);
+  %}
   ins_pipe(istore_mem_reg);
 %}
 

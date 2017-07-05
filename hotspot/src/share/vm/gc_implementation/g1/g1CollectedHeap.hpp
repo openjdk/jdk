@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,33 +81,29 @@ private:
 
   HeapRegion* _head;
 
-  HeapRegion* _scan_only_head;
-  HeapRegion* _scan_only_tail;
+  HeapRegion* _survivor_head;
+  HeapRegion* _survivor_tail;
+
+  HeapRegion* _curr;
+
   size_t      _length;
-  size_t      _scan_only_length;
+  size_t      _survivor_length;
 
   size_t      _last_sampled_rs_lengths;
   size_t      _sampled_rs_lengths;
-  HeapRegion* _curr;
-  HeapRegion* _curr_scan_only;
 
-  HeapRegion* _survivor_head;
-  HeapRegion* _survivor_tail;
-  size_t      _survivor_length;
-
-  void          empty_list(HeapRegion* list);
+  void         empty_list(HeapRegion* list);
 
 public:
   YoungList(G1CollectedHeap* g1h);
 
-  void          push_region(HeapRegion* hr);
-  void          add_survivor_region(HeapRegion* hr);
-  HeapRegion*   pop_region();
-  void          empty_list();
-  bool          is_empty() { return _length == 0; }
-  size_t        length() { return _length; }
-  size_t        scan_only_length() { return _scan_only_length; }
-  size_t        survivor_length() { return _survivor_length; }
+  void         push_region(HeapRegion* hr);
+  void         add_survivor_region(HeapRegion* hr);
+
+  void         empty_list();
+  bool         is_empty() { return _length == 0; }
+  size_t       length() { return _length; }
+  size_t       survivor_length() { return _survivor_length; }
 
   void rs_length_sampling_init();
   bool rs_length_sampling_more();
@@ -120,22 +116,21 @@ public:
 
   // for development purposes
   void reset_auxilary_lists();
+  void clear() { _head = NULL; _length = 0; }
+
+  void clear_survivors() {
+    _survivor_head    = NULL;
+    _survivor_tail    = NULL;
+    _survivor_length  = 0;
+  }
+
   HeapRegion* first_region() { return _head; }
-  HeapRegion* first_scan_only_region() { return _scan_only_head; }
   HeapRegion* first_survivor_region() { return _survivor_head; }
   HeapRegion* last_survivor_region() { return _survivor_tail; }
-  HeapRegion* par_get_next_scan_only_region() {
-    MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-    HeapRegion* ret = _curr_scan_only;
-    if (ret != NULL)
-      _curr_scan_only = ret->get_next_young_region();
-    return ret;
-  }
 
   // debugging
   bool          check_list_well_formed();
-  bool          check_list_empty(bool ignore_scan_only_list,
-                                 bool check_sample = true);
+  bool          check_list_empty(bool check_sample = true);
   void          print();
 };
 
@@ -231,6 +226,9 @@ private:
   // A list of the regions that have been set to be alloc regions in the
   // current collection.
   HeapRegion* _gc_alloc_region_list;
+
+  // Determines PLAB size for a particular allocation purpose.
+  static size_t desired_plab_sz(GCAllocPurpose purpose);
 
   // When called by par thread, require par_alloc_during_gc_lock() to be held.
   void push_gc_alloc_region(HeapRegion* hr);
@@ -402,8 +400,7 @@ public:
     assert(_in_cset_fast_test_base != NULL, "sanity");
     assert(r->in_collection_set(), "invariant");
     int index = r->hrs_index();
-    assert(0 <= (size_t) index && (size_t) index < _in_cset_fast_test_length,
-           "invariant");
+    assert(0 <= index && (size_t) index < _in_cset_fast_test_length, "invariant");
     assert(!_in_cset_fast_test_base[index], "invariant");
     _in_cset_fast_test_base[index] = true;
   }
@@ -426,6 +423,12 @@ public:
     } else {
       return false;
     }
+  }
+
+  void clear_cset_fast_test() {
+    assert(_in_cset_fast_test_base != NULL, "sanity");
+    memset(_in_cset_fast_test_base, false,
+        _in_cset_fast_test_length * sizeof(bool));
   }
 
 protected:
@@ -473,6 +476,10 @@ protected:
   // regions.
   void free_collection_set(HeapRegion* cs_head);
 
+  // Abandon the current collection set without recording policy
+  // statistics or updating free lists.
+  void abandon_collection_set(HeapRegion* cs_head);
+
   // Applies "scan_non_heap_roots" to roots outside the heap,
   // "scan_rs" to roots inside the heap (having done "set_region" to
   // indicate the region in which the root resides), and does "scan_perm"
@@ -485,15 +492,8 @@ protected:
                                SharedHeap::ScanningOption so,
                                OopClosure* scan_non_heap_roots,
                                OopsInHeapRegionClosure* scan_rs,
-                               OopsInHeapRegionClosure* scan_so,
                                OopsInGenClosure* scan_perm,
                                int worker_i);
-
-  void scan_scan_only_set(OopsInHeapRegionClosure* oc,
-                          int worker_i);
-  void scan_scan_only_region(HeapRegion* hr,
-                             OopsInHeapRegionClosure* oc,
-                             int worker_i);
 
   // Apply "blk" to all the weak roots of the system.  These include
   // JNI weak roots, the code cache, system dictionary, symbol table,
@@ -1133,36 +1133,14 @@ public:
   void set_region_short_lived_locked(HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
 
-  void young_list_rs_length_sampling_init() {
-    _young_list->rs_length_sampling_init();
-  }
-  bool young_list_rs_length_sampling_more() {
-    return _young_list->rs_length_sampling_more();
-  }
-  void young_list_rs_length_sampling_next() {
-    _young_list->rs_length_sampling_next();
-  }
-  size_t young_list_sampled_rs_lengths() {
-    return _young_list->sampled_rs_lengths();
-  }
-
-  size_t young_list_length()   { return _young_list->length(); }
-  size_t young_list_scan_only_length() {
-                                      return _young_list->scan_only_length(); }
-
-  HeapRegion* pop_region_from_young_list() {
-    return _young_list->pop_region();
-  }
-
-  HeapRegion* young_list_first_region() {
-    return _young_list->first_region();
-  }
+  YoungList* young_list() { return _young_list; }
 
   // debugging
   bool check_young_list_well_formed() {
     return _young_list->check_list_well_formed();
   }
-  bool check_young_list_empty(bool ignore_scan_only_list,
+
+  bool check_young_list_empty(bool check_heap,
                               bool check_sample = true);
 
   // *** Stuff related to concurrent marking.  It's not clear to me that so
@@ -1367,12 +1345,18 @@ private:
     return BitsPerWord << shifter();
   }
 
-  static size_t gclab_word_size() {
-    return G1ParallelGCAllocBufferSize / HeapWordSize;
+  size_t gclab_word_size() const {
+    return _gclab_word_size;
   }
 
-  static size_t bitmap_size_in_bits() {
-    size_t bits_in_bitmap = gclab_word_size() >> shifter();
+  // Calculates actual GCLab size in words
+  size_t gclab_real_word_size() const {
+    return bitmap_size_in_bits(pointer_delta(_real_end_word, _start_word))
+           / BitsPerWord;
+  }
+
+  static size_t bitmap_size_in_bits(size_t gclab_word_size) {
+    size_t bits_in_bitmap = gclab_word_size >> shifter();
     // We are going to ensure that the beginning of a word in this
     // bitmap also corresponds to the beginning of a word in the
     // global marking bitmap. To handle the case where a GCLab
@@ -1382,13 +1366,13 @@ private:
     return bits_in_bitmap + BitsPerWord - 1;
   }
 public:
-  GCLabBitMap(HeapWord* heap_start)
-    : BitMap(bitmap_size_in_bits()),
+  GCLabBitMap(HeapWord* heap_start, size_t gclab_word_size)
+    : BitMap(bitmap_size_in_bits(gclab_word_size)),
       _cm(G1CollectedHeap::heap()->concurrent_mark()),
       _shifter(shifter()),
       _bitmap_word_covers_words(bitmap_word_covers_words()),
       _heap_start(heap_start),
-      _gclab_word_size(gclab_word_size()),
+      _gclab_word_size(gclab_word_size),
       _real_start_word(NULL),
       _real_end_word(NULL),
       _start_word(NULL)
@@ -1483,7 +1467,7 @@ public:
       mark_bitmap->mostly_disjoint_range_union(this,
                                 0, // always start from the start of the bitmap
                                 _start_word,
-                                size_in_words());
+                                gclab_real_word_size());
       _cm->grayRegionIfNecessary(MemRegion(_real_start_word, _real_end_word));
 
 #ifndef PRODUCT
@@ -1495,9 +1479,10 @@ public:
     }
   }
 
-  static size_t bitmap_size_in_words() {
-    return (bitmap_size_in_bits() + BitsPerWord - 1) / BitsPerWord;
+  size_t bitmap_size_in_words() const {
+    return (bitmap_size_in_bits(gclab_word_size()) + BitsPerWord - 1) / BitsPerWord;
   }
+
 };
 
 class G1ParGCAllocBuffer: public ParGCAllocBuffer {
@@ -1507,10 +1492,10 @@ private:
   GCLabBitMap _bitmap;
 
 public:
-  G1ParGCAllocBuffer() :
-    ParGCAllocBuffer(G1ParallelGCAllocBufferSize / HeapWordSize),
+  G1ParGCAllocBuffer(size_t gclab_word_size) :
+    ParGCAllocBuffer(gclab_word_size),
     _during_marking(G1CollectedHeap::heap()->mark_in_progress()),
-    _bitmap(G1CollectedHeap::heap()->reserved_region().start()),
+    _bitmap(G1CollectedHeap::heap()->reserved_region().start(), gclab_word_size),
     _retired(false)
   { }
 
@@ -1549,8 +1534,10 @@ protected:
   typedef GrowableArray<StarTask> OverflowQueue;
   OverflowQueue* _overflowed_refs;
 
-  G1ParGCAllocBuffer _alloc_buffers[GCAllocPurposeCount];
-  ageTable           _age_table;
+  G1ParGCAllocBuffer  _surviving_alloc_buffer;
+  G1ParGCAllocBuffer  _tenured_alloc_buffer;
+  G1ParGCAllocBuffer* _alloc_buffers[GCAllocPurposeCount];
+  ageTable            _age_table;
 
   size_t           _alloc_buffer_waste;
   size_t           _undo_waste;
@@ -1619,7 +1606,7 @@ public:
   ageTable*         age_table()       { return &_age_table;       }
 
   G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
-    return &_alloc_buffers[purpose];
+    return _alloc_buffers[purpose];
   }
 
   size_t alloc_buffer_waste()                    { return _alloc_buffer_waste; }
@@ -1684,15 +1671,15 @@ public:
   HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
 
     HeapWord* obj = NULL;
-    if (word_sz * 100 <
-        (size_t)(G1ParallelGCAllocBufferSize / HeapWordSize) *
-                                                  ParallelGCBufferWastePct) {
+    size_t gclab_word_size = _g1h->desired_plab_sz(purpose);
+    if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
       G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
+      assert(gclab_word_size == alloc_buf->word_sz(),
+             "dynamic resizing is not supported");
       add_to_alloc_buffer_waste(alloc_buf->words_remaining());
       alloc_buf->retire(false, false);
 
-      HeapWord* buf =
-        _g1h->par_allocate_during_gc(purpose, G1ParallelGCAllocBufferSize / HeapWordSize);
+      HeapWord* buf = _g1h->par_allocate_during_gc(purpose, gclab_word_size);
       if (buf == NULL) return NULL; // Let caller handle allocation failure.
       // Otherwise.
       alloc_buf->set_buf(buf);
@@ -1786,9 +1773,9 @@ public:
 
   void retire_alloc_buffers() {
     for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-      size_t waste = _alloc_buffers[ap].words_remaining();
+      size_t waste = _alloc_buffers[ap]->words_remaining();
       add_to_alloc_buffer_waste(waste);
-      _alloc_buffers[ap].retire(true, false);
+      _alloc_buffers[ap]->retire(true, false);
     }
   }
 

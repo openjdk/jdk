@@ -1408,8 +1408,11 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
 }
 
 void BCEscapeAnalyzer::copy_dependencies(Dependencies *deps) {
-  if(!has_dependencies())
-    return;
+  if (ciEnv::current()->jvmti_can_hotswap_or_post_breakpoint()) {
+    // Also record evol dependencies so redefinition of the
+    // callee will trigger recompilation.
+    deps->assert_evol_method(method());
+  }
   for (int i = 0; i < _dependencies.length(); i+=2) {
     ciKlass *k = _dependencies[i]->as_klass();
     ciMethod *m = _dependencies[i+1]->as_method();
