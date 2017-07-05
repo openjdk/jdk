@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,11 +179,11 @@ HandleMark::~HandleMark() {
   _thread->set_last_handle_mark(previous_handle_mark());
 }
 
-void* HandleMark::operator new(size_t size) {
+void* HandleMark::operator new(size_t size) throw() {
   return AllocateHeap(size, mtThread);
 }
 
-void* HandleMark::operator new [] (size_t size) {
+void* HandleMark::operator new [] (size_t size) throw() {
   return AllocateHeap(size, mtThread);
 }
 

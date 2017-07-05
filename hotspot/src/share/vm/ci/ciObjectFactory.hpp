@@ -131,6 +131,8 @@ public:
   ciInstance* get_unloaded_method_type_constant(ciSymbol* signature);
 
 
+  ciInstance* get_unloaded_object_constant();
+
   // Get the ciMethodData representing the methodData for a method
   // with none.
   ciMethodData* get_empty_methodData();
