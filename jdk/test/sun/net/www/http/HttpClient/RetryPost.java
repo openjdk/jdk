@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,25 @@
  * questions.
  */
 
-import java.net.*;
-import java.util.*;
-import java.io.*;
-import com.sun.net.httpserver.*;
+/*
+ * @test
+ * @bug 6427251 6382788
+ * @modules jdk.httpserver
+ * @run main RetryPost
+ * @run main/othervm -Dsun.net.http.retryPost=false RetryPost noRetry
+ * @summary HttpURLConnection automatically retries non-idempotent method POST
+ */
+
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.SocketException;
+import java.net.URL;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 
