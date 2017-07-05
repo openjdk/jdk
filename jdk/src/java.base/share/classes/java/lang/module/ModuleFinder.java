@@ -228,14 +228,14 @@ public interface ModuleFinder {
      * directory is treated as an exploded module rather than a directory of
      * modules. </p>
      *
-     * <p> The module finder returned by this method supports modules that are
-     * packaged as JAR files. A JAR file with a {@code module-info.class} in
-     * the top-level directory of the JAR file (or overridden by a versioned
-     * entry in a {@link java.util.jar.JarFile#isMultiRelease() multi-release}
-     * JAR file) is a modular JAR and is an <em>explicit module</em>.
-     * A JAR file that does not have a {@code module-info.class} in the
-     * top-level directory is created as an automatic module. The components
-     * for the automatic module are derived as follows:
+     * <p id="automatic-modules"> The module finder returned by this method
+     * supports modules packaged as JAR files. A JAR file with a {@code
+     * module-info.class} in its top-level directory, or in a versioned entry
+     * in a {@linkplain java.util.jar.JarFile#isMultiRelease() multi-release}
+     * JAR file, is a modular JAR file and thus defines an <em>explicit</em>
+     * module. A JAR file that does not have a {@code module-info.class} in its
+     * top-level directory defines an <em>automatic module</em>, as follows:
+     * </p>
      *
      * <ul>
      *
@@ -254,16 +254,16 @@ public interface ModuleFinder {
      *         ModuleDescriptor.Version} and ignored if it cannot be parsed as
      *         a {@code Version}. </p></li>
      *
-     *         <li><p> For the module name, then any trailing digits and dots
-     *         are removed, all non-alphanumeric characters ({@code [^A-Za-z0-9]})
-     *         are replaced with a dot ({@code "."}), all repeating dots are
-     *         replaced with one dot, and all leading and trailing dots are
-     *         removed. </p></li>
+     *         <li><p> All non-alphanumeric characters ({@code [^A-Za-z0-9]})
+     *         in the module name are replaced with a dot ({@code "."}), all
+     *         repeating dots are replaced with one dot, and all leading and
+     *         trailing dots are removed. </p></li>
      *
      *         <li><p> As an example, a JAR file named {@code foo-bar.jar} will
      *         derive a module name {@code foo.bar} and no version. A JAR file
-     *         named {@code foo-1.2.3-SNAPSHOT.jar} will derive a module name
-     *         {@code foo} and {@code 1.2.3-SNAPSHOT} as the version. </p></li>
+     *         named {@code foo-bar-1.2.3-SNAPSHOT.jar} will derive a module
+     *         name {@code foo.bar} and {@code 1.2.3-SNAPSHOT} as the version.
+     *         </p></li>
      *
      *     </ul></li>
      *
@@ -312,7 +312,9 @@ public interface ModuleFinder {
      *
      * <p> As with automatic modules, the contents of a packaged or exploded
      * module may need to be <em>scanned</em> in order to determine the packages
-     * in the module. If a {@code .class} file (other than {@code
+     * in the module. Whether {@linkplain java.nio.file.Files#isHidden(Path)
+     * hidden files} are ignored or not is implementation specific and therefore
+     * not specified. If a {@code .class} file (other than {@code
      * module-info.class}) is found in the top-level directory then it is
      * assumed to be a class in the unnamed package and so {@code FindException}
      * is thrown. </p>

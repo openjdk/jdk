@@ -33,7 +33,6 @@
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -87,14 +86,14 @@ public class BadProvidersTest {
     private List<Provider> loadProviders(Path mp, String moduleName) throws Exception {
         ModuleFinder finder = ModuleFinder.of(mp);
 
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
 
         Configuration cf = bootLayer.configuration()
                 .resolveAndBind(finder, ModuleFinder.of(), Set.of(moduleName));
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();
 
-        Layer layer = Layer.boot().defineModulesWithOneLoader(cf, scl);
+        ModuleLayer layer = ModuleLayer.boot().defineModulesWithOneLoader(cf, scl);
 
         Class<?> service = layer.findLoader(moduleName).loadClass(TEST_SERVICE);
 

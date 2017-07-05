@@ -40,8 +40,6 @@ import static jdk.test.lib.Asserts.*;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -63,7 +61,7 @@ import myloaders.MySameClassLoader;
 //
 public class UmodUPkg {
 
- // Create Layers over the boot layer to test different
+ // Create layers over the boot layer to test different
  // accessing scenarios of a named module to an unnamed module.
 
  // Module m1x is a strict module and has not established
@@ -84,7 +82,7 @@ public class UmodUPkg {
      ModuleFinder finder = ModuleLibrary.of(descriptor_m1x);
 
      // Resolves "m1x"
-     Configuration cf = Layer.boot()
+     Configuration cf = ModuleLayer.boot()
              .configuration()
              .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
@@ -94,8 +92,8 @@ public class UmodUPkg {
      Map<String, ClassLoader> map = new HashMap<>();
      map.put("m1x", loader);
 
-     // Create Layer that contains m1x
-     Layer layer = Layer.boot().defineModules(cf, map::get);
+     // Create layer that contains m1x
+     ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
      assertTrue(layer.findLoader("m1x") == loader);
      assertTrue(layer.findLoader("java.base") == null);
@@ -130,7 +128,7 @@ public class UmodUPkg {
      ModuleFinder finder = ModuleLibrary.of(descriptor_m1x);
 
      // Resolves "m1x"
-     Configuration cf = Layer.boot()
+     Configuration cf = ModuleLayer.boot()
              .configuration()
              .resolve(finder, ModuleFinder.of(), Set.of("m1x"));
 
@@ -140,8 +138,8 @@ public class UmodUPkg {
      Map<String, ClassLoader> map = new HashMap<>();
      map.put("m1x", loader);
 
-     // Create Layer that contains m1x
-     Layer layer = Layer.boot().defineModules(cf, map::get);
+     // Create layer that contains m1x
+     ModuleLayer layer = ModuleLayer.boot().defineModules(cf, map::get);
 
      assertTrue(layer.findLoader("m1x") == loader);
      assertTrue(layer.findLoader("java.base") == null);

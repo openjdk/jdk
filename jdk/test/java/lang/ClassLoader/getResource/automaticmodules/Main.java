@@ -26,7 +26,6 @@ import java.io.InputStream;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Layer;
 import java.net.URL;
 import java.util.Enumeration;
 
@@ -74,7 +73,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         String mn = args[0];
 
-        ModuleReference mref = Layer.boot()
+        ModuleReference mref = ModuleLayer.boot()
                 .configuration()
                 .findModule(mn)
                 .map(ResolvedModule::reference)
