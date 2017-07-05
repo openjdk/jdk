@@ -66,7 +66,7 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   int        _data_offset;                       // offset to where data region begins
   int        _frame_size;                        // size of stack frame
   OopMapSet* _oop_maps;                          // OopMap for this CodeBlob
-  CodeComments _comments;
+  CodeStrings _strings;
 
  public:
   // Returns the space needed for CodeBlob
@@ -186,12 +186,12 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   // Print the comment associated with offset on stream, if there is one
   virtual void print_block_comment(outputStream* stream, address block_begin) const {
     intptr_t offset = (intptr_t)(block_begin - code_begin());
-    _comments.print_block_comment(stream, offset);
+    _strings.print_block_comment(stream, offset);
   }
 
   // Transfer ownership of comments to this CodeBlob
-  void set_comments(CodeComments& comments) {
-    _comments.assign(comments);
+  void set_strings(CodeStrings& strings) {
+    _strings.assign(strings);
   }
 };
 

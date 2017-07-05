@@ -178,7 +178,7 @@ void SharedHeap::process_strong_roots(bool activate_scope,
       SystemDictionary::always_strong_oops_do(roots);
       ClassLoaderDataGraph::always_strong_oops_do(roots, klass_closure, !is_scavenging);
     } else {
-      ShouldNotReachHere2("We should always have selected either SO_AllClasses or SO_SystemClasses");
+      fatal("We should always have selected either SO_AllClasses or SO_SystemClasses");
     }
   }
 
