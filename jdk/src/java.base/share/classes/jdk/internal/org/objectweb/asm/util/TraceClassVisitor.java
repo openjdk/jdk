@@ -74,36 +74,34 @@ import jdk.internal.org.objectweb.asm.TypePath;
  * visitor chain to trace the class that is visited at a given point in this
  * chain. This may be useful for debugging purposes.
  * <p>
- * The trace printed when visiting the <tt>Hello</tt> class is the following:
- * <p>
+ * The trace printed when visiting the {@code Hello} class is the following:
  * <blockquote>
  *
- * <pre>
+ * <pre>{@code
  * // class version 49.0 (49) // access flags 0x21 public class Hello {
  *
  * // compiled from: Hello.java
  *
- * // access flags 0x1 public &lt;init&gt; ()V ALOAD 0 INVOKESPECIAL
- * java/lang/Object &lt;init&gt; ()V RETURN MAXSTACK = 1 MAXLOCALS = 1
+ * // access flags 0x1 public <init> ()V ALOAD 0 INVOKESPECIAL
+ * java/lang/Object <init> ()V RETURN MAXSTACK = 1 MAXLOCALS = 1
  *
  * // access flags 0x9 public static main ([Ljava/lang/String;)V GETSTATIC
- * java/lang/System out Ljava/io/PrintStream; LDC &quot;hello&quot;
+ * java/lang/System out Ljava/io/PrintStream; LDC "hello"
  * INVOKEVIRTUAL java/io/PrintStream println (Ljava/lang/String;)V RETURN
  * MAXSTACK = 2 MAXLOCALS = 1 }
- * </pre>
+ * }</pre>
  *
- * </blockquote> where <tt>Hello</tt> is defined by:
- * <p>
+ * </blockquote> where {@code Hello} is defined by:
  * <blockquote>
  *
- * <pre>
+ * <pre>{@code
  * public class Hello {
  *
  *     public static void main(String[] args) {
- *         System.out.println(&quot;hello&quot;);
+ *         System.out.println("hello");
  *     }
  * }
- * </pre>
+ * }</pre>
  *
  * </blockquote>
  *
@@ -137,7 +135,7 @@ public final class TraceClassVisitor extends ClassVisitor {
      *
      * @param cv
      *            the {@link ClassVisitor} to which this visitor delegates
-     *            calls. May be <tt>null</tt>.
+     *            calls. May be {@code null}.
      * @param pw
      *            the print writer to be used to print the class.
      */
@@ -150,7 +148,7 @@ public final class TraceClassVisitor extends ClassVisitor {
      *
      * @param cv
      *            the {@link ClassVisitor} to which this visitor delegates
-     *            calls. May be <tt>null</tt>.
+     *            calls. May be {@code null}.
      * @param p
      *            the object that actually converts visit events into text.
      * @param pw

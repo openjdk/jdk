@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,15 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Constructor {
     /**
-     * Name of the constructor function. If empty, the name is inferred.
+     * @return the name of the constructor function. If empty, the name is
+     *         inferred.
      */
     public String name() default "";
 
     /**
-     * The arity of the function. By default computed from the method signature.
-     * Note that -1 means varargs. So, -2 is used as invalid arity.
+     * @return the arity of the function. By default computed from the method
+     *         signature. Note that -1 means varargs. So, -2 is used as invalid
+     *         arity.
      */
     public int arity() default -2;
 }

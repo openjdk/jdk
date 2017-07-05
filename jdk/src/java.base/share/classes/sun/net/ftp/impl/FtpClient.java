@@ -1211,7 +1211,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
      * The <code>OutputStream</code> is not closed by this method at the end
      * of the transfer.
      *
-     * @param name a <code>String<code> containing the name of the file to
+     * @param name a {@code String} containing the name of the file to
      *        retreive from the server.
      * @param local the <code>OutputStream</code> the file should be written to.
      * @throws IOException if the transfer fails.

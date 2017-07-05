@@ -338,7 +338,7 @@ public class JarURLConnection extends java.net.JarURLConnection {
      * Sets the value of the <code>ifModifiedSince</code> field of
      * this <code>URLConnection</code> to the specified value.
      *
-     * @param   value   the new value.
+     * @param   ifmodifiedsince   the new value.
      * @see     java.net.URLConnection#ifModifiedSince
      */
     public void setIfModifiedSince(long ifmodifiedsince) {
