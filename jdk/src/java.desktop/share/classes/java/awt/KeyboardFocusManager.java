@@ -415,6 +415,7 @@ public abstract class KeyboardFocusManager
      * Initializes a KeyboardFocusManager.
      */
     public KeyboardFocusManager() {
+        @SuppressWarnings("deprecation")
         AWTKeyStroke[][] defaultFocusTraversalKeyStrokes = {
                 {
                         AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_TAB, 0, false),
