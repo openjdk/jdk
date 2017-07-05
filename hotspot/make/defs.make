@@ -29,6 +29,12 @@ ifneq ($(SPEC),)
   include $(SPEC)
 endif
 
+ifeq ($(LOG_LEVEL),warn)
+  LOG_INFO := > /dev/null
+else
+  LOG_INFO :=
+endif
+
 # Directory paths and user name
 # Unless GAMMADIR is set on the command line, search upward from
 # the current directory for a parent directory containing "src/share/vm".

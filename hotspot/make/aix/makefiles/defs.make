@@ -29,6 +29,12 @@
 
 SLASH_JAVA ?= /java
 
+define print_info
+  ifneq ($$(LOG_LEVEL), warn)
+    $$(shell echo >&2 "INFO: $1")
+  endif
+endef
+
 # Need PLATFORM (os-arch combo names) for jdk and hotspot, plus libarch name
 #ARCH:=$(shell uname -m)
 PATH_SEP = :
@@ -122,8 +128,7 @@ ifeq ($(JDK6_OR_EARLIER),0)
       # debug variants always get Full Debug Symbols (if available)
       ENABLE_FULL_DEBUG_SYMBOLS = 1
     endif
-    _JUNK_ := $(shell \
-      echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
+    $(eval $(call print_info, "ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)"))
     # since objcopy is optional, we set ZIP_DEBUGINFO_FILES later
 
     ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
@@ -138,19 +143,16 @@ ifeq ($(JDK6_OR_EARLIER),0)
       endif
       OBJCOPY=$(shell test -x $(DEF_OBJCOPY) && echo $(DEF_OBJCOPY))
       ifneq ($(ALT_OBJCOPY),)
-        _JUNK_ := $(shell echo >&2 "INFO: ALT_OBJCOPY=$(ALT_OBJCOPY)")
+        $(eval $(call print_info, "ALT_OBJCOPY=$(ALT_OBJCOPY)"))
         OBJCOPY=$(shell test -x $(ALT_OBJCOPY) && echo $(ALT_OBJCOPY))
       endif
 
       ifeq ($(OBJCOPY),)
-        _JUNK_ := $(shell \
-          echo >&2 "INFO: no objcopy cmd found so cannot create .debuginfo files. You may need to set ALT_OBJCOPY.")
+        $(eval $(call print_info, "no objcopy cmd found so cannot create .debuginfo files. You may need to set ALT_OBJCOPY."))
         ENABLE_FULL_DEBUG_SYMBOLS=0
-        _JUNK_ := $(shell \
-          echo >&2 "INFO: ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)")
+        $(eval $(call print_info, "ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)"))
       else
-        _JUNK_ := $(shell \
-          echo >&2 "INFO: $(OBJCOPY) cmd found so will create .debuginfo files.")
+        $(eval $(call print_info, "$(OBJCOPY) cmd found so will create .debuginfo files."))
 
         # Library stripping policies for .debuginfo configs:
         #   all_strip - strips everything from the library
@@ -164,13 +166,11 @@ ifeq ($(JDK6_OR_EARLIER),0)
         #
         STRIP_POLICY ?= min_strip
 
-        _JUNK_ := $(shell \
-          echo >&2 "INFO: STRIP_POLICY=$(STRIP_POLICY)")
+        $(eval $(call print_info, "STRIP_POLICY=$(STRIP_POLICY)"))
 
         ZIP_DEBUGINFO_FILES ?= 1
 
-        _JUNK_ := $(shell \
-          echo >&2 "INFO: ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)")
+        $(eval $(call print_info, "ZIP_DEBUGINFO_FILES=$(ZIP_DEBUGINFO_FILES)"))
       endif
     endif # ENABLE_FULL_DEBUG_SYMBOLS=1
   endif # BUILD_FLAVOR
@@ -227,5 +227,3 @@ ADD_SA_BINARIES/ppc64 =
 ADD_SA_BINARIES/zero  =
 
 EXPORT_LIST += $(ADD_SA_BINARIES/$(HS_ARCH))
-
-
