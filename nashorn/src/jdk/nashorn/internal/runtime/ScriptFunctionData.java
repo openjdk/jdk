@@ -675,7 +675,7 @@ public abstract class ScriptFunctionData {
 
     /**
      * Heuristic to figure out if the method handle has a callee argument. If it's type is either
-     * {@code (boolean, Object, ScriptFunction, ...)} or {@code (Object, ScriptFunction, ...)}, then we'll assume it has
+     * {@code (boolean, ScriptFunction, ...)} or {@code (ScriptFunction, ...)}, then we'll assume it has
      * a callee argument. We need this as the constructor above is not passed this information, and can't just blindly
      * assume it's false (notably, it's being invoked for creation of new scripts, and scripts have scopes, therefore
      * they also always receive a callee).
@@ -692,11 +692,11 @@ public abstract class ScriptFunctionData {
             return false;
         }
 
-        if (type.parameterType(0) == boolean.class) {
-            return length > 1 && type.parameterType(1) == ScriptFunction.class;
+        if (type.parameterType(0) == ScriptFunction.class) {
+            return true;
         }
 
-        return type.parameterType(0) == ScriptFunction.class;
+        return length > 1 && type.parameterType(0) == boolean.class && type.parameterType(1) == ScriptFunction.class;
     }
 
     /**

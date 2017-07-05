@@ -33,8 +33,9 @@ package com.sun.jdi;
  * @author James McIlree
  * @since  1.3
  */
-public interface ByteValue extends PrimitiveValue, Comparable<ByteValue>
-{
+@jdk.Exported
+public interface ByteValue extends PrimitiveValue, Comparable<ByteValue> {
+
     /**
      * Returns this ByteValue as a <code>byte</code>.
      *

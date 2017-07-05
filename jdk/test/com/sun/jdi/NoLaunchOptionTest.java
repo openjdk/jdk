@@ -142,7 +142,7 @@ public class NoLaunchOptionTest extends Object {
         NoLaunchOptionTest myTest = new NoLaunchOptionTest();
         String results [] = myTest.run(VMConnection.insertDebuggeeVMOptions(cmds));
         if ((results[RETSTAT].equals("1")) &&
-            (results[STDERR].startsWith("ERROR:"))) {
+            (results[STDERR].contains("ERROR:"))) {
             System.out.println("Test passed: status = 1 with warning messages " +
                                "is expected and normal for this test");
         } else {

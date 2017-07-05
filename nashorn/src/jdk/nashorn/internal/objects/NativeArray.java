@@ -851,6 +851,10 @@ public final class NativeArray extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object slice(final Object self, final Object start, final Object end) {
         final Object       obj                 = Global.toObject(self);
+        if (!(obj instanceof ScriptObject)) {
+            return ScriptRuntime.UNDEFINED;
+        }
+
         final ScriptObject sobj                = (ScriptObject)obj;
         final long         len                 = JSType.toUint32(sobj.getLength());
         final long         relativeStart       = JSType.toLong(start);

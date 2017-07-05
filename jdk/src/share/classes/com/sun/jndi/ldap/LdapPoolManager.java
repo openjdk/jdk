@@ -237,7 +237,7 @@ public final class LdapPoolManager {
              !socketFactory.equals(LdapCtx.DEFAULT_SSL_FACTORY)) {
             try {
                 Class<?> socketFactoryClass = Obj.helper.loadClass(socketFactory);
-                Class[] interfaces = socketFactoryClass.getInterfaces();
+                Class<?>[] interfaces = socketFactoryClass.getInterfaces();
                 for (int i = 0; i < interfaces.length; i++) {
                     if (interfaces[i].getCanonicalName().equals(COMPARATOR)) {
                         foundSockCmp = true;

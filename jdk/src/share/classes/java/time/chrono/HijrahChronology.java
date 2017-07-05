@@ -214,7 +214,7 @@ import sun.util.logging.PlatformLogger;
  *
  * @since 1.8
  */
-public final class HijrahChronology extends Chronology implements Serializable {
+public final class HijrahChronology extends AbstractChronology implements Serializable {
 
     /**
      * The Hijrah Calendar id.
@@ -308,8 +308,8 @@ public final class HijrahChronology extends Chronology implements Serializable {
         try {
             INSTANCE = new HijrahChronology("Hijrah-umalqura");
             // Register it by its aliases
-            Chronology.registerChrono(INSTANCE, "Hijrah");
-            Chronology.registerChrono(INSTANCE, "islamic");
+            AbstractChronology.registerChrono(INSTANCE, "Hijrah");
+            AbstractChronology.registerChrono(INSTANCE, "islamic");
         } catch (DateTimeException ex) {
             // Absence of Hijrah calendar is fatal to initializing this class.
             PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");
@@ -336,7 +336,7 @@ public final class HijrahChronology extends Chronology implements Serializable {
                 try {
                     // Create and register the variant
                     HijrahChronology chrono = new HijrahChronology(id);
-                    Chronology.registerChrono(chrono);
+                    AbstractChronology.registerChrono(chrono);
                 } catch (DateTimeException ex) {
                     // Log error and continue
                     PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 /**
  * @test
- * @bug 4531817
+ * @bug 4531817 8026245
  * @summary Inet[46]Address.localHost need doPrivileged
  * @run main/othervm GetLocalHostWithSM
+ * @run main/othervm -Djava.net.preferIPv4Stack=true GetLocalHostWithSM
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true GetLocalHostWithSM
  * files needed: GetLocalHostWithSM.java, MyPrincipal.java, and policy.file
  */
 

@@ -177,8 +177,8 @@ import javax.xml.transform.Source;
  * The state moves from writable to not writeable once free() or any of the
  * writing APIs are called: setBinaryStream(), setCharacterStream(), setResult(), and setString().
  * Implementations may also change the state to not readable when this occurs.
+ *
  * <p>
-  * <p>
  * All methods on the <code>SQLXML</code> interface must be fully implemented if the
  * JDBC driver supports the data type.
  *

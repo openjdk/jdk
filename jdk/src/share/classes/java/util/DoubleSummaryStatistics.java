@@ -111,12 +111,24 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
 
     /**
      * Returns the sum of values recorded, or zero if no values have been
-     * recorded. The sum returned can vary depending upon the order in which
-     * values are recorded. This is due to accumulated rounding error in
-     * addition of values of differing magnitudes. Values sorted by increasing
-     * absolute magnitude tend to yield more accurate results.  If any recorded
-     * value is a {@code NaN} or the sum is at any point a {@code NaN} then the
-     * sum will be {@code NaN}.
+     * recorded.
+     *
+     * If any recorded value is a NaN or the sum is at any point a NaN
+     * then the sum will be NaN.
+     *
+     * <p> The value of a floating-point sum is a function both of the
+     * input values as well as the order of addition operations. The
+     * order of addition operations of this method is intentionally
+     * not defined to allow for implementation flexibility to improve
+     * the speed and accuracy of the computed result.
+     *
+     * In particular, this method may be implemented using compensated
+     * summation or other technique to reduce the error bound in the
+     * numerical sum compared to a simple summation of {@code double}
+     * values.
+     *
+     * @apiNote Sorting values by increasing absolute magnitude tends to yield
+     * more accurate results.
      *
      * @return the sum of values, or zero if none
      */
@@ -153,13 +165,21 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
     }
 
     /**
-     * Returns the arithmetic mean of values recorded, or zero if no values have been
-     * recorded. The average returned can vary depending upon the order in
-     * which values are recorded. This is due to accumulated rounding error in
-     * addition of values of differing magnitudes. Values sorted by increasing
-     * absolute magnitude tend to yield more accurate results. If any recorded
-     * value is a {@code NaN} or the sum is at any point a {@code NaN} then the
-     * average will be {@code NaN}.
+     * Returns the arithmetic mean of values recorded, or zero if no
+     * values have been recorded.
+     *
+     * If any recorded value is a NaN or the sum is at any point a NaN
+     * then the average will be code NaN.
+     *
+     * <p>The average returned can vary depending upon the order in
+     * which values are recorded.
+     *
+     * This method may be implemented using compensated summation or
+     * other technique to reduce the error bound in the {@link #getSum
+     * numerical sum} used to compute the average.
+     *
+     * @apiNote Values sorted by increasing absolute magnitude tend to yield
+     * more accurate results.
      *
      * @return the arithmetic mean of values, or zero if none
      */

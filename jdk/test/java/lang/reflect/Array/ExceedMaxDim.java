@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4100814
+ * @bug 4100814 7044282
  * @summary Make sure you can't create an array of dimension > 256.
  */
 

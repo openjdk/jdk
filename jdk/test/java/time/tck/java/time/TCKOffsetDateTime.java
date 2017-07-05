@@ -132,6 +132,7 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
@@ -635,13 +636,13 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_2008_6_30_11_30_59_000000500, TemporalQuery.chronology(), IsoChronology.INSTANCE},
-                {TEST_2008_6_30_11_30_59_000000500, TemporalQuery.zoneId(), null},
-                {TEST_2008_6_30_11_30_59_000000500, TemporalQuery.precision(), ChronoUnit.NANOS},
-                {TEST_2008_6_30_11_30_59_000000500, TemporalQuery.zone(), OFFSET_PONE},
-                {TEST_2008_6_30_11_30_59_000000500, TemporalQuery.offset(), OFFSET_PONE},
-                {TEST_2008_6_30_11_30_59_000000500, TemporalQuery.localDate(), LocalDate.of(2008, 6, 30)},
-                {TEST_2008_6_30_11_30_59_000000500, TemporalQuery.localTime(), LocalTime.of(11, 30, 59, 500)},
+                {TEST_2008_6_30_11_30_59_000000500, TemporalQueries.chronology(), IsoChronology.INSTANCE},
+                {TEST_2008_6_30_11_30_59_000000500, TemporalQueries.zoneId(), null},
+                {TEST_2008_6_30_11_30_59_000000500, TemporalQueries.precision(), ChronoUnit.NANOS},
+                {TEST_2008_6_30_11_30_59_000000500, TemporalQueries.zone(), OFFSET_PONE},
+                {TEST_2008_6_30_11_30_59_000000500, TemporalQueries.offset(), OFFSET_PONE},
+                {TEST_2008_6_30_11_30_59_000000500, TemporalQueries.localDate(), LocalDate.of(2008, 6, 30)},
+                {TEST_2008_6_30_11_30_59_000000500, TemporalQueries.localTime(), LocalTime.of(11, 30, 59, 500)},
         };
     }
 

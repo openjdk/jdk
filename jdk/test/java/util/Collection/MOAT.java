@@ -26,7 +26,7 @@
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
  *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
- *          4802647 7123424
+ *          4802647 7123424 8024709
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @run main MOAT
@@ -1171,8 +1171,45 @@ public class MOAT {
             THROWS(NoSuchElementException.class,
                    new Fun(){void f(){it.next();}});
         }
-    }
 
+        prepMapForDescItrTests(m);
+        checkDescItrRmFirst(m.keySet(), m.navigableKeySet().descendingIterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmMid(m.keySet(), m.navigableKeySet().descendingIterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmLast(m.keySet(), m.navigableKeySet().descendingIterator());
+
+        prepMapForDescItrTests(m);
+        checkDescItrRmFirst(m.keySet(), m.descendingMap().keySet().iterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmMid(m.keySet(), m.descendingMap().keySet().iterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmLast(m.keySet(), m.descendingMap().keySet().iterator());
+
+        prepMapForDescItrTests(m);
+        checkDescItrRmFirst(m.keySet(), m.descendingKeySet().iterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmMid(m.keySet(), m.descendingKeySet().iterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmLast(m.keySet(), m.descendingKeySet().iterator());
+
+        prepMapForDescItrTests(m);
+        checkDescItrRmFirst(m.values(), m.descendingMap().values().iterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmMid(m.values(), m.descendingMap().values().iterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmLast(m.values(), m.descendingMap().values().iterator());
+
+        prepMapForDescItrTests(m);
+        checkDescItrRmFirst((Collection)m.entrySet(),
+                            m.descendingMap().entrySet().iterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmMid((Collection)m.entrySet(),
+                          m.descendingMap().entrySet().iterator());
+        prepMapForDescItrTests(m);
+        checkDescItrRmLast((Collection)m.entrySet(),
+                           m.descendingMap().entrySet().iterator());
+    }
 
     private static void testNavigableSet(NavigableSet<Integer> s) {
         clear(s);
@@ -1205,6 +1242,87 @@ public class MOAT {
             THROWS(NoSuchElementException.class,
                    new Fun(){void f(){it.next();}});
         }
+
+        prepSetForDescItrTests(s);
+        checkDescItrRmFirst(s, s.descendingIterator());
+        prepSetForDescItrTests(s);
+        checkDescItrRmMid(s, s.descendingIterator());
+        prepSetForDescItrTests(s);
+        checkDescItrRmLast(s, s.descendingIterator());
+
+        prepSetForDescItrTests(s);
+        checkDescItrRmFirst(s, s.descendingSet().iterator());
+        prepSetForDescItrTests(s);
+        checkDescItrRmMid(s, s.descendingSet().iterator());
+        prepSetForDescItrTests(s);
+        checkDescItrRmLast(s, s.descendingSet().iterator());
+    }
+
+    private static void prepSetForDescItrTests(Set s) {
+        clear(s);
+        check(s.add(1));
+        check(s.add(3));
+        check(s.add(5));
+    }
+
+    private static void prepMapForDescItrTests(Map m) {
+        clear(m);
+        equal(m.put(1, 2), null);
+        equal(m.put(3, 4), null);
+        equal(m.put(5, 9), null);
+    }
+
+    //--------------------------------------------------------------------
+    // Check behavior of descending iterator when first element is removed
+    //--------------------------------------------------------------------
+    private static <T> void checkDescItrRmFirst(Collection<T> ascColl,
+                                                Iterator<T> descItr) {
+        T[] expected = (T[]) ascColl.toArray();
+        int idx = expected.length -1;
+
+        equalNext(descItr, expected[idx--]);
+        descItr.remove();
+        while(idx >= 0 && descItr.hasNext()) {
+            equalNext(descItr, expected[idx--]);
+        }
+        equal(descItr.hasNext(), false);
+        equal(idx, -1);
+    }
+
+    //-----------------------------------------------------------------------
+    // Check behavior of descending iterator when a middle element is removed
+    //-----------------------------------------------------------------------
+    private static <T> void checkDescItrRmMid(Collection<T> ascColl,
+                                              Iterator<T> descItr) {
+        T[] expected = (T[]) ascColl.toArray();
+        int idx = expected.length -1;
+
+        while (idx >= expected.length / 2) {
+            equalNext(descItr, expected[idx--]);
+        }
+        descItr.remove();
+        while (idx >= 0 && descItr.hasNext()) {
+            equalNext(descItr, expected[idx--]);
+        }
+        equal(descItr.hasNext(), false);
+        equal(idx, -1);
+    }
+
+    //-----------------------------------------------------------------------
+    // Check behavior of descending iterator when the last element is removed
+    //-----------------------------------------------------------------------
+    private static <T> void checkDescItrRmLast(Collection<T> ascColl,
+                                               Iterator<T> descItr) {
+        T[] expected = (T[]) ascColl.toArray();
+        int idx = expected.length -1;
+
+        while (idx >= 0 && descItr.hasNext()) {
+            equalNext(descItr, expected[idx--]);
+        }
+        equal(idx, -1);
+        equal(descItr.hasNext(), false);
+        descItr.remove();
+        equal(ascColl.contains(expected[0]), false);
     }
 
     //--------------------- Infrastructure ---------------------------

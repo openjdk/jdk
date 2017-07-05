@@ -146,7 +146,7 @@ import java.util.Set;
  * Some applications may need to use the older {@link Format java.text.Format}
  * class for formatting. The {@link #toFormat()} method returns an
  * implementation of {@code java.text.Format}.
- * <p>
+ *
  * <h3 id="predefined">Predefined Formatters</h3>
  * <table summary="Predefined Formatters" cellpadding="2" cellspacing="3" border="0" >
  * <thead>
@@ -460,7 +460,7 @@ import java.util.Set;
  * <li>The {@code ChronoField} time fields are resolved.
  * This is documented on {@link ChronoField} and is the same for all chronologies.
  * <li>Any fields that are not {@code ChronoField} are processed.
- * This is achieved using {@link TemporalField#resolve(Map, Chronology, ZoneId, ResolverStyle)}.
+ * This is achieved using {@link TemporalField#resolve(Map, TemporalAccessor, ResolverStyle)}.
  * Documentation about field resolution is located in the implementation
  * of {@code TemporalField}.
  * <li>The {@code ChronoField} date and time fields are re-resolved.
@@ -684,7 +684,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended local date format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>Four digits or more for the {@link ChronoField#YEAR year}.
      * Years in the range 0000 to 9999 will be pre-padded by zero to ensure four digits.
      * Years outside that range will have a prefixed positive or negative symbol.
@@ -719,7 +719,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended offset date format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>The {@link #ISO_LOCAL_DATE}
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
@@ -747,7 +747,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended date format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>The {@link #ISO_LOCAL_DATE}
      * <li>If the offset is not available then the format is complete.
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
@@ -780,7 +780,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended local time format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>Two digits for the {@link ChronoField#HOUR_OF_DAY hour-of-day}.
      *  This is pre-padded by zero to ensure two digits.
      * <li>A colon
@@ -821,7 +821,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended offset time format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>The {@link #ISO_LOCAL_TIME}
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
@@ -848,7 +848,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended offset time format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>The {@link #ISO_LOCAL_TIME}
      * <li>If the offset is not available then the format is complete.
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
@@ -880,7 +880,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended offset date-time format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>The {@link #ISO_LOCAL_DATE}
      * <li>The letter 'T'. Parsing is case insensitive.
      * <li>The {@link #ISO_LOCAL_TIME}
@@ -908,7 +908,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended offset date-time format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>The {@link #ISO_LOCAL_DATE_TIME}
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
      *  they will be handled even though this is not part of the ISO-8601 standard.
@@ -938,7 +938,7 @@ public final class DateTimeFormatter {
      * to add the time-zone.
      * The section in square brackets is not part of the ISO-8601 standard.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>The {@link #ISO_OFFSET_DATE_TIME}
      * <li>If the zone ID is not available or is a {@code ZoneOffset} then the format is complete.
      * <li>An open square bracket '['.
@@ -973,7 +973,7 @@ public final class DateTimeFormatter {
      * the ISO-8601 extended local or offset date-time format, as well as the
      * extended non-ISO form specifying the time-zone.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>The {@link #ISO_LOCAL_DATE_TIME}
      * <li>If the offset is not available to format or parse then the format is complete.
      * <li>The {@link ZoneOffset#getId() offset ID}. If the offset has seconds then
@@ -1014,7 +1014,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended ordinal date format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>Four digits or more for the {@link ChronoField#YEAR year}.
      * Years in the range 0000 to 9999 will be pre-padded by zero to ensure four digits.
      * Years outside that range will have a prefixed positive or negative symbol.
@@ -1054,7 +1054,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 extended week-based date format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>Four digits or more for the {@link IsoFields#WEEK_BASED_YEAR week-based-year}.
      * Years in the range 0000 to 9999 will be pre-padded by zero to ensure four digits.
      * Years outside that range will have a prefixed positive or negative symbol.
@@ -1114,7 +1114,7 @@ public final class DateTimeFormatter {
      * a suitable conversion using {@code ZoneOffset.UTC}.
      * <p>
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>The {@link #ISO_OFFSET_DATE_TIME} where the instant is converted from
      *  {@link ChronoField#INSTANT_SECONDS} and {@link ChronoField#NANO_OF_SECOND}
      *  using the {@code UTC} offset. Parsing is case insensitive.
@@ -1139,7 +1139,7 @@ public final class DateTimeFormatter {
      * This returns an immutable formatter capable of formatting and parsing
      * the ISO-8601 basic local date format.
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>Four digits for the {@link ChronoField#YEAR year}.
      *  Only years in the range 0000 to 9999 are supported.
      * <li>Two digits for the {@link ChronoField#MONTH_OF_YEAR month-of-year}.
@@ -1183,7 +1183,7 @@ public final class DateTimeFormatter {
      * names, only 'GMT' and offset amounts.
      * <p>
      * The format consists of:
-     * <p><ul>
+     * <ul>
      * <li>If the day-of-week is not available to format or parse then jump to day-of-month.
      * <li>Three letter {@link ChronoField#DAY_OF_WEEK day-of-week} in English.
      * <li>A comma
@@ -1274,11 +1274,11 @@ public final class DateTimeFormatter {
      * a non-null period, with a zero period returned instead of null.
      * <p>
      * There are two situations where this query may return a non-zero period.
-     * <p><ul>
+     * <ul>
      * <li>If the {@code ResolverStyle} is {@code LENIENT} and a time is parsed
      *  without a date, then the complete result of the parse consists of a
      *  {@code LocalTime} and an excess {@code Period} in days.
-     * <p>
+     *
      * <li>If the {@code ResolverStyle} is {@code SMART} and a time is parsed
      *  without a date where the time is 24:00:00, then the complete result of
      *  the parse consists of a {@code LocalTime} of 00:00:00 and an excess

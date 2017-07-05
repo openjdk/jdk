@@ -365,6 +365,20 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
      * stateful intermediate operation</a>.
      *
+     * @apiNote
+     * While {@code limit()} is generally a cheap operation on sequential
+     * stream pipelines, it can be quite expensive on ordered parallel pipelines,
+     * especially for large values of {@code maxSize}, since {@code limit(n)}
+     * is constrained to return not just any <em>n</em> elements, but the
+     * <em>first n</em> elements in the encounter order.  Using an unordered
+     * stream source (such as {@link #generate(Supplier)}) or removing the
+     * ordering constraint with {@link #unordered()} may result in significant
+     * speedups of {@code limit()} in parallel pipelines, if the semantics of
+     * your situation permit.  If consistency with encounter order is required,
+     * and you are experiencing poor performance or memory utilization with
+     * {@code limit()} in parallel pipelines, switching to sequential execution
+     * with {@link #sequential()} may improve performance.
+     *
      * @param maxSize the number of elements the stream should be limited to
      * @return the new stream
      * @throws IllegalArgumentException if {@code maxSize} is negative
@@ -373,37 +387,32 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
 
     /**
      * Returns a stream consisting of the remaining elements of this stream
-     * after discarding the first {@code startInclusive} elements of the stream.
-     * If this stream contains fewer than {@code startInclusive} elements then an
+     * after discarding the first {@code n} elements of the stream.
+     * If this stream contains fewer than {@code n} elements then an
      * empty stream will be returned.
      *
      * <p>This is a <a href="package-summary.html#StreamOps">stateful
      * intermediate operation</a>.
      *
-     * @param startInclusive the number of leading elements to skip
-     * @return the new stream
-     * @throws IllegalArgumentException if {@code startInclusive} is negative
-     */
-    Stream<T> substream(long startInclusive);
-
-    /**
-     * Returns a stream consisting of the remaining elements of this stream
-     * after discarding the first {@code startInclusive} elements and truncating
-     * the result to be no longer than {@code endExclusive - startInclusive}
-     * elements in length. If this stream contains fewer than
-     * {@code startInclusive} elements then an empty stream will be returned.
+     * @apiNote
+     * While {@code skip()} is generally a cheap operation on sequential
+     * stream pipelines, it can be quite expensive on ordered parallel pipelines,
+     * especially for large values of {@code n}, since {@code skip(n)}
+     * is constrained to skip not just any <em>n</em> elements, but the
+     * <em>first n</em> elements in the encounter order.  Using an unordered
+     * stream source (such as {@link #generate(Supplier)}) or removing the
+     * ordering constraint with {@link #unordered()} may result in significant
+     * speedups of {@code skip()} in parallel pipelines, if the semantics of
+     * your situation permit.  If consistency with encounter order is required,
+     * and you are experiencing poor performance or memory utilization with
+     * {@code skip()} in parallel pipelines, switching to sequential execution
+     * with {@link #sequential()} may improve performance.
      *
-     * <p>This is a <a href="package-summary.html#StreamOps">short-circuiting
-     * stateful intermediate operation</a>.
-     *
-     * @param startInclusive the starting position of the substream, inclusive
-     * @param endExclusive the ending position of the substream, exclusive
+     * @param n the number of leading elements to skip
      * @return the new stream
-     * @throws IllegalArgumentException if {@code startInclusive} or
-     * {@code endExclusive} is negative or {@code startInclusive} is greater
-     * than {@code endExclusive}
+     * @throws IllegalArgumentException if {@code n} is negative
      */
-    Stream<T> substream(long startInclusive, long endExclusive);
+    Stream<T> skip(long n);
 
     /**
      * Performs an action for each element of this stream.

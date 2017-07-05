@@ -85,6 +85,7 @@ import sun.management.GarbageCollectionNotifInfoCompositeData;
  * </ul>
  **/
 
+@jdk.Exported
 public class GarbageCollectionNotificationInfo implements  CompositeDataView {
 
     private final String gcName;

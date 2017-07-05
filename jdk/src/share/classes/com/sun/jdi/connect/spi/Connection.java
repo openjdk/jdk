@@ -56,6 +56,7 @@ import java.io.IOException;
  * @since 1.5
  */
 
+@jdk.Exported
 public abstract class Connection {
 
     /**

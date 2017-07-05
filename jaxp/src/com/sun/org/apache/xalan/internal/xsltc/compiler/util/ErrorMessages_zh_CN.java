@@ -90,7 +90,13 @@ public class ErrorMessages_zh_CN extends ListResourceBundle {
  */
 
     // These message should be read from a locale-specific resource bundle
-    private static final Object[][] _contents =  new Object[][] {
+    /** Get the lookup table for error messages.
+     *
+     * @return The message lookup table.
+     */
+    public Object[][] getContents()
+    {
+      return new Object[][] {
         {ErrorMsg.MULTIPLE_STYLESHEET_ERR,
         "\u540C\u4E00\u6587\u4EF6\u4E2D\u5B9A\u4E49\u4E86\u591A\u4E2A\u6837\u5F0F\u8868\u3002"},
 
@@ -964,12 +970,5 @@ public class ErrorMessages_zh_CN extends ListResourceBundle {
 
     };
 
-    /** Get the lookup table for error messages.
-     *
-     * @return The message lookup table.
-     */
-    public Object[][] getContents()
-    {
-        return _contents;
     }
 }
