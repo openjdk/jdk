@@ -97,6 +97,7 @@ class klassVtable : public ResourceObj {
   // trace_name_printed is set to true if the current call has
   // printed the klass name so that other routines in the adjust_*
   // group don't print the klass name.
+  bool adjust_default_method(int vtable_index, Method* old_method, Method* new_method);
   void adjust_method_entries(Method** old_methods, Method** new_methods,
                              int methods_length, bool * trace_name_printed);
   bool check_no_old_or_obsolete_entries();
@@ -118,24 +119,28 @@ class klassVtable : public ResourceObj {
   void put_method_at(Method* m, int index);
   static bool needs_new_vtable_entry(methodHandle m, Klass* super, Handle classloader, Symbol* classname, AccessFlags access_flags, TRAPS);
 
-  bool update_inherited_vtable(InstanceKlass* klass, methodHandle target_method, int super_vtable_len, bool checkconstraints, TRAPS);
+  bool update_inherited_vtable(InstanceKlass* klass, methodHandle target_method, int super_vtable_len, int default_index, bool checkconstraints, TRAPS);
  InstanceKlass* find_transitive_override(InstanceKlass* initialsuper, methodHandle target_method, int vtable_index,
                                          Handle target_loader, Symbol* target_classname, Thread* THREAD);
 
   // support for miranda methods
   bool is_miranda_entry_at(int i);
   int fill_in_mirandas(int initialized);
-  static bool is_miranda(Method* m, Array<Method*>* class_methods, Klass* super);
+  static bool is_miranda(Method* m, Array<Method*>* class_methods,
+                         Array<Method*>* default_methods, Klass* super);
   static void add_new_mirandas_to_lists(
       GrowableArray<Method*>* new_mirandas,
       GrowableArray<Method*>* all_mirandas,
-      Array<Method*>* current_interface_methods, Array<Method*>* class_methods,
+      Array<Method*>* current_interface_methods,
+      Array<Method*>* class_methods,
+      Array<Method*>* default_methods,
       Klass* super);
   static void get_mirandas(
       GrowableArray<Method*>* new_mirandas,
       GrowableArray<Method*>* all_mirandas, Klass* super,
-      Array<Method*>* class_methods, Array<Klass*>* local_interfaces);
-
+      Array<Method*>* class_methods,
+      Array<Method*>* default_methods,
+      Array<Klass*>* local_interfaces);
   void verify_against(outputStream* st, klassVtable* vt, int index);
   inline InstanceKlass* ik() const;
 };
@@ -290,7 +295,7 @@ class klassItable : public ResourceObj {
 #endif // INCLUDE_JVMTI
 
   // Setup of itable
-  static int assign_itable_indexes_for_interface(Klass* klass);
+  static int assign_itable_indices_for_interface(Klass* klass);
   static int method_count_for_interface(Klass* klass);
   static int compute_itable_size(Array<Klass*>* transitive_interfaces);
   static void setup_itable_offset_table(instanceKlassHandle klass);
