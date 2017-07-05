@@ -109,7 +109,7 @@ IMPORT_LIST += $(MS_RUNTIME_LIBRARIES:%=$(BINDIR)/%)
 $(BINDIR)/msvcrt.dll: $(MSVCRT_DLL_PATH)/msvcrt.dll
 	$(install-import-file)
 	$(CHMOD) a+x $@
-$(BINDIR)/msvcr71.dll: $(MSVCR71_DLL_PATH)/msvcr71.dll
+$(BINDIR)/$(MSVCRNN_DLL): $(MSVCRNN_DLL_PATH)/$(MSVCRNN_DLL)
 	$(install-import-file)
 	$(CHMOD) a+x $@
 
