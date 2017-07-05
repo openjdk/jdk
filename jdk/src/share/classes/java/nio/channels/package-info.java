@@ -232,8 +232,6 @@
  *     <td>An asynchronous channel to a stream-oriented connecting socket</td></tr>
  * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousServerSocketChannel}&nbsp;&nbsp;</tt></td>
  *     <td>An asynchronous channel to a stream-oriented listening socket</td></tr>
- * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousDatagramChannel}</tt></td>
- *     <td>An asynchronous channel to a datagram-oriented socket</td></tr>
  * <tr><td valign=top><tt>{@link java.nio.channels.CompletionHandler}</tt></td>
  *     <td>A handler for consuming the result of an asynchronous operation</td></tr>
  * <tr><td valign=top><tt>{@link java.nio.channels.AsynchronousChannelGroup}</tt></td>

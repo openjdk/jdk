@@ -290,12 +290,12 @@ FileList_join(FileList fl, char sep)
     char *path;
     char *p;
     for (i = 0, size = 1; i < fl->size; i++)
-        size += JLI_StrLen(fl->files[i]) + 1;
+        size += (int)JLI_StrLen(fl->files[i]) + 1;
 
     path = JLI_MemAlloc(size);
 
     for (i = 0, p = path; i < fl->size; i++) {
-        int len = JLI_StrLen(fl->files[i]);
+        int len = (int)JLI_StrLen(fl->files[i]);
         if (i > 0) *p++ = sep;
         memcpy(p, fl->files[i], len);
         p += len;
@@ -309,7 +309,7 @@ static FileList
 FileList_split(const char *path, char sep)
 {
     const char *p, *q;
-    int len = JLI_StrLen(path);
+    int len = (int)JLI_StrLen(path);
     int count;
     FileList fl;
     for (count = 1, p = path; p < path + len; p++)
@@ -330,7 +330,7 @@ FileList_split(const char *path, char sep)
 static int
 isJarFileName(const char *filename)
 {
-    int len = JLI_StrLen(filename);
+    int len = (int)JLI_StrLen(filename);
     return (len >= 4) &&
         (filename[len - 4] == '.') &&
         (equal(filename + len - 3, "jar") ||
@@ -342,8 +342,8 @@ isJarFileName(const char *filename)
 static char *
 wildcardConcat(const char *wildcard, const char *basename)
 {
-    int wildlen = JLI_StrLen(wildcard);
-    int baselen = JLI_StrLen(basename);
+    int wildlen = (int)JLI_StrLen(wildcard);
+    int baselen = (int)JLI_StrLen(basename);
     char *filename = (char *) JLI_MemAlloc(wildlen + baselen);
     /* Replace the trailing '*' with basename */
     memcpy(filename, wildcard, wildlen-1);
@@ -369,7 +369,7 @@ wildcardFileList(const char *wildcard)
 static int
 isWildcard(const char *filename)
 {
-    int len = JLI_StrLen(filename);
+    int len = (int)JLI_StrLen(filename);
     return (len > 0) &&
         (filename[len - 1] == '*') &&
         (len == 1 || IS_FILE_SEPARATOR(filename[len - 2])) &&

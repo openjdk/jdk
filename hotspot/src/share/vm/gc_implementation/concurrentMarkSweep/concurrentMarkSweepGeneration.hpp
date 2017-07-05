@@ -1185,8 +1185,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   virtual void par_promote_alloc_done(int thread_num);
   virtual void par_oop_since_save_marks_iterate_done(int thread_num);
 
-  virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes,
-    bool younger_handles_promotion_failure) const;
+  virtual bool promotion_attempt_is_safe(size_t promotion_in_bytes) const;
 
   // Inform this (non-young) generation that a promotion failure was
   // encountered during a collection of a younger generation that

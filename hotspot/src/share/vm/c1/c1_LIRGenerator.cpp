@@ -1350,7 +1350,6 @@ void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_Opr
     addr = ptr;
   }
   assert(addr->is_register(), "must be a register at this point");
-  assert(addr->type() == T_OBJECT, "addr should point to an object");
 
   LIR_Opr xor_res = new_pointer_register();
   LIR_Opr xor_shift_res = new_pointer_register();

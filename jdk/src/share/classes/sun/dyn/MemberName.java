@@ -521,6 +521,11 @@ public final class MemberName implements Member, Cloneable {
         if (lookupClass != null)  message += ", from " + lookupClass.getName();
         return new NoAccessException(message);
     }
+    public static Error uncaughtException(Exception ex) {
+        Error err = new InternalError("uncaught exception");
+        err.initCause(ex);
+        return err;
+    }
 
     /** Actually making a query requires an access check. */
     public static Factory getFactory(Access token) {
@@ -641,7 +646,7 @@ public final class MemberName implements Member, Cloneable {
          *  If lookup fails or access is not permitted, a {@linkplain NoAccessException} is thrown.
          *  Otherwise a fresh copy of the given member is returned, with modifier bits filled in.
          */
-        public MemberName resolveOrFail(MemberName m, boolean searchSupers, Class<?> lookupClass) {
+        public MemberName resolveOrFail(MemberName m, boolean searchSupers, Class<?> lookupClass) throws NoAccessException {
             MemberName result = resolveOrNull(m, searchSupers, lookupClass);
             if (result != null)
                 return result;

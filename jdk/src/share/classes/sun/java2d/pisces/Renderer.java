@@ -26,250 +26,552 @@
 package sun.java2d.pisces;
 
 import java.util.Arrays;
+import java.util.Iterator;
 
-public class Renderer implements LineSink {
+import sun.awt.geom.PathConsumer2D;
 
-///////////////////////////////////////////////////////////////////////////////
-// Scan line iterator and edge crossing data.
-//////////////////////////////////////////////////////////////////////////////
+public class Renderer implements PathConsumer2D {
 
-    private int[] crossings;
+    private class ScanlineIterator {
 
-    // This is an array of indices into the edge array. It is initialized to
-    // [i * SIZEOF_STRUCT_EDGE for i in range(0, edgesSize/SIZEOF_STRUCT_EDGE)]
-    // (where range(i, j) is i,i+1,...,j-1 -- just like in python).
-    // The reason for keeping this is because we need the edges array sorted
-    // by y0, but we don't want to move all that data around, so instead we
-    // sort the indices into the edge array, and use edgeIndices to access
-    // the edges array. This is meant to simulate a pointer array (hence the name)
-    private int[] edgePtrs;
+        private int[] crossings;
 
-    // crossing bounds. The bounds are not necessarily tight (the scan line
-    // at minY, for example, might have no crossings). The x bounds will
-    // be accumulated as crossings are computed.
-    private int minY, maxY;
-    private int minX, maxX;
-    private int nextY;
+        // crossing bounds. The bounds are not necessarily tight (the scan line
+        // at minY, for example, might have no crossings). The x bounds will
+        // be accumulated as crossings are computed.
+        private int minY, maxY;
+        private int nextY;
 
-    // indices into the edge pointer list. They indicate the "active" sublist in
-    // the edge list (the portion of the list that contains all the edges that
-    // cross the next scan line).
-    private int lo, hi;
+        // indices into the segment pointer lists. They indicate the "active"
+        // sublist in the segment lists (the portion of the list that contains
+        // all the segments that cross the next scan line).
+        private int elo, ehi;
+        private final int[] edgePtrs;
+        private int qlo, qhi;
+        private final int[] quadPtrs;
+        private int clo, chi;
+        private final int[] curvePtrs;
 
-    private static final int INIT_CROSSINGS_SIZE = 50;
-    private void ScanLineItInitialize() {
-        crossings = new int[INIT_CROSSINGS_SIZE];
-        edgePtrs = new int[edgesSize / SIZEOF_STRUCT_EDGE];
-        for (int i = 0; i < edgePtrs.length; i++) {
-            edgePtrs[i] = i * SIZEOF_STRUCT_EDGE;
+        private static final int INIT_CROSSINGS_SIZE = 10;
+
+        private ScanlineIterator() {
+            crossings = new int[INIT_CROSSINGS_SIZE];
+
+            edgePtrs = new int[numEdges];
+            Helpers.fillWithIdxes(edgePtrs, SIZEOF_EDGE);
+            qsort(edges, edgePtrs, YMIN, 0, numEdges - 1);
+
+            quadPtrs = new int[numQuads];
+            Helpers.fillWithIdxes(quadPtrs, SIZEOF_QUAD);
+            qsort(quads, quadPtrs, YMIN, 0, numQuads - 1);
+
+            curvePtrs = new int[numCurves];
+            Helpers.fillWithIdxes(curvePtrs, SIZEOF_CURVE);
+            qsort(curves, curvePtrs, YMIN, 0, numCurves - 1);
+
+            // We don't care if we clip some of the line off with ceil, since
+            // no scan line crossings will be eliminated (in fact, the ceil is
+            // the y of the first scan line crossing).
+            nextY = minY = Math.max(boundsMinY, (int)Math.ceil(edgeMinY));
+            maxY = Math.min(boundsMaxY, (int)Math.ceil(edgeMaxY));
+
+            for (elo = 0; elo < numEdges && edges[edgePtrs[elo]+YMAX] <= minY; elo++)
+                ;
+            // the active list is *edgePtrs[lo] (inclusive) *edgePtrs[hi] (exclusive)
+            for (ehi = elo; ehi < numEdges && edges[edgePtrs[ehi]+YMIN] <= minY; ehi++)
+                edgeSetCurY(edgePtrs[ehi], minY);// TODO: make minY a float to avoid casts
+
+            for (qlo = 0; qlo < numQuads && quads[quadPtrs[qlo]+YMAX] <= minY; qlo++)
+                ;
+            for (qhi = qlo; qhi < numQuads && quads[quadPtrs[qhi]+YMIN] <= minY; qhi++)
+                quadSetCurY(quadPtrs[qhi], minY);
+
+            for (clo = 0; clo < numCurves && curves[curvePtrs[clo]+YMAX] <= minY; clo++)
+                ;
+            for (chi = clo; chi < numCurves && curves[curvePtrs[chi]+YMIN] <= minY; chi++)
+                curveSetCurY(curvePtrs[chi], minY);
         }
 
-        qsort(0, edgePtrs.length - 1);
-
-        // We don't care if we clip some of the line off with ceil, since
-        // no scan line crossings will be eliminated (in fact, the ceil is
-        // the y of the first scan line crossing).
-        nextY = minY = Math.max(boundsMinY, (int)Math.ceil(edgeMinY));
-        maxY = Math.min(boundsMaxY, (int)Math.ceil(edgeMaxY));
-
-        for (lo = 0; lo < edgePtrs.length && edges[edgePtrs[lo]+Y1] <= nextY; lo++)
-            ;
-        for (hi = lo; hi < edgePtrs.length && edges[edgePtrs[hi]+CURY] <= nextY; hi++)
-            ; // the active list is *edgePtrs[lo] (inclusive) *edgePtrs[hi] (exclusive)
-        for (int i = lo; i < hi; i++) {
-            setCurY(edgePtrs[i], nextY);
-        }
-
-        // We accumulate X in the iterator because accumulating it in addEdge
-        // like we do with Y does not do much good: if there's an edge
-        // (0,0)->(1000,10000), and if y gets clipped to 1000, then the x
-        // bound should be 100, but the accumulator from addEdge would say 1000,
-        // so we'd still have to accumulate the X bounds as we add crossings.
-        minX = boundsMinX;
-        maxX = boundsMaxX;
-    }
-
-    private int ScanLineItCurrentY() {
-        return nextY - 1;
-    }
-
-    private int ScanLineItGoToNextYAndComputeCrossings() {
-        // we go through the active list and remove the ones that don't cross
-        // the nextY scanline.
-        int crossingIdx = 0;
-        for (int i = lo; i < hi; i++) {
-            if (edges[edgePtrs[i]+Y1] <= nextY) {
-                edgePtrs[i] = edgePtrs[lo++];
+        private int next() {
+            // we go through the active lists and remove segments that don't cross
+            // the nextY scanline.
+            int crossingIdx = 0;
+            for (int i = elo; i < ehi; i++) {
+                if (edges[edgePtrs[i]+YMAX] <= nextY) {
+                    edgePtrs[i] = edgePtrs[elo++];
+                }
             }
-        }
-        if (hi - lo > crossings.length) {
-            int newSize = Math.max(hi - lo, crossings.length * 2);
-            crossings = Arrays.copyOf(crossings, newSize);
-        }
-        // Now every edge between lo and hi crosses nextY. Compute it's
-        // crossing and put it in the crossings array.
-        for (int i = lo; i < hi; i++) {
-            addCrossing(nextY, getCurCrossing(edgePtrs[i]), (int)edges[edgePtrs[i]+OR], crossingIdx);
-            gotoNextY(edgePtrs[i]);
-            crossingIdx++;
+            for (int i = qlo; i < qhi; i++) {
+                if (quads[quadPtrs[i]+YMAX] <= nextY) {
+                    quadPtrs[i] = quadPtrs[qlo++];
+                }
+            }
+            for (int i = clo; i < chi; i++) {
+                if (curves[curvePtrs[i]+YMAX] <= nextY) {
+                    curvePtrs[i] = curvePtrs[clo++];
+                }
+            }
+
+            crossings = Helpers.widenArray(crossings, 0, ehi-elo+qhi-qlo+chi-clo);
+
+            // Now every edge between lo and hi crosses nextY. Compute it's
+            // crossing and put it in the crossings array.
+            for (int i = elo; i < ehi; i++) {
+                int ptr = edgePtrs[i];
+                addCrossing(nextY, (int)edges[ptr+CURX], edges[ptr+OR], crossingIdx);
+                edgeGoToNextY(ptr);
+                crossingIdx++;
+            }
+            for (int i = qlo; i < qhi; i++) {
+                int ptr = quadPtrs[i];
+                addCrossing(nextY, (int)quads[ptr+CURX], quads[ptr+OR], crossingIdx);
+                quadGoToNextY(ptr);
+                crossingIdx++;
+            }
+            for (int i = clo; i < chi; i++) {
+                int ptr = curvePtrs[i];
+                addCrossing(nextY, (int)curves[ptr+CURX], curves[ptr+OR], crossingIdx);
+                curveGoToNextY(ptr);
+                crossingIdx++;
+            }
+
+            nextY++;
+            // Expand active lists to include new edges.
+            for (; ehi < numEdges && edges[edgePtrs[ehi]+YMIN] <= nextY; ehi++) {
+                edgeSetCurY(edgePtrs[ehi], nextY);
+            }
+            for (; qhi < numQuads && quads[quadPtrs[qhi]+YMIN] <= nextY; qhi++) {
+                quadSetCurY(quadPtrs[qhi], nextY);
+            }
+            for (; chi < numCurves && curves[curvePtrs[chi]+YMIN] <= nextY; chi++) {
+                curveSetCurY(curvePtrs[chi], nextY);
+            }
+            Arrays.sort(crossings, 0, crossingIdx);
+            return crossingIdx;
         }
 
-        nextY++;
-        // Expand active list to include new edges.
-        for (; hi < edgePtrs.length && edges[edgePtrs[hi]+CURY] <= nextY; hi++) {
-            setCurY(edgePtrs[hi], nextY);
+        private boolean hasNext() {
+            return nextY < maxY;
         }
 
-        Arrays.sort(crossings, 0, crossingIdx);
-        return crossingIdx;
+        private int curY() {
+            return nextY - 1;
+        }
+
+        private void addCrossing(int y, int x, float or, int idx) {
+            x <<= 1;
+            crossings[idx] = ((or > 0) ? (x | 0x1) : x);
+        }
     }
-
-    private boolean ScanLineItHasNext() {
-        return nextY < maxY;
-    }
-
-    private void addCrossing(int y, int x, int or, int idx) {
-        if (x < minX) {
-            minX = x;
-        }
-        if (x > maxX) {
-            maxX = x;
-        }
-        x <<= 1;
-        crossings[idx] = ((or == 1) ? (x | 0x1) : x);
-    }
-
-
     // quicksort implementation for sorting the edge indices ("pointers")
     // by increasing y0. first, last are indices into the "pointer" array
     // It sorts the pointer array from first (inclusive) to last (inclusive)
-    private void qsort(int first, int last) {
+    private static void qsort(final float[] data, final int[] ptrs,
+                              final int fieldForCmp, int first, int last)
+    {
         if (last > first) {
-            int p = partition(first, last);
+            int p = partition(data, ptrs, fieldForCmp, first, last);
             if (first < p - 1) {
-                qsort(first, p - 1);
+                qsort(data, ptrs, fieldForCmp, first, p - 1);
             }
             if (p < last) {
-                qsort(p, last);
+                qsort(data, ptrs, fieldForCmp, p, last);
             }
         }
     }
 
     // i, j are indices into edgePtrs.
-    private int partition(int i, int j) {
-        int pivotVal = edgePtrs[i];
+    private static int partition(final float[] data, final int[] ptrs,
+                                 final int fieldForCmp, int i, int j)
+    {
+        int pivotValFieldForCmp = ptrs[i]+fieldForCmp;
         while (i <= j) {
             // edges[edgePtrs[i]+1] is equivalent to (*(edgePtrs[i])).y0 in C
-            while (edges[edgePtrs[i]+CURY] < edges[pivotVal+CURY]) { i++; }
-            while (edges[edgePtrs[j]+CURY] > edges[pivotVal+CURY]) { j--; }
+            while (data[ptrs[i]+fieldForCmp] < data[pivotValFieldForCmp])
+                i++;
+            while (data[ptrs[j]+fieldForCmp] > data[pivotValFieldForCmp])
+                j--;
             if (i <= j) {
-                int tmp = edgePtrs[i];
-                edgePtrs[i] = edgePtrs[j];
-                edgePtrs[j] = tmp;
+                int tmp = ptrs[i];
+                ptrs[i] = ptrs[j];
+                ptrs[j] = tmp;
                 i++;
                 j--;
             }
         }
         return i;
     }
-
 //============================================================================
 
 
 //////////////////////////////////////////////////////////////////////////////
 //  EDGE LIST
 //////////////////////////////////////////////////////////////////////////////
+// TODO(maybe): very tempting to use fixed point here. A lot of opportunities
+// for shifts and just removing certain operations altogether.
+// TODO: it might be worth it to make an EdgeList class. It would probably
+// clean things up a bit and not impact performance much.
 
-    private static final int INIT_NUM_EDGES = 1000;
-    private static final int SIZEOF_STRUCT_EDGE = 5;
+    // common to all types of input path segments.
+    private static final int YMIN = 0;
+    private static final int YMAX = 1;
+    private static final int CURX = 2;
+    // this and OR are meant to be indeces into "int" fields, but arrays must
+    // be homogenous, so every field is a float. However floats can represent
+    // exactly up to 26 bit ints, so we're ok.
+    private static final int CURY = 3;
+    private static final int OR   = 4;
 
-    // The following array is a poor man's struct array:
-    // it simulates a struct array by having
-    // edges[SIZEOF_STRUCT_EDGE * i + j] be the jth field in the ith element
-    // of an array of edge structs.
-    private float[] edges;
-    private int edgesSize; // size of the edge list.
-    private static final int Y1    = 0;
-    private static final int SLOPE = 1;
-    private static final int OR    = 2; // the orientation. This can be -1 or 1.
-                                     // -1 means up, 1 means down.
-    private static final int CURY  = 3; // j = 5 corresponds to the "current Y".
-                             // Each edge keeps track of the last scanline
-                             // crossing it computed, and this is the y coord of
-                             // that scanline.
-    private static final int CURX = 4; //the x coord of the current crossing.
+    // for straight lines only:
+    private static final int SLOPE = 5;
 
-    // Note that while the array is declared as a float[] not all of it's
-    // elements should be floats. currentY and Orientation should be ints (or int and
-    // byte respectively), but they all need to be the same type. This isn't
-    // really a problem because floats can represent exactly all 23 bit integers,
-    // which should be more than enough.
-    // Note, also, that we only need x1 for slope computation, so we don't need
-    // to store it. x0, y0 don't need to be stored either. They can be put into
-    // curx, cury, and it's ok if they're lost when curx and cury are changed.
-    // We take this undeniably ugly and error prone approach (instead of simply
-    // making an Edge class) for performance reasons. Also, it would probably be nicer
-    // to have one array for each field, but that would defeat the purpose because
-    // it would make poor use of the processor cache, since we tend to access
-    // all the fields for one edge at a time.
+    // for quads and cubics:
+    private static final int X0 = 5;
+    private static final int Y0 = 6;
+    private static final int XL = 7;
+    private static final int COUNT = 8;
+    private static final int CURSLOPE = 9;
+    private static final int DX = 10;
+    private static final int DY = 11;
+    private static final int DDX = 12;
+    private static final int DDY = 13;
 
-    private float edgeMinY;
-    private float edgeMaxY;
+    // for cubics only
+    private static final int DDDX = 14;
+    private static final int DDDY = 15;
+
+    private float edgeMinY = Float.POSITIVE_INFINITY;
+    private float edgeMaxY = Float.NEGATIVE_INFINITY;
+    private float edgeMinX = Float.POSITIVE_INFINITY;
+    private float edgeMaxX = Float.NEGATIVE_INFINITY;
+
+    private static final int SIZEOF_EDGE = 6;
+    private float[] edges = null;
+    private int numEdges;
+    // these are static because we need them to be usable from ScanlineIterator
+    private void edgeSetCurY(final int idx, int y) {
+        edges[idx+CURX] += (y - edges[idx+CURY]) * edges[idx+SLOPE];
+        edges[idx+CURY] = y;
+    }
+    private void edgeGoToNextY(final int idx) {
+        edges[idx+CURY] += 1;
+        edges[idx+CURX] += edges[idx+SLOPE];
+    }
 
 
-    private void addEdge(float x0, float y0, float x1, float y1) {
-        float or = (y0 < y1) ? 1f : -1f; // orientation: 1 = UP; -1 = DOWN
-        if (or == -1) {
-            float tmp = y0;
-            y0 = y1;
-            y1 = tmp;
-            tmp = x0;
-            x0 = x1;
-            x1 = tmp;
+    private static final int SIZEOF_QUAD = 14;
+    private float[] quads = null;
+    private int numQuads;
+    // This function should be called exactly once, to set the first scanline
+    // of the curve. Before it is called, the curve should think its first
+    // scanline is CEIL(YMIN).
+    private void quadSetCurY(final int idx, final int y) {
+        assert y < quads[idx+YMAX];
+        assert (quads[idx+CURY] > y);
+        assert (quads[idx+CURY] == Math.ceil(quads[idx+CURY]));
+
+        while (quads[idx+CURY] < ((float)y)) {
+            quadGoToNextY(idx);
         }
-        // skip edges that don't cross a scanline
-        if (Math.ceil(y0) >= Math.ceil(y1)) {
+    }
+    private void quadGoToNextY(final int idx) {
+        quads[idx+CURY] += 1;
+        // this will get overriden if the while executes.
+        quads[idx+CURX] += quads[idx+CURSLOPE];
+        int count = (int)quads[idx+COUNT];
+        // this loop should never execute more than once because our
+        // curve is monotonic in Y. Still we put it in because you can
+        // never be too sure when dealing with floating point.
+        while(quads[idx+CURY] >= quads[idx+Y0] && count > 0) {
+            float x0 = quads[idx+X0], y0 = quads[idx+Y0];
+            count = executeQuadAFDIteration(idx);
+            float x1 = quads[idx+X0], y1 = quads[idx+Y0];
+            // our quads are monotonic, so this shouldn't happen, but
+            // it is conceivable that for very flat quads with different
+            // y values at their endpoints AFD might give us a horizontal
+            // segment.
+            if (y1 == y0) {
+                continue;
+            }
+            quads[idx+CURSLOPE] = (x1 - x0) / (y1 - y0);
+            quads[idx+CURX] = x0 + (quads[idx+CURY] - y0) * quads[idx+CURSLOPE];
+        }
+    }
+
+
+    private static final int SIZEOF_CURVE = 16;
+    private float[] curves = null;
+    private int numCurves;
+    private void curveSetCurY(final int idx, final int y) {
+        assert y < curves[idx+YMAX];
+        assert (curves[idx+CURY] > y);
+        assert (curves[idx+CURY] == Math.ceil(curves[idx+CURY]));
+
+        while (curves[idx+CURY] < ((float)y)) {
+            curveGoToNextY(idx);
+        }
+    }
+    private void curveGoToNextY(final int idx) {
+        curves[idx+CURY] += 1;
+        // this will get overriden if the while executes.
+        curves[idx+CURX] += curves[idx+CURSLOPE];
+        int count = (int)curves[idx+COUNT];
+        // this loop should never execute more than once because our
+        // curve is monotonic in Y. Still we put it in because you can
+        // never be too sure when dealing with floating point.
+        while(curves[idx+CURY] >= curves[idx+Y0] && count > 0) {
+            float x0 = curves[idx+X0], y0 = curves[idx+Y0];
+            count = executeCurveAFDIteration(idx);
+            float x1 = curves[idx+X0], y1 = curves[idx+Y0];
+            // our curves are monotonic, so this shouldn't happen, but
+            // it is conceivable that for very flat curves with different
+            // y values at their endpoints AFD might give us a horizontal
+            // segment.
+            if (y1 == y0) {
+                continue;
+            }
+            curves[idx+CURSLOPE] = (x1 - x0) / (y1 - y0);
+            curves[idx+CURX] = x0 + (curves[idx+CURY] - y0) * curves[idx+CURSLOPE];
+        }
+    }
+
+
+    private static final float DEC_BND = 20f;
+    private static final float INC_BND = 8f;
+    // Flattens using adaptive forward differencing. This only carries out
+    // one iteration of the AFD loop. All it does is update AFD variables (i.e.
+    // X0, Y0, D*[X|Y], COUNT; not variables used for computing scanline crossings).
+    private int executeQuadAFDIteration(int idx) {
+        int count = (int)quads[idx+COUNT];
+        float ddx = quads[idx+DDX];
+        float ddy = quads[idx+DDY];
+        float dx = quads[idx+DX];
+        float dy = quads[idx+DY];
+
+        while (Math.abs(ddx) > DEC_BND || Math.abs(ddy) > DEC_BND) {
+            ddx = ddx / 4;
+            ddy = ddy / 4;
+            dx = (dx - ddx) / 2;
+            dy = (dy - ddy) / 2;
+            count <<= 1;
+        }
+        // can only do this on even "count" values, because we must divide count by 2
+        while (count % 2 == 0 && Math.abs(dx) <= INC_BND && Math.abs(dy) <= INC_BND) {
+            dx = 2 * dx + ddx;
+            dy = 2 * dy + ddy;
+            ddx = 4 * ddx;
+            ddy = 4 * ddy;
+            count >>= 1;
+        }
+        count--;
+        if (count > 0) {
+            quads[idx+X0] += dx;
+            dx += ddx;
+            quads[idx+Y0] += dy;
+            dy += ddy;
+        } else {
+            quads[idx+X0] = quads[idx+XL];
+            quads[idx+Y0] = quads[idx+YMAX];
+        }
+        quads[idx+COUNT] = count;
+        quads[idx+DDX] = ddx;
+        quads[idx+DDY] = ddy;
+        quads[idx+DX] = dx;
+        quads[idx+DY] = dy;
+        return count;
+    }
+    private int executeCurveAFDIteration(int idx) {
+        int count = (int)curves[idx+COUNT];
+        float ddx = curves[idx+DDX];
+        float ddy = curves[idx+DDY];
+        float dx = curves[idx+DX];
+        float dy = curves[idx+DY];
+        float dddx = curves[idx+DDDX];
+        float dddy = curves[idx+DDDY];
+
+        while (Math.abs(ddx) > DEC_BND || Math.abs(ddy) > DEC_BND) {
+            dddx /= 8;
+            dddy /= 8;
+            ddx = ddx/4 - dddx;
+            ddy = ddy/4 - dddy;
+            dx = (dx - ddx) / 2;
+            dy = (dy - ddy) / 2;
+            count <<= 1;
+        }
+        // can only do this on even "count" values, because we must divide count by 2
+        while (count % 2 == 0 && Math.abs(dx) <= INC_BND && Math.abs(dy) <= INC_BND) {
+            dx = 2 * dx + ddx;
+            dy = 2 * dy + ddy;
+            ddx = 4 * (ddx + dddx);
+            ddy = 4 * (ddy + dddy);
+            dddx = 8 * dddx;
+            dddy = 8 * dddy;
+            count >>= 1;
+        }
+        count--;
+        if (count > 0) {
+            curves[idx+X0] += dx;
+            dx += ddx;
+            ddx += dddx;
+            curves[idx+Y0] += dy;
+            dy += ddy;
+            ddy += dddy;
+        } else {
+            curves[idx+X0] = curves[idx+XL];
+            curves[idx+Y0] = curves[idx+YMAX];
+        }
+        curves[idx+COUNT] = count;
+        curves[idx+DDDX] = dddx;
+        curves[idx+DDDY] = dddy;
+        curves[idx+DDX] = ddx;
+        curves[idx+DDY] = ddy;
+        curves[idx+DX] = dx;
+        curves[idx+DY] = dy;
+        return count;
+    }
+
+
+    private void initLine(final int idx, float[] pts, int or) {
+        edges[idx+SLOPE] = (pts[2] - pts[0]) / (pts[3] - pts[1]);
+        edges[idx+CURX] = pts[0] + (edges[idx+CURY] - pts[1]) * edges[idx+SLOPE];
+    }
+
+    private void initQuad(final int idx, float[] points, int or) {
+        final int countlg = 3;
+        final int count = 1 << countlg;
+
+        // the dx and dy refer to forward differencing variables, not the last
+        // coefficients of the "points" polynomial
+        final float ddx, ddy, dx, dy;
+        c.set(points, 6);
+
+        ddx = c.dbx / (1 << (2 * countlg));
+        ddy = c.dby / (1 << (2 * countlg));
+        dx = c.bx / (1 << (2 * countlg)) + c.cx / (1 << countlg);
+        dy = c.by / (1 << (2 * countlg)) + c.cy / (1 << countlg);
+
+        quads[idx+DDX] = ddx;
+        quads[idx+DDY] = ddy;
+        quads[idx+DX] = dx;
+        quads[idx+DY] = dy;
+        quads[idx+COUNT] = count;
+        quads[idx+XL] = points[4];
+        quads[idx+X0] = points[0];
+        quads[idx+Y0] = points[1];
+        executeQuadAFDIteration(idx);
+        float x1 = quads[idx+X0], y1 = quads[idx+Y0];
+        quads[idx+CURSLOPE] = (x1 - points[0]) / (y1 - points[1]);
+        quads[idx+CURX] = points[0] + (quads[idx+CURY] - points[1])*quads[idx+CURSLOPE];
+    }
+
+    private void initCurve(final int idx, float[] points, int or) {
+        final int countlg = 3;
+        final int count = 1 << countlg;
+
+        // the dx and dy refer to forward differencing variables, not the last
+        // coefficients of the "points" polynomial
+        final float dddx, dddy, ddx, ddy, dx, dy;
+        c.set(points, 8);
+        dddx = 2f * c.dax / (1 << (3 * countlg));
+        dddy = 2f * c.day / (1 << (3 * countlg));
+
+        ddx = dddx + c.dbx / (1 << (2 * countlg));
+        ddy = dddy + c.dby / (1 << (2 * countlg));
+        dx = c.ax / (1 << (3 * countlg)) + c.bx / (1 << (2 * countlg)) + c.cx / (1 << countlg);
+        dy = c.ay / (1 << (3 * countlg)) + c.by / (1 << (2 * countlg)) + c.cy / (1 << countlg);
+
+        curves[idx+DDDX] = dddx;
+        curves[idx+DDDY] = dddy;
+        curves[idx+DDX] = ddx;
+        curves[idx+DDY] = ddy;
+        curves[idx+DX] = dx;
+        curves[idx+DY] = dy;
+        curves[idx+COUNT] = count;
+        curves[idx+XL] = points[6];
+        curves[idx+X0] = points[0];
+        curves[idx+Y0] = points[1];
+        executeCurveAFDIteration(idx);
+        float x1 = curves[idx+X0], y1 = curves[idx+Y0];
+        curves[idx+CURSLOPE] = (x1 - points[0]) / (y1 - points[1]);
+        curves[idx+CURX] = points[0] + (curves[idx+CURY] - points[1])*curves[idx+CURSLOPE];
+    }
+
+    private void addPathSegment(float[] pts, final int type, final int or) {
+        int idx;
+        float[] addTo;
+        switch (type) {
+        case 4:
+            idx = numEdges * SIZEOF_EDGE;
+            addTo = edges = Helpers.widenArray(edges, numEdges*SIZEOF_EDGE, SIZEOF_EDGE);
+            numEdges++;
+            break;
+        case 6:
+            idx = numQuads * SIZEOF_QUAD;
+            addTo = quads = Helpers.widenArray(quads, numQuads*SIZEOF_QUAD, SIZEOF_QUAD);
+            numQuads++;
+            break;
+        case 8:
+            idx = numCurves * SIZEOF_CURVE;
+            addTo = curves = Helpers.widenArray(curves, numCurves*SIZEOF_CURVE, SIZEOF_CURVE);
+            numCurves++;
+            break;
+        default:
+            throw new InternalError();
+        }
+        // set the common fields, except CURX, for which we must know the kind
+        // of curve. NOTE: this must be done before the type specific fields
+        // are initialized, because those depend on the common ones.
+        addTo[idx+YMIN] = pts[1];
+        addTo[idx+YMAX] = pts[type-1];
+        addTo[idx+OR] = or;
+        addTo[idx+CURY] = (float)Math.ceil(pts[1]);
+        switch (type) {
+        case 4:
+            initLine(idx, pts, or);
+            break;
+        case 6:
+            initQuad(idx, pts, or);
+            break;
+        case 8:
+            initCurve(idx, pts, or);
+            break;
+        default:
+            throw new InternalError();
+        }
+    }
+
+    // precondition: the curve in pts must be monotonic and increasing in y.
+    private void somethingTo(float[] pts, final int type, final int or) {
+        // NOTE: it's very important that we check for or >= 0 below (as
+        // opposed to or == 1, or or > 0, or anything else). That's
+        // because if we check for or==1, when the curve being added
+        // is a horizontal line, or will be 0 so or==1 will be false and
+        // x0 and y0 will be updated to pts[0] and pts[1] instead of pts[type-2]
+        // and pts[type-1], which is the correct thing to do.
+        this.x0 = or >= 0 ? pts[type - 2] : pts[0];
+        this.y0 = or >= 0 ? pts[type - 1] : pts[1];
+
+        float minY = pts[1], maxY = pts[type - 1];
+        if (Math.ceil(minY) >= Math.ceil(maxY) ||
+            Math.ceil(minY) >= boundsMaxY || maxY < boundsMinY)
+        {
             return;
         }
 
-        int newSize = edgesSize + SIZEOF_STRUCT_EDGE;
-        if (edges.length < newSize) {
-            edges = Arrays.copyOf(edges, newSize * 2);
-        }
-        edges[edgesSize+CURX] = x0;
-        edges[edgesSize+CURY] = y0;
-        edges[edgesSize+Y1] = y1;
-        edges[edgesSize+SLOPE] = (x1 - x0) / (y1 - y0);
-        edges[edgesSize+OR] = or;
-        // the crossing values can't be initialized meaningfully yet. This
-        // will have to wait until setCurY is called
-        edgesSize += SIZEOF_STRUCT_EDGE;
+        if (minY < edgeMinY) { edgeMinY = minY; }
+        if (maxY > edgeMaxY) { edgeMaxY = maxY; }
 
-        // Accumulate edgeMinY and edgeMaxY
-        if (y0 < edgeMinY) { edgeMinY = y0; }
-        if (y1 > edgeMaxY) { edgeMaxY = y1; }
+        int minXidx = (pts[0] < pts[type-2] ? 0 : type - 2);
+        float minX = pts[minXidx];
+        float maxX = pts[type - 2 - minXidx];
+        if (minX < edgeMinX) { edgeMinX = minX; }
+        if (maxX > edgeMaxX) { edgeMaxX = maxX; }
+        addPathSegment(pts, type, or);
     }
 
-    // As far as the following methods care, this edges extends to infinity.
-    // They can compute the x intersect of any horizontal line.
-    // precondition: idx is the index to the start of the desired edge.
-    // So, if the ith edge is wanted, idx should be SIZEOF_STRUCT_EDGE * i
-    private void setCurY(int idx, int y) {
-        // compute the x crossing of edge at idx and horizontal line y
-        // currentXCrossing = (y - y0)*slope + x0
-        edges[idx + CURX] = (y - edges[idx + CURY]) * edges[idx + SLOPE] + edges[idx+CURX];
-        edges[idx + CURY] = (float)y;
-    }
+// END EDGE LIST
+//////////////////////////////////////////////////////////////////////////////
 
-    private void gotoNextY(int idx) {
-        edges[idx + CURY] += 1f; // i.e. curY += 1
-        edges[idx + CURX] += edges[idx + SLOPE]; // i.e. curXCrossing += slope
-    }
-
-    private int getCurCrossing(int idx) {
-        return (int)edges[idx + CURX];
-    }
-//====================================================================================
 
     public static final int WIND_EVEN_ODD = 0;
     public static final int WIND_NON_ZERO = 1;
@@ -284,16 +586,13 @@ public class Renderer implements LineSink {
     final int MAX_AA_ALPHA;
 
     // Cache to store RLE-encoded coverage mask of the current primitive
-    final PiscesCache cache;
+    PiscesCache cache;
 
     // Bounds of the drawing region, at subpixel precision.
-    final private int boundsMinX, boundsMinY, boundsMaxX, boundsMaxY;
-
-    // Pixel bounding box for current primitive
-    private int pix_bboxX0, pix_bboxY0, pix_bboxX1, pix_bboxY1;
+    private final int boundsMinX, boundsMinY, boundsMaxX, boundsMaxY;
 
     // Current winding rule
-    final private int windingRule;
+    private final int windingRule;
 
     // Current drawing position, i.e., final point of last segment
     private float x0, y0;
@@ -304,8 +603,8 @@ public class Renderer implements LineSink {
     public Renderer(int subpixelLgPositionsX, int subpixelLgPositionsY,
                     int pix_boundsX, int pix_boundsY,
                     int pix_boundsWidth, int pix_boundsHeight,
-                    int windingRule,
-                    PiscesCache cache) {
+                    int windingRule)
+    {
         this.SUBPIXEL_LG_POSITIONS_X = subpixelLgPositionsX;
         this.SUBPIXEL_LG_POSITIONS_Y = subpixelLgPositionsY;
         this.SUBPIXEL_MASK_X = (1 << (SUBPIXEL_LG_POSITIONS_X)) - 1;
@@ -314,23 +613,12 @@ public class Renderer implements LineSink {
         this.SUBPIXEL_POSITIONS_Y = 1 << (SUBPIXEL_LG_POSITIONS_Y);
         this.MAX_AA_ALPHA = (SUBPIXEL_POSITIONS_X * SUBPIXEL_POSITIONS_Y);
 
-        this.edges = new float[SIZEOF_STRUCT_EDGE * INIT_NUM_EDGES];
-        edgeMinY = Float.POSITIVE_INFINITY;
-        edgeMaxY = Float.NEGATIVE_INFINITY;
-        edgesSize = 0;
-
         this.windingRule = windingRule;
-        this.cache = cache;
 
         this.boundsMinX = pix_boundsX * SUBPIXEL_POSITIONS_X;
         this.boundsMinY = pix_boundsY * SUBPIXEL_POSITIONS_Y;
         this.boundsMaxX = (pix_boundsX + pix_boundsWidth) * SUBPIXEL_POSITIONS_X;
         this.boundsMaxY = (pix_boundsY + pix_boundsHeight) * SUBPIXEL_POSITIONS_Y;
-
-        this.pix_bboxX0 = pix_boundsX;
-        this.pix_bboxY0 = pix_boundsY;
-        this.pix_bboxX1 = pix_boundsX + pix_boundsWidth;
-        this.pix_bboxY1 = pix_boundsY + pix_boundsHeight;
     }
 
     private float tosubpixx(float pix_x) {
@@ -341,7 +629,7 @@ public class Renderer implements LineSink {
     }
 
     public void moveTo(float pix_x0, float pix_y0) {
-        close();
+        closePath();
         this.pix_sx0 = pix_x0;
         this.pix_sy0 = pix_y0;
         this.y0 = tosubpixy(pix_y0);
@@ -350,39 +638,102 @@ public class Renderer implements LineSink {
 
     public void lineJoin() { /* do nothing */ }
 
-    public void lineTo(float pix_x1, float pix_y1) {
-        float x1 = tosubpixx(pix_x1);
-        float y1 = tosubpixy(pix_y1);
+    private final float[][] pts = new float[2][8];
+    private final float[] ts = new float[4];
 
-        // Ignore horizontal lines
-        if (y0 == y1) {
-            this.x0 = x1;
-            return;
+    private static void invertPolyPoints(float[] pts, int off, int type) {
+        for (int i = off, j = off + type - 2; i < j; i += 2, j -= 2) {
+            float tmp = pts[i];
+            pts[i] = pts[j];
+            pts[j] = tmp;
+            tmp = pts[i+1];
+            pts[i+1] = pts[j+1];
+            pts[j+1] = tmp;
         }
-
-        addEdge(x0, y0, x1, y1);
-
-        this.x0 = x1;
-        this.y0 = y1;
     }
 
-    public void close() {
+    // return orientation before making the curve upright.
+    private static int makeMonotonicCurveUpright(float[] pts, int off, int type) {
+        float y0 = pts[off + 1];
+        float y1 = pts[off + type - 1];
+        if (y0 > y1) {
+            invertPolyPoints(pts, off, type);
+            return -1;
+        } else if (y0 < y1) {
+            return 1;
+        }
+        return 0;
+    }
+
+    public void lineTo(float pix_x1, float pix_y1) {
+        pts[0][0] = x0; pts[0][1] = y0;
+        pts[0][2] = tosubpixx(pix_x1); pts[0][3] = tosubpixy(pix_y1);
+        int or = makeMonotonicCurveUpright(pts[0], 0, 4);
+        somethingTo(pts[0], 4, or);
+    }
+
+    Curve c = new Curve();
+    private void curveOrQuadTo(int type) {
+        c.set(pts[0], type);
+        int numTs = c.dxRoots(ts, 0);
+        numTs += c.dyRoots(ts, numTs);
+        numTs = Helpers.filterOutNotInAB(ts, 0, numTs, 0, 1);
+        Helpers.isort(ts, 0, numTs);
+
+        Iterator<float[]> it = Curve.breakPtsAtTs(pts, type, ts, numTs);
+        while(it.hasNext()) {
+            float[] curCurve = it.next();
+            int or = makeMonotonicCurveUpright(curCurve, 0, type);
+            somethingTo(curCurve, type, or);
+        }
+    }
+
+    @Override public void curveTo(float x1, float y1,
+                                  float x2, float y2,
+                                  float x3, float y3)
+    {
+        pts[0][0] = x0; pts[0][1] = y0;
+        pts[0][2] = tosubpixx(x1); pts[0][3] = tosubpixy(y1);
+        pts[0][4] = tosubpixx(x2); pts[0][5] = tosubpixy(y2);
+        pts[0][6] = tosubpixx(x3); pts[0][7] = tosubpixy(y3);
+        curveOrQuadTo(8);
+    }
+
+    @Override public void quadTo(float x1, float y1, float x2, float y2) {
+        pts[0][0] = x0; pts[0][1] = y0;
+        pts[0][2] = tosubpixx(x1); pts[0][3] = tosubpixy(y1);
+        pts[0][4] = tosubpixx(x2); pts[0][5] = tosubpixy(y2);
+        curveOrQuadTo(6);
+    }
+
+    public void closePath() {
         // lineTo expects its input in pixel coordinates.
         lineTo(pix_sx0, pix_sy0);
     }
 
-    public void end() {
-        close();
+    public void pathDone() {
+        closePath();
     }
 
-    private void _endRendering() {
+
+    @Override
+    public long getNativeConsumer() {
+        throw new InternalError("Renderer does not use a native consumer.");
+    }
+
+    private void _endRendering(final int pix_bboxx0, final int pix_bboxy0,
+                               final int pix_bboxx1, final int pix_bboxy1)
+    {
         // Mask to determine the relevant bit of the crossing sum
         // 0x1 if EVEN_ODD, all bits if NON_ZERO
         int mask = (windingRule == WIND_EVEN_ODD) ? 0x1 : ~0x0;
 
         // add 1 to better deal with the last pixel in a pixel row.
-        int width = ((boundsMaxX - boundsMinX) >> SUBPIXEL_LG_POSITIONS_X) + 1;
-        byte[] alpha = new byte[width+1];
+        int width = pix_bboxx1 - pix_bboxx0 + 1;
+        int[] alpha = new int[width+1];
+
+        int bboxx0 = pix_bboxx0 << SUBPIXEL_LG_POSITIONS_X;
+        int bboxx1 = pix_bboxx1 << SUBPIXEL_LG_POSITIONS_X;
 
         // Now we iterate through the scanlines. We must tell emitRow the coord
         // of the first non-transparent pixel, so we must keep accumulators for
@@ -394,33 +745,34 @@ public class Renderer implements LineSink {
         int pix_minX = Integer.MAX_VALUE;
 
         int y = boundsMinY; // needs to be declared here so we emit the last row properly.
-        ScanLineItInitialize();
-        for ( ; ScanLineItHasNext(); ) {
-            int numCrossings = ScanLineItGoToNextYAndComputeCrossings();
-            y = ScanLineItCurrentY();
+        ScanlineIterator it = this.new ScanlineIterator();
+        for ( ; it.hasNext(); ) {
+            int numCrossings = it.next();
+            int[] crossings = it.crossings;
+            y = it.curY();
 
             if (numCrossings > 0) {
                 int lowx = crossings[0] >> 1;
                 int highx = crossings[numCrossings - 1] >> 1;
-                int x0 = Math.max(lowx, boundsMinX);
-                int x1 = Math.min(highx, boundsMaxX);
+                int x0 = Math.max(lowx, bboxx0);
+                int x1 = Math.min(highx, bboxx1);
 
                 pix_minX = Math.min(pix_minX, x0 >> SUBPIXEL_LG_POSITIONS_X);
                 pix_maxX = Math.max(pix_maxX, x1 >> SUBPIXEL_LG_POSITIONS_X);
             }
 
             int sum = 0;
-            int prev = boundsMinX;
+            int prev = bboxx0;
             for (int i = 0; i < numCrossings; i++) {
                 int curxo = crossings[i];
                 int curx = curxo >> 1;
                 int crorientation = ((curxo & 0x1) == 0x1) ? 1 : -1;
                 if ((sum & mask) != 0) {
-                    int x0 = Math.max(prev, boundsMinX);
-                    int x1 = Math.min(curx, boundsMaxX);
+                    int x0 = Math.max(prev, bboxx0);
+                    int x1 = Math.min(curx, bboxx1);
                     if (x0 < x1) {
-                        x0 -= boundsMinX; // turn x0, x1 from coords to indeces
-                        x1 -= boundsMinX; // in the alpha array.
+                        x0 -= bboxx0; // turn x0, x1 from coords to indeces
+                        x1 -= bboxx0; // in the alpha array.
 
                         int pix_x = x0 >> SUBPIXEL_LG_POSITIONS_X;
                         int pix_xmaxm1 = (x1 - 1) >> SUBPIXEL_LG_POSITIONS_X;
@@ -442,6 +794,9 @@ public class Renderer implements LineSink {
                 prev = curx;
             }
 
+            // even if this last row had no crossings, alpha will be zeroed
+            // from the last emitRow call. But this doesn't matter because
+            // maxX < minX, so no row will be emitted to the cache.
             if ((y & SUBPIXEL_MASK_Y) == SUBPIXEL_MASK_Y) {
                 emitRow(alpha, y >> SUBPIXEL_LG_POSITIONS_Y, pix_minX, pix_maxX);
                 pix_minX = Integer.MAX_VALUE;
@@ -453,47 +808,53 @@ public class Renderer implements LineSink {
         if (pix_maxX >= pix_minX) {
             emitRow(alpha, y >> SUBPIXEL_LG_POSITIONS_Y, pix_minX, pix_maxX);
         }
-        pix_bboxX0 = minX >> SUBPIXEL_LG_POSITIONS_X;
-        pix_bboxX1 = maxX >> SUBPIXEL_LG_POSITIONS_X;
-        pix_bboxY0 = minY >> SUBPIXEL_LG_POSITIONS_Y;
-        pix_bboxY1 = maxY >> SUBPIXEL_LG_POSITIONS_Y;
     }
-
 
     public void endRendering() {
-        // Set up the cache to accumulate the bounding box
-        if (cache != null) {
-            cache.bboxX0 = Integer.MAX_VALUE;
-            cache.bboxY0 = Integer.MAX_VALUE;
-            cache.bboxX1 = Integer.MIN_VALUE;
-            cache.bboxY1 = Integer.MIN_VALUE;
+        final int bminx = boundsMinX >> SUBPIXEL_LG_POSITIONS_X;
+        final int bmaxx = boundsMaxX >> SUBPIXEL_LG_POSITIONS_X;
+        final int bminy = boundsMinY >> SUBPIXEL_LG_POSITIONS_Y;
+        final int bmaxy = boundsMaxY >> SUBPIXEL_LG_POSITIONS_Y;
+        final int eminx = ((int)Math.floor(edgeMinX)) >> SUBPIXEL_LG_POSITIONS_X;
+        final int emaxx = ((int)Math.ceil(edgeMaxX)) >> SUBPIXEL_LG_POSITIONS_X;
+        final int eminy = ((int)Math.floor(edgeMinY)) >> SUBPIXEL_LG_POSITIONS_Y;
+        final int emaxy = ((int)Math.ceil(edgeMaxY)) >> SUBPIXEL_LG_POSITIONS_Y;
+
+        final int minX = Math.max(bminx, eminx);
+        final int maxX = Math.min(bmaxx, emaxx);
+        final int minY = Math.max(bminy, eminy);
+        final int maxY = Math.min(bmaxy, emaxy);
+        if (minX > maxX || minY > maxY) {
+            this.cache = new PiscesCache(bminx, bminy, bmaxx, bmaxy);
+            return;
         }
 
-        _endRendering();
+        this.cache = new PiscesCache(minX, minY, maxX, maxY);
+        _endRendering(minX, minY, maxX, maxY);
     }
 
-    public void getBoundingBox(int[] pix_bbox) {
-        pix_bbox[0] = pix_bboxX0;
-        pix_bbox[1] = pix_bboxY0;
-        pix_bbox[2] = pix_bboxX1 - pix_bboxX0;
-        pix_bbox[3] = pix_bboxY1 - pix_bboxY0;
+    public PiscesCache getCache() {
+        if (cache == null) {
+            throw new InternalError("cache not yet initialized");
+        }
+        return cache;
     }
 
-    private void emitRow(byte[] alphaRow, int pix_y, int pix_from, int pix_to) {
+    private void emitRow(int[] alphaRow, int pix_y, int pix_from, int pix_to) {
         // Copy rowAA data into the cache if one is present
         if (cache != null) {
             if (pix_to >= pix_from) {
-                cache.startRow(pix_y, pix_from, pix_to);
+                cache.startRow(pix_y, pix_from);
 
                 // Perform run-length encoding and store results in the cache
-                int from = pix_from - (boundsMinX >> SUBPIXEL_LG_POSITIONS_X);
-                int to = pix_to - (boundsMinX >> SUBPIXEL_LG_POSITIONS_X);
+                int from = pix_from - cache.bboxX0;
+                int to = pix_to - cache.bboxX0;
 
                 int runLen = 1;
-                byte startVal = alphaRow[from];
+                int startVal = alphaRow[from];
                 for (int i = from + 1; i <= to; i++) {
-                    byte nextVal = (byte)(startVal + alphaRow[i]);
-                    if (nextVal == startVal && runLen < 255) {
+                    int nextVal = startVal + alphaRow[i];
+                    if (nextVal == startVal) {
                         runLen++;
                     } else {
                         cache.addRLERun(startVal, runLen);
@@ -502,9 +863,8 @@ public class Renderer implements LineSink {
                     }
                 }
                 cache.addRLERun(startVal, runLen);
-                cache.addRLERun((byte)0, 0);
             }
         }
-        java.util.Arrays.fill(alphaRow, (byte)0);
+        java.util.Arrays.fill(alphaRow, 0);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,6 +302,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
             // init the crl checker
             currentState.crlChecker =
                 new CrlRevocationChecker(null, buildParams, null, onlyEECert);
+            currentState.algorithmChecker = new AlgorithmChecker(anchor);
             try {
                 depthFirstSearchReverse(null, currentState,
                 new ReverseBuilder(buildParams, targetSubjectDN), adjacencyList,
@@ -475,29 +476,41 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                 userCheckers.add(mustCheck, policyChecker);
                 mustCheck++;
 
+                // add the algorithm checker
+                userCheckers.add(mustCheck,
+                        new AlgorithmChecker(builder.trustAnchor));
+                mustCheck++;
+
                 if (nextState.keyParamsNeeded()) {
                     PublicKey rootKey = cert.getPublicKey();
                     if (builder.trustAnchor.getTrustedCert() == null) {
                         rootKey = builder.trustAnchor.getCAPublicKey();
                         if (debug != null)
-                            debug.println("SunCertPathBuilder.depthFirstSearchForward" +
-                                          " using buildParams public key: " +
-                                          rootKey.toString());
+                            debug.println(
+                                "SunCertPathBuilder.depthFirstSearchForward " +
+                                "using buildParams public key: " +
+                                rootKey.toString());
                     }
                     TrustAnchor anchor = new TrustAnchor
                         (cert.getSubjectX500Principal(), rootKey, null);
+
+                    // add the basic checker
                     basicChecker = new BasicChecker(anchor,
                                            builder.date,
                                            buildParams.getSigProvider(),
                                            true);
                     userCheckers.add(mustCheck, basicChecker);
                     mustCheck++;
+
+                    // add the crl revocation checker
                     if (buildParams.isRevocationEnabled()) {
                         userCheckers.add(mustCheck, new CrlRevocationChecker
                             (anchor, buildParams, null, onlyEECert));
                         mustCheck++;
                     }
                 }
+                // Why we don't need BasicChecker and CrlRevocationChecker
+                // if nextState.keyParamsNeeded() is false?
 
                 for (int i=0; i<appendedCerts.size(); i++) {
                     X509Certificate currCert = appendedCerts.get(i);
@@ -513,10 +526,18 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
                     for (int j=0; j<userCheckers.size(); j++) {
                         PKIXCertPathChecker currChecker = userCheckers.get(j);
                         if (j < mustCheck ||
-                            !currChecker.isForwardCheckingSupported())
-                        {
+                            !currChecker.isForwardCheckingSupported()) {
                             if (i == 0) {
                                 currChecker.init(false);
+
+                                // The user specified
+                                // AlgorithmChecker may not be
+                                // able to set the trust anchor until now.
+                                if (j >= mustCheck &&
+                                    currChecker instanceof AlgorithmChecker) {
+                                    ((AlgorithmChecker)currChecker).
+                                        trySetTrustAnchor(builder.trustAnchor);
+                                }
                             }
 
                             try {

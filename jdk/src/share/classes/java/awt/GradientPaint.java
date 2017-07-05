@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.ColorModel;
+import java.beans.ConstructorProperties;
 
 /**
  * The <code>GradientPaint</code> class provides a way to fill
@@ -166,6 +167,7 @@ public class GradientPaint implements Paint {
      * @throws NullPointerException if either one of colors or points
      * is null
      */
+    @ConstructorProperties({ "point1", "color1", "point2", "color2", "cyclic" })
     public GradientPaint(Point2D pt1,
                          Color color1,
                          Point2D pt2,

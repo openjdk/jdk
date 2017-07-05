@@ -142,8 +142,7 @@ jint GenCollectedHeap::initialize() {
   }
   _perm_gen = perm_gen_spec->init(heap_rs, PermSize, rem_set());
 
-  clear_incremental_collection_will_fail();
-  clear_last_incremental_collection_failed();
+  clear_incremental_collection_failed();
 
 #ifndef SERIALGC
   // If we are running CMS, create the collector responsible
@@ -1347,17 +1346,6 @@ class GenGCEpilogueClosure: public GenCollectedHeap::GenClosure {
 };
 
 void GenCollectedHeap::gc_epilogue(bool full) {
-  // Remember if a partial collection of the heap failed, and
-  // we did a complete collection.
-  if (full && incremental_collection_will_fail()) {
-    set_last_incremental_collection_failed();
-  } else {
-    clear_last_incremental_collection_failed();
-  }
-  // Clear the flag, if set; the generation gc_epilogues will set the
-  // flag again if the condition persists despite the collection.
-  clear_incremental_collection_will_fail();
-
 #ifdef COMPILER2
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
   size_t actual_gap = pointer_delta((HeapWord*) (max_uintx-3), *(end_addr()));

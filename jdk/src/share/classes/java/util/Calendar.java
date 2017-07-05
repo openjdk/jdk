@@ -51,6 +51,8 @@ import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import sun.util.BuddhistCalendar;
 import sun.util.calendar.ZoneInfo;
 import sun.util.resources.LocaleData;
@@ -837,7 +839,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Cache to hold the firstDayOfWeek and minimalDaysInFirstWeek
      * of a Locale.
      */
-    private static Hashtable<Locale, int[]> cachedLocaleData = new Hashtable<Locale, int[]>(3);
+    private static final ConcurrentMap<Locale, int[]> cachedLocaleData
+        = new ConcurrentHashMap<Locale, int[]>(3);
 
     // Special values of stamp[]
     /**
@@ -1022,7 +1025,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
             // returns a BuddhistCalendar instance.
             if ("th".equals(aLocale.getLanguage())
                     && ("TH".equals(aLocale.getCountry()))) {
-                    cal = new BuddhistCalendar(zone, aLocale);
+                cal = new BuddhistCalendar(zone, aLocale);
             } else {
                 cal = new GregorianCalendar(zone, aLocale);
             }
@@ -2588,7 +2591,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
             data = new int[2];
             data[0] = Integer.parseInt(bundle.getString("firstDayOfWeek"));
             data[1] = Integer.parseInt(bundle.getString("minimalDaysInFirstWeek"));
-            cachedLocaleData.put(desiredLocale, data);
+            cachedLocaleData.putIfAbsent(desiredLocale, data);
         }
         firstDayOfWeek = data[0];
         minimalDaysInFirstWeek = data[1];

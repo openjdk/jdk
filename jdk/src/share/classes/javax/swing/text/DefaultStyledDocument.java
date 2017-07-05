@@ -132,7 +132,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             // install the content
             Content c = getContent();
             int n = data.length;
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < n; i++) {
                 ElementSpec es = data[i];
                 if (es.getLength() > 0) {
@@ -191,7 +191,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
             // install the content
             Content c = getContent();
             int n = data.length;
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < n; i++) {
                 ElementSpec es = data[i];
                 if (es.getLength() > 0) {

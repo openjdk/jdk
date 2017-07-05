@@ -25,9 +25,8 @@
 
 package sun.dyn;
 
-import java.dyn.JavaMethodHandle;
-import java.dyn.MethodHandle;
-import java.dyn.MethodType;
+import java.dyn.*;
+import static sun.dyn.MemberName.uncaughtException;
 
 /**
  * Unary function composition, useful for many small plumbing jobs.
@@ -51,8 +50,16 @@ public class FilterOneArgument extends JavaMethodHandle {
         return target.invokeExact(filteredArgument);
     }
 
-    private static final MethodHandle INVOKE =
-        MethodHandleImpl.IMPL_LOOKUP.findVirtual(FilterOneArgument.class, "invoke", MethodType.genericMethodType(1));
+    private static final MethodHandle INVOKE;
+    static {
+        try {
+            INVOKE =
+                MethodHandleImpl.IMPL_LOOKUP.findVirtual(FilterOneArgument.class, "invoke",
+                                                         MethodType.genericMethodType(1));
+        } catch (NoAccessException ex) {
+            throw uncaughtException(ex);
+        }
+    }
 
     protected FilterOneArgument(MethodHandle filter, MethodHandle target) {
         super(INVOKE);
