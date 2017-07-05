@@ -1625,7 +1625,7 @@ int MacroAssembler::corrected_idivl(Register result, Register ra, Register rb,
     sdivw(result, ra, rb);
   } else {
     sdivw(scratch, ra, rb);
-    msubw(result, scratch, rb, ra);
+    Assembler::msubw(result, scratch, rb, ra);
   }
 
   return idivl_offset;
@@ -1655,7 +1655,7 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
     sdiv(result, ra, rb);
   } else {
     sdiv(scratch, ra, rb);
-    msub(result, scratch, rb, ra);
+    Assembler::msub(result, scratch, rb, ra);
   }
 
   return idivq_offset;
@@ -3786,14 +3786,6 @@ void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byt
     _adrp(reg1, dest.target());
   }
 }
-
-  bool MacroAssembler::use_acq_rel_for_volatile_fields() {
-#ifdef PRODUCT
-    return false;
-#else
-    return UseAcqRelForVolatileFields;
-#endif
-  }
 
 void MacroAssembler::build_frame(int framesize) {
   if (framesize == 0) {
