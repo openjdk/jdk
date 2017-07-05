@@ -163,7 +163,7 @@ class LocalMember extends MemberDefinition {
      * May inline copies of all the arguments of the given method.
      */
     static public LocalMember[] copyArguments(Context ctx, MemberDefinition field) {
-        Vector v = field.getArguments();
+        Vector<MemberDefinition> v = field.getArguments();
         LocalMember res[] = new LocalMember[v.size()];
         v.copyInto(res);
         for (int i = 0; i < res.length; i++) {

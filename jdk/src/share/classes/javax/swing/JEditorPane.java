@@ -39,6 +39,7 @@ import javax.swing.text.*;
 import javax.swing.event.*;
 import javax.swing.text.html.*;
 import javax.accessibility.*;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * A text component to edit various kinds of content.
@@ -1193,12 +1194,12 @@ public class JEditorPane extends JTextComponent {
             try {
                 Class<?> c;
                 if (loader != null) {
+                    ReflectUtil.checkPackageAccess(classname);
                     c = loader.loadClass(classname);
                 } else {
                     // Will only happen if developer has invoked
                     // registerEditorKitForContentType(type, class, null).
-                    c = Class.forName(classname, true, Thread.currentThread().
-                                      getContextClassLoader());
+                    c = SwingUtilities.loadSystemClass(classname);
                 }
                 k = (EditorKit) c.newInstance();
                 kitRegistry.put(type, k);

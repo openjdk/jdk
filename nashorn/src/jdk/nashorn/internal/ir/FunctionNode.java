@@ -359,7 +359,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @return a list of parameter nodes, potentially modified from original ones by the visitor.
      */
     public List<IdentNode> visitParameters(final NodeVisitor<? extends LexicalContext> visitor) {
-        return Node.accept(visitor, IdentNode.class, parameters);
+        return Node.accept(visitor, parameters);
     }
 
     /**

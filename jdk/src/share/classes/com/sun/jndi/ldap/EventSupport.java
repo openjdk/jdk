@@ -83,7 +83,7 @@ import javax.naming.ldap.UnsolicitedNotification;
  *a new notifier is created for the listener.
  *
  *<h4>Deregistration</h4>
- *When a deregistration request is made, this class attemps to find its
+ *When a deregistration request is made, this class attempts to find its
  *corresponding notifier. If the notifier is found, the listener is removed
  *from the notifier's list. If the listener is the last listener on the list,
  *the notifier's thread is terminated and removed from this class's hashtable.

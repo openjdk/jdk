@@ -639,7 +639,7 @@ public class PNGImageReader extends ImageReader {
         metadata.zTXt_keyword.add(keyword);
 
         int method = stream.readUnsignedByte();
-        metadata.zTXt_compressionMethod.add(new Integer(method));
+        metadata.zTXt_compressionMethod.add(method);
 
         byte[] b = new byte[chunkLength - keyword.length() - 2];
         stream.readFully(b);

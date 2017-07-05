@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /**
  * @test
- * @bug 4394937
+ * @bug 4394937 8051382
  * @summary tests the toString method of reflect.Modifier
  */
 
-import java.lang.reflect.*;
+import java.lang.reflect.Modifier;
 
 public class toStringTest {
 

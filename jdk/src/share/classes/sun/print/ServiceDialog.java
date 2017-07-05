@@ -1017,8 +1017,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
             format.setParseIntegerOnly(true);
             format.setDecimalSeparatorAlwaysShown(false);
             NumberFormatter nf = new NumberFormatter(format);
-            nf.setMinimum(new Integer(1));
-            nf.setMaximum(new Integer(Integer.MAX_VALUE));
+            nf.setMinimum(1);
+            nf.setMaximum(Integer.MAX_VALUE);
             nf.setAllowsInvalid(true);
             nf.setCommitsOnValidEdit(true);
             tfRangeFrom = new JFormattedTextField(nf);
@@ -1110,12 +1110,12 @@ public class ServiceDialog extends JDialog implements ActionListener {
 
             if (min < 1) {
                 min = 1;
-                tfRangeFrom.setValue(new Integer(1));
+                tfRangeFrom.setValue(1);
             }
 
             if (max < min) {
                 max = min;
-                tfRangeTo.setValue(new Integer(min));
+                tfRangeTo.setValue(min);
             }
 
             PageRanges pr = new PageRanges(min, max);
@@ -1165,8 +1165,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
             } else { // RANGE
                 rbPages.setSelected(true);
             }
-            tfRangeFrom.setValue(new Integer(min));
-            tfRangeTo.setValue(new Integer(max));
+            tfRangeFrom.setValue(min);
+            tfRangeTo.setValue(max);
             rbAll.setEnabled(prSupported);
             rbPages.setEnabled(prSupported);
             setupRangeWidgets();
@@ -1274,14 +1274,14 @@ public class ServiceDialog extends JDialog implements ActionListener {
                 min = 1;
                 max = Integer.MAX_VALUE;
             }
-            snModel.setMinimum(new Integer(min));
-            snModel.setMaximum(new Integer(max));
+            snModel.setMinimum(min);
+            snModel.setMaximum(max);
 
             int value = cp.getValue();
             if ((value < min) || (value > max)) {
                 value = min;
             }
-            snModel.setValue(new Integer(value));
+            snModel.setValue(value);
 
             // setup Collate checkbox
             if (psCurrent.isAttributeCategorySupported(scCategory)) {
@@ -2762,7 +2762,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             if ((value < 1) || (value > 100)) {
                 value = 1;
             }
-            snModel.setValue(new Integer(value));
+            snModel.setValue(value);
             lblPriority.setEnabled(jpSupported);
             spinPriority.setEnabled(jpSupported);
 

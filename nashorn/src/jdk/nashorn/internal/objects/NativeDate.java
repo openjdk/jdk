@@ -935,7 +935,6 @@ public final class NativeDate extends ScriptObject {
                     }
                     sb.append(' ');
 
-                    //$FALL-THROUGH$
                 case FORMAT_TIME:
                     final TimeZone tz = nd.getTimeZone();
                     final double utcTime = nd.getTime();

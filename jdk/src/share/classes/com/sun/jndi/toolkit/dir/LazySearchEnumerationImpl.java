@@ -152,7 +152,7 @@ final public class LazySearchEnumerationImpl
                         } else if (useFactory) {
                             try {
                                 // Give name only if context non-null,
-                                // otherewise, name will be interpreted relative
+                                // otherwise, name will be interpreted relative
                                 // to initial context (not what we want)
                                 Name nm = (context != null ?
                                     new CompositeName(next.getName()) : null);

@@ -121,7 +121,7 @@ public class AquaUtilControlSize {
         try {
             // see if this component has a "getUI" method
             final Class<? extends JComponent> clazz = c.getClass();
-            final Method getUIMethod = clazz.getMethod("getUI", new Class[0]);
+            final Method getUIMethod = clazz.getMethod("getUI", new Class<?>[0]);
 
             // see if that UI is one of ours that understands sizing
             final Object ui = getUIMethod.invoke(c, new Object[0]);

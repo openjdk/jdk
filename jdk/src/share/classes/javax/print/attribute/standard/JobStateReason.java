@@ -51,7 +51,6 @@ import javax.print.attribute.Attribute;
  * <CODE>getName()</CODE> is the IPP attribute name.  The enumeration's
  * integer value is the IPP enum value.  The <code>toString()</code> method
  * returns the IPP string representation of the attribute value.
- * <P>
  *
  * @author  Alan Kaminsky
  */

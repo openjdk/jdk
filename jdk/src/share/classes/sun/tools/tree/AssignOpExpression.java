@@ -149,7 +149,7 @@ class AssignOpExpression extends BinaryAssignExpression {
     /**
      * Check an assignment expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = left.checkAssignOp(env, ctx, vset, exp, this);
         vset = right.checkValue(env, ctx, vset, exp);
         int tm = left.type.getTypeMask() | right.type.getTypeMask();

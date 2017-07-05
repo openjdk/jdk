@@ -67,20 +67,20 @@ class Imports implements Constants {
     /**
      * The imported classes, including memoized imports from packages.
      */
-    Hashtable classes = new Hashtable();
+    Hashtable<Identifier, Identifier> classes = new Hashtable<>();
 
     /**
      * The imported package identifiers.  This will not contain duplicate
      * imports for the same package.  It will also not contain the
      * current package.
      */
-    Vector packages = new Vector();
+    Vector<IdentifierToken> packages = new Vector<>();
 
     /**
      * The (originally) imported classes.
      * A vector of IdentifierToken.
      */
-    Vector singles = new Vector();
+    Vector<IdentifierToken> singles = new Vector<>();
 
     /**
      * Are the import names checked yet?
@@ -134,9 +134,9 @@ class Imports implements Constants {
         //     }
         // }
 
-        Vector resolvedPackages = new Vector();
-        for (Enumeration e = packages.elements() ; e.hasMoreElements() ;) {
-            IdentifierToken t = (IdentifierToken)e.nextElement();
+        Vector<IdentifierToken> resolvedPackages = new Vector<>();
+        for (Enumeration<IdentifierToken> e = packages.elements() ; e.hasMoreElements() ;) {
+            IdentifierToken t = e.nextElement();
             Identifier nm = t.getName();
             long where = t.getWhere();
 
@@ -175,8 +175,8 @@ class Imports implements Constants {
         }
         packages = resolvedPackages;
 
-        for (Enumeration e = singles.elements() ; e.hasMoreElements() ;) {
-            IdentifierToken t = (IdentifierToken)e.nextElement();
+        for (Enumeration<IdentifierToken> e = singles.elements() ; e.hasMoreElements() ;) {
+            IdentifierToken t = e.nextElement();
             Identifier nm = t.getName();
             long where = t.getWhere();
             Identifier pkg = nm.getQualifier();
@@ -191,7 +191,7 @@ class Imports implements Constants {
             Identifier snm = nm.getFlatName().getName();
 
             // make sure it isn't already imported explicitly
-            Identifier className = (Identifier)classes.get(snm);
+            Identifier className = classes.get(snm);
             if (className != null) {
                 Identifier f1 = Identifier.lookup(className.getQualifier(),
                                                   className.getFlatName());
@@ -280,7 +280,7 @@ class Imports implements Constants {
         }
 
         // Check if it was imported before
-        Identifier className = (Identifier)classes.get(nm);
+        Identifier className = classes.get(nm);
         if (className != null) {
             if (tracing) env.dtExit("Imports.resolve: PREVIOUSLY IMPORTED " + nm);
             return className;
@@ -303,9 +303,9 @@ class Imports implements Constants {
         } else {
             // If it isn't in the current package, try to find it in
             // our import-on-demands.
-            Enumeration e = packages.elements();
+            Enumeration<IdentifierToken> e = packages.elements();
             while (e.hasMoreElements()) {
-                IdentifierToken t = (IdentifierToken)e.nextElement();
+                IdentifierToken t = e.nextElement();
                 id = Identifier.lookup(t.getName(), nm);
 
                 if (importable(id, env)) {
@@ -386,7 +386,7 @@ class Imports implements Constants {
         if (nm.isQualified())
             return nm;
 
-        Identifier className = (Identifier)classes.get(nm);
+        Identifier className = classes.get(nm);
         if (className != null) {
             return className;
         }
@@ -425,7 +425,7 @@ class Imports implements Constants {
         // added to the list, ignore it.
         final int size = packages.size();
         for (int i = 0; i < size; i++) {
-            if (name == ((IdentifierToken)packages.elementAt(i)).getName()) {
+            if (name == (packages.elementAt(i)).getName()) {
                 return;
             }
         }
@@ -464,7 +464,7 @@ class Imports implements Constants {
      * Return an unmodifiable list of IdentifierToken representing
      * packages specified as imports.
      */
-    public List getImportedPackages() {
+    public List<IdentifierToken> getImportedPackages() {
         return Collections.unmodifiableList(packages);
     }
 
@@ -472,7 +472,7 @@ class Imports implements Constants {
      * Return an unmodifiable list of IdentifierToken representing
      * classes specified as imports.
      */
-    public List getImportedClasses() {
+    public List<IdentifierToken> getImportedClasses() {
         return Collections.unmodifiableList(singles);
     }
 
