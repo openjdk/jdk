@@ -92,6 +92,7 @@ public class CodeInstallationTest {
 
         asm.emitPrologue();
         compiler.compile(asm);
+        asm.emitEpilogue();
 
         HotSpotCompiledCode code = asm.finish(resolvedMethod);
         InstalledCode installed = codeCache.addCode(resolvedMethod, code, null, null);

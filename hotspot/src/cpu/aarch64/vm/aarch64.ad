@@ -14928,7 +14928,22 @@ instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct array_equals(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
+instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
+                      iRegP_R10 tmp, rFlagsReg cr)
+%{
+  predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
+  match(Set result (AryEq ary1 ary2));
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, KILL cr);
+
+  format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
+  ins_encode %{
+    __ byte_arrays_equals($ary1$$Register, $ary2$$Register,
+                          $result$$Register, $tmp$$Register);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
                       iRegP_R10 tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);

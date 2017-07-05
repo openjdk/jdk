@@ -34,7 +34,6 @@
 /*
  * @test
  * @bug 6445158
- * @key intermittent
  * @summary Basic tests for Phaser
  * @author Chris Hegarty
  * @modules java.management

@@ -723,8 +723,8 @@ class ConstantPool : public Metadata {
   }
 
   // Sizing (in words)
-  static int header_size()             { return sizeof(ConstantPool)/HeapWordSize; }
-  static int size(int length)          { return align_object_size(header_size() + length); }
+  static int header_size()             { return sizeof(ConstantPool)/wordSize; }
+  static int size(int length)          { return align_metadata_size(header_size() + length); }
   int size() const                     { return size(length()); }
 #if INCLUDE_SERVICES
   void collect_statistics(KlassSizeStats *sz) const;

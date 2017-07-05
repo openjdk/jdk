@@ -165,9 +165,6 @@ javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java			generi
 # 8147985
 sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java generic-all
 
-# 8145919
-sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       generic-all
-
 ############################################################################
 
 # jdk_net
@@ -307,9 +304,6 @@ sun/security/provider/SecureRandom/StrongSecureRandom.java      macosx-10.10
 
 # 8074580
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               generic-all
-
-# 8146387
-javax/net/ssl/SSLSession/SessionCacheSizeTests.java windows-all,solaris-all
 
 ############################################################################
 

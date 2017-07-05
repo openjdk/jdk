@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package sun.java2d.marlin;
 
-import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
 
 /**
@@ -209,15 +208,5 @@ public final class FloatMath implements MarlinConst {
             return intpart;
         }
         return intpart - 1;
-    }
-
-    /**
-     * Returns a floating-point power of two in the normal range.
-     */
-    static double powerOfTwoD(int n) {
-        assert (n >= DoubleConsts.MIN_EXPONENT && n <= DoubleConsts.MAX_EXPONENT);
-        return Double.longBitsToDouble((((long) n + (long) DoubleConsts.EXP_BIAS)
-                << (DoubleConsts.SIGNIFICAND_WIDTH - 1))
-                & DoubleConsts.EXP_BIT_MASK);
     }
 }

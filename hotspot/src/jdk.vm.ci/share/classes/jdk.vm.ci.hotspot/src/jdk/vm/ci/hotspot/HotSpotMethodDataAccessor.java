@@ -56,7 +56,7 @@ public interface HotSpotMethodDataAccessor {
 
         private final int value;
 
-        private Tag(int value) {
+        Tag(int value) {
             this.value = value;
         }
 

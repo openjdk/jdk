@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/defaultStream.hpp"
+#include "logging/log.hpp"
+#include "logging/logConfiguration.hpp"
 
 #ifdef DTRACE_ENABLED
 
@@ -135,9 +137,9 @@ void ClassLoadingService::notify_class_unloaded(InstanceKlass* k) {
     }
   }
 
-  if (TraceClassUnloading) {
+  if (log_is_enabled(Info, classunload)) {
     ResourceMark rm;
-    tty->print_cr("[Unloading class %s " INTPTR_FORMAT "]", k->external_name(), p2i(k));
+    log_info(classunload)("unloading class %s " INTPTR_FORMAT , k->external_name(), p2i(k));
   }
 }
 
@@ -179,12 +181,13 @@ size_t ClassLoadingService::compute_class_size(InstanceKlass* k) {
 
 bool ClassLoadingService::set_verbose(bool verbose) {
   MutexLocker m(Management_lock);
-
   // verbose will be set to the previous value
-  Flag::Error error = CommandLineFlags::boolAtPut("TraceClassLoading", &verbose, Flag::MANAGEMENT);
-  assert(error==Flag::SUCCESS, "Setting TraceClassLoading flag failed with error %s", Flag::flag_error_str(error));
+  if (verbose) {
+    LogConfiguration::parse_log_arguments("stdout", "classload=info", NULL, NULL, NULL);
+  } else {
+    LogConfiguration::parse_log_arguments("stdout", "classload=off", NULL, NULL, NULL);
+  }
   reset_trace_class_unloading();
-
   return verbose;
 }
 
@@ -192,8 +195,11 @@ bool ClassLoadingService::set_verbose(bool verbose) {
 void ClassLoadingService::reset_trace_class_unloading() {
   assert(Management_lock->owned_by_self(), "Must own the Management_lock");
   bool value = MemoryService::get_verbose() || ClassLoadingService::get_verbose();
-  Flag::Error error = CommandLineFlags::boolAtPut("TraceClassUnloading", &value, Flag::MANAGEMENT);
-  assert(error==Flag::SUCCESS, "Setting TraceClassUnLoading flag failed with error %s", Flag::flag_error_str(error));
+  if (value) {
+    LogConfiguration::parse_log_arguments("stdout", "classunload=info", NULL, NULL, NULL);
+  } else {
+    LogConfiguration::parse_log_arguments("stdout", "classunload=off", NULL, NULL, NULL);
+  }
 }
 
 GrowableArray<KlassHandle>* LoadedClassesEnumerator::_loaded_classes = NULL;

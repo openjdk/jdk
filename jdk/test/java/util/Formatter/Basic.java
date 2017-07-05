@@ -28,7 +28,7 @@
  *      6344623 6369500 6534606 6282094 6286592 6476425 5063507 6469160 6476168
  *      8059175
  *
- * @modules java.base/jdk.internal.math
+ * @modules java.base
  * @run shell/timeout=240 Basic.sh
  */
 

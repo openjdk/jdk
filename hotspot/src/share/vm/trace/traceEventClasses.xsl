@@ -56,7 +56,8 @@ public:
   void set_endtime(const Ticks&amp; time) {}
   bool should_commit() const { return false; }
   static bool is_enabled() { return false; }
-  void commit() const {}
+  void commit() {}
+  void cancel() {}
 };
 
   <xsl:apply-templates select="trace/events/struct" mode="empty"/>

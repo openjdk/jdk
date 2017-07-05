@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ class TypeArrayKlass : public ArrayKlass {
   void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
   // Parallel Compact
   void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
-  void oop_pc_update_pointers(oop obj);
+  void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
 #endif
 
   // Oop iterators. Since there are no oops in TypeArrayKlasses,
@@ -133,7 +133,7 @@ class TypeArrayKlass : public ArrayKlass {
   static const char* external_name(BasicType type);
 
   // Sizing
-  static int header_size()  { return sizeof(TypeArrayKlass)/HeapWordSize; }
+  static int header_size()  { return sizeof(TypeArrayKlass)/wordSize; }
   int size() const          { return ArrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/parallel/psAdaptiveSizePolicy.hpp"
 #include "gc/parallel/psMarkSweep.hpp"
-#include "gc/parallel/psParallelCompact.hpp"
+#include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/parallel/psTasks.hpp"
 #include "gc/shared/collectorPolicy.hpp"
@@ -761,6 +761,15 @@ GCTaskManager* const PSScavenge::gc_task_manager() {
   assert(ParallelScavengeHeap::gc_task_manager() != NULL,
    "shouldn't return NULL");
   return ParallelScavengeHeap::gc_task_manager();
+}
+
+// Adaptive size policy support.  When the young generation/old generation
+// boundary moves, _young_generation_boundary must be reset
+void PSScavenge::set_young_generation_boundary(HeapWord* v) {
+  _young_generation_boundary = v;
+  if (UseCompressedOops) {
+    _young_generation_boundary_compressed = (uintptr_t)oopDesc::encode_heap_oop((oop)v);
+  }
 }
 
 void PSScavenge::initialize() {

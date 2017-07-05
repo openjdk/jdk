@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,10 +77,10 @@ public class JstatGcCapacityResults extends JstatResults {
         assertThat(NGC <= NGCMX, "NGC > NGCMX (generation capacity > max generation capacity)");
 
         float S0C = getFloatValue("S0C");
-        assertThat(S0C < NGC, "S0C >= NGC (survivor space 0 capacity >= new generation capacity)");
+        assertThat(S0C <= NGC, "S0C > NGC (survivor space 0 capacity > new generation capacity)");
 
         float S1C = getFloatValue("S1C");
-        assertThat(S1C < NGC, "S1C >= NGC (survivor space 1 capacity >= new generation capacity)");
+        assertThat(S1C <= NGC, "S1C > NGC (survivor space 1 capacity > new generation capacity)");
 
         float EC = getFloatValue("EC");
         assertThat(EC <= NGC, "EC > NGC (eden space capacity > new generation capacity)");
