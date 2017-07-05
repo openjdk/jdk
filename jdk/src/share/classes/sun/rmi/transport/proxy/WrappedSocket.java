@@ -28,6 +28,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * The WrappedSocket class provides a general wrapper for providing an
@@ -78,7 +80,14 @@ class WrappedSocket extends Socket {
      * Get the local address to which the socket is bound.
      */
     public InetAddress getLocalAddress() {
-        return socket.getLocalAddress();
+        return  AccessController.doPrivileged(
+                        new PrivilegedAction<InetAddress>() {
+                            @Override
+                            public InetAddress run() {
+                                return socket.getLocalAddress();
+
+                            }
+                        });
     }
 
     /**

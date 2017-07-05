@@ -26,6 +26,11 @@
 package javax.xml.xpath;
 
 import java.io.PrintWriter;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.io.InvalidClassException;
 
 /**
  * <code>XPathException</code> represents a generic XPath exception.</p>
@@ -36,7 +41,9 @@ import java.io.PrintWriter;
  */
 public class XPathException extends Exception {
 
-    private final Throwable cause;
+    private static final ObjectStreamField[] serialPersistentFields = {
+        new ObjectStreamField( "cause", Throwable.class )
+    };
 
     /**
      * <p>Stream Unique Identifier.</p>
@@ -62,7 +69,6 @@ public class XPathException extends Exception {
         if ( message == null ) {
             throw new NullPointerException ( "message can't be null");
         }
-        this.cause = null;
     }
 
     /**
@@ -77,8 +83,7 @@ public class XPathException extends Exception {
      * @throws NullPointerException if <code>cause</code> is <code>null</code>.
      */
     public XPathException(Throwable cause) {
-        super();
-        this.cause = cause;
+        super(cause);
         if ( cause == null ) {
             throw new NullPointerException ( "cause can't be null");
         }
@@ -90,7 +95,47 @@ public class XPathException extends Exception {
      * @return Cause of this XPathException.
      */
     public Throwable getCause() {
-        return cause;
+        return super.getCause();
+    }
+
+    /**
+     * Writes "cause" field to the stream.
+     * The cause is got from the parent class.
+     *
+     * @param out stream used for serialization.
+     * @throws IOException thrown by <code>ObjectOutputStream</code>
+     *
+     */
+    private void writeObject(ObjectOutputStream out)
+            throws IOException
+    {
+        ObjectOutputStream.PutField fields = out.putFields();
+        fields.put("cause", (Throwable) super.getCause());
+        out.writeFields();
+    }
+
+    /**
+     * Reads the "cause" field from the stream.
+     * And initializes the "cause" if it wasn't
+     * done before.
+     *
+     * @param in stream used for deserialization
+     * @throws IOException thrown by <code>ObjectInputStream</code>
+     * @throws ClassNotFoundException  thrown by <code>ObjectInputStream</code>
+     */
+    private void readObject(ObjectInputStream in)
+            throws IOException, ClassNotFoundException
+    {
+        ObjectInputStream.GetField fields = in.readFields();
+        Throwable scause = (Throwable) fields.get("cause", null);
+
+        if (super.getCause() == null && scause != null) {
+            try {
+                super.initCause(scause);
+            } catch(IllegalStateException e) {
+                throw new InvalidClassException("Inconsistent state: two causes");
+            }
+        }
     }
 
     /**

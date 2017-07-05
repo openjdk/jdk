@@ -1021,7 +1021,7 @@ cmsStage* _cmsStageAllocLabV2ToV4curves(cmsContext ContextID)
     mpe = cmsStageAllocToneCurves(ContextID, 3, LabTable);
     cmsFreeToneCurveTriple(LabTable);
 
-    if (mpe == NULL) return NULL;
+    if (mpe == NULL) return mpe;
 
     mpe ->Implements = cmsSigLabV2toV4;
     return mpe;
@@ -1426,6 +1426,8 @@ cmsPipeline* CMSEXPORT cmsPipelineDup(const cmsPipeline* lut)
     if (lut == NULL) return NULL;
 
     NewLUT = cmsPipelineAlloc(lut ->ContextID, lut ->InputChannels, lut ->OutputChannels);
+    if (NewLUT == NULL) return NULL;
+
     for (mpe = lut ->Elements;
          mpe != NULL;
          mpe = mpe ->Next) {

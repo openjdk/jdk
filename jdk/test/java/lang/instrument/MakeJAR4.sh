@@ -43,4 +43,4 @@ while [ $# != 0 ] ; do
 done
 
 
-${JAR} "{TESTTOOLVMOPTS}" cvfm ${AGENT}.jar ${AGENT}.mf ${AGENT}*.class ${OTHER}*.java
+${JAR} ${TESTTOOLVMOPTS} cvfm ${AGENT}.jar ${AGENT}.mf ${AGENT}*.class ${OTHER}*.java

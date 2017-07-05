@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -689,7 +689,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(float f) {
-        new FloatingDecimal(f).appendTo(this);
+        FloatingDecimal.appendTo(f,this);
         return this;
     }
 
@@ -706,7 +706,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(double d) {
-        new FloatingDecimal(d).appendTo(this);
+        FloatingDecimal.appendTo(d,this);
         return this;
     }
 

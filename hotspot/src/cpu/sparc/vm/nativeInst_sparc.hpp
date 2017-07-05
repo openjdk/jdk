@@ -70,8 +70,7 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
   bool is_zombie() {
     int x = long_at(0);
     return is_op3(x,
-                  VM_Version::v9_instructions_work() ?
-                    Assembler::ldsw_op3 : Assembler::lduw_op3,
+                  Assembler::ldsw_op3,
                   Assembler::ldst_op)
         && Assembler::inv_rs1(x) == G0
         && Assembler::inv_rd(x) == O7;

@@ -151,19 +151,8 @@ class DTraceProvider extends ProviderSkeleton {
     // directly.  So this method should never get invoked.  We also wire up the
     // DTraceProbe.uncheckedTrigger() method to call the proxy method instead
     // of doing the work itself.
-    public Object invoke(Object proxy, Method method, Object[] args) {
-        if (method.getDeclaringClass() != providerType) {
-            try {
-                return method.invoke(this, args);
-            } catch (IllegalAccessException e) {
-                assert false;
-            } catch (InvocationTargetException e) {
-                assert false;
-            }
-        } else if (active) {
-            assert false : "This method should have been overridden by the JVM";
-        }
-        return null;
+    protected void triggerProbe(Method method, Object[] args) {
+        assert false : "This method should have been overridden by the JVM";
     }
 
     public String getProviderName() {

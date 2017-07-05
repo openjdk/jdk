@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,11 @@ import javax.sound.midi.SoundbankResource;
  *
  * @author Karl Helgason
  */
-public class SF2Layer extends SoundbankResource {
+public final class SF2Layer extends SoundbankResource {
 
-    protected String name = "";
-    protected SF2GlobalRegion globalregion = null;
-    protected List<SF2LayerRegion> regions = new ArrayList<SF2LayerRegion>();
+    String name = "";
+    SF2GlobalRegion globalregion = null;
+    List<SF2LayerRegion> regions = new ArrayList<SF2LayerRegion>();
 
     public SF2Layer(SF2Soundbank soundBank) {
         super(soundBank, null, null);

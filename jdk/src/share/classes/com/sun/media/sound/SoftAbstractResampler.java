@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public abstract class SoftAbstractResampler implements SoftResampler {
         float samplerateconv = 1;
         float pitchcorrection = 0;
 
-        public ModelAbstractResamplerStream() {
+        ModelAbstractResamplerStream() {
             pad = getPadding();
             pad2 = getPadding() * 2;
             ibuffer = new float[2][sector_size + pad2];
@@ -384,7 +384,7 @@ public abstract class SoftAbstractResampler implements SoftResampler {
             float in_end, float[] pitch, float pitchstep, float[] out,
             int[] out_offset, int out_end);
 
-    public SoftResamplerStreamer openStreamer() {
+    public final SoftResamplerStreamer openStreamer() {
         return new ModelAbstractResamplerStream();
     }
 }

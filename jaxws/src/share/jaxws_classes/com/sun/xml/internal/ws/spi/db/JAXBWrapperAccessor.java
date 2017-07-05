@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.util.List;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementRef;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.namespace.QName;
 
 /**
@@ -87,12 +88,19 @@ public class JAXBWrapperAccessor extends WrapperAccessor {
         }
         HashSet<String> elementLocalNames = new HashSet<String>();
         for (Field field : getAllFields(contentClass)) {
+            XmlElementWrapper xmlElemWrapper = field.getAnnotation(XmlElementWrapper.class);
             XmlElement xmlElem = field.getAnnotation(XmlElement.class);
             XmlElementRef xmlElemRef = field.getAnnotation(XmlElementRef.class);
             String fieldName = field.getName().toLowerCase();
             String namespace = "";
             String localName = field.getName();
-            if (xmlElem != null) {
+            if (xmlElemWrapper != null) {
+                namespace = xmlElemWrapper.namespace();
+                if (xmlElemWrapper.name() != null && !xmlElemWrapper.name().equals("")
+                        && !xmlElemWrapper.name().equals("##default")) {
+                    localName = xmlElemWrapper.name();
+                }
+            }else if (xmlElem != null) {
                 namespace = xmlElem.namespace();
                 if (xmlElem.name() != null && !xmlElem.name().equals("")
                         && !xmlElem.name().equals("##default")) {

@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
@@ -251,6 +252,7 @@ public class RetrievalMethodResolver extends KeyResolverSpi {
       try {
          javax.xml.parsers.DocumentBuilderFactory dbf =javax.xml.parsers.DocumentBuilderFactory.newInstance();
          dbf.setNamespaceAware(true);
+         dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
          javax.xml.parsers.DocumentBuilder db = dbf.newDocumentBuilder();
          org.w3c.dom.Document doc =
             db.parse(new java.io.ByteArrayInputStream(bytes));

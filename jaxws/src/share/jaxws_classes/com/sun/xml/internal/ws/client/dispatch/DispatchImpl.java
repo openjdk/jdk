@@ -386,8 +386,10 @@ public abstract class DispatchImpl<T> extends Stub implements Dispatch<T> {
             endpoint = (String) requestContext.get(BindingProvider.ENDPOINT_ADDRESS_PROPERTY);
         }
         // This is existing before packetTakesPriorityOverRequestContext so leaving in place.
-        if (endpoint == null)
+        if (endpoint == null) {
+            if (message.endpointAddress == null) throw new WebServiceException(DispatchMessages.INVALID_NULLARG_URI());
             endpoint = message.endpointAddress.toString();
+        }
 
         String pathInfo = null;
         String queryString = null;

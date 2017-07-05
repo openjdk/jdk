@@ -136,10 +136,15 @@ public class XMLReaderManager {
                 try {
                     reader.setFeature(NAMESPACES_FEATURE, true);
                     reader.setFeature(NAMESPACE_PREFIXES_FEATURE, false);
-                    reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
                 } catch (SAXException se) {
                     // Try to carry on if we've got a parser that
                     // doesn't know about namespace prefixes.
+                }
+                try {
+                    reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
+                } catch (SAXException se) {
+                    System.err.println("Warning:  " + reader.getClass().getName() + ": "
+                                + se.getMessage());
                 }
             } catch (ParserConfigurationException ex) {
                 throw new SAXException(ex);

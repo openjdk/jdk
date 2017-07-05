@@ -232,7 +232,7 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
      * @return the actual number of bytes skipped
      * @exception ZipException if a ZIP file error has occurred
      * @exception IOException if an I/O error has occurred
-     * @exception IllegalArgumentException if n < 0
+     * @exception IllegalArgumentException if {@code n < 0}
      */
     public long skip(long n) throws IOException {
         if (n < 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1794,8 +1794,7 @@ public class CorbaMessageMediatorImpl
 
         if (msg.getGIOPVersion().lessThan(GIOPVersion.V1_2)) {
             // locate msgs 1.0 & 1.1 :=> grow,
-            // REVISIT - build from factory
-            outputObject = new CDROutputObject(
+            outputObject = sun.corba.OutputStreamFactory.newCDROutputObject(
                              (ORB) messageMediator.getBroker(),
                              this,
                              GIOPVersion.V1_0,
@@ -1804,8 +1803,7 @@ public class CorbaMessageMediatorImpl
                              ORBConstants.STREAM_FORMAT_VERSION_1);
         } else {
             // 1.2 :=> stream
-            // REVISIT - build from factory
-            outputObject = new CDROutputObject(
+            outputObject = sun.corba.OutputStreamFactory.newCDROutputObject(
                              (ORB) messageMediator.getBroker(),
                              messageMediator,
                              reply,
@@ -1959,7 +1957,8 @@ public class CorbaMessageMediatorImpl
                           ReplyMessage.NEEDS_ADDRESSING_MODE,
                           null, null);
             // REVISIT: via acceptor factory.
-            CDROutputObject outputObject = new CDROutputObject(
+            CDROutputObject outputObject =
+                sun.corba.OutputStreamFactory.newCDROutputObject(
                 (ORB)messageMediator.getBroker(),
                 this,
                 messageMediator.getGIOPVersion(),
@@ -2126,7 +2125,7 @@ public class CorbaMessageMediatorImpl
         ex.printStackTrace(pw);
         pw.flush(); // NOTE: you must flush or baos will be empty.
         EncapsOutputStream encapsOutputStream =
-            new EncapsOutputStream((ORB)mediator.getBroker());
+            sun.corba.OutputStreamFactory.newEncapsOutputStream((ORB)mediator.getBroker());
         encapsOutputStream.putEndian();
         encapsOutputStream.write_wstring(baos.toString());
         UnknownServiceContext serviceContext =
@@ -2203,12 +2202,11 @@ public class CorbaMessageMediatorImpl
         // REVISIT = do not use null.
         //
         if (messageMediator.getConnection() == null) {
-            // REVISIT - needs factory
             replyOutputObject =
-                new CDROutputObject(orb, messageMediator,
-                                    messageMediator.getReplyHeader(),
-                                    messageMediator.getStreamFormatVersion(),
-                                    BufferManagerFactory.GROW);
+                sun.corba.OutputStreamFactory.newCDROutputObject(orb,
+                            messageMediator, messageMediator.getReplyHeader(),
+                            messageMediator.getStreamFormatVersion(),
+                            BufferManagerFactory.GROW);
         } else {
             replyOutputObject = messageMediator.getConnection().getAcceptor()
              .createOutputObject(messageMediator.getBroker(), messageMediator);

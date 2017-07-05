@@ -96,6 +96,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * resolved.
      * @return The systemID that was set with setSystemId(String id)
      */
+    @Override
     public String getSystemId() {
         return _systemId;
     }
@@ -106,6 +107,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * resolved.
      * @param id Base URI for this stylesheet
      */
+    @Override
     public void setSystemId(String id) {
         _systemId = id;
     }
@@ -116,6 +118,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * order to set parameters and output properties.
      * @return The Transformer object
      */
+    @Override
     public Transformer getTransformer() {
         return _transformer;
     }
@@ -127,6 +130,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * @param result A Result instance, should not be null
      * @throws IllegalArgumentException if result is invalid for some reason
      */
+    @Override
     public void setResult(Result result) throws IllegalArgumentException {
         _result = result;
 
@@ -166,6 +170,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.characters()
      * Receive notification of character data.
      */
+    @Override
     public void characters(char[] ch, int start, int length)
         throws SAXException
     {
@@ -176,6 +181,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.startDocument()
      * Receive notification of the beginning of a document.
      */
+    @Override
     public void startDocument() throws SAXException {
         // Make sure setResult() was called before the first SAX event
         if (_result == null) {
@@ -189,10 +195,8 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
 
             // Create an internal DOM (not W3C) and get SAX2 input handler
             try {
-                dtmManager =
-                    (XSLTCDTMManager)_transformer.getTransformerFactory()
-                                                 .getDTMManagerClass()
-                                                 .newInstance();
+                dtmManager = _transformer.getTransformerFactory()
+                                         .createNewDTMManagerInstance();
             } catch (Exception e) {
                 throw new SAXException(e);
             }
@@ -230,6 +234,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.endDocument()
      * Receive notification of the end of a document.
      */
+    @Override
     public void endDocument() throws SAXException {
         // Signal to the DOMBuilder that the document is complete
         _handler.endDocument();
@@ -260,6 +265,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.startElement()
      * Receive notification of the beginning of an element.
      */
+    @Override
     public void startElement(String uri, String localName,
                              String qname, Attributes attributes)
         throws SAXException
@@ -271,6 +277,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.endElement()
      * Receive notification of the end of an element.
      */
+    @Override
     public void endElement(String namespaceURI, String localName, String qname)
         throws SAXException
     {
@@ -281,6 +288,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.processingInstruction()
      * Receive notification of a processing instruction.
      */
+    @Override
     public void processingInstruction(String target, String data)
         throws SAXException
     {
@@ -290,6 +298,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.LexicalHandler.startCDATA()
      */
+    @Override
     public void startCDATA() throws SAXException {
         if (_lexHandler != null) {
             _lexHandler.startCDATA();
@@ -299,6 +308,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.LexicalHandler.endCDATA()
      */
+    @Override
     public void endCDATA() throws SAXException {
         if (_lexHandler != null) {
             _lexHandler.endCDATA();
@@ -309,6 +319,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ext.LexicalHandler.comment()
      * Receieve notification of a comment
      */
+    @Override
     public void comment(char[] ch, int start, int length)
         throws SAXException
     {
@@ -322,6 +333,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Receive notification of ignorable whitespace in element
      * content. Similar to characters(char[], int, int).
      */
+    @Override
     public void ignorableWhitespace(char[] ch, int start, int length)
         throws SAXException
     {
@@ -332,6 +344,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.setDocumentLocator()
      * Receive an object for locating the origin of SAX document events.
      */
+    @Override
     public void setDocumentLocator(Locator locator) {
         _locator = locator;
 
@@ -344,6 +357,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.skippedEntity()
      * Receive notification of a skipped entity.
      */
+    @Override
     public void skippedEntity(String name) throws SAXException {
         _handler.skippedEntity(name);
     }
@@ -352,6 +366,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.startPrefixMapping()
      * Begin the scope of a prefix-URI Namespace mapping.
      */
+    @Override
     public void startPrefixMapping(String prefix, String uri)
         throws SAXException {
         _handler.startPrefixMapping(prefix, uri);
@@ -361,6 +376,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
      * Implements org.xml.sax.ContentHandler.endPrefixMapping()
      * End the scope of a prefix-URI Namespace mapping.
      */
+    @Override
     public void endPrefixMapping(String prefix) throws SAXException {
         _handler.endPrefixMapping(prefix);
     }
@@ -368,6 +384,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.LexicalHandler.startDTD()
      */
+    @Override
     public void startDTD(String name, String publicId, String systemId)
         throws SAXException
     {
@@ -379,6 +396,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.LexicalHandler.endDTD()
      */
+    @Override
     public void endDTD() throws SAXException {
         if (_lexHandler != null) {
             _lexHandler.endDTD();
@@ -388,6 +406,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.LexicalHandler.startEntity()
      */
+    @Override
     public void startEntity(String name) throws SAXException {
         if (_lexHandler != null) {
             _lexHandler.startEntity(name);
@@ -397,6 +416,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.LexicalHandler.endEntity()
      */
+    @Override
     public void endEntity(String name) throws SAXException {
         if (_lexHandler != null) {
             _lexHandler.endEntity(name);
@@ -406,6 +426,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.DTDHandler.unparsedEntityDecl()
      */
+    @Override
     public void unparsedEntityDecl(String name, String publicId,
         String systemId, String notationName) throws SAXException
     {
@@ -418,6 +439,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.DTDHandler.notationDecl()
      */
+    @Override
     public void notationDecl(String name, String publicId, String systemId)
         throws SAXException
     {
@@ -429,6 +451,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.DeclHandler.attributeDecl()
      */
+    @Override
     public void attributeDecl(String eName, String aName, String type,
         String valueDefault, String value) throws SAXException
     {
@@ -440,6 +463,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.DeclHandler.elementDecl()
      */
+    @Override
     public void elementDecl(String name, String model)
         throws SAXException
     {
@@ -451,6 +475,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.DeclHandler.externalEntityDecl()
      */
+    @Override
     public void externalEntityDecl(String name, String publicId, String systemId)
         throws SAXException
     {
@@ -462,6 +487,7 @@ public class TransformerHandlerImpl implements TransformerHandler, DeclHandler {
     /**
      * Implements org.xml.sax.ext.DeclHandler.externalEntityDecl()
      */
+    @Override
     public void internalEntityDecl(String name, String value)
         throws SAXException
     {

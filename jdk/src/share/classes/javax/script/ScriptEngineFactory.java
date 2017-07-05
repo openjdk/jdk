@@ -144,8 +144,7 @@ public interface ScriptEngineFactory {
      * of the supported scripting language.  For instance, an implementaton for a Javascript
      * engine might be;
      * <p>
-     * <pre>
-     * <code>
+     * <pre>{@code
      * public String getMethodCallSyntax(String obj,
      *                                   String m, String... args) {
      *      String ret = obj;
@@ -159,8 +158,7 @@ public interface ScriptEngineFactory {
      *      ret += ")";
      *      return ret;
      * }
-     *</code>
-     *</pre>
+     * } </pre>
      * <p>
      *
      * @param obj The name representing the object whose method is to be invoked. The
@@ -200,17 +198,17 @@ public interface ScriptEngineFactory {
      * Returns A valid scripting language executable progam with given statements.
      * For instance an implementation for a PHP engine might be:
      * <p>
-     * <pre><code>
+     * <pre>{@code
      * public String getProgram(String... statements) {
-     *      $retval = "&lt;?\n";
+     *      $retval = "<?\n";
      *      int len = statements.length;
      *      for (int i = 0; i < len; i++) {
      *          $retval += statements[i] + ";\n";
      *      }
-     *      $retval += "?&gt;";
+     *      $retval += "?>";
      *
      * }
-     * </code></pre>
+     * }</pre>
      *
      *  @param statements The statements to be executed.  May be return values of
      *  calls to the <code>getMethodCallSyntax</code> and <code>getOutputStatement</code> methods.

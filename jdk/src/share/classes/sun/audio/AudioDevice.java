@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,9 @@ package sun.audio;
 
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.Enumeration;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.BufferedInputStream;
-import java.io.OutputStream;
-import java.io.ByteArrayInputStream;
 
 import javax.sound.sampled.*;
 import javax.sound.midi.*;
@@ -57,8 +54,7 @@ import com.sun.media.sound.Toolkit;
  * @author Florian Bomers
  */
 
-public class
-    AudioDevice {
+public final class AudioDevice {
 
     private boolean DEBUG = false  /*true*/ ;
 
@@ -404,11 +400,11 @@ public class
 
     // INFO CLASS
 
-    class Info implements MetaEventListener {
+    final class Info implements MetaEventListener {
 
-        Sequencer   sequencer;
-        InputStream in;
-        DataPusher  datapusher;
+        final Sequencer   sequencer;
+        final InputStream in;
+        final DataPusher  datapusher;
 
         Info( Sequencer sequencer, InputStream in, DataPusher datapusher ) {
 

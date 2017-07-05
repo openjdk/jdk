@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ import javax.sound.midi.spi.MidiDeviceProvider;
  *
  * @author Karl Helgason
  */
-public class SoftProvider extends MidiDeviceProvider {
+public final class SoftProvider extends MidiDeviceProvider {
 
-    protected final static Info softinfo = SoftSynthesizer.info;
-    private static Info[] softinfos = {softinfo};
+    static final Info softinfo = SoftSynthesizer.info;
+    private static final Info[] softinfos = {softinfo};
 
     public MidiDevice.Info[] getDeviceInfo() {
         return Arrays.copyOf(softinfos, softinfos.length);

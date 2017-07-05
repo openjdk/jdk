@@ -185,7 +185,7 @@ class BufferedInputStream extends FilterInputStream {
      *
      * @param   in     the underlying input stream.
      * @param   size   the buffer size.
-     * @exception IllegalArgumentException if size <= 0.
+     * @exception IllegalArgumentException if {@code size <= 0}.
      */
     public BufferedInputStream(InputStream in, int size) {
         super(in);

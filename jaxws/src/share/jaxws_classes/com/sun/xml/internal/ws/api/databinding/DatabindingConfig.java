@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,37 +52,16 @@ public class DatabindingConfig {
     protected Class contractClass;
         protected Class endpointClass;
         protected Set<Class> additionalValueTypes = new HashSet<Class>();
-//      protected Set<SchemaInfo> schemaInfo;
-//      protected MappingInfo defaultMappingInfo = new MappingInfo();
-//      protected MappingInfo overrideMappingInfo = new MappingInfo();
         protected MappingInfo mappingInfo = new MappingInfo();
-//      protected Definition wsdl;
         protected URL wsdlURL;
         protected ClassLoader classLoader;
-//      protected QName serviceName;
-//      protected BindingID bindingId;
         protected Iterable<WebServiceFeature> features;
-        //TODO WSBinding isn't it BindingID + features?
-        //On the EndpointFactory.createEndpoint path, WSBinding could be created from DeploymentDescriptorParser.createBinding
         protected WSBinding wsBinding;
         protected WSDLPort wsdlPort;
         protected MetadataReader metadataReader;
         protected Map<String, Object> properties = new HashMap<String, Object>();
     protected Source wsdlSource;
     protected EntityResolver entityResolver;
-
-//      public MappingInfo getDefaultMappingInfo() {
-//              return defaultMappingInfo;
-//      }
-//      public void setDefaultMappingInfo(MappingInfo defaultMappingInfo) {
-//              this.defaultMappingInfo = defaultMappingInfo;
-//      }
-//      public MappingInfo getOverrideMappingInfo() {
-//              return overrideMappingInfo;
-//      }
-//      public void setOverrideMappingInfo(MappingInfo overrideMappingInfo) {
-//              this.overrideMappingInfo = overrideMappingInfo;
-//      }
 
         public Class getContractClass() {
                 return contractClass;
@@ -114,19 +93,8 @@ public class DatabindingConfig {
         public void setClassLoader(ClassLoader classLoader) {
                 this.classLoader = classLoader;
         }
-//      public QName getServiceName() {
-//              return serviceName;
-//      }
-//      public void setServiceName(QName serviceName) {
-//              this.serviceName = serviceName;
-//      }
-//      public BindingID getBindingId() {
-//              return bindingId;
-//      }
-//      public void setBindingId(BindingID bindingId) {
-//              this.bindingId = bindingId;
-//      }
         public Iterable<WebServiceFeature> getFeatures() {
+            if (features == null && wsBinding != null) return wsBinding.getFeatures();
                 return features;
         }
         public void setFeatures(WebServiceFeature[] features) {

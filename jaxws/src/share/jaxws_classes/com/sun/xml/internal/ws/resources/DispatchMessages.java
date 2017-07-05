@@ -51,6 +51,18 @@ public final class DispatchMessages {
         return localizer.localize(localizableINVALID_NULLARG_XMLHTTP_REQUEST_METHOD(arg0, arg1));
     }
 
+    public static Localizable localizableINVALID_NULLARG_URI() {
+        return messageFactory.getMessage("invalid.nullarg.uri");
+    }
+
+    /**
+     * Endpoint address URI is not allowed with a null argument
+     *
+     */
+    public static String INVALID_NULLARG_URI() {
+        return localizer.localize(localizableINVALID_NULLARG_URI());
+    }
+
     public static Localizable localizableINVALID_SOAPMESSAGE_DISPATCH_MSGMODE(Object arg0, Object arg1) {
         return messageFactory.getMessage("invalid.soapmessage.dispatch.msgmode", arg0, arg1);
     }

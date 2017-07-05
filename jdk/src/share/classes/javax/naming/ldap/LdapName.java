@@ -443,7 +443,7 @@ public class LdapName implements Name {
      * @throws  InvalidNameException if <tt>suffix</tt> is not a valid LDAP
      *          name, or if the addition of the components would violate the
      *          syntax rules of this LDAP name.
-     * @throws  IndexOutOfBoundsException.
+     * @throws  IndexOutOfBoundsException
      *          If posn is outside the specified range.
      */
     public Name addAll(int posn, Name suffix)
@@ -474,7 +474,7 @@ public class LdapName implements Name {
      *                          Must be in the range [0,size()].
      *
      * @return  The updated name (not a new instance).
-     * @throws  IndexOutOfBoundsException.
+     * @throws  IndexOutOfBoundsException
      *          If posn is outside the specified range.
      */
     public Name addAll(int posn, List<Rdn> suffixRdns) {
@@ -527,7 +527,7 @@ public class LdapName implements Name {
      *                  Must be in the range [0,size()].
      * @return          The updated LdapName, not a new instance.
      *                  Cannot be null.
-     * @exception       IndexOutOfBoundsException.
+     * @exception       IndexOutOfBoundsException
      *                  If posn is outside the specified range.
      * @exception       InvalidNameException If adding comp at the
      *                  specified position would violate the name's syntax.

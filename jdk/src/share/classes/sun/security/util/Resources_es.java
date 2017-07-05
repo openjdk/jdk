@@ -127,6 +127,8 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"multiple.Codebase.expressions",
                 "expresiones m\u00FAltiples de CodeBase"},
         {"multiple.SignedBy.expressions","expresiones m\u00FAltiples de SignedBy"},
+        {"duplicate.keystore.domain.name","nombre de dominio de almac\u00E9n de claves duplicado: {0}"},
+        {"duplicate.keystore.name","nombre de almac\u00E9n de claves duplicado: {0}"},
         {"SignedBy.has.empty.alias","SignedBy tiene un alias vac\u00EDo"},
         {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
                 "no se puede especificar Principal con una clase de comod\u00EDn sin un nombre de comod\u00EDn"},
