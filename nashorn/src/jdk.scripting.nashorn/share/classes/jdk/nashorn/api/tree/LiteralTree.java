@@ -36,7 +36,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface LiteralTree extends ExpressionTree {
     /**
      * Returns the value of this literal.

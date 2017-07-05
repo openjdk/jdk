@@ -55,7 +55,6 @@ import com.sun.tools.attach.spi.AttachProvider;
  *
  * @since 1.6
  */
-@jdk.Exported
 public class VirtualMachineDescriptor {
 
     private AttachProvider provider;

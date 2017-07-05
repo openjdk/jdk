@@ -78,7 +78,7 @@ public class ReplayCacheTestProc {
                 mode = -1;
             }
 
-            uid = sun.misc.VM.geteuid();
+            uid = jdk.internal.misc.VM.geteuid();
 
             KDC kdc = KDC.create(OneKDC.REALM, HOST, 0, true);
             for (int i=0; i<nu; i++) {

@@ -36,7 +36,6 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface ForInLoopTree extends LoopTree {
     /**
      * The for..in left hand side expression.

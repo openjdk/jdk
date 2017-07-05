@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @test
  * @bug 4842196
  * @summary Test that there is no difference between the JMX version and the
- * JDK version when JMX is bundled into the Java platform and the application
- * is run with a security manager and the test codebase has the java permission
- * to read the "java.runtime.version" system property.
+ * JDK version when the application is run with a security manager and the
+ * test codebase has the java permission to read the "java.runtime.version"
+ * system property.
  * @author Luis-Miguel Alventosa
  * @modules java.management
  * @run clean ImplVersionTest ImplVersionCommand
@@ -36,8 +36,6 @@
  */
 
 import java.io.File;
-import java.security.CodeSource;
-import javax.management.MBeanServer;
 
 public class ImplVersionTest {
 
@@ -70,18 +68,13 @@ public class ImplVersionTest {
             System.out.println("testClasses = " + testClasses);
             // Get boot class path
             //
-            boolean checkVersion = true;
-            String bootClassPath = System.getProperty("sun.boot.class.path");
-            if (bootClassPath != null &&
-                bootClassPath.indexOf("jmxri.jar") != -1)
-                checkVersion = false;
             String command =
                 javaHome + File.separator + "bin" + File.separator + "java " +
                 " -classpath " + testClasses +
                 " -Djava.security.manager -Djava.security.policy==" + testSrc +
                 File.separator + "policy -Dtest.classes=" + testClasses +
                 " ImplVersionCommand " +
-                System.getProperty("java.runtime.version") + " " + checkVersion;
+                System.getProperty("java.runtime.version");
             System.out.println("ImplVersionCommand Exec Command = " +command);
             Process proc = Runtime.getRuntime().exec(command);
             new ImplVersionReader(proc, proc.getInputStream()).start();

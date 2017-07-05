@@ -33,13 +33,11 @@ package jdk.nashorn.api.tree;
  *
  * @since 1.9
  */
-@jdk.Exported
 public interface Tree {
 
     /**
      * Enumerates all kinds of trees.
      */
-    @jdk.Exported
     public enum Kind {
         /**
          * Used for instances of {@link ArrayAccessTree}.

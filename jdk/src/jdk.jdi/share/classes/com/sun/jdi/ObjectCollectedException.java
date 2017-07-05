@@ -32,7 +32,6 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
-@jdk.Exported
 public class ObjectCollectedException extends RuntimeException {
     private static final long serialVersionUID = -1928428056197269588L;
     public ObjectCollectedException() {
