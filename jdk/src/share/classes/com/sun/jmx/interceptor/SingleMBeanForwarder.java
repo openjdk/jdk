@@ -51,6 +51,8 @@ import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.management.ReflectionException;
+import javax.management.namespace.JMXNamespaces;
+import javax.management.namespace.MBeanServerSupport;
 import javax.management.remote.IdentityMBeanServerForwarder;
 
 public class SingleMBeanForwarder extends IdentityMBeanServerForwarder {
@@ -285,14 +287,14 @@ public class SingleMBeanForwarder extends IdentityMBeanServerForwarder {
         if (!pattern.apply(mbeanName))
             return false;
 
-//        final String dompat = pattern.getDomain();
-//        if (!dompat.contains(JMXNamespaces.NAMESPACE_SEPARATOR))
-//            return true; // We already checked that patterns apply.
-//
-//        if (mbeanName.getDomain().endsWith(JMXNamespaces.NAMESPACE_SEPARATOR)) {
-//            // only matches if pattern ends with //
-//            return dompat.endsWith(JMXNamespaces.NAMESPACE_SEPARATOR);
-//        }
+        final String dompat = pattern.getDomain();
+        if (!dompat.contains(JMXNamespaces.NAMESPACE_SEPARATOR))
+            return true; // We already checked that patterns apply.
+
+        if (mbeanName.getDomain().endsWith(JMXNamespaces.NAMESPACE_SEPARATOR)) {
+            // only matches if pattern ends with //
+            return dompat.endsWith(JMXNamespaces.NAMESPACE_SEPARATOR);
+        }
 
         // should not come here, unless mbeanName contains a // in the
         // middle of its domain, which would be weird.

@@ -58,6 +58,9 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     not_null_block = _succs[0];
     null_block     = _succs[1];
   }
+  while (null_block->is_Empty() == Block::empty_with_goto) {
+    null_block     = null_block->_succs[0];
+  }
 
   // Search the exception block for an uncommon trap.
   // (See Parse::do_if and Parse::do_ifnull for the reason
@@ -149,6 +152,10 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
       const TypePtr *adr_type = NULL;  // Do not need this return value here
       const Node* base = mach->get_base_and_disp(offset, adr_type);
       if (base == NULL || base == NodeSentinel) {
+        // Narrow oop address doesn't have base, only index
+        if( val->bottom_type()->isa_narrowoop() &&
+            MacroAssembler::needs_explicit_null_check(offset) )
+          continue;             // Give up if offset is beyond page size
         // cannot reason about it; is probably not implicit null exception
       } else {
         const TypePtr* tptr = base->bottom_type()->is_ptr();

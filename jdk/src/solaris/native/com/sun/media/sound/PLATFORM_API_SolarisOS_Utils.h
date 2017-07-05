@@ -31,7 +31,9 @@
 #include <sys/audio.h>
 #include <sys/mixer.h>
 #include <sys/types.h>
+#ifndef __linux__
 #include <stropts.h>
+#endif
 #include <sys/conf.h>
 #include <sys/stat.h>
 #include <unistd.h>
