@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile ThreadGroupTest.java
- *  @run main ThreadGroupTest
+ *  @run driver ThreadGroupTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;

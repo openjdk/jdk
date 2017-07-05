@@ -626,6 +626,7 @@ import javax.sql.rowset.spi.*;
  * </PRE>
  *
  * @author Jonathan Bruce
+ * @since 1.5
  */
 
 public interface CachedRowSet extends RowSet, Joinable {

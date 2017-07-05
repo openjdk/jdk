@@ -35,14 +35,14 @@
 AdjoiningGenerations::AdjoiningGenerations(ReservedSpace old_young_rs,
                                            GenerationSizer* policy,
                                            size_t alignment) :
-  _virtual_spaces(old_young_rs, policy->min_gen1_size(),
-                  policy->min_gen0_size(), alignment) {
-  size_t init_low_byte_size = policy->initial_gen1_size();
-  size_t min_low_byte_size = policy->min_gen1_size();
-  size_t max_low_byte_size = policy->max_gen1_size();
-  size_t init_high_byte_size = policy->initial_gen0_size();
-  size_t min_high_byte_size = policy->min_gen0_size();
-  size_t max_high_byte_size = policy->max_gen0_size();
+  _virtual_spaces(old_young_rs, policy->min_old_size(),
+                  policy->min_young_size(), alignment) {
+  size_t init_low_byte_size = policy->initial_old_size();
+  size_t min_low_byte_size = policy->min_old_size();
+  size_t max_low_byte_size = policy->max_old_size();
+  size_t init_high_byte_size = policy->initial_young_size();
+  size_t min_high_byte_size = policy->min_young_size();
+  size_t max_high_byte_size = policy->max_young_size();
 
   assert(min_low_byte_size <= init_low_byte_size &&
          init_low_byte_size <= max_low_byte_size, "Parameter check");

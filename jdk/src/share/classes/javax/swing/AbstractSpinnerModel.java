@@ -131,6 +131,7 @@ public abstract class AbstractSpinnerModel implements SpinnerModel, Serializable
      * myAbstractSpinnerModel.getListeners(ChangeListener.class);
      * </pre>
      *
+     * @param <T> the type of requested listeners
      * @param listenerType the type of listeners to return, e.g. ChangeListener.class
      * @return all of the objects receiving <em>listenerType</em> notifications
      *         from this model

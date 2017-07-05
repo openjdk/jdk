@@ -31,7 +31,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g:none NoLocInfoTest.java
- *  @run main NoLocInfoTest
+ *  @run driver NoLocInfoTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -1395,24 +1395,24 @@ class Parser extends Scanner implements ParserActions, Constants {
             return res;
         }
 
-        StringBuffer buf = new StringBuffer(res.id.toString());
+        StringBuilder sb = new StringBuilder(res.id.toString());
 
         while (token == FIELD) {
             scan();
             if ((token == MUL) && star) {
                 scan();
-                buf.append(".*");
+                sb.append(".*");
                 break;
             }
 
-            buf.append('.');
+            sb.append('.');
             if (token == IDENT) {
-                buf.append(scanner.idValue);
+                sb.append(scanner.idValue);
             }
             expect(IDENT);
         }
 
-        res.id = Identifier.lookup(buf.toString());
+        res.id = Identifier.lookup(sb.toString());
         return res;
     }
     /**

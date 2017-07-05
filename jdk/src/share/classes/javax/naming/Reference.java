@@ -364,13 +364,13 @@ public class Reference implements Cloneable, java.io.Serializable {
       * @return The non-null string representation of this reference.
       */
     public String toString() {
-        StringBuffer buf = new StringBuffer("Reference Class Name: " +
-                                            className + "\n");
+        StringBuilder sb = new StringBuilder("Reference Class Name: " +
+                                             className + "\n");
         int len = addrs.size();
         for (int i = 0; i < len; i++)
-            buf.append(get(i).toString());
+            sb.append(get(i).toString());
 
-        return buf.toString();
+        return sb.toString();
     }
 
     /**

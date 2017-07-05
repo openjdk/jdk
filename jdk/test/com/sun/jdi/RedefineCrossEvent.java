@@ -46,26 +46,26 @@
  *  @run compile -g RepStepTarg.java
  *  @run compile -g RequestReflectionTest.java
  *
- *  @run main AccessSpecifierTest -redefstart -redefevent
- *  @run main AfterThreadDeathTest -redefstart -redefevent
- *  @run main ArrayRangeTest -redefstart -redefevent
- *  @run main BacktraceFieldTest -redefstart -redefevent
- *  @run main ClassesByName2Test -redefstart -redefevent
- *  @run main DebuggerThreadTest -redefstart -redefevent
- *  @run main DeleteEventRequestsTest -redefstart -redefevent
- *  @run main/othervm ExceptionEvents -redefstart -redefevent N A StackOverflowCaughtTarg java.lang.Exception
- *  @run main/othervm ExceptionEvents -redefstart -redefevent C A StackOverflowCaughtTarg null
- *  @run main/othervm ExceptionEvents -redefstart -redefevent C A StackOverflowCaughtTarg java.lang.StackOverflowError
- *  @run main/othervm ExceptionEvents -redefstart -redefevent N A StackOverflowCaughtTarg java.lang.NullPointerException
- *  @run main/othervm ExceptionEvents -redefstart -redefevent C T StackOverflowCaughtTarg java.lang.Error
- *  @run main/othervm ExceptionEvents -redefstart -redefevent N T StackOverflowCaughtTarg java.lang.NullPointerException
- *  @run main/othervm ExceptionEvents -redefstart -redefevent N N StackOverflowCaughtTarg java.lang.Exception
- *  @run main/othervm ExceptionEvents -redefstart -redefevent C N StackOverflowCaughtTarg java.lang.Error
- *  @run main/othervm ExceptionEvents -redefstart -redefevent N A StackOverflowUncaughtTarg java.lang.Exception
- *  @run main ExpiredRequestDeletionTest -redefstart -redefevent
- *  @run main/othervm FieldWatchpoints -redefstart -redefevent
- *  @run main/othervm InstanceFilter -redefstart -redefevent
- *  @run main LocationTest -redefstart -redefevent
- *  @run main NewInstanceTest -redefstart -redefevent
- *  @run main RequestReflectionTest -redefstart -redefevent
+ *  @run driver AccessSpecifierTest -redefstart -redefevent
+ *  @run driver AfterThreadDeathTest -redefstart -redefevent
+ *  @run driver ArrayRangeTest -redefstart -redefevent
+ *  @run driver BacktraceFieldTest -redefstart -redefevent
+ *  @run driver ClassesByName2Test -redefstart -redefevent
+ *  @run driver DebuggerThreadTest -redefstart -redefevent
+ *  @run driver DeleteEventRequestsTest -redefstart -redefevent
+ *  @run driver ExceptionEvents -redefstart -redefevent N A StackOverflowCaughtTarg java.lang.Exception
+ *  @run driver ExceptionEvents -redefstart -redefevent C A StackOverflowCaughtTarg null
+ *  @run driver ExceptionEvents -redefstart -redefevent C A StackOverflowCaughtTarg java.lang.StackOverflowError
+ *  @run driver ExceptionEvents -redefstart -redefevent N A StackOverflowCaughtTarg java.lang.NullPointerException
+ *  @run driver ExceptionEvents -redefstart -redefevent C T StackOverflowCaughtTarg java.lang.Error
+ *  @run driver ExceptionEvents -redefstart -redefevent N T StackOverflowCaughtTarg java.lang.NullPointerException
+ *  @run driver ExceptionEvents -redefstart -redefevent N N StackOverflowCaughtTarg java.lang.Exception
+ *  @run driver ExceptionEvents -redefstart -redefevent C N StackOverflowCaughtTarg java.lang.Error
+ *  @run driver ExceptionEvents -redefstart -redefevent N A StackOverflowUncaughtTarg java.lang.Exception
+ *  @run driver ExpiredRequestDeletionTest -redefstart -redefevent
+ *  @run driver FieldWatchpoints -redefstart -redefevent
+ *  @run driver InstanceFilter -redefstart -redefevent
+ *  @run driver LocationTest -redefstart -redefevent
+ *  @run driver NewInstanceTest -redefstart -redefevent
+ *  @run driver RequestReflectionTest -redefstart -redefevent
  */

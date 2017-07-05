@@ -68,7 +68,7 @@ class ServiceLocator {
         if (dn == null) {
             return null;
         }
-        StringBuffer domain = new StringBuffer();
+        StringBuilder domain = new StringBuilder();
         LdapName ldapName = new LdapName(dn);
 
         // process RDNs left-to-right

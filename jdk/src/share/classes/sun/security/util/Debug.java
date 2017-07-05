@@ -188,13 +188,13 @@ public class Debug {
      */
     public static String toHexString(BigInteger b) {
         String hexValue = b.toString(16);
-        StringBuffer buf = new StringBuffer(hexValue.length()*2);
+        StringBuilder sb = new StringBuilder(hexValue.length()*2);
 
         if (hexValue.startsWith("-")) {
-            buf.append("   -");
+            sb.append("   -");
             hexValue = hexValue.substring(1);
         } else {
-            buf.append("    ");     // four spaces
+            sb.append("    ");     // four spaces
         }
         if ((hexValue.length()%2) != 0) {
             // add back the leading 0
@@ -203,17 +203,17 @@ public class Debug {
         int i=0;
         while (i < hexValue.length()) {
             // one byte at a time
-            buf.append(hexValue.substring(i, i+2));
+            sb.append(hexValue.substring(i, i + 2));
             i+=2;
             if (i!= hexValue.length()) {
                 if ((i%64) == 0) {
-                    buf.append("\n    ");     // line after eight words
+                    sb.append("\n    ");     // line after eight words
                 } else if (i%8 == 0) {
-                    buf.append(" ");     // space between words
+                    sb.append(" ");     // space between words
                 }
             }
         }
-        return buf.toString();
+        return sb.toString();
     }
 
     /**
@@ -221,7 +221,7 @@ public class Debug {
      */
     private static String marshal(String args) {
         if (args != null) {
-            StringBuffer target = new StringBuffer();
+            StringBuilder target = new StringBuilder();
             StringBuffer source = new StringBuffer(args);
 
             // obtain the "permission=<classname>" options

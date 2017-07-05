@@ -185,6 +185,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * properties with keys that are valid array indices.</p>
      *
      * @param properties   Collection of initial properties.
+     * @param className    class name
      * @param fieldCount   Number of fields in use.
      * @param fieldMaximum Number of fields available.
      * @param spillLength  Number of used spill slots.

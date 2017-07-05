@@ -29,7 +29,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g LambdaStepTest.java
- *  @run main LambdaStepTest
+ *  @run driver LambdaStepTest
  */
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.ObjectReference;

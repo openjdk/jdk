@@ -542,7 +542,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * @return  a string representation of this <code>JColorChooser</code>
      */
     protected String paramString() {
-        StringBuffer chooserPanelsString = new StringBuffer("");
+        StringBuilder chooserPanelsString = new StringBuilder("");
         for (int i=0; i<chooserPanels.length; i++) {
             chooserPanelsString.append("[" + chooserPanels[i].toString()
                                        + "]");

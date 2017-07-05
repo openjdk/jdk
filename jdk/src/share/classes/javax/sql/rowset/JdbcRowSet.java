@@ -118,6 +118,7 @@ import java.io.*;
  * requirements of connected and disconnected <code>RowSet</code> objects.
  *
  * @author Jonathan Bruce
+ * @since 1.5
  */
 
 public interface JdbcRowSet extends RowSet, Joinable {

@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g VarargsTest.java
- *  @run main VarargsTest
+ *  @run driver VarargsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

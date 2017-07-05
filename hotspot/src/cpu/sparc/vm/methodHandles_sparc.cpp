@@ -483,7 +483,7 @@ void trace_method_handle_stub(const char* adaptername,
   const char* mh_reg_name = has_mh ? "G3_mh" : "G3";
   tty->print_cr("MH %s %s="INTPTR_FORMAT " saved_sp=" INTPTR_FORMAT " args=" INTPTR_FORMAT,
                 adaptername, mh_reg_name,
-                (intptr_t) mh, saved_sp, args);
+                p2i(mh), p2i(saved_sp), p2i(args));
 
   if (Verbose) {
     // dumping last frame with frame::describe

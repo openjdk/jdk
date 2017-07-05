@@ -218,6 +218,9 @@ JNIEXPORT void JNICALL Java_sun_net_ExtendedOptionsImpl_setFlowOption
             if (errno == ENOPROTOOPT) {
                 JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
                         "unsupported socket option");
+            } else if (errno == EACCES || errno == EPERM) {
+                NET_ERROR(env, JNU_JAVANETPKG "SocketException",
+                                "Permission denied");
             } else {
                 NET_ERROR(env, JNU_JAVANETPKG "SocketException",
                                 "set option SO_FLOW_SLA failed");
@@ -251,6 +254,9 @@ JNIEXPORT void JNICALL Java_sun_net_ExtendedOptionsImpl_getFlowOption
             if (errno == ENOPROTOOPT) {
                 JNU_ThrowByName(env, "java/lang/UnsupportedOperationException",
                         "unsupported socket option");
+            } else if (errno == EACCES || errno == EPERM) {
+                NET_ERROR(env, JNU_JAVANETPKG "SocketException",
+                                "Permission denied");
             } else {
                 NET_ERROR(env, JNU_JAVANETPKG "SocketException",
                                 "set option SO_FLOW_SLA failed");

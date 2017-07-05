@@ -1,6 +1,5 @@
-
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -320,7 +319,6 @@ ifeq ($(OPENJDK_TARGET_OS), aix)
 endif
 
 $(eval $(call SetupJVMTIDemo,hprof, java_crw_demo, \
-    -I$(JDK_TOPDIR)/src/share/npt -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/npt \
     $(BUILD_LIBHPROF_AIX_EXTRA_CFLAGS), C, \
     -ldl, ws2_32.lib winmm.lib, -lsocket -lnsl, -lpthread, $(BUILD_LIBHPROF_AIX_EXTRA_SRC)))
 

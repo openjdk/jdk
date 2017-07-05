@@ -31,7 +31,7 @@
  *
  *  @run build TestScaffold VMConnection TargetAdapter TargetListener
  *  @run compile -g CountEvent.java
- *  @run main CountEvent
+ *  @run driver CountEvent
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

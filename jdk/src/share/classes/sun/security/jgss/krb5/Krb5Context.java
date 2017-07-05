@@ -1345,7 +1345,7 @@ class Krb5Context implements GSSContextSpi {
 
     private static String getHexBytes(byte[] bytes, int pos, int len) {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < len; i++) {
 
             int b1 = (bytes[i]>>4) & 0x0f;

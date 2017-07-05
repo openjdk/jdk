@@ -44,11 +44,11 @@ public class JNITypeParser {
     }
 
     static String typeNameToSignature(String signature) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int firstIndex = signature.indexOf('[');
         int index = firstIndex;
         while (index != -1) {
-            buffer.append('[');
+            sb.append('[');
             index = signature.indexOf('[', index + 1);
         }
 
@@ -57,28 +57,28 @@ public class JNITypeParser {
         }
 
         if (signature.equals("boolean")) {
-            buffer.append('Z');
+            sb.append('Z');
         } else if (signature.equals("byte")) {
-            buffer.append('B');
+            sb.append('B');
         } else if (signature.equals("char")) {
-            buffer.append('C');
+            sb.append('C');
         } else if (signature.equals("short")) {
-            buffer.append('S');
+            sb.append('S');
         } else if (signature.equals("int")) {
-            buffer.append('I');
+            sb.append('I');
         } else if (signature.equals("long")) {
-            buffer.append('J');
+            sb.append('J');
         } else if (signature.equals("float")) {
-            buffer.append('F');
+            sb.append('F');
         } else if (signature.equals("double")) {
-            buffer.append('D');
+            sb.append('D');
         } else {
-            buffer.append('L');
-            buffer.append(signature.replace('.', '/'));
-            buffer.append(';');
+            sb.append('L');
+            sb.append(signature.replace('.', '/'));
+            sb.append(';');
         }
 
-        return buffer.toString();
+        return sb.toString();
     }
 
     String typeName() {
