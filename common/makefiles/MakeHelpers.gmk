@@ -184,26 +184,34 @@ define ParseLogLevel
           LOG_STRIPPED2=$$(subst nofile,,$$(LOG_STRIPPED1))
           # We might have ended up with a leading comma. Remove it
           LOG_STRIPPED3=$$(strip $$(patsubst $$(COMMA)%,%,$$(LOG_STRIPPED2)))
-          override LOG:=$$(LOG_STRIPPED3)
+          LOG_LEVEL:=$$(LOG_STRIPPED3)
+        else
+          LOG_LEVEL:=$$(LOG)
         endif
 
-        ifeq ($$(LOG),)
+        ifeq ($$(LOG_LEVEL),)
             # Set LOG to "warn" as default if not set (and no VERBOSE given)
-            override LOG=warn
+            override LOG_LEVEL=warn
         endif
-        ifeq ($$(LOG),warn)
+        ifeq ($$(LOG_LEVEL),warn)
             VERBOSE=-s
-        else ifeq ($$(LOG),info)
+        else ifeq ($$(LOG_LEVEL),info)
             VERBOSE=-s
-        else ifeq ($$(LOG),debug)
+        else ifeq ($$(LOG_LEVEL),debug)
             VERBOSE=
-        else ifeq ($$(LOG),trace)
+        else ifeq ($$(LOG_LEVEL),trace)
             VERBOSE=
         else
             $$(info Error: LOG must be one of: warn, info, debug or trace.)
             $$(eval $$(call FatalError))
         endif
     else
+        # Provide resonable interpretations of LOG_LEVEL if VERBOSE is given.
+        ifeq ($(VERBOSE),)
+            LOG_LEVEL:=debug
+        else
+            LOG_LEVEL:=warn
+        endif
         ifneq ($$(LOG),)
             # We have both a VERBOSE and a LOG argument. This is OK only if this is a repeated call by ourselves,
             # but complain if this is the top-level make call.

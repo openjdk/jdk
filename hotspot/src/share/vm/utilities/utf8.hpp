@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ class UTF8 : AllStatic {
   static int quoted_ascii_length(const char* utf8_str, int utf8_length);
 
   // converts a utf8 string to quoted ascii
-  static void as_quoted_ascii(const char* utf8_str, char* buf, int buflen);
+  static void as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int buflen);
 
   // converts a quoted ascii string to utf8 string.  returns the original
   // string unchanged if nothing needs to be done.

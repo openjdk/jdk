@@ -532,7 +532,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
 
   // Loop until the allocation is satisified,
   // or unsatisfied after GC.
-  for (int try_count = 1; /* return or throw */; try_count += 1) {
+  for (int try_count = 1, gclocker_stalled_count = 0; /* return or throw */; try_count += 1) {
     HandleMark hm; // discard any handles allocated in each iteration
 
     // First allocation attempt is lock-free.
@@ -576,6 +576,10 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
           }
         }
 
+        if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
+          return NULL; // we didn't get to do a GC and we didn't get any memory
+        }
+
         // If this thread is not in a jni critical section, we stall
         // the requestor until the critical section has cleared and
         // GC allowed. When the critical section clears, a GC is
@@ -587,6 +591,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
           MutexUnlocker mul(Heap_lock);
           // Wait for JNI critical section to be exited
           GC_locker::stall_until_clear();
+          gclocker_stalled_count += 1;
           continue;
         } else {
           if (CheckJNICalls) {
