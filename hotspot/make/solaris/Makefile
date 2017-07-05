@@ -38,10 +38,10 @@
 
 # Along with VM, Serviceability Agent (SA) is built for SA/JDI binding.
 # JDI binding on SA produces two binaries:
-#  1. sa-jdi.jar       - This is build before building libjvm[_g].so
+#  1. sa-jdi.jar       - This is built before building libjvm.so
 #                        Please refer to ./makefiles/sa.make
-#  2. libsaproc[_g].so - Native library for SA - This is built after
-#                        libjsig[_g].so (signal interposition library)
+#  2. libsaproc.so     - Native library for SA - This is built after
+#                        libjsig.so (signal interposition library)
 #                        Please refer to ./makefiles/vm.make
 # If $(GAMMADIR)/agent dir is not present, SA components are not built.
 
@@ -141,9 +141,9 @@ endif
 #
 # What you get with each target:
 #
-# debug*     - "thin" libjvm_g - debug info linked into the gamma_g launcher
+# debug*     - "thin" libjvm - debug info linked into the gamma launcher
 # fastdebug* - optimized compile, but with asserts enabled
-# jvmg*      - "fat" libjvm_g - debug info linked into libjvm_g.so
+# jvmg*      - "fat" libjvm - debug info linked into libjvm.so
 # optimized* - optimized compile, no asserts
 # profiled*  - gprof
 # product*   - the shippable thing:  optimized compile, no asserts, -DPRODUCT

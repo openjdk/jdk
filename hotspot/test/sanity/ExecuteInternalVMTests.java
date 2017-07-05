@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,19 @@
  *
  */
 
-package sun.jvm.hotspot.opto;
+/* @test ExecuteInternalVMTests
+ * @bug 8004691
+ * @summary Add a jtreg test that exercises the ExecuteInternalVMTests flag
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+ExecuteInternalVMTests ExecuteInternalVMTests
+ */
+public class ExecuteInternalVMTests {
+    public static void main(String[] args) throws Exception {
+        // The tests that are run are the HotSpot internal tests which are
+        // executed only when the flag -XX:+ExecuteInternalVMTests is used.
 
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.runtime.*;
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.types.*;
-
-public class RootNode extends LoopNode {
-  static {
-    VM.registerVMInitializedObserver(new Observer() {
-        public void update(Observable o, Object data) {
-          initialize(VM.getVM().getTypeDataBase());
-        }
-      });
-  }
-
-  private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type      = db.lookupType("RootNode");
-  }
-
-
-  public RootNode(Address addr) {
-    super(addr);
-  }
+        // The flag -XX:+ExecuteInternalVMTests can only be used for
+        // non-product builds of HotSpot. Therefore, the flag
+        // -XX:+IgnoreUnrecognizedVMOptions is also used, which means that this
+        // test will do nothing on a product build.
+    }
 }

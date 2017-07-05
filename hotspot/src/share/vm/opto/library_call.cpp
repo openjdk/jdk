@@ -282,6 +282,7 @@ class LibraryCallKit : public GraphKit {
   typedef enum { LS_xadd, LS_xchg, LS_cmpxchg } LoadStoreKind;
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind);
   bool inline_unsafe_ordered_store(BasicType type);
+  bool inline_unsafe_fence(vmIntrinsics::ID id);
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_number_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
@@ -334,6 +335,9 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     case vmIntrinsics::_getAndSetInt:
     case vmIntrinsics::_getAndSetLong:
     case vmIntrinsics::_getAndSetObject:
+    case vmIntrinsics::_loadFence:
+    case vmIntrinsics::_storeFence:
+    case vmIntrinsics::_fullFence:
       break;  // InlineNatives does not control String.compareTo
     case vmIntrinsics::_Reference_get:
       break;  // InlineNatives does not control Reference.get
@@ -412,16 +416,16 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     break;
 
   case vmIntrinsics::_reverseBytes_c:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesUS)) return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesUS)) return NULL;
     break;
   case vmIntrinsics::_reverseBytes_s:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesS))  return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesS))  return NULL;
     break;
   case vmIntrinsics::_reverseBytes_i:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesI))  return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesI))  return NULL;
     break;
   case vmIntrinsics::_reverseBytes_l:
-    if (!Matcher::match_rule_supported(Op_ReverseBytesL))  return false;
+    if (!Matcher::match_rule_supported(Op_ReverseBytesL))  return NULL;
     break;
 
   case vmIntrinsics::_Reference_get:
@@ -536,7 +540,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   // Try to inline the intrinsic.
   if (kit.try_to_inline()) {
     if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
-      CompileTask::print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -555,7 +559,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     if (jvms->has_method()) {
       // Not a root compile.
       const char* msg = is_virtual() ? "failed to inline (intrinsic, virtual)" : "failed to inline (intrinsic)";
-      CompileTask::print_inlining(callee, jvms->depth() - 1, bci, msg);
+      C->print_inlining(callee, jvms->depth() - 1, bci, msg);
     } else {
       // Root compile
       tty->print("Did not generate intrinsic %s%s at bci:%d in",
@@ -585,7 +589,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
   Node* slow_ctl = kit.try_to_predicate();
   if (!kit.failing()) {
     if (PrintIntrinsics || PrintInlining NOT_PRODUCT( || PrintOptoInlining) ) {
-      CompileTask::print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -602,12 +606,12 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
     if (jvms->has_method()) {
       // Not a root compile.
       const char* msg = "failed to generate predicate for intrinsic";
-      CompileTask::print_inlining(kit.callee(), jvms->depth() - 1, bci, msg);
+      C->print_inlining(kit.callee(), jvms->depth() - 1, bci, msg);
     } else {
       // Root compile
-      tty->print("Did not generate predicate for intrinsic %s%s at bci:%d in",
-               vmIntrinsics::name_at(intrinsic_id()),
-               (is_virtual() ? " (virtual)" : ""), bci);
+      C->print_inlining_stream()->print("Did not generate predicate for intrinsic %s%s at bci:%d in",
+                                        vmIntrinsics::name_at(intrinsic_id()),
+                                        (is_virtual() ? " (virtual)" : ""), bci);
     }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
@@ -731,6 +735,10 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_getAndSetInt:             return inline_unsafe_load_store(T_INT,    LS_xchg);
   case vmIntrinsics::_getAndSetLong:            return inline_unsafe_load_store(T_LONG,   LS_xchg);
   case vmIntrinsics::_getAndSetObject:          return inline_unsafe_load_store(T_OBJECT, LS_xchg);
+
+  case vmIntrinsics::_loadFence:
+  case vmIntrinsics::_storeFence:
+  case vmIntrinsics::_fullFence:                return inline_unsafe_fence(intrinsic_id());
 
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_isInterrupted:            return inline_native_isInterrupted();
@@ -2840,6 +2848,26 @@ bool LibraryCallKit::inline_unsafe_ordered_store(BasicType type) {
   return true;
 }
 
+bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
+  // Regardless of form, don't allow previous ld/st to move down,
+  // then issue acquire, release, or volatile mem_bar.
+  insert_mem_bar(Op_MemBarCPUOrder);
+  switch(id) {
+    case vmIntrinsics::_loadFence:
+      insert_mem_bar(Op_MemBarAcquire);
+      return true;
+    case vmIntrinsics::_storeFence:
+      insert_mem_bar(Op_MemBarRelease);
+      return true;
+    case vmIntrinsics::_fullFence:
+      insert_mem_bar(Op_MemBarVolatile);
+      return true;
+    default:
+      fatal_unexpected_iid(id);
+      return false;
+  }
+}
+
 //----------------------------inline_unsafe_allocate---------------------------
 // public native Object sun.mics.Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
@@ -2952,14 +2980,23 @@ bool LibraryCallKit::inline_native_isInterrupted() {
 
   // We only go to the fast case code if we pass two guards.
   // Paths which do not pass are accumulated in the slow_region.
+
+  enum {
+    no_int_result_path   = 1, // t == Thread.current() && !TLS._osthread._interrupted
+    no_clear_result_path = 2, // t == Thread.current() &&  TLS._osthread._interrupted && !clear_int
+    slow_result_path     = 3, // slow path: t.isInterrupted(clear_int)
+    PATH_LIMIT
+  };
+
+  // Ensure that it's not possible to move the load of TLS._osthread._interrupted flag
+  // out of the function.
+  insert_mem_bar(Op_MemBarCPUOrder);
+
+  RegionNode* result_rgn = new (C) RegionNode(PATH_LIMIT);
+  PhiNode*    result_val = new (C) PhiNode(result_rgn, TypeInt::BOOL);
+
   RegionNode* slow_region = new (C) RegionNode(1);
   record_for_igvn(slow_region);
-  RegionNode* result_rgn = new (C) RegionNode(1+3); // fast1, fast2, slow
-  PhiNode*    result_val = new (C) PhiNode(result_rgn, TypeInt::BOOL);
-  enum { no_int_result_path   = 1,
-         no_clear_result_path = 2,
-         slow_result_path     = 3
-  };
 
   // (a) Receiving thread must be the current thread.
   Node* rec_thr = argument(0);
@@ -2968,14 +3005,13 @@ bool LibraryCallKit::inline_native_isInterrupted() {
   Node* cmp_thr = _gvn.transform( new (C) CmpPNode(cur_thr, rec_thr) );
   Node* bol_thr = _gvn.transform( new (C) BoolNode(cmp_thr, BoolTest::ne) );
 
-  bool known_current_thread = (_gvn.type(bol_thr) == TypeInt::ZERO);
-  if (!known_current_thread)
-    generate_slow_guard(bol_thr, slow_region);
+  generate_slow_guard(bol_thr, slow_region);
 
   // (b) Interrupt bit on TLS must be false.
   Node* p = basic_plus_adr(top()/*!oop*/, tls_ptr, in_bytes(JavaThread::osthread_offset()));
   Node* osthread = make_load(NULL, p, TypeRawPtr::NOTNULL, T_ADDRESS);
   p = basic_plus_adr(top()/*!oop*/, osthread, in_bytes(OSThread::interrupted_offset()));
+
   // Set the control input on the field _interrupted read to prevent it floating up.
   Node* int_bit = make_load(control(), p, TypeInt::BOOL, T_INT);
   Node* cmp_bit = _gvn.transform( new (C) CmpINode(int_bit, intcon(0)) );
@@ -3020,22 +3056,20 @@ bool LibraryCallKit::inline_native_isInterrupted() {
     Node* slow_val = set_results_for_java_call(slow_call);
     // this->control() comes from set_results_for_java_call
 
-    // If we know that the result of the slow call will be true, tell the optimizer!
-    if (known_current_thread)  slow_val = intcon(1);
-
     Node* fast_io  = slow_call->in(TypeFunc::I_O);
     Node* fast_mem = slow_call->in(TypeFunc::Memory);
+
     // These two phis are pre-filled with copies of of the fast IO and Memory
-    Node* io_phi   = PhiNode::make(result_rgn, fast_io,  Type::ABIO);
-    Node* mem_phi  = PhiNode::make(result_rgn, fast_mem, Type::MEMORY, TypePtr::BOTTOM);
+    PhiNode* result_mem  = PhiNode::make(result_rgn, fast_mem, Type::MEMORY, TypePtr::BOTTOM);
+    PhiNode* result_io   = PhiNode::make(result_rgn, fast_io,  Type::ABIO);
 
     result_rgn->init_req(slow_result_path, control());
-    io_phi    ->init_req(slow_result_path, i_o());
-    mem_phi   ->init_req(slow_result_path, reset_memory());
+    result_io ->init_req(slow_result_path, i_o());
+    result_mem->init_req(slow_result_path, reset_memory());
     result_val->init_req(slow_result_path, slow_val);
 
-    set_all_memory( _gvn.transform(mem_phi) );
-    set_i_o(        _gvn.transform(io_phi) );
+    set_all_memory(_gvn.transform(result_mem));
+    set_i_o(       _gvn.transform(result_io));
   }
 
   C->set_has_split_ifs(true); // Has chance for split-if optimization
@@ -3319,7 +3353,7 @@ bool LibraryCallKit::inline_native_subtype_check() {
     Node* arg = args[which_arg];
     arg = null_check(arg);
     if (stopped())  break;
-    args[which_arg] = _gvn.transform(arg);
+    args[which_arg] = arg;
 
     Node* p = basic_plus_adr(arg, class_klass_offset);
     Node* kls = LoadKlassNode::make(_gvn, immutable_memory(), p, adr_type, kls_type);
