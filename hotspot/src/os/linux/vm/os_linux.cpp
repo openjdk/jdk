@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,14 @@
 # include "assembler_zero.inline.hpp"
 # include "nativeInst_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "assembler_arm.inline.hpp"
+# include "nativeInst_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "assembler_ppc.inline.hpp"
+# include "nativeInst_ppc.hpp"
+#endif
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
@@ -123,6 +131,7 @@
 #define ALL_64_BITS CONST64(0xFFFFFFFFFFFFFFFF)
 #define SEC_IN_NANOSECS  1000000000LL
 
+#define LARGEPAGES_BIT (1 << 6)
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Linux::_physical_memory = 0;
@@ -2509,8 +2518,10 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
   return end;
 }
 
-extern "C" void numa_warn(int number, char *where, ...) { }
-extern "C" void numa_error(char *where) { }
+// Something to do with the numa-aware allocator needs these symbols
+extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
+extern "C" JNIEXPORT void numa_error(char *where) { }
+extern "C" JNIEXPORT int fork1() { return fork(); }
 
 
 // If we are running with libnuma version > 2, then we should
@@ -2807,6 +2818,43 @@ bool os::unguard_memory(char* addr, size_t size) {
   return linux_mprotect(addr, size, PROT_READ|PROT_WRITE);
 }
 
+/*
+* Set the coredump_filter bits to include largepages in core dump (bit 6)
+*
+* From the coredump_filter documentation:
+*
+* - (bit 0) anonymous private memory
+* - (bit 1) anonymous shared memory
+* - (bit 2) file-backed private memory
+* - (bit 3) file-backed shared memory
+* - (bit 4) ELF header pages in file-backed private memory areas (it is
+*           effective only if the bit 2 is cleared)
+* - (bit 5) hugetlb private memory
+* - (bit 6) hugetlb shared memory
+*/
+static void set_coredump_filter(void) {
+  FILE *f;
+  long cdm;
+
+  if ((f = fopen("/proc/self/coredump_filter", "r+")) == NULL) {
+    return;
+  }
+
+  if (fscanf(f, "%lx", &cdm) != 1) {
+    fclose(f);
+    return;
+  }
+
+  rewind(f);
+
+  if ((cdm & LARGEPAGES_BIT) == 0) {
+    cdm |= LARGEPAGES_BIT;
+    fprintf(f, "%#lx", cdm);
+  }
+
+  fclose(f);
+}
+
 // Large page support
 
 static size_t _large_page_size = 0;
@@ -2863,6 +2911,8 @@ bool os::large_page_init() {
     _page_sizes[1] = default_page_size;
     _page_sizes[2] = 0;
   }
+
+  set_coredump_filter();
 
   // Large page support is available on 2.6 or newer kernel, some vendors
   // (e.g. Redhat) have backported it to their 2.4 based distributions.
@@ -3483,7 +3533,7 @@ bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
 // Note that the VM will print warnings if it detects conflicting signal
 // handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
 //
-extern "C" int
+extern "C" JNIEXPORT int
 JVM_handle_linux_signal(int signo, siginfo_t* siginfo,
                         void* ucontext, int abort_if_unrecognized);
 
@@ -4678,44 +4728,6 @@ void os::pause() {
   }
 }
 
-extern "C" {
-
-/**
- * NOTE: the following code is to keep the green threads code
- * in the libjava.so happy. Once the green threads is removed,
- * these code will no longer be needed.
- */
-int
-jdk_waitpid(pid_t pid, int* status, int options) {
-    return waitpid(pid, status, options);
-}
-
-int
-fork1() {
-    return fork();
-}
-
-int
-jdk_sem_init(sem_t *sem, int pshared, unsigned int value) {
-    return sem_init(sem, pshared, value);
-}
-
-int
-jdk_sem_post(sem_t *sem) {
-    return sem_post(sem);
-}
-
-int
-jdk_sem_wait(sem_t *sem) {
-    return sem_wait(sem);
-}
-
-int
-jdk_pthread_sigmask(int how , const sigset_t* newmask, sigset_t* oldmask) {
-    return pthread_sigmask(how , newmask, oldmask);
-}
-
-}
 
 // Refer to the comments in os_solaris.cpp park-unpark.
 //

@@ -41,6 +41,12 @@
 #ifdef TARGET_ARCH_MODEL_zero
 # include "interp_masm_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "interp_masm_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc
+# include "interp_masm_ppc.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
 #endif

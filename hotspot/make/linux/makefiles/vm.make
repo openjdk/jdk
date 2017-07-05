@@ -28,6 +28,7 @@
 # Common build rules.
 MAKEFILES_DIR=$(GAMMADIR)/make/$(Platform_os_family)/makefiles
 include $(MAKEFILES_DIR)/rules.make
+include $(GAMMADIR)/make/altsrc.make
 
 default: build
 
@@ -119,17 +120,27 @@ JVM      = jvm
 LIBJVM   = lib$(JVM).so
 LIBJVM_G = lib$(JVM)$(G_SUFFIX).so
 
-CORE_PATHS := $(shell find $(GAMMADIR)/src/share/vm/* -type d \! \( -name adlc -o -name c1 -o -name gc_implementation -o -name opto -o -name shark -o -name libadt \))
-CORE_PATHS += $(GAMMADIR)/src/os/$(Platform_os_family)/vm
-CORE_PATHS += $(GAMMADIR)/src/cpu/$(Platform_arch)/vm
-CORE_PATHS += $(GAMMADIR)/src/os_cpu/$(Platform_os_arch)/vm
-CORE_PATHS += $(GENERATED)/jvmtifiles
+SPECIAL_PATHS:=adlc c1 gc_implementation opto shark libadt
 
-COMPILER1_PATHS := $(GAMMADIR)/src/share/vm/c1
+SOURCE_PATHS=\
+  $(shell find $(HS_COMMON_SRC)/share/vm/* -type d \! \
+      \( -name DUMMY $(foreach dir,$(SPECIAL_PATHS),-o -name $(dir)) \))
+SOURCE_PATHS+=$(HS_COMMON_SRC)/os/$(Platform_os_family)/vm
+SOURCE_PATHS+=$(HS_COMMON_SRC)/os/posix/vm
+SOURCE_PATHS+=$(HS_COMMON_SRC)/cpu/$(Platform_arch)/vm
+SOURCE_PATHS+=$(HS_COMMON_SRC)/os_cpu/$(Platform_os_arch)/vm
 
-COMPILER2_PATHS := $(GAMMADIR)/src/share/vm/opto
-COMPILER2_PATHS += $(GAMMADIR)/src/share/vm/libadt
-COMPILER2_PATHS +=  $(GENERATED)/adfiles
+CORE_PATHS=$(foreach path,$(SOURCE_PATHS),$(call altsrc,$(path)) $(path))
+CORE_PATHS+=$(GENERATED)/jvmtifiles
+
+COMPILER1_PATHS := $(call altsrc,$(HS_COMMON_SRC)/share/vm/c1)
+COMPILER1_PATHS += $(HS_COMMON_SRC)/share/vm/c1
+
+COMPILER2_PATHS := $(call altsrc,$(HS_COMMON_SRC)/share/vm/opto)
+COMPILER2_PATHS += $(call altsrc,$(HS_COMMON_SRC)/share/vm/libadt)
+COMPILER2_PATHS += $(HS_COMMON_SRC)/share/vm/opto
+COMPILER2_PATHS += $(HS_COMMON_SRC)/share/vm/libadt
+COMPILER2_PATHS += $(GENERATED)/adfiles
 
 # Include dirs per type.
 Src_Dirs/CORE      := $(CORE_PATHS)
