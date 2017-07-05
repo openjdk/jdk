@@ -45,6 +45,7 @@ public interface VMManagement {
     public boolean isSynchronizerUsageSupported();
     public boolean isThreadAllocatedMemorySupported();
     public boolean isThreadAllocatedMemoryEnabled();
+    public boolean isGcNotificationSupported();
 
     // Class Loading Subsystem
     public long    getTotalClassCount();

@@ -170,7 +170,7 @@ class SocketChannelImpl
                 throw new ClosedChannelException();
 
             // special handling for IP_TOS: no-op when IPv6
-            if (name == StandardSocketOption.IP_TOS) {
+            if (name == StandardSocketOptions.IP_TOS) {
                 if (!Net.isIPv6Available())
                     Net.setSocketOption(fd, StandardProtocolFamily.INET, name, value);
                 return this;
@@ -197,7 +197,7 @@ class SocketChannelImpl
                 throw new ClosedChannelException();
 
             // special handling for IP_TOS: always return 0 when IPv6
-            if (name == StandardSocketOption.IP_TOS) {
+            if (name == StandardSocketOptions.IP_TOS) {
                 return (Net.isIPv6Available()) ? (T) Integer.valueOf(0) :
                     (T) Net.getSocketOption(fd, StandardProtocolFamily.INET, name);
             }
@@ -212,14 +212,14 @@ class SocketChannelImpl
 
         private static Set<SocketOption<?>> defaultOptions() {
             HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(8);
-            set.add(StandardSocketOption.SO_SNDBUF);
-            set.add(StandardSocketOption.SO_RCVBUF);
-            set.add(StandardSocketOption.SO_KEEPALIVE);
-            set.add(StandardSocketOption.SO_REUSEADDR);
-            set.add(StandardSocketOption.SO_LINGER);
-            set.add(StandardSocketOption.TCP_NODELAY);
+            set.add(StandardSocketOptions.SO_SNDBUF);
+            set.add(StandardSocketOptions.SO_RCVBUF);
+            set.add(StandardSocketOptions.SO_KEEPALIVE);
+            set.add(StandardSocketOptions.SO_REUSEADDR);
+            set.add(StandardSocketOptions.SO_LINGER);
+            set.add(StandardSocketOptions.TCP_NODELAY);
             // additional options required by socket adaptor
-            set.add(StandardSocketOption.IP_TOS);
+            set.add(StandardSocketOptions.IP_TOS);
             set.add(ExtendedSocketOption.SO_OOBINLINE);
             return Collections.unmodifiableSet(set);
         }

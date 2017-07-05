@@ -26,7 +26,9 @@
 #define CPU_X86_VM_INTERPRETER_X86_HPP
 
  public:
-  static Address::ScaleFactor stackElementScale() { return Address::times_4; }
+  static Address::ScaleFactor stackElementScale() {
+    return NOT_LP64(Address::times_4) LP64_ONLY(Address::times_8);
+  }
 
   // Offset from rsp (which points to the last stack element)
   static int expr_offset_in_bytes(int i) { return stackElementSize * i; }

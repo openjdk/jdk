@@ -159,7 +159,7 @@ import java.util.concurrent.locks.LockSupport;
  * void runTasks(List<Runnable> tasks) {
  *   final Phaser phaser = new Phaser(1); // "1" to register self
  *   // create and start threads
- *   for (Runnable task : tasks) {
+ *   for (final Runnable task : tasks) {
  *     phaser.register();
  *     new Thread() {
  *       public void run() {
