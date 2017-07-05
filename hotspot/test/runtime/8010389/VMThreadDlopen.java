@@ -19,26 +19,26 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+
+import java.io.File;
 
 /*
  * @test
- * @bug 8007736
- * @summary Test static interface method.
- * @run main/othervm -Xverify:all TestStaticIF
+ * @key regression
+ * @bug 8010389
+ * @run main/othervm -Djava.library.path=. VMThreadDlopen
  */
 
-public class TestStaticIF implements StaticMethodInInterface {
-
-    public static void main(String[] args) {
-        System.out.printf("main: %s%n", StaticMethodInInterface.get());
-    }
-}
-
-interface StaticMethodInInterface {
-
-    public static String get() {
-        return "Hello from StaticMethodInInterface.get()";
+public class VMThreadDlopen {
+    public static void main(String[] args) throws Exception {
+        File file = new File("libbroken.so");
+        file.createNewFile();
+        try {
+            System.loadLibrary("broken");
+        } catch (UnsatisfiedLinkError e) {
+            e.printStackTrace();
+            // expected
+        }
     }
 }
