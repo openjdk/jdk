@@ -98,7 +98,7 @@ public final class Provider extends java.security.Provider {
     }
 
     public Provider() {
-        super("SunSASL", 1.9d, info);
+        super("SunSASL", 9.0d, info);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
