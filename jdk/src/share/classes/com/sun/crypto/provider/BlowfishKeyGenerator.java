@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public final class BlowfishKeyGenerator extends KeyGeneratorSpi {
      */
     protected SecretKey engineGenerateKey() {
         if (this.random == null) {
-            this.random = SunJCE.RANDOM;
+            this.random = SunJCE.getRandom();
         }
 
         byte[] keyBytes = new byte[this.keysize];

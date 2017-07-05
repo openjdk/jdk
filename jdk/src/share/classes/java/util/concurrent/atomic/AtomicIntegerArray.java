@@ -145,12 +145,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndSet(int i, int newValue) {
-        long offset = checkedByteOffset(i);
-        while (true) {
-            int current = getRaw(offset);
-            if (compareAndSetRaw(offset, current, newValue))
-                return current;
-        }
+        return unsafe.getAndSetInt(array, checkedByteOffset(i), newValue);
     }
 
     /**
@@ -182,7 +177,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @param i the index
      * @param expect the expected value
      * @param update the new value
-     * @return true if successful.
+     * @return true if successful
      */
     public final boolean weakCompareAndSet(int i, int expect, int update) {
         return compareAndSet(i, expect, update);
@@ -216,12 +211,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndAdd(int i, int delta) {
-        long offset = checkedByteOffset(i);
-        while (true) {
-            int current = getRaw(offset);
-            if (compareAndSetRaw(offset, current, current + delta))
-                return current;
-        }
+        return unsafe.getAndAddInt(array, checkedByteOffset(i), delta);
     }
 
     /**
@@ -231,7 +221,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the updated value
      */
     public final int incrementAndGet(int i) {
-        return addAndGet(i, 1);
+        return getAndAdd(i, 1) + 1;
     }
 
     /**
@@ -241,7 +231,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the updated value
      */
     public final int decrementAndGet(int i) {
-        return addAndGet(i, -1);
+        return getAndAdd(i, -1) - 1;
     }
 
     /**
@@ -252,13 +242,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @return the updated value
      */
     public final int addAndGet(int i, int delta) {
-        long offset = checkedByteOffset(i);
-        while (true) {
-            int current = getRaw(offset);
-            int next = current + delta;
-            if (compareAndSetRaw(offset, current, next))
-                return next;
-        }
+        return getAndAdd(i, delta) + delta;
     }
 
     /**
