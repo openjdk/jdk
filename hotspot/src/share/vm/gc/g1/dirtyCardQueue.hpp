@@ -116,7 +116,8 @@ public:
                   int process_completed_threshold,
                   int max_completed_queue,
                   Mutex* lock,
-                  DirtyCardQueueSet* fl_owner = NULL);
+                  DirtyCardQueueSet* fl_owner,
+                  bool init_free_ids = false);
 
   // The number of parallel ids that can be claimed to allow collector or
   // mutator threads to do card-processing work.

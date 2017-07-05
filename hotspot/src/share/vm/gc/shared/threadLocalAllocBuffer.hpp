@@ -145,8 +145,8 @@ public:
   // Initialization at startup
   static void startup_initialization();
 
-  // Make an in-use tlab parsable, optionally also retiring it.
-  void make_parsable(bool retire);
+  // Make an in-use tlab parsable, optionally retiring and/or zapping it.
+  void make_parsable(bool retire, bool zap = true);
 
   // Retire in-use tlab before allocation of a new tlab
   void clear_before_allocation();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,10 +244,9 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   DiscoveredList* _discoveredWeakRefs;
   DiscoveredList* _discoveredFinalRefs;
   DiscoveredList* _discoveredPhantomRefs;
-  DiscoveredList* _discoveredCleanerRefs;
 
  public:
-  static int number_of_subclasses_of_ref() { return (REF_CLEANER - REF_OTHER); }
+  static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
 
   uint num_q()                             { return _num_q; }
   uint max_num_q()                         { return _max_num_q; }

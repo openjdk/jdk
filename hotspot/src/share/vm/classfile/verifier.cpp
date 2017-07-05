@@ -2004,7 +2004,7 @@ bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
                                         Symbol* field_name,
                                         Symbol* field_sig,
                                         bool is_method) {
-  No_Safepoint_Verifier nosafepoint;
+  NoSafepointVerifier nosafepoint;
 
   // If target class isn't a super class of this class, we don't worry about this case
   if (!this_class->is_subclass_of(target_class)) {

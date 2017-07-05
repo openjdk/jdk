@@ -687,6 +687,24 @@ void JSON::error(JSON_ERROR e, const char* format, ...) {
 }
 
 #ifndef PRODUCT
+class JSONTest : public JSON {
+ public:
+  static void test();
+
+ private:
+  JSONTest(const char* text);
+  static void test(const char* json, bool valid);
+
+  void log(uint level, const char* format, ...) ATTRIBUTE_PRINTF(3, 4);
+
+  bool callback(JSON_TYPE t, JSON_VAL* v, uint level);
+  JSON_TYPE prev;
+};
+
+void JSON_test() {
+  JSONTest::test();
+}
+
 void JSONTest::test(const char* text, bool should_pass) {
   JSONTest json(text);
   if (should_pass) {
@@ -707,7 +725,7 @@ JSONTest::JSONTest(const char* text) : JSON(text, !VerboseInternalVMTests, tty) 
   parse();
 }
 
-bool JSONTest::test() {
+void JSONTest::test() {
   JSONTest::test("{}", true);
   JSONTest::test("[]", true);
   JSONTest::test("  {  }  ", true);
@@ -842,8 +860,6 @@ bool JSONTest::test() {
       "         blocking_compile: true" "\n"
       "   }," "\n"
       "]" "\n", true);
-
-  return true;
 }
 
 void JSONTest::log(uint indent, const char* format, ...) {

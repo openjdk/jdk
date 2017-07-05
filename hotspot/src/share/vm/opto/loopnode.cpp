@@ -815,6 +815,11 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 
   C->print_method(PHASE_AFTER_CLOOPS, 3);
 
+  // Capture bounds of the loop in the induction variable Phi before
+  // subsequent transformation (iteration splitting) obscures the
+  // bounds
+  l->phi()->as_Phi()->set_type(l->phi()->Value(&_igvn));
+
   return true;
 }
 
@@ -897,7 +902,7 @@ int CountedLoopEndNode::stride_con() const {
 
 //=============================================================================
 //------------------------------Value-----------------------------------------
-const Type *LoopLimitNode::Value( PhaseTransform *phase ) const {
+const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
   const Type* init_t   = phase->type(in(Init));
   const Type* limit_t  = phase->type(in(Limit));
   const Type* stride_t = phase->type(in(Stride));
@@ -1011,7 +1016,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Identity---------------------------------------
 // If stride == 1 return limit node.
-Node *LoopLimitNode::Identity( PhaseTransform *phase ) {
+Node* LoopLimitNode::Identity(PhaseGVN* phase) {
   int stride_con = phase->type(in(Stride))->is_int()->get_con();
   if (stride_con == 1 || stride_con == -1)
     return in(Limit);
@@ -3483,7 +3488,7 @@ void PhaseIdealLoop::build_loop_late( VectorSet &visited, Node_List &worklist, N
 // Second pass finds latest legal placement, and ideal loop placement.
 void PhaseIdealLoop::build_loop_late_post( Node *n ) {
 
-  if (n->req() == 2 && n->Opcode() == Op_ConvI2L && !C->major_progress() && !_verify_only) {
+  if (n->req() == 2 && (n->Opcode() == Op_ConvI2L || n->Opcode() == Op_CastII) && !C->major_progress() && !_verify_only) {
     _igvn._worklist.push(n);  // Maybe we'll normalize it, if no more loops.
   }
 

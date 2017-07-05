@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,17 @@
 
 #define __ _masm->
 
+// Size of interpreter code.  Increase if too small.  Interpreter will
+// fail with a guarantee ("not enough space for interpreter generation");
+// if too small.
+// Run with +PrintInterpreter to get the VM to print out the size.
+// Max size with JVMTI
+#ifdef AMD64
+int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
+#else
+int TemplateInterpreter::InterpreterCodeSize = 224 * 1024;
+#endif // AMD64
+
 // Global Register Names
 static const Register rbcp     = LP64_ONLY(r13) NOT_LP64(rsi);
 static const Register rlocals  = LP64_ONLY(r14) NOT_LP64(rdi);
@@ -56,6 +67,7 @@ static const Register rlocals  = LP64_ONLY(r14) NOT_LP64(rdi);
 const int method_offset = frame::interpreter_frame_method_offset * wordSize;
 const int bcp_offset    = frame::interpreter_frame_bcp_offset    * wordSize;
 const int locals_offset = frame::interpreter_frame_locals_offset * wordSize;
+
 
 //-----------------------------------------------------------------------------
 
@@ -778,6 +790,30 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   return NULL;
 }
 
+// TODO: rather than touching all pages, check against stack_overflow_limit and bang yellow page to
+// generate exception.  Windows might need this to map the shadow pages though.
+void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
+  // Quick & dirty stack overflow checking: bang the stack & handle trap.
+  // Note that we do the banging after the frame is setup, since the exception
+  // handling code expects to find a valid interpreter frame on the stack.
+  // Doing the banging earlier fails if the caller frame is not an interpreter
+  // frame.
+  // (Also, the exception throwing code expects to unlock any synchronized
+  // method receiever, so do the banging after locking the receiver.)
+
+  // Bang each page in the shadow zone. We can't assume it's been done for
+  // an interpreter frame with greater than a page of locals, so each page
+  // needs to be checked.  Only true for non-native.
+  if (UseStackBanging) {
+    const int page_size = os::vm_page_size();
+    const int n_shadow_pages = ((int)JavaThread::stack_shadow_zone_size()) / page_size;
+    const int start_page = native_call ? n_shadow_pages : 1;
+    for (int pages = start_page; pages <= n_shadow_pages; pages++) {
+      __ bang_stack_with_offset(pages*page_size);
+    }
+  }
+}
+
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the
 // native method than the typical interpreter frame setup.
@@ -1300,6 +1336,27 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ bind(invocation_counter_overflow);
     generate_counter_overflow(continue_after_compile);
   }
+
+  return entry_point;
+}
+
+// Abstract method entry
+// Attempt to execute abstract method. Throw exception
+address TemplateInterpreterGenerator::generate_abstract_entry(void) {
+
+  address entry_point = __ pc();
+
+  // abstract method entry
+
+  //  pop return address, reset last_sp to NULL
+  __ empty_expression_stack();
+  __ restore_bcp();      // rsi must be correct for exception handler   (was destroyed)
+  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
+
+  // throw exception
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
+  // the call_VM checks for exception, so we should never return here.
+  __ should_not_reach_here();
 
   return entry_point;
 }

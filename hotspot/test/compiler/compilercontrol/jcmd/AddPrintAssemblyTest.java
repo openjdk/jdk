@@ -27,7 +27,8 @@
  * @summary Tests jcmd to be able to add a directive to print assembly
  *          only for specified methods
  * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
- * @build AddPrintAssemblyTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ * @build compiler.compilercontrol.jcmd.AddPrintAssemblyTest
+ *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

@@ -304,16 +304,6 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     }
 
     @Override
-    public JavaConstant getJavaClass() {
-        return HotSpotObjectConstantImpl.forObject(mirror());
-    }
-
-    @Override
-    public Constant getObjectHub() {
-        return klass();
-    }
-
-    @Override
     public AssumptionResult<Boolean> hasFinalizableSubclass() {
         assert !isArray();
         if (!compilerToVM().hasFinalizableSubclass(this)) {

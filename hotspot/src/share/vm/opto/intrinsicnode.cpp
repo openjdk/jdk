@@ -55,7 +55,7 @@ Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type* StrIntrinsicNode::Value(PhaseTransform* phase) const {
+const Type* StrIntrinsicNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   return bottom_type();
 }
@@ -93,7 +93,7 @@ Node* EncodeISOArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type* EncodeISOArrayNode::Value(PhaseTransform* phase) const {
+const Type* EncodeISOArrayNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   return bottom_type();
 }

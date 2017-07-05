@@ -56,6 +56,8 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         _is_blocking;
 #if INCLUDE_JVMCI
   bool         _has_waiter;
+  // Compiler thread for a blocking JVMCI compilation
+  CompilerThread* _jvmci_compiler_thread;
 #endif
   int          _comp_level;
   int          _num_inlined_bytecodes;
@@ -92,6 +94,12 @@ class CompileTask : public CHeapObj<mtCompiler> {
 #if INCLUDE_JVMCI
   bool         has_waiter() const                { return _has_waiter; }
   void         clear_waiter()                    { _has_waiter = false; }
+  CompilerThread* jvmci_compiler_thread() const  { return _jvmci_compiler_thread; }
+  void         set_jvmci_compiler_thread(CompilerThread* t) {
+    assert(is_blocking(), "must be");
+    assert((t == NULL) != (_jvmci_compiler_thread == NULL), "must be");
+    _jvmci_compiler_thread = t;
+  }
 #endif
 
   nmethodLocker* code_handle() const             { return _code_handle; }

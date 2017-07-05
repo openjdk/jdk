@@ -692,7 +692,7 @@ nmethod::nmethod(
   _native_basic_lock_sp_offset(basic_lock_sp_offset)
 {
   {
-    debug_only(No_Safepoint_Verifier nsv;)
+    debug_only(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults();
@@ -796,7 +796,7 @@ nmethod::nmethod(
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   {
-    debug_only(No_Safepoint_Verifier nsv;)
+    debug_only(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
     init_defaults();
@@ -1412,7 +1412,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   // Make sure neither the nmethod nor the method is flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
   methodHandle the_method(method());
-  No_Safepoint_Verifier nsv;
+  NoSafepointVerifier nsv;
 
   // during patching, depending on the nmethod state we must notify the GC that
   // code has been unloaded, unregistering it. We cannot do this right while
@@ -2640,6 +2640,7 @@ address nmethod::continuation_for_implicit_exception(address pc) {
     ResourceMark rm(thread);
     CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb != NULL && cb == this, "");
+    ttyLocker ttyl;
     tty->print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
     print();
     method()->print_codes();
@@ -2960,13 +2961,6 @@ void nmethod::print() const {
                                               p2i(nul_chk_table_end()),
                                               nul_chk_table_size());
 }
-
-void nmethod::print_code() {
-  HandleMark hm;
-  ResourceMark m;
-  Disassembler::decode(this);
-}
-
 
 #ifndef PRODUCT
 

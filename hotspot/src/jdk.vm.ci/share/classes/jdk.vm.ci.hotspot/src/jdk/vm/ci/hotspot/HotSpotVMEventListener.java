@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.code.CompilationResult;
+import jdk.vm.ci.code.CompiledCode;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.meta.JVMCIMetaAccessContext;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -40,9 +40,9 @@ public interface HotSpotVMEventListener {
      *
      * @param hotSpotCodeCacheProvider
      * @param installedCode
-     * @param compResult
+     * @param compiledCode
      */
-    default void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompilationResult compResult) {
+    default void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompiledCode compiledCode) {
     }
 
     /**
