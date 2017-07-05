@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ import java.util.StringJoiner;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentSkipListMap;
 import sun.net.util.IPAddressUtil;
-import sun.net.RegisteredDomain;
 import sun.net.PortConfig;
+import sun.security.util.RegisteredDomain;
 import sun.security.util.SecurityConstants;
 import sun.security.util.Debug;
 
@@ -142,6 +142,7 @@ import sun.security.util.Debug;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @since 1.2
  *
  * @serial exclude
  */
@@ -678,13 +679,18 @@ public final class SocketPermission extends Permission
         String a = cname.toLowerCase();
         String b = hname.toLowerCase();
         if (a.startsWith(b)  &&
-            ((a.length() == b.length()) || (a.charAt(b.length()) == '.')))
+            ((a.length() == b.length()) || (a.charAt(b.length()) == '.'))) {
             return true;
+        }
         if (cdomain == null) {
-            cdomain = RegisteredDomain.getRegisteredDomain(a);
+            cdomain = RegisteredDomain.from(a)
+                                      .map(RegisteredDomain::name)
+                                      .orElse(a);
         }
         if (hdomain == null) {
-            hdomain = RegisteredDomain.getRegisteredDomain(b);
+            hdomain = RegisteredDomain.from(b)
+                                      .map(RegisteredDomain::name)
+                                      .orElse(b);
         }
 
         return cdomain.length() != 0 && hdomain.length() != 0

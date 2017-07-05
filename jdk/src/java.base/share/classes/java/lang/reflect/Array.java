@@ -36,6 +36,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * conversion would occur.
  *
  * @author Nakul Saraiya
+ * @since 1.1
  */
 public final
 class Array {

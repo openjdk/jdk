@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,27 @@
 
 /* @test
  * @bug 5004077
- * @key intermittent
  * @summary Check blocking of select and close
  */
 
 import java.nio.channels.*;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 public class SelectAndClose {
     static Selector selector;
-    static boolean awakened = false;
-    static boolean closed = false;
+    static volatile boolean awakened = false;
+    static volatile boolean closed = false;
 
     public static void main(String[] args) throws Exception {
         selector = Selector.open();
 
         // Create and start a selector in a separate thread.
+        final CountDownLatch selectLatch = new CountDownLatch(1);
         new Thread(new Runnable() {
                 public void run() {
                     try {
+                        selectLatch.countDown();
                         selector.select();
                         awakened = true;
                     } catch (IOException e) {
@@ -51,10 +53,11 @@ public class SelectAndClose {
             }).start();
 
         // Wait for above thread to get to select() before we call close.
-        Thread.sleep(3000);
+        selectLatch.await();
+        Thread.sleep(2000);
 
         // Try to close. This should wakeup select.
-        new Thread(new Runnable() {
+        Thread closeThread = new Thread(new Runnable() {
                 public void run() {
                     try {
                         selector.close();
@@ -63,10 +66,11 @@ public class SelectAndClose {
                         System.err.println(e);
                     }
                 }
-            }).start();
+            });
+        closeThread.start();
 
         // Wait for select() to be awakened, which should be done by close.
-        Thread.sleep(3000);
+        closeThread.join();
 
         if (!awakened)
             selector.wakeup();

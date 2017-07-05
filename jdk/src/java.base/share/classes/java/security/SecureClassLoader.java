@@ -39,6 +39,7 @@ import sun.security.util.Debug;
  *
  * @author  Li Gong
  * @author  Roland Schemers
+ * @since 1.2
  */
 public class SecureClassLoader extends ClassLoader {
     /*
@@ -125,6 +126,7 @@ public class SecureClassLoader extends ClassLoader {
      *         doesn't allow creation of a class loader.
      *
      * @since 9
+     * @spec JPMS
      */
     protected SecureClassLoader(String name, ClassLoader parent) {
         super(name, parent);

@@ -23,11 +23,9 @@
  * questions.
  */
 
-
 package java.util.logging;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Module;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -664,7 +662,7 @@ public class Logger {
      * a new logger is created.
      * <p>
      * If a new logger is created its log level will be configured
-     * based on the LogManager configuration and it will configured
+     * based on the LogManager configuration and it will be configured
      * to also send logging output to its parent's Handlers.  It will
      * be registered in the LogManager global namespace.
      * <p>
@@ -726,7 +724,7 @@ public class Logger {
      *
      * <p>
      * If a new logger is created its log level will be configured
-     * based on the LogManager and it will configured to also send logging
+     * based on the LogManager and it will be configured to also send logging
      * output to its parent's Handlers.  It will be registered in
      * the LogManager global namespace.
      * <p>

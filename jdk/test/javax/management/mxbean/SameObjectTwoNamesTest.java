@@ -28,7 +28,7 @@
  * names produces an exception
  * @author Alexander Shusherov
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run main SameObjectTwoNamesTest
  * @run main/othervm -Djmx.mxbean.multiname=true SameObjectTwoNamesTest
  */

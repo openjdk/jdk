@@ -26,7 +26,7 @@
  * @bug 4943248
  * @summary Tests that NullPointerException is thrown when listener is null.
  * @author Daniel Fuchs
- * @modules java.management.rmi
+ *
  * @run clean ConnectionListenerNullTest
  * @run build ConnectionListenerNullTest
  * @run main ConnectionListenerNullTest

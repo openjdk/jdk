@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ import sun.security.util.SecurityConstants;
  *
  * @author Roland Schemers
  * @author Gary Ellison
+ * @since 1.2
  * @see java.security.Provider
  * @see java.security.ProtectionDomain
  * @see java.security.Permission
@@ -365,8 +366,8 @@ public abstract class Policy {
      *
      * @param type the specified Policy type.  See the Policy section in the
      *    <a href=
-     *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Policy">
-     *    Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *    "{@docRoot}/../specs/security/standard-names.html#policy-types">
+     *    Java Security Standard Algorithm Names Specification</a>
      *    for a list of standard Policy types.
      *
      * @param params parameters for the Policy, which may be null.
@@ -419,8 +420,8 @@ public abstract class Policy {
      *
      * @param type the specified Policy type.  See the Policy section in the
      *    <a href=
-     *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Policy">
-     *    Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *    "{@docRoot}/../specs/security/standard-names.html#policy-types">
+     *    Java Security Standard Algorithm Names Specification</a>
      *    for a list of standard Policy types.
      *
      * @param params parameters for the Policy, which may be null.
@@ -485,8 +486,8 @@ public abstract class Policy {
      *
      * @param type the specified Policy type.  See the Policy section in the
      *    <a href=
-     *    "{@docRoot}/../technotes/guides/security/StandardNames.html#Policy">
-     *    Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     *    "{@docRoot}/../specs/security/standard-names.html#policy-types">
+     *    Java Security Standard Algorithm Names Specification</a>
      *    for a list of standard Policy types.
      *
      * @param params parameters for the Policy, which may be null.

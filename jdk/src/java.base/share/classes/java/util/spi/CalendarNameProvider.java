@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Map;
  * An abstract class for service providers that provide localized string
  * representations (display names) of {@code Calendar} field values.
  *
- * <p><a name="calendartypes"><b>Calendar Types</b></a>
+ * <p><a id="calendartypes"><b>Calendar Types</b></a>
  *
  * <p>Calendar types are used to specify calendar systems for which the {@link
  * #getDisplayName(String, int, int, int, Locale) getDisplayName} and {@link
@@ -46,15 +46,19 @@ import java.util.Map;
  * Calendar}. The following are calendar-common fields and their values to be
  * supported for each calendar system.
  *
- * <table style="border-bottom:1px solid" border="1" cellpadding="3" cellspacing="0" summary="Field values">
+ *  <table class="plain">
+ * <caption style="display:none">Field values</caption>
+ * <thead>
  *   <tr>
  *     <th>Field</th>
  *     <th>Value</th>
  *     <th>Description</th>
  *   </tr>
+ * </thead>
+ * <tbody>
  *   <tr>
- *     <td valign="top">{@link Calendar#MONTH}</td>
- *     <td valign="top">{@link Calendar#JANUARY} to {@link Calendar#UNDECIMBER}</td>
+ *     <td style="vertical-align:top">{@link Calendar#MONTH}</td>
+ *     <td style="vertical-align:top">{@link Calendar#JANUARY} to {@link Calendar#UNDECIMBER}</td>
  *     <td>Month numbering is 0-based (e.g., 0 - January, ..., 11 -
  *         December). Some calendar systems have 13 months. Month
  *         names need to be supported in both the formatting and
@@ -63,30 +67,35 @@ import java.util.Map;
  *         in both of the forms.</td>
  *   </tr>
  *   <tr>
- *     <td valign="top">{@link Calendar#DAY_OF_WEEK}</td>
- *     <td valign="top">{@link Calendar#SUNDAY} to {@link Calendar#SATURDAY}</td>
+ *     <td style="vertical-align:top">{@link Calendar#DAY_OF_WEEK}</td>
+ *     <td style="vertical-align:top">{@link Calendar#SUNDAY} to {@link Calendar#SATURDAY}</td>
  *     <td>Day-of-week numbering is 1-based starting from Sunday (i.e., 1 - Sunday,
  *         ..., 7 - Saturday).</td>
  *   </tr>
  *   <tr>
- *     <td valign="top">{@link Calendar#AM_PM}</td>
- *     <td valign="top">{@link Calendar#AM} to {@link Calendar#PM}</td>
+ *     <td style="vertical-align:top">{@link Calendar#AM_PM}</td>
+ *     <td style="vertical-align:top">{@link Calendar#AM} to {@link Calendar#PM}</td>
  *     <td>0 - AM, 1 - PM</td>
  *   </tr>
+ * </tbody>
  * </table>
  *
  * <p style="margin-top:20px">The following are calendar-specific fields and their values to be supported.
  *
- * <table style="border-bottom:1px solid" border="1" cellpadding="3" cellspacing="0" summary="Calendar type and field values">
+ * <table class="plain">
+ * <caption style="display:none">Calendar type and field values</caption>
+ * <thead>
  *   <tr>
  *     <th>Calendar Type</th>
  *     <th>Field</th>
  *     <th>Value</th>
  *     <th>Description</th>
  *   </tr>
+ * </thead>
+ * <tbody>
  *   <tr>
- *     <td rowspan="2" valign="top">{@code "gregory"}</td>
- *     <td rowspan="2" valign="top">{@link Calendar#ERA}</td>
+ *     <td rowspan="2" style="vertical-align:top">{@code "gregory"}</td>
+ *     <td rowspan="2" style="vertical-align:top">{@link Calendar#ERA}</td>
  *     <td>0</td>
  *     <td>{@link java.util.GregorianCalendar#BC} (BCE)</td>
  *   </tr>
@@ -95,8 +104,8 @@ import java.util.Map;
  *     <td>{@link java.util.GregorianCalendar#AD} (CE)</td>
  *   </tr>
  *   <tr>
- *     <td rowspan="2" valign="top">{@code "buddhist"}</td>
- *     <td rowspan="2" valign="top">{@link Calendar#ERA}</td>
+ *     <td rowspan="2" style="vertical-align:top">{@code "buddhist"}</td>
+ *     <td rowspan="2" style="vertical-align:top">{@link Calendar#ERA}</td>
  *     <td>0</td>
  *     <td>BC (BCE)</td>
  *   </tr>
@@ -105,8 +114,8 @@ import java.util.Map;
  *     <td>B.E. (Buddhist Era)</td>
  *   </tr>
  *   <tr>
- *     <td rowspan="6" valign="top">{@code "japanese"}</td>
- *     <td rowspan="5" valign="top">{@link Calendar#ERA}</td>
+ *     <td rowspan="6" style="vertical-align:top">{@code "japanese"}</td>
+ *     <td rowspan="5" style="vertical-align:top">{@link Calendar#ERA}</td>
  *     <td>0</td>
  *     <td>Seireki (Before Meiji)</td>
  *   </tr>
@@ -135,8 +144,8 @@ import java.util.Map;
  *     Year representation in {@code SimpleDateFormat}</a>.</td>
  *   </tr>
  *   <tr>
- *     <td rowspan="2" valign="top">{@code "roc"}</td>
- *     <td rowspan="2" valign="top">{@link Calendar#ERA}</td>
+ *     <td rowspan="2" style="vertical-align:top">{@code "roc"}</td>
+ *     <td rowspan="2" style="vertical-align:top">{@link Calendar#ERA}</td>
  *     <td>0</td>
  *     <td>Before R.O.C.</td>
  *   </tr>
@@ -145,8 +154,8 @@ import java.util.Map;
  *     <td>R.O.C.</td>
  *   </tr>
  *   <tr>
- *     <td rowspan="2" valign="top">{@code "islamic"}</td>
- *     <td rowspan="2" valign="top">{@link Calendar#ERA}</td>
+ *     <td rowspan="2" style="vertical-align:top">{@code "islamic"}</td>
+ *     <td rowspan="2" style="vertical-align:top">{@link Calendar#ERA}</td>
  *     <td>0</td>
  *     <td>Before AH</td>
  *   </tr>
@@ -154,6 +163,7 @@ import java.util.Map;
  *     <td>1</td>
  *     <td>Anno Hijrah (AH)</td>
  *   </tr>
+ * </tbody>
  * </table>
  *
  * <p>Calendar field value names for {@code "gregory"} must be consistent with

@@ -43,6 +43,7 @@ import java.lang.ref.WeakReference;
  * with Principals from the {@code Subject} associated with this
  * {@code SubjectDomainCombiner}.
  *
+ * @since 1.4
  */
 public class SubjectDomainCombiner implements java.security.DomainCombiner {
 
