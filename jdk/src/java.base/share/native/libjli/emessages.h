@@ -36,7 +36,7 @@
 #define JNI_ERROR       "Error: A JNI error has occurred, please check your installation and try again"
 #define JNI_ERROR1      "Error: can't find JNI interfaces in: %s"
 
-#define ARG_INFO_ENVVAR "NOTE: Picked up the following options via %s:\n  %s"
+#define ARG_INFO_ENVVAR "NOTE: Picked up %s: %s"
 #define ARG_WARN        "Warning: %s option is no longer supported."
 
 #define ARG_ERROR1      "Error: %s requires class path specification"
