@@ -316,6 +316,10 @@
       <to>java.instrument</to>
     </export>
     <export>
+      <name>sun.net</name>
+      <to>java.httpclient</to>
+    </export>
+    <export>
       <name>sun.net.dns</name>
       <to>java.security.jgss</to>
       <to>jdk.naming.dns</to>
@@ -496,6 +500,7 @@
       <to>java.logging</to>
       <to>java.management</to>
       <to>java.prefs</to>
+      <to>java.httpclient</to>
     </export>
     <export>
       <name>sun.util.resources</name>
@@ -520,6 +525,7 @@
     <depend re-exports="true">java.compact2</depend>
     <depend re-exports="true">java.compiler</depend>
     <depend re-exports="true">java.instrument</depend>
+    <depend re-exports="true">java.httpclient</depend>
     <depend re-exports="true">java.management</depend>
     <depend re-exports="true">java.naming</depend>
     <depend re-exports="true">java.prefs</depend>
@@ -835,6 +841,13 @@
     <depend>jdk.internal.le</depend>
     <export>
       <name>jdk.jshell</name>
+    </export>
+  </module>
+  <module>
+    <name>java.httpclient</name>
+    <depend>java.base</depend>
+    <export>
+      <name>java.net.http</name>
     </export>
   </module>
   <module>

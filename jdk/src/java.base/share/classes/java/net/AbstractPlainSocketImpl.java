@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,9 @@ import java.io.FileDescriptor;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.ResourceManager;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collections;
 
 /**
  * Default Socket Implementation. This implementation does
@@ -85,6 +88,45 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
                     return null;
                 }
             });
+    }
+
+    private static volatile boolean checkedReusePort;
+    private static volatile boolean isReusePortAvailable;
+
+    /**
+     * Tells whether SO_REUSEPORT is supported.
+     */
+    static boolean isReusePortAvailable() {
+        if (!checkedReusePort) {
+            isReusePortAvailable = isReusePortAvailable0();
+            checkedReusePort = true;
+        }
+        return isReusePortAvailable;
+    }
+
+    private static volatile Set<SocketOption<?>> socketOptions;
+
+   /**
+    * Returns a set of SocketOptions supported by this impl
+    * and by this impl's socket (Socket or ServerSocket)
+    *
+    * @return a Set of SocketOptions
+    */
+    @Override
+    protected Set<SocketOption<?>> supportedOptions() {
+        Set<SocketOption<?>> options = socketOptions;
+        if (options == null) {
+            if (isReusePortAvailable()) {
+                options = new HashSet<>();
+                options.addAll(super.supportedOptions());
+                options.add(StandardSocketOptions.SO_REUSEPORT);
+                options = Collections.unmodifiableSet(options);
+            } else {
+                options = super.supportedOptions();
+            }
+            socketOptions = options;
+        }
+        return options;
     }
 
     /**
@@ -269,6 +311,13 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
                 throw new SocketException("bad parameter for SO_REUSEADDR");
             on = ((Boolean)val).booleanValue();
             break;
+        case SO_REUSEPORT:
+            if (val == null || !(val instanceof Boolean))
+                throw new SocketException("bad parameter for SO_REUSEPORT");
+            if (!supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT))
+                throw new UnsupportedOperationException("unsupported option");
+            on = ((Boolean)val).booleanValue();
+            break;
         default:
             throw new SocketException("unrecognized TCP option: " + opt);
         }
@@ -324,6 +373,12 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
                     return trafficClass; // ipv6 tos
             }
         case SO_KEEPALIVE:
+            ret = socketGetOption(opt, null);
+            return Boolean.valueOf(ret != -1);
+        case SO_REUSEPORT:
+            if (!supportedOptions().contains(StandardSocketOptions.SO_REUSEPORT)) {
+                throw new UnsupportedOperationException("unsupported option");
+            }
             ret = socketGetOption(opt, null);
             return Boolean.valueOf(ret != -1);
         // should never get here
@@ -723,4 +778,6 @@ abstract class AbstractPlainSocketImpl extends SocketImpl
 
     public static final int SHUT_RD = 0;
     public static final int SHUT_WR = 1;
+
+    private static native boolean isReusePortAvailable0();
 }

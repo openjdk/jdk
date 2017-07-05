@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
         -L$(call FindLibDirForModule, java.base)/jli, \
     LDFLAGS_macosx := -Wl$(COMMA)-all_load, \
     LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
-    LDFLAGS_windows := -export:Agent_OnAttach, \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_unix := -ljava $(LIBZ), \
     LIBS_linux := -ljli $(LIBDL), \

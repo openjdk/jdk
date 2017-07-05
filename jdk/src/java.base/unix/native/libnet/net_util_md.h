@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,19 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 #define NET_WAIT_READ    0x01
 #define NET_WAIT_WRITE   0x02
 #define NET_WAIT_CONNECT 0x04
+
+/* Defines SO_REUSEPORT */
+#ifndef SO_REUSEPORT
+#ifdef __linux__
+#define SO_REUSEPORT 15
+#elif __solaris__
+#define SO_REUSEPORT 0x100e
+#elif defined(AIX) || defined(MACOSX)
+#define SO_REUSEPORT 0x0200
+#else
+#define SO_REUSEPORT 0
+#endif
+#endif
 
 jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 

@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_G1_HEAPREGIONTYPE_HPP
 #define SHARE_VM_GC_G1_HEAPREGIONTYPE_HPP
 
+#include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "memory/allocation.hpp"
 
 #define hrt_assert_is_valid(tag) \
@@ -141,6 +142,7 @@ public:
 
   const char* get_str() const;
   const char* get_short_str() const;
+  G1HeapRegionTraceType::Type get_trace_type();
 
   HeapRegionType() : _tag(FreeTag) { hrt_assert_is_valid(_tag); }
 };
