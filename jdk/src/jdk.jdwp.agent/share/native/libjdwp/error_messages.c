@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,12 @@
 #include "utf_util.h"
 #include "proc_md.h"
 
-/* Maximim length of a message */
-#define MAX_MESSAGE_LEN MAXPATHLEN*2+512
+/* Maximum number of bytes in a message, including the trailing zero.
+ * Do not print very long messages as they could be truncated.
+ * Use at most one pathname per message. NOTE, we use MAXPATHLEN*2
+ * in case each character in the pathname takes 2 bytes.
+ */
+#define MAX_MESSAGE_BUF MAXPATHLEN*2+512
 
 /* Print message in platform encoding (assume all input is UTF-8 safe)
  *    NOTE: This function is at the lowest level of the call tree.
@@ -61,17 +65,16 @@ static void
 vprint_message(FILE *fp, const char *prefix, const char *suffix,
                const char *format, va_list ap)
 {
-    jbyte  utf8buf[MAX_MESSAGE_LEN+1];
+    jbyte  utf8buf[MAX_MESSAGE_BUF];
     int    len;
-    char   pbuf[MAX_MESSAGE_LEN+1];
+    char   pbuf[MAX_MESSAGE_BUF];
 
     /* Fill buffer with single UTF-8 string */
-    (void)vsnprintf((char*)utf8buf, MAX_MESSAGE_LEN, format, ap);
-    utf8buf[MAX_MESSAGE_LEN] = 0;
+    (void)vsnprintf((char*)utf8buf, sizeof(utf8buf), format, ap);
     len = (int)strlen((char*)utf8buf);
 
     /* Convert to platform encoding (ignore errors, dangerous area) */
-    (void)utf8ToPlatform(utf8buf, len, pbuf, MAX_MESSAGE_LEN);
+    (void)utf8ToPlatform(utf8buf, len, pbuf, (int)sizeof(pbuf));
 
     (void)fprintf(fp, "%s%s%s", prefix, pbuf, suffix);
 }

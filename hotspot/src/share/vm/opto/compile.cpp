@@ -778,7 +778,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
     }
     if (failing())  return;
     if (cg == NULL) {
-      record_method_not_compilable_all_tiers("cannot parse method");
+      record_method_not_compilable("cannot parse method");
       return;
     }
     JVMState* jvms = build_start_state(start(), tf());
@@ -2794,20 +2794,30 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   case Op_StoreL:
   case Op_StoreIConditional:
   case Op_StoreLConditional:
+  case Op_CompareAndSwapB:
+  case Op_CompareAndSwapS:
   case Op_CompareAndSwapI:
   case Op_CompareAndSwapL:
   case Op_CompareAndSwapP:
   case Op_CompareAndSwapN:
+  case Op_WeakCompareAndSwapB:
+  case Op_WeakCompareAndSwapS:
   case Op_WeakCompareAndSwapI:
   case Op_WeakCompareAndSwapL:
   case Op_WeakCompareAndSwapP:
   case Op_WeakCompareAndSwapN:
+  case Op_CompareAndExchangeB:
+  case Op_CompareAndExchangeS:
   case Op_CompareAndExchangeI:
   case Op_CompareAndExchangeL:
   case Op_CompareAndExchangeP:
   case Op_CompareAndExchangeN:
+  case Op_GetAndAddS:
+  case Op_GetAndAddB:
   case Op_GetAndAddI:
   case Op_GetAndAddL:
+  case Op_GetAndSetS:
+  case Op_GetAndSetB:
   case Op_GetAndSetI:
   case Op_GetAndSetL:
   case Op_GetAndSetP:

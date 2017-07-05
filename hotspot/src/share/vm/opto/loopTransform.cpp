@@ -868,7 +868,7 @@ bool IdealLoopTree::policy_range_check( PhaseIdealLoop *phase ) const {
       Node *bol = iff->in(1);
       if (bol->req() != 2) continue; // dead constant test
       if (!bol->is_Bool()) {
-        assert(UseLoopPredicate && bol->Opcode() == Op_Conv2B, "predicate check only");
+        assert(bol->Opcode() == Op_Conv2B, "predicate check only");
         continue;
       }
       if (bol->as_Bool()->_test._test == BoolTest::ne)
@@ -1760,14 +1760,6 @@ void PhaseIdealLoop::mark_reductions(IdealLoopTree *loop) {
   }
 }
 
-//------------------------------dominates_backedge---------------------------------
-// Returns true if ctrl is executed on every complete iteration
-bool IdealLoopTree::dominates_backedge(Node* ctrl) {
-  assert(ctrl->is_CFG(), "must be control");
-  Node* backedge = _head->as_Loop()->in(LoopNode::LoopBackControl);
-  return _phase->dom_lca_internal(ctrl, backedge) == ctrl;
-}
-
 //------------------------------adjust_limit-----------------------------------
 // Helper function for add_constraint().
 Node* PhaseIdealLoop::adjust_limit(int stride_con, Node * scale, Node *offset, Node *rc_limit, Node *loop_limit, Node *pre_ctrl) {
@@ -2187,10 +2179,8 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
         if( b_test._test == BoolTest::lt ) { // Range checks always use lt
           // The underflow and overflow limits: 0 <= scale*I+offset < limit
           add_constraint( stride_con, scale_con, offset, zero, limit, pre_ctrl, &pre_limit, &main_limit );
-          if (!conditional_rc) {
-            // (0-offset)/scale could be outside of loop iterations range.
-            conditional_rc = !loop->dominates_backedge(iff);
-          }
+          // (0-offset)/scale could be outside of loop iterations range.
+          conditional_rc = true;
         } else {
           if (PrintOpto) {
             tty->print_cr("missed RCE opportunity");
@@ -2221,12 +2211,10 @@ int PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
           // Note: (MIN_INT+1 == -MAX_INT) is used instead of MIN_INT here
           // to avoid problem with scale == -1: MIN_INT/(-1) == MIN_INT.
           add_constraint( stride_con, scale_con, offset, mini, limit, pre_ctrl, &pre_limit, &main_limit );
-          if (!conditional_rc) {
-            // ((MIN_INT+1)-offset)/scale could be outside of loop iterations range.
-            // Note: negative offset is replaced with 0 but (MIN_INT+1)/scale could
-            // still be outside of loop range.
-            conditional_rc = !loop->dominates_backedge(iff);
-          }
+          // ((MIN_INT+1)-offset)/scale could be outside of loop iterations range.
+          // Note: negative offset is replaced with 0 but (MIN_INT+1)/scale could
+          // still be outside of loop range.
+          conditional_rc = true;
           break;
         default:
           if (PrintOpto) {
@@ -2484,14 +2472,20 @@ void IdealLoopTree::adjust_loop_exit_prob( PhaseIdealLoop *phase ) {
             ((bol->in(1)->Opcode() == Op_StorePConditional ) ||
              (bol->in(1)->Opcode() == Op_StoreIConditional ) ||
              (bol->in(1)->Opcode() == Op_StoreLConditional ) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeB ) ||
+             (bol->in(1)->Opcode() == Op_CompareAndExchangeS ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeI ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeL ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeP ) ||
              (bol->in(1)->Opcode() == Op_CompareAndExchangeN ) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapB ) ||
+             (bol->in(1)->Opcode() == Op_WeakCompareAndSwapS ) ||
              (bol->in(1)->Opcode() == Op_WeakCompareAndSwapI ) ||
              (bol->in(1)->Opcode() == Op_WeakCompareAndSwapL ) ||
              (bol->in(1)->Opcode() == Op_WeakCompareAndSwapP ) ||
              (bol->in(1)->Opcode() == Op_WeakCompareAndSwapN ) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapB ) ||
+             (bol->in(1)->Opcode() == Op_CompareAndSwapS ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapI ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapL ) ||
              (bol->in(1)->Opcode() == Op_CompareAndSwapP ) ||

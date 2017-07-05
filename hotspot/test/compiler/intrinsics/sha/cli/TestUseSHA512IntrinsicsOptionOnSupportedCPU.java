@@ -25,12 +25,12 @@
  * @test
  * @bug 8035968
  * @summary Verify UseSHA512Intrinsics option processing on supported CPU.
- * @library /testlibrary /test/lib /compiler/testlibrary testcases
+ * @library /testlibrary /test/lib testcases /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestUseSHA512IntrinsicsOptionOnSupportedCPU
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   TestUseSHA512IntrinsicsOptionOnSupportedCPU

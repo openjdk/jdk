@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,10 +86,9 @@ public class CodeSource implements java.io.Serializable {
      * Constructs a CodeSource and associates it with the specified
      * location and set of certificates.
      *
-     * @param url the location (URL).
-     *
-     * @param certs the certificate(s). It may be null. The contents of the
-     * array are copied to protect against subsequent modification.
+     * @param url the location (URL).  It may be {@code null}.
+     * @param certs the certificate(s). It may be {@code null}. The contents
+     * of the array are copied to protect against subsequent modification.
      */
     public CodeSource(URL url, java.security.cert.Certificate[] certs) {
         this.location = url;
@@ -107,9 +106,9 @@ public class CodeSource implements java.io.Serializable {
      * Constructs a CodeSource and associates it with the specified
      * location and set of code signers.
      *
-     * @param url the location (URL).
-     * @param signers the code signers. It may be null. The contents of the
-     * array are copied to protect against subsequent modification.
+     * @param url the location (URL).  It may be {@code null}.
+     * @param signers the code signers. It may be {@code null}. The contents
+     * of the array are copied to protect against subsequent modification.
      *
      * @since 1.5
      */
@@ -176,7 +175,8 @@ public class CodeSource implements java.io.Serializable {
     /**
      * Returns the location associated with this CodeSource.
      *
-     * @return the location (URL).
+     * @return the location (URL), or {@code null} if no URL was supplied
+     * during construction.
      */
     public final URL getLocation() {
         /* since URL is practically immutable, returning itself is not
@@ -203,7 +203,8 @@ public class CodeSource implements java.io.Serializable {
      * bottom-to-top (i.e., with the signer certificate first and the (root)
      * certificate authority last).
      *
-     * @return A copy of the certificates array, or null if there is none.
+     * @return a copy of the certificate array, or {@code null} if there
+     * is none.
      */
     public final java.security.cert.Certificate[] getCertificates() {
         if (certs != null) {
@@ -235,7 +236,8 @@ public class CodeSource implements java.io.Serializable {
      * create an array of CodeSigner objects. Note that only X.509 certificates
      * are examined - all other certificate types are ignored.
      *
-     * @return A copy of the code signer array, or null if there is none.
+     * @return a copy of the code signer array, or {@code null} if there
+     * is none.
      *
      * @since 1.5
      */
@@ -322,7 +324,6 @@ public class CodeSource implements java.io.Serializable {
      * @return true if the specified codesource is implied by this codesource,
      * false if not.
      */
-
     public boolean implies(CodeSource codesource)
     {
         if (codesource == null)
@@ -336,7 +337,7 @@ public class CodeSource implements java.io.Serializable {
      * CodeSource are also in <i>that</i>.
      *
      * @param that the CodeSource to check against.
-     * @param strict If true then a strict equality match is performed.
+     * @param strict if true then a strict equality match is performed.
      *               Otherwise a subset match is performed.
      */
     boolean matchCerts(CodeSource that, boolean strict)
@@ -622,7 +623,7 @@ public class CodeSource implements java.io.Serializable {
      * The array of certificates is a concatenation of certificate chains
      * where the initial certificate in each chain is the end-entity cert.
      *
-     * @return An array of code signers or null if none are generated.
+     * @return an array of code signers or null if none are generated.
      */
     private CodeSigner[] convertCertArrayToSignerArray(
         java.security.cert.Certificate[] certs) {

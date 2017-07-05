@@ -257,6 +257,8 @@ AwtComponent::AwtComponent()
         AwtComponent::BuildPrimaryDynamicTable();
         sm_PrimaryDynamicTableBuilt = TRUE;
     }
+
+    deadKeyActive = FALSE;
 }
 
 AwtComponent::~AwtComponent()
@@ -2952,6 +2954,7 @@ static const CharToVKEntry charToDeadVKTable[] = {
     {0x037A, java_awt_event_KeyEvent_VK_DEAD_IOTA},             // ASCII ???
     {0x309B, java_awt_event_KeyEvent_VK_DEAD_VOICED_SOUND},
     {0x309C, java_awt_event_KeyEvent_VK_DEAD_SEMIVOICED_SOUND},
+    {0x0004, java_awt_event_KeyEvent_VK_COMPOSE},
     {0,0}
 };
 
@@ -3444,8 +3447,9 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
     AwtToolkit::GetKeyboardState(keyboardState);
 
     // apply modifiers to keyboard state if necessary
+    BOOL shiftIsDown = FALSE;
     if (modifiers) {
-        BOOL shiftIsDown = modifiers & java_awt_event_InputEvent_SHIFT_DOWN_MASK;
+        shiftIsDown = modifiers & java_awt_event_InputEvent_SHIFT_DOWN_MASK;
         BOOL altIsDown = modifiers & java_awt_event_InputEvent_ALT_DOWN_MASK;
         BOOL ctrlIsDown = modifiers & java_awt_event_InputEvent_CTRL_DOWN_MASK;
 
@@ -3517,18 +3521,27 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
         } // ctrlIsDown
     } // modifiers
 
-    // instead of creating our own conversion tables, I'll let Win32
-    // convert the character for me.
     WORD wChar[2];
-    UINT scancode = ::MapVirtualKey(wkey, 0);
-    int converted = ::ToUnicodeEx(wkey, scancode, keyboardState,
-                                  wChar, 2, 0, GetKeyboardLayout());
+    int converted = 1;
+    UINT ch = ::MapVirtualKey(wkey, 2);
+    if (ch & 0x80000000) {
+        // Dead key which is handled as a normal key
+        isDeadKey = deadKeyActive = TRUE;
+    } else if (deadKeyActive) {
+        // We cannot use ::ToUnicodeEx if dead key is active because this will
+        // break dead key function
+        wChar[0] = shiftIsDown ? ch : tolower(ch);
+    } else {
+        UINT scancode = ::MapVirtualKey(wkey, 0);
+        converted = ::ToUnicodeEx(wkey, scancode, keyboardState,
+                                              wChar, 2, 0, GetKeyboardLayout());
+    }
 
     UINT translation;
     BOOL deadKeyFlag = (converted == 2);
 
     // Dead Key
-    if (converted < 0) {
+    if (converted < 0 || isDeadKey) {
         translation = java_awt_event_KeyEvent_CHAR_UNDEFINED;
     } else
     // No translation available -- try known conversions or else punt.
@@ -3682,6 +3695,8 @@ MsgRouting AwtComponent::WmIMEChar(UINT character, UINT repCnt, UINT flags, BOOL
 MsgRouting AwtComponent::WmChar(UINT character, UINT repCnt, UINT flags,
                                 BOOL system)
 {
+    deadKeyActive = FALSE;
+
     // Will only get WmChar messages with DBCS if we create them for
     // an Edit class in the WmForwardChar method. These synthesized
     // DBCS chars are ok to pass on directly to the default window

@@ -22,6 +22,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 

@@ -24,7 +24,7 @@
 /*
  * @test TestRegionLivenessPrint.java
  * @bug 8151920
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @summary Make sure that G1 does not assert when printing region liveness data on a humongous continues region.
  * @key gc
  * @library /testlibrary /test/lib

@@ -37,7 +37,7 @@ import java.util.List;
 /**
  * @test TestHeapCounters
  * @summary Checks that heap counters work as expected after humongous allocations/deallocations
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management

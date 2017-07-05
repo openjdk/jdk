@@ -237,13 +237,14 @@ int
 SplashDecodeJpegStream(Splash * splash, SplashStream * stream)
 {
     struct jpeg_decompress_struct cinfo;
-    int success = 0;
+    int success;
     struct my_error_mgr jerr;
 
     cinfo.err = jpeg_std_error(&jerr.pub);
     jerr.pub.error_exit = my_error_exit;
 
     if (setjmp(jerr.setjmp_buffer)) {
+        success = 0;
         goto done;
     }
     jpeg_create_decompress(&cinfo);

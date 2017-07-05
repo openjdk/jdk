@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -54,7 +53,7 @@ public class SaslGSS {
 
     public static void main(String[] args) throws Exception {
 
-        String name = "host." + OneKDC.REALM.toLowerCase(Locale.US);
+        String name = "host." + OneKDC.REALM_LOWER_CASE;
 
         new OneKDC(null).writeJAASConf();
         System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");

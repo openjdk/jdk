@@ -25,7 +25,7 @@
  * @test TestInitialTenuringThreshold
  * @key gc
  * @bug 8014765
- * @requires vm.gc=="Parallel" | vm.gc=="null"
+ * @requires vm.gc.Parallel
  * @summary Tests argument processing for initial tenuring threshold
  * @library /testlibrary
  * @modules java.base/jdk.internal.misc

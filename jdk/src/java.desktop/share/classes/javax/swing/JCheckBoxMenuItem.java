@@ -56,6 +56,15 @@ import javax.accessibility.*;
  * href="http://docs.oracle.com/javase/tutorial/uiswing/misc/action.html">How
  * to Use Actions</a>, a section in <em>The Java Tutorial</em>.
  * <p>
+ * Some times it is required to select several check box menu items from a menu.
+ * In this case it is useful that clicking on one check box menu item does not
+ * close the menu. Such behavior can be controlled by the Look and Feel property
+ * named {@code "CheckBoxMenuItem.closeOnMouseClick"}. The default value is
+ * {@code true}. Setting the property to {@code false} prevents the menu from
+ * closing when it is clicked by the mouse.
+ * Note: some {@code L&F}s may ignore this property. All built-in {@code L&F}s
+ * inherit this behaviour.
+ * <p>
  * For further information and examples of using check box menu items,
  * see <a
  href="http://docs.oracle.com/javase/tutorial/uiswing/components/menu.html">How to Use Menus</a>,
