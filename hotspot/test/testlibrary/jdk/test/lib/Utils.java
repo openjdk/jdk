@@ -314,9 +314,8 @@ public final class Utils {
      */
     public static String fileAsString(String filename) throws IOException {
         Path filePath = Paths.get(filename);
-        return Files.exists(filePath)
-            ? Files.lines(filePath).collect(Collectors.joining(NEW_LINE))
-            : null;
+        if (!Files.exists(filePath)) return null;
+        return new String(Files.readAllBytes(filePath));
     }
 
     /**

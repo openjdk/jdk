@@ -1773,9 +1773,11 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
   AddressLiteral exception_blob(OptoRuntime::exception_blob()->entry_point());
   MacroAssembler _masm(&cbuf);
 
-  address base =
-  __ start_a_stub(size_exception_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
+  address base = __ start_a_stub(size_exception_handler());
+  if (base == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
 
   int offset = __ offset();
 
@@ -1796,9 +1798,11 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   AddressLiteral deopt_blob(SharedRuntime::deopt_blob()->unpack());
   MacroAssembler _masm(&cbuf);
 
-  address base =
-  __ start_a_stub(size_deopt_handler());
-  if (base == NULL)  return 0;  // CodeBuffer::expand failed
+  address base = __ start_a_stub(size_deopt_handler());
+  if (base == NULL) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
 
   int offset = __ offset();
   __ save_frame(0);
@@ -2599,7 +2603,12 @@ encode %{
       emit_call_reloc(cbuf, $meth$$method, relocInfo::static_call_type);
     }
     if (_method) {  // Emit stub for static call.
-      CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      // Stub does not fit into scratch buffer if TraceJumps is enabled
+      if (stub == NULL && !(TraceJumps && Compile::current()->in_scratch_emit_size())) {
+        ciEnv::current()->record_failure("CodeCache is full");
+        return;
+      } 
     }
   %}
 
