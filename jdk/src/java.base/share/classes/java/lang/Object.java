@@ -278,6 +278,7 @@ public class Object {
      * @see        java.lang.Object#notifyAll()
      * @see        java.lang.Object#wait()
      */
+    @HotSpotIntrinsicCandidate
     public final native void notify();
 
     /**
@@ -302,6 +303,7 @@ public class Object {
      * @see        java.lang.Object#notify()
      * @see        java.lang.Object#wait()
      */
+    @HotSpotIntrinsicCandidate
     public final native void notifyAll();
 
     /**

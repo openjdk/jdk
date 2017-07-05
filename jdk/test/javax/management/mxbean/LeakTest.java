@@ -27,7 +27,7 @@
  * @author Eamonn McManus
  * @modules java.desktop
  *          java.management
- * @run build LeakTest RandomMXBeanTest
+ * @run build LeakTest RandomMXBeanTest MerlinMXBean TigerMXBean
  * @run main LeakTest
  */
 

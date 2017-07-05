@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: javadoc
-.\" Language: English
-.\" Date: 2011年5月10日
-.\" SectDesc: 基本ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "javadoc" "1" "2011年5月10日" "JDK 8" "基本ツール"
+.\" Title: javadoc
+.\" Language: Japanese
+.\" Date: 2015ǯ3��3��
+.\" SectDesc: ���ܥġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "javadoc" "1" "2015ǯ3��3��" "JDK 8" "���ܥġ���"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLページを生成します。
-.SH "概要"
+.SH "̾��"
+javadoc \- Java���������ե����뤫�顢API�ɥ�����Ȥ�HTML�ڡ������������ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIjavadoc\fR {\fIpackages\fR|\fIsource\-files\fR} [\fIoptions\fR] [\fI@argfiles\fR]
+\fBjavadoc\fR {\fIpackages\fR|\fIsource\-files\fR} [\fIoptions\fR] [\fI@argfiles\fR]
 .fi
 .if n \{\
 .RE
@@ -64,33 +66,33 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .PP
 \fIpackages\fR
 .RS 4
-\fIjava\&.lang java\&.lang\&.reflect java\&.awt\fRなど、空白で区切ってドキュメント化するパッケージの名前。サブパッケージもドキュメント化する場合は、\fI\-subpackages\fRオプションを使用してパッケージを指定します。
+\fBjava\&.lang java\&.lang\&.reflect java\&.awt\fR�ʤɡ�����Ƕ��ڤäƥɥ�����Ȳ�����ѥå�������̾�������֥ѥå�������ɥ�����Ȳ�������ϡ�\fB\-subpackages\fR���ץ�������Ѥ��ƥѥå���������ꤷ�ޤ���
 .sp
-デフォルトでは、\fIjavadoc\fRは、現在のディレクトリおよびサブディレクトリで指定されたパッケージを探します。\fI\-sourcepath\fRオプションを使用して、パッケージを探すディレクトリのリストを指定します。
+�ǥե���ȤǤϡ�\fBjavadoc\fR�ϡ����ߤΥǥ��쥯�ȥꤪ��ӥ��֥ǥ��쥯�ȥ�ǻ��ꤵ�줿�ѥå�������õ���ޤ���\fB\-sourcepath\fR���ץ�������Ѥ��ơ��ѥå�������õ���ǥ��쥯�ȥ�Υꥹ�Ȥ���ꤷ�ޤ���
 .RE
 .PP
 \fIsource\-files\fR
 .RS 4
-\fIClass\&.java Object\&.java Button\&.java\fRのように空白で区切った、ドキュメント化するJavaソース・ファイルの名前。デフォルトでは、\fIjavadoc\fRは、現在のディレクトリで指定されたクラスを探します。ただし、\fI/home/src/java/awt/Graphics*\&.java\fRのように、クラス・ファイルのフルパスを指定し、ワイルドカード文字を使用できます。現在のディレクトリからの相対パスも指定できます。
+\fBClass\&.java Object\&.java Button\&.java\fR�Τ褦�˶���Ƕ��ڤä����ɥ�����Ȳ�����Java���������ե������̾�����ǥե���ȤǤϡ�\fBjavadoc\fR�ϡ����ߤΥǥ��쥯�ȥ�ǻ��ꤵ�줿���饹��õ���ޤ�����������\fB/home/src/java/awt/Graphics*\&.java\fR�Τ褦�ˡ����饹���ե�����Υե�ѥ�����ꤷ���磻��ɥ�����ʸ������ѤǤ��ޤ������ߤΥǥ��쥯�ȥ꤫������Хѥ������Ǥ��ޤ���
 .RE
 .PP
 \fIoptions\fR
 .RS 4
-空白で区切られたコマンドライン・オプション。オプションを参照してください。
+����Ƕ��ڤ�줿���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fI@argfiles\fR
 .RS 4
-\fIjavadoc\fRコマンド・オプション、パッケージ名およびソース・ファイル名のリストを任意の順序で含むファイルの名前。
+\fBjavadoc\fR���ޥ�ɡ����ץ���󡢥ѥå�����̾����ӥ��������ե�����̾�Υꥹ�Ȥ�Ǥ�դν���Ǵޤ�ե������̾����
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIjavadoc\fRコマンドは、一連のJavaソース・ファイルにある宣言およびドキュメンテーション・コメントを解析し、デフォルトでは、publicクラス、protectedクラス、ネストされたクラス(匿名の内部クラスは除く)、インタフェース、コンストラクタ、メソッド、およびフィールドについて記述した一連のHTMLページを生成します。\fIjavadoc\fRコマンドは、APIドキュメントの生成や、一連のソース・ファイルの実装ドキュメントの生成に使用できます。
+\fBjavadoc\fR���ޥ�ɤϡ���Ϣ��Java���������ե�����ˤ����������ӥɥ�����ơ�����󡦥����Ȥ���Ϥ����ǥե���ȤǤϡ�public���饹��protected���饹���ͥ��Ȥ��줿���饹(ƿ̾���������饹�Ͻ���)�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤˤĤ��Ƶ��Ҥ�����Ϣ��HTML�ڡ������������ޤ���\fBjavadoc\fR���ޥ�ɤϡ�API�ɥ�����Ȥ������䡢��Ϣ�Υ��������ե�����μ����ɥ�����Ȥ������˻��ѤǤ��ޤ���
 .PP
-\fIjavadoc\fRコマンドは、パッケージ全体、個々のソース・ファイル、またはその両方に対して実行できます。パッケージ全体のドキュメント化を行うには、\fI\-subpackages\fRオプションを使用してディレクトリおよびそのサブディレクトリを再帰的にたどるか、パッケージ名の明示的なリストを渡します。個々のソース・ファイルをドキュメント化するには、Javaソース・ファイル名のリストを渡します。簡単な例を参照してください。
-.SS "ソース・ファイルの処理"
+\fBjavadoc\fR���ޥ�ɤϡ��ѥå��������Ρ��ġ��Υ��������ե����롢�ޤ��Ϥ���ξ�����Ф��Ƽ¹ԤǤ��ޤ����ѥå��������ΤΥɥ�����Ȳ���Ԥ��ˤϡ�\fB\-subpackages\fR���ץ�������Ѥ��ƥǥ��쥯�ȥꤪ��Ӥ��Υ��֥ǥ��쥯�ȥ��Ƶ�Ū�ˤ��ɤ뤫���ѥå�����̾������Ū�ʥꥹ�Ȥ��Ϥ��ޤ����ġ��Υ��������ե������ɥ�����Ȳ�����ˤϡ�Java���������ե�����̾�Υꥹ�Ȥ��Ϥ��ޤ�����ñ����򻲾Ȥ��Ƥ���������
+.SS "���������ե�����ν���"
 .PP
-\fIjavadoc\fRコマンドは、ソースで終わるファイル、およびソース・ファイルで説明しているその他のファイルを処理します。個々のソース・ファイル名を渡して\fIjavadoc\fRを実行する場合、どのソース・ファイルを処理するかを正確に指定できます。ただし、多くの開発者はこの方法では作業しません。パッケージ名を渡すほうが簡単だからです。ソース・ファイル名を明示的に指定しなくても、\fIjavadoc\fRコマンドは3つの方法で実行できます。パッケージ名を渡し、\fI\-subpackages\fRオプションを使用するか、またはソース・ファイル名にワイルドカードを使用することができます。これらの場合、\fIjavadoc\fRコマンドがソース・ファイルの処理を行うのは、そのファイルが次のすべての要件を満たす場合のみです。
+\fBjavadoc\fR���ޥ�ɤϡ��������ǽ����ե����롢����ӥ��������ե�������������Ƥ��뤽��¾�Υե������������ޤ����ġ��Υ��������ե�����̾���Ϥ���\fBjavadoc\fR��¹Ԥ����硢�ɤΥ��������ե������������뤫�����Τ˻���Ǥ��ޤ�����������¿���γ�ȯ�ԤϤ�����ˡ�ǤϺ�Ȥ��ޤ��󡣥ѥå�����̾���Ϥ��ۤ�����ñ������Ǥ������������ե�����̾������Ū�˻��ꤷ�ʤ��Ƥ⡢\fBjavadoc\fR���ޥ�ɤ�3�Ĥ���ˡ�Ǽ¹ԤǤ��ޤ����ѥå�����̾���Ϥ���\fB\-subpackages\fR���ץ�������Ѥ��뤫���ޤ��ϥ��������ե�����̾�˥磻��ɥ����ɤ���Ѥ��뤳�Ȥ��Ǥ��ޤ��������ξ�硢\fBjavadoc\fR���ޥ�ɤ����������ե�����ν�����Ԥ��Τϡ����Υե����뤬���Τ��٤Ƥ��׷�����������ΤߤǤ���
 .sp
 .RS 4
 .ie n \{\
@@ -100,18 +102,7 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-ファイル名の接頭辞(\fI\&.java\fRを削除)が有効なクラス名である。
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-ソース・ツリーのルートからの相対的なパス名が、区切り文字をドットに変換すると、有効なパッケージ名になる。
+�ե�����̾����Ƭ��(\fB\&.java\fR����)��ͭ���ʥ��饹̾�Ǥ��롣
 .RE
 .sp
 .RS 4
@@ -122,20 +113,7 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-パッケージ文に有効なパッケージ名が含まれている。
-.RE
-リンクの処理.PP
-処理の実行中に、\fIjavadoc\fRコマンドは、その実行でドキュメント化されるパッケージ、クラス、およびメンバーの名前に対して、相互参照リンクを追加します。リンクは、次の場所に表示されます。@タグの説明については、javadocタグを参照してください。
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-宣言(戻り値の型、引数の型、フィールドの型)。
+���������ĥ꡼�Υ롼�Ȥ��������Ū�ʥѥ�̾�������ڤ�ʸ����ɥåȤ��Ѵ�����ȡ�ͭ���ʥѥå�����̾�ˤʤ롣
 .RE
 .sp
 .RS 4
@@ -146,7 +124,22 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI@see\fRタグから生成された「\fI関連項目\fR」セクション。
+�ѥå�����ʸ��ͭ���ʥѥå�����̾���ޤޤ�Ƥ��롣
+.RE
+.PP
+��󥯤ν���
+.PP
+�����μ¹���ˡ�\fBjavadoc\fR���ޥ�ɤϡ����μ¹Ԥǥɥ�����Ȳ������ѥå����������饹������ӥ��С���̾�����Ф��ơ���߻��ȥ�󥯤��ɲä��ޤ�����󥯤ϡ����ξ���ɽ������ޤ���@�����������ˤĤ��Ƥϡ�javadoc�����򻲾Ȥ��Ƥ���������
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+���(����ͤη��������η����ե�����ɤη�)��
 .RE
 .sp
 .RS 4
@@ -157,7 +150,7 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI{@link}\fRタグから生成されたインライン・テキスト。
+\fB@see\fR���������������줿\fI�ִ�Ϣ���ܡ�\fR���������
 .RE
 .sp
 .RS 4
@@ -168,7 +161,7 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI@throws\fRタグから生成された例外の名前。
+\fB{@link}\fR���������������줿����饤�󡦥ƥ����ȡ�
 .RE
 .sp
 .RS 4
@@ -179,7 +172,7 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-インタフェースのメンバーに対する「\fI定義\fR」リンクと、クラスのメンバーに対する「\fIオーバーライド\fR」リンク。メソッド・コメントの継承を参照してください。
+\fB@throws\fR���������������줿�㳰��̾����
 .RE
 .sp
 .RS 4
@@ -190,7 +183,7 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-パッケージ、クラス、およびメンバーをリストしているサマリー表。
+���󥿥ե������Υ��С����Ф���\fI�������\fR��󥯤ȡ����饹�Υ��С����Ф���\fI�֥����С��饤�ɡ�\fR��󥯡��᥽�åɡ������ȤηѾ��򻲾Ȥ��Ƥ���������
 .RE
 .sp
 .RS 4
@@ -201,7 +194,7 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-パッケージおよびクラスの継承ツリー。
+�ѥå����������饹������ӥ��С���ꥹ�Ȥ��Ƥ��륵�ޥ꡼ɽ��
 .RE
 .sp
 .RS 4
@@ -212,52 +205,7 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-索引。
-.RE
-.PP
-コマンドラインで指定しなかったクラスについての既存のテキスト(別に生成したテキスト)に対してリンクを追加するには、\fI\-link\fRおよび\fI\-linkoffline\fRオプションを利用できます。
-処理の詳細.PP
-\fIjavadoc\fRコマンドは実行するたびに1つの完全なドキュメントを生成します。前の実行の結果を変更または直接取り込む、増分ビルドを行いません。ただし、\fIjavadoc\fRコマンドは、他の実行の結果にリンクできます。
-.PP
-\fIjavadoc\fRコマンドの実装にはJavaコンパイラが必要で、Javaコンパイラに依存しています。\fIjavadoc\fRコマンドは\fIjavac\fRコマンドの一部を呼び出し、宣言をコンパイルして、メンバーの実装を無視します。\fIjavadoc\fRコマンドは、クラス階層を含むクラスの豊富な内部表現とクラスの「使用」関係を構築し、HTMLを生成します。さらに、J\fIjavadoc\fRコマンドは、ソース・コードのドキュメンテーション・コメントから、ユーザーの提供したドキュメントも取得します。ドキュメンテーション・コメントを参照してください。
-.PP
-\fIjavadoc\fRコマンドは、メソッド本体を持たない純粋なスタブ・ファイルであるソース・ファイルに対して実行できます。したがって、APIの実装前の設計の早い段階で、ドキュメンテーション・コメントを記述して\fIjavadoc\fRコメントを実行できます。
-.PP
-コンパイラに依存することによって、HTML出力は、実際の実装に正確に対応します。実際の実装は、明示的なソース・コードにではなく、暗黙のソース・コードに依存する場合があります。たとえば、\fIjavadoc\fRコマンドは、コンパイル済クラス・ファイルには存在するがソース・コードには存在しないデフォルト・コンストラクタをドキュメント化します。
-.PP
-多くの場合、\fIjavadoc\fRコマンドでは、ソース・ファイルのコードが不完全またはエラーを含んでいる場合でもドキュメントを生成できます。すべてのデバッグやトラブルシューティングを完了する前にドキュメントを生成できます。\fIjavadoc\fRコマンドはドキュメンテーション・コメントの基本的なチェックを行います。
-.PP
-\fIjavadoc\fRコマンドは、ドキュメントの内部構造を構築する際、参照クラスをすべてロードします。このため、
-\fIjavadoc\fRコマンドは、ブートストラップ・クラス、拡張機能、またはユーザー・クラスにかかわらず、すべての参照クラスを検索できる必要があります。クラスの検出方法
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/findingclasses\&.html)を参照してください
-.PP
-通常、作成するクラスは、拡張クラスとして、または\fIjavadoc\fRコマンドのクラス・パスでロードされる必要があります。
-.SS "Javadocのドックレット"
-.PP
-\fIjavadoc\fRコマンドの出力の内容と形式は、ドックレットを使用してカスタマイズできます。\fIjavadoc\fRコマンドには、標準ドックレットと呼ばれるデフォルトの組込みドックレットがあります。標準ドックレットは、HTML形式のAPIドキュメントを生成します。標準ドックレットを修正またはサブクラスを作成することや、HTML、XML、MIF、RTFなどの好みの出力形式を生成する独自のドックレットを記述することも可能です。
-.PP
-\fI\-doclet\fRオプションでカスタム・ドックレットが指定されていない場合、\fIjavadoc\fRコマンドは、デフォルトの標準ドックレットを使用します。\fIjavadoc\fRコマンドには、使用されているドックレットに関係なく使用できるいくつかのオプションがあります。標準ドックレットでは、これらの他に、いくつかのコマンドライン・オプションが追加されます。オプションを参照してください。
-.SH "ソース・ファイル"
-.PP
-\fIjavadoc\fRコマンドは、次のタイプのソース・ファイルから出力を生成します。そのファイルは、クラスのJava言語ソース・ファイル(\fI\&.java\fR)、パッケージ・コメント・ファイル、概要コメント・ファイル、およびその他の未処理のファイルです。ここでは、ドキュメント化しないがソース・ツリーに存在する場合があるテスト・ファイルやテンプレート・ファイルについても説明します。
-.SS "クラスのソース・ファイル"
-.PP
-それぞれのクラスまたはインタフェース、およびそのメンバーは、独自のドキュメンテーション・コメントを持つことができ、それをソース・ファイル内に保持します。ドキュメンテーション・コメントを参照してください。
-.SS "パッケージ・コメント・ファイル"
-.PP
-それぞれのパッケージは、独自のドキュメンテーション・コメントを持つことができ、それを専用のソース・ファイルに保持します。その内容は、\fIjavadoc\fRコマンドによって生成されるパッケージのサマリー・ページに組み込まれます。このコメントには、通常、そのパッケージ全体に当てはまるドキュメントを記述します。
-.PP
-パッケージ・コメント・ファイルを作成するには、次のいずれかのファイルにコメントを格納できます。
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fIpackage\-info\&.java\fRファイルには、パッケージ宣言、パッケージ注釈、パッケージ・コメント、およびJavadocタグを格納できます。このファイルが優先されます。
+�ѥå���������ӥ��饹�ηѾ��ĥ꡼��
 .RE
 .sp
 .RS 4
@@ -268,73 +216,139 @@ javadoc \- Javaソース・ファイルから、APIドキュメントのHTMLペ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIpackage\&.html\fRファイルには、パッケージ・コメントとJavadocタグのみを格納できます。パッケージ注釈は格納できません。
+������
 .RE
 .PP
-各パッケージは、\fIpackage\&.html\fRファイルまたは\fIpackage\-info\&.java\fRファイルのいずれかを1つ持つことができますが、その両方を持つことはできません。このどちらかのファイルをソース・ファイルとともに、ソース・ツリー内のそのパッケージ・ディレクトリ内に配置してください。
-package\-info\&.javaファイル.PP
-\fIpackage\-info\&.java\fRファイルには、次の構造のパッケージ・コメントを含めることができます。コメントは、パッケージ宣言の前に配置されます。
+���ޥ�ɹԤǻ��ꤷ�ʤ��ä����饹�ˤĤ��Ƥδ�¸�Υƥ�����(�̤����������ƥ�����)���Ф��ƥ�󥯤��ɲä���ˤϡ�\fB\-link\fR�����\fB\-linkoffline\fR���ץ��������ѤǤ��ޤ���
 .PP
-\fB注意:\fR
-コメント区切り文字である\fI/**\fRおよび\fI*/\fRが存在する必要がありますが、中間の行の先頭のアスタリスクは省略可能です。
+�����ξܺ�
+.PP
+\fBjavadoc\fR���ޥ�ɤϼ¹Ԥ��뤿�Ӥ�1�Ĥδ����ʥɥ�����Ȥ��������ޤ������μ¹Ԥη�̤��ѹ��ޤ���ľ�ܼ����ࡢ��ʬ�ӥ�ɤ�Ԥ��ޤ��󡣤�������\fBjavadoc\fR���ޥ�ɤϡ�¾�μ¹Ԥη�̤˥�󥯤Ǥ��ޤ���
+.PP
+\fBjavadoc\fR���ޥ�ɤμ����ˤ�Java����ѥ��餬ɬ�פǡ�Java����ѥ���˰�¸���Ƥ��ޤ���\fBjavadoc\fR���ޥ�ɤ�\fBjavac\fR���ޥ�ɤΰ�����ƤӽФ�������򥳥�ѥ��뤷�ơ����С��μ�����̵�뤷�ޤ���\fBjavadoc\fR���ޥ�ɤϡ����饹���ؤ�ޤ९�饹��˭�٤�����ɽ���ȥ��饹�Ρֻ��ѡ״ط����ۤ���HTML���������ޤ�������ˡ�J\fBjavadoc\fR���ޥ�ɤϡ��������������ɤΥɥ�����ơ�����󡦥����Ȥ��顢�桼�������󶡤����ɥ�����Ȥ�������ޤ����ɥ�����ơ�����󡦥����Ȥ򻲾Ȥ��Ƥ���������
+.PP
+\fBjavadoc\fR���ޥ�ɤϡ��᥽�å����Τ�����ʤ����ʥ����֡��ե�����Ǥ��륽�������ե�������Ф��Ƽ¹ԤǤ��ޤ����������äơ�API�μ��������߷פ��ᤤ�ʳ��ǡ��ɥ�����ơ�����󡦥����Ȥ򵭽Ҥ���\fBjavadoc\fR�����Ȥ�¹ԤǤ��ޤ���
+.PP
+����ѥ���˰�¸���뤳�Ȥˤ�äơ�HTML���Ϥϡ��ºݤμ��������Τ��б����ޤ����ºݤμ����ϡ�����Ū�ʥ������������ɤˤǤϤʤ������ۤΥ������������ɤ˰�¸�����礬����ޤ������Ȥ��С�\fBjavadoc\fR���ޥ�ɤϡ�����ѥ���ѥ��饹���ե�����ˤ�¸�ߤ��뤬�������������ɤˤ�¸�ߤ��ʤ��ǥե���ȡ����󥹥ȥ饯����ɥ�����Ȳ����ޤ���
+.PP
+¿���ξ�硢\fBjavadoc\fR���ޥ�ɤǤϡ����������ե�����Υ����ɤ��Դ����ޤ��ϥ��顼��ޤ�Ǥ�����Ǥ�ɥ�����Ȥ������Ǥ��ޤ������٤ƤΥǥХå���ȥ�֥륷�塼�ƥ��󥰤�λ�������˥ɥ�����Ȥ������Ǥ��ޤ���\fBjavadoc\fR���ޥ�ɤϥɥ�����ơ�����󡦥����Ȥδ���Ū�ʥ����å���Ԥ��ޤ���
+.PP
+\fBjavadoc\fR���ޥ�ɤϡ��ɥ�����Ȥ�������¤���ۤ���ݡ����ȥ��饹�򤹤٤ƥ����ɤ��ޤ������Τ��ᡢ
+\fBjavadoc\fR���ޥ�ɤϡ��֡��ȥ��ȥ�åס����饹����ĥ��ǽ���ޤ��ϥ桼���������饹�ˤ�����餺�����٤Ƥλ��ȥ��饹�򸡺��Ǥ���ɬ�פ�����ޤ������饹�θ�����ˡ
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/findingclasses\&.html)�򻲾Ȥ��Ƥ�������
+.PP
+�̾�������륯�饹�ϡ���ĥ���饹�Ȥ��ơ��ޤ���\fBjavadoc\fR���ޥ�ɤΥ��饹���ѥ��ǥ����ɤ����ɬ�פ�����ޤ���
+.SS "Javadoc�Υɥå���å�"
+.PP
+\fBjavadoc\fR���ޥ�ɤν��Ϥ����Ƥȷ����ϡ��ɥå���åȤ���Ѥ��ƥ������ޥ����Ǥ��ޤ���\fBjavadoc\fR���ޥ�ɤˤϡ�ɸ��ɥå���åȤȸƤФ��ǥե���Ȥ��ȹ��ߥɥå���åȤ�����ޤ���ɸ��ɥå���åȤϡ�HTML������API�ɥ�����Ȥ��������ޤ���ɸ��ɥå���åȤ����ޤ��ϥ��֥��饹��������뤳�Ȥ䡢HTML��XML��MIF��RTF�ʤɤι��ߤν��Ϸ��������������ȼ��Υɥå���åȤ򵭽Ҥ��뤳�Ȥ��ǽ�Ǥ���
+.PP
+\fB\-doclet\fR���ץ����ǥ������ࡦ�ɥå���åȤ����ꤵ��Ƥ��ʤ���硢\fBjavadoc\fR���ޥ�ɤϡ��ǥե���Ȥ�ɸ��ɥå���åȤ���Ѥ��ޤ���\fBjavadoc\fR���ޥ�ɤˤϡ����Ѥ���Ƥ���ɥå���åȤ˴ط��ʤ����ѤǤ��뤤���Ĥ��Υ��ץ���󤬤���ޤ���ɸ��ɥå���åȤǤϡ�������¾�ˡ������Ĥ��Υ��ޥ�ɹԥ��ץ�����ɲä���ޤ������ץ����򻲾Ȥ��Ƥ���������
+.SH "���������ե�����"
+.PP
+\fBjavadoc\fR���ޥ�ɤϡ����Υ����פΥ��������ե����뤫����Ϥ��������ޤ������Υե�����ϡ����饹��Java���쥽�������ե�����(\fB\&.java\fR)���ѥå������������ȡ��ե����롢���ץ����ȡ��ե����롢����Ӥ���¾��̤�����Υե�����Ǥ��������Ǥϡ��ɥ�����Ȳ����ʤ������������ĥ꡼��¸�ߤ����礬����ƥ��ȡ��ե������ƥ�ץ졼�ȡ��ե�����ˤĤ��Ƥ��������ޤ���
+.SS "���饹�Υ��������ե�����"
+.PP
+���줾��Υ��饹�ޤ��ϥ��󥿥ե�����������Ӥ��Υ��С��ϡ��ȼ��Υɥ�����ơ�����󡦥����Ȥ���Ĥ��Ȥ��Ǥ�������򥽡������ե���������ݻ����ޤ����ɥ�����ơ�����󡦥����Ȥ򻲾Ȥ��Ƥ���������
+.SS "�ѥå������������ȡ��ե�����"
+.PP
+���줾��Υѥå������ϡ��ȼ��Υɥ�����ơ�����󡦥����Ȥ���Ĥ��Ȥ��Ǥ�����������ѤΥ��������ե�������ݻ����ޤ����������Ƥϡ�\fBjavadoc\fR���ޥ�ɤˤ�ä����������ѥå������Υ��ޥ꡼���ڡ������Ȥ߹��ޤ�ޤ������Υ����Ȥˤϡ��̾���Υѥå��������Τ����ƤϤޤ�ɥ�����Ȥ򵭽Ҥ��ޤ���
+.PP
+�ѥå������������ȡ��ե�������������ˤϡ����Τ����줫�Υե�����˥����Ȥ��Ǽ�Ǥ��ޤ���
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpackage\-info\&.java\fR�ե�����ˤϡ��ѥå�����������ѥå��������ᡢ�ѥå������������ȡ������Javadoc�������Ǽ�Ǥ��ޤ������Υե����뤬ͥ�褵��ޤ���
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBpackage\&.html\fR�ե�����ˤϡ��ѥå������������Ȥ�Javadoc�����Τߤ��Ǽ�Ǥ��ޤ����ѥå���������ϳ�Ǽ�Ǥ��ޤ���
+.RE
+.PP
+�ƥѥå������ϡ�\fBpackage\&.html\fR�ե�����ޤ���\fBpackage\-info\&.java\fR�ե�����Τ����줫��1�Ļ��Ĥ��Ȥ��Ǥ��ޤ���������ξ������Ĥ��ȤϤǤ��ޤ��󡣤��Τɤ��餫�Υե�����򥽡������ե�����ȤȤ�ˡ����������ĥ꡼��Τ��Υѥå��������ǥ��쥯�ȥ�������֤��Ƥ���������
+.PP
+package\-info\&.java�ե�����
+.PP
+\fBpackage\-info\&.java\fR�ե�����ˤϡ����ι�¤�Υѥå������������Ȥ�ޤ�뤳�Ȥ��Ǥ��ޤ��������Ȥϡ��ѥå�����������������֤���ޤ���
+.PP
+\fB����:\fR
+�����ȶ��ڤ�ʸ���Ǥ���\fB/**\fR�����\fB*/\fR��¸�ߤ���ɬ�פ�����ޤ�������֤ιԤ���Ƭ�Υ������ꥹ���Ͼ�ά��ǽ�Ǥ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-/**
- * Provides the classes necessary to create an  
- * applet and the classes an applet uses 
- * to communicate with its applet context\&.
- * <p>
- * The applet framework involves two entities:
- * the applet and the applet context\&.
- * An applet is an embeddable window (see the
- * {@link java\&.awt\&.Panel} class) with a few extra
- * methods that the applet context can use to 
- * initialize, start, and stop the applet\&.
- *
- * @since 1\&.0
- * @see java\&.awt
- */
-package java\&.lang\&.applet;
+\fB/**\fR
+\fB * Provides the classes necessary to create an  \fR
+\fB * applet and the classes an applet uses \fR
+\fB * to communicate with its applet context\&.\fR
+\fB * <p>\fR
+\fB * The applet framework involves two entities:\fR
+\fB * the applet and the applet context\&.\fR
+\fB * An applet is an embeddable window (see the\fR
+\fB * {@link java\&.awt\&.Panel} class) with a few extra\fR
+\fB * methods that the applet context can use to \fR
+\fB * initialize, start, and stop the applet\&.\fR
+\fB *\fR
+\fB * @since 1\&.0\fR
+\fB * @see java\&.awt\fR
+\fB */\fR
+\fBpackage java\&.lang\&.applet;\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-package\&.htmlファイル.PP
-\fIpackage\&.html\fRファイルには、次の構造のパッケージ・コメントを含めることができます。コメントは、\fI<body>\fR要素に配置されます。
 .PP
-ファイル:
-\fIjava/applet/package\&.html\fR
+package\&.html�ե�����
+.PP
+\fBpackage\&.html\fR�ե�����ˤϡ����ι�¤�Υѥå������������Ȥ�ޤ�뤳�Ȥ��Ǥ��ޤ��������Ȥϡ�\fB<body>\fR���Ǥ����֤���ޤ���
+.PP
+�ե�����:
+\fBjava/applet/package\&.html\fR
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-<HTML>
-<BODY>
-Provides the classes necessary to create an applet and the 
-classes an applet uses to communicate with its applet context\&.
-<p>
-The applet framework involves two entities: the applet
-and the applet context\&. An applet is an embeddable
-window (see the {@link java\&.awt\&.Panel} class) with a
-few extra methods that the applet context can use to
-initialize, start, and stop the applet\&. 
-
-@since 1\&.0 
-@see java\&.awt
-</BODY>
-</HTML>
+\fB<HTML>\fR
+\fB<BODY>\fR
+\fBProvides the classes necessary to create an applet and the \fR
+\fBclasses an applet uses to communicate with its applet context\&.\fR
+\fB<p>\fR
+\fBThe applet framework involves two entities: the applet\fR
+\fBand the applet context\&. An applet is an embeddable\fR
+\fBwindow (see the {@link java\&.awt\&.Panel} class) with a\fR
+\fBfew extra methods that the applet context can use to\fR
+\fBinitialize, start, and stop the applet\&. \fR
+ 
+\fB@since 1\&.0 \fR
+\fB@see java\&.awt\fR
+\fB</BODY>\fR
+\fB</HTML>\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fIpackage\&.html\fRファイルは通常のHTMLファイルであり、パッケージ宣言を含んでいません。パッケージ・コメント・ファイルの内容はHTMLで記述しますが、例外が1つあります。このドキュメンテーション・コメントには、コメント区切り文字である\fI/**\fRと\fI*/\fR、または行頭のアスタリスクを含めない、という点です。コメントを書く場合は、最初の文をパッケージのサマリーとし、\fI<body>\fRタグと最初の文の間にタイトルやその他のテキストを含めないようにします。パッケージ・タグを含めることができます。すべてのブロック・タグは、主説明の後に配置する必要があります。\fI@see\fRタグをパッケージ・コメント・ファイルに追加する場合には、完全修飾名を使用する必要があります。
-コメント・ファイルの処理.PP
-\fIjavadoc\fRコメントを実行すると、パッケージ・コメント・ファイルが検索されます。パッケージ・コメント・ファイルが見つかった場合は、\fIjavadoc\fRコマンドは次の手順を実行します。
+\fBpackage\&.html\fR�ե�������̾��HTML�ե�����Ǥ��ꡢ�ѥå����������ޤ�Ǥ��ޤ��󡣥ѥå������������ȡ��ե���������Ƥ�HTML�ǵ��Ҥ��ޤ������㳰��1�Ĥ���ޤ������Υɥ�����ơ�����󡦥����Ȥˤϡ������ȶ��ڤ�ʸ���Ǥ���\fB/**\fR��\fB*/\fR���ޤ��Ϲ�Ƭ�Υ������ꥹ����ޤ�ʤ����Ȥ������Ǥ��������Ȥ�񤯾��ϡ��ǽ��ʸ��ѥå������Υ��ޥ꡼�Ȥ���\fB<body>\fR�����Ⱥǽ��ʸ�δ֤˥����ȥ�䤽��¾�Υƥ����Ȥ�ޤ�ʤ��褦�ˤ��ޤ����ѥå�������������ޤ�뤳�Ȥ��Ǥ��ޤ������٤ƤΥ֥��å��������ϡ��������θ�����֤���ɬ�פ�����ޤ���\fB@see\fR������ѥå������������ȡ��ե�������ɲä�����ˤϡ���������̾����Ѥ���ɬ�פ�����ޤ���
+.PP
+�����ȡ��ե�����ν���
+.PP
+\fBjavadoc\fR�����Ȥ�¹Ԥ���ȡ��ѥå������������ȡ��ե����뤬��������ޤ����ѥå������������ȡ��ե����뤬���Ĥ��ä����ϡ�\fBjavadoc\fR���ޥ�ɤϼ��μ���¹Ԥ��ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -344,8 +358,8 @@ initialize, start, and stop the applet\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-処理できるようにコメントをコピーします。package\&.htmlの場合、\fIjavadoc\fRコマンドは、\fI<body>\fRと\fI</body>\fR
-HTMLタグ間のすべての内容をコピーします。\fI<head>\fRセクションを含め、そこに\fI<title>\fRタグやソース・ファイルの著作権記述などの情報を配置することもできますが、生成されたドキュメントにはそれらは一切表示されません。
+�����Ǥ���褦�˥����Ȥ򥳥ԡ����ޤ���package\&.html�ξ�硢\fBjavadoc\fR���ޥ�ɤϡ�\fB<body>\fR��\fB</body>\fR
+HTML�����֤Ǥ��٤ƤΥ���ƥ�Ĥ򥳥ԡ����ޤ���\fB<title>\fR���������������ե���������ʸ�ޤ���¾�ξ�������֤���\fB<head>\fR����������ޤ�뤳�Ȥ��Ǥ��ޤ������������������줿�ɥ�����Ȥ�ɽ������ޤ���
 .RE
 .sp
 .RS 4
@@ -356,7 +370,7 @@ HTMLタグ間のすべての内容をコピーします。\fI<head>\fRセクシ�
 .sp -1
 .IP \(bu 2.3
 .\}
-パッケージ・タグを処理します。パッケージ・タグを参照してください。
+�ѥå�������������������ޤ����ѥå������������򻲾Ȥ��Ƥ���������
 .RE
 .sp
 .RS 4
@@ -367,8 +381,8 @@ HTMLタグ間のすべての内容をコピーします。\fI<head>\fRセクシ�
 .sp -1
 .IP \(bu 2.3
 .\}
-処理したテキストを生成されたパッケージのサマリー・ページの下部に挿入します。Javaプラットフォーム、Standard Edition API仕様の概要
-(http://docs\&.oracle\&.com/javase/8/docs/api/overview\-summary\&.html)を参照してください
+���������ƥ����Ȥ��������줿�ѥå������Υ��ޥ꡼���ڡ����β������������ޤ���Java�ץ�åȥե����ࡢStandard Edition API���ͤγ���
+(http://docs\&.oracle\&.com/javase/8/docs/api/overview\-summary\&.html)�򻲾Ȥ��Ƥ�������
 .RE
 .sp
 .RS 4
@@ -379,24 +393,24 @@ HTMLタグ間のすべての内容をコピーします。\fI<head>\fRセクシ�
 .sp -1
 .IP \(bu 2.3
 .\}
-パッケージのサマリー・ページの先頭に、パッケージ・コメントの最初の文をコピーします。さらに、\fIjavadoc\fRコマンドは、概要ページのパッケージ・リストに、パッケージ名とパッケージ・コメントの最初の文を追加します。Javaプラットフォーム、Standard Edition API仕様の概要
-(http://docs\&.oracle\&.com/javase/8/docs/api/overview\-summary\&.html)を参照してください
+�ѥå������Υ��ޥ꡼���ڡ�������Ƭ�ˡ��ѥå������������Ȥκǽ��ʸ�򥳥ԡ����ޤ�������ˡ�\fBjavadoc\fR���ޥ�ɤϡ����ץڡ����Υѥå��������ꥹ�Ȥˡ��ѥå�����̾�ȥѥå������������Ȥκǽ��ʸ���ɲä��ޤ���Java�ץ�åȥե����ࡢStandard Edition API���ͤγ���
+(http://docs\&.oracle\&.com/javase/8/docs/api/overview\-summary\&.html)�򻲾Ȥ��Ƥ�������
 .sp
-文の終わりは、クラスやメンバーの主説明の最初の文の終わりと同じルールによって判断されます。
+ʸ�ν����ϡ����饹����С��μ������κǽ��ʸ�ν�����Ʊ���롼��ˤ�ä�Ƚ�Ǥ���ޤ���
 .RE
-.SS "概要コメント・ファイル"
+.SS "���ץ����ȡ��ե�����"
 .PP
-ドキュメント化する各アプリケーションまたはパッケージ・セットは、独自の概要ドキュメンテーション・コメントを持つことができ、それは専用のソース・ファイルに保持されます。その内容は、\fIjavadoc\fRコマンドによって生成される概要ページに組み込まれます。このコメントには、通常、アプリケーションまたはパッケージ・セット全体に当てはまるドキュメントを記述します。
+�ɥ�����Ȳ�����ƥ��ץꥱ�������ޤ��ϥѥå����������åȤϡ��ȼ��γ��ץɥ�����ơ�����󡦥����Ȥ���Ĥ��Ȥ��Ǥ�����������ѤΥ��������ե�������ݻ�����ޤ����������Ƥϡ�\fBjavadoc\fR���ޥ�ɤˤ�ä���������복�ץڡ������Ȥ߹��ޤ�ޤ������Υ����Ȥˤϡ��̾���ץꥱ�������ޤ��ϥѥå����������å����Τ����ƤϤޤ�ɥ�����Ȥ򵭽Ҥ��ޤ���
 .PP
-このファイルにはoverview\&.htmlなどの名前を付けることができ、どこに配置してもかまいません。一般的な場所は、ソース・ツリーの最上部です。
+���Υե�����ˤ�overview\&.html�ʤɤ�̾�����դ��뤳�Ȥ��Ǥ����ɤ������֤��Ƥ⤫�ޤ��ޤ��󡣰���Ū�ʾ��ϡ����������ĥ꡼�κǾ����Ǥ���
 .PP
-たとえば、\fIjava\&.applet\fRパッケージのソース・ファイルが/home/user/src/java/appletディレクトリに格納されている場合、概要コメント・ファイルは/home/user/src/overview\&.htmlに作成できます。
+���Ȥ��С�\fBjava\&.applet\fR�ѥå������Υ��������ե����뤬/home/user/src/java/applet�ǥ��쥯�ȥ�˳�Ǽ����Ƥ����硢���ץ����ȡ��ե������/home/user/src/overview\&.html�˺����Ǥ��ޤ���
 .PP
-異なるパッケージのセットに対して\fIjavadoc\fRコマンドを複数回実行する場合は、同じ1つのソース・ファイルのセットに対して複数の概要コメント・ファイルを作成できます。たとえば、内部ドキュメント用に\fI\-private\fRを指定して\fIjavadoc\fRコマンドを1回実行した後、公開ドキュメント用にそのオプションを指定しないで再度実行することができます。この場合、各概要コメント・ファイルの1文目で、そのドキュメントを公開用または内部用として記述できます。
+�ۤʤ�ѥå������Υ��åȤ��Ф���\fBjavadoc\fR���ޥ�ɤ�ʣ����¹Ԥ�����ϡ�Ʊ��1�ĤΥ��������ե�����Υ��åȤ��Ф���ʣ���γ��ץ����ȡ��ե����������Ǥ��ޤ������Ȥ��С������ɥ�������Ѥ�\fB\-private\fR����ꤷ��\fBjavadoc\fR���ޥ�ɤ�1��¹Ԥ����塢�����ɥ�������Ѥˤ��Υ��ץ�������ꤷ�ʤ��Ǻ��ټ¹Ԥ��뤳�Ȥ��Ǥ��ޤ������ξ�硢�Ƴ��ץ����ȡ��ե������1ʸ�ܤǡ����Υɥ�����Ȥ�����Ѥޤ��������ѤȤ��Ƶ��ҤǤ��ޤ���
 .PP
-概要コメント・ファイルの内容は、HTMLで記述された1つの大きなドキュメンテーション・コメントです。最初の文はアプリケーションまたはパッケージのセットのサマリーとします。\fI<body>\fRタグと最初の文の間にタイトルやその他のテキストを含めないようにします。{\fI@link}\fRなどのインライン・タグを除くすべてのタグは、主説明の後に配置する必要があります。\fI@see\fRタグを追加する場合には、完全修飾名を使用する必要があります。
+���ץ����ȡ��ե���������Ƥϡ�HTML�ǵ��Ҥ��줿1�Ĥ��礭�ʥɥ�����ơ�����󡦥����ȤǤ����ǽ��ʸ�ϥ��ץꥱ�������ޤ��ϥѥå������Υ��åȤΥ��ޥ꡼�Ȥ��ޤ���\fB<body>\fR�����Ⱥǽ��ʸ�δ֤˥����ȥ�䤽��¾�Υƥ����Ȥ�ޤ�ʤ��褦�ˤ��ޤ���{\fB@link}\fR�ʤɤΥ���饤�󡦥�����������٤ƤΥ����ϡ��������θ�����֤���ɬ�פ�����ޤ���\fB@see\fR�������ɲä�����ˤϡ���������̾����Ѥ���ɬ�פ�����ޤ���
 .PP
-\fIjavadoc\fRコマンドの実行時に、\fI\-overview\fRオプションを使用して概要コメント・ファイル名を指定します。このファイルは、パッケージ・コメント・ファイルと同じように処理されます。\fIjavadoc\fRコマンドは次の手順を実行します。
+\fBjavadoc\fR���ޥ�ɤμ¹Ի��ˡ�\fB\-overview\fR���ץ�������Ѥ��Ƴ��ץ����ȡ��ե�����̾����ꤷ�ޤ������Υե�����ϡ��ѥå������������ȡ��ե������Ʊ���褦�˽�������ޤ���\fBjavadoc\fR���ޥ�ɤϼ��μ���¹Ԥ��ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -406,18 +420,7 @@ HTMLタグ間のすべての内容をコピーします。\fI<head>\fRセクシ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI<body>\fRと\fI</body>\fRタグの間にある内容をすべて処理対象としてコピーします。
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-概要タグがあれば処理します。概要タグを参照してください。
+\fB<body>\fR��\fB</body>\fR�����֤ǡ��������뤹�٤ƤΥ���ƥ�Ĥ򥳥ԡ����ޤ���
 .RE
 .sp
 .RS 4
@@ -428,8 +431,7 @@ HTMLタグ間のすべての内容をコピーします。\fI<head>\fRセクシ�
 .sp -1
 .IP \(bu 2.3
 .\}
-処理したテキストを生成された概要ページの下部に挿入します。JavaプラットフォームStandard Edition API仕様の概要
-(http://docs\&.oracle\&.com/javase/8/docs/api/overview\-summary\&.html)を参照してください
+���ץ���������н������ޤ������ץ����򻲾Ȥ��Ƥ���������
 .RE
 .sp
 .RS 4
@@ -440,55 +442,73 @@ HTMLタグ間のすべての内容をコピーします。\fI<head>\fRセクシ�
 .sp -1
 .IP \(bu 2.3
 .\}
-概要サマリー・ページの先頭に、概要コメントの最初の文をコピーします。
+���������ƥ����Ȥ��������줿���ץڡ����β������������ޤ���Java�ץ�åȥե�����Standard Edition API���ͤγ���
+(http://docs\&.oracle\&.com/javase/8/docs/api/overview\-summary\&.html)�򻲾Ȥ��Ƥ�������
 .RE
-.SS "未処理のファイル"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+���ץ��ޥ꡼���ڡ�������Ƭ�ˡ����ץ����Ȥκǽ��ʸ�򥳥ԡ����ޤ���
+.RE
+.SS "̤�����Υե�����"
 .PP
-ソース・ファイルには、\fIjavadoc\fRコマンドによって宛先ディレクトリにコピーされる、任意のファイルを含めることができます。このようなファイルには、通常、グラフィック・ファイル、サンプルのJavaソースおよびクラス・ファイル、一般的なJavaソース・ファイルのドキュメンテーション・コメントの影響を受けない多くの内容を含む独立したHTMLファイルなどがあります。
+���������ե�����ˤϡ�\fBjavadoc\fR���ޥ�ɤˤ�äư���ǥ��쥯�ȥ�˥��ԡ�����롢Ǥ�դΥե������ޤ�뤳�Ȥ��Ǥ��ޤ������Τ褦�ʥե�����ˤϡ��̾����ե��å����ե����롢����ץ��Java����������ӥ��饹���ե����롢����Ū��Java���������ե�����Υɥ�����ơ�����󡦥����Ȥαƶ�������ʤ�¿�������Ƥ�ޤ���Ω����HTML�ե�����ʤɤ�����ޤ���
 .PP
-未処理のファイルを含めるには、doc\-filesというディレクトリにファイルを配置します。doc\-filesディレクトリは、ソース・ファイルを含む任意のパッケージ・ディレクトリのサブディレクトリになることができます。doc\-filesサブディレクトリは、パッケージごとに1つ用意できます。
+̤�����Υե������ޤ��ˤϡ�doc\-files�Ȥ����ǥ��쥯�ȥ�˥ե���������֤��ޤ���doc\-files�ǥ��쥯�ȥ�ϡ����������ե������ޤ�Ǥ�դΥѥå��������ǥ��쥯�ȥ�Υ��֥ǥ��쥯�ȥ�ˤʤ뤳�Ȥ��Ǥ��ޤ���doc\-files���֥ǥ��쥯�ȥ�ϡ��ѥå��������Ȥ�1���ѰդǤ��ޤ���
 .PP
-たとえば、ボタンのイメージを\fIjava\&.awt\&.Button\fRクラスのドキュメントに含める場合には、そのイメージ・ファイルを/home/user/src/java/awt/doc\-files/ディレクトリに置きます。doc\-filesディレクトリを/home/user/src/java/doc\-filesに置かないでください。javaはパッケージではないからです。ソース・ファイルを含めることもできません。
+���Ȥ��С��ܥ���Υ��᡼����\fBjava\&.awt\&.Button\fR���饹�Υɥ�����Ȥ˴ޤ����ˤϡ����Υ��᡼�����ե������/home/user/src/java/awt/doc\-files/�ǥ��쥯�ȥ���֤��ޤ���doc\-files�ǥ��쥯�ȥ��/home/user/src/java/doc\-files���֤��ʤ��Ǥ���������java�ϥѥå������ǤϤʤ�����Ǥ������������ե������ޤ�뤳�Ȥ�Ǥ��ޤ���
 .PP
-\fIjavadoc\fRコマンドはファイルを参照しないので、未処理のファイルへのすべてのリンクは、コードに含まれている必要があります。\fIjavadoc\fRコマンドはディレクトリとそのすべての内容を宛先にコピーします。次の例では、Button\&.javaドキュメンテーション・コメントのリンクがどのように見えるかを示しています。
+\fBjavadoc\fR���ޥ�ɤϥե�����򻲾Ȥ��ʤ��Τǡ�̤�����Υե�����ؤΤ��٤ƤΥ�󥯤ϡ������ɤ˴ޤޤ�Ƥ���ɬ�פ�����ޤ���\fBjavadoc\fR���ޥ�ɤϥǥ��쥯�ȥ�Ȥ��Τ��٤Ƥ����Ƥ���˥��ԡ����ޤ���������Ǥϡ�Button\&.java�ɥ�����ơ�����󡦥����ȤΥ�󥯤��ɤΤ褦�˸����뤫�򼨤��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-/**
- * This button looks like this: 
- * <img src="doc\-files/Button\&.gif">
- */
+\fB/**\fR
+\fB * This button looks like this: \fR
+\fB * <img src="doc\-files/Button\&.gif">\fR
+\fB */\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SS "テストおよびテンプレート・ファイル"
+.SS "�ƥ��Ȥ���ӥƥ�ץ졼�ȡ��ե�����"
 .PP
-ソース・ツリーのテストおよびテンプレート・ファイルを、ソース・ファイルが存在するディレクトリまたはサブディレクトリと同じディレクトリに格納できます。テストおよびテンプレート・ファイルが処理されるのを防ぐには、\fIjavadoc\fRコマンドを実行し、明示的に個別のソース・ファイル名を渡します。
+���������ĥ꡼�Υƥ��Ȥ���ӥƥ�ץ졼�ȡ��ե�����򡢥��������ե����뤬¸�ߤ���ǥ��쥯�ȥ�ޤ��ϥ��֥ǥ��쥯�ȥ��Ʊ���ǥ��쥯�ȥ�˳�Ǽ�Ǥ��ޤ����ƥ��Ȥ���ӥƥ�ץ졼�ȡ��ե����뤬���������Τ��ɤ��ˤϡ�\fBjavadoc\fR���ޥ�ɤ�¹Ԥ�������Ū�˸��̤Υ��������ե�����̾���Ϥ��ޤ���
 .PP
-テスト・ファイルは、有効な、コンパイル可能なソース・ファイルです。テンプレート・ファイルは、有効な、互換性のあるソース・ファイルではありませんが、多くの場合、\fI\&.java\fR接尾辞を持っています。
-テスト・ファイル.PP
-テスト・ファイルを、名前なしパッケージや、ソース・ファイルが存在するパッケージとは別のパッケージに属するようにする場合、テスト・ファイルをソース・ファイルの下のサブディレクトリに配置し、そのディレクトリに無効な名前を付けます。テスト・ファイルをソースと同じディレクトリに配置し、パッケージ名を示すコマンドライン引数を指定して\fIjavadoc\fRコマンドを呼び出すと、テスト・ファイルは警告またはエラーを引き起こします。ファイルが無効な名前を持つサブディレクトリ内に存在する場合、テスト・ファイル・ディレクトリはスキップされ、エラーまたは警告は発行されません。たとえば、ソース・ファイルのテスト・ファイルをcom\&.package1に追加するには、無効なパッケージ名のサブディレクトリに配置します。次のディレクトリ名にはハイフンが含まれているため無効です。
+�ƥ��ȡ��ե�����ϡ�ͭ���ʡ�����ѥ����ǽ�ʥ��������ե�����Ǥ����ƥ�ץ졼�ȡ��ե�����ϡ�ͭ���ʡ��ߴ����Τ��륽�������ե�����ǤϤ���ޤ��󤬡�¿���ξ�硢\fB\&.java\fR����������äƤ��ޤ���
+.PP
+�ƥ��ȡ��ե�����
+.PP
+�ƥ��ȡ��ե������̾���ʤ��ѥå������䡢���������ե����뤬¸�ߤ���ѥå������Ȥ��̤Υѥå�������°����褦�ˤ����硢�ƥ��ȡ��ե�����򥽡������ե�����β��Υ��֥ǥ��쥯�ȥ�����֤������Υǥ��쥯�ȥ��̵����̾�����դ��ޤ����ƥ��ȡ��ե�����򥽡�����Ʊ���ǥ��쥯�ȥ�����֤����ѥå�����̾�򼨤����ޥ�ɹ԰�������ꤷ��\fBjavadoc\fR���ޥ�ɤ�ƤӽФ��ȡ��ƥ��ȡ��ե�����Ϸٹ�ޤ��ϥ��顼������������ޤ����ե����뤬̵����̾������ĥ��֥ǥ��쥯�ȥ����¸�ߤ����硢�ƥ��ȡ��ե����롦�ǥ��쥯�ȥ�ϥ����åפ��졢���顼�ޤ��Ϸٹ��ȯ�Ԥ���ޤ��󡣤��Ȥ��С����������ե�����Υƥ��ȡ��ե������com\&.package1���ɲä���ˤϡ�̵���ʥѥå�����̾�Υ��֥ǥ��쥯�ȥ�����֤��ޤ������Υǥ��쥯�ȥ�̾�ˤϥϥ��ե󤬴ޤޤ�Ƥ��뤿��̵���Ǥ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-com/package1/test\-files/
+\fBcom/package1/test\-files/\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-テスト・ファイルにドキュメンテーション・コメントが含まれる場合、\fIjavadoc\fRコマンドの個別の実行で、ワイルドカードを含んだテスト・ソース・ファイル名(\fIcom/package1/test\-files/*\&.java\fRなど)を渡して、テスト・ファイルのドキュメントを生成するように設定できます。
-テンプレート・ファイル.PP
-テンプレート・ファイルをソース・ディレクトリに配置するが、\fIjavadoc\fRコマンドを実行するときにエラーを生成しない場合、ファイルに\fIBuffer\-Template\&.java\fRなどの無効な名前を付けて、処理させないようにします。\fIjavadoc\fRコマンドは、接尾辞の\fI\&.java\fRが削除されると有効なクラス名になる名前を持つソース・ファイルのみを処理します。
-.SH "生成されるファイル"
+�ƥ��ȡ��ե�����˥ɥ�����ơ�����󡦥����Ȥ��ޤޤ���硢\fBjavadoc\fR���ޥ�ɤθ��̤μ¹Ԥǡ��磻��ɥ����ɤ�ޤ���ƥ��ȡ����������ե�����̾(\fBcom/package1/test\-files/*\&.java\fR�ʤ�)���Ϥ��ơ��ƥ��ȡ��ե�����Υɥ�����Ȥ���������褦������Ǥ��ޤ���
 .PP
-デフォルトでは、\fIjavadoc\fRコマンドは、HTML形式のドキュメントを生成する標準ドックレットを使用します。標準ドックレットは、ここで説明する、基本内容ページ、相互参照ページ、サポート・ページを生成します。各HTMLページは個別のファイルに対応します。\fIjavadoc\fRコマンドは、2つのタイプのファイルを生成します。最初のタイプには、クラスおよびインタフェースに応じた名前が付けられます。2番目のタイプには、最初のタイプのファイルとの競合を防ぐために、ハイフンが含まれます(package\-summary\&.htmlなど)。
-.SS "基本内容ページ"
+�ƥ�ץ졼�ȡ��ե�����
+.PP
+�ƥ�ץ졼�ȡ��ե�����򥽡������ǥ��쥯�ȥ�����֤��뤬��\fBjavadoc\fR���ޥ�ɤ�¹Ԥ���Ȥ��˥��顼���������ʤ���硢�ե������\fBBuffer\-Template\&.java\fR�ʤɤ�̵����̾�����դ��ơ����������ʤ��褦�ˤ��ޤ���\fBjavadoc\fR���ޥ�ɤϡ���������\fB\&.java\fR�����������ͭ���ʥ��饹̾�ˤʤ�̾������ĥ��������ե�����Τߤ�������ޤ���
+.SH "���������ե�����"
+.PP
+�ǥե���ȤǤϡ�\fBjavadoc\fR���ޥ�ɤϡ�HTML�����Υɥ�����Ȥ���������ɸ��ɥå���åȤ���Ѥ��ޤ���ɸ��ɥå���åȤϡ��������������롢�������ƥڡ�������߻��ȥڡ��������ݡ��ȡ��ڡ������������ޤ�����HTML�ڡ����ϸ��̤Υե�������б����ޤ���\fBjavadoc\fR���ޥ�ɤϡ�2�ĤΥ����פΥե�������������ޤ����ǽ�Υ����פˤϡ����饹����ӥ��󥿥ե������˱�����̾�����դ����ޤ���2���ܤΥ����פˤϡ��ǽ�Υ����פΥե�����Ȥζ�����ɤ�����ˡ��ϥ��ե󤬴ޤޤ�ޤ�(package\-summary\&.html�ʤ�)��
+.SS "�������ƥڡ���"
 .sp
 .RS 4
 .ie n \{\
@@ -498,7 +518,7 @@ com/package1/test\-files/
 .sp -1
 .IP \(bu 2.3
 .\}
-記載されているクラスまたはインタフェースごとに1つのクラスまたはインタフェース・ページ(classname\&.html)。
+���ܤ���Ƥ��륯�饹�ޤ��ϥ��󥿥ե��������Ȥ�1�ĤΥ��饹�ޤ��ϥ��󥿥ե��������ڡ���(classname\&.html)��
 .RE
 .sp
 .RS 4
@@ -509,7 +529,7 @@ com/package1/test\-files/
 .sp -1
 .IP \(bu 2.3
 .\}
-記載されているパッケージごとに1つのパッケージ・ページ(package\-summary\&.html)。\fIjavadoc\fRコマンドは、ソース・ツリーのパッケージ・ディレクトリ内にあるpackage\&.htmlまたはpackage\-info\&.javaという名前のファイル内のHTMLテキストをすべて組み入れます。
+���ܤ���Ƥ���ѥå��������Ȥ�1�ĤΥѥå��������ڡ���(package\-summary\&.html)��\fBjavadoc\fR���ޥ�ɤϡ����������ĥ꡼�Υѥå��������ǥ��쥯�ȥ���ˤ���package\&.html�ޤ���package\-info\&.java�Ȥ���̾���Υե��������HTML�ƥ����Ȥ򤹤٤��Ȥ�����ޤ���
 .RE
 .sp
 .RS 4
@@ -520,9 +540,9 @@ com/package1/test\-files/
 .sp -1
 .IP \(bu 2.3
 .\}
-パッケージのセット全体に対して1つの概要ページ(overview\-summary\&.html)。概要ページは、生成ドキュメントの先頭ページになります。\fIjavadoc\fRコマンドは、\fI\-overview\fRオプションで指定されたファイル内のHTMLテキストをすべて組み入れます。概要ページが作成されるのは、\fIjavadoc\fRコマンドに複数のパッケージ名を渡した場合のみです。HTMLフレームおよびオプションを参照してください。
+�ѥå������Υ��å����Τ��Ф���1�Ĥγ��ץڡ���(overview\-summary\&.html)�����ץڡ����ϡ������ɥ�����Ȥ���Ƭ�ڡ����ˤʤ�ޤ���\fBjavadoc\fR���ޥ�ɤϡ�\fB\-overview\fR���ץ����ǻ��ꤵ�줿�ե��������HTML�ƥ����Ȥ򤹤٤��Ȥ�����ޤ������ץڡ��������������Τϡ�\fBjavadoc\fR���ޥ�ɤ�ʣ���Υѥå�����̾���Ϥ������ΤߤǤ���HTML�ե졼�प��ӥ��ץ����򻲾Ȥ��Ƥ���������
 .RE
-.SS "相互参照ページ"
+.SS "��߻��ȥڡ���"
 .sp
 .RS 4
 .ie n \{\
@@ -532,18 +552,7 @@ com/package1/test\-files/
 .sp -1
 .IP \(bu 2.3
 .\}
-パッケージのセット全体に対して1つのクラス階層ページ(overview\-tree\&.html)。階層ページを表示するには、ナビゲーション・バーの「概要」をクリックしてから、「階層ツリー」をクリックします。
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-パッケージごとに1つのクラス階層ページ(package\-tree\&.html)。階層ページを表示するには、特定のパッケージ、クラス、またはインタフェースのページに移動し、「階層ツリー」をクリックしてそのパッケージの階層を表示します。
+�ѥå������Υ��å����Τ��Ф���1�ĤΥ��饹���إڡ���(overview\-tree\&.html)�����إڡ�����ɽ������ˤϡ��ʥӥ�������󡦥С��Ρֳ��ספ򥯥�å����Ƥ��顢�ֳ��إĥ꡼�פ򥯥�å����ޤ���
 .RE
 .sp
 .RS 4
@@ -554,7 +563,7 @@ com/package1/test\-files/
 .sp -1
 .IP \(bu 2.3
 .\}
-パッケージごとに1つの使用ページ(package\-use\&.html)と、クラスおよびインタフェースごとに1つずつの使用ページ(class\-use/classname\&.html)。使用ページでは、指定したクラス、インタフェース、またはパッケージの一部を使用しているパッケージ、クラス、メソッド、コンストラクタ、およびフィールドについて記述されます。たとえば、クラスまたはインタフェースAを例にすると、その使用ページには、Aのサブクラス、Aとして宣言されたフィールド、Aを返すメソッド、A型のパラメータを持つメソッドおよびコンストラクタが組み込まれます。使用ページを表示するには、パッケージ、クラス、またはインタフェースに移動し、ナビゲーション・バーの「使用」リンクをクリックします。
+�ѥå��������Ȥ�1�ĤΥ��饹���إڡ���(package\-tree\&.html)�����إڡ�����ɽ������ˤϡ�����Υѥå����������饹���ޤ��ϥ��󥿥ե������Υڡ����˰�ư�����ֳ��إĥ꡼�פ򥯥�å����Ƥ��Υѥå������γ��ؤ�ɽ�����ޤ���
 .RE
 .sp
 .RS 4
@@ -565,7 +574,7 @@ com/package1/test\-files/
 .sp -1
 .IP \(bu 2.3
 .\}
-すべての非推奨APIとその推奨する代替をリストする非推奨APIページ(deprecated\-list\&.html)。非推奨APIは将来の実装で削除される可能性があるので使用しないでください。
+�ѥå��������Ȥ�1�Ĥλ��ѥڡ���(package\-use\&.html)�ȡ����饹����ӥ��󥿥ե��������Ȥ�1�Ĥ��Ĥλ��ѥڡ���(class\-use/classname\&.html)�����ѥڡ����Ǥϡ����ꤷ�����饹�����󥿥ե��������ޤ��ϥѥå������ΰ�������Ѥ��Ƥ���ѥå����������饹���᥽�åɡ����󥹥ȥ饯��������ӥե�����ɤˤĤ��Ƶ��Ҥ���ޤ������Ȥ��С����饹�ޤ��ϥ��󥿥ե�����A����ˤ���ȡ����λ��ѥڡ����ˤϡ�A�Υ��֥��饹��A�Ȥ���������줿�ե�����ɡ�A���֤��᥽�åɡ�A���Υѥ�᡼������ĥ᥽�åɤ���ӥ��󥹥ȥ饯�����Ȥ߹��ޤ�ޤ������ѥڡ�����ɽ������ˤϡ��ѥå����������饹���ޤ��ϥ��󥿥ե������˰�ư�����ʥӥ�������󡦥С��Ρֻ��ѡץ�󥯤򥯥�å����ޤ���
 .RE
 .sp
 .RS 4
@@ -576,7 +585,7 @@ com/package1/test\-files/
 .sp -1
 .IP \(bu 2.3
 .\}
-定数フィールドの値用の定数フィールド値ページ(constant\-values\&.html)。
+���٤Ƥ���侩API�Ȥ��ο侩�������ؤ�ꥹ�Ȥ�����侩API�ڡ���(deprecated\-list\&.html)����侩API�Ͼ���μ����Ǻ��������ǽ��������Τǻ��Ѥ��ʤ��Ǥ���������
 .RE
 .sp
 .RS 4
@@ -587,9 +596,7 @@ com/package1/test\-files/
 .sp -1
 .IP \(bu 2.3
 .\}
-直列化された形式ページ(serialized\-form\&.html)。フィールドおよびメソッドの説明を含む、直列化可能かつ外部化可能なクラスに関する情報用のページです。このページ内の情報は、APIを使用する開発者ではなく、再実装者に必要な情報です。直列化された形式ページへアクセスするには、直列化されたクラスに移動して、そのクラス・コメントにある「関連項目」セクションで「直列化された形式」をクリックします。標準ドックレットは直列化された形式ページを生成します。このページには、Serializableを実装するすべてのクラス(publicまたは非public)が、その\fIreadObject\fRや\fIwriteObject\fRメソッド、直列化されたフィールド、および\fI@serial\fR、\fI@serialField\fR、\fI@serialData\fRタグからのドキュメンテーション・コメントとともにリストされます。直列化可能なpublicクラスを除外するには、そのクラス(またはそのパッケージ)を\fI@serial\fR
-excludeでマークします。直列化可能なpackage\-privateクラスを含めるには、そのクラス(またはそのパッケージ)を\fI@serial\fR
-includeでマークします。リリース1\&.4では、\fI\-private\fRオプションを指定せずに\fIjavadoc\fRコマンドを実行することにより、publicクラスおよびprivateクラスの完全に直列化された形式を生成できます。オプションを参照してください。
+����ե�����ɤ����Ѥ�����ե�������ͥڡ���(constant\-values\&.html)��
 .RE
 .sp
 .RS 4
@@ -600,19 +607,9 @@ includeでマークします。リリース1\&.4では、\fI\-private\fRオプ�
 .sp -1
 .IP \(bu 2.3
 .\}
-索引ページ(\fIindex\-*\&.html\fR)。すべてのクラス名、インタフェース名、コンストラクタ名、フィールド名、およびメソッド名がアルファベット順に並んでいます。索引ページは、Unicodeを扱えるように国際化されています。1つのファイルとして生成することも、先頭文字(英語の場合A\(enZ)ごとに別々のファイルとして生成することもできます。
-.RE
-.SS "サポート・ページ"
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-ヘルプ・ページ(help\-doc\&.html)。ナビゲーション・バーや前述の各ページに関する説明が記載されています。デフォルトのヘルプ・ファイルを独自のカスタム・ヘルプ・ファイルでオーバーライドするには、\fI\-helpfile\fRを使用します。
+ľ�󲽤��줿�����ڡ���(serialized\-form\&.html)���ե�����ɤ���ӥ᥽�åɤ�������ޤࡢľ�󲽲�ǽ���ĳ�������ǽ�ʥ��饹�˴ؤ�������ѤΥڡ����Ǥ������Υڡ�����ξ���ϡ�API����Ѥ��볫ȯ�ԤǤϤʤ����Ƽ����Ԥ�ɬ�פʾ���Ǥ���ľ�󲽤��줿�����ڡ����إ�����������ˤϡ�ľ�󲽤��줿���饹�˰�ư���ơ����Υ��饹�������Ȥˤ���ִ�Ϣ���ܡץ��������ǡ�ľ�󲽤��줿�����פ򥯥�å����ޤ���ɸ��ɥå���åȤ�ľ�󲽤��줿�����ڡ������������ޤ������Υڡ����ˤϡ�Serializable��������뤹�٤ƤΥ��饹(public�ޤ�����public)��������\fBreadObject\fR��\fBwriteObject\fR�᥽�åɡ�ľ�󲽤��줿�ե�����ɡ������\fB@serial\fR��\fB@serialField\fR��\fB@serialData\fR��������Υɥ�����ơ�����󡦥����ȤȤȤ�˥ꥹ�Ȥ���ޤ���ľ�󲽲�ǽ��public���饹���������ˤϡ����Υ��饹(�ޤ��Ϥ��Υѥå�����)��\fB@serial\fR
+exclude�ǥޡ������ޤ���ľ�󲽲�ǽ��package\-private���饹��ޤ��ˤϡ����Υ��饹(�ޤ��Ϥ��Υѥå�����)��\fB@serial\fR
+include�ǥޡ������ޤ�����꡼��1\&.4�Ǥϡ�\fB\-private\fR���ץ�������ꤻ����\fBjavadoc\fR���ޥ�ɤ�¹Ԥ��뤳�Ȥˤ�ꡢpublic���饹�����private���饹�δ�����ľ�󲽤��줿�����������Ǥ��ޤ������ץ����򻲾Ȥ��Ƥ���������
 .RE
 .sp
 .RS 4
@@ -623,7 +620,19 @@ includeでマークします。リリース1\&.4では、\fI\-private\fRオプ�
 .sp -1
 .IP \(bu 2.3
 .\}
-表示用のHTMLフレームを作成する1つのindex\&.htmlファイル。フレーム付きの先頭ページを表示するにはこのファイルをロードします。index\&.htmlファイルには、テキスト・コンテンツは含まれていません。
+�����ڡ���(\fBindex\-*\&.html\fR)�����٤ƤΥ��饹̾�����󥿥ե�����̾�����󥹥ȥ饯��̾���ե������̾������ӥ᥽�å�̾������ե��٥åȽ���¤�Ǥ��ޤ��������ڡ����ϡ�Unicode�򰷤���褦�˹�ݲ�����Ƥ��ޤ���1�ĤΥե�����Ȥ����������뤳�Ȥ⡢��Ƭʸ��(�Ѹ�ξ��A\(enZ)���Ȥ��̡��Υե�����Ȥ����������뤳�Ȥ�Ǥ��ޤ���
+.RE
+.SS "���ݡ��ȡ��ڡ���"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+�إ�ס��ڡ���(help\-doc\&.html)���ʥӥ�������󡦥С������Ҥγƥڡ����˴ؤ������������ܤ���Ƥ��ޤ����ǥե���ȤΥإ�ס��ե�������ȼ��Υ������ࡦ�إ�ס��ե�����ǥ����С��饤�ɤ���ˤϡ�\fB\-helpfile\fR����Ѥ��ޤ���
 .RE
 .sp
 .RS 4
@@ -634,7 +643,7 @@ includeでマークします。リリース1\&.4では、\fI\-private\fRオプ�
 .sp -1
 .IP \(bu 2.3
 .\}
-複数のフレーム・ファイル(\fI*\-frame\&.html\fR)。パッケージ、クラス、およびインタフェースのリストが含まれています。フレーム・ファイルはHTMLフレームを表示します。
+ɽ���Ѥ�HTML�ե졼����������1�Ĥ�index\&.html�ե����롣�ե졼���դ�����Ƭ�ڡ�����ɽ������ˤϤ��Υե����������ɤ��ޤ���index\&.html�ե�����ˤϡ��ƥ����ȡ�����ƥ�Ĥϴޤޤ�Ƥ��ޤ���
 .RE
 .sp
 .RS 4
@@ -645,7 +654,7 @@ includeでマークします。リリース1\&.4では、\fI\-private\fRオプ�
 .sp -1
 .IP \(bu 2.3
 .\}
-パッケージ・リスト・ファイル(package\-list)。\fI\-link\fRおよび\fI\-linkoffline\fRオプションで使用されます。パッケージ・リスト・ファイルはテキスト・ファイルであり、どのリンクからもアクセスできません。
+ʣ���Υե졼�ࡦ�ե�����(\fB*\-frame\&.html\fR)���ѥå����������饹������ӥ��󥿥ե������Υꥹ�Ȥ��ޤޤ�Ƥ��ޤ����ե졼�ࡦ�ե������HTML�ե졼���ɽ�����ޤ���
 .RE
 .sp
 .RS 4
@@ -656,7 +665,7 @@ includeでマークします。リリース1\&.4では、\fI\-private\fRオプ�
 .sp -1
 .IP \(bu 2.3
 .\}
-スタイルシート・ファイル(stylesheet\&.css)。生成されるページの一部の要素について色、フォント・ファミリ、フォント・サイズ、フォント・スタイル、および配置を制御します。
+�ѥå��������ꥹ�ȡ��ե�����(package\-list)��\fB\-link\fR�����\fB\-linkoffline\fR���ץ����ǻ��Ѥ���ޤ����ѥå��������ꥹ�ȡ��ե�����ϥƥ����ȡ��ե�����Ǥ��ꡢ�ɤΥ�󥯤���⥢�������Ǥ��ޤ���
 .RE
 .sp
 .RS 4
@@ -667,22 +676,33 @@ includeでマークします。リリース1\&.4では、\fI\-private\fRオプ�
 .sp -1
 .IP \(bu 2.3
 .\}
-doc\-filesディレクトリ。宛先ディレクトリにコピーするイメージ、サンプル・コード、ソース・コードなどのファイルが格納されます。これらのファイルは、\fIjavadoc\fRコマンドによって処理されません。このディレクトリは、ソース・ツリーの中に存在する場合にのみ処理されます。
+�������륷���ȡ��ե�����(stylesheet\&.css)�����������ڡ����ΰ��������ǤˤĤ��ƿ����ե���ȡ��ե��ߥꡢ�ե���ȡ����������ե���ȡ��������롢��������֤����椷�ޤ���
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+doc\-files�ǥ��쥯�ȥꡣ����ǥ��쥯�ȥ�˥��ԡ����륤�᡼��������ץ롦�����ɡ��������������ɤʤɤΥե����뤬��Ǽ����ޤ��������Υե�����ϡ�\fBjavadoc\fR���ޥ�ɤˤ�äƽ�������ޤ��󡣤��Υǥ��쥯�ȥ�ϡ����������ĥ꡼�����¸�ߤ�����ˤΤ߽�������ޤ���
 .RE
 .PP
-オプションを参照してください。
-.SS "HTMLフレーム"
+���ץ����򻲾Ȥ��Ƥ���������
+.SS "HTML�ե졼��"
 .PP
-\fIjavadoc\fRコマンドは、コマンドに渡された値に基づき、最小限必要な数(2または3)のフレームを生成します。\fIjavadoc\fRコマンドに引数として1つのパッケージ名または1つのパッケージに含まれるソース・ファイルを渡す場合は、パッケージのリストが省略されます。そのかわりに、\fIjavadoc\fRコマンドは左側の列に1つのフレームを作成し、クラスのリストを表示します。複数のパッケージ名を渡した場合は、\fIjavadoc\fRコマンドは、すべてのパッケージをリストする第3のフレームと概要ページ(overview\-summary\&.html)を作成します。フレームを省略するには、「フレームなし」リンクをクリックするか、overview\-summary\&.htmlページからページ・セットを表示します。
-.SS "生成されるファイルの構造"
+\fBjavadoc\fR���ޥ�ɤϡ����ޥ�ɤ��Ϥ��줿�ͤ˴�Ť����Ǿ���ɬ�פʿ�(2�ޤ���3)�Υե졼����������ޤ���\fBjavadoc\fR���ޥ�ɤ˰����Ȥ���1�ĤΥѥå�����̾�ޤ���1�ĤΥѥå������˴ޤޤ�륽�������ե�������Ϥ����ϡ��ѥå������Υꥹ�Ȥ���ά����ޤ������Τ����ˡ�\fBjavadoc\fR���ޥ�ɤϺ�¦�����1�ĤΥե졼�������������饹�Υꥹ�Ȥ�ɽ�����ޤ���ʣ���Υѥå�����̾���Ϥ������ϡ�\fBjavadoc\fR���ޥ�ɤϡ����٤ƤΥѥå�������ꥹ�Ȥ�����3�Υե졼��ȳ��ץڡ���(overview\-summary\&.html)��������ޤ����ե졼����ά����ˤϡ��֥ե졼��ʤ��ץ�󥯤򥯥�å����뤫��overview\-summary\&.html�ڡ�������ڡ��������åȤ�ɽ�����ޤ���
+.SS "���������ե�����ι�¤"
 .PP
-生成されるクラス・ファイルおよびインタフェース・ファイルは、Javaソース・ファイルおよびクラス・ファイルと同じディレクトリ階層に編成されます。1つのサブパッケージにつき1つのディレクトリ、という構造になります。
+��������륯�饹���ե����뤪��ӥ��󥿥ե��������ե�����ϡ�Java���������ե����뤪��ӥ��饹���ե������Ʊ���ǥ��쥯�ȥ곬�ؤ���������ޤ���1�ĤΥ��֥ѥå������ˤĤ�1�ĤΥǥ��쥯�ȥꡢ�Ȥ�����¤�ˤʤ�ޤ���
 .PP
-たとえば、\fIjava\&.applet\&.Applet\fRクラス用に生成されるドキュメントは、java/applet/Applet\&.htmlに格納されます。
+���Ȥ��С�\fBjava\&.applet\&.Applet\fR���饹�Ѥ����������ɥ�����Ȥϡ�java/applet/Applet\&.html�˳�Ǽ����ޤ���
 .PP
-生成先ディレクトリの名前が\fIapidocs\fRだとすると、\fIjava\&.applet\fRパッケージのファイルの構造は、次のとおりです。前述のように、\fIframe\fRという語を名前に含むファイルは、すべて左上または左下のフレームに表示されます。それ以外のHTMLファイルは、すべて右側のフレームに表示されます。
+������ǥ��쥯�ȥ��̾����\fBapidocs\fR���Ȥ���ȡ�\fBjava\&.applet\fR�ѥå������Υե�����ι�¤�ϡ����ΤȤ���Ǥ������ҤΤ褦�ˡ�\fIframe\fR�Ȥ������̾���˴ޤ�ե�����ϡ����٤ƺ���ޤ��Ϻ����Υե졼���ɽ������ޤ�������ʳ���HTML�ե�����ϡ����٤Ʊ�¦�Υե졼���ɽ������ޤ���
 .PP
-ディレクトリは太字です。アスタリスク(*)は、\fIjavadoc\fRコマンドへの引数がパッケージ名ではなくソース・ファイル名である場合に省略されるファイルおよびディレクトリを示しています。引数がソース・ファイル名の場合、空のパッケージ・リストが作成されます。doc\-filesディレクトリは、ソース・ツリー内に存在する場合にのみ、生成先に作成されます。生成されるファイルを参照してください。
+�ǥ��쥯�ȥ�������Ǥ����������ꥹ��(*)�ϡ�\fBjavadoc\fR���ޥ�ɤؤΰ������ѥå�����̾�ǤϤʤ����������ե�����̾�Ǥ�����˾�ά�����ե����뤪��ӥǥ��쥯�ȥ�򼨤��Ƥ��ޤ������������������ե�����̾�ξ�硢���Υѥå��������ꥹ�Ȥ���������ޤ���doc\-files�ǥ��쥯�ȥ�ϡ����������ĥ꡼���¸�ߤ�����ˤΤߡ�������˺�������ޤ������������ե�����򻲾Ȥ��Ƥ���������
 .sp
 .RS 4
 .ie n \{\
@@ -692,7 +712,7 @@ doc\-filesディレクトリ。宛先ディレクトリにコピーするイメ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBapidocs\fR: 最上位レベル・ディレクトリ
+\fBapidocs\fR: �Ǿ�̥�٥롦�ǥ��쥯�ȥ�
 .sp
 .RS 4
 .ie n \{\
@@ -702,7 +722,7 @@ doc\-filesディレクトリ。宛先ディレクトリにコピーするイメ�
 .sp -1
 .IP \(bu 2.3
 .\}
-index\&.html: HTMLフレームを設定する初期ページ
+index\&.html: HTML�ե졼������ꤹ�����ڡ���
 .RE
 .sp
 .RS 4
@@ -713,7 +733,7 @@ index\&.html: HTMLフレームを設定する初期ページ
 .sp -1
 .IP \(bu 2.3
 .\}
-*overview\-summary\&.html: パッケージ・リストとサマリー
+*overview\-summary\&.html: �ѥå��������ꥹ�Ȥȥ��ޥ꡼
 .RE
 .sp
 .RS 4
@@ -724,7 +744,7 @@ index\&.html: HTMLフレームを設定する初期ページ
 .sp -1
 .IP \(bu 2.3
 .\}
-overview\-tree\&.html: すべてのパッケージのクラス階層
+overview\-tree\&.html: ���٤ƤΥѥå������Υ��饹����
 .RE
 .sp
 .RS 4
@@ -735,7 +755,7 @@ overview\-tree\&.html: すべてのパッケージのクラス階層
 .sp -1
 .IP \(bu 2.3
 .\}
-deprecated\-list\&.html: すべてのパッケージの非推奨API
+deprecated\-list\&.html: ���٤ƤΥѥå���������侩API
 .RE
 .sp
 .RS 4
@@ -746,7 +766,7 @@ deprecated\-list\&.html: すべてのパッケージの非推奨API
 .sp -1
 .IP \(bu 2.3
 .\}
-constant\-values\&.html: すべてのパッケージの静的フィールド値
+constant\-values\&.html: ���٤ƤΥѥå���������Ū�ե��������
 .RE
 .sp
 .RS 4
@@ -757,7 +777,7 @@ constant\-values\&.html: すべてのパッケージの静的フィールド値
 .sp -1
 .IP \(bu 2.3
 .\}
-serialized\-form\&.html: すべてのパッケージの直列化されたフォーム
+serialized\-form\&.html: ���٤ƤΥѥå�������ľ�󲽤��줿�ե�����
 .RE
 .sp
 .RS 4
@@ -768,7 +788,7 @@ serialized\-form\&.html: すべてのパッケージの直列化されたフォ�
 .sp -1
 .IP \(bu 2.3
 .\}
-*overview\-frame\&.html: 左上のフレームに表示するすべてのパッケージ
+*overview\-frame\&.html: ����Υե졼���ɽ�����뤹�٤ƤΥѥå�����
 .RE
 .sp
 .RS 4
@@ -779,7 +799,7 @@ serialized\-form\&.html: すべてのパッケージの直列化されたフォ�
 .sp -1
 .IP \(bu 2.3
 .\}
-allclasses\-frame\&.html: 左下のフレームに表示するすべてのクラス
+allclasses\-frame\&.html: �����Υե졼���ɽ�����뤹�٤ƤΥ��饹
 .RE
 .sp
 .RS 4
@@ -790,7 +810,7 @@ allclasses\-frame\&.html: 左下のフレームに表示するすべてのクラ
 .sp -1
 .IP \(bu 2.3
 .\}
-help\-doc\&.html: Javadocページの編成に関するヘルプ
+help\-doc\&.html: Javadoc�ڡ����������˴ؤ���إ��
 .RE
 .sp
 .RS 4
@@ -802,7 +822,7 @@ help\-doc\&.html: Javadocページの編成に関するヘルプ
 .IP \(bu 2.3
 .\}
 index\-all\&.html:
-\fI\-splitindex\fRオプションなしで作成されたデフォルトの索引
+\fB\-splitindex\fR���ץ����ʤ��Ǻ������줿�ǥե���Ȥκ���
 .RE
 .sp
 .RS 4
@@ -814,7 +834,7 @@ index\-all\&.html:
 .IP \(bu 2.3
 .\}
 \fBindex\-files\fR:
-\fI\-splitindex\fRオプションを指定して作成されたディレクトリ
+\fB\-splitindex\fR���ץ�������ꤷ�ƺ������줿�ǥ��쥯�ȥ�
 .sp
 .RS 4
 .ie n \{\
@@ -825,7 +845,7 @@ index\-all\&.html:
 .IP \(bu 2.3
 .\}
 index\-<number>\&.html:
-\fI\-splitindex\fRオプションを指定して作成された索引ファイル
+\fB\-splitindex\fR���ץ�������ꤷ�ƺ������줿�����ե�����
 .RE
 .RE
 .sp
@@ -837,7 +857,7 @@ index\-<number>\&.html:
 .sp -1
 .IP \(bu 2.3
 .\}
-package\-list: 外部参照を解決するためのパッケージ名
+package\-list: �������Ȥ��褹�뤿��Υѥå�����̾
 .RE
 .sp
 .RS 4
@@ -848,7 +868,7 @@ package\-list: 外部参照を解決するためのパッケージ名
 .sp -1
 .IP \(bu 2.3
 .\}
-stylesheet\&.css: フォント、色、位置などを定義します
+stylesheet\&.css: �ե���ȡ��������֤ʤɤ�������ޤ�
 .RE
 .RE
 .sp
@@ -860,7 +880,7 @@ stylesheet\&.css: フォント、色、位置などを定義します
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBjava\fR: パッケージ・ディレクトリ
+\fBjava\fR: �ѥå��������ǥ��쥯�ȥ�
 .sp
 .RS 4
 .ie n \{\
@@ -870,7 +890,7 @@ stylesheet\&.css: フォント、色、位置などを定義します
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBapplet\fR: サブパッケージ・ディレクトリ
+\fBapplet\fR: ���֥ѥå��������ǥ��쥯�ȥ�
 .sp
 .RS 4
 .ie n \{\
@@ -881,7 +901,7 @@ stylesheet\&.css: フォント、色、位置などを定義します
 .IP \(bu 2.3
 .\}
 Applet\&.html:
-\fIApplet\fRクラス・ページ
+\fBApplet\fR���饹���ڡ���
 .RE
 .sp
 .RS 4
@@ -893,7 +913,7 @@ Applet\&.html:
 .IP \(bu 2.3
 .\}
 AppletContext\&.html:
-\fIAppletContext\fRインタフェース
+\fBAppletContext\fR���󥿥ե�����
 .RE
 .sp
 .RS 4
@@ -905,7 +925,7 @@ AppletContext\&.html:
 .IP \(bu 2.3
 .\}
 AppletStub\&.html:
-\fIAppletStub\fRインタフェース
+\fBAppletStub\fR���󥿥ե�����
 .RE
 .sp
 .RS 4
@@ -917,7 +937,7 @@ AppletStub\&.html:
 .IP \(bu 2.3
 .\}
 AudioClip\&.html:
-\fIAudioClip\fRインタフェース
+\fBAudioClip\fR���󥿥ե�����
 .RE
 .sp
 .RS 4
@@ -928,7 +948,7 @@ AudioClip\&.html:
 .sp -1
 .IP \(bu 2.3
 .\}
-package\-summary\&.html: クラスとサマリー
+package\-summary\&.html: ���饹�ȥ��ޥ꡼
 .RE
 .sp
 .RS 4
@@ -939,7 +959,7 @@ package\-summary\&.html: クラスとサマリー
 .sp -1
 .IP \(bu 2.3
 .\}
-package\-frame\&.html: 左下のフレームに表示するパッケージ・クラス
+package\-frame\&.html: �����Υե졼���ɽ������ѥå����������饹
 .RE
 .sp
 .RS 4
@@ -950,7 +970,7 @@ package\-frame\&.html: 左下のフレームに表示するパッケージ・ク
 .sp -1
 .IP \(bu 2.3
 .\}
-package\-tree\&.html: このパッケージのクラス階層
+package\-tree\&.html: ���Υѥå������Υ��饹����
 .RE
 .sp
 .RS 4
@@ -961,7 +981,7 @@ package\-tree\&.html: このパッケージのクラス階層
 .sp -1
 .IP \(bu 2.3
 .\}
-package\-use\&.html: このパッケージが使用される場所
+package\-use\&.html: ���Υѥå����������Ѥ������
 .RE
 .sp
 .RS 4
@@ -972,7 +992,7 @@ package\-use\&.html: このパッケージが使用される場所
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBdoc\-files\fR: イメージおよびサンプル・ファイルのディレクトリ
+\fBdoc\-files\fR: ���᡼������ӥ���ץ롦�ե�����Υǥ��쥯�ȥ�
 .RE
 .sp
 .RS 4
@@ -983,18 +1003,18 @@ package\-use\&.html: このパッケージが使用される場所
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBclass\-use\fR: イメージおよびサンプル・ファイルの場所
+\fBclass\-use\fR: ���᡼������ӥ���ץ롦�ե�����ξ��
 .sp
-\- Applet\&.html: Appletクラスの使用
+\- Applet\&.html: Applet���饹�λ���
 .sp
 \- AppletContext\&.html:
-\fIAppletContext\fRインタフェースの使用
+\fBAppletContext\fR���󥿥ե������λ���
 .sp
 \- AppletStub\&.html:
-\fIAppletStub\fRインタフェースの使用
+\fBAppletStub\fR���󥿥ե������λ���
 .sp
 \- AudioClip\&.html:
-\fIAudioClip\fRインタフェースの使用
+\fBAudioClip\fR���󥿥ե������λ���
 .RE
 .RE
 .RE
@@ -1007,7 +1027,7 @@ package\-use\&.html: このパッケージが使用される場所
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBsrc\-html\fR: ソース・コード・ディレクトリ
+\fBsrc\-html\fR: �������������ɡ��ǥ��쥯�ȥ�
 .sp
 .RS 4
 .ie n \{\
@@ -1017,7 +1037,7 @@ package\-use\&.html: このパッケージが使用される場所
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBjava\fR: パッケージ・ディレクトリ
+\fBjava\fR: �ѥå��������ǥ��쥯�ȥ�
 .sp
 .RS 4
 .ie n \{\
@@ -1027,177 +1047,200 @@ package\-use\&.html: このパッケージが使用される場所
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBapplet\fR: サブパッケージ・ディレクトリ
+\fBapplet\fR: ���֥ѥå��������ǥ��쥯�ȥ�
 .sp
-\- Applet\&.html: Appletソース・コード
+\- Applet\&.html: Applet��������������
 .sp
 \- AppletContext\&.html:
-\fIAppletContext\fRソース・コード
+\fBAppletContext\fR��������������
 .sp
 \- AppletStub\&.html:
-\fIAppletStub\fRソース・コード
+\fBAppletStub\fR��������������
 .sp
 \- AudioClip\&.html:
-\fIAudioClip\fRソース・コード
+\fBAudioClip\fR��������������
 .RE
 .RE
 .RE
-.SS "生成されるAPI宣言"
+.SS "���������API���"
 .PP
-\fIjavadoc\fRコマンドは、それぞれのクラス、インタフェース、フィールド、コンストラクタ、およびメソッドの記述の最初に、そのAPI用の宣言を生成します。たとえば、\fIBoolean\fRクラスの宣言は、次のようになります。
+\fBjavadoc\fR���ޥ�ɤϡ����줾��Υ��饹�����󥿥ե��������ե�����ɡ����󥹥ȥ饯��������ӥ᥽�åɤε��Ҥκǽ�ˡ�����API�Ѥ�������������ޤ������Ȥ��С�\fBBoolean\fR���饹������ϡ����Τ褦�ˤʤ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-public final class Boolean
-extends Object
-implements Serializable
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-\fIBoolean\&.valueOf\fRメソッドの宣言は次のとおりです。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-public static Boolean valueOf(String s)
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-\fIjavadoc\fRコマンドは、修飾子\fIpublic\fR、\fIprotected\fR、\fIprivate\fR、\fIabstract\fR、\fIfinal\fR、\fIstatic\fR、\fItransient\fR、および\fIvolatile\fRを含めることができますが、\fIsynchronized\fRおよび\fInative\fRはできません。\fIsynchronized\fRおよび\fInative\fR修飾子は、実装の詳細とみなされているため、API仕様には含まれません。
-.PP
-APIでは、並行性セマンティクスについて、キーワード\fIsynchronized\fRに依存するのではなく、コメントの主説明としてドキュメント化する必要があります。たとえば、「1つのenumerationを複数のスレッドから並行して使用することはできない」のように記述します。ドキュメントには、これらのセマンティクスを実現する方法を記述しないでください。たとえば、\fIHashtable\fRオプションはスレッドセーフである必要がありますが、「エクスポートされるすべてのメソッドを同期化してそれを実現する」のように指定する根拠はありません。より高度な並行性のために、バケット・レベルで内部的に同期化する権限を保有しておくことをお薦めします。
-.SH "ドキュメンテーション・コメント"
-.PP
-このセクションでは、ソース・コードのコメントとコメントの継承について説明します。
-.SS "ソース・コード・コメント"
-.PP
-ソース・コードの任意のクラス、インタフェース、メソッド、コンストラクタ、またはフィールドの宣言の前に、ドキュメンテーション・コメントを記述することができます。各パッケージにもドキュメンテーション・コメントを作成できます。構文は若干異なりますが、概要にもドキュメンテーション・コメントを作成できます。ドキュメンテーション・コメントは、\fI/**\fRと、終わりを表す\fI*/\fRの間にある文字から構成されます。先頭のアスタリスクは各行で使用でき、次の項で詳しく説明します。コメントのテキストは、複数行にわたって記述できます。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-/**
- * This is the typical format of a simple documentation comment
- * that spans two lines\&.
- */
-.fi
-.if n \{\
-.RE
-.\}
-.PP
-スペースを節約するには、コメントを1行に入れます。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-/** This comment takes up only one line\&. */
-.fi
-.if n \{\
-.RE
-.\}
-コメントの配置.PP
-ドキュメンテーション・コメントは、クラス、インタフェース、コンストラクタ、メソッド、またはフィールド宣言の直前に配置される場合にのみ認識されます。メソッドの本体に置かれているドキュメンテーション・コメントは無視されます。\fIjavadoc\fRコマンドは、宣言文ごとに1つのドキュメンテーション・コメントしか認識しません。タグを使用できる場所を参照してください。
-.PP
-よくある間違いは、クラス・コメントとクラス宣言の間に\fIimport\fR文を置いてしまうことです。\fIjavadoc\fRコマンドはクラス・コメントを無視するので、\fIimport\fR文をこの場所に配置しないでください。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-/**
- * This is the class comment for the class Whatever\&.
- */
- 
-import com\&.example;   // MISTAKE \- Important not to put import statement here
- 
-public class Whatever{ }
-.fi
-.if n \{\
-.RE
-.\}
-コメントのパーツ.PP
-ドキュメンテーション・コメントには、主説明とその後に続くタグ・セクションが含まれます。主説明は、開始区切り文字\fI/**\fRで始まり、タグ・セクションまで続きます。タグ・セクションは、先頭文字が\fI@\fRの行で定義される最初のブロック・タグから始まります(先頭のアスタリスク、空白文字、先頭の区切り文字\fI/**\fRは除く)。主説明を記述せず、タグ・セクションのみのコメントを記述することもできます。主説明は、タグ・セクション以降に続けることはできません。タグの引数は、複数行にわたって記述できます。タグの数に制限はありません。何回も記述できるタグと、1回しか記述できないタグがあります。たとえば、次の\fI@see\fRタグからタグ・セクションは始まります。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-/**
- * This sentence holds the main description for this documentation comment\&.
- * @see java\&.lang\&.Object
- */
-.fi
-.if n \{\
-.RE
-.\}
-ブロックおよびインライン・タグ.PP
-タグは、\fIjavadoc\fRコマンドが処理するドキュメンテーション・コメント内の特殊なキーワードです。タグには2つのタイプがあります。1つは\fI@tag\fRタグのように表記されるブロック・タグ(スタンドアロン・タグとも呼ばれる)、もう1つは\fI{@tag}\fRタグのように中カッコで囲んで表記されるインライン・タグです。ブロック・タグが解釈されるには、行頭のアスタリスク、空白文字、区切り文字(\fI/**\fR)を除いて、行の先頭に置く必要があります。これは、\fI@\fR文字をテキスト内の別の場所で使用しても、タグの開始として解釈されないことを意味しています。\fI@\fR文字を使用して行を開始しても、それが解釈されないようにするには、HTMLエンティティ\fI&#064;\fRを使用します。それぞれのブロック・タグには、関連付けられたテキストがあります。このテキストは、タグの後から、次のタグの前、またはドキュメンテーション・コメントの最後までの間に記述されたテキストです(タグまたはコメント区切り文字を除く)。この関連テキストは、複数行にわたって記述できます。インライン・タグは、テキストを記述できる場所であればどこにでも置くことができ、解釈されます。次の例にはブロック・タグ\fI@deprecated\fRとインライン・タグ\fI{@link}\fRが含まれています。javadocタグを参照してください。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-/**
- * @deprecated  As of JDK 1\&.1, replaced by {@link #setBounds(int,int,int,int)}
- */
-.fi
-.if n \{\
-.RE
-.\}
-HTMLでのコメントの記述.PP
-テキストはHTMLエンティティとHTMLタグを使用してHTMLで記述される必要があります。使用するブラウザがサポートする任意のHTMLのバージョンを使用できます。標準ドックレットは、カスケーディング・スタイル・シートおよびフレームを含め、ドキュメンテーション・コメント以外の部分でHTML 3\&.2に準拠したコードを生成します。フレーム・セットのため、生成されたファイルにはHTML 4\&.0が推奨されます。
-.PP
-たとえば、より小さい記号(<)およびより大きい記号(>)のエンティティは、\fI&lt;\fRおよび\fI&gt;\fRと記述する必要があります。同様に、アンパサンド(&)は\fI&amp;\fRと記述する必要があります。次の例では、太字のHTMLタグ\fI<b>\fRを使用しています。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-/**
- * This is a <b>doc</b> comment\&.
- * @see java\&.lang\&.Object
- */
-.fi
-.if n \{\
-.RE
-.\}
-先頭のアスタリスク.PP
-\fIjavadoc\fRコマンドによるドキュメンテーション・コメントの解析時に、各行の先頭にあるアスタリスク(*)文字は破棄されます。最初のアスタリスク(*)文字より前にある空白やタブも破棄されます。行頭のアスタリスクを省略した場合、インデントを保持したままでサンプル・コードを\fI<PRE>\fRタグ内のドキュメンテーション・コメントに直接貼り付けられるように、先頭の空白文字は削除されなくなります。ブラウザは、空白文字をタブよりも一律に解釈します。インデントの起点は(区切り文字\fI/**\fRまたは\fI<PRE>\fRタグではなく)左マージンになります。
-最初の文.PP
-各ドキュメンテーション・コメントの最初の文は、宣言されているエンティティに関する簡潔かつ完全なサマリー文である必要があります。この文は、空白、タブ、または行終了文字が続く最初のピリオド、または最初のブロック・タグがある位置で終わります。最初の文は、\fIjavadoc\fRコマンドによってHTMLページの先頭にあるメンバーのサマリーの部分にコピーされます。
-複数フィールドの宣言.PP
-Javaプラットフォームでは、1つの文で複数のフィールドを宣言できます。ただし、この文には、1つのドキュメンテーション・コメントしか記述できません。そのコメントが、すべてのフィールドに対してコピーされます。フィールドごとにドキュメンテーション・コメントを記述する必要がある場合は、各フィールドを別々の文で宣言する必要があります。たとえば、次のドキュメンテーション・コメントは、1つの宣言として記述すると不適切です。この場合は、宣言を2つに分けることをお薦めします。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-/** 
- * The horizontal and vertical distances of point (x,y)
- */
-public int x, y;      // Avoid this 
+\fBpublic final class Boolean\fR
+\fBextends Object\fR
+\fBimplements Serializable\fR
  
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fIjavadoc\fRコマンドは、上のコードから次のようなドキュメントを生成します。
+\fBBoolean\&.valueOf\fR�᥽�åɤ�����ϼ��ΤȤ���Ǥ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-public int x
+\fBpublic static Boolean valueOf(String s)\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBjavadoc\fR���ޥ�ɤϡ�������\fBpublic\fR��\fBprotected\fR��\fBprivate\fR��\fBabstract\fR��\fBfinal\fR��\fBstatic\fR��\fBtransient\fR�������\fBvolatile\fR��ޤ�뤳�Ȥ��Ǥ��ޤ�����\fBsynchronized\fR�����\fBnative\fR�ϤǤ��ޤ���\fBsynchronized\fR�����\fBnative\fR�����Ҥϡ������ξܺ٤Ȥߤʤ���Ƥ��뤿�ᡢAPI���ͤˤϴޤޤ�ޤ���
+.PP
+API�Ǥϡ��¹������ޥ�ƥ������ˤĤ��ơ��������\fBsynchronized\fR�˰�¸����ΤǤϤʤ��������Ȥμ������Ȥ��ƥɥ�����Ȳ�����ɬ�פ�����ޤ������Ȥ��С���1�Ĥ�enumeration��ʣ���Υ���åɤ����¹Ԥ��ƻ��Ѥ��뤳�ȤϤǤ��ʤ��פΤ褦�˵��Ҥ��ޤ����ɥ�����Ȥˤϡ������Υ��ޥ�ƥ�������¸�������ˡ�򵭽Ҥ��ʤ��Ǥ������������Ȥ��С�\fBHashtable\fR���ץ����ϥ���åɥ����դǤ���ɬ�פ�����ޤ������֥������ݡ��Ȥ���뤹�٤ƤΥ᥽�åɤ�Ʊ�������Ƥ����¸�����פΤ褦�˻��ꤹ�뺬��Ϥ���ޤ��󡣤����٤��¹����Τ���ˡ��Х��åȡ���٥������Ū��Ʊ�������븢�¤���ͭ���Ƥ������Ȥ����ᤷ�ޤ���
+.SH "�ɥ�����ơ�����󡦥�����"
+.PP
+���Υ��������Ǥϡ��������������ɤΥ����Ȥȥ����ȤηѾ��ˤĤ����������ޤ���
+.SS "�������������ɡ�������"
+.PP
+�������������ɤ�Ǥ�դΥ��饹�����󥿥ե��������᥽�åɡ����󥹥ȥ饯�����ޤ��ϥե�����ɤ���������ˡ��ɥ�����ơ�����󡦥����Ȥ򵭽Ҥ��뤳�Ȥ��Ǥ��ޤ����ƥѥå������ˤ�ɥ�����ơ�����󡦥����Ȥ�����Ǥ��ޤ�����ʸ�ϼ㴳�ۤʤ�ޤ��������פˤ�ɥ�����ơ�����󡦥����Ȥ�����Ǥ��ޤ����ɥ�����ơ�����󡦥����Ȥϡ�\fB/**\fR�ȡ�������ɽ��\fB*/\fR�δ֤ˤ���ʸ�����鹽������ޤ�����Ƭ�Υ������ꥹ���ϳƹԤǻ��ѤǤ������ι�Ǿܤ����������ޤ��������ȤΥƥ����Ȥϡ�ʣ���Ԥˤ錄�äƵ��ҤǤ��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB/**\fR
+\fB * This is the typical format of a simple documentation comment\fR
+\fB * that spans two lines\&.\fR
+\fB */\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+���ڡ��������󤹤�ˤϡ������Ȥ�1�Ԥ�����ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB/** This comment takes up only one line\&. */\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+�����Ȥ�����
+.PP
+�ɥ�����ơ�����󡦥����Ȥϡ����饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ��ޤ��ϥե�����������ľ�������֤������ˤΤ�ǧ������ޤ����᥽�åɤ����Τ��֤���Ƥ���ɥ�����ơ�����󡦥����Ȥ�̵�뤵��ޤ���\fBjavadoc\fR���ޥ�ɤϡ����ʸ���Ȥ�1�ĤΥɥ�����ơ�����󡦥����Ȥ���ǧ�����ޤ��󡣥�������ѤǤ�����򻲾Ȥ��Ƥ���������
+.PP
+�褯����ְ㤤�ϡ����饹�������Ȥȥ��饹����δ֤�\fBimport\fRʸ���֤��Ƥ��ޤ����ȤǤ���\fBjavadoc\fR���ޥ�ɤϥ��饹�������Ȥ�̵�뤹��Τǡ�\fBimport\fRʸ�򤳤ξ������֤��ʤ��Ǥ���������
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB/**\fR
+\fB * This is the class comment for the class Whatever\&.\fR
+\fB */\fR
+\fB \fR
+\fBimport com\&.example;   // MISTAKE \- Important not to put import statement here\fR
+\fB \fR
+\fBpublic class Whatever{ }\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+�����ȤΥѡ���
+.PP
+�ɥ�����ơ�����󡦥����Ȥˤϡ��������Ȥ��θ��³����������������󤬴ޤޤ�ޤ����������ϡ����϶��ڤ�ʸ��\fB/**\fR�ǻϤޤꡢ���������������ޤ�³���ޤ������������������ϡ���Ƭʸ����\fB@\fR�ιԤ���������ǽ�Υ֥��å�����������Ϥޤ�ޤ�(��Ƭ�Υ������ꥹ��������ʸ������Ƭ�ζ��ڤ�ʸ��\fB/**\fR�Ͻ���)���������򵭽Ҥ��������������������ΤߤΥ����Ȥ򵭽Ҥ��뤳�Ȥ�Ǥ��ޤ����������ϡ����������������ʹߤ�³���뤳�ȤϤǤ��ޤ��󡣥����ΰ����ϡ�ʣ���Ԥˤ錄�äƵ��ҤǤ��ޤ��������ο������¤Ϥ���ޤ��󡣲���⵭�ҤǤ��륿���ȡ�1�󤷤����ҤǤ��ʤ�����������ޤ������Ȥ��С�����\fB@see\fR�������饿�������������ϻϤޤ�ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB/**\fR
+\fB * This sentence holds the main description for this documentation comment\&.\fR
+\fB * @see java\&.lang\&.Object\fR
+\fB */\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+�֥��å�����ӥ���饤�󡦥���
+.PP
+�����ϡ�\fBjavadoc\fR���ޥ�ɤ���������ɥ�����ơ�����󡦥���������ü�ʥ�����ɤǤ��������ˤ�2�ĤΥ����פ�����ޤ���1�Ĥ�\fB@tag\fR�����Τ褦��ɽ�������֥��å�������(������ɥ����󡦥����Ȥ�ƤФ��)���⤦1�Ĥ�\fB{@tag}\fR�����Τ褦���楫�å��ǰϤ��ɽ������륤��饤�󡦥����Ǥ����֥��å�����������ᤵ���ˤϡ���Ƭ�Υ������ꥹ��������ʸ�������ڤ�ʸ��(\fB/**\fR)������ơ��Ԥ���Ƭ���֤�ɬ�פ�����ޤ�������ϡ�\fB@\fRʸ����ƥ���������̤ξ��ǻ��Ѥ��Ƥ⡢�����γ��ϤȤ��Ʋ�ᤵ��ʤ����Ȥ��̣���Ƥ��ޤ���\fB@\fRʸ������Ѥ��ƹԤ򳫻Ϥ��Ƥ⡢���줬��ᤵ��ʤ��褦�ˤ���ˤϡ�HTML����ƥ��ƥ�\fB&#064;\fR����Ѥ��ޤ������줾��Υ֥��å��������ˤϡ���Ϣ�դ���줿�ƥ����Ȥ�����ޤ������Υƥ����Ȥϡ������θ夫�顢���Υ����������ޤ��ϥɥ�����ơ�����󡦥����ȤκǸ�ޤǤδ֤˵��Ҥ��줿�ƥ����ȤǤ�(�����ޤ��ϥ����ȶ��ڤ�ʸ�������)�����δ�Ϣ�ƥ����Ȥϡ�ʣ���Ԥˤ錄�äƵ��ҤǤ��ޤ�������饤�󡦥����ϡ��ƥ����Ȥ򵭽ҤǤ�����Ǥ���Фɤ��ˤǤ��֤����Ȥ��Ǥ�����ᤵ��ޤ���������ˤϥ֥��å�������\fB@deprecated\fR�ȥ���饤�󡦥���\fB{@link}\fR���ޤޤ�Ƥ��ޤ���javadoc�����򻲾Ȥ��Ƥ���������
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB/**\fR
+\fB * @deprecated  As of JDK 1\&.1, replaced by {@link #setBounds(int,int,int,int)}\fR
+\fB */\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+HTML�ǤΥ����Ȥε���
+.PP
+�ƥ����Ȥ�HTML����ƥ��ƥ���HTML��������Ѥ���HTML�ǵ��Ҥ����ɬ�פ�����ޤ������Ѥ���֥饦�������ݡ��Ȥ���Ǥ�դ�HTML�ΥС���������ѤǤ��ޤ���ɸ��ɥå���åȤϡ����������ǥ��󥰡��������롦�����Ȥ���ӥե졼���ޤᡢ�ɥ�����ơ�����󡦥����Ȱʳ�����ʬ��HTML 3\&.2�˽�򤷤������ɤ��������ޤ����ե졼�ࡦ���åȤΤ��ᡢ�������줿�ե�����ˤ�HTML 4\&.0���侩����ޤ���
+.PP
+���Ȥ��С���꾮��������(<)����Ӥ���礭������(>)�Υ���ƥ��ƥ��ϡ�\fB&lt;\fR�����\fB&gt;\fR�ȵ��Ҥ���ɬ�פ�����ޤ���Ʊ�ͤˡ�����ѥ����(&)��\fB&amp;\fR�ȵ��Ҥ���ɬ�פ�����ޤ���������Ǥϡ�������HTML����\fB<b>\fR����Ѥ��Ƥ��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB/**\fR
+\fB * This is a <b>doc</b> comment\&.\fR
+\fB * @see java\&.lang\&.Object\fR
+\fB */\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+��Ƭ�Υ������ꥹ��
+.PP
+\fBjavadoc\fR���ޥ�ɤˤ��ɥ�����ơ�����󡦥����Ȥβ��ϻ��ˡ��ƹԤ���Ƭ�ˤ��륢�����ꥹ��(*)ʸ�����˴�����ޤ����ǽ�Υ������ꥹ��(*)ʸ��������ˤ������䥿�֤��˴�����ޤ�����Ƭ�Υ������ꥹ�����ά������硢����ǥ�Ȥ��ݻ������ޤޤǥ���ץ롦�����ɤ�\fB<PRE>\fR������Υɥ�����ơ�����󡦥����Ȥ�ľ��Ž���դ�����褦�ˡ���Ƭ�ζ���ʸ���Ϻ������ʤ��ʤ�ޤ����֥饦���ϡ�����ʸ���򥿥֤����Χ�˲�ᤷ�ޤ�������ǥ�Ȥε�����(���ڤ�ʸ��\fB/**\fR�ޤ���\fB<PRE>\fR�����ǤϤʤ�)���ޡ�����ˤʤ�ޤ���
+.PP
+�ǽ��ʸ
+.PP
+�ƥɥ�����ơ�����󡦥����Ȥκǽ��ʸ�ϡ��������Ƥ��륨��ƥ��ƥ��˴ؤ���ʷ餫�Ĵ����ʥ��ޥ꡼ʸ�Ǥ���ɬ�פ�����ޤ�������ʸ�ϡ����򡢥��֡��ޤ��ϹԽ�λʸ����³���ǽ�Υԥꥪ�ɡ��ޤ��Ϻǽ�Υ֥��å���������������֤ǽ����ޤ����ǽ��ʸ�ϡ�\fBjavadoc\fR���ޥ�ɤˤ�ä�HTML�ڡ�������Ƭ�ˤ�����С��Υ��ޥ꡼����ʬ�˥��ԡ�����ޤ���
+.PP
+ʣ���ե�����ɤ����
+.PP
+Java�ץ�åȥե�����Ǥϡ�1�Ĥ�ʸ��ʣ���Υե�����ɤ�����Ǥ��ޤ���������������ʸ�ˤϡ�1�ĤΥɥ�����ơ�����󡦥����Ȥ������ҤǤ��ޤ��󡣤��Υ����Ȥ������٤ƤΥե�����ɤ��Ф��ƥ��ԡ�����ޤ����ե�����ɤ��Ȥ˥ɥ�����ơ�����󡦥����Ȥ򵭽Ҥ���ɬ�פ�������ϡ��ƥե�����ɤ��̡���ʸ���������ɬ�פ�����ޤ������Ȥ��С����Υɥ�����ơ�����󡦥����Ȥϡ�1�Ĥ�����Ȥ��Ƶ��Ҥ������Ŭ�ڤǤ������ξ��ϡ������2�Ĥ�ʬ���뤳�Ȥ����ᤷ�ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB/** \fR
+\fB * The horizontal and vertical distances of point (x,y)\fR
+\fB */\fR
+\fBpublic int x, y;      // Avoid this \fR
+\fB \fR
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBjavadoc\fR���ޥ�ɤϡ���Υ����ɤ��鼡�Τ褦�ʥɥ�����Ȥ��������ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBpublic int x\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1209,34 +1252,41 @@ The horizontal and vertical distances of point (x, y)\&.
 .RS 4
 .\}
 .nf
-public int y
+\fBpublic int y\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
 The horizontal and vertical distances of point (x, y)\&.
-ヘッダー・タグの使用.PP
-メンバーに対してドキュメンテーション・コメントを記述するときには、\fI<H1>\fRや\fI<H2>\fRなどのHTML見出しタグを使用しないことをお薦めします。\fIjavadoc\fRコマンドは、完全な構造化ドキュメントを作成するので、このような構造化タグが使用されていると、生成ドキュメントの形式が悪影響を受けることがあります。ただし、クラスやパッケージのコメントでは、これらの見出しを使用して独自の構造を指定してかまいません。
-.SS "メソッド・コメントの継承"
 .PP
-\fIjavadoc\fRコマンドでは、クラスおよびインタフェースでメソッド・コメントを継承して、欠落したテキストを入力したり、明示的にメソッド・コメントを継承することができます。コンストラクタ、フィールド、およびネストされたクラスは、ドキュメンテーション・コメントを継承しません。
+�إå����������λ���
 .PP
-\fB注意:\fR
-ドキュメンテーション・コメントをコピーに利用するには、継承したメソッドのソース・ファイルが\fI\-sourcepath\fRオプションで指定したパスのみに置かれている必要があります。コマンドラインで、クラスもパッケージも渡す必要はありません。この点はリリース1\&.3\&.\fIn\fR以前とは対照的です。これまでは、クラスがドキュメント化されるクラスであることが必要でした。
-欠落テキストの入力.PP
-主説明、または\fI@return\fR、\fI@param\fR、\fI@throws\fRタグがメソッド・コメントから欠落している場合、\fIjavadoc\fRコマンドは、対応する主説明またはタグ・コメントを、それがオーバーライドまたは実装しているメソッド(ある場合)からコピーします。メソッド・コメントの継承を参照してください。
+���С����Ф��ƥɥ�����ơ�����󡦥����Ȥ򵭽Ҥ���Ȥ��ˤϡ�\fB<H1>\fR�����\fB<H2>\fR�ʤɤ�HTML���Ф���������Ѥ��ʤ����Ȥ����ᤷ�ޤ���\fBjavadoc\fR���ޥ�ɤϡ������ʹ�¤���ɥ�����Ȥ��������Τǡ����Τ褦�ʹ�¤�����������Ѥ���Ƥ���ȡ������ɥ�����Ȥη��������ƶ�������뤳�Ȥ�����ޤ��������������饹��ѥå������Υ����ȤǤϡ������θ��Ф�����Ѥ����ȼ��ι�¤����ꤷ�Ƥ��ޤ��ޤ���
+.SS "�᥽�åɡ������ȤηѾ�"
 .PP
-特定のパラメータの\fI@param\fRタグが見つからない場合、そのパラメータのコメントが、上位の継承階層のメソッドからコピーされます。特定の例外の\fI@throws\fRタグが見つからない場合、その例外が宣言されている場合にかぎり、\fI@throws\fRタグがコピーされます。
+\fBjavadoc\fR���ޥ�ɤǤϡ����饹����ӥ��󥿥ե������ǥ᥽�åɡ������Ȥ�Ѿ����ơ�������ƥ����Ȥ����Ϥ����ꡢ����Ū�˥᥽�åɡ������Ȥ�Ѿ����뤳�Ȥ��Ǥ��ޤ������󥹥ȥ饯�����ե�����ɡ�����ӥͥ��Ȥ��줿���饹�ϡ��ɥ�����ơ�����󡦥����Ȥ�Ѿ����ޤ���
 .PP
-この動作はリリース1\&.3以前の動作とは対照的です。これまでのバージョンでは、主説明またはタグが存在すれば、コメントは一切継承されませんでした。
+\fB����:\fR
+�ɥ�����ơ�����󡦥����Ȥ򥳥ԡ������Ѥ���ˤϡ��Ѿ������᥽�åɤΥ��������ե����뤬\fB\-sourcepath\fR���ץ����ǻ��ꤷ���ѥ��Τߤ��֤���Ƥ���ɬ�פ�����ޤ������ޥ�ɹԤǡ����饹��ѥå��������Ϥ�ɬ�פϤ���ޤ��󡣤������ϥ�꡼��1\&.3\&.\fIn\fR�����Ȥ��о�Ū�Ǥ�������ޤǤϡ����饹���ɥ�����Ȳ�����륯�饹�Ǥ��뤳�Ȥ�ɬ�פǤ�����
 .PP
-javadocタグおよびオプションを参照してください。
-明示的な継承.PP
-\fI{@inheritDoc}\fRインライン・タグをメソッドの主説明または\fI@return\fR、\fI@param\fR、\fI@throws\fRタグ・コメントに挿入します。対応する継承された主説明またはタグ・コメントは、その場所にコピーされます。
-.SS "クラスおよびインタフェースの継承"
+����ƥ����Ȥ�����
 .PP
-コメントの継承は、クラスおよびインタフェースからの継承の、考えられるすべての場合に発生します。
+���������ޤ���\fB@return\fR��\fB@param\fR��\fB@throws\fR�������᥽�åɡ������Ȥ������Ƥ����硢\fBjavadoc\fR���ޥ�ɤϡ��б�����������ޤ��ϥ����������Ȥ򡢤��줬�����С��饤�ɤޤ��ϼ������Ƥ���᥽�å�(������)���饳�ԡ����ޤ����᥽�åɡ������ȤηѾ��򻲾Ȥ��Ƥ���������
+.PP
+����Υѥ�᡼����\fB@param\fR���������Ĥ���ʤ���硢���Υѥ�᡼���Υ����Ȥ�����̤ηѾ����ؤΥ᥽�åɤ��饳�ԡ�����ޤ���������㳰��\fB@throws\fR���������Ĥ���ʤ���硢�����㳰���������Ƥ�����ˤ����ꡢ\fB@throws\fR���������ԡ�����ޤ���
+.PP
+����ư��ϥ�꡼��1\&.3������ư��Ȥ��о�Ū�Ǥ�������ޤǤΥС������Ǥϡ��������ޤ��ϥ�����¸�ߤ���С������Ȥϰ��ڷѾ�����ޤ���Ǥ�����
+.PP
+javadoc��������ӥ��ץ����򻲾Ȥ��Ƥ���������
+.PP
+����Ū�ʷѾ�
+.PP
+\fB{@inheritDoc}\fR����饤�󡦥�����᥽�åɤμ������ޤ���\fB@return\fR��\fB@param\fR��\fB@throws\fR�����������Ȥ��������ޤ����б�����Ѿ����줿�������ޤ��ϥ����������Ȥϡ����ξ��˥��ԡ�����ޤ���
+.SS "���饹����ӥ��󥿥ե������ηѾ�"
+.PP
+�����ȤηѾ��ϡ����饹����ӥ��󥿥ե���������ηѾ��Ρ��ͤ����뤹�٤Ƥξ���ȯ�����ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -1246,7 +1296,7 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP \(bu 2.3
 .\}
-クラスのメソッドがスーパークラスのメソッドをオーバーライドしている場合
+���饹�Υ᥽�åɤ������ѡ����饹�Υ᥽�åɤ򥪡��С��饤�ɤ��Ƥ�����
 .RE
 .sp
 .RS 4
@@ -1257,7 +1307,7 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP \(bu 2.3
 .\}
-インタフェースのメソッドがスーパーインタフェースのメソッドをオーバーライドしている場合
+���󥿥ե������Υ᥽�åɤ������ѡ����󥿥ե������Υ᥽�åɤ򥪡��С��饤�ɤ��Ƥ�����
 .RE
 .sp
 .RS 4
@@ -1268,15 +1318,15 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP \(bu 2.3
 .\}
-クラスのメソッドがインタフェースのメソッドを実装している場合
+���饹�Υ᥽�åɤ����󥿥ե������Υ᥽�åɤ�������Ƥ�����
 .RE
 .PP
-最初の2つのケースでは、\fIjavadoc\fRコマンドは、オーバーライドしているメソッドのドキュメント内に\fI「オーバーライド」\fRという小見出しを生成します。コメントが継承されているかどうかにかかわらず、オーバーライドされているメソッドへのリンクが含まれます。
+�ǽ��2�ĤΥ������Ǥϡ�\fBjavadoc\fR���ޥ�ɤϡ������С��饤�ɤ��Ƥ���᥽�åɤΥɥ���������\fI�֥����С��饤�ɡ�\fR�Ȥ��������Ф����������ޤ��������Ȥ��Ѿ�����Ƥ��뤫�ɤ����ˤ�����餺�������С��饤�ɤ���Ƥ���᥽�åɤؤΥ�󥯤��ޤޤ�ޤ���
 .PP
-3つ目のケース(特定のクラスのメソッドがインタフェースのメソッドを実装している場合)では、\fIjavadoc\fRコマンドは、オーバーライドしているメソッドのドキュメント内に\fI「定義」\fRという小見出しを生成します。コメントが継承されているかどうかにかかわらず、実装されているメソッドへのリンクが含まれます。
-.SS "メソッド・コメントのアルゴリズム"
+3���ܤΥ�����(����Υ��饹�Υ᥽�åɤ����󥿥ե������Υ᥽�åɤ�������Ƥ�����)�Ǥϡ�\fBjavadoc\fR���ޥ�ɤϡ������С��饤�ɤ��Ƥ���᥽�åɤΥɥ���������\fI�������\fR�Ȥ��������Ф����������ޤ��������Ȥ��Ѿ�����Ƥ��뤫�ɤ����ˤ�����餺����������Ƥ���᥽�åɤؤΥ�󥯤��ޤޤ�ޤ���
+.SS "�᥽�åɡ������ȤΥ��르�ꥺ��"
 .PP
-メソッドにドキュメンテーション・コメントがない、または\fI{@inheritDoc}\fRタグがある場合、\fIjavadoc\fRコマンドは次のアルゴリズムを使用して適用できるコメントを検索します。アルゴリズムは、最も特定される適用可能なドキュメンテーション・コメントを探し、スーパークラスよりもインタフェースを優先するように設計されています。
+�᥽�åɤ˥ɥ�����ơ�����󡦥����Ȥ��ʤ����ޤ���\fB{@inheritDoc}\fR�����������硢\fBjavadoc\fR���ޥ�ɤϼ��Υ��르�ꥺ�����Ѥ���Ŭ�ѤǤ��륳���Ȥ򸡺����ޤ������르�ꥺ��ϡ��Ǥ����ꤵ���Ŭ�Ѳ�ǽ�ʥɥ�����ơ�����󡦥����Ȥ�õ���������ѡ����饹���⥤�󥿥ե�������ͥ�褹��褦���߷פ���Ƥ��ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -1286,7 +1336,7 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP "  1." 4.2
 .\}
-直接に実装されている(または、拡張されている)インタフェースを、メソッドの宣言で\fIimplements\fR(または\fIextends\fR)という語の後に出現する順序で、1つずつ調べます。このメソッドについて最初に見つかったドキュメンテーション・コメントを採用します。
+ľ�ܤ˼�������Ƥ���(�ޤ��ϡ���ĥ����Ƥ���)���󥿥ե������򡢥᥽�åɤ������\fBimplements\fR(�ޤ���\fBextends\fR)�Ȥ�����θ�˽и��������ǡ�1�Ĥ���Ĵ�٤ޤ������Υ᥽�åɤˤĤ��ƺǽ�˸��Ĥ��ä��ɥ�����ơ�����󡦥����Ȥ���Ѥ��ޤ���
 .RE
 .sp
 .RS 4
@@ -1297,7 +1347,7 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP "  2." 4.2
 .\}
-手順1でドキュメンテーション・コメントが見つからなかった場合は、直接実装されている(または、拡張されている)インタフェースのそれぞれに対して、このアルゴリズム全体を再帰的に適用します(その際の順序は、手順1でインタフェースを調べたときの順序と同じ)。
+���1�ǥɥ�����ơ�����󡦥����Ȥ����Ĥ���ʤ��ä����ϡ�ľ�ܼ�������Ƥ���(�ޤ��ϡ���ĥ����Ƥ���)���󥿥ե������Τ��줾����Ф��ơ����Υ��르�ꥺ�����Τ�Ƶ�Ū��Ŭ�Ѥ��ޤ�(���κݤν���ϡ����1�ǥ��󥿥ե�������Ĵ�٤��Ȥ��ν����Ʊ��)��
 .RE
 .sp
 .RS 4
@@ -1308,7 +1358,7 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP "  3." 4.2
 .\}
-手順2でドキュメンテーション・コメントが見つからなかった場合で、このクラスが\fIObject\fR以外のクラスであるが、インタフェースではない場合は、次のように処理します。
+���2�ǥɥ�����ơ�����󡦥����Ȥ����Ĥ���ʤ��ä����ǡ����Υ��饹��\fBObject\fR�ʳ��Υ��饹�Ǥ��뤬�����󥿥ե������ǤϤʤ����ϡ����Τ褦�˽������ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -1318,7 +1368,7 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP "  1." 4.2
 .\}
-スーパークラスにこのメソッドについてのドキュメンテーション・コメントが記述されている場合は、そのコメントを採用します。
+�����ѡ����饹�ˤ��Υ᥽�åɤˤĤ��ƤΥɥ�����ơ�����󡦥����Ȥ����Ҥ���Ƥ�����ϡ����Υ����Ȥ���Ѥ��ޤ���
 .RE
 .sp
 .RS 4
@@ -1329,14 +1379,14 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP "  2." 4.2
 .\}
-手順3aでドキュメンテーション・コメントが見つからなかった場合は、スーパークラスに対して、このアルゴリズム全体を再帰的に適用します。
+���3a�ǥɥ�����ơ�����󡦥����Ȥ����Ĥ���ʤ��ä����ϡ������ѡ����饹���Ф��ơ����Υ��르�ꥺ�����Τ�Ƶ�Ū��Ŭ�Ѥ��ޤ���
 .RE
 .RE
-.SH "JAVADOCタグ"
+.SH "JAVADOC����"
 .PP
-\fIjavadoc\fRコマンドは、Javaのドキュメンテーション・コメント内に埋め込まれた特別なタグを解析します。\fIjavadoc\fRタグを使用すると、完全な整形式のAPIをソース・コードから自動的に生成できます。タグはアットマーク記号(\fI@\fR)で始まり、大文字と小文字が区別されます。これらのタグは、表示されているとおりに大文字と小文字を使用して入力する必要があります。タグは、行の先頭(先頭の空白文字と省略可能なアスタリスクの後)に置く必要があります。そうしないと、テキストとして扱われます。慣例として、同じ名前のタグは1箇所にまとめます。たとえば、\fI@see\fRタグが複数ある場合は、すべて同じ場所にまとめて配置します。詳細は、タグを使用できる場所を参照してください。
+\fBjavadoc\fR���ޥ�ɤϡ�Java�Υɥ�����ơ�����󡦥�������������ޤ줿���̤ʥ�������Ϥ��ޤ���\fBjavadoc\fR��������Ѥ���ȡ���������������API�򥽡����������ɤ��鼫ưŪ�������Ǥ��ޤ��������ϥ��åȥޡ�������(\fB@\fR)�ǻϤޤꡢ��ʸ���Ⱦ�ʸ�������̤���ޤ��������Υ����ϡ�ɽ������Ƥ���Ȥ������ʸ���Ⱦ�ʸ������Ѥ������Ϥ���ɬ�פ�����ޤ��������ϡ��Ԥ���Ƭ(��Ƭ�ζ���ʸ���Ⱦ�ά��ǽ�ʥ������ꥹ���θ�)���֤�ɬ�פ�����ޤ����������ʤ��ȡ��ƥ����ȤȤ��ư����ޤ�������Ȥ��ơ�Ʊ��̾���Υ�����1�ս�ˤޤȤ�ޤ������Ȥ��С�\fB@see\fR������ʣ��������ϡ����٤�Ʊ�����ˤޤȤ�����֤��ޤ����ܺ٤ϡ���������ѤǤ�����򻲾Ȥ��Ƥ���������
 .PP
-タグには、次のタイプがあります。
+�����ˤϡ����Υ����פ�����ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -1346,7 +1396,7 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP \(bu 2.3
 .\}
-ブロック・タグ: ブロック・タグは主説明に続くタグ・セクション内にのみ配置します。ブロック・タグは、\fI@tag\fRの形式をとります。
+�֥��å�������: �֥��å��������ϼ�������³�������������������ˤΤ����֤��ޤ����֥��å��������ϡ�\fI@tag\fR�η�����Ȥ�ޤ���
 .RE
 .sp
 .RS 4
@@ -1357,52 +1407,52 @@ javadocタグおよびオプションを参照してください。
 .sp -1
 .IP \(bu 2.3
 .\}
-インライン・タグ: インライン・タグは主説明内またはブロック・タグのコメント内の任意の場所に配置します。インライン・タグは\fI{@tag}\fRのように中カッコで囲みます。
+����饤�󡦥���: ����饤�󡦥����ϼ�������ޤ��ϥ֥��å��������Υ��������Ǥ�դξ������֤��ޤ�������饤�󡦥�����\fI{@tag}\fR�Τ褦���楫�å��ǰϤߤޤ���
 .RE
 .PP
-カスタム・タグについては、\-tag tagname:Xaoptcmf:"taghead"を参照してください。タグを使用できる場所も参照してください。
-.SS "タグの説明"
+�������ࡦ�����ˤĤ��Ƥϡ�\-tag tagname:Xaoptcmf:"taghead"�򻲾Ȥ��Ƥ�����������������ѤǤ�����⻲�Ȥ��Ƥ���������
+.SS "����������"
 .PP
 @author \fIname\-text\fR
 .RS 4
-JDK 1\&.0で導入
+JDK 1\&.0��Ƴ��
 .sp
-\fI\-author\fRオプションが使用されている場合、指定した名前のテキストの作成者エントリを生成されるドキュメントに追加します。1つのドキュメンテーション・コメントに複数の\fI@author\fRタグを含めることができます。1つの\fI@author\fRタグに1つの名前を指定することも、複数の名前を指定することもできます。前者の場合は、\fIjavadoc\fRコマンドによって名前と名前の間にカンマ(,)と空白文字が挿入されます。後者の場合は、テキスト全体が解析されることなく、生成ドキュメントにコピーされます。したがって、カンマではなく、各言語に対応した名前区切り文字を使用する必要があるときに、1行に複数の名前を指定できます。JavadocツールでのDocコメントの記述方法の@authorに関する項
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@author)を参照してください。
+\fB\-author\fR���ץ���󤬻��Ѥ���Ƥ����硢���ꤷ��̾���Υƥ����Ȥκ����ԥ���ȥ�����������ɥ�����Ȥ��ɲä��ޤ���1�ĤΥɥ�����ơ�����󡦥����Ȥ�ʣ����\fB@author\fR������ޤ�뤳�Ȥ��Ǥ��ޤ���1�Ĥ�\fB@author\fR������1�Ĥ�̾������ꤹ�뤳�Ȥ⡢ʣ����̾������ꤹ�뤳�Ȥ�Ǥ��ޤ������Ԥξ��ϡ�\fBjavadoc\fR���ޥ�ɤˤ�ä�̾����̾���δ֤˥����(,)�ȶ���ʸ������������ޤ�����Ԥξ��ϡ��ƥ��������Τ����Ϥ���뤳�Ȥʤ��������ɥ�����Ȥ˥��ԡ�����ޤ����������äơ�����ޤǤϤʤ����Ƹ�����б�����̾�����ڤ�ʸ������Ѥ���ɬ�פ�����Ȥ��ˡ�1�Ԥ�ʣ����̾�������Ǥ��ޤ���Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ��@author�˴ؤ����
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@author)�򻲾Ȥ��Ƥ���������
 .RE
 .PP
 {@code \fItext\fR}
 .RS 4
-JDK 1\&.5で導入
+JDK 1\&.5��Ƴ��
 .sp
-\fI<code>{@literal}</code>\fRと同等です。
+\fB<code>{@literal}</code>\fR��Ʊ���Ǥ���
 .sp
-テキストをHTMLマークアップまたはネストされたJavadocタグとして解釈せずに、textをコード・フォントで表示します。これにより、ドキュメンテーション・コメントでは、パラメータの型(\fI<Object>\fR)、不等号(\fI3 < 4\fR)、矢印(\fI<\-\fR)などで、通常の山カッコ(<および>)をHTMLエンティティ(\fI&lt;\fRおよび\fI&gt;\fR)のかわりに使用できます。たとえば、ドキュメンテーション・コメント\fI{@code A<B>C}\fRは\fIA<B>C\fRとして変更されずに生成されたHTMLページに表示されます。つまり、\fI<B>\fRが太字として解釈されず、そのフォントはコード・フォントになります。コード・フォントなしで同じ機能を実現するには、\fI{@literal}\fRタグを使用します。
+�ƥ����Ȥ�HTML�ޡ������åפޤ��ϥͥ��Ȥ��줿Javadoc�����Ȥ��Ʋ�᤻���ˡ�text�򥳡��ɡ��ե���Ȥ�ɽ�����ޤ�������ˤ�ꡢ�ɥ�����ơ�����󡦥����ȤǤϡ��ѥ�᡼���η�(\fB<Object>\fR)��������(\fB3 < 4\fR)�����(\fB<\-\fR)�ʤɤǡ��̾�λ����å�(<�����>)��HTML����ƥ��ƥ�(\fB&lt;\fR�����\fB&gt;\fR)�Τ����˻��ѤǤ��ޤ������Ȥ��С��ɥ�����ơ�����󡦥����ȡ��ƥ�����\fB{@code A<B>C}\fR�ϡ�\fBA<B>C\fR�Ȥ����ѹ����줺���������줿HTML�ڡ�����ɽ������ޤ����Ĥޤꡢ\fB<B>\fR�������Ȥ��Ʋ�ᤵ�줺�����Υե���Ȥϥ����ɡ��ե���Ȥˤʤ�ޤ��������ɡ��ե���Ȥʤ���Ʊ����ǽ��¸�����ˤϡ�\fB{@literal}\fR��������Ѥ��ޤ���
 .RE
 .PP
 @deprecated \fIdeprecated\-text\fR
 .RS 4
-JDK 1\&.0で導入
+JDK 1\&.0��Ƴ��
 .sp
-このAPIは動作し続けますが、このAPIを使用しないことを薦めるコメントを追加します。\fIjavadoc\fRコマンドは、\fIdeprecated\-text\fRを主説明の前に移動してイタリックにし、その前に太字の警告「推奨されていません。」を追加します。このタグは、すべてのドキュメンテーション・コメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、およびフィールドで有効です。
+����API��ư�³���ޤ���������API����Ѥ��ʤ����Ȥ�����륳���Ȥ��ɲä��ޤ���\fBjavadoc\fR���ޥ�ɤϡ�\fBdeprecated\-text\fR������������˰�ư���ƥ�����å��ˤ����������������ηٹ�ֿ侩����Ƥ��ޤ��󡣡פ��ɲä��ޤ������Υ����ϡ����٤ƤΥɥ�����ơ�����󡦥����ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤ�ͭ���Ǥ���
 .sp
-非推奨テキストの最初の文では、そのAPIが推奨されなくなった時期と、代替として使用するAPIをユーザーに提示する必要があります。\fIjavadoc\fRコマンドは、この最初の文を、サマリー・セクションと索引にコピーします。その後の文で非推奨になった理由を説明することもできます。代替APIを指し示す\fI{@link}\fRタグ(Javadoc 1\&.2以降の場合)を含める必要があります。
+��侩�ƥ����Ȥκǽ��ʸ�Ǥϡ�����API���侩����ʤ��ʤä������ȡ����ؤȤ��ƻ��Ѥ���API��桼�������󼨤���ɬ�פ�����ޤ���\fBjavadoc\fR���ޥ�ɤϡ����κǽ��ʸ�򡢥��ޥ꡼�����������Ⱥ����˥��ԡ����ޤ������θ��ʸ����侩�ˤʤä���ͳ���������뤳�Ȥ�Ǥ��ޤ�������API��ؤ�����\fB{@link}\fR����(Javadoc 1\&.2�ʹߤξ��)��ޤ��ɬ�פ�����ޤ���
 .sp
-\fI@deprecated annotation\fRタグを使用してプログラム要素を非推奨にします。APIを非推奨にする方法と時期
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/deprecation/deprecation\&.html)を参照してください。
+\fI@deprecated annotation\fR��������Ѥ��ƥץ���������Ǥ���侩�ˤ��ޤ���API����侩�ˤ�����ˡ�Ȼ���
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/deprecation/deprecation\&.html)�򻲾Ȥ��Ƥ���������
 .sp
-JavadocツールでのDocコメントの記述方法の@deprecatedに関する項
+Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ��@deprecated�˴ؤ����
 
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@deprecated)も参照してください。
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@deprecated)�⻲�Ȥ��Ƥ���������
 .RE
 .PP
 {@docRoot}
 .RS 4
-JDK 1\&.3で導入
+JDK 1\&.3��Ƴ��
 .sp
-生成されるページからの、生成ドキュメントの(生成先)ルート・ディレクトリへの相対パスを表します。このタグは、著作権のページや会社のロゴなど、生成されるすべてのページから参照するファイルを組み込むときに便利です。通常は、各ページの最下部から著作権のページにリンクします。
+���������ڡ�������Ρ������ɥ�����Ȥ�(������)�롼�ȡ��ǥ��쥯�ȥ�ؤ����Хѥ���ɽ���ޤ������Υ����ϡ�����Υڡ������ҤΥ����ʤɡ���������뤹�٤ƤΥڡ������黲�Ȥ���ե�������Ȥ߹���Ȥ��������Ǥ����̾�ϡ��ƥڡ����κǲ�����������Υڡ����˥�󥯤��ޤ���
 .sp
-この\fI{@docRoot}\fRタグは、コマンドラインでもドキュメンテーション・コメント内でも使用できます。このタグは、任意のタグ(\fI@return\fR、\fI@param\fRおよび\fI@deprecated\fRタグなど)のテキスト部分を含む、すべてのドキュメンテーション・コメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、およびフィールドで有効です。
+����\fB{@docRoot}\fR�����ϡ����ޥ�ɹԤǤ�ɥ�����ơ�����󡦥�������Ǥ���ѤǤ��ޤ������Υ����ϡ�Ǥ�դΥ���(\fB@return\fR��\fB@param\fR�����\fB@deprecated\fR�����ʤ�)�Υƥ�������ʬ��ޤࡢ���٤ƤΥɥ�����ơ�����󡦥����ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤ�ͭ���Ǥ���
 .sp
 .RS 4
 .ie n \{\
@@ -1412,9 +1462,9 @@ JDK 1\&.3で導入
 .sp -1
 .IP \(bu 2.3
 .\}
-コマンドラインで、ヘッダー、フッターまたは最下部が次のように定義されます。\fIjavadoc \-bottom \*(Aq<a href="{@docRoot}/copyright\&.html">Copyright</a>\*(Aq\fR
+���ޥ�ɹԤǡ�header��footer�ޤ���bottom���������Ƥ����硢\fBjavadoc \-bottom \*(Aq<a href="{@docRoot}/copyright\&.html">Copyright</a>\*(Aq\fR�Ȥʤ�ޤ���
 .sp
-\fI{@docRoot}\fRタグをmakefile内でこのように利用する場合、一部の\fImakefile\fRプログラムでは、中カッコ\fI{}\fR文字を特別にエスケープする必要があります。たとえば、Inprise MAKEバージョン5\&.2をWindows上で実行する場合は、\fI{{@docRoot}}\fRのように、中カッコを二重にする必要があります。\fI\-bottom\fRオプションなどのオプションへの引数を囲むのに、二重(一重ではなく)引用符も必要です(\fIhref\fR引数を囲む引用符は省略)。
+\fB{@docRoot}\fR������makefile��Ǥ��Τ褦�����Ѥ����硢������\fBmakefile\fR�ץ������Ǥϡ��楫�å�\fB{}\fRʸ�������̤˥��������פ���ɬ�פ�����ޤ������Ȥ��С�Inprise MAKE�С������5\&.2��Windows��Ǽ¹Ԥ�����ϡ�\fB{{@docRoot}}\fR�Τ褦�ˡ��楫�å�����Ťˤ���ɬ�פ�����ޤ���\fB\-bottom\fR���ץ����ʤɤΥ��ץ����ؤΰ�����Ϥ�Τˡ����(��ŤǤϤʤ�)�������ɬ�פǤ�(\fBhref\fR������Ϥ������Ͼ�ά)��
 .RE
 .sp
 .RS 4
@@ -1425,37 +1475,39 @@ JDK 1\&.3で導入
 .sp -1
 .IP \(bu 2.3
 .\}
-ドキュメンテーション・コメントでは
+�ɥ�����ơ�����󡦥����ȤǤ�
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-/**
- * See the <a href="{@docRoot}/copyright\&.html">Copyright</a>\&.
- */
+\fB/**\fR
+\fB * See the <a href="{@docRoot}/copyright\&.html">Copyright</a>\&.\fR
+\fB */\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-このタグが必要な理由は、生成ドキュメントが、サブパッケージと同じ深さを持つ階層構造のディレクトリに格納されるからです。式\fI<a href="{@docRoot}/copyright\&.html">\fRは、\fIjava/lang/Object\&.java\fRに対しては\fI<a href="\&.\&./\&.\&./copyright\&.html">\fRに解決され、\fIjava/lang/ref/Reference\&.java\fRに対しては\fI<a href="\&.\&./\&.\&./\&.\&./copyright\&.html">\fRに解決されます。
+���Υ�����ɬ�פ���ͳ�ϡ������ɥ�����Ȥ������֥ѥå�������Ʊ����������ĳ��ع�¤�Υǥ��쥯�ȥ�˳�Ǽ����뤫��Ǥ�����:
+\fB<a href="{@docRoot}/copyright\&.html">\fR�ϡ�\fBjava/lang/Object\&.java\fR�ξ��\fB<a href="\&.\&./\&.\&./copyright\&.html">\fR�ˡ�\fBjava/lang/ref/Reference\&.java\fR�ξ��\fB<a href="\&.\&./\&.\&./\&.\&./copyright\&.html">\fR�˲�褵��ޤ���
 .RE
 .RE
 .PP
 @exception \fIclass\-name description\fR
 .RS 4
-JDK 1\&.0で導入
+JDK 1\&.0��Ƴ��
 .sp
-\fI@throws\fRタグと同じです。@throws class\-name descriptionを参照してください。
+\fB@throws\fR������Ʊ���Ǥ���@throws class\-name description�򻲾Ȥ��Ƥ���������
 .RE
 .PP
 {@inheritDoc}
 .RS 4
-JDK 1\&.4で導入
+JDK 1\&.4��Ƴ��
 .sp
-最も近い継承可能なクラスまたは実装可能なインタフェースから、このタグの位置にある現在のドキュメンテーション・コメントに、ドキュメントを継承(コピー)します。これにより、より汎用的なコメントを継承ツリーの上位に記述し、コピーしたテキストを使用して記述することができます。
+�Ǥ�ᤤ�Ѿ���ǽ�ʥ��饹�ޤ��ϼ�����ǽ�ʥ��󥿥ե��������顢���Υ����ΰ��֤ˤ��븽�ߤΥɥ�����ơ�����󡦥����Ȥˡ��ɥ�����Ȥ�Ѿ�(���ԡ�)���ޤ�������ˤ�ꡢ�������Ū�ʥ����Ȥ�Ѿ��ĥ꡼�ξ�̤˵��Ҥ������ԡ������ƥ����Ȥ���Ѥ��Ƶ��Ҥ��뤳�Ȥ��Ǥ��ޤ���
 .sp
-このタグは、ドキュメンテーション・コメントの次の位置でのみ有効です。
+���Υ����ϡ��ɥ�����ơ�����󡦥����Ȥμ��ΰ��֤ǤΤ�ͭ���Ǥ���
 .sp
 .RS 4
 .ie n \{\
@@ -1465,7 +1517,7 @@ JDK 1\&.4で導入
 .sp -1
 .IP \(bu 2.3
 .\}
-メソッドの主説明ブロック内。この場合、主説明は、上位階層のクラスまたはインタフェースからコピーされます。
+�᥽�åɤμ������֥��å��⡣���ξ�硢�������ϡ���̳��ؤΥ��饹�ޤ��ϥ��󥿥ե��������饳�ԡ�����ޤ���
 .RE
 .sp
 .RS 4
@@ -1476,52 +1528,55 @@ JDK 1\&.4で導入
 .sp -1
 .IP \(bu 2.3
 .\}
-メソッドの\fI@return\fR、\fI@param\fR、\fI@throws\fRタグのテキスト引数内。この場合、タグ・テキストは、上位階層の対応するタグからコピーされます。
+�᥽�åɤ�\fB@return\fR��\fB@param\fR��\fB@throws\fR�����Υƥ����Ȱ����⡣���ξ�硢�������ƥ����Ȥϡ���̳��ؤ��б����륿�����饳�ԡ�����ޤ���
 .RE
 .sp
-継承階層でコメントを見つける方法に関する説明は、メソッド・コメントの継承を参照してください。このタグが見つからない場合、コメントは、この項で説明するルールに応じて、自動的に継承されるかどうかが決まります。
+�Ѿ����ؤǥ����Ȥ򸫤Ĥ�����ˡ�˴ؤ��������ϡ��᥽�åɡ������ȤηѾ��򻲾Ȥ��Ƥ������������Υ��������Ĥ���ʤ���硢�����Ȥϡ����ι����������롼��˱����ơ���ưŪ�˷Ѿ�����뤫�ɤ�������ޤ�ޤ���
 .RE
 .PP
 {@link \fIpackage\&.class#member label\fR}
 .RS 4
-JDK 1\&.2で導入
+JDK 1\&.2��Ƴ��
 .sp
-表示テキストlabelとともにインライン・リンクを挿入します。labelは、参照クラスの指定されたパッケージ、クラス、またはメンバーの名前のドキュメントを指し示します。このタグは、\fI@return\fR、\fI@param\fRおよび\fI@deprecated\fRタグなどの任意のタグのテキスト部分を含む、すべてのドキュメンテーション・コメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、およびフィールドで有効です。JavadocツールでのDocコメントの記述方法の@linkに関する項
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#{@link)を参照してください。
+ɽ���ƥ�����label�ȤȤ�˥���饤�󡦥�󥯤��������ޤ���label�ϡ����ȥ��饹�λ��ꤵ�줿�ѥå����������饹���ޤ��ϥ��С���̾���Υɥ�����Ȥ�ؤ������ޤ������Υ����ϡ�\fB@return\fR��\fB@param\fR�����\fB@deprecated\fR�����ʤɤ�Ǥ�դΥ����Υƥ�������ʬ��ޤࡢ���٤ƤΥɥ�����ơ�����󡦥����ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ�����ӥե�����ɤ�ͭ���Ǥ���Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ��@link�˴ؤ����
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#{@link)�򻲾Ȥ��Ƥ���������
 .sp
-このタグは\fI@see\fRタグに似ています。どちらのタグも、\fIpackage\&.class#member\fRと\fIlabel\fRの参照方法と、有効な構文が同じです。主な違いは、\fI{@link}\fRタグでは、「関連項目」セクションにリンクが配置されるかわりに、インライン・リンクが生成されるという点です。インライン・テキストの他の部分と区別するために、\fI{@link}\fRタグの最初と最後に中カッコを記述します。ラベル内で右中カッコ(\fI}\fR)を使用する必要がある場合、HTMLエンティティ記法\fI&#125;\fRを使用します。
+���Υ�����\fB@see\fR�����˻��Ƥ��ޤ����ɤ���Υ����⡢\fBpackage\&.class#member\fR��\fBlabel\fR�λ�����ˡ�ȡ�ͭ���ʹ�ʸ��Ʊ���Ǥ�����ʰ㤤�ϡ�\fB{@link}\fR�����Ǥϡ��ִ�Ϣ���ܡץ��������˥�󥯤����֤���뤫���ˡ�����饤�󡦥�󥯤����������Ȥ������Ǥ�������饤�󡦥ƥ����Ȥ�¾����ʬ�ȶ��̤��뤿��ˡ�\fB{@link}\fR�����κǽ�ȺǸ���楫�å��򵭽Ҥ��ޤ�����٥���Ǳ��楫�å�(\fB}\fR)����Ѥ���ɬ�פ������硢HTML����ƥ��ƥ���ˡ\fB&#125;\fR����Ѥ��ޤ���
 .sp
-1つ文の中で使用できる\fI{@link}\fRタグの数に制限はありません。このタグは、ドキュメンテーション・コメントの主説明部分、または\fI@deprecated\fR、\fI@return\fR、\fI@param\fRタグなどの任意のタグのテキスト部分で使用できます。
+1��ʸ����ǻ��ѤǤ���\fB{@link}\fR�����ο������¤Ϥ���ޤ��󡣤��Υ����ϡ��ɥ�����ơ�����󡦥����Ȥμ�������ʬ���ޤ���\fB@deprecated\fR��\fB@return\fR��\fB@param\fR�����ʤɤ�Ǥ�դΥ����Υƥ�������ʬ�ǻ��ѤǤ��ޤ���
 .sp
-たとえば、次のコメントでは\fIgetComponentAt(int,int)\fRメソッドを参照しています。
+���Ȥ��С����Υ����ȤǤ�\fBgetComponentAt(int,int)\fR�᥽�åɤ򻲾Ȥ��Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-Use the {@link #getComponentAt(int, int) getComponentAt} method\&.
+\fBUse the {@link #getComponentAt(int, int) getComponentAt} method\&.\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-標準ドックレットでは、このコードから次のHTMLが生成されます(このコメントが同じパッケージの別のクラスを参照している場合)。
+ɸ��ɥå���åȤǤϡ����Υ����ɤ��鼡��HTML����������ޤ�(���Υ����Ȥ�Ʊ���ѥå��������̤Υ��饹�򻲾Ȥ��Ƥ�����)��
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-Use the <a href="Component\&.html#getComponentAt(int, int)">getComponentAt</a> method\&.
+\fBUse the <a href="Component\&.html#getComponentAt(int, int)">getComponentAt</a> method\&.\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-前の行は、次のようにWebページに表示されます。
+���ιԤϡ����Τ褦��Web�ڡ�����ɽ������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-Use the getComponentAt method\&.
+\fBUse the getComponentAt method\&.\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1530,56 +1585,58 @@ Use the getComponentAt method\&.
 .PP
 {@linkplain \fIpackage\&.class#member label\fR}
 .RS 4
-JDK 1\&.4で導入
+JDK 1\&.4��Ƴ��
 .sp
-\fI{@link}\fRタグと同じ動作をしますが、リンク・ラベルがコード・フォントではなくプレーン・テキストで表示される点が異なります。ラベルがプレーン・テキストで記述されていると便利です。たとえば、「\fIRefer to {@linkplain add() the overridden method}\fR\&.」は「Refer to the overridden method」と表示されます。
+\fB{@link}\fR������Ʊ��ư��򤷤ޤ�������󥯡���٥뤬�����ɡ��ե���ȤǤϤʤ��ץ졼�󡦥ƥ����Ȥ�ɽ������������ۤʤ�ޤ�����٥뤬�ץ졼�󡦥ƥ����Ȥǵ��Ҥ���Ƥ���������Ǥ������Ȥ��С���\fBRefer to {@linkplain add() the overridden method}\fR\&.�פϡ�Refer to the overridden method�פ�ɽ������ޤ���
 .RE
 .PP
 {@literal \fItext\fR}
 .RS 4
-JDK 1\&.5で導入
+JDK 1\&.5��Ƴ��
 .sp
-テキストをHTMLマークアップまたはネストされたJavadocタグとして解釈せずに、textを表示します。これにより、ドキュメンテーション・コメントでは、パラメータの型(\fI<Object>\fR)、不等号(\fI3 < 4\fR)、矢印(<\-)などで、山カッコ(\fI<および>\fR)をHTMLエンティティ(\fI&lt;\fRおよび\fI&gt;\fR)のかわりに使用できます。たとえば、ドキュメンテーション・コメントのテキスト\fI{@literal A<B>C}\fRは\fIA<B>C\fRとして、ブラウザの生成されたHTMLページに変更されずに表示されます。\fI<B>\fRは太字として解釈されません(コード・フォントになりません)。コード・フォントで同じ機能を実現するには、\fI{@code}\fRタグを使用します。
+�ƥ����Ȥ�HTML�ޡ������åפޤ��ϥͥ��Ȥ��줿Javadoc�����Ȥ��Ʋ�᤻���ˡ�text��ɽ�����ޤ�������ˤ�ꡢ�ɥ�����ơ�����󡦥����ȤǤϡ��ѥ�᡼���η�(\fB<Object>\fR)��������(\fB3 < 4\fR)�����(<\-)�ʤɤǡ������å�(\fB<�����>\fR)��HTML����ƥ��ƥ�(\fB&lt;\fR�����\fB&gt;\fR)�Τ����˻��ѤǤ��ޤ������Ȥ��С��ɥ�����ơ�����󡦥����ȡ��ƥ�����\fB{@literal A<B>C}\fR�ϡ�\fBA<B>C\fR�Ȥ��ƥ֥饦�����������줿HTML�ڡ������ѹ����줺��ɽ������ޤ���\fB<B>\fR�������Ȥ��Ʋ�ᤵ��ޤ���(�����ɡ��ե���Ȥˤʤ�ޤ���)�������ɡ��ե���Ȥ�Ʊ����ǽ��¸�����ˤϡ�\fB{@code}\fR��������Ѥ��ޤ���
 .RE
 .PP
 @param \fIparameter\-name description\fR
 .RS 4
-JDK 1\&.0で導入
+JDK 1\&.0��Ƴ��
 .sp
-「パラメータ」セクションに、指定された\fIparameter\-name\fRの後に指定されたdescriptionを続けてパラメータを追加します。ドキュメンテーション・コメントを記述するときには、descriptionを複数行にわたって記述することもできます。このタグは、メソッド、コンストラクタ、またはクラスのドキュメンテーション・コメント内でのみ有効です。JavadocツールでのDocコメントの記述方法の@paramに関する項
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@param)を参照してください。
+�֥ѥ�᡼���ץ��������ˡ����ꤵ�줿\fBparameter\-name\fR�θ�˻��ꤵ�줿description��³���ƥѥ�᡼�����ɲä��ޤ����ɥ�����ơ�����󡦥����Ȥ򵭽Ҥ���Ȥ��ˤϡ�description��ʣ���Ԥˤ錄�äƵ��Ҥ��뤳�Ȥ�Ǥ��ޤ������Υ����ϡ��᥽�åɡ����󥹥ȥ饯�����ޤ��ϥ��饹�Υɥ�����ơ�����󡦥�������ǤΤ�ͭ���Ǥ���Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ��@param�˴ؤ����
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@param)�򻲾Ȥ��Ƥ���������
 .sp
-\fIparameter\-name\fRは、メソッドまたはコンストラクタでのパラメータの名前か、クラス、メソッドまたはコンストラクタの型パラメータの名前になります。山カッコでこのパラメータ名を囲み、型パラメータを使用することを指定します。
+\fBparameter\-name\fR�ϡ��᥽�åɤޤ��ϥ��󥹥ȥ饯���ǤΥѥ�᡼����̾���������饹���᥽�åɤޤ��ϥ��󥹥ȥ饯���η��ѥ�᡼����̾���ˤʤ�ޤ��������å��Ǥ��Υѥ�᡼��̾��Ϥߡ����ѥ�᡼������Ѥ��뤳�Ȥ���ꤷ�ޤ���
 .sp
-クラスの型パラメータの例:
+���饹�η��ѥ�᡼������:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-/**
- * @param <E> Type of element stored in a list
- */
-public interface List<E> extends Collection<E> {
-}
+\fB/**\fR
+\fB * @param <E> Type of element stored in a list\fR
+\fB */\fR
+\fBpublic interface List<E> extends Collection<E> {\fR
+\fB}\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-メソッドの型パラメータの例:
+�᥽�åɤη��ѥ�᡼������:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-/**
- * @param string  the string to be converted
- * @param type    the type to convert the string to
- * @param <T>     the type of the element
- * @param <V>     the value of the element
- */
-<T, V extends T> V convert(String string, Class<T> type) {
-}
+\fB/**\fR
+\fB * @param string  the string to be converted\fR
+\fB * @param type    the type to convert the string to\fR
+\fB * @param <T>     the type of the element\fR
+\fB * @param <V>     the value of the element\fR
+\fB */\fR
+\fB<T, V extends T> V convert(String string, Class<T> type) {\fR
+\fB}\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -1588,35 +1645,35 @@ public interface List<E> extends Collection<E> {
 .PP
 @return \fIdescription\fR
 .RS 4
-JDK 1\&.0で導入
+JDK 1\&.0��Ƴ��
 .sp
-「戻り値」セクションを追加して、descriptionのテキストを書き込みます。このテキストでは、戻り値の型と、取り得る値の範囲について記述する必要があります。このタグは、メソッドのドキュメンテーション・コメントでのみ有効です。JavadocツールでのDocコメントの記述方法の@returnに関する項
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@return)を参照してください。
+������͡ץ����������ɲä��ơ�description�Υƥ����Ȥ�񤭹��ߤޤ������Υƥ����ȤǤϡ�����ͤη��ȡ���������ͤ��ϰϤˤĤ��Ƶ��Ҥ���ɬ�פ�����ޤ������Υ����ϡ��᥽�åɤΥɥ�����ơ�����󡦥����ȤǤΤ�ͭ���Ǥ���Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ��@return�˴ؤ����
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@return)�򻲾Ȥ��Ƥ���������
 .RE
 .PP
 @see \fIreference\fR
 .RS 4
-JDK 1\&.0で導入
+JDK 1\&.0��Ƴ��
 .sp
-\fI「関連項目」\fR見出しを追加して、referenceを指すリンク、またはテキスト・エントリを書き込みます。1つのドキュメンテーション・コメントには任意の数の\fI@see\fRタグを含めることができますが、それらはすべて同じ見出しの下にグループ化されます。\fI@see\fRタグには、3つのタイプの形式があります。この形式が最も一般的です。このタグは、すべてのドキュメンテーション・コメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、またはフィールドで有効です。パッケージ、クラス、またはメンバーに対するインライン・リンクを文中に挿入する方法は、\fI{@link}\fRを参照してください。
+\fI�ִ�Ϣ���ܡ�\fR���Ф����ɲä��ơ�reference��ؤ���󥯡��ޤ��ϥƥ����ȡ�����ȥ��񤭹��ߤޤ���1�ĤΥɥ�����ơ�����󡦥����Ȥˤ�Ǥ�դο���\fB@see\fR������ޤ�뤳�Ȥ��Ǥ��ޤ����������Ϥ��٤�Ʊ�����Ф��β��˥��롼�ײ�����ޤ���\fB@see\fR�����ˤϡ�3�ĤΥ����פη���������ޤ������η������Ǥ����Ū�Ǥ������Υ����ϡ����٤ƤΥɥ�����ơ�����󡦥����ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ��ޤ��ϥե�����ɤ�ͭ���Ǥ����ѥå����������饹���ޤ��ϥ��С����Ф��륤��饤�󡦥�󥯤�ʸ�������������ˡ�ϡ�\fB{@link}\fR�򻲾Ȥ��Ƥ���������
 .sp
-\fB形式1\fR。@see
-\fIstring\fRタグ形式は、\fIstring\fRのテキスト・エントリを追加します。リンクは生成されません。stringは、書籍またはURLではアクセスできない情報の参照先です。\fIjavadoc\fRコマンドは、最初の文字として二重引用符(")を検索して、この形式を前述の形式と区別します。たとえば、\fI@see "The Java Programming Language"\fRは次のテキストを生成します。
+\fB����1\fR��@see
+\fBstring\fR���������ϡ�\fIstring\fR�Υƥ����ȡ�����ȥ���ɲä��ޤ�����󥯤���������ޤ���string�ϡ����Ҥޤ���URL�Ǥϥ��������Ǥ��ʤ�����λ�����Ǥ���\fBjavadoc\fR���ޥ�ɤϡ��ǽ��ʸ���Ȥ�����Ű�����(")�򸡺����ơ����η��������Ҥη����ȶ��̤��ޤ������Ȥ��С�\fB@see "The Java Programming Language"\fR�ϼ��Υƥ����Ȥ��������ޤ���
 .sp
-\fB関連項目\fR:
+\fB��Ϣ����\fR:
 .sp
 "The Java Programming Language"
 .sp
-\fB形式2\fR。\fI@see <a href="URL#value">label</a>\fR形式は、\fIURL#value\fRにより定義されたリンクを追加します。\fIURL#value\fRパラメータは、相対URLまたは絶対URLです。\fIjavadoc\fRコマンドは、最初の文字として「より小さい」記号(\fI<\fR)を検索して、この形式を他の形式と区別します。たとえば、\fI@see <a href="spec\&.html#section">Java Spec</a>\fRは次のリンクを生成します。
+\fB����2\fR��\fB@see <a href="URL#value">label</a>\fR�ե�����ϡ�\fBURL#value\fR���������Ƥ���褦�˥�󥯤��ɲä��ޤ���\fBURL#value\fR�ѥ�᡼���ϡ�����URL�ޤ�������URL�Ǥ���\fBjavadoc\fR���ޥ�ɤϡ��ǽ��ʸ���Ȥ��ơ֤�꾮�����׵���(\fB<\fR)�򸡺����ơ����η�����¾�η����ȶ��̤��ޤ������Ȥ��С�\fB@see <a href="spec\&.html#section">Java Spec</a>\fR�ϡ����Υ�󥯤��������ޤ�:
 .sp
-\fB関連項目\fR:
+\fB��Ϣ����\fR:
 .sp
 Java Spec
 .sp
-\fB形式3\fR。\fI@see package\&.class#member label\fR形式は、表示テキスト・ラベルとともにリンクを追加します。このラベルは参照されているJava言語の指定された名前のドキュメントを指し示します。ラベルはオプションです。ラベルを省略した場合は、表示テキストのかわりに、名前が適切に短縮されて表示されます。\fI\-noqualifier\fRオプションを使用すると、この表示テキストからパッケージ名が全体的に削除されます。ラベルは、自動生成される表示テキストとは異なる表示テキストにする場合に使用します。「名前が表示される方法」を参照してください。
+\fB����3\fR��\fB@see package\&.class#member label\fR�����ϡ�ɽ���ƥ����ȡ���٥�ȤȤ�˥�󥯤��ɲä��ޤ������Υ�٥�ϻ��Ȥ���Ƥ���Java����λ��ꤵ�줿̾���Υɥ�����Ȥ�ؤ������ޤ�����٥�ϥ��ץ����Ǥ�����٥���ά�������ϡ�ɽ���ƥ����ȤΤ����ˡ�̾����Ŭ�ڤ�û�̤����ɽ������ޤ���\fB\-noqualifier\fR���ץ�������Ѥ���ȡ�����ɽ���ƥ����Ȥ���ѥå�����̾������Ū�˺������ޤ�����٥�ϡ���ư���������ɽ���ƥ����ȤȤϰۤʤ�ɽ���ƥ����Ȥˤ�����˻��Ѥ��ޤ�����̾����ɽ���������ˡ�פ򻲾Ȥ��Ƥ���������
 .sp
-Java SE 1\&.2だけは、ラベルではなく名前が\fI<code>\fR
-HTMLタグ内に自動的に表示されます。Java SE 1\&.2\&.2からは、ラベルを使用するかしないかにかかわらず、\fI<code>\fRタグは常に表示テキストを囲むかたちで含まれます。
+Java SE 1\&.2�����ϡ���٥�ǤϤʤ�̾����\fB<code>\fR
+HTML������˼�ưŪ��ɽ������ޤ���Java SE 1\&.2\&.2����ϡ���٥����Ѥ��뤫���ʤ����ˤ�����餺��\fB<code>\fR�����Ͼ��ɽ���ƥ����Ȥ�Ϥ���Ǵޤޤ�ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -1626,10 +1683,10 @@ HTMLタグ内に自動的に表示されます。Java SE 1\&.2\&.2からは、�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIpackage\&.class#member\fRには、参照されている任意の有効なプログラム要素の名前を指定します。つまり、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、またはフィールドの名前です。ただし、メンバー名の前の文字は、シャープ記号(\fI#\fR)にする必要があります。classは、任意のトップレベルまたはネストされたクラスか、インタフェースを表します。memberは、任意のコンストラクタ、メソッドまたはフィールドを表します(ネストされたクラスまたはインタフェースではありません)。この名前が、ドキュメント化されるクラスに含まれている場合、\fIjavadoc\fRコマンドは、その名前へのリンクを作成します。外部参照クラスへのリンクを作成するには、\fI\-link\fRオプションを使用します。参照クラスに属していない名前のドキュメントを参照するには、他の2つの\fI@see\fRタグ形式のどちらかを使用します。「名前の指定」を参照してください。
+\fBpackage\&.class#member\fR�ˤϡ����Ȥ���Ƥ���Ǥ�դ�ͭ���ʥץ���������Ǥ�̾������ꤷ�ޤ����Ĥޤꡢ�ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ��ޤ��ϥե�����ɤ�̾���Ǥ��������������С�̾������ʸ���ϡ����㡼�׵���(\fB#\fR)�ˤ���ɬ�פ�����ޤ���class�ϡ�Ǥ�դΥȥåץ�٥�ޤ��ϥͥ��Ȥ��줿���饹�������󥿥ե�������ɽ���ޤ���member�ϡ�Ǥ�դΥ��󥹥ȥ饯�����᥽�åɤޤ��ϥե�����ɤ�ɽ���ޤ�(�ͥ��Ȥ��줿���饹�ޤ��ϥ��󥿥ե������ǤϤ���ޤ���)������̾�������ɥ�����Ȳ�����륯�饹�˴ޤޤ�Ƥ����硢\fBjavadoc\fR���ޥ�ɤϡ�����̾���ؤΥ�󥯤�������ޤ����������ȥ��饹�ؤΥ�󥯤��������ˤϡ�\fB\-link\fR���ץ�������Ѥ��ޤ������ȥ��饹��°���Ƥ��ʤ�̾���Υɥ�����Ȥ򻲾Ȥ���ˤϡ�¾��2�Ĥ�\fB@see\fR���������Τɤ��餫����Ѥ��ޤ�����̾���λ���פ򻲾Ȥ��Ƥ���������
 .sp
-\fB注意:\fR
-外部参照クラスは、コマンドラインで\fIjavadoc\fRコマンドに渡されないクラスです。生成ドキュメント内で外部参照クラスにリンクしている箇所は、外部参照または外部リンクと呼ばれます。たとえば、\fIjava\&.awt package\fRに対してのみ\fIjavadoc\fRコマンドを実行した場合、\fIObject\fRなどの\fIjava\&.lang\fR内のすべてのクラスが外部参照クラスになります。\fI\-link\fRおよび\fI\-linkoffline\fRオプションを使用して、外部参照クラスへリンクします。外部参照クラスのソース・コメントは\fIjavadoc\fRコマンドの実行には使用できません。
+\fB����:\fR
+�������ȥ��饹�ϡ����ޥ�ɹԤ�\fBjavadoc\fR���ޥ�ɤ��Ϥ���ʤ����饹�Ǥ��������ɥ��������ǳ������ȥ��饹�˥�󥯤��Ƥ���ս�ϡ��������Ȥޤ��ϳ�����󥯤ȸƤФ�ޤ������Ȥ��С�\fBjava\&.awt package\fR���Ф��ƤΤ�\fBjavadoc\fR���ޥ�ɤ�¹Ԥ�����硢\fBObject\fR�ʤɤ�\fBjava\&.lang\fR��Τ��٤ƤΥ��饹���������ȥ��饹�ˤʤ�ޤ���\fB\-link\fR�����\fB\-linkoffline\fR���ץ�������Ѥ��ơ��������ȥ��饹�إ�󥯤��ޤ����������ȥ��饹�Υ������������Ȥ�\fBjavadoc\fR���ޥ�ɤμ¹Ԥˤϻ��ѤǤ��ޤ���
 .RE
 .sp
 .RS 4
@@ -1640,7 +1697,7 @@ HTMLタグ内に自動的に表示されます。Java SE 1\&.2\&.2からは、�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIlabel\fRは、省略可能なテキストで、リンクのラベルとして表示されます。ラベルには空白を含めることができます。\fIlabel\fRを省略すると、\fIpackage\&.class\&.member\fRが、現在のクラスおよびパッケージに応じて適切に短縮されて表示されます。「名前が表示される方法」を参照してください。
+\fBlabel\fR�ϡ���ά��ǽ�ʥƥ����Ȥǡ���󥯤Υ�٥�Ȥ���ɽ������ޤ�����٥�ˤ϶����ޤ�뤳�Ȥ��Ǥ��ޤ���\fBlabel\fR���ά����ȡ�\fBpackage\&.class\&.member\fR�������ߤΥ��饹����ӥѥå������˱�����Ŭ�ڤ�û�̤����ɽ������ޤ�����̾����ɽ���������ˡ�פ򻲾Ȥ��Ƥ���������
 .RE
 .sp
 .RS 4
@@ -1651,81 +1708,86 @@ HTMLタグ内に自動的に表示されます。Java SE 1\&.2\&.2からは、�
 .sp -1
 .IP \(bu 2.3
 .\}
-空白文字が、\fIpackage\&.class#member\fRと\fIlabel\fRの間の区切り文字になります。カッコの内側の空白文字はラベルの先頭とは解釈されないため、メソッドのパラメータ間に空白文字を入れてもかまいません。
+����ʸ������\fBpackage\&.class#member\fR��\fBlabel\fR�δ֤ζ��ڤ�ʸ���ˤʤ�ޤ������å�����¦�ζ���ʸ���ϥ�٥����Ƭ�Ȥϲ�ᤵ��ʤ����ᡢ�᥽�åɤΥѥ�᡼���֤˶���ʸ��������Ƥ⤫�ޤ��ޤ���
 .RE
 .sp
-この例では、\fI@see\fRタグ(\fICharacter\fRクラス内)が、\fIString\fRクラスのequalsメソッドを参照しています。タグには、名前\fIString#equals(Object)\fRとラベル\fIequals\fRの両方の引数が含まれています。
+������Ǥϡ�\fB@see\fR����(\fBCharacter\fR���饹��)����\fBString\fR���饹��equals�᥽�åɤ򻲾Ȥ��Ƥ��ޤ��������ˤϡ�̾��\fBString#equals(Object)\fR�ȥ�٥�\fBequals\fR��ξ���ΰ������ޤޤ�Ƥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-/**
- * @see String#equals(Object) equals
- */
+\fB/**\fR
+\fB * @see String#equals(Object) equals\fR
+\fB */\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-標準ドックレットは、次のようなHTMLを生成します。
+ɸ��ɥå���åȤϡ����Τ褦��HTML���������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-<dl>
-<dt><b>See Also:</b>
-<dd><a href="\&.\&./\&.\&./java/lang/String#equals(java\&.lang\&.Object)"><code>equals<code></a>
-</dl>
+\fB<dl>\fR
+\fB<dt><b>See Also:</b>\fR
+\fB<dd><a href="\&.\&./\&.\&./java/lang/String#equals(java\&.lang\&.Object)"><code>equals<code></a>\fR
+\fB</dl>\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-前述のコードは、ブラウザに次のように表示され、ラベルは表示リンク・テキストになっています。
+���ҤΥ����ɤϡ��֥饦���˼��Τ褦��ɽ�����졢��٥��ɽ����󥯡��ƥ����ȤˤʤäƤ��ޤ���
 .sp
-\fB関連項目\fR:
+\fB��Ϣ����\fR:
 .sp
 equals
 .RE
-名前の指定.PP
-この\fIpackage\&.class#member\fRという名前は、\fIjava\&.lang\&.String#toUpperCase()\fRのような完全修飾名にすることも、\fIString#toUpperCase()\fRや\fI#toUpperCase()\fRのような非完全修飾名にすることもできます。名前が完全修飾より短い場合は、\fIjavadoc\fRコマンドは、標準のJavaコンパイラの検索順序を使用して探します。「@seeタグの検索順序」を参照してください。名前は、メソッド引数の間など、カッコ内のスペースを含めることができます。部分的に修飾した短い名前を指定することの利点は、入力する文字数が減ることや、ソース・コードが読みやすくなることです。次のリストに様々な形式の名前を示します。ここで、\fIClass\fRにはクラスまたはインタフェースを、Typeにはクラス、インタフェース、配列、またはプリミティブを、methodにはメソッドまたはコンストラクタを、それぞれ指定できます。
+.PP
+̾���λ���
+.PP
+����\fBpackage\&.class#member\fR�Ȥ���̾���ϡ�\fBjava\&.lang\&.String#toUpperCase()\fR�Τ褦�ʴ�������̾�ˤ��뤳�Ȥ⡢\fBString#toUpperCase()\fR��\fB#toUpperCase()\fR�Τ褦����������̾�ˤ��뤳�Ȥ�Ǥ��ޤ���̾���������������û�����ϡ�\fBjavadoc\fR���ޥ�ɤϡ�ɸ���Java����ѥ���θ����������Ѥ���õ���ޤ�����@see�����θ�������פ򻲾Ȥ��Ƥ���������̾���ϡ��᥽�åɰ����δ֤ʤɡ����å���Υ��ڡ�����ޤ�뤳�Ȥ��Ǥ��ޤ�����ʬŪ�˽�������û��̾������ꤹ�뤳�Ȥ������ϡ����Ϥ���ʸ���������뤳�Ȥ䡢�������������ɤ��ɤߤ䤹���ʤ뤳�ȤǤ������Υꥹ�Ȥ��͡��ʷ�����̾���򼨤��ޤ��������ǡ�\fBClass\fR�ˤϥ��饹�ޤ��ϥ��󥿥ե�������Type�ˤϥ��饹�����󥿥ե����������󡢤ޤ��ϥץ�ߥƥ��֤�method�ˤϥ᥽�åɤޤ��ϥ��󥹥ȥ饯���򡢤��줾�����Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fBTypical forms for\fR\fB @see package\&.class#member\fR 
-\fBReferencing a member of the current class\fR
-@see #field
-@see #method(Type, Type,\&.\&.\&.)
-@see #method(Type argname, Type argname,\&.\&.\&.)
-@see #constructor(Type, Type,\&.\&.\&.)
-@see #constructor(Type argname, Type argname,\&.\&.\&.) 
-
-\fBReferencing another class in the current or imported packages\fR
-@see Class#field
-@see Class#method(Type, Type,\&.\&.\&.)
-@see Class#method(Type argname, Type argname,\&.\&.\&.)
-@see Class#constructor(Type, Type,\&.\&.\&.)
-@see Class#constructor(Type argname, Type argname,\&.\&.\&.)
-@see Class\&.NestedClass
-@see Class 
-
-\fBReferencing an element in another package (fully qualified)\fR
-@see package\&.Class#field
-@see package\&.Class#method(Type, Type,\&.\&.\&.)
-@see package\&.Class#method(Type argname, Type argname,\&.\&.\&.)
-@see package\&.Class#constructor(Type, Type,\&.\&.\&.)
-@see package\&.Class#constructor(Type argname, Type argname,\&.\&.\&.)
-@see package\&.Class\&.NestedClass
-@see package\&.Class
-@see package
+\fB\fBTypical forms for\fR\fR\fB\fB @see package\&.class#member\fR\fR\fB \fR
+\fB\fBReferencing a member of the current class\fR\fR
+\fB@see #field\fR
+\fB@see #method(Type, Type,\&.\&.\&.)\fR
+\fB@see #method(Type argname, Type argname,\&.\&.\&.)\fR
+\fB@see #constructor(Type, Type,\&.\&.\&.)\fR
+\fB@see #constructor(Type argname, Type argname,\&.\&.\&.) \fR
+ 
+\fB\fBReferencing another class in the current or imported packages\fR\fR
+\fB@see Class#field\fR
+\fB@see Class#method(Type, Type,\&.\&.\&.)\fR
+\fB@see Class#method(Type argname, Type argname,\&.\&.\&.)\fR
+\fB@see Class#constructor(Type, Type,\&.\&.\&.)\fR
+\fB@see Class#constructor(Type argname, Type argname,\&.\&.\&.)\fR
+\fB@see Class\&.NestedClass\fR
+\fB@see Class \fR
+ 
+\fB\fBReferencing an element in another package (fully qualified)\fR\fR
+\fB@see package\&.Class#field\fR
+\fB@see package\&.Class#method(Type, Type,\&.\&.\&.)\fR
+\fB@see package\&.Class#method(Type argname, Type argname,\&.\&.\&.)\fR
+\fB@see package\&.Class#constructor(Type, Type,\&.\&.\&.)\fR
+\fB@see package\&.Class#constructor(Type argname, Type argname,\&.\&.\&.)\fR
+\fB@see package\&.Class\&.NestedClass\fR
+\fB@see package\&.Class\fR
+\fB@see package\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-前のリストに関するメモ:
+���Υꥹ�Ȥ˴ؤ�����:
 .sp
 .RS 4
 .ie n \{\
@@ -1735,7 +1797,7 @@ equals
 .sp -1
 .IP \(bu 2.3
 .\}
-最初のタイプの形式(パッケージとクラスを省略)の場合、\fIjavadoc\fRコマンドは、現在のクラスの階層のみを検索します。つまり、現在のクラスかインタフェース、そのスーパークラスかスーパーインタフェース、またはその外側を囲んでいるクラスかインタフェースからメンバーを検索します(検索項目1\(en3)。現在のパッケージの他の部分や、他のパッケージは検索しません(検索項目4\(en5)。「@seeタグの検索順序」を参照してください。
+�ǽ�Υ����פη���(�ѥå������ȥ��饹���ά)�ξ�硢\fBjavadoc\fR���ޥ�ɤϡ����ߤΥ��饹�γ��ؤΤߤ򸡺����ޤ����Ĥޤꡢ���ߤΥ��饹�����󥿥ե����������Υ����ѡ����饹�������ѡ����󥿥ե��������ޤ��Ϥ��γ�¦��Ϥ�Ǥ��륯�饹�����󥿥ե�����������С��򸡺����ޤ�(��������1\(en3)�����ߤΥѥå�������¾����ʬ�䡢¾�Υѥå������ϸ������ޤ���(��������4\(en5)����@see�����θ�������פ򻲾Ȥ��Ƥ���������
 .RE
 .sp
 .RS 4
@@ -1746,7 +1808,7 @@ equals
 .sp -1
 .IP \(bu 2.3
 .\}
-メソッドまたはコンストラクタの入力時に、\fIgetValue\fRのようにカッコなしの名前を使用した場合、同じ名前のフィールドが存在していなければ、\fIjavadoc\fRコマンドはそのメソッドへのリンクを作成します。このメソッドがオーバーロードされている場合、\fIjavadoc\fRコマンドは、検索で最初に見つかったメソッドにリンクします。結果は前もって特定できません。
+�᥽�åɤޤ��ϥ��󥹥ȥ饯�������ϻ��ˡ�\fBgetValue\fR�Τ褦�˥��å��ʤ���̾������Ѥ�����硢Ʊ��̾���Υե�����ɤ�¸�ߤ��Ƥ��ʤ���С�\fBjavadoc\fR���ޥ�ɤϤ��Υ᥽�åɤؤΥ�󥯤�������ޤ������Υ᥽�åɤ������С������ɤ���Ƥ����硢\fBjavadoc\fR���ޥ�ɤϡ������Ǻǽ�˸��Ĥ��ä��᥽�åɤ˥�󥯤��ޤ�����̤�����ä�����Ǥ��ޤ���
 .RE
 .sp
 .RS 4
@@ -1757,7 +1819,7 @@ equals
 .sp -1
 .IP \(bu 2.3
 .\}
-ネストされたクラスは、すべての形式について、\fIouter\&.inner\fRとして指定する必要があります。単純に\fIinner\fRとはしないでください。
+�ͥ��Ȥ��줿���饹�ϡ����٤Ƥη����ˤĤ��ơ�\fBouter\&.inner\fR�Ȥ��ƻ��ꤹ��ɬ�פ�����ޤ���ñ���\fBinner\fR�ȤϤ��ʤ��Ǥ���������
 .RE
 .sp
 .RS 4
@@ -1768,12 +1830,14 @@ equals
 .sp -1
 .IP \(bu 2.3
 .\}
-すでに述べたように、クラスとメンバーとの間の区切り文字としては、ドット(\fI\&.\fR)ではなくシャープ記号(\fI#\fR)を使用します。このように指定すると、\fIjavadoc\fRコマンドは、あいまいさを解決できます。ドットは、クラス、ネストされたクラス、パッケージ、およびサブパッケージを区切るためにも使用されるからです。ただし、\fIjavadoc\fRコマンドでは、あいまいさがなければドットは正しく解析されますが、警告は表示されます。
+���Ǥ˽Ҥ٤��褦�ˡ����饹�ȥ��С��Ȥδ֤ζ��ڤ�ʸ���Ȥ��Ƥϡ��ɥå�(\fB\&.\fR)�ǤϤʤ����㡼�׵���(\fB#\fR)����Ѥ��ޤ������Τ褦�˻��ꤹ��ȡ�\fBjavadoc\fR���ޥ�ɤϡ������ޤ�������Ǥ��ޤ����ɥåȤϡ����饹���ͥ��Ȥ��줿���饹���ѥå�����������ӥ��֥ѥå���������ڤ뤿��ˤ���Ѥ���뤫��Ǥ�����������\fBjavadoc\fR���ޥ�ɤǤϡ������ޤ������ʤ���ХɥåȤ����������Ϥ���ޤ������ٹ��ɽ������ޤ���
 .RE
-@seeタグの検索順序.PP
-\fIjavadoc\fRコマンドは、ソース・ファイル、パッケージ・ファイル、概要ファイルに表示される\fI@see\fRタグを処理します。後者の2つのファイルでは、完全修飾の名前を\fI@see\fRタグに指定する必要があります。ソース・ファイルでは、完全修飾の名前、または部分修飾の名前を指定できます。
 .PP
-次に、\fI@see\fRタグの検索順序を示します。
+@see�����θ������
+.PP
+\fBjavadoc\fR���ޥ�ɤϡ����������ե����롢�ѥå��������ե����롢���ץե������ɽ�������\fB@see\fR������������ޤ�����Ԥ�2�ĤΥե�����Ǥϡ�����������̾����\fB@see\fR�����˻��ꤹ��ɬ�פ�����ޤ������������ե�����Ǥϡ�����������̾�����ޤ�����ʬ������̾�������Ǥ��ޤ���
+.PP
+���ˡ�\fB@see\fR�����θ�������򼨤��ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -1783,7 +1847,7 @@ equals
 .sp -1
 .IP "  1." 4.2
 .\}
-現在のクラスまたはインタフェース。
+���ߤΥ��饹�ޤ��ϥ��󥿥ե�������
 .RE
 .sp
 .RS 4
@@ -1794,7 +1858,7 @@ equals
 .sp -1
 .IP "  2." 4.2
 .\}
-外側を囲んでいるクラスとインタフェース(最も近いものから検索)。
+��¦��Ϥ�Ǥ��륯�饹�ȥ��󥿥ե�����(�Ǥ�ᤤ��Τ��鸡��)��
 .RE
 .sp
 .RS 4
@@ -1805,7 +1869,7 @@ equals
 .sp -1
 .IP "  3." 4.2
 .\}
-スーパークラスとスーパーインタフェース(最も近いものから検索)。
+�����ѡ����饹�ȥ����ѡ����󥿥ե�����(�Ǥ�ᤤ��Τ��鸡��)��
 .RE
 .sp
 .RS 4
@@ -1816,7 +1880,7 @@ equals
 .sp -1
 .IP "  4." 4.2
 .\}
-現在のパッケージ。
+���ߤΥѥå�������
 .RE
 .sp
 .RS 4
@@ -1827,12 +1891,12 @@ equals
 .sp -1
 .IP "  5." 4.2
 .\}
-インポートされているパッケージ、クラス、およびインタフェース(\fIimport\fR文の順序に従って検索)。
+����ݡ��Ȥ���Ƥ���ѥå����������饹������ӥ��󥿥ե�����(\fBimport\fRʸ�ν���˽��äƸ���)��
 .RE
 .PP
-\fIjavadoc\fRコマンドは、各クラスについて項目1\-3を再帰的に適用しながら、一致する名前が見つかるまで検索を続けます。つまり、まず現在のクラスを検索し、次にその外側を囲んでいるクラスEを検索した後、Eのスーパークラスを検索してから、Eを囲んでいるクラスを検索します。項目4と5では、\fIjavadoc\fRコマンドが1つのパッケージ内のクラスまたはインタフェースを検索する順序は決まっていません(その順序は、個々のコンパイラによって異なります)。項目5では、\fIjavadoc\fRコマンドは、\fIjava\&.lang\fRを検索します。このパッケージは、すべてのプログラムに自動的にインポートされるからです。
+\fBjavadoc\fR���ޥ�ɤϡ��ƥ��饹�ˤĤ��ƹ���1\-3��Ƶ�Ū��Ŭ�Ѥ��ʤ��顢���פ���̾�������Ĥ���ޤǸ�����³���ޤ����Ĥޤꡢ�ޤ����ߤΥ��饹�򸡺��������ˤ��γ�¦��Ϥ�Ǥ��륯�饹E�򸡺������塢E�Υ����ѡ����饹�򸡺����Ƥ��顢E��Ϥ�Ǥ��륯�饹�򸡺����ޤ�������4��5�Ǥϡ�\fBjavadoc\fR���ޥ�ɤ�1�ĤΥѥå�������Υ��饹�ޤ��ϥ��󥿥ե������򸡺��������Ϸ�ޤäƤ��ޤ���(���ν���ϡ��ġ��Υ���ѥ���ˤ�äưۤʤ�ޤ�)������5�Ǥϡ�\fBjavadoc\fR���ޥ�ɤϡ�\fIjava\&.lang\fR�򸡺����ޤ������Υѥå������ϡ����٤ƤΥץ������˼�ưŪ�˥���ݡ��Ȥ���뤫��Ǥ���
 .PP
-\fIjavadoc\fRコマンドは、完全修飾でないソース・ファイルで\fI@see\fRタグを見つけると、Javaコンパイラと同じ順序で指定された名前を検索します(ただし、\fIjavadoc\fRコマンドは、特定の名前空間のあいまいさを検出しません。これは、ソース・コードにこれらのエラーが存在していないことを前提としているためです)。この検索順序は、Java言語仕様で正式に定義されています。\fIjavadoc\fRコマンドは、関連するクラスとパッケージ、およびインポートされたクラスとパッケージのすべてからその名前を検索します。具体的には、次の順序で検索します。
+\fBjavadoc\fR���ޥ�ɤϡ����������Ǥʤ����������ե������\fB@see\fR�����򸫤Ĥ���ȡ�Java����ѥ����Ʊ������ǻ��ꤵ�줿̾���򸡺����ޤ�(��������\fBjavadoc\fR���ޥ�ɤϡ������̾�����֤Τ����ޤ����򸡽Ф��ޤ��󡣤���ϡ��������������ɤˤ����Υ��顼��¸�ߤ��Ƥ��ʤ����Ȥ�����Ȥ��Ƥ��뤿��Ǥ�)�����θ�������ϡ�Java������ͤ��������������Ƥ��ޤ���\fBjavadoc\fR���ޥ�ɤϡ���Ϣ���륯�饹�ȥѥå�����������ӥ���ݡ��Ȥ��줿���饹�ȥѥå������Τ��٤Ƥ��餽��̾���򸡺����ޤ�������Ū�ˤϡ����ν���Ǹ������ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -1842,7 +1906,7 @@ equals
 .sp -1
 .IP "  1." 4.2
 .\}
-現在のクラスまたはインタフェース。
+���ߤΥ��饹�ޤ��ϥ��󥿥ե�������
 .RE
 .sp
 .RS 4
@@ -1853,7 +1917,7 @@ equals
 .sp -1
 .IP "  2." 4.2
 .\}
-外側を囲んでいるクラスとインタフェース(最も近いものから検索)。
+��¦��Ϥ�Ǥ��륯�饹�ȥ��󥿥ե�����(�Ǥ�ᤤ��Τ��鸡��)��
 .RE
 .sp
 .RS 4
@@ -1864,7 +1928,7 @@ equals
 .sp -1
 .IP "  3." 4.2
 .\}
-スーパークラスとスーパーインタフェース(最も近いものから検索)。
+�����ѡ����饹�ȥ����ѡ����󥿥ե�����(�Ǥ�ᤤ��Τ��鸡��)��
 .RE
 .sp
 .RS 4
@@ -1875,7 +1939,7 @@ equals
 .sp -1
 .IP "  4." 4.2
 .\}
-現在のパッケージ。
+���ߤΥѥå�������
 .RE
 .sp
 .RS 4
@@ -1886,86 +1950,91 @@ equals
 .sp -1
 .IP "  5." 4.2
 .\}
-インポートされているパッケージ、クラス、およびインタフェース(\fIimport\fR文の順序に従って検索)。
+����ݡ��Ȥ���Ƥ���ѥå����������饹������ӥ��󥿥ե�����(\fBimport\fRʸ�ν���˽��äƸ���)��
 .RE
 .PP
-\fIjavadoc\fRコマンドは、必ずしもサブクラスを検索するとは限りません。また、実行中に他のパッケージのドキュメントが生成される場合でも、他のパッケージを検索しません。たとえば、\fI@see\fRタグが\fIjava\&.awt\&.event\&.KeyEvent\fRクラス内に含まれていて、\fIjava\&.awt package\fR内のある名前を参照していても、そのクラスがインポートしないかぎり\fIjavadoc\fRコマンドはそのパッケージを検索しません。
-名前が表示される方法.PP
-\fIlabel\fRを省略すると、\fIpackage\&.class\&.member\fRが表示されます。一般に、これは現在のクラスおよびパッケージに応じて適切に短縮されます。短縮されるとは、\fIjavadoc\fRコマンドにより必要最小限の名前のみが表示されるということです。たとえば、\fIString\&.toUpperCase()\fRメソッドに、同じクラスのメンバーへの参照と他のクラスのメンバーへの参照が含まれている場合、クラス名が表示されるのは後者のケースのみです(次のリストを参照)。パッケージ名を全体的に削除するには、\fI\-noqualifier\fRオプションを使用します。
+\fBjavadoc\fR���ޥ�ɤϡ�ɬ�����⥵�֥��饹�򸡺�����Ȥϸ¤�ޤ��󡣤ޤ����¹����¾�Υѥå������Υɥ�����Ȥ������������Ǥ⡢¾�Υѥå������򸡺����ޤ��󡣤��Ȥ��С�\fB@see\fR������\fBjava\&.awt\&.event\&.KeyEvent\fR���饹��˴ޤޤ�Ƥ��ơ�\fBjava\&.awt package\fR��Τ���̾���򻲾Ȥ��Ƥ��Ƥ⡢���Υ��饹������ݡ��Ȥ��ʤ�������\fBjavadoc\fR���ޥ�ɤϤ��Υѥå������򸡺����ޤ���
+.PP
+̾����ɽ���������ˡ
+.PP
+\fBlabel\fR���ά����ȡ�\fBpackage\&.class\&.member\fR��ɽ������ޤ������̤ˡ�����ϸ��ߤΥ��饹����ӥѥå������˱�����Ŭ�ڤ�û�̤���ޤ���û�̤����Ȥϡ�\fBjavadoc\fR���ޥ�ɤˤ��ɬ�׺Ǿ��¤�̾���Τߤ�ɽ�������Ȥ������ȤǤ������Ȥ��С�\fBString\&.toUpperCase()\fR�᥽�åɤˡ�Ʊ�����饹�Υ��С��ؤλ��Ȥ�¾�Υ��饹�Υ��С��ؤλ��Ȥ��ޤޤ�Ƥ����硢���饹̾��ɽ�������Τϸ�ԤΥ������ΤߤǤ�(���Υꥹ�Ȥ򻲾�)���ѥå�����̾������Ū�˺������ˤϡ�\fB\-noqualifier\fR���ץ�������Ѥ��ޤ���
 .RS 4
-\fB参照のタイプ\fR: \fI@see\fRタグは同じクラス、同じパッケージのメンバーを参照します
+\fB���ȤΥ�����\fR: \fB@see\fR������Ʊ�����饹��Ʊ���ѥå������Υ��С��򻲾Ȥ��ޤ�
 .RE
 .RS 4
-\fB例\fR: \fI@see String#toLowerCase()\fR
+\fB��\fR: \fB@see String#toLowerCase()\fR
 .RE
 .RS 4
-\fB表示\fR: \fItoLowerCase()\fR \- パッケージおよびクラス名を省略します
-.RE
-.RS 4
-.RE
-.RS 4
-\fB参照のタイプ\fR: \fI@see\fRタグは別のクラス、同じパッケージのメンバーを参照します
-.RE
-.RS 4
-\fB例\fR: \fI@see Character#toLowerCase(char)\fR
-.RE
-.RS 4
-\fB表示\fR: \fICharacter\&.toLowerCase(char)\fR \- パッケージ名を省略し、クラス名を含みます
+\fBɽ��\fR: \fBtoLowerCase()\fR \- �ѥå���������ӥ��饹̾���ά���ޤ�
 .RE
 .RS 4
 .RE
 .RS 4
-\fB参照のタイプ\fR: \fI@see\fRタグは異なるクラス、異なるパッケージのメンバーを参照します
+\fB���ȤΥ�����\fR: \fB@see\fR�������̤Υ��饹��Ʊ���ѥå������Υ��С��򻲾Ȥ��ޤ�
 .RE
 .RS 4
-\fB例\fR: \fI@see java\&.io\&.File#exists()\fR
+\fB��\fR: \fB@see Character#toLowerCase(char)\fR
 .RE
 .RS 4
-\fB表示\fR: \fIjava\&.io\&.File\&.exists()\fR \- パッケージおよびクラス名を含みます
+\fBɽ��\fR: \fBCharacter\&.toLowerCase(char)\fR \- �ѥå�����̾���ά�������饹̾��ޤߤޤ�
 .RE
 .RS 4
 .RE
-@seeタグの例.PP
-右側のコメントは、\fI@see\fRタグが\fIjava\&.applet\&.Applet\fRなどの別のパッケージのクラス内にある場合に、名前がどのように表示されるかを示しています。JavadocツールでのDocコメントの記述方法の@seeに関する項
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@see)を参照してください。
+.RS 4
+\fB���ȤΥ�����\fR: \fB@see\fR�����ϰۤʤ륯�饹���ۤʤ�ѥå������Υ��С��򻲾Ȥ��ޤ�
+.RE
+.RS 4
+\fB��\fR: \fB@see java\&.io\&.File#exists()\fR
+.RE
+.RS 4
+\fBɽ��\fR: \fBjava\&.io\&.File\&.exists()\fR \- �ѥå���������ӥ��饹̾��ޤߤޤ�
+.RE
+.RS 4
+.RE
+.PP
+@see��������
+.PP
+��¦�Υ����Ȥϡ�\fB@see\fR������\fBjava\&.applet\&.Applet\fR�ʤɤ��̤Υѥå������Υ��饹��ˤ�����ˡ�̾�����ɤΤ褦��ɽ������뤫�򼨤��Ƥ��ޤ���Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ��@see�˴ؤ����
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@see)�򻲾Ȥ��Ƥ���������
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-                                            See also:
-@see java\&.lang\&.String                   //  String                           
-@see java\&.lang\&.String The String class  //  The String class                 
-@see String                             //  String                           
-@see String#equals(Object)              //  String\&.equals(Object)            
-@see String#equals                      //  String\&.equals(java\&.lang\&.Object)   
-@see java\&.lang\&.Object#wait(long)        //  java\&.lang\&.Object\&.wait(long)      
-@see Character#MAX_RADIX                //  Character\&.MAX_RADIX              
-@see <a href="spec\&.html">Java Spec</a>  //  Java Spec            
-@see "The Java Programming Language"    //  "The Java Programming Language" 
+\fB                                            See also:\fR
+\fB@see java\&.lang\&.String                   //  String                           \fR
+\fB@see java\&.lang\&.String The String class  //  The String class                 \fR
+\fB@see String                             //  String                           \fR
+\fB@see String#equals(Object)              //  String\&.equals(Object)            \fR
+\fB@see String#equals                      //  String\&.equals(java\&.lang\&.Object)   \fR
+\fB@see java\&.lang\&.Object#wait(long)        //  java\&.lang\&.Object\&.wait(long)      \fR
+\fB@see Character#MAX_RADIX                //  Character\&.MAX_RADIX              \fR
+\fB@see <a href="spec\&.html">Java Spec</a>  //  Java Spec            \fR
+\fB@see "The Java Programming Language"    //  "The Java Programming Language" \fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fB注意:\fR
-\fI@se\fR\fIe\fRタグを拡張してドキュメント化されないクラスにリンクするには、\fI\-link\fRオプションを使用します。
+\fB����:\fR
+\fB@se\fR\fBe\fR�������ĥ���ƥɥ�����Ȳ�����ʤ����饹�˥�󥯤���ˤϡ�\fB\-link\fR���ץ�������Ѥ��ޤ���
 .PP
 @serial \fIfield\-description\fR | include | exclude
 .RS 4
-JDK 1\&.2で導入
+JDK 1\&.2��Ƴ��
 .sp
-デフォルトの直列化可能フィールドのドキュメンテーション・コメントで使用します。クラスの直列化可能なフィールドおよびデータの文書化
-(http://docs\&.oracle\&.com/javase/8/docs/platform/serialization/spec/serial\-arch\&.html#5251)を参照してください
+�ǥե���Ȥ�ľ�󲽲�ǽ�ե�����ɤΥɥ�����ơ�����󡦥����Ȥǻ��Ѥ��ޤ������饹��ľ�󲽲�ǽ�ʥե�����ɤ���ӥǡ�����ʸ��
+(http://docs\&.oracle\&.com/javase/8/docs/platform/serialization/spec/serial\-arch\&.html#5251)�򻲾Ȥ��Ƥ�������
 .sp
-Oracleの直列化された形式の仕様にクラスを含める基準
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/serialized\-criteria\-137781\&.html)も参照してください
+Oracle��ľ�󲽤��줿�����λ��ͤ˥��饹��ޤ����
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/serialized\-criteria\-137781\&.html)�⻲�Ȥ��Ƥ�������
 .sp
-\fIfield\-description\fR(省略可能)では、フィールドの意味を説明し、取り得る値のリストを示す必要があります。必要な場合は、複数の行に渡って説明を記述できます。標準ドックレットは、この情報を、直列化された形式ページに追加します。相互参照ページを参照してください。
+\fBfield\-description\fR(��ά��ǽ)�Ǥϡ��ե�����ɤΰ�̣������������������ͤΥꥹ�Ȥ򼨤�ɬ�פ�����ޤ���ɬ�פʾ��ϡ�ʣ���ιԤ��Ϥä������򵭽ҤǤ��ޤ���ɸ��ɥå���åȤϡ����ξ����ľ�󲽤��줿�����ڡ������ɲä��ޤ�����߻��ȥڡ����򻲾Ȥ��Ƥ���������
 .sp
-クラスを直列化した後に直列化可能フィールドをクラスに追加した場合、主説明に、追加したバージョンを識別する文を追加する必要があります。
+���饹��ľ�󲽤������ľ�󲽲�ǽ�ե�����ɤ򥯥饹���ɲä�����硢�������ˡ��ɲä����С��������̤���ʸ���ɲä���ɬ�פ�����ޤ���
 .sp
-\fIinclude\fRおよび\fIexclude\fR引数は、直列化された形式ページにクラスまたはパッケージを含めるか除外するかを示します。次のように機能します。
+\fBinclude\fR�����\fBexclude\fR�����ϡ�ľ�󲽤��줿�����ڡ����˥��饹�ޤ��ϥѥå�������ޤ�뤫�������뤫�򼨤��ޤ������Τ褦�˵�ǽ���ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -1975,7 +2044,7 @@ Oracleの直列化された形式の仕様にクラスを含める基準
 .sp -1
 .IP \(bu 2.3
 .\}
-\fISerializable\fRを実装しているpublicまたはprotectedクラスは、そのクラス(またはそのクラスが属するパッケージ)が\fI@serial exclude\fRタグでマークされていないかぎり、含められます。
+\fBSerializable\fR��������Ƥ���public�ޤ���protected���饹�ϡ����Υ��饹(�ޤ��Ϥ��Υ��饹��°����ѥå�����)��\fB@serial exclude\fR�����ǥޡ�������Ƥ��ʤ������ꡢ�ޤ���ޤ���
 .RE
 .sp
 .RS 4
@@ -1986,212 +2055,217 @@ Oracleの直列化された形式の仕様にクラスを含める基準
 .sp -1
 .IP \(bu 2.3
 .\}
-\fISerializable\fRを実装しているprivateまたはpackage\-privateクラスは、そのクラス(またはそのクラスが属するパッケージ)が\fI@serial include\fRタグでマークされていないかぎり、除外されます。
+\fBSerializable\fR��������Ƥ���private�ޤ���package\-private���饹�ϡ����Υ��饹(�ޤ��Ϥ��Υ��饹��°����ѥå�����)��\fB@serial include\fR�����ǥޡ�������Ƥ��ʤ������ꡢ��������ޤ���
 .RE
 .sp
-たとえば、\fIjavax\&.swing\fRパッケージはpackage\&.htmlまたはpackage\-info\&.java内で\fI@serial\fR
-\fIexclude\fRタグでマークされています。publicクラス\fIjava\&.security\&.BasicPermission\fRは\fI@serial exclude\fRタグでマークされています。package\-privateクラス\fIjava\&.util\&.PropertyPermissionCollection\fRは\fI@serial include\fRタグでマークされています。
+���Ȥ��С�\fBjavax\&.swing\fR�ѥå�������package\&.html�ޤ���package\-info\&.java���\fB@serial\fR
+\fBexclude\fR�����ǥޡ�������Ƥ��ޤ���public���饹\fBjava\&.security\&.BasicPermission\fR��\fB@serial exclude\fR�����ǥޡ�������Ƥ��ޤ���package\-private���饹\fBjava\&.util\&.PropertyPermissionCollection\fR��\fB@serial include\fR�����ǥޡ�������Ƥ��ޤ���
 .sp
-クラス・レベルの\fI@serial\fRタグはパッケージ・レベルの\fI@serial\fRタグをオーバーライドします。
+���饹����٥��\fB@serial\fR�����ϥѥå���������٥��\fB@serial\fR�����򥪡��С��饤�ɤ��ޤ���
 .RE
 .PP
 @serialData \fIdata\-description\fR
 .RS 4
-JDK 1\&.2で導入
+JDK 1\&.2��Ƴ��
 .sp
-データの説明値を使用して、直列化された形式でのデータの型と順序をドキュメント化します。このデータには、\fIwriteObject\fRメソッドによって書き込まれる省略可能なデータ、および\fIExternalizable\&.writeExternal\fRメソッドによって書き込まれるすべてのデータ(ベース・クラスを含む)が含まれます。
+�ǡ����������ͤ���Ѥ��ơ�ľ�󲽤��줿�����ǤΥǡ����η��Ƚ����ɥ�����Ȳ����ޤ������Υǡ����ˤϡ�\fBwriteObject\fR�᥽�åɤˤ�äƽ񤭹��ޤ���ά��ǽ�ʥǡ����������\fBExternalizable\&.writeExternal\fR�᥽�åɤˤ�äƽ񤭹��ޤ�뤹�٤ƤΥǡ���(�١��������饹��ޤ�)���ޤޤ�ޤ���
 .sp
-\fI@serialData\fRタグは、\fIwriteObject\fR、\fIreadObject\fR、\fIwriteExternal\fR、\fIreadExternal\fR、\fIwriteReplace\fRおよび\fIreadResolve\fRメソッドのドキュメンテーション・コメントで使用できます。
+\fB@serialData\fR�����ϡ�\fBwriteObject\fR��\fBreadObject\fR��\fBwriteExternal\fR��\fBreadExternal\fR��\fBwriteReplace\fR�����\fBreadResolve\fR�᥽�åɤΥɥ�����ơ�����󡦥����Ȥǻ��ѤǤ��ޤ���
 .RE
 .PP
 @serialField \fIfield\-name\fR \fIfield\-type\fR \fIfield\-description\fR
 .RS 4
-JDK 1\&.2で導入
+JDK 1\&.2��Ƴ��
 .sp
-\fISerializable\fRクラスの\fIserialPersistentFields\fRメンバーの\fIObjectStreamField\fRコンポーネントをドキュメント化します。\fIObjectStreamField\fRコンポーネントごとに1つの\fI@serialField\fRタグを使用します。
+\fBSerializable\fR���饹��\fBserialPersistentFields\fR���С���\fBObjectStreamField\fR����ݡ��ͥ�Ȥ�ɥ�����Ȳ����ޤ���\fBObjectStreamField\fR����ݡ��ͥ�Ȥ��Ȥ�1�Ĥ�\fB@serialField\fR��������Ѥ��ޤ���
 .RE
 .PP
 @since \fIsince\-text\fR
 .RS 4
-JDK 1\&.1で導入
+JDK 1\&.1��Ƴ��
 .sp
-生成ドキュメントに、指定された\fIsince\-text\fRの値の\fI「導入されたバージョン」\fR見出しを追加します。このテキストには、特別な内部構造はありません。このタグは、すべてのドキュメンテーション・コメント、つまり概要、パッケージ、クラス、インタフェース、コンストラクタ、メソッド、またはフィールドで有効です。このタグは、特定の変更または機能が、\fIsince\-text\fRの値によって指定されたソフトウェア・リリース以降、存在していることを意味します。たとえば、\fI@since 1\&.5\fRです。
+�����ɥ�����Ȥˡ����ꤵ�줿\fBsince\-text\fR���ͤ�\fI��Ƴ�����줿�С�������\fR���Ф����ɲä��ޤ������Υƥ����Ȥˤϡ����̤�������¤�Ϥ���ޤ��󡣤��Υ����ϡ����٤ƤΥɥ�����ơ�����󡦥����ȡ��Ĥޤ공�ס��ѥå����������饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ��ޤ��ϥե�����ɤ�ͭ���Ǥ������Υ����ϡ�������ѹ��ޤ��ϵ�ǽ����\fBsince\-text\fR���ͤˤ�äƻ��ꤵ�줿���եȥ���������꡼���ʹߡ�¸�ߤ��Ƥ��뤳�Ȥ��̣���ޤ������Ȥ��С�\fB@since 1\&.5\fR�Ǥ���
 .sp
-Javaプラットフォームのソース・コードの場合、\fI@since\fRタグは、JavaプラットフォームAPI仕様のバージョンを示します。ソース・コードがリファレンス実装に追加された時期を示すとは限りません。複数の\fI@since\fRタグを使用でき、複数の\fI@author\fRタグのように扱われます。プログラム要素が複数のAPIで使用される場合、複数のタグを使用できます。
+Java�ץ�åȥե�����Υ������������ɤξ�硢\fB@since\fR�����ϡ�Java�ץ�åȥե�����API���ͤΥС������򼨤��ޤ����������������ɤ���ե���󥹼������ɲä��줿�����򼨤��Ȥϸ¤�ޤ���ʣ����\fB@since\fR��������ѤǤ���ʣ����\fB@author\fR�����Τ褦�˰����ޤ����ץ���������Ǥ�ʣ����API�ǻ��Ѥ�����硢ʣ���Υ�������ѤǤ��ޤ���
 .RE
 .PP
 @throws \fIclass\-name\fR \fIdescription\fR
 .RS 4
-JDK 1\&.2で導入
+JDK 1\&.2��Ƴ��
 .sp
-\fI@exception\fRタグと同じ動作をします。JavadocツールでのDocコメントの記述方法の@throwsに関する項
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@exception)を参照してください
+\fB@exception\fR������Ʊ��ư��򤷤ޤ���Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ��@throws�˴ؤ����
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@exception)�򻲾Ȥ��Ƥ�������
 .sp
-\fI@throws\fRタグは、生成ドキュメントに\fIThrows\fR小見出しを追加して、\fIclass\-name\fRおよび\fIdescription\fRテキストを書き込みます。\fIclass\-name\fRは、そのメソッドからスローされる可能性のある例外の名前です。このタグは、メソッド、コンストラクタのドキュメンテーション・コメント内でのみ有効です。このクラスが完全指定の名前で記述されていない場合、\fIjavadoc\fRコマンドは、検索順序に従ってクラスを探します。複数の\fI@throws\fRタグを、同じ例外または違う例外の指定したドキュメンテーション・コメントで使用できます。「@seeタグの検索順序」を参照してください。
+\fB@throws\fR�����ϡ������ɥ�����Ȥ�\fIThrows\fR�����Ф����ɲä��ơ�\fBclass\-name\fR�����\fBdescription\fR�ƥ����Ȥ�񤭹��ߤޤ���\fIclass\-name\fR�ϡ����Υ᥽�åɤ��饹����������ǽ���Τ����㳰��̾���Ǥ������Υ����ϡ��᥽�åɡ����󥹥ȥ饯���Υɥ�����ơ�����󡦥�������ǤΤ�ͭ���Ǥ������Υ��饹�����������̾���ǵ��Ҥ���Ƥ��ʤ���硢\fBjavadoc\fR���ޥ�ɤϡ���������˽��äƥ��饹��õ���ޤ���ʣ����\fB@throws\fR������Ʊ���㳰�ޤ��ϰ㤦�㳰�λ��ꤷ���ɥ�����ơ�����󡦥����Ȥǻ��ѤǤ��ޤ�����@see�����θ�������פ򻲾Ȥ��Ƥ���������
 .sp
-すべてのチェック済例外がドキュメント化されるようにするために、\fI@throws\fRタグがthrows節内の例外用に存在しない場合は、\fI@throws\fRタグでドキュメント化されたかのように、\fIjavadoc\fRコマンドによって例外がHTML出力に説明なしで追加されます。
+���٤ƤΥ����å����㳰���ɥ�����Ȳ������褦�ˤ��뤿��ˡ�\fB@throws\fR������throws������㳰�Ѥ�¸�ߤ��ʤ����ϡ�\fB@throws\fR�����ǥɥ�����Ȳ����줿���Τ褦�ˡ�\fBjavadoc\fR���ޥ�ɤˤ�ä��㳰��HTML���Ϥ������ʤ����ɲä���ޤ���
 .sp
-オーバーライドされるメソッド内で例外が明示的に宣言されている場合のみ、\fI@throws\fRのドキュメントがそのメソッドからサブクラスにコピーされます。インタフェース・メソッドから実装メソッドにコピーされる場合も同様です。\fI{@inheritDoc}\fRタグを使用して、\fI@throws\fRタグがドキュメンテーションを継承するように強制できます。
+�����С��饤�ɤ����᥽�å�����㳰������Ū���������Ƥ�����Τߡ�\fB@throws\fR�Υɥ�����Ȥ����Υ᥽�åɤ��饵�֥��饹�˥��ԡ�����ޤ������󥿥ե��������᥽�åɤ�������᥽�åɤ˥��ԡ���������Ʊ�ͤǤ���\fB{@inheritDoc}\fR��������Ѥ��ơ�\fB@throws\fR�������ɥ�����ơ�������Ѿ�����褦�˶����Ǥ��ޤ���
 .RE
 .PP
 {@value \fIpackage\&.class#field\fR}
 .RS 4
-JDK 1\&.4で導入
+JDK 1\&.4��Ƴ��
 .sp
-定数の値を表示します。\fI{@value}\fRタグが静的フィールドのドキュメンテーション・コメントで引数なしで使用されている場合、その定数の値を表示します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-/**
- * The value of this constant is {@value}\&.
- */
-public static final String SCRIPT_START = "<script>"
-.fi
-.if n \{\
-.RE
-.\}
-任意のドキュメンテーション・コメント内で引数\fIpackage\&.class#field\fRありで使用された場合、\fI{@value}\fRタグは指定された定数の値を表示します。
+������ͤ�ɽ�����ޤ���\fB{@value}\fR��������Ū�ե�����ɤΥɥ�����ơ�����󡦥����Ȥǰ����ʤ��ǻ��Ѥ���Ƥ����硢����������ͤ�ɽ�����ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-/**
- * Evaluates the script starting with {@value #SCRIPT_START}\&.
- */
-public String evalScript(String script) {}
+\fB/**\fR
+\fB * The value of this constant is {@value}\&.\fR
+\fB */\fR
+\fBpublic static final String SCRIPT_START = "<script>"\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-引数\fIpackage\&.class#field\fRは、\fI@see\fRタグ引数と同一の形式になります。ただし、メンバーは静的フィールドである必要があります。
+Ǥ�դΥɥ�����ơ�����󡦥�������ǰ���\fBpackage\&.class#field\fR����ǻ��Ѥ��줿��硢\fB{@value}\fR�����ϻ��ꤵ�줿������ͤ�ɽ�����ޤ���
 .sp
-これらの定数の値は「定数フィールド値」
-(http://docs\&.oracle\&.com/javase/8/docs/api/constant\-values\&.html)にも表示されます
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB/**\fR
+\fB * Evaluates the script starting with {@value #SCRIPT_START}\&.\fR
+\fB */\fR
+\fBpublic String evalScript(String script) {}\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+����\fBpackage\&.class#field\fR�ϡ�\fB@see\fR����������Ʊ��η����ˤʤ�ޤ��������������С�����Ū�ե�����ɤǤ���ɬ�פ�����ޤ���
+.sp
+������������ͤϡ�����ե�������͡�
+(http://docs\&.oracle\&.com/javase/8/docs/api/constant\-values\&.html)�ˤ�ɽ������ޤ�
 .RE
 .PP
 @version \fIversion\-text\fR
 .RS 4
-JDK 1\&.0で導入
+JDK 1\&.0��Ƴ��
 .sp
-\fI\-version\fRオプションが使用されている場合、生成ドキュメントに\fI「バージョン」\fR小見出しを追加して、指定された\fIversion\-text\fRの値を書き込みます。このタグはこのコードが含まれるソフトウェアの現在のリリース番号を保持するためのものであるのに対し、\fI@since\fRタグは、このコードが導入されたリリース番号を保持します。\fIversion\-text\fRの値には、特別な内部構造はありません。JavadocツールでのDocコメントの記述方法の@versionに関する項
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@version)を参照してください
+\fB\-version\fR���ץ���󤬻��Ѥ���Ƥ����硢�����ɥ�����Ȥ�\fI�֥С�������\fR�����Ф����ɲä��ơ����ꤵ�줿\fBversion\-text\fR���ͤ�񤭹��ߤޤ������Υ����Ϥ��Υ����ɤ��ޤޤ�륽�եȥ������θ��ߤΥ�꡼���ֹ���ݻ����뤿��Τ�ΤǤ���Τ��Ф���\fB@since\fR�����ϡ����Υ����ɤ�Ƴ�����줿��꡼���ֹ���ݻ����ޤ���\fBversion\-text\fR���ͤˤϡ����̤�������¤�Ϥ���ޤ���Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ��@version�˴ؤ����
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#@version)�򻲾Ȥ��Ƥ�������
 .sp
-1つのドキュメンテーション・コメントに複数の\fI@version\fRタグを含めることができます。必要に応じて、1つの\fI@version\fRタグに1つのリリース番号を指定することも、複数のリリース番号を指定することもできます。前者の場合は、\fIjavadoc\fRコマンドによって名前と名前の間にカンマ(,)と空白文字が挿入されます。後者の場合は、テキスト全体が解析されることなく、生成ドキュメントにコピーされます。したがって、カンマではなく、各言語に対応した名前区切り文字を使用する必要があるときに、1行に複数の名前を指定できます。
+1�ĤΥɥ�����ơ�����󡦥����Ȥ�ʣ����\fB@version\fR������ޤ�뤳�Ȥ��Ǥ��ޤ���ɬ�פ˱����ơ�1�Ĥ�\fB@version\fR������1�ĤΥ�꡼���ֹ����ꤹ�뤳�Ȥ⡢ʣ���Υ�꡼���ֹ����ꤹ�뤳�Ȥ�Ǥ��ޤ������Ԥξ��ϡ�\fBjavadoc\fR���ޥ�ɤˤ�ä�̾����̾���δ֤˥����(,)�ȶ���ʸ������������ޤ�����Ԥξ��ϡ��ƥ��������Τ����Ϥ���뤳�Ȥʤ��������ɥ�����Ȥ˥��ԡ�����ޤ����������äơ�����ޤǤϤʤ����Ƹ�����б�����̾�����ڤ�ʸ������Ѥ���ɬ�פ�����Ȥ��ˡ�1�Ԥ�ʣ����̾�������Ǥ��ޤ���
 .RE
-.SH "タグを使用できる場所"
+.SH "��������ѤǤ�����"
 .PP
-ここでは、タグを使用できる場所について説明します。次のタグがすべてのドキュメンテーション・コメントで使用できます。\fI@see\fR、\fI@since\fR、\fI@deprecated\fR、\fI{@link}\fR、\fI{@linkplain}\fRおよび\fI{@docroot}\fR。
-.SS "概要タグ"
+�����Ǥϡ���������ѤǤ�����ˤĤ����������ޤ������Υ��������٤ƤΥɥ�����ơ�����󡦥����Ȥǻ��ѤǤ��ޤ���\fB@see\fR��\fB@since\fR��\fB@deprecated\fR��\fB{@link}\fR��\fB{@linkplain}\fR�����\fB{@docroot}\fR��
+.SS "���ץ���"
 .PP
-概要タグは、概要ページのドキュメンテーション・コメントで使用できるタグです(このドキュメンテーション・コメントは、通常overview\&.htmlという名前のソース・ファイル内にあります)。他のドキュメンテーション・コメントの場合と同様に、これらのタグは、主説明の後で使用する必要があります。
+���ץ����ϡ����ץڡ����Υɥ�����ơ�����󡦥����Ȥǻ��ѤǤ��륿���Ǥ�(���Υɥ�����ơ�����󡦥����Ȥϡ��̾�overview\&.html�Ȥ���̾���Υ��������ե�������ˤ���ޤ�)��¾�Υɥ�����ơ�����󡦥����Ȥξ���Ʊ�ͤˡ������Υ����ϡ��������θ�ǻ��Ѥ���ɬ�פ�����ޤ���
 .PP
-\fB注意:\fR
-Java SE 1\&.2では、概要ドキュメント内の\fI{@link}\fRタグに不具合があります。テキストは正しく表示されますが、リンクが設定されません。現在のところ、\fI{@docRoot}\fRタグは、概要ドキュメント内では機能しません。
+\fB����:\fR
+Java SE 1\&.2�Ǥϡ����ץɥ���������\fB{@link}\fR������bug������ޤ����ƥ����Ȥ�������ɽ������ޤ�������󥯤����ꤵ��ޤ��󡣸��ߤΤȤ�����\fB{@docRoot}\fR�����ϡ����ץɥ��������Ǥϵ�ǽ���ޤ���
 .PP
-概要タグは、次のとおりです。
+���ץ����ϡ����ΤȤ���Ǥ���
 .PP
 @see reference || @since since\-text || @serialField field\-name field\-type field\-description || @author name\-text || @version version\-text || {@link package\&.class#member label} || {@linkplain package\&.class#member label} || {@docRoot} ||
-.SS "パッケージ・タグ"
+.SS "�ѥå�����������"
 .PP
-パッケージ・タグは、パッケージのドキュメンテーション・コメントで使用できるタグで、ドキュメンテーション・コメントはpackage\&.htmlまたはpackage\-info\&.javaという名前のソース・ファイル内にあります。ここで使用できる\fI@serial\fRタグは、\fIinclude\fRまたは\fIexclude\fR引数を指定したもののみです。
+�ѥå������������ϡ��ѥå������Υɥ�����ơ�����󡦥����Ȥǻ��ѤǤ��륿���ǡ��ɥ�����ơ�����󡦥����Ȥ�package\&.html�ޤ���package\-info\&.java�Ȥ���̾���Υ��������ե�������ˤ���ޤ��������ǻ��ѤǤ���\fB@serial\fR�����ϡ�\fBinclude\fR�ޤ���\fBexclude\fR��������ꤷ����ΤΤߤǤ���
 .PP
-パッケージ・タグは、次のとおりです。
+�ѥå������������ϡ����ΤȤ���Ǥ���
 .PP
 @see reference || @since since\-text || @serial field\-description | include | exclude || @author name\-text || @version version\-text || {@linkplain package\&.class#member label} || {@linkplain package\&.class#member label} || {@docRoot} ||
-.SS "クラスおよびインタフェース・タグ"
+.SS "���饹����ӥ��󥿥ե�����������"
 .PP
-次に、クラスまたはインタフェースのドキュメンテーション・コメントで使用できるタグを示します。\fI@serial\fRタグは、\fIinclude\fRまたは\fIexclude\fR引数を指定して、クラスまたはインタフェースのドキュメンテーション内でのみ使用できます。
+���ˡ����饹�ޤ��ϥ��󥿥ե������Υɥ�����ơ�����󡦥����Ȥǻ��ѤǤ��륿���򼨤��ޤ���\fB@serial\fR�����ϡ�\fBinclude\fR�ޤ���\fBexclude\fR��������ꤷ�ơ����饹�ޤ��ϥ��󥿥ե������Υɥ�����ơ��������ǤΤ߻��ѤǤ��ޤ���
 .PP
 @see reference || @since since\-text || @deprecated deprecated\-text || @serial field\-description | include | exclude || @author name\-text || @version version\-text || {@link package\&.class#member label} || {@linkplain package\&.class#member label} || {@docRoot} ||
 .PP
-クラス・コメントの例:
+���饹�������Ȥ���:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-/**
- * A class representing a window on the screen\&.
- * For example:
- * <pre>
- *    Window win = new Window(parent);
- *    win\&.show();
- * </pre>
- *
- * @author  Sami Shaio
- * @version 1\&.13, 06/08/06
- * @see     java\&.awt\&.BaseWindow
- * @see     java\&.awt\&.Button
- */
-class Window extends BaseWindow {
-   \&.\&.\&.
-}
+\fB/**\fR
+\fB * A class representing a window on the screen\&.\fR
+\fB * For example:\fR
+\fB * <pre>\fR
+\fB *    Window win = new Window(parent);\fR
+\fB *    win\&.show();\fR
+\fB * </pre>\fR
+\fB *\fR
+\fB * @author  Sami Shaio\fR
+\fB * @version 1\&.13, 06/08/06\fR
+\fB * @see     java\&.awt\&.BaseWindow\fR
+\fB * @see     java\&.awt\&.Button\fR
+\fB */\fR
+\fBclass Window extends BaseWindow {\fR
+\fB   \&.\&.\&.\fR
+\fB}\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SS "フィールド・タグ"
+.SS "�ե�����ɡ�����"
 .PP
-これらのタグは、フィールドに表示できます。
+�����Υ����ϡ��ե�����ɤ�ɽ���Ǥ��ޤ���
 .PP
 @see reference || @since since\-text || @deprecated deprecated\-text || @serial field\-description | include | exclude || @serialField field\-name field\-type field\-description || {@link package\&.class#member label} || {@linkplain package\&.class#member label} || {@docRoot} || {@value package\&.class#field}
 .PP
-フィールド・コメントの例:
+�ե�����ɡ������Ȥ���:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-    /**
-     * The X\-coordinate of the component\&.
-     *
-     * @see #getLocation()
-     */
-    int x = 1263732;
+\fB    /**\fR
+\fB     * The X\-coordinate of the component\&.\fR
+\fB     *\fR
+\fB     * @see #getLocation()\fR
+\fB     */\fR
+\fB    int x = 1263732;\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SS "コンストラクタとメソッド・タグ"
+.SS "���󥹥ȥ饯���ȥ᥽�åɡ�����"
 .PP
-次に、コンストラクタまたはメソッドのドキュメンテーション・コメントで使用できるタグを示します。ただし、\fI@return\fRはコンストラクタでは使用できず、
-\fI{@inheritDoc}\fRには制限があります。
+���ˡ����󥹥ȥ饯���ޤ��ϥ᥽�åɤΥɥ�����ơ�����󡦥����Ȥǻ��ѤǤ��륿���򼨤��ޤ�����������\fB@return\fR�ϥ��󥹥ȥ饯���Ǥϻ��ѤǤ�����
+\fB{@inheritDoc}\fR�ˤ����¤�����ޤ���
 .PP
 @see reference || @since since\-text || @deprecated deprecated\-text || @param parameter\-name description || @return description || @throws class\-name description || @exception class\-name description || @serialData data\-description || {@link package\&.class#member label} || {@linkplain package\&.class#member label} || {@inheritDoc} || {@docRoot}
 .PP
-\fB注意:\fR
-\fI@serialData\fRタグは、\fIwriteObject\fR、\fIreadObject\fR、\fIwriteExternal\fR、\fIreadExternal\fR、\fIwriteReplace\fRおよび\fIreadResolve\fRメソッドのドキュメンテーション・コメントでのみ使用できます。
+\fB����:\fR
+\fB@serialData\fR�����ϡ�\fBwriteObject\fR��\fBreadObject\fR��\fBwriteExternal\fR��\fBreadExternal\fR��\fBwriteReplace\fR�����\fBreadResolve\fR�᥽�åɤΥɥ�����ơ�����󡦥����ȤǤΤ߻��ѤǤ��ޤ���
 .PP
-メソッド・コメントの例:
+�᥽�åɡ������Ȥ���:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-/**
-     * Returns the character at the specified index\&. An index 
-     * ranges from <code>0</code> to <code>length() \- 1</code>
-     *
-     * @param     index the index of the desired character\&.
-     * @return    the desired character\&.
-     * @exception StringIndexOutOfRangeException 
-     *              if the index is not in the range <code>0</code> 
-     *              to <code>length()\-1</code>
-     * @see       java\&.lang\&.Character#charValue()
-     */
-    public char charAt(int index) {
-       \&.\&.\&.
-    }
+\fB/**\fR
+\fB     * Returns the character at the specified index\&. An index \fR
+\fB     * ranges from <code>0</code> to <code>length() \- 1</code>\fR
+\fB     *\fR
+\fB     * @param     index the index of the desired character\&.\fR
+\fB     * @return    the desired character\&.\fR
+\fB     * @exception StringIndexOutOfRangeException \fR
+\fB     *              if the index is not in the range <code>0</code> \fR
+\fB     *              to <code>length()\-1</code>\fR
+\fB     * @see       java\&.lang\&.Character#charValue()\fR
+\fB     */\fR
+\fB    public char charAt(int index) {\fR
+\fB       \&.\&.\&.\fR
+\fB    }\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SH "オプション"
+.SH "���ץ����"
 .PP
-\fIjavadoc\fRコマンドは、ドックレットを使用して出力を決定します。\fIjavadoc\fRコマンドは、\fI\-doclet\fRオプションでカスタム・ドックレットが指定されている場合以外は、デフォルトの標準ドックレットを使用します。\fIjavadoc\fRコマンドには、任意のドックレットとともに使用できるコマンドライン・オプションがあります。これらのオプションについては、Javadocオプションで説明します。標準ドックレットでは、この他に、いくつかの追加のコマンドライン・オプションが提供されます。これらのオプションについては、標準ドックレットのオプションで説明します。どのオプション名も、大文字と小文字が区別されません。ただし、オプションの引数では、大文字と小文字が区別されます。
+\fBjavadoc\fR���ޥ�ɤϡ��ɥå���åȤ���Ѥ��ƽ��Ϥ���ꤷ�ޤ���\fBjavadoc\fR���ޥ�ɤϡ�\fB\-doclet\fR���ץ����ǥ������ࡦ�ɥå���åȤ����ꤵ��Ƥ�����ʳ��ϡ��ǥե���Ȥ�ɸ��ɥå���åȤ���Ѥ��ޤ���\fBjavadoc\fR���ޥ�ɤˤϡ�Ǥ�դΥɥå���åȤȤȤ�˻��ѤǤ��륳�ޥ�ɹԥ��ץ���󤬤���ޤ��������Υ��ץ����ˤĤ��Ƥϡ�Javadoc���ץ������������ޤ���ɸ��ɥå���åȤǤϡ�����¾�ˡ������Ĥ����ɲäΥ��ޥ�ɹԥ��ץ�����󶡤���ޤ��������Υ��ץ����ˤĤ��Ƥϡ�ɸ��ɥå���åȤΥ��ץ������������ޤ����ɤΥ��ץ����̾�⡢��ʸ���Ⱦ�ʸ�������̤���ޤ��󡣤����������ץ����ΰ����Ǥϡ���ʸ���Ⱦ�ʸ�������̤���ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -2201,7 +2275,7 @@ class Window extends BaseWindow {
 .sp -1
 .IP \(bu 2.3
 .\}
-Javadocオプションも参照してください
+Javadoc���ץ����⻲�Ȥ��Ƥ�������
 .RE
 .sp
 .RS 4
@@ -2212,45 +2286,712 @@ Javadocオプションも参照してください
 .sp -1
 .IP \(bu 2.3
 .\}
-標準ドックレットのオプションも参照してください
+ɸ��ɥå���åȤΥ��ץ����⻲�Ȥ��Ƥ�������
 .RE
 .PP
-オプションは次のとおりです。
+���ץ����ϼ��ΤȤ���Ǥ���
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-1\&.1
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-author
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-bootclasspath classpathlist
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-bottom text
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-breakiterator
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-charset name
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-classpath classpathlist
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-d directory
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-docencoding name
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-docfilesubdirs
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-doclet class
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-docletpath classpathlist
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-doctitle title
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-encoding
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-exclude packagename1:packagename2:\&.\&.\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-excludedocfilessubdir name1:name2
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-extdirs dirist
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-footer footer
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-group groupheading packagepattern:packagepattern
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-header header
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-help
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-helpfile path\efilename
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-Jflag
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-javafx
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-keywords
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-link extdocURL
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-linkoffline extdocURL packagelistLoc
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-linksource
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-locale language_country_variant
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-nocomment
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-nodeprecated
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-nodeprecatedlist
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-nohelp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-noindex
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-nonavbar
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-noqualifier all | packagename1:packagename2\&.\&.\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-nosince
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-notimestamp
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-notree
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-overview path/filename
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-package
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-private
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-protected
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-public
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-quiet
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-serialwarn
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-source release
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-sourcepath sourcepathlist
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-sourcetab tablength
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-splitindex
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-stylesheet path/filename
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-tag tagname:Xaoptcmf:"taghead"
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-subpackages package1:package2:\&.\&.\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-taglet class
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-tagletpath tagletpathlist
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-title title
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-top
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-use
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-verbose
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-version
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\-windowtitle title
+.RE
 .PP
-\-1\&.1 || \-author || \-bootclasspath classpathlist || \-bottom text || \-breakiterator || \-charset name || \-classpath classpathlist || \-d directory || \-docencoding name || \-docfilesubdirs || \-doclet class || \-docletpath classpathlist || \-doctitle title || \-encoding || \-exclude packagename1:packagename2:\&.\&.\&. || \-excludedocfilessubdir name1:name2 || \-extdirs dirist || \-footer footer || \-group groupheading packagepattern:packagepattern || \-header header || \-help || \-helpfile path\efilename || \-Jflag || \-keywords || \-link extdocURL || \-linkoffline extdocURL packagelistLoc || \-linksource || \-locale language_country_variant || \-nocomment || \-nodeprecated || \-nodeprecatedlist || \-nohelp || \-noindex || \-nonavbar || \-noqualifier all | packagename1:packagename2\&.\&.\&. || \-nosince || \-notimestamp || \-notree ||
-\fI\-overview path/filename || \fR\-package || \-private || \-protected || \-public || \-quiet || \-serialwarn || \-source release || \-sourcepath sourcepathlist || \-sourcetab tablength || \-splitindex ||
-\fI\-stylesheet path/filename || \fR\-subpackages package1:package2:\&.\&.\&. || \-tag tagname:Xaoptcmf:"taghead" || \-taglet class || \-tagletpath tagletpathlist || \-title title || \-top || \-use || \-verbose || \-version || \-windowtitle title
-.PP
-次のオプションは、すべてのドックレットに使用可能なコアのJavadocオプションです。標準ドックレットでは、ドックレットの他の部分を提供します。\fI\-bootclasspath\fR、\fI\-breakiterator\fR、\fI\-classpath\fR、\fI\-doclet\fR、\fI\-docletpath\fR、\fI\-encoding\fR、\-\fIexclude\fR、\fI\-extdirs\fR、\fI\-help\fR、\fI\-locale\fR、\fI\-\fR\fIoverview\fR、\fI\-package\fR、\fI\-private\fR、\fI\-protected\fR、\fI\-public\fR、\fI\-quiet\fR、\fI\-source\fR、\fI\-sourcepath\fR、\fI\-subpackages\fRおよび\fI\-verbose\fR。
-.SS "Javadocオプション"
+���Υ��ץ����ϡ����٤ƤΥɥå���åȤ˻��Ѳ�ǽ�ʥ�����Javadoc���ץ����Ǥ���ɸ��ɥå���åȤǤϡ��ɥå���åȤ�¾����ʬ���󶡤��ޤ���\fB\-bootclasspath\fR��\fB\-breakiterator\fR��\fB\-classpath\fR��\fB\-doclet\fR��\fB\-docletpath\fR��\fB\-encoding\fR��\-\fBexclude\fR��\fB\-extdirs\fR��\fB\-help\fR��\fB\-locale\fR��\fB\-\fR\fBoverview\fR��\fB\-package\fR��\fB\-private\fR��\fB\-protected\fR��\fB\-public\fR��\fB\-quiet\fR��\fB\-source\fR��\fB\-sourcepath\fR��\fB\-subpackages\fR�����\fB\-verbose\fR��
+.SS "Javadoc���ץ����"
 .PP
 \-overview \fIpath/filename \fR
 .RS 4
 
-\fIjavadoc\fRコマンドに対して、\fIpath/filename \fRで指定されたソース・ファイルから概要ドキュメント用のテキストを取得し、そのテキストを概要ページ(overview\-summary\&.html)に配置するように指定します。\fIpath/filename\fRは、現在のディレクトリからの相対パスです。
+\fBjavadoc\fR���ޥ�ɤ��Ф��ơ�\fIpath/filename \fR�ǻ��ꤵ�줿���������ե����뤫�鳵�ץɥ�������ѤΥƥ����Ȥ�����������Υƥ����Ȥ�ֳ��סץڡ���(overview\-summary\&.html)�����֤���褦�˻��ꤷ�ޤ���\fIpath/filename\fR�ϡ����ߤΥǥ��쥯�ȥ꤫������Хѥ��Ǥ���
 .sp
-\fIfilename\fRの値で任意の名前を使用し、pathで任意の配置先を指定できますが、通常はoverview\&.htmlという名前を付け、ソース・ツリー内の最上位パッケージ・ディレクトリを含むディレクトリに配置します。この場所に配置すると、パッケージをドキュメント化するときにpathを指定する必要がなくなります。これは、\fI\-sourcepath\fRオプションによってこのファイルが指し示されるからです。
+\fBfilename\fR���ͤ�Ǥ�դ�̾������Ѥ���path��Ǥ�դ�����������Ǥ��ޤ������̾��overview\&.html�Ȥ���̾�����դ������������ĥ꡼��κǾ�̥ѥå��������ǥ��쥯�ȥ��ޤ�ǥ��쥯�ȥ�����֤��ޤ������ξ������֤���ȡ��ѥå�������ɥ�����Ȳ�����Ȥ���path����ꤹ��ɬ�פ��ʤ��ʤ�ޤ�������ϡ�\fB\-sourcepath\fR���ץ����ˤ�äƤ��Υե����뤬�ؤ�������뤫��Ǥ���
 .sp
-たとえば、\fIjava\&.lang\fRパッケージのソース・ツリーが/src/classes/java/lang/の場合、概要ファイルを/src/classes/overview\&.htmlに配置できます
+���Ȥ��С�\fBjava\&.lang\fR�ѥå������Υ��������ĥ꡼��/src/classes/java/lang/�ξ�硢���ץե������/src/classes/overview\&.html�����֤Ǥ��ޤ�
 .sp
-実際の例を参照してください。
+�ºݤ���򻲾Ȥ��Ƥ���������
 .sp
-\fIpath/filename\fRで指定するファイルについては、概要コメント・ファイルを参照してください。
+\fIpath/filename\fR�ǻ��ꤹ��ե�����ˤĤ��Ƥϡ����ץ����ȡ��ե�����򻲾Ȥ��Ƥ���������
 .sp
-概要ページが作成されるのは、\fIjavadoc\fRコマンドに複数のパッケージ名を渡した場合のみです。詳細は、HTMLフレームを参照してください。概要ページのタイトルは、\fI\-doctitle\fRによって設定されます。
+�ֳ��סץڡ��������������Τϡ�\fBjavadoc\fR���ޥ�ɤ�ʣ���Υѥå�����̾���Ϥ������ΤߤǤ����ܺ٤ϡ�HTML�ե졼��򻲾Ȥ��Ƥ����������ֳ��סץڡ����Υ����ȥ�ϡ�\fB\-doctitle\fR�ˤ�ä����ꤵ��ޤ���
 .RE
 .PP
 \-Xdoclint:(all|none|[\-]\fI<group>\fR)
 .RS 4
-不正な参照、アクセシビリティの欠落およびJavadocコメントの不足の警告をレポートし、無効なJavadoc構文および不足しているHTMLタグのエラーをレポートします。
+�����ʻ��ȡ����������ӥ�ƥ��η�����Javadoc�����Ȥ���­�ηٹ���ݡ��Ȥ���̵����Javadoc��ʸ�������­���Ƥ���HTML�����Υ��顼���ݡ��Ȥ��ޤ���
 .sp
-このオプションにより、\fIjavadoc\fRコマンドは生成された出力に含まれるすべてのドキュメント・コメントをチェックします。通常どおり、標準オプション\fI\-public\fR、\fI\-protected\fR、\fI\-package\fRおよび\fI\-private\fRで生成された出力に含む項目を選択できます。
+���Υ��ץ����ˤ�ꡢ\fBjavadoc\fR���ޥ�ɤ��������줿���Ϥ˴ޤޤ�뤹�٤ƤΥɥ�����ȡ������Ȥ�����å����ޤ����̾�ɤ��ꡢɸ�४�ץ����\fB\-public\fR��\fB\-protected\fR��\fB\-package\fR�����\fB\-private\fR���������줿���Ϥ˴ޤ���ܤ�����Ǥ��ޤ���
 .sp
-\fI\-Xdoclint\fRが有効になっている場合は、\fIjavac\fRコマンドと同様にメッセージで問題がレポートされます。\fIjavadoc\fRコマンドは、メッセージ、ソース・ファイルのコピーおよびエラーが検出された正確な位置を指すキャレットを出力します。メッセージは、重大度、および生成されたドキュメントがバリデータを使用して実行された場合にエラーが発生する可能性に応じて、警告またはエラーになります。たとえば、不正な参照またはJavadocコメントの欠落は、\fIjavadoc\fRコマンドが無効なHTMLを生成する原因にならないため、これらの問題は警告としてレポートされます。構文エラーまたはHTML終了タグの欠落は、\fIjavadoc\fRコマンドが無効なHTMLを生成する原因になるため、これらの問題はエラーとしてレポートされます。
+\fB\-Xdoclint\fR��ͭ���ˤʤäƤ�����ϡ�\fBjavac\fR���ޥ�ɤ�Ʊ�ͤ˥�å����������꤬��ݡ��Ȥ���ޤ���\fBjavadoc\fR���ޥ�ɤϡ���å����������������ե�����Υ��ԡ�����ӥ��顼�����Ф��줿���Τʰ��֤�ؤ������åȤ���Ϥ��ޤ�����å������ϡ������١�������������줿�ɥ�����Ȥ��Х�ǡ�������Ѥ��Ƽ¹Ԥ��줿���˥��顼��ȯ�������ǽ���˱����ơ��ٹ�ޤ��ϥ��顼�ˤʤ�ޤ������Ȥ��С������ʻ��Ȥޤ���Javadoc�����Ȥη���ϡ�\fBjavadoc\fR���ޥ�ɤ�̵����HTML���������븶���ˤʤ�ʤ����ᡢ����������Ϸٹ�Ȥ��ƥ�ݡ��Ȥ���ޤ�����ʸ���顼�ޤ���HTML��λ�����η���ϡ�\fBjavadoc\fR���ޥ�ɤ�̵����HTML���������븶���ˤʤ뤿�ᡢ����������ϥ��顼�Ȥ��ƥ�ݡ��Ȥ���ޤ���
 .sp
-デフォルトでは、\fI\-Xdoclint\fRオプションは有効になっています。オプション\fI\-Xdoclint:none\fRで無効にします。
+�ǥե���ȤǤϡ�\fB\-Xdoclint\fR���ץ�����ͭ���ˤʤäƤ��ޤ������ץ����\fB\-Xdoclint:none\fR��̵���ˤ��ޤ���
 .sp
-\fI\-Xdoclint\fRオプションでレポートされる内容は次のオプションで変更します。
+\fB\-Xdoclint\fR���ץ����ǥ�ݡ��Ȥ�������Ƥϼ��Υ��ץ������ѹ����ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -2260,8 +3001,8 @@ Javadocオプションも参照してください
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-Xdoclint\fR\fI\fR\fI none\fR:
-\fI\-Xdoclint\fRオプションを無効にします。
+\fB\-Xdoclint none\fR:
+\fB\-Xdoclint\fR���ץ�����̵���ˤ��ޤ���
 .RE
 .sp
 .RS 4
@@ -2272,8 +3013,8 @@ Javadocオプションも参照してください
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-Xdoclint\fR\fI\fR\fI \fR\fIgroup\fR:
-\fIgroup\fRチェックを有効にします。
+\fB\-Xdoclint \fR\fIgroup\fR:
+\fIgroup\fR�����å���ͭ���ˤ��ޤ���
 .RE
 .sp
 .RS 4
@@ -2284,7 +3025,7 @@ Javadocオプションも参照してください
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-Xdoclint\fR\fI\fR\fI all\fR: すべてのチェック・グループを有効にします。
+\fB\-Xdoclint all\fR: ���٤ƤΥ����å������롼�פ�ͭ���ˤ��ޤ���
 .RE
 .sp
 .RS 4
@@ -2295,11 +3036,11 @@ Javadocオプションも参照してください
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-Xdoclint\fR\fI\fR\fI all,\fR\fI\-group\fR:
-\fIgroup\fRチェック以外のすべてを有効にします。
+\fB\-Xdoclint all,\fR\fI\-group\fR:
+\fIgroup\fR�����å��ʳ��Τ��٤Ƥ�ͭ���ˤ��ޤ���
 .RE
 .sp
-変数\fIgroup\fRは次のいずれかの値を持ちます。
+�ѿ�\fIgroup\fR�ϼ��Τ����줫���ͤ�����ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -2309,18 +3050,7 @@ Javadocオプションも参照してください
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIaccessibility\fR: アクセシビリティ・チェッカで検出する問題をチェックします(たとえば、\fI<table>\fRタグで指定されるno captionまたはsummary属性)。
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fIhtml\fR: インライン要素へのブロック要素の挿入や終了タグを必要とする要素を終了しないなど、上位レベルHTMLの問題を検出します。ルールは、HTML 4\&.01仕様から導出されます。このタイプのチェックは、\fIjavadoc\fRコマンドを有効にして、ブラウザが受け入れる可能性のあるHTMLの問題を検出します。
+\fBaccessibility\fR: ���������ӥ�ƥ��������å��Ǹ��Ф������������å����ޤ�(���Ȥ��С�\fB<table>\fR�����ǻ��ꤵ���no caption�ޤ���summary°��)��
 .RE
 .sp
 .RS 4
@@ -2331,7 +3061,7 @@ Javadocオプションも参照してください
 .sp -1
 .IP \(bu 2.3
 .\}
-\fImissing\fR: 欠落しているJavadocコメントまたはタグをチェックします(たとえば、欠落しているコメントやクラス、または欠落している\fI@return\fRタグやメソッド上の同様のタグ)。
+\fBhtml\fR: ����饤�����ǤؤΥ֥��å����Ǥ������佪λ������ɬ�פȤ������Ǥ�λ���ʤ��ʤɡ���̥�٥�HTML������򸡽Ф��ޤ����롼��ϡ�HTML 4\&.01���ͤ���Ƴ�Ф���ޤ������Υ����פΥ����å��ϡ�\fBjavadoc\fR���ޥ�ɤ�ͭ���ˤ��ơ��֥饦��������������ǽ���Τ���HTML������򸡽Ф��ޤ���
 .RE
 .sp
 .RS 4
@@ -2342,7 +3072,7 @@ Javadocオプションも参照してください
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIreference\fR: JavadocタグのJava API要素の参照に関連する問題をチェックします(たとえば、\fI@see\fRで見つからない項目、または\fI@param\fRの後の不正な名前)。
+\fBmissing\fR: ����Ƥ���Javadoc�����Ȥޤ��ϥ���������å����ޤ�(���Ȥ��С�����Ƥ��륳���Ȥ䥯�饹���ޤ��Ϸ���Ƥ���\fB@return\fR������᥽�åɾ��Ʊ�ͤΥ���)��
 .RE
 .sp
 .RS 4
@@ -2353,72 +3083,84 @@ Javadocオプションも参照してください
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIsyntax\fR: エスケープされていない山カッコ(\fI<\fRおよび\fI>\fR)やアンパサンド(\fI&\fR)、無効なJavadocタグなどの下位レベルの問題を確認します。
+\fBreference\fR: Javadoc������Java API���Ǥλ��Ȥ˴�Ϣ�������������å����ޤ�(���Ȥ��С�\fB@see\fR�Ǹ��Ĥ���ʤ����ܡ��ޤ���\fB@param\fR�θ��������̾��)��
 .RE
 .sp
-\fI\-Xdoclint\fRオプションを複数回指定して、複数のカテゴリのエラーと警告をチェックするオプションを有効にできます。または、前のオプションを使用して、複数のエラーおよび警告カテゴリを指定できます。たとえば、次のコマンドのいずれかを使用して、\fIfilename\fRファイル内のHTML、構文およびアクセシビリティの問題をチェックします。
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBsyntax\fR: ���������פ���Ƥ��ʤ������å�(\fB<\fR�����\fB>\fR)�䥢��ѥ����(\fB&\fR)��̵����Javadoc�����ʤɤβ��̥�٥��������ǧ���ޤ���
+.RE
+.sp
+\fB\-Xdoclint\fR���ץ�����ʣ������ꤷ�ơ�ʣ���Υ��ƥ���Υ��顼�ȷٹ������å����륪�ץ�����ͭ���ˤǤ��ޤ����ޤ��ϡ����Υ��ץ�������Ѥ��ơ�ʣ���Υ��顼����ӷٹ𥫥ƥ�������Ǥ��ޤ������Ȥ��С����Υ��ޥ�ɤΤ����줫����Ѥ��ơ�\fIfilename\fR�ե��������HTML����ʸ����ӥ��������ӥ�ƥ������������å����ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-Xdoclint:html \-Xdoclint:syntax \-Xdoclint:accessibility \fIfilename\fR
-javadoc \-Xdoclint:html,syntax,accessibility \fIfilename\fR
+\fBjavadoc \-Xdoclint:html \-Xdoclint:syntax \-Xdoclint:accessibility \fR\fB\fIfilename\fR\fR
+\fBjavadoc \-Xdoclint:html,syntax,accessibility \fR\fB\fIfilename\fR\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-\fB注意:\fR
-\fIjavadoc\fRコマンドでは、これらのチェックの完全性は保証されません。具体的には、完全なHTMLコンプライアンス・チェッカではありません。\-\fIXdoclint\fRオプションの目的は、\fIjavadoc\fRコマンドを有効にして一般的なエラーの大半をレポートすることです。
+\fB����:\fR
+\fBjavadoc\fR���ޥ�ɤǤϡ������Υ����å��δ��������ݾڤ���ޤ��󡣶���Ū�ˤϡ�������HTML����ץ饤���󥹡������å��ǤϤ���ޤ���\-\fBXdoclint\fR���ץ�������Ū�ϡ�\fBjavadoc\fR���ޥ�ɤ�ͭ���ˤ��ư���Ū�ʥ��顼����Ⱦ���ݡ��Ȥ��뤳�ȤǤ���
 .sp
-\fIjavadoc\fRコマンドは、無効な入力の修正を試行せず、レポートのみ行います。
+\fBjavadoc\fR���ޥ�ɤϡ�̵�������Ϥν������Ԥ�������ݡ��ȤΤ߹Ԥ��ޤ���
 .RE
 .PP
 \-public
 .RS 4
-publicクラスおよびメンバーのみ表示します。
+public���饹����ӥ��С��Τ�ɽ�����ޤ���
 .RE
 .PP
 \-protected
 .RS 4
-protectedおよびpublicのクラスとメンバーのみを表示します。これがデフォルトです。
+protected�����public�Υ��饹�ȥ��С��Τߤ�ɽ�����ޤ������줬�ǥե���ȤǤ���
 .RE
 .PP
 \-package
 .RS 4
-package、protected、およびpublicのクラスとメンバーのみ表示します。
+package��protected�������public�Υ��饹�ȥ��С��Τ�ɽ�����ޤ���
 .RE
 .PP
 \-private
 .RS 4
-すべてのクラスとメンバーを表示します。
+���٤ƤΥ��饹�ȥ��С���ɽ�����ޤ���
 .RE
 .PP
 \-help
 .RS 4
-オンライン・ヘルプを表示します。\fIjavadoc\fRと\fIドックレット\fRのコマンドライン・オプションがリストされます。
+����饤�󡦥إ�פ�ɽ�����ޤ���\fBjavadoc\fR��\fB�ɥå���å�\fR�Υ��ޥ�ɹԥ��ץ���󤬥ꥹ�Ȥ���ޤ���
 .RE
 .PP
 \-doclet \fIclass\fR
 .RS 4
-ドキュメントの生成に使用するドックレットを起動するためのクラス・ファイルを指定します。完全修飾名を使用します。このドックレットにより、出力の内容と形式が定義されます。\fI\-doclet\fRオプションが使用されていない場合、\fIjavadoc\fRコマンドは、標準ドックレットを使用してデフォルトのHTML形式を生成します。このクラスには\fIstart(Root)\fRメソッドが含まれている必要があります。この起動クラスへのパスは\fI\-docletpath\fRオプションによって定義されます。ドックレットの概要
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/doclet/overview\&.html)を参照してください
+�ɥ�����Ȥ������˻��Ѥ���ɥå���åȤ�ư���뤿��Υ��饹���ե��������ꤷ�ޤ�����������̾����Ѥ��ޤ������Υɥå���åȤˤ�ꡢ���Ϥ����Ƥȷ������������ޤ���\fB\-doclet\fR���ץ���󤬻��Ѥ���Ƥ��ʤ���硢\fBjavadoc\fR���ޥ�ɤϡ�ɸ��ɥå���åȤ���Ѥ��ƥǥե���Ȥ�HTML�������������ޤ������Υ��饹�ˤ�\fBstart(Root)\fR�᥽�åɤ��ޤޤ�Ƥ���ɬ�פ�����ޤ������ε�ư���饹�ؤΥѥ���\fB\-docletpath\fR���ץ����ˤ�ä��������ޤ����ɥå���åȤγ���
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/doclet/overview\&.html)�򻲾Ȥ��Ƥ�������
 .RE
 .PP
 \-docletpath \fIclasspathlist\fR
 .RS 4
-\fI\-doclet\fRオプションで指定されたドックレット開始クラス・ファイル、およびそのクラスが依存するすべてのJARファイルへのパスを指定します。開始クラス・ファイルがJARファイル内にある場合、このオプションでJARファイルへのパスを指定します。絶対パスまたは現在のディレクトリからの相対パスを指定できます。\fIclasspathlist\fRに複数のパスやJARファイルが含まれる場合には、それらをSolarisの場合はコロン(:)で、Windowsの場合はセミコロン(;)でそれぞれ区切ります。目的のドックレット開始クラスがすでに検索パス内にある場合は、このオプションは不要です。ドックレットの概要
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/doclet/overview\&.html)を参照してください
+\fB\-doclet\fR���ץ����ǻ��ꤵ�줿�ɥå���åȳ��ϥ��饹���ե����롢����Ӥ��Υ��饹����¸���뤹�٤Ƥ�JAR�ե�����ؤΥѥ�����ꤷ�ޤ������ϥ��饹���ե����뤬JAR�ե�������ˤ����硢���Υ��ץ�����JAR�ե�����ؤΥѥ�����ꤷ�ޤ������Хѥ��ޤ��ϸ��ߤΥǥ��쥯�ȥ꤫������Хѥ������Ǥ��ޤ���\fBclasspathlist\fR��ʣ���Υѥ���JAR�ե����뤬�ޤޤ����ˤϡ�������Solaris�ξ��ϥ�����(:)�ǡ�Windows�ξ��ϥ��ߥ�����(;)�Ǥ��줾����ڤ�ޤ�����Ū�Υɥå���åȳ��ϥ��饹�����Ǥ˸����ѥ���ˤ�����ϡ����Υ��ץ��������פǤ����ɥå���åȤγ���
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/doclet/overview\&.html)�򻲾Ȥ��Ƥ�������
 .RE
 .PP
 \-1\&.1
 .RS 4
-Javadoc 1\&.4から削除され、代替はありません。このオプションは、Javadoc 1\&.1によって生成されるのと同じ外見と機能を持つドキュメントを作成するためのものでした(ネストされたクラスはサポートされていません)。このオプションが必要な場合は、Javadoc 1\&.2または1\&.3をかわりに使用してください。
+Javadoc 1\&.4���������졢���ؤϤ���ޤ��󡣤��Υ��ץ����ϡ�Javadoc 1\&.1�ˤ�ä����������Τ�Ʊ�������ȵ�ǽ����ĥɥ�����Ȥ�������뤿��Τ�ΤǤ���(�ͥ��Ȥ��줿���饹�ϥ��ݡ��Ȥ���Ƥ��ޤ���)�����Υ��ץ����ɬ�פʾ��ϡ�Javadoc 1\&.2�ޤ���1\&.3�򤫤��˻��Ѥ��Ƥ���������
 .RE
 .PP
 \-source \fIrelease\fR
 .RS 4
-受け付けるソース・コードのリリースを指定します。\fIrelease\fRパラメータには次の値を指定できます。\fIjavac\fRコマンドでコードをコンパイルするときに使用する値に対応する\fIリリース\fRの値を使用します。
+�����դ��륽�����������ɤΥ�꡼������ꤷ�ޤ���\fBrelease\fR�ѥ�᡼���ˤϼ����ͤ����Ǥ��ޤ���\fBjavac\fR���ޥ�ɤǥ����ɤ򥳥�ѥ��뤹��Ȥ��˻��Ѥ����ͤ��б�����\fB��꡼��\fR���ͤ���Ѥ��ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -2428,7 +3170,7 @@ Javadoc 1\&.4から削除され、代替はありません。このオプショ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBリリース値: 1\&.5\fR。\fIjavadoc\fRコマンドは、JDK 1\&.5で導入された総称および他の言語機能を含むコードを受け付けます。\fI\-source\fRオプションが使用されなかった場合のコンパイラのデフォルト動作は、1\&.5のものになります。
+\fB��꡼����: 1\&.5\fR��\fBjavadoc\fR���ޥ�ɤϡ�JDK 1\&.5��Ƴ�����줿���Τ����¾�θ��쵡ǽ��ޤॳ���ɤ�����դ��ޤ���\fB\-source\fR���ץ���󤬻��Ѥ���ʤ��ä����Υ���ѥ���Υǥե����ư��ϡ�1\&.5�Τ�Τˤʤ�ޤ���
 .RE
 .sp
 .RS 4
@@ -2439,7 +3181,7 @@ Javadoc 1\&.4から削除され、代替はありません。このオプショ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBリリース値: 1\&.4\fR。\fIjavadoc\fRコマンドは、JDK 1\&.4で導入されたアサーションを含むコードを受け付けます。
+\fB��꡼����: 1\&.4\fR��\fBjavadoc\fR���ޥ�ɤϡ�JDK 1\&.4��Ƴ�����줿������������ޤॳ���ɤ�����դ��ޤ���
 .RE
 .sp
 .RS 4
@@ -2450,41 +3192,46 @@ Javadoc 1\&.4から削除され、代替はありません。このオプショ�
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBリリース値: 1\&.3\fR。\fIjavadoc\fRコマンドは、JDK 1\&.3以降に導入されたアサーション、総称、または他の言語機能をサポートしません。
+\fB��꡼����: 1\&.3\fR��\fBjavadoc\fR���ޥ�ɤϡ�JDK 1\&.3�ʹߤ�Ƴ�����줿��������������Ρ��ޤ���¾�θ��쵡ǽ�򥵥ݡ��Ȥ��ޤ���
 .RE
 .RE
 .PP
 \-sourcepath \fIsourcepathlist\fR
 .RS 4
-パッケージ名または\fI\-subpackages\fRオプションを\fIjavadoc\fRコマンドに渡すときに、ソース・ファイルを見つけるための検索パスを指定します。
-\fI複数のパスはコロン(:)で区切ります。\fR\fIjavadoc\fRコマンドは、指定されたパス以下のすべてのサブディレクトリを検索します。このオプションを使用して、ドキュメント化されるソース・ファイルの位置のみでなく、それ自体はドキュメント化されないがドキュメント化されるソース・ファイルから継承されたコメントを持つソース・ファイルの位置も確認できます。
+�ѥå�����̾�ޤ���\fB\-subpackages\fR���ץ�����\fBjavadoc\fR���ޥ�ɤ��Ϥ��Ȥ��ˡ����������ե�����򸫤Ĥ��뤿��θ����ѥ�����ꤷ�ޤ���
 .sp
-\fI\-sourcepath\fRオプションを使用できるのは、\fIjavadoc\fRコマンドにパッケージ名を渡す場合のみです。\fIjavadoc\fRコマンドに渡されるソース・ファイルは検索されません。ソース・ファイルを特定するには、そのディレクトリに移動するか、「1つ以上のクラスのドキュメント化」に示すように各ファイルの前にパスを含めます。\fI\-sourcepath\fRが省略された場合、\fIjavadoc\fRコマンドは、クラス・パスを使用してソース・ファイルを検索します(\fI\-classpath\fRを参照)。デフォルトの\fI\-sourcepath\fRは、クラス・パスの値です。\fI\-classpath\fRを省略してパッケージ名を\fIjavadoc\fRコマンドに渡すと、\fIjavadoc\fRコマンドは現在のディレクトリ(およびそのサブディレクトリ)からソース・ファイルを検索します。
+ʣ���Υѥ��ϥ�����(:)�Ƕ��ڤ�ޤ���
 .sp
-\fIsourcepathlist\fRには、ドキュメント化するパッケージのソース・ツリーのルート・ディレクトリを設定します。
+\fBjavadoc\fR���ޥ�ɤϡ����ꤵ�줿�ѥ��ʲ��Τ��٤ƤΥ��֥ǥ��쥯�ȥ�򸡺����ޤ������Υ��ץ�������Ѥ��ơ��ɥ�����Ȳ�����륽�������ե�����ΰ��֤ΤߤǤʤ������켫�Τϥɥ�����Ȳ�����ʤ����ɥ�����Ȳ�����륽�������ե����뤫��Ѿ����줿�����Ȥ���ĥ��������ե�����ΰ��֤��ǧ�Ǥ��ޤ���
 .sp
-たとえば、\fIcom\&.mypackage\fRという名前のパッケージをドキュメント化する場合に、そのソース・ファイルが/home/user/src/com/mypackage/*\&.javaにあるとします。ソース・パスをcom\emypackageが含まれるディレクトリ/home/user/srcに指定してから、次のように、パッケージ名を指定します。
+\fB\-sourcepath\fR���ץ�������ѤǤ���Τϡ�\fBjavadoc\fR���ޥ�ɤ˥ѥå�����̾���Ϥ����ΤߤǤ���\fBjavadoc\fR���ޥ�ɤ��Ϥ���륽�������ե�����ϸ�������ޤ��󡣥��������ե���������ꤹ��ˤϡ����Υǥ��쥯�ȥ�˰�ư���뤫����1�İʾ�Υ��饹�Υɥ�����Ȳ��פ˼����褦�˳ƥե���������˥ѥ���ޤ�ޤ���\fB\-sourcepath\fR����ά���줿��硢\fBjavadoc\fR���ޥ�ɤϡ����饹���ѥ�����Ѥ��ƥ��������ե�����򸡺����ޤ�(\fB\-classpath\fR�򻲾�)���ǥե���Ȥ�\fB\-sourcepath\fR�ϡ����饹���ѥ����ͤǤ���\fB\-classpath\fR���ά���ƥѥå�����̾��\fBjavadoc\fR���ޥ�ɤ��Ϥ��ȡ�\fBjavadoc\fR���ޥ�ɤϸ��ߤΥǥ��쥯�ȥ�(����Ӥ��Υ��֥ǥ��쥯�ȥ�)���饽�������ե�����򸡺����ޤ���
+.sp
+\fBsourcepathlist\fR�ˤϡ��ɥ�����Ȳ�����ѥå������Υ��������ĥ꡼�Υ롼�ȡ��ǥ��쥯�ȥ�����ꤷ�ޤ���
+.sp
+���Ȥ��С�\fBcom\&.mypackage\fR�Ȥ���̾���Υѥå�������ɥ�����Ȳ�������ˡ����Υ��������ե����뤬/home/user/src/com/mypackage/*\&.java�ˤ���Ȥ��ޤ������������ѥ���com\emypackage���ޤޤ��ǥ��쥯�ȥ�/home/user/src�˻��ꤷ�Ƥ��顢���Τ褦�ˡ��ѥå�����̾����ꤷ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-sourcepath /home/user/src/ com\&.mypackage
+\fBjavadoc \-sourcepath /home/user/src/ com\&.mypackage\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-ソース・パスの値とパッケージ名を連結して、ドットをスラッシュ(/)に変更すると、次のように、パッケージのフルパスになります。
+���������ѥ����ͤȥѥå�����̾��Ϣ�뤷�ơ��ɥåȤ򥹥�å���(/)���ѹ�����ȡ����Τ褦�ˡ��ѥå������Υե�ѥ��ˤʤ�ޤ���
 .sp
 /home/user/src/com/mypackage
 .sp
-2つのソース・パスを設定するには、次のようにします。
+2�ĤΥ��������ѥ������ꤹ��ˤϡ����Τ褦�ˤ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-sourcepath /home/user1/src:/home/user2/src com\&.mypackage
+\fBjavadoc \-sourcepath /home/user1/src:/home/user2/src com\&.mypackage\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2493,43 +3240,48 @@ javadoc \-sourcepath /home/user1/src:/home/user2/src com\&.mypackage
 .PP
 \-classpath \fIclasspathlist\fR
 .RS 4
-\fIjavadoc\fRコマンドが参照クラスの検索を行うときに使用するパスを指定します。参照クラスとは、ドキュメント化されるクラスと、それらのクラスによって参照されるすべてのクラスのことです。
-\fI複数のパスはコロン(:)で区切ります。\fR\fIjavadoc\fRコマンドは、指定されたパス以下のすべてのサブディレクトリを検索します。\fIclasspathlist\fRの値を指定するときは、クラス・パスのドキュメントにある指示に従ってください。
+\fBjavadoc\fR���ޥ�ɤ����ȥ��饹�θ�����Ԥ��Ȥ��˻��Ѥ���ѥ�����ꤷ�ޤ������ȥ��饹�Ȥϡ��ɥ�����Ȳ�����륯�饹�ȡ������Υ��饹�ˤ�äƻ��Ȥ���뤹�٤ƤΥ��饹�Τ��ȤǤ���
 .sp
-\fI\-sourcepath\fRが省略された場合、\fIjavadoc\fRコマンドは\fI\-classpath\fRを使用して、ソース・ファイルおよびクラス・ファイルを検索します(下位互換性のため)。ソース・ファイルとクラス・ファイルを別々のパスから検索する必要がある場合は、\fI\-sourcepath\fRと\fI\-classpath\fRの両方を使用します。
+ʣ���Υѥ��ϥ�����(:)�Ƕ��ڤ�ޤ���
 .sp
-たとえば、\fIcom\&.mypackage\fRをドキュメント化する場合に、そのソース・ファイルがディレクトリ/home/user/src/com/mypackageにあり、このパッケージが/home/user/libthen内のライブラリに依存しているとき、次のように指定します。
+\fBjavadoc\fR���ޥ�ɤϡ����ꤵ�줿�ѥ��ʲ��Τ��٤ƤΥ��֥ǥ��쥯�ȥ�򸡺����ޤ���\fBclasspathlist\fR���ͤ���ꤹ��Ȥ��ϡ����饹���ѥ��Υɥ�����Ȥˤ���ؼ��˽��äƤ���������
+.sp
+\fB\-sourcepath\fR����ά���줿��硢\fBjavadoc\fR���ޥ�ɤ�\fB\-classpath\fR����Ѥ��ơ����������ե����뤪��ӥ��饹���ե�����򸡺����ޤ�(�����ߴ����Τ���)�����������ե�����ȥ��饹���ե�������̡��Υѥ����鸡������ɬ�פ�������ϡ�\fB\-sourcepath\fR��\fB\-classpath\fR��ξ������Ѥ��ޤ���
+.sp
+���Ȥ��С�\fBcom\&.mypackage\fR��ɥ�����Ȳ�������ˡ����Υ��������ե����뤬�ǥ��쥯�ȥ�/home/user/src/com/mypackage�ˤ��ꡢ���Υѥå�������/home/user/lib��Υ饤�֥��˰�¸���Ƥ���Ȥ������Τ褦�˻��ꤷ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-sourcepath /home/user/lib \-classpath /home/user/src com\&.mypackage
+\fBjavadoc \-sourcepath /home/user/lib \-classpath /home/user/src com\&.mypackage\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-他のツールと同様に、\fI\-classpath\fRが指定されていない場合、\fICLASSPATH\fR環境変数が設定されていれば、\fIjavadoc\fRコマンドはその環境変数を使用します。どちらも設定されていない場合、\fIjavadoc\fRコマンドは現在のディレクトリからクラスを検索します。
+¾�Υġ����Ʊ�ͤˡ�\fB\-classpath\fR�����ꤵ��Ƥ��ʤ���硢\fBCLASSPATH\fR�Ķ��ѿ������ꤵ��Ƥ���С�\fBjavadoc\fR���ޥ�ɤϤ��δĶ��ѿ�����Ѥ��ޤ����ɤ�������ꤵ��Ƥ��ʤ���硢\fBjavadoc\fR���ޥ�ɤϸ��ߤΥǥ��쥯�ȥ꤫�饯�饹�򸡺����ޤ���
 .sp
-\fIjavadoc\fRコマンドが\fI\-classpath\fRを使用してユーザー・クラスを検索する方法についての、拡張機能クラスやブートストラップ・クラスに関連した詳細は、クラスの検索方法
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/findingclasses\&.html)を参照してください。
+\fBjavadoc\fR���ޥ�ɤ�\fB\-classpath\fR����Ѥ��ƥ桼���������饹�򸡺�������ˡ�ˤĤ��ƤΡ���ĥ��ǽ���饹��֡��ȥ��ȥ�åס����饹�˴�Ϣ�����ܺ٤ϡ����饹�θ�����ˡ
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/findingclasses\&.html)�򻲾Ȥ��Ƥ���������
 .sp
-*のベース名を含むクラス・パス要素は、\fI\&.jar\fRまたは\fI\&.JAR\fRを拡張子に持つディレクトリ内のすべてのファイルのリストを指定するのと同等とみなされます。
+*�Υ١���̾��ޤ९�饹���ѥ����Ǥϡ�\fB\&.jar\fR�ޤ���\fB\&.JAR\fR���ĥ�Ҥ˻��ĥǥ��쥯�ȥ���Τ��٤ƤΥե�����Υꥹ�Ȥ���ꤹ��Τ�Ʊ���Ȥߤʤ���ޤ���
 .sp
-たとえば、ディレクトリ\fImydir\fRに\fIa\&.jar\fRと\fIb\&.JA\fRRが含まれている場合、クラス・パス要素\fIfoo/*\fRは\fIA\&.jar:b\&.JAR\fRに展開されますが、JARファイルの順番は未指定となります。非表示のファイルを含む、指定したディレクトリ内のすべてのJARファイルがリストに含まれます。*からなるクラス・パス・エントリは、現在のディレクトリ内のすべてのJARファイルのリストに展開されます。\fICLASSPATH\fR環境変数も同様に展開されます。クラス・パスのワイルドカードの展開は、Java仮想マシン(JVM)の開始前に行われます。Javaプログラムは、System\&.getenv(\fI"CLASSPATH"\fR)の呼び出しによってなど、環境を問い合せる場合を除き、展開されていないワイルドカードを参照しません。
+���Ȥ��С��ǥ��쥯�ȥ�\fBmydir\fR��\fBa\&.jar\fR��\fBb\&.JA\fRR���ޤޤ�Ƥ����硢���饹���ѥ�����\fBfoo/*\fR��\fBA\&.jar:b\&.JAR\fR��Ÿ������ޤ�����JAR�ե�����ν��֤�̤����Ȥʤ�ޤ�����ɽ���Υե������ޤࡢ���ꤷ���ǥ��쥯�ȥ���Τ��٤Ƥ�JAR�ե����뤬�ꥹ�Ȥ˴ޤޤ�ޤ���*����ʤ륯�饹���ѥ�������ȥ�ϡ����ߤΥǥ��쥯�ȥ���Τ��٤Ƥ�JAR�ե�����Υꥹ�Ȥ�Ÿ������ޤ���\fBCLASSPATH\fR�Ķ��ѿ���Ʊ�ͤ�Ÿ������ޤ������饹���ѥ��Υ磻��ɥ����ɤ�Ÿ���ϡ�Java Virtual Machine (JVM)�γ������˹Ԥ��ޤ���Java�ץ������ϡ�System\&.getenv(\fB"CLASSPATH"\fR)�θƤӽФ��ˤ�äƤʤɡ��Ķ����䤤�礻����������Ÿ������Ƥ��ʤ��磻��ɥ����ɤ򻲾Ȥ��ޤ���
 .RE
 .PP
 \-subpackages \fIpackage1:package2:\&.\&.\&.\fR
 .RS 4
-ソース・ファイルから指定されたパッケージおよびそのサブパッケージ内に再帰的にドキュメントを生成します。このオプションは、ソース・コードに新しいサブパッケージを追加する際に便利です。新しいサブパッケージが自動的に組み込まれるからです。各package引数は、任意の最上位サブパッケージ(\fIjava\fRなど)または完全修飾パッケージ(\fIjavax\&.swing\fRなど)になります。ソース・ファイルを含める必要はありません。引数は、すべてのオペレーティング・システムで、コロンで区切られます。ワイルドカードは使用できません。パッケージの検索場所を指定するには、\fI\-sourcepath\fRを使用します。このオプションでは、ソース・ツリー内に存在するがパッケージに含まれないソース・ファイルを処理しません。ソース・ファイルの処理を参照してください。
+���������ե����뤫����ꤵ�줿�ѥå���������Ӥ��Υ��֥ѥå�������˺Ƶ�Ū�˥ɥ�����Ȥ��������ޤ������Υ��ץ����ϡ��������������ɤ˿��������֥ѥå��������ɲä���ݤ������Ǥ������������֥ѥå���������ưŪ���Ȥ߹��ޤ�뤫��Ǥ�����package�����ϡ�Ǥ�դκǾ�̥��֥ѥå�����(\fBjava\fR�ʤ�)�ޤ��ϴ��������ѥå�����(\fBjavax\&.swing\fR�ʤ�)�ˤʤ�ޤ������������ե������ޤ��ɬ�פϤ���ޤ��󡣰����ϡ����٤ƤΥ��ڥ졼�ƥ��󥰡������ƥ�ǡ�������Ƕ��ڤ��ޤ����磻��ɥ����ɤϻ��ѤǤ��ޤ��󡣥ѥå������θ���������ꤹ��ˤϡ�\fB\-sourcepath\fR����Ѥ��ޤ������Υ��ץ����Ǥϡ����������ĥ꡼���¸�ߤ��뤬�ѥå������˴ޤޤ�ʤ����������ե������������ޤ��󡣥��������ե�����ν����򻲾Ȥ��Ƥ���������
 .sp
-たとえば、次のコマンドは、\fIjava\fRおよび\fIjavax\&.swing\fRという名前のパッケージとこれらのサブパッケージ全部のドキュメントを生成します。
+���Ȥ��С����Υ��ޥ�ɤϡ�\fBjava\fR�����\fBjavax\&.swing\fR�Ȥ���̾���Υѥå������Ȥ����Υ��֥ѥå����������Υɥ�����Ȥ��������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-d docs \-sourcepath /home/user/src  \-subpackages java:javax\&.swing 
+\fBjavadoc \-d docs \-sourcepath /home/user/src  \-subpackages java:javax\&.swing \fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2538,16 +3290,17 @@ javadoc \-d docs \-sourcepath /home/user/src  \-subpackages java:javax\&.swing
 .PP
 \-exclude \fIpackagename1:packagename2:\&.\&.\&.\fR
 .RS 4
-指定されたパッケージとそのサブパッケージを\fI\-subpackages\fRによって作成されたリストから無条件に除外します。過去または将来の\fI\-subpackages\fRオプションの指定によって組み込まれるパッケージも除外の対象となります。
+���ꤵ�줿�ѥå������Ȥ��Υ��֥ѥå�������\fB\-subpackages\fR�ˤ�äƺ������줿�ꥹ�Ȥ���̵���˽������ޤ������ޤ��Ͼ����\fB\-subpackages\fR���ץ����λ���ˤ�ä��Ȥ߹��ޤ��ѥå�������������оݤȤʤ�ޤ���
 .sp
-次の例では、\fIjava\&.io\fR、\fIjava\&.util\fR、\fIjava\&.math\fRなどは組み込まれますが、\fIjava\&.net\fRと\fIjava\&.lang\fRをルートに持つパッケージは除外されます。\fIjava\&.lang\fRのサブパッケージである\fIjava\&.lang\&.ref\fRが除外される点に注意してください。
+������Ǥϡ�\fBjava\&.io\fR��\fBjava\&.util\fR��\fBjava\&.math\fR�ʤɤ��Ȥ߹��ޤ�ޤ�����\fBjava\&.net\fR��\fBjava\&.lang\fR��롼�Ȥ˻��ĥѥå������Ͻ�������ޤ���\fBjava\&.lang\fR�Υ��֥ѥå������Ǥ���\fBjava\&.lang\&.ref\fR������������������դ��Ƥ���������
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-sourcepath /home/user/src \-subpackages java \-exclude 
-    java\&.net:java\&.lang
+\fBjavadoc \-sourcepath /home/user/src \-subpackages java \-exclude \fR
+\fB    java\&.net:java\&.lang\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2556,30 +3309,30 @@ javadoc \-sourcepath /home/user/src \-subpackages java \-exclude
 .PP
 \-bootclasspath \fIclasspathlist\fR
 .RS 4
-ブート・クラスが存在するパスを指定します。ブート・クラスとは、通常、Javaプラットフォーム・クラスのことです。\fIbootclasspath\fRは、\fIjavadoc\fRコマンドがソース・ファイルとクラス・ファイルを探すときに使用する検索パスの一部です。詳細は、クラスの検出方法
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/findingclasses\&.html)を参照してください
+�֡��ȡ����饹��¸�ߤ���ѥ�����ꤷ�ޤ����֡��ȡ����饹�Ȥϡ��̾Java�ץ�åȥե����ࡦ���饹�Τ��ȤǤ���\fBbootclasspath\fR�ϡ�\fBjavadoc\fR���ޥ�ɤ����������ե�����ȥ��饹���ե������õ���Ȥ��˻��Ѥ��븡���ѥ��ΰ����Ǥ����ܺ٤ϡ����饹�θ�����ˡ
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/findingclasses\&.html)�򻲾Ȥ��Ƥ�������
 .sp
-\fIclasspathlist\fRパラメータ内のディレクトリは、セミコロン(;)で区切る(Windowsの場合)か、コロン(:)で区切ります(Oracle Solarisの場合)。
+\fBclasspathlist\fR�ѥ�᡼����Υǥ��쥯�ȥ�ϡ����ߥ�����(;)�Ƕ��ڤ�(Windows�ξ��)����������(:)�Ƕ��ڤ�ޤ�(Oracle Solaris�ξ��)��
 .RE
 .PP
 \-extdirs \fIdirist\fR
 .RS 4
-拡張機能クラスが存在するディレクトリを指定します。拡張機能クラスとは、Java拡張機能機構を使用するすべてのクラスです。\fIextdirs\fRオプションは、\fIjavadoc\fRコマンドがソース・ファイルとクラス・ファイルを探すときに使用する検索パスの一部です。詳細は、\fI\-classpath\fRオプションを参照してください。\fIdirlist\fR内のディレクトリは、セミコロン(;)で区切る(Windowsの場合)か、コロン(:)で区切ります(Oracle Solarisの場合)。
+��ĥ��ǽ���饹��¸�ߤ���ǥ��쥯�ȥ����ꤷ�ޤ�����ĥ��ǽ���饹�Ȥϡ�Java��ĥ��ǽ��������Ѥ��뤹�٤ƤΥ��饹�Ǥ���\fBextdirs\fR���ץ����ϡ�\fBjavadoc\fR���ޥ�ɤ����������ե�����ȥ��饹���ե������õ���Ȥ��˻��Ѥ��븡���ѥ��ΰ����Ǥ����ܺ٤ϡ�\fB\-classpath\fR���ץ����򻲾Ȥ��Ƥ���������\fBdirlist\fR��Υǥ��쥯�ȥ�ϡ����ߥ�����(;)�Ƕ��ڤ�(Windows�ξ��)����������(:)�Ƕ��ڤ�ޤ�(Oracle Solaris�ξ��)��
 .RE
 .PP
 \-verbose
 .RS 4
-\fIjavadoc\fRコマンドの実行中に詳細なメッセージを表示します。\fIverbose\fRオプションを指定しないと、ソース・ファイルのロード時、ドキュメントの生成時(ソース・ファイルごとに1つのメッセージ)、およびソート時にメッセージが表示されます。verboseオプションを指定すると、各Javaソース・ファイルの解析に要した時間(ミリ秒単位)を示す追加のメッセージが表示されます。
+\fBjavadoc\fR���ޥ�ɤμ¹���˾ܺ٤ʥ�å�������ɽ�����ޤ���\fBverbose\fR���ץ�������ꤷ�ʤ��ȡ����������ե�����Υ����ɻ����ɥ�����Ȥ�������(���������ե����뤴�Ȥ�1�ĤΥ�å�����)������ӥ����Ȼ��˥�å�������ɽ������ޤ���verbose���ץ�������ꤹ��ȡ���Java���������ե�����β��Ϥ��פ�������(�ߥ���ñ��)�򼨤��ɲäΥ�å�������ɽ������ޤ���
 .RE
 .PP
 \-quiet
 .RS 4
-メッセージを抑制し、警告とエラーのみが表示されるようにして、これらを確認しやすくします。\fIversion\fR文字列も抑止します。
+��å����������������ٹ�ȥ��顼�Τߤ�ɽ�������褦�ˤ��ơ��������ǧ���䤹�����ޤ���\fBversion\fRʸ������޻ߤ��ޤ���
 .RE
 .PP
 \-breakiterator
 .RS 4
-英語の場合、パッケージ、クラスまたはメンバーの主説明の最初の文の終わりを判断する際に、\fIjava\&.text\&.BreakIterator\fRの国際化された文境界を使用します。他のすべてのロケールは、英語言語というロケール固有のアルゴリズムではなく、すでに\fIBreakIterator\fRクラスを使用しています。最初の文は、パッケージ、クラス、またはメンバーのサマリーにコピーされ、アルファベット順の索引にコピーされます。JDK 1\&.2以降、\fIBreakIterator\fRクラスは、英語を除くすべての言語の文の終わりを判断するために、すでに使用されています。したがって、\fI\-breakiterator\fRオプションは、1\&.2以降では英文以外には効果がありません。英文には、次のような独自のデフォルトのアルゴリズムがあります。
+�Ѹ�ξ�硢�ѥå����������饹�ޤ��ϥ��С��μ������κǽ��ʸ�ν�����Ƚ�Ǥ���ݤˡ�\fBjava\&.text\&.BreakIterator\fR�ι�ݲ����줿ʸ��������Ѥ��ޤ���¾�Τ��٤ƤΥ�������ϡ��Ѹ����Ȥ������������ͭ�Υ��르�ꥺ��ǤϤʤ������Ǥ�\fBBreakIterator\fR���饹����Ѥ��Ƥ��ޤ����ǽ��ʸ�ϡ��ѥå����������饹���ޤ��ϥ��С��Υ��ޥ꡼�˥��ԡ����졢����ե��٥åȽ�κ����˥��ԡ�����ޤ���JDK 1\&.2�ʹߡ�\fBBreakIterator\fR���饹�ϡ��Ѹ��������٤Ƥθ����ʸ�ν�����Ƚ�Ǥ��뤿��ˡ����Ǥ˻��Ѥ���Ƥ��ޤ����������äơ�\fB\-breakiterator\fR���ץ����ϡ�1\&.2�ʹߤǤϱ�ʸ�ʳ��ˤϸ��̤�����ޤ��󡣱�ʸ�ˤϡ����Τ褦���ȼ��Υǥե���ȤΥ��르�ꥺ�ब����ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -2589,7 +3342,7 @@ javadoc \-sourcepath /home/user/src \-subpackages java \-exclude
 .sp -1
 .IP \(bu 2.3
 .\}
-英文のデフォルトの文区切りアルゴリズム。空白文字またはHTMLブロック・タグ(\fI<P>\fRなど)が続くピリオドで停止します。
+��ʸ�Υǥե���Ȥ�ʸ���ڤꥢ�르�ꥺ�ࡣ����ʸ���ޤ���HTML�֥��å�������(\fB<P>\fR�ʤ�)��³���ԥꥪ�ɤ���ߤ��ޤ���
 .RE
 .sp
 .RS 4
@@ -2600,135 +3353,158 @@ javadoc \-sourcepath /home/user/src \-subpackages java \-exclude
 .sp -1
 .IP \(bu 2.3
 .\}
-breakiterator文区切りアルゴリズム。次の語が大文字で始まる場合、空白文字が続くピリオド、疑問符、または感嘆符で停止します。このアルゴリズムでは「The serial no\&. is valid」など、ほとんどの省略表記が処理されますが、「Mr\&. Smith」は処理されません。\fI\-breakiterator\fRオプションでは、HTMLタグや、数字または記号で始まる文では停止しません。HTMLタグに埋め込まれている場合でも、「\&.\&./filename」の最後のピリオドで停止します。
+breakiteratorʸ���ڤꥢ�르�ꥺ�ࡣ���θ줬��ʸ���ǻϤޤ��硢����ʸ����³���ԥꥪ�ɡ������䡢�ޤ��ϴ�ò�����ߤ��ޤ������Υ��르�ꥺ��Ǥϡ�The serial no\&. is valid�פʤɡ��ۤȤ�ɤξ�άɽ������������ޤ�������Mr\&. Smith�פϽ�������ޤ���\fB\-breakiterator\fR���ץ����Ǥϡ�HTML�����䡢�����ޤ��ϵ���ǻϤޤ�ʸ�Ǥ���ߤ��ޤ���HTML�����������ޤ�Ƥ�����Ǥ⡢���르�ꥺ��ϡ�\&.\&./filename�פκǸ�Υԥꥪ�ɤ���ߤ��ޤ���
 .RE
 .sp
-Java SE 1\&.5では\fI\-breakiterator\fR警告メッセージが削除され、デフォルトの文区切りアルゴリズムは変更されていません。ソース・コードを変更せず、SE 1\&.4\&.xでの\fI\-breakiterator\fRオプションの警告を除去していない場合でも、何もする必要はありません。Java SE 1\&.5\&.0からは警告は消滅しています。
+Java SE 1\&.5�Ǥ�\fB\-breakiterator\fR�ٹ��å�������������졢�ǥե���Ȥ�ʸ���ڤꥢ�르�ꥺ����ѹ�����Ƥ��ޤ��󡣥������������ɤ��ѹ�������SE 1\&.4\&.x�Ǥ�\fB\-breakiterator\fR���ץ����ηٹ�����Ƥ��ʤ����Ǥ⡢���⤹��ɬ�פϤ���ޤ���Java SE 1\&.5\&.0����Ϸٹ�Ͼ��Ǥ��Ƥ��ޤ���
 .RE
 .PP
 \-locale \fIlanguage_country_variant\fR
 .RS 4
-\fIjavadoc\fRコマンドがドキュメントを生成するときに使用するロケールを指定します。この引数は、\fIj\fR\fIava\&.util\&.Locale\fRドキュメントで説明しているように、\fIen_US\fR
-(英語、米国)または\fIen_US_WIN\fR
-(Windowsバリアント)などのロケールの名前です。
+\fBjavadoc\fR���ޥ�ɤ��ɥ�����Ȥ���������Ȥ��˻��Ѥ�������������ꤷ�ޤ������ΰ����ϡ�\fBj\fR\fBava\&.util\&.Locale\fR�ɥ�����Ȥ��������Ƥ���褦�ˡ�\fBen_US\fR
+(�Ѹ졢�ƹ�)�ޤ���\fBen_US_WIN\fR
+(Windows�Хꥢ���)�ʤɤΥ��������̾���Ǥ���
 .sp
-\fB注意:\fR
-\fI\-locale\fRオプションは、標準ドックレットが提供するすべてのオプション、またはその他の任意のドックレットが提供するすべてのオプションより前(左側)に指定する必要があります。そうしないと、ナビゲーション・バーが英語で表示されます。このコマンドライン・オプションのみ、指定する順序に依存します。標準ドックレットのオプションを参照してください。
+\fB����:\fR
+\fB\-locale\fR���ץ����ϡ�ɸ��ɥå���åȤ��󶡤��뤹�٤ƤΥ��ץ���󡢤ޤ��Ϥ���¾��Ǥ�դΥɥå���åȤ��󶡤��뤹�٤ƤΥ��ץ��������(��¦)�˻��ꤹ��ɬ�פ�����ޤ����������ʤ��ȡ��ʥӥ�������󡦥С����Ѹ��ɽ������ޤ������Υ��ޥ�ɹԥ��ץ����Τߡ����ꤹ�����˰�¸���ޤ���ɸ��ɥå���åȤΥ��ץ����򻲾Ȥ��Ƥ���������
 .sp
-ロケールを指定すると、指定したロケールのリソース・ファイルが\fIjavadoc\fRコマンドによって選択されて、メッセージ(ナビゲーション・バー、リストと表の見出し、ヘルプ・ファイルの目次、stylesheet\&.cssのコメントなどの文字列)のために使用されます。また、アルファベット順にソートされるリストのソート順、および最初の文の終わりを判断するための文の区切り文字も、指定したロケールによって決まります。\fI\-locale\fRオプションは、ドキュメント化されるクラスのソース・ファイル内で指定されているドキュメンテーション・コメントのテキストのロケールを決定するものではありません。
+�����������ꤹ��ȡ����ꤷ����������Υ꥽�������ե����뤬\fBjavadoc\fR���ޥ�ɤˤ�ä����򤵤�ơ���å�����(�ʥӥ�������󡦥С����ꥹ�Ȥ�ɽ�θ��Ф����إ�ס��ե�������ܼ���stylesheet\&.css�Υ����Ȥʤɤ�ʸ����)�Τ���˻��Ѥ���ޤ����ޤ�������ե��٥åȽ�˥����Ȥ����ꥹ�ȤΥ����Ƚ硢����Ӻǽ��ʸ�ν�����Ƚ�Ǥ��뤿���ʸ�ζ��ڤ�ʸ���⡢���ꤷ����������ˤ�äƷ�ޤ�ޤ���\fB\-locale\fR���ץ����ϡ��ɥ�����Ȳ�����륯�饹�Υ��������ե�������ǻ��ꤵ��Ƥ���ɥ�����ơ�����󡦥����ȤΥƥ����ȤΥ����������ꤹ���ΤǤϤ���ޤ���
 .RE
 .PP
 \-encoding
 .RS 4
-ソース・ファイルのエンコーディングの名前(\fIEUCJIS/SJIS\fRなど)を指定します。このオプションが指定されていない場合は、プラットフォームのデフォルト・コンバータが使用されます。およびオプションも参照してください。
+���������ե�����Υ��󥳡��ǥ��󥰤�̾��(\fBEUCJIS/SJIS\fR�ʤ�)����ꤷ�ޤ������Υ��ץ���󤬻��ꤵ��Ƥ��ʤ����ϡ��ץ�åȥե�����Υǥե���ȡ�����С��������Ѥ���ޤ�������ӥ��ץ����⻲�Ȥ��Ƥ���������
 .RE
 .PP
 \-J\fIflag\fR
 .RS 4
-\fIjavadoc\fRコマンドを実行するJava Runtime Environment (JRE)に、\fIflag\fRを直接渡します。たとえば、生成ドキュメントを処理するためにシステムで32MBのメモリーを確保しておく必要がある場合は、\fI\-Xmx\fRオプションを次のように呼び出します。\fIjavadoc \-J\-Xmx32m \-J\-Xms32m com\&.mypackage\fR。\fI\-Xms\fRは省略可能で、これは初期メモリーのサイズを設定するのみのオプションで、必要なメモリーの最小量がわかっている場合に便利です。
+\fBjavadoc\fR���ޥ�ɤ�¹Ԥ���Java Runtime Environment (JRE)�ˡ�\fBflag\fR��ľ���Ϥ��ޤ������Ȥ��С������ɥ�����Ȥ�������뤿��˥����ƥ��32MB�Υ��꡼����ݤ��Ƥ���ɬ�פ�������ϡ�\fB\-Xmx\fR���ץ����򼡤Τ褦�˸ƤӽФ��ޤ���\fBjavadoc \-J\-Xmx32m \-J\-Xms32m com\&.mypackage\fR��\fB\-Xms\fR�Ͼ�ά��ǽ�ǡ�����Ͻ�����꡼�Υ����������ꤹ��ΤߤΥ��ץ����ǡ�ɬ�פʥ��꡼�κǾ��̤��狼�äƤ�����������Ǥ���
 .sp
-\fIJ\fRと\fIflag\fRの間に空白文字はありません。
+\fBJ\fR��\fBflag\fR�δ֤˶���ʸ���Ϥ���ޤ���
 .sp
-使用している\fIjavadoc\fRコマンドのバージョンを確認するには\fI\-version\fRオプションを使用します。出力ストリームには標準ドックレットのバージョン番号が含まれます。Javadocコマンドの実行を参照してください。
+���Ѥ��Ƥ���\fBjavadoc\fR���ޥ�ɤΥС��������ǧ����ˤ�\fB\-version\fR���ץ�������Ѥ��ޤ������ϥ��ȥ꡼��ˤ�ɸ��ɥå���åȤΥС�������ֹ椬�ޤޤ�ޤ���Javadoc���ޥ�ɤμ¹Ԥ򻲾Ȥ��Ƥ���������
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-J\-version
-java version "1\&.7\&.0_09"
-Java(TM) SE Runtime Environment (build 1\&.7\&.0_09\-b05)
-Java HotSpot(TM) 64\-Bit Server VM (build 23\&.5\-b02, mixed mode)
+\fBjavadoc \-J\-version\fR
+\fBjava version "1\&.7\&.0_09"\fR
+\fBJava(TM) SE Runtime Environment (build 1\&.7\&.0_09\-b05)\fR
+\fBJava HotSpot(TM) 64\-Bit Server VM (build 23\&.5\-b02, mixed mode)\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
-.SS "標準ドックレットのオプション"
+.PP
+\-javafx
+.RS 4
+ɸ��ɥå���åȤ��Ф���JavaFX��ĥ��ǽ����Ѥ��ơ�HTML�ɥ�����Ȥ��������ޤ����������줿�ɥ�����Ȥˤϡ�ɸ��Java�ɥå���åȤ��������줿¾�Υ��ޥ꡼�����������˲ä��ơ֥ץ��ѥƥ��Υ��ޥ꡼�ץ�������󤬴ޤޤ�Ƥ��ޤ����ꥹ�Ȥ��줿�ץ��ѥƥ��ϡ��ƥץ��ѥƥ���getter�����setter�᥽�åɤΥ��������˥�󥯤���ޤ���
+.sp
+getter�����setter�᥽�åɤ��Ф�������Ū�˵��ܤ���Ƥ���ɥ�����ȡ������Ȥ��ʤ���硢�ץ��ѥƥ����᥽�åɤΥɥ�����ȡ������Ȥ������Υ᥽�åɤ��Ф����������줿�ɥ�����Ȥ˼�ưŪ�˥��ԡ�����ޤ������Υ��ץ����ϡ��ץ��ѥƥ��Υǥե�����ͤ򵭽ҤǤ��뿷����\fB@defaultValue\fR�������ɲä��ޤ���
+.sp
+��:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjavadoc \-javafx MyClass\&.java \-d testdir\fR
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.SS "ɸ��ɥå���åȤΥ��ץ����"
 .PP
 \-d \fIdirectory\fR
 .RS 4
-\fIjavadoc\fRコマンドが生成されたHTMLファイルを保存する生成先ディレクトリを指定します。\fI\-d\fRオプションを省略すると、ファイルは現在のディレクトリに保存されます。\fIdirectory\fRの値には、絶対ディレクトリ、または現在の作業ディレクトリからの相対ディレクトリを指定できます。Java SE 1\&.4では、\fIjavadoc\fRコマンドを実行すると生成先ディレクトリが自動的に作成されます。
+\fBjavadoc\fR���ޥ�ɤ��������줿HTML�ե��������¸����������ǥ��쥯�ȥ����ꤷ�ޤ���\fB\-d\fR���ץ������ά����ȡ��ե�����ϸ��ߤΥǥ��쥯�ȥ����¸����ޤ���\fBdirectory\fR���ͤˤϡ����Хǥ��쥯�ȥꡢ�ޤ��ϸ��ߤκ�ȥǥ��쥯�ȥ꤫������Хǥ��쥯�ȥ�����Ǥ��ޤ���Java SE 1\&.4�Ǥϡ�\fBjavadoc\fR���ޥ�ɤ�¹Ԥ����������ǥ��쥯�ȥ꤬��ưŪ�˺�������ޤ���
 .sp
-たとえば、次の例では、\fIcom\&.mypackage\fRパッケージのドキュメントが生成され、その結果が\fI/user/doc/ \fRディレクトリに保存されます。\fIjavadoc \-d \fR\fI/user/doc/ \fR\fIcom\&.mypackage\fR
+���Ȥ��С�������Ǥϡ�\fBcom\&.mypackage\fR�ѥå������Υɥ�����Ȥ��������졢���η�̤�/user/doc/�ǥ��쥯�ȥ����¸����ޤ���\fBjavadoc \-d \fR\fB/user/doc/ \fR\fBcom\&.mypackage\fR
 .RE
 .PP
 \-use
 .RS 4
-ドキュメント化されるクラスおよびパッケージごとに1つの使用ページを組み込みます。このページには、その特定のクラスまたはパッケージのAPIを使用しているパッケージ、クラス、メソッド、コンストラクタ、およびフィールドが記述されます。たとえば、クラスCを例にとると、クラスCを使用しているものとしては、Cのサブクラス、Cとして宣言されているフィールド、Cを返すメソッド、および型Cのパラメータを持つメソッドとコンストラクタがあります。たとえば、\fIString\fR型用の使用ページを表示できます。\fIjava\&.awt\&.Font\fRクラスの\fIgetName\fRメソッドは\fIString\fR型を戻すので、\fIgetName\fRメソッドは\fIString\fRを使用し、\fIgetName\fRメソッドが\fIString\fR用の使用ページに表示されます。これは実装ではなくAPIの使用のみをドキュメント化します。メソッドがその実装で\fIString\fRを使用するが、引数として文字列を取らない、または文字列を返さない場合、それは\fIString\fRの使用とはみなされません。生成された使用ページにアクセスするには、クラスまたはパッケージに移動し、ナビゲーション・バーの\fBリンクの使用\fRをクリックします。
+�ɥ�����Ȳ�����륯�饹����ӥѥå��������Ȥ�1�ĤΡֻ��ѡץڡ������Ȥ߹��ߤޤ������Υڡ����ˤϡ���������Υ��饹�ޤ��ϥѥå�������API����Ѥ��Ƥ���ѥå����������饹���᥽�åɡ����󥹥ȥ饯��������ӥե�����ɤ����Ҥ���ޤ������Ȥ��С����饹C����ˤȤ�ȡ����饹C����Ѥ��Ƥ����ΤȤ��Ƥϡ�C�Υ��֥��饹��C�Ȥ����������Ƥ���ե�����ɡ�C���֤��᥽�åɡ�����ӷ�C�Υѥ�᡼������ĥ᥽�åɤȥ��󥹥ȥ饯��������ޤ������Ȥ��С�\fBString\fR���ѤΡֻ��ѡץڡ�����ɽ���Ǥ��ޤ���\fBjava\&.awt\&.Font\fR���饹��\fBgetName\fR�᥽�åɤ�\fBString\fR�����᤹�Τǡ�\fBgetName\fR�᥽�åɤ�\fBString\fR����Ѥ���\fBgetName\fR�᥽�åɤ�\fBString\fR�ѤΡֻ��ѡץڡ�����ɽ������ޤ�������ϼ����ǤϤʤ�API�λ��ѤΤߤ�ɥ�����Ȳ����ޤ����᥽�åɤ����μ�����\fBString\fR����Ѥ��뤬�������Ȥ���ʸ�������ʤ����ޤ���ʸ������֤��ʤ���硢�����\fBString\fR�λ��ѤȤϤߤʤ���ޤ����������줿�ֻ��ѡץڡ����˥�����������ˤϡ����饹�ޤ��ϥѥå������˰�ư�����ʥӥ�������󡦥С���\fB��󥯤λ���\fR�򥯥�å����ޤ���
 .RE
 .PP
 \-version
 .RS 4
-生成ドキュメントに、@versionのテキストを組み込みます。このテキストは、デフォルトでは省略されます。使用している\fIjavadoc\fRコマンドのバージョンを確認するには\fI\-J\-version\fRオプションを使用します。
+�����ɥ�����Ȥˡ�@version�Υƥ����Ȥ��Ȥ߹��ߤޤ������Υƥ����Ȥϡ��ǥե���ȤǤϾ�ά����ޤ������Ѥ��Ƥ���\fBjavadoc\fR���ޥ�ɤΥС��������ǧ����ˤ�\fB\-J\-version\fR���ץ�������Ѥ��ޤ���
 .RE
 .PP
 \-author
 .RS 4
-生成ドキュメントに、\fI@author\fRのテキストを組み込みます。
+�����ɥ�����Ȥˡ�\fB@author\fR�Υƥ����Ȥ��Ȥ߹��ߤޤ���
 .RE
 .PP
 \-splitindex
 .RS 4
-索引ファイルをアルファベットごとに複数のファイルに分割し、文字ごとに1つのファイルと、アルファベット以外の記号で始まる索引エントリ用に1つのファイルを作成します。
+�����ե�����򥢥�ե��٥åȤ��Ȥ�ʣ���Υե������ʬ�䤷��ʸ�����Ȥ�1�ĤΥե�����ȡ�����ե��٥åȰʳ��ε���ǻϤޤ��������ȥ��Ѥ�1�ĤΥե������������ޤ���
 .RE
 .PP
 \-windowtitle \fItitle\fR
 .RS 4
-HTMLの\fI<title>\fRタグに配置するタイトルを指定します。\fItitle\fRタグに指定したテキストは、ウィンドウのタイトルや、このページに対して作成されたブラウザのブックマーク(お気に入り)に表示されます。このタイトルにはHTMLタグを含めないでください。タイトルにHTMLタグが含まれていると、ブラウザがタグを正しく解釈できません。\fItitle\fRタグ内の内部の二重引用符はエスケープ文字を使用してマークします。\fI\-windowtitle\fRオプションを省略すると、\fIjavadoc\fRコマンドは、\fI\-windowtitle\fRオプションのかわりに、\fI\-doctitle\fRオプションの値を使用します。たとえば、\fIjavadoc \-windowtitle "Java SE Platform" com\&.mypackage\fRです。
+HTML��\fB<title>\fR���������֤��륿���ȥ����ꤷ�ޤ���\fBtitle\fR�����˻��ꤷ���ƥ����Ȥϡ�������ɥ��Υ����ȥ�䡢���Υڡ������Ф��ƺ������줿�֥饦���Υ֥å��ޡ���(����������)��ɽ������ޤ������Υ����ȥ�ˤ�HTML������ޤ�ʤ��Ǥ��������������ȥ��HTML�������ޤޤ�Ƥ���ȡ��֥饦�������������������Ǥ��ޤ���\fBtitle\fR���������������Ű�����ϥ���������ʸ������Ѥ��ƥޡ������ޤ���\fB\-windowtitle\fR���ץ������ά����ȡ�\fBjavadoc\fR���ޥ�ɤϡ�\fB\-windowtitle\fR���ץ����Τ����ˡ�\fB\-doctitle\fR���ץ������ͤ���Ѥ��ޤ������Ȥ��С�\fBjavadoc \-windowtitle "Java SE Platform" com\&.mypackage\fR�Ǥ���
 .RE
 .PP
 \-doctitle \fItitle\fR
 .RS 4
-概要サマリー・ファイルの最上部の近くに配置するタイトルを指定します。\fItitle\fRタグに指定したテキストは中央揃えになり、レベル1の見出しとして、上部ナビゲーション・バーのすぐ下に置かれます。\fItitle\fRタグにはHTMLタグおよび空白文字を含めることができますが、その場合、タイトルを引用符で囲む必要があります。\fItitle\fRタグの内部で引用符を使用する場合は、エスケープする必要があります。たとえば、\fIjavadoc \-header "<b>Java Platform </b><br>v1\&.4" com\&.mypackage\fRです。
+���ץ��ޥ꡼���ե�����κǾ����ζ᤯�����֤��륿���ȥ����ꤷ�ޤ���\fBtitle\fR�����˻��ꤷ���ƥ����Ȥ����·���ˤʤꡢ��٥�1�θ��Ф��Ȥ��ơ������ʥӥ�������󡦥С��Τ��������֤���ޤ���\fBtitle\fR�����ˤ�HTML��������Ӷ���ʸ����ޤ�뤳�Ȥ��Ǥ��ޤ��������ξ�硢�����ȥ�������ǰϤ�ɬ�פ�����ޤ���\fBtitle\fR�����������ǰ��������Ѥ�����ϡ����������פ���ɬ�פ�����ޤ������Ȥ��С�\fBjavadoc \-header "<b>Java Platform </b><br>v1\&.4" com\&.mypackage\&.\fR�Ȥʤ�ޤ���
 .RE
 .PP
 \-title \fItitle\fR
 .RS 4
-すでに存在しません。Javadoc 1\&.2のベータ版にしか存在していませんでした。このオプションは、\fI\-doctitle\fRという名前に変更されました。名前を変更した理由は、このオプションが、ウィンドウのタイトルではなくドキュメントのタイトルを定義することを明確にするためです。
+���Ǥ�¸�ߤ��ޤ���Javadoc 1\&.2�Υ١����Ǥˤ���¸�ߤ��Ƥ��ޤ���Ǥ��������Υ��ץ����ϡ�\fB\-doctitle\fR�Ȥ���̾�����ѹ�����ޤ�����̾�����ѹ�������ͳ�ϡ����Υ��ץ���󤬡�������ɥ��Υ����ȥ�ǤϤʤ��ɥ�����ȤΥ����ȥ��������뤳�Ȥ����Τˤ��뤿��Ǥ���
 .RE
 .PP
 \-header \fIheader\fR
 .RS 4
-各出力ファイルの最上部に配置するヘッダー・テキストを指定します。ヘッダーは、ナビゲーション・バーの右上に配置されます。\fIheader\fRにはHTMLタグおよび空白文字を含めることができますが、その場合、\fIheader\fRを引用符で囲む必要があります。ヘッダー内部の引用符にはエスケープ文字を使用します。たとえば、\fIjavadoc \-header "<b>Java Platform </b><br>v1\&.4" com\&.mypackage\fRです。
+�ƽ��ϥե�����κǾ��������֤���إå������ƥ����Ȥ���ꤷ�ޤ����إå����ϡ��ʥӥ�������󡦥С��α�������֤���ޤ���\fBheader\fR�ˤ�HTML��������Ӷ���ʸ����ޤ�뤳�Ȥ��Ǥ��ޤ��������ξ�硢\fBheader\fR�������ǰϤ�ɬ�פ�����ޤ����إå��������ΰ�����ˤϥ���������ʸ������Ѥ��ޤ������Ȥ��С�\fBjavadoc \-header "<b>Java Platform </b><br>v1\&.4" com\&.mypackage\&.\fR�Ȥʤ�ޤ���
 .RE
 .PP
 \-footer \fIfooter\fR
 .RS 4
-各出力ファイルの最下部に配置するフッター・テキストを指定します。\fIfooter\fRの値は、ナビゲーション・バーの右下に配置されます。\fIfooter\fRにはHTMLタグおよび空白文字を含めることができますが、その場合、\fIfooter\fRを引用符で囲む必要があります。フッター内部の引用符にはエスケープ文字を使用します。
+�ƽ��ϥե�����κǲ��������֤���եå������ƥ����Ȥ���ꤷ�ޤ���\fIfooter\fR���ͤϡ��ʥӥ�������󡦥С��α��������֤���ޤ���\fBfooter\fR�ˤ�HTML��������Ӷ���ʸ����ޤ�뤳�Ȥ��Ǥ��ޤ��������ξ�硢\fBfooter\fR�������ǰϤ�ɬ�פ�����ޤ����եå��������ΰ�����ˤϥ���������ʸ������Ѥ��ޤ���
 .RE
 .PP
 \-top
 .RS 4
-各出力ファイルの最上部に配置するテキストを指定します。
+�ƽ��ϥե�����κǾ��������֤���ƥ����Ȥ���ꤷ�ޤ���
 .RE
 .PP
 \-bottom \fItext\fR
 .RS 4
-各出力ファイルの最下部に配置するテキストを指定します。このテキストは、下部ナビゲーション・バーより下の、ページの最下部に配置されます。テキストにはHTMLタグおよび空白文字を含めることができますが、その場合、テキストを引用符で囲む必要があります。テキスト内部の引用符にはエスケープ文字を使用します。
+�ƽ��ϥե�����κǲ��������֤���ƥ����Ȥ���ꤷ�ޤ������Υƥ����Ȥϡ������ʥӥ�������󡦥С���겼�Ρ��ڡ����κǲ��������֤���ޤ����ƥ����Ȥˤ�HTML��������Ӷ���ʸ����ޤ�뤳�Ȥ��Ǥ��ޤ��������ξ�硢�ƥ����Ȥ������ǰϤ�ɬ�פ�����ޤ����ƥ����������ΰ�����ˤϥ���������ʸ������Ѥ��ޤ���
 .RE
 .PP
 \-link \fIextdocURL\fR
 .RS 4
-既存のJavadocにより生成された外部参照クラスのドキュメントへのリンクを作成します。\fIextdocURL\fR引数は、リンク先として指定する、Javadocにより生成された外部ドキュメントを含むディレクトリの絶対URLまたは相対URLです。指定した\fIjavadoc\fRコマンドの実行で、複数の\fI\-link\fRオプションを指定して複数のドキュメントへのリンクを作成できます。
+��¸��Javadoc�ˤ���������줿�������ȥ��饹�Υɥ�����ȤؤΥ�󥯤�������ޤ���\fIextdocURL\fR�����ϡ������Ȥ��ƻ��ꤹ�롢Javadoc�ˤ���������줿�����ɥ�����Ȥ�ޤ�ǥ��쥯�ȥ������URL�ޤ�������URL�Ǥ������ꤷ��\fBjavadoc\fR���ޥ�ɤμ¹Ԥǡ�ʣ����\fB\-link\fR���ץ�������ꤷ��ʣ���Υɥ�����ȤؤΥ�󥯤�����Ǥ��ޤ���
 .sp
-このディレクトリ内にpackage\-listファイルが存在する必要があります(存在しない場合は、\fI\-linkoffline\fRオプションを使用します)。\fIjavadoc\fRコマンドは、package\-listファイルからパッケージ名を読み取った後、そのURLでこれらのパッケージにリンクします。\fIjavadoc\fRコマンドの実行時に、\fIextdocURL\fRの値が、作成された\fI<A HREF>\fRリンク内にコピーされます。したがって、\fIextdocURL\fRはファイルではなくディレクトリへのURLである必要があります。\fIextdocURL\fRに絶対リンクを使用すると、ユーザーのドキュメントを任意のWebサイト上のドキュメントにリンクできます。相対位置へリンクするのみの場合は相対リンクを使用できます。相対リンクを使用する場合、渡す値は宛先ディレクトリから、リンクされているパッケージを含むディレクトリへである必要があります(\fI\-d\fRオプションで指定)。絶対リンクを指定する場合、通常、HTTPリンクを使用します。ただし、Webサーバーを持たないファイル・システムにリンクする場合は、ファイル・リンクを使用できます。生成されたドキュメンテーションにアクセスする全員が同じファイル・システムを共有する場合にのみファイル・リンクを使用します。どの場合も、どのオペレーティング・システムでも、URLが絶対または相対のいずれでも、また\fIh\fR\fIttp:\fRまたは\fIf\fR\fIile:\fRのいずれでも、URLメモ: Uniform Resource Locators
-(http://www\&.ietf\&.org/rfc/rfc1738\&.txt)に指定されているとおり、区切り文字としてスラッシュを使用します。
+���Υǥ��쥯�ȥ����package\-list�ե����뤬¸�ߤ���ɬ�פ�����ޤ�(¸�ߤ��ʤ����ϡ�\fB\-linkoffline\fR���ץ�������Ѥ��ޤ�)��\fBjavadoc\fR���ޥ�ɤϡ�package\-list�ե����뤫��ѥå�����̾���ɤ߼�ä��塢����URL�Ǥ����Υѥå������˥�󥯤��ޤ���\fBjavadoc\fR���ޥ�ɤμ¹Ի��ˡ�\fBextdocURL\fR���ͤ����������줿\fB<A HREF>\fR�����˥��ԡ�����ޤ����������äơ�\fBextdocURL\fR�ϥե�����ǤϤʤ��ǥ��쥯�ȥ�ؤ�URL�Ǥ���ɬ�פ�����ޤ���\fIextdocURL\fR�����Х�󥯤���Ѥ���ȡ��桼�����Υɥ�����Ȥ�Ǥ�դ�Web�����Ⱦ�Υɥ�����Ȥ˥�󥯤Ǥ��ޤ������а��֤إ�󥯤���Τߤξ������Х�󥯤���ѤǤ��ޤ������Х�󥯤���Ѥ����硢�Ϥ��ͤϰ���ǥ��쥯�ȥ꤫�顢��󥯤���Ƥ���ѥå�������ޤ�ǥ��쥯�ȥ�ؤǤ���ɬ�פ�����ޤ�(\fB\-d\fR���ץ����ǻ���)�����Х�󥯤���ꤹ���硢�̾HTTP��󥯤���Ѥ��ޤ�����������Web�����С�������ʤ��ե����롦�����ƥ�˥�󥯤�����ϡ��ե����롦��󥯤���ѤǤ��ޤ����������줿�ɥ�����ơ������˥�����������������Ʊ���ե����롦�����ƥ��ͭ������ˤΤߥե����롦��󥯤���Ѥ��ޤ����ɤξ��⡢�ɤΥ��ڥ졼�ƥ��󥰡������ƥ�Ǥ⡢URL�����Фޤ������ФΤ�����Ǥ⡢�ޤ�\fBh\fR\fBttp:\fR�ޤ���\fBf\fR\fBile:\fR�Τ�����Ǥ⡢URL���: Uniform Resource Locators
+(http://www\&.ietf\&.org/rfc/rfc1738\&.txt)�˻��ꤵ��Ƥ���Ȥ��ꡢ���ڤ�ʸ���Ȥ��ƥ���å������Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-link  http://<host>/<directory>/<directory>/\&.\&.\&./<name>
-\-link file://<host>/<directory>/<directory>/\&.\&.\&./<name>
-\-link <directory>/<directory>/\&.\&.\&./<name>
+\fB\-link  http://<host>/<directory>/<directory>/\&.\&.\&./<name>\fR
+\fB\-link file://<host>/<directory>/<directory>/\&.\&.\&./<name>\fR
+\fB\-link <directory>/<directory>/\&.\&.\&./<name>\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
-\-linkofflineおよび\-linkオプションの違い.PP
-次の場合に、\fI\-link\fRオプションを使用します。
+.PP
+\-linkoffline�����\-link���ץ����ΰ㤤
+.PP
+���ξ��ˡ�\fB\-link\fR���ץ�������Ѥ��ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -2738,7 +3514,7 @@ HTMLの\fI<title>\fRタグに配置するタイトルを指定します。\fItit
 .sp -1
 .IP \(bu 2.3
 .\}
-外部APIドキュメントへの相対パスを使用する場合。
+����API�ɥ�����Ȥؤ����Хѥ�����Ѥ����硣
 .RE
 .sp
 .RS 4
@@ -2749,87 +3525,100 @@ HTMLの\fI<title>\fRタグに配置するタイトルを指定します。\fItit
 .sp -1
 .IP \(bu 2.3
 .\}
-外部APIドキュメントへの絶対URLを使用する場合(そのURLに接続し、読取りを行うことがシェルによって許可されている場合)。
+����API�ɥ�����Ȥؤ�����URL����Ѥ�����(����URL����³�����ɼ���Ԥ����Ȥ�������ˤ�äƵ��Ĥ���Ƥ�����)��
 .RE
 .PP
-外部APIドキュメントへの絶対URLを使用する場合(そのURLに接続し、読取りを行うことがシェルによって許可されていない場合)は\fI\-linkoffline\fRオプションを使用します。このような状況は、ファイアウォールの内側からファイアウォールの外側にあるドキュメントにリンクしようとする場合に発生します。
+����API�ɥ�����Ȥؤ�����URL����Ѥ�����(����URL����³�����ɼ���Ԥ����Ȥ�������ˤ�äƵ��Ĥ���Ƥ��ʤ����)��\fB\-linkoffline\fR���ץ�������Ѥ��ޤ������Τ褦�ʾ����ϡ��ե����������������¦����ե�������������γ�¦�ˤ���ɥ�����Ȥ˥�󥯤��褦�Ȥ������ȯ�����ޤ���
 .PP
-\fBExample 1\fR, 外部ドキュメントへの絶対リンク
+\fB�� 1 \fR�����ɥ�����Ȥؤ����Х��
 .RS 4
-http://docs\&.oracle\&.com/javase/8/docs/api/index\&.htmlに示すような、\fIjava\&.lang\fR、\fIjava\&.io\fRおよびその他のJavaプラットフォーム・パッケージにリンクする場合、次のコマンドを使用します
+http://docs\&.oracle\&.com/javase/8/docs/api/index\&.html�˼����褦�ʡ�\fBjava\&.lang\fR��\fBjava\&.io\fR����Ӥ���¾��Java�ץ�åȥե����ࡦ�ѥå������˥�󥯤����硢���Υ��ޥ�ɤ���Ѥ��ޤ�
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-link http://docs\&.oracle\&.com/javase/8/docs/api/ com\&.mypackage
+\fBjavadoc \-link http://docs\&.oracle\&.com/javase/8/docs/api/ com\&.mypackage\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-このコマンドは、Java SEプラットフォーム・パッケージへのリンク持つ\fIcom\&.mypackage\fRパッケージのドキュメントを生成します。生成ドキュメントには、たとえばクラス\fItrees\fR内の\fIObject\fRクラスへのリンクが含まれています。\fI\-sourcepath\fRや\fI\-d\fRなどの他のオプションは表示されません。
+���Υ��ޥ�ɤϡ�Java SE�ץ�åȥե����ࡦ�ѥå������ؤΥ�󥯻���\fBcom\&.mypackage\fR�ѥå������Υɥ�����Ȥ��������ޤ��������ɥ�����Ȥˤϡ����Ȥ��Х��饹\fBtrees\fR���\fBObject\fR���饹�ؤΥ�󥯤��ޤޤ�Ƥ��ޤ���\fB\-sourcepath\fR��\fB\-d\fR�ʤɤ�¾�Υ��ץ�����ɽ������ޤ���
 .RE
 .PP
-\fBExample 2\fR, 外部ドキュメントへの相対リンク
+\fB�� 2 \fR�����ɥ�����Ȥؤ����Х��
 .RS 4
-この例では、2つのパッケージがあり、そのドキュメントは\fIjavadoc\fRコマンドを複数回実行した結果生成されたものです。さらに、これらのドキュメントは相対パスで分割されています。パッケージは、APIである\fIcom\&.apipackage\fRと、SPI(サービス・プロバイダ・インタフェース)であるc\fIom\&.spipackage\fRです。ドキュメントの格納先は、docs/api/com/apipackageとdocs/spi/com/spipackageです。APIパッケージのドキュメントはすでに生成されていて、docsが現在のディレクトリである場合、APIドキュメントへのリンクを持つSPIパッケージをドキュメント化するには、次のコマンドを実行します。\fIjavadoc \-d \&./spi \-link \&.\&./api com\&.spipackage\fR
+������Ǥϡ�2�ĤΥѥå����������ꡢ���Υɥ�����Ȥ�\fBjavadoc\fR���ޥ�ɤ�ʣ����¹Ԥ�������������줿��ΤǤ�������ˡ������Υɥ�����Ȥ����Хѥ���ʬ�䤵��Ƥ��ޤ����ѥå������ϡ�API�Ǥ���\fBcom\&.apipackage\fR�ȡ�SPI(�����ӥ����ץ��Х��������󥿥ե�����)�Ǥ���c\fBom\&.spipackage\fR�Ǥ����ɥ�����Ȥγ�Ǽ��ϡ�docs/api/com/apipackage��docs/spi/com/spipackage�Ǥ���API�ѥå������Υɥ�����ȤϤ��Ǥ���������Ƥ��ơ�docs�����ߤΥǥ��쥯�ȥ�Ǥ����硢API�ɥ�����ȤؤΥ�󥯤����SPI�ѥå�������ɥ�����Ȳ�����ˤϡ����Υ��ޥ�ɤ�¹Ԥ��ޤ���\fBjavadoc \-d \&./spi \-link \&.\&./api com\&.spipackage\fR
 .sp
-\fI\-link\fRオプションは、宛先ディレクトリ(docs/spi)からの相対パスです。
+\fB\-link\fR���ץ����ϡ�����ǥ��쥯�ȥ�(docs/spi)��������Хѥ��Ǥ���
 .RE
-注意.PP
-\fI\-link\fRオプションを使用すると、コードからは参照されていても、今回の\fIjavadoc\fRの実行ではドキュメント化されないクラスにリンクできるようになります。リンクから有効なページに移動できるようにするには、それらのHTMLページがある場所を調べ、その場所を\fIextdocURL\fRに指定する必要があります。これにより、サードパーティのドキュメンテーションがjava\&.*ドキュメンテーション(http://docs\&.oracle\&.com)へリンクすることができます。\fIjavadoc\fRコマンドで、現在の実行で生成しているドキュメンテーション内のAPIへのリンクのみを作成する場合には、\fI\-link\fRオプションを省略します。\fI\-link\fRオプションを指定しないと、\fIjavadoc\fRコマンドは外部参照のためのドキュメンテーションへのリンクを作成しません。ドキュメンテーションが存在するのかどうか、またはどこに存在するのかがわからないからです。\fI\-link\fRオプションでは、生成ドキュメンテーション内の複数の場所にリンクを作成できます。ソース・ファイルの処理を参照してください。もう1つの用途は、パッケージ・セットの間にクロスリンクを作成することです。一方のパッケージ・セットに対して\fIjavadoc\fRコマンドを実行した後、他方のパッケージ・セットに対して\fIjavadoc\fRコマンドを再度実行すると、両セット間に双方向のリンクを作成できます。
-クラスの参照方法.PP
-表示される外部参照クラスへのリンクの場合(およびそのテキスト・ラベルだけではなく)、クラスは次の方法で参照される必要があります。メソッドの本体でクラスを参照するのみでは十分ではありません。\fIimport\fR文、宣言のいずれかで参照する必要があります。次に、クラス\fIjava\&.io\&.File\fRを参照する方法の例を示します。
 .PP
-すべてのタイプのimport文の場合。ワイルドカードによるインポート、名前による明示的なインポート、または\fIjava\&.lang\&.*\fRに対する自動インポート。
+����
 .PP
-Java SE 1\&.3\&.\fIn\fRおよび1\&.2\&.\fIn\fRでは、名前による明示的なインポートのみ機能します。ワイルドカードによる\fIimport\fR文も、\fIimport java\&.lang\&.*\fRの自動インポートも機能しません。
+\fB\-link\fR���ץ�������Ѥ���ȡ������ɤ���ϻ��Ȥ���Ƥ��Ƥ⡢�����\fBjavadoc\fR�μ¹ԤǤϥɥ�����Ȳ�����ʤ����饹�˥�󥯤Ǥ���褦�ˤʤ�ޤ�����󥯤���ͭ���ʥڡ����˰�ư�Ǥ���褦�ˤ���ˤϡ�������HTML�ڡ������������Ĵ�١����ξ���\fBextdocURL\fR�˻��ꤹ��ɬ�פ�����ޤ�������ˤ�ꡢ�����ɥѡ��ƥ��Υɥ�����ơ������java\&.*�ɥ�����ơ������(
+http://docs\&.oracle\&.com)�إ�󥯤��뤳�Ȥ��Ǥ��ޤ���\fBjavadoc\fR���ޥ�ɤǡ����ߤμ¹Ԥ��������Ƥ���ɥ�����ơ���������API�ؤΥ�󥯤Τߤ����������ˤϡ�\fB\-link\fR���ץ������ά���ޤ���\fB\-link\fR���ץ�������ꤷ�ʤ��ȡ�\fBjavadoc\fR���ޥ�ɤϳ������ȤΤ���Υɥ�����ơ������ؤΥ�󥯤�������ޤ��󡣥ɥ�����ơ������¸�ߤ���Τ��ɤ������ޤ��Ϥɤ���¸�ߤ���Τ����狼��ʤ�����Ǥ���\fB\-link\fR���ץ����Ǥϡ������ɥ�����ơ���������ʣ���ξ��˥�󥯤�����Ǥ��ޤ������������ե�����ν����򻲾Ȥ��Ƥ����������⤦1�Ĥ����Ӥϡ��ѥå����������åȤδ֤˥�������󥯤�������뤳�ȤǤ��������Υѥå����������åȤ��Ф���\fBjavadoc\fR���ޥ�ɤ�¹Ԥ����塢¾���Υѥå����������åȤ��Ф���\fBjavadoc\fR���ޥ�ɤ���ټ¹Ԥ���ȡ�ξ���åȴ֤��������Υ�󥯤�����Ǥ��ޤ���
 .PP
-宣言の場合:
-\fIvoid mymethod(File f) {}\fR
+���饹�λ�����ˡ
 .PP
-参照は、メソッド、コンストラクタ、フィールド、クラスまたはインタフェースの戻り型またはパラメータ・タイプ、あるいは実装、拡張またはスロー文にあります。
+ɽ������볰�����ȥ��饹�ؤΥ�󥯤ξ��(����Ӥ��Υƥ����ȡ���٥�����ǤϤʤ�)�����饹�ϼ�����ˡ�ǻ��Ȥ����ɬ�פ�����ޤ����᥽�åɤ����Τǥ��饹�򻲾Ȥ���ΤߤǤϽ�ʬ�ǤϤ���ޤ���\fBimport\fRʸ������Τ����줫�ǻ��Ȥ���ɬ�פ�����ޤ������ˡ����饹\fBjava\&.io\&.File\fR�򻲾Ȥ�����ˡ����򼨤��ޤ���
 .PP
-重要な結果として、\fI\-link\fRオプションを使用しても、この制限のために誤って表示されないリンクが多数発生する可能性があります。テキストはハイパーテキスト・リンクが付けられずに表示されます。リンクが表示する警告から、これらのリンクを認識できます。クラスを正しく参照し、それによってリンクを追加するための最も簡単な方法はそのクラスをインポートすることです。
-パッケージ・リスト.PP
-\fI\-link\fRオプションには、\fIjavadoc\fRコマンドによって生成されるpackage\-listという名前のファイルが、\fI\-link\fRオプションに指定したURLに存在していることが必要です。package\-listファイルは、その場所にあるドキュメント化されたパッケージの名前のリストが入った単純なテキスト・ファイルです。前述の例では、\fIjavadoc\fRコマンドは、指定したURLでpackage\-listという名前のファイルを検索し、パッケージ名を読み取って、そのURLでこれらのパッケージにリンクします。
+���٤ƤΥ����פ�importʸ�ξ�硣�磻��ɥ����ɤˤ�륤��ݡ��ȡ�̾���ˤ������Ū�ʥ���ݡ��ȡ��ޤ���\fBjava\&.lang\&.*\fR���Ф��뼫ư����ݡ��ȡ�
 .PP
-たとえば、Java SE APIのパッケージ・リストは
-http://docs\&.oracle\&.com/javase/8/docs/api/package\-listにあります。
+Java SE 1\&.3\&.\fIn\fR�����1\&.2\&.\fIn\fR�Ǥϡ�̾���ˤ������Ū�ʥ���ݡ��ȤΤߵ�ǽ���ޤ����磻��ɥ����ɤˤ��\fBimport\fRʸ�⡢\fBimport java\&.lang\&.*\fR�μ�ư����ݡ��Ȥⵡǽ���ޤ���
 .PP
-このパッケージ・リストは次のような内容で始まっています。
+����ξ��:
+\fBvoid mymethod(File f) {}\fR
+.PP
+���Ȥϡ��᥽�åɡ����󥹥ȥ饯�����ե�����ɡ����饹�ޤ��ϥ��󥿥ե���������귿�ޤ��ϥѥ�᡼���������ס����뤤�ϼ�������ĥ�ޤ��ϥ�����ʸ�ˤ���ޤ���
+.PP
+���פʷ�̤Ȥ��ơ�\fB\-link\fR���ץ�������Ѥ��Ƥ⡢�������¤Τ���˸��ä�ɽ������ʤ���󥯤�¿��ȯ�������ǽ��������ޤ����ƥ����Ȥϥϥ��ѡ��ƥ����ȡ���󥯤��դ���줺��ɽ������ޤ�����󥯤�ɽ������ٹ𤫤顢�����Υ�󥯤�ǧ���Ǥ��ޤ������饹�����������Ȥ�������ˤ�äƥ�󥯤��ɲä��뤿��κǤ��ñ����ˡ�Ϥ��Υ��饹�򥤥�ݡ��Ȥ��뤳�ȤǤ���
+.PP
+�ѥå��������ꥹ��
+.PP
+\fB\-link\fR���ץ����ˤϡ�\fBjavadoc\fR���ޥ�ɤˤ�ä����������package\-list�Ȥ���̾���Υե����뤬��\fB\-link\fR���ץ����˻��ꤷ��URL��¸�ߤ��Ƥ��뤳�Ȥ�ɬ�פǤ���package\-list�ե�����ϡ����ξ��ˤ���ɥ�����Ȳ����줿�ѥå�������̾���Υꥹ�Ȥ����ä�ñ��ʥƥ����ȡ��ե�����Ǥ������Ҥ���Ǥϡ�\fBjavadoc\fR���ޥ�ɤϡ����ꤷ��URL��package\-list�Ȥ���̾���Υե�����򸡺������ѥå�����̾���ɤ߼�äơ�����URL�Ǥ����Υѥå������˥�󥯤��ޤ���
+.PP
+���Ȥ��С�Java SE API�Υѥå��������ꥹ�Ȥ�
+http://docs\&.oracle\&.com/javase/8/docs/api/package\-list�ˤ���ޤ���
+.PP
+���Υѥå��������ꥹ�Ȥϼ��Τ褦�����ƤǻϤޤäƤ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-java\&.applet
-java\&.awt
-java\&.awt\&.color
-java\&.awt\&.datatransfer
-java\&.awt\&.dnd
-java\&.awt\&.event
-java\&.awt\&.font
-and so on \&.\&.\&.\&.
+\fBjava\&.applet\fR
+\fBjava\&.awt\fR
+\fBjava\&.awt\&.color\fR
+\fBjava\&.awt\&.datatransfer\fR
+\fBjava\&.awt\&.dnd\fR
+\fBjava\&.awt\&.event\fR
+\fBjava\&.awt\&.font\fR
+\fBand so on \&.\&.\&.\&.\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fI\-link\fRオプションを指定せずに\fIjavadoc\fRを実行した場合、外部参照クラスに属する名前を見つけると、その名前をリンクなしで出力します。一方、\fI\-link\fRオプションを指定した場合、\fIjavadoc\fRコマンドは、指定された\fIextdocURL\fRの場所にあるpackage\-listファイルでそのパッケージ名を検索します。パッケージ名が見つかると、\fIextdocURL\fRが名前の前に付加されます。
+\fB\-link\fR���ץ�������ꤻ����\fBjavadoc\fR��¹Ԥ�����硢�������ȥ��饹��°����̾���򸫤Ĥ���ȡ�����̾�����󥯤ʤ��ǽ��Ϥ��ޤ���������\fB\-link\fR���ץ�������ꤷ����硢\fBjavadoc\fR���ޥ�ɤϡ����ꤵ�줿\fIextdocURL\fR�ξ��ˤ���package\-list�ե�����Ǥ��Υѥå�����̾�򸡺����ޤ����ѥå�����̾�����Ĥ���ȡ�\fIextdocURL\fR��̾���������ղä���ޤ���
 .PP
-すべてのリンクが正しく機能するためには、外部参照のすべてのドキュメントが、指定したURLに存在する必要があります。\fIjavadoc\fRコマンドは、指定されたpackage\-listが存在するかどうかのみをチェックし、これらのページが存在するかどうかはチェックしません。
-複数のリンク.PP
-複数の\fI\-link\fRオプションを指定すると、任意の数の外部生成ドキュメントへのリンクを作成できます。Javadoc 1\&.2には、複数の\fI\-link\fRオプションを指定できないという既知の不具合があります。これはJavadoc 1\&.2\&.2で修正されました。リンクする外部ドキュメントごとに、次のように別々のリンク・オプションを指定します。\fIjavadoc \-link extdocURL1 \-link extdocURL2 \&.\&.\&. \-link extdocURLn com\&.mypackage\fR
-\fIextdocURL1\fR、\fIextdocURL2\fR、\&.\fI\&.\&. extdocURLn\fRは、それぞれ外部ドキュメントのルートを指し、各ルートには、package\-listという名前のファイルが入っています。
-クロスリンク.PP
-以前に作成された複数のドキュメントをクロスリンクする場合、ブートストラップが必要になることがあります。どのドキュメントについてもpackage\-listが存在していない場合は、最初のドキュメントに対して\fIjavadoc\fRコマンドを実行する時点で、2番目のドキュメントのpackage\-listはまだ存在していません。したがって、外部リンクを作成するには、2番目のドキュメントを生成した後で、最初のドキュメントを生成しなおす必要があります。
+���٤ƤΥ�󥯤���������ǽ���뤿��ˤϡ��������ȤΤ��٤ƤΥɥ�����Ȥ������ꤷ��URL��¸�ߤ���ɬ�פ�����ޤ���\fBjavadoc\fR���ޥ�ɤϡ����ꤵ�줿package\-list��¸�ߤ��뤫�ɤ����Τߤ�����å����������Υڡ�����¸�ߤ��뤫�ɤ����ϥ����å����ޤ���
 .PP
-この場合、最初のドキュメント生成の目的は、package\-listを作成することです(パッケージ名を把握している場合は手動で作成してもかまいません)。次に、2番目のドキュメントとその外部リンクを生成します。必要な外部のpackage\-listファイルが存在しない場合は、\fIjavadoc\fRコマンドから警告が出力されます。
+ʣ���Υ��
+.PP
+ʣ����\fB\-link\fR���ץ�������ꤹ��ȡ�Ǥ�դο��γ��������ɥ�����ȤؤΥ�󥯤�����Ǥ��ޤ���Javadoc 1\&.2�ˤϡ�ʣ����\fB\-link\fR���ץ��������Ǥ��ʤ��Ȥ������Τ�bug������ޤ��������Javadoc 1\&.2\&.2�ǽ�������ޤ�������󥯤��볰���ɥ�����Ȥ��Ȥˡ����Τ褦���̡��Υ�󥯡����ץ�������ꤷ�ޤ���\fBjavadoc \-link extdocURL1 \-link extdocURL2 \&.\&.\&. \-link extdocURLn com\&.mypackage\fR
+\fIextdocURL1\fR��\fIextdocURL2\fR��\&.\fB\&.\&. extdocURLn\fR�ϡ����줾�쳰���ɥ�����ȤΥ롼�Ȥ�ؤ����ƥ롼�Ȥˤϡ�package\-list�Ȥ���̾���Υե����뤬���äƤ��ޤ���
+.PP
+���������
+.PP
+�����˺������줿ʣ���Υɥ�����Ȥ򥯥�����󥯤����硢�֡��ȥ��ȥ�åפ�ɬ�פˤʤ뤳�Ȥ�����ޤ����ɤΥɥ�����ȤˤĤ��Ƥ�package\-list��¸�ߤ��Ƥ��ʤ����ϡ��ǽ�Υɥ�����Ȥ��Ф���\fBjavadoc\fR���ޥ�ɤ�¹Ԥ�������ǡ�2���ܤΥɥ�����Ȥ�package\-list�Ϥޤ�¸�ߤ��Ƥ��ޤ��󡣤������äơ�������󥯤��������ˤϡ�2���ܤΥɥ�����Ȥ�����������ǡ��ǽ�Υɥ�����Ȥ��������ʤ���ɬ�פ�����ޤ���
+.PP
+���ξ�硢�ǽ�Υɥ��������������Ū�ϡ�package\-list��������뤳�ȤǤ�(�ѥå�����̾���İ����Ƥ�����ϼ�ư�Ǻ������Ƥ⤫�ޤ��ޤ���)�����ˡ�2���ܤΥɥ�����ȤȤ��γ�����󥯤��������ޤ���ɬ�פʳ�����package\-list�ե����뤬¸�ߤ��ʤ����ϡ�\fBjavadoc\fR���ޥ�ɤ���ٹ𤬽��Ϥ���ޤ���
 .PP
 \-linkoffline \fIextdocURL packagelistLoc\fR
 .RS 4
-このオプションは\fI\-link\fRオプションのバリエーションです。両方とも、Javadocにより生成された外部参照クラスのドキュメントへのリンクを作成します。\fIjavadoc\fRコマンドがWeb接続を使用してドキュメントにアクセスできないとき、Web上のドキュメントにリンクするには、\fI\-link\fRo\fIffline\fRオプションを使用します。外部ドキュメントのpackage\-listファイルにアクセスできないとき、またはこのファイルが\fIextdocURL\fRで指定された場所には存在せず、\fIpackageListLoc\fRで指定できる別の場所(通常ローカル)に存在するとき、\fI\-linkoffline\fRオプションを使用します。\fIextdocURL\fRにWorld Wide Web上でしかアクセスできない場合は、\fI\-linkoffline\fRオプションを指定することにより、ドキュメントの生成時に\fIjavadoc\fRコマンドがWebに接続する必要があるという制約がなくなります。もう1つの用途は、ドキュメントを更新するための回避策として使用することです。パッケージのセット全体に対して\fIjavadoc\fRコマンドを実行した後、変更した一部のパッケージに対してのみ\fIjavadoc\fRコマンドを再度実行して、更新されたファイルを、オリジナルのセットに挿入できるようにします。次に例を示します。\fI\-linkoffline\fRオプションは引数を2つ取ります。第1引数は\fI<a href>\fRリンクに組み込まれる文字列を指定し、第2引数はpackage\-listの検索場所を\fI\-linkoffline\fRに伝えます。
+���Υ��ץ�����\fB\-link\fR���ץ����ΥХꥨ�������Ǥ���ξ���Ȥ⡢Javadoc�ˤ���������줿�������ȥ��饹�Υɥ�����ȤؤΥ�󥯤�������ޤ���\fBjavadoc\fR���ޥ�ɤ�Web��³����Ѥ��ƥɥ�����Ȥ˥��������Ǥ��ʤ��Ȥ���Web��Υɥ�����Ȥ˥�󥯤���ˤϡ�\fB\-link\fRo\fBffline\fR���ץ�������Ѥ��ޤ��������ɥ�����Ȥ�package\-list�ե�����˥��������Ǥ��ʤ��Ȥ����ޤ��Ϥ��Υե����뤬\fBextdocURL\fR�ǻ��ꤵ�줿���ˤ�¸�ߤ�����\fBpackageListLoc\fR�ǻ���Ǥ����̤ξ��(�̾��������)��¸�ߤ���Ȥ���\fB\-linkoffline\fR���ץ�������Ѥ��ޤ���\fBextdocURL\fR��World Wide Web��Ǥ������������Ǥ��ʤ����ϡ�\fB\-linkoffline\fR���ץ�������ꤹ�뤳�Ȥˤ�ꡢ�ɥ�����Ȥ���������\fBjavadoc\fR���ޥ�ɤ�Web����³����ɬ�פ�����Ȥ������󤬤ʤ��ʤ�ޤ����⤦1�Ĥ����Ӥϡ��ɥ�����Ȥ򹹿����뤿��β�����Ȥ��ƻ��Ѥ��뤳�ȤǤ����ѥå������Υ��å����Τ��Ф���\fBjavadoc\fR���ޥ�ɤ�¹Ԥ����塢�ѹ����������Υѥå��������Ф��ƤΤ�\fBjavadoc\fR���ޥ�ɤ���ټ¹Ԥ��ơ��������줿�ե�����򡢥��ꥸ�ʥ�Υ��åȤ������Ǥ���褦�ˤ��ޤ���������򼨤��ޤ���\fB\-linkoffline\fR���ץ����ϰ�����2�ļ��ޤ�����1������\fB<a href>\fR��󥯤��Ȥ߹��ޤ��ʸ�������ꤷ����2������package\-list�θ�������\fB\-linkoffline\fR�������ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -2839,7 +3628,7 @@ and so on \&.\&.\&.\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIextdocURL\fRの値は、リンク先として指定する、Javadocにより生成された外部ドキュメントを含むディレクトリの絶対URLまたは相対URLです。相対URLの場合、値は、生成先ディレクトリ(\fI\-d\fRオプションで指定)からリンク先となるパッケージのルートへの相対パスにする必要があります。詳細は、\fI\-link\fRオプションの\fIextdocURL\fRを参照してください。
+\fBextdocURL\fR���ͤϡ������Ȥ��ƻ��ꤹ�롢Javadoc�ˤ���������줿�����ɥ�����Ȥ�ޤ�ǥ��쥯�ȥ������URL�ޤ�������URL�Ǥ�������URL�ξ�硢�ͤϡ�������ǥ��쥯�ȥ�(\fB\-d\fR���ץ����ǻ���)��������Ȥʤ�ѥå������Υ롼�Ȥؤ����Хѥ��ˤ���ɬ�פ�����ޤ����ܺ٤ϡ�\fB\-link\fR���ץ�����\fIextdocURL\fR�򻲾Ȥ��Ƥ���������
 .RE
 .sp
 .RS 4
@@ -2850,16 +3639,18 @@ and so on \&.\&.\&.\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIpackagelistLoc\fRの値は、外部ドキュメントのpackage\-listファイルを含むディレクトリへのパスまたはURLです。これは、URL (http:またはfile:)でもファイル・パスでもかまいません。また、絶対パスと相対パスのどちらでもかまいません。相対パスの場合は、\fIjavadoc\fRコマンドが実行される現在のディレクトリからの相対パスとして指定します。package\-listファイル名を含めないでください。
+\fBpackagelistLoc\fR���ͤϡ������ɥ�����Ȥ�package\-list�ե������ޤ�ǥ��쥯�ȥ�ؤΥѥ��ޤ���URL�Ǥ�������ϡ�URL (http:�ޤ���file:)�Ǥ�ե����롦�ѥ��Ǥ⤫�ޤ��ޤ��󡣤ޤ������Хѥ������Хѥ��Τɤ���Ǥ⤫�ޤ��ޤ������Хѥ��ξ��ϡ�\fBjavadoc\fR���ޥ�ɤ��¹Ԥ���븽�ߤΥǥ��쥯�ȥ꤫������Хѥ��Ȥ��ƻ��ꤷ�ޤ���package\-list�ե�����̾��ޤ�ʤ��Ǥ���������
 .sp
-指定した\fIjavadoc\fRコマンドの実行で、複数の\fI\-link\fRオプションを指定できます。Javadoc 1\&.2\&.2より前では、\fI\-linkfile\fRオプションは1回しか指定できませんでした。
+���ꤷ��\fBjavadoc\fR���ޥ�ɤμ¹Ԥǡ�ʣ����\fB\-link\fR���ץ��������Ǥ��ޤ���Javadoc 1\&.2\&.2������Ǥϡ�\fB\-linkfile\fR���ץ�����1�󤷤�����Ǥ��ޤ���Ǥ�����
 .RE
 .RE
-外部ドキュメントへの絶対リンク.PP
-http://docs\&.oracle\&.com/javase/8/docs/api/index\&.htmlに示すような、\fIjava\&.lang\fR、
-\fIjava\&.io\fRおよびその他のJava SEパッケージにリンクする必要がある場合があります。
 .PP
-ただし、シェルにはWebアクセス権がありません。この場合、次を行います。
+�����ɥ�����Ȥؤ����Х��
+.PP
+http://docs\&.oracle\&.com/javase/8/docs/api/index\&.html�˼����褦�ʡ�\fBjava\&.lang\fR��
+\fBjava\&.io\fR����Ӥ���¾��Java SE�ѥå������˥�󥯤���ɬ�פ������礬����ޤ���
+.PP
+��������������ˤ�Web����������������ޤ��󡣤��ξ�硢����Ԥ��ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -2869,7 +3660,7 @@ http://docs\&.oracle\&.com/javase/8/docs/api/index\&.htmlに示すような、\f
 .sp -1
 .IP "  1." 4.2
 .\}
-ブラウザでpackage\-listファイルを開きます(http://docs\&.oracle\&.com/javase/8/docs/api/package\-list)
+�֥饦����package\-list�ե�����򳫤��ޤ�(http://docs\&.oracle\&.com/javase/8/docs/api/package\-list)
 .RE
 .sp
 .RS 4
@@ -2880,78 +3671,91 @@ http://docs\&.oracle\&.com/javase/8/docs/api/index\&.htmlに示すような、\f
 .sp -1
 .IP "  2." 4.2
 .\}
-ファイルをローカル・ディレクトリに保存し、このローカル・コピーを第2引数\fIpackagelistLoc\fRで指定します。この例では、パッケージ・リスト・ファイルはカレント・ディレクトリ(\&.)に保存されています。
+�ե������������롦�ǥ��쥯�ȥ����¸�������Υ������롦���ԡ�����2����\fBpackagelistLoc\fR�ǻ��ꤷ�ޤ���������Ǥϡ��ѥå��������ꥹ�ȡ��ե�����ϥ����ȡ��ǥ��쥯�ȥ�(\&.)����¸����Ƥ��ޤ���
 .RE
 .PP
-次のコマンドは、Java SEプラットフォーム・パッケージへのリンクを持つc\fIom\&.mypackage\fRパッケージのドキュメントを生成します。生成ドキュメントには、たとえばクラス\fItrees\fR内の\fIObject\fRクラスへのリンクが含まれています。\fI\-sourcepath\fRなど、他の必要なオプションは表示されません。
+���Υ��ޥ�ɤϡ�Java SE�ץ�åȥե����ࡦ�ѥå������ؤΥ�󥯤����c\fBom\&.mypackage\fR�ѥå������Υɥ�����Ȥ��������ޤ��������ɥ�����Ȥˤϡ����Ȥ��Х��饹\fBtrees\fR���\fBObject\fR���饹�ؤΥ�󥯤��ޤޤ�Ƥ��ޤ���\fB\-sourcepath\fR�ʤɡ�¾��ɬ�פʥ��ץ�����ɽ������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-linkoffline http://docs\&.oracle\&.com/javase/8/docs/api/ \&.  com\&.mypackage 
-.fi
-.if n \{\
-.RE
-.\}
-外部ドキュメントへの相対リンク.PP
-\fI\-linkoffline\fRを相対パスとともに使用することはあまりありません。理由は単純で、通常は\fI\-link\fRで間に合うからです。\fI\-linkoffline\fRオプションを使用する場合、通常、package\-listファイルはローカルで、相対リンクを使用する場合はリンク先のファイルもローカルなので、通常は\fI\-linkoffline\fRオプションの2つの引数に、異なるパスを指定する必要はありません。2つの引数が同一の場合、\fI\-link\fRオプションを使用できます。
-package\-listファイルの手動での作成.PP
-package\-listファイルがまだ存在しなくても、ドキュメントのリンク先のパッケージ名がわかっている場合は、このファイルのコピーを手動で作成し、\fIpackagelistLoc\fRでそのパスを指定することができます。\fIcom\&.apipackage\fRが最初に生成された時点で\fIcom\&.spipackage\fRのパッケージ・リストが存在しないという前出のケースが一例として挙げられます。この方法は、パッケージ名はわかっているものの、まだ公開されていない、新しい外部ドキュメントにリンクするドキュメントを生成する必要がある場合に便利です。また、package\-listファイルが生成されないJavadoc 1\&.0または1\&.1で生成されたパッケージ用にpackage\-listファイルを作成する場合にも、この方法が使用できます。同様に、2つの企業が未公開のpackage\-listファイルを共有できるため、クロスリンクを設定したドキュメントを同時にリリースすることも可能になります。
-複数ドキュメントへのリンク.PP
-参照先の生成ドキュメントごとに1回、\fI\-linkoffline\fRオプションを含めることができます。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-javadoc \-linkoffline extdocURL1 packagelistLoc1 \-linkoffline extdocURL2
-packagelistLoc2 \&.\&.\&.
-.fi
-.if n \{\
-.RE
-.\}
-ドキュメントの更新.PP
-プロジェクトに何十または何百のパッケージが含まれる場合にも、\fI\-linkoffline\fRオプションを使用できます。ソース・ツリー全体ですでに\fIjavadoc\fRコマンドを実行したことがある場合、ドキュメンテーション・コメントにわずかな変更を迅速に加え、ソース・ツリーの一部で\fIjavadoc\fRコマンドを再実行することができます。2回目の実行は、ドキュメンテーション・コメントを変更し、宣言は変更しない場合にのみ正しく処理されることに注意してください。ソース・コードに対して宣言を追加、削除、または変更した場合は、索引、パッケージ・ツリー、継承されるメンバーのリスト、使用ページなどの場所で、リンクが壊れることがあります。
-.PP
-まず、この新しい小規模な実行で使用する、新しい生成先ディレクトリ(updateなど)を作成します。この例では、元の生成先ディレクトリの名前はhtmlです。最も単純な例では、htmlディレクトリの親ディレクトリに移動します。\fI\-linkoffline\fRオプションの第1引数にカレント・ディレクトリ(\&.)を設定し、第2引数にpackage\-listが検索されるhtmlへの相対パスを設定し、更新するパッケージのパッケージ名のみを渡します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-javadoc \-d update \-linkoffline \&. html com\&.mypackage
+\fBjavadoc \-linkoffline http://docs\&.oracle\&.com/javase/8/docs/api/ \&.  com\&.mypackage \fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-\fIjavadoc\fRコマンドの終了後、update/com/package内の生成されたクラスのページをコピーし(概要や索引は除く)、html/com/package内の元のファイルに上書きします。
+�����ɥ�����Ȥؤ����Х��
+.PP
+\fB\-linkoffline\fR�����Хѥ��ȤȤ�˻��Ѥ��뤳�ȤϤ��ޤꤢ��ޤ�����ͳ��ñ��ǡ��̾��\fB\-link\fR�Ǵ֤˹礦����Ǥ���\fB\-linkoffline\fR���ץ�������Ѥ����硢�̾package\-list�ե�����ϥ�������ǡ����Х�󥯤���Ѥ�����ϥ����Υե�������������ʤΤǡ��̾��\fB\-linkoffline\fR���ץ�����2�Ĥΰ����ˡ��ۤʤ�ѥ�����ꤹ��ɬ�פϤ���ޤ���2�Ĥΰ�����Ʊ��ξ�硢\fB\-link\fR���ץ�������ѤǤ��ޤ���
+.PP
+package\-list�ե�����μ�ư�Ǥκ���
+.PP
+package\-list�ե����뤬�ޤ�¸�ߤ��ʤ��Ƥ⡢�ɥ�����ȤΥ����Υѥå�����̾���狼�äƤ�����ϡ����Υե�����Υ��ԡ����ư�Ǻ�������\fBpackagelistLoc\fR�Ǥ��Υѥ�����ꤹ�뤳�Ȥ��Ǥ��ޤ���\fBcom\&.apipackage\fR���ǽ���������줿������\fBcom\&.spipackage\fR�Υѥå��������ꥹ�Ȥ�¸�ߤ��ʤ��Ȥ������ФΥ�����������Ȥ��Ƶ󤲤��ޤ���������ˡ�ϡ��ѥå�����̾�Ϥ狼�äƤ����ΤΡ��ޤ���������Ƥ��ʤ��������������ɥ�����Ȥ˥�󥯤���ɥ�����Ȥ���������ɬ�פ�������������Ǥ����ޤ���package\-list�ե����뤬��������ʤ�Javadoc 1\&.0�ޤ���1\&.1���������줿�ѥå������Ѥ�package\-list�ե���������������ˤ⡢������ˡ�����ѤǤ��ޤ���Ʊ�ͤˡ�2�Ĥδ�Ȥ�̤������package\-list�ե������ͭ�Ǥ��뤿�ᡢ��������󥯤����ꤷ���ɥ�����Ȥ�Ʊ���˥�꡼�����뤳�Ȥ��ǽ�ˤʤ�ޤ���
+.PP
+ʣ���ɥ�����ȤؤΥ��
+.PP
+������������ɥ�����Ȥ��Ȥ�1��\fB\-linkoffline\fR���ץ�����ޤ�뤳�Ȥ��Ǥ��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjavadoc \-linkoffline extdocURL1 packagelistLoc1 \-linkoffline extdocURL2\fR
+\fBpackagelistLoc2 \&.\&.\&.\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+�ɥ�����Ȥι���
+.PP
+�ץ��������Ȥ˲����ޤ��ϲ�ɴ�Υѥå��������ޤޤ����ˤ⡢\fB\-linkoffline\fR���ץ�������ѤǤ��ޤ������������ĥ꡼���ΤǤ��Ǥ�\fBjavadoc\fR���ޥ�ɤ�¹Ԥ������Ȥ������硢�ɥ�����ơ�����󡦥����Ȥˤ鷺�����ѹ����®�˲ä������������ĥ꡼�ΰ�����\fBjavadoc\fR���ޥ�ɤ�Ƽ¹Ԥ��뤳�Ȥ��Ǥ��ޤ���2���ܤμ¹Ԥϡ��ɥ�����ơ�����󡦥����Ȥ��ѹ�����������ѹ����ʤ����ˤΤ���������������뤳�Ȥ����դ��Ƥ����������������������ɤ��Ф���������ɲá�������ޤ����ѹ��������ϡ��������ѥå��������ĥ꡼���Ѿ��������С��Υꥹ�ȡ��ֻ��ѡץڡ����ʤɤξ��ǡ���󥯤�����뤳�Ȥ�����ޤ���
+.PP
+�ޤ������ο����������Ϥʼ¹Ԥǻ��Ѥ��롢������������ǥ��쥯�ȥ�(update�ʤ�)��������ޤ���������Ǥϡ�����������ǥ��쥯�ȥ��̾����html�Ǥ����Ǥ�ñ�����Ǥϡ�html�ǥ��쥯�ȥ�οƥǥ��쥯�ȥ�˰�ư���ޤ���\fB\-linkoffline\fR���ץ�������1�����˥����ȡ��ǥ��쥯�ȥ�(\&.)�����ꤷ����2������package\-list�����������html�ؤ����Хѥ������ꤷ����������ѥå������Υѥå�����̾�Τߤ��Ϥ��ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjavadoc \-d update \-linkoffline \&. html com\&.mypackage\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBjavadoc\fR���ޥ�ɤν�λ�塢update/com/package����������줿���饹�Υڡ����򥳥ԡ���(���פ�����Ͻ���)��html/com/package��θ��Υե�����˾�񤭤��ޤ���
 .PP
 \-linksource
 .RS 4
-各ソース・ファイル(行番号付き)のHTMLバージョンを作成し、標準HTMLドキュメントからソース・ファイルへのリンクを追加します。リンクは、ソース・ファイル内に宣言されているクラス、インタフェース、コンストラクタ、メソッド、フィールドに対して作成されます。そうでない場合、たとえばデフォルト・コンストラクタや生成されたクラスに対しては、リンクは作成されません。
+�ƥ��������ե�����(���ֹ��դ�)��HTML�С��������������ɸ��HTML�ɥ�����Ȥ��饽�������ե�����ؤΥ�󥯤��ɲä��ޤ�����󥯤ϡ����������ե���������������Ƥ��륯�饹�����󥿥ե����������󥹥ȥ饯�����᥽�åɡ��ե�����ɤ��Ф��ƺ�������ޤ����ǥե���ȡ����󥹥ȥ饯�����������줿���饹�ʤɤ��Ф��ƤϺ�������ޤ���
 .sp
-このオプションは、\fI\-public\fR、\fI\-package\fR、\fI\-protected\fRおよび\fI\-private\fRの各オプションとは関係なく、非公開のクラス、フィールド、非公開のメソッドの本体をはじめとする組み込まれたソース・ファイル内のすべての非公開実装の詳細を公開します。\fI\-private\fRオプションもあわせて指定しないかぎり、非公開のクラスやインタフェースの一部には、リンクを介してアクセスできないことがあります。
+���Υ��ץ����ϡ�\fB\-public\fR��\fB\-package\fR��\fB\-protected\fR�����\fB\-private\fR�γƥ��ץ����Ȥϴط��ʤ���������Υ��饹���ե�����ɡ�������Υ᥽�åɤ����Τ�Ϥ���Ȥ����Ȥ߹��ޤ줿���������ե�������Τ��٤Ƥ�����������ξܺ٤�������ޤ���\fB\-private\fR���ץ����⤢�碌�ƻ��ꤷ�ʤ������ꡢ������Υ��饹�䥤�󥿥ե������ΰ����ˤϡ���󥯤�𤷤ƥ��������Ǥ��ʤ����Ȥ�����ޤ���
 .sp
-各リンクは、その宣言内の識別子名の上に作成されます。たとえば、\fIButton\fRクラスのソース・コードへのリンクは、\fIButton\fRという語の上に作成されます。
+�ƥ�󥯤ϡ����������μ��̻�̾�ξ�˺�������ޤ������Ȥ��С�\fBButton\fR���饹�Υ������������ɤؤΥ�󥯤ϡ�\fBButton\fR�Ȥ�����ξ�˺�������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-public class Button extends Component implements Accessible
+\fBpublic class Button extends Component implements Accessible\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-\fIButton\fRクラスの\fIgetLabel\fRメソッドのソース・コードへのリンクは、\fIgetLabel\fRという語の上に作成されます。
+\fBButton\fR���饹��\fBgetLabel\fR�᥽�åɤΥ������������ɤؤΥ�󥯤ϡ�\fBgetLabel\fR�Ȥ�����ξ�˺�������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-public String getLabel()
+\fBpublic String getLabel()\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -2960,7 +3764,7 @@ public String getLabel()
 .PP
 \-group groupheading \fIpackagepattern:packagepattern\fR
 .RS 4
-概要ページの複数のパッケージを、指定したグループに分けて、グループごとに表を作成します。各グループは、それぞれ別の\fI\-group\fRオプションで指定します。グループは、コマンド行で指定された順序でページに表示されます。パッケージは、グループ内でアルファベット順になっています。指定した\fI\-group\fRオプションでは、\fIpackagepattern\fR式のリストに一致するパッケージが、見出しとして\fIgroupheading\fRを持つ1つの表に表示されます。
+���ץڡ�����ʣ���Υѥå������򡢻��ꤷ�����롼�פ�ʬ���ơ����롼�פ��Ȥ�ɽ��������ޤ����ƥ��롼�פϡ����줾���̤�\fB\-group\fR���ץ����ǻ��ꤷ�ޤ������롼�פϡ����ޥ�ɹԤǻ��ꤵ�줿����ǥڡ�����ɽ������ޤ����ѥå������ϡ����롼����ǥ���ե��٥åȽ�ˤʤäƤ��ޤ������ꤷ��\fB\-group\fR���ץ����Ǥϡ�\fBpackagepattern\fR���Υꥹ�Ȥ˰��פ���ѥå������������Ф��Ȥ���\fIgroupheading\fR�����1�Ĥ�ɽ��ɽ������ޤ���
 .sp
 .RS 4
 .ie n \{\
@@ -2970,7 +3774,7 @@ public String getLabel()
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIgroupheading\fRには、任意のテキストを指定でき、空白を含めることができます。指定したテキストは、グループの表見出しになります。
+\fBgroupheading\fR�ˤϡ�Ǥ�դΥƥ����Ȥ����Ǥ��������ޤ�뤳�Ȥ��Ǥ��ޤ������ꤷ���ƥ����Ȥϡ����롼�פ�ɽ���Ф��ˤʤ�ޤ���
 .RE
 .sp
 .RS 4
@@ -2981,85 +3785,87 @@ public String getLabel()
 .sp -1
 .IP \(bu 2.3
 .\}
-\fIpackagepattern\fRの値には、任意のパッケージ名の先頭部分とそれに続く1つのアスタリスク(*)で任意のパッケージ名を指定できます。アスタリスクは使用できる唯一のワイルドカードで、任意の文字に一致する、という意味です。1つのグループには、コロン(:)で区切って複数のパターンを含めることができます。パターンまたはパターン・リストでアスタリスクを使用する場合、パターン・リストは\fI"java\&.lang*:java\&.util"\fRのように引用符で囲む必要があります。
+\fBpackagepattern\fR���ͤˤϡ�Ǥ�դΥѥå�����̾����Ƭ��ʬ�Ȥ����³��1�ĤΥ������ꥹ��(*)��Ǥ�դΥѥå�����̾�����Ǥ��ޤ����������ꥹ���ϻ��ѤǤ���ͣ��Υ磻��ɥ����ɤǡ�Ǥ�դ�ʸ���˰��פ��롢�Ȥ�����̣�Ǥ���1�ĤΥ��롼�פˤϡ�������(:)�Ƕ��ڤä�ʣ���Υѥ������ޤ�뤳�Ȥ��Ǥ��ޤ����ѥ�����ޤ��ϥѥ����󡦥ꥹ�Ȥǥ������ꥹ������Ѥ����硢�ѥ����󡦥ꥹ�Ȥ�\fB"java\&.lang*:java\&.util"\fR�Τ褦�˰�����ǰϤ�ɬ�פ�����ޤ���
 .RE
 .sp
-\fI\-group\fRオプションを指定しない場合は、見出し\fIPackages\fRおよび適切な小見出しを持つ1つのグループに配置されます。小見出しにすべてのドキュメント化されるパッケージ(すべてのグループ)が含まれるわけではない場合、残りのパッケージは「その他のパッケージ」というサブ見出しを持つ独立したグループに入れられます。
+\fB\-group\fR���ץ�������ꤷ�ʤ����ϡ����Ф�\fIPackages\fR�����Ŭ�ڤʾ����Ф������1�ĤΥ��롼�פ����֤���ޤ��������Ф��ˤ��٤ƤΥɥ�����Ȳ������ѥå�����(���٤ƤΥ��롼��)���ޤޤ��櫓�ǤϤʤ���硢�Ĥ�Υѥå������ϡ֤���¾�Υѥå������פȤ������ָ��Ф��������Ω�������롼�פ�������ޤ���
 .sp
-たとえば、次の\fIjavadoc\fRコマンドでは、3つのドキュメント化されたパッケージが\fI「コア」\fR、\fI「拡張」\fRおよび\fI「その他のパッケージ」\fRに分けられます。\fIjava\&.lang*\fRでは、最後のドット(\&.)を指定していません。\fIjava\&.lang\&.*\fRのようにドットを入れると、\fI java\&.lang\fRパッケージは除外されることになります。
+���Ȥ��С�����\fBjavadoc\fR���ޥ�ɤǤϡ�3�ĤΥɥ�����Ȳ����줿�ѥå�������\fI�֥�����\fR��\fI�ֳ�ĥ��\fR�����\fI�֤���¾�Υѥå�������\fR��ʬ�����ޤ���\fBjava\&.lang*\fR�Ǥϡ��Ǹ�Υɥå�(\&.)����ꤷ�Ƥ��ޤ���\fBjava\&.lang\&.*\fR�Τ褦�˥ɥåȤ������ȡ�\fB java\&.lang\fR�ѥå������Ͻ�������뤳�Ȥˤʤ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-group "Core Packages" "java\&.lang*:java\&.util"
-        \-group "Extension Packages" "javax\&.*"
-        java\&.lang java\&.lang\&.reflect java\&.util javax\&.servlet java\&.new
+\fBjavadoc \-group "Core Packages" "java\&.lang*:java\&.util"\fR
+\fB        \-group "Extension Packages" "javax\&.*"\fR
+\fB        java\&.lang java\&.lang\&.reflect java\&.util javax\&.servlet java\&.new\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-\fBコア・パッケージ\fR
+\fB�������ѥå�����\fR
 .sp
-\fIjava\&.lang\fR
+\fBjava\&.lang\fR
 .sp
-\fIjava\&.lang\&.reflect\fR
+\fBjava\&.lang\&.reflect\fR
 .sp
-\fIjava\&.util\fR
+\fBjava\&.util\fR
 .sp
-\fB拡張機能パッケージ\fR
+\fB��ĥ��ǽ�ѥå�����\fR
 .sp
-\fIjavax\&.servlet\fR
+\fBjavax\&.servlet\fR
 .sp
 \fBOther Packages\fR
 .sp
-\fIjava\&.new\fR
+\fBjava\&.new\fR
 .RE
 .PP
 \-nodeprecated
 .RS 4
-非推奨のAPIをドキュメントに生成しないようにします。このオプションを指定すると、\fI\-nodeprecatedlist\fRオプションを指定した場合と同じ効果があり、ドキュメントの他の部分全体でも、非推奨のAPIが生成されません。このオプションは、コードを記述しているとき、非推奨のコードによって気を散らされたくない場合に便利です。
+��侩��API��ɥ�����Ȥ��������ʤ��褦�ˤ��ޤ������Υ��ץ�������ꤹ��ȡ�\fB\-nodeprecatedlist\fR���ץ�������ꤷ������Ʊ�����̤����ꡢ�ɥ�����Ȥ�¾����ʬ���ΤǤ⡢��侩��API����������ޤ��󡣤��Υ��ץ����ϡ������ɤ򵭽Ҥ��Ƥ���Ȥ�����侩�Υ����ɤˤ�äƵ��򻶤餵�줿���ʤ����������Ǥ���
 .RE
 .PP
 \-nodeprecatedlist
 .RS 4
-非推奨のAPIのリストを含むファイル(deprecated\-list\&.html)、およびナビゲーション・バーのそのページへのリンクが生成されないようにします。\fIjavadoc\fRコマンドでは、引き続き、ドキュメントの他の部分では、非推奨のAPIが生成されます。このオプションは、非推奨のAPIがソース・コードに含まれておらず、ナビゲーション・バーをすっきりと見せる場合に便利です。
+��侩��API�Υꥹ�Ȥ�ޤ�ե�����(deprecated\-list\&.html)������ӥʥӥ�������󡦥С��Τ��Υڡ����ؤΥ�󥯤���������ʤ��褦�ˤ��ޤ���\fBjavadoc\fR���ޥ�ɤǤϡ�����³�����ɥ�����Ȥ�¾����ʬ�Ǥϡ���侩��API����������ޤ������Υ��ץ����ϡ���侩��API���������������ɤ˴ޤޤ�Ƥ��餺���ʥӥ�������󡦥С��򤹤ä���ȸ�������������Ǥ���
 .RE
 .PP
 \-nosince
 .RS 4
-生成ドキュメントから、\fI@since\fRタグに関連付けられた\fI「導入されたバージョン」\fRセクションを省略します。
+�����ɥ�����Ȥ��顢\fB@since\fR�����˴�Ϣ�դ���줿\fB��Ƴ�����줿�С�������\fR�����������ά���ޤ���
 .RE
 .PP
 \-notree
 .RS 4
-生成ドキュメントから、クラスおよびインタフェースの階層ページを省略します。これらのページには、ナビゲーション・バーの「階層ツリー」ボタンからアクセスできます。デフォルトでは、階層が生成されます。
+�����ɥ�����Ȥ��顢���饹����ӥ��󥿥ե������γ��إڡ������ά���ޤ��������Υڡ����ˤϡ��ʥӥ�������󡦥С��Ρֳ��إĥ꡼�ץܥ��󤫤饢�������Ǥ��ޤ����ǥե���ȤǤϡ����ؤ���������ޤ���
 .RE
 .PP
 \-noindex
 .RS 4
-生成ドキュメントから、索引を省略します。デフォルトでは、索引が生成されます。
+�����ɥ�����Ȥ��顢�������ά���ޤ����ǥե���ȤǤϡ���������������ޤ���
 .RE
 .PP
 \-nohelp
 .RS 4
-出力の各ページの最上部と最下部にあるナビゲーション・バーから「ヘルプ」リンクを省略します。
+���Ϥγƥڡ����κǾ����Ⱥǲ����ˤ���ʥӥ�������󡦥С�����֥إ�סץ�󥯤��ά���ޤ���
 .RE
 .PP
 \-nonavbar
 .RS 4
-通常、生成されるページの最上部と最下部に表示されるナビゲーション・バー、ヘッダー、およびフッターを生成しないようにします。\fI\-nonavbar\fRオプションは\fI\-bottom\fRオプションに影響を与えません。\fI\-nonavbar\fRオプションは、印刷するためにのみファイルをPostScriptやPDFに変換する場合など、内容のみが重要で、ナビゲーションの必要がない場合に便利です。
+�̾���������ڡ����κǾ����Ⱥǲ�����ɽ�������ʥӥ�������󡦥С����إå���������ӥեå������������ʤ��褦�ˤ��ޤ���\fB\-nonavbar\fR���ץ�����\fB\-bottom\fR���ץ����˱ƶ���Ϳ���ޤ���\fB\-nonavbar\fR���ץ����ϡ��������뤿��ˤΤߥե������PostScript��PDF���Ѵ�������ʤɡ����ƤΤߤ����פǡ��ʥӥ���������ɬ�פ��ʤ����������Ǥ���
 .RE
 .PP
 \-helpfile \fIpath\efilename\fR
 .RS 4
-最上部および最下部のナビゲーション・バーの「ヘルプ」リンクのリンク先となる代替ヘルプ・ファイルpath\efilenameのパスを指定します。このオプションが指定されていないと、\fIjavadoc\fRコマンドは、\fIjavadoc\fRコマンド内でハードコードされているヘルプ・ファイルhelp\-doc\&.htmlを自動作成します。このオプションを使用すると、デフォルトをオーバーライドできます。ファイル名にはどんな名前でも指定でき、help\-doc\&.htmlに限定されません。\fIjavadoc\fRコマンドは、次の例のように、ナビゲーション・バー内のリンクを必要に応じて調整します。
+�Ǿ�������Ӻǲ����Υʥӥ�������󡦥С��Ρ֥إ�סץ�󥯤Υ����Ȥʤ����إإ�ס��ե�����path\efilename�Υѥ�����ꤷ�ޤ������Υ��ץ���󤬻��ꤵ��Ƥ��ʤ��ȡ�\fBjavadoc\fR���ޥ�ɤϡ�\fBjavadoc\fR���ޥ����ǥϡ��ɥ����ɤ���Ƥ���إ�ס��ե�����help\-doc\&.html��ư�������ޤ������Υ��ץ�������Ѥ���ȡ��ǥե���Ȥ򥪡��С��饤�ɤǤ��ޤ����ե�����̾�ˤϤɤ��̾���Ǥ����Ǥ���help\-doc\&.html�˸��ꤵ��ޤ���\fBjavadoc\fR���ޥ�ɤϡ�������Τ褦�ˡ��ʥӥ�������󡦥С���Υ�󥯤�ɬ�פ˱�����Ĵ�����ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-helpfile /home/user/myhelp\&.html java\&.awt\&.
+\fBjavadoc \-helpfile /home/user/myhelp\&.html java\&.awt\&.\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -3068,13 +3874,14 @@ javadoc \-helpfile /home/user/myhelp\&.html java\&.awt\&.
 .PP
 \-stylesheet \fIpath/filename \fR
 .RS 4
-代替HTMLスタイルシート・ファイルのパスを指定します。このオプションが指定されていないと、\fIjavadoc\fRコマンドは、\fIjavadoc\fRコマンド内でハードコードされているスタイルシート・ファイルstylesheet\&.cssを自動作成します。このオプションを使用すると、デフォルトをオーバーライドできます。ファイル名にはどんな名前でも指定でき、stylesheet\&.cssに限定されません。
+����HTML�������륷���ȡ��ե�����Υѥ�����ꤷ�ޤ������Υ��ץ���󤬻��ꤵ��Ƥ��ʤ��ȡ�\fBjavadoc\fR���ޥ�ɤϡ�\fBjavadoc\fR���ޥ����ǥϡ��ɥ����ɤ���Ƥ��륹�����륷���ȡ��ե�����stylesheet\&.css��ư�������ޤ������Υ��ץ�������Ѥ���ȡ��ǥե���Ȥ򥪡��С��饤�ɤǤ��ޤ����ե�����̾�ˤϤɤ��̾���Ǥ����Ǥ���stylesheet\&.css�˸��ꤵ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-stylesheet file /home/user/mystylesheet\&.css com\&.mypackage
+\fBjavadoc \-stylesheet file /home/user/mystylesheet\&.css com\&.mypackage\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -3083,52 +3890,54 @@ javadoc \-stylesheet file /home/user/mystylesheet\&.css com\&.mypackage
 .PP
 \-serialwarn
 .RS 4
-\fI@serial\fRタグがない場合は、コンパイル時に警告を生成します。デフォルトでは、Javadoc 1\&.2\&.2以降では、直列化の警告は生成されません。以前のリリースとは逆の動作です。このオプションを使用すると、直列化の警告が表示されるので、デフォルトの直列化可能フィールドと\fIwriteExternal\fRメソッドを適切にドキュメント化するのに役立ちます。
+\fB@serial\fR�������ʤ����ϡ�����ѥ�����˷ٹ���������ޤ����ǥե���ȤǤϡ�Javadoc 1\&.2\&.2�ʹߤǤϡ�ľ�󲽤ηٹ����������ޤ��󡣰����Υ�꡼���Ȥϵդ�ư��Ǥ������Υ��ץ�������Ѥ���ȡ�ľ�󲽤ηٹ�ɽ�������Τǡ��ǥե���Ȥ�ľ�󲽲�ǽ�ե�����ɤ�\fBwriteExternal\fR�᥽�åɤ�Ŭ�ڤ˥ɥ�����Ȳ�����Τ���Ω���ޤ���
 .RE
 .PP
 \-charset \fIname\fR
 .RS 4
-このドキュメント用のHTML文字セットを指定します。この名前は、IANA RegistryのCharacter Sets
-(http://www\&.iana\&.org/assignments/character\-sets)に示された、優先MIME名である必要があります。
+���Υɥ�������Ѥ�HTMLʸ�����åȤ���ꤷ�ޤ�������̾���ϡ�IANA Registry��Character Sets
+(http://www\&.iana\&.org/assignments/character\-sets)�˼����줿��ͥ��MIME̾�Ǥ���ɬ�פ�����ޤ���
 .sp
-たとえば、\fIjavadoc \-charset "iso\-8859\-1" mypackage\fRは次の行を生成された各ページのヘッダーに挿入します。
+���Ȥ��С�\fBjavadoc \-charset "iso\-8859\-1" mypackage\fR�ϼ��ιԤ��������줿�ƥڡ����Υإå������������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-<META http\-equiv="Content\-Type" content="text/html; charset=ISO\-8859\-1">
+\fB<META http\-equiv="Content\-Type" content="text/html; charset=ISO\-8859\-1">\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-この\fIMETA\fRタグは、HTML標準(4197265および4137321)のHTML Document Representation
-(http://www\&.w3\&.org/TR/REC\-html40/charset\&.html#h\-5\&.2\&.2)に記載されています。
+����\fBMETA\fR�����ϡ�HTMLɸ��(4197265�����4137321)��HTML Document Representation
+(http://www\&.w3\&.org/TR/REC\-html40/charset\&.html#h\-5\&.2\&.2)�˵��ܤ���Ƥ��ޤ���
 .sp
-およびオプションも参照してください。
+����ӥ��ץ����⻲�Ȥ��Ƥ���������
 .RE
 .PP
 \-docencoding \fIname\fR
 .RS 4
-生成されるHTMLファイルのエンコーディングを指定します。この名前は、IANA RegistryのCharacter Sets
-(http://www\&.iana\&.org/assignments/character\-sets)に示された、優先MIME名である必要があります。
+���������HTML�ե�����Υ��󥳡��ǥ��󥰤���ꤷ�ޤ�������̾���ϡ�IANA Registry��Character Sets
+(http://www\&.iana\&.org/assignments/character\-sets)�˼����줿��ͥ��MIME̾�Ǥ���ɬ�פ�����ޤ���
 .sp
-\fI\-docencoding\fRオプションを省略し、\fI\-encoding\fRオプションを使用すると、生成されたHTMLファイルの暗号化は\fI\-encoding\fRオプションで特定されます。例:
-\fIjavadoc \-docencoding"iso\-8859\-1" mypackage\fRおよびオプションも参照してください。
+\fB\-docencoding\fR���ץ������ά����\fB\-encoding\fR���ץ�������Ѥ���ȡ��������줿HTML�ե�����ΰŹ沽��\fB\-encoding\fR���ץ��������ꤵ��ޤ�����:
+\fBjavadoc \-docencoding "iso\-8859\-1" mypackage\fR����ӥ��ץ����⻲�Ȥ��Ƥ���������
 .RE
 .PP
 \-keywords
 .RS 4
-HTMLキーワード<META>タグを、クラスごとに生成されるファイルに追加します。これらのタグは、<META>タグを検索するサーチ・エンジンがページを見つける場合に役立ちます。インターネット全体を検索する検索エンジンのほとんどは<META>タグを参照しません。ページが誤用している可能性があるからです。自身のWebサイトへの検索を制限する、企業により提供される検索エンジンは、<META>タグを参照することで恩恵を受けることができます。<META>タグには、クラスの完全修飾名と、フィールドおよびメソッドの修飾されていない名前が含まれます。コンストラクタは、クラス名と同じであるため含まれません。たとえば、クラス\fIString\fRは次のキーワードで開始します。
+HTML�������<META>�����򡢥��饹���Ȥ����������ե�������ɲä��ޤ��������Υ����ϡ�<META>�����򸡺����륵���������󥸥󤬥ڡ����򸫤Ĥ��������Ω���ޤ������󥿡��ͥå����Τ򸡺����븡�����󥸥�ΤۤȤ�ɤ�<META>�����򻲾Ȥ��ޤ��󡣥ڡ��������Ѥ��Ƥ����ǽ�������뤫��Ǥ������Ȥ�Web�����Ȥؤθ��������¤��롢��Ȥˤ���󶡤���븡�����󥸥�ϡ�<META>�����򻲾Ȥ��뤳�Ȥǲ��ä�����뤳�Ȥ��Ǥ��ޤ���<META>�����ˤϡ����饹�δ�������̾�ȡ��ե�����ɤ���ӥ᥽�åɤν�������Ƥ��ʤ�̾�����ޤޤ�ޤ������󥹥ȥ饯���ϡ����饹̾��Ʊ���Ǥ��뤿��ޤޤ�ޤ��󡣤��Ȥ��С����饹\fBString\fR�ϼ��Υ�����ɤǳ��Ϥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-<META NAME="keywords" CONTENT="java\&.lang\&.String class">
-<META NAME="keywords" CONTENT="CASE_INSENSITIVE_ORDER">
-<META NAME="keywords" CONTENT="length()">
-<META NAME="keywords" CONTENT="charAt()">
+\fB<META NAME="keywords" CONTENT="java\&.lang\&.String class">\fR
+\fB<META NAME="keywords" CONTENT="CASE_INSENSITIVE_ORDER">\fR
+\fB<META NAME="keywords" CONTENT="length()">\fR
+\fB<META NAME="keywords" CONTENT="charAt()">\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -3137,105 +3946,108 @@ HTMLキーワード<META>タグを、クラスごとに生成されるファイ�
 .PP
 \-tag \fItagname\fR:Xaoptcmf:"\fItaghead\fR"
 .RS 4
-\fIjavadoc\fRコマンドがドキュメンテーション・コメント内の引数を1つ取る単純なカスタム・ブロック・タグ\fI@tagname\fRを解釈できるようにします。これにより、\fIjavadoc\fRコマンドはタグ名のスペルチェックを行うことができるので、ソース・コード内に存在するすべてのカスタム・タグについて、\fI\-tag\fRオプションを組み込むことが重要です。今回の実行では出力されないタグは、\fIX\fRを付けて無効にします。\fI\-tag\fRオプションは、タグの見出し\fItaghead\fRを太字で出力します。その次の行には、このオプションの1つの引数で指定したテキストが続きます。ブロック・タグと同様、この引数のテキストにはインライン・タグを含めることができます。このインライン・タグも解釈されます。出力は、引数を1つ取る標準のタグ(\fI@return\fRや\fI@author\fRなど)の出力とよく似ています。\fItaghead\fRの値を省略すると、\fItagname\fRが見出しとして表示されます。
+\fBjavadoc\fR���ޥ�ɤ��ɥ�����ơ�����󡦥�������ΰ�����1�ļ��ñ��ʥ������ࡦ�֥��å�������\fB@tagname\fR����Ǥ���褦�ˤ��ޤ�������ˤ�ꡢ\fBjavadoc\fR���ޥ�ɤϥ���̾�Υ��ڥ�����å���Ԥ����Ȥ��Ǥ���Τǡ������������������¸�ߤ��뤹�٤ƤΥ������ࡦ�����ˤĤ��ơ�\fB\-tag\fR���ץ������Ȥ߹��ळ�Ȥ����פǤ�������μ¹ԤǤϽ��Ϥ���ʤ������ϡ�\fBX\fR���դ���̵���ˤ��ޤ���\fB\-tag\fR���ץ����ϡ������θ��Ф�\fItaghead\fR�������ǽ��Ϥ��ޤ������μ��ιԤˤϡ����Υ��ץ�����1�Ĥΰ����ǻ��ꤷ���ƥ����Ȥ�³���ޤ����֥��å���������Ʊ�͡����ΰ����Υƥ����Ȥˤϥ���饤�󡦥�����ޤ�뤳�Ȥ��Ǥ��ޤ������Υ���饤�󡦥������ᤵ��ޤ������Ϥϡ�������1�ļ��ɸ��Υ���(\fB@return\fR��\fB@author\fR�ʤ�)�ν��ϤȤ褯���Ƥ��ޤ���\fItaghead\fR���ͤ��ά����ȡ�\fBtagname\fR�����Ф��Ȥ���ɽ������ޤ���
 .sp
-\fBタグの配置\fR:
-\fIXaoptcmf\fR引数により、ソース・コード内でタグを配置できる場所が決まり、タグを無効にできるかどうか(\fIX\fRを使用して)が決まります。タグの配置位置を制限しない場合は\fIa\fRを指定します。それ以外の文字の組合せも可能です。
+\fB����������\fR:
+\fBXaoptcmf\fR�����ˤ�ꡢ����������������ǥ��������֤Ǥ����꤬��ޤꡢ������̵���ˤǤ��뤫�ɤ���(\fBX\fR����Ѥ���)����ޤ�ޤ������������ְ��֤����¤��ʤ�����\fBa\fR����ꤷ�ޤ�������ʳ���ʸ�����ȹ礻���ǽ�Ǥ���
 .sp
-\fIX\fR
-(タグの無効化)
+\fBX\fR
+(������̵����)
 .sp
-\fIa\fR
-(すべて)
+\fBa\fR
+(���٤�)
 .sp
-\fIo\fR
-(概要)
+\fBo\fR
+(����)
 .sp
-\fIp\fR
-(パッケージ)
+\fBp\fR
+(�ѥå�����)
 .sp
-\fIt\fR
-(タイプ、つまりクラスとインタフェース)
+\fBt\fR
+(�����ס��Ĥޤꥯ�饹�ȥ��󥿥ե�����)
 .sp
-\fIc\fR
-(コンストラクタ)
+\fBc\fR
+(���󥹥ȥ饯��)
 .sp
-\fIm\fR
-(メソッド)
+\fBm\fR
+(�᥽�å�)
 .sp
-\fIf\fR
-(フィールド)
+\fBf\fR
+(�ե������)
 .sp
-\fBシングル・タグの例\fR: ソース・コード内の任意の位置で使用できるタグのタグ・オプションの例を示します。\fI\-tag todo:a:"To Do:"\fR
+\fB���󥰥롦��������\fR: �����������������Ǥ�դΰ��֤ǻ��ѤǤ��륿���Υ��������ץ�������򼨤��ޤ���\fB\-tag todo:a:"To Do:"\fR
 .sp
-\fI@todo\fRタグをコンストラクタ、メソッドおよびフィールドとのみ使用する場合、\fI\-tag todo:cmf:"To Do:"\fRを使用します。
+\fB@todo\fR�����򥳥󥹥ȥ饯�����᥽�åɤ���ӥե�����ɤȤΤ߻��Ѥ����硢\fB\-tag todo:cmf:"To Do:"\fR����Ѥ��ޤ���
 .sp
-最後のコロン(:)は、パラメータ区切り文字ではなく、見出しテキストの一部になっています。\fI@todo\fRタグを含む、ソース・コード用のいずれかのタグ・オプションを使用します。たとえば、\fI@todo The documentation for this method needs work\fRです。
+�Ǹ�Υ�����(:)�ϡ��ѥ�᡼�����ڤ�ʸ���ǤϤʤ������Ф��ƥ����Ȥΰ����ˤʤäƤ��ޤ���\fB@todo\fR������ޤࡢ���������������ѤΤ����줫�Υ��������ץ�������Ѥ��ޤ������Ȥ��С�\fB@todo The documentation for this method needs work\fR�Ǥ���
 .sp
-\fBタグ名内のコロン\fR: タグ名内でコロンを使用する場合はバックスラッシュを使用してエスケープします。次のドキュメンテーション・コメントには、\fI\-tag ejb\e\e:bean:a:"EJB Bean:"\fRオプションを使用します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-/**
- * @ejb:bean
- */
-.fi
-.if n \{\
-.RE
-.\}
-\fBタグ名のスペルチェック\fR: 一部の開発者が必ずしも出力しないカスタム・タグをソース・コード内に配置することがあります。この場合、ソース・コード内のすべてのタグをリストし、出力するタグを有効にし、出力しないタグを無効にする必要があります。\fIX\fRを指定するとタグは無効になります。指定しないと、タグは有効になります。これにより、\fIjavadoc\fRコマンドは、検出したタグが入力ミスなどによる不明タグであるかどうかを特定できます。このような場合に、\fIjavadoc\fRコマンドから警告が出力されます。すでに配置されている値に\fIX\fRを追加できます。こうしておけば、\fIX\fRを削除するのみでタグを有効にすることができます。たとえば、\fI@todo\fRタグを出力で抑制する場合、\fI\-tag todo:Xcmf:"To Do:"\fRを使用します。さらに簡単にする場合、\fI\-tag todo:X\fRを使用します。構文\fI\-tag todo:X\fRは、\fI@todo\fRタグがタグレットで定義されていても機能します。
-.sp
-\fBタグの順序\fR:
-\fI\-ta\fR\fIg\fRおよび\fI\-taglet\fRオプションの順序によって、タグの出力順が決まります。カスタム・タグと標準タグを組み合せて使用することもできます。標準タグのタグ・オプションは、順序を決定するためだけのプレースホルダです。標準タグの名前のみを取ります。標準タグの小見出しは変更できません。これを次の例に示します。\fI\-tag\fRオプションを指定しないと、\fI\-tagle\fR\fIt\fRオプションの位置により、順序が決まります。タグが両方とも存在する場合、コマンドラインの最後にある方がその順序を決定します。これは、タグやタグレットがコマンドラインに指定された順番に処理されるためです。たとえば、\fI\-taglet\fRおよび\fI\-tag\fRオプションが名前\fItodo\fR値を持つ場合、コマンドラインに最後に指定されたものが順序を決定します。
-.sp
-\fBタグの完全セットの例\fR: この例では、出力のParametersとThrowsの間にTo Doを挿入します。\fIX\fRを使用して、\fI@example\fRタグが、ソース・コード内の今回の実行では出力されないタグであることも指定します。\fI@argfile\fRタグを使用する場合は、次のように、引数ファイル内の別々の行にタグを配置できます(行の継続を示す文字は不要)。
+\fB����̾��Υ�����\fR: ����̾��ǥ��������Ѥ�����ϥХå�����å������Ѥ��ƥ��������פ��ޤ������Υɥ�����ơ�����󡦥����Ȥˤϡ�\fB\-tag ejb\e\e:bean:a:"EJB Bean:"\fR���ץ�������Ѥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-tag param
-\-tag return
-\-tag todo:a:"To Do:"
-\-tag throws
-\-tag see
-\-tag example:X
+\fB/**\fR
+\fB * @ejb:bean\fR
+\fB */\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-\fIjavadoc\fRコマンドがドキュメンテーション・コメントを解析する際に検索されたタグのうち、標準タグでも、\fI\-tag\fRや\fI\-taglet\fRオプションで渡されたタグでもないものはすべて不明タグとみなされ、警告がスローされます。
+\fB����̾�Υ��ڥ�����å�\fR: �����γ�ȯ�Ԥ�ɬ��������Ϥ��ʤ��������ࡦ�����򥽡�����������������֤��뤳�Ȥ�����ޤ������ξ�硢����������������Τ��٤ƤΥ�����ꥹ�Ȥ������Ϥ��륿����ͭ���ˤ������Ϥ��ʤ�������̵���ˤ���ɬ�פ�����ޤ���\fBX\fR����ꤹ��ȥ�����̵���ˤʤ�ޤ������ꤷ�ʤ��ȡ�������ͭ���ˤʤ�ޤ�������ˤ�ꡢ\fBjavadoc\fR���ޥ�ɤϡ����Ф������������ϥߥ��ʤɤˤ�����������Ǥ��뤫�ɤ���������Ǥ��ޤ������Τ褦�ʾ��ˡ�\fBjavadoc\fR���ޥ�ɤ���ٹ𤬽��Ϥ���ޤ������Ǥ����֤���Ƥ����ͤ�\fBX\fR���ɲäǤ��ޤ����������Ƥ����С�\fBX\fR��������Τߤǥ�����ͭ���ˤ��뤳�Ȥ��Ǥ��ޤ������Ȥ��С�\fB@todo\fR��������Ϥ����������硢\fB\-tag todo:Xcmf:"To Do:"\fR����Ѥ��ޤ�������˴�ñ�ˤ����硢\fB\-tag todo:X\fR����Ѥ��ޤ�����ʸ\fB\-tag todo:X\fR�ϡ�\fB@todo\fR������������åȤ��������Ƥ��Ƥⵡǽ���ޤ���
 .sp
-標準タグは、最初、デフォルトの順序でリスト内に内部的に格納されます。\fI\-tag\fRオプションを使用すると、それらのタグはこのリストに追加されます。標準タグは、デフォルトの位置から移動されます。そのため、標準タグの\fI\-tag\fRオプションを省略すると、それはデフォルトの位置に配置されたままになります。
+\fB�����ν��\fR:
+\fB\-ta\fR\fBg\fR�����\fB\-taglet\fR���ץ����ν���ˤ�äơ������ν��Ͻ礬��ޤ�ޤ����������ࡦ������ɸ�ॿ�����Ȥ߹礻�ƻ��Ѥ��뤳�Ȥ�Ǥ��ޤ���ɸ�ॿ���Υ��������ץ����ϡ��������ꤹ�뤿������Υץ졼���ۥ���Ǥ���ɸ�ॿ����̾���Τߤ���ޤ���ɸ�ॿ���ξ����Ф����ѹ��Ǥ��ޤ��󡣤���򼡤���˼����ޤ���\fB\-tag\fR���ץ�������ꤷ�ʤ��ȡ�\fB\-tagle\fR\fBt\fR���ץ����ΰ��֤ˤ�ꡢ�������ޤ�ޤ���������ξ���Ȥ�¸�ߤ����硢���ޥ�ɹԤκǸ�ˤ����������ν������ꤷ�ޤ�������ϡ������䥿����åȤ����ޥ�ɹԤ˻��ꤵ�줿���֤˽�������뤿��Ǥ������Ȥ��С�\fB\-taglet\fR�����\fB\-tag\fR���ץ����̾��\fBtodo\fR�ͤ���ľ�硢���ޥ�ɹԤ˺Ǹ�˻��ꤵ�줿��Τ��������ꤷ�ޤ���
 .sp
-\fB競合の回避\fR: 固有の名前空間を作成するには、パッケージに使用されている\fIcom\&.mycompany\&.todo\fRという名前のように、ドットで区切られた名前を使用します。Oracleは、今後も名前にドットを含まない標準タグを作成します。ユーザーが作成したタグは、Oracleが定義する同じ名前のタグの動作をオーバーライドします。\fI@todo\fRという名前のタグまたはタグレットをユーザーが作成した場合、その後にOracleが同じ名前の標準タグを作成しても、そのタグまたはタグレットは常にユーザーが定義したのと同じ動作を保持します。
+\fB�����δ������åȤ���\fR: ������Ǥϡ����Ϥ�Parameters��Throws�δ֤�To Do���������ޤ���\fBX\fR����Ѥ��ơ�\fB@example\fR������������������������κ���μ¹ԤǤϽ��Ϥ���ʤ������Ǥ��뤳�Ȥ���ꤷ�ޤ���\fB@argfile\fR��������Ѥ�����ϡ����Τ褦�ˡ������ե���������̡��ιԤ˥��������֤Ǥ��ޤ�(�Ԥη�³�򼨤�ʸ��������)��
 .sp
-\fB注釈vs\&. Javadocタグ\fR: 一般に、追加する必要のあるマークアップが、ドキュメントに影響を与えたりドキュメントを生成したりするためのものである場合、そのマークアップはJavadocタグにします。それ以外の場合は注釈にします。JavadocツールでのDocコメントの記述方法のカスタム・タグと注釈に関する項
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#annotations)を参照してください。
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB\-tag param\fR
+\fB\-tag return\fR
+\fB\-tag todo:a:"To Do:"\fR
+\fB\-tag throws\fR
+\fB\-tag see\fR
+\fB\-tag example:X\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+\fBjavadoc\fR���ޥ�ɤ��ɥ�����ơ�����󡦥����Ȥ���Ϥ���ݤ˸������줿�����Τ�����ɸ�ॿ���Ǥ⡢\fB\-tag\fR��\fB\-taglet\fR���ץ������Ϥ��줿�����Ǥ�ʤ���ΤϤ��٤����������Ȥߤʤ��졢�ٹ𤬥���������ޤ���
 .sp
-\fI\-taglet\fRオプションを使用して、より複雑なブロック・タグやカスタム・インライン・タグも作成できます。
+ɸ�ॿ���ϡ��ǽ顢�ǥե���Ȥν���ǥꥹ���������Ū�˳�Ǽ����ޤ���\fB\-tag\fR���ץ�������Ѥ���ȡ������Υ����Ϥ��Υꥹ�Ȥ��ɲä���ޤ���ɸ�ॿ���ϡ��ǥե���Ȥΰ��֤����ư����ޤ������Τ��ᡢɸ�ॿ����\fB\-tag\fR���ץ������ά����ȡ�����ϥǥե���Ȥΰ��֤����֤��줿�ޤޤˤʤ�ޤ���
+.sp
+\fB����β���\fR: ��ͭ��̾�����֤���������硢�ѥå������˻��Ѥ���Ƥ���\fBcom\&.mycompany\&.todo\fR�Τ褦�ʥɥåȤǶ��ڤ��̿̾��§����ѤǤ��ޤ���Oracle�ϡ������̾���˥ɥåȤ�ޤޤʤ�ɸ�ॿ����������ޤ����桼�������������������ϡ�Oracle���������Ʊ��̾���Υ�����ư��򥪡��С��饤�ɤ��ޤ���\fB@todo\fR�Ȥ���̾���Υ����ޤ��ϥ�����åȤ�桼����������������硢���θ��Oracle��Ʊ��̾����ɸ�ॿ����������Ƥ⡢���Υ����ޤ��ϥ�����åȤϾ�˥桼��������������Τ�Ʊ��ư����ݻ����ޤ���
+.sp
+\fB����vs\&. Javadoc����\fR: ���̤ˡ��ɲä���ɬ�פΤ���ޡ������åפ����ɥ�����Ȥ˱ƶ���Ϳ������ɥ�����Ȥ����������ꤹ�뤿��Τ�ΤǤ����硢���Υޡ������åפ�Javadoc�����ˤ��ޤ�������ʳ��ξ�������ˤ��ޤ���Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ�Υ������ࡦ����������˴ؤ����
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html#annotations)�򻲾Ȥ��Ƥ���������
+.sp
+\fB\-taglet\fR���ץ�������Ѥ��ơ����ʣ���ʥ֥��å��������䥫�����ࡦ����饤�󡦥���������Ǥ��ޤ���
 .RE
 .PP
 \-taglet \fIclass\fR
 .RS 4
-そのタグのドキュメントの生成に使用するドックレットを起動するためのクラス・ファイルを指定します。\fIclass\fR値の完全修飾名を使用します。このタグレットは、カスタム・タグのテキスト引数の数も定義します。タグレットは、これらの引数を受け付け、処理し、出力を生成します。タグレットの例を使用した豊富なドキュメントについては、タグレットの概要
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/taglet/overview\&.html)を参照してください。
+���Υ����Υɥ�����Ȥ������˻��Ѥ���ɥå���åȤ�ư���뤿��Υ��饹���ե��������ꤷ�ޤ���\fBclass\fR�ͤδ�������̾����Ѥ��ޤ������Υ�����åȤϡ��������ࡦ�����Υƥ����Ȱ����ο���������ޤ���������åȤϡ������ΰ���������դ��������������Ϥ��������ޤ���������åȤ������Ѥ���˭�٤ʥɥ�����ȤˤĤ��Ƥϡ�������åȤγ���
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/taglet/overview\&.html)�򻲾Ȥ��Ƥ���������
 .sp
-タグレットは、ブロックタグまたはインライン・タグで便利です。タグレットは任意の数の引数をとることができます。また、テキストを太字にする、箇条書きを作成する、テキストをファイルに書き出す、その他のプロセスを開始するなどのカスタム動作を実装できます。タグレットで指定できるのは、タグの配置場所と配置形式のみです。その他のすべての決定は、ドックレットによって行われます。タグレットを使用しても、包含クラスのリストからクラス名を削除するなどの処理は実行できません。ただし、タグのテキストをファイルに出力したり、別のプロセスをトリガーするなどの副作用は得られます。タグレットへのパスを指定するには、\fI\-tagletpath\fRオプションを使用します。次に、生成されるページのParametersとThrowsの間にTo Doタグレットを挿入する例を示します。または、\fI\-taglet\fRオプションをその\fI\-tag\fRオプションのかわりに使用することができますが、読み取りが困難になる可能性があります。
+������åȤϡ��֥��å������ޤ��ϥ���饤�󡦥����������Ǥ���������åȤ�Ǥ�դο��ΰ�����Ȥ뤳�Ȥ��Ǥ��ޤ����ޤ����ƥ����Ȥ������ˤ��롢�վ�񤭤�������롢�ƥ����Ȥ�ե�����˽񤭽Ф�������¾�Υץ������򳫻Ϥ���ʤɤΥ�������ư�������Ǥ��ޤ���������åȤǻ���Ǥ���Τϡ����������־������ַ����ΤߤǤ�������¾�Τ��٤Ƥη���ϡ��ɥå���åȤˤ�äƹԤ��ޤ���������åȤ���Ѥ��Ƥ⡢��ޥ��饹�Υꥹ�Ȥ��饯�饹̾��������ʤɤν����ϼ¹ԤǤ��ޤ��󡣤������������Υƥ����Ȥ�ե�����˽��Ϥ����ꡢ�̤Υץ�������ȥꥬ������ʤɤ������Ѥ������ޤ���������åȤؤΥѥ�����ꤹ��ˤϡ�\fB\-tagletpath\fR���ץ�������Ѥ��ޤ������ˡ����������ڡ�����Parameters��Throws�δ֤�To Do������åȤ�����������򼨤��ޤ����ޤ��ϡ�\fB\-taglet\fR���ץ����򤽤�\fB\-tag\fR���ץ����Τ����˻��Ѥ��뤳�Ȥ��Ǥ��ޤ������ɤ߼�꤬����ˤʤ��ǽ��������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-taglet com\&.sun\&.tools\&.doclets\&.ToDoTaglet
-\-tagletpath /home/taglets 
-\-tag return
-\-tag param
-\-tag todo
-\-tag throws
-\-tag see
+\fB\-taglet com\&.sun\&.tools\&.doclets\&.ToDoTaglet\fR
+\fB\-tagletpath /home/taglets \fR
+\fB\-tag return\fR
+\fB\-tag param\fR
+\fB\-tag todo\fR
+\fB\-tag throws\fR
+\fB\-tag see\fR
+ 
 .fi
 .if n \{\
 .RE
@@ -3244,405 +4056,430 @@ HTMLキーワード<META>タグを、クラスごとに生成されるファイ�
 .PP
 \-tagletpath \fItagletpathlist\fR
 .RS 4
-tagletクラス・ファイルを検索するための検索パスを指定します。\fItagletpathlist\fRには、コロン(:)で区切って複数のパスを含めることができます。\fIjavadoc\fRコマンドは、指定されたパス以下のすべてのサブディレクトリを検索します。
+taglet���饹���ե�����򸡺����뤿��θ����ѥ�����ꤷ�ޤ���\fBtagletpathlist\fR�ˤϡ�������(:)�Ƕ��ڤä�ʣ���Υѥ���ޤ�뤳�Ȥ��Ǥ��ޤ���\fBjavadoc\fR���ޥ�ɤϡ����ꤵ�줿�ѥ��ʲ��Τ��٤ƤΥ��֥ǥ��쥯�ȥ�򸡺����ޤ���
 .RE
 .PP
 \-docfilesubdirs
 .RS 4
-doc\-filesディレクトリのディープ・コピーを有効にします。宛先には、サブディレクトリとそのすべて内容が再帰的にコピーされます。たとえば、ディレクトリoc\-files/example/imagesとその内容がすべてコピーされます。ここでも、サブディレクトリを除外する指定が可能です。
+doc\-files�ǥ��쥯�ȥ�Υǥ����ס����ԡ���ͭ���ˤ��ޤ�������ˤϡ����֥ǥ��쥯�ȥ�Ȥ��Τ��٤����Ƥ��Ƶ�Ū�˥��ԡ�����ޤ������Ȥ��С��ǥ��쥯�ȥ�oc\-files/example/images�Ȥ������Ƥ����٤ƥ��ԡ�����ޤ��������Ǥ⡢���֥ǥ��쥯�ȥ�����������꤬��ǽ�Ǥ���
 .RE
 .PP
 \-excludedocfilessubdir \fIname1:name2\fR
 .RS 4
-指定された名前のdoc\-filesサブディレクトリをすべて除外します。これにより、SCCSとその他のソース・コード制御サブディレクトリのコピーを防ぎます。
+���ꤵ�줿̾����doc\-files���֥ǥ��쥯�ȥ�򤹤٤ƽ������ޤ�������ˤ�ꡢSCCS�Ȥ���¾�Υ����������������極�֥ǥ��쥯�ȥ�Υ��ԡ����ɤ��ޤ���
 .RE
 .PP
 \-noqualifier all | \fIpackagename1\fR:\fIpackagename2\&.\&.\&.\fR
 .RS 4
-出力されるクラス名から修飾パッケージ名を省略します。\fI\-noqualifier\fRオプションの引数は、\fIall\fR(すべてのパッケージ修飾子を省略)、または修飾子として削除するパッケージのコロン区切りリスト(ワイルドカードも可)、のいずれかとなります。クラスまたはインタフェース名が表示される位置からパッケージ名が削除されます。ソース・ファイルの処理を参照してください。
+���Ϥ���륯�饹̾���齤���ѥå�����̾���ά���ޤ���\fB\-noqualifier\fR���ץ����ΰ����ϡ�\fBall\fR(���٤ƤΥѥå����������Ҥ��ά)���ޤ��Ͻ����ҤȤ��ƺ������ѥå������Υ�������ڤ�ꥹ��(�磻��ɥ����ɤ��)���Τ����줫�Ȥʤ�ޤ������饹�ޤ��ϥ��󥿥ե�����̾��ɽ���������֤���ѥå�����̾���������ޤ������������ե�����ν����򻲾Ȥ��Ƥ���������
 .sp
-次の例では、すべてのパッケージ修飾子を省略します。\fI\-noqualifier all\fR
+������Ǥϡ����٤ƤΥѥå����������Ҥ��ά���ޤ���\fB\-noqualifier all\fR
 .sp
-次の例では、\fIjava\&.lang\fRおよび\fIjava\&.io\fRパッケージ修飾子を省略します:
-\fI\-noqualifier java\&.lang:java\&.io\fR。
+������Ǥϡ�\fBjava\&.lang\fR�����\fBjava\&.io\fR�ѥå����������Ҥ��ά���ޤ�:
+\fB\-noqualifier java\&.lang:java\&.io\fR��
 .sp
-次の例では、\fIjava\fRで始まるパッケージ修飾子および\fIcom\&.sun\fRサブパッケージを省略しますが、\fIjavax\fRは省略しません。\fI\-noqualifier java\&.*:com\&.sun\&.*\fR
+������Ǥϡ�\fBjava\fR�ǻϤޤ�ѥå����������Ҥ����\fBcom\&.sun\fR���֥ѥå��������ά���ޤ�����\fBjavax\fR�Ͼ�ά���ޤ���\fB\-noqualifier java\&.*:com\&.sun\&.*\fR
 .sp
-パッケージ修飾子が前述の動作に従って表示される場合、名前は適切に短縮されます。「名前が表示される方法」を参照してください。このルールは、\fI\-noqualifier\fRオプションを使用するかどうかにかかわらず有効です。
+�ѥå����������Ҥ����Ҥ�ư��˽��ä�ɽ��������硢̾����Ŭ�ڤ�û�̤���ޤ�����̾����ɽ���������ˡ�פ򻲾Ȥ��Ƥ������������Υ롼��ϡ�\fB\-noqualifier\fR���ץ�������Ѥ��뤫�ɤ����ˤ�����餺ͭ���Ǥ���
 .RE
 .PP
 \-notimestamp
 .RS 4
-タイムスタンプが抑制されます。各ページの先頭近くにある、生成されたHTML内のHTMLコメントでタイムスタンプが隠されます。\fI\-notimestamp\fRオプションは、\fIjavadoc\fRコマンドを2つのソース・ベースで実行し、それらの間の差分\fIdiff\fRを取得する場合に役立ちます。タイムスタンプによる\fIdiff\fRの発生を防ぐからです(そうでないとすべてのページで\fIdiff\fRになります)。タイムスタンプには\fIjavadoc\fRコマンドのリリース番号が含まれ、現在では、\fI<!\-\- Generated by javadoc (build 1\&.5\&.0_01) on Thu Apr 02 14:04:52 IST 2009 \-\->\fRのように表示されます。
+�����ॹ����פ���������ޤ����ƥڡ�������Ƭ�᤯�ˤ��롢�������줿HTML���HTML�����Ȥǥ����ॹ����פ�������ޤ���\fB\-notimestamp\fR���ץ����ϡ�\fBjavadoc\fR���ޥ�ɤ�2�ĤΥ��������١����Ǽ¹Ԥ��������δ֤κ�ʬ\fBdiff\fR��������������Ω���ޤ��������ॹ����פˤ��\fBdiff\fR��ȯ�����ɤ�����Ǥ�(�����Ǥʤ��Ȥ��٤ƤΥڡ�����\fBdiff\fR�ˤʤ�ޤ�)�������ॹ����פˤ�\fBjavadoc\fR���ޥ�ɤΥ�꡼���ֹ椬�ޤޤ졢���ߤǤϡ�\fB<!\-\- Generated by javadoc (build 1\&.5\&.0_01) on Thu Apr 02 14:04:52 IST 2009 \-\->\fR�Τ褦��ɽ������ޤ���
 .RE
 .PP
 \-nocomment
 .RS 4
-主説明およびすべてのタグを含むコメント本文全体を抑制し、宣言のみを生成します。このオプションにより、元は異なる目的のためだったソース・ファイルを再利用し、新しいプロジェクトの早い段階でスケルトンHTMLドキュメントを作成できるようになります。
+����������Ӥ��٤ƤΥ�����ޤॳ������ʸ���Τ�������������Τߤ��������ޤ������Υ��ץ����ˤ�ꡢ���ϰۤʤ���Ū�Τ�����ä����������ե����������Ѥ����������ץ��������Ȥ��ᤤ�ʳ��ǥ�����ȥ�HTML�ɥ�����Ȥ�����Ǥ���褦�ˤʤ�ޤ���
 .RE
 .PP
 \-sourcetab \fItablength\fR
 .RS 4
-ソース内で各タブが使用する空白文字の数を指定します。
+��������ǳƥ��֤����Ѥ������ʸ���ο�����ꤷ�ޤ���
 .RE
-.SH "コマンドライン引数ファイル"
+.SH "���ޥ�ɹ԰����ե�����"
 .PP
-\fIjavadoc\fRコマンドを短くしたり簡潔にしたりするために、\fIjavadoc\fRコマンドに対する引数(\fI\-J\fRオプションを除く)が入った1つ以上のファイルを指定することができます。このことを利用すれば、どのオペレーティング・システム上でも、任意の長さの\fIjavadoc\fRコマンドを作成できます。
+\fBjavadoc\fR���ޥ�ɤ�û��������ʷ�ˤ����ꤹ�뤿��ˡ�\fBjavadoc\fR���ޥ�ɤ��Ф������(\fB\-J\fR���ץ��������)�����ä�1�İʾ�Υե��������ꤹ�뤳�Ȥ��Ǥ��ޤ������Τ��Ȥ����Ѥ���С��ɤΥ��ڥ졼�ƥ��󥰡������ƥ��Ǥ⡢Ǥ�դ�Ĺ����\fBjavadoc\fR���ޥ�ɤ�����Ǥ��ޤ���
 .PP
-引数ファイルには、\fIjavac\fRのオプションとソース・ファイル名を自由に組み合せて記述できます。ファイル内の各引数は、スペースまたは改行で区切ります。ファイル名に埋め込まれた空白がある場合、ファイル名全体を二重引用符で囲みます。
+�����ե�����ˤϡ�\fBjavac\fR�Υ��ץ����ȥ��������ե�����̾��ͳ���Ȥ߹礻�Ƶ��ҤǤ��ޤ����ե�������γư����ϡ����ڡ����ޤ��ϲ��ԤǶ��ڤ�ޤ����ե�����̾�������ޤ줿���򤬤����硢�ե�����̾���Τ���Ű�����ǰϤߤޤ���
 .PP
-引数ファイル内のファイル名は、引数ファイルの位置ではなく、現在のディレクトリに相対的となります。これらのリストでは、ワイルドカード(\fI*\fR)は使用できません。たとえば、*\&.javaとは指定できません。アットマーク(@)を使用して、ファイルを再帰的に解釈することはできません。また、\fI\-J\fRオプションもサポートされていません。このオプションは起動ツールに渡されますが、起動ツールでは引数ファイルをサポートしていないからです。
+�����ե�������Υե�����̾�ϡ������ե�����ΰ��֤ǤϤʤ������ߤΥǥ��쥯�ȥ������Ū�Ȥʤ�ޤ��������Υꥹ�ȤǤϡ��磻��ɥ�����(\fB*\fR)�ϻ��ѤǤ��ޤ��󡣤��Ȥ��С�*\&.java�Ȥϻ���Ǥ��ޤ��󡣥��åȥޡ���(@)����Ѥ��ơ��ե������Ƶ�Ū�˲�᤹�뤳�ȤϤǤ��ޤ��󡣤ޤ���\fB\-J\fR���ץ����⥵�ݡ��Ȥ���Ƥ��ޤ��󡣤��Υ��ץ����ϵ�ư�ġ�����Ϥ���ޤ�������ư�ġ���Ǥϰ����ե�����򥵥ݡ��Ȥ��Ƥ��ʤ�����Ǥ���
 .PP
-\fIjavadoc\fRを実行するときに、各引数ファイルのパスとファイル名の先頭に@文字を付けて渡します。\fIjavadoc\fRコマンドは、アットマーク(@)文字で始まる引数を見つけると、そのファイルの内容を展開して引数リストに挿入します。
+\fBjavadoc\fR��¹Ԥ���Ȥ��ˡ��ư����ե�����Υѥ��ȥե�����̾����Ƭ��@ʸ�����դ����Ϥ��ޤ���\fBjavadoc\fR���ޥ�ɤϡ����åȥޡ���(@)ʸ���ǻϤޤ�����򸫤Ĥ���ȡ����Υե���������Ƥ�Ÿ�����ư����ꥹ�Ȥ��������ޤ���
 .PP
-\fBExample 1\fR, 単一の引数ファイル
+\fB�� 1 \fRñ��ΰ����ե�����
 .RS 4
-\fIargfile\fRという名前の1つの引数ファイルを使用して、すべての\fIjavadoc\fRコマンド引数を保持できます。\fIjavadoc @argfile\fR次の例に示すように、この引数ファイルには両方のファイルの内容が含まれています。
+\fBargfile\fR�Ȥ���̾����1�Ĥΰ����ե��������Ѥ��ơ����٤Ƥ�\fBjavadoc\fR���ޥ�ɰ������ݻ��Ǥ��ޤ���\fBjavadoc @argfile\fR������˼����褦�ˡ����ΰ����ե�����ˤ�ξ���Υե���������Ƥ��ޤޤ�Ƥ��ޤ���
 .RE
 .PP
-\fBExample 2\fR, 2つの引数ファイル
+\fB�� 2 \fR2�Ĥΰ����ե�����
 .RS 4
-次のように、2つの引数ファイルを作成できます。\fIjavadoc\fRコマンドのオプション用に1つ、パッケージ名またはソース・ファイル名用に1つです。次のリストでは行継続文字を使用していません。
+���Τ褦�ˡ�2�Ĥΰ����ե����������Ǥ��ޤ���\fBjavadoc\fR���ޥ�ɤΥ��ץ�����Ѥ�1�ġ��ѥå�����̾�ޤ��ϥ��������ե�����̾�Ѥ�1�ĤǤ������Υꥹ�ȤǤϹԷ�³ʸ������Ѥ��Ƥ��ޤ���
 .sp
-次の内容を含む、optionsという名前のファイルを作成します。
+�������Ƥ�ޤࡢoptions�Ȥ���̾���Υե������������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-d docs\-filelist 
-\-use 
-\-splitindex
-\-windowtitle \*(AqJava SE 7 API Specification\*(Aq
-\-doctitle \*(AqJava SE 7 API Specification\*(Aq
-\-header \*(Aq<b>Java(TM) SE 7</b>\*(Aq
-\-bottom \*(AqCopyright &copy; 1993\-2011 Oracle and/or its affiliates\&. All rights reserved\&.\*(Aq
-\-group "Core Packages" "java\&.*"
-\-overview /java/pubs/ws/1\&.7\&.0/src/share/classes/overview\-core\&.html
-\-sourcepath /java/pubs/ws/1\&.7\&.0/src/share/classes
+\fB\-d docs\-filelist \fR
+\fB\-use \fR
+\fB\-splitindex\fR
+\fB\-windowtitle \*(AqJava SE 7 API Specification\*(Aq\fR
+\fB\-doctitle \*(AqJava SE 7 API Specification\*(Aq\fR
+\fB\-header \*(Aq<b>Java(TM) SE 7</b>\*(Aq\fR
+\fB\-bottom \*(AqCopyright &copy; 1993\-2011 Oracle and/or its affiliates\&. All rights reserved\&.\*(Aq\fR
+\fB\-group "Core Packages" "java\&.*"\fR
+\fB\-overview /java/pubs/ws/1\&.7\&.0/src/share/classes/overview\-core\&.html\fR
+\fB\-sourcepath /java/pubs/ws/1\&.7\&.0/src/share/classes\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-次の内容を含む、packagesという名前のファイルを作成します。
+�������Ƥ�ޤࡢpackages�Ȥ���̾���Υե������������ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-com\&.mypackage1
-com\&.mypackage2
-com\&.mypackage3
+\fBcom\&.mypackage1\fR
+\fBcom\&.mypackage2\fR
+\fBcom\&.mypackage3\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-次のように、\fIjavadoc\fRコマンドを実行します。
+���Τ褦�ˡ�\fBjavadoc\fR���ޥ�ɤ�¹Ԥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc @options @packages
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-\fBExample 3\fR, パスを使用した引数ファイル
-.RS 4
-引数ファイルはパスを指定できますが、ファイル内のすべてのファイル名は、(\fIpath1\fRや\fIpath2\fRではなく)次のように現在の作業ディレクトリに相対的となります。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-javadoc @path1/options @path2/packages
+\fBjavadoc @options @packages\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
 .PP
-\fBExample 4\fR, オプション引数
+\fB�� 3 \fR�ѥ�����Ѥ��������ե�����
 .RS 4
-次に、\fIjavadoc\fRコマンドのオプションに対する引数を引数ファイルに格納する例を示します。長い引数を指定できるので、\fI\-bottom\fRオプションを使用します。次のようなテキスト引数を含む、bottomという名前のファイルを作成できます。
+�����ե�����ϥѥ������Ǥ��ޤ������ե�������Τ��٤ƤΥե�����̾�ϡ�(\fBpath1\fR��\fBpath2\fR�ǤϤʤ�)���Τ褦�˸��ߤκ�ȥǥ��쥯�ȥ������Ū�Ȥʤ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-<font size="\-1">
-    <a href="http://bugreport\&.sun\&.com/bugreport/">Submit a bug or feature</a><br/>
-    Copyright &copy; 1993, 2011, Oracle and/or its affiliates\&. All rights reserved\&. <br/>
-    Oracle is a registered trademark of Oracle Corporation and/or its affiliates\&.
-    Other names may be trademarks of their respective owners\&.</font>
-.fi
-.if n \{\
-.RE
-.\}
-\fIjavadoc\fRコマンドを次のように実行します。\fI javadoc \-bottom @bottom @packages\fR
-.sp
-\fI\-bottom\fRオプションを引数ファイルの最初に含めて、次のように\fIjavadoc\fRコマンドを実行することもできます。\fIjavadoc @bottom @packages\fR
-.RE
-.SH "JAVADOCコマンドの実行"
-.PP
-\fIjavadoc\fRコマンドのリリース番号は\fIjavadoc \-J\-version\fRオプションで特定できます。出力ストリームには標準ドックレットのリリース番号が含まれます。\fI\-quiet\fRオプションで無効にできます。
-.PP
-Java言語で記述されたプログラムから\fIjavadoc\fRコマンドを起動するには公開プログラマティック・インタフェースを使用します。このインタフェースは\fIcom\&.sun\&.tools\&.javadoc\&.Main\fRにあります(また\fIjavadoc\fRコマンドは再入可能です)。詳細は、標準ドックレット
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/standard\-doclet\&.html#runningprogrammatically)を参照してください。
-.PP
-次の手順では、標準HTMLドックレットを呼び出します。カスタム・ドックレットを呼び出すには、\fI\-doclet\fRおよび\fI\-docletpath\fRオプションを使用しますドックレットの概要
-(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/doclet/overview\&.html)を参照してください
-.SS "簡単な例"
-.PP
-\fIjavadoc\fRコマンドは、パッケージ全体に対して実行することも、個々のソース・ファイルに対して実行することもできます。各パッケージ名は、それぞれのパッケージ名に対応するディレクトリ名を持ちます。
-.PP
-次の例では、ソース・ファイルは/home/src/java/awt/*\&.javaにあります。生成先ディレクトリは/home/htmlです。
-1つ以上のパッケージのドキュメント化.PP
-パッケージをドキュメント化するには、そのパッケージのソース・ファイルを、そのパッケージと同じ名前のディレクトリ内に格納する必要があります。
-.PP
-パッケージ名が(\fIjava\&.awt\&.color\fRのようにドットで区切られた)複数の識別子から構成されている場合、後続の各識別子が下位のサブディレクトリ(ava/awt/colorなど)に対応している必要があります。
-.PP
-1つのパッケージのための複数のソース・ファイルを、異なる場所にあるそのような2つのディレクトリ・ツリーに分けて格納することもできます。ただし、その場合は\fI\-sourcepath\fRによってその両方の場所を指定する必要があります。たとえば、src1/java/awt/colorとsrc2/java/awt/color。
-.PP
-ディレクトリの変更(\fIcd\fRコマンドを使用)または\fI\-sourcepath\fRオプションにより、\fIjavadoc\fRコマンドを実行できます。次の例で両方の選択肢を示します。
-.PP
-\fBExample 1\fR, 1つ以上のパッケージから再帰的に実行
-.RS 4
-この例では\fIjavadoc\fRコマンドが任意のディレクトリから実行できるように、\fI\-sourcepath\fRを使用し、再帰的処理のために\fI\-subpackages\fR
-(1\&.4の新オプション)を使用します。これは、javaディレクトリのサブパッケージをたどりますが、\fIjava\&.net\fRと\fIjava\&.lang\fRをルートに持つパッケージは除外されます。\fIjava\&.lang\fRのサブパッケージである\fIjava\&.lang\&.ref\fRが除外される点に注意してください。また、他のパッケージ・ツリーを下方にたどるには、\fIjava:javax:org\&.xml\&.sax\fRのように、それらのパッケージの名前を\fI\-subpackages\fRの引数に追加します。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-javadoc \-d /home/html \-sourcepath /home/src \-subpackages java \-exclude
+\fBjavadoc @path1/options @path2/packages\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
 .PP
-\fBExample 2\fR, ルートへの移動および明示的なパッケージの実行
+\fB�� 4 \fR���ץ�������
 .RS 4
-完全修飾されたパッケージの親ディレクトリに移動します。次に、ドキュメント化する1つ以上のパッケージの名前を指定して\fIjavadoc\fRコマンドを実行します。
+���ˡ�\fBjavadoc\fR���ޥ�ɤΥ��ץ������Ф������������ե�����˳�Ǽ������򼨤��ޤ���Ĺ�����������Ǥ���Τǡ�\fB\-bottom\fR���ץ�������Ѥ��ޤ������Τ褦�ʥƥ����Ȱ�����ޤࡢbottom�Ȥ���̾���Υե����������Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-cd /home/src/
-javadoc \-d /home/html java\&.awt java\&.awt\&.event
+\fB<font size="\-1">\fR
+\fB    <a href="http://bugreport\&.sun\&.com/bugreport/">Submit a bug or feature</a><br/>\fR
+\fB    Copyright &copy; 1993, 2011, Oracle and/or its affiliates\&. All rights reserved\&. <br/>\fR
+\fB    Oracle is a registered trademark of Oracle Corporation and/or its affiliates\&.\fR
+\fB    Other names may be trademarks of their respective owners\&.</font>\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-また、他のパッケージ・ツリーを下方にたどるには、j\fIava:javax:org\&.xml\&.sax\fRのように、それらのパッケージの名前を\fI\-subpackages\fRの引数に追加します。
+\fBjavadoc\fR���ޥ�ɤ򼡤Τ褦�˼¹Ԥ��ޤ���\fB javadoc \-bottom @bottom @packages\fR
+.sp
+\fB\-bottom\fR���ץ���������ե�����κǽ�˴ޤ�ơ����Τ褦��\fBjavadoc\fR���ޥ�ɤ�¹Ԥ��뤳�Ȥ�Ǥ��ޤ���\fBjavadoc @bottom @packages\fR
 .RE
+.SH "JAVADOC���ޥ�ɤμ¹�"
 .PP
-\fBExample 3\fR, 1つのツリーの明示的なパッケージの任意のディレクトリから実行
+\fBjavadoc\fR���ޥ�ɤΥ�꡼���ֹ��\fBjavadoc \-J\-version\fR���ץ���������Ǥ��ޤ������ϥ��ȥ꡼��ˤ�ɸ��ɥå���åȤΥ�꡼���ֹ椬�ޤޤ�ޤ���\fB\-quiet\fR���ץ�����̵���ˤǤ��ޤ���
+.PP
+Java����ǵ��Ҥ��줿�ץ�����फ��\fBjavadoc\fR���ޥ�ɤ�ư����ˤϸ����ץ�����ޥƥ��å������󥿥ե���������Ѥ��ޤ������Υ��󥿥ե�������\fBcom\&.sun\&.tools\&.javadoc\&.Main\fR�ˤ���ޤ�(�ޤ�\fBjavadoc\fR���ޥ�ɤϺ�����ǽ�Ǥ�)���ܺ٤ϡ�ɸ��ɥå���å�
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/standard\-doclet\&.html#runningprogrammatically)�򻲾Ȥ��Ƥ���������
+.PP
+���μ��Ǥϡ�ɸ��HTML�ɥå���åȤ�ƤӽФ��ޤ����������ࡦ�ɥå���åȤ�ƤӽФ��ˤϡ�\fB\-doclet\fR�����\fB\-docletpath\fR���ץ�������Ѥ��ޤ��ɥå���åȤγ���
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/doclet/overview\&.html)�򻲾Ȥ��Ƥ�������
+.SS "��ñ����"
+.PP
+\fBjavadoc\fR���ޥ�ɤϡ��ѥå��������Τ��Ф��Ƽ¹Ԥ��뤳�Ȥ⡢�ġ��Υ��������ե�������Ф��Ƽ¹Ԥ��뤳�Ȥ�Ǥ��ޤ����ƥѥå�����̾�ϡ����줾��Υѥå�����̾���б�����ǥ��쥯�ȥ�̾������ޤ���
+.PP
+������Ǥϡ����������ե������/home/src/java/awt/*\&.java�ˤ���ޤ���������ǥ��쥯�ȥ��/home/html�Ǥ���
+.PP
+1�İʾ�Υѥå������Υɥ�����Ȳ�
+.PP
+�ѥå�������ɥ�����Ȳ�����ˤϡ����Υѥå������Υ��������ե�����򡢤��Υѥå�������Ʊ��̾���Υǥ��쥯�ȥ���˳�Ǽ����ɬ�פ�����ޤ���
+.PP
+�ѥå�����̾��(\fBjava\&.awt\&.color\fR�Τ褦�˥ɥåȤǶ��ڤ�줿)ʣ���μ��̻Ҥ��鹽������Ƥ����硢��³�γƼ��̻Ҥ����̤Υ��֥ǥ��쥯�ȥ�(ava/awt/color�ʤ�)���б����Ƥ���ɬ�פ�����ޤ���
+.PP
+1�ĤΥѥå������Τ����ʣ���Υ��������ե�����򡢰ۤʤ���ˤ��뤽�Τ褦��2�ĤΥǥ��쥯�ȥꡦ�ĥ꡼��ʬ���Ƴ�Ǽ���뤳�Ȥ�Ǥ��ޤ��������������ξ���\fB\-sourcepath\fR�ˤ�äƤ���ξ���ξ�����ꤹ��ɬ�פ�����ޤ������Ȥ��С�src1/java/awt/color��src2/java/awt/color��
+.PP
+�ǥ��쥯�ȥ���ѹ�(\fBcd\fR���ޥ�ɤ����)�ޤ���\fB\-sourcepath\fR���ץ����ˤ�ꡢ\fBjavadoc\fR���ޥ�ɤ�¹ԤǤ��ޤ����������ξ���������򼨤��ޤ���
+.PP
+\fB�� 1 \fR1�İʾ�Υѥå���������Ƶ�Ū�˼¹�
 .RS 4
-この場合、現在のディレクトリがどこかは問題ではありません。\fIjavadoc\fRコマンドを実行し、最上位パッケージの親ディレクトリを指定して\fI\-sourcepath\fRオプションを使用します。ドキュメント化する1つ以上のパッケージの名前を指定します。
+������Ǥ�\fBjavadoc\fR���ޥ�ɤ�Ǥ�դΥǥ��쥯�ȥ꤫��¹ԤǤ���褦�ˡ�\fB\-sourcepath\fR����Ѥ����Ƶ�Ū�����Τ����\fB\-subpackages\fR(1\&.4�ο����ץ����)����Ѥ��ޤ�������ϡ�java�ǥ��쥯�ȥ�Υ��֥ѥå������򤿤ɤ�ޤ�����\fBjava\&.net\fR��\fBjava\&.lang\fR��롼�Ȥ˻��ĥѥå������Ͻ�������ޤ���\fBjava\&.lang\fR�Υ��֥ѥå������Ǥ���\fBjava\&.lang\&.ref\fR������������������դ��Ƥ����������ޤ���¾�Υѥå��������ĥ꡼�����ˤ��ɤ�ˤϡ�\fBjava:javax:org\&.xml\&.sax\fR�Τ褦�ˡ������Υѥå�������̾����\fB\-subpackages\fR�ΰ������ɲä��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-d /home/html \-sourcepath /home/src java\&.awt java\&.awt\&.event
-.fi
-.if n \{\
-.RE
-.\}
-.RE
-.PP
-\fBExample 4\fR, 複数のツリーの明示的なパッケージの任意のディレクトリから実行
-.RS 4
-\fIjavadoc\fRコマンドを実行し、各ツリーのルートへのパスのコロン区切りリストを指定して\fI\-sourcepath\fRオプションを使用します。ドキュメント化する1つ以上のパッケージの名前を指定します。指定したパッケージのすべてのソース・ファイルが、1つのルート・ディレクトリの下に存在する必要はありませんが、ソース・パスで指定された場所のどこかで見つかる必要があります。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-javadoc \-d /home/html \-sourcepath /home/src1:/home/src2 java\&.awt java\&.awt\&.event
-.fi
-.if n \{\
-.RE
-.\}
-すべてのケースでj\fIava\&.awt\fRおよび\fIjava\&.awt\&.even\fRtパッケージ内の\fIpublic\fRおよび\fIprotected\fRクラスとインタフェースについて、HTML形式のドキュメントが生成され、指定された生成先ディレクトリにHTMLファイルが保存されます。2つ以上のパッケージが生成されているので、ドキュメントは、パッケージのリスト、クラスのリスト、およびメインのクラス・ページという3つのHTMLフレームを持つことになります。
-.RE
-1つ以上のクラスのドキュメント化.PP
-また、1つ以上のソース・ファイルを渡して、\fIjavadoc\fRコマンドを実行することもできます。\fIjavadoc\fRは、次の2つの方法のいずれかで実行できます。1つはディレクトリを変更する方法(\fIcd\fRを使用)、もう1つはソース・ファイルへのパスを完全に指定する方法です。相対パスは、現在のディレクトリを起点とします。ソース・ファイルを渡すときは、\fI\-sourcepath\fRオプションは無視されます。アスタリスク(*)のようなコマンドライン・ワイルドカードを使用すると、クラスのグループを指定できます。
-.PP
-\fBExample 1\fR, ソース・ディレクトリに変更
-.RS 4
-ソースを保持するディレクトリに変更します。次に、ドキュメント化する1つ以上のソース・ファイルの名前を指定して\fIjavadoc\fRコマンドを実行します。
-.sp
-この例では、\fIButton\fRクラスと\fICanvas\fRクラス、および名前が\fIGraphics\fRで始まるクラスについて、HTML形式のドキュメントが生成されます。パッケージ名ではなくソース・ファイルが\fIjavadoc\fRコマンドに引数として渡されているので、ドキュメントは、クラスのリストとメイン・ページという2つのフレームを持つことになります。
-.sp
-.if n \{\
-.RS 4
-.\}
-.nf
-cd /home/src/java/awt
-javadoc \-d /home/html Button\&.java Canvas\&.java Graphics*\&.java
+\fBjavadoc \-d /home/html \-sourcepath /home/src \-subpackages java \-exclude\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
 .PP
-\fBExample 2\fR, パッケージのルート・ディレクトリに変更
+\fB�� 2 \fR�롼�Ȥؤΰ�ư���������Ū�ʥѥå������μ¹�
 .RS 4
-これは、同じルートからの別のサブパッケージの個々のソース・ファイルをドキュメント化するのに役立ちます。パッケージのルート・ディレクトリに移り、各ソース・ファイルを、ルートからのパスとともに指定します。
+�����������줿�ѥå������οƥǥ��쥯�ȥ�˰�ư���ޤ������ˡ��ɥ�����Ȳ�����1�İʾ�Υѥå�������̾������ꤷ��\fBjavadoc\fR���ޥ�ɤ�¹Ԥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-cd /home/src/
-javadoc \-d /home/html java/awt/Button\&.java java/applet/Applet\&.java
+\fBcd /home/src/\fR
+\fBjavadoc \-d /home/html java\&.awt java\&.awt\&.event\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+�ޤ���¾�Υѥå��������ĥ꡼�����ˤ��ɤ�ˤϡ�j\fBava:javax:org\&.xml\&.sax\fR�Τ褦�ˡ������Υѥå�������̾����\fB\-subpackages\fR�ΰ������ɲä��ޤ���
+.RE
+.PP
+\fB�� 3 \fR1�ĤΥĥ꡼������Ū�ʥѥå�������Ǥ�դΥǥ��쥯�ȥ꤫��¹�
+.RS 4
+���ξ�硢���ߤΥǥ��쥯�ȥ꤬�ɤ���������ǤϤ���ޤ���\fBjavadoc\fR���ޥ�ɤ�¹Ԥ����Ǿ�̥ѥå������οƥǥ��쥯�ȥ����ꤷ��\fB\-sourcepath\fR���ץ�������Ѥ��ޤ����ɥ�����Ȳ�����1�İʾ�Υѥå�������̾������ꤷ�ޤ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjavadoc \-d /home/html \-sourcepath /home/src java\&.awt java\&.awt\&.event\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .RE
 .PP
-\fBExample 3\fR, 任意のディレクトリからのファイルのドキュメント化
+\fB�� 4 \fRʣ���Υĥ꡼������Ū�ʥѥå�������Ǥ�դΥǥ��쥯�ȥ꤫��¹�
 .RS 4
-この場合、現在のディレクトリがどこかは問題ではありません。ドキュメント化するソース・ファイルへの絶対パス(または現在のディレクトリからの相対パス)を指定して\fIjavadoc\fRコマンドを実行します。
+\fBjavadoc\fR���ޥ�ɤ�¹Ԥ����ƥĥ꡼�Υ롼�ȤؤΥѥ��Υ�������ڤ�ꥹ�Ȥ���ꤷ��\fB\-sourcepath\fR���ץ�������Ѥ��ޤ����ɥ�����Ȳ�����1�İʾ�Υѥå�������̾������ꤷ�ޤ������ꤷ���ѥå������Τ��٤ƤΥ��������ե����뤬��1�ĤΥ롼�ȡ��ǥ��쥯�ȥ�β���¸�ߤ���ɬ�פϤ���ޤ��󤬡����������ѥ��ǻ��ꤵ�줿���Τɤ����Ǹ��Ĥ���ɬ�פ�����ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-d /home/html /home/src/java/awt/Button\&.java
-/home/src/java/awt/Graphics*\&.java
+\fBjavadoc \-d /home/html \-sourcepath /home/src1:/home/src2 java\&.awt java\&.awt\&.event\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
+���٤ƤΥ�������j\fBava\&.awt\fR�����\fBjava\&.awt\&.even\fRt�ѥå��������\fBpublic\fR�����\fBprotected\fR���饹�ȥ��󥿥ե������ˤĤ��ơ�HTML�����Υɥ�����Ȥ��������졢���ꤵ�줿������ǥ��쥯�ȥ��HTML�ե����뤬��¸����ޤ���2�İʾ�Υѥå���������������Ƥ���Τǡ��ɥ�����Ȥϡ��ѥå������Υꥹ�ȡ����饹�Υꥹ�ȡ�����ӥᥤ��Υ��饹���ڡ����Ȥ���3�Ĥ�HTML�ե졼�����Ĥ��Ȥˤʤ�ޤ���
 .RE
-パッケージおよびクラスのドキュメント化.PP
-パッケージ全体と個々のクラスを同時に指定してドキュメント化することもできます。次に、前述の2つの例を組み合せた例を示します。\fI\-sourcepath\fRオプションは、パッケージへのパスに対しては使用できますが、個々のクラスへのパスに対しては使用できません。
+.PP
+1�İʾ�Υ��饹�Υɥ�����Ȳ�
+.PP
+�ޤ���1�İʾ�Υ��������ե�������Ϥ��ơ�\fBjavadoc\fR���ޥ�ɤ�¹Ԥ��뤳�Ȥ�Ǥ��ޤ���\fBjavadoc\fR�ϡ�����2�Ĥ���ˡ�Τ����줫�Ǽ¹ԤǤ��ޤ���1�Ĥϥǥ��쥯�ȥ���ѹ�������ˡ(\fBcd\fR�����)���⤦1�Ĥϥ��������ե�����ؤΥѥ������˻��ꤹ����ˡ�Ǥ������Хѥ��ϡ����ߤΥǥ��쥯�ȥ�����Ȥ��ޤ������������ե�������Ϥ��Ȥ��ϡ�\fB\-sourcepath\fR���ץ�����̵�뤵��ޤ����������ꥹ��(*)�Τ褦�ʥ��ޥ�ɹԥ磻��ɥ����ɤ���Ѥ���ȡ����饹�Υ��롼�פ����Ǥ��ޤ���
+.PP
+\fB�� 1 \fR���������ǥ��쥯�ȥ���ѹ�
+.RS 4
+���������ݻ�����ǥ��쥯�ȥ���ѹ����ޤ������ˡ��ɥ�����Ȳ�����1�İʾ�Υ��������ե������̾������ꤷ��\fBjavadoc\fR���ޥ�ɤ�¹Ԥ��ޤ���
+.sp
+������Ǥϡ�\fBButton\fR���饹��\fBCanvas\fR���饹�������̾����\fBGraphics\fR�ǻϤޤ륯�饹�ˤĤ��ơ�HTML�����Υɥ�����Ȥ���������ޤ����ѥå�����̾�ǤϤʤ����������ե����뤬\fBjavadoc\fR���ޥ�ɤ˰����Ȥ����Ϥ���Ƥ���Τǡ��ɥ�����Ȥϡ����饹�Υꥹ�Ȥȥᥤ�󡦥ڡ����Ȥ���2�ĤΥե졼�����Ĥ��Ȥˤʤ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-d /home/html \-sourcepath /home/src java\&.awt
-/home/src/java/applet/Applet\&.java
+\fBcd /home/src/java/awt\fR
+\fBjavadoc \-d /home/html Button\&.java Canvas\&.java Graphics*\&.java\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SS "実際の例"
+.RE
 .PP
-次のコマンドラインおよび\fImakefile\fRバージョンの\fIjavadoc\fRコマンドをJavaプラットフォームAPIで実行します。Java SE 1\&.2で約1500個のpublicおよびprotectedクラスのドキュメントを生成するには、180MBのメモリーを使用します。どちらの例もオプションの引数で絶対パスが使用されているため、任意のディレクトリから同じ\fIjavadoc\fRコマンドを実行できます。
-コマンドラインの例.PP
-次のコマンドは、一部のシェルに対して長すぎる可能性があります。この制限を回避するには、コマンドライン引数ファイルを使用します。または、シェル・スクリプトを記述します。
-.PP
-この例では、\fIpackages\fRは処理するパッケージを含む名前で、\fIjava\&.applet\fR
-\fIjava\&.lang\fRなどです。各オプションの、一重引用符で囲まれた引数の内側には、改行文字を挿入できません。たとえば、この例をコピー・アンド・ペーストする場合は、\fI\-bottom\fRオプションから改行文字を削除してください。
+\fB�� 2 \fR�ѥå������Υ롼�ȡ��ǥ��쥯�ȥ���ѹ�
+.RS 4
+����ϡ�Ʊ���롼�Ȥ�����̤Υ��֥ѥå������θġ��Υ��������ե������ɥ�����Ȳ�����Τ���Ω���ޤ����ѥå������Υ롼�ȡ��ǥ��쥯�ȥ�˰ܤꡢ�ƥ��������ե�����򡢥롼�Ȥ���Υѥ��ȤȤ�˻��ꤷ�ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-sourcepath /java/jdk/src/share/classes \e
-\-overview /java/jdk/src/share/classes/overview\&.html \e
-\-d /java/jdk/build/api \e
-\-use \e
-\-splitIndex \e
-\-windowtitle \*(AqJava Platform, Standard Edition 7 API Specification\*(Aq \e
-\-doctitle \*(AqJava Platform, Standard Edition 7 API Specification\*(Aq \e
-\-header \*(Aq<b>Java(TM) SE 7</b>\*(Aq \e
-\-bottom \*(Aq<font size="\-1">
-<a href="http://bugreport\&.sun\&.com/bugreport/">Submit a bug or feature</a><br/>
-Copyright &copy; 1993, 2011, Oracle and/or its affiliates\&. All rights reserved\&.<br/>
-Oracle is a registered trademark of Oracle Corporation and/or its affiliates\&.
-Other names may be trademarks of their respective owners\&.</font>\*(Aq \e
-\-group "Core Packages" "java\&.*:com\&.sun\&.java\&.*:org\&.omg\&.*" \e
-\-group "Extension Packages" "javax\&.*" \e
-\-J\-Xmx180m \e  
-@packages
+\fBcd /home/src/\fR
+\fBjavadoc \-d /home/html java/awt/Button\&.java java/applet/Applet\&.java\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-プログラマティック・インタフェース.PP
-Javadoc Access APIでは、新しいプロセスを実行しなくても、JavadocツールをJavaアプリケーションから直接起動できます。
+.RE
 .PP
-たとえば、次の文はコマンド\fIjavadoc \-d /home/html \-sourcepath /home/src \-subpackages java \-exclude java\&.net:java\&.lang com\&.example\fRと同等です。
+\fB�� 3 \fRǤ�դΥǥ��쥯�ȥ꤫��Υե�����Υɥ�����Ȳ�
+.RS 4
+���ξ�硢���ߤΥǥ��쥯�ȥ꤬�ɤ���������ǤϤ���ޤ��󡣥ɥ�����Ȳ����륽�������ե�����ؤ����Хѥ�(�ޤ��ϸ��ߤΥǥ��쥯�ȥ꤫������Хѥ�)����ꤷ��\fBjavadoc\fR���ޥ�ɤ�¹Ԥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-import javax\&.tools\&.DocumentationTool;
-import javax\&.tools\&.ToolProvider;
-
-public class JavaAccessSample{
-    public static void main(String[] args){
-        DocumentationTool javadoc = ToolProvider\&.getSystemDocumentationTool();
-        int rc = javadoc\&.run( null, null, null,
-                 "\-d", "/home/html",
-                 "\-sourcepath", "home/src",
-                 "\-subpackages", "java",
-                 "\-exclude", "java\&.net:java\&.lang",
-                 "com\&.example");
-     }
- }
+\fBjavadoc \-d /home/html /home/src/java/awt/Button\&.java\fR
+\fB/home/src/java/awt/Graphics*\&.java\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
+.RE
 .PP
-\fIrun\fRメソッドの最初の3つの引数は、入力、標準出力、および標準エラー・ストリームを指定します。\fINull\fRは\fISystem\&.in\fR、\fISystem\&.out\fRおよび\fISystem\&.err\fRそれぞれのデフォルト値です。
-.SS "makefileの例"
+�ѥå���������ӥ��饹�Υɥ�����Ȳ�
 .PP
-ここでは、GNU
-\fImakefile\fRの例を示します。\fImakefile\fRの引数は、一重引用符で囲みます。Windows
-\fImakefile\fRの例については、Javadoc FAQの\fImakefiles\fRに関する項
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137483\&.html#makefiles)を参照してください
+�ѥå��������Τȸġ��Υ��饹��Ʊ���˻��ꤷ�ƥɥ�����Ȳ����뤳�Ȥ�Ǥ��ޤ������ˡ����Ҥ�2�Ĥ�����Ȥ߹礻����򼨤��ޤ���\fB\-sourcepath\fR���ץ����ϡ��ѥå������ؤΥѥ����Ф��Ƥϻ��ѤǤ��ޤ������ġ��Υ��饹�ؤΥѥ����Ф��Ƥϻ��ѤǤ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-javadoc \-sourcepath $(SRCDIR)              \e   /* Sets path for source files   */
-        \-overview $(SRCDIR)/overview\&.html  \e   /* Sets file for overview text  */
-        \-d /java/jdk/build/api             \e   /* Sets destination directory   */
-        \-use                               \e   /* Adds "Use" files             */
-        \-splitIndex                        \e   /* Splits index A\-Z             */
-        \-windowtitle $(WINDOWTITLE)        \e   /* Adds a window title          */
-        \-doctitle $(DOCTITLE)              \e   /* Adds a doc title             */
-        \-header $(HEADER)                  \e   /* Adds running header text     */
-        \-bottom $(BOTTOM)                  \e   /* Adds text at bottom          */
-        \-group $(GROUPCORE)                \e   /* 1st subhead on overview page */
-        \-group $(GROUPEXT)                 \e   /* 2nd subhead on overview page */
-        \-J\-Xmx180m                         \e   /* Sets memory to 180MB         */
-        java\&.lang java\&.lang\&.reflect        \e   /* Sets packages to document    */
-        java\&.util java\&.io java\&.net         \e
-        java\&.applet
-        
-WINDOWTITLE = \*(AqJava(TM) SE 7 API Specification\*(Aq
-DOCTITLE = \*(AqJava(TM) Platform Standard Edition 7 API Specification\*(Aq
-HEADER = \*(Aq<b>Java(TM) SE 7</font>\*(Aq
-BOTTOM = \*(Aq<font size="\-1">
-      <a href="http://bugreport\&.sun\&.com/bugreport/">Submit a bug or feature</a><br/>
-      Copyright &copy; 1993, 2011, Oracle and/or its affiliates\&. All rights reserved\&.<br/>
-      Oracle is a registered trademark of Oracle Corporation and/or its affiliates\&.
-      Other names may be trademarks of their respective owners\&.</font>\*(Aq
-GROUPCORE = \*(Aq"Core Packages" "java\&.*:com\&.sun\&.java\&.*:org\&.omg\&.*"\*(Aq
-GROUPEXT  = \*(Aq"Extension Packages" "javax\&.*"\*(Aq
-SRCDIR = \*(Aq/java/jdk/1\&.7\&.0/src/share/classes\*(Aq
+\fBjavadoc \-d /home/html \-sourcepath /home/src java\&.awt\fR
+\fB/home/src/java/applet/Applet\&.java\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SS "注意"
+.SS "�ºݤ���"
+.PP
+���Υ��ޥ�ɹԤ����\fBmakefile\fR�С�������\fBjavadoc\fR���ޥ�ɤ�Java�ץ�åȥե�����API�Ǽ¹Ԥ��ޤ���Java SE 1\&.2����1500�Ĥ�public�����protected���饹�Υɥ�����Ȥ���������ˤϡ�180MB�Υ��꡼����Ѥ��ޤ����ɤ������⥪�ץ����ΰ��������Хѥ������Ѥ���Ƥ��뤿�ᡢǤ�դΥǥ��쥯�ȥ꤫��Ʊ��\fBjavadoc\fR���ޥ�ɤ�¹ԤǤ��ޤ���
+.PP
+���ޥ�ɹԤ���
+.PP
+���Υ��ޥ�ɤϡ������Υ�������Ф���Ĺ�������ǽ��������ޤ����������¤���򤹤�ˤϡ����ޥ�ɹ԰����ե��������Ѥ��ޤ����ޤ��ϡ������롦������ץȤ򵭽Ҥ��ޤ���
+.PP
+������Ǥϡ�\fBpackages\fR�Ͻ�������ѥå�������ޤ�̾���ǡ�\fBjava\&.applet\fR
+\fBjava\&.lang\fR�ʤɤǤ����ƥ��ץ����Ρ���Ű�����ǰϤޤ줿��������¦�ˤϡ�����ʸ���������Ǥ��ޤ��󡣤��Ȥ��С�������򥳥ԡ�������ɡ��ڡ����Ȥ�����ϡ�\fB\-bottom\fR���ץ���󤫤����ʸ���������Ƥ���������
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjavadoc \-sourcepath /java/jdk/src/share/classes \e\fR
+\fB\-overview /java/jdk/src/share/classes/overview\&.html \e\fR
+\fB\-d /java/jdk/build/api \e\fR
+\fB\-use \e\fR
+\fB\-splitIndex \e\fR
+\fB\-windowtitle \*(AqJava Platform, Standard Edition 7 API Specification\*(Aq \e\fR
+\fB\-doctitle \*(AqJava Platform, Standard Edition 7 API Specification\*(Aq \e\fR
+\fB\-header \*(Aq<b>Java(TM) SE 7</b>\*(Aq \e\fR
+\fB\-bottom \*(Aq<font size="\-1">\fR
+\fB<a href="http://bugreport\&.sun\&.com/bugreport/">Submit a bug or feature</a><br/>\fR
+\fBCopyright &copy; 1993, 2011, Oracle and/or its affiliates\&. All rights reserved\&.<br/>\fR
+\fBOracle is a registered trademark of Oracle Corporation and/or its affiliates\&.\fR
+\fBOther names may be trademarks of their respective owners\&.</font>\*(Aq \e\fR
+\fB\-group "Core Packages" "java\&.*:com\&.sun\&.java\&.*:org\&.omg\&.*" \e\fR
+\fB\-group "Extension Packages" "javax\&.*" \e\fR
+\fB\-J\-Xmx180m \e  \fR
+\fB@packages\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+�ץ�����ޥƥ��å������󥿥ե�����
+.PP
+Javadoc Access API�Ǥϡ��������ץ�������¹Ԥ��ʤ��Ƥ⡢Javadoc�ġ����Java���ץꥱ������󤫤�ľ�ܵ�ư�Ǥ��ޤ���
+.PP
+���Ȥ��С�����ʸ�ϥ��ޥ��\fBjavadoc \-d /home/html \-sourcepath /home/src \-subpackages java \-exclude java\&.net:java\&.lang com\&.example\fR��Ʊ���Ǥ���
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBimport javax\&.tools\&.DocumentationTool;\fR
+\fBimport javax\&.tools\&.ToolProvider;\fR
+ 
+\fBpublic class JavaAccessSample{\fR
+\fB    public static void main(String[] args){\fR
+\fB        DocumentationTool javadoc = ToolProvider\&.getSystemDocumentationTool();\fR
+\fB        int rc = javadoc\&.run( null, null, null,\fR
+\fB                 "\-d", "/home/html",\fR
+\fB                 "\-sourcepath", "home/src",\fR
+\fB                 "\-subpackages", "java",\fR
+\fB                 "\-exclude", "java\&.net:java\&.lang",\fR
+\fB                 "com\&.example");\fR
+\fB     }\fR
+\fB }\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+\fBrun\fR�᥽�åɤκǽ��3�Ĥΰ����ϡ����ϡ�ɸ����ϡ������ɸ�२�顼�����ȥ꡼�����ꤷ�ޤ���\fBNull\fR��\fBSystem\&.in\fR��\fBSystem\&.out\fR�����\fBSystem\&.err\fR���줾��Υǥե�����ͤǤ���
+.SS "makefile����"
+.PP
+�����Ǥϡ�GNU
+\fBmakefile\fR����򼨤��ޤ���\fBmakefile\fR�ΰ����ϡ���Ű�����ǰϤߤޤ���Windows
+\fBmakefile\fR����ˤĤ��Ƥϡ�Javadoc FAQ��\fBmakefiles\fR�Υ��������
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137483\&.html#makefiles)�򻲾Ȥ��Ƥ�������
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjavadoc \-sourcepath $(SRCDIR)              \e   /* Sets path for source files   */\fR
+\fB        \-overview $(SRCDIR)/overview\&.html  \e   /* Sets file for overview text  */\fR
+\fB        \-d /java/jdk/build/api             \e   /* Sets destination directory   */\fR
+\fB        \-use                               \e   /* Adds "Use" files             */\fR
+\fB        \-splitIndex                        \e   /* Splits index A\-Z             */\fR
+\fB        \-windowtitle $(WINDOWTITLE)        \e   /* Adds a window title          */\fR
+\fB        \-doctitle $(DOCTITLE)              \e   /* Adds a doc title             */\fR
+\fB        \-header $(HEADER)                  \e   /* Adds running header text     */\fR
+\fB        \-bottom $(BOTTOM)                  \e   /* Adds text at bottom          */\fR
+\fB        \-group $(GROUPCORE)                \e   /* 1st subhead on overview page */\fR
+\fB        \-group $(GROUPEXT)                 \e   /* 2nd subhead on overview page */\fR
+\fB        \-J\-Xmx180m                         \e   /* Sets memory to 180MB         */\fR
+\fB        java\&.lang java\&.lang\&.reflect        \e   /* Sets packages to document    */\fR
+\fB        java\&.util java\&.io java\&.net         \e\fR
+\fB        java\&.applet\fR
+\fB        \fR
+\fBWINDOWTITLE = \*(AqJava(TM) SE 7 API Specification\*(Aq\fR
+\fBDOCTITLE = \*(AqJava(TM) Platform Standard Edition 7 API Specification\*(Aq\fR
+\fBHEADER = \*(Aq<b>Java(TM) SE 7</font>\*(Aq\fR
+\fBBOTTOM = \*(Aq<font size="\-1">\fR
+\fB      <a href="http://bugreport\&.sun\&.com/bugreport/">Submit a bug or feature</a><br/>\fR
+\fB      Copyright &copy; 1993, 2011, Oracle and/or its affiliates\&. All rights reserved\&.<br/>\fR
+\fB      Oracle is a registered trademark of Oracle Corporation and/or its affiliates\&.\fR
+\fB      Other names may be trademarks of their respective owners\&.</font>\*(Aq\fR
+\fBGROUPCORE = \*(Aq"Core Packages" "java\&.*:com\&.sun\&.java\&.*:org\&.omg\&.*"\*(Aq\fR
+\fBGROUPEXT  = \*(Aq"Extension Packages" "javax\&.*"\*(Aq\fR
+\fBSRCDIR = \*(Aq/java/jdk/1\&.7\&.0/src/share/classes\*(Aq\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.SS "����"
 .sp
 .RS 4
 .ie n \{\
@@ -3652,41 +4489,7 @@ SRCDIR = \*(Aq/java/jdk/1\&.7\&.0/src/share/classes\*(Aq
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI\-windowtitle\fRオプションを省略すると、\fIjavadoc\fRコマンドによってドキュメント・タイトルがウィンドウ・タイトルにコピーされます。\fI\-windowtitle\fRオプションのテキストは、\fI\-doctitle\fRオプションと同じですが、HTMLタグは含まれません。これは、HTMLタグが、ウィンドウ・タイトル内にそのままのテキストとして表示されるのを防ぐためです。
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fI\-footer\fRオプションを省略すると、\fIjavadoc\fRコマンドによってヘッダー・テキストがフッターにコピーされます。
-.RE
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-この例では必要ありませんが、\fI\-classpath\fRと\fI\-link\fRも重要なオプションです。
-.RE
-.SH "一般的なトラブルシューティング"
-.sp
-.RS 4
-.ie n \{\
-\h'-04'\(bu\h'+03'\c
-.\}
-.el \{\
-.sp -1
-.IP \(bu 2.3
-.\}
-\fIjavadoc\fRコマンドは有効なクラス名を含むファイルのみを読み取ります。\fIjavadoc\fRコマンドがファイルの内容を正しく読み取っていない場合は、クラス名が有効であることを確認します。ソース・ファイルの処理を参照してください。
+\fB\-windowtitle\fR���ץ������ά����ȡ�\fBjavadoc\fR���ޥ�ɤˤ�äƥɥ�����ȡ������ȥ뤬������ɥ��������ȥ�˥��ԡ�����ޤ���\fB\-windowtitle\fR���ץ����Υƥ����Ȥϡ�\fB\-doctitle\fR���ץ�����Ʊ���Ǥ�����HTML�����ϴޤޤ�ޤ��󡣤���ϡ�HTML��������������ɥ��������ȥ���ˤ��ΤޤޤΥƥ����ȤȤ���ɽ�������Τ��ɤ�����Ǥ���
 .RE
 .sp
 .RS 4
@@ -3697,27 +4500,61 @@ SRCDIR = \*(Aq/java/jdk/1\&.7\&.0/src/share/classes\*(Aq
 .sp -1
 .IP \(bu 2.3
 .\}
-共通の不具合およびトラブルシューティングのヒントについては、Javadoc FAQ
-(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137483\&.html)を参照してください。
+\fB\-footer\fR���ץ������ά����ȡ�\fBjavadoc\fR���ޥ�ɤˤ�äƥإå������ƥ����Ȥ��եå����˥��ԡ�����ޤ���
 .RE
-.SH "エラーと警告"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+������Ǥ�ɬ�פ���ޤ��󤬡�\fB\-classpath\fR��\fB\-link\fR����פʥ��ץ����Ǥ���
+.RE
+.SH "����Ū�ʥȥ�֥륷�塼�ƥ���"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fBjavadoc\fR���ޥ�ɤ�ͭ���ʥ��饹̾��ޤ�ե�����Τߤ��ɤ߼��ޤ���\fBjavadoc\fR���ޥ�ɤ��ե���������Ƥ��������ɤ߼�äƤ��ʤ����ϡ����饹̾��ͭ���Ǥ��뤳�Ȥ��ǧ���ޤ������������ե�����ν����򻲾Ȥ��Ƥ���������
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+����Ū��bug����ӥȥ�֥륷�塼�ƥ��󥰤Υҥ�ȤˤĤ��Ƥϡ�Javadoc FAQ
+(http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137483\&.html)�򻲾Ȥ��Ƥ���������
+.RE
+.SH "���顼�ȷٹ�"
 .PP
-エラーおよび警告メッセージには、ファイル名と宣言行(ドキュメンテーション・コメント内の特定の行ではない)の行番号が含まれます。
+���顼����ӷٹ��å������ˤϡ��ե�����̾�������(�ɥ�����ơ�����󡦥������������ιԤǤϤʤ�)�ι��ֹ椬�ޤޤ�ޤ���
 .PP
-たとえば、メッセージ\fI「エラー: Class1\&.javaを読み込めません」\fRは、\fIjavadoc\fRコマンドが\fIClass1\&.jav\fR\fIa\fRを現在のディレクトリにロードしようとしていることを意味します。クラス名はそのパス(絶対または相対)で表示されます。
-.SH "環境"
+���Ȥ��С���å�����\fB�֥��顼: Class1\&.java���ɤ߹���ޤ����\fR�ϡ�\fBjavadoc\fR���ޥ�ɤ�\fBClass1\&.jav\fR\fBa\fR�򸽺ߤΥǥ��쥯�ȥ�˥����ɤ��褦�Ȥ��Ƥ��뤳�Ȥ��̣���ޤ������饹̾�Ϥ��Υѥ�(���Фޤ�������)��ɽ������ޤ���
+.SH "�Ķ�"
 .PP
 CLASSPATH
 .RS 4
-\fICLASSPATH\fRは、\fIjavadoc\fRコマンドがユーザー・クラス・ファイルの検出に使用するパスを提供する環境変数です。この環境変数は、\fI\-classpath\fRオプションによってオーバーライドされます。ディレクトリはセミコロン(Windowsの場合)またはコロン(Oracle Solarisの場合)で区切ります。
+\fBCLASSPATH\fR�ϡ�\fBjavadoc\fR���ޥ�ɤ��桼���������饹���ե�����θ��Ф˻��Ѥ���ѥ����󶡤���Ķ��ѿ��Ǥ������δĶ��ѿ��ϡ�\fB\-classpath\fR���ץ����ˤ�äƥ����С��饤�ɤ���ޤ����ǥ��쥯�ȥ�ϥ��ߥ�����(Windows�ξ��)�ޤ��ϥ�����(Oracle Solaris�ξ��)�Ƕ��ڤ�ޤ���
 .sp
-\fBWindowsの例\fR:
-\fI\&.;C:\eclasses;C:\ehome\ejava\eclasses\fR
+\fBWindows����\fR:
+\fB\&.;C:\eclasses;C:\ehome\ejava\eclasses\fR
 .sp
-\fBOracle Solarisの例\fR:
-\fI\&.:/home/classes:/usr/local/java/classes\fR
+\fBOracle Solaris����\fR:
+\fB\&.:/home/classes:/usr/local/java/classes\fR
 .RE
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\
@@ -3773,7 +4610,7 @@ javah(1)
 .\}
 javap(1)
 .RE
-.SH "関連ドキュメント"
+.SH "��Ϣ�ɥ������"
 .sp
 .RS 4
 .ie n \{\
@@ -3783,7 +4620,7 @@ javap(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-Javadocテクノロジ
+Javadoc�ƥ��Υ���
 (http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/javadoc/index\&.html)
 .RE
 .sp
@@ -3795,7 +4632,7 @@ Javadocテクノロジ
 .sp -1
 .IP \(bu 2.3
 .\}
-クラスの検出方法
+���饹�θ�����ˡ
 (http://docs\&.oracle\&.com/javase/8/docs/technotes/tools/findingclasses\&.html)
 .RE
 .sp
@@ -3807,7 +4644,7 @@ Javadocテクノロジ
 .sp -1
 .IP \(bu 2.3
 .\}
-JavadocツールでのDocコメントの記述方法
+Javadoc�ġ���Ǥ�Doc�����Ȥε�����ˡ
 (http://www\&.oracle\&.com/technetwork/java/javase/documentation/index\-137868\&.html)
 .RE
 .sp
@@ -3819,7 +4656,7 @@ JavadocツールでのDocコメントの記述方法
 .sp -1
 .IP \(bu 2.3
 .\}
-URLメモ、Uniform Resource Locators
+URL��⡢Uniform Resource Locators
 (http://www\&.ietf\&.org/rfc/rfc1738\&.txt)
 .RE
 .sp
@@ -3831,7 +4668,7 @@ URLメモ、Uniform Resource Locators
 .sp -1
 .IP \(bu 2.3
 .\}
-HTML標準、HTML Document Representation (4197265および4137321)
+HTMLɸ�ࡢHTML Document Representation (4197265�����4137321)
 (http://www\&.w3\&.org/TR/REC\-html40/charset\&.html#h\-5\&.2\&.2)
 .RE
 .br

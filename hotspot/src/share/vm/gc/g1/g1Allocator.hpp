@@ -44,52 +44,52 @@ protected:
   size_t _summary_bytes_used;
 
 public:
-   G1Allocator(G1CollectedHeap* heap) :
-     _g1h(heap), _summary_bytes_used(0) { }
+  G1Allocator(G1CollectedHeap* heap) :
+    _g1h(heap), _summary_bytes_used(0) { }
 
-   static G1Allocator* create_allocator(G1CollectedHeap* g1h);
+  static G1Allocator* create_allocator(G1CollectedHeap* g1h);
 
-   virtual void init_mutator_alloc_region() = 0;
-   virtual void release_mutator_alloc_region() = 0;
+  virtual void init_mutator_alloc_region() = 0;
+  virtual void release_mutator_alloc_region() = 0;
 
-   virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
-   virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
-   virtual void abandon_gc_alloc_regions() = 0;
+  virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
+  virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
+  virtual void abandon_gc_alloc_regions() = 0;
 
-   virtual MutatorAllocRegion*    mutator_alloc_region(AllocationContext_t context) = 0;
-   virtual SurvivorGCAllocRegion* survivor_gc_alloc_region(AllocationContext_t context) = 0;
-   virtual OldGCAllocRegion*      old_gc_alloc_region(AllocationContext_t context) = 0;
-   virtual size_t                 used() = 0;
-   virtual bool                   is_retained_old_region(HeapRegion* hr) = 0;
+  virtual MutatorAllocRegion*    mutator_alloc_region(AllocationContext_t context) = 0;
+  virtual SurvivorGCAllocRegion* survivor_gc_alloc_region(AllocationContext_t context) = 0;
+  virtual OldGCAllocRegion*      old_gc_alloc_region(AllocationContext_t context) = 0;
+  virtual size_t                 used() = 0;
+  virtual bool                   is_retained_old_region(HeapRegion* hr) = 0;
 
-   void                           reuse_retained_old_region(EvacuationInfo& evacuation_info,
-                                                            OldGCAllocRegion* old,
-                                                            HeapRegion** retained);
+  void                           reuse_retained_old_region(EvacuationInfo& evacuation_info,
+                                                           OldGCAllocRegion* old,
+                                                           HeapRegion** retained);
 
-   size_t used_unlocked() const {
-     return _summary_bytes_used;
-   }
+  size_t used_unlocked() const {
+    return _summary_bytes_used;
+  }
 
-   void increase_used(size_t bytes) {
-     _summary_bytes_used += bytes;
-   }
+  void increase_used(size_t bytes) {
+    _summary_bytes_used += bytes;
+  }
 
-   void decrease_used(size_t bytes) {
-     assert(_summary_bytes_used >= bytes,
-            err_msg("invariant: _summary_bytes_used: " SIZE_FORMAT " should be >= bytes: " SIZE_FORMAT,
-                _summary_bytes_used, bytes));
-     _summary_bytes_used -= bytes;
-   }
+  void decrease_used(size_t bytes) {
+    assert(_summary_bytes_used >= bytes,
+           err_msg("invariant: _summary_bytes_used: " SIZE_FORMAT " should be >= bytes: " SIZE_FORMAT,
+               _summary_bytes_used, bytes));
+    _summary_bytes_used -= bytes;
+  }
 
-   void set_used(size_t bytes) {
-     _summary_bytes_used = bytes;
-   }
+  void set_used(size_t bytes) {
+    _summary_bytes_used = bytes;
+  }
 
-   virtual HeapRegion* new_heap_region(uint hrs_index,
-                                       G1BlockOffsetSharedArray* sharedOffsetArray,
-                                       MemRegion mr) {
-     return new HeapRegion(hrs_index, sharedOffsetArray, mr);
-   }
+  virtual HeapRegion* new_heap_region(uint hrs_index,
+                                      G1BlockOffsetSharedArray* sharedOffsetArray,
+                                      MemRegion mr) {
+    return new HeapRegion(hrs_index, sharedOffsetArray, mr);
+  }
 };
 
 // The default allocator for G1.

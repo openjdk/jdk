@@ -216,7 +216,7 @@ class Heap$Type$Buffer$RW$
 #if[rw]
         if (src instanceof Heap$Type$Buffer) {
             if (src == this)
-                throw new IllegalArgumentException();
+                throw createSameBufferException();
             Heap$Type$Buffer sb = (Heap$Type$Buffer)src;
             int n = sb.remaining();
             if (n > remaining())

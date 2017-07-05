@@ -1,12 +1,5 @@
 '\" t
-.\" Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
-.\" Title: serialver
-.\" Language: English
-.\" Date: 2013年11月21日
-.\" SectDesc: Remote Method Invocation (RMI)ツール
-.\" Software: JDK 8
-.\" Arch: 汎用
-.\"
+.\" Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -15,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -27,8 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.pl 99999
-.TH "serialver" "1" "2013年11月21日" "JDK 8" "Remote Method Invocation (RMI)"
+.\" Title: serialver
+.\" Language: Japanese
+.\" Date: 2013ǯ11��21��
+.\" SectDesc: Remote Method Invocation (RMI)�ġ���
+.\" Software: JDK 8
+.\" Arch: ����
+.\" Part Number: E58103-01
+.\" Doc ID: JSSON
+.\"
+.if n .pl 99999
+.TH "serialver" "1" "2013ǯ11��21��" "JDK 8" "Remote Method Invocation (RMI)"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,15 +50,15 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-.SH "NAME"
-serialver \- 指定したクラスのシリアル・バージョンUIDを戻します。
-.SH "概要"
+.SH "̾��"
+serialver \- ���ꤷ�����饹�Υ��ꥢ�롦�С������UID���ᤷ�ޤ���
+.SH "����"
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\fIserialver\fR [ \fIoptions\fR ] [ \fIclassnames\fR ]
+\fBserialver\fR [ \fIoptions\fR ] [ \fIclassnames\fR ]
 .fi
 .if n \{\
 .RE
@@ -64,58 +66,60 @@ serialver \- 指定したクラスのシリアル・バージョンUIDを戻し�
 .PP
 \fIoptions\fR
 .RS 4
-コマンドライン・オプション。オプションを参照してください。
+���ޥ�ɹԥ��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
 .RE
 .PP
 \fIclassnames\fR
 .RS 4
-\fIserialVersionUID\fRを戻すクラスです。
+\fBserialVersionUID\fR���᤹���饹�Ǥ���
 .RE
-.SH "説明"
+.SH "����"
 .PP
-\fIserialver\fRコマンドは、1つ以上のクラスの\fIserialVersionUID\fRを、展開しているクラスへコピーするのに適した形式で返します。引数なしで呼び出された場合、\fIserialver\fRコマンドは使用率行を出力します。
-.SH "オプション"
+\fBserialver\fR���ޥ�ɤϡ�1�İʾ�Υ��饹��\fBserialVersionUID\fR��Ÿ�����Ƥ��륯�饹�إ��ԡ�����Τ�Ŭ�����������֤��ޤ��������ʤ��ǸƤӽФ��줿��硢\fBserialver\fR���ޥ�ɤϻ���Ψ�Ԥ���Ϥ��ޤ���
+.SH "���ץ����"
 .PP
 \-classpath \fIpath\-files\fR
 .RS 4
-アプリケーションのクラスおよびリソースの検索パスを設定します。クラスとリソースをコロン(:)で区切ります。
+���ץꥱ�������Υ��饹����ӥ꥽�����θ����ѥ������ꤷ�ޤ������饹�ȥ꥽�����򥳥���(:)�Ƕ��ڤ�ޤ���
 .RE
 .PP
 \-show
 .RS 4
-簡単なユーザー・インタフェースを表示します。完全指定のクラス名を入力して、Enterキーか「表示」ボタンを押し、\fIserialVersionUID\fRを表示します。
+��ñ�ʥ桼���������󥿥ե�������ɽ�����ޤ�����������Υ��饹̾�����Ϥ��ơ�Enter��������ɽ���ץܥ���򲡤���\fBserialVersionUID\fR��ɽ�����ޤ���
 .RE
 .PP
 \-J\fIoption\fR
 .RS 4
-Java仮想マシンに\fIoption\fRを渡します。optionには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+Java Virtual Machine��\fBoption\fR���Ϥ��ޤ���option�ˤϡ�Java���ץꥱ�������ư�ġ���Υ�ե���󥹡��ڡ����˵��ܤ���Ƥ��륪�ץ�����1�Ļ��ꤷ�ޤ������Ȥ��С�\fB\-J\-Xms48m\fR�Ȼ��ꤹ��ȡ��������ȥ��åס����꡼��48MB�����ꤵ��ޤ���java(1)�򻲾Ȥ��Ƥ���������
 .RE
-.SH "注意"
+.SH "����"
 .PP
-\fIserialver\fRコマンドは、指定されたクラスをその仮想マシン内に読み込んで初期化しますが、デフォルトではセキュリティ・マネージャの設定は行いません。信頼できないクラスとともに\fIserialver\fRコマンドを実行する場合には、次のオプションを使用してセキュリティ・マネージャを設定できます。
+\fBserialver\fR���ޥ�ɤϡ����ꤵ�줿���饹�򤽤β��ۥޥ�������ɤ߹���ǽ�������ޤ������ǥե���ȤǤϥ������ƥ����ޥ͡����������ϹԤ��ޤ��󡣿���Ǥ��ʤ����饹�ȤȤ��\fBserialver\fR���ޥ�ɤ�¹Ԥ�����ˤϡ����Υ��ץ�������Ѥ��ƥ������ƥ����ޥ͡����������Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-J\-Djava\&.security\&.manager
+\fB\-J\-Djava\&.security\&.manager\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
 .PP
-必要であれば、次のオプションを使用してセキュリティ・ポリシーを指定できます。
+ɬ�פǤ���С����Υ��ץ�������Ѥ��ƥ������ƥ����ݥꥷ�������Ǥ��ޤ���
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-\-J\-Djava\&.security\&.policy=<policy file>
+\fB\-J\-Djava\&.security\&.policy=<policy file>\fR
+ 
 .fi
 .if n \{\
 .RE
 .\}
-.SH "関連項目"
+.SH "��Ϣ����"
 .sp
 .RS 4
 .ie n \{\
@@ -136,8 +140,8 @@ policytool(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-http://docs\&.oracle\&.com/javase/8/docs/api/java/io/ObjectStreamClass\&.htmlにある
-\fIjava\&.io\&.ObjectStream\fRクラス記述
+http://docs\&.oracle\&.com/javase/8/docs/api/java/io/ObjectStreamClass\&.html�ˤ���
+\fBjava\&.io\&.ObjectStream\fR���饹����
 .RE
 .br
 'pl 8.5i
