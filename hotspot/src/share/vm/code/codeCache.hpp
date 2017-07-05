@@ -58,12 +58,13 @@ class CodeCache : AllStatic {
   static bool _needs_cache_clean;
   static nmethod* _scavenge_root_nmethods;  // linked via nm->scavenge_root_link()
 
-  static void verify_if_often() PRODUCT_RETURN;
-
   static void mark_scavenge_root_nmethods() PRODUCT_RETURN;
   static void verify_perm_nmethods(CodeBlobClosure* f_or_null) PRODUCT_RETURN;
 
   static int _codemem_full_count;
+  static size_t bytes_allocated_in_freelist() { return _heap->allocated_in_freelist(); }
+  static int    allocated_segments()          { return _heap->allocated_segments(); }
+  static size_t freelist_length()             { return _heap->freelist_length(); }
 
  public:
 
@@ -78,7 +79,6 @@ class CodeCache : AllStatic {
   static int alignment_unit();                      // guaranteed alignment of all CodeBlobs
   static int alignment_offset();                    // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
   static void free(CodeBlob* cb);                   // frees a CodeBlob
-  static void flush();                              // flushes all CodeBlobs
   static bool contains(void *p);                    // returns whether p is included
   static void blobs_do(void f(CodeBlob* cb));       // iterates over all CodeBlobs
   static void blobs_do(CodeBlobClosure* f);         // iterates over all CodeBlobs
@@ -150,6 +150,7 @@ class CodeCache : AllStatic {
   // Printing/debugging
   static void print();                           // prints summary
   static void print_internals();
+  static void print_memory_overhead();
   static void verify();                          // verifies the code cache
   static void print_trace(const char* event, CodeBlob* cb, int size = 0) PRODUCT_RETURN;
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage

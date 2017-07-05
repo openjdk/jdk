@@ -669,6 +669,13 @@ appendClassPath( JPLISAgent* agent,
     jplis_assert((void*)res != (void*)NULL);     \
 }
 
+/**
+ * Convert a pathname to canonical form.
+ * This method is exported from libjava.
+ */
+extern int
+Canonicalize(JNIEnv *unused, char *orig, char *out, int len);
+
 
 /*
  * This function takes the value of the Boot-Class-Path attribute,
@@ -790,7 +797,8 @@ appendBootClassPath( JPLISAgent* agent,
             char* resolved;
 
             if (!haveBasePath) {
-                if (canonicalize((char*)jarfile, canonicalPath, sizeof(canonicalPath)) != 0) {
+                /* Use NULL as the JNIEnv since we know that Canonicalize does not use it. */
+                if (Canonicalize(NULL, (char*)jarfile, canonicalPath, sizeof(canonicalPath)) != 0) {
                     fprintf(stderr, "WARNING: unable to canonicalize %s\n", jarfile);
                     free(path);
                     continue;

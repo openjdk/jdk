@@ -3007,22 +3007,28 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   }
 
   Node* cast_obj = NULL;
-  const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
-  // We may not have profiling here or it may not help us. If we have
-  // a speculative type use it to perform an exact cast.
-  ciKlass* spec_obj_type = obj_type->speculative_type();
-  if (spec_obj_type != NULL ||
-      (data != NULL &&
-       // Counter has never been decremented (due to cast failure).
-       // ...This is a reasonable thing to expect.  It is true of
-       // all casts inserted by javac to implement generic types.
-       data->as_CounterData()->count() >= 0)) {
-    cast_obj = maybe_cast_profiled_receiver(not_null_obj, tk->klass(), spec_obj_type, safe_for_replace);
-    if (cast_obj != NULL) {
-      if (failure_control != NULL) // failure is now impossible
-        (*failure_control) = top();
-      // adjust the type of the phi to the exact klass:
-      phi->raise_bottom_type(_gvn.type(cast_obj)->meet_speculative(TypePtr::NULL_PTR));
+  if (tk->klass_is_exact()) {
+    // The following optimization tries to statically cast the speculative type of the object
+    // (for example obtained during profiling) to the type of the superklass and then do a
+    // dynamic check that the type of the object is what we expect. To work correctly
+    // for checkcast and aastore the type of superklass should be exact.
+    const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
+    // We may not have profiling here or it may not help us. If we have
+    // a speculative type use it to perform an exact cast.
+    ciKlass* spec_obj_type = obj_type->speculative_type();
+    if (spec_obj_type != NULL ||
+        (data != NULL &&
+         // Counter has never been decremented (due to cast failure).
+         // ...This is a reasonable thing to expect.  It is true of
+         // all casts inserted by javac to implement generic types.
+         data->as_CounterData()->count() >= 0)) {
+      cast_obj = maybe_cast_profiled_receiver(not_null_obj, tk->klass(), spec_obj_type, safe_for_replace);
+      if (cast_obj != NULL) {
+        if (failure_control != NULL) // failure is now impossible
+          (*failure_control) = top();
+        // adjust the type of the phi to the exact klass:
+        phi->raise_bottom_type(_gvn.type(cast_obj)->meet_speculative(TypePtr::NULL_PTR));
+      }
     }
   }
 

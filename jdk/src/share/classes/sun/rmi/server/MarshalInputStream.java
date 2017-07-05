@@ -36,6 +36,7 @@ import java.security.AccessControlException;
 import java.security.Permission;
 
 import java.rmi.server.RMIClassLoader;
+import java.security.PrivilegedAction;
 
 /**
  * MarshalInputStream is an extension of ObjectInputStream.  When resolving
@@ -65,7 +66,7 @@ public class MarshalInputStream extends ObjectInputStream {
      */
     private static final boolean useCodebaseOnlyProperty =
         ! java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction(
+            (PrivilegedAction<String>) () -> System.getProperty(
                 "java.rmi.server.useCodebaseOnly", "true"))
             .equalsIgnoreCase("false");
 

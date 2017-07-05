@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ final class WButtonPeer extends WComponentPeer implements ButtonPeer {
 
     // ComponentPeer overrides
 
+    @Override
     public Dimension getMinimumSize() {
         FontMetrics fm = getFontMetrics(((Button)target).getFont());
         String label = ((Button)target).getLabel();
@@ -46,12 +47,14 @@ final class WButtonPeer extends WComponentPeer implements ButtonPeer {
         return new Dimension(fm.stringWidth(label) + 14,
                              fm.getHeight() + 8);
     }
+    @Override
     public boolean isFocusable() {
         return true;
     }
 
     // ButtonPeer implementation
 
+    @Override
     public native void setLabel(String label);
 
     // Toolkit & peer internals
@@ -60,6 +63,7 @@ final class WButtonPeer extends WComponentPeer implements ButtonPeer {
         super(target);
     }
 
+    @Override
     native void create(WComponentPeer peer);
 
     // native callbacks
@@ -70,6 +74,7 @@ final class WButtonPeer extends WComponentPeer implements ButtonPeer {
         // Fixed 5064013: the InvocationEvent time should be equals
         // the time of the ActionEvent
         WToolkit.executeOnEventHandlerThread(target, new Runnable() {
+            @Override
             public void run() {
                 postEvent(new ActionEvent(target, ActionEvent.ACTION_PERFORMED,
                                           ((Button)target).getActionCommand(),
@@ -79,6 +84,7 @@ final class WButtonPeer extends WComponentPeer implements ButtonPeer {
     }
 
 
+    @Override
     public boolean shouldClearRectBeforePaint() {
         return false;
     }
@@ -88,6 +94,7 @@ final class WButtonPeer extends WComponentPeer implements ButtonPeer {
      */
     private static native void initIDs();
 
+    @Override
     public boolean handleJavaKeyEvent(KeyEvent e) {
          switch (e.getID()) {
             case KeyEvent.KEY_RELEASED:

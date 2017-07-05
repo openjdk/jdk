@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,14 +75,17 @@ JNF_CLASS_CACHE(CImageClass, "sun/lwawt/macosx/CImage");
 static NSDragOperation    sDragOperation;
 static NSPoint            sDraggingLocation;
 
-static CDragSource*        sCurrentDragSource;
 static BOOL                sNeedsEnter;
 
-@implementation CDragSource
+@interface CDragSource ()
+// Updates from the destination to the source
+- (void) postDragEnter;
+- (void) postDragExit;
+// Utility
+- (NSPoint) mapNSScreenPointToJavaWithOffset:(NSPoint) point;
+@end
 
-+ (CDragSource *) currentDragSource {
-    return sCurrentDragSource;
-}
+@implementation CDragSource
 
 - (id)        init:(jobject)jDragSourceContextPeer
          component:(jobject)jComponent
@@ -94,7 +97,7 @@ static BOOL                sNeedsEnter;
          modifiers:(jint)extModifiers
         clickCount:(jint)clickCount
          timeStamp:(jlong)timeStamp
-         dragImage:(jobject)jDragImage
+         dragImage:(jlong)nsDragImagePtr
   dragImageOffsetX:(jint)jDragImageOffsetX
   dragImageOffsetY:(jint)jDragImageOffsetY
      sourceActions:(jint)jSourceActions
@@ -109,26 +112,21 @@ static BOOL                sNeedsEnter;
 
     // Construct the object if we have a valid model for it:
     if (control != nil) {
-        JNIEnv *env = [ThreadUtilities getJNIEnv];
-        fComponent = JNFNewGlobalRef(env, jComponent);
-        fDragSourceContextPeer = JNFNewGlobalRef(env, jDragSourceContextPeer);
+        fComponent = jComponent;
+        fDragSourceContextPeer = jDragSourceContextPeer;
+        fTransferable = jTransferable;
+        fTriggerEvent = jTrigger;
 
-        fTransferable = JNFNewGlobalRef(env, jTransferable);
-        fTriggerEvent = JNFNewGlobalRef(env, jTrigger);
-
-        if (jDragImage) {
-            JNF_MEMBER_CACHE(nsImagePtr, CImageClass, "ptr", "J");
-            jlong imgPtr = JNFGetLongField(env, jDragImage, nsImagePtr);
-            fDragImage = (NSImage*) jlong_to_ptr(imgPtr); // Double-casting prevents compiler 'd$|//
-
+        if (nsDragImagePtr) {
+            fDragImage = (NSImage*) jlong_to_ptr(nsDragImagePtr);
             [fDragImage retain];
         }
 
         fDragImageOffset = NSMakePoint(jDragImageOffsetX, jDragImageOffsetY);
 
         fSourceActions = jSourceActions;
-        fFormats = JNFNewGlobalRef(env, jFormats);
-        fFormatMap = JNFNewGlobalRef(env, jFormatMap);
+        fFormats = jFormats;
+        fFormatMap = jFormatMap;
 
         fTriggerEventTimeStamp = timeStamp;
         fDragPos = NSMakePoint(dragPosX, dragPosY);
@@ -515,8 +513,6 @@ static BOOL                sNeedsEnter;
     fDragKeyModifiers = [DnDUtilities extractJavaExtKeyModifiersFromJavaExtModifiers:fModifiers];
     fDragMouseModifiers = [DnDUtilities extractJavaExtMouseModifiersFromJavaExtModifiers:fModifiers];
 
-    // Set the current DragSource
-    sCurrentDragSource = self;
     sNeedsEnter = YES;
 
     @try {
@@ -566,8 +562,6 @@ static BOOL                sNeedsEnter;
                 JNF_MEMBER_CACHE(resetHoveringMethod, CDragSourceContextPeerClass, "resetHovering", "()V");
         JNFCallVoidMethod(env, fDragSourceContextPeer, resetHoveringMethod); // Hust reset static variable
     } @finally {
-        // Clear the current DragSource
-        sCurrentDragSource = nil;
         sNeedsEnter = NO;
     }
 

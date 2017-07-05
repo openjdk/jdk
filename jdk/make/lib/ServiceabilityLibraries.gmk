@@ -203,7 +203,6 @@ BUILD_LIBRARIES += $(BUILD_LIBJSDT)
 ##########################################################################################
 
 LIBINSTRUMENT_SRC := $(JDK_TOPDIR)/src/share/instrument \
-    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/io \
     $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/instrument
 
 LIBINSTRUMENT_FILES := \
@@ -218,9 +217,8 @@ LIBINSTRUMENT_FILES := \
     JavaExceptions.c \
     PathCharsValidator.c \
     Reentrancy.c \
-    Utilities.c \
-    canonicalize_md.c
-
+    Utilities.c
+    
 LIBINSTRUMENT_DIR := $(JDK_OUTPUTDIR)/objs/libinstrument
 LIBINSTRUMENT_CFLAGS := $(CFLAGS_JDKLIB) \
     -I$(JDK_TOPDIR)/src/share/instrument \
@@ -239,6 +237,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBINSTRUMENT_CFLAGS := $(filter-out -MD, $(LIBINSTRUMENT_CFLAGS))
   # equivalent of strcasecmp is stricmp on Windows
   LIBINSTRUMENT_CFLAGS += -Dstrcasecmp=stricmp
+else
+  LIBINSTRUMENT_LDFLAGS_SUFFIX := -ljava
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \

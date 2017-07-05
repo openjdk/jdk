@@ -72,19 +72,55 @@ public class TestCatchException {
         assertEquals(x, 17);
     }
 
+    final static Object masterParam = new Object();
+    final static Object[] masterTail = new Object[] { "str" };
+    static Exception masterEx = new Exception();
 
     public static Object m1(Object o1, Object o2, Object o3, Object o4, Object o5,
                             Object o6, Object o7, Object o8, Object... tail) {
+        assertEquals(masterParam, o1);
+        assertEquals(masterParam, o2);
+        assertEquals(masterParam, o3);
+        assertEquals(masterParam, o4);
+        assertEquals(masterParam, o5);
+        assertEquals(masterParam, o6);
+        assertEquals(masterParam, o7);
+        assertEquals(masterParam, o8);
+        assertEquals(masterTail, tail);
         return tail;
     }
 
     public static Object m2(Exception e, Object o1, Object o2, Object o3, Object o4,
                             Object o5, Object o6, Object o7, Object o8, Object... tail) {
+        assertEquals(masterEx, e);
+        assertEquals(masterParam, o1);
+        assertEquals(masterParam, o2);
+        assertEquals(masterParam, o3);
+        assertEquals(masterParam, o4);
+        assertEquals(masterParam, o5);
+        assertEquals(masterParam, o6);
+        assertEquals(masterParam, o7);
+        assertEquals(masterParam, o8);
+        assertEquals(masterTail, tail);
         return tail;
     }
 
+    public static Object throwEx(Object o1, Object o2, Object o3, Object o4, Object o5,
+                                 Object o6, Object o7, Object o8, Object... tail) throws Exception {
+        assertEquals(masterParam, o1);
+        assertEquals(masterParam, o2);
+        assertEquals(masterParam, o3);
+        assertEquals(masterParam, o4);
+        assertEquals(masterParam, o5);
+        assertEquals(masterParam, o6);
+        assertEquals(masterParam, o7);
+        assertEquals(masterParam, o8);
+        assertEquals(masterTail, tail);
+        throw masterEx;
+    }
+
     @Test
-    public void testVarargsCollector() throws Throwable {
+    public void testVarargsCollectorNoThrow() throws Throwable {
         MethodType t1 = MethodType.methodType(Object.class, Object.class, Object.class, Object.class, Object.class,
                 Object.class, Object.class, Object.class, Object.class, Object[].class);
 
@@ -92,17 +128,34 @@ public class TestCatchException {
 
         MethodHandle target = LOOKUP.findStatic(TestCatchException.class, "m1", t1)
                                     .asVarargsCollector(Object[].class);
-
-        MethodHandle catcher = LOOKUP.findStatic(TestCatchException.class, "m2", t2);
-
+        MethodHandle catcher = LOOKUP.findStatic(TestCatchException.class, "m2", t2)
+                                     .asVarargsCollector(Object[].class);
         MethodHandle gwc = MethodHandles.catchException(target, Exception.class, catcher);
 
-        Object o = new Object();
-        Object[] obj1 = new Object[] { "str" };
+        Object o = masterParam;
+        Object[] obj1 = masterTail;
 
-        Object r1 = target.invokeExact(o, o, o, o, o, o, o, o, obj1);
         Object r2 = gwc.invokeExact(o, o, o, o, o, o, o, o, obj1);
-        assertEquals(r1, obj1);
+        assertEquals(r2, obj1);
+    }
+
+    @Test
+    public void testVarargsCollectorThrow() throws Throwable {
+        MethodType t1 = MethodType.methodType(Object.class, Object.class, Object.class, Object.class, Object.class,
+                Object.class, Object.class, Object.class, Object.class, Object[].class);
+
+        MethodType t2 = t1.insertParameterTypes(0, Exception.class);
+
+        MethodHandle target = LOOKUP.findStatic(TestCatchException.class, "throwEx", t1)
+                                    .asVarargsCollector(Object[].class);
+        MethodHandle catcher = LOOKUP.findStatic(TestCatchException.class, "m2", t2)
+                                     .asVarargsCollector(Object[].class);
+        MethodHandle gwc = MethodHandles.catchException(target, Exception.class, catcher);
+
+        Object o = masterParam;
+        Object[] obj1 = masterTail;
+
+        Object r2 = gwc.invokeExact(o, o, o, o, o, o, o, o, obj1);
         assertEquals(r2, obj1);
     }
 
@@ -110,7 +163,8 @@ public class TestCatchException {
         TestCatchException test = new TestCatchException();
         test.testNoThrowPath();
         test.testThrowPath();
-        test.testVarargsCollector();
+        test.testVarargsCollectorNoThrow();
+        test.testVarargsCollectorThrow();
         System.out.println("TEST PASSED");
     }
 }

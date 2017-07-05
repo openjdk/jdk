@@ -570,7 +570,7 @@ public class DataFlavor implements Externalizable, Cloneable {
         if (DataTransferer.isFlavorCharsetTextType(this) &&
             (isRepresentationClassInputStream() ||
              isRepresentationClassByteBuffer() ||
-             DataTransferer.byteArrayClass.equals(representationClass)))
+             byte[].class.equals(representationClass)))
         {
             params += ";charset=" + DataTransferer.getTextCharset(this);
         }
@@ -743,7 +743,7 @@ public class DataFlavor implements Externalizable, Cloneable {
     private static Comparator<DataFlavor> textFlavorComparator;
 
     static class TextFlavorComparator
-        extends DataTransferer.DataFlavorComparator {
+            extends DataTransferer.DataFlavorComparator {
 
         /**
          * Compares two <code>DataFlavor</code> objects. Returns a negative
@@ -754,8 +754,8 @@ public class DataFlavor implements Externalizable, Cloneable {
          * <code>DataFlavor</code>s are ordered according to the rules outlined
          * for <code>selectBestTextFlavor</code>.
          *
-         * @param obj1 the first <code>DataFlavor</code> to be compared
-         * @param obj2 the second <code>DataFlavor</code> to be compared
+         * @param flavor1 the first <code>DataFlavor</code> to be compared
+         * @param flavor2 the second <code>DataFlavor</code> to be compared
          * @return a negative integer, zero, or a positive integer as the first
          *         argument is worse, equal to, or better than the second
          * @throws ClassCastException if either of the arguments is not an
@@ -765,13 +765,10 @@ public class DataFlavor implements Externalizable, Cloneable {
          *
          * @see #selectBestTextFlavor
          */
-        public int compare(Object obj1, Object obj2) {
-            DataFlavor flavor1 = (DataFlavor)obj1;
-            DataFlavor flavor2 = (DataFlavor)obj2;
-
+        public int compare(DataFlavor flavor1, DataFlavor flavor2) {
             if (flavor1.isFlavorTextType()) {
                 if (flavor2.isFlavorTextType()) {
-                    return super.compare(obj1, obj2);
+                    return super.compare(flavor1, flavor2);
                 } else {
                     return 1;
                 }
@@ -1014,7 +1011,7 @@ public class DataFlavor implements Externalizable, Cloneable {
                     !(isRepresentationClassReader() ||
                         String.class.equals(representationClass) ||
                         isRepresentationClassCharBuffer() ||
-                        DataTransferer.charArrayClass.equals(representationClass)))
+                        char[].class.equals(representationClass)))
                 {
                     String thisCharset =
                         DataTransferer.canonicalName(getParameter("charset"));
@@ -1099,8 +1096,7 @@ public class DataFlavor implements Externalizable, Cloneable {
                 !(isRepresentationClassReader() ||
                   String.class.equals(representationClass) ||
                   isRepresentationClassCharBuffer() ||
-                  DataTransferer.charArrayClass.equals
-                  (representationClass)))
+                  char[].class.equals(representationClass)))
             {
                 String charset =
                     DataTransferer.canonicalName(getParameter("charset"));

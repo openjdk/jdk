@@ -105,14 +105,20 @@ class ResourceHashtable : public ResourceObj {
     }
   }
 
-  // Inserts or replaces a value in the table
-  void put(K const& key, V const& value) {
+ /**
+  * Inserts or replaces a value in the table.
+  * @return: true:  if a new item is added
+  *          false: if the item already existed and the value is updated
+  */
+  bool put(K const& key, V const& value) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
     if (*ptr != NULL) {
       (*ptr)->_value = value;
+      return false;
     } else {
       *ptr = new Node(hv, key, value);
+      return true;
     }
   }
 

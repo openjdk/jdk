@@ -50,7 +50,7 @@ public class JPEGImageWriterSpi extends ImageWriterSpi {
               JPEG.suffixes,
               JPEG.MIMETypes,
               "com.sun.imageio.plugins.jpeg.JPEGImageWriter",
-              new Class[] { ImageOutputStream.class },
+              new Class<?>[] { ImageOutputStream.class },
               readerSpiNames,
               true,
               JPEG.nativeStreamMetadataFormatName,
