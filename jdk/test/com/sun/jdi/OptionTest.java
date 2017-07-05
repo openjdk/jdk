@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  *   @summary    Test for misc jdwp options, just that the option is parsed
  *   @author     Kelly O'Hair (copied from Tim Bell's NoLaunchOptionTest)
  *
+ *  @modules jdk.jdi
  *  @run compile -g OptionTest.java
  *  @run compile -g HelloWorld.java
  *  @run compile -g VMConnection.java

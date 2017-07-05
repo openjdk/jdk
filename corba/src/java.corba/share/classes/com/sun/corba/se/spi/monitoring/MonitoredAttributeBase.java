@@ -27,16 +27,11 @@ package com.sun.corba.se.spi.monitoring;
 import java.util.*;
 
 /**
- * <p>
- *
  * @author Hemanth Puttaswamy
- * </p>
- * <p>
+ *
  *  A Convenient class provided to help users extend and implement only
  *  getValue(), if there is no need to clear the state and the attribute is not
  *  writable.
- *
- * </p>
  */
 public abstract class MonitoredAttributeBase implements MonitoredAttribute {
     String name;

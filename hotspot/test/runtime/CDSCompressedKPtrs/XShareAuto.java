@@ -37,14 +37,14 @@ public class XShareAuto {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-server", "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
+            "-XX:SharedArchiveFile=./XShareAuto.jsa", "-Xshare:dump");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);
 
         pb = ProcessTools.createJavaProcessBuilder(
             "-server", "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa", "-version");
+            "-XX:SharedArchiveFile=./XShareAuto.jsa", "-version");
         output = new OutputAnalyzer(pb.start());
         // We asked for server but it could be aliased to something else
         if (output.getOutput().contains("Server VM")) {
@@ -59,7 +59,7 @@ public class XShareAuto {
 
         pb = ProcessTools.createJavaProcessBuilder(
             "-server", "-Xshare:auto", "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=./sample.jsa", "-XX:+PrintSharedSpaces", "-version");
+            "-XX:SharedArchiveFile=./XShareAuto.jsa", "-XX:+PrintSharedSpaces", "-version");
         output = new OutputAnalyzer(pb.start());
         try {
             output.shouldContain("sharing");

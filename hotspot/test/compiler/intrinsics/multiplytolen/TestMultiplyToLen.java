@@ -34,6 +34,7 @@
  *      -XX:CompileCommand=inline,java.math.BigInteger::multiply TestMultiplyToLen
  */
 
+import java.util.Arrays;
 import java.util.Random;
 import java.math.*;
 
@@ -97,12 +98,36 @@ public class TestMultiplyToLen {
         newsum = newsum.add(newres);
 
         if (!bytecompare(oldres,newres)) {
+          System.out.println(b1);
+          System.out.println(b2);
+          System.out.print("mismatch for:b1:" + stringify(b1) + " :b2:" + stringify(b2) + " :oldres:" + stringify(oldres) + " :newres:" + stringify(newres));
+          throw new Exception("Failed");
+        }
+      }
+
+      // Test carry propagation.  Multiple carries during bignum
+      // multiplication are rare (especially when using 64-bit
+      // arithmetic) so we have to provoke them deliberately.
+      for (int j = 4; j <= 396; j += 4) {
+        byte[] bytes = new byte[j];
+        Arrays.fill(bytes, (byte)255);
+        b1 = new BigInteger(bytes);
+        b2 = new BigInteger(bytes);
+
+        oldres = base_multiply(b1,b2);
+        newres = new_multiply(b1,b2);
+
+        oldsum = oldsum.add(oldres);
+        newsum = newsum.add(newres);
+
+        if (!bytecompare(oldres,newres)) {
           System.out.print("mismatch for:b1:" + stringify(b1) + " :b2:" + stringify(b2) + " :oldres:" + stringify(oldres) + " :newres:" + stringify(newres));
           System.out.println(b1);
           System.out.println(b2);
           throw new Exception("Failed");
         }
       }
+
       if (!bytecompare(oldsum,newsum))  {
         System.out.println("Failure: oldsum:" + stringify(oldsum) + " newsum:" + stringify(newsum));
         throw new Exception("Failed");

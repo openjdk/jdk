@@ -7,6 +7,7 @@
  *  @author Robert Field
  *
  *  @library ..
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE HelloWorld
  *  @run compile TemperatureTableTest.java
  *  @run compile -g TemperatureTableServlet.java

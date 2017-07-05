@@ -2530,6 +2530,11 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
 // prior to coming here.
 Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, MergeMemNode* mem, PhaseGVN* gvn) {
   Compile* C = gvn->C;
+
+  if ((*ctrl)->is_top()) {
+    return C->top();
+  }
+
   // Fast check for identical types, perhaps identical constants.
   // The types can even be identical non-constants, in cases
   // involving Array.newInstance, Object.clone, etc.
@@ -2792,18 +2797,19 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
  */
 Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
                                         ciKlass* type,
-                                        bool not_null,
-                                        SafePointNode* sfpt) {
+                                        bool not_null) {
+  if (stopped()) {
+    return obj;
+  }
+
   // type == NULL if profiling tells us this object is always null
   if (type != NULL) {
     Deoptimization::DeoptReason class_reason = Deoptimization::Reason_speculate_class_check;
     Deoptimization::DeoptReason null_reason = Deoptimization::Reason_speculate_null_check;
-    ciMethod* trap_method = (sfpt == NULL) ? method() : sfpt->jvms()->method();
-    int trap_bci = (sfpt == NULL) ? bci() : sfpt->jvms()->bci();
 
     if (!too_many_traps(null_reason) && !too_many_recompiles(null_reason) &&
-        !C->too_many_traps(trap_method, trap_bci, class_reason) &&
-        !C->too_many_recompiles(trap_method, trap_bci, class_reason)) {
+        !too_many_traps(class_reason) &&
+        !too_many_recompiles(class_reason)) {
       Node* not_null_obj = NULL;
       // not_null is true if we know the object is not null and
       // there's no need for a null check
@@ -2819,12 +2825,7 @@ Node* GraphKit::maybe_cast_profiled_obj(Node* obj,
       ciKlass* exact_kls = type;
       Node* slow_ctl  = type_check_receiver(exact_obj, exact_kls, 1.0,
                                             &exact_obj);
-      if (sfpt != NULL) {
-        GraphKit kit(sfpt->jvms());
-        PreserveJVMState pjvms(&kit);
-        kit.set_control(slow_ctl);
-        kit.uncommon_trap_exact(class_reason, Deoptimization::Action_maybe_recompile);
-      } else {
+      {
         PreserveJVMState pjvms(this);
         set_control(slow_ctl);
         uncommon_trap_exact(class_reason, Deoptimization::Action_maybe_recompile);

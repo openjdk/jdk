@@ -91,7 +91,7 @@ public class StringEntry extends SymtabEntry
   } // generate
 
   /** Access the primitive type generator.
-      @returns an object which implements the PrimitiveGen interface.
+      @return an object which implements the PrimitiveGen interface.
       @see PrimitiveGen */
   public Generator generator ()
   {

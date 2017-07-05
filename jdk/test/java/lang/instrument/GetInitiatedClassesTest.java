@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary simple tests for getInitiatedClasses (does a newly loaded class show up?)
  * @author Gabriel Adauto, Wily Technology
  *
+ * @modules java.instrument
  * @run build GetInitiatedClassesTest DummyClass
  * @run shell MakeJAR.sh basicAgent
  * @run main/othervm -javaagent:basicAgent.jar GetInitiatedClassesTest GetInitiatedClassesTest

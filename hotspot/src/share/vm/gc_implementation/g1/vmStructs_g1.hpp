@@ -26,8 +26,8 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_VMSTRUCTS_G1_HPP
 
 #include "gc_implementation/g1/heapRegion.hpp"
-#include "gc_implementation/g1/heapRegionManager.inline.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/heapRegionManager.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.hpp"
 
 #define VM_STRUCTS_G1(nonstatic_field, static_field)                          \
                                                                               \
@@ -70,7 +70,7 @@
                                                                               \
   declare_toplevel_type(G1HeapRegionTable)                                    \
                                                                               \
-  declare_type(G1CollectedHeap, SharedHeap)                                   \
+  declare_type(G1CollectedHeap, CollectedHeap)                                \
                                                                               \
   declare_type(G1OffsetTableContigSpace, CompactibleSpace)                    \
   declare_type(HeapRegion, G1OffsetTableContigSpace)                          \

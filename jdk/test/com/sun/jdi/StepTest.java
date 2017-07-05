@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  *  @bug 4270488 4787861
  *  @author Gordon Hirsch
  *
+ *  @modules jdk.jdi
  *  @run build TestScaffold VMConnection TargetAdapter TargetListener
  *  @run compile -g MethodCalls.java
  *  @run compile -g MethodCallsReflection.java

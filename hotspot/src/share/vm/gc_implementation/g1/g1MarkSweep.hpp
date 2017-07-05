@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1MARKSWEEP_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1MARKSWEEP_HPP
 
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "memory/genMarkSweep.hpp"
 #include "memory/generation.hpp"

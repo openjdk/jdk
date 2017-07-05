@@ -54,12 +54,7 @@ void PcDesc::print(nmethod* code) {
   for (ScopeDesc* sd = code->scope_desc_at(real_pc(code));
        sd != NULL;
        sd = sd->sender()) {
-    tty->print("  ");
-    sd->method()->print_short_name(tty);
-    tty->print("  @%d", sd->bci());
-    if (sd->should_reexecute())
-      tty->print("  reexecute=true");
-    tty->cr();
+    sd->print_on(tty);
   }
 #endif
 }

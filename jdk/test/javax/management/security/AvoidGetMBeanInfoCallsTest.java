@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test that MBeanServer.queryNames doesn't call getMBeanInfo on every
  *          resultant MBean when there is no security manager installed.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
  * @run clean AvoidGetMBeanInfoCallsTest
  * @run build AvoidGetMBeanInfoCallsTest
  * @run main AvoidGetMBeanInfoCallsTest

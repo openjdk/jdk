@@ -2,10 +2,10 @@
 .\" Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: rmiregistry
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: Remote Method Invocation (RMI)�ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: Remote Method Invocation (RMI)ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "rmiregistry" "1" "2013ǯ11��21��" "JDK 8" "Remote Method Invocation (RMI)"
+.TH "rmiregistry" "1" "2013年11月21日" "JDK 8" "Remote Method Invocation (RMI)"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-rmiregistry \- ���ߤΥۥ��Ȥλ��ꤷ���ݡ��Ⱦ�˥�⡼�ȡ����֥������ȡ��쥸���ȥ�򳫻Ϥ��ޤ���
-.SH "����"
+rmiregistry \- 現在のホストの指定したポート上にリモート・オブジェクト・レジストリを開始します。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,11 +64,11 @@ rmiregistry \- ���ߤΥۥ��Ȥλ��ꤷ���ݡ��Ⱦ�˥�⡼�ȡ����֥������ȡ��쥸���ȥ
 .PP
 \fIport\fR
 .RS 4
-��⡼�ȡ����֥������ȡ��쥸���ȥ�򳫻Ϥ��븽�ߤΥۥ��Ⱦ��\fIport\fR�ο���
+リモート・オブジェクト・レジストリを開始する現在のホスト上の\fIport\fRの数。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIrmiregistry\fR���ޥ�ɤϡ����ߤΥۥ��Ȥλ��ꤷ���ݡ��Ⱦ�˥�⡼�ȡ����֥������ȡ��쥸���ȥ������������Ϥ��ޤ���port�λ�����ά������硢�쥸���ȥ�ϥݡ���1099�ǳ��Ϥ��ޤ���\fIrmiregistry\fR���ޥ�ɤˡ����ϵ�ǽ�Ϥ���ޤ����̾����ϥХå����饦��ɤǼ¹Ԥ���ޤ���������򼨤��ޤ���
+\fIrmiregistry\fRコマンドは、現在のホストの指定したポート上にリモート・オブジェクト・レジストリを作成し、開始します。portの指定を省略した場合、レジストリはポート1099で開始します。\fIrmiregistry\fRコマンドに、出力機能はありません。通常、これはバックグラウンドで実行されます。次に例を示します。
 .sp
 .if n \{\
 .RS 4
@@ -80,20 +80,20 @@ rmiregistry &
 .RE
 .\}
 .PP
-��⡼�ȡ����֥������ȡ��쥸���ȥ�ϡ��֡��ȥ��ȥ�åפΥ͡��ࡦ�����ӥ��Ǥ���Ʊ��ۥ��Ȥ�RMI�����С�������⡼�ȡ����֥������Ȥ�̾���˥Х���ɤ��뤿��˻��Ѥ���ޤ������ˡ��������뤪��ӥ�⡼�ȡ��ۥ��ȤΥ��饤����Ȥϥ�⡼�ȡ����֥������Ȥ򸡺�������⡼�ȡ��᥽�åɤθƽФ���Ԥ��ޤ���
+リモート・オブジェクト・レジストリは、ブートストラップのネーム・サービスです。同一ホストのRMIサーバーが、リモート・オブジェクトを名前にバインドするために使用されます。次に、ローカルおよびリモート・ホストのクライアントはリモート・オブジェクトを検索し、リモート・メソッドの呼出しを行います。
 .PP
-�쥸���ȥ�ϡ�����Ū�ˡ��ǽ�Υ�⡼�ȡ����֥������Ȥΰ��֤���ꤷ�ޤ��������ǡ����ץꥱ�������ϥ᥽�åɤ�ƤӽФ�ɬ�פ�����ޤ������θ塢���Υ��֥������Ȥϥ��ץꥱ����������Υ��ݡ��Ȥ��󶡤���¾�Υ��֥������Ȥ�õ���ޤ���
+レジストリは、一般的に、最初のリモート・オブジェクトの位置を指定します。そこで、アプリケーションはメソッドを呼び出す必要があります。その後、そのオブジェクトはアプリケーション指定のサポートを提供し、他のオブジェクトを探します。
 .PP
-\fIjava\&.rmi\&.registry\&.LocateRegistry\fR���饹�Υ᥽�åɤϡ��������롦�ۥ��ȡ��ޤ��ϥ������롦�ۥ��Ȥȥݡ��Ȥ�ư���쥸���ȥ��������뤿��˻��Ѥ���ޤ���
+\fIjava\&.rmi\&.registry\&.LocateRegistry\fRクラスのメソッドは、ローカル・ホスト、またはローカル・ホストとポートで動作するレジストリを取得するために使用されます。
 .PP
-\fIjava\&.rmi\&.Naming\fR���饹��URL�١������᥽�åɤϥ쥸���ȥ���Ф�������¹Ԥ���Ǥ�դΥۥ��Ȥ���ӥ������롦�ۥ��ȤǤΥ�⡼�ȡ����֥������Ȥθ����˻��ѤǤ��ޤ���ñ��̾(ʸ����)���⡼�ȡ����֥������Ȥ˥Х���ɤ���������̾�����⡼�ȡ����֥������Ȥ˺ƥХ���ɤ�(�Ť��Х���ɤ򥪡��С��饤��)����⡼�ȡ����֥������Ȥ򥢥�Х���ɤ����쥸���ȥ�˥Х���ɤ���Ƥ���URL��ꥹ��ɽ�����ޤ���
-.SH "���ץ����"
+\fIjava\&.rmi\&.Naming\fRクラスのURLベース・メソッドはレジストリに対して操作を実行し、任意のホストおよびローカル・ホストでのリモート・オブジェクトの検索に使用できます。単純名(文字列)をリモート・オブジェクトにバインドし、新しい名前をリモート・オブジェクトに再バインドし(古いバインドをオーバーライド)、リモート・オブジェクトをアンバインドし、レジストリにバインドされているURLをリスト表示します。
+.SH "オプション"
 .PP
 \-J
 .RS 4
-Java���ץ����ȤȤ�˻��Ѥ��ơ�\fI\-J\fR�θ����³�����ץ�����Java���󥿥ץ꥿�˰����Ϥ��ޤ�(\fI\-J\fR�ȥ��ץ����δ֤˥��ڡ���������ޤ���)��
+Javaオプションとともに使用して、\fI\-J\fRの後ろに続くオプションをJavaインタプリタに引き渡します(\fI\-J\fRとオプションの間にスペースは入れません)。
 .RE
-.SH "��Ϣ����"
+.SH "関連項目"
 .sp
 .RS 4
 .ie n \{\
@@ -114,7 +114,7 @@ java(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI��java\&.rmi\&.registry\&.LocateRegistry��\fR(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/registry/LocateRegistry\&.html)
+\fI「java\&.rmi\&.registry\&.LocateRegistry」\fR(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/registry/LocateRegistry\&.html)
 .RE
 .sp
 .RS 4
@@ -125,7 +125,7 @@ java(1)
 .sp -1
 .IP \(bu 2.3
 .\}
-\fI��java\&.rmi\&.Naming class description��\fR(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/Naming\&.html)
+\fI「java\&.rmi\&.Naming class description」\fR(http://docs\&.oracle\&.com/javase/8/docs/api/java/rmi/Naming\&.html)
 .RE
 .br
 'pl 8.5i

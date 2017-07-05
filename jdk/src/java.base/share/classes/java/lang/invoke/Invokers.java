@@ -281,7 +281,7 @@ class Invokers {
             outArgs[0] = names[CHECK_TYPE];
         }
         if (CHECK_CUSTOM != -1) {
-            names[CHECK_CUSTOM] = new Name(NF_checkCustomized, names[CALL_MH]);
+            names[CHECK_CUSTOM] = new Name(NF_checkCustomized, outArgs[0]);
         }
         names[LINKER_CALL] = new Name(outCallType, outArgs);
         lform = new LambdaForm(debugName, INARG_LIMIT, names);
@@ -394,6 +394,7 @@ class Invokers {
     @ForceInline
     void checkCustomized(Object o) {
         MethodHandle mh = (MethodHandle)o;
+        if (MethodHandleImpl.isCompileConstant(mh)) return;
         if (mh.form.customized == null) {
             maybeCustomize(mh);
         }

@@ -2,10 +2,10 @@
 .\" Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
 .\" Title: jrunscript
 .\" Language: English
-.\" Date: 2013ǯ11��21��
-.\" SectDesc: ������ץƥ��󥰡��ġ���
+.\" Date: 2013年11月21日
+.\" SectDesc: スクリプティング・ツール
 .\" Software: JDK 8
-.\" Arch: ����
+.\" Arch: 汎用
 .\"
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
@@ -28,7 +28,7 @@
 .\" questions.
 .\"
 .pl 99999
-.TH "jrunscript" "1" "2013ǯ11��21��" "JDK 8" "������ץƥ��󥰡��ġ���"
+.TH "jrunscript" "1" "2013年11月21日" "JDK 8" "スクリプティング・ツール"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -49,8 +49,8 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-jrunscript \- ���÷��⡼�ɤȥХå����⡼�ɤ򥵥ݡ��Ȥ��륳�ޥ�ɥ饤�󡦥�����ץȡ��������¹Ԥ��ޤ������Υ��ޥ�ɤϻŪ�ʤ�Τǡ����ݡ��Ȥ���Ƥ��ޤ���
-.SH "����"
+jrunscript \- 対話型モードとバッチ・モードをサポートするコマンドライン・スクリプト・シェルを実行します。このコマンドは試験的なもので、サポートされていません。
+.SH "概要"
 .sp
 .if n \{\
 .RS 4
@@ -64,83 +64,83 @@ jrunscript \- ���÷��⡼�ɤȥХå����⡼�ɤ򥵥ݡ��Ȥ��륳�ޥ�ɥ饤�󡦥������
 .PP
 \fIoptions\fR
 .RS 4
-���ޥ�ɥ饤�󡦥��ץ���󡣥��ץ����򻲾Ȥ��Ƥ���������
+コマンドライン・オプション。オプションを参照してください。
 .RE
 .PP
 \fIarguments\fR
 .RS 4
-��������Ѥ����硢���ץ����ޤ��ϥ��ޥ��̾��ľ��˵��Ҥ��Ƥ��������������򻲾Ȥ��Ƥ���������
+引数を使用する場合、オプションまたはコマンド名の直後に記述してください。引数を参照してください。
 .RE
-.SH "����"
+.SH "説明"
 .PP
-\fIjrunscript\fR���ޥ�ɤϡ�����˰�¸���ʤ����ޥ�ɥ饤�󡦥�����ץȡ�������Ǥ���\fIjrunscript\fR�ϡ����÷�(read\-eval\-print)�⡼�ɤȥХå�(\fI\-f\fR���ץ����)���⡼�ɤ�ξ���Υ�����ץȼ¹Ԥ򥵥ݡ��Ȥ��ޤ����ǥե���Ȥλ��Ѹ����JavaScript�Ǥ�����\fI\-l\fR���ץ�������Ѥ����¾�θ�������Ǥ��ޤ���\fIjrunscript\fR���ޥ�ɤϡ�Java�ȥ�����ץȸ���Ȥ��̿�����Ѥ���õ��Ū�ʥץ�����ߥ󥰡���������򥵥ݡ��Ȥ��ޤ���
-.SH "���ץ����"
+\fIjrunscript\fRコマンドは、言語に依存しないコマンドライン・スクリプト・シェルです。\fIjrunscript\fRは、対話型(read\-eval\-print)モードとバッチ(\fI\-f\fRオプション)・モードの両方のスクリプト実行をサポートします。デフォルトの使用言語はJavaScriptですが、\fI\-l\fRオプションを使用すれば他の言語も指定できます。\fIjrunscript\fRコマンドは、Javaとスクリプト言語との通信を使用して探求的なプログラミング・スタイルをサポートします。
+.SH "オプション"
 .PP
 \-classpath \fIpath\fR
 .RS 4
-������ץȤ�������������ɬ�פΤ��륯�饹���ե�����ξ��򼨤��ޤ���
+スクリプトがアクセスする必要のあるクラス・ファイルの場所を示します。
 .RE
 .PP
 \-cp \fIpath\fR
 .RS 4
 \fI\-classpath\fR
-\fIpath\fR��Ʊ���Ǥ���
+\fIpath\fRと同じです。
 .RE
 .PP
 \-D\fIname\fR=\fIvalue\fR
 .RS 4
-Java�Υ����ƥࡦ�ץ��ѥƥ������ꤷ�ޤ���
+Javaのシステム・プロパティを設定します。
 .RE
 .PP
 \-J\fIflag\fR
 .RS 4
-\fIflag\fR��\fIjrunscript\fR���ޥ�ɤ��¹Ԥ���Ƥ���Java���ۥޥ����ľ���Ϥ��ޤ���
+\fIflag\fRを、\fIjrunscript\fRコマンドが実行されているJava仮想マシンに直接渡します。
 .RE
 .PP
 \-I \fIlanguage\fR
 .RS 4
-���ꤵ�줿������ץȸ������Ѥ��ޤ����ǥե���ȤǤ�JavaScript�����Ѥ���ޤ���¾�Υ�����ץȸ������Ѥ���ˤϡ�\fI\-cp\fR�ޤ���\fI\-classpath\fR���ץ�������Ѥ��ơ��б����륹����ץȡ����󥸥��JAR�ե��������ꤹ��ɬ�פ�����ޤ���
+指定されたスクリプト言語を使用します。デフォルトではJavaScriptが使用されます。他のスクリプト言語を使用するには、\fI\-cp\fRまたは\fI\-classpath\fRオプションを使用して、対応するスクリプト・エンジンのJARファイルを指定する必要があります。
 .RE
 .PP
 \-e \fIscript\fR
 .RS 4
-���ꤵ�줿������ץȤ�ɾ�����ޤ������Υ��ץ�������Ѥ���С����ޥ�ɥ饤��ˤ��٤Ƥ����ꤵ�줿1�ԥ�����ץȤ�¹ԤǤ��ޤ���
+指定されたスクリプトを評価します。このオプションを使用すれば、コマンドラインにすべてが指定された1行スクリプトを実行できます。
 .RE
 .PP
 \-encoding \fIencoding\fR
 .RS 4
-������ץȡ��ե�������ɼ����˻��Ѥ���ʸ�����󥳡��ǥ��󥰤���ꤷ�ޤ���
+スクリプト・ファイルの読取り時に使用する文字エンコーディングを指定します。
 .RE
 .PP
 \-f \fIscript\-file\fR
 .RS 4
-���ꤵ�줿������ץȡ��ե�����(�Хå����⡼��)��ɾ�����ޤ���
+指定されたスクリプト・ファイル(バッチ・モード)を評価します。
 .RE
 .PP
 \-f \-
 .RS 4
-ɸ�����Ϥ��饹����ץȤ��ɤ߼�ꡢ�����ɾ�����ޤ�(���÷��⡼��)��
+標準入力からスクリプトを読み取り、それを評価します(対話型モード)。
 .RE
 .PP
 \-help
 .RS 4
-�إ�ס���å�������ɽ�����ƽ�λ���ޤ���
+ヘルプ・メッセージを表示して終了します。
 .RE
 .PP
 \-?
 .RS 4
-�إ�ס���å�������ɽ�����ƽ�λ���ޤ���
+ヘルプ・メッセージを表示して終了します。
 .RE
 .PP
 \-q
 .RS 4
-���Ѳ�ǽ�ʤ��٤ƤΥ�����ץȡ����󥸥�����ɽ���������ȡ���λ���ޤ���
+利用可能なすべてのスクリプト・エンジンを一覧表示したあと、終了します。
 .RE
-.SH "����"
+.SH "引数"
 .PP
-arguments��¸�ߤ��Ƥ��ơ�����\fI\-e\fR��\fI\-f\fR�Τ�����Υ��ץ�������Ѥ���ʤ��ä���硢�ǽ�ΰ�����������ץȡ��ե�����Ȥʤꡢ¾�ΰ�����¸�ߤ�����ϥ�����ץȤ��Ϥ���ޤ���arguments�ȡ�\fI\-e\fR�ޤ���\fI\-f\fR���ץ���󤬻��Ѥ���Ƥ����硢���٤Ƥ�arguments��������ץȤ��Ϥ���ޤ���arguments��\fI\-e\fR��\fI\-f\fR���ɤ��¸�ߤ��ʤ��ä����ϡ����÷��⡼�ɤ����Ѥ���ޤ���������ץȤ��饹����ץȰ�������Ѥ���ˤϡ�\fIarguments\fR�Ȥ���̾����\fIString\fR���󷿤Υ��󥸥��ѿ�����Ѥ��ޤ���
-.SH "��"
-.SS "����饤�󡦥�����ץȤμ¹�"
+argumentsが存在していて、かつ\fI\-e\fR、\fI\-f\fRのいずれのオプションも使用されなかった場合、最初の引数がスクリプト・ファイルとなり、他の引数が存在する場合はスクリプトに渡されます。argumentsと、\fI\-e\fRまたは\fI\-f\fRオプションが使用されている場合、すべてのargumentsがスクリプトに渡されます。arguments、\fI\-e\fR、\fI\-f\fRがどれも存在しなかった場合は、対話型モードが使用されます。スクリプトからスクリプト引数を使用するには、\fIarguments\fRという名前の\fIString\fR配列型のエンジン変数を使用します。
+.SH "例"
+.SS "インライン・スクリプトの実行"
 .sp
 .if n \{\
 .RS 4
@@ -152,7 +152,7 @@ jrunscript \-e "cat(\*(Aqhttp://www\&.example\&.com\*(Aq)"
 .if n \{\
 .RE
 .\}
-.SS "���ꤵ�줿����λ��Ѥ���ӥ�����ץȡ��ե������ɾ��"
+.SS "指定された言語の使用およびスクリプト・ファイルの評価"
 .sp
 .if n \{\
 .RS 4
@@ -163,7 +163,7 @@ jrunscript \-l js \-f test\&.js
 .if n \{\
 .RE
 .\}
-.SS "���÷��⡼��"
+.SS "対話型モード"
 .sp
 .if n \{\
 .RS 4
@@ -184,9 +184,9 @@ js>
 .if n \{\
 .RE
 .\}
-.SS "������ץȰ�������ꤷ��������ץȡ��ե�����μ¹�"
+.SS "スクリプト引数を指定したスクリプト・ファイルの実行"
 .PP
-test\&.js�ե�����ϥ�����ץȡ��ե�����Ǥ���\fIarg1\fR��\fIarg2\fR�����\fIarg3\fR�γư�����������ץȤ��Ϥ���ޤ���������ץȤ�arguments�������Ѥ��Ƥ����ΰ����˥��������Ǥ��ޤ���
+test\&.jsファイルはスクリプト・ファイルです。\fIarg1\fR、\fIarg2\fRおよび\fIarg3\fRの各引数がスクリプトに渡されます。スクリプトはarguments配列を使用してこれらの引数にアクセスできます。
 .sp
 .if n \{\
 .RS 4
@@ -197,10 +197,10 @@ jrunscript test\&.js arg1 arg2 arg3
 .if n \{\
 .RE
 .\}
-.SH "��Ϣ����"
+.SH "関連項目"
 .PP
-JavaScript�����Ѥ�����硢�桼�������������ץȤ�ɾ���������ˡ�\fIjrunscript\fR���ޥ�ɤϤ����Ĥ����ȹ��ߴؿ����ȹ��ߥ��֥������Ȥ��������ޤ���������JavaScript���ȹ��ߤˤĤ��Ƥϡ�http://code\&.google\&.com/p/jsdoc\-toolkit/�ˤ���
-JsDoc\-Toolkit�򻲾Ȥ��Ƥ���������
+JavaScriptが使用される場合、ユーザー定義スクリプトを評価する前に、\fIjrunscript\fRコマンドはいくつかの組込み関数や組込みオブジェクトを初期化します。これらのJavaScriptの組込みについては、http://code\&.google\&.com/p/jsdoc\-toolkit/にある
+JsDoc\-Toolkitを参照してください。
 .br
 'pl 8.5i
 'bp

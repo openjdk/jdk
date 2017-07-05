@@ -29,9 +29,9 @@ import java.util.Observable;
 import java.util.Observer;
 
 import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.gc_interface.CollectedHeap;
 import sun.jvm.hotspot.gc_interface.CollectedHeapName;
 import sun.jvm.hotspot.memory.MemRegion;
-import sun.jvm.hotspot.memory.SharedHeap;
 import sun.jvm.hotspot.memory.SpaceClosure;
 import sun.jvm.hotspot.runtime.VM;
 import sun.jvm.hotspot.runtime.VMObjectFactory;
@@ -41,7 +41,7 @@ import sun.jvm.hotspot.types.TypeDataBase;
 
 // Mirror class for G1CollectedHeap.
 
-public class G1CollectedHeap extends SharedHeap {
+public class G1CollectedHeap extends CollectedHeap {
     // HeapRegionManager _hrm;
     static private long hrmFieldOffset;
     // MemRegion _g1_reserved;

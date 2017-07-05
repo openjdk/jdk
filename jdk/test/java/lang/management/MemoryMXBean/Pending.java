@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug     4530538
+ * @modules java.base/sun.misc
+ *          java.management
  * @summary Basic unit test of
  *          RuntimeMXBean.getObjectPendingFinalizationCount()
  *          1. GC and runFinalization() to get the current pending number
@@ -32,7 +34,6 @@
  *          4. GC and runFinalization() and the finalizable objects should
  *             be garbage collected.
  * @author  Alexei Guibadoulline and Mandy Chung
- *
  */
 
 import java.lang.management.*;

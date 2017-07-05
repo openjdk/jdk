@@ -81,53 +81,48 @@ public class HeapSummary extends Tool {
       System.out.println();
       System.out.println("Heap Usage:");
 
-      if (heap instanceof SharedHeap) {
-         SharedHeap sharedHeap = (SharedHeap) heap;
-         if (sharedHeap instanceof GenCollectedHeap) {
-            GenCollectedHeap genHeap = (GenCollectedHeap) sharedHeap;
-            for (int n = 0; n < genHeap.nGens(); n++) {
-               Generation gen = genHeap.getGen(n);
-               if (gen instanceof sun.jvm.hotspot.memory.DefNewGeneration) {
-                  System.out.println("New Generation (Eden + 1 Survivor Space):");
-                  printGen(gen);
+      if (heap instanceof GenCollectedHeap) {
+         GenCollectedHeap genHeap = (GenCollectedHeap) heap;
+         for (int n = 0; n < genHeap.nGens(); n++) {
+            Generation gen = genHeap.getGen(n);
+            if (gen instanceof sun.jvm.hotspot.memory.DefNewGeneration) {
+               System.out.println("New Generation (Eden + 1 Survivor Space):");
+               printGen(gen);
 
-                  ContiguousSpace eden = ((DefNewGeneration)gen).eden();
-                  System.out.println("Eden Space:");
-                  printSpace(eden);
+               ContiguousSpace eden = ((DefNewGeneration)gen).eden();
+               System.out.println("Eden Space:");
+               printSpace(eden);
 
-                  ContiguousSpace from = ((DefNewGeneration)gen).from();
-                  System.out.println("From Space:");
-                  printSpace(from);
+               ContiguousSpace from = ((DefNewGeneration)gen).from();
+               System.out.println("From Space:");
+               printSpace(from);
 
-                  ContiguousSpace to = ((DefNewGeneration)gen).to();
-                  System.out.println("To Space:");
-                  printSpace(to);
-               } else {
-                  System.out.println(gen.name() + ":");
-                  printGen(gen);
-               }
+               ContiguousSpace to = ((DefNewGeneration)gen).to();
+               System.out.println("To Space:");
+               printSpace(to);
+            } else {
+               System.out.println(gen.name() + ":");
+               printGen(gen);
             }
-         } else if (sharedHeap instanceof G1CollectedHeap) {
-             G1CollectedHeap g1h = (G1CollectedHeap) sharedHeap;
-             G1MonitoringSupport g1mm = g1h.g1mm();
-             long edenRegionNum = g1mm.edenRegionNum();
-             long survivorRegionNum = g1mm.survivorRegionNum();
-             HeapRegionSetBase oldSet = g1h.oldSet();
-             HeapRegionSetBase humongousSet = g1h.humongousSet();
-             long oldRegionNum = oldSet.count().length()
-                          + humongousSet.count().capacity() / HeapRegion.grainBytes();
-             printG1Space("G1 Heap:", g1h.n_regions(),
-                          g1h.used(), g1h.capacity());
-             System.out.println("G1 Young Generation:");
-             printG1Space("Eden Space:", edenRegionNum,
-                          g1mm.edenUsed(), g1mm.edenCommitted());
-             printG1Space("Survivor Space:", survivorRegionNum,
-                          g1mm.survivorUsed(), g1mm.survivorCommitted());
-             printG1Space("G1 Old Generation:", oldRegionNum,
-                          g1mm.oldUsed(), g1mm.oldCommitted());
-         } else {
-             throw new RuntimeException("unknown SharedHeap type : " + heap.getClass());
          }
+      } else if (heap instanceof G1CollectedHeap) {
+          G1CollectedHeap g1h = (G1CollectedHeap) heap;
+          G1MonitoringSupport g1mm = g1h.g1mm();
+          long edenRegionNum = g1mm.edenRegionNum();
+          long survivorRegionNum = g1mm.survivorRegionNum();
+          HeapRegionSetBase oldSet = g1h.oldSet();
+          HeapRegionSetBase humongousSet = g1h.humongousSet();
+          long oldRegionNum = oldSet.count().length()
+                       + humongousSet.count().capacity() / HeapRegion.grainBytes();
+          printG1Space("G1 Heap:", g1h.n_regions(),
+                       g1h.used(), g1h.capacity());
+          System.out.println("G1 Young Generation:");
+          printG1Space("Eden Space:", edenRegionNum,
+                       g1mm.edenUsed(), g1mm.edenCommitted());
+          printG1Space("Survivor Space:", survivorRegionNum,
+                       g1mm.survivorUsed(), g1mm.survivorCommitted());
+          printG1Space("G1 Old Generation:", oldRegionNum,
+                       g1mm.oldUsed(), g1mm.oldCommitted());
       } else if (heap instanceof ParallelScavengeHeap) {
          ParallelScavengeHeap psh = (ParallelScavengeHeap) heap;
          PSYoungGen youngGen = psh.youngGen();

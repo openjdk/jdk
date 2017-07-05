@@ -126,9 +126,8 @@ void MemoryService::add_gen_collected_heap_info(GenCollectedHeap* heap) {
   CollectorPolicy* policy = heap->collector_policy();
 
   assert(policy->is_generation_policy(), "Only support two generations");
-  guarantee(heap->n_gens() == 2, "Only support two-generation heap");
-
   GenCollectorPolicy* gen_policy = policy->as_generation_policy();
+  guarantee(gen_policy->number_of_generations() == 2, "Only support two-generation heap");
   if (gen_policy != NULL) {
     Generation::Name kind = gen_policy->young_gen_spec()->name();
     switch (kind) {

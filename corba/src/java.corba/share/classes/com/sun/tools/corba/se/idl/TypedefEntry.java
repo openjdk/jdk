@@ -110,7 +110,7 @@ public class TypedefEntry extends SymtabEntry
   }
 
   /** Access the typedef generator.
-      @returns an object which implements the TypedefGen interface.
+      @return an object which implements the TypedefGen interface.
       @see TypedefGen */
   public Generator generator ()
   {

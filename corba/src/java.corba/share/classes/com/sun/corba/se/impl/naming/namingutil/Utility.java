@@ -36,7 +36,7 @@ import com.sun.corba.se.spi.logging.CORBALogDomains;
 /**
  *  Utility methods for Naming.
  *
- *  @Author Hemanth
+ *  @author Hemanth
  */
 class Utility {
     private static NamingSystemException wrapper =

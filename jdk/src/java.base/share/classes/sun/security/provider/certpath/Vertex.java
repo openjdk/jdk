@@ -67,7 +67,7 @@ public class Vertex {
     /**
      * return the certificate for this vertex
      *
-     * @returns X509Certificate
+     * @return X509Certificate
      */
     public X509Certificate getCertificate() {
         return cert;
@@ -78,7 +78,7 @@ public class Vertex {
      * adjacency list that contains certificates that could follow this
      * certificate.
      *
-     * @returns int index for this vertex, or -1 if no following certificates.
+     * @return int index for this vertex, or -1 if no following certificates.
      */
     public int getIndex() {
         return index;
@@ -99,7 +99,7 @@ public class Vertex {
      * return the throwable associated with this vertex;
      * returns null if none.
      *
-     * @returns Throwable
+     * @return Throwable
      */
     public Throwable getThrowable() {
         return throwable;
@@ -118,7 +118,7 @@ public class Vertex {
     /**
      * Return full string representation of vertex
      *
-     * @returns String representation of vertex
+     * @return String representation of vertex
      */
     @Override
     public String toString() {
@@ -129,7 +129,7 @@ public class Vertex {
      * Return string representation of this vertex's
      * certificate information.
      *
-     * @returns String representation of certificate info
+     * @return String representation of certificate info
      */
     public String certToString() {
         StringBuilder sb = new StringBuilder();
@@ -197,7 +197,7 @@ public class Vertex {
      * return Vertex throwable as String compatible with
      * the way toString returns other information
      *
-     * @returns String form of exception (or "none")
+     * @return String form of exception (or "none")
      */
     public String throwableToString() {
         StringBuilder sb = new StringBuilder("Exception:  ");
@@ -214,7 +214,7 @@ public class Vertex {
      * the way other Vertex.xToString() methods display
      * information.
      *
-     * @returns String form of index as "Last cert?  [Yes/No]
+     * @return String form of index as "Last cert?  [Yes/No]
      */
     public String moreToString() {
         StringBuilder sb = new StringBuilder("Last cert?  ");
@@ -227,7 +227,7 @@ public class Vertex {
      * return Vertex index as String compatible with
      * the way other Vertex.xToString() methods displays other information.
      *
-     * @returns String form of index as "Index:     [numeric index]"
+     * @return String form of index as "Index:     [numeric index]"
      */
     public String indexToString() {
         return "Index:      " + index + "\n";

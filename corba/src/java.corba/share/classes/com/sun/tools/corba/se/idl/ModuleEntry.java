@@ -84,7 +84,7 @@ public class ModuleEntry extends SymtabEntry
   } // generate
 
   /** Access the module generator.
-      @returns an object which implements the ModuleGen interface.
+      @return an object which implements the ModuleGen interface.
       @see ModuleGen */
   public Generator generator ()
   {

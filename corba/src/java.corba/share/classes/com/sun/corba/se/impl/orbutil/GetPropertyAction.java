@@ -35,7 +35,7 @@ package com.sun.corba.se.impl.orbutil ;
  * <code>AccessController.doPrivileged</code>.
  *
  * <p>The following code retrieves the value of the system
- * property named <code>"prop"</code> as a privileged action: <p>
+ * property named <code>"prop"</code> as a privileged action:
  *
  * <pre>
  * String s = (String) java.security.AccessController.doPrivileged(
@@ -67,7 +67,7 @@ public class GetPropertyAction implements java.security.PrivilegedAction {
      * value of that property.
      *
      * @param theProp the name of the system property.
-     * @param defaulVal the default value.
+     * @param defaultVal the default value.
      */
     public GetPropertyAction(String theProp, String defaultVal) {
         this.theProp = theProp;

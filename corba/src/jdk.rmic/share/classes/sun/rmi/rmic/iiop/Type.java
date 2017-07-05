@@ -51,7 +51,7 @@ import sun.rmi.rmic.Names;
  * conformance checking and name mapping as defined in the "Java to IDL
  * Mapping" OMG specification.  The family is composed of the following
  * fixed set of types:
- * <pre>
+ * <pre>{@literal
  *
  *                                              +- RemoteType <-- AbstractType
  *                                              |
@@ -67,7 +67,7 @@ import sun.rmi.rmic.Names;
  *                                              |
  *                                              +- NCClassType
  *
- * </pre>
+ * }</pre>
  * PrimitiveType represents a primitive or a void type.
  * <p>
  * CompoundType is an abstract base representing any non-special class

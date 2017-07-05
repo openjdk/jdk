@@ -36,7 +36,7 @@ import sun.security.provider.certpath.AlgorithmChecker;
 
 /**
  * Validator implementation built on the PKIX CertPath API. This
- * implementation will be emphasized going forward.<p>
+ * implementation will be emphasized going forward.
  * <p>
  * Note that the validate() implementation tries to use a PKIX validator
  * if that appears possible and a PKIX builder otherwise. This increases

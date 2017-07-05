@@ -76,9 +76,6 @@ import com.sun.corba.se.impl.util.JDKBridge;
 
 import com.sun.corba.se.impl.logging.IORSystemException;
 
-/**
- * @author
- */
 public class IIOPProfileImpl extends IdentifiableBase implements IIOPProfile
 {
     private ORB orb ;

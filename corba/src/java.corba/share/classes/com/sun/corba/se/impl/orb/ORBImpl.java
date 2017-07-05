@@ -585,7 +585,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
      * Create an NVList
      *
      * @param count     size of list to create
-     * @result          NVList created
+     * @return          NVList created
      *
      * @see NVList
      */
@@ -599,7 +599,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
      * Create an NVList corresponding to an OperationDef
      *
      * @param oper      operation def to use to create list
-     * @result          NVList created
+     * @return          NVList created
      *
      * @see NVList
      */
@@ -612,7 +612,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
     /**
      * Create a NamedValue
      *
-     * @result          NamedValue created
+     * @return          NamedValue created
      */
     public synchronized NamedValue create_named_value(String s, Any any, int flags)
     {
@@ -623,7 +623,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
     /**
      * Create an ExceptionList
      *
-     * @result          ExceptionList created
+     * @return          ExceptionList created
      */
     public synchronized org.omg.CORBA.ExceptionList create_exception_list()
     {
@@ -634,7 +634,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
     /**
      * Create a ContextList
      *
-     * @result          ContextList created
+     * @return          ContextList created
      */
     public synchronized org.omg.CORBA.ContextList create_context_list()
     {
@@ -645,7 +645,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
     /**
      * Get the default Context object
      *
-     * @result          the default Context object
+     * @return          the default Context object
      */
     public synchronized org.omg.CORBA.Context get_default_context()
     {
@@ -656,7 +656,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
     /**
      * Create an Environment
      *
-     * @result          Environment created
+     * @return          Environment created
      */
     public synchronized org.omg.CORBA.Environment create_environment()
     {
@@ -719,7 +719,7 @@ public class ORBImpl extends com.sun.corba.se.spi.orb.ORB
     /**
      * Get the next request that has gotten a response.
      *
-     * @result            the next request ready with a response.
+     * @return            the next request ready with a response.
      */
     public org.omg.CORBA.Request get_next_response()
         throws org.omg.CORBA.WrongTransaction

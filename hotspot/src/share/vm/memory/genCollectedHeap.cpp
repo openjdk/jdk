@@ -39,7 +39,7 @@
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/resourceArea.hpp"
-#include "memory/sharedHeap.hpp"
+#include "memory/strongRootsScope.hpp"
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -50,15 +50,15 @@
 #include "runtime/vmThread.hpp"
 #include "services/management.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/stack.inline.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/workgroup.hpp"
-#include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/concurrentMarkSweep/vmCMSOperations.hpp"
 #endif // INCLUDE_ALL_GCS
 
-GenCollectedHeap* GenCollectedHeap::_gch;
 NOT_PRODUCT(size_t GenCollectedHeap::_skip_header_HeapWords = 0;)
 
 // The set of potentially parallel tasks in root scanning.
@@ -78,20 +78,26 @@ enum GCH_strong_roots_tasks {
 };
 
 GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
-  SharedHeap(),
+  CollectedHeap(),
   _rem_set(NULL),
   _gen_policy(policy),
   _process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)),
   _full_collections_completed(0)
 {
   assert(policy != NULL, "Sanity check");
+  if (UseConcMarkSweepGC) {
+    _workers = new FlexibleWorkGang("GC Thread", ParallelGCThreads,
+                            /* are_GC_task_threads */true,
+                            /* are_ConcurrentGC_threads */false);
+    _workers->initialize_workers();
+  } else {
+    // Serial GC does not use workers.
+    _workers = NULL;
+  }
 }
 
 jint GenCollectedHeap::initialize() {
   CollectedHeap::pre_initialize();
-
-  _n_gens = gen_policy()->number_of_generations();
-  assert(_n_gens == 2, "There is no support for more than two generations");
 
   // While there are no constraints in the GC code that HeapWordSize
   // be any particular value, there are multiple other areas in the
@@ -119,8 +125,6 @@ jint GenCollectedHeap::initialize() {
 
   _rem_set = collector_policy()->create_rem_set(reserved_region());
   set_barrier_set(rem_set()->bs());
-
-  _gch = this;
 
   ReservedSpace young_rs = heap_rs.first_part(gen_policy()->young_gen_spec()->max_size(), false, false);
   _young_gen = gen_policy()->young_gen_spec()->init(young_rs, 0, rem_set());
@@ -166,7 +170,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
 }
 
 void GenCollectedHeap::post_initialize() {
-  SharedHeap::post_initialize();
+  CollectedHeap::post_initialize();
+  ref_processing_init();
   GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
   guarantee(policy->is_generation_policy(), "Illegal policy type");
   assert((_young_gen->kind() == Generation::DefNew) ||
@@ -185,7 +190,6 @@ void GenCollectedHeap::post_initialize() {
 }
 
 void GenCollectedHeap::ref_processing_init() {
-  SharedHeap::ref_processing_init();
   _young_gen->ref_processor_init();
   _old_gen->ref_processor_init();
 }
@@ -200,8 +204,7 @@ size_t GenCollectedHeap::used() const {
 
 // Save the "used_region" for generations level and lower.
 void GenCollectedHeap::save_used_regions(int level) {
-  assert(level >= 0, "Illegal level parameter");
-  assert(level < _n_gens, "Illegal level parameter");
+  assert(level == 0 || level == 1, "Illegal level parameter");
   if (level == 1) {
     _old_gen->save_used_region();
   }
@@ -417,7 +420,6 @@ void GenCollectedHeap::do_collection(bool   full,
   assert(Heap_lock->is_locked(),
          "the requesting thread should have the Heap_lock");
   guarantee(!is_gc_active(), "collection is not reentrant");
-  assert(max_level < n_gens(), "sanity check");
 
   if (GC_locker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
@@ -435,7 +437,7 @@ void GenCollectedHeap::do_collection(bool   full,
   {
     FlagSetting fl(_is_gc_active, true);
 
-    bool complete = full && (max_level == (n_gens()-1));
+    bool complete = full && (max_level == 1 /* old */);
     const char* gc_cause_prefix = complete ? "Full GC" : "GC";
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
     // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
@@ -507,7 +509,7 @@ void GenCollectedHeap::do_collection(bool   full,
     // Update "complete" boolean wrt what actually transpired --
     // for instance, a promotion failure could have led to
     // a whole heap collection.
-    complete = complete || (max_level_collected == n_gens() - 1);
+    complete = complete || (max_level_collected == 1 /* old */);
 
     if (complete) { // We did a "major" collection
       // FIXME: See comment at pre_full_gc_dump call
@@ -524,7 +526,7 @@ void GenCollectedHeap::do_collection(bool   full,
     }
 
     // Adjust generation sizes.
-    if (max_level_collected == 1) {
+    if (max_level_collected == 1 /* old */) {
       _old_gen->compute_new_size();
     }
     _young_gen->compute_new_size();
@@ -560,7 +562,8 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
 }
 
 void GenCollectedHeap::set_par_threads(uint t) {
-  SharedHeap::set_par_threads(t);
+  assert(t == 0 || !UseSerialGC, "Cannot have parallel threads");
+  CollectedHeap::set_par_threads(t);
   set_n_termination(t);
 }
 
@@ -586,7 +589,7 @@ void GenCollectedHeap::process_roots(bool activate_scope,
                                      CLDClosure* strong_cld_closure,
                                      CLDClosure* weak_cld_closure,
                                      CodeBlobClosure* code_roots) {
-  StrongRootsScope srs(this, activate_scope);
+  StrongRootsScope srs(activate_scope);
 
   // General roots.
   assert(Threads::thread_claim_parity() != 0, "must have called prologue code");
@@ -606,7 +609,8 @@ void GenCollectedHeap::process_roots(bool activate_scope,
   // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
   CodeBlobClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
 
-  Threads::possibly_parallel_oops_do(strong_roots, roots_from_clds_p, roots_from_code_p);
+  bool is_par = n_par_threads() > 0;
+  Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_clds_p, roots_from_code_p);
 
   if (!_process_strong_tasks->is_task_claimed(GCH_PS_Universe_oops_do)) {
     Universe::oops_do(strong_roots);
@@ -771,19 +775,19 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
 #endif // INCLUDE_ALL_GCS
   } else if (cause == GCCause::_wb_young_gc) {
     // minor collection for WhiteBox API
-    collect(cause, 0);
+    collect(cause, 0 /* young */);
   } else {
 #ifdef ASSERT
   if (cause == GCCause::_scavenge_alot) {
     // minor collection only
-    collect(cause, 0);
+    collect(cause, 0 /* young */);
   } else {
     // Stop-the-world full collection
-    collect(cause, n_gens() - 1);
+    collect(cause, 1 /* old */);
   }
 #else
     // Stop-the-world full collection
-    collect(cause, n_gens() - 1);
+    collect(cause, 1 /* old */);
 #endif
   }
 }
@@ -798,7 +802,7 @@ void GenCollectedHeap::collect(GCCause::Cause cause, int max_level) {
 void GenCollectedHeap::collect_locked(GCCause::Cause cause) {
   // The caller has the Heap_lock
   assert(Heap_lock->owned_by_self(), "this thread should own the Heap_lock");
-  collect_locked(cause, n_gens() - 1);
+  collect_locked(cause, 1 /* old */);
 }
 
 // this is the private collection interface
@@ -854,7 +858,7 @@ void GenCollectedHeap::collect_mostly_concurrent(GCCause::Cause cause) {
 #endif // INCLUDE_ALL_GCS
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs) {
-   do_full_collection(clear_all_soft_refs, _n_gens - 1);
+   do_full_collection(clear_all_soft_refs, 1 /* old */);
 }
 
 void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
@@ -886,7 +890,7 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
                   clear_all_soft_refs  /* clear_all_soft_refs */,
                   0                    /* size */,
                   false                /* is_tlab */,
-                  n_gens() - 1         /* max_level */);
+                  1  /* old */         /* max_level */);
   }
 }
 
@@ -899,17 +903,6 @@ bool GenCollectedHeap::is_in_young(oop p) {
 
 // Returns "TRUE" iff "p" points into the committed areas of the heap.
 bool GenCollectedHeap::is_in(const void* p) const {
-  #ifndef ASSERT
-  guarantee(VerifyBeforeGC      ||
-            VerifyDuringGC      ||
-            VerifyBeforeExit    ||
-            VerifyDuringStartup ||
-            PrintAssembly       ||
-            tty->count() != 0   ||   // already printing
-            VerifyAfterGC       ||
-    VMError::fatal_error_in_progress(), "too expensive");
-
-  #endif
   return _young_gen->is_in(p) || _old_gen->is_in(p);
 }
 
@@ -922,6 +915,11 @@ bool GenCollectedHeap::is_in_partial_collection(const void* p) {
   return p < _young_gen->reserved().end() && p != NULL;
 }
 #endif
+
+void GenCollectedHeap::oop_iterate_no_header(OopClosure* cl) {
+  NoHeaderExtendedOopClosure no_header_cl(cl);
+  oop_iterate(&no_header_cl);
+}
 
 void GenCollectedHeap::oop_iterate(ExtendedOopClosure* cl) {
   _young_gen->oop_iterate(cl);
@@ -1092,11 +1090,6 @@ void GenCollectedHeap::generation_iterate(GenClosure* cl,
   }
 }
 
-void GenCollectedHeap::space_iterate(SpaceClosure* cl) {
-  _young_gen->space_iterate(cl, true);
-  _old_gen->space_iterate(cl, true);
-}
-
 bool GenCollectedHeap::is_maximal_no_gc() const {
   return _young_gen->is_maximal_no_gc() && _old_gen->is_maximal_no_gc();
 }
@@ -1107,14 +1100,13 @@ void GenCollectedHeap::save_marks() {
 }
 
 GenCollectedHeap* GenCollectedHeap::heap() {
-  assert(_gch != NULL, "Uninitialized access to GenCollectedHeap::heap()");
-  assert(_gch->kind() == CollectedHeap::GenCollectedHeap, "not a generational heap");
-  return _gch;
+  CollectedHeap* heap = Universe::heap();
+  assert(heap != NULL, "Uninitialized access to GenCollectedHeap::heap()");
+  assert(heap->kind() == CollectedHeap::GenCollectedHeap, "Not a GenCollectedHeap");
+  return (GenCollectedHeap*)heap;
 }
 
-
 void GenCollectedHeap::prepare_for_compaction() {
-  guarantee(_n_gens = 2, "Wrong number of generations");
   // Start by compacting into same gen.
   CompactPoint cp(_old_gen);
   _old_gen->prepare_for_compaction(&cp);

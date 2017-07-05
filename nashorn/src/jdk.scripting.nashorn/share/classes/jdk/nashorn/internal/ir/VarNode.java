@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.parser.Token;
 
 /**
  * Node represents a var/let declaration.
@@ -210,7 +209,7 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
 
     @Override
     public void toString(final StringBuilder sb, final boolean printType) {
-        sb.append(Token.descType(getToken()).getName()).append(' ');
+        sb.append(tokenType().getName()).append(' ');
         name.toString(sb, printType);
 
         if (init != null) {

@@ -150,7 +150,6 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
   ~VM_GC_HeapInspection() {}
   virtual VMOp_Type type() const { return VMOp_GC_HeapInspection; }
   virtual bool skip_operation() const;
-  virtual bool doit_prologue();
   virtual void doit();
   void set_csv_format(bool value) {_csv_format = value;}
   void set_print_help(bool value) {_print_help = value;}

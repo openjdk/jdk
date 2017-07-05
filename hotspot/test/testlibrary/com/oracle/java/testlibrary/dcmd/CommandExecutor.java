@@ -40,16 +40,34 @@ public abstract class CommandExecutor {
      *          stderr, regardless of the specific executor used.
      */
     public final OutputAnalyzer execute(String cmd) throws CommandExecutorException {
-        System.out.printf("Running DCMD '%s' through '%s'%n", cmd, this.getClass().getSimpleName());
+        return execute(cmd, false);
+    }
+
+    /**
+     * Execute a diagnostic command
+     *
+     * @param cmd The diagnostic command to execute
+     * @param silent Do not print the command output
+     * @return an {@link jdk.testlibrary.OutputAnalyzer} encapsulating the output of the command
+     * @throws CommandExecutorException if there is an exception on the "calling side" while trying to execute the
+     *          Diagnostic Command. Exceptions thrown on the remote side are available as textual representations in
+     *          stderr, regardless of the specific executor used.
+     */
+    public final OutputAnalyzer execute(String cmd, boolean silent) throws CommandExecutorException {
+        if (!silent) {
+            System.out.printf("Running DCMD '%s' through '%s'%n", cmd, this.getClass().getSimpleName());
+        }
+
         OutputAnalyzer oa = executeImpl(cmd);
 
-        System.out.println("---------------- stdout ----------------");
-        System.out.println(oa.getStdout());
-        System.out.println("---------------- stderr ----------------");
-        System.out.println(oa.getStderr());
-        System.out.println("----------------------------------------");
-        System.out.println();
-
+        if (!silent) {
+            System.out.println("---------------- stdout ----------------");
+            System.out.println(oa.getStdout());
+            System.out.println("---------------- stderr ----------------");
+            System.out.println(oa.getStderr());
+            System.out.println("----------------------------------------");
+            System.out.println();
+        }
         return oa;
     }
 

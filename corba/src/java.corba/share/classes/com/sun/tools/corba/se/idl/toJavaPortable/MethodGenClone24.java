@@ -74,7 +74,7 @@ public class MethodGenClone24 extends AttributeGen
   } // ctor
 
   /**
-   * <d62023> - write an abstract method definition
+   * d62023 - write an abstract method definition
    **/
   protected void abstractMethod (Hashtable symbolTable, MethodEntry m, PrintWriter stream)
   {
@@ -91,7 +91,7 @@ public class MethodGenClone24 extends AttributeGen
   } // abstractMethod
 
   /**
-   * <d62023> - delete method templates for valuetypes
+   * d62023 - delete method templates for valuetypes
    **/
   protected void interfaceMethod (Hashtable symbolTable, MethodEntry m, PrintWriter stream)
   {
