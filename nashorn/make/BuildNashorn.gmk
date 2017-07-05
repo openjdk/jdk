@@ -44,8 +44,8 @@ MODULESOURCEPATH := $(NASHORN_TOPDIR)/src/*/share/classes
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
     JVM := $(JAVA), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -g -source 9 -target 9 -upgrademodulepath "$(JDK_OUTPUTDIR)/modules/" \
-         -system none -modulesourcepath "$(MODULESOURCEPATH)", \
+    FLAGS := -g -source 9 -target 9 --upgrade-module-path "$(JDK_OUTPUTDIR)/modules/" \
+         --system none --module-source-path "$(MODULESOURCEPATH)", \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
@@ -76,9 +76,9 @@ NASGEN_RUN_FILE := $(NASHORN_CLASSES_DIR)/_the.nasgen.run
 ifeq ($(BOOT_JDK_MODULAR), true)
   NASGEN_OPTIONS := \
       -cp $(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
-      -Xpatch:java.base=$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
-      -XaddExports:java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
-      -XaddExports:java.base/jdk.internal.org.objectweb.asm.util=ALL-UNNAMED \
+      --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/nasgen_classes \
+      --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+      --add-exports java.base/jdk.internal.org.objectweb.asm.util=ALL-UNNAMED \
       #
 else
   NASGEN_OPTIONS := \

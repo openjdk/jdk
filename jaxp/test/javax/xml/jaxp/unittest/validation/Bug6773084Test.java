@@ -32,11 +32,10 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
@@ -69,6 +68,7 @@ public class Bug6773084Test {
     private static final ExecutorService EXEC = Executors.newCachedThreadPool();
 
     private static final CyclicBarrier BARRIER = new CyclicBarrier(NTHREADS);
+    private static final int TIMEOUT = 110;
 
     public static final String IN_FOLDER = Bug6773084Test.class.getResource("Bug6773084In").getPath();
     public static final String XSD_PATH = Bug6773084Test.class.getResource("Bug6773084.xsd").getPath();
@@ -93,20 +93,23 @@ public class Bug6773084Test {
             }
         });
 
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+
         for (int i = 0; i < files.length; i++) {
-            EXEC.execute(new XMLValiddator(files[i], i));
+            EXEC.execute(new XMLValiddator(dbf.newDocumentBuilder().parse(files[i]), i));
         }
         runWithAllPerm(() -> EXEC.shutdown());
-
+        EXEC.awaitTermination(TIMEOUT, TimeUnit.SECONDS);
     }
 
     private static class XMLValiddator implements Runnable {
 
-        private File file;
+        private Document document;
         private int index;
 
-        public XMLValiddator(File file, int index) {
-            this.file = file;
+        public XMLValiddator(Document document, int index) {
+            this.document = document;
             this.index = index;
         }
 
@@ -117,23 +120,14 @@ public class Bug6773084Test {
                 BARRIER.await();
                 System.out.println("Validating....");
 
-                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                factory.setNamespaceAware(true);
-
-                DocumentBuilder builder = factory.newDocumentBuilder();
-                Document document = builder.parse(file);
-
                 Validator validator = schema.newValidator();
                 validator.setErrorHandler(new ErrorHandlerImpl());
                 validator.validate(new DOMSource(document));
-
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (SAXException e) {
                 e.printStackTrace();
                 Assert.fail("Test failed.");
-            } catch (ParserConfigurationException e) {
-                e.printStackTrace();
             } catch (BrokenBarrierException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {

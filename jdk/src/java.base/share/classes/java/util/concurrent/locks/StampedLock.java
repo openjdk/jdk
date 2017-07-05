@@ -263,6 +263,47 @@ public class StampedLock implements java.io.Serializable {
      * is theoretically possible, so we additionally add a
      * storeStoreFence after lock acquisition CAS.
      *
+     * ----------------------------------------------------------------
+     * Here's an informal proof that plain reads by _successful_
+     * readers see plain writes from preceding but not following
+     * writers (following Boehm and the C++ standard [atomics.fences]):
+     *
+     * Because of the total synchronization order of accesses to
+     * volatile long state containing the sequence number, writers and
+     * _successful_ readers can be globally sequenced.
+     *
+     * int x, y;
+     *
+     * Writer 1:
+     * inc sequence (odd - "locked")
+     * storeStoreFence();
+     * x = 1; y = 2;
+     * inc sequence (even - "unlocked")
+     *
+     * Successful Reader:
+     * read sequence (even)
+     * // must see writes from Writer 1 but not Writer 2
+     * r1 = x; r2 = y;
+     * acquireFence();
+     * read sequence (even - validated unchanged)
+     * // use r1 and r2
+     *
+     * Writer 2:
+     * inc sequence (odd - "locked")
+     * storeStoreFence();
+     * x = 3; y = 4;
+     * inc sequence (even - "unlocked")
+     *
+     * Visibility of writer 1's stores is normal - reader's initial
+     * read of state synchronizes with writer 1's final write to state.
+     * Lack of visibility of writer 2's plain writes is less obvious.
+     * If reader's read of x or y saw writer 2's write, then (assuming
+     * semantics of C++ fences) the storeStoreFence would "synchronize"
+     * with reader's acquireFence and reader's validation read must see
+     * writer 2's initial write to state and so validation must fail.
+     * But making this "proof" formal and rigorous is an open problem!
+     * ----------------------------------------------------------------
+     *
      * The memory layout keeps lock state and queue pointers together
      * (normally on the same cache line). This usually works well for
      * read-mostly loads. In most other cases, the natural tendency of
@@ -276,14 +317,14 @@ public class StampedLock implements java.io.Serializable {
     /** Number of processors, for spin control */
     private static final int NCPU = Runtime.getRuntime().availableProcessors();
 
-    /** Maximum number of retries before enqueuing on acquisition */
-    private static final int SPINS = (NCPU > 1) ? 1 << 6 : 0;
+    /** Maximum number of retries before enqueuing on acquisition; at least 1 */
+    private static final int SPINS = (NCPU > 1) ? 1 << 6 : 1;
 
-    /** Maximum number of retries before blocking at head on acquisition */
-    private static final int HEAD_SPINS = (NCPU > 1) ? 1 << 10 : 0;
+    /** Maximum number of tries before blocking at head on acquisition */
+    private static final int HEAD_SPINS = (NCPU > 1) ? 1 << 10 : 1;
 
     /** Maximum number of retries before re-blocking */
-    private static final int MAX_HEAD_SPINS = (NCPU > 1) ? 1 << 16 : 0;
+    private static final int MAX_HEAD_SPINS = (NCPU > 1) ? 1 << 16 : 1;
 
     /** The period for yielding when waiting for overflow spinlock */
     private static final int OVERFLOW_YIELD_RATE = 7; // must be power 2 - 1
@@ -1228,6 +1269,11 @@ public class StampedLock implements java.io.Serializable {
                         WCOWAIT.compareAndSet(h, c, c.cowait) &&
                         (w = c.thread) != null) // help release
                         LockSupport.unpark(w);
+                    if (Thread.interrupted()) {
+                        if (interruptible)
+                            return cancelWaiter(node, p, true);
+                        wasInterrupted = true;
+                    }
                     if (h == (pp = p.prev) || h == p || pp == null) {
                         long m, s, ns;
                         do {
@@ -1264,11 +1310,6 @@ public class StampedLock implements java.io.Serializable {
                                 LockSupport.parkNanos(this, time);
                         }
                         node.thread = null;
-                        if (Thread.interrupted()) {
-                            if (interruptible)
-                                return cancelWaiter(node, p, true);
-                            wasInterrupted = true;
-                        }
                     }
                 }
             }

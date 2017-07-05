@@ -137,7 +137,7 @@ public abstract class ModularTest {
         final StringJoiner command = new StringJoiner(SPACE, SPACE, SPACE);
         vmArgs.forEach((key, value) -> command.add(key + value));
         if (modulePath != null) {
-            command.add("-mp").add(modulePath.toFile().getCanonicalPath());
+            command.add("--module-path").add(modulePath.toFile().getCanonicalPath());
         }
         if (classPath != null && classPath.length() > 0) {
             command.add("-cp").add(classPath);

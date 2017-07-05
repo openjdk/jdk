@@ -23,26 +23,11 @@
 
 /*
  * @test
- * @summary Module system initialization exception results if a module is specificed twice to Xpatch.
- * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @bug 8132943
+ * @library ../../../../java/security/testlibrary
+ * @build CertificateBuilder SimpleOCSPServer
+ * @run main/othervm java.base/sun.security.ssl.StatusReqSelection
+ * @summary ServerHandshaker may select non-empty OCSPStatusRequest
+ *          structures when Responder ID selection is not supported
  */
-
-import jdk.test.lib.*;
-
-public class XpatchDupModule {
-
-  // The module system initialization should generate an ExceptionInInitializerError
-  // if -Xpatch is specified with the same module more than once.
-
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-Xpatch:module1=module1_dir",
-      "-Xpatch:module1=module1_dir",
-      "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("java.lang.ExceptionInInitializerError");
-    output.shouldHaveExitValue(1);
-  }
-}
 
