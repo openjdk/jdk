@@ -167,17 +167,6 @@ typedef uint16_t jushort;
 typedef uint32_t juint;
 typedef uint64_t julong;
 
-//----------------------------------------------------------------------------------------------------
-// Special (possibly not-portable) casts
-// Cast floats into same-size integers and vice-versa w/o changing bit-pattern
-// %%%%%% These seem like standard C++ to me--how about factoring them out? - Ungar
-
-inline jint    jint_cast   (jfloat  x)           { return *(jint*   )&x; }
-inline jlong   jlong_cast  (jdouble x)           { return *(jlong*  )&x; }
-inline julong  julong_cast (jdouble x)           { return *(julong* )&x; }
-
-inline jfloat  jfloat_cast (jint    x)           { return *(jfloat* )&x; }
-inline jdouble jdouble_cast(jlong   x)           { return *(jdouble*)&x; }
 
 //----------------------------------------------------------------------------------------------------
 // Constant for jlong (specifying an long long canstant is C++ compiler specific)

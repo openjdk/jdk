@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,7 @@ import javax.swing.event.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.*;
-import java.io.*;
 import java.util.EventObject;
-import java.util.Vector;
 
 /**
  * A <code>TreeCellEditor</code>. You need to supply an
@@ -60,7 +57,6 @@ import java.util.Vector;
  *
  * @author Scott Violet
  */
-@SuppressWarnings("serial") // Same-version serialization only
 public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
             TreeSelectionListener {
     /** Editor handling the editing. */
@@ -532,6 +528,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      */
     protected TreeCellEditor createTreeCellEditor() {
         Border              aBorder = UIManager.getBorder("Tree.editorBorder");
+        @SuppressWarnings("serial") // Safe: outer class is non-serializable
         DefaultCellEditor   editor = new DefaultCellEditor
             (new DefaultTextField(aBorder)) {
             public boolean shouldSelectCell(EventObject event) {
@@ -556,35 +553,6 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
         editingComponent = null;
     }
 
-    // Serialization support.
-    private void writeObject(ObjectOutputStream s) throws IOException {
-        Vector<Object> values = new Vector<Object>();
-
-        s.defaultWriteObject();
-        // Save the realEditor, if its Serializable.
-        if(realEditor != null && realEditor instanceof Serializable) {
-            values.addElement("realEditor");
-            values.addElement(realEditor);
-        }
-        s.writeObject(values);
-    }
-
-    private void readObject(ObjectInputStream s)
-        throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
-
-        Vector<?>       values = (Vector)s.readObject();
-        int             indexCounter = 0;
-        int             maxCounter = values.size();
-
-        if(indexCounter < maxCounter && values.elementAt(indexCounter).
-           equals("realEditor")) {
-            realEditor = (TreeCellEditor)values.elementAt(++indexCounter);
-            indexCounter++;
-        }
-    }
-
-
     /**
      * <code>TextField</code> used when no editor is supplied.
      * This textfield locks into the border it is constructed with.
@@ -592,6 +560,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      * renderer is not <code>null</code> and no font
      * has been specified the preferred height is that of the renderer.
      */
+    @SuppressWarnings("serial") // Safe: outer class is non-serializable
     public class DefaultTextField extends JTextField {
         /** Border to use. */
         protected Border         border;
@@ -673,6 +642,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
     /**
      * Container responsible for placing the <code>editingComponent</code>.
      */
+    @SuppressWarnings("serial") // Safe: outer class is non-serializable
     public class EditorContainer extends Container {
         /**
          * Constructs an <code>EditorContainer</code> object.

@@ -229,9 +229,10 @@ void AwtCursor::UpdateCursor(AwtComponent *comp) {
                 if (cur != NULL) {
                     ::SetCursor(cur);
                 } else {
-                    safe_ExceptionOccurred(env);
+                    if (safe_ExceptionOccurred(env)) {
+                        env->ExceptionClear();
+                    }
                 }
-
                 if (AwtCursor::updateCursorID == NULL) {
                     jclass cls =
                     env->FindClass("sun/awt/windows/WGlobalCursorManager");

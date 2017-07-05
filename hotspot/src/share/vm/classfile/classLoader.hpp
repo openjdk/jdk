@@ -128,6 +128,8 @@ class LazyClassPathEntry: public ClassPathEntry {
   bool is_jar_file();
   const char* name()  { return _path; }
   LazyClassPathEntry(char* path, const struct stat* st);
+  virtual ~LazyClassPathEntry();
+
   ClassFileStream* open_stream(const char* name, TRAPS);
   void set_meta_index(MetaIndex* meta_index) { _meta_index = meta_index; }
   virtual bool is_lazy();

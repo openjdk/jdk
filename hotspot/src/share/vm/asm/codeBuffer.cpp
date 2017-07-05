@@ -269,7 +269,7 @@ address CodeBuffer::decode_begin() {
 
 GrowableArray<int>* CodeBuffer::create_patch_overflow() {
   if (_overflow_arena == NULL) {
-    _overflow_arena = new (mtCode) Arena();
+    _overflow_arena = new (mtCode) Arena(mtCode);
   }
   return new (_overflow_arena) GrowableArray<int>(_overflow_arena, 8, 0, 0);
 }

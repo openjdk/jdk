@@ -774,6 +774,11 @@ void VMError::report(outputStream* st) {
        st->cr();
      }
 
+  STEP(228, "(Native Memory Tracking)" )
+     if (_verbose) {
+       MemTracker::final_report(st);
+     }
+
   STEP(230, "" )
 
      if (_verbose) {
@@ -896,9 +901,6 @@ void VMError::report_and_die() {
   static bool out_done = false;         // done printing to standard out
   static bool log_done = false;         // done saving error log
   static bool transmit_report_done = false; // done error reporting
-
-  // disble NMT to avoid further exception
-  MemTracker::shutdown(MemTracker::NMT_error_reporting);
 
   if (SuppressFatalErrorMessage) {
       os::abort();

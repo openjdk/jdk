@@ -52,6 +52,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/cardTableRS.hpp"
 #include "memory/defNewGeneration.hpp"
 #include "memory/freeBlockDictionary.hpp"
@@ -93,6 +94,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -3296,14 +3298,14 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     }
   }
   if (strstr(typeName, " const") == typeName + len - 6) {
-    char * s = strdup(typeName);
+    char * s = os::strdup_check_oom(typeName);
     s[len - 6] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {
-      free(s);
+      os::free(s);
       return 1;
     }
-    free(s);
+    os::free(s);
   }
   if (!isRecurse) {
     tty->print_cr("type \"%s\" not found", typeName);

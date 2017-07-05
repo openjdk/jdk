@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,12 @@ public class LocaleDataMetaInfo {
 
         resourceNameToLocales.put("CollationData",
                                   " #CollationData_ENLocales# | #CollationData_NonENLocales# ");
+
+        resourceNameToLocales.put("BreakIteratorInfo",
+                                  " #BreakIteratorInfo_ENLocales# | #BreakIteratorInfo_NonENLocales# ");
+
+        resourceNameToLocales.put("BreakIteratorRules",
+                                  " #BreakIteratorRules_ENLocales# | #BreakIteratorRules_NonENLocales# ");
 
         resourceNameToLocales.put("TimeZoneNames",
                                   " #TimeZoneNames_ENLocales# | #TimeZoneNames_NonENLocales# ");

@@ -209,7 +209,7 @@ class InvokerBytecodeGenerator {
             throw new InternalError("observed CP placeholder twice: " + cpPlaceholder);
         }
         // insert placeholder in CP and remember the patch
-        int index = cw.newConst((Object) cpPlaceholder);  // TODO check if aready in the constant pool
+        int index = cw.newConst((Object) cpPlaceholder);  // TODO check if already in the constant pool
         cpPatches.put(cpPlaceholder, new CpPatch(index, cpPlaceholder, arg));
         return cpPlaceholder;
     }
