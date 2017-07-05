@@ -240,7 +240,7 @@ enum CounterNS {
  * be removed from the product in the future.
  *
  */
-class PerfData : public CHeapObj {
+class PerfData : public CHeapObj<mtInternal> {
 
   friend class StatSampler;      // for access to protected void sample()
   friend class PerfDataManager;  // for access to protected destructor
@@ -342,7 +342,7 @@ class PerfData : public CHeapObj {
  * invoke the take_sample() method and write the value returned to its
  * appropriate location in the PerfData memory region.
  */
-class PerfLongSampleHelper : public CHeapObj {
+class PerfLongSampleHelper : public CHeapObj<mtInternal> {
   public:
     virtual jlong take_sample() = 0;
 };
@@ -591,7 +591,7 @@ class PerfStringVariable : public PerfString {
  * some other implementation, as long as that implementation provides
  * a mechanism to iterate over the container by index.
  */
-class PerfDataList : public CHeapObj {
+class PerfDataList : public CHeapObj<mtInternal> {
 
   private:
 

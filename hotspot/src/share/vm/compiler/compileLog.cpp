@@ -37,14 +37,14 @@ CompileLog* CompileLog::_first = NULL;
 CompileLog::CompileLog(const char* file, FILE* fp, intx thread_id)
   : _context(_context_buffer, sizeof(_context_buffer))
 {
-  initialize(new(ResourceObj::C_HEAP) fileStream(fp));
+  initialize(new(ResourceObj::C_HEAP, mtCompiler) fileStream(fp));
   _file = file;
   _file_end = 0;
   _thread_id = thread_id;
 
   _identities_limit = 0;
   _identities_capacity = 400;
-  _identities = NEW_C_HEAP_ARRAY(char, _identities_capacity);
+  _identities = NEW_C_HEAP_ARRAY(char, _identities_capacity, mtCompiler);
 
   // link into the global list
   { MutexLocker locker(CompileTaskAlloc_lock);
@@ -56,7 +56,7 @@ CompileLog::CompileLog(const char* file, FILE* fp, intx thread_id)
 CompileLog::~CompileLog() {
   delete _out;
   _out = NULL;
-  FREE_C_HEAP_ARRAY(char, _identities);
+  FREE_C_HEAP_ARRAY(char, _identities, mtCompiler);
 }
 
 
@@ -109,7 +109,7 @@ int CompileLog::identify(ciObject* obj) {
   if (id >= _identities_capacity) {
     int new_cap = _identities_capacity * 2;
     if (new_cap <= id)  new_cap = id + 100;
-    _identities = REALLOC_C_HEAP_ARRAY(char, _identities, new_cap);
+    _identities = REALLOC_C_HEAP_ARRAY(char, _identities, new_cap, mtCompiler);
     _identities_capacity = new_cap;
   }
   while (id >= _identities_limit) {

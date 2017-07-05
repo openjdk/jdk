@@ -443,7 +443,7 @@ vframeArray* vframeArray::allocate(JavaThread* thread, int frame_size, GrowableA
   // Allocate the vframeArray
   vframeArray * result = (vframeArray*) AllocateHeap(sizeof(vframeArray) + // fixed part
                                                      sizeof(vframeArrayElement) * (chunk->length() - 1), // variable part
-                                                     "vframeArray::allocate");
+                                                     mtCompiler);
   result->_frames = chunk->length();
   result->_owner_thread = thread;
   result->_sender = sender;

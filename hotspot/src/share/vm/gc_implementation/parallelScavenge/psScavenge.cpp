@@ -62,8 +62,8 @@ bool                       PSScavenge::_survivor_overflow = false;
 int                        PSScavenge::_tenuring_threshold = 0;
 HeapWord*                  PSScavenge::_young_generation_boundary = NULL;
 elapsedTimer               PSScavenge::_accumulated_time;
-Stack<markOop>             PSScavenge::_preserved_mark_stack;
-Stack<oop>                 PSScavenge::_preserved_oop_stack;
+Stack<markOop, mtGC>       PSScavenge::_preserved_mark_stack;
+Stack<oop, mtGC>           PSScavenge::_preserved_oop_stack;
 CollectorCounters*         PSScavenge::_counters = NULL;
 bool                       PSScavenge::_promotion_failed = false;
 

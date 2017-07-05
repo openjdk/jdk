@@ -29,7 +29,7 @@
 
 typedef void (*initializer)(void);
 
-class AbstractCompiler : public CHeapObj {
+class AbstractCompiler : public CHeapObj<mtCompiler> {
  private:
   bool _is_initialized; // Mark whether compiler object is initialized
 

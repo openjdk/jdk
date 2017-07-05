@@ -37,7 +37,8 @@ ifeq ($(COMPILER_REV_NUMERIC),508)
 endif
 endif
 
-CFLAGS += $(DEBUG_CFLAGS/BYFILE)
+# _NMT_NOINLINE_ informs NMT that no inlining by Compiler
+CFLAGS += $(DEBUG_CFLAGS/BYFILE) -D_NMT_NOINLINE_
 
 # Set the environment variable HOTSPARC_GENERIC to "true"
 # to inhibit the effect of the previous line on CFLAGS.

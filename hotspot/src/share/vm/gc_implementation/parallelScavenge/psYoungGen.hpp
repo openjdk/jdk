@@ -33,7 +33,7 @@
 
 class PSMarkSweepDecorator;
 
-class PSYoungGen : public CHeapObj {
+class PSYoungGen : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class ParallelScavengeHeap;
   friend class AdjoiningGenerations;

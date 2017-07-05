@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
 
-class AbstractDecoder : public CHeapObj {
+class AbstractDecoder : public CHeapObj<mtInternal> {
 public:
   // status code for decoding native C frame
   enum decoder_status {
