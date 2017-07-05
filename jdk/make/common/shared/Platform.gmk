@@ -373,34 +373,40 @@ ifeq ($(PLATFORM), windows)
   REQUIRED_DXSDK_VER = 0x0700
   OS_VENDOR = Microsoft
   # How much RAM does this machine have:
-  ifeq ($(USING_CYGWIN),true)
-    # CYGWIN has the 'free' utility
-    _MB_OF_MEMORY := \
-	 $(shell free -m | grep Mem: | awk '{print $$2;}' )
-  else
-    # Windows 2000 has the mem utility, but two memory areas
-    #    extended memory is what is beyond 1024M
-    _B_OF_EXT_MEMORY := \
-	 $(shell mem 2> $(DEV_NULL) | grep 'total contiguous extended memory' | awk '{print $$1;}')
-    ifeq ($(_B_OF_EXT_MEMORY),)
-      _B_OF_MEMORY := \
-	 $(shell mem 2> $(DEV_NULL) | grep 'total conventional memory' | awk '{print $$1;}')
-    else
-      _B_OF_MEMORY := \
-         $(shell expr 1048576 '+' $(_B_OF_EXT_MEMORY) 2> $(DEV_NULL))
-    endif
-    ifeq ($(_B_OF_MEMORY),)
-      # Windows 2003 has the systeminfo utility use it if mem doesn't work
+  ifeq ($(JDK_HAS_MEM_INFO),)
+    ifeq ($(USING_CYGWIN),true)
+      # CYGWIN has the 'free' utility
       _MB_OF_MEMORY := \
-	  $(shell systeminfo 2> $(DEV_NULL) | grep 'Total Physical Memory:' | awk '{print $$4;}' | sed -e 's@,@@')
+	   $(shell free -m | grep Mem: | awk '{print $$2;}' )
     else
-      _MB_OF_MEMORY := $(shell expr $(_B_OF_MEMORY) '/' 1024 2> $(DEV_NULL))
+      # Windows 2000 has the mem utility, but two memory areas
+      #    extended memory is what is beyond 1024M
+      _B_OF_EXT_MEMORY := \
+	   $(shell mem 2> $(DEV_NULL) | \
+		   grep 'total contiguous extended memory' | awk '{print $$1;}')
+      ifeq ($(_B_OF_EXT_MEMORY),)
+          _B_OF_MEMORY := \
+	   $(shell mem 2> $(DEV_NULL) | \
+		   grep 'total conventional memory' | awk '{print $$1;}')
+      else
+        _B_OF_MEMORY := \
+           $(shell expr 1048576 '+' $(_B_OF_EXT_MEMORY) 2> $(DEV_NULL))
+      endif
+      ifeq ($(_B_OF_MEMORY),)
+        # Windows 2003 has the systeminfo utility use it if mem doesn't work
+        _MB_OF_MEMORY := \
+	    $(shell systeminfo 2> $(DEV_NULL) | \
+		    grep 'Total Physical Memory:' | \
+		    awk '{print $$4;}' | sed -e 's@,@@')
+      else
+        _MB_OF_MEMORY := $(shell expr $(_B_OF_MEMORY) '/' 1024 2> $(DEV_NULL))
+      endif
     endif
-  endif
-  ifeq ($(shell expr $(_MB_OF_MEMORY) '+' 0 2> $(DEV_NULL)), $(_MB_OF_MEMORY))
-    MB_OF_MEMORY := $(_MB_OF_MEMORY)
-  else
-    MB_OF_MEMORY := 512
+    ifeq ($(shell expr $(_MB_OF_MEMORY) '+' 0 2> $(DEV_NULL)), $(_MB_OF_MEMORY))
+      MB_OF_MEMORY := $(_MB_OF_MEMORY)
+    else
+      MB_OF_MEMORY := 512
+    endif
   endif
 endif
 
@@ -446,30 +452,38 @@ endif
 #    system swapping during the build.
 #    If we don't know, assume 512. Subtract 128 from MB for VM MAX.
 #    Don't set VM max over 1024-128=896.
-ifneq ($(MB_OF_MEMORY),)
-  LOW_MEMORY_MACHINE := $(shell \
-    if [ $(MB_OF_MEMORY) -le 512 ] ; then \
-      echo "true"; \
-    else \
-      echo "false"; \
-    fi)
-  MAX_VM_MEMORY := $(shell \
-    if [ $(MB_OF_MEMORY) -le 1024 ] ; then \
-      expr $(MB_OF_MEMORY) '-' 128 2> $(DEV_NULL) ; \
-    else \
-      echo "896"; \
-    fi)
-  MIN_VM_MEMORY := $(shell \
-    if [ $(MAX_VM_MEMORY) -le 128 ] ; then \
-      expr $(MAX_VM_MEMORY) '-' 8 2> $(DEV_NULL) ; \
-    else \
-      echo "128"; \
-    fi)
-else
-  MB_OF_MEMORY       := unknown
-  LOW_MEMORY_MACHINE := true
-  MAX_VM_MEMORY      := 384
-  MIN_VM_MEMORY      := 128
+ifeq ($(JDK_HAS_MEM_INFO),)
+  JDK_HAS_MEM_INFO=true
+  export JDK_HAS_MEM_INFO
+  ifneq ($(MB_OF_MEMORY),)
+    LOW_MEMORY_MACHINE := $(shell \
+      if [ $(MB_OF_MEMORY) -le 512 ] ; then \
+        echo "true"; \
+      else \
+        echo "false"; \
+      fi)
+    MAX_VM_MEMORY := $(shell \
+      if [ $(MB_OF_MEMORY) -le 1024 ] ; then \
+        expr $(MB_OF_MEMORY) '-' 128 2> $(DEV_NULL) ; \
+      else \
+        echo "896"; \
+      fi)
+    MIN_VM_MEMORY := $(shell \
+      if [ $(MAX_VM_MEMORY) -le 128 ] ; then \
+        expr $(MAX_VM_MEMORY) '-' 8 2> $(DEV_NULL) ; \
+      else \
+        echo "128"; \
+      fi)
+  else
+    MB_OF_MEMORY       := unknown
+    LOW_MEMORY_MACHINE := true
+    MAX_VM_MEMORY      := 384
+    MIN_VM_MEMORY      := 128
+  endif
+  export MB_OF_MEMORY
+  export LOW_MEMORY_MACHINE
+  export MAX_VM_MEMORY
+  export MIN_VM_MEMORY
 endif
 
 # If blanks in the username, use the first 4 words and pack them together

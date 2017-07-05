@@ -40,6 +40,9 @@
 #   LDLIBS        (set $(EXTRA_LIBS) instead)
 #   LDLIBS_COMMON (set $(EXTRA_LIBS) instead)
 #   LINTFLAGS     (set $(OTHER_LINTFLAGS) instead)
+#
+# Note: CPPFLAGS are used in C and C++ compiles.
+#
 
 # Get shared JDK settings
 include $(JDK_MAKE_SHARED_DIR)/Defs.gmk
@@ -112,6 +115,10 @@ endif
 #                       Required with many of the source files.
 #       -mt             Assume multi-threaded (important)
 #
+# The more unusual options to the Sun C compiler:
+#       +w              Print more warnings
+#       +w2             Maximum warnings
+#
 
 #
 # Debug flag for C and C++ compiler
@@ -140,15 +147,34 @@ ifeq ($(FASTDEBUG), true)
   CXXFLAGS_DEBUG_OPTION  = -g0  $(CC_FASTDEBUG_OPT)
 endif
 
-CFLAGS_COMMON   = -v -mt -L$(OBJDIR) -xc99=%none
+CFLAGS_COMMON   = -L$(OBJDIR)
+
+# Do not allow C99 language features like declarations in code etc.
+CFLAGS_COMMON  += -xc99=%none
+
+# Allow C++ comments in C code
 CFLAGS_COMMON  += -xCC
-CFLAGS_COMMON  += -errshort=tags
+
+# Show error message tags on errors
+CFLAGS_COMMON   += -errshort=tags
+CXXFLAGS_COMMON += -errtags=yes
+
+# Optimization flags
 CFLAGS_OPT      = $(POPT)
+
+# Debug version flags
 CFLAGS_DBG      = $(CFLAGS_DEBUG_OPTION)
-CFLAGS_COMMON  +=  -Xa $(CFLAGS_REQUIRED)
+
+# Required C compiler flags
+CFLAGS_COMMON  += -Xa $(CFLAGS_REQUIRED)
+
+# Maximum warnings all the time
+CXXFLAGS_COMMON += +w
+CFLAGS_COMMON   += -v
 
 # Assume MT behavior all the time (important)
-CXXFLAGS_COMMON  = -mt
+CXXFLAGS_COMMON += -mt
+CFLAGS_COMMON   += -mt
 
 # Assume no C++ exceptions are used
 CXXFLAGS_COMMON += -features=no%except -DCC_NOEX
@@ -237,8 +263,8 @@ LINTFLAGS_COMMON += $(LINT_XARCH_OPTION)
 # OTHER_CFLAGS += -DPERTURBALOT
 #
 
-CPPFLAGS_COMMON = -D$(ARCH_FAMILY) -D__solaris__ -D_REENTRANT 
-CPPFLAGS_OPT    = 
+CPPFLAGS_COMMON = -D__solaris__  -D$(ARCH_FAMILY)
+CPPFLAGS_OPT    = -DNDEBUG
 CPPFLAGS_DBG    = -DDEBUG
 
 ifeq ($(ARCH_FAMILY), i586)

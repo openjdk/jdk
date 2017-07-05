@@ -27,6 +27,7 @@ package javax.management;
 
 import com.sun.jmx.mbeanserver.DescriptorCache;
 import com.sun.jmx.mbeanserver.Introspector;
+import com.sun.jmx.mbeanserver.MBeanInjector;
 import com.sun.jmx.mbeanserver.MBeanSupport;
 import com.sun.jmx.mbeanserver.MXBeanSupport;
 import com.sun.jmx.mbeanserver.StandardMBeanSupport;
@@ -125,7 +126,78 @@ import static javax.management.JMX.MBeanOptions;
  *
  * @since 1.5
  */
-public class StandardMBean implements DynamicMBean, MBeanRegistration {
+public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
+
+    /**
+     * <p>Options controlling the behavior of {@code StandardMBean} instances.</p>
+     */
+    public static class Options extends JMX.MBeanOptions {
+        private static final long serialVersionUID = 5107355471177517164L;
+
+        private boolean wrappedVisible;
+
+        /**
+         * <p>Construct an {@code Options} object where all options have
+         * their default values.</p>
+         */
+        public Options() {}
+
+        @Override
+        public Options clone() {
+            return (Options) super.clone();
+        }
+
+        /**
+         * <p>Defines whether the {@link StandardMBean#getWrappedObject()
+         * getWrappedObject} method returns the wrapped object.</p>
+         *
+         * <p>If this option is true, then {@code getWrappedObject()} will return
+         * the same object as {@link StandardMBean#getImplementation()
+         * getImplementation}.  Otherwise, it will return the
+         * StandardMBean instance itself.  The setting of this option
+         * affects the behavior of {@link MBeanServer#getClassLoaderFor
+         * MBeanServer.getClassLoaderFor} and {@link MBeanServer#isInstanceOf
+         * MBeanServer.isInstanceOf}.  The default value is false for
+         * compatibility reasons, but true is a better value for most new code.</p>
+         *
+         * @return true if this StandardMBean's {@link
+         * StandardMBean#getWrappedObject getWrappedObject} returns the wrapped
+         * object.
+         */
+        public boolean isWrappedObjectVisible() {
+            return this.wrappedVisible;
+        }
+
+        /**
+         * <p>Set the {@link #isWrappedObjectVisible WrappedObjectVisible} option
+         * to the given value.</p>
+         * @param visible the new value.
+         */
+        public void setWrappedObjectVisible(boolean visible) {
+            this.wrappedVisible = visible;
+        }
+
+        // Canonical objects for each of (MXBean,!MXBean) x (WVisible,!WVisible)
+        private static final Options[] CANONICALS = {
+            new Options(), new Options(), new Options(), new Options(),
+        };
+        static {
+            CANONICALS[1].setMXBeanMappingFactory(MXBeanMappingFactory.DEFAULT);
+            CANONICALS[2].setWrappedObjectVisible(true);
+            CANONICALS[3].setMXBeanMappingFactory(MXBeanMappingFactory.DEFAULT);
+            CANONICALS[3].setWrappedObjectVisible(true);
+        }
+        @Override
+        MBeanOptions[] canonicals() {
+            return CANONICALS;
+        }
+
+        @Override
+        boolean same(MBeanOptions opts) {
+            return (super.same(opts) && opts instanceof Options &&
+                    ((Options) opts).wrappedVisible == wrappedVisible);
+        }
+    }
 
     private final static DescriptorCache descriptors =
         DescriptorCache.getInstance(JMX.proof);
@@ -347,7 +419,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      *        the management interface associated with the given
      *        implementation.
      * @param options MBeanOptions that control the operation of the resulting
-     *        MBean, as documented in the {@link MBeanOptions} class.
+     *        MBean.
      * @param <T> Allows the compiler to check
      * that {@code implementation} does indeed implement the class
      * described by {@code mbeanInterface}.  The compiler can only
@@ -381,7 +453,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * @param mbeanInterface The Management Interface exported by this
      *        MBean.
      * @param options MBeanOptions that control the operation of the resulting
-     *        MBean, as documented in the {@link MBeanOptions} class.
+     *        MBean.
      *
      * @exception IllegalArgumentException if the <var>mbeanInterface</var>
      *    does not follow JMX design patterns for Management Interfaces, or
@@ -441,7 +513,67 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * @see #setImplementation
      **/
     public Object getImplementation() {
-        return mbean.getResource();
+        return mbean.getWrappedObject();
+    }
+
+    /**
+     * <p>Get the wrapped implementation object or return this object.</p>
+     *
+     * <p>For compatibility reasons, this method only returns the wrapped
+     * implementation object if the {@link Options#isWrappedObjectVisible
+     * WrappedObjectVisible} option was specified when this StandardMBean
+     * was created.  Otherwise it returns {@code this}.</p>
+     *
+     * <p>If you want the MBeanServer's {@link MBeanServer#getClassLoaderFor
+     * getClassLoaderFor} and {@link MBeanServer#isInstanceOf
+     * isInstanceOf} methods to refer to the wrapped implementation and
+     * not this StandardMBean object, then you must set the
+     * {@code WrappedObjectVisible} option, for example using:</p>
+     *
+     * <pre>
+     * StandardMBean.Options opts = new StandardMBean.Options();
+     * opts.setWrappedObjectVisible(true);
+     * StandardMBean mbean = new StandardMBean(impl, MyMBean.class, opts);
+     * </pre>
+     *
+     * @return The wrapped implementation object, or this StandardMBean
+     * instance.
+     */
+    public Object getWrappedObject() {
+        if (options instanceof Options &&
+                ((Options) options).isWrappedObjectVisible())
+            return getImplementation();
+        else
+            return this;
+    }
+
+    /**
+     * <p>Get the ClassLoader of the wrapped implementation object or of this
+     * object.</p>
+     *
+     * <p>For compatibility reasons, this method only returns the ClassLoader
+     * of the wrapped implementation object if the {@link
+     * Options#isWrappedObjectVisible WrappedObjectVisible} option was
+     * specified when this StandardMBean was created. Otherwise it returns
+     * {@code this.getClass().getClassLoader()}.</p>
+     *
+     * <p>If you want the MBeanServer's {@link MBeanServer#getClassLoaderFor
+     * getClassLoaderFor} and {@link MBeanServer#isInstanceOf
+     * isInstanceOf} methods to refer to the wrapped implementation and
+     * not this StandardMBean object, then you must set the
+     * {@code WrappedObjectVisible} option, for example using:</p>
+     *
+     * <pre>
+     * StandardMBean.Options opts = new StandardMBean.Options();
+     * opts.setWrappedObjectVisible(true);
+     * StandardMBean mbean = new StandardMBean(impl, MyMBean.class, opts);
+     * </pre>
+     *
+     * @return The ClassLoader of the wrapped Cimplementation object, or of
+     * this StandardMBean instance.
+     */
+    public ClassLoader getWrappedClassLoader() {
+        return getWrappedObject().getClass().getClassLoader();
     }
 
     /**
@@ -457,7 +589,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
      * @return The class of the implementation of this Standard MBean (or MXBean).
      **/
     public Class<?> getImplementationClass() {
-        return mbean.getResource().getClass();
+        return mbean.getWrappedObject().getClass();
     }
 
     /**
@@ -559,7 +691,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
 
         MBeanSupport msupport = mbean;
         final MBeanInfo bi = msupport.getMBeanInfo();
-        final Object impl = msupport.getResource();
+        final Object impl = msupport.getWrappedObject();
 
         final boolean immutableInfo = immutableInfo(this.getClass());
 
@@ -1184,6 +1316,7 @@ public class StandardMBean implements DynamicMBean, MBeanRegistration {
     public ObjectName preRegister(MBeanServer server, ObjectName name)
             throws Exception {
         mbean.register(server, name);
+        MBeanInjector.inject(mbean.getWrappedObject(), server, name);
         return name;
     }
 

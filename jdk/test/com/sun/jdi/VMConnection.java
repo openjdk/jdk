@@ -115,7 +115,7 @@ class VMConnection {
             return cmdLine;
         }
         // Insert the options at position 1.  Blanks in args are not allowed!
-        String[] v1 = opts.split(" ");
+        String[] v1 = opts.split(" +");
         String[] retVal = new String[cmdLine.length + v1.length];
         retVal[0] = cmdLine[0];
         System.arraycopy(v1, 0, retVal, 1, v1.length);
