@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -368,8 +368,8 @@ ifeq ($(OS_VENDOR), Darwin)
   # Standard linker flags
   LFLAGS +=
 
-  # Darwin doesn't use ELF and doesn't support version scripts
-  LDNOMAP = true
+  # The apple linker has its own variant of mapfiles/version-scripts
+  MAPFLAG = -Xlinker -exported_symbols_list -Xlinker FILENAME
 
   # Use $(SONAMEFLAG:SONAME=soname) to specify the intrinsic name of a shared obj
   SONAMEFLAG =
