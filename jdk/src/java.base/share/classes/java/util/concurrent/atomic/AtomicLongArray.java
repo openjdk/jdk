@@ -135,7 +135,7 @@ public class AtomicLongArray implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(int i, long newValue) {
-        U.putOrderedLong(array, checkedByteOffset(i), newValue);
+        U.putLongRelease(array, checkedByteOffset(i), newValue);
     }
 
     /**

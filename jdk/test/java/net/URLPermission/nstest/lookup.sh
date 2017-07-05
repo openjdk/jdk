@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,8 @@
 
 # @test
 # @library /lib/testlibrary
-# @modules java.base/sun.net.spi.nameservice
 # @build jdk.testlibrary.*
-# @compile -XDignore.symbol.file=true SimpleNameService.java
-#            LookupTest.java SimpleNameServiceDescriptor.java
+# @compile -XDignore.symbol.file=true LookupTest.java
 # @run shell/timeout=50 lookup.sh
 #
 
@@ -58,7 +56,6 @@ grant {
 POLICY
 
 ${TESTJAVA}/bin/java ${TESTVMOPTS} \
-    -XaddExports:java.base/sun.net.spi.nameservice=ALL-UNNAMED \
     -Djava.security.policy=file:./policy \
-    -Dsun.net.spi.nameservice.provider.1=simple,sun \
+    -Dtest.src=${TESTSRC} \
     -cp ${TESTCLASSPATH}${PS}${TESTSRC} LookupTest -runtest ${port}

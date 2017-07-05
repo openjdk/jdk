@@ -25,8 +25,6 @@
 
 package sun.nio.ch;
 
-import sun.misc.*;
-
 
 /**
  * Manipulates a native array of pollfd structs on Solaris:

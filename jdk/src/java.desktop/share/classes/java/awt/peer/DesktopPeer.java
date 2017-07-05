@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package java.awt.peer;
-
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.awt.Desktop.Action;
+import java.awt.desktop.AboutHandler;
+import java.awt.desktop.SystemEventListener;
+import java.awt.desktop.OpenFilesHandler;
+import java.awt.desktop.OpenURIHandler;
+import java.awt.desktop.PreferencesHandler;
+import java.awt.desktop.PrintFilesHandler;
+import java.awt.desktop.QuitHandler;
+import java.awt.desktop.QuitStrategy;
+import javax.swing.JMenuBar;
 
 /**
  * The {@code DesktopPeer} interface provides methods for the operation
@@ -104,4 +111,168 @@ public interface DesktopPeer {
      *         or it fails to be launched.
      */
     void browse(URI uri) throws IOException;
+
+    /**
+     * Adds sub-types of {@link SystemEventListener} to listen for notifications
+     * from the native system.
+     *
+     * @param listener listener
+     * @see java.awt.desktop.AppForegroundListener
+     * @see java.awt.desktop.AppHiddenListener
+     * @see java.awt.desktop.AppReopenedListener
+     * @see java.awt.desktop.ScreenSleepListener
+     * @see java.awt.desktop.SystemSleepListener
+     * @see java.awt.desktop.UserSessionListener
+     */
+    default void addAppEventListener(final SystemEventListener listener) {
+    }
+
+    /**
+     * Removes sub-types of {@link SystemEventListener} to listen for notifications
+     * from the native system.
+     *
+     * @param listener listener
+     * @see java.awt.desktop.AppForegroundListener
+     * @see java.awt.desktop.AppHiddenListener
+     * @see java.awt.desktop.AppReopenedListener
+     * @see java.awt.desktop.ScreenSleepListener
+     * @see java.awt.desktop.SystemSleepListener
+     * @see java.awt.desktop.UserSessionListener
+     */
+    default void removeAppEventListener(final SystemEventListener listener) {
+    }
+
+    /**
+     * Installs a handler to show a custom About window for your application.
+     * <p>
+     * Setting the {@link AboutHandler} to {@code null} reverts it to the
+     * default behavior.
+     *
+     * @param aboutHandler the handler to respond to the
+     * {@link AboutHandler#handleAbout} )} message
+     */
+    default void setAboutHandler(final AboutHandler aboutHandler) {
+    }
+
+    /**
+     * Installs a handler to show a custom Preferences window for your
+     * application.
+     * <p>
+     * Setting the {@link PreferencesHandler} to {@code null} reverts it to
+     * the default behavior
+     *
+     * @param preferencesHandler the handler to respond to the
+     * {@link java.awt.desktop.PreferencesHandler#handlePreferences(java.awt.PreferencesEvent) }
+     */
+    default void setPreferencesHandler(final PreferencesHandler preferencesHandler) {
+    }
+
+    /**
+     * Installs the handler which is notified when the application is asked to
+     * open a list of files.
+     *
+     * @param openFileHandler handler
+     *
+     */
+    default void setOpenFileHandler(final OpenFilesHandler openFileHandler) {
+    }
+
+    /**
+     * Installs the handler which is notified when the application is asked to
+     * print a list of files.
+     *
+     * @param printFileHandler handler
+     */
+    default void setPrintFileHandler(final PrintFilesHandler printFileHandler) {
+    }
+
+    /**
+     * Installs the handler which is notified when the application is asked to
+     * open a URL.
+     *
+     * Setting the handler to {@code null} causes all
+     * {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} requests to be
+     * enqueued until another handler is set.
+     *
+     * @param openURIHandler handler
+     */
+    default void setOpenURIHandler(final OpenURIHandler openURIHandler) {
+    }
+
+    /**
+     * Installs the handler which determines if the application should quit.
+     *
+     * @param quitHandler the handler that is called when the application is
+     * asked to quit
+     * @see java.awt.Desktop#setQuitHandler(java.awt.desktop.QuitHandler)
+     */
+    default void setQuitHandler(final QuitHandler quitHandler) {
+    }
+
+    /**
+     * Sets the default strategy used to quit this application. The default is
+     * calling SYSTEM_EXIT_0.
+     *
+     * @param strategy the way this application should be shutdown
+     */
+    default void setQuitStrategy(final QuitStrategy strategy) {
+    }
+
+    /**
+     * Enables this application to be suddenly terminated.
+     *
+     * @see java.awt.Desktop#disableSuddenTermination()
+     */
+    default void enableSuddenTermination() {
+    }
+
+   /**
+     * Prevents this application from being suddenly terminated.
+     *
+     * @see java.awt.Desktop#enableSuddenTermination()
+     */
+    default void disableSuddenTermination() {
+    }
+
+    /**
+     * Requests this application to move to the foreground.
+     *
+     * @param allWindows if all windows of this application should be moved to
+     * the foreground, or only the foremost one
+     */
+    default void requestForeground(final boolean allWindows) {
+    }
+
+    /**
+     * Opens the native help viewer application.
+     */
+    default void openHelpViewer() {
+    }
+
+    /**
+     * Sets the default menu bar to use when there are no active frames.
+     *
+     * @param menuBar to use when no other frames are active
+     */
+    default void setDefaultMenuBar(final JMenuBar menuBar) {
+    }
+
+    /**
+     * Opens a folder containing the {@code file} in a default system file manager.
+     * @param file the file
+     * @return returns true if successfully opened
+     */
+    default boolean browseFileDirectory(File file) {
+        return false;
+    }
+    /**
+     * Moves the specified file to the trash.
+     *
+     * @param file the file
+     * @return returns true if successfully moved the file to the trash.
+     */
+    default boolean moveToTrash(File file) {
+        return false;
+    }
+
 }

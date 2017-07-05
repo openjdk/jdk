@@ -31,7 +31,6 @@
  * @bug 7068321
  * @summary Support TLS Server Name Indication (SNI) Extension in JSSE Server
  * @library ../templates
- * @modules java.base/sun.misc
  * @build SSLCapabilities SSLExplorer
  * @run main/othervm SSLSocketExplorer SSLv2Hello,SSLv3
  * @run main/othervm SSLSocketExplorer SSLv3

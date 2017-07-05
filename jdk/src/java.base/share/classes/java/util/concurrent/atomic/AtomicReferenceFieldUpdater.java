@@ -426,7 +426,7 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
         public final void lazySet(T obj, V newValue) {
             accessCheck(obj);
             valueCheck(newValue);
-            U.putOrderedObject(obj, offset, newValue);
+            U.putObjectRelease(obj, offset, newValue);
         }
 
         @SuppressWarnings("unchecked")

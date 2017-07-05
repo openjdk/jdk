@@ -49,6 +49,7 @@ import jdk.internal.jimage.ImageLocation;
  * @test
  * @summary Verify jimage
  * @modules java.base/jdk.internal.jimage
+ * @run main/othervm -Djdk.launcher.addmods=ALL-SYSTEM VerifyJimage
  */
 
 /**

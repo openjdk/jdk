@@ -178,7 +178,8 @@ public class HTMLWriter extends AbstractWriter {
                         if (!synthesizedElement(top)) {
                             AttributeSet attrs = top.getAttributes();
                             if (!matchNameAttribute(attrs, HTML.Tag.PRE) &&
-                                !isFormElementWithContent(attrs)) {
+                                !isFormElementWithContent(attrs) &&
+                                !isPreTagWithParagraphTag(attrs)) {
                                 decrIndent();
                             }
                             endTag(top);
@@ -223,7 +224,8 @@ public class HTMLWriter extends AbstractWriter {
             if (!synthesizedElement(current)) {
                 AttributeSet attrs = current.getAttributes();
                 if (!matchNameAttribute(attrs, HTML.Tag.PRE) &&
-                              !isFormElementWithContent(attrs)) {
+                              !isFormElementWithContent(attrs) &&
+                              !isPreTagWithParagraphTag(attrs)) {
                     decrIndent();
                 }
                 endTag(current);
@@ -830,6 +832,14 @@ public class HTMLWriter extends AbstractWriter {
                 matchNameAttribute(attr, HTML.Tag.SELECT);
     }
 
+    /**
+     * Determines if the element associated with the attributeset
+     * is a P tag and it is within Pre tag.  If true, returns true else
+     * false
+     */
+    private boolean isPreTagWithParagraphTag(AttributeSet attr) {
+        return inPre && matchNameAttribute(attr, HTML.Tag.P);
+    }
 
     /**
      * Determines whether a the indentation needs to be

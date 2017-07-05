@@ -249,7 +249,6 @@ public class NMethod extends CodeBlob {
   // public int     age();
   // public boolean isMarkedForDeoptimization();
   // public boolean isMarkedForUnloading();
-  // public boolean isMarkedForReclamation();
   // public int     level();
   // public int     version();
 

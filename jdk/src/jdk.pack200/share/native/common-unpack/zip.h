@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ struct jar {
   // JAR file writer
   FILE*       jarfp;
   int         default_modtime;
+
+  const char* jarname;
 
   // Used by unix2dostime:
   int         modtime_cache;
@@ -97,6 +99,9 @@ struct gunzip {
   void* read_input_fn;  // underlying byte stream
   void* zstream;        // inflater state
   char inbuf[1 << 14];   // input buffer
+
+  uint  gzcrc;      // CRC gathered from gzip *container* content
+  uint  gzlen;      // CRC gathered length
 
   void init(unpacker* u_);  // pushes new value on u->read_input_fn
 

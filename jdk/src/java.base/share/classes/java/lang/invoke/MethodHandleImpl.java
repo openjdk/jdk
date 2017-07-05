@@ -1060,6 +1060,19 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         FAKE_METHOD_HANDLE_INVOKE[idx] = mh;
         return mh;
     }
+    static MethodHandle fakeVarHandleInvoke(MemberName method) {
+        // TODO caching, is it necessary?
+        MethodType type = MethodType.methodType(method.getReturnType(), UnsupportedOperationException.class,
+                                                VarHandle.class, Object[].class);
+        MethodHandle mh = throwException(type);
+        mh = mh.bindTo(new UnsupportedOperationException("cannot reflectively invoke VarHandle"));
+        if (!method.getInvocationType().equals(mh.type()))
+            throw new InternalError(method.toString());
+        mh = mh.withInternalMemberName(method, false);
+        mh = mh.asVarargsCollector(Object[].class);
+        assert(method.isVarargs());
+        return mh;
+    }
 
     /**
      * Create an alias for the method handle which, when called,

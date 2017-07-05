@@ -41,6 +41,7 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "systemScale.h"
 
 typedef DWORD rgbquad_t;
 typedef WORD word_t;
@@ -55,6 +56,5 @@ typedef RECT RECT_T;
 #define INLINE __inline
 
 #define SPLASHEXPORT __declspec(dllexport)
-
 
 #endif

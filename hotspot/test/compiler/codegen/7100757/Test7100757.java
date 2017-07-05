@@ -27,7 +27,7 @@
  * @bug 7100757
  * @summary The BitSet.nextSetBit() produces incorrect result in 32bit VM on Sparc
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/timeout=300 Test7100757
  */

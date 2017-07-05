@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,9 @@
 
 package java.nio;
 
-import java.util.Spliterator;
 import jdk.internal.HotSpotIntrinsicCandidate;
+
+import java.util.Spliterator;
 
 /**
  * A container for data of a specific primitive type.
@@ -188,7 +189,15 @@ public abstract class Buffer {
     private int limit;
     private int capacity;
 
-    // Used only by direct buffers
+    // Used by heap byte buffers or direct buffers with Unsafe access
+    // For heap byte buffers this field will be the address relative to the
+    // array base address and offset into that array. The address might
+    // not align on a word boundary for slices, nor align at a long word
+    // (8 byte) boundary for byte[] allocations on 32-bit systems.
+    // For direct buffers it is the start address of the memory region. The
+    // address might not align on a word boundary for slices, nor when created
+    // using JNI, see NewDirectByteBuffer(void*, long).
+    // Should ideally be declared final
     // NOTE: hoisted here for speed in JNI GetDirectBufferAddress
     long address;
 

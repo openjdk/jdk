@@ -1453,20 +1453,14 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
   Node *opaq = NULL;
   if (adjust_min_trip) {       // If not maximally unrolling, need adjustment
     // Search for zero-trip guard.
-    assert( loop_head->is_main_loop(), "" );
-    assert( ctrl->Opcode() == Op_IfTrue || ctrl->Opcode() == Op_IfFalse, "" );
-    Node *iff = ctrl->in(0);
-    assert( iff->Opcode() == Op_If, "" );
-    Node *bol = iff->in(1);
-    assert( bol->Opcode() == Op_Bool, "" );
-    Node *cmp = bol->in(1);
-    assert( cmp->Opcode() == Op_CmpI, "" );
-    opaq = cmp->in(2);
-    // Occasionally it's possible for a zero-trip guard Opaque1 node to be
-    // optimized away and then another round of loop opts attempted.
-    // We can not optimize this particular loop in that case.
-    if (opaq->Opcode() != Op_Opaque1)
-      return; // Cannot find zero-trip guard!  Bail out!
+
+    // Check the shape of the graph at the loop entry. If an inappropriate
+    // graph shape is encountered, the compiler bails out loop unrolling;
+    // compilation of the method will still succeed.
+    if (!is_canonical_main_loop_entry(loop_head)) {
+      return;
+    }
+    opaq = ctrl->in(0)->in(1)->in(1)->in(2);
     // Zero-trip test uses an 'opaque' node which is not shared.
     assert(opaq->outcnt() == 1 && opaq->in(1) == limit, "");
   }
@@ -2109,7 +2103,6 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
 #endif
   assert(RangeCheckElimination, "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  assert(cl->is_main_loop(), "");
 
   // protect against stride not being a constant
   if (!cl->stride_is_con())
@@ -2121,20 +2114,17 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   // to not ever trip end tests
   Node *main_limit = cl->limit();
 
+  // Check graph shape. Cannot optimize a loop if zero-trip
+  // Opaque1 node is optimized away and then another round
+  // of loop opts attempted.
+  if (!is_canonical_main_loop_entry(cl)) {
+    return;
+  }
+
   // Need to find the main-loop zero-trip guard
   Node *ctrl  = cl->in(LoopNode::EntryControl);
-  assert(ctrl->Opcode() == Op_IfTrue || ctrl->Opcode() == Op_IfFalse, "");
   Node *iffm = ctrl->in(0);
-  assert(iffm->Opcode() == Op_If, "");
-  Node *bolzm = iffm->in(1);
-  assert(bolzm->Opcode() == Op_Bool, "");
-  Node *cmpzm = bolzm->in(1);
-  assert(cmpzm->is_Cmp(), "");
-  Node *opqzm = cmpzm->in(2);
-  // Can not optimize a loop if zero-trip Opaque1 node is optimized
-  // away and then another round of loop opts attempted.
-  if (opqzm->Opcode() != Op_Opaque1)
-    return;
+  Node *opqzm = iffm->in(1)->in(1)->in(2);
   assert(opqzm->in(1) == main_limit, "do not understand situation");
 
   // Find the pre-loop limit; we will expand its iterations to

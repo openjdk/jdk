@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,12 @@ final class AuFileFormat extends AudioFileFormat {
     static final int AU_LINEAR_24    = 4;  /* 24-bit linear PCM */
     static final int AU_LINEAR_32    = 5;  /* 32-bit linear PCM */
     static final int AU_FLOAT        = 6;  /* 32-bit IEEE floating point */
-    static final int AU_DOUBLE       = 7;  /* 64-bit IEEE floating point */
-    static final int AU_ADPCM_G721   = 23; /* 4-bit CCITT g.721 ADPCM */
-    static final int AU_ADPCM_G722   = 24; /* CCITT g.722 ADPCM */
-    static final int AU_ADPCM_G723_3 = 25; /* CCITT g.723 3-bit ADPCM */
-    static final int AU_ADPCM_G723_5 = 26; /* CCITT g.723 5-bit ADPCM */
+//  we don't support these ...
+//  static final int AU_DOUBLE       = 7;  /* 64-bit IEEE floating point */
+//  static final int AU_ADPCM_G721   = 23; /* 4-bit CCITT g.721 ADPCM */
+//  static final int AU_ADPCM_G722   = 24; /* CCITT g.722 ADPCM */
+//  static final int AU_ADPCM_G723_3 = 25; /* CCITT g.723 3-bit ADPCM */
+//  static final int AU_ADPCM_G723_5 = 26; /* CCITT g.723 5-bit ADPCM */
     static final int AU_ALAW_8       = 27; /* 8-bit ISDN A-law */
 
     static final int AU_HEADERSIZE       = 24;
@@ -64,23 +65,27 @@ final class AuFileFormat extends AudioFileFormat {
 
         auType = -1;
 
-        if( AudioFormat.Encoding.ALAW.equals(encoding) ) {
-            if( format.getSampleSizeInBits()==8 ) {
+        if (AudioFormat.Encoding.ALAW.equals(encoding)) {
+            if (format.getSampleSizeInBits() == 8) {
                 auType = AU_ALAW_8;
             }
-        } else if( AudioFormat.Encoding.ULAW.equals(encoding) ) {
-            if( format.getSampleSizeInBits()==8 ) {
+        } else if (AudioFormat.Encoding.ULAW.equals(encoding)) {
+            if (format.getSampleSizeInBits() == 8) {
                 auType = AU_ULAW_8;
             }
-        } else if( AudioFormat.Encoding.PCM_SIGNED.equals(encoding) ) {
-            if( format.getSampleSizeInBits()==8 ) {
+        } else if (AudioFormat.Encoding.PCM_SIGNED.equals(encoding)) {
+            if (format.getSampleSizeInBits() == 8) {
                 auType = AU_LINEAR_8;
-            } else if( format.getSampleSizeInBits()==16 ) {
+            } else if (format.getSampleSizeInBits() == 16) {
                 auType = AU_LINEAR_16;
-            } else if( format.getSampleSizeInBits()==24 ) {
+            } else if (format.getSampleSizeInBits() == 24) {
                 auType = AU_LINEAR_24;
-            } else if( format.getSampleSizeInBits()==32 ) {
+            } else if (format.getSampleSizeInBits() == 32) {
                 auType = AU_LINEAR_32;
+            }
+        } else if (AudioFormat.Encoding.PCM_FLOAT.equals(encoding)) {
+            if (format.getSampleSizeInBits() == 32) {
+                auType = AU_FLOAT;
             }
         }
     }

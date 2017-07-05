@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,17 @@
  */
 package java.time.chrono;
 
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
+import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
 import java.time.format.TextStyle;
@@ -712,6 +717,59 @@ public interface Chronology extends Comparable<Chronology> {
         return new ChronoPeriodImpl(this, years, months, days);
     }
 
+    //---------------------------------------------------------------------
+
+    /**
+     * Gets the number of seconds from the epoch of 1970-01-01T00:00:00Z.
+     * <p>
+     * The number of seconds is calculated using the proleptic-year,
+     * month, day-of-month, hour, minute, second, and zoneOffset.
+     *
+     * @param prolepticYear the chronology proleptic-year
+     * @param month the chronology month-of-year
+     * @param dayOfMonth the chronology day-of-month
+     * @param hour the hour-of-day, from 0 to 23
+     * @param minute the minute-of-hour, from 0 to 59
+     * @param second the second-of-minute, from 0 to 59
+     * @param zoneOffset the zone offset, not null
+     * @return the number of seconds relative to 1970-01-01T00:00:00Z, may be negative
+     * @throws DateTimeException if any of the values are out of range
+     * @since 9
+     */
+     public default long epochSecond(int prolepticYear, int month, int dayOfMonth,
+                                     int hour, int minute, int second, ZoneOffset zoneOffset) {
+        Objects.requireNonNull(zoneOffset, "zoneOffset");
+        HOUR_OF_DAY.checkValidValue(hour);
+        MINUTE_OF_HOUR.checkValidValue(minute);
+        SECOND_OF_MINUTE.checkValidValue(second);
+        long daysInSec = Math.multiplyExact(date(prolepticYear, month, dayOfMonth).toEpochDay(), 86400);
+        long timeinSec = (hour * 60 + minute) * 60 + second;
+        return Math.addExact(daysInSec, timeinSec - zoneOffset.getTotalSeconds());
+    }
+
+    /**
+     * Gets the number of seconds from the epoch of 1970-01-01T00:00:00Z.
+     * <p>
+     * The number of seconds is calculated using the era, year-of-era,
+     * month, day-of-month, hour, minute, second, and zoneOffset.
+     *
+     * @param era  the era of the correct type for the chronology, not null
+     * @param yearOfEra the chronology year-of-era
+     * @param month the chronology month-of-year
+     * @param dayOfMonth the chronology day-of-month
+     * @param hour the hour-of-day, from 0 to 23
+     * @param minute the minute-of-hour, from 0 to 59
+     * @param second the second-of-minute, from 0 to 59
+     * @param zoneOffset the zone offset, not null
+     * @return the number of seconds relative to 1970-01-01T00:00:00Z, may be negative
+     * @throws DateTimeException if any of the values are out of range
+     * @since 9
+     */
+     public default long epochSecond(Era era, int yearOfEra, int month, int dayOfMonth,
+                                     int hour, int minute, int second, ZoneOffset zoneOffset) {
+        Objects.requireNonNull(era, "era");
+        return epochSecond(prolepticYear(era, yearOfEra), month, dayOfMonth, hour, minute, second, zoneOffset);
+    }
     //-----------------------------------------------------------------------
     /**
      * Compares this chronology to another chronology.

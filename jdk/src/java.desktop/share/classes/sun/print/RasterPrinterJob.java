@@ -1212,6 +1212,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         pageRangesAttr =  (PageRanges)attributes.get(PageRanges.class);
         if (!isSupportedValue(pageRangesAttr, attributes)) {
             pageRangesAttr = null;
+            setPageRange(-1, -1);
         } else {
             if ((SunPageSelection)attributes.get(SunPageSelection.class)
                      == SunPageSelection.RANGE) {

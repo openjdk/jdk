@@ -84,12 +84,13 @@ public class PageFormatFromAttributes {
             throw new RuntimeException("expected a media size");
         }
         double units = Size2DSyntax.INCH/72.0;
-        int w = (int)(mediaSize.getX(1)/units);
-        int h = (int)(mediaSize.getY(1)/units);
+        double w = mediaSize.getX(1) / units;
+        double h = mediaSize.getY(1) / units;
         Paper paper = pf.getPaper();
-        int pw = (int)paper.getWidth();
-        int ph = (int)paper.getHeight();
-        if (pw != w || ph != h) {
+        double pw = paper.getWidth();
+        double ph = paper.getHeight();
+        if (Math.round(pw) != Math.round(w) ||
+            Math.round(ph) != Math.round(h)) {
             throw new RuntimeException("size not as specified");
         }
     }

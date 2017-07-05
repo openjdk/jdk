@@ -24,7 +24,7 @@
 /* @test
  * @bug 8046903
  * @summary VM anonymous class members can't be statically invocable
- * @modules java.base/sun.misc java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.misc java.base/jdk.internal.org.objectweb.asm
  * @run junit test.java.lang.invoke.VMAnonymousClass
  */
 package test.java.lang.invoke;
@@ -34,7 +34,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import org.junit.Test;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.org.objectweb.asm.*;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
@@ -43,17 +43,17 @@ public class VMAnonymousClass {
         VMAnonymousClass test = new VMAnonymousClass();
         test.testJavaLang();
         test.testJavaUtil();
-        test.testSunMisc();
+        test.testJdkInternalMisc();
         test.testJavaLangInvoke();
         System.out.println("TEST PASSED");
     }
 
     // Test VM anonymous classes from different packages
     // (see j.l.i.InvokerBytecodeGenerator::isStaticallyInvocable).
-    @Test public void testJavaLang()       throws Throwable { test("java/lang");        }
-    @Test public void testJavaUtil()       throws Throwable { test("java/util");        }
-    @Test public void testSunMisc()        throws Throwable { test("sun/misc");         }
-    @Test public void testJavaLangInvoke() throws Throwable { test("java/lang/invoke"); }
+    @Test public void testJavaLang()        throws Throwable { test("java/lang");         }
+    @Test public void testJavaUtil()        throws Throwable { test("java/util");         }
+    @Test public void testJdkInternalMisc() throws Throwable { test("jdk/internal/misc"); }
+    @Test public void testJavaLangInvoke()  throws Throwable { test("java/lang/invoke");  }
 
     private static Unsafe unsafe = getUnsafe();
 

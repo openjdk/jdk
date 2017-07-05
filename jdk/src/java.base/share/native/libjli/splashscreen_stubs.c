@@ -25,7 +25,7 @@
 
 #include <stdio.h>
 #include "splashscreen.h"
-
+#include "jni.h"
 extern void* SplashProcAddress(const char* name); /* in java_md.c */
 
 /*
@@ -38,8 +38,10 @@ typedef void (*SplashClose_t)(void);
 typedef void (*SplashSetFileJarName_t)(const char* fileName,
                                        const char* jarName);
 typedef void (*SplashSetScaleFactor_t)(float scaleFactor);
-typedef char* (*SplashGetScaledImageName_t)(const char* fileName,
-                        const char* jarName, float* scaleFactor);
+typedef jboolean (*SplashGetScaledImageName_t)(const char* fileName,
+                        const char* jarName, float* scaleFactor,
+                        char *scaleImageName, const size_t scaleImageNameLength);
+typedef int (*SplashGetScaledImgNameMaxPstfixLen_t)(const char* filename);
 
 /*
  * This macro invokes a function from the shared lib.
@@ -59,6 +61,7 @@ typedef char* (*SplashGetScaledImageName_t)(const char* fileName,
 
 #define INVOKE(name,def) _INVOKE(name,def,return)
 #define INVOKEV(name) _INVOKE(name, ,;)
+
 
 int     DoSplashLoadMemory(void* pdata, int size) {
     INVOKE(SplashLoadMemory, 0)(pdata, size);
@@ -84,7 +87,13 @@ void    DoSplashSetScaleFactor(float scaleFactor) {
     INVOKEV(SplashSetScaleFactor)(scaleFactor);
 }
 
-char*    DoSplashGetScaledImageName(const char* fileName, const char* jarName,
-                                    float* scaleFactor) {
-    INVOKE(SplashGetScaledImageName, NULL)(fileName, jarName, scaleFactor);
+jboolean DoSplashGetScaledImageName(const char* fileName, const char* jarName,
+           float* scaleFactor, char *scaledImageName, const size_t scaledImageNameLength) {
+        INVOKE(SplashGetScaledImageName, 0)(fileName, jarName, scaleFactor,
+                                            scaledImageName, scaledImageNameLength);
 }
+
+int     DoSplashGetScaledImgNameMaxPstfixLen(const char *fileName) {
+    INVOKE(SplashGetScaledImgNameMaxPstfixLen, 0)(fileName);
+}
+
