@@ -37,7 +37,7 @@
 #include "memory/metaspaceTracer.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"

@@ -34,7 +34,7 @@
 #include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
 

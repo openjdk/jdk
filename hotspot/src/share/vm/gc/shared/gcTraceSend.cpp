@@ -43,7 +43,7 @@
 typedef uintptr_t TraceAddress;
 
 void GCTracer::send_garbage_collection_event() const {
-  EventGCGarbageCollection event(UNTIMED);
+  EventGarbageCollection event(UNTIMED);
   if (event.should_commit()) {
     event.set_gcId(GCId::current());
     event.set_name(_shared_gc_info.name());
@@ -91,7 +91,7 @@ void GCTracer::send_metaspace_chunk_free_list_summary(GCWhen::Type when, Metaspa
 }
 
 void ParallelOldTracer::send_parallel_old_event() const {
-  EventGCParallelOld e(UNTIMED);
+  EventParallelOldGarbageCollection e(UNTIMED);
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
     e.set_densePrefix((TraceAddress)_parallel_old_gc_info.dense_prefix());
@@ -102,7 +102,7 @@ void ParallelOldTracer::send_parallel_old_event() const {
 }
 
 void YoungGCTracer::send_young_gc_event() const {
-  EventGCYoungGarbageCollection e(UNTIMED);
+  EventYoungGarbageCollection e(UNTIMED);
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
     e.set_tenuringThreshold(_tenuring_threshold);
@@ -127,7 +127,7 @@ void YoungGCTracer::send_promotion_in_new_plab_event(Klass* klass, size_t obj_si
   EventPromoteObjectInNewPLAB event;
   if (event.should_commit()) {
     event.set_gcId(GCId::current());
-    event.set_class(klass);
+    event.set_objectClass(klass);
     event.set_objectSize(obj_size);
     event.set_tenured(tenured);
     event.set_tenuringAge(age);
@@ -142,7 +142,7 @@ void YoungGCTracer::send_promotion_outside_plab_event(Klass* klass, size_t obj_s
   EventPromoteObjectOutsidePLAB event;
   if (event.should_commit()) {
     event.set_gcId(GCId::current());
-    event.set_class(klass);
+    event.set_objectClass(klass);
     event.set_objectSize(obj_size);
     event.set_tenured(tenured);
     event.set_tenuringAge(age);
@@ -151,7 +151,7 @@ void YoungGCTracer::send_promotion_outside_plab_event(Klass* klass, size_t obj_s
 }
 
 void OldGCTracer::send_old_gc_event() const {
-  EventGCOldGarbageCollection e(UNTIMED);
+  EventOldGarbageCollection e(UNTIMED);
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
     e.set_starttime(_shared_gc_info.start_timestamp());
@@ -173,7 +173,7 @@ void YoungGCTracer::send_promotion_failed_event(const PromotionFailedInfo& pf_in
   EventPromotionFailed e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
-    e.set_data(to_trace_struct(pf_info));
+    e.set_promotionFailed(to_trace_struct(pf_info));
     e.set_thread(pf_info.thread_trace_id());
     e.commit();
   }
@@ -190,7 +190,7 @@ void OldGCTracer::send_concurrent_mode_failure_event() {
 
 #if INCLUDE_ALL_GCS
 void G1NewTracer::send_g1_young_gc_event() {
-  EventGCG1GarbageCollection e(UNTIMED);
+  EventG1GarbageCollection e(UNTIMED);
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
     e.set_type(_g1_young_gc_info.type());
@@ -201,7 +201,7 @@ void G1NewTracer::send_g1_young_gc_event() {
 }
 
 void G1MMUTracer::send_g1_mmu_event(double timeSlice, double gcTime, double maxTime) {
-  EventGCG1MMU e;
+  EventG1MMU e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
     e.set_timeSlice(timeSlice);
@@ -212,15 +212,15 @@ void G1MMUTracer::send_g1_mmu_event(double timeSlice, double gcTime, double maxT
 }
 
 void G1NewTracer::send_evacuation_info_event(EvacuationInfo* info) {
-  EventEvacuationInfo e;
+  EventEvacuationInformation e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
     e.set_cSetRegions(info->collectionset_regions());
     e.set_cSetUsedBefore(info->collectionset_used_before());
     e.set_cSetUsedAfter(info->collectionset_used_after());
     e.set_allocationRegions(info->allocation_regions());
-    e.set_allocRegionsUsedBefore(info->alloc_regions_used_before());
-    e.set_allocRegionsUsedAfter(info->alloc_regions_used_before() + info->bytes_copied());
+    e.set_allocationRegionsUsedBefore(info->alloc_regions_used_before());
+    e.set_allocationRegionsUsedAfter(info->alloc_regions_used_before() + info->bytes_copied());
     e.set_bytesCopied(info->bytes_copied());
     e.set_regionsFreed(info->regions_freed());
     e.commit();
@@ -231,13 +231,14 @@ void G1NewTracer::send_evacuation_failed_event(const EvacuationFailedInfo& ef_in
   EventEvacuationFailed e;
   if (e.should_commit()) {
     e.set_gcId(GCId::current());
-    e.set_data(to_trace_struct(ef_info));
+    e.set_evacuationFailed(to_trace_struct(ef_info));
     e.commit();
   }
 }
 
-static TraceStructG1EvacStats create_g1_evacstats(unsigned gcid, const G1EvacSummary& summary) {
-  TraceStructG1EvacStats s;
+static TraceStructG1EvacuationStatistics
+create_g1_evacstats(unsigned gcid, const G1EvacSummary& summary) {
+  TraceStructG1EvacuationStatistics s;
   s.set_gcId(gcid);
   s.set_allocated(summary.allocated() * HeapWordSize);
   s.set_wasted(summary.wasted() * HeapWordSize);
@@ -252,17 +253,17 @@ static TraceStructG1EvacStats create_g1_evacstats(unsigned gcid, const G1EvacSum
 }
 
 void G1NewTracer::send_young_evacuation_statistics(const G1EvacSummary& summary) const {
-  EventGCG1EvacuationYoungStatistics surv_evt;
+  EventG1EvacuationYoungStatistics surv_evt;
   if (surv_evt.should_commit()) {
-    surv_evt.set_stats(create_g1_evacstats(GCId::current(), summary));
+    surv_evt.set_statistics(create_g1_evacstats(GCId::current(), summary));
     surv_evt.commit();
   }
 }
 
 void G1NewTracer::send_old_evacuation_statistics(const G1EvacSummary& summary) const {
-  EventGCG1EvacuationOldStatistics old_evt;
+  EventG1EvacuationOldStatistics old_evt;
   if (old_evt.should_commit()) {
-    old_evt.set_stats(create_g1_evacstats(GCId::current(), summary));
+    old_evt.set_statistics(create_g1_evacstats(GCId::current(), summary));
     old_evt.commit();
   }
 }
@@ -273,7 +274,7 @@ void G1NewTracer::send_basic_ihop_statistics(size_t threshold,
                                              size_t last_allocation_size,
                                              double last_allocation_duration,
                                              double last_marking_length) {
-  EventGCG1BasicIHOP evt;
+  EventG1BasicIHOP evt;
   if (evt.should_commit()) {
     evt.set_gcId(GCId::current());
     evt.set_threshold(threshold);
@@ -295,7 +296,7 @@ void G1NewTracer::send_adaptive_ihop_statistics(size_t threshold,
                                                 double predicted_allocation_rate,
                                                 double predicted_marking_length,
                                                 bool prediction_active) {
-  EventGCG1AdaptiveIHOP evt;
+  EventG1AdaptiveIHOP evt;
   if (evt.should_commit()) {
     evt.set_gcId(GCId::current());
     evt.set_threshold(threshold);

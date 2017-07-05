@@ -51,6 +51,16 @@ public final class SwingAccessor {
     }
 
     /**
+     * An accessor for the JComponent class.
+     */
+    public interface JComponentAccessor {
+
+        boolean getFlag(JComponent comp, int aFlag);
+
+        void compWriteObjectNotify(JComponent comp);
+    }
+
+    /**
      * An accessor for the JTextComponent class.
      * Note that we intentionally introduce the JTextComponentAccessor,
      * and not the JComponentAccessor because the needed methods
@@ -103,6 +113,29 @@ public final class SwingAccessor {
     public interface KeyStrokeAccessor {
 
         KeyStroke create();
+    }
+
+    /**
+     * The javax.swing.JComponent class accessor object.
+     */
+    private static JComponentAccessor jComponentAccessor;
+
+    /**
+     * Set an accessor object for the javax.swing.JComponent class.
+     */
+    public static void setJComponentAccessor(JComponentAccessor jCompAccessor) {
+        jComponentAccessor = jCompAccessor;
+    }
+
+    /**
+     * Retrieve the accessor object for the javax.swing.JComponent class.
+     */
+    public static JComponentAccessor getJComponentAccessor() {
+        if (jComponentAccessor == null) {
+            unsafe.ensureClassInitialized(JComponent.class);
+        }
+
+        return jComponentAccessor;
     }
 
     /**

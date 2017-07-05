@@ -22,6 +22,7 @@
  */
 
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -75,7 +76,7 @@ public class GenerateJLIClassesPluginTest {
 
     }
 
-    private static List<String> classFilesForSpecies(List<String> species) {
+    private static List<String> classFilesForSpecies(Collection<String> species) {
         return species.stream()
                 .map(s -> "/java.base/java/lang/invoke/BoundMethodHandle$Species_" + s + ".class")
                 .collect(Collectors.toList());

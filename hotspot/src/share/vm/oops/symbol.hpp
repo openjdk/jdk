@@ -26,8 +26,8 @@
 #define SHARE_VM_OOPS_SYMBOL_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 
 // A Symbol is a canonicalized string.

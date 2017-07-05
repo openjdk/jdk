@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import org.testng.annotations.Test;
@@ -32,9 +32,7 @@ import static org.testng.Assert.*;
  * @bug 8054890
  * @summary Test of VM.set_flag diagnostic command
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @build jdk.test.lib.*
- * @build jdk.test.lib.dcmd.*
+ * @library /test/lib
  * @run testng SetVMFlagTest
  */
 

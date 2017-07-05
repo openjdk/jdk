@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@ import java.io.FileOutputStream;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
-import jdk.test.lib.*;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test OverriderMsg
  * @bug 8026894
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
  *          java.management

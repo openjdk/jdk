@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,11 @@
 
 /**
  * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
- *       8014217 8025003 8026330 8028397 8129544
+ *       8014217 8025003 8026330 8028397 8129544 8165243
  * @summary tests java.util.Base64
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
+ * @run main TestBase64
  * @key randomness
  */
 
@@ -35,10 +38,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Random;
 
+import jdk.testlibrary.RandomFactory;
+
 public class TestBase64 {
+
+    private static final Random rnd = RandomFactory.getRandom();
 
     public static void main(String args[]) throws Throwable {
         int numRuns  = 10;
@@ -52,7 +61,6 @@ public class TestBase64 {
         test(Base64.getUrlEncoder(), Base64.getUrlDecoder(), numRuns, numBytes);
         test(Base64.getMimeEncoder(), Base64.getMimeDecoder(), numRuns, numBytes);
 
-        Random rnd = new java.util.Random();
         byte[] nl_1 = new byte[] {'\n'};
         byte[] nl_2 = new byte[] {'\n', '\r'};
         byte[] nl_3 = new byte[] {'\n', '\r', '\n'};
@@ -76,7 +84,7 @@ public class TestBase64 {
         testNull(Base64.getDecoder());
         testNull(Base64.getUrlDecoder());
         testNull(Base64.getMimeDecoder());
-        checkNull(new Runnable() { public void run() { Base64.getMimeEncoder(10, null); }});
+        checkNull(() -> Base64.getMimeEncoder(10, null));
 
         testIOE(Base64.getEncoder());
         testIOE(Base64.getUrlEncoder());
@@ -84,26 +92,23 @@ public class TestBase64 {
         testIOE(Base64.getMimeEncoder(10, new byte[]{'\n'}));
 
         byte[] src = new byte[1024];
-        new Random().nextBytes(src);
+        rnd.nextBytes(src);
         final byte[] decoded = Base64.getEncoder().encode(src);
         testIOE(Base64.getDecoder(), decoded);
         testIOE(Base64.getMimeDecoder(), decoded);
         testIOE(Base64.getUrlDecoder(), Base64.getUrlEncoder().encode(src));
 
         // illegal line separator
-        checkIAE(new Runnable() { public void run() { Base64.getMimeEncoder(10, new byte[]{'\r', 'N'}); }});
+        checkIAE(() -> Base64.getMimeEncoder(10, new byte[]{'\r', 'N'}));
 
         // malformed padding/ending
         testMalformedPadding();
 
         // illegal base64 character
         decoded[2] = (byte)0xe0;
-        checkIAE(new Runnable() {
-            public void run() { Base64.getDecoder().decode(decoded); }});
-        checkIAE(new Runnable() {
-            public void run() { Base64.getDecoder().decode(decoded, new byte[1024]); }});
-        checkIAE(new Runnable() { public void run() {
-            Base64.getDecoder().decode(ByteBuffer.wrap(decoded)); }});
+        checkIAE(() -> Base64.getDecoder().decode(decoded));
+        checkIAE(() -> Base64.getDecoder().decode(decoded, new byte[1024]));
+        checkIAE(() -> Base64.getDecoder().decode(ByteBuffer.wrap(decoded)));
 
         // test single-non-base64 character for mime decoding
         testSingleNonBase64MimeDec();
@@ -113,12 +118,20 @@ public class TestBase64 {
 
         // test mime decoding with ignored character after padding
         testDecodeIgnoredAfterPadding();
+
+        // given invalid args, encoder should not produce output
+        testEncoderKeepsSilence(Base64.getEncoder());
+        testEncoderKeepsSilence(Base64.getUrlEncoder());
+        testEncoderKeepsSilence(Base64.getMimeEncoder());
+
+        // given invalid args, decoder should not consume input
+        testDecoderKeepsAbstinence(Base64.getDecoder());
+        testDecoderKeepsAbstinence(Base64.getUrlDecoder());
+        testDecoderKeepsAbstinence(Base64.getMimeDecoder());
     }
 
     private static void test(Base64.Encoder enc, Base64.Decoder dec,
                              int numRuns, int numBytes) throws Throwable {
-        Random rnd = new java.util.Random();
-
         enc.encode(new byte[0]);
         dec.decode(new byte[0]);
 
@@ -258,48 +271,49 @@ public class TestBase64 {
     private static final String str_null = null;
     private static final ByteBuffer bb_null = null;
 
-    private static void testNull(final Base64.Encoder enc) {
-        checkNull(new Runnable() { public void run() { enc.encode(ba_null); }});
-        checkNull(new Runnable() { public void run() { enc.encodeToString(ba_null); }});
-        checkNull(new Runnable() { public void run() { enc.encode(ba_null, new byte[10]); }});
-        checkNull(new Runnable() { public void run() { enc.encode(new byte[10], ba_null); }});
-        checkNull(new Runnable() { public void run() { enc.encode(bb_null); }});
-        checkNull(new Runnable() { public void run() { enc.wrap((OutputStream)null); }});
+    private static void testNull(Base64.Encoder enc) {
+        checkNull(() -> enc.encode(ba_null));
+        checkNull(() -> enc.encodeToString(ba_null));
+        checkNull(() -> enc.encode(ba_null, new byte[10]));
+        checkNull(() -> enc.encode(new byte[10], ba_null));
+        checkNull(() -> enc.encode(bb_null));
+        checkNull(() -> enc.wrap((OutputStream)null));
     }
 
-    private static void testNull(final Base64.Decoder dec) {
-        checkNull(new Runnable() { public void run() { dec.decode(ba_null); }});
-        checkNull(new Runnable() { public void run() { dec.decode(str_null); }});
-        checkNull(new Runnable() { public void run() { dec.decode(ba_null, new byte[10]); }});
-        checkNull(new Runnable() { public void run() { dec.decode(new byte[10], ba_null); }});
-        checkNull(new Runnable() { public void run() { dec.decode(bb_null); }});
-        checkNull(new Runnable() { public void run() { dec.wrap((InputStream)null); }});
+    private static void testNull(Base64.Decoder dec) {
+        checkNull(() -> dec.decode(ba_null));
+        checkNull(() -> dec.decode(str_null));
+        checkNull(() -> dec.decode(ba_null, new byte[10]));
+        checkNull(() -> dec.decode(new byte[10], ba_null));
+        checkNull(() -> dec.decode(bb_null));
+        checkNull(() -> dec.wrap((InputStream)null));
     }
 
+    @FunctionalInterface
     private static interface Testable {
         public void test() throws Throwable;
     }
 
-    private static void testIOE(final Base64.Encoder enc) throws Throwable {
+    private static void testIOE(Base64.Encoder enc) throws Throwable {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(8192);
-        final OutputStream os = enc.wrap(baos);
+        OutputStream os = enc.wrap(baos);
         os.write(new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9});
         os.close();
-        checkIOE(new Testable() { public void test() throws Throwable { os.write(10); }});
-        checkIOE(new Testable() { public void test() throws Throwable { os.write(new byte[] {10}); }});
-        checkIOE(new Testable() { public void test() throws Throwable { os.write(new byte[] {10}, 1, 4); }});
+        checkIOE(() -> os.write(10));
+        checkIOE(() -> os.write(new byte[] {10}));
+        checkIOE(() -> os.write(new byte[] {10}, 1, 4));
     }
 
-    private static void testIOE(final Base64.Decoder dec, byte[] decoded) throws Throwable {
+    private static void testIOE(Base64.Decoder dec, byte[] decoded) throws Throwable {
         ByteArrayInputStream bais = new ByteArrayInputStream(decoded);
-        final InputStream is = dec.wrap(bais);
+        InputStream is = dec.wrap(bais);
         is.read(new byte[10]);
         is.close();
-        checkIOE(new Testable() { public void test() throws Throwable { is.read(); }});
-        checkIOE(new Testable() { public void test() throws Throwable { is.read(new byte[] {10}); }});
-        checkIOE(new Testable() { public void test() throws Throwable { is.read(new byte[] {10}, 1, 4); }});
-        checkIOE(new Testable() { public void test() throws Throwable { is.available(); }});
-        checkIOE(new Testable() { public void test() throws Throwable { is.skip(20); }});
+        checkIOE(() -> is.read());
+        checkIOE(() -> is.read(new byte[] {10}));
+        checkIOE(() -> is.read(new byte[] {10}, 1, 4));
+        checkIOE(() -> is.available());
+        checkIOE(() -> is.skip(20));
     }
 
     private static final void checkNull(Runnable r) {
@@ -391,13 +405,13 @@ public class TestBase64 {
                 int pos = (Integer)data[i + 2];
 
                 // decode(byte[])
-                checkIAE(new Runnable() { public void run() { dec.decode(srcBytes); }});
+                checkIAE(() -> dec.decode(srcBytes));
 
                 // decode(String)
-                checkIAE(new Runnable() { public void run() { dec.decode(srcStr); }});
+                checkIAE(() -> dec.decode(srcStr));
 
                 // decode(ByteBuffer)
-                checkIAE(new Runnable() { public void run() { dec.decode(srcBB); }});
+                checkIAE(() -> dec.decode(srcBB));
 
                 // wrap stream
                 checkIOE(new Testable() {
@@ -412,10 +426,8 @@ public class TestBase64 {
         // anything left after padding is "invalid"/IAE, if
         // not MIME. In case of MIME, non-base64 character(s)
         // is ignored.
-        checkIAE(new Runnable() { public void run() {
-            Base64.getDecoder().decode("AA==\u00D2"); }});
-        checkIAE(new Runnable() { public void run() {
-            Base64.getUrlDecoder().decode("AA==\u00D2"); }});
+        checkIAE(() -> Base64.getDecoder().decode("AA==\u00D2"));
+        checkIAE(() -> Base64.getUrlDecoder().decode("AA==\u00D2"));
         Base64.getMimeDecoder().decode("AA==\u00D2");
      }
 
@@ -515,5 +527,68 @@ public class TestBase64 {
                 ret[j++] = src[i];
         }
         return ret;
+    }
+
+    private static void testEncoderKeepsSilence(Base64.Encoder enc)
+            throws Throwable {
+        List<Integer> vals = new ArrayList<>(List.of(Integer.MIN_VALUE,
+                Integer.MIN_VALUE + 1, -1111, -2, -1, 0, 1, 2, 3, 1111,
+                Integer.MAX_VALUE - 1, Integer.MAX_VALUE));
+        vals.addAll(List.of(rnd.nextInt(), rnd.nextInt(), rnd.nextInt(),
+                rnd.nextInt()));
+        byte[] buf = new byte[] {1, 0, 91};
+        for (int off : vals) {
+            for (int len : vals) {
+                if (off >= 0 && len >= 0 && off <= buf.length - len) {
+                    // valid args, skip them
+                    continue;
+                }
+                // invalid args, test them
+                System.out.println("testing off=" + off + ", len=" + len);
+
+                ByteArrayOutputStream baos = new ByteArrayOutputStream(100);
+                try (OutputStream os = enc.wrap(baos)) {
+                    os.write(buf, off, len);
+                    throw new RuntimeException("Expected IOOBEx was not thrown");
+                } catch (IndexOutOfBoundsException expected) {
+                }
+                if (baos.size() > 0)
+                    throw new RuntimeException("No output was expected, but got "
+                            + baos.size() + " bytes");
+            }
+        }
+    }
+
+    private static void testDecoderKeepsAbstinence(Base64.Decoder dec)
+            throws Throwable {
+        List<Integer> vals = new ArrayList<>(List.of(Integer.MIN_VALUE,
+                Integer.MIN_VALUE + 1, -1111, -2, -1, 0, 1, 2, 3, 1111,
+                Integer.MAX_VALUE - 1, Integer.MAX_VALUE));
+        vals.addAll(List.of(rnd.nextInt(), rnd.nextInt(), rnd.nextInt(),
+                rnd.nextInt()));
+        byte[] buf = new byte[3];
+        for (int off : vals) {
+            for (int len : vals) {
+                if (off >= 0 && len >= 0 && off <= buf.length - len) {
+                    // valid args, skip them
+                    continue;
+                }
+                // invalid args, test them
+                System.out.println("testing off=" + off + ", len=" + len);
+
+                String input = "AAAAAAAAAAAAAAAAAAAAAA";
+                ByteArrayInputStream bais =
+                        new ByteArrayInputStream(input.getBytes("Latin1"));
+                try (InputStream is = dec.wrap(bais)) {
+                    is.read(buf, off, len);
+                    throw new RuntimeException("Expected IOOBEx was not thrown");
+                } catch (IndexOutOfBoundsException expected) {
+                }
+                if (bais.available() != input.length())
+                    throw new RuntimeException("No input should be consumed, "
+                            + "but consumed " + (input.length() - bais.available())
+                            + " bytes");
+            }
+        }
     }
 }

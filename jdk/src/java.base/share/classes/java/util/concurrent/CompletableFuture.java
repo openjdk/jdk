@@ -521,7 +521,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
                 else
                     break;
             }
-            else if (STACK.weakCompareAndSetVolatile(this, p, (p = p.next)))
+            else if (STACK.weakCompareAndSet(this, p, (p = p.next)))
                 unlinked = true;
             else
                 p = stack;
@@ -532,7 +532,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             if (q.isLive()) {
                 p = q;
                 q = s;
-            } else if (NEXT.weakCompareAndSetVolatile(p, q, s))
+            } else if (NEXT.weakCompareAndSet(p, q, s))
                 break;
             else
                 q = p.next;

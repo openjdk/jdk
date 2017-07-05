@@ -99,9 +99,13 @@ public final class ExcludeVMPlugin implements Plugin {
      * e.g.: /java.base/native/amd64/server/libjvm.so
      * /java.base/native/server/libjvm.dylib
      */
-    private List<ResourcePoolEntry> getVMs(ResourcePoolModule javaBase, String jvmlib) {
+    private List<ResourcePoolEntry> getVMs(ResourcePoolModule javaBase, String[] jvmlibs) {
         List<ResourcePoolEntry> ret = javaBase.entries().filter((t) -> {
-            return t.path().endsWith("/" + jvmlib);
+            String path = t.path();
+            for (String jvmlib : jvmlibs) {
+                return t.path().endsWith("/" + jvmlib);
+            }
+            return false;
         }).collect(Collectors.toList());
         return ret;
     }
@@ -109,18 +113,21 @@ public final class ExcludeVMPlugin implements Plugin {
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         ResourcePoolModule javaBase = in.moduleView().findModule("java.base").get();
-        String jvmlib = jvmlib(javaBase.descriptor().osName().get());
+        String[] jvmlibs = jvmlibs(javaBase.descriptor().osName().get());
         TreeSet<Jvm> existing = new TreeSet<>(new JvmComparator());
         TreeSet<Jvm> removed = new TreeSet<>(new JvmComparator());
         if (!keepAll) {
             // First retrieve all available VM names and removed VM
-            List<ResourcePoolEntry> jvms = getVMs(javaBase, jvmlib);
+            List<ResourcePoolEntry> jvms = getVMs(javaBase, jvmlibs);
             for (Jvm jvm : Jvm.values()) {
                 for (ResourcePoolEntry md : jvms) {
-                    if (md.path().endsWith("/" + jvm.getName() + "/" + jvmlib)) {
-                        existing.add(jvm);
-                        if (isRemoved(md)) {
-                            removed.add(jvm);
+                    String mdPath = md.path();
+                    for (String jvmlib : jvmlibs) {
+                        if (mdPath.endsWith("/" + jvm.getName() + "/" + jvmlib)) {
+                            existing.add(jvm);
+                            if (isRemoved(md)) {
+                                removed.add(jvm);
+                            }
                         }
                     }
                 }
@@ -248,14 +255,14 @@ public final class ExcludeVMPlugin implements Plugin {
         return orig.copyWithContent(content);
     }
 
-    private static String jvmlib(String osName) {
-        String lib = "libjvm.so";
+    private static String[] jvmlibs(String osName) {
         if (isWindows(osName)) {
-            lib = "jvm.dll";
+            return new String[] { "jvm.dll" };
         } else if (isMac(osName)) {
-            lib = "libjvm.dylib";
+            return new String[] { "libjvm.dylib", "libjvm.a" };
+        } else {
+            return new String[] { "libjvm.so", "libjvm.a" };
         }
-        return lib;
     }
 
     private static boolean isWindows(String osName) {

@@ -26,7 +26,7 @@
  * @test
  * @bug 8026049 8151163
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseUnalignedAccesses -Djdk.test.lib.random.seed=0 DirectByteBufferTest
  * @run main/othervm -Djdk.test.lib.random.seed=0 DirectByteBufferTest
  * @summary Verify that direct byte buffers are correctly accessed.

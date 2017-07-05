@@ -26,8 +26,8 @@
 # Define library interface.
 
 SUNWprivate_1.1 {
-	global:
-	    JAWT_GetAWT;
-	local:
-	    *;
+    global:
+        JAWT_GetAWT;
+    local:
+        *;
 };

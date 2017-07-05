@@ -26,7 +26,7 @@
  * @test
  * @bug 8160527
  * @summary The VM does not always perform checks added by 8157181 when updating final instance fields
- * @library /testlibrary
+ * @library /test/lib
  * @compile TestPutField.jasm
  * @compile TestPutStatic.jasm
  * @compile TestPutMain.java

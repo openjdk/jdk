@@ -26,18 +26,17 @@
  * @test
  * @bug 8149036 8150619
  * @summary os+thread output should contain logging calls for thread start stop attaches detaches
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver ThreadLoggingTest
  * @author Thomas Stuefe (SAP)
  */
 
 import java.io.File;
 import java.util.Map;
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class ThreadLoggingTest {
 

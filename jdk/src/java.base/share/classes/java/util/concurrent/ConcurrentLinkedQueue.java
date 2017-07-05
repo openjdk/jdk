@@ -308,7 +308,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
                     // for e to become an element of this queue,
                     // and for newNode to become "live".
                     if (p != t) // hop two nodes at a time; failure is OK
-                        TAIL.weakCompareAndSetVolatile(this, t, newNode);
+                        TAIL.weakCompareAndSet(this, t, newNode);
                     return true;
                 }
                 // Lost CAS race to another thread; re-read next
@@ -477,7 +477,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
 
                 next = succ(p);
                 if (pred != null && next != null) // unlink
-                    NEXT.weakCompareAndSetVolatile(pred, p, next);
+                    NEXT.weakCompareAndSet(pred, p, next);
                 if (removed)
                     return true;
             }
@@ -524,12 +524,12 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
                 if (NEXT.compareAndSet(p, null, beginningOfTheEnd)) {
                     // Successful CAS is the linearization point
                     // for all elements to be added to this queue.
-                    if (!TAIL.weakCompareAndSetVolatile(this, t, last)) {
+                    if (!TAIL.weakCompareAndSet(this, t, last)) {
                         // Try a little harder to update tail,
                         // since we may be adding many elements.
                         t = tail;
                         if (last.next == null)
-                            TAIL.weakCompareAndSetVolatile(this, t, last);
+                            TAIL.weakCompareAndSet(this, t, last);
                     }
                     return true;
                 }

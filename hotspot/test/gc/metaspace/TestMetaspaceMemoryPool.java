@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,16 @@
 
 import java.util.List;
 import java.lang.management.*;
-import jdk.test.lib.*;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import static jdk.test.lib.Asserts.*;
 
 /* @test TestMetaspaceMemoryPool
  * @bug 8000754
  * @summary Tests that a MemoryPoolMXBeans is created for metaspace and that a
  *          MemoryManagerMXBean is created.
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseCompressedOops TestMetaspaceMemoryPool

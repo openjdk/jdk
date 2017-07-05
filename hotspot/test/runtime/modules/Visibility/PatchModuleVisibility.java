@@ -26,7 +26,7 @@
  * @summary Ensure that a newly introduced java.base package placed within the --patch-module
  *          directory is considered part of the boot loader's visibility boundary
  * @requires !(os.family == "windows")
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm PatchModuleVisibility
@@ -36,7 +36,9 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-import jdk.test.lib.*;
+import jdk.test.lib.InMemoryJavaCompiler;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleVisibility {
 

@@ -24,15 +24,12 @@
 /*
  * @test CodelistTest
  * @bug 8054889
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build jdk.test.lib.*
- *        jdk.test.lib.dcmd.*
- *        sun.hotspot.WhiteBox
- *        compiler.testlibrary.CompilerUtils
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing -Xmixed CodelistTest
@@ -48,7 +45,7 @@
 
 import compiler.testlibrary.CompilerUtils;
 import compiler.whitebox.CompilerWhiteBoxTest;
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import org.testng.annotations.Test;

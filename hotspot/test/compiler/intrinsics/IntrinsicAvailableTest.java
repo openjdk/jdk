@@ -25,9 +25,9 @@
  * @test
  * @bug 8130832
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  *
- * @build compiler.intrinsics.IntrinsicAvailableTest
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
