@@ -34,7 +34,7 @@ package com.sun.tools.jdeps;
 class MultiReleaseException extends RuntimeException {
     private static final long serialVersionUID = 4474870142461654108L;
     private final String key;
-    private final String[] msg;
+    private final Object[] params;
 
     /**
      * Constructs an {@code MultiReleaseException} with the specified detail
@@ -42,13 +42,13 @@ class MultiReleaseException extends RuntimeException {
      *
      * @param key
      *        The key that identifies the message in the jdeps.properties file
-     * @param msg
+     * @param params
      *        The detail message array
      */
-    public MultiReleaseException(String key, String... msg) {
+    public MultiReleaseException(String key, Object... params) {
         super();
         this.key = key;
-        this.msg = msg;
+        this.params = params;
     }
 
     /**
@@ -63,7 +63,7 @@ class MultiReleaseException extends RuntimeException {
      *
      * @return the detailed error message array
      */
-    public String[] getMsg() {
-        return msg;
+    public Object[] getParams() {
+        return params;
     }
 }
