@@ -42,6 +42,8 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
+
+import com.sun.security.jgss.ExtendedGSSContext;
 import org.ietf.jgss.GSSException;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.Config;
@@ -129,7 +131,7 @@ public class OkAsDelegateXRealm implements CallbackHandler {
         for (int i=0; i<2; i++) {
             c.startAsClient("host@host.r3.local", GSSUtil.GSS_KRB5_MECH_OID);
             s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
-            c.x().requestDelegPolicy(true);
+            ((ExtendedGSSContext)c.x()).requestDelegPolicy(true);
 
             Context.handshake(c, s);
             boolean succeed = true;

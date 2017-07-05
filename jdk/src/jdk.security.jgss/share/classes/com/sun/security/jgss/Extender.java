@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,34 @@
  * questions.
  */
 
-#include "sun_awt_windows_WBufferStrategy.h"
-#include "jni_util.h"
+package com.sun.security.jgss;
 
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import sun.security.jgss.GSSContextImpl;
+import sun.security.jgss.GSSCredentialImpl;
+import sun.security.jgss.JgssExtender;
 
-static jmethodID getBackBufferID;
+// The com.sun.security.jgss extension to JGSS-API
+class Extender extends JgssExtender {
 
-/*
- * Class:     sun_awt_windows_WBufferStrategy
- * Method:    initIDs
- * Signature: (Ljava/lang/Class;)V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_windows_WBufferStrategy_initIDs(JNIEnv *env, jclass wbs,
-                                             jclass componentClass)
-{
-    getBackBufferID = env->GetMethodID(componentClass, "getBackBuffer",
-                                       "()Ljava/awt/Image;");
-}
+    static {
+        JgssExtender.setExtender(new Extender());
+    }
 
-/**
- * Native method of WBufferStrategy.java.  Given a Component
- * object, this method will find the back buffer associated
- * with the Component's BufferStrategy and return a handle
- * to it.
- */
-extern "C" JNIEXPORT jobject JNICALL
-Java_sun_awt_windows_WBufferStrategy_getDrawBuffer(JNIEnv *env, jclass wbs,
-                                                   jobject component)
-{
-    if (!JNU_IsNull(env, getBackBufferID)) {
-        return env->CallObjectMethod(component, getBackBufferID);
-    } else {
-        return NULL;
+    public GSSCredential wrap(GSSCredential cred) {
+        if (cred instanceof ExtendedGSSCredential.ExtendedGSSCredentialImpl) {
+            return cred;
+        } else {
+            return new ExtendedGSSCredential.ExtendedGSSCredentialImpl((GSSCredentialImpl)cred);
+        }
+    }
+
+    public GSSContext wrap(GSSContext ctxt) {
+        if (ctxt instanceof ExtendedGSSContext.ExtendedGSSContextImpl) {
+            return ctxt;
+        } else {
+            return new ExtendedGSSContext.ExtendedGSSContextImpl((GSSContextImpl)ctxt);
+        }
     }
 }

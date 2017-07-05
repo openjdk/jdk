@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,29 +21,30 @@
  * questions.
  */
 
-package com.sun.tools.internal.xjc.api.util;
-
-import java.io.File;
-
-/**
- * Signals an error when tools.jar was not found.
- *
- * Simply print out the message obtained by {@link #getMessage()}.
- *
- * @author Kohsuke Kawaguchi
+/*
+ * @test
+ * @bug 8055289
+ * @library /testlibrary
+ * @build UnsafeMallocLimit
+ * @run main/othervm -Xmx32m -XX:NativeMemoryTracking=summary UnsafeMallocLimit
  */
-public final class ToolsJarNotFoundException extends Exception {
-    /**
-     * Location where we expected to find tools.jar
-     */
-    public final File toolsJar;
 
-    public ToolsJarNotFoundException(File toolsJar) {
-        super(calcMessage(toolsJar));
-        this.toolsJar = toolsJar;
-    }
+import com.oracle.java.testlibrary.*;
+import sun.misc.Unsafe;
 
-    private static String calcMessage(File toolsJar) {
-        return Messages.TOOLS_JAR_NOT_FOUND.format(toolsJar.getPath());
+public class UnsafeMallocLimit {
+
+    public static void main(String args[]) throws Exception {
+        if (Platform.is32bit()) {
+            Unsafe unsafe = Utils.getUnsafe();
+            try {
+                unsafe.allocateMemory(1 << 30);
+                throw new RuntimeException("Did not get expected OOME");
+            } catch (OutOfMemoryError e) {
+                // Expected exception
+            }
+        } else {
+            System.out.println("Test only valid on 32-bit platforms");
+        }
     }
 }

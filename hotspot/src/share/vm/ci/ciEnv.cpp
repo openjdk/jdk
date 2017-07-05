@@ -926,7 +926,7 @@ void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
 #ifdef ASSERT
     if (!counter_changed && !PrintCompilation) {
       // Print out the compile task that failed
-      _task->print_line();
+      _task->print_tty();
     }
 #endif
     assert(counter_changed, "failed dependencies, but counter didn't change");

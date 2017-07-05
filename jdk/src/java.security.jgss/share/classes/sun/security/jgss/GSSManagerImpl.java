@@ -145,35 +145,35 @@ public class GSSManagerImpl extends GSSManager {
 
     public GSSCredential createCredential(int usage)
         throws GSSException {
-        return new GSSCredentialImpl(this, usage);
+        return wrap(new GSSCredentialImpl(this, usage));
     }
 
     public GSSCredential createCredential(GSSName aName,
                                           int lifetime, Oid mech, int usage)
         throws GSSException {
-        return new GSSCredentialImpl(this, aName, lifetime, mech, usage);
+        return wrap(new GSSCredentialImpl(this, aName, lifetime, mech, usage));
     }
 
     public GSSCredential createCredential(GSSName aName,
                                           int lifetime, Oid mechs[], int usage)
         throws GSSException {
-        return new GSSCredentialImpl(this, aName, lifetime, mechs, usage);
+        return wrap(new GSSCredentialImpl(this, aName, lifetime, mechs, usage));
     }
 
     public GSSContext createContext(GSSName peer, Oid mech,
                                     GSSCredential myCred, int lifetime)
         throws GSSException {
-        return new GSSContextImpl(this, peer, mech, myCred, lifetime);
+        return wrap(new GSSContextImpl(this, peer, mech, myCred, lifetime));
     }
 
     public GSSContext createContext(GSSCredential myCred)
         throws GSSException {
-        return new GSSContextImpl(this, myCred);
+        return wrap(new GSSContextImpl(this, myCred));
     }
 
     public GSSContext createContext(byte[] interProcessToken)
         throws GSSException {
-        return new GSSContextImpl(this, interProcessToken);
+        return wrap(new GSSContextImpl(this, interProcessToken));
     }
 
     public void addProviderAtFront(Provider p, Oid mech)
@@ -256,5 +256,21 @@ public class GSSManagerImpl extends GSSManager {
             throw new GSSException(GSSException.UNAVAILABLE);
         }
         return result;
+    }
+
+    static {
+        // Load the extended JGSS interfaces if exist
+        try {
+            Class.forName("com.sun.security.jgss.Extender");
+        } catch (Exception e) {
+        }
+    }
+
+    static GSSCredential wrap(GSSCredentialImpl cred) {
+        return sun.security.jgss.JgssExtender.getExtender().wrap(cred);
+    }
+
+    static GSSContext wrap(GSSContextImpl ctxt) {
+        return sun.security.jgss.JgssExtender.getExtender().wrap(ctxt);
     }
 }

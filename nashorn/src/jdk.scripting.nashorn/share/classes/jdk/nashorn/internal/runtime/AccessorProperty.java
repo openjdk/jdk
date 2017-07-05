@@ -119,7 +119,7 @@ public class AccessorProperty extends Property {
      *   produce different boun method handles wrapping the same access mechanism
      *   depending on callsite
      */
-    private MethodHandle[] GETTER_CACHE = new MethodHandle[NOOF_TYPES];
+    private transient MethodHandle[] GETTER_CACHE = new MethodHandle[NOOF_TYPES];
 
     /**
      * Create a new accessor property. Factory method used by nasgen generated code.

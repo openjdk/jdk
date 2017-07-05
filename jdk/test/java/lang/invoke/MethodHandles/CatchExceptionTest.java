@@ -42,6 +42,7 @@ import java.util.function.Supplier;
 public class CatchExceptionTest {
     private static final List<Class<?>> ARGS_CLASSES;
     protected static final int MAX_ARITY = Helper.MAX_ARITY - 1;
+
     static {
         Class<?> classes[] = {
                 Object.class,
@@ -52,11 +53,8 @@ public class CatchExceptionTest {
                 double[].class,
                 String.class,
         };
-        List<Class<?>> list = new ArrayList<>(MAX_ARITY);
-        for (int i = 0; i < MAX_ARITY; ++i) {
-            list.add(classes[Helper.RNG.nextInt(classes.length)]);
-        }
-        ARGS_CLASSES = Collections.unmodifiableList(list);
+        ARGS_CLASSES = Collections.unmodifiableList(
+                Helper.randomClasses(classes, MAX_ARITY));
     }
 
     private final TestCase testCase;
@@ -65,7 +63,6 @@ public class CatchExceptionTest {
     private final MethodHandle catcher;
     private int dropped;
     private MethodHandle thrower;
-
 
     public CatchExceptionTest(TestCase testCase, final boolean isVararg, final int argsCount,
             final int catchDrops) {
@@ -107,37 +104,7 @@ public class CatchExceptionTest {
     }
 
     private List<Class<?>> getThrowerParams(boolean isVararg, int argsCount) {
-        boolean unmodifiable = true;
-        List<Class<?>> classes;
-        classes = ARGS_CLASSES.subList(0,
-                Math.min(argsCount, (MAX_ARITY / 2) - 1));
-        int extra = 0;
-        if (argsCount >= MAX_ARITY / 2) {
-            classes = new ArrayList<>(classes);
-            unmodifiable = false;
-            extra = (int) classes.stream().filter(Helper::isDoubleCost).count();
-            int i = classes.size();
-            while (classes.size() + extra < argsCount) {
-                Class<?> aClass = ARGS_CLASSES.get(i);
-                if (Helper.isDoubleCost(aClass)) {
-                    ++extra;
-                    if (classes.size() + extra >= argsCount) {
-                        break;
-                    }
-                }
-                classes.add(aClass);
-            }
-        }
-        if (isVararg && classes.size() > 0) {
-            if (unmodifiable) {
-                classes = new ArrayList<>(classes);
-            }
-            int last = classes.size() - 1;
-            Class<?> aClass = classes.get(classes.size() - 1);
-            aClass = Array.newInstance(aClass, 2).getClass();
-            classes.set(last, aClass);
-        }
-        return classes;
+        return Helper.getParams(ARGS_CLASSES, isVararg, argsCount);
     }
 
 

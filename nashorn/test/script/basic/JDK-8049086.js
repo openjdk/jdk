@@ -58,7 +58,7 @@ print("/foo/ is script object? " + Java.isScriptObject(/foo/));
 // (a) Java methods (b) Java classes (as these respond to new)
 // (c) FunctionalInterface objects (d) JSObjects that are 'functions'
 
-print("java.awt.Color is java function? " + Java.isJavaFunction(java.awt.Color));
+print("java.lang.String is java function? " + Java.isJavaFunction(java.lang.String));
 print("java.lang.Runnable instance is java function? "
     + Java.isJavaFunction(new java.lang.Runnable(function() {})));
 print("eval is java function? " + Java.isJavaFunction(eval));

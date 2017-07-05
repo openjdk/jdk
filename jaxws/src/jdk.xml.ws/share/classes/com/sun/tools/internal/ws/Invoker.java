@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,19 +29,16 @@ import com.sun.istack.internal.tools.MaskingClassLoader;
 import com.sun.istack.internal.tools.ParallelWorldClassLoader;
 import com.sun.tools.internal.ws.resources.WscompileMessages;
 import com.sun.tools.internal.ws.wscompile.Options;
-import com.sun.tools.internal.xjc.api.util.ToolsJarNotFoundException;
 import com.sun.xml.internal.bind.util.Which;
 
 import javax.xml.ws.Service;
 import javax.xml.ws.WebServiceFeature;
 import javax.xml.namespace.QName;
-import java.io.File;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -59,7 +56,7 @@ public final class Invoker {
     /**
      * The list of package prefixes we want the
      * {@link MaskingClassLoader} to prevent the parent
-     * classLoader from loading
+     * class loader from loading
      */
     static final String[] maskedPackages = new String[]{
             "com.sun.istack.internal.tools.",
@@ -130,24 +127,6 @@ public final class Invoker {
                     return -1;
                 }
 
-                //find and load tools.jar
-                List<URL> urls = new ArrayList<URL>();
-                findToolsJar(cl, urls);
-
-                if(urls.size() > 0){
-                    List<String> mask = new ArrayList<String>(Arrays.asList(maskedPackages));
-
-                    // first create a protected area so that we load JAXB/WS 2.1 API
-                    // and everything that depends on them inside
-                    cl = new MaskingClassLoader(cl,mask);
-
-                    // then this classloader loads the API and tools.jar
-                    cl = new URLClassLoader(urls.toArray(new URL[urls.size()]), cl);
-
-                    // finally load the rest of the RI. The actual class files are loaded from ancestors
-                    cl = new ParallelWorldClassLoader(cl,"");
-                        }
-
             }
 
             Thread.currentThread().setContextClassLoader(cl);
@@ -158,8 +137,6 @@ public final class Invoker {
             Method runMethod = compileTool.getMethod("run",String[].class);
             boolean r = (Boolean)runMethod.invoke(tool,new Object[]{args});
             return r ? 0 : 1;
-        } catch (ToolsJarNotFoundException e) {
-            System.err.println(e.getMessage());
         } catch (InvocationTargetException e) {
             throw e.getCause();
         } catch(ClassNotFoundException e){
@@ -167,8 +144,6 @@ public final class Invoker {
         }finally {
             Thread.currentThread().setContextClassLoader(oldcc);
         }
-
-        return -1;
     }
 
     /**
@@ -203,10 +178,10 @@ public final class Invoker {
 
 
     /**
-     * Creates a classloader that can load JAXB/WS 2.2 API and tools.jar,
-     * and then return a classloader that can RI classes, which can see all those APIs and tools.jar.
+     * Creates a class loader that can load JAXB/WS 2.2 API,
+     * and then return a class loader that can RI classes, which can see all those APIs.
      */
-    public static ClassLoader createClassLoader(ClassLoader cl) throws ClassNotFoundException, IOException, ToolsJarNotFoundException {
+    public static ClassLoader createClassLoader(ClassLoader cl) throws ClassNotFoundException, IOException {
 
         URL[] urls = findIstack22APIs(cl);
         if(urls.length==0)
@@ -223,7 +198,7 @@ public final class Invoker {
         // and everything that depends on them inside
         cl = new MaskingClassLoader(cl,mask);
 
-        // then this classloader loads the API and tools.jar
+        // then this class loader loads the API
         cl = new URLClassLoader(urls, cl);
 
         // finally load the rest of the RI. The actual class files are loaded from ancestors
@@ -233,13 +208,13 @@ public final class Invoker {
     }
 
     /**
-     * Creates a classloader for loading JAXB/WS 2.2 jar and tools.jar
+     * Creates a class loader for loading JAXB/WS 2.2 jar
      */
-    private static URL[] findIstack22APIs(ClassLoader cl) throws ClassNotFoundException, IOException, ToolsJarNotFoundException {
+    private static URL[] findIstack22APIs(ClassLoader cl) throws ClassNotFoundException, IOException {
         List<URL> urls = new ArrayList<URL>();
 
         if(Service.class.getClassLoader()==null) {
-            // JAX-WS API is loaded from bootstrap classloader
+            // JAX-WS API is loaded from bootstrap class loader
             URL res = cl.getResource("javax/xml/ws/EndpointContext.class");
             if(res==null)
                 throw new ClassNotFoundException("There's no JAX-WS 2.2 API in the classpath");
@@ -250,28 +225,7 @@ public final class Invoker {
             urls.add(ParallelWorldClassLoader.toJarUrl(res));
         }
 
-        findToolsJar(cl, urls);
-
         return urls.toArray(new URL[urls.size()]);
-    }
-
-    private static void findToolsJar(ClassLoader cl, List<URL> urls) throws ToolsJarNotFoundException, MalformedURLException {
-        try {
-            Class.forName("com.sun.tools.javac.Main",false,cl);
-            // we can already load them in the parent class loader.
-            // so no need to look for tools.jar.
-            // this happens when we are run inside IDE/Ant, or
-            // in Mac OS.
-        } catch (ClassNotFoundException e) {
-            // otherwise try to find tools.jar
-            File jreHome = new File(System.getProperty("java.home"));
-            File toolsJar = new File( jreHome.getParent(), "lib/tools.jar" );
-
-            if (!toolsJar.exists()) {
-                throw new ToolsJarNotFoundException(toolsJar);
-            }
-            urls.add(toolsJar.toURL());
-        }
     }
 
 }
