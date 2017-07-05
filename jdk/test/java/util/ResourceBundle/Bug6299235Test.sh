@@ -68,7 +68,7 @@ cd ${PATCHDIR}/java.desktop
 ${TESTJAVA}/bin/jar xf ${TESTSRC}/awtres.jar
 
 echo 
-${TESTJAVA}/bin/java ${TESTVMOPTS} -Xpatch:${PATCHDIR} \
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Xpatch:java.desktop=${PATCHDIR}/java.desktop \
      -cp ${TESTCLASSES} Bug6299235Test
 
 if [ $? -ne 0 ]

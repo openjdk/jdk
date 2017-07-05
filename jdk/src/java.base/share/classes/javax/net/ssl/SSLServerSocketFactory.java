@@ -97,6 +97,7 @@ public abstract class SSLServerSocketFactory extends ServerSocketFactory
                         }
                     }
                     log("class " + clsName + " is loaded");
+                    @SuppressWarnings("deprecation")
                     SSLServerSocketFactory fac = (SSLServerSocketFactory)cls.newInstance();
                     log("instantiated an instance of class " + clsName);
                     theFactory = fac;

@@ -111,8 +111,9 @@ public final class TerminalFactory {
                 type = "PC/SC";
                 Provider sun = Security.getProvider("SunPCSC");
                 if (sun == null) {
-                    Class<?> clazz = Class.forName("sun.security.smartcardio.SunPCSC");
-                    sun = (Provider)clazz.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object o = Class.forName("sun.security.smartcardio.SunPCSC").newInstance();
+                    sun = (Provider)o;
                 }
                 factory = TerminalFactory.getInstance(type, null, sun);
             } catch (Exception e) {

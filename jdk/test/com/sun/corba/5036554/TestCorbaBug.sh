@@ -81,9 +81,9 @@ cp ${TESTSRC}${FS}JavaBug.java bug
 
 chmod -fR 777 bug
 
-${COMPILEJAVA}${FS}bin${FS}javac -d . bug${FS}*.java
+${COMPILEJAVA}${FS}bin${FS}javac -addmods java.corba -d . bug${FS}*.java
 
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp . bug/JavaBug > test.out 2>&1 
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -addmods java.corba -cp . bug/JavaBug > test.out 2>&1 
 
 grep "NullPointerException" test.out
 

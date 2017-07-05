@@ -86,7 +86,9 @@ public final class FactoryEnumeration {
                     answer = cls;
                 }
                 // Instantiate Class to get factory
-                answer = ((Class) answer).newInstance();
+                @SuppressWarnings("deprecation")
+                Object tmp = ((Class) answer).newInstance();
+                answer = tmp;
                 ref = new NamedWeakReference<>(answer, className);
                 factories.set(posn-1, ref);  // replace Class object or null
                 return answer;

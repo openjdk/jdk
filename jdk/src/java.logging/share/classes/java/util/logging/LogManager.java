@@ -231,13 +231,15 @@ public class LogManager {
                     cname = System.getProperty("java.util.logging.manager");
                     if (cname != null) {
                         try {
-                            Class<?> clz = ClassLoader.getSystemClassLoader()
-                                    .loadClass(cname);
-                            mgr = (LogManager) clz.newInstance();
+                            @SuppressWarnings("deprecation")
+                            Object tmp = ClassLoader.getSystemClassLoader()
+                                .loadClass(cname).newInstance();
+                            mgr = (LogManager) tmp;
                         } catch (ClassNotFoundException ex) {
-                            Class<?> clz = Thread.currentThread()
-                                    .getContextClassLoader().loadClass(cname);
-                            mgr = (LogManager) clz.newInstance();
+                            @SuppressWarnings("deprecation")
+                            Object tmp = Thread.currentThread()
+                                .getContextClassLoader().loadClass(cname).newInstance();
+                            mgr = (LogManager) tmp;
                         }
                     }
                 } catch (Exception ex) {
@@ -991,8 +993,9 @@ public class LogManager {
         List<Handler> handlers = new ArrayList<>(names.length);
         for (String type : names) {
             try {
-                Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(type);
-                Handler hdl = (Handler) clz.newInstance();
+                @SuppressWarnings("deprecation")
+                Object o = ClassLoader.getSystemClassLoader().loadClass(type).newInstance();
+                Handler hdl = (Handler) o;
                 // Check if there is a property defining the
                 // this handler's level.
                 String levs = getProperty(type + ".level");
@@ -1330,11 +1333,13 @@ public class LogManager {
                 // calling readConfiguration(InputStream) with a suitable stream.
                 try {
                     Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(cname);
-                    clz.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object witness = clz.newInstance();
                     return;
                 } catch (ClassNotFoundException ex) {
                     Class<?> clz = Thread.currentThread().getContextClassLoader().loadClass(cname);
-                    clz.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object witness = clz.newInstance();
                     return;
                 }
             } catch (Exception ex) {
@@ -1561,7 +1566,8 @@ public class LogManager {
                 for (String word : names) {
                     try {
                         Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(word);
-                        clz.newInstance();
+                        @SuppressWarnings("deprecation")
+                        Object witness = clz.newInstance();
                     } catch (Exception ex) {
                         System.err.println("Can't load config class \"" + word + "\"");
                         System.err.println("" + ex);
@@ -2307,8 +2313,9 @@ public class LogManager {
         String val = getProperty(name);
         try {
             if (val != null) {
-                Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(val);
-                return (Filter) clz.newInstance();
+                @SuppressWarnings("deprecation")
+                Object o = ClassLoader.getSystemClassLoader().loadClass(val).newInstance();
+                return (Filter) o;
             }
         } catch (Exception ex) {
             // We got one of a variety of exceptions in creating the
@@ -2328,8 +2335,9 @@ public class LogManager {
         String val = getProperty(name);
         try {
             if (val != null) {
-                Class<?> clz = ClassLoader.getSystemClassLoader().loadClass(val);
-                return (Formatter) clz.newInstance();
+                @SuppressWarnings("deprecation")
+                Object o = ClassLoader.getSystemClassLoader().loadClass(val).newInstance();
+                return (Formatter) o;
             }
         } catch (Exception ex) {
             // We got one of a variety of exceptions in creating the

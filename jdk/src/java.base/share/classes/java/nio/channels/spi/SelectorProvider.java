@@ -95,9 +95,10 @@ public abstract class SelectorProvider {
         if (cn == null)
             return false;
         try {
-            Class<?> c = Class.forName(cn, true,
-                                       ClassLoader.getSystemClassLoader());
-            provider = (SelectorProvider)c.newInstance();
+            @SuppressWarnings("deprecation")
+            Object tmp = Class.forName(cn, true,
+                                       ClassLoader.getSystemClassLoader()).newInstance();
+            provider = (SelectorProvider)tmp;
             return true;
         } catch (ClassNotFoundException x) {
             throw new ServiceConfigurationError(null, x);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 import java.io.FilePermission;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Module;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.InaccessibleObjectException;
+import java.lang.reflect.Layer;
 import java.lang.reflect.ReflectPermission;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -68,7 +70,6 @@ import jdk.internal.module.Modules;
  */
 public class FieldSetAccessibleTest {
 
-    static final List<String> skipped = new ArrayList<>();
     static final List<String> cantread = new ArrayList<>();
     static final List<String> failed = new ArrayList<>();
     static final AtomicLong classCount = new AtomicLong();
@@ -210,7 +211,6 @@ public class FieldSetAccessibleTest {
         long millis = (elapsed % 1000_000_000) / 1000_000;
         long nanos  = elapsed % 1000_000;
         System.out.println("Unreadable path elements: " + cantread);
-        System.out.println("Skipped path elements: " + skipped);
         System.out.println("Failed path elements: " + failed);
         printSummary(secs, millis, nanos);
 
@@ -247,37 +247,26 @@ public class FieldSetAccessibleTest {
     static class ClassNameJrtStreamBuilder implements Iterable<String>{
 
         final FileSystem jrt;
-        final List<Path> roots = new ArrayList<>();
+        final Path root;
         ClassNameJrtStreamBuilder() {
              jrt = FileSystems.getFileSystem(URI.create("jrt:/"));
-             for (Path root : jrt.getRootDirectories()) {
-                 roots.add(root);
-             }
-        }
-
-        Stream<String> build() {
-            return roots.stream().flatMap(this::toStream)
-                    .filter(x -> x.getNameCount() > 2)
-                    .map( x-> x.subpath(2, x.getNameCount()))
-                    .map( x -> x.toString())
-                    .filter(s -> s.endsWith(".class") && !s.endsWith("module-info.class"));
+             root = jrt.getPath("/modules");
         }
 
         @Override
         public Iterator<String> iterator() {
-            return build().iterator();
-        }
-
-        private Stream<Path> toStream(Path root) {
             try {
-                return Files.walk(root);
+                return Files.walk(root)
+                        .filter(p -> p.getNameCount() > 2)
+                        .filter(p -> Layer.boot().findModule(p.getName(1).toString()).isPresent())
+                        .map(p -> p.subpath(2, p.getNameCount()))
+                        .map(p -> p.toString())
+                        .filter(s -> s.endsWith(".class") && !s.endsWith("module-info.class"))
+                    .iterator();
             } catch(IOException x) {
-                x.printStackTrace(System.err);
-                skipped.add(root.toString());
+                throw new UncheckedIOException("Unable to walk \"/modules\"", x);
             }
-            return Collections.<Path>emptyList().stream();
         }
-
     }
 
     // Test with or without a security manager

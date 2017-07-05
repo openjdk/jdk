@@ -35,7 +35,7 @@ import jdk.test.lib.*;
 public class MaxMetaspaceSize {
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:MaxMetaspaceSize=20m", "-Xshare:dump");
+        "-XX:MaxMetaspaceSize=10m", "-Xshare:dump");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
       output.shouldContain("is not large enough.\nEither don't specify the -XX:MaxMetaspaceSize=<size>\nor increase the size to at least");
       output.shouldHaveExitValue(2);
