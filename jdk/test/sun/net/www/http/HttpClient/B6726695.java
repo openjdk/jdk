@@ -147,6 +147,8 @@ public class B6726695 extends Thread {
             serverIgnore(s);
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try { server.close(); } catch (IOException unused) {}
         }
     }
 

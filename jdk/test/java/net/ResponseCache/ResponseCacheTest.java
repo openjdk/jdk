@@ -30,7 +30,6 @@
 import java.net.*;
 import java.util.*;
 import java.io.*;
-import java.nio.*;
 import sun.net.www.ParseUtil;
 import javax.net.ssl.*;
 
@@ -43,11 +42,16 @@ public class ResponseCacheTest implements Runnable {
     static URL url1;
     static URL url2;
     static String FNPrefix, OutFNPrefix;
+    static List<Closeable> streams = new ArrayList<>();
+    static List<File> files = new ArrayList<>();
+
     /*
      * Our "http" server to return a 404 */
     public void run() {
+        Socket s = null;
+        FileInputStream fis = null;
         try {
-            Socket s = ss.accept();
+            s = ss.accept();
 
             InputStream is = s.getInputStream ();
             BufferedReader r = new BufferedReader(new InputStreamReader(is));
@@ -68,7 +72,7 @@ public class ResponseCacheTest implements Runnable {
             out.print("Content-Length: "+file2.length()+"\r\n");
             out.print("Connection: close\r\n");
             out.print("\r\n");
-            FileInputStream fis = new FileInputStream(file2);
+            fis = new FileInputStream(file2);
             byte[] buf = new byte[(int)file2.length()];
             int len;
             while ((len = fis.read(buf)) != -1) {
@@ -81,6 +85,10 @@ public class ResponseCacheTest implements Runnable {
             ss.close();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            try { ss.close(); } catch (IOException unused) {}
+            try { s.close(); } catch (IOException unused) {}
+            try { fis.close(); } catch (IOException unused) {}
         }
     }
 static class NameVerifier implements HostnameVerifier {
@@ -144,11 +152,14 @@ static class NameVerifier implements HostnameVerifier {
         // assert (headers1 == headers2 && file1 == file2.2)
         File file1 = new File(OutFNPrefix+"file1");
         File file2 = new File(OutFNPrefix+"file2.2");
+        files.add(file1);
+        files.add(file2);
         System.out.println("headers1"+headers1+"\nheaders2="+headers2);
         if (!headers1.equals(headers2) || file1.length() != file2.length()) {
             throw new RuntimeException("test failed");
         }
     }
+
     public static void main(String args[]) throws Exception {
         try {
             ResponseCache.setDefault(new MyResponseCache());
@@ -157,6 +168,12 @@ static class NameVerifier implements HostnameVerifier {
             new ResponseCacheTest();
         } finally{
             ResponseCache.setDefault(null);
+            for (Closeable c: streams) {
+                try { c.close(); } catch (IOException unused) {}
+            }
+            for (File f: files) {
+                f.delete();
+            }
         }
     }
 
@@ -184,6 +201,7 @@ static class NameVerifier implements HostnameVerifier {
         public MyCacheResponse(String filename) {
             try {
                 fis = new FileInputStream(new File(filename));
+                streams.add(fis);
                 ObjectInputStream ois = new ObjectInputStream(fis);
                 headers = (Map<String,List<String>>)ois.readObject();
             } catch (Exception ex) {
@@ -206,6 +224,8 @@ static class NameVerifier implements HostnameVerifier {
             try {
                 File file = new File(filename);
                 fos = new FileOutputStream(file);
+                streams.add(fos);
+                files.add(file);
                 ObjectOutputStream oos = new ObjectOutputStream(fos);
                 oos.writeObject(rspHeaders);
             } catch (Exception ex) {

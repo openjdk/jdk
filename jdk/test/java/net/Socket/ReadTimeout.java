@@ -44,7 +44,7 @@ public class ReadTimeout  {
     sin = InetAddress.getLocalHost();
     srv = new ServerSocket(port);
     port = srv.getLocalPort();
-    soc = new Socket(sin, port, true);
+    soc = new Socket(sin, port);
     soc1 = srv.accept();
     soc.setSoTimeout(tout);
 
@@ -53,10 +53,10 @@ public class ReadTimeout  {
       os = soc1.getOutputStream();
       is.read();
     } catch(InterruptedIOException e) {
+    } finally {
+        soc.close();
+        soc1.close();
+        srv.close();
     }
-
-    soc.close();
-    soc1.close();
-    srv.close();
   }
 }

@@ -39,27 +39,28 @@ public class Restart {
      */
 
     public static void main(String args[]) throws Exception {
+        ServerSocket ss = new ServerSocket(0);
+        Socket s1 = null, s2 = null;
+        try {
+            int port = ss.getLocalPort();
 
-        InetSocketAddress isa = new InetSocketAddress(0);
-        ServerSocket ss = new ServerSocket();
-        ss.bind(isa);
+            s1 = new Socket(InetAddress.getLocalHost(), port);
+            s2 = ss.accept();
 
-        int port = ss.getLocalPort();
+            // close server socket and the accepted connection
+            ss.close();
+            s2.close();
 
-        Socket s1 = new Socket(InetAddress.getLocalHost(), port);
-        Socket s2 = ss.accept();
+            ss = new ServerSocket();
+            ss.bind( new InetSocketAddress(port) );
+            ss.close();
 
-        // close server socket and the accepted connection
-        ss.close();
-        s2.close();
-
-        boolean failed = false;
-
-        ss = new ServerSocket();
-        ss.bind( new InetSocketAddress(port) );
-        ss.close();
-
-        // close the client socket
-        s1.close();
+            // close the client socket
+            s1.close();
+        } finally {
+            if (ss != null) ss.close();
+            if (s1 != null) s1.close();
+            if (s2 != null) s2.close();
+        }
     }
 }

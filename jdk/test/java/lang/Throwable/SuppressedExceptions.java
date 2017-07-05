@@ -26,7 +26,7 @@ import java.util.*;
 
 /*
  * @test
- * @bug     6911258 6962571
+ * @bug     6911258 6962571 6963622
  * @summary Basic tests of suppressed exceptions
  * @author  Joseph D. Darcy
  */
@@ -35,9 +35,20 @@ public class SuppressedExceptions {
     private static String message = "Bad suppressed exception information";
 
     public static void main(String... args) throws Exception {
+        noSelfSuppression();
         basicSupressionTest();
         serializationTest();
         selfReference();
+    }
+
+    private static void noSelfSuppression() {
+        Throwable throwable = new Throwable();
+        try {
+            throwable.addSuppressedException(throwable);
+            throw new RuntimeException("IllegalArgumentException for self-suppresion not thrown.");
+        } catch (IllegalArgumentException iae) {
+            ; // Expected
+        }
     }
 
     private static void basicSupressionTest() {
@@ -156,9 +167,8 @@ public class SuppressedExceptions {
 
         throwable1.printStackTrace();
 
-
-        throwable1.addSuppressedException(throwable1);
         throwable1.addSuppressedException(throwable2);
+        throwable2.addSuppressedException(throwable1);
 
         throwable1.printStackTrace();
     }
