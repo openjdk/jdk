@@ -1528,7 +1528,6 @@ void GraphKit::pre_barrier(bool do_load,
     case BarrierSet::ModRef:
       break;
 
-    case BarrierSet::Other:
     default      :
       ShouldNotReachHere();
 
@@ -1547,7 +1546,6 @@ bool GraphKit::can_move_pre_barrier() const {
     case BarrierSet::ModRef:
       return true; // There is no pre-barrier
 
-    case BarrierSet::Other:
     default      :
       ShouldNotReachHere();
   }
@@ -1578,7 +1576,6 @@ void GraphKit::post_barrier(Node* ctl,
     case BarrierSet::ModRef:
       break;
 
-    case BarrierSet::Other:
     default      :
       ShouldNotReachHere();
 

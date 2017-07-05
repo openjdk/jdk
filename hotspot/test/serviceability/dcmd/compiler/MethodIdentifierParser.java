@@ -51,11 +51,11 @@ public class MethodIdentifierParser {
         // Add sanity check for extracted fields
     }
 
-    public Method getMethod() throws NoSuchMethodException, SecurityException, ClassNotFoundException, Exception {
+    public Method getMethod() throws NoSuchMethodException, SecurityException, ClassNotFoundException {
         try {
             return Class.forName(className).getDeclaredMethod(methodName, getParamenterDescriptorArray());
         } catch (UnexpectedTokenException e) {
-            throw new Exception("Parse failed");
+            throw new RuntimeException("Parse failed");
         }
     }
 
