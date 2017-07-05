@@ -169,27 +169,25 @@ endif
 ##########################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-  ifndef OPENJDK
 
-    UCRYPTO_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/ucrypto.jar
-    UCRYPTO_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/ucrypto.jar
+  UCRYPTO_JAR_DST := $(JDK_OUTPUTDIR)/lib/ext/ucrypto.jar
+  UCRYPTO_JAR_UNSIGNED := $(JDK_OUTPUTDIR)/jce/unsigned/ucrypto.jar
 
-    $(eval $(call SetupArchive,BUILD_UCRYPTO_JAR, , \
-        SRCS := $(JDK_OUTPUTDIR)/modules/jdk.crypto.ucrypto, \
-        SUFFIXES := .class, \
-        INCLUDES := com/oracle/security/ucrypto, \
-        JAR := $(UCRYPTO_JAR_UNSIGNED), \
-        MANIFEST := $(JCE_MANIFEST), \
-        SKIP_METAINF := true))
+  $(eval $(call SetupArchive,BUILD_UCRYPTO_JAR, , \
+      SRCS := $(JDK_OUTPUTDIR)/modules/jdk.crypto.ucrypto, \
+      SUFFIXES := .class, \
+      INCLUDES := com/oracle/security/ucrypto, \
+      JAR := $(UCRYPTO_JAR_UNSIGNED), \
+      MANIFEST := $(JCE_MANIFEST), \
+      SKIP_METAINF := true))
 
-    $(UCRYPTO_JAR_UNSIGNED): $(JCE_MANIFEST)
+  $(UCRYPTO_JAR_UNSIGNED): $(JCE_MANIFEST)
 
-    $(UCRYPTO_JAR_DST): $(UCRYPTO_JAR_UNSIGNED)
+  $(UCRYPTO_JAR_DST): $(UCRYPTO_JAR_UNSIGNED)
 	$(install-file)
 
-    TARGETS += $(UCRYPTO_JAR_UNSIGNED) $(UCRYPTO_JAR_DST)
+  TARGETS += $(UCRYPTO_JAR_UNSIGNED) $(UCRYPTO_JAR_DST)
 
-  endif
 endif
 
 all: $(TARGETS)

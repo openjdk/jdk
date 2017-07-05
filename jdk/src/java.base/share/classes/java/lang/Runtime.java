@@ -730,7 +730,7 @@ public class Runtime {
      * @param   on   <code>true</code> to enable instruction tracing;
      *               <code>false</code> to disable this feature.
      */
-    public native void traceInstructions(boolean on);
+    public void traceInstructions(boolean on) { }
 
     /**
      * Enables/Disables tracing of method calls.
@@ -748,7 +748,7 @@ public class Runtime {
      * @param   on   <code>true</code> to enable instruction tracing;
      *               <code>false</code> to disable this feature.
      */
-    public native void traceMethodCalls(boolean on);
+    public void traceMethodCalls(boolean on) { }
 
     /**
      * Loads the native library specified by the filename argument.  The filename

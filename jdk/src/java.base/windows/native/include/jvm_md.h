@@ -97,7 +97,6 @@ JVM_GetHostByName(char* name);
 #define JVM_O_O_APPEND   O_APPEND
 #define JVM_O_EXCL       O_EXCL
 #define JVM_O_CREAT      O_CREAT
-#define JVM_O_DELETE     O_TEMPORARY
 
 /* Signals */
 

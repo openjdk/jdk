@@ -134,6 +134,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void print_method(Compile* compile, const char *name, int level=1, bool clear_nodes = false);
   void print(Compile* compile, const char *name, Node *root, int level=1, bool clear_nodes = false);
   void print_xml(const char *name);
+  static bool should_print(ciMethod* method, int level = 1);
 };
 
 #endif

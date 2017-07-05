@@ -30,11 +30,11 @@ bool SimpleThresholdPolicy::call_predicate_helper(int i, int b, double scale) {
   switch(level) {
   case CompLevel_none:
   case CompLevel_limited_profile:
-    return (i > Tier3InvocationThreshold * scale) ||
-           (i > Tier3MinInvocationThreshold * scale && i + b > Tier3CompileThreshold * scale);
+    return (i >= Tier3InvocationThreshold * scale) ||
+           (i >= Tier3MinInvocationThreshold * scale && i + b >= Tier3CompileThreshold * scale);
   case CompLevel_full_profile:
-   return (i > Tier4InvocationThreshold * scale) ||
-          (i > Tier4MinInvocationThreshold * scale && i + b > Tier4CompileThreshold * scale);
+   return (i >= Tier4InvocationThreshold * scale) ||
+          (i >= Tier4MinInvocationThreshold * scale && i + b >= Tier4CompileThreshold * scale);
   }
   return true;
 }
@@ -44,9 +44,9 @@ bool SimpleThresholdPolicy::loop_predicate_helper(int i, int b, double scale) {
   switch(level) {
   case CompLevel_none:
   case CompLevel_limited_profile:
-    return b > Tier3BackEdgeThreshold * scale;
+    return b >= Tier3BackEdgeThreshold * scale;
   case CompLevel_full_profile:
-    return b > Tier4BackEdgeThreshold * scale;
+    return b >= Tier4BackEdgeThreshold * scale;
   }
   return true;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,9 +48,17 @@ public class ObjectSynchronizer {
       blockListField = type.getAddressField("gBlockList");
       gBlockListAddr = blockListField.getValue();
       blockSize = db.lookupIntConstant("ObjectSynchronizer::_BLOCKSIZE").intValue();
+      defaultCacheLineSize = db.lookupIntConstant("DEFAULT_CACHE_LINE_SIZE").intValue();
     } catch (RuntimeException e) { }
     type = db.lookupType("ObjectMonitor");
     objectMonitorTypeSize = type.getSize();
+    if ((objectMonitorTypeSize % defaultCacheLineSize) != 0) {
+      // sizeof(ObjectMonitor) is not already a multiple of a cache line.
+      // The ObjectMonitor allocation code in ObjectSynchronizer pads each
+      // ObjectMonitor in a block to the next cache line boundary.
+      int needLines = ((int)objectMonitorTypeSize / defaultCacheLineSize) + 1;
+      objectMonitorTypeSize = needLines * defaultCacheLineSize;
+    }
   }
 
   public long identityHashValueFor(Oop obj) {
@@ -122,6 +130,7 @@ public class ObjectSynchronizer {
 
   private static Address gBlockListAddr;
   private static int blockSize;
+  private static int defaultCacheLineSize;
   private static long objectMonitorTypeSize;
 
 }
