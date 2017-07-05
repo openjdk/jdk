@@ -78,7 +78,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE_NOWARNINGS, \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 
-JDK_BOOTCLASSPATH := $(subst $(SPACE),$(PATH_SEP),\
+JDK_BOOTCLASSPATH := $(call PathList, \
     $(filter-out $(JDK_OUTPUTDIR)/modules/_%, $(wildcard $(JDK_OUTPUTDIR)/modules/*)))
 
 # After the jdk is built, we want to build demos using only the recently
@@ -88,7 +88,7 @@ JDK_BOOTCLASSPATH := $(subst $(SPACE),$(PATH_SEP),\
 $(eval $(call SetupJavaCompiler,GENERATE_USINGJDKBYTECODE, \
     JVM := $(JAVA_SMALL), \
     JAVAC := $(NEW_JAVAC), \
-    FLAGS := -bootclasspath "$(JDK_BOOTCLASSPATH)" $(DISABLE_WARNINGS), \
+    FLAGS := -bootclasspath $(JDK_BOOTCLASSPATH) $(DISABLE_WARNINGS), \
     SERVER_DIR := $(SJAVAC_SERVER_DIR), \
     SERVER_JVM := $(SJAVAC_SERVER_JAVA)))
 

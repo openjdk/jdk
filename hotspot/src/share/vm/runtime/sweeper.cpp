@@ -611,7 +611,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_nmethod(nmethod* nm) {
   } else if (nm->is_not_entrant()) {
     // If there are no current activations of this method on the
     // stack we can safely convert it to a zombie method
-    if (nm->can_not_entrant_be_converted()) {
+    if (nm->can_convert_to_zombie()) {
       // Clear ICStubs to prevent back patching stubs of zombie or unloaded
       // nmethods during the next safepoint (see ICStub::finalize).
       {
@@ -645,6 +645,12 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_nmethod(nmethod* nm) {
       assert(result == None, "sanity");
       result = Flushed;
     } else {
+      {
+        // Clean ICs of unloaded nmethods as well because they may reference other
+        // unloaded nmethods that may be flushed earlier in the sweeper cycle.
+        MutexLocker cl(CompiledIC_lock);
+        nm->cleanup_inline_caches();
+      }
       // Code cache state change is tracked in make_zombie()
       nm->make_zombie();
       SWEEP(nm);

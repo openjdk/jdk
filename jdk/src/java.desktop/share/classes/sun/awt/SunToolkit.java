@@ -124,18 +124,7 @@ public abstract class SunToolkit extends Toolkit
      * @param appContext AppContext to associate with the event queue
      */
     private static void initEQ(AppContext appContext) {
-        EventQueue eventQueue;
-
-        String eqName = System.getProperty("AWT.EventQueueClass",
-                "java.awt.EventQueue");
-
-        try {
-            eventQueue = (EventQueue)Class.forName(eqName).newInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Failed loading " + eqName + ": " + e);
-            eventQueue = new EventQueue();
-        }
+        EventQueue eventQueue = new EventQueue();
         appContext.put(AppContext.EVENT_QUEUE_KEY, eventQueue);
 
         PostEventQueue postEventQueue = new PostEventQueue(eventQueue);

@@ -298,8 +298,8 @@ public void close()
  * Handles a parameterless RTF keyword. This is called by the superclass
  * (RTFParser) when a keyword is found in the input stream.
  *
- * @returns <code>true</code> if the keyword is recognized and handled;
- *          <code>false</code> otherwise
+ * @return true if the keyword is recognized and handled;
+ *         false otherwise
  * @see RTFParser#handleKeyword
  */
 public boolean handleKeyword(String keyword)
@@ -444,8 +444,8 @@ public boolean handleKeyword(String keyword)
  * This is called by the superclass
  * (RTFParser) when a keyword is found in the input stream.
  *
- * @returns <code>true</code> if the keyword is recognized and handled;
- *          <code>false</code> otherwise
+ * @return true if the keyword is recognized and handled;
+ *         false otherwise
  * @see RTFParser#handleKeyword
  */
 public boolean handleKeyword(String keyword, int parameter)
@@ -553,7 +553,7 @@ defineCharacterSet(String name, char[] table)
  *  array of characters, mapping unsigned byte values to their Unicode
  *  equivalents. The character set is loaded if necessary.
  *
- *  @returns the character set
+ *  @return the character set
  */
 public static Object
 getCharacterSet(final String name)
@@ -577,7 +577,7 @@ getCharacterSet(final String name)
  * must contain 256 decimal integers, separated by whitespace, with
  * no punctuation. B- and C- style comments are allowed.
  *
- * @returns the newly read character set
+ * @return the newly read character set
  */
 static char[] readCharset(InputStream strm)
      throws IOException
@@ -1349,7 +1349,7 @@ abstract class AttributeTrackingDestination implements Destination
      * Calculates the current text (character) attributes in a form suitable
      * for SwingText from the current parser state.
      *
-     * @returns a new MutableAttributeSet containing the text attributes.
+     * @return a new MutableAttributeSet containing the text attributes.
      */
     MutableAttributeSet currentTextAttributes()
     {
@@ -1410,7 +1410,7 @@ abstract class AttributeTrackingDestination implements Destination
      * Calculates the current paragraph attributes (with keys
      * as given in StyleConstants) from the current parser state.
      *
-     * @returns a newly created MutableAttributeSet.
+     * @return a newly created MutableAttributeSet.
      * @see StyleConstants
      */
     MutableAttributeSet currentParagraphAttributes()
@@ -1449,7 +1449,7 @@ abstract class AttributeTrackingDestination implements Destination
      * Calculates the current section attributes
      * from the current parser state.
      *
-     * @returns a newly created MutableAttributeSet.
+     * @return a newly created MutableAttributeSet.
      */
     public AttributeSet currentSectionAttributes()
     {

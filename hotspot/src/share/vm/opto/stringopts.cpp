@@ -1576,51 +1576,58 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
 
   Node* result;
   if (!kit.stopped()) {
-
-    // length now contains the number of characters needed for the
-    // char[] so create a new AllocateArray for the char[]
     Node* char_array = NULL;
-    {
-      PreserveReexecuteState preexecs(&kit);
-      // The original jvms is for an allocation of either a String or
-      // StringBuffer so no stack adjustment is necessary for proper
-      // reexecution.  If we deoptimize in the slow path the bytecode
-      // will be reexecuted and the char[] allocation will be thrown away.
-      kit.jvms()->set_should_reexecute(true);
-      char_array = kit.new_array(__ makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_CHAR))),
-                                 length, 1);
-    }
+    if (sc->num_arguments() == 1 &&
+          (sc->mode(0) == StringConcat::StringMode ||
+           sc->mode(0) == StringConcat::StringNullCheckMode)) {
+      // Handle the case when there is only a single String argument.
+      // In this case, we can just pull the value from the String itself.
+      char_array = kit.load_String_value(kit.control(), sc->argument(0));
+    } else {
+      // length now contains the number of characters needed for the
+      // char[] so create a new AllocateArray for the char[]
+      {
+        PreserveReexecuteState preexecs(&kit);
+        // The original jvms is for an allocation of either a String or
+        // StringBuffer so no stack adjustment is necessary for proper
+        // reexecution.  If we deoptimize in the slow path the bytecode
+        // will be reexecuted and the char[] allocation will be thrown away.
+        kit.jvms()->set_should_reexecute(true);
+        char_array = kit.new_array(__ makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_CHAR))),
+                                   length, 1);
+      }
 
-    // Mark the allocation so that zeroing is skipped since the code
-    // below will overwrite the entire array
-    AllocateArrayNode* char_alloc = AllocateArrayNode::Ideal_array_allocation(char_array, _gvn);
-    char_alloc->maybe_set_complete(_gvn);
+      // Mark the allocation so that zeroing is skipped since the code
+      // below will overwrite the entire array
+      AllocateArrayNode* char_alloc = AllocateArrayNode::Ideal_array_allocation(char_array, _gvn);
+      char_alloc->maybe_set_complete(_gvn);
 
-    // Now copy the string representations into the final char[]
-    Node* start = __ intcon(0);
-    for (int argi = 0; argi < sc->num_arguments(); argi++) {
-      Node* arg = sc->argument(argi);
-      switch (sc->mode(argi)) {
-        case StringConcat::IntMode: {
-          Node* end = __ AddI(start, string_sizes->in(argi));
-          // getChars words backwards so pass the ending point as well as the start
-          int_getChars(kit, arg, char_array, start, end);
-          start = end;
-          break;
+      // Now copy the string representations into the final char[]
+      Node* start = __ intcon(0);
+      for (int argi = 0; argi < sc->num_arguments(); argi++) {
+        Node* arg = sc->argument(argi);
+        switch (sc->mode(argi)) {
+          case StringConcat::IntMode: {
+            Node* end = __ AddI(start, string_sizes->in(argi));
+            // getChars words backwards so pass the ending point as well as the start
+            int_getChars(kit, arg, char_array, start, end);
+            start = end;
+            break;
+          }
+          case StringConcat::StringNullCheckMode:
+          case StringConcat::StringMode: {
+            start = copy_string(kit, arg, char_array, start);
+            break;
+          }
+          case StringConcat::CharMode: {
+            __ store_to_memory(kit.control(), kit.array_element_address(char_array, start, T_CHAR),
+                               arg, T_CHAR, char_adr_idx, MemNode::unordered);
+            start = __ AddI(start, __ intcon(1));
+            break;
+          }
+          default:
+            ShouldNotReachHere();
         }
-        case StringConcat::StringNullCheckMode:
-        case StringConcat::StringMode: {
-          start = copy_string(kit, arg, char_array, start);
-          break;
-        }
-        case StringConcat::CharMode: {
-          __ store_to_memory(kit.control(), kit.array_element_address(char_array, start, T_CHAR),
-                             arg, T_CHAR, char_adr_idx, MemNode::unordered);
-          start = __ AddI(start, __ intcon(1));
-          break;
-        }
-        default:
-          ShouldNotReachHere();
       }
     }
 

@@ -145,7 +145,7 @@ final class ColorPanel extends JPanel implements ActionListener {
     }
 
     void colorChanged() {
-        this.color = new Color(getColor(0), true);
+        this.color = new Color(getColor(0), isColorTransparencySelectionEnabled());
         Object parent = getParent();
         if (parent instanceof ColorChooserPanel) {
             ColorChooserPanel chooser = (ColorChooserPanel) parent;
@@ -206,6 +206,17 @@ final class ColorPanel extends JPanel implements ActionListener {
             setValue(index++);
         }
         return this.model.getColor(this.values);
+    }
+
+    void setColorTransparencySelectionEnabled(boolean b) {
+        if (spinners[model.getCount() - 1].isVisible() != b) {
+            spinners[model.getCount() - 1].setVisible(b);
+            colorChanged();
+        }
+    }
+
+    boolean isColorTransparencySelectionEnabled() {
+        return spinners[model.getCount() - 1].isVisible();
     }
 
     private void setValue(int index) {
