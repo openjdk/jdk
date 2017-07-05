@@ -736,6 +736,14 @@ public class Config {
         return name;
     }
 
+    private static String trimmed(String s) {
+        s = s.trim();
+        if (s.charAt(0) == '"' && s.charAt(s.length()-1) == '"' ||
+                s.charAt(0) == '\'' && s.charAt(s.length()-1) == '\'') {
+            s = s.substring(1, s.length()-1).trim();
+        }
+        return s;
+    }
     /**
      * Parses key-value pairs under a stanza name.
      */
@@ -747,7 +755,7 @@ public class Config {
             for (int j = 0; j < line.length(); j++) {
                 if (line.charAt(j) == '=') {
                     String key = (line.substring(0, j)).trim();
-                    String value = (line.substring(j + 1)).trim();
+                    String value = trimmed(line.substring(j + 1));
                     table.put(key, value);
                     break;
                 }
@@ -820,7 +828,7 @@ public class Config {
                     } else {
                         nameVector = table.get(key);
                     }
-                    nameVector.addElement((line.substring(j + 1)).trim());
+                    nameVector.addElement(trimmed(line.substring(j + 1)));
                     table.put(key, nameVector);
                     break;
                 }
@@ -1263,4 +1271,32 @@ public class Config {
         }
     }
 
+    @Override
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        toStringIndented("", stanzaTable, sb);
+        return sb.toString();
+    }
+    private static void toStringIndented(String prefix, Object obj,
+            StringBuffer sb) {
+        if (obj instanceof String) {
+            sb.append(prefix);
+            sb.append(obj);
+            sb.append('\n');
+        } else if (obj instanceof Hashtable) {
+            Hashtable tab = (Hashtable)obj;
+            for (Object o: tab.keySet()) {
+                sb.append(prefix);
+                sb.append(o);
+                sb.append(" = {\n");
+                toStringIndented(prefix + "    ", tab.get(o), sb);
+                sb.append(prefix + "}\n");
+            }
+        } else if (obj instanceof Vector) {
+            Vector v = (Vector)obj;
+            for (Object o: v.toArray()) {
+                toStringIndented(prefix + "    ", o, sb);
+            }
+        }
+    }
 }

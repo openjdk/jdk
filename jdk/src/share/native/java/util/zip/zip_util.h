@@ -168,6 +168,7 @@ typedef struct jzentry {  /* Zip file entry */
     char *comment;        /* optional zip file comment */
     jbyte *extra;         /* optional extra data */
     jlong pos;            /* position of LOC header or entry data */
+    jint flag;            /* general purpose flag */
 } jzentry;
 
 /*

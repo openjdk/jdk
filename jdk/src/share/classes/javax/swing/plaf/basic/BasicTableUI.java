@@ -1414,17 +1414,20 @@ public class BasicTableUI extends TableUI
 
         Color sbg = table.getSelectionBackground();
         if (sbg == null || sbg instanceof UIResource) {
-            table.setSelectionBackground(UIManager.getColor("Table.selectionBackground"));
+            sbg = UIManager.getColor("Table.selectionBackground");
+            table.setSelectionBackground(sbg != null ? sbg : UIManager.getColor("textHighlight"));
         }
 
         Color sfg = table.getSelectionForeground();
         if (sfg == null || sfg instanceof UIResource) {
-            table.setSelectionForeground(UIManager.getColor("Table.selectionForeground"));
+            sfg = UIManager.getColor("Table.selectionForeground");
+            table.setSelectionForeground(sfg != null ? sfg : UIManager.getColor("textHighlightText"));
         }
 
         Color gridColor = table.getGridColor();
         if (gridColor == null || gridColor instanceof UIResource) {
-            table.setGridColor(UIManager.getColor("Table.gridColor"));
+            gridColor = UIManager.getColor("Table.gridColor");
+            table.setGridColor(gridColor != null ? gridColor : Color.GRAY);
         }
 
         // install the scrollpane border

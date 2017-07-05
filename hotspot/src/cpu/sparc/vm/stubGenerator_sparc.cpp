@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,16 +68,9 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef PRODUCT
 #define inc_counter_np(a,b,c) (0)
 #else
-  void inc_counter_np_(int& counter, Register t1, Register t2) {
-    Address counter_addr(t2, (address) &counter);
-    __ sethi(counter_addr);
-    __ ld(counter_addr, t1);
-    __ inc(t1);
-    __ st(t1, counter_addr);
-  }
 #define inc_counter_np(counter, t1, t2) \
   BLOCK_COMMENT("inc_counter " #counter); \
-  inc_counter_np_(counter, t1, t2);
+  __ inc_counter(&counter, t1, t2);
 #endif
 
   //----------------------------------------------------------------------------------------------------
@@ -325,9 +318,9 @@ class StubGenerator: public StubCodeGenerator {
     __ verify_thread();
 
     const Register& temp_reg = Gtemp;
-    Address pending_exception_addr    (G2_thread, 0, in_bytes(Thread::pending_exception_offset()));
-    Address exception_file_offset_addr(G2_thread, 0, in_bytes(Thread::exception_file_offset   ()));
-    Address exception_line_offset_addr(G2_thread, 0, in_bytes(Thread::exception_line_offset   ()));
+    Address pending_exception_addr    (G2_thread, Thread::pending_exception_offset());
+    Address exception_file_offset_addr(G2_thread, Thread::exception_file_offset   ());
+    Address exception_line_offset_addr(G2_thread, Thread::exception_line_offset   ());
 
     // set pending exception
     __ verify_oop(Oexception);
@@ -340,8 +333,8 @@ class StubGenerator: public StubCodeGenerator {
     // complete return to VM
     assert(StubRoutines::_call_stub_return_address != NULL, "must have been generated before");
 
-    Address stub_ret(temp_reg, StubRoutines::_call_stub_return_address);
-    __ jump_to(stub_ret);
+    AddressLiteral stub_ret(StubRoutines::_call_stub_return_address);
+    __ jump_to(stub_ret, temp_reg);
     __ delayed()->nop();
 
     return start;
@@ -366,7 +359,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const Register& handler_reg = Gtemp;
 
-    Address exception_addr (G2_thread, 0, in_bytes(Thread::pending_exception_offset()));
+    Address exception_addr(G2_thread, Thread::pending_exception_offset());
 
 #ifdef ASSERT
     // make sure that this code is only executed if there is a pending exception
@@ -456,8 +449,7 @@ class StubGenerator: public StubCodeGenerator {
     int frame_complete = __ offset();
 
     if (restore_saved_exception_pc) {
-      Address saved_exception_pc(G2_thread, 0, in_bytes(JavaThread::saved_exception_pc_offset()));
-      __ ld_ptr(saved_exception_pc, I7);
+      __ ld_ptr(G2_thread, JavaThread::saved_exception_pc_offset(), I7);
       __ sub(I7, frame::pc_return_offset, I7);
     }
 
@@ -481,7 +473,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef ASSERT
     Label L;
 
-    Address exception_addr(G2_thread, 0, in_bytes(Thread::pending_exception_offset()));
+    Address exception_addr(G2_thread, Thread::pending_exception_offset());
     Register scratch_reg = Gtemp;
     __ ld_ptr(exception_addr, scratch_reg);
     __ br_notnull(scratch_reg, false, Assembler::pt, L);
@@ -835,7 +827,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     const int preserve_register_words = (64 * 2);
-    Address preserve_addr(FP, 0, (-preserve_register_words * wordSize) + STACK_BIAS);
+    Address preserve_addr(FP, (-preserve_register_words * wordSize) + STACK_BIAS);
 
     Register Lthread = L7_thread_cache;
     int i;
@@ -1106,21 +1098,19 @@ class StubGenerator: public StubCodeGenerator {
           __ srl_ptr(addr, CardTableModRefBS::card_shift, addr);
           __ srl_ptr(count, CardTableModRefBS::card_shift, count);
           __ sub(count, addr, count);
-          Address rs(tmp, (address)ct->byte_map_base);
-          __ load_address(rs);
+          AddressLiteral rs(ct->byte_map_base);
+          __ set(rs, tmp);
         __ BIND(L_loop);
-          __ stb(G0, rs.base(), addr);
+          __ stb(G0, tmp, addr);
           __ subcc(count, 1, count);
           __ brx(Assembler::greaterEqual, false, Assembler::pt, L_loop);
           __ delayed()->add(addr, 1, addr);
-
-          }
+        }
         break;
       case BarrierSet::ModRef:
         break;
-      default      :
+      default:
         ShouldNotReachHere();
-
     }
   }
 

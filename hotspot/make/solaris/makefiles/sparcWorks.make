@@ -46,7 +46,7 @@ C_COMPILER_REV := \
 $(shell $(CC) -V 2>&1 | sed -n 's/^.*[ ,\t]C[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p')
 
 # Pick which compiler is validated
-ifeq ($(JDK_MINOR_VERSION),6)
+ifeq ($(JRE_RELEASE_VER),1.6.0)
   # Validated compiler for JDK6 is SS11 (5.8)
   VALIDATED_COMPILER_REV   := 5.8
   VALIDATED_C_COMPILER_REV := 5.8
@@ -101,18 +101,9 @@ CFLAGS += ${SOLARIS_7_OR_LATER}
 
 # New architecture options started in SS12 (5.9), we need both styles to build.
 #   The older arch options for SS11 (5.8) or older and also for /usr/ccs/bin/as.
-#   Note: SS12 default for 32bit sparc is now the same as v8plus, so the
-#         settings below have changed all SS12 32bit sparc builds to be v8plus.
-#         The older SS11 (5.8) settings have remained as they always have been.
-ifeq ($(TYPE),COMPILER2)
-  ARCHFLAG_OLD/sparc   = -xarch=v8plus
-else
-  ifeq ($(TYPE),TIERED)
-    ARCHFLAG_OLD/sparc = -xarch=v8plus
-  else
-    ARCHFLAG_OLD/sparc = -xarch=v8
-  endif
-endif
+#   Note: default for 32bit sparc is now the same as v8plus, so the
+#         settings below have changed all 32bit sparc builds to be v8plus.
+ARCHFLAG_OLD/sparc   = -xarch=v8plus
 ARCHFLAG_NEW/sparc   = -m32 -xarch=sparc
 ARCHFLAG_OLD/sparcv9 = -xarch=v9
 ARCHFLAG_NEW/sparcv9 = -m64 -xarch=sparc

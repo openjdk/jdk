@@ -204,7 +204,7 @@ struct unpacker {
 
   // archive header fields
   int      magic, minver, majver;
-  julong   archive_size;
+  size_t   archive_size;
   int      archive_next_count, archive_options, archive_modtime;
   int      band_headers_size;
   int      file_count, attr_definition_count, ic_count, class_count;

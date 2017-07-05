@@ -109,6 +109,7 @@ class RawBytecodeStream: StackObj {
 
   Bytecodes::Code code() const                   { return _code; }
   bool            is_wide() const                { return _is_wide; }
+  int             instruction_size() const       { return (_next_bci - _bci); }
   bool            is_last_bytecode() const       { return _next_bci >= _end_bci; }
 
   address         bcp() const                    { return method()->code_base() + _bci; }
@@ -122,8 +123,29 @@ class RawBytecodeStream: StackObj {
   int             dest_w() const                 { return bci() + (int  )Bytes::get_Java_u4(bcp() + 1); }
 
   // Unsigned indices, widening
-  int             get_index() const              { return (is_wide()) ? Bytes::get_Java_u2(bcp() + 2) : bcp()[1]; }
-  int             get_index_big() const          { return (int)Bytes::get_Java_u2(bcp() + 1);  }
+  int             get_index() const              { assert_index_size(is_wide() ? 2 : 1);
+                                                   return (is_wide()) ? Bytes::get_Java_u2(bcp() + 2) : bcp()[1]; }
+  int             get_index_big() const          { assert_index_size(2);
+                                                   return (int)Bytes::get_Java_u2(bcp() + 1);  }
+  int             get_index_int() const          { return has_giant_index() ? get_index_giant() : get_index_big(); }
+  int             get_index_giant() const        { assert_index_size(4); return Bytes::get_native_u4(bcp() + 1); }
+  int             has_giant_index() const        { return (code() == Bytecodes::_invokedynamic); }
+
+ private:
+  void assert_index_size(int required_size) const {
+#ifdef ASSERT
+    int isize = instruction_size() - (int)_is_wide - 1;
+    if (isize == 2 && code() == Bytecodes::_iinc)
+      isize = 1;
+    else if (isize <= 2)
+      ;                         // no change
+    else if (has_giant_index())
+      isize = 4;
+    else
+      isize = 2;
+    assert(isize = required_size, "wrong index size");
+#endif
+  }
 };
 
 // In BytecodeStream, non-java bytecodes will be translated into the

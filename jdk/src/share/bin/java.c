@@ -915,8 +915,14 @@ SelectVersion(int argc, char **argv, char **main_class)
      * to avoid locating, expanding and parsing the manifest extra
      * times.
      */
-    if (info.main_class != NULL)
-        (void)JLI_StrCat(env_entry, info.main_class);
+    if (info.main_class != NULL) {
+        if (JLI_StrLen(info.main_class) <= MAXNAMELEN) {
+            (void)JLI_StrCat(env_entry, info.main_class);
+        } else {
+            JLI_ReportErrorMessage(CLS_ERROR5, MAXNAMELEN);
+            exit(1);
+        }
+    }
     (void)putenv(env_entry);
     ExecJRE(jre, new_argv);
     JLI_FreeManifest();
