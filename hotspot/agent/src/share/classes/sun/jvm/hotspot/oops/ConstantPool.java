@@ -53,11 +53,19 @@ public class ConstantPool extends Oop implements ClassConstants {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type   = db.lookupType("constantPoolOopDesc");
     tags        = new OopField(type.getOopField("_tags"), 0);
+    operands    = new OopField(type.getOopField("_operands"), 0);
     cache       = new OopField(type.getOopField("_cache"), 0);
     poolHolder  = new OopField(type.getOopField("_pool_holder"), 0);
     length      = new CIntField(type.getCIntegerField("_length"), 0);
     headerSize  = type.getSize();
     elementSize = 0;
+    // fetch constants:
+    MULTI_OPERAND_COUNT_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_multi_operand_count_offset").intValue();
+    MULTI_OPERAND_BASE_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_multi_operand_base_offset").intValue();
+    INDY_BSM_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_bsm_offset").intValue();
+    INDY_NT_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_nt_offset").intValue();
+    INDY_ARGC_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_argc_offset").intValue();
+    INDY_ARGV_OFFSET = db.lookupIntConstant("constantPoolOopDesc::_indy_argv_offset").intValue();
   }
 
   ConstantPool(OopHandle handle, ObjectHeap heap) {
@@ -67,6 +75,7 @@ public class ConstantPool extends Oop implements ClassConstants {
   public boolean isConstantPool()      { return true; }
 
   private static OopField tags;
+  private static OopField operands;
   private static OopField cache;
   private static OopField poolHolder;
   private static CIntField length; // number of elements in oop
@@ -74,7 +83,15 @@ public class ConstantPool extends Oop implements ClassConstants {
   private static long headerSize;
   private static long elementSize;
 
+  private static int MULTI_OPERAND_COUNT_OFFSET;
+  private static int MULTI_OPERAND_BASE_OFFSET;
+  private static int INDY_BSM_OFFSET;
+  private static int INDY_NT_OFFSET;
+  private static int INDY_ARGC_OFFSET;
+  private static int INDY_ARGV_OFFSET;
+
   public TypeArray         getTags()       { return (TypeArray)         tags.getValue(this); }
+  public TypeArray         getOperands()   { return (TypeArray)         operands.getValue(this); }
   public ConstantPoolCache getCache()      { return (ConstantPoolCache) cache.getValue(this); }
   public Klass             getPoolHolder() { return (Klass)             poolHolder.getValue(this); }
   public int               getLength()     { return (int)length.getValue(this); }
@@ -276,6 +293,25 @@ public class ConstantPool extends Oop implements ClassConstants {
       System.err.println("ConstantPool.getMethodHandleTypeAt(" + i + "): result = " + res);
     }
     return res;
+  }
+
+  /** Lookup for multi-operand (InvokeDynamic) entries. */
+  public int[] getMultiOperandsAt(int i) {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(getTagAt(i).isInvokeDynamic(), "Corrupted constant pool");
+    }
+    int pos = this.getIntAt(i);
+    int countPos = pos + MULTI_OPERAND_COUNT_OFFSET;  // == pos-1
+    int basePos  = pos + MULTI_OPERAND_BASE_OFFSET;   // == pos
+    if (countPos < 0)  return null;  // safety first
+    TypeArray operands = getOperands();
+    if (operands == null)  return null;  // safety first
+    int length = operands.getIntAt(countPos);
+    int[] values = new int[length];
+    for (int j = 0; j < length; j++) {
+        values[j] = operands.getIntAt(basePos+j);
+    }
+    return values;
   }
 
   final private static String[] nameForTag = new String[] {
@@ -522,15 +558,20 @@ public class ConstantPool extends Oop implements ClassConstants {
 
               case JVM_CONSTANT_InvokeDynamic: {
                   dos.writeByte(cpConstType);
-                  int value = getIntAt(ci);
-                  short bootstrapMethodIndex = (short) extractLowShortFromInt(value);
-                  short nameAndTypeIndex = (short) extractHighShortFromInt(value);
-                  dos.writeShort(bootstrapMethodIndex);
-                  dos.writeShort(nameAndTypeIndex);
+                  int[] values = getMultiOperandsAt(ci);
+                  for (int vn = 0; vn < values.length; vn++) {
+                      dos.writeShort(values[vn]);
+                  }
+                  int bootstrapMethodIndex = values[INDY_BSM_OFFSET];
+                  int nameAndTypeIndex = values[INDY_NT_OFFSET];
+                  int argumentCount = values[INDY_ARGC_OFFSET];
+                  assert(INDY_ARGV_OFFSET + argumentCount == values.length);
                   if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " + bootstrapMethodIndex
-                                          + ", N&T = " + nameAndTypeIndex);
+                                          + ", N&T = " + nameAndTypeIndex
+                                          + ", argc = " + argumentCount);
                   break;
               }
+
               default:
                   throw new InternalError("unknown tag: " + cpConstType);
           } // switch
