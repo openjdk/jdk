@@ -246,7 +246,7 @@ static BOOL GDIWinSD_CheckMonitorArea(GDIWinSDOps *wsdo,
     }
     if( numScreens > 1 ) {
 
-        MONITOR_INFO *miInfo;
+        LPMONITORINFO miInfo;
         RECT rSect ={0,0,0,0};
         RECT rView ={bounds->x1, bounds->y1, bounds->x2, bounds->y2};
         retCode = FALSE;
@@ -258,7 +258,7 @@ static BOOL GDIWinSD_CheckMonitorArea(GDIWinSDOps *wsdo,
         ::OffsetRect(&rView,
             (ptOrig.x), (ptOrig.y));
 
-        ::IntersectRect(&rSect,&rView,&(miInfo->rMonitor));
+        ::IntersectRect(&rSect,&rView,&(miInfo->rcMonitor));
 
         if( FALSE == ::IsRectEmpty(&rSect) ) {
             if( TRUE == ::EqualRect(&rSect,&rView) ) {

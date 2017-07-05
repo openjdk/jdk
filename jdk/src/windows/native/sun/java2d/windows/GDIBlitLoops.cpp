@@ -23,6 +23,7 @@
  * have any questions.
  */
 
+#include "awt.h"
 #include <sun_java2d_windows_GDIBlitLoops.h>
 #include "gdefs.h"
 #include "Trace.h"

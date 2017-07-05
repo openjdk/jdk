@@ -50,7 +50,6 @@
 
 #include "awt.h"
 #include "awtmsg.h"
-#include "awt_Multimon.h"
 #include "Trace.h"
 
 #include "sun_awt_windows_WToolkit.h"
@@ -89,11 +88,8 @@ class JNILocalFrame {
  */
 class CriticalSection {
   public:
-    INLINE  CriticalSection() { ::InitializeCriticalSection(&rep);
-                                ::InitializeCriticalSection(&tryrep);
-                                tryEntered = 0; }
-    INLINE ~CriticalSection() { ::DeleteCriticalSection(&rep);
-                                ::DeleteCriticalSection(&tryrep); }
+    INLINE  CriticalSection() { ::InitializeCriticalSection(&rep); }
+    INLINE ~CriticalSection() { ::DeleteCriticalSection(&rep); }
 
     class Lock {
       public:
@@ -111,50 +107,18 @@ class CriticalSection {
   private:
     CRITICAL_SECTION rep;
 
-    CRITICAL_SECTION tryrep;
-    long tryEntered;
-
     CriticalSection(const CriticalSection&);
     const CriticalSection& operator =(const CriticalSection&);
 
   public:
-    virtual void    Enter           (void)
-    {
-        ::EnterCriticalSection(&tryrep);
-        tryEntered++;
-        if (tryEntered == 1) {
-            ::EnterCriticalSection(&rep);
-            ::LeaveCriticalSection(&tryrep);
-        } else {
-            ::LeaveCriticalSection(&tryrep);
-            ::EnterCriticalSection(&rep);
-        }
+    virtual void Enter() {
+        ::EnterCriticalSection(&rep);
     }
-    // we cannot use ::TryEnterCriticalSection as it is not supported on Win9x/Me
-    virtual BOOL    TryEnter        (void)
-    {
-        BOOL result = FALSE;
-        ::EnterCriticalSection(&tryrep);
-        if (tryEntered == 0) {
-            ::EnterCriticalSection(&rep);
-            tryEntered++;
-            result = TRUE;
-        }
-        ::LeaveCriticalSection(&tryrep);
-        return result;
+    virtual BOOL TryEnter() {
+        return ::TryEnterCriticalSection(&rep);
     }
-    virtual void    Leave           (void)
-    {
-        ::EnterCriticalSection(&tryrep);
-        if (tryEntered > 0) {
-            tryEntered--;
-        } else {
-            // this may happen only if we call to Leave() before
-            // Enter() so this is definitely a bug
-            DASSERT(FALSE);
-        }
+    virtual void Leave() {
         ::LeaveCriticalSection(&rep);
-        ::LeaveCriticalSection(&tryrep);
     }
 };
 
@@ -211,6 +175,8 @@ public:
     BOOL IsDynamicLayoutSet();
     BOOL IsDynamicLayoutSupported();
     BOOL IsDynamicLayoutActive();
+    BOOL areExtraMouseButtonsEnabled();
+    void setExtraMouseButtonsEnabled(BOOL enable);
 
     INLINE BOOL localPump() { return m_localPump; }
     INLINE BOOL VerifyComponents() { return FALSE; } // TODO: Use new DebugHelper class to set this flag
@@ -387,6 +353,7 @@ private:
     BOOL m_verbose;
     BOOL m_isActive; // set to FALSE at beginning of Dispose
     BOOL m_isDisposed; // set to TRUE at end of Dispose
+    BOOL m_areExtraMouseButtonsEnabled;
 
     BOOL m_vmSignalled; // set to TRUE if QUERYENDSESSION has successfully
                         // raised SIGTERM

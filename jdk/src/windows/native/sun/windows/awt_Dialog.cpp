@@ -132,14 +132,13 @@ AwtDialog* AwtDialog::Create(jobject peer, jobject parent)
         dialog = new AwtDialog();
 
         {
-            int colorId = IS_WIN4X ? COLOR_3DFACE : COLOR_WINDOW;
+            int colorId = COLOR_3DFACE;
             DWORD style = WS_CAPTION | WS_SYSMENU | WS_CLIPCHILDREN;
             if (hwndParent != NULL) {
                 style |= WS_POPUP;
             }
             style &= ~(WS_MINIMIZEBOX|WS_MAXIMIZEBOX);
-            DWORD exStyle = IS_WIN4X ? WS_EX_WINDOWEDGE | WS_EX_DLGMODALFRAME
-                                     : 0;
+            DWORD exStyle = WS_EX_WINDOWEDGE | WS_EX_DLGMODALFRAME;
 
             if (GetRTL()) {
                 exStyle |= WS_EX_RIGHT | WS_EX_LEFTSCROLLBAR;
@@ -663,7 +662,7 @@ void AwtDialog::_SetIMMOption(void *param)
 
     int badAlloc = 0;
     LPCTSTR coption;
-    LPTSTR empty = TEXT("InputMethod");
+    LPCTSTR empty = TEXT("InputMethod");
     AwtDialog *d = NULL;
 
     PDATA pData;

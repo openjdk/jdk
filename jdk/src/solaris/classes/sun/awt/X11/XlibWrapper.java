@@ -485,6 +485,7 @@ static native String XSetLocaleModifiers(String modifier_list);
     static native int XdbeEndIdiom(long display);
     static native int XdbeSwapBuffers(long display, long swap_info, int num_windows);
 
+    static native void XQueryKeymap(long display, long vector);
     static native long XKeycodeToKeysym(long display, int keycode, int index);
 
     static native int XKeysymToKeycode(long display, long keysym);

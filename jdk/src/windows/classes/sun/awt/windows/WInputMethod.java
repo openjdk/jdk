@@ -548,11 +548,15 @@ public class WInputMethod extends InputMethodAdapter
 
     public void inquireCandidatePosition()
     {
+        Component source = getClientComponent();
+        if (source == null) {
+            return;
+        }
         // This call should return immediately just to cause
         // InputMethodRequests.getTextLocation be called within
         // AWT Event thread.  Otherwise, a potential deadlock
         // could happen.
-        java.awt.EventQueue.invokeLater(new Runnable() {
+        Runnable r = new Runnable() {
             public void run() {
                 int x = 0;
                 int y = 0;
@@ -573,7 +577,9 @@ public class WInputMethod extends InputMethodAdapter
 
                 openCandidateWindow(awtFocussedComponentPeer, x, y);
             }
-        });
+        };
+        WToolkit.postEvent(WToolkit.targetToAppContext(source),
+                           new InvocationEvent(source, r));
     }
 
     // java.awt.Toolkit#getNativeContainer() is not available
