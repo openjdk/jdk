@@ -504,8 +504,7 @@ jobject createNetworkInterface
      */
     if (netaddrCount < 0) {
         netaddrCount = enumAddresses_win(env, ifs, &netaddrP);
-        if ((*env)->ExceptionOccurred(env)) {
-            free_netaddr(netaddrP);
+        if (netaddrCount == -1) {
             return NULL;
         }
     }

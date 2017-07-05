@@ -537,7 +537,7 @@ public class Hashtable<K,V>
             return t;
         } catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

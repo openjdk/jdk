@@ -478,7 +478,7 @@ public class ObjectStreamClass implements Serializable {
             fieldRefl = getReflector(fields, this);
         } catch (InvalidClassException ex) {
             // field mismatches impossible when matching local fields vs. self
-            throw new InternalError();
+            throw new InternalError(ex);
         }
 
         if (deserializeEx == null) {
@@ -941,7 +941,7 @@ public class ObjectStreamClass implements Serializable {
                 return cons.newInstance();
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
-                throw new InternalError();
+                throw new InternalError(ex);
             }
         } else {
             throw new UnsupportedOperationException();
@@ -969,7 +969,7 @@ public class ObjectStreamClass implements Serializable {
                 }
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
-                throw new InternalError();
+                throw new InternalError(ex);
             }
         } else {
             throw new UnsupportedOperationException();
@@ -1000,7 +1000,7 @@ public class ObjectStreamClass implements Serializable {
                 }
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
-                throw new InternalError();
+                throw new InternalError(ex);
             }
         } else {
             throw new UnsupportedOperationException();
@@ -1028,7 +1028,7 @@ public class ObjectStreamClass implements Serializable {
                 }
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
-                throw new InternalError();
+                throw new InternalError(ex);
             }
         } else {
             throw new UnsupportedOperationException();
@@ -1053,11 +1053,11 @@ public class ObjectStreamClass implements Serializable {
                     throw (ObjectStreamException) th;
                 } else {
                     throwMiscException(th);
-                    throw new InternalError();  // never reached
+                    throw new InternalError(th);  // never reached
                 }
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
-                throw new InternalError();
+                throw new InternalError(ex);
             }
         } else {
             throw new UnsupportedOperationException();
@@ -1082,11 +1082,11 @@ public class ObjectStreamClass implements Serializable {
                     throw (ObjectStreamException) th;
                 } else {
                     throwMiscException(th);
-                    throw new InternalError();  // never reached
+                    throw new InternalError(th);  // never reached
                 }
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
-                throw new InternalError();
+                throw new InternalError(ex);
             }
         } else {
             throw new UnsupportedOperationException();
@@ -1774,7 +1774,7 @@ public class ObjectStreamClass implements Serializable {
             }
             return hash;
         } catch (IOException ex) {
-            throw new InternalError();
+            throw new InternalError(ex);
         } catch (NoSuchAlgorithmException ex) {
             throw new SecurityException(ex.getMessage());
         }

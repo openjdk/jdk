@@ -1276,7 +1276,7 @@ public class RenderingHints
             }
         } catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
-            throw new InternalError();
+            throw new InternalError(e);
         }
 
         return rh;

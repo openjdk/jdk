@@ -174,9 +174,7 @@ class DatagramSocket implements java.io.Closeable {
      * @see SecurityManager#checkListen
      */
     public DatagramSocket() throws SocketException {
-        // create a datagram socket.
-        createImpl();
-        bind(new InetSocketAddress(0));
+        this(new InetSocketAddress(0));
     }
 
     /**
@@ -221,7 +219,12 @@ class DatagramSocket implements java.io.Closeable {
         // create a datagram socket.
         createImpl();
         if (bindaddr != null) {
-            bind(bindaddr);
+            try {
+                bind(bindaddr);
+            } finally {
+                if (!isBound())
+                    close();
+            }
         }
     }
 
