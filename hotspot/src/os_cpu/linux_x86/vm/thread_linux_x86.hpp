@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,11 @@
 
   bool pd_get_top_frame_for_signal_handler(frame* fr_addr, void* ucontext,
     bool isInJava);
+
+  bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
+private:
+  bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
+public:
 
   // These routines are only used on cpu architectures that
   // have separate register stacks (Itanium).

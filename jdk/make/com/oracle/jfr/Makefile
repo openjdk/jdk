@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,11 @@ FILES_c = VMJFR.c
 
 AUTO_FILES_JAVA_DIRS = com/oracle/jrockit/jfr oracle/jrockit/jfr
 
+JFC_XSD = oracle/jrockit/jfr/settings/jfc.xsd
+JFC_XSD_SRC = $(CLOSED_SHARE_SRC)/classes/$(JFC_XSD)
+JFC_XSD_FILE = $(CLASSDESTDIR)/$(JFC_XSD)
+
+
 # Find C source files
 #
 vpath %.c $(CLOSED_SHARE_SRC)/native/oracle/jfr
@@ -59,15 +64,17 @@ clean clobber::
 	$(RM) -r $(CLASSDESTDIR)/com/oracle/jrockit/jfr
 	$(RM) -r $(CLASSDESTDIR)/oracle/jrockit/jfr
 
-
-# Copy pre-shipped .jfs files
+# Copy pre-shipped .jfc files
 JFR_LIBDIR = $(LIBDIR)/jfr
-JFR_SRCDIR = $(CLOSED_SHARE_SRC)/lib/jfr
+JFC_SRCDIR = $(CLOSED_SHARE_SRC)/classes/oracle/jrockit/jfr/settings
 
-$(JFR_LIBDIR)/%.jfs: $(JFR_SRCDIR)/%.jfs
+$(JFR_LIBDIR)/%.jfc: $(JFC_SRCDIR)/%.jfc
 	$(install-file)
 
-JFS_FILES := $(subst $(JFR_SRCDIR),$(JFR_LIBDIR),$(wildcard $(JFR_SRCDIR)/*.jfs))
+JFC_FILES := $(subst $(JFC_SRCDIR),$(JFR_LIBDIR),$(wildcard $(JFC_SRCDIR)/*.jfc))
 
-all build : $(JFS_FILES)
+$(JFC_XSD_FILE) : $(JFC_XSD_SRC)
+	$(install-file)
+
+all build : $(JFC_FILES) $(JFC_XSD_FILE)
 

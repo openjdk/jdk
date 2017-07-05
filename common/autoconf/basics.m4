@@ -363,7 +363,11 @@ AC_ARG_WITH([devkit], [AS_HELP_STRING([--with-devkit],
       AC_MSG_ERROR([Cannot specify both --with-devkit and --with-tools-dir at the same time])
     fi
     TOOLS_DIR=$with_devkit/bin
-    SYS_ROOT=$with_devkit/$host_alias/libc
+    if test -d "$with_devkit/$host_alias/libc"; then
+      SYS_ROOT=$with_devkit/$host_alias/libc
+    elif test -d "$with_devkit/$host/sys-root"; then
+      SYS_ROOT=$with_devkit/$host/sys-root
+    fi
   ])
 
 ])

@@ -961,7 +961,7 @@ void java_lang_Thread::set_thread_status(oop java_thread,
 
 // Read thread status value from threadStatus field in java.lang.Thread java class.
 java_lang_Thread::ThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
-  assert(Thread::current()->is_VM_thread() ||
+  assert(Thread::current()->is_Watcher_thread() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
   // The threadStatus is only present starting in 1.5
