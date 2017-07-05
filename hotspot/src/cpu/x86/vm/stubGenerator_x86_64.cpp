@@ -3469,16 +3469,12 @@ class StubGenerator: public StubCodeGenerator {
   // Output:
   //   rax       - input length
   //
-
   address generate_cipherBlockChaining_decryptAESCrypt_Parallel() {
     assert(UseAES, "need AES instructions and misaligned SSE support");
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "cipherBlockChaining_decryptAESCrypt");
     address start = __ pc();
 
-    Label L_exit, L_key_192_256, L_key_256;
-    Label L_singleBlock_loopTop_128, L_multiBlock_loopTop_128;
-    Label L_singleBlock_loopTop_192, L_singleBlock_loopTop_256;
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
     const Register key         = c_rarg2;  // key array address
@@ -3492,7 +3488,17 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     const Register pos         = rax;
 
-    // keys 0-10 preloaded into xmm2-xmm12
+    const int PARALLEL_FACTOR = 4;
+    const int ROUNDS[3] = { 10, 12, 14 }; // aes rounds for key128, key192, key256
+
+    Label L_exit;
+    Label L_singleBlock_loopTopHead[3]; // 128, 192, 256
+    Label L_singleBlock_loopTopHead2[3]; // 128, 192, 256
+    Label L_singleBlock_loopTop[3]; // 128, 192, 256
+    Label L_multiBlock_loopTopHead[3]; // 128, 192, 256
+    Label L_multiBlock_loopTop[3]; // 128, 192, 256
+
+    // keys 0-10 preloaded into xmm5-xmm15
     const int XMM_REG_NUM_KEY_FIRST = 5;
     const int XMM_REG_NUM_KEY_LAST  = 15;
     const XMMRegister xmm_key_first = as_XMMRegister(XMM_REG_NUM_KEY_FIRST);
@@ -3519,7 +3525,7 @@ class StubGenerator: public StubCodeGenerator {
 #else
     __ push(len_reg); // Save
 #endif
-
+    __ push(rbx);
     // the java expanded key ordering is rotated one position from what we want
     // so we start from 0x10 here and hit 0x00 last
     const XMMRegister xmm_key_shuf_mask = xmm1;  // used temporarily to swap key bytes up front
@@ -3541,85 +3547,173 @@ class StubGenerator: public StubCodeGenerator {
 
     __ movdqu(xmm_prev_block_cipher, Address(rvec, 0x00));   // initialize with initial rvec
 
+    __ xorptr(pos, pos);
+
     // now split to different paths depending on the keylen (len in ints of AESCrypt.KLE array (52=192, or 60=256))
-    __ movl(rax, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-    __ cmpl(rax, 44);
-    __ jcc(Assembler::notEqual, L_key_192_256);
+    __ movl(rbx, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+    __ cmpl(rbx, 52);
+    __ jcc(Assembler::equal, L_multiBlock_loopTopHead[1]);
+    __ cmpl(rbx, 60);
+    __ jcc(Assembler::equal, L_multiBlock_loopTopHead[2]);
 
+#define DoFour(opc, src_reg)           \
+  __ opc(xmm_result0, src_reg);         \
+  __ opc(xmm_result1, src_reg);         \
+  __ opc(xmm_result2, src_reg);         \
+  __ opc(xmm_result3, src_reg);         \
 
-    // 128-bit code follows here, parallelized
-    __ movptr(pos, 0);
-    __ align(OptoLoopAlignment);
-    __ BIND(L_multiBlock_loopTop_128);
-    __ cmpptr(len_reg, 4*AESBlockSize);           // see if at least 4 blocks left
-    __ jcc(Assembler::less, L_singleBlock_loopTop_128);
+    for (int k = 0; k < 3; ++k) {
+      __ BIND(L_multiBlock_loopTopHead[k]);
+      if (k != 0) {
+        __ cmpptr(len_reg, PARALLEL_FACTOR * AESBlockSize); // see if at least 4 blocks left
+        __ jcc(Assembler::less, L_singleBlock_loopTopHead2[k]);
+      }
+      if (k == 1) {
+        __ subptr(rsp, 6 * wordSize);
+        __ movdqu(Address(rsp, 0), xmm15); //save last_key from xmm15
+        load_key(xmm15, key, 0xb0); // 0xb0; 192-bit key goes up to 0xc0
+        __ movdqu(Address(rsp, 2 * wordSize), xmm15);
+        load_key(xmm1, key, 0xc0);  // 0xc0;
+        __ movdqu(Address(rsp, 4 * wordSize), xmm1);
+      } else if (k == 2) {
+        __ subptr(rsp, 10 * wordSize);
+        __ movdqu(Address(rsp, 0), xmm15); //save last_key from xmm15
+        load_key(xmm15, key, 0xd0); // 0xd0; 256-bit key goes upto 0xe0
+        __ movdqu(Address(rsp, 6 * wordSize), xmm15);
+        load_key(xmm1, key, 0xe0);  // 0xe0;
+        __ movdqu(Address(rsp, 8 * wordSize), xmm1);
+        load_key(xmm15, key, 0xb0); // 0xb0;
+        __ movdqu(Address(rsp, 2 * wordSize), xmm15);
+        load_key(xmm1, key, 0xc0);  // 0xc0;
+        __ movdqu(Address(rsp, 4 * wordSize), xmm1);
+      }
+      __ align(OptoLoopAlignment);
+      __ BIND(L_multiBlock_loopTop[k]);
+      __ cmpptr(len_reg, PARALLEL_FACTOR * AESBlockSize); // see if at least 4 blocks left
+      __ jcc(Assembler::less, L_singleBlock_loopTopHead[k]);
 
-    __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0*AESBlockSize));   // get next 4 blocks into xmmresult registers
-    __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1*AESBlockSize));
-    __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2*AESBlockSize));
-    __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3*AESBlockSize));
+      if  (k != 0) {
+        __ movdqu(xmm15, Address(rsp, 2 * wordSize));
+        __ movdqu(xmm1, Address(rsp, 4 * wordSize));
+      }
 
-#define DoFour(opc, src_reg)                    \
-    __ opc(xmm_result0, src_reg);               \
-    __ opc(xmm_result1, src_reg);               \
-    __ opc(xmm_result2, src_reg);               \
-    __ opc(xmm_result3, src_reg);
+      __ movdqu(xmm_result0, Address(from, pos, Address::times_1, 0 * AESBlockSize)); // get next 4 blocks into xmmresult registers
+      __ movdqu(xmm_result1, Address(from, pos, Address::times_1, 1 * AESBlockSize));
+      __ movdqu(xmm_result2, Address(from, pos, Address::times_1, 2 * AESBlockSize));
+      __ movdqu(xmm_result3, Address(from, pos, Address::times_1, 3 * AESBlockSize));
 
-    DoFour(pxor, xmm_key_first);
-    for (int rnum = XMM_REG_NUM_KEY_FIRST + 1; rnum  <= XMM_REG_NUM_KEY_LAST - 1; rnum++) {
-      DoFour(aesdec, as_XMMRegister(rnum));
-    }
-    DoFour(aesdeclast, xmm_key_last);
-    // for each result, xor with the r vector of previous cipher block
-    __ pxor(xmm_result0, xmm_prev_block_cipher);
-    __ movdqu(xmm_prev_block_cipher, Address(from, pos, Address::times_1, 0*AESBlockSize));
-    __ pxor(xmm_result1, xmm_prev_block_cipher);
-    __ movdqu(xmm_prev_block_cipher, Address(from, pos, Address::times_1, 1*AESBlockSize));
-    __ pxor(xmm_result2, xmm_prev_block_cipher);
-    __ movdqu(xmm_prev_block_cipher, Address(from, pos, Address::times_1, 2*AESBlockSize));
-    __ pxor(xmm_result3, xmm_prev_block_cipher);
-    __ movdqu(xmm_prev_block_cipher, Address(from, pos, Address::times_1, 3*AESBlockSize));   // this will carry over to next set of blocks
+      DoFour(pxor, xmm_key_first);
+      if (k == 0) {
+        for (int rnum = 1; rnum < ROUNDS[k]; rnum++) {
+          DoFour(aesdec, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+        }
+        DoFour(aesdeclast, xmm_key_last);
+      } else if (k == 1) {
+        for (int rnum = 1; rnum <= ROUNDS[k]-2; rnum++) {
+          DoFour(aesdec, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+        }
+        __ movdqu(xmm_key_last, Address(rsp, 0)); // xmm15 needs to be loaded again.
+        DoFour(aesdec, xmm1);  // key : 0xc0
+        __ movdqu(xmm_prev_block_cipher, Address(rvec, 0x00));  // xmm1 needs to be loaded again
+        DoFour(aesdeclast, xmm_key_last);
+      } else if (k == 2) {
+        for (int rnum = 1; rnum <= ROUNDS[k] - 4; rnum++) {
+          DoFour(aesdec, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+        }
+        DoFour(aesdec, xmm1);  // key : 0xc0
+        __ movdqu(xmm15, Address(rsp, 6 * wordSize));
+        __ movdqu(xmm1, Address(rsp, 8 * wordSize));
+        DoFour(aesdec, xmm15);  // key : 0xd0
+        __ movdqu(xmm_key_last, Address(rsp, 0)); // xmm15 needs to be loaded again.
+        DoFour(aesdec, xmm1);  // key : 0xe0
+        __ movdqu(xmm_prev_block_cipher, Address(rvec, 0x00));  // xmm1 needs to be loaded again
+        DoFour(aesdeclast, xmm_key_last);
+      }
 
-    __ movdqu(Address(to, pos, Address::times_1, 0*AESBlockSize), xmm_result0);     // store 4 results into the next 64 bytes of output
-    __ movdqu(Address(to, pos, Address::times_1, 1*AESBlockSize), xmm_result1);
-    __ movdqu(Address(to, pos, Address::times_1, 2*AESBlockSize), xmm_result2);
-    __ movdqu(Address(to, pos, Address::times_1, 3*AESBlockSize), xmm_result3);
+      // for each result, xor with the r vector of previous cipher block
+      __ pxor(xmm_result0, xmm_prev_block_cipher);
+      __ movdqu(xmm_prev_block_cipher, Address(from, pos, Address::times_1, 0 * AESBlockSize));
+      __ pxor(xmm_result1, xmm_prev_block_cipher);
+      __ movdqu(xmm_prev_block_cipher, Address(from, pos, Address::times_1, 1 * AESBlockSize));
+      __ pxor(xmm_result2, xmm_prev_block_cipher);
+      __ movdqu(xmm_prev_block_cipher, Address(from, pos, Address::times_1, 2 * AESBlockSize));
+      __ pxor(xmm_result3, xmm_prev_block_cipher);
+      __ movdqu(xmm_prev_block_cipher, Address(from, pos, Address::times_1, 3 * AESBlockSize));   // this will carry over to next set of blocks
+      if (k != 0) {
+        __ movdqu(Address(rvec, 0x00), xmm_prev_block_cipher);
+      }
 
-    __ addptr(pos, 4*AESBlockSize);
-    __ subptr(len_reg, 4*AESBlockSize);
-    __ jmp(L_multiBlock_loopTop_128);
+      __ movdqu(Address(to, pos, Address::times_1, 0 * AESBlockSize), xmm_result0);     // store 4 results into the next 64 bytes of output
+      __ movdqu(Address(to, pos, Address::times_1, 1 * AESBlockSize), xmm_result1);
+      __ movdqu(Address(to, pos, Address::times_1, 2 * AESBlockSize), xmm_result2);
+      __ movdqu(Address(to, pos, Address::times_1, 3 * AESBlockSize), xmm_result3);
 
-    // registers used in the non-parallelized loops
-    // xmm register assignments for the loops below
-    const XMMRegister xmm_result = xmm0;
-    const XMMRegister xmm_prev_block_cipher_save = xmm2;
-    const XMMRegister xmm_key11 = xmm3;
-    const XMMRegister xmm_key12 = xmm4;
-    const XMMRegister xmm_temp  = xmm4;
+      __ addptr(pos, PARALLEL_FACTOR * AESBlockSize);
+      __ subptr(len_reg, PARALLEL_FACTOR * AESBlockSize);
+      __ jmp(L_multiBlock_loopTop[k]);
 
-    __ align(OptoLoopAlignment);
-    __ BIND(L_singleBlock_loopTop_128);
-    __ cmpptr(len_reg, 0);           // any blocks left??
-    __ jcc(Assembler::equal, L_exit);
-    __ movdqu(xmm_result, Address(from, pos, Address::times_1, 0));   // get next 16 bytes of cipher input
-    __ movdqa(xmm_prev_block_cipher_save, xmm_result);              // save for next r vector
-    __ pxor  (xmm_result, xmm_key_first);               // do the aes dec rounds
-    for (int rnum = XMM_REG_NUM_KEY_FIRST + 1; rnum  <= XMM_REG_NUM_KEY_LAST - 1; rnum++) {
-      __ aesdec(xmm_result, as_XMMRegister(rnum));
-    }
-    __ aesdeclast(xmm_result, xmm_key_last);
-    __ pxor  (xmm_result, xmm_prev_block_cipher);               // xor with the current r vector
-    __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result);     // store into the next 16 bytes of output
-    // no need to store r to memory until we exit
-    __ movdqa(xmm_prev_block_cipher, xmm_prev_block_cipher_save);              // set up next r vector with cipher input from this block
+      // registers used in the non-parallelized loops
+      // xmm register assignments for the loops below
+      const XMMRegister xmm_result = xmm0;
+      const XMMRegister xmm_prev_block_cipher_save = xmm2;
+      const XMMRegister xmm_key11 = xmm3;
+      const XMMRegister xmm_key12 = xmm4;
+      const XMMRegister key_tmp = xmm4;
 
-    __ addptr(pos, AESBlockSize);
-    __ subptr(len_reg, AESBlockSize);
-    __ jmp(L_singleBlock_loopTop_128);
+      __ BIND(L_singleBlock_loopTopHead[k]);
+      if (k == 1) {
+        __ addptr(rsp, 6 * wordSize);
+      } else if (k == 2) {
+        __ addptr(rsp, 10 * wordSize);
+      }
+      __ cmpptr(len_reg, 0); // any blocks left??
+      __ jcc(Assembler::equal, L_exit);
+      __ BIND(L_singleBlock_loopTopHead2[k]);
+      if (k == 1) {
+        load_key(xmm_key11, key, 0xb0); // 0xb0; 192-bit key goes upto 0xc0
+        load_key(xmm_key12, key, 0xc0); // 0xc0; 192-bit key goes upto 0xc0
+      }
+      if (k == 2) {
+        load_key(xmm_key11, key, 0xb0); // 0xb0; 256-bit key goes upto 0xe0
+      }
+      __ align(OptoLoopAlignment);
+      __ BIND(L_singleBlock_loopTop[k]);
+      __ movdqu(xmm_result, Address(from, pos, Address::times_1, 0)); // get next 16 bytes of cipher input
+      __ movdqa(xmm_prev_block_cipher_save, xmm_result); // save for next r vector
+      __ pxor(xmm_result, xmm_key_first); // do the aes dec rounds
+      for (int rnum = 1; rnum <= 9 ; rnum++) {
+          __ aesdec(xmm_result, as_XMMRegister(rnum + XMM_REG_NUM_KEY_FIRST));
+      }
+      if (k == 1) {
+        __ aesdec(xmm_result, xmm_key11);
+        __ aesdec(xmm_result, xmm_key12);
+      }
+      if (k == 2) {
+        __ aesdec(xmm_result, xmm_key11);
+        load_key(key_tmp, key, 0xc0);
+        __ aesdec(xmm_result, key_tmp);
+        load_key(key_tmp, key, 0xd0);
+        __ aesdec(xmm_result, key_tmp);
+        load_key(key_tmp, key, 0xe0);
+        __ aesdec(xmm_result, key_tmp);
+      }
 
+      __ aesdeclast(xmm_result, xmm_key_last); // xmm15 always came from key+0
+      __ pxor(xmm_result, xmm_prev_block_cipher); // xor with the current r vector
+      __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result); // store into the next 16 bytes of output
+      // no need to store r to memory until we exit
+      __ movdqa(xmm_prev_block_cipher, xmm_prev_block_cipher_save); // set up next r vector with cipher input from this block
+      __ addptr(pos, AESBlockSize);
+      __ subptr(len_reg, AESBlockSize);
+      __ jcc(Assembler::notEqual, L_singleBlock_loopTop[k]);
+      if (k != 2) {
+        __ jmp(L_exit);
+      }
+    } //for 128/192/256
 
     __ BIND(L_exit);
     __ movdqu(Address(rvec, 0), xmm_prev_block_cipher);     // final value of r stored in rvec of CipherBlockChaining object
+    __ pop(rbx);
 #ifdef _WIN64
     // restore regs belonging to calling function
     for (int i = 6; i <= XMM_REG_NUM_KEY_LAST; i++) {
@@ -3631,69 +3725,8 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret(0);
-
-
-    __ BIND(L_key_192_256);
-    // here rax = len in ints of AESCrypt.KLE array (52=192, or 60=256)
-    load_key(xmm_key11, key, 0xb0);
-    __ cmpl(rax, 52);
-    __ jcc(Assembler::notEqual, L_key_256);
-
-    // 192-bit code follows here (could be optimized to use parallelism)
-    load_key(xmm_key12, key, 0xc0);     // 192-bit key goes up to c0
-    __ movptr(pos, 0);
-    __ align(OptoLoopAlignment);
-
-    __ BIND(L_singleBlock_loopTop_192);
-    __ movdqu(xmm_result, Address(from, pos, Address::times_1, 0));   // get next 16 bytes of cipher input
-    __ movdqa(xmm_prev_block_cipher_save, xmm_result);              // save for next r vector
-    __ pxor  (xmm_result, xmm_key_first);               // do the aes dec rounds
-    for (int rnum = XMM_REG_NUM_KEY_FIRST + 1; rnum <= XMM_REG_NUM_KEY_LAST - 1; rnum++) {
-      __ aesdec(xmm_result, as_XMMRegister(rnum));
-    }
-    __ aesdec(xmm_result, xmm_key11);
-    __ aesdec(xmm_result, xmm_key12);
-    __ aesdeclast(xmm_result, xmm_key_last);                    // xmm15 always came from key+0
-    __ pxor  (xmm_result, xmm_prev_block_cipher);               // xor with the current r vector
-    __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result);  // store into the next 16 bytes of output
-    // no need to store r to memory until we exit
-    __ movdqa(xmm_prev_block_cipher, xmm_prev_block_cipher_save);  // set up next r vector with cipher input from this block
-    __ addptr(pos, AESBlockSize);
-    __ subptr(len_reg, AESBlockSize);
-    __ jcc(Assembler::notEqual,L_singleBlock_loopTop_192);
-    __ jmp(L_exit);
-
-    __ BIND(L_key_256);
-    // 256-bit code follows here (could be optimized to use parallelism)
-    __ movptr(pos, 0);
-    __ align(OptoLoopAlignment);
-
-    __ BIND(L_singleBlock_loopTop_256);
-    __ movdqu(xmm_result, Address(from, pos, Address::times_1, 0)); // get next 16 bytes of cipher input
-    __ movdqa(xmm_prev_block_cipher_save, xmm_result);              // save for next r vector
-    __ pxor  (xmm_result, xmm_key_first);               // do the aes dec rounds
-    for (int rnum = XMM_REG_NUM_KEY_FIRST + 1; rnum <= XMM_REG_NUM_KEY_LAST - 1; rnum++) {
-      __ aesdec(xmm_result, as_XMMRegister(rnum));
-    }
-    __ aesdec(xmm_result, xmm_key11);
-    load_key(xmm_temp, key, 0xc0);
-    __ aesdec(xmm_result, xmm_temp);
-    load_key(xmm_temp, key, 0xd0);
-    __ aesdec(xmm_result, xmm_temp);
-    load_key(xmm_temp, key, 0xe0);     // 256-bit key goes up to e0
-    __ aesdec(xmm_result, xmm_temp);
-    __ aesdeclast(xmm_result, xmm_key_last);          // xmm15 came from key+0
-    __ pxor  (xmm_result, xmm_prev_block_cipher);               // xor with the current r vector
-    __ movdqu(Address(to, pos, Address::times_1, 0), xmm_result);  // store into the next 16 bytes of output
-    // no need to store r to memory until we exit
-    __ movdqa(xmm_prev_block_cipher, xmm_prev_block_cipher_save);  // set up next r vector with cipher input from this block
-    __ addptr(pos, AESBlockSize);
-    __ subptr(len_reg, AESBlockSize);
-    __ jcc(Assembler::notEqual,L_singleBlock_loopTop_256);
-    __ jmp(L_exit);
-
     return start;
-  }
+}
 
   address generate_upper_word_mask() {
     __ align(64);

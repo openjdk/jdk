@@ -42,7 +42,8 @@ define_pd_global(bool,  UncommonNullCast,     true);
 define_pd_global(intx,  CodeEntryAlignment,   32);
 define_pd_global(intx,  OptoLoopAlignment,    16);
 define_pd_global(intx,  InlineFrequencyCount, 100);
-define_pd_global(intx,  InlineSmallCode,      1000 );
+define_pd_global(intx,  InlineSmallCode,      1000);
+define_pd_global(intx,  InitArrayShortSize,   -1); // not used
 
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -913,7 +913,15 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     private class DetailsTableRowSorter extends TableRowSorter<TableModel> {
         public DetailsTableRowSorter() {
-            setModelWrapper(new SorterModelWrapper());
+            SorterModelWrapper modelWrapper = new SorterModelWrapper();
+            setModelWrapper(modelWrapper);
+            modelWrapper.getModel().addTableModelListener(
+                new TableModelListener() {
+                    @Override
+                    public void tableChanged(TableModelEvent e) {
+                        modelStructureChanged();
+                    }
+                });
         }
 
         public void updateComparators(ShellFolderColumnInfo [] columns) {

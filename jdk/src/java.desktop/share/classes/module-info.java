@@ -27,10 +27,13 @@ module java.desktop {
     requires public java.datatransfer;
     requires public java.xml;
     requires java.prefs;
+    // 8147544
+    requires jdk.unsupported;
 
     exports java.applet;
     exports java.awt;
     exports java.awt.color;
+    exports java.awt.desktop;
     exports java.awt.dnd;
     exports java.awt.event;
     exports java.awt.font;

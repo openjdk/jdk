@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -56,7 +57,7 @@ public final class AuFileReader extends SunFileReader {
 
         final int headerSize = dis.readInt();
         final int dataSize = dis.readInt();
-        final int encoding_local = dis.readInt();
+        final int auType = dis.readInt();
         final int sampleRate = dis.readInt();
         final int channels = dis.readInt();
         if (channels <= 0) {
@@ -65,40 +66,38 @@ public final class AuFileReader extends SunFileReader {
 
         final int sampleSizeInBits;
         final AudioFormat.Encoding encoding;
-        switch (encoding_local) {
-        case AuFileFormat.AU_ULAW_8:
-            encoding = AudioFormat.Encoding.ULAW;
-            sampleSizeInBits = 8;
-            break;
-        case AuFileFormat.AU_ALAW_8:
-            encoding = AudioFormat.Encoding.ALAW;
-            sampleSizeInBits = 8;
-            break;
-        case AuFileFormat.AU_LINEAR_8:
-            // $$jb: 04.29.99: 8bit linear is *signed*, not *unsigned*
-            encoding = AudioFormat.Encoding.PCM_SIGNED;
-            sampleSizeInBits = 8;
-            break;
-        case AuFileFormat.AU_LINEAR_16:
-            encoding = AudioFormat.Encoding.PCM_SIGNED;
-            sampleSizeInBits = 16;
-            break;
-        case AuFileFormat.AU_LINEAR_24:
-            encoding = AudioFormat.Encoding.PCM_SIGNED;
-
-            sampleSizeInBits = 24;
-            break;
-        case AuFileFormat.AU_LINEAR_32:
-            encoding = AudioFormat.Encoding.PCM_SIGNED;
-
-            sampleSizeInBits = 32;
-            break;
-            // $jb: 03.19.99: we don't support these ...
-            /*          case AuFileFormat.AU_FLOAT:
-                        encoding = new AudioFormat.FLOAT;
-                        sampleSizeInBits = 32;
-                        break;
-                        case AuFileFormat.AU_DOUBLE:
+        switch (auType) {
+            case AuFileFormat.AU_ULAW_8:
+                encoding = AudioFormat.Encoding.ULAW;
+                sampleSizeInBits = 8;
+                break;
+            case AuFileFormat.AU_ALAW_8:
+                encoding = AudioFormat.Encoding.ALAW;
+                sampleSizeInBits = 8;
+                break;
+            case AuFileFormat.AU_LINEAR_8:
+                // $$jb: 04.29.99: 8bit linear is *signed*, not *unsigned*
+                encoding = AudioFormat.Encoding.PCM_SIGNED;
+                sampleSizeInBits = 8;
+                break;
+            case AuFileFormat.AU_LINEAR_16:
+                encoding = AudioFormat.Encoding.PCM_SIGNED;
+                sampleSizeInBits = 16;
+                break;
+            case AuFileFormat.AU_LINEAR_24:
+                encoding = AudioFormat.Encoding.PCM_SIGNED;
+                sampleSizeInBits = 24;
+                break;
+            case AuFileFormat.AU_LINEAR_32:
+                encoding = AudioFormat.Encoding.PCM_SIGNED;
+                sampleSizeInBits = 32;
+                break;
+            case AuFileFormat.AU_FLOAT:
+                encoding = AudioFormat.Encoding.PCM_FLOAT;
+                sampleSizeInBits = 32;
+                break;
+            // we don't support these ...
+            /*          case AuFileFormat.AU_DOUBLE:
                         encoding = new AudioFormat.DOUBLE;
                         sampleSizeInBits = 8;
                         break;
@@ -117,9 +116,9 @@ public final class AuFileReader extends SunFileReader {
                         SamplePerUnit = 8;
                         break;
             */
-        default:
-            // unsupported filetype, throw exception
-            throw new UnsupportedAudioFileException("not a valid AU file");
+            default:
+                // unsupported filetype, throw exception
+                throw new UnsupportedAudioFileException("not a valid AU file");
         }
 
         final int frameSize = calculatePCMFrameSize(sampleSizeInBits, channels);
@@ -136,7 +135,6 @@ public final class AuFileReader extends SunFileReader {
         final AudioFormat format = new AudioFormat(encoding, sampleRate,
                                                    sampleSizeInBits, channels,
                                                    frameSize, sampleRate, true);
-        return new AuFileFormat(AudioFileFormat.Type.AU, dataSize + headerSize,
-                                format, length);
+        return new AuFileFormat(Type.AU, dataSize + headerSize, format, length);
     }
 }

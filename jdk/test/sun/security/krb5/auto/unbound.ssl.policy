@@ -1,6 +1,7 @@
 grant {
     permission java.util.PropertyPermission "*", "read,write";
     permission java.net.SocketPermission "*:*", "listen,resolve,accept,connect";
+    permission java.io.FilePermission "/-", "read";
     permission java.io.FilePermission "*", "read,write,delete";
     permission java.lang.RuntimePermission "accessDeclaredMembers";
     permission java.lang.reflect.ReflectPermission "suppressAccessChecks";

@@ -530,7 +530,6 @@ const char* nmethod::compile_kind() const {
 void nmethod::init_defaults() {
   _state                      = in_use;
   _unloading_clock            = 0;
-  _marked_for_reclamation     = 0;
   _has_flushed_dependencies   = 0;
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
@@ -1332,8 +1331,19 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   }
   // Unlink the osr method, so we do not look this up again
   if (is_osr_method()) {
-    invalidate_osr_method();
+    // Invalidate the osr nmethod only once
+    if (is_in_use()) {
+      invalidate_osr_method();
+    }
+#ifdef ASSERT
+    if (method() != NULL) {
+      // Make sure osr nmethod is invalidated, i.e. not on the list
+      bool found = method()->method_holder()->remove_osr_nmethod(this);
+      assert(!found, "osr nmethod should have been invalidated");
+    }
+#endif
   }
+
   // If _method is already NULL the Method* is about to be unloaded,
   // so we don't have to break the cycle. Note that it is possible to
   // have the Method* live here, in case we unload the nmethod because
@@ -1387,8 +1397,9 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
 void nmethod::invalidate_osr_method() {
   assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod");
   // Remove from list of active nmethods
-  if (method() != NULL)
+  if (method() != NULL) {
     method()->method_holder()->remove_osr_nmethod(this);
+  }
 }
 
 void nmethod::log_state_change() const {
@@ -1436,8 +1447,9 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     // invalidate osr nmethod before acquiring the patching lock since
     // they both acquire leaf locks and we don't want a deadlock.
     // This logic is equivalent to the logic below for patching the
-    // verified entry point of regular methods.
-    if (is_osr_method()) {
+    // verified entry point of regular methods. We check that the
+    // nmethod is in use to ensure that it is invalidated only once.
+    if (is_osr_method() && is_in_use()) {
       // this effectively makes the osr nmethod not entrant
       invalidate_osr_method();
     }
@@ -1503,13 +1515,21 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     }
   } // leave critical region under Patching_lock
 
+#ifdef ASSERT
+  if (is_osr_method() && method() != NULL) {
+    // Make sure osr nmethod is invalidated, i.e. not on the list
+    bool found = method()->method_holder()->remove_osr_nmethod(this);
+    assert(!found, "osr nmethod should have been invalidated");
+  }
+#endif
+
   // When the nmethod becomes zombie it is no longer alive so the
   // dependencies must be flushed.  nmethods in the not_entrant
   // state will be flushed later when the transition to zombie
   // happens or they get unloaded.
   if (state == zombie) {
     {
-      // Flushing dependecies must be done before any possible
+      // Flushing dependencies must be done before any possible
       // safepoint can sneak in, otherwise the oops used by the
       // dependency logic could have become stale.
       MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -1525,7 +1545,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
 
     // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload
     // event and it hasn't already been reported for this nmethod then
-    // report it now. The event may have been reported earilier if the GC
+    // report it now. The event may have been reported earlier if the GC
     // marked it for unloading). JvmtiDeferredEventQueue support means
     // we no longer go to a safepoint here.
     post_compiled_method_unload();
@@ -1553,18 +1573,18 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
 
 void nmethod::flush() {
   // Note that there are no valid oops in the nmethod anymore.
-  assert(is_zombie() || (is_osr_method() && is_unloaded()), "must be a zombie method");
-  assert(is_marked_for_reclamation() || (is_osr_method() && is_unloaded()), "must be marked for reclamation");
-
+  assert(!is_osr_method() || is_unloaded() || is_zombie(),
+         "osr nmethod must be unloaded or zombie before flushing");
+  assert(is_zombie() || is_osr_method(), "must be a zombie method");
   assert (!is_locked_by_vm(), "locked methods shouldn't be flushed");
   assert_locked_or_safepoint(CodeCache_lock);
 
   // completely deallocate this method
   Events::log(JavaThread::current(), "flushing nmethod " INTPTR_FORMAT, p2i(this));
   if (PrintMethodFlushing) {
-    tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
+    tty->print_cr("*flushing %s nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
                   "/Free CodeCache:" SIZE_FORMAT "Kb",
-                  _compile_id, p2i(this), CodeCache::blob_count(),
+                  is_osr_method() ? "osr" : "",_compile_id, p2i(this), CodeCache::blob_count(),
                   CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
   }
 
@@ -2916,10 +2936,7 @@ void nmethod::print() const {
     tty->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
     tty->print(" for method " INTPTR_FORMAT , p2i(method()));
     tty->print(" { ");
-    if (is_in_use())      tty->print("in_use ");
-    if (is_not_entrant()) tty->print("not_entrant ");
-    if (is_zombie())      tty->print("zombie ");
-    if (is_unloaded())    tty->print("unloaded ");
+    tty->print_cr("%s ", state());
     if (on_scavenge_root_list())  tty->print("scavenge_root ");
     tty->print_cr("}:");
   }

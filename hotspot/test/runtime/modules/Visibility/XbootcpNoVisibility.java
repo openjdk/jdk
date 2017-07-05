@@ -26,7 +26,7 @@
  * @summary Ensure that a class defined within a java.base package can not
  *          be located via -Xbootclasspath/a
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm XbootcpNoVisibility
  */

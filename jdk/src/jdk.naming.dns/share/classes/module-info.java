@@ -31,7 +31,5 @@ module jdk.naming.dns {
 
     provides javax.naming.spi.InitialContextFactory
         with com.sun.jndi.dns.DnsContextFactory;
-    provides sun.net.spi.nameservice.NameServiceDescriptor
-        with sun.net.spi.nameservice.dns.DNSNameServiceDescriptor;
 }
 

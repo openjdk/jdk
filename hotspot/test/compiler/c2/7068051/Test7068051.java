@@ -28,7 +28,7 @@
  * @summary SIGSEGV in PhaseIdealLoop::build_loop_late_post on T5440
  * @library /testlibrary
  *
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -showversion -Xbatch Test7068051
  */

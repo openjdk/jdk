@@ -35,7 +35,7 @@ import jdk.test.lib.*;
  * @summary Test that anewarray bytecode is valid only if it specifies 255 or fewer dimensions.
  * @library /testlibrary
  * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/sun.misc
+ *          java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file TestANewArray.java
  * @run main/othervm TestANewArray 49

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.ResourceBundle;
-import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.util.locale.provider.LocaleProviderAdapter;
@@ -144,6 +143,12 @@ public class DateFormatSymbols implements Serializable, Cloneable {
     public DateFormatSymbols(Locale locale)
     {
         initializeData(locale);
+    }
+
+    /**
+     * Constructs an uninitialized DateFormatSymbols.
+     */
+    private DateFormatSymbols(boolean flag) {
     }
 
     /**
@@ -679,54 +684,80 @@ public class DateFormatSymbols implements Serializable, Cloneable {
      */
     transient volatile int cachedHashCode;
 
-    private void initializeData(Locale desiredLocale) {
-        locale = desiredLocale;
-
-        // Copy values of a cached instance if any.
+    /**
+     * Initializes this DateFormatSymbols with the locale data. This method uses
+     * a cached DateFormatSymbols instance for the given locale if available. If
+     * there's no cached one, this method creates an uninitialized instance and
+     * populates its fields from the resource bundle for the locale, and caches
+     * the instance. Note: zoneStrings isn't initialized in this method.
+     */
+    private void initializeData(Locale locale) {
         SoftReference<DateFormatSymbols> ref = cachedInstances.get(locale);
         DateFormatSymbols dfs;
-        if (ref != null && (dfs = ref.get()) != null) {
-            copyMembers(dfs, this);
-            return;
-        }
+        if (ref == null || (dfs = ref.get()) == null) {
+            if (ref != null) {
+                // Remove the empty SoftReference
+                cachedInstances.remove(locale, ref);
+            }
+            dfs = new DateFormatSymbols(false);
 
-        // Initialize the fields from the ResourceBundle for locale.
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DateFormatSymbolsProvider.class, locale);
-        // Avoid any potential recursions
-        if (!(adapter instanceof ResourceBundleBasedAdapter)) {
-            adapter = LocaleProviderAdapter.getResourceBundleBased();
-        }
-        ResourceBundle resource = ((ResourceBundleBasedAdapter)adapter).getLocaleData().getDateFormatData(locale);
+            // Initialize the fields from the ResourceBundle for locale.
+            LocaleProviderAdapter adapter
+                = LocaleProviderAdapter.getAdapter(DateFormatSymbolsProvider.class, locale);
+            // Avoid any potential recursions
+            if (!(adapter instanceof ResourceBundleBasedAdapter)) {
+                adapter = LocaleProviderAdapter.getResourceBundleBased();
+            }
+            ResourceBundle resource
+                = ((ResourceBundleBasedAdapter)adapter).getLocaleData().getDateFormatData(locale);
 
-        // JRE and CLDR use different keys
-        // JRE: Eras, short.Eras and narrow.Eras
-        // CLDR: long.Eras, Eras and narrow.Eras
-        if (resource.containsKey("Eras")) {
-            eras = resource.getStringArray("Eras");
-        } else if (resource.containsKey("long.Eras")) {
-            eras = resource.getStringArray("long.Eras");
-        } else if (resource.containsKey("short.Eras")) {
-            eras = resource.getStringArray("short.Eras");
-        }
-        months = resource.getStringArray("MonthNames");
-        shortMonths = resource.getStringArray("MonthAbbreviations");
-        ampms = resource.getStringArray("AmPmMarkers");
-        localPatternChars = resource.getString("DateTimePatternChars");
+            dfs.locale = locale;
+            // JRE and CLDR use different keys
+            // JRE: Eras, short.Eras and narrow.Eras
+            // CLDR: long.Eras, Eras and narrow.Eras
+            if (resource.containsKey("Eras")) {
+                dfs.eras = resource.getStringArray("Eras");
+            } else if (resource.containsKey("long.Eras")) {
+                dfs.eras = resource.getStringArray("long.Eras");
+            } else if (resource.containsKey("short.Eras")) {
+                dfs.eras = resource.getStringArray("short.Eras");
+            }
+            dfs.months = resource.getStringArray("MonthNames");
+            dfs.shortMonths = resource.getStringArray("MonthAbbreviations");
+            dfs.ampms = resource.getStringArray("AmPmMarkers");
+            dfs.localPatternChars = resource.getString("DateTimePatternChars");
 
-        // Day of week names are stored in a 1-based array.
-        weekdays = toOneBasedArray(resource.getStringArray("DayNames"));
-        shortWeekdays = toOneBasedArray(resource.getStringArray("DayAbbreviations"));
+            // Day of week names are stored in a 1-based array.
+            dfs.weekdays = toOneBasedArray(resource.getStringArray("DayNames"));
+            dfs.shortWeekdays = toOneBasedArray(resource.getStringArray("DayAbbreviations"));
 
-        // Put a clone in the cache
-        ref = new SoftReference<>((DateFormatSymbols)this.clone());
-        SoftReference<DateFormatSymbols> x = cachedInstances.putIfAbsent(locale, ref);
-        if (x != null) {
-            DateFormatSymbols y = x.get();
-            if (y == null) {
-                // Replace the empty SoftReference with ref.
-                cachedInstances.put(locale, ref);
+            // Put dfs in the cache
+            ref = new SoftReference<>(dfs);
+            SoftReference<DateFormatSymbols> x = cachedInstances.putIfAbsent(locale, ref);
+            if (x != null) {
+                DateFormatSymbols y = x.get();
+                if (y == null) {
+                    // Replace the empty SoftReference with ref.
+                    cachedInstances.replace(locale, x, ref);
+                } else {
+                    ref = x;
+                    dfs = y;
+                }
+            }
+            // If the bundle's locale isn't the target locale, put another cache
+            // entry for the bundle's locale.
+            Locale bundleLocale = resource.getLocale();
+            if (!bundleLocale.equals(locale)) {
+                SoftReference<DateFormatSymbols> z
+                    = cachedInstances.putIfAbsent(bundleLocale, ref);
+                if (z != null && z.get() == null) {
+                    cachedInstances.replace(bundleLocale, z, ref);
+                }
             }
         }
+
+        // Copy the field values from dfs to this instance.
+        copyMembers(dfs, this);
     }
 
     private static String[] toOneBasedArray(String[] src) {
@@ -808,12 +839,14 @@ public class DateFormatSymbols implements Serializable, Cloneable {
 
     /**
      * Clones all the data members from the source DateFormatSymbols to
-     * the target DateFormatSymbols. This is only for subclasses.
+     * the target DateFormatSymbols.
+     *
      * @param src the source DateFormatSymbols.
      * @param dst the target DateFormatSymbols.
      */
     private void copyMembers(DateFormatSymbols src, DateFormatSymbols dst)
     {
+        dst.locale = src.locale;
         dst.eras = Arrays.copyOf(src.eras, src.eras.length);
         dst.months = Arrays.copyOf(src.months, src.months.length);
         dst.shortMonths = Arrays.copyOf(src.shortMonths, src.shortMonths.length);

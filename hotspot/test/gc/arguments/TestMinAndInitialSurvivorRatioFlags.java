@@ -26,7 +26,7 @@
  * @key gc
  * @summary Verify that MinSurvivorRatio and InitialSurvivorRatio flags work
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestMinAndInitialSurvivorRatioFlags
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

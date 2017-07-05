@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4401,13 +4401,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
 
         if (sortManager != null) {
-            List<? extends RowSorter.SortKey> sortKeys =
-                    sortManager.sorter.getSortKeys();
-            if (sortKeys.size() != 0 &&
-                    sortKeys.get(0).getSortOrder() != SortOrder.UNSORTED) {
-                sortedTableChanged(null, e);
-                return;
-            }
+            sortedTableChanged(null, e);
+            return;
         }
 
         // The totalRowHeight calculated below will be incorrect if

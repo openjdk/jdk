@@ -41,7 +41,7 @@ class InfoFromMemberName implements MethodHandleInfo {
     private final int referenceKind;
 
     InfoFromMemberName(Lookup lookup, MemberName member, byte referenceKind) {
-        assert(member.isResolved() || member.isMethodHandleInvoke());
+        assert(member.isResolved() || member.isMethodHandleInvoke() || member.isVarHandleMethodInvoke());
         assert(member.referenceKindIsConsistentWith(referenceKind));
         this.member = member;
         this.referenceKind = referenceKind;
@@ -79,7 +79,8 @@ class InfoFromMemberName implements MethodHandleInfo {
 
     @Override
     public <T extends Member> T reflectAs(Class<T> expected, Lookup lookup) {
-        if (member.isMethodHandleInvoke() && !member.isVarargs()) {
+        if ((member.isMethodHandleInvoke() || member.isVarHandleMethodInvoke())
+            && !member.isVarargs()) {
             // This member is an instance of a signature-polymorphic method, which cannot be reflected
             // A method handle invoker can come in either of two forms:
             // A generic placeholder (present in the source code, and varargs)

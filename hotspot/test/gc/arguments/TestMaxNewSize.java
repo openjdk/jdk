@@ -28,7 +28,7 @@
  * @summary Make sure that MaxNewSize always has a useful value after argument
  * processing.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestMaxNewSize
  * @run main TestMaxNewSize -XX:+UseSerialGC

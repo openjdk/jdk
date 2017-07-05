@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,11 @@ public class Renewal {
 
     static OneKDC kdc;
     static String clazz = "sun.security.krb5.internal.tools.Kinit";
+    static String hostsFileName = null;
 
     public static void main(String[] args) throws Exception {
+        hostsFileName = System.getProperty("test.src", ".") + "/TestHosts";
+        System.setProperty("jdk.net.hosts.file", hostsFileName);
 
         kdc = new OneKDC(null);
         kdc.writeJAASConf();
@@ -95,7 +98,7 @@ public class Renewal {
         count++;
         p.args(OneKDC.USER, new String(OneKDC.PASS))
                 .inheritIO()
-                .prop("sun.net.spi.nameservice.provider.1", "ns,mock")
+                .prop("jdk.net.hosts.file", hostsFileName)
                 .prop("java.security.krb5.conf", OneKDC.KRB5_CONF)
                 .env("KRB5CCNAME", "ccache" + count)
                 .start();
@@ -114,10 +117,11 @@ public class Renewal {
     }
 
     static void checkKinitRenew() throws Exception {
+
         Proc p = Proc.create(clazz)
                 .args("-R")
                 .inheritIO()
-                .prop("sun.net.spi.nameservice.provider.1", "ns,mock")
+                .prop("jdk.net.hosts.file", hostsFileName)
                 .prop("java.security.krb5.conf", OneKDC.KRB5_CONF)
                 .env("KRB5CCNAME", "ccache" + count)
                 .start();

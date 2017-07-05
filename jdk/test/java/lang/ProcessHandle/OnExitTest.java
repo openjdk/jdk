@@ -39,7 +39,8 @@ import org.testng.TestNG;
 /*
  * @test
  * @library /test/lib/share/classes
- * @modules jdk.management
+ * @modules java.base/jdk.internal.misc
+ *          jdk.management
  * @build jdk.test.lib.Platform jdk.test.lib.Utils
  * @run testng OnExitTest
  * @summary Functions of Process.onExit and ProcessHandle.onExit

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,6 +299,13 @@ public class FtpURLConnection extends URLConnection {
             // Just keep throwing for now.
             throw e;
         } catch (FtpProtocolException fe) {
+            if (ftp != null) {
+                try {
+                    ftp.close();
+                } catch (IOException ioe) {
+                    fe.addSuppressed(ioe);
+                }
+            }
             throw new IOException(fe);
         }
         try {
@@ -481,11 +488,34 @@ public class FtpURLConnection extends URLConnection {
                 msgh.add("content-type", "text/plain");
                 msgh.add("access-type", "directory");
             } catch (IOException ex) {
-                throw new FileNotFoundException(fullpath);
+                FileNotFoundException fnfe = new FileNotFoundException(fullpath);
+                if (ftp != null) {
+                    try {
+                        ftp.close();
+                    } catch (IOException ioe) {
+                        fnfe.addSuppressed(ioe);
+                    }
+                }
+                throw fnfe;
             } catch (FtpProtocolException ex2) {
-                throw new FileNotFoundException(fullpath);
+                FileNotFoundException fnfe = new FileNotFoundException(fullpath);
+                if (ftp != null) {
+                    try {
+                        ftp.close();
+                    } catch (IOException ioe) {
+                        fnfe.addSuppressed(ioe);
+                    }
+                }
+                throw fnfe;
             }
         } catch (FtpProtocolException ftpe) {
+            if (ftp != null) {
+                try {
+                    ftp.close();
+                } catch (IOException ioe) {
+                    ftpe.addSuppressed(ioe);
+                }
+            }
             throw new IOException(ftpe);
         }
         setProperties(msgh);

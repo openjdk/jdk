@@ -50,9 +50,10 @@ import jdk.internal.misc.Unsafe;
     static final int PROFILE_LEVEL;
     static final boolean PROFILE_GWT;
     static final int CUSTOMIZE_THRESHOLD;
+    static final boolean VAR_HANDLE_GUARDS;
 
     static {
-        final Object[] values = new Object[9];
+        final Object[] values = new Object[10];
         AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Void run() {
                     values[0] = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
@@ -64,6 +65,7 @@ import jdk.internal.misc.Unsafe;
                     values[6] = Integer.getInteger("java.lang.invoke.MethodHandle.PROFILE_LEVEL", 0);
                     values[7] = Boolean.parseBoolean(System.getProperty("java.lang.invoke.MethodHandle.PROFILE_GWT", "true"));
                     values[8] = Integer.getInteger("java.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD", 127);
+                    values[9] = Boolean.parseBoolean(System.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_GUARDS", "true"));
                     return null;
                 }
             });
@@ -76,6 +78,7 @@ import jdk.internal.misc.Unsafe;
         PROFILE_LEVEL             = (Integer) values[6];
         PROFILE_GWT               = (Boolean) values[7];
         CUSTOMIZE_THRESHOLD       = (Integer) values[8];
+        VAR_HANDLE_GUARDS         = (Boolean) values[9];
 
         if (CUSTOMIZE_THRESHOLD < -1 || CUSTOMIZE_THRESHOLD > 127) {
             throw newInternalError("CUSTOMIZE_THRESHOLD should be in [-1...127] range");
