@@ -27,7 +27,7 @@
 
 #include "os_linux.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
-#include "thread_linux.inline.hpp"
+#include "runtime/thread.inline.hpp"
 
 
 // Reconciliation History

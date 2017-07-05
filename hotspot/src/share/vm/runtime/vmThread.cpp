@@ -31,24 +31,13 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
 
 #ifndef USDT2
 HS_DTRACE_PROBE_DECL3(hotspot, vmops__request, char *, uintptr_t, int);
@@ -668,8 +657,8 @@ void VMThread::execute(VM_Operation* op) {
 }
 
 
-void VMThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
-  Thread::oops_do(f, cf);
+void VMThread::oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf) {
+  Thread::oops_do(f, cld_f, cf);
   _vm_queue->oops_do(f);
 }
 
@@ -701,5 +690,5 @@ void VMOperationQueue::verify_queue(int prio) {
 #endif
 
 void VMThread::verify() {
-  oops_do(&VerifyOopClosure::verify_oop, NULL);
+  oops_do(&VerifyOopClosure::verify_oop, NULL, NULL);
 }
