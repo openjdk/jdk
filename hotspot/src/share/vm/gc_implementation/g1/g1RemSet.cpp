@@ -280,62 +280,6 @@ void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, int worker_i) {
   _g1p->phase_times()->record_update_rs_time(worker_i, (os::elapsedTime() - start) * 1000.0);
 }
 
-class CountRSSizeClosure: public HeapRegionClosure {
-  size_t _n;
-  size_t _tot;
-  size_t _max;
-  HeapRegion* _max_r;
-  enum {
-    N = 20,
-    MIN = 6
-  };
-  int _histo[N];
-public:
-  CountRSSizeClosure() : _n(0), _tot(0), _max(0), _max_r(NULL) {
-    for (int i = 0; i < N; i++) _histo[i] = 0;
-  }
-  bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
-      size_t occ = r->rem_set()->occupied();
-      _n++;
-      _tot += occ;
-      if (occ > _max) {
-        _max = occ;
-        _max_r = r;
-      }
-      // Fit it into a histo bin.
-      int s = 1 << MIN;
-      int i = 0;
-      while (occ > (size_t) s && i < (N-1)) {
-        s = s << 1;
-        i++;
-      }
-      _histo[i]++;
-    }
-    return false;
-  }
-  size_t n() { return _n; }
-  size_t tot() { return _tot; }
-  size_t mx() { return _max; }
-  HeapRegion* mxr() { return _max_r; }
-  void print_histo() {
-    int mx = N;
-    while (mx >= 0) {
-      if (_histo[mx-1] > 0) break;
-      mx--;
-    }
-    gclog_or_tty->print_cr("Number of regions with given RS sizes:");
-    gclog_or_tty->print_cr("           <= %8d   %8d", 1 << MIN, _histo[0]);
-    for (int i = 1; i < mx-1; i++) {
-      gclog_or_tty->print_cr("  %8d  - %8d   %8d",
-                    (1 << (MIN + i - 1)) + 1,
-                    1 << (MIN + i),
-                    _histo[i]);
-    }
-    gclog_or_tty->print_cr("            > %8d   %8d", (1 << (MIN+mx-2))+1, _histo[mx-1]);
-  }
-};
-
 void G1RemSet::cleanupHRRS() {
   HeapRegionRemSet::cleanup();
 }
@@ -347,17 +291,6 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
 #endif
   if (worker_i == 0) {
     _cg1r->clear_and_record_card_counts();
-  }
-
-  // Make this into a command-line flag...
-  if (G1RSCountHisto && (ParallelGCThreads == 0 || worker_i == 0)) {
-    CountRSSizeClosure count_cl;
-    _g1->heap_region_iterate(&count_cl);
-    gclog_or_tty->print_cr("Avg of %d RS counts is %f, max is %d, "
-                  "max region is " PTR_FORMAT,
-                  count_cl.n(), (float)count_cl.tot()/(float)count_cl.n(),
-                  count_cl.mx(), count_cl.mxr());
-    count_cl.print_histo();
   }
 
   // We cache the value of 'oc' closure into the appropriate slot in the
@@ -568,8 +501,6 @@ void G1RemSet::scrub_par(BitMap* region_bm, BitMap* card_bm,
 }
 
 
-static IntHistogram out_of_histo(50, 50);
-
 
 G1TriggerClosure::G1TriggerClosure() :
   _triggered(false) { }
@@ -671,7 +602,6 @@ bool G1RemSet::concurrentRefineOneCard_impl(jbyte* card_ptr, int worker_i,
       sdcq->enqueue(card_ptr);
     }
   } else {
-    out_of_histo.add_entry(filter_then_update_rs_oop_cl.out_of_region());
     _conc_refine_cards++;
   }
 
@@ -862,11 +792,6 @@ void G1RemSet::print_summary_info() {
   card_repeat_count.print_on(gclog_or_tty);
 #endif
 
-  if (FILTEROUTOFREGIONCLOSURE_DOHISTOGRAMCOUNT) {
-    gclog_or_tty->print_cr("\nG1 rem-set out-of-region histogram: ");
-    gclog_or_tty->print_cr("  # of CS ptrs --> # of cards with that number.");
-    out_of_histo.print_on(gclog_or_tty);
-  }
   gclog_or_tty->print_cr("\n Concurrent RS processed %d cards",
                          _conc_refine_cards);
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
@@ -889,21 +814,24 @@ void G1RemSet::print_summary_info() {
 
   HRRSStatsIter blk;
   g1->heap_region_iterate(&blk);
-  gclog_or_tty->print_cr("  Total heap region rem set sizes = " SIZE_FORMAT "K."
-                         "  Max = " SIZE_FORMAT "K.",
+  gclog_or_tty->print_cr("  Total heap region rem set sizes = "SIZE_FORMAT"K."
+                         "  Max = "SIZE_FORMAT"K.",
                          blk.total_mem_sz()/K, blk.max_mem_sz()/K);
-  gclog_or_tty->print_cr("  Static structures = " SIZE_FORMAT "K,"
-                         " free_lists = " SIZE_FORMAT "K.",
-                         HeapRegionRemSet::static_mem_size()/K,
-                         HeapRegionRemSet::fl_mem_size()/K);
-  gclog_or_tty->print_cr("    %d occupied cards represented.",
+  gclog_or_tty->print_cr("  Static structures = "SIZE_FORMAT"K,"
+                         " free_lists = "SIZE_FORMAT"K.",
+                         HeapRegionRemSet::static_mem_size() / K,
+                         HeapRegionRemSet::fl_mem_size() / K);
+  gclog_or_tty->print_cr("    "SIZE_FORMAT" occupied cards represented.",
                          blk.occupied());
-  gclog_or_tty->print_cr("    Max sz region = [" PTR_FORMAT ", " PTR_FORMAT " )"
-                         ", cap = " SIZE_FORMAT "K, occ = " SIZE_FORMAT "K.",
-                         blk.max_mem_sz_region()->bottom(), blk.max_mem_sz_region()->end(),
-                         (blk.max_mem_sz_region()->rem_set()->mem_size() + K - 1)/K,
-                         (blk.max_mem_sz_region()->rem_set()->occupied() + K - 1)/K);
-  gclog_or_tty->print_cr("    Did %d coarsenings.", HeapRegionRemSet::n_coarsenings());
+  HeapRegion* max_mem_sz_region = blk.max_mem_sz_region();
+  HeapRegionRemSet* rem_set = max_mem_sz_region->rem_set();
+  gclog_or_tty->print_cr("    Max size region = "HR_FORMAT", "
+                         "size = "SIZE_FORMAT "K, occupied = "SIZE_FORMAT"K.",
+                         HR_FORMAT_PARAMS(max_mem_sz_region),
+                         (rem_set->mem_size() + K - 1)/K,
+                         (rem_set->occupied() + K - 1)/K);
+  gclog_or_tty->print_cr("    Did %d coarsenings.",
+                         HeapRegionRemSet::n_coarsenings());
 }
 
 void G1RemSet::prepare_for_verify() {

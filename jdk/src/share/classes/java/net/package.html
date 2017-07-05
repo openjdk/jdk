@@ -65,6 +65,7 @@ Provides the classes for implementing networking applications.
 <p>Sending and receiving with TCP sockets is done through InputStreams and OutputStreams which can be obtained via the {@link java.net.Socket#getInputStream} and {@link java.net.Socket#getOutputStream} methods.</p>
 <h2>Interfaces</h2>
 <p>The {@link java.net.NetworkInterface} class provides APIs to browse and query all the networking interfaces (e.g. ethernet connection or PPP endpoint) of the local machine. It is through that class that you can check if any of the local interfaces is configured to support IPv6.</p>
+<p>Note, all conforming implementations must support at least one {@code NetworkInterface} object, which must either be connected to a network, or be a "loopback" interface that can only communicate with entities on the same machine.</p>
 
 <h2>High level API</h2>
 <p>A number of classes in the java.net package do provide for a much higher level of abstraction and allow for easy access to resources on the network. The classes are:

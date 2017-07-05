@@ -91,6 +91,18 @@ bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const cha
   return decoder->decode(addr, buf, buflen, offset, modulepath);
 }
 
+bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const void* base) {
+  assert(_shared_decoder_lock != NULL, "Just check");
+  bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
+  MutexLockerEx locker(error_handling_thread ? NULL : _shared_decoder_lock, true);
+  AbstractDecoder* decoder = error_handling_thread ?
+    get_error_handler_instance(): get_shared_instance();
+  assert(decoder != NULL, "null decoder");
+
+  return decoder->decode(addr, buf, buflen, offset, base);
+}
+
+
 bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
   assert(_shared_decoder_lock != NULL, "Just check");
   bool error_handling_thread = os::current_thread_id() == VMError::first_error_tid;
