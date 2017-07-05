@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,41 +23,22 @@
 
 /*
  * @test
- * @bug 8055910
- * @summary Arrays.copyOf doesn't perform subtype check
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayOfNoTypeCheck
- *
+ * @bug 6583051
+ * @summary Give error if java.lang.Object has been incompatibly overridden on the bootpath
+ * @library /testlibrary
+ * @compile Object.java
+ * @run main BootstrapRedefine
  */
 
-import java.util.Arrays;
+import com.oracle.java.testlibrary.*;
 
-public class TestArrayOfNoTypeCheck {
+public class BootstrapRedefine {
 
-    static class A {
-    }
-
-    static class B extends A {
-    }
-
-    static B[] test(A[] arr) {
-        return Arrays.copyOf(arr, 10, B[].class);
-    }
-
-    static public void main(String[] args) {
-        A[] arr = new A[20];
-        for (int i = 0; i < 20000; i++) {
-            test(arr);
-        }
-        A[] arr2 = new A[20];
-        arr2[0] = new A();
-        boolean exception = false;
-        try {
-            test(arr2);
-        } catch (ArrayStoreException ase) {
-            exception = true;
-        }
-        if (!exception) {
-            throw new RuntimeException("TEST FAILED: ArrayStoreException not thrown");
-        }
+    public static void main(String[] args) throws Exception {
+        String testClasses = System.getProperty("test.classes", ".");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xbootclasspath/p:" + testClasses, "-version");
+        new OutputAnalyzer(pb.start())
+            .shouldContain("Incompatible definition of java.lang.Object")
+            .shouldHaveExitValue(1);
     }
 }

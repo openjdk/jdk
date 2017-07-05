@@ -22,9 +22,9 @@
  */
 
 /*
- * @test TestG1TraceReclaimDeadHumongousObjectsAtYoungGC
- * @bug 8058801
- * @summary Ensure that the output for a G1TraceReclaimDeadHumongousObjectsAtYoungGC
+ * @test TestG1TraceEagerReclaimHumongousObjects
+ * @bug 8058801 8048179
+ * @summary Ensure that the output for a G1TraceEagerReclaimHumongousObjects
  * includes the expected necessary messages.
  * @key gc
  * @library /testlibrary
@@ -34,7 +34,7 @@ import com.oracle.java.testlibrary.ProcessTools;
 import com.oracle.java.testlibrary.OutputAnalyzer;
 import java.util.LinkedList;
 
-public class TestG1TraceReclaimDeadHumongousObjectsAtYoungGC {
+public class TestG1TraceEagerReclaimHumongousObjects {
   public static void main(String[] args) throws Exception {
     testGCLogs();
     testHumongousObjectGCLogs();
@@ -50,12 +50,12 @@ public class TestG1TraceReclaimDeadHumongousObjectsAtYoungGC {
                                                "-XX:+PrintGC",
                                                "-XX:+UnlockExperimentalVMOptions",
                                                "-XX:G1LogLevel=finest",
-                                               "-XX:+G1TraceReclaimDeadHumongousObjectsAtYoungGC",
+                                               "-XX:+G1TraceEagerReclaimHumongousObjects",
                                                GCTest.class.getName());
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-    // As G1ReclaimDeadHumongousObjectsAtYoungGC is set(default), below logs should be displayed.
+    // As G1EagerReclaimHumongousObjects is set(default), below logs should be displayed.
     // And GCTest doesn't have humongous objects, so values should be zero.
     output.shouldContain("[Humongous Reclaim");
     output.shouldContain("[Humongous Total: 0]");
@@ -74,7 +74,7 @@ public class TestG1TraceReclaimDeadHumongousObjectsAtYoungGC {
                                                "-XX:+PrintGC",
                                                "-XX:+UnlockExperimentalVMOptions",
                                                "-XX:G1LogLevel=finest",
-                                               "-XX:+G1TraceReclaimDeadHumongousObjectsAtYoungGC",
+                                               "-XX:+G1TraceEagerReclaimHumongousObjects",
                                                GCWithHumongousObjectTest.class.getName());
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -88,7 +88,7 @@ public class TestG1TraceReclaimDeadHumongousObjectsAtYoungGC {
     // As G1TraceReclaimDeadHumongousObjectsAtYoungGC is set and GCWithHumongousObjectTest has humongous objects,
     // these logs should be displayed.
     output.shouldContain("Live humongous");
-    output.shouldContain("Reclaim humongous region");
+    output.shouldContain("Dead humongous region");
     output.shouldHaveExitValue(0);
   }
 

@@ -4475,8 +4475,11 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   ArrayCopyNode* ac = ArrayCopyNode::make(this, false, src, NULL, dest, NULL, countx, false);
   ac->set_clonebasic();
   Node* n = _gvn.transform(ac);
-  assert(n == ac, "cannot disappear");
-  set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
+  if (n == ac) {
+    set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
+  } else {
+    set_all_memory(n);
+  }
 
   // If necessary, emit some card marks afterwards.  (Non-arrays only.)
   if (card_mark) {
@@ -4540,6 +4543,26 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
 
     Node* obj = null_check_receiver();
     if (stopped())  return true;
+
+    const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
+
+    // If we are going to clone an instance, we need its exact type to
+    // know the number and types of fields to convert the clone to
+    // loads/stores. Maybe a speculative type can help us.
+    if (!obj_type->klass_is_exact() &&
+        obj_type->speculative_type() != NULL &&
+        obj_type->speculative_type()->is_instance_klass()) {
+      ciInstanceKlass* spec_ik = obj_type->speculative_type()->as_instance_klass();
+      if (spec_ik->nof_nonstatic_fields() <= ArrayCopyLoadStoreMaxElem &&
+          !spec_ik->has_injected_fields()) {
+        ciKlass* k = obj_type->klass();
+        if (!k->is_instance_klass() ||
+            k->as_instance_klass()->is_interface() ||
+            k->as_instance_klass()->has_subklass()) {
+          obj = maybe_cast_profiled_obj(obj, obj_type->speculative_type(), false);
+        }
+      }
+    }
 
     Node* obj_klass = load_object_klass(obj);
     const TypeKlassPtr* tklass = _gvn.type(obj_klass)->isa_klassptr();
@@ -4743,7 +4766,7 @@ bool LibraryCallKit::inline_arraycopy() {
     sfpt->set_memory(map()->memory());
   }
 
-  bool notest = false;
+  bool validated = false;
 
   const Type* src_type  = _gvn.type(src);
   const Type* dest_type = _gvn.type(dest);
@@ -4847,7 +4870,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
   if (!too_many_traps(Deoptimization::Reason_intrinsic) && !src->is_top() && !dest->is_top()) {
     // validate arguments: enables transformation the ArrayCopyNode
-    notest = true;
+    validated = true;
 
     RegionNode* slow_region = new RegionNode(1);
     record_for_igvn(slow_region);
@@ -4922,13 +4945,15 @@ bool LibraryCallKit::inline_arraycopy() {
                                           load_object_klass(src), load_object_klass(dest),
                                           load_array_length(src), load_array_length(dest));
 
-  if (notest) {
-    ac->set_arraycopy_notest();
-  }
+  ac->set_arraycopy(validated);
 
   Node* n = _gvn.transform(ac);
-  assert(n == ac, "cannot disappear");
-  ac->connect_outputs(this);
+  if (n == ac) {
+    ac->connect_outputs(this);
+  } else {
+    assert(validated, "shouldn't transform if all arguments not validated");
+    set_all_memory(n);
+  }
 
   return true;
 }
