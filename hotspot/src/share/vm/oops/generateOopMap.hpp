@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ class RetTable VALUE_OBJ_CLASS_SPEC {
   void add_jsr(int return_bci, int target_bci);   // Adds entry to list
  public:
   RetTable()                                                  { _first = NULL; }
-  void compute_ret_table(methodHandle method);
+  void compute_ret_table(const methodHandle& method);
   void update_ret_table(int bci, int delta);
   RetTableEntry* find_jsrs_for_target(int targBci);
 };
@@ -462,7 +462,7 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
 
   friend class RelocCallback;
  public:
-  GenerateOopMap(methodHandle method);
+  GenerateOopMap(const methodHandle& method);
 
   // Compute the map.
   void compute_map(TRAPS);
@@ -537,7 +537,7 @@ class ResolveOopMapConflicts: public GenerateOopMap {
 #endif
 
  public:
-  ResolveOopMapConflicts(methodHandle method) : GenerateOopMap(method) { _must_clear_locals = false; };
+  ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method) { _must_clear_locals = false; };
 
   methodHandle do_potential_rewrite(TRAPS);
   bool must_clear_locals() const { return _must_clear_locals; }
@@ -562,7 +562,7 @@ class GeneratePairingInfo: public GenerateOopMap {
                                            int stack_top)                 {}
   virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars) {}
  public:
-  GeneratePairingInfo(methodHandle method) : GenerateOopMap(method)       {};
+  GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method)       {};
 
   // Call compute_map(CHECK) to generate info.
 };

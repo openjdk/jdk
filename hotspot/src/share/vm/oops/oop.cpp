@@ -129,9 +129,6 @@ void VerifyOopClosure::do_oop(narrowOop* p) { VerifyOopClosure::do_oop_work(p); 
 
 // type test operations that doesn't require inclusion of oop.inline.hpp.
 bool oopDesc::is_instance_noinline()          const { return is_instance();            }
-bool oopDesc::is_instanceMirror_noinline()    const { return is_instanceMirror();      }
-bool oopDesc::is_instanceClassLoader_noline() const { return is_instanceClassLoader(); }
-bool oopDesc::is_instanceRef_noline()         const { return is_instanceRef();         }
 bool oopDesc::is_array_noinline()             const { return is_array();               }
 bool oopDesc::is_objArray_noinline()          const { return is_objArray();            }
 bool oopDesc::is_typeArray_noinline()         const { return is_typeArray();           }

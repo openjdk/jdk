@@ -373,7 +373,8 @@ void ReferenceProcessor::enqueue_discovered_reflist(DiscoveredList& refs_list,
   // so that the References are not considered active.
   while (obj != next_d) {
     obj = next_d;
-    assert(obj->is_instanceRef(), "should be reference object");
+    assert(obj->is_instance(), "should be an instance object");
+    assert(InstanceKlass::cast(obj->klass())->is_reference_instance_klass(), "should be reference object");
     next_d = java_lang_ref_Reference::discovered(obj);
     if (TraceReferenceGC && PrintGCDetails) {
       gclog_or_tty->print_cr("        obj " INTPTR_FORMAT "/next_d " INTPTR_FORMAT,

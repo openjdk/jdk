@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.*;
+import java.util.Objects;
 
 /**
  * Represents the debugging information for a particular point of execution. This information

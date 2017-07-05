@@ -42,7 +42,6 @@ import java.lang.invoke.MethodType;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotConstantPool;
 import jdk.test.lib.Asserts;
 import sun.reflect.ConstantPool;
 
@@ -62,7 +61,8 @@ public class ResolveConstantInPoolTest {
         testCase.test();
     }
 
-    private static void validateMethodHandle(HotSpotConstantPool constantPoolCTVM,
+    private static void validateMethodHandle(
+            jdk.vm.ci.meta.ConstantPool constantPoolCTVM,
             ConstantPool constantPoolSS,
             ConstantPoolTestsHelper.DummyClasses dummyClass, int index) {
         Object constantInPool = CompilerToVMHelper
@@ -77,7 +77,8 @@ public class ResolveConstantInPoolTest {
         }
     }
 
-    private static void validateMethodType(HotSpotConstantPool constantPoolCTVM,
+    private static void validateMethodType(
+            jdk.vm.ci.meta.ConstantPool constantPoolCTVM,
             ConstantPool constantPoolSS,
             ConstantPoolTestsHelper.DummyClasses dummyClass, int index) {
         Object constantInPool = CompilerToVMHelper

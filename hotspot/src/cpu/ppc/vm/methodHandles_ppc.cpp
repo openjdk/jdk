@@ -73,7 +73,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj_reg, SystemDictionary::WKID klass_id,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
-  Klass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
+  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
   KlassHandle klass = SystemDictionary::well_known_klass(klass_id);
   Label L_ok, L_bad;
   BLOCK_COMMENT("verify_klass {");

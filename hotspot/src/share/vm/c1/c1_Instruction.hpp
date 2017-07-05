@@ -701,19 +701,22 @@ LEAF(Phi, Instruction)
 LEAF(Local, Instruction)
  private:
   int      _java_index;                          // the local index within the method to which the local belongs
+  bool     _is_receiver;                         // if local variable holds the receiver: "this" for non-static methods
   ciType*  _declared_type;
  public:
   // creation
-  Local(ciType* declared, ValueType* type, int index)
+  Local(ciType* declared, ValueType* type, int index, bool receiver)
     : Instruction(type)
     , _java_index(index)
     , _declared_type(declared)
+    , _is_receiver(receiver)
   {
     NOT_PRODUCT(set_printable_bci(-1));
   }
 
   // accessors
   int java_index() const                         { return _java_index; }
+  bool is_receiver() const                       { return _is_receiver; }
 
   virtual ciType* declared_type() const          { return _declared_type; }
 

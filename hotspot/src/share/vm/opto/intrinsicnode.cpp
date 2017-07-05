@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ uint StrIntrinsicNode::match_edge(uint idx) const {
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
-Node *StrIntrinsicNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape)) return this;
   // Don't bother trying to transform a dead node
   if (in(0) && in(0)->is_top())  return NULL;
@@ -55,9 +55,27 @@ Node *StrIntrinsicNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type *StrIntrinsicNode::Value( PhaseTransform *phase ) const {
+const Type* StrIntrinsicNode::Value(PhaseTransform* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   return bottom_type();
+}
+
+uint StrIntrinsicNode::size_of() const { return sizeof(*this); }
+
+//=============================================================================
+//------------------------------Ideal------------------------------------------
+// Return a node which is more "ideal" than the current node.  Strip out
+// control copies
+Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
+}
+
+//=============================================================================
+//------------------------------Ideal------------------------------------------
+// Return a node which is more "ideal" than the current node.  Strip out
+// control copies
+Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
 //=============================================================================
@@ -70,12 +88,12 @@ uint EncodeISOArrayNode::match_edge(uint idx) const {
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
-Node *EncodeISOArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* EncodeISOArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
 //------------------------------Value------------------------------------------
-const Type *EncodeISOArrayNode::Value(PhaseTransform *phase) const {
+const Type* EncodeISOArrayNode::Value(PhaseTransform* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
   return bottom_type();
 }

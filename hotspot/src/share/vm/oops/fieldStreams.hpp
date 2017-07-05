@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ class FieldStreamBase : public StackObj {
     return num_fields;
   }
 
-  FieldStreamBase(Array<u2>* fields, constantPoolHandle constants, int start, int limit) {
+  FieldStreamBase(Array<u2>* fields, const constantPoolHandle& constants, int start, int limit) {
     _fields = fields;
     _constants = constants;
     _index = start;
@@ -91,7 +91,7 @@ class FieldStreamBase : public StackObj {
     }
   }
 
-  FieldStreamBase(Array<u2>* fields, constantPoolHandle constants) {
+  FieldStreamBase(Array<u2>* fields, const constantPoolHandle& constants) {
     _fields = fields;
     _constants = constants;
     _index = 0;
@@ -251,7 +251,7 @@ class InternalFieldStream : public FieldStreamBase {
 
 class AllFieldStream : public FieldStreamBase {
  public:
-  AllFieldStream(Array<u2>* fields, constantPoolHandle constants): FieldStreamBase(fields, constants) {}
+  AllFieldStream(Array<u2>* fields, const constantPoolHandle& constants): FieldStreamBase(fields, constants) {}
   AllFieldStream(InstanceKlass* k):      FieldStreamBase(k->fields(), k->constants()) {}
   AllFieldStream(instanceKlassHandle k): FieldStreamBase(k->fields(), k->constants()) {}
 };

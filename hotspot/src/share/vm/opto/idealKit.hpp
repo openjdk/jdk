@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,7 @@ class IdealKit: public StackObj {
   Node* AddI(Node* l, Node* r) { return transform(new AddINode(l, r)); }
   Node* SubI(Node* l, Node* r) { return transform(new SubINode(l, r)); }
   Node* AndI(Node* l, Node* r) { return transform(new AndINode(l, r)); }
+  Node* OrI(Node* l, Node* r)  { return transform(new OrINode(l, r));  }
   Node* MaxI(Node* l, Node* r) { return transform(new MaxINode(l, r)); }
   Node* LShiftI(Node* l, Node* r) { return transform(new LShiftINode(l, r)); }
   Node* CmpI(Node* l, Node* r) { return transform(new CmpINode(l, r)); }
@@ -256,7 +257,6 @@ class IdealKit: public StackObj {
                             Node* parm1,
                             Node* parm2,
                             Node* parm3);
-
 };
 
 #endif // SHARE_VM_OPTO_IDEALKIT_HPP

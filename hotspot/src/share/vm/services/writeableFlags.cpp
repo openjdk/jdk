@@ -57,7 +57,6 @@ static void print_flag_error_message_bounds(const char* name, char* buffer) {
   }
 }
 
-PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 static void print_flag_error_message_if_needed(Flag::Error error, const char* name, FormatBuffer<80>& err_msg) {
   if (error == Flag::SUCCESS) {
     return;
