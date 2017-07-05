@@ -106,6 +106,9 @@ public class StringSharingPluginTest {
                     byte[] content = Files.readAllBytes(p);
                     String path = p.toString().replace('\\', '/');
                     path = path.substring("/modules".length());
+                    if (path.charAt(0) != '/') {
+                        path = "/" + path;
+                    }
                     ModuleEntry res = ModuleEntry.create(path, content);
                     resources.add(res);
                 } catch (Exception ex) {
