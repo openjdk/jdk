@@ -92,11 +92,6 @@ endif
 INIT += $(LIBDIR)/jvm.hprof.txt
 
 #
-# This removes all asserts in the optimized version
-#
-CPPFLAGS_OPT += -DNDEBUG
-
-#
 # This puts logging code in
 #
 CPPFLAGS_DBG += -DHPROF_LOGGING
