@@ -61,12 +61,17 @@ import sun.management.snmp.util.JvmContextFactory;
  */
 public class JvmMemManagerTableMetaImpl extends JvmMemManagerTableMeta {
 
+    static final long serialVersionUID = 36176771566817592L;
+
     /**
      * A concrete implementation of {@link SnmpNamedListTableCache}, for the
      * jvmMemManagerTable.
      **/
     private static class JvmMemManagerTableCache
         extends SnmpNamedListTableCache {
+
+        static final long serialVersionUID = 6564294074653009240L;
+
         /**
          * Create a weak cache for the jvmMemManagerTable.
          * @param validity validity of the cached data, in ms.
@@ -87,7 +92,7 @@ public class JvmMemManagerTableMetaImpl extends JvmMemManagerTableMeta {
          *        <code>MemoryManagerMXBean</code> in the list.
          * @return  <code>((MemoryManagerMXBean)item).getName()</code>
          **/
-        protected String getKey(Object context, List rawDatas,
+        protected String getKey(Object context, List<?> rawDatas,
                                 int rank, Object item) {
             if (item == null) return null;
             final String name = ((MemoryManagerMXBean)item).getName();
@@ -99,7 +104,7 @@ public class JvmMemManagerTableMetaImpl extends JvmMemManagerTableMeta {
          * Call <code>getTableHandler(JvmContextFactory.getUserData())</code>.
          **/
         public SnmpTableHandler getTableHandler() {
-            final Map userData = JvmContextFactory.getUserData();
+            final Map<Object, Object> userData = JvmContextFactory.getUserData();
             return getTableDatas(userData);
         }
 
@@ -114,7 +119,7 @@ public class JvmMemManagerTableMetaImpl extends JvmMemManagerTableMeta {
          * Call ManagementFactory.getMemoryManagerMXBeans() to
          * load the raw data of this table.
          **/
-        protected List   loadRawDatas(Map userData) {
+        protected List<MemoryManagerMXBean> loadRawDatas(Map<Object, Object> userData) {
             return ManagementFactory.getMemoryManagerMXBeans();
         }
 

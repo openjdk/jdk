@@ -68,6 +68,7 @@ import com.sun.jmx.snmp.agent.SnmpStandardObjectServer;
  */
 public class JvmRTBootClassPathTableMeta extends SnmpMibTable implements Serializable {
 
+    static final long serialVersionUID = 42471379600792135L;
     /**
      * Constructor for the table. Initialize metadata for "JvmRTBootClassPathTableMeta".
      * The reference on the MBean server is updated so the entries created through an SNMP SET will be AUTOMATICALLY REGISTERED in Java DMK.

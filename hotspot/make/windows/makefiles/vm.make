@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Resource file containing VERSIONINFO
@@ -30,7 +30,7 @@ Res_Files=.\version.res
 COMMONSRC=$(WorkSpace)\src
 ALTSRC=$(WorkSpace)\src\closed
 
-!ifdef RELEASE 
+!ifdef RELEASE
 !ifdef DEVELOP
 CPP_FLAGS=$(CPP_FLAGS) /D "DEBUG"
 !else
@@ -74,6 +74,10 @@ CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_BUILD_TARGET=\"$(BUILD_FLAVOR)\""
 CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_BUILD_USER=\"$(BuildUser)\""
 CPP_FLAGS=$(CPP_FLAGS) /D "HOTSPOT_VM_DISTRO=\"$(HOTSPOT_VM_DISTRO)\""
 
+!ifndef JAVASE_EMBEDDED
+CPP_FLAGS=$(CPP_FLAGS) /D "INCLUDE_TRACE"
+!endif
+
 CPP_FLAGS=$(CPP_FLAGS) $(CPP_INCLUDE_DIRS)
 
 # Define that so jni.h is on correct side
@@ -97,7 +101,7 @@ AGCT_EXPORT=/export:AsyncGetCallTrace
 !endif
 
 # If you modify exports below please do the corresponding changes in
-# src/share/tools/ProjectCreator/WinGammaPlatformVC7.java 
+# src/share/tools/ProjectCreator/WinGammaPlatformVC7.java
 LINK_FLAGS=$(LINK_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
   /export:JNI_GetDefaultJavaVMInitArgs       \
   /export:JNI_CreateJavaVM                   \
@@ -170,12 +174,20 @@ VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/oops
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/prims
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/runtime
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/services
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/trace
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/utilities
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/libadt
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/os/windows/vm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/os_cpu/windows_$(Platform_arch)/vm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/cpu/$(Platform_arch)/vm
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/opto
+
+!if exists($(ALTSRC)\share\vm\jfr)
+VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr/agent
+VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr/agent/isolated_deps/util
+VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr/jvm
+VM_PATH=$(VM_PATH);$(ALTSRC)/share/vm/jfr
+!endif
 
 VM_PATH={$(VM_PATH)}
 
@@ -263,6 +275,9 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {$(COMMONSRC)\share\vm\services}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
+{$(COMMONSRC)\share\vm\trace}.cpp.obj::
+        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+
 {$(COMMONSRC)\share\vm\utilities}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
@@ -340,6 +355,9 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 {$(ALTSRC)\share\vm\services}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
+{$(ALTSRC)\share\vm\trace}.cpp.obj::
+        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+
 {$(ALTSRC)\share\vm\utilities}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
@@ -369,6 +387,18 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
 {..\generated\jvmtifiles}.cpp.obj::
+        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+
+{$(ALTSRC)\share\vm\jfr}.cpp.obj::
+        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+
+{$(ALTSRC)\share\vm\jfr\agent}.cpp.obj::
+        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+
+{$(ALTSRC)\share\vm\jfr\agent\isolated_deps\util}.cpp.obj::
+        $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
+
+{$(ALTSRC)\share\vm\jfr\jvm}.cpp.obj::
         $(CPP) $(CPP_FLAGS) $(CPP_USE_PCH) /c $<
 
 default::

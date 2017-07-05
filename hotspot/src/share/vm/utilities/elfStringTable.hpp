@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef __ELF_STRING_TABLE_HPP
-#define __ELF_STRING_TABLE_HPP
+#ifndef SHARE_VM_UTILITIES_ELF_STRING_TABLE_HPP
+#define SHARE_VM_UTILITIES_ELF_STRING_TABLE_HPP
 
 #if !defined(_WINDOWS) && !defined(__APPLE__)
 
@@ -35,9 +35,6 @@
 // The string table represents a string table section in an elf file.
 // Whenever there is enough memory, it will load whole string table as
 // one blob. Otherwise, it will load string from file when requested.
-
-#define MAX_SYMBOL_LEN  256
-
 class ElfStringTable: CHeapObj {
   friend class ElfFile;
  public:
@@ -48,10 +45,10 @@ class ElfStringTable: CHeapObj {
   int index() { return m_index; };
 
   // get string at specified offset
-  const char* string_at(int offset);
+  bool string_at(int offset, char* buf, int buflen);
 
   // get status code
-  Decoder::decoder_status get_status() { return m_status; };
+  NullDecoder::decoder_status get_status() { return m_status; };
 
  protected:
   ElfStringTable*        m_next;
@@ -69,13 +66,10 @@ class ElfStringTable: CHeapObj {
   // section header
   Elf_Shdr                 m_shdr;
 
-  // buffer for reading individual string
-  char                     m_symbol[MAX_SYMBOL_LEN];
-
   // error code
-  Decoder::decoder_status  m_status;
+  NullDecoder::decoder_status  m_status;
 };
 
-#endif // _WINDOWS
+#endif // _WINDOWS and _APPLE
 
-#endif // __ELF_STRING_TABLE_HPP
+#endif // SHARE_VM_UTILITIES_ELF_STRING_TABLE_HPP

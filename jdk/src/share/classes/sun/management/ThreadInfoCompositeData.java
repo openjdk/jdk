@@ -190,7 +190,7 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
                                       threadInfoV6Attributes.length;
             String[] v5ItemNames = new String[numV5Attributes];
             String[] v5ItemDescs = new String[numV5Attributes];
-            OpenType[] v5ItemTypes = new OpenType[numV5Attributes];
+            OpenType<?>[] v5ItemTypes = new OpenType<?>[numV5Attributes];
             int i = 0;
             for (String n : itemNames) {
                 if (isV5Attribute(n)) {

@@ -555,7 +555,8 @@ jdk_security2: $(call TestDirs, javax/crypto javax/xml/crypto com/sun/crypto)
 # Stable agentvm testruns (minus items from PROBLEM_LIST)
 JDK_ALL_TARGETS += jdk_security3
 jdk_security3: $(call TestDirs, com/sun/security lib/security javax/security \
-        sun/security com/sun/org/apache/xml/internal/security)
+        sun/security com/sun/org/apache/xml/internal/security \
+        com/oracle/secrity/ucrypto)
 	$(call SharedLibraryPermissions,sun/security)
 	$(call RunAgentvmBatch)
 

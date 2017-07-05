@@ -1431,7 +1431,7 @@ public final class Files {
      * <li>It is <i>transitive</i>: for three {@code Paths}
      *     {@code f}, {@code g}, and {@code h}, if {@code isSameFile(f,g)} returns
      *     {@code true} and {@code isSameFile(g,h)} returns {@code true}, then
-     *     {@code isSameFile(g,h)} will return return {@code true}.
+     *     {@code isSameFile(f,h)} will return return {@code true}.
      * </ul>
      *
      * @param   path

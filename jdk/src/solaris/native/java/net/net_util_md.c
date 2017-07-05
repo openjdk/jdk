@@ -588,7 +588,7 @@ static void initLoopbackRoutes() {
         int plen, scope, dad_status, if_idx;
 
         if ((f = fopen("/proc/net/if_inet6", "r")) != NULL) {
-            while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %02x %02x %02x %02x %20s\n",
+            while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
                       addr6p[0], addr6p[1], addr6p[2], addr6p[3],
                       addr6p[4], addr6p[5], addr6p[6], addr6p[7],
                   &if_idx, &plen, &scope, &dad_status, devname) == 13) {
@@ -1078,7 +1078,7 @@ int getDefaultIPv6Interface(struct in6_addr *target_addr) {
         int plen, scope, dad_status, if_idx;
 
         if ((f = fopen("/proc/net/if_inet6", "r")) != NULL) {
-            while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %02x %02x %02x %02x %20s\n",
+            while (fscanf(f, "%4s%4s%4s%4s%4s%4s%4s%4s %08x %02x %02x %02x %20s\n",
                       addr6p[0], addr6p[1], addr6p[2], addr6p[3],
                       addr6p[4], addr6p[5], addr6p[6], addr6p[7],
                   &if_idx, &plen, &scope, &dad_status, devname) == 13) {

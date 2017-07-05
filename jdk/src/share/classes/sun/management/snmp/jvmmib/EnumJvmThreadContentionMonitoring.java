@@ -43,10 +43,11 @@ import com.sun.jmx.snmp.Enumerated;
  */
 public class EnumJvmThreadContentionMonitoring extends Enumerated implements Serializable {
 
+    static final long serialVersionUID = -6411827583604137210L;
     protected static Hashtable<Integer, String> intTable =
-            new Hashtable<Integer, String>();
+            new Hashtable<>();
     protected static Hashtable<String, Integer> stringTable =
-            new Hashtable<String, Integer>();
+            new Hashtable<>();
     static  {
         intTable.put(new Integer(3), "enabled");
         intTable.put(new Integer(4), "disabled");
@@ -72,11 +73,11 @@ public class EnumJvmThreadContentionMonitoring extends Enumerated implements Ser
         super(x);
     }
 
-    protected Hashtable getIntTable() {
+    protected Hashtable<Integer,String> getIntTable() {
         return intTable ;
     }
 
-    protected Hashtable getStringTable() {
+    protected Hashtable<String,Integer> getStringTable() {
         return stringTable ;
     }
 

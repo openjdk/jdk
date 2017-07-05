@@ -391,7 +391,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ call(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id), relocInfo::runtime_call_type);
   __ delayed()->nop();
   __ should_not_reach_here();
-  assert(code_offset() - offset <= exception_handler_size, "overflow");
+  guarantee(code_offset() - offset <= exception_handler_size, "overflow");
   __ end_a_stub();
 
   return offset;
@@ -474,8 +474,7 @@ int LIR_Assembler::emit_deopt_handler() {
   AddressLiteral deopt_blob(SharedRuntime::deopt_blob()->unpack());
   __ JUMP(deopt_blob, G3_scratch, 0); // sethi;jmp
   __ delayed()->nop();
-  assert(code_offset() - offset <= deopt_handler_size, "overflow");
-  debug_only(__ stop("should have gone to the caller");)
+  guarantee(code_offset() - offset <= deopt_handler_size, "overflow");
   __ end_a_stub();
 
   return offset;
