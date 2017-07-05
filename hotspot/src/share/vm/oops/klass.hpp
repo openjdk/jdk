@@ -161,6 +161,7 @@ protected:
   enum DefaultsLookupMode { find_defaults, skip_defaults };
   enum OverpassLookupMode { find_overpass, skip_overpass };
   enum StaticLookupMode   { find_static,   skip_static };
+  enum PrivateLookupMode  { find_private,  skip_private };
 
   bool is_klass() const volatile { return true; }
 

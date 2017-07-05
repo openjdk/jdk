@@ -1271,6 +1271,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   bool has_jimage = (os::stat(jimage, &st) == 0);
   if (has_jimage) {
     Arguments::set_sysclasspath(jimage);
+    FREE_C_HEAP_ARRAY(char, jimage);
     return true;
   }
   FREE_C_HEAP_ARRAY(char, jimage);
@@ -1282,6 +1283,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
       sysclasspath = expand_entries_to_path(modules_dir, fileSep, pathSep);
     }
   }
+  FREE_C_HEAP_ARRAY(char, modules_dir);
 
   // fallback to classes
   if (sysclasspath == NULL)
@@ -1289,6 +1291,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
 
   if (sysclasspath == NULL) return false;
   Arguments::set_sysclasspath(sysclasspath);
+  FREE_C_HEAP_ARRAY(char, sysclasspath);
 
   return true;
 }

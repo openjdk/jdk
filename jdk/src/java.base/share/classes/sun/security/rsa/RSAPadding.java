@@ -319,18 +319,17 @@ public final class RSAPadding {
             }
             // generate non-zero padding bytes
             // use a buffer to reduce calls to SecureRandom
-            byte[] r = new byte[64];
-            int i = -1;
-            while (psSize-- > 0) {
-                int b;
-                do {
-                    if (i < 0) {
-                        random.nextBytes(r);
-                        i = r.length - 1;
+            while (psSize > 0) {
+                // extra bytes to avoid zero bytes,
+                // number of zero bytes <= 4 in 98% cases
+                byte[] r = new byte[psSize + 4];
+                random.nextBytes(r);
+                for (int i = 0; i < r.length && psSize > 0; i++) {
+                    if (r[i] != 0) {
+                        padded[k++] = r[i];
+                        psSize--;
                     }
-                    b = r[i--] & 0xff;
-                } while (b == 0);
-                padded[k++] = (byte)b;
+                }
             }
         }
         return padded;

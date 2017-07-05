@@ -52,7 +52,7 @@ public abstract class FtpClientProvider {
      * Initializes a new instance of this class.
      *
      * @throws SecurityException if a security manager is installed and it denies
-     *         {@link RuntimePermission}<tt>("ftpClientProvider")</tt>
+     *         {@link RuntimePermission}{@code ("ftpClientProvider")}
      */
     protected FtpClientProvider() {
         SecurityManager sm = System.getSecurityManager();
@@ -108,7 +108,7 @@ public abstract class FtpClientProvider {
      * <ol>
      *
      *   <li><p> If the system property
-     *   <tt>java.net.FtpClientProvider</tt> is defined then it is
+     *   {@code java.net.FtpClientProvider} is defined then it is
      *   taken to be the fully-qualified name of a concrete provider class.
      *   The class is loaded and instantiated; if this process fails then an
      *   unspecified unchecked error or exception is thrown.  </p></li>
@@ -116,8 +116,8 @@ public abstract class FtpClientProvider {
      *   <li><p> If a provider class has been installed in a jar file that is
      *   visible to the system class loader, and that jar file contains a
      *   provider-configuration file named
-     *   <tt>java.net.FtpClientProvider</tt> in the resource
-     *   directory <tt>META-INF/services</tt>, then the first class name
+     *   {@code java.net.FtpClientProvider} in the resource
+     *   directory {@code META-INF/services}, then the first class name
      *   specified in that file is taken.  The class is loaded and
      *   instantiated; if this process fails then an unspecified unchecked error or exception is
      *   thrown.  </p></li>

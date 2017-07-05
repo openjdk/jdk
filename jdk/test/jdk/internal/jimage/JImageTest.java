@@ -66,9 +66,10 @@ public class JImageTest {
             String bootimage = bootimagePath.toAbsolutePath().toString();
             String extractDir = Paths.get(".", "extract").toAbsolutePath().toString();
             String recreateImage = Paths.get(".", "recreate.jimage").toAbsolutePath().toString();
-
+            String relativeRecreateImage = Paths.get(".", "recreate2.jimage").toString();
             jimage("extract", "--dir", extractDir, bootimage);
             jimage("recreate", "--dir", extractDir, recreateImage);
+            jimage("recreate", "--dir", extractDir, relativeRecreateImage);
 
             System.out.println("Test successful");
          } else {
