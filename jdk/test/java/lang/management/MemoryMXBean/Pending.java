@@ -39,7 +39,7 @@ import java.lang.management.*;
 
 public class Pending {
     final static int NO_REF_COUNT = 600;
-    final static int REF_COUNT = 600;
+    final static int REF_COUNT = 500;
     final static int TOTAL_FINALIZABLE = (NO_REF_COUNT + REF_COUNT);
     private static int finalized = 0;
     private static MemoryMXBean mbean
@@ -83,31 +83,22 @@ public class Pending {
         // Clean the memory and remove all objects that are pending
         // finalization
         System.gc();
-        Runtime.getRuntime().runFinalization();
-
-        // Let the finalizer to finish
-        try {
-            Thread.sleep(200);
-        } catch (Exception e) {
-            throw e;
-        }
-
-        // Create a number of new objects but no references to them
-        int startCount = mbean.getObjectPendingFinalizationCount();
+        Snapshot snapshot = getSnapshotAfterFinalization();
 
         System.out.println("Number of objects pending for finalization:");
-        System.out.println("   Before creating object: " + startCount +
-            " finalized = " + finalized);
+        System.out.println("   Before creating object: " + snapshot);
         printFinalizerInstanceCount();
 
+        // Create objects without saving reference. Should be removed at next GC.
         for (int i = 0; i < NO_REF_COUNT; i++) {
             new MyObject();
         }
 
-        Snapshot snapshot = getSnapshot();
+        snapshot = getSnapshot();
         System.out.println("   Afer creating objects with no ref: " + snapshot);
         printFinalizerInstanceCount();
 
+        // Create objects and save references.
         objs = new Object[REF_COUNT];
         for (int i = 0; i < REF_COUNT; i++) {
             objs[i] = new MyObject();
@@ -139,9 +130,8 @@ public class Pending {
                                      + TOTAL_FINALIZABLE);
         }
 
-        if (startCount != 0 || snapshot.curPending != 0) {
+        if (snapshot.curPending != 0) {
             throw new RuntimeException("Wrong number of objects pending "
-                                     + "finalization start = " + startCount
                                      + " end = " + snapshot);
         }
 
@@ -161,29 +151,8 @@ public class Pending {
              snapshot.curFinalized != expectedTotal && i <= MAX_GC_LOOP;
              i++) {
             System.gc();
+            snapshot = getSnapshotAfterFinalization();
 
-            // Pause to give a chance to Finalizer thread to run
-            pause();
-
-            printFinalizerInstanceCount();
-            // Race condition may occur; attempt to check this
-            // a few times before throwing exception.
-            for (int j = 0; j < 5; j++) {
-                // poll for another current pending count
-                snapshot = getSnapshot();
-                if (snapshot.curFinalized == expectedTotal ||
-                    snapshot.curPending != 0) {
-                    break;
-                }
-            }
-            System.out.println("   After GC " + i + ": " + snapshot);
-
-            Runtime.getRuntime().runFinalization();
-
-            // Pause to give a chance to Finalizer thread to run
-            pause();
-
-            snapshot = getSnapshot();
             if (snapshot.curFinalized == expectedTotal &&
                 snapshot.curPending != 0) {
                 throw new RuntimeException(
@@ -237,17 +206,21 @@ public class Pending {
         }
     }
 
-    private static Object pauseObj = new Object();
-    private static void pause() {
-        // Enter lock a without blocking
-        synchronized (pauseObj) {
-            try {
-                // may need to tune this timeout for different platforms
-                pauseObj.wait(20);
-            } catch (Exception e) {
-                System.err.println("Unexpected exception.");
-                e.printStackTrace(System.err);
+    // Repeat getSnapshot until no pending finalization.
+    private static Snapshot getSnapshotAfterFinalization() throws Exception {
+        int loopCount = 0;
+        Snapshot snapshot = null;
+        while (loopCount < 100) {
+            Runtime.getRuntime().runFinalization();
+            Thread.sleep(50);
+            snapshot = getSnapshot();
+            if (snapshot.curPending == 0) {
+                return snapshot;
             }
+            ++loopCount;
+            System.out.println("Waiting for curPending to be 0. snapshot=" + snapshot);
         }
+        String msg = "Objects pending finalization is not 0. snapshot=%s";
+        throw new RuntimeException(String.format(msg, snapshot));
     }
 }

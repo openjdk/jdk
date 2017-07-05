@@ -165,6 +165,10 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     private static MethodHandle LIST_GUARD = Guards.getInstanceOfGuard(List.class);
     private static MethodHandle MAP_GUARD = Guards.getInstanceOfGuard(Map.class);
 
+    private enum CollectionType {
+        ARRAY, LIST, MAP
+    };
+
     private GuardedInvocationComponent getElementGetter(final CallSiteDescriptor callSiteDescriptor,
             final LinkerServices linkerServices, final List<String> operations) throws Exception {
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
@@ -178,27 +182,27 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         // Note that for arrays and lists, using LinkerServices.asType() will ensure that any language specific linkers
         // in use will get a chance to perform any (if there's any) implicit conversion to integer for the indices.
         final GuardedInvocationComponent gic;
-        final boolean isMap;
+        final CollectionType collectionType;
         if(declaredType.isArray()) {
-            gic = new GuardedInvocationComponent(MethodHandles.arrayElementGetter(declaredType));
-            isMap = false;
+            gic = createInternalFilteredGuardedInvocationComponent(MethodHandles.arrayElementGetter(declaredType), linkerServices);
+            collectionType = CollectionType.ARRAY;
         } else if(List.class.isAssignableFrom(declaredType)) {
-            gic = new GuardedInvocationComponent(GET_LIST_ELEMENT);
-            isMap = false;
+            gic = createInternalFilteredGuardedInvocationComponent(GET_LIST_ELEMENT, linkerServices);
+            collectionType = CollectionType.LIST;
         } else if(Map.class.isAssignableFrom(declaredType)) {
-            gic = new GuardedInvocationComponent(GET_MAP_ELEMENT);
-            isMap = true;
+            gic = createInternalFilteredGuardedInvocationComponent(GET_MAP_ELEMENT, linkerServices);
+            collectionType = CollectionType.MAP;
         } else if(clazz.isArray()) {
-            gic = getClassGuardedInvocationComponent(MethodHandles.arrayElementGetter(clazz), callSiteType);
-            isMap = false;
+            gic = getClassGuardedInvocationComponent(linkerServices.filterInternalObjects(MethodHandles.arrayElementGetter(clazz)), callSiteType);
+            collectionType = CollectionType.ARRAY;
         } else if(List.class.isAssignableFrom(clazz)) {
-            gic = new GuardedInvocationComponent(GET_LIST_ELEMENT, Guards.asType(LIST_GUARD, callSiteType), List.class,
-                    ValidationType.INSTANCE_OF);
-            isMap = false;
+            gic = createInternalFilteredGuardedInvocationComponent(GET_LIST_ELEMENT, Guards.asType(LIST_GUARD, callSiteType), List.class, ValidationType.INSTANCE_OF,
+                    linkerServices);
+            collectionType = CollectionType.LIST;
         } else if(Map.class.isAssignableFrom(clazz)) {
-            gic = new GuardedInvocationComponent(GET_MAP_ELEMENT, Guards.asType(MAP_GUARD, callSiteType), Map.class,
-                    ValidationType.INSTANCE_OF);
-            isMap = true;
+            gic = createInternalFilteredGuardedInvocationComponent(GET_MAP_ELEMENT, Guards.asType(MAP_GUARD, callSiteType), Map.class, ValidationType.INSTANCE_OF,
+                    linkerServices);
+            collectionType = CollectionType.MAP;
         } else {
             // Can't retrieve elements for objects that are neither arrays, nor list, nor maps.
             return nextComponent;
@@ -208,7 +212,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         final String fixedKey = getFixedKey(callSiteDescriptor);
         // Convert the key to a number if we're working with a list or array
         final Object typedFixedKey;
-        if(!isMap && fixedKey != null) {
+        if(collectionType != CollectionType.MAP && fixedKey != null) {
             typedFixedKey = convertKeyToInteger(fixedKey, linkerServices);
             if(typedFixedKey == null) {
                 // key is not numeric, it can never succeed
@@ -227,20 +231,38 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         }
 
         final MethodHandle checkGuard;
-        if(invocation == GET_LIST_ELEMENT) {
+        switch(collectionType) {
+        case LIST:
             checkGuard = convertArgToInt(RANGE_CHECK_LIST, linkerServices, callSiteDescriptor);
-        } else if(invocation == GET_MAP_ELEMENT) {
+            break;
+        case MAP:
             // TODO: A more complex solution could be devised for maps, one where we do a get() first, and fold it
             // into a GWT that tests if it returned null, and if it did, do another GWT with containsKey()
             // that returns constant null (on true), or falls back to next component (on false)
-            checkGuard = CONTAINS_MAP;
-        } else {
+            checkGuard = linkerServices.filterInternalObjects(CONTAINS_MAP);
+            break;
+        case ARRAY:
             checkGuard = convertArgToInt(RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
+            break;
+        default:
+            throw new AssertionError();
         }
         final MethodPair matchedInvocations = matchReturnTypes(binder.bind(invocation),
                 nextComponent.getGuardedInvocation().getInvocation());
         return nextComponent.compose(matchedInvocations.guardWithTest(binder.bindTest(checkGuard)), gi.getGuard(),
                 gic.getValidatorClass(), gic.getValidationType());
+    }
+
+    private static GuardedInvocationComponent createInternalFilteredGuardedInvocationComponent(
+            final MethodHandle invocation, final LinkerServices linkerServices) {
+        return new GuardedInvocationComponent(linkerServices.filterInternalObjects(invocation));
+    }
+
+    private static GuardedInvocationComponent createInternalFilteredGuardedInvocationComponent(
+            final MethodHandle invocation, final MethodHandle guard, final Class<?> validatorClass,
+            final ValidationType validationType, final LinkerServices linkerServices) {
+        return new GuardedInvocationComponent(linkerServices.filterInternalObjects(invocation), guard,
+                validatorClass, validationType);
     }
 
     private static String getFixedKey(final CallSiteDescriptor callSiteDescriptor) {
@@ -381,37 +403,38 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         // dealing with an array, or a list or map, but hey...
         // Note that for arrays and lists, using LinkerServices.asType() will ensure that any language specific linkers
         // in use will get a chance to perform any (if there's any) implicit conversion to integer for the indices.
-        final boolean isMap;
+        final CollectionType collectionType;
         if(declaredType.isArray()) {
-            gic = new GuardedInvocationComponent(MethodHandles.arrayElementSetter(declaredType));
-            isMap = false;
+            gic = createInternalFilteredGuardedInvocationComponent(MethodHandles.arrayElementSetter(declaredType), linkerServices);
+            collectionType = CollectionType.ARRAY;
         } else if(List.class.isAssignableFrom(declaredType)) {
-            gic = new GuardedInvocationComponent(SET_LIST_ELEMENT);
-            isMap = false;
+            gic = createInternalFilteredGuardedInvocationComponent(SET_LIST_ELEMENT, linkerServices);
+            collectionType = CollectionType.LIST;
         } else if(Map.class.isAssignableFrom(declaredType)) {
-            gic = new GuardedInvocationComponent(PUT_MAP_ELEMENT);
-            isMap = true;
+            gic = createInternalFilteredGuardedInvocationComponent(PUT_MAP_ELEMENT, linkerServices);
+            collectionType = CollectionType.MAP;
         } else if(clazz.isArray()) {
-            gic = getClassGuardedInvocationComponent(MethodHandles.arrayElementSetter(clazz), callSiteType);
-            isMap = false;
+            gic = getClassGuardedInvocationComponent(linkerServices.filterInternalObjects(
+                    MethodHandles.arrayElementSetter(clazz)), callSiteType);
+            collectionType = CollectionType.ARRAY;
         } else if(List.class.isAssignableFrom(clazz)) {
-            gic = new GuardedInvocationComponent(SET_LIST_ELEMENT, Guards.asType(LIST_GUARD, callSiteType), List.class,
-                    ValidationType.INSTANCE_OF);
-            isMap = false;
+            gic = createInternalFilteredGuardedInvocationComponent(SET_LIST_ELEMENT, Guards.asType(LIST_GUARD, callSiteType), List.class, ValidationType.INSTANCE_OF,
+                    linkerServices);
+            collectionType = CollectionType.LIST;
         } else if(Map.class.isAssignableFrom(clazz)) {
-            gic = new GuardedInvocationComponent(PUT_MAP_ELEMENT, Guards.asType(MAP_GUARD, callSiteType), Map.class,
-                    ValidationType.INSTANCE_OF);
-            isMap = true;
+            gic = createInternalFilteredGuardedInvocationComponent(PUT_MAP_ELEMENT, Guards.asType(MAP_GUARD, callSiteType),
+                    Map.class, ValidationType.INSTANCE_OF, linkerServices);
+            collectionType = CollectionType.MAP;
         } else {
             // Can't set elements for objects that are neither arrays, nor list, nor maps.
             gic = null;
-            isMap = false;
+            collectionType = null;
         }
 
         // In contrast to, say, getElementGetter, we only compute the nextComponent if the target object is not a map,
         // as maps will always succeed in setting the element and will never need to fall back to the next component
         // operation.
-        final GuardedInvocationComponent nextComponent = isMap ? null : getGuardedInvocationComponent(
+        final GuardedInvocationComponent nextComponent = collectionType == CollectionType.MAP ? null : getGuardedInvocationComponent(
                 callSiteDescriptor, linkerServices, operations);
         if(gic == null) {
             return nextComponent;
@@ -421,7 +444,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         final String fixedKey = getFixedKey(callSiteDescriptor);
         // Convert the key to a number if we're working with a list or array
         final Object typedFixedKey;
-        if(!isMap && fixedKey != null) {
+        if(collectionType != CollectionType.MAP && fixedKey != null) {
             typedFixedKey = convertKeyToInteger(fixedKey, linkerServices);
             if(typedFixedKey == null) {
                 // key is not numeric, it can never succeed
@@ -439,7 +462,8 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
             return gic.replaceInvocation(binder.bind(invocation));
         }
 
-        final MethodHandle checkGuard = convertArgToInt(invocation == SET_LIST_ELEMENT ? RANGE_CHECK_LIST :
+        assert collectionType == CollectionType.LIST || collectionType == CollectionType.ARRAY;
+        final MethodHandle checkGuard = convertArgToInt(collectionType == CollectionType.LIST ? RANGE_CHECK_LIST :
             RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
         final MethodPair matchedInvocations = matchReturnTypes(binder.bind(invocation),
                 nextComponent.getGuardedInvocation().getInvocation());

@@ -1,6 +1,10 @@
-import java.util.HashSet;
-import java.util.Set;
+import org.testng.annotations.Test;
+import org.testng.Assert;
+
+import com.oracle.java.testlibrary.OutputAnalyzer;
 import com.oracle.java.testlibrary.Platform;
+import com.oracle.java.testlibrary.dcmd.CommandExecutor;
+import com.oracle.java.testlibrary.dcmd.JMXExecutor;
 
 /*
  * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
@@ -29,14 +33,15 @@ import com.oracle.java.testlibrary.Platform;
  * @test
  * @summary Test of VM.dynlib diagnostic command via MBean
  * @library /testlibrary
- * @build com.oracle.java.testlibrary.* DcmdUtil
- * @run main DynLibDcmdTest
+ * @build com.oracle.java.testlibrary.*
+ * @build com.oracle.java.testlibrary.dcmd.*
+ * @run testng DynLibsTest
  */
 
-public class DynLibDcmdTest {
+public class DynLibsTest {
 
-    public static void main(String[] args) throws Exception {
-        String result = DcmdUtil.executeDcmd("VM.dynlibs");
+    public void run(CommandExecutor executor) {
+        OutputAnalyzer output = executor.execute("VM.dynlibs");
 
         String osDependentBaseString = null;
         if (Platform.isAix()) {
@@ -52,18 +57,16 @@ public class DynLibDcmdTest {
         }
 
         if (osDependentBaseString == null) {
-            throw new Exception("Unsupported OS");
+            Assert.fail("Unsupported OS");
         }
 
-        Set<String> expectedContent = new HashSet<>();
-        expectedContent.add(String.format(osDependentBaseString, "jvm"));
-        expectedContent.add(String.format(osDependentBaseString, "java"));
-        expectedContent.add(String.format(osDependentBaseString, "management"));
+        output.shouldContain(String.format(osDependentBaseString, "jvm"));
+        output.shouldContain(String.format(osDependentBaseString, "java"));
+        output.shouldContain(String.format(osDependentBaseString, "management"));
+    }
 
-        for(String expected : expectedContent) {
-            if (!result.contains(expected)) {
-                throw new Exception("Dynamic library list output did not contain the expected string: '" + expected + "'");
-            }
-        }
+    @Test
+    public void jmx() {
+        run(new JMXExecutor());
     }
 }

@@ -42,7 +42,6 @@
     var Arrays = Java.type("java.util.Arrays");
     var BufferedReader = Java.type("java.io.BufferedReader");
     var InputStreamReader = Java.type("java.io.InputStreamReader");
-    var List = Java.type("java.util.List");
     var ProcessBuilder = Java.type("java.lang.ProcessBuilder");
     var System = Java.type("java.lang.System");
 
@@ -67,7 +66,7 @@
                     }
                 } else {
                     // build child process and start it!
-                    new ProcessBuilder(Java.to(args, List))
+                    new ProcessBuilder(Arrays.asList(args))
                         .inheritIO()
                         .start()
                         .waitFor();

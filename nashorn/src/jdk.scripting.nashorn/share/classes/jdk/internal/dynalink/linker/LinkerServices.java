@@ -181,6 +181,15 @@ public interface LinkerServices {
     public Comparison compareConversion(Class<?> sourceType, Class<?> targetType1, Class<?> targetType2);
 
     /**
+     * Modifies the method handle so that any parameters that can receive potentially internal language runtime objects
+     * will have a filter added on them to prevent them from escaping, potentially by wrapping them.
+     * It can also potentially add an unwrapping filter to the return value.
+     * @param target the target method handle
+     * @return a method handle with parameters and/or return type potentially filtered for wrapping and unwrapping.
+     */
+    public MethodHandle filterInternalObjects(final MethodHandle target);
+
+    /**
      * If we could just use Java 8 constructs, then {@code asTypeSafeReturn} would be a method with default
      * implementation. Since we can't do that, we extract common default implementations into this static class.
      */

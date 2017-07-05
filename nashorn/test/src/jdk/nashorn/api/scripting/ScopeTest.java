@@ -706,4 +706,74 @@ public class ScopeTest {
         }
     }
 
+    // @bug 8071678: NashornScriptEngine returns javax.script.ScriptContext instance
+    // with get/setAttribute methods insonsistent for GLOBAL_SCOPE
+    @Test
+    public void testGlobalScopeSearch() throws Exception {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptContext c = e.getContext();
+        c.setAttribute("name1234", "value", ScriptContext.GLOBAL_SCOPE);
+        assertEquals(c.getAttribute("name1234"), "value");
+        assertEquals(c.getAttributesScope("name1234"),
+            ScriptContext.GLOBAL_SCOPE);
+    }
+
+    // @bug 8071594: NashornScriptEngine returns javax.script.ScriptContext instance
+    // which doesn't completely conform to the spec regarding exceptions throwing
+    @Test
+    public void testScriptContext_NPE_IAE() throws Exception {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final ScriptContext c = e.getContext();
+        try {
+            c.getAttribute("");
+            throw new AssertionError("should have thrown IAE");
+        } catch (IllegalArgumentException iae1) {}
+
+        try {
+            c.getAttribute(null);
+            throw new AssertionError("should have thrown NPE");
+        } catch (NullPointerException npe1) {}
+
+        try {
+            c.getAttribute("", ScriptContext.ENGINE_SCOPE);
+            throw new AssertionError("should have thrown IAE");
+        } catch (IllegalArgumentException iae2) {}
+
+        try {
+            c.getAttribute(null, ScriptContext.ENGINE_SCOPE);
+            throw new AssertionError("should have thrown NPE");
+        } catch (NullPointerException npe2) {}
+
+        try {
+            c.removeAttribute("", ScriptContext.ENGINE_SCOPE);
+            throw new AssertionError("should have thrown IAE");
+        } catch (IllegalArgumentException iae3) {}
+
+        try {
+            c.removeAttribute(null, ScriptContext.ENGINE_SCOPE);
+            throw new AssertionError("should have thrown NPE");
+        } catch (NullPointerException npe3) {}
+
+        try {
+            c.setAttribute("", "value", ScriptContext.ENGINE_SCOPE);
+            throw new AssertionError("should have thrown IAE");
+        } catch (IllegalArgumentException iae4) {}
+
+        try {
+            c.setAttribute(null, "value", ScriptContext.ENGINE_SCOPE);
+            throw new AssertionError("should have thrown NPE");
+        } catch (NullPointerException npe4) {}
+
+        try {
+            c.getAttributesScope("");
+            throw new AssertionError("should have thrown IAE");
+        } catch (IllegalArgumentException iae5) {}
+
+        try {
+            c.getAttributesScope(null);
+            throw new AssertionError("should have thrown NPE");
+        } catch (NullPointerException npe5) {}
+    }
 }
