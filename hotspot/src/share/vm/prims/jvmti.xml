@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <?xml-stylesheet type="text/xsl" href="jvmti.xsl"?>
 <!--
- Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -358,7 +358,7 @@
 <specification label="JVM(TM) Tool Interface"
         majorversion="1"
         minorversion="2"
-        microversion="1">
+        microversion="2">
   <title subtitle="Version">
     <tm>JVM</tm> Tool Interface
   </title>
@@ -405,7 +405,7 @@
     interfaces are more appropriate than <jvmti/> for many tools. 
     For more information on the Java Platform Debugger Architecture, 
     see the 
-    <externallink id="http://java.sun.com/products/jpda/">Java 
+    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jpda/architecture.html">Java 
       Platform Debugger Architecture website</externallink>. 
   </intro>
 
@@ -693,7 +693,7 @@ Agent_OnUnload(JavaVM *vm)</example>
     An agent creates a <jvmti/> environment 
     by passing a <jvmti/> version 
     as the interface ID to the JNI Invocation API function 
-    <externallink id="http://java.sun.com/javase/6/docs/technotes/guides/jni/spec/invocation.html#GetEnv"><code>GetEnv</code></externallink>.
+    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/invocation.html#GetEnv"><code>GetEnv</code></externallink>.
     See <internallink id="jvmtiEnvAccess">Accessing <jvmti/> Functions</internallink>
     for more details on the creation and use of 
     <jvmti/> environments.
@@ -797,7 +797,7 @@ Agent_OnUnload(JavaVM *vm)</example>
     Modified UTF-8 differs 
     from standard UTF-8 in the representation of supplementary characters 
     and of the null character. See the
-    <externallink id="http://java.sun.com/javase/6/docs/technotes/guides/jni/spec/types.html#wp16542">
+    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/types.html#wp16542">
       Modified UTF-8 Strings</externallink>
     section of the JNI specification for details.
   </intro>
@@ -827,7 +827,7 @@ Agent_OnUnload(JavaVM *vm)</example>
     by calling <jvmti/> functions. 
     Access to <jvmti/> functions is by use of an interface pointer
     in the same manner as 
-    <externallink id="http://java.sun.com/javase/6/docs/technotes/guides/jni/spec/design.html">Java 
+    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html">Java 
       Native Interface (JNI) functions</externallink> are accessed.
     The <jvmti/> interface pointer is called the 
     <i>environment pointer</i>.
@@ -919,7 +919,7 @@ jvmtiEnv *jvmti;
     local references--these local references are created 
     during the <jvmti/> call.
     Local references are a resource that must be managed (see the 
-    <externallink id="http://java.sun.com/javase/6/docs/guide/jni/spec/functions.html#wp18654">JNI Documentation</externallink>).  
+    <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html#wp18654">JNI Documentation</externallink>).  
     When threads return from native code all local references
     are freed.  Note that some threads, including typical
     agent threads, will never return from native code.
@@ -954,7 +954,7 @@ jvmtiEnv *jvmti;
       <jvmti/> function.
       See the
       <externallink 
-        id="http://java.sun.com/javase/6/docs/technotes/guides/jni/spec/design.html#wp770"
+        id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html#wp770"
              >Java Exceptions</externallink>
       section of the JNI specification for information on handling exceptions.
     </intro>
@@ -2024,7 +2024,7 @@ jvmtiEnv *jvmti;
 	<p/>
 	Upon execution of <code>proc</code>, the new thread will be attached to the
 	VM--see the JNI documentation on 
-	<externallink id="http://java.sun.com/javase/6/docs/technotes/guides/jni/spec/invocation.html#wp1060"
+	<externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/invocation.html#wp1060"
 		      >Attaching to the VM</externallink>.
       </description>
       <origin>jvmdiClone</origin>
@@ -4010,7 +4010,7 @@ class C2 extends C1 implements I2 {
 	  </inptr>
 	  <description>
 	    Details about the reference. 
-            Set when the <paramlink id="reference_kind"/> is
+            Set when the <datalink id="jvmtiHeapReferenceCallback.reference_kind">reference_kind</datalink> is
             <datalink id="JVMTI_HEAP_REFERENCE_FIELD"/>,
 	    <datalink id="JVMTI_HEAP_REFERENCE_STATIC_FIELD"/>,
 	    <datalink id="JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT"/>,
@@ -4378,7 +4378,7 @@ class C2 extends C1 implements I2 {
         do not control which objects are visited but they do control which
         objects and primitive values are reported by the callbacks.
         For example, if the only callback that was set is
-        <paramlink id="array_primitive_value_callback"/> and <code>klass</code>
+        <fieldlink id="array_primitive_value_callback" struct="jvmtiHeapCallbacks"/> and <code>klass</code>
         is set to the array of bytes class, then only arrays of byte will be
         reported.  
         The table below summarizes this:
@@ -4414,7 +4414,7 @@ class C2 extends C1 implements I2 {
           </tr>
           <tr>
             <th align="left">
-              <fieldlink id="object_reference_callback" struct="jvmtiHeapCallbacks"/>
+              <fieldlink id="array_primitive_value_callback" struct="jvmtiHeapCallbacks"/>
               in <paramlink id="callbacks"/> set
             </th>
             <td>
@@ -4570,7 +4570,7 @@ class C2 extends C1 implements I2 {
         do not control which objects are visited but they do control which
         objects and primitive values are reported by the callbacks.
         For example, if the only callback that was set is
-        <paramlink id="array_primitive_value_callback"/> and <code>klass</code>
+        <fieldlink id="array_primitive_value_callback" struct="jvmtiHeapCallbacks"/> and <code>klass</code>
         is set to the array of bytes class, then only arrays of byte will be
         reported. The table below summarizes this (contrast this with 
         <functionlink id="FollowReferences"/>):
@@ -4606,7 +4606,7 @@ class C2 extends C1 implements I2 {
           </tr>
           <tr>
             <th align="left">
-              <fieldlink id="object_callback" struct="jvmtiHeapCallbacks"/>
+              <fieldlink id="array_primitive_value_callback" struct="jvmtiHeapCallbacks"/>
               in <paramlink id="callbacks"/> set
             </th>
             <td>
@@ -6478,7 +6478,7 @@ class C2 extends C1 implements I2 {
       <synopsis>Get Class Signature</synopsis>
       <description>
         For the class indicated by <code>klass</code>, return the 
-        <externallink id="http://java.sun.com/javase/6/docs/guide/jni/spec/types.html#wp16432">JNI 
+        <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/types.html#wp16432">JNI 
             type signature</externallink> 
         and the generic signature of the class.
         For example, <code>java.util.List</code> is <code>"Ljava/util/List;"</code>
@@ -8763,7 +8763,7 @@ method(wrapped_foo) -> nativeImplementation(foo)</example>
       Provides the ability to intercept and resend 
       Java Native Interface (JNI) function calls
       by manipulating the JNI function table.
-      See <externallink id="http://java.sun.com/javase/6/docs/guide/jni/spec/functions.html">JNI
+      See <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html">JNI
 	Functions</externallink> in the <i>Java Native Interface Specification</i>.
       <p/>
       The following example illustrates intercepting the 
@@ -10446,7 +10446,7 @@ myInit() {
 	  for a class. The segment is typically a directory or JAR file.
 	  <p/>	  
 	  In the live phase the <paramlink id="segment"/> may be used to specify any platform-dependent
-	  path to a <externallink id="http://java.sun.com/javase/6/docs/guide/jar/jar.html">
+	  path to a <externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jar/jar.html">
 	  JAR file</externallink>. The agent should take care that the JAR file does not
           contain any classes or resources other than those to be defined by the bootstrap
           class loader for the purposes of instrumentation.
@@ -10494,7 +10494,7 @@ myInit() {
 	  for a class. The segment is typically a directory or JAR file.
 	  <p/>	  
 	  In the live phase the <paramlink id="segment"/> is a platform-dependent path to a <externallink 
-	  id="http://java.sun.com/javase/6/docs/guide/jar/jar.html">JAR file</externallink> to be
+	  id="http://docs.oracle.com/javase/7/docs/technotes/guides/jar/jar.html">JAR file</externallink> to be
 	  searched after the system class loader unsuccessfully searches for a class. The agent should
           take care that the JAR file does not contain any classes or resources other than those to be
           defined by the system class loader for the purposes of instrumentation.
@@ -13128,6 +13128,12 @@ myInit() {
 	Unsigned 8 bits.
       </description>
     </basetype>
+    <basetype id="jchar">
+      <description>
+	Holds a Java programming language <code>char</code>.
+	Unsigned 16 bits.
+      </description>
+    </basetype>
     <basetype id="jint">
       <description>
 	Holds a Java programming language <code>int</code>. 
@@ -13285,7 +13291,7 @@ typedef void (JNICALL *jvmtiEventVMInit)
       <description>
 	Typedef for the JNI function table <code>JNINativeInterface</code>
 	defined in the 
-	<externallink id="http://java.sun.com/javase/6/docs/guide/jni/spec/functions.html#wp23720">JNI Specification</externallink>.
+	<externallink id="http://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/functions.html#wp23720">JNI Specification</externallink>.
 	The JNI reference implementation defines this with an underscore.
       </description>
     </basetype>
@@ -14251,6 +14257,9 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="6 August 2006" version="1.1.102">
       Add ResourceExhaustedEvent.
+  </change>
+  <change date="11 October 2012" version="1.2.2">
+      Fixed the "HTTP" and "Missing Anchor" errors reported by the LinkCheck tool.
   </change>
 </changehistory>
 

@@ -29,13 +29,4 @@ FILES_java = \
         sun/util/resources/LocaleNamesBundle.java \
         sun/util/resources/TimeZoneNamesBundle.java \
         sun/util/resources/TimeZoneNames.java \
-        sun/util/resources/de/TimeZoneNames_de.java \
-        sun/util/resources/en/TimeZoneNames_en.java \
-        sun/util/resources/en/TimeZoneNames_en_CA.java \
-        sun/util/resources/en/TimeZoneNames_en_GB.java \
-        sun/util/resources/en/TimeZoneNames_en_IE.java \
-        sun/util/resources/es/TimeZoneNames_es.java \
-        sun/util/resources/fr/TimeZoneNames_fr.java \
-        sun/util/resources/it/TimeZoneNames_it.java \
-        sun/util/resources/pt/TimeZoneNames_pt_BR.java \
-        sun/util/resources/sv/TimeZoneNames_sv.java
+        sun/util/resources/en/TimeZoneNames_en.java

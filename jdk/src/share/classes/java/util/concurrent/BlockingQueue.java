@@ -127,7 +127,7 @@ import java.util.Queue;
  * Usage example, based on a typical producer-consumer scenario.
  * Note that a <tt>BlockingQueue</tt> can safely be used with multiple
  * producers and multiple consumers.
- * <pre>
+ *  <pre> {@code
  * class Producer implements Runnable {
  *   private final BlockingQueue queue;
  *   Producer(BlockingQueue q) { queue = q; }
@@ -160,8 +160,7 @@ import java.util.Queue;
  *     new Thread(c1).start();
  *     new Thread(c2).start();
  *   }
- * }
- * </pre>
+ * }}</pre>
  *
  * <p>Memory consistency effects: As with other concurrent
  * collections, actions in a thread prior to placing an object into a

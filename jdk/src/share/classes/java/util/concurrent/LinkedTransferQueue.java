@@ -695,7 +695,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @return matched item, or e if unmatched on interrupt or timeout
      */
     private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
-        long lastTime = timed ? System.nanoTime() : 0L;
+        final long deadline = timed ? System.nanoTime() + nanos : 0L;
         Thread w = Thread.currentThread();
         int spins = -1; // initialized after first item and cancel checks
         ThreadLocalRandom randomYields = null; // bound if needed
@@ -726,10 +726,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 s.waiter = w;                 // request unpark then recheck
             }
             else if (timed) {
-                long now = System.nanoTime();
-                if ((nanos -= now - lastTime) > 0)
+                nanos = deadline - System.nanoTime();
+                if (nanos > 0L)
                     LockSupport.parkNanos(this, nanos);
-                lastTime = now;
             }
             else {
                 LockSupport.park(this);
@@ -1294,11 +1293,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Saves the state to a stream (that is, serializes it).
+     * Saves this queue to a stream (that is, serializes it).
      *
      * @serialData All of the elements (each an {@code E}) in
      * the proper order, followed by a null
-     * @param s the stream
      */
     private void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
@@ -1310,10 +1308,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Reconstitutes the Queue instance from a stream (that is,
-     * deserializes it).
-     *
-     * @param s the stream
+     * Reconstitutes this queue from a stream (that is, deserializes it).
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {

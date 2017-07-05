@@ -77,14 +77,14 @@ import java.util.concurrent.TimeUnit;
  * methods and statements. In most cases, the following idiom
  * should be used:
  *
- * <pre><tt>     Lock l = ...;
- *     l.lock();
- *     try {
- *         // access the resource protected by this lock
- *     } finally {
- *         l.unlock();
- *     }
- * </tt></pre>
+ *  <pre> {@code
+ * Lock l = ...;
+ * l.lock();
+ * try {
+ *   // access the resource protected by this lock
+ * } finally {
+ *   l.unlock();
+ * }}</pre>
  *
  * When locking and unlocking occur in different scopes, care must be
  * taken to ensure that all code that is executed while the lock is
@@ -120,8 +120,9 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>All {@code Lock} implementations <em>must</em> enforce the same
  * memory synchronization semantics as provided by the built-in monitor
- * lock, as described in section 17.4 of
- * <cite>The Java&trade; Language Specification</cite>:
+ * lock, as described in
+ * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/index.html">
+ * The Java Language Specification, Third Edition (17.4 Memory Model)</a>:
  * <ul>
  * <li>A successful {@code lock} operation has the same memory
  * synchronization effects as a successful <em>Lock</em> action.
@@ -239,18 +240,18 @@ public interface Lock {
      * immediately with the value {@code false}.
      *
      * <p>A typical usage idiom for this method would be:
-     * <pre>
-     *      Lock lock = ...;
-     *      if (lock.tryLock()) {
-     *          try {
-     *              // manipulate protected state
-     *          } finally {
-     *              lock.unlock();
-     *          }
-     *      } else {
-     *          // perform alternative actions
-     *      }
-     * </pre>
+     *  <pre> {@code
+     * Lock lock = ...;
+     * if (lock.tryLock()) {
+     *   try {
+     *     // manipulate protected state
+     *   } finally {
+     *     lock.unlock();
+     *   }
+     * } else {
+     *   // perform alternative actions
+     * }}</pre>
+     *
      * This usage ensures that the lock is unlocked if it was acquired, and
      * doesn't try to unlock if the lock was not acquired.
      *

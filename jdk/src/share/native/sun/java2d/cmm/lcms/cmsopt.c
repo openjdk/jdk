@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2011 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -223,6 +223,12 @@ cmsBool PreOptimize(cmsPipeline* Lut)
         // Remove V2 to V4 followed by V4 to V2
         Opt |= _Remove2Op(Lut, cmsSigLabV2toV4, cmsSigLabV4toV2);
 
+        // Remove float pcs Lab conversions
+        Opt |= _Remove2Op(Lut, cmsSigLab2FloatPCS, cmsSigFloatPCS2Lab);
+
+        // Remove float pcs Lab conversions
+        Opt |= _Remove2Op(Lut, cmsSigXYZ2FloatPCS, cmsSigFloatPCS2XYZ);
+
         if (Opt) AnyOpt = TRUE;
 
     } while (Opt);
@@ -298,7 +304,7 @@ Prelin16Data* PrelinOpt16alloc(cmsContext ContextID,
                                int nOutputs, cmsToneCurve** Out )
 {
     int i;
-    Prelin16Data* p16 = (Prelin16Data*) _cmsMallocZero(ContextID, sizeof(Prelin16Data));
+    Prelin16Data* p16 = _cmsMallocZero(ContextID, sizeof(Prelin16Data));
     if (p16 == NULL) return NULL;
 
     p16 ->nInputs = nInputs;
@@ -411,17 +417,17 @@ cmsBool  PatchLUT(cmsStage* CLUT, cmsUInt16Number At[], cmsUInt16Number Value[],
         return FALSE;
     }
 
-    px = ((cmsFloat64Number) At[0] * (p16->Domain[0])) / 65535.0;
-    py = ((cmsFloat64Number) At[1] * (p16->Domain[1])) / 65535.0;
-    pz = ((cmsFloat64Number) At[2] * (p16->Domain[2])) / 65535.0;
-    pw = ((cmsFloat64Number) At[3] * (p16->Domain[3])) / 65535.0;
-
-    x0 = (int) floor(px);
-    y0 = (int) floor(py);
-    z0 = (int) floor(pz);
-    w0 = (int) floor(pw);
-
     if (nChannelsIn == 4) {
+
+        px = ((cmsFloat64Number) At[0] * (p16->Domain[0])) / 65535.0;
+        py = ((cmsFloat64Number) At[1] * (p16->Domain[1])) / 65535.0;
+        pz = ((cmsFloat64Number) At[2] * (p16->Domain[2])) / 65535.0;
+        pw = ((cmsFloat64Number) At[3] * (p16->Domain[3])) / 65535.0;
+
+        x0 = (int) floor(px);
+        y0 = (int) floor(py);
+        z0 = (int) floor(pz);
+        w0 = (int) floor(pw);
 
         if (((px - x0) != 0) ||
             ((py - y0) != 0) ||
@@ -429,23 +435,35 @@ cmsBool  PatchLUT(cmsStage* CLUT, cmsUInt16Number At[], cmsUInt16Number Value[],
             ((pw - w0) != 0)) return FALSE; // Not on exact node
 
         index = p16 -> opta[3] * x0 +
-            p16 -> opta[2] * y0 +
-            p16 -> opta[1] * z0 +
-            p16 -> opta[0] * w0;
+                p16 -> opta[2] * y0 +
+                p16 -> opta[1] * z0 +
+                p16 -> opta[0] * w0;
     }
     else
         if (nChannelsIn == 3) {
+
+            px = ((cmsFloat64Number) At[0] * (p16->Domain[0])) / 65535.0;
+            py = ((cmsFloat64Number) At[1] * (p16->Domain[1])) / 65535.0;
+            pz = ((cmsFloat64Number) At[2] * (p16->Domain[2])) / 65535.0;
+
+            x0 = (int) floor(px);
+            y0 = (int) floor(py);
+            z0 = (int) floor(pz);
 
             if (((px - x0) != 0) ||
                 ((py - y0) != 0) ||
                 ((pz - z0) != 0)) return FALSE;  // Not on exact node
 
             index = p16 -> opta[2] * x0 +
-                p16 -> opta[1] * y0 +
-                p16 -> opta[0] * z0;
+                    p16 -> opta[1] * y0 +
+                    p16 -> opta[0] * z0;
         }
         else
             if (nChannelsIn == 1) {
+
+                px = ((cmsFloat64Number) At[0] * (p16->Domain[0])) / 65535.0;
+
+                x0 = (int) floor(px);
 
                 if (((px - x0) != 0)) return FALSE; // Not on exact node
 
@@ -462,13 +480,15 @@ cmsBool  PatchLUT(cmsStage* CLUT, cmsUInt16Number At[], cmsUInt16Number Value[],
             return TRUE;
 }
 
-// Auxiliar, to see if two values are equal.
+// Auxiliar, to see if two values are equal or very different
 static
 cmsBool WhitesAreEqual(int n, cmsUInt16Number White1[], cmsUInt16Number White2[] )
 {
     int i;
 
     for (i=0; i < n; i++) {
+
+        if (abs(White1[i] - White2[i]) > 0xf000) return TRUE;  // Values are so extremly different that the fixup should be avoided
         if (White1[i] != White2[i]) return FALSE;
     }
     return TRUE;
@@ -491,6 +511,8 @@ cmsBool FixWhiteMisalignment(cmsPipeline* Lut, cmsColorSpaceSignature EntryColor
         &WhitePointOut, NULL, &nOuts)) return FALSE;
 
     // It needs to be fixed?
+    if (Lut ->InputChannels != nIns) return FALSE;
+    if (Lut ->OutputChannels != nOuts) return FALSE;
 
     cmsPipelineEval16(WhitePointIn, ObtainedOut, Lut);
 
@@ -555,6 +577,7 @@ cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
 {
     cmsPipeline* Src;
     cmsPipeline* Dest;
+    cmsStage* mpe;
     cmsStage* CLUT;
     cmsStage *KeepPreLin = NULL, *KeepPostLin = NULL;
     int nGridPoints;
@@ -579,6 +602,13 @@ cmsBool OptimizeByResampling(cmsPipeline** Lut, cmsUInt32Number Intent, cmsUInt3
         nGridPoints = 2;
 
     Src = *Lut;
+
+   // Named color pipelines cannot be optimized either
+   for (mpe = cmsPipelineGetPtrToFirstStage(Src);
+         mpe != NULL;
+         mpe = cmsStageNext(mpe)) {
+            if (cmsStageType(mpe) == cmsSigNamedColorElemType) return FALSE;
+    }
 
     // Allocate an empty LUT
     Dest =  cmsPipelineAlloc(Src ->ContextID, Src ->InputChannels, Src ->OutputChannels);
@@ -817,8 +847,8 @@ void PrelinEval8(register const cmsUInt16Number Input[],
     cmsUInt8Number         r, g, b;
     cmsS15Fixed16Number    rx, ry, rz;
     cmsS15Fixed16Number    c0, c1, c2, c3, Rest;
-    int        OutChan;
-    register   cmsS15Fixed16Number    X0, X1, Y0, Y1, Z0, Z1;
+    int                    OutChan;
+    register cmsS15Fixed16Number    X0, X1, Y0, Y1, Z0, Z1;
     Prelin8Data* p8 = (Prelin8Data*) D;
     register const cmsInterpParams* p = p8 ->p;
     int                    TotalOut = p -> nOutputs;
@@ -892,14 +922,34 @@ void PrelinEval8(register const cmsUInt16Number Input[],
                             }
 
 
-                            Rest = c1 * rx + c2 * ry + c3 * rz;
-
-                            Output[OutChan] = (cmsUInt16Number)c0 + ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest));
+                            Rest = c1 * rx + c2 * ry + c3 * rz + 0x8001;
+                            Output[OutChan] = (cmsUInt16Number)c0 + ((Rest + (Rest>>16))>>16);
 
     }
 }
 
 #undef DENS
+
+
+// Curves that contain wide empty areas are not optimizeable
+static
+cmsBool IsDegenerated(const cmsToneCurve* g)
+{
+    int i, Zeros = 0, Poles = 0;
+    int nEntries = g ->nEntries;
+
+    for (i=0; i < nEntries; i++) {
+
+        if (g ->Table16[i] == 0x0000) Zeros++;
+        if (g ->Table16[i] == 0xffff) Poles++;
+    }
+
+    if (Zeros == 1 && Poles == 1) return FALSE;  // For linear tables
+    if (Zeros > (nEntries / 4)) return TRUE;  // Degenerated, mostly zeros
+    if (Poles > (nEntries / 4)) return TRUE;  // Degenerated, mostly poles
+
+    return FALSE;
+}
 
 // --------------------------------------------------------------------------------------------------------------
 // We need xput over here
@@ -917,6 +967,7 @@ cmsBool OptimizeByComputingLinearization(cmsPipeline** Lut, cmsUInt32Number Inte
     cmsStage* OptimizedCLUTmpe;
     cmsColorSpaceSignature ColorSpace, OutputColorSpace;
     cmsStage* OptimizedPrelinMpe;
+    cmsStage* mpe;
     cmsToneCurve**   OptimizedPrelinCurves;
     _cmsStageCLutData*     OptimizedPrelinCLUT;
 
@@ -935,6 +986,14 @@ cmsBool OptimizeByComputingLinearization(cmsPipeline** Lut, cmsUInt32Number Inte
     }
 
     OriginalLut = *Lut;
+
+   // Named color pipelines cannot be optimized either
+   for (mpe = cmsPipelineGetPtrToFirstStage(OriginalLut);
+         mpe != NULL;
+         mpe = cmsStageNext(mpe)) {
+            if (cmsStageType(mpe) == cmsSigNamedColorElemType) return FALSE;
+    }
+
     ColorSpace       = _cmsICCcolorSpace(T_COLORSPACE(*InputFormat));
     OutputColorSpace = _cmsICCcolorSpace(T_COLORSPACE(*OutputFormat));
     nGridPoints      = _cmsReasonableGridpointsByColorspace(ColorSpace, *dwFlags);
@@ -980,6 +1039,9 @@ cmsBool OptimizeByComputingLinearization(cmsPipeline** Lut, cmsUInt32Number Inte
 
         // Exclude if non-monotonic
         if (!cmsIsToneCurveMonotonic(Trans[t]))
+            lIsSuitable = FALSE;
+
+        if (IsDegenerated(Trans[t]))
             lIsSuitable = FALSE;
     }
 
@@ -1413,12 +1475,12 @@ void FillSecondShaper(cmsUInt16Number* Table, cmsToneCurve* Curve, cmsBool Is8Bi
             // first we compute the resulting byte and then we store the byte times
             // 257. This quantization allows to round very quick by doing a >> 8, but
             // since the low byte is always equal to msb, we can do a & 0xff and this works!
-            cmsUInt16Number w = _cmsQuickSaturateWord(Val * 65535.0 + 0.5);
+            cmsUInt16Number w = _cmsQuickSaturateWord(Val * 65535.0);
             cmsUInt8Number  b = FROM_16_TO_8(w);
 
             Table[i] = FROM_8_TO_16(b);
         }
-        else Table[i]  = _cmsQuickSaturateWord(Val * 65535.0 + 0.5);
+        else Table[i]  = _cmsQuickSaturateWord(Val * 65535.0);
     }
 }
 
@@ -1654,4 +1716,6 @@ cmsBool _cmsOptimizePipeline(cmsPipeline**    PtrLut,
     // Only simple optimizations succeeded
     return AnySuccess;
 }
+
+
 

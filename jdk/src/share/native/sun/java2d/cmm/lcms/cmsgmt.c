@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -212,7 +212,6 @@ cmsToneCurve* _cmsBuildKToneCurve(cmsContext        ContextID,
 
     // Make sure it is monotonic
     if (!cmsIsToneCurveMonotonic(KTone)) {
-
         cmsFreeToneCurve(KTone);
         return NULL;
     }
@@ -246,7 +245,7 @@ int GamutSampler(register const cmsUInt16Number In[], register cmsUInt16Number O
     GAMUTCHAIN*  t = (GAMUTCHAIN* ) Cargo;
     cmsCIELab LabIn1, LabOut1;
     cmsCIELab LabIn2, LabOut2;
-    cmsFloat32Number Proof[cmsMAXCHANNELS], Proof2[cmsMAXCHANNELS];
+    cmsUInt16Number Proof[cmsMAXCHANNELS], Proof2[cmsMAXCHANNELS];
     cmsFloat64Number dE1, dE2, ErrorRatio;
 
     // Assume in-gamut by default.
@@ -396,8 +395,8 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
                                               cmsFLAGS_NOCACHE);
 
 
-    // Does create the forward step. Lab double to cmsFloat32Number
-    dwFormat    = (FLOAT_SH(1)|CHANNELS_SH(nChannels)|BYTES_SH(4));
+    // Does create the forward step. Lab double to device
+    dwFormat    = (CHANNELS_SH(nChannels)|BYTES_SH(2));
     Chain.hForward = cmsCreateTransformTHR(ContextID,
                                            hLab, TYPE_Lab_DBL,
                                            hGamut, dwFormat,
@@ -421,10 +420,10 @@ cmsPipeline* _cmsCreateGamutCheckPipeline(cmsContext ContextID,
 
         if (Gamut != NULL) {
 
-            CLUT = cmsStageAllocCLut16bit(ContextID, nGridpoints, nChannels, 1, NULL);
-            cmsPipelineInsertStage(Gamut, cmsAT_BEGIN, CLUT);
+          CLUT = cmsStageAllocCLut16bit(ContextID, nGridpoints, nChannels, 1, NULL);
+          cmsPipelineInsertStage(Gamut, cmsAT_BEGIN, CLUT);
 
-            cmsStageSampleCLut16bit(CLUT, GamutSampler, (void*) &Chain, 0);
+          cmsStageSampleCLut16bit(CLUT, GamutSampler, (void*) &Chain, 0);
         }
     }
     else
