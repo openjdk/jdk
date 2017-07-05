@@ -379,6 +379,10 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private static final long MAX_U4_VALUE = 0xFFFFFFFFL;
     int serialNum = 1;
 
+    public HeapHprofBinWriter() {
+        this.KlassMap = new ArrayList<Klass>();
+    }
+
     public synchronized void write(String fileName) throws IOException {
         // open file stream and create buffered data output stream
         fos = new FileOutputStream(fileName);
@@ -425,6 +429,9 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
 
         // HPROF_LOAD_CLASS records for all classes
         writeClasses();
+
+        // write HPROF_FRAME and HPROF_TRACE records
+        dumpStackTraces();
 
         // write CLASS_DUMP records
         writeClassDumpRecords();
@@ -698,6 +705,67 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
             // no instance fields for array klasses
             out.writeShort((short) 0);
         }
+    }
+
+    private void dumpStackTraces() throws IOException {
+        // write a HPROF_TRACE record without any frames to be referenced as object alloc sites
+        writeHeader(HPROF_TRACE, 3 * (int)INT_SIZE );
+        out.writeInt(DUMMY_STACK_TRACE_ID);
+        out.writeInt(0);                    // thread number
+        out.writeInt(0);                    // frame count
+
+        int frameSerialNum = 0;
+        int numThreads = 0;
+        Threads threads = VM.getVM().getThreads();
+
+        for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
+            Oop threadObj = thread.getThreadObj();
+            if (threadObj != null && !thread.isExiting() && !thread.isHiddenFromExternalView()) {
+
+                // dump thread stack trace
+                ThreadStackTrace st = new ThreadStackTrace(thread);
+                st.dumpStack(-1);
+                numThreads++;
+
+                // write HPROF_FRAME records for this thread's stack trace
+                int depth = st.getStackDepth();
+                int threadFrameStart = frameSerialNum;
+                for (int j=0; j < depth; j++) {
+                    StackFrameInfo frame = st.stackFrameAt(j);
+                    Method m = frame.getMethod();
+                    int classSerialNum = KlassMap.indexOf(m.getMethodHolder()) + 1;
+                    // the class serial number starts from 1
+                    assert classSerialNum > 0:"class not found";
+                    dumpStackFrame(++frameSerialNum, classSerialNum, m, frame.getBCI());
+                }
+
+                // write HPROF_TRACE record for one thread
+                writeHeader(HPROF_TRACE, 3 * (int)INT_SIZE + depth * (int)VM.getVM().getOopSize());
+                int stackSerialNum = numThreads + DUMMY_STACK_TRACE_ID;
+                out.writeInt(stackSerialNum);      // stack trace serial number
+                out.writeInt(numThreads);          // thread serial number
+                out.writeInt(depth);               // frame count
+                for (int j=1; j <= depth; j++) {
+                    writeObjectID(threadFrameStart + j);
+                }
+            }
+        }
+    }
+
+    private void dumpStackFrame(int frameSN, int classSN, Method m, int bci) throws IOException {
+        int lineNumber;
+        if (m.isNative()) {
+            lineNumber = -3; // native frame
+        } else {
+            lineNumber = m.getLineNumberFromBCI(bci);
+        }
+        writeHeader(HPROF_FRAME, 4 * (int)VM.getVM().getOopSize() + 2 * (int)INT_SIZE);
+        writeObjectID(frameSN);                                  // frame serial number
+        writeSymbolID(m.getName());                              // method's name
+        writeSymbolID(m.getSignature());                         // method's signature
+        writeSymbolID(m.getMethodHolder().getSourceFileName());  // source file name
+        out.writeInt(classSN);                                   // class serial number
+        out.writeInt(lineNumber);                                // line number
     }
 
     protected void writeJavaThread(JavaThread jt, int index) throws IOException {
@@ -1030,6 +1098,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                         writeHeader(HPROF_LOAD_CLASS, 2 * (OBJ_ID_SIZE + 4));
                         out.writeInt(serialNum);
                         writeObjectID(clazz);
+                        KlassMap.add(serialNum - 1, k);
                         out.writeInt(DUMMY_STACK_TRACE_ID);
                         writeSymbolID(k.getName());
                         serialNum++;
@@ -1045,6 +1114,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
                         writeHeader(HPROF_LOAD_CLASS, 2 * (OBJ_ID_SIZE + 4));
                         out.writeInt(serialNum);
                         writeObjectID(clazz);
+                        KlassMap.add(serialNum - 1, k);
                         out.writeInt(DUMMY_STACK_TRACE_ID);
                         writeSymbolID(k.getName());
                         serialNum++;
@@ -1157,6 +1227,7 @@ public class HeapHprofBinWriter extends AbstractHeapGraphWriter {
     private Debugger dbg;
     private ObjectHeap objectHeap;
     private SymbolTable symTbl;
+    private ArrayList<Klass> KlassMap;
 
     // oopSize of the debuggee
     private int OBJ_ID_SIZE;

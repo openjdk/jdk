@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -588,19 +588,18 @@ public final class Constructor<T> extends Executable {
     }
 
     @Override
-    void handleParameterNumberMismatch(int resultLength, int numParameters) {
+    boolean handleParameterNumberMismatch(int resultLength, int numParameters) {
         Class<?> declaringClass = getDeclaringClass();
         if (declaringClass.isEnum() ||
             declaringClass.isAnonymousClass() ||
             declaringClass.isLocalClass() )
-            return ; // Can't do reliable parameter counting
+            return false; // Can't do reliable parameter counting
         else {
-            if (!declaringClass.isMemberClass() || // top-level
-                // Check for the enclosing instance parameter for
-                // non-static member classes
-                (declaringClass.isMemberClass() &&
-                 ((declaringClass.getModifiers() & Modifier.STATIC) == 0)  &&
-                 resultLength + 1 != numParameters) ) {
+            if (declaringClass.isMemberClass() &&
+                ((declaringClass.getModifiers() & Modifier.STATIC) == 0)  &&
+                resultLength + 1 == numParameters) {
+                return true;
+            } else {
                 throw new AnnotationFormatError(
                           "Parameter annotations don't match number of parameters");
             }
