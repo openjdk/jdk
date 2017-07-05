@@ -50,9 +50,9 @@ import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
-import java.util.logging.*;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import sun.util.logging.PlatformLogger;
 import sun.awt.SunToolkit;
 
 /**
@@ -67,7 +67,7 @@ import sun.awt.SunToolkit;
 
 public class InputContext extends java.awt.im.InputContext
                           implements ComponentListener, WindowListener {
-    private static final Logger log = Logger.getLogger("sun.awt.im.InputContext");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.im.InputContext");
     // The current input method is represented by two objects:
     // a locator is used to keep information about the selected
     // input method and locale until we actually need a real input
@@ -386,7 +386,7 @@ public class InputContext extends java.awt.im.InputContext
             }
             previousInputMethod = null;
 
-            if (log.isLoggable(Level.FINE)) log.fine("Current client component " + currentClientComponent);
+            if (log.isLoggable(PlatformLogger.FINE)) log.fine("Current client component " + currentClientComponent);
             if (inputMethod instanceof InputMethodAdapter) {
                 ((InputMethodAdapter) inputMethod).setClientComponent(currentClientComponent);
             }
@@ -889,7 +889,7 @@ public class InputContext extends java.awt.im.InputContext
             {inputMethodLocator.getDescriptor().getInputMethodDisplayName(null, Locale.getDefault()),
              throwable.getLocalizedMessage()};
         MessageFormat mf = new MessageFormat(errorTextFormat);
-        Logger logger = Logger.getLogger("sun.awt.im");
+        PlatformLogger logger = PlatformLogger.getLogger("sun.awt.im");
         logger.config(mf.format(args));
     }
 

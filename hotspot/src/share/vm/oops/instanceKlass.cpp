@@ -2152,7 +2152,7 @@ void instanceKlass::add_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
   OsrList_lock->lock_without_safepoint_check();
   assert(n->is_osr_method(), "wrong kind of nmethod");
-  n->set_link(osr_nmethods_head());
+  n->set_osr_link(osr_nmethods_head());
   set_osr_nmethods_head(n);
   // Remember to unlock again
   OsrList_lock->unlock();
@@ -2168,17 +2168,17 @@ void instanceKlass::remove_osr_nmethod(nmethod* n) {
   // Search for match
   while(cur != NULL && cur != n) {
     last = cur;
-    cur = cur->link();
+    cur = cur->osr_link();
   }
   if (cur == n) {
     if (last == NULL) {
       // Remove first element
-      set_osr_nmethods_head(osr_nmethods_head()->link());
+      set_osr_nmethods_head(osr_nmethods_head()->osr_link());
     } else {
-      last->set_link(cur->link());
+      last->set_osr_link(cur->osr_link());
     }
   }
-  n->set_link(NULL);
+  n->set_osr_link(NULL);
   // Remember to unlock again
   OsrList_lock->unlock();
 }
@@ -2195,7 +2195,7 @@ nmethod* instanceKlass::lookup_osr_nmethod(const methodOop m, int bci) const {
       OsrList_lock->unlock();
       return osr;
     }
-    osr = osr->link();
+    osr = osr->osr_link();
   }
   OsrList_lock->unlock();
   return NULL;

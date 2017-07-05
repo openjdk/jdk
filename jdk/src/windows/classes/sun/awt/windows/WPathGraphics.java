@@ -64,7 +64,7 @@ import java.util.Arrays;
 import sun.font.CharToGlyphMapper;
 import sun.font.CompositeFont;
 import sun.font.Font2D;
-import sun.font.FontManager;
+import sun.font.FontUtilities;
 import sun.font.PhysicalFont;
 import sun.font.TrueTypeFont;
 
@@ -119,6 +119,7 @@ class WPathGraphics extends PathGraphics {
      *                       this graphics context.
      * @since      JDK1.0
      */
+    @Override
     public Graphics create() {
 
         return new WPathGraphics((Graphics2D) getDelegate().create(),
@@ -143,6 +144,7 @@ class WPathGraphics extends PathGraphics {
      * @see #setClip
      * @see #setComposite
      */
+    @Override
     public void draw(Shape s) {
 
         Stroke stroke = getStroke();
@@ -250,10 +252,12 @@ class WPathGraphics extends PathGraphics {
      * @see         java.awt.Graphics#drawChars
      * @since       JDK1.0
      */
+    @Override
     public void drawString(String str, int x, int y) {
         drawString(str, (float) x, (float) y);
     }
 
+    @Override
      public void drawString(String str, float x, float y) {
          drawString(str, x, y, getFont(), getFontRenderContext(), 0f);
      }
@@ -270,6 +274,7 @@ class WPathGraphics extends PathGraphics {
      * the default render context (as canDrawStringToWidth() will return
      * false. That is why it ignores the frc and width arguments.
      */
+    @Override
     protected int platformFontCount(Font font, String str) {
 
         AffineTransform deviceTransform = getTransform();
@@ -294,7 +299,7 @@ class WPathGraphics extends PathGraphics {
          * fail that case. Just do a quick check whether its a TrueTypeFont
          * - ie not a Type1 font etc, and let drawString() resolve the rest.
          */
-        Font2D font2D = FontManager.getFont2D(font);
+        Font2D font2D = FontUtilities.getFont2D(font);
         if (font2D instanceof CompositeFont ||
             font2D instanceof TrueTypeFont) {
             return 1;
@@ -320,14 +325,14 @@ class WPathGraphics extends PathGraphics {
      */
     private boolean strNeedsTextLayout(String str, Font font) {
         char[] chars = str.toCharArray();
-        boolean isComplex = FontManager.isComplexText(chars, 0, chars.length);
+        boolean isComplex = FontUtilities.isComplexText(chars, 0, chars.length);
         if (!isComplex) {
             return false;
         } else if (!useGDITextLayout) {
             return true;
         } else {
             if (preferGDITextLayout ||
-                (isXP() && FontManager.textLayoutIsCompatible(font))) {
+                (isXP() && FontUtilities.textLayoutIsCompatible(font))) {
                 return false;
             } else {
                 return true;
@@ -388,6 +393,7 @@ class WPathGraphics extends PathGraphics {
      * @see #setComposite
      * @see #setClip
      */
+    @Override
     public void drawString(String str, float x, float y,
                            Font font, FontRenderContext frc, float targetW) {
         if (str.length() == 0) {
@@ -498,7 +504,7 @@ class WPathGraphics extends PathGraphics {
         float awScale = getAwScale(scaleFactorX, scaleFactorY);
         int iangle = getAngle(ptx);
 
-        Font2D font2D = FontManager.getFont2D(font);
+        Font2D font2D = FontUtilities.getFont2D(font);
         if (font2D instanceof TrueTypeFont) {
             textOut(str, font, (TrueTypeFont)font2D, frc,
                     scaledFontSizeY, iangle, awScale,
@@ -549,6 +555,7 @@ class WPathGraphics extends PathGraphics {
     /** return true if the Graphics instance can directly print
      * this glyphvector
      */
+    @Override
     protected boolean printGlyphVector(GlyphVector gv, float x, float y) {
         /* We don't want to try to handle per-glyph transforms. GDI can't
          * handle per-glyph rotations, etc. There's no way to express it
@@ -693,7 +700,7 @@ class WPathGraphics extends PathGraphics {
                                    glyphAdvPos, 0,      //destination
                                    glyphPos.length/2);  //num points
 
-        Font2D font2D = FontManager.getFont2D(font);
+        Font2D font2D = FontUtilities.getFont2D(font);
         if (font2D instanceof TrueTypeFont) {
             String family = font2D.getFamilyName(null);
             int style = font.getStyle() | font2D.getStyle();
@@ -792,7 +799,7 @@ class WPathGraphics extends PathGraphics {
              char[] chars = str.toCharArray();
              int len = chars.length;
              GlyphVector gv = null;
-             if (!FontManager.isComplexText(chars, 0, len)) {
+             if (!FontUtilities.isComplexText(chars, 0, len)) {
                  gv = font.createGlyphVector(frc, str);
              }
              if (gv == null) {

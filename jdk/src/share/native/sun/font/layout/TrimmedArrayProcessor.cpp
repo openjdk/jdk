@@ -38,6 +38,10 @@
 #include "LEGlyphStorage.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(TrimmedArrayProcessor)
+
 TrimmedArrayProcessor::TrimmedArrayProcessor()
 {
 }
@@ -72,3 +76,5 @@ void TrimmedArrayProcessor::process(LEGlyphStorage &glyphStorage)
         }
     }
 }
+
+U_NAMESPACE_END

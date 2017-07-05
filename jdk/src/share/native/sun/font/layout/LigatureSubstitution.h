@@ -32,11 +32,18 @@
 #ifndef __LIGATURESUBSTITUTION_H
 #define __LIGATURESUBSTITUTION_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LayoutTables.h"
 #include "StateTables.h"
 #include "MorphTables.h"
 #include "MorphStateTables.h"
+
+U_NAMESPACE_BEGIN
 
 struct LigatureSubstitutionHeader : MorphStateTableHeader
 {
@@ -65,4 +72,5 @@ enum LigatureActionFlags
     lafComponentOffsetMask  = 0x3FFFFFFF
 };
 
+U_NAMESPACE_END
 #endif

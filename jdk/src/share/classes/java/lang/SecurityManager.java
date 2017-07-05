@@ -1341,7 +1341,7 @@ class SecurityManager {
             throw new NullPointerException("window can't be null");
         }
         try {
-            checkPermission(SecurityConstants.TOPLEVEL_WINDOW_PERMISSION);
+            checkPermission(SecurityConstants.AWT.TOPLEVEL_WINDOW_PERMISSION);
             return true;
         } catch (SecurityException se) {
             // just return false
@@ -1391,7 +1391,7 @@ class SecurityManager {
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     public void checkSystemClipboardAccess() {
-        checkPermission(SecurityConstants.ACCESS_CLIPBOARD_PERMISSION);
+        checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
     }
 
     /**
@@ -1412,7 +1412,7 @@ class SecurityManager {
      * @see        #checkPermission(java.security.Permission) checkPermission
      */
     public void checkAwtEventQueueAccess() {
-        checkPermission(SecurityConstants.CHECK_AWT_EVENTQUEUE_PERMISSION);
+        checkPermission(SecurityConstants.AWT.CHECK_AWT_EVENTQUEUE_PERMISSION);
     }
 
     /*

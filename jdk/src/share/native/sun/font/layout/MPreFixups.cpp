@@ -33,6 +33,8 @@
 #include "LEGlyphStorage.h"
 #include "MPreFixups.h"
 
+U_NAMESPACE_BEGIN
+
 struct FixupData
 {
     le_int32 fBaseIndex;
@@ -92,7 +94,7 @@ void MPreFixups::apply(LEGlyphStorage &glyphStorage)
 
         for (i = 0; i < mpreCount; i += 1) {
             mpreSave[i]  = glyphStorage[mpreIndex + i];
-            indexSave[i] = glyphStorage.getCharIndex(mpreIndex + i, success);
+            indexSave[i] = glyphStorage.getCharIndex(mpreIndex + i, success); //charIndices[mpreIndex + i];
         }
 
         for (i = 0; i < moveCount; i += 1) {
@@ -112,3 +114,5 @@ void MPreFixups::apply(LEGlyphStorage &glyphStorage)
         LE_DELETE_ARRAY(mpreSave);
     }
 }
+
+U_NAMESPACE_END

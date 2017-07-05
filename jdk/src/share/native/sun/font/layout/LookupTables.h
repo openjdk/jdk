@@ -32,8 +32,15 @@
 #ifndef __LOOKUPTABLES_H
 #define __LOOKUPTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LayoutTables.h"
+
+U_NAMESPACE_BEGIN
 
 enum LookupTableFormat
 {
@@ -104,4 +111,5 @@ struct TrimmedArrayLookupTable : LookupTable
     LookupValue valueArray[ANY_NUMBER];
 };
 
+U_NAMESPACE_END
 #endif

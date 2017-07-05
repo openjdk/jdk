@@ -149,6 +149,12 @@ class ciMethod : public ciObject {
   bool          has_monitor_bytecodes() const    { return _uses_monitors; }
   bool          has_balanced_monitors();
 
+  // Returns a bitmap indicating which locals are required to be
+  // maintained as live for deopt.  raw_liveness_at_bci is always the
+  // direct output of the liveness computation while liveness_at_bci
+  // may mark all locals as live to improve support for debugging Java
+  // code by maintaining the state of as many locals as possible.
+  MethodLivenessResult raw_liveness_at_bci(int bci);
   MethodLivenessResult liveness_at_bci(int bci);
 
   // Get the interpreters viewpoint on oop liveness.  MethodLiveness is

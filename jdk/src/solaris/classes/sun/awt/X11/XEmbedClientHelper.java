@@ -26,10 +26,10 @@
 package sun.awt.X11;
 
 import java.awt.AWTKeyStroke;
-import java.util.logging.*;
 import sun.awt.SunToolkit;
 import java.awt.Component;
 import java.awt.Container;
+import sun.util.logging.PlatformLogger;
 
 import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsDevice;
@@ -40,7 +40,7 @@ import sun.awt.X11GraphicsDevice;
  * call install and forward all XClientMessageEvents to it.
  */
 public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher {
-    private static final Logger xembedLog = Logger.getLogger("sun.awt.X11.xembed.XEmbedClientHelper");
+    private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbedClientHelper");
 
     private XEmbeddedFramePeer embedded; // XEmbed client
     private long server; // XEmbed server
@@ -53,7 +53,7 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
     }
 
     void setClient(XEmbeddedFramePeer client) {
-        if (xembedLog.isLoggable(Level.FINE)) {
+        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
             xembedLog.fine("XEmbed client: " + client);
         }
         if (embedded != null) {
@@ -67,7 +67,7 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
     }
 
     void install() {
-        if (xembedLog.isLoggable(Level.FINE)) {
+        if (xembedLog.isLoggable(PlatformLogger.FINE)) {
             xembedLog.fine("Installing xembedder on " + embedded);
         }
         long[] info = new long[] { XEMBED_VERSION, XEMBED_MAPPED };
@@ -95,9 +95,9 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
 
     void handleClientMessage(XEvent xev) {
         XClientMessageEvent msg = xev.get_xclient();
-        if (xembedLog.isLoggable(Level.FINE)) xembedLog.fine(msg.toString());
+        if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine(msg.toString());
         if (msg.get_message_type() == XEmbed.getAtom()) {
-            if (xembedLog.isLoggable(Level.FINE)) xembedLog.fine("Embedded message: " + msgidToString((int)msg.get_data(1)));
+            if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Embedded message: " + msgidToString((int)msg.get_data(1)));
             switch ((int)msg.get_data(1)) {
               case XEMBED_EMBEDDED_NOTIFY: // Notification about embedding protocol start
                   active = true;

@@ -32,8 +32,15 @@
 #ifndef __GLYPHLOOKUPTABLES_H
 #define __GLYPHLOOKUPTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
+
+U_NAMESPACE_BEGIN
 
 struct GlyphLookupTableHeader
 {
@@ -46,4 +53,7 @@ struct GlyphLookupTableHeader
     le_bool coversScriptAndLanguage(LETag scriptTag, LETag languageTag, le_bool exactMatch = FALSE) const;
 };
 
+U_NAMESPACE_END
+
 #endif
+

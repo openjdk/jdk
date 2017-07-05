@@ -1766,7 +1766,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
         }
 
         private boolean isTypeAheadKey( KeyEvent e ) {
-            return !e.isAltDown() && !e.isControlDown() && !e.isMetaDown();
+            return !e.isAltDown() && !BasicGraphicsUtils.isMenuShortcutKeyDown(e);
         }
 
         //

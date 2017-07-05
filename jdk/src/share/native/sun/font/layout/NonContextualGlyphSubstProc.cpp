@@ -41,6 +41,8 @@
 #include "TrimmedArrayProcessor.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 NonContextualGlyphSubstitutionProcessor::NonContextualGlyphSubstitutionProcessor()
 {
 }
@@ -79,3 +81,5 @@ SubtableProcessor *NonContextualGlyphSubstitutionProcessor::createInstance(const
         return NULL;
     }
 }
+
+U_NAMESPACE_END

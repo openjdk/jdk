@@ -24,7 +24,6 @@
  */
 
 /*
- *
  **********************************************************************
  *   Copyright (C) 1998-2005, International Business Machines
  *   Corporation and others.  All Rights Reserved.
@@ -36,6 +35,13 @@
 
 #include "LETypes.h"
 #include "LEInsertionList.h"
+
+/**
+ * \file
+ * \brief C++ API: This class encapsulates the per-glyph storage used by the ICU LayoutEngine.
+ */
+
+U_NAMESPACE_BEGIN
 
 /**
  * This class encapsulates the per-glyph storage used by the ICU LayoutEngine.
@@ -50,7 +56,7 @@
  *
  * @draft ICU 3.6
  */
-class U_LAYOUT_API LEGlyphStorage : protected LEInsertionCallback
+class U_LAYOUT_API LEGlyphStorage : public UObject, protected LEInsertionCallback
 {
 private:
     /**
@@ -112,35 +118,37 @@ private:
 
 protected:
     /**
-     * This implements <code>LEInsertionCallback</code>. The
-     * <code>LEInsertionList</code> will call this method once for
-     * each insertion.
+     * This implements <code>LEInsertionCallback</code>. The <code>LEInsertionList</code>
+     * will call this method once for each insertion.
      *
      * @param atPosition the position of the insertion
      * @param count the number of glyphs being inserted
      * @param newGlyphs the address of the new glyph IDs
      *
-     * @return <code>true</code> if <code>LEInsertionList</code>
-     * should stop processing the insertion list after this insertion.
+     * @return <code>true</code> if <code>LEInsertionList</code> should stop
+     *         processing the insertion list after this insertion.
      *
      * @see LEInsertionList.h
      *
      * @draft ICU 3.0
      */
-    virtual le_bool applyInsertion(le_int32 atPosition, le_int32 count,
-        LEGlyphID newGlyphs[]);
+    virtual le_bool applyInsertion(le_int32 atPosition, le_int32 count, LEGlyphID newGlyphs[]);
 
 public:
 
     /**
-     * Allocates an empty <code>LEGlyphStorage</code> object. You must
-     * call <code>allocateGlyphArray, allocatePositions and
-     * allocateAuxData</code> to allocate the data.
+     * Allocates an empty <code>LEGlyphStorage</code> object. You must call
+     * <code>allocateGlyphArray, allocatePositions and allocateAuxData</code>
+     * to allocate the data.
+     *
+     * @draft ICU 3.0
      */
     LEGlyphStorage();
 
     /**
      * The destructor. This will deallocate all of the arrays.
+     *
+     * @draft ICU 3.0
      */
     ~LEGlyphStorage();
 
@@ -154,9 +162,9 @@ public:
     inline le_int32 getGlyphCount() const;
 
     /**
-     * This method copies the glyph array into a caller supplied
-     * array.  The caller must ensure that the array is large enough
-     * to hold all the glyphs.
+     * This method copies the glyph array into a caller supplied array.
+     * The caller must ensure that the array is large enough to hold all
+     * the glyphs.
      *
      * @param glyphs - the destiniation glyph array
      * @param success - set to an error code if the operation fails
@@ -166,10 +174,10 @@ public:
     void getGlyphs(LEGlyphID glyphs[], LEErrorCode &success) const;
 
     /**
-     * This method copies the glyph array into a caller supplied
-     * array, ORing in extra bits. (This functionality is needed by
-     * the JDK, which uses 32 bits pre glyph idex, with the high 16
-     * bits encoding the composite font slot number)
+     * This method copies the glyph array into a caller supplied array,
+     * ORing in extra bits. (This functionality is needed by the JDK,
+     * which uses 32 bits pre glyph idex, with the high 16 bits encoding
+     * the composite font slot number)
      *
      * @param glyphs - the destination (32 bit) glyph array
      * @param extraBits - this value will be ORed with each glyph index
@@ -177,13 +185,12 @@ public:
      *
      * @draft ICU 3.0
      */
-    void getGlyphs(le_uint32 glyphs[], le_uint32 extraBits,
-        LEErrorCode &success) const;
+    void getGlyphs(le_uint32 glyphs[], le_uint32 extraBits, LEErrorCode &success) const;
 
     /**
-     * This method copies the character index array into a caller
-     * supplied array.  The caller must ensure that the array is large
-     * enough to hold a character index for each glyph.
+     * This method copies the character index array into a caller supplied array.
+     * The caller must ensure that the array is large enough to hold a
+     * character index for each glyph.
      *
      * @param charIndices - the destiniation character index array
      * @param success - set to an error code if the operation fails
@@ -193,9 +200,9 @@ public:
     void getCharIndices(le_int32 charIndices[], LEErrorCode &success) const;
 
     /**
-     * This method copies the character index array into a caller
-     * supplied array.  The caller must ensure that the array is large
-     * enough to hold a character index for each glyph.
+     * This method copies the character index array into a caller supplied array.
+     * The caller must ensure that the array is large enough to hold a
+     * character index for each glyph.
      *
      * @param charIndices - the destiniation character index array
      * @param indexBase - an offset which will be added to each index
@@ -203,14 +210,13 @@ public:
      *
      * @draft ICU 3.0
      */
-    void getCharIndices(le_int32 charIndices[], le_int32 indexBase,
-        LEErrorCode &success) const;
+    void getCharIndices(le_int32 charIndices[], le_int32 indexBase, LEErrorCode &success) const;
 
     /**
-     * This method copies the position array into a caller supplied
-     * array.  The caller must ensure that the array is large enough
-     * to hold an X and Y position for each glyph, plus an extra X and
-     * Y for the advance of the last glyph.
+     * This method copies the position array into a caller supplied array.
+     * The caller must ensure that the array is large enough to hold an
+     * X and Y position for each glyph, plus an extra X and Y for the
+     * advance of the last glyph.
      *
      * @param positions - the destiniation position array
      * @param success - set to an error code if the operation fails
@@ -233,33 +239,27 @@ public:
      *
      * @draft ICU 3.0
      */
-    void getGlyphPosition(le_int32 glyphIndex, float &x, float &y,
-        LEErrorCode &success) const;
+    void getGlyphPosition(le_int32 glyphIndex, float &x, float &y, LEErrorCode &success) const;
 
     /**
-     * This method allocates the glyph array, the char indices array
-     * and the insertion list. You must call this method before using
-     * the object. This method also initializes the char indices
+     * This method allocates the glyph array, the char indices array and the insertion list. You
+     * must call this method before using the object. This method also initializes the char indices
      * array.
-     * @param initialGlyphCount the initial size of the glyph and char
-     *     indices arrays.
-     * @param rightToLeft <code>true</code> if the original input text
-     *     is right to left.
-     * @param success set to an error code if the storage cannot be
-     *     allocated of if the initial glyph count is not positive.
+     *
+     * @param initialGlyphCount the initial size of the glyph and char indices arrays.
+     * @param rightToLeft <code>true</code> if the original input text is right to left.
+     * @param success set to an error code if the storage cannot be allocated of if the initial
+     *        glyph count is not positive.
      *
      * @draft ICU 3.0
      */
-    void allocateGlyphArray(le_int32 initialGlyphCount, le_bool rightToLeft,
-        LEErrorCode &success);
+    void allocateGlyphArray(le_int32 initialGlyphCount, le_bool rightToLeft, LEErrorCode &success);
 
     /**
-     * This method allocates the storage for the glyph positions. It
-     * allocates one extra X, Y position pair for the position just
-     * after the last glyph.
+     * This method allocates the storage for the glyph positions. It allocates one extra X, Y
+     * position pair for the position just after the last glyph.
      *
-     * @param success set to an error code if the positions array
-     *     cannot be allocated.
+     * @param success set to an error code if the positions array cannot be allocated.
      *
      * @return the number of X, Y position pairs allocated.
      *
@@ -270,8 +270,7 @@ public:
     /**
      * This method allocates the storage for the auxillary glyph data.
      *
-     * @param success set to an error code if the aulillary data array
-     *     cannot be allocated.
+     * @param success set to an error code if the aulillary data array cannot be allocated.
      *
      * @return the size of the auxillary data array.
      *
@@ -282,10 +281,8 @@ public:
     /**
      * Copy the entire auxillary data array.
      *
-     * @param auxData the auxillary data array will be copied to this
-     *     address
-     * @param success set to an error code if the data cannot be
-     *     copied
+     * @param auxData the auxillary data array will be copied to this address
+     * @param success set to an error code if the data cannot be copied
      *
      * @draft ICU 3.6
      */
@@ -295,8 +292,7 @@ public:
      * Get the glyph ID for a particular glyph.
      *
      * @param glyphIndex the index into the glyph array
-     * @param success set to an error code if the glyph ID cannot be
-     *     retrieved.
+     * @param success set to an error code if the glyph ID cannot be retrieved.
      *
      * @return the glyph ID
      *
@@ -308,8 +304,7 @@ public:
      * Get the char index for a particular glyph.
      *
      * @param glyphIndex the index into the glyph array
-     * @param success set to an error code if the char index cannot be
-     *     retrieved.
+     * @param success set to an error code if the char index cannot be retrieved.
      *
      * @return the character index
      *
@@ -322,8 +317,7 @@ public:
      * Get the auxillary data for a particular glyph.
      *
      * @param glyphIndex the index into the glyph array
-     * @param success set to an error code if the auxillary data
-     *     cannot be retrieved.
+     * @param success set to an error code if the auxillary data cannot be retrieved.
      *
      * @return the auxillary data
      *
@@ -345,11 +339,10 @@ public:
 
     /**
      * Call this method to replace a single glyph in the glyph array
-     * with multiple glyphs. This method uses the
-     * <code>LEInsertionList</code> to do the insertion. It returns
-     * the address of storage where the new glyph IDs can be
-     * stored. They will not actually be inserted into the glyph array
-     * until <code>applyInsertions</code> is called.
+     * with multiple glyphs. This method uses the <code>LEInsertionList</code>
+     * to do the insertion. It returns the address of storage where the new
+     * glyph IDs can be stored. They will not actually be inserted into the
+     * glyph array until <code>applyInsertions</code> is called.
      *
      * @param atIndex the index of the glyph to be replaced
      * @param insertCount the number of glyphs to replace it with
@@ -381,26 +374,22 @@ public:
      *
      * @param glyphIndex the index of the glyph
      * @param glyphID the new glyph ID
-     * @param success will be set to an error code if the glyph ID
-     *     cannot be set.
+     * @param success will be set to an error code if the glyph ID cannot be set.
      *
      * @draft ICU 3.0
      */
-    void setGlyphID(le_int32 glyphIndex, LEGlyphID glyphID,
-        LEErrorCode &success);
+    void setGlyphID(le_int32 glyphIndex, LEGlyphID glyphID, LEErrorCode &success);
 
     /**
      * Set the char index for a particular glyph.
      *
      * @param glyphIndex the index of the glyph
      * @param charIndex the new char index
-     * @param success will be set to an error code if the char index
-     *     cannot be set.
+     * @param success will be set to an error code if the char index cannot be set.
      *
      * @draft ICU 3.0
      */
-    void setCharIndex(le_int32 glyphIndex, le_int32 charIndex,
-        LEErrorCode &success);
+    void setCharIndex(le_int32 glyphIndex, le_int32 charIndex, LEErrorCode &success);
 
     /**
      * Set the X, Y position for a particular glyph.
@@ -408,13 +397,11 @@ public:
      * @param glyphIndex the index of the glyph
      * @param x the new X position
      * @param y the new Y position
-     * @param success will be set to an error code if the position
-     *     cannot be set.
+     * @param success will be set to an error code if the position cannot be set.
      *
      * @draft ICU 3.0
      */
-    void setPosition(le_int32 glyphIndex, float x, float y,
-        LEErrorCode &success);
+    void setPosition(le_int32 glyphIndex, float x, float y, LEErrorCode &success);
 
     /**
      * Adjust the X, Y position for a particular glyph.
@@ -422,21 +409,18 @@ public:
      * @param glyphIndex the index of the glyph
      * @param xAdjust the adjustment to the glyph's X position
      * @param yAdjust the adjustment to the glyph's Y position
-     * @param success will be set to an error code if the glyph's
-     *     position cannot be adjusted.
+     * @param success will be set to an error code if the glyph's position cannot be adjusted.
      *
      * @draft ICU 3.0
      */
-    void adjustPosition(le_int32 glyphIndex, float xAdjust, float yAdjust,
-        LEErrorCode &success);
+    void adjustPosition(le_int32 glyphIndex, float xAdjust, float yAdjust, LEErrorCode &success);
 
     /**
      * Set the auxillary data for a particular glyph.
      *
      * @param glyphIndex the index of the glyph
      * @param auxData the new auxillary data
-     * @param success will be set to an error code if the auxillary
-     *     data cannot be set.
+     * @param success will be set to an error code if the auxillary data cannot be set.
      *
      * @draft ICU 3.6
      */
@@ -511,14 +495,28 @@ public:
     void adoptGlyphCount(le_int32 newGlyphCount);
 
     /**
-     * This method frees the glyph, character index, position and
-     * auxillary data arrays so that the LayoutEngine can be reused to
-     * layout a different characer array. (This method is also called
+     * This method frees the glyph, character index, position  and
+     * auxillary data arrays so that the LayoutEngine can be reused
+     * to layout a different characer array. (This method is also called
      * by the destructor)
      *
      * @draft ICU 3.0
      */
     void reset();
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @draft ICU 3.0
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @draft ICU 3.0
+     */
+    static UClassID getStaticClassID();
 };
 
 inline le_int32 LEGlyphStorage::getGlyphCount() const
@@ -531,4 +529,7 @@ inline LEGlyphID &LEGlyphStorage::operator[](le_int32 glyphIndex) const
     return fGlyphs[glyphIndex];
 }
 
+
+U_NAMESPACE_END
 #endif
+

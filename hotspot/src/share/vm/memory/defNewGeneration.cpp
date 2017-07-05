@@ -555,12 +555,14 @@ void DefNewGeneration::collect(bool   full,
          "save marks have not been newly set.");
 
   gch->gen_process_strong_roots(_level,
-                                true, // Process younger gens, if any, as
-                                      // strong roots.
-                                false,// not collecting permanent generation.
+                                true,  // Process younger gens, if any,
+                                       // as strong roots.
+                                true,  // activate StrongRootsScope
+                                false, // not collecting perm generation.
                                 SharedHeap::SO_AllClasses,
-                                &fsc_with_gc_barrier,
-                                &fsc_with_no_gc_barrier);
+                                &fsc_with_no_gc_barrier,
+                                true,   // walk *all* scavengable nmethods
+                                &fsc_with_gc_barrier);
 
   // "evacuate followers".
   evacuate_followers.do_void();

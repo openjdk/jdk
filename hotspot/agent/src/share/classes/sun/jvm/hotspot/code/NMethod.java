@@ -40,7 +40,10 @@ public class NMethod extends CodeBlob {
   /** != InvocationEntryBci if this nmethod is an on-stack replacement method */
   private static CIntegerField entryBCIField;
   /** To support simple linked-list chaining of nmethods */
-  private static AddressField  linkField;
+  private static AddressField  osrLinkField;
+  private static AddressField  scavengeRootLinkField;
+  private static CIntegerField scavengeRootStateField;
+
   /** Offsets for different nmethod parts */
   private static CIntegerField exceptionOffsetField;
   private static CIntegerField deoptOffsetField;
@@ -87,7 +90,10 @@ public class NMethod extends CodeBlob {
     zombieInstructionSizeField  = type.getCIntegerField("_zombie_instruction_size");
     methodField                 = type.getOopField("_method");
     entryBCIField               = type.getCIntegerField("_entry_bci");
-    linkField                   = type.getAddressField("_link");
+    osrLinkField                = type.getAddressField("_osr_link");
+    scavengeRootLinkField       = type.getAddressField("_scavenge_root_link");
+    scavengeRootStateField      = type.getCIntegerField("_scavenge_root_state");
+
     exceptionOffsetField        = type.getCIntegerField("_exception_offset");
     deoptOffsetField            = type.getCIntegerField("_deoptimize_offset");
     origPCOffsetField           = type.getCIntegerField("_orig_pc_offset");
@@ -219,9 +225,18 @@ public class NMethod extends CodeBlob {
     return getEntryBCI();
   }
 
-  public NMethod getLink() {
-    return (NMethod) VMObjectFactory.newObject(NMethod.class, linkField.getValue(addr));
+  public NMethod getOSRLink() {
+    return (NMethod) VMObjectFactory.newObject(NMethod.class, osrLinkField.getValue(addr));
   }
+
+  public NMethod getScavengeRootLink() {
+    return (NMethod) VMObjectFactory.newObject(NMethod.class, scavengeRootLinkField.getValue(addr));
+  }
+
+  public int getScavengeRootState() {
+    return (int) scavengeRootStateField.getValue(addr);
+  }
+
 
   /** Tells whether frames described by this nmethod can be
       deoptimized. Note: native wrappers cannot be deoptimized. */

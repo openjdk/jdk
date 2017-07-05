@@ -399,13 +399,6 @@ abstract class AuthenticationInfo extends AuthCacheValue implements Cloneable {
     abstract boolean isAuthorizationStale (String header);
 
     /**
-     * Check for any expected authentication information in the response
-     * from the server
-     */
-    abstract void checkResponse (String header, String method, URL url)
-                                        throws IOException;
-
-    /**
      * Give a key for hash table lookups.
      * @param includeRealm if you want the realm considered.  Preemptively
      *          setting an authorization is done before the realm is known.

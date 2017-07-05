@@ -1085,6 +1085,9 @@ Node *CastX2PNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   switch (op) {
   case Op_SubX:
     x = in(1)->in(1);
+    // Avoid ideal transformations ping-pong between this and AddP for raw pointers.
+    if (phase->find_intptr_t_con(x, -1) == 0)
+      break;
     y = in(1)->in(2);
     if (fits_in_int(phase->type(y), true)) {
       return addP_of_X2P(phase, x, y, true);

@@ -24,7 +24,6 @@
  */
 
 /*
- *
  * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
  *
  */
@@ -32,8 +31,15 @@
 #ifndef __DEFAULTCHARMAPPER_H
 #define __DEFAULTCHARMAPPER_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEFontInstance.h"
+
+U_NAMESPACE_BEGIN
 
 /**
  * This class is an instance of LECharMapper which
@@ -42,7 +48,7 @@
  *
  * @see LECharMapper
  */
-class DefaultCharMapper : public LECharMapper
+class DefaultCharMapper : public UMemory, public LECharMapper
 {
 private:
     le_bool fFilterControls;
@@ -77,4 +83,5 @@ public:
     LEUnicode32 mapChar(LEUnicode32 ch) const;
 };
 
+U_NAMESPACE_END
 #endif

@@ -32,8 +32,15 @@
 #ifndef __LOOKUPS_H
 #define __LOOKUPS_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
+
+U_NAMESPACE_BEGIN
 
 enum LookupFlags
 {
@@ -79,6 +86,5 @@ inline le_int32 LookupSubtable::getGlyphCoverage(LEGlyphID glyphID) const
     return getGlyphCoverage(coverageTableOffset, glyphID);
 }
 
-
-
+U_NAMESPACE_END
 #endif

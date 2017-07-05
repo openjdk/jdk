@@ -37,6 +37,8 @@
 #include "GlyphIterator.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 #define Nibble(value, nibble) ((value >> (nibble * 4)) & 0xF)
 #define NibbleBits(value, nibble) (bitsInNibble[Nibble(value, nibble)])
 
@@ -161,8 +163,8 @@ void ValueRecord::adjustPosition(ValueFormat valueFormat, const char *base, Glyp
         xPlacementAdjustment, yPlacementAdjustment, xAdvanceAdjustment, yAdvanceAdjustment);
 }
 
-void ValueRecord::adjustPosition(le_int16 index, ValueFormat valueFormat, const char *base,
-    GlyphIterator &glyphIterator, const LEFontInstance *fontInstance) const
+void ValueRecord::adjustPosition(le_int16 index, ValueFormat valueFormat, const char *base, GlyphIterator &glyphIterator,
+                                 const LEFontInstance *fontInstance) const
 {
     float xPlacementAdjustment = 0;
     float yPlacementAdjustment = 0;
@@ -323,3 +325,5 @@ le_int16 ValueRecord::getFieldIndex(ValueFormat valueFormat, ValueRecordField fi
 
     return getFieldCount(valueFormat & beforeMasks[field]);
 }
+
+U_NAMESPACE_END

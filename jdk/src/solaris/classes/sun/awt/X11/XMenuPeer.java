@@ -29,7 +29,7 @@ import java.awt.peer.*;
 
 import java.lang.reflect.Field;
 import java.util.Vector;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 import sun.awt.SunToolkit;
 
 public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
@@ -39,7 +39,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
      * Data members
      *
      ************************************************/
-    private static Logger log = Logger.getLogger("sun.awt.X11.XMenuPeer");
+    private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XMenuPeer");
 
     /**
      * Window that correspond to this menu
@@ -122,7 +122,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
      * for adding separators
      */
     public void addSeparator() {
-        if (log.isLoggable(Level.FINER)) log.finer("addSeparator is not implemented");
+        if (log.isLoggable(PlatformLogger.FINER)) log.finer("addSeparator is not implemented");
     }
 
     public void addItem(MenuItem item) {
@@ -130,7 +130,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
         if (menuWindow != null) {
             menuWindow.addItem(item);
         } else {
-            if (log.isLoggable(Level.FINE)) {
+            if (log.isLoggable(PlatformLogger.FINE)) {
                 log.fine("Attempt to use XMenuWindowPeer without window");
             }
         }
@@ -141,7 +141,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
         if (menuWindow != null) {
             menuWindow.delItem(index);
         } else {
-            if (log.isLoggable(Level.FINE)) {
+            if (log.isLoggable(PlatformLogger.FINE)) {
                 log.fine("Attempt to use XMenuWindowPeer without window");
             }
         }
