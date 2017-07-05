@@ -56,7 +56,7 @@ import sun.jvm.hotspot.debugger.*;
     </PRE>
 
     FIXME: among other things, this interface is not sufficient to
-    describe fields which are themselves arrays (like symbolOop's
+    describe fields which are themselves arrays (like Symbol's
     jbyte _body[1]).  */
 public interface Field {
   /** Get the name of this field */

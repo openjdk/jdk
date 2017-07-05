@@ -4925,10 +4925,11 @@ void G1CollectedHeap::evacuate_collection_set() {
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 }
 
-void G1CollectedHeap::free_region_if_totally_empty(HeapRegion* hr,
+void G1CollectedHeap::free_region_if_empty(HeapRegion* hr,
                                      size_t* pre_used,
                                      FreeRegionList* free_list,
                                      HumongousRegionSet* humongous_proxy_set,
+                                     HRRSCleanupTask* hrrs_cleanup_task,
                                      bool par) {
   if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young()) {
     if (hr->isHumongous()) {
@@ -4937,6 +4938,8 @@ void G1CollectedHeap::free_region_if_totally_empty(HeapRegion* hr,
     } else {
       free_region(hr, pre_used, free_list, par);
     }
+  } else {
+    hr->rem_set()->do_cleanup_work(hrrs_cleanup_task);
   }
 }
 
