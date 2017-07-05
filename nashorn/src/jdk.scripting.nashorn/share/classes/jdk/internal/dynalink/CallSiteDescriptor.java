@@ -96,8 +96,6 @@ import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
  * guarding linkers so they aren't tempted to directly manipulate the call sites. The constructors of built-in
  * {@link RelinkableCallSite} implementations all need a call site descriptor. Even if you create your own call site
  * descriptors consider using {@link CallSiteDescriptorFactory#tokenizeName(String)} in your implementation.
- *
- * @author Attila Szegedi
  */
 public interface CallSiteDescriptor {
     /**
@@ -157,7 +155,9 @@ public interface CallSiteDescriptor {
     public MethodType getMethodType();
 
     /**
-     * Returns the lookup passed to the bootstrap method.
+     * Returns the lookup passed to the bootstrap method. If the lookup isn't the public lookup, the
+     * implementation must check the {@code RuntimePermission("dynalink.getLookup")} permission if a security
+     * manager is present.
      * @return the lookup passed to the bootstrap method.
      */
     public Lookup getLookup();

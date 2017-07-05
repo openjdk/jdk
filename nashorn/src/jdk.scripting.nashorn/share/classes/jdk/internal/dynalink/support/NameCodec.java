@@ -99,8 +99,6 @@ import jdk.internal.dynalink.CallSiteDescriptor;
  * have your own way of creating call site descriptors, but you still delegate to this method of the default factory
  * (it is recommended that you do), then you have demangling handled for you already, and only need to ensure that you
  * mangle the names when you're emitting them in the bytecode.
- *
- * @author Attila Szegedi
  */
 public class NameCodec {
     private static final char ESCAPE_CHAR = '\\';

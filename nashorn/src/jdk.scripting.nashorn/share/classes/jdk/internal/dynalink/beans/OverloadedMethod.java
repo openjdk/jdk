@@ -100,8 +100,6 @@ import jdk.internal.dynalink.support.TypeUtilities;
  * a vararg subset depending on the subclass. The method is for a fixed number of arguments though (as it is generated
  * for a concrete call site). As such, all methods in the subset can be invoked with the specified number of arguments
  * (exactly matching for fixargs, or having less than or equal fixed arguments, for varargs).
- *
- * @author Attila Szegedi
  */
 class OverloadedMethod {
     private final Map<ClassString, MethodHandle> argTypesToMethods = new ConcurrentHashMap<>();
@@ -122,7 +120,7 @@ class OverloadedMethod {
         fixArgMethods = new ArrayList<>(methodHandles.size());
         varArgMethods = new ArrayList<>(methodHandles.size());
         final int argNum = callSiteType.parameterCount();
-        for(MethodHandle mh: methodHandles) {
+        for(final MethodHandle mh: methodHandles) {
             if(mh.isVarargsCollector()) {
                 final MethodHandle asFixed = mh.asFixedArity();
                 if(argNum == asFixed.type().parameterCount()) {

@@ -126,19 +126,19 @@ public class SpliteratorCharacteristics {
         }
 
         {
-            Spliterator<?> s = Spliterators.spliterator(l.iterator( ), 1, 0);
+            Spliterator<?> s = Spliterators.spliterator(l.iterator(), 1, 0);
             assertCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
             assertHasNotCharacteristics(s, Spliterator.CONCURRENT);
         }
 
         {
-            Spliterator<?> s = Spliterators.spliterator(l.iterator( ), 1, Spliterator.CONCURRENT);
+            Spliterator<?> s = Spliterators.spliterator(l.iterator(), 1, Spliterator.CONCURRENT);
             assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
             assertCharacteristics(s, Spliterator.CONCURRENT);
         }
 
         {
-            Spliterator<?> s = Spliterators.spliteratorUnknownSize(l.iterator( ), 0);
+            Spliterator<?> s = Spliterators.spliteratorUnknownSize(l.iterator(), 0);
             assertHasNotCharacteristics(s, Spliterator.SIZED | Spliterator.SUBSIZED);
         }
 

@@ -89,8 +89,6 @@ import jdk.internal.dynalink.DynamicLinkerFactory;
 /**
  * Represents a request to link a particular invocation at a particular call site. Instances of these requests are being
  * passed to {@link GuardingDynamicLinker}.
- *
- * @author Attila Szegedi
  */
 public interface LinkRequest {
     /**

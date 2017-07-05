@@ -97,7 +97,6 @@ import jdk.internal.dynalink.support.Lookup;
  * Base class for dynamic methods that dispatch to a single target Java method or constructor. Handles adaptation of the
  * target method to a call site type (including mapping variable arity methods to a call site signature with different
  * arity).
- * @author Attila Szegedi
  */
 abstract class SingleDynamicMethod extends DynamicMethod {
 
