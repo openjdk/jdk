@@ -251,12 +251,11 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java        8157338 generic-
 
 tools/pack200/CommandLineTests.java                             8059906 generic-all
 
-tools/launcher/ArgsEnvVar.java					8173712 generic-all
 tools/launcher/FXLauncherTest.java                              8068049 linux-all,macosx-all
 
-tools/jimage/JImageExtractTest.java                             8169713 generic-all
-tools/jimage/JImageListTest.java                                8169713 generic-all
-tools/jimage/JImageVerifyTest.java                              8169713 generic-all
+tools/jimage/JImageExtractTest.java                             8170120 generic-all
+tools/jimage/JImageListTest.java                                8170120 generic-all
+tools/jimage/JImageVerifyTest.java                              8170120 generic-all
 
 
 tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-x64
@@ -267,7 +266,7 @@ tools/jlink/multireleasejar/JLinkMultiReleaseJarTest.java       8169971 windows-
 
 com/sun/jdi/RedefineImplementor.sh                              8004127 generic-all
 
-com/sun/jdi/JdbMethodExitTest.sh                                6902121 generic-all
+com/sun/jdi/JdbMethodExitTest.sh                                8171483 generic-all
 
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
@@ -296,6 +295,8 @@ java/util/BitSet/BitSetStreamTest.java                          8079538 generic-
 
 sun/tools/jcmd/TestJcmdSanity.java                              8031482 windows-all
 
+sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
+
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-all
@@ -308,6 +309,6 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i5
 
 javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux-all
 
-javax/xml/ws/clientjar/TestWsImport.java			8170370 generic-all
+javax/xml/ws/clientjar/TestWsImport.java			8173317 generic-all
 
 ############################################################################

@@ -314,7 +314,7 @@ define SetupJavadocGenerationBody
   $1_INDEX_FILE := $$(JAVADOC_OUTPUTDIR)/$$($1_OUTPUT_DIRNAME)/index.html
 
   # Rule for actually running javadoc
-  $$($1_INDEX_FILE): $(BUILD_TOOLS_JDK) $$($1_VARDEPS_FILE) $$($1_PACKAGE_DEPS) $$($1_DEPS)
+  $$($1_INDEX_FILE): $$(BUILD_TOOLS_JDK) $$($1_VARDEPS_FILE) $$($1_PACKAGE_DEPS) $$($1_DEPS)
 	$$(call LogWarn, Generating Javadoc from $$(words $$($1_PACKAGES)) package(s) for $$($1_OUTPUT_DIRNAME))
 	$$(call MakeDir, $$(@D))
         ifneq ($$($1_PACKAGES_FILE), )
@@ -743,7 +743,7 @@ $(eval $(call IncludeCustomExtension, , Javadoc.gmk))
 
 ################################################################################
 
-docs-javadoc: $(BUILD_TOOLS_JDK) $(TARGETS)
+docs-javadoc: $(TARGETS)
 
 docs-copy: $(COPY_TARGETS)
 
