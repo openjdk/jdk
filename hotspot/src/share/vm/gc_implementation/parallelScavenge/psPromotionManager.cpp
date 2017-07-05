@@ -90,10 +90,7 @@ void PSPromotionManager::pre_scavenge() {
 }
 
 void PSPromotionManager::post_scavenge() {
-#if PS_PM_STATS
-  print_stats();
-#endif // PS_PM_STATS
-
+  TASKQUEUE_STATS_ONLY(if (PrintGCDetails && ParallelGCVerbose) print_stats());
   for (uint i = 0; i < ParallelGCThreads + 1; i++) {
     PSPromotionManager* manager = manager_array(i);
     if (UseDepthFirstScavengeOrder) {
@@ -105,37 +102,58 @@ void PSPromotionManager::post_scavenge() {
   }
 }
 
-#if PS_PM_STATS
+#if TASKQUEUE_STATS
+void
+PSPromotionManager::print_taskqueue_stats(uint i) const {
+  const TaskQueueStats& stats = depth_first() ?
+    _claimed_stack_depth.stats : _claimed_stack_breadth.stats;
+  tty->print("%3u ", i);
+  stats.print();
+  tty->cr();
+}
 
 void
-PSPromotionManager::print_stats(uint i) {
-  tty->print_cr("---- GC Worker %2d Stats", i);
-  tty->print_cr("    total pushes            %8d", _total_pushes);
-  tty->print_cr("    masked pushes           %8d", _masked_pushes);
-  tty->print_cr("    overflow pushes         %8d", _overflow_pushes);
-  tty->print_cr("    max overflow length     %8d", _max_overflow_length);
-  tty->print_cr("");
-  tty->print_cr("    arrays chunked          %8d", _arrays_chunked);
-  tty->print_cr("    array chunks processed  %8d", _array_chunks_processed);
-  tty->print_cr("");
-  tty->print_cr("    total steals            %8d", _total_steals);
-  tty->print_cr("    masked steals           %8d", _masked_steals);
-  tty->print_cr("");
+PSPromotionManager::print_local_stats(uint i) const {
+  #define FMT " " SIZE_FORMAT_W(10)
+  tty->print_cr("%3u" FMT FMT FMT FMT, i, _masked_pushes, _masked_steals,
+                _arrays_chunked, _array_chunks_processed);
+  #undef FMT
 }
+
+static const char* const pm_stats_hdr[] = {
+  "    --------masked-------     arrays      array",
+  "thr       push      steal    chunked     chunks",
+  "--- ---------- ---------- ---------- ----------"
+};
 
 void
 PSPromotionManager::print_stats() {
-  tty->print_cr("== GC Tasks Stats (%s), GC %3d",
-                (UseDepthFirstScavengeOrder) ? "Depth-First" : "Breadth-First",
+  const bool df = UseDepthFirstScavengeOrder;
+  tty->print_cr("== GC Task Stats (%s-First), GC %3d", df ? "Depth" : "Breadth",
                 Universe::heap()->total_collections());
 
-  for (uint i = 0; i < ParallelGCThreads+1; ++i) {
-    PSPromotionManager* manager = manager_array(i);
-    manager->print_stats(i);
+  tty->print("thr "); TaskQueueStats::print_header(1); tty->cr();
+  tty->print("--- "); TaskQueueStats::print_header(2); tty->cr();
+  for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
+    manager_array(i)->print_taskqueue_stats(i);
+  }
+
+  const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
+  for (uint i = 0; i < hlines; ++i) tty->print_cr(pm_stats_hdr[i]);
+  for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
+    manager_array(i)->print_local_stats(i);
   }
 }
 
-#endif // PS_PM_STATS
+void
+PSPromotionManager::reset_stats() {
+  TaskQueueStats& stats = depth_first() ?
+    claimed_stack_depth()->stats : claimed_stack_breadth()->stats;
+  stats.reset();
+  _masked_pushes = _masked_steals = 0;
+  _arrays_chunked = _array_chunks_processed = 0;
+}
+#endif // TASKQUEUE_STATS
 
 PSPromotionManager::PSPromotionManager() {
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
@@ -189,16 +207,7 @@ void PSPromotionManager::reset() {
 
   _prefetch_queue.clear();
 
-#if PS_PM_STATS
-  _total_pushes = 0;
-  _masked_pushes = 0;
-  _overflow_pushes = 0;
-  _max_overflow_length = 0;
-  _arrays_chunked = 0;
-  _array_chunks_processed = 0;
-  _total_steals = 0;
-  _masked_steals = 0;
-#endif // PS_PM_STATS
+  TASKQUEUE_STATS_ONLY(reset_stats());
 }
 
 
@@ -423,14 +432,9 @@ oop PSPromotionManager::copy_to_survivor_space(oop o, bool depth_first) {
             new_obj->is_objArray() &&
             PSChunkLargeArrays) {
           // we'll chunk it
-#if PS_PM_STATS
-          ++_arrays_chunked;
-#endif // PS_PM_STATS
           oop* const masked_o = mask_chunked_array_oop(o);
           push_depth(masked_o);
-#if PS_PM_STATS
-          ++_masked_pushes;
-#endif // PS_PM_STATS
+          TASKQUEUE_STATS_ONLY(++_arrays_chunked; ++_masked_pushes);
         } else {
           // we'll just push its contents
           new_obj->push_contents(this);
@@ -494,9 +498,7 @@ void PSPromotionManager::process_array_chunk(oop old) {
   assert(old->is_objArray(), "invariant");
   assert(old->is_forwarded(), "invariant");
 
-#if PS_PM_STATS
-  ++_array_chunks_processed;
-#endif // PS_PM_STATS
+  TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
 
   oop const obj = old->forwardee();
 
@@ -508,9 +510,7 @@ void PSPromotionManager::process_array_chunk(oop old) {
     assert(start > 0, "invariant");
     arrayOop(old)->set_length(start);
     push_depth(mask_chunked_array_oop(old));
-#if PS_PM_STATS
-    ++_masked_pushes;
-#endif // PS_PM_STATS
+    TASKQUEUE_STATS_ONLY(++_masked_pushes);
   } else {
     // this is the final chunk for this array
     start = 0;

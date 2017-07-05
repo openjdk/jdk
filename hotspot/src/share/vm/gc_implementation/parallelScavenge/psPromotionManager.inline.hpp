@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,3 +124,11 @@ inline void PSPromotionManager::process_popped_location_depth(StarTask p) {
     }
   }
 }
+
+#if TASKQUEUE_STATS
+void PSPromotionManager::record_steal(StarTask& p) {
+  if (is_oop_masked(p)) {
+    ++_masked_steals;
+  }
+}
+#endif // TASKQUEUE_STATS

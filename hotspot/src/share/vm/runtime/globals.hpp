@@ -3517,6 +3517,9 @@ class CommandLineFlags {
   experimental(bool, EnableInvokeDynamic, false,                            \
           "recognize the invokedynamic instruction")                        \
                                                                             \
+  experimental(bool, AllowTransitionalJSR292, true,                         \
+          "recognize pre-PFD formats of invokedynamic")                     \
+                                                                            \
   develop(bool, TraceInvokeDynamic, false,                                  \
           "trace internal invoke dynamic operations")                       \
                                                                             \

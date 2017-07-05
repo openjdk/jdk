@@ -297,6 +297,7 @@ public class ConstantPool extends Oop implements ClassConstants {
     case JVM_CONSTANT_NameAndType:        return "JVM_CONSTANT_NameAndType";
     case JVM_CONSTANT_MethodHandle:       return "JVM_CONSTANT_MethodHandle";
     case JVM_CONSTANT_MethodType:         return "JVM_CONSTANT_MethodType";
+    case JVM_CONSTANT_InvokeDynamic:      return "JVM_CONSTANT_InvokeDynamic";
     case JVM_CONSTANT_Invalid:            return "JVM_CONSTANT_Invalid";
     case JVM_CONSTANT_UnresolvedClass:    return "JVM_CONSTANT_UnresolvedClass";
     case JVM_CONSTANT_UnresolvedClassInError:    return "JVM_CONSTANT_UnresolvedClassInError";
@@ -355,6 +356,7 @@ public class ConstantPool extends Oop implements ClassConstants {
         case JVM_CONSTANT_NameAndType:
         case JVM_CONSTANT_MethodHandle:
         case JVM_CONSTANT_MethodType:
+        case JVM_CONSTANT_InvokeDynamic:
           visitor.doInt(new IntField(new NamedFieldIdentifier(nameForTag(ctag)), indexOffset(index), true), true);
           break;
         }
@@ -515,6 +517,18 @@ public class ConstantPool extends Oop implements ClassConstants {
                   dos.writeShort(signatureIndex);
                   if (DEBUG) debugMessage("CP[" + ci + "] = N&T name = " + nameIndex
                                           + ", type = " + signatureIndex);
+                  break;
+              }
+
+              case JVM_CONSTANT_InvokeDynamic: {
+                  dos.writeByte(cpConstType);
+                  int value = getIntAt(ci);
+                  short bootstrapMethodIndex = (short) extractLowShortFromInt(value);
+                  short nameAndTypeIndex = (short) extractHighShortFromInt(value);
+                  dos.writeShort(bootstrapMethodIndex);
+                  dos.writeShort(nameAndTypeIndex);
+                  if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " + bootstrapMethodIndex
+                                          + ", N&T = " + nameAndTypeIndex);
                   break;
               }
               default:

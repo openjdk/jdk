@@ -658,7 +658,8 @@ HeapRegion::object_iterate_mem_careful(MemRegion mr,
 HeapWord*
 HeapRegion::
 oops_on_card_seq_iterate_careful(MemRegion mr,
-                                     FilterOutOfRegionClosure* cl) {
+                                 FilterOutOfRegionClosure* cl,
+                                 bool filter_young) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // If we're within a stop-world GC, then we might look at a card in a
@@ -671,6 +672,16 @@ oops_on_card_seq_iterate_careful(MemRegion mr,
   }
   if (mr.is_empty()) return NULL;
   // Otherwise, find the obj that extends onto mr.start().
+
+  // The intersection of the incoming mr (for the card) and the
+  // allocated part of the region is non-empty. This implies that
+  // we have actually allocated into this region. The code in
+  // G1CollectedHeap.cpp that allocates a new region sets the
+  // is_young tag on the region before allocating. Thus we
+  // safely know if this region is young.
+  if (is_young() && filter_young) {
+    return NULL;
+  }
 
   // We used to use "block_start_careful" here.  But we're actually happy
   // to update the BOT while we do this...
