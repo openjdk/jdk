@@ -161,7 +161,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
   // If this is the first frame, and java.lang.Object.wait(...) then print out the receiver.
   if (frame_count == 0) {
     if (method()->name() == vmSymbols::wait_name() &&
-        InstanceKlass::cast(method()->method_holder())->name() == vmSymbols::java_lang_Object()) {
+        method()->method_holder()->name() == vmSymbols::java_lang_Object()) {
       StackValueCollection* locs = locals();
       if (!locs->is_empty()) {
         StackValue* sv = locs->at(0);
@@ -407,7 +407,7 @@ void vframeStreamCommon::security_get_caller_frame(int depth) {
     if (Universe::reflect_invoke_cache()->is_same_method(method())) {
       // This is Method.invoke() -- skip it
     } else if (use_new_reflection &&
-              Klass::cast(method()->method_holder())
+              method()->method_holder()
                  ->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass())) {
       // This is an auxilary frame -- skip it
     } else if (method()->is_method_handle_intrinsic() ||
@@ -471,8 +471,8 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 void vframeStreamCommon::skip_reflection_related_frames() {
   while (!at_end() &&
          (JDK_Version::is_gte_jdk14x_version() && UseNewReflection &&
-          (Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
-           Klass::cast(method()->method_holder())->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass())))) {
+          (method()->method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
+           method()->method_holder()->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass())))) {
     next();
   }
 }
@@ -547,13 +547,13 @@ void javaVFrame::print() {
 
 void javaVFrame::print_value() const {
   Method*    m = method();
-  Klass*     k = m->method_holder();
+  InstanceKlass*     k = m->method_holder();
   tty->print_cr("frame( sp=" INTPTR_FORMAT ", unextended_sp=" INTPTR_FORMAT ", fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT ")",
                 _fr.sp(),  _fr.unextended_sp(), _fr.fp(), _fr.pc());
   tty->print("%s.%s", Klass::cast(k)->internal_name(), m->name()->as_C_string());
 
   if (!m->is_native()) {
-    Symbol*  source_name = InstanceKlass::cast(k)->source_file_name();
+    Symbol*  source_name = k->source_file_name();
     int        line_number = m->line_number_from_bci(bci());
     if (source_name != NULL && (line_number != -1)) {
       tty->print("(%s:%d)", source_name->as_C_string(), line_number);

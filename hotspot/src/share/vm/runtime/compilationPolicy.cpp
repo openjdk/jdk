@@ -627,7 +627,7 @@ const char* StackWalkCompPolicy::shouldNotInline(methodHandle m) {
   // negative filter: should send NOT be inlined?  returns NULL (--> inline) or rejection msg
   if (m->is_abstract()) return (_msg = "abstract method");
   // note: we allow ik->is_abstract()
-  if (!InstanceKlass::cast(m->method_holder())->is_initialized()) return (_msg = "method holder not initialized");
+  if (!m->method_holder()->is_initialized()) return (_msg = "method holder not initialized");
   if (m->is_native()) return (_msg = "native method");
   nmethod* m_code = m->code();
   if (m_code != NULL && m_code->code_size() > InlineSmallCode)

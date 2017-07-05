@@ -228,7 +228,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
       } else {
         do_resolve = true;
         name   = this_oop->unresolved_klass_at(which);
-        loader = Handle(THREAD, InstanceKlass::cast(this_oop->pool_holder())->class_loader());
+        loader = Handle(THREAD, this_oop->pool_holder()->class_loader());
       }
     }
   } // unlocking constantPool
@@ -247,7 +247,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
 
   if (do_resolve) {
     // this_oop must be unlocked during resolve_or_fail
-    oop protection_domain = Klass::cast(this_oop->pool_holder())->protection_domain();
+    oop protection_domain = this_oop->pool_holder()->protection_domain();
     Handle h_prot (THREAD, protection_domain);
     Klass* k_oop = SystemDictionary::resolve_or_fail(name, loader, h_prot, true, THREAD);
     KlassHandle k;
@@ -315,7 +315,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
         vframeStream vfst(JavaThread::current());
         if (!vfst.at_end()) {
           line_number = vfst.method()->line_number_from_bci(vfst.bci());
-          Symbol* s = InstanceKlass::cast(vfst.method()->method_holder())->source_file_name();
+          Symbol* s = vfst.method()->method_holder()->source_file_name();
           if (s != NULL) {
             source_file = s->as_C_string();
           }
@@ -325,11 +325,11 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
         // only print something if the classes are different
         if (source_file != NULL) {
           tty->print("RESOLVE %s %s %s:%d\n",
-                     InstanceKlass::cast(this_oop->pool_holder())->external_name(),
+                     this_oop->pool_holder()->external_name(),
                      InstanceKlass::cast(k())->external_name(), source_file, line_number);
         } else {
           tty->print("RESOLVE %s %s\n",
-                     InstanceKlass::cast(this_oop->pool_holder())->external_name(),
+                     this_oop->pool_holder()->external_name(),
                      InstanceKlass::cast(k())->external_name());
         }
       }
@@ -339,7 +339,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_oop, int which, TRAPS
       // Only updated constant pool - if it is resolved.
       do_resolve = this_oop->tag_at(which).is_unresolved_klass();
       if (do_resolve) {
-        ClassLoaderData* this_key = InstanceKlass::cast(this_oop->pool_holder())->class_loader_data();
+        ClassLoaderData* this_key = this_oop->pool_holder()->class_loader_data();
         if (!this_key->is_the_null_class_loader_data()) {
           this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
         }
@@ -367,8 +367,8 @@ Klass* ConstantPool::klass_at_if_loaded(constantPoolHandle this_oop, int which) 
     assert(entry.is_unresolved(), "must be either symbol or klass");
     Thread *thread = Thread::current();
     Symbol* name = entry.get_symbol();
-    oop loader = InstanceKlass::cast(this_oop->pool_holder())->class_loader();
-    oop protection_domain = Klass::cast(this_oop->pool_holder())->protection_domain();
+    oop loader = this_oop->pool_holder()->class_loader();
+    oop protection_domain = this_oop->pool_holder()->protection_domain();
     Handle h_prot (thread, protection_domain);
     Handle h_loader (thread, loader);
     Klass* k = SystemDictionary::find(name, h_loader, h_prot, thread);
@@ -409,8 +409,8 @@ Klass* ConstantPool::klass_ref_at_if_loaded_check(constantPoolHandle this_oop, i
   } else {
     assert(entry.is_unresolved(), "must be either symbol or klass");
     Symbol*  name  = entry.get_symbol();
-    oop loader = InstanceKlass::cast(this_oop->pool_holder())->class_loader();
-    oop protection_domain = Klass::cast(this_oop->pool_holder())->protection_domain();
+    oop loader = this_oop->pool_holder()->class_loader();
+    oop protection_domain = this_oop->pool_holder()->protection_domain();
     Handle h_loader(THREAD, loader);
     Handle h_prot  (THREAD, protection_domain);
     KlassHandle k(THREAD, SystemDictionary::find(name, h_loader, h_prot, THREAD));
@@ -1143,16 +1143,21 @@ void ConstantPool::copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int 
   int from_oplen = operand_array_length(from_cp->operands());
   int old_oplen  = operand_array_length(to_cp->operands());
   if (from_oplen != 0) {
+    ClassLoaderData* loader_data = to_cp->pool_holder()->class_loader_data();
     // append my operands to the target's operands array
     if (old_oplen == 0) {
-      to_cp->set_operands(from_cp->operands());  // reuse; do not merge
+      // Can't just reuse from_cp's operand list because of deallocation issues
+      int len = from_cp->operands()->length();
+      Array<u2>* new_ops = MetadataFactory::new_array<u2>(loader_data, len, CHECK);
+      Copy::conjoint_memory_atomic(
+          from_cp->operands()->adr_at(0), new_ops->adr_at(0), len * sizeof(u2));
+      to_cp->set_operands(new_ops);
     } else {
       int old_len  = to_cp->operands()->length();
       int from_len = from_cp->operands()->length();
       int old_off  = old_oplen * sizeof(u2);
       int from_off = from_oplen * sizeof(u2);
       // Use the metaspace for the destination constant pool
-      ClassLoaderData* loader_data = to_cp->pool_holder()->class_loader_data();
       Array<u2>* new_operands = MetadataFactory::new_array<u2>(loader_data, old_len + from_len, CHECK);
       int fillp = 0, len = 0;
       // first part of dest
@@ -1785,7 +1790,7 @@ void ConstantPool::patch_resolved_references(
     assert(cp_patches->at(index).is_null(),
            err_msg("Unused constant pool patch at %d in class file %s",
                    index,
-                   InstanceKlass::cast(pool_holder())->external_name()));
+                   pool_holder()->external_name()));
   }
 #endif // ASSERT
 }
@@ -1943,7 +1948,7 @@ void ConstantPool::print_value_on(outputStream* st) const {
   st->print(" for ");
   pool_holder()->print_value_on(st);
   if (pool_holder() != NULL) {
-    bool extra = (InstanceKlass::cast(pool_holder())->constants() != this);
+    bool extra = (pool_holder()->constants() != this);
     if (extra)  st->print(" (extra)");
   }
   if (cache() != NULL) {
