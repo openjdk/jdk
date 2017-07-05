@@ -951,6 +951,9 @@ public final class ProcessBuilder
      * {@code command} array as its argument. This may result in
      * a {@link SecurityException} being thrown.
      *
+     * <p>If the operating system does not support the creation of
+     * processes, an {@link UnsupportedOperationException} will be thrown.
+     *
      * <p>Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
      * <ul>
@@ -997,6 +1000,9 @@ public final class ProcessBuilder
      *         denies write access to the file
      *
      *         </ul>
+     *
+     * @throws  UnsupportedOperationException
+     *          If the operating system does not support the creation of processes.
      *
      * @throws IOException if an I/O error occurs
      *

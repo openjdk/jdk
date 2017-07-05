@@ -564,6 +564,9 @@ public class Runtime {
      * <code>cmdarray</code> as its argument. This may result in a
      * {@link SecurityException} being thrown.
      *
+     * <p>If the operating system does not support the creation of
+     * processes, an {@link UnsupportedOperationException} will be thrown.
+     *
      * <p>Starting an operating system process is highly system-dependent.
      * Among the many things that can go wrong are:
      * <ul>
@@ -596,6 +599,9 @@ public class Runtime {
      *          If a security manager exists and its
      *          {@link SecurityManager#checkExec checkExec}
      *          method doesn't allow creation of the subprocess
+     *
+     * @throws  UnsupportedOperationException
+     *          If the operating system does not support the creation of processes.
      *
      * @throws  IOException
      *          If an I/O error occurs

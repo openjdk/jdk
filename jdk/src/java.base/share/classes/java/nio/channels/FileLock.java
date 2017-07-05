@@ -26,6 +26,7 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * A token representing a lock on a region of a file.
@@ -147,6 +148,7 @@ public abstract class FileLock implements AutoCloseable {
     protected FileLock(FileChannel channel,
                        long position, long size, boolean shared)
     {
+        Objects.requireNonNull(channel, "Null channel");
         if (position < 0)
             throw new IllegalArgumentException("Negative position");
         if (size < 0)
@@ -185,6 +187,7 @@ public abstract class FileLock implements AutoCloseable {
     protected FileLock(AsynchronousFileChannel channel,
                        long position, long size, boolean shared)
     {
+        Objects.requireNonNull(channel, "Null channel");
         if (position < 0)
             throw new IllegalArgumentException("Negative position");
         if (size < 0)
