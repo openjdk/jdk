@@ -44,6 +44,9 @@
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
+#ifdef COMPILER2
+#include "opto/intrinsicnode.hpp"
+#endif
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -4253,27 +4256,385 @@ void MacroAssembler::reinit_heapbase() {
   }
 }
 
-// Compare char[] arrays aligned to 4 bytes.
-void MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
-                                        Register limit, Register result,
-                                        Register chr1, Register chr2, Label& Ldone) {
-  Label Lvector, Lloop;
-  assert(chr1 == result, "should be the same");
+#ifdef COMPILER2
 
-  // Note: limit contains number of bytes (2*char_elements) != 0.
-  andcc(limit, 0x2, chr1); // trailing character ?
+// Compress char[] to byte[] by compressing 16 bytes at once. Return 0 on failure.
+void MacroAssembler::string_compress_16(Register src, Register dst, Register cnt, Register result,
+                                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
+                                        FloatRegister ftmp1, FloatRegister ftmp2, FloatRegister ftmp3, Label& Ldone) {
+  Label Lloop, Lslow;
+  assert(UseVIS >= 3, "VIS3 is required");
+  assert_different_registers(src, dst, cnt, tmp1, tmp2, tmp3, tmp4, result);
+  assert_different_registers(ftmp1, ftmp2, ftmp3);
+
+  // Check if cnt >= 8 (= 16 bytes)
+  cmp(cnt, 8);
+  br(Assembler::less, false, Assembler::pn, Lslow);
+  delayed()->mov(cnt, result); // copy count
+
+  // Check for 8-byte alignment of src and dst
+  or3(src, dst, tmp1);
+  andcc(tmp1, 7, G0);
+  br(Assembler::notZero, false, Assembler::pn, Lslow);
+  delayed()->nop();
+
+  // Set mask for bshuffle instruction
+  Register mask = tmp4;
+  set(0x13579bdf, mask);
+  bmask(mask, G0, G0);
+
+  // Set mask to 0xff00 ff00 ff00 ff00 to check for non-latin1 characters
+  Assembler::sethi(0xff00fc00, mask); // mask = 0x0000 0000 ff00 fc00
+  add(mask, 0x300, mask);             // mask = 0x0000 0000 ff00 ff00
+  sllx(mask, 32, tmp1);               // tmp1 = 0xff00 ff00 0000 0000
+  or3(mask, tmp1, mask);              // mask = 0xff00 ff00 ff00 ff00
+
+  // Load first 8 bytes
+  ldx(src, 0, tmp1);
+
+  bind(Lloop);
+  // Load next 8 bytes
+  ldx(src, 8, tmp2);
+
+  // Check for non-latin1 character by testing if the most significant byte of a char is set.
+  // Although we have to move the data between integer and floating point registers, this is
+  // still faster than the corresponding VIS instructions (ford/fand/fcmpd).
+  or3(tmp1, tmp2, tmp3);
+  btst(tmp3, mask);
+  // annul zeroing if branch is not taken to preserve original count
+  brx(Assembler::notZero, true, Assembler::pn, Ldone);
+  delayed()->mov(G0, result); // 0 - failed
+
+  // Move bytes into float register
+  movxtod(tmp1, ftmp1);
+  movxtod(tmp2, ftmp2);
+
+  // Compress by copying one byte per char from ftmp1 and ftmp2 to ftmp3
+  bshuffle(ftmp1, ftmp2, ftmp3);
+  stf(FloatRegisterImpl::D, ftmp3, dst, 0);
+
+  // Increment addresses and decrement count
+  inc(src, 16);
+  inc(dst, 8);
+  dec(cnt, 8);
+
+  cmp(cnt, 8);
+  // annul LDX if branch is not taken to prevent access past end of string
+  br(Assembler::greaterEqual, true, Assembler::pt, Lloop);
+  delayed()->ldx(src, 0, tmp1);
+
+  // Fallback to slow version
+  bind(Lslow);
+}
+
+// Compress char[] to byte[]. Return 0 on failure.
+void MacroAssembler::string_compress(Register src, Register dst, Register cnt, Register result, Register tmp, Label& Ldone) {
+  Label Lloop;
+  assert_different_registers(src, dst, cnt, tmp, result);
+
+  lduh(src, 0, tmp);
+
+  bind(Lloop);
+  inc(src, sizeof(jchar));
+  cmp(tmp, 0xff);
+  // annul zeroing if branch is not taken to preserve original count
+  br(Assembler::greater, true, Assembler::pn, Ldone); // don't check xcc
+  delayed()->mov(G0, result); // 0 - failed
+  deccc(cnt);
+  stb(tmp, dst, 0);
+  inc(dst);
+  // annul LDUH if branch is not taken to prevent access past end of string
+  br(Assembler::notZero, true, Assembler::pt, Lloop);
+  delayed()->lduh(src, 0, tmp); // hoisted
+}
+
+// Inflate byte[] to char[] by inflating 16 bytes at once.
+void MacroAssembler::string_inflate_16(Register src, Register dst, Register cnt, Register tmp,
+                                       FloatRegister ftmp1, FloatRegister ftmp2, FloatRegister ftmp3, FloatRegister ftmp4, Label& Ldone) {
+  Label Lloop, Lslow;
+  assert(UseVIS >= 3, "VIS3 is required");
+  assert_different_registers(src, dst, cnt, tmp);
+  assert_different_registers(ftmp1, ftmp2, ftmp3, ftmp4);
+
+  // Check if cnt >= 8 (= 16 bytes)
+  cmp(cnt, 8);
+  br(Assembler::less, false, Assembler::pn, Lslow);
+  delayed()->nop();
+
+  // Check for 8-byte alignment of src and dst
+  or3(src, dst, tmp);
+  andcc(tmp, 7, G0);
+  br(Assembler::notZero, false, Assembler::pn, Lslow);
+  // Initialize float register to zero
+  FloatRegister zerof = ftmp4;
+  delayed()->fzero(FloatRegisterImpl::D, zerof);
+
+  // Load first 8 bytes
+  ldf(FloatRegisterImpl::D, src, 0, ftmp1);
+
+  bind(Lloop);
+  inc(src, 8);
+  dec(cnt, 8);
+
+  // Inflate the string by interleaving each byte from the source array
+  // with a zero byte and storing the result in the destination array.
+  fpmerge(zerof, ftmp1->successor(), ftmp2);
+  stf(FloatRegisterImpl::D, ftmp2, dst, 8);
+  fpmerge(zerof, ftmp1, ftmp3);
+  stf(FloatRegisterImpl::D, ftmp3, dst, 0);
+
+  inc(dst, 16);
+
+  cmp(cnt, 8);
+  // annul LDX if branch is not taken to prevent access past end of string
+  br(Assembler::greaterEqual, true, Assembler::pt, Lloop);
+  delayed()->ldf(FloatRegisterImpl::D, src, 0, ftmp1);
+
+  // Fallback to slow version
+  bind(Lslow);
+}
+
+// Inflate byte[] to char[].
+void MacroAssembler::string_inflate(Register src, Register dst, Register cnt, Register tmp, Label& Ldone) {
+  Label Loop;
+  assert_different_registers(src, dst, cnt, tmp);
+
+  ldub(src, 0, tmp);
+  bind(Loop);
+  inc(src);
+  deccc(cnt);
+  sth(tmp, dst, 0);
+  inc(dst, sizeof(jchar));
+  // annul LDUB if branch is not taken to prevent access past end of string
+  br(Assembler::notZero, true, Assembler::pt, Loop);
+  delayed()->ldub(src, 0, tmp); // hoisted
+}
+
+void MacroAssembler::string_compare(Register str1, Register str2,
+                                    Register cnt1, Register cnt2,
+                                    Register tmp1, Register tmp2,
+                                    Register result, int ae) {
+  Label Ldone, Lloop;
+  assert_different_registers(str1, str2, cnt1, cnt2, tmp1, result);
+  int stride1, stride2;
+
+  // Note: Making use of the fact that compareTo(a, b) == -compareTo(b, a)
+  // we interchange str1 and str2 in the UL case and negate the result.
+  // Like this, str1 is always latin1 encoded, expect for the UU case.
+
+  if (ae == StrIntrinsicNode::LU || ae == StrIntrinsicNode::UL) {
+    srl(cnt2, 1, cnt2);
+  }
+
+  // See if the lengths are different, and calculate min in cnt1.
+  // Save diff in case we need it for a tie-breaker.
+  Label Lskip;
+  Register diff = tmp1;
+  subcc(cnt1, cnt2, diff);
+  br(Assembler::greater, true, Assembler::pt, Lskip);
+  // cnt2 is shorter, so use its count:
+  delayed()->mov(cnt2, cnt1);
+  bind(Lskip);
+
+  // Rename registers
+  Register limit1 = cnt1;
+  Register limit2 = limit1;
+  Register chr1   = result;
+  Register chr2   = cnt2;
+  if (ae == StrIntrinsicNode::LU || ae == StrIntrinsicNode::UL) {
+    // We need an additional register to keep track of two limits
+    assert_different_registers(str1, str2, cnt1, cnt2, tmp1, tmp2, result);
+    limit2 = tmp2;
+  }
+
+  // Is the minimum length zero?
+  cmp(limit1, (int)0); // use cast to resolve overloading ambiguity
+  br(Assembler::equal, true, Assembler::pn, Ldone);
+  // result is difference in lengths
+  if (ae == StrIntrinsicNode::UU) {
+    delayed()->sra(diff, 1, result);  // Divide by 2 to get number of chars
+  } else {
+    delayed()->mov(diff, result);
+  }
+
+  // Load first characters
+  if (ae == StrIntrinsicNode::LL) {
+    stride1 = stride2 = sizeof(jbyte);
+    ldub(str1, 0, chr1);
+    ldub(str2, 0, chr2);
+  } else if (ae == StrIntrinsicNode::UU) {
+    stride1 = stride2 = sizeof(jchar);
+    lduh(str1, 0, chr1);
+    lduh(str2, 0, chr2);
+  } else {
+    stride1 = sizeof(jbyte);
+    stride2 = sizeof(jchar);
+    ldub(str1, 0, chr1);
+    lduh(str2, 0, chr2);
+  }
+
+  // Compare first characters
+  subcc(chr1, chr2, chr1);
+  br(Assembler::notZero, false, Assembler::pt, Ldone);
+  assert(chr1 == result, "result must be pre-placed");
+  delayed()->nop();
+
+  // Check if the strings start at same location
+  cmp(str1, str2);
+  brx(Assembler::equal, true, Assembler::pn, Ldone);
+  delayed()->mov(G0, result);  // result is zero
+
+  // We have no guarantee that on 64 bit the higher half of limit is 0
+  signx(limit1);
+
+  // Get limit
+  if (ae == StrIntrinsicNode::LU || ae == StrIntrinsicNode::UL) {
+    sll(limit1, 1, limit2);
+    subcc(limit2, stride2, chr2);
+  }
+  subcc(limit1, stride1, chr1);
+  br(Assembler::zero, true, Assembler::pn, Ldone);
+  // result is difference in lengths
+  if (ae == StrIntrinsicNode::UU) {
+    delayed()->sra(diff, 1, result);  // Divide by 2 to get number of chars
+  } else {
+    delayed()->mov(diff, result);
+  }
+
+  // Shift str1 and str2 to the end of the arrays, negate limit
+  add(str1, limit1, str1);
+  add(str2, limit2, str2);
+  neg(chr1, limit1);  // limit1 = -(limit1-stride1)
+  if (ae == StrIntrinsicNode::LU || ae == StrIntrinsicNode::UL) {
+    neg(chr2, limit2);  // limit2 = -(limit2-stride2)
+  }
+
+  // Compare the rest of the characters
+  if (ae == StrIntrinsicNode::UU) {
+    lduh(str1, limit1, chr1);
+  } else {
+    ldub(str1, limit1, chr1);
+  }
+
+  bind(Lloop);
+  if (ae == StrIntrinsicNode::LL) {
+    ldub(str2, limit2, chr2);
+  } else {
+    lduh(str2, limit2, chr2);
+  }
+
+  subcc(chr1, chr2, chr1);
+  br(Assembler::notZero, false, Assembler::pt, Ldone);
+  assert(chr1 == result, "result must be pre-placed");
+  delayed()->inccc(limit1, stride1);
+  if (ae == StrIntrinsicNode::LU || ae == StrIntrinsicNode::UL) {
+    inccc(limit2, stride2);
+  }
+
+  // annul LDUB if branch is not taken to prevent access past end of string
+  br(Assembler::notZero, true, Assembler::pt, Lloop);
+  if (ae == StrIntrinsicNode::UU) {
+    delayed()->lduh(str1, limit2, chr1);
+  } else {
+    delayed()->ldub(str1, limit1, chr1);
+  }
+
+  // If strings are equal up to min length, return the length difference.
+  if (ae == StrIntrinsicNode::UU) {
+    // Divide by 2 to get number of chars
+    sra(diff, 1, result);
+  } else {
+    mov(diff, result);
+  }
+
+  // Otherwise, return the difference between the first mismatched chars.
+  bind(Ldone);
+  if(ae == StrIntrinsicNode::UL) {
+    // Negate result (see note above)
+    neg(result);
+  }
+}
+
+void MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register ary2,
+                                  Register limit, Register tmp, Register result, bool is_byte) {
+  Label Ldone, Lvector, Lloop;
+  assert_different_registers(ary1, ary2, limit, tmp, result);
+
+  int length_offset  = arrayOopDesc::length_offset_in_bytes();
+  int base_offset    = arrayOopDesc::base_offset_in_bytes(is_byte ? T_BYTE : T_CHAR);
+
+  if (is_array_equ) {
+    // return true if the same array
+    cmp(ary1, ary2);
+    brx(Assembler::equal, true, Assembler::pn, Ldone);
+    delayed()->add(G0, 1, result); // equal
+
+    br_null(ary1, true, Assembler::pn, Ldone);
+    delayed()->mov(G0, result);    // not equal
+
+    br_null(ary2, true, Assembler::pn, Ldone);
+    delayed()->mov(G0, result);    // not equal
+
+    // load the lengths of arrays
+    ld(Address(ary1, length_offset), limit);
+    ld(Address(ary2, length_offset), tmp);
+
+    // return false if the two arrays are not equal length
+    cmp(limit, tmp);
+    br(Assembler::notEqual, true, Assembler::pn, Ldone);
+    delayed()->mov(G0, result);    // not equal
+  }
+
+  cmp_zero_and_br(Assembler::zero, limit, Ldone, true, Assembler::pn);
+  delayed()->add(G0, 1, result); // zero-length arrays are equal
+
+  if (is_array_equ) {
+    // load array addresses
+    add(ary1, base_offset, ary1);
+    add(ary2, base_offset, ary2);
+  } else {
+    // We have no guarantee that on 64 bit the higher half of limit is 0
+    signx(limit);
+  }
+
+  if (is_byte) {
+    Label Lskip;
+    // check for trailing byte
+    andcc(limit, 0x1, tmp);
+    br(Assembler::zero, false, Assembler::pt, Lskip);
+    delayed()->nop();
+
+    // compare the trailing byte
+    sub(limit, sizeof(jbyte), limit);
+    ldub(ary1, limit, result);
+    ldub(ary2, limit, tmp);
+    cmp(result, tmp);
+    br(Assembler::notEqual, true, Assembler::pt, Ldone);
+    delayed()->mov(G0, result);    // not equal
+
+    // only one byte?
+    cmp_zero_and_br(zero, limit, Ldone, true, Assembler::pn);
+    delayed()->add(G0, 1, result); // zero-length arrays are equal
+    bind(Lskip);
+  } else if (is_array_equ) {
+    // set byte count
+    sll(limit, exact_log2(sizeof(jchar)), limit);
+  }
+
+  // check for trailing character
+  andcc(limit, 0x2, tmp);
   br(Assembler::zero, false, Assembler::pt, Lvector);
   delayed()->nop();
 
   // compare the trailing char
   sub(limit, sizeof(jchar), limit);
-  lduh(ary1, limit, chr1);
-  lduh(ary2, limit, chr2);
-  cmp(chr1, chr2);
+  lduh(ary1, limit, result);
+  lduh(ary2, limit, tmp);
+  cmp(result, tmp);
   br(Assembler::notEqual, true, Assembler::pt, Ldone);
   delayed()->mov(G0, result);     // not equal
 
-  // only one char ?
+  // only one char?
   cmp_zero_and_br(zero, limit, Ldone, true, Assembler::pn);
   delayed()->add(G0, 1, result); // zero-length arrays are equal
 
@@ -4284,20 +4645,22 @@ void MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
   add(ary2, limit, ary2);
   neg(limit, limit);
 
-  lduw(ary1, limit, chr1);
+  lduw(ary1, limit, result);
   bind(Lloop);
-  lduw(ary2, limit, chr2);
-  cmp(chr1, chr2);
+  lduw(ary2, limit, tmp);
+  cmp(result, tmp);
   br(Assembler::notEqual, true, Assembler::pt, Ldone);
   delayed()->mov(G0, result);     // not equal
   inccc(limit, 2*sizeof(jchar));
   // annul LDUW if branch is not taken to prevent access past end of array
   br(Assembler::notZero, true, Assembler::pt, Lloop);
-  delayed()->lduw(ary1, limit, chr1); // hoisted
+  delayed()->lduw(ary1, limit, result); // hoisted
 
-  // Caller should set it:
-  // add(G0, 1, result); // equals
+  add(G0, 1, result); // equals
+  bind(Ldone);
 }
+
+#endif
 
 // Use BIS for zeroing (count is in bytes).
 void MacroAssembler::bis_zeroing(Register to, Register count, Register temp, Label& Ldone) {

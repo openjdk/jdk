@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -64,6 +64,51 @@ void  check_jvmti_error(jvmtiEnv *jvmti, jvmtiError errnum, const char *str);
 void  deallocate(jvmtiEnv *jvmti, void *ptr);
 void *allocate(jvmtiEnv *jvmti, jint len);
 void  add_demo_jar_to_bootclasspath(jvmtiEnv *jvmti, char *demo_name);
+
+#ifdef STATIC_BUILD
+/* Macros for handling declaration of static/dynamic
+ * Agent library Load/Attach/Unload functions
+ *
+ * DEF_Agent_OnLoad, DEF_Agent_OnAttach or DEF_Agent_OnUnload
+ * generate the appropriate entrypoint names based on static
+ * versus dynamic builds.
+ *
+ * STATIC_BUILD must be defined to build static versions of these libraries.
+ * LIBRARY_NAME must be set to the name of the library for static builds.
+ */
+#define ADD_LIB_NAME3(name, lib) name ## lib
+#define ADD_LIB_NAME2(name, lib) ADD_LIB_NAME3(name, lib)
+#define ADD_LIB_NAME(entry) ADD_LIB_NAME2(entry, LIBRARY_NAME)
+
+#define DEF_Agent_OnLoad \
+ADD_LIB_NAME(Agent_OnLoad_)(JavaVM *vm, char *options, void *reserved) \
+{ \
+  jint JNICALL ADD_LIB_NAME(Agent_OnLoad_dynamic_)(JavaVM *vm, char *options, void *reserved); \
+  return ADD_LIB_NAME(Agent_OnLoad_dynamic_)(vm, options, reserved); \
+} \
+jint JNICALL ADD_LIB_NAME(Agent_OnLoad_dynamic_)
+
+#define DEF_Agent_OnAttach \
+ADD_LIB_NAME(Agent_OnAttach_)(JavaVM *vm, char *options, void *reserved) \
+{ \
+  jint JNICALL ADD_LIB_NAME(Agent_OnAttach_dynamic_)(JavaVM *vm, char *options, void *reserved); \
+  return ADD_LIB_NAME(Agent_OnAttach_dynamic_)(vm, options, reserved); \
+} \
+jint JNICALL ADD_LIB_NAME(Agent_OnAttach_dynamic_)
+
+#define DEF_Agent_OnUnload \
+ADD_LIB_NAME(Agent_OnUnload_)(JavaVM *vm) \
+{ \
+  void JNICALL ADD_LIB_NAME(Agent_OnUnload_dynamic_)(JavaVM *vm); \
+  ADD_LIB_NAME(Agent_OnUnload_dynamic_)(vm); \
+} \
+void JNICALL ADD_LIB_NAME(Agent_OnUnload_dynamic_)
+
+#else
+#define DEF_Agent_OnLoad Agent_OnLoad
+#define DEF_Agent_OnAttach Agent_OnAttach
+#define DEF_Agent_OnUnload Agent_OnUnload
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -55,7 +55,7 @@ package sun.awt.X11;
  * @since       1.5
  */
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.util.HashMap;
 
 public final class XAtom {

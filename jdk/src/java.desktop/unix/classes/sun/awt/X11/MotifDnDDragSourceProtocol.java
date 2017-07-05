@@ -33,7 +33,7 @@ import java.awt.dnd.InvalidDnDOperationException;
 
 import java.util.Map;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * XDragSourceProtocol implementation for Motif DnD protocol.

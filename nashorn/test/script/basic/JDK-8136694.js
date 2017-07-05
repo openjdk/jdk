@@ -25,8 +25,7 @@
  * JDK-8136694: Megemorphic scope access does not throw ReferenceError when property is missing
  *
  * @test
- * @fork
- * @option -Dnashorn.unstable.relink.threshold=16
+ * @option --unstable-relink-threshold=16
  * @run
  */
 

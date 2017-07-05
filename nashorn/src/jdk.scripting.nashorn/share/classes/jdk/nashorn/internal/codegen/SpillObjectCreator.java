@@ -173,9 +173,10 @@ public final class SpillObjectCreator extends ObjectCreator<Expression> {
                 loadTuple(method, tuple);
                 method.dynamicSetIndex(callSiteFlags);
             } else {
+                assert property.getKey() instanceof String; // symbol keys not yet supported in object literals
                 method.dup();
                 loadTuple(method, tuple);
-                method.dynamicSet(property.getKey(), codegen.getCallSiteFlags(), false);
+                method.dynamicSet((String) property.getKey(), codegen.getCallSiteFlags(), false);
             }
         }
     }

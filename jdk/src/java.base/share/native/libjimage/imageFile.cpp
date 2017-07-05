@@ -118,7 +118,7 @@ void ImageLocation::set_data(u1* data) {
     // Deflate the attribute stream into an array of attributes.
     u1 byte;
     // Repeat until end header is found.
-    while ((byte = *data)) {
+    while ((data != NULL) && (byte = *data)) {
         // Extract kind from header byte.
         u1 kind = attribute_kind(byte);
         assert(kind < ATTRIBUTE_COUNT && "invalid image location attribute");
@@ -191,7 +191,7 @@ ImageModuleData::ImageModuleData(const ImageFileReader* image_file,
 // Release module data resource.
 ImageModuleData::~ImageModuleData() {
     if (_data) {
-        delete _data;
+        delete[] _data;
     }
 }
 
@@ -274,7 +274,7 @@ ImageFileReaderTable::ImageFileReaderTable() : _count(0), _max(_growth) {
 }
 
 ImageFileReaderTable::~ImageFileReaderTable() {
-    delete _table;
+    delete[] _table;
 }
 
 // Add a new image entry to the table.
@@ -414,7 +414,7 @@ ImageFileReader::~ImageFileReader() {
     close();
     // Free up name.
     if (_name) {
-        delete _name;
+        delete[] _name;
         _name = NULL;
     }
 }
@@ -668,7 +668,7 @@ void ImageFileReader::get_resource(ImageLocation& location, u1* uncompressed_dat
                         &strings);
         // If not memory mapped then release temporary buffer.
         if (!MemoryMapImage) {
-                delete compressed_data;
+                delete[] compressed_data;
         }
     } else {
         // Read bytes from offset beyond the image index.

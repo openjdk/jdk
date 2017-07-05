@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class TypeArrayKlass : public ArrayKlass {
   void set_max_length(jint m)           { _max_length = m;    }
 
   // testers
-  bool oop_is_typeArray_slow() const    { return true; }
+  DEBUG_ONLY(bool is_typeArray_klass_slow() const  { return true; })
 
   // klass allocation
   static TypeArrayKlass* create_klass(BasicType type, const char* name_str,
@@ -122,8 +122,8 @@ class TypeArrayKlass : public ArrayKlass {
  public:
   // Casting from Klass*
   static TypeArrayKlass* cast(Klass* k) {
-    assert(k->oop_is_typeArray(), "cast to TypeArrayKlass");
-    return (TypeArrayKlass*) k;
+    assert(k->is_typeArray_klass(), "cast to TypeArrayKlass");
+    return static_cast<TypeArrayKlass*>(k);
   }
 
   // Naming

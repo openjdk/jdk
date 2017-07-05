@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.meta;
 
-import jdk.vm.ci.meta.JavaMethodProfile.*;
+import jdk.vm.ci.meta.JavaMethodProfile.ProfiledMethod;
 
 /**
  * This profile object represents the method profile at a specific BCI. The precision of the

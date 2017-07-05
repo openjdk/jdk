@@ -33,6 +33,10 @@
 #import "QueuingApplicationDelegate.h"
 #import "AWTIconData.h"
 
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 static BOOL sUsingDefaultNIB = YES;
 static NSString *SHARED_FRAMEWORK_BUNDLE = @"/System/Library/Frameworks/JavaVM.framework";
@@ -432,10 +436,10 @@ AWT_ASSERT_APPKIT_THREAD;
 @end
 
 
-void OSXAPP_SetApplicationDelegate(id <NSApplicationDelegate> delegate)
+void OSXAPP_SetApplicationDelegate(id <NSApplicationDelegate> newdelegate)
 {
 AWT_ASSERT_APPKIT_THREAD;
-    applicationDelegate = delegate;
+    applicationDelegate = newdelegate;
 
     if (NSApp != nil) {
         [NSApp setDelegate: applicationDelegate];

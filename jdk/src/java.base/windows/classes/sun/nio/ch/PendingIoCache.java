@@ -27,7 +27,7 @@ package sun.nio.ch;
 
 import java.nio.channels.*;
 import java.util.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Maintains a mapping of pending I/O requests (identified by the address of

@@ -252,6 +252,23 @@ public final class NativeObject {
     }
 
     /**
+     * ECMA 2 19.1.2.8 Object.getOwnPropertySymbols ( O )
+     *
+     * @param self self reference
+     * @param obj  object to query for property names
+     * @return array of property names
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static ScriptObject getOwnPropertySymbols(final Object self, final Object obj) {
+        if (obj instanceof ScriptObject) {
+            return new NativeArray(((ScriptObject)obj).getOwnSymbols(true));
+        } else {
+            // TODO: we don't support this on ScriptObjectMirror objects yet
+            throw notAnObject(obj);
+        }
+    }
+
+    /**
      * ECMA 15.2.3.5 Object.create ( O [, Properties] )
      *
      * @param self  self reference
@@ -288,7 +305,7 @@ public final class NativeObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static ScriptObject defineProperty(final Object self, final Object obj, final Object prop, final Object attr) {
         final ScriptObject sobj = Global.checkObject(obj);
-        sobj.defineOwnProperty(JSType.toString(prop), attr, true);
+        sobj.defineOwnProperty(JSType.toPropertyKey(prop), attr, true);
         return sobj;
     }
 
@@ -465,6 +482,7 @@ public final class NativeObject {
             case BOOLEAN:
             case NUMBER:
             case STRING:
+            case SYMBOL:
                 return Global.toObject(value);
             case OBJECT:
                 return value;

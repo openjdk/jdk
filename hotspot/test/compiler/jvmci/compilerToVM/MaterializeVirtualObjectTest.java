@@ -46,19 +46,21 @@
 
 package compiler.jvmci.compilerToVM;
 
-import compiler.jvmci.common.CTVMUtilities;
-import compiler.testlibrary.CompilerUtils;
+import java.lang.reflect.Method;
+import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
+
+import compiler.jvmci.common.CTVMUtilities;
+import compiler.testlibrary.CompilerUtils;
+
 import sun.hotspot.WhiteBox;
-import java.lang.reflect.Method;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
-import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
 
 public class MaterializeVirtualObjectTest {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final Method METHOD;
-    private static final HotSpotResolvedJavaMethodImpl RESOLVED_METHOD;
+    private static final ResolvedJavaMethod RESOLVED_METHOD;
     private static final boolean INVALIDATE = Boolean.getBoolean(
             "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate");
 
@@ -113,7 +115,7 @@ public class MaterializeVirtualObjectTest {
         if (materialize) {
             HotSpotStackFrameReference hsFrame = CompilerToVMHelper
                     .getNextStackFrame(/* topmost frame */ null,
-                            new HotSpotResolvedJavaMethodImpl[]{
+                            new ResolvedJavaMethod[]{
                                 RESOLVED_METHOD}, /* don't skip any */ 0);
             Asserts.assertNotNull(hsFrame, getName() + " : got null frame");
             Asserts.assertTrue(WB.isMethodCompiled(METHOD), getName()

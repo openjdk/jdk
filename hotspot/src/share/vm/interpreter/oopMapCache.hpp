@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ class InterpreterOopMap: ResourceObj {
   void set_expression_stack_size(int sz)         { _expression_stack_size = sz; }
 
   // Lookup
-  bool match(methodHandle method, int bci) const { return _method == method() && _bci == bci; }
+  bool match(const methodHandle& method, int bci) const { return _method == method() && _bci == bci; }
   bool is_empty() const;
 
   // Initialization
@@ -151,7 +151,7 @@ class OopMapCache : public CHeapObj<mtClass> {
 
   OopMapCacheEntry* _array;
 
-  unsigned int hash_value_for(methodHandle method, int bci) const;
+  unsigned int hash_value_for(const methodHandle& method, int bci) const;
   OopMapCacheEntry* entry_at(int i) const;
 
   mutable Mutex _mut;
@@ -167,10 +167,10 @@ class OopMapCache : public CHeapObj<mtClass> {
 
   // Returns the oopMap for (method, bci) in parameter "entry".
   // Returns false if an oop map was not found.
-  void lookup(methodHandle method, int bci, InterpreterOopMap* entry) const;
+  void lookup(const methodHandle& method, int bci, InterpreterOopMap* entry) const;
 
   // Compute an oop map without updating the cache or grabbing any locks (for debugging)
-  static void compute_one_oop_map(methodHandle method, int bci, InterpreterOopMap* entry);
+  static void compute_one_oop_map(const methodHandle& method, int bci, InterpreterOopMap* entry);
 
   // Returns total no. of bytes allocated as part of OopMapCache's
   static long memory_usage()                     PRODUCT_RETURN0;

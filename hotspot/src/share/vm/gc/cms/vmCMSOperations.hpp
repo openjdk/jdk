@@ -138,7 +138,6 @@ class VM_GenCollectFullConcurrent: public VM_GC_Operation {
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true /* full */)
   {
     assert(FullGCCount_lock != NULL, "Error");
-    assert(UseAsyncConcMarkSweepGC, "Else will hang caller");
   }
   ~VM_GenCollectFullConcurrent() {}
   virtual VMOp_Type type() const { return VMOp_GenCollectFullConcurrent; }

@@ -412,7 +412,8 @@ public final class StringBuilder
     @HotSpotIntrinsicCandidate
     public String toString() {
         // Create a copy, don't share the array
-        return new String(value, 0, count);
+        return isLatin1() ? StringLatin1.newString(value, 0, count)
+                          : StringUTF16.newStringSB(value, 0, count);
     }
 
     /**
@@ -430,7 +431,13 @@ public final class StringBuilder
         throws java.io.IOException {
         s.defaultWriteObject();
         s.writeInt(count);
-        s.writeObject(value);
+        char[] val = new char[capacity()];
+        if (isLatin1()) {
+            StringLatin1.getChars(value, 0, count, val, 0);
+        } else {
+            StringUTF16.getChars(value, 0, count, val, 0);
+        }
+        s.writeObject(val);
     }
 
     /**
@@ -441,7 +448,8 @@ public final class StringBuilder
         throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();
         count = s.readInt();
-        value = (char[]) s.readObject();
+        char[] val = (char[]) s.readObject();
+        initBytes(val, 0, val.length);
     }
 
 }

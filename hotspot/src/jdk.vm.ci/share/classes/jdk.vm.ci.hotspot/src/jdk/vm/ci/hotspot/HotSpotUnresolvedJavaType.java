@@ -22,16 +22,18 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Implementation of {@link JavaType} for unresolved HotSpot classes.
  */
-public class HotSpotUnresolvedJavaType extends HotSpotJavaType {
+final class HotSpotUnresolvedJavaType extends HotSpotJavaType {
 
     private final HotSpotJVMCIRuntimeProvider runtime;
 
-    public HotSpotUnresolvedJavaType(String name, HotSpotJVMCIRuntimeProvider runtime) {
+    private HotSpotUnresolvedJavaType(String name, HotSpotJVMCIRuntimeProvider runtime) {
         super(name);
         assert name.charAt(0) == '[' || name.charAt(name.length() - 1) == ';' : name;
         this.runtime = runtime;
@@ -40,7 +42,7 @@ public class HotSpotUnresolvedJavaType extends HotSpotJavaType {
     /**
      * Creates an unresolved type for a valid {@link JavaType#getName() type name}.
      */
-    public static HotSpotUnresolvedJavaType create(HotSpotJVMCIRuntimeProvider runtime, String name) {
+    static HotSpotUnresolvedJavaType create(HotSpotJVMCIRuntimeProvider runtime, String name) {
         return new HotSpotUnresolvedJavaType(name, runtime);
     }
 

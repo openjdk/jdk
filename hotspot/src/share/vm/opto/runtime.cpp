@@ -264,7 +264,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   // Scavenge and allocate an instance.
   oop result;
 
-  if (array_type->oop_is_typeArray()) {
+  if (array_type->is_typeArray_klass()) {
     // The oopFactory likes to work with the element type.
     // (We could bypass the oopFactory, since it doesn't add much value.)
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
@@ -302,7 +302,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   // Scavenge and allocate an instance.
   oop result;
 
-  assert(array_type->oop_is_typeArray(), "should be called only for type array");
+  assert(array_type->is_typeArray_klass(), "should be called only for type array");
   // The oopFactory likes to work with the element type.
   BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
   result = oopFactory::new_typeArray_nozero(elem_type, len, THREAD);
