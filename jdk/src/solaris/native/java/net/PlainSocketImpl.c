@@ -181,6 +181,12 @@ Java_java_net_PlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
                                            jboolean stream) {
     jobject fdObj, ssObj;
     int fd;
+    int type = (stream ? SOCK_STREAM : SOCK_DGRAM);
+#ifdef AF_INET6
+    int domain = ipv6_available() ? AF_INET6 : AF_INET;
+#else
+    int domain = AF_INET;
+#endif
 
     if (socketExceptionCls == NULL) {
         jclass c = (*env)->FindClass(env, "java/net/SocketException");
@@ -194,24 +200,28 @@ Java_java_net_PlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
         (*env)->ThrowNew(env, socketExceptionCls, "null fd object");
         return;
     }
-#ifdef AF_INET6
-    if (ipv6_available()) {
-        fd = JVM_Socket(AF_INET6, (stream ? SOCK_STREAM: SOCK_DGRAM), 0);
-    } else
-#endif /* AF_INET6 */
-        {
-            fd = JVM_Socket(AF_INET, (stream ? SOCK_STREAM: SOCK_DGRAM), 0);
-        }
-    if (fd == JVM_IO_ERR) {
+
+    if ((fd = JVM_Socket(domain, type, 0)) == JVM_IO_ERR) {
         /* note: if you run out of fds, you may not be able to load
          * the exception class, and get a NoClassDefFoundError
          * instead.
          */
         NET_ThrowNew(env, errno, "can't create socket");
         return;
-    } else {
-        (*env)->SetIntField(env, fdObj, IO_fd_fdID, fd);
     }
+
+#ifdef AF_INET6
+    /* Disable IPV6_V6ONLY to ensure dual-socket support */
+    if (domain == AF_INET6) {
+        int arg = 0;
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&arg,
+                       sizeof(int)) < 0) {
+            NET_ThrowNew(env, errno, "cannot set IPPROTO_IPV6");
+            close(fd);
+            return;
+        }
+    }
+#endif /* AF_INET6 */
 
     /*
      * If this is a server socket then enable SO_REUSEADDR
@@ -221,9 +231,15 @@ Java_java_net_PlainSocketImpl_socketCreate(JNIEnv *env, jobject this,
     if (ssObj != NULL) {
         int arg = 1;
         SET_NONBLOCKING(fd);
-        JVM_SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,
-            sizeof(arg));
+        if (JVM_SetSockOpt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,
+                           sizeof(arg)) < 0) {
+            NET_ThrowNew(env, errno, "cannot set SO_REUSEADDR");
+            close(fd);
+            return;
+        }
     }
+
+    (*env)->SetIntField(env, fdObj, IO_fd_fdID, fd);
 }
 
 /*

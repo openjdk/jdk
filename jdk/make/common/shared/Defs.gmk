@@ -136,15 +136,20 @@ define GetVersion
 $(shell echo $1 | sed -e 's@[^0-9]*\([0-9][0-9]*\.[0-9][.0-9]*\).*@\1@' )
 endef
 
+# Return one part of the version numbers, watch out for non digits.
+define VersionWord # Number Version
+$(word $1,$(subst ., ,$(subst -, ,$2)))
+endef
+
 # Given a major.minor.micro version, return the major, minor, or micro number
 define MajorVersion
-$(if $(word 1, $(subst ., ,$1)),$(word 1, $(subst ., ,$1)),0)
+$(if $(call VersionWord,1,$1),$(call VersionWord,1,$1),0)
 endef
 define MinorVersion
-$(if $(word 2, $(subst ., ,$1)),$(word 2, $(subst ., ,$1)),0)
+$(if $(call VersionWord,2,$1),$(call VersionWord,2,$1),0)
 endef
 define MicroVersion
-$(if $(word 3, $(subst ., ,$1)),$(word 3, $(subst ., ,$1)),0)
+$(if $(call VersionWord,3,$1),$(call VersionWord,3,$1),0)
 endef
 
 # Macro that returns missing, same, newer, or older $1=version $2=required

@@ -27,6 +27,7 @@ package sun.java2d.pisces;
 
 import java.awt.Shape;
 import java.awt.BasicStroke;
+import java.awt.geom.FlatteningPathIterator;
 import java.awt.geom.Path2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
@@ -37,23 +38,9 @@ import sun.java2d.pipe.RenderingEngine;
 import sun.java2d.pipe.AATileGenerator;
 
 public class PiscesRenderingEngine extends RenderingEngine {
-    public static Transform4 IdentT4 = new Transform4();
     public static double defaultFlat = 0.1;
 
-    static int FloatToS15_16(float flt) {
-        flt = flt * 65536f + 0.5f;
-        if (flt <= -(65536f * 65536f)) {
-            return Integer.MIN_VALUE;
-        } else if (flt >= (65536f * 65536f)) {
-            return Integer.MAX_VALUE;
-        } else {
-            return (int) Math.floor(flt);
-        }
-    }
-
-    static float S15_16ToFloat(int fix) {
-        return (fix / 65536f);
-    }
+    private static enum NormMode {OFF, ON_NO_AA, ON_WITH_AA}
 
     /**
      * Create a widened path as specified by the parameters.
@@ -85,18 +72,19 @@ public class PiscesRenderingEngine extends RenderingEngine {
         strokeTo(src,
                  null,
                  width,
+                 NormMode.OFF,
                  caps,
                  join,
                  miterlimit,
                  dashes,
                  dashphase,
                  new LineSink() {
-                     public void moveTo(int x0, int y0) {
-                         p2d.moveTo(S15_16ToFloat(x0), S15_16ToFloat(y0));
+                     public void moveTo(float x0, float y0) {
+                         p2d.moveTo(x0, y0);
                      }
                      public void lineJoin() {}
-                     public void lineTo(int x1, int y1) {
-                         p2d.lineTo(S15_16ToFloat(x1), S15_16ToFloat(y1));
+                     public void lineTo(float x1, float y1) {
+                         p2d.lineTo(x1, y1);
                      }
                      public void close() {
                          p2d.closePath();
@@ -142,14 +130,17 @@ public class PiscesRenderingEngine extends RenderingEngine {
                          boolean antialias,
                          final PathConsumer2D consumer)
     {
-        strokeTo(src, at, bs, thin, normalize, antialias,
+        NormMode norm = (normalize) ?
+                ((antialias) ? NormMode.ON_WITH_AA : NormMode.ON_NO_AA)
+                : NormMode.OFF;
+        strokeTo(src, at, bs, thin, norm, antialias,
                  new LineSink() {
-                     public void moveTo(int x0, int y0) {
-                         consumer.moveTo(S15_16ToFloat(x0), S15_16ToFloat(y0));
+                     public void moveTo(float x0, float y0) {
+                         consumer.moveTo(x0, y0);
                      }
                      public void lineJoin() {}
-                     public void lineTo(int x1, int y1) {
-                         consumer.lineTo(S15_16ToFloat(x1), S15_16ToFloat(y1));
+                     public void lineTo(float x1, float y1) {
+                         consumer.lineTo(x1, y1);
                      }
                      public void close() {
                          consumer.closePath();
@@ -164,7 +155,7 @@ public class PiscesRenderingEngine extends RenderingEngine {
                   AffineTransform at,
                   BasicStroke bs,
                   boolean thin,
-                  boolean normalize,
+                  NormMode normalize,
                   boolean antialias,
                   LineSink lsink)
     {
@@ -181,6 +172,7 @@ public class PiscesRenderingEngine extends RenderingEngine {
         strokeTo(src,
                  at,
                  lw,
+                 normalize,
                  bs.getEndCap(),
                  bs.getLineJoin(),
                  bs.getMiterLimit(),
@@ -258,6 +250,7 @@ public class PiscesRenderingEngine extends RenderingEngine {
     void strokeTo(Shape src,
                   AffineTransform at,
                   float width,
+                  NormMode normalize,
                   int caps,
                   int join,
                   float miterlimit,
@@ -265,36 +258,139 @@ public class PiscesRenderingEngine extends RenderingEngine {
                   float dashphase,
                   LineSink lsink)
     {
-        Transform4 t4;
-
-        if (at == null || at.isIdentity()) {
-            t4 = IdentT4;
-        } else {
-            t4 = new Transform4(FloatToS15_16((float) at.getScaleX()),
-                                FloatToS15_16((float) at.getShearX()),
-                                FloatToS15_16((float) at.getShearY()),
-                                FloatToS15_16((float) at.getScaleY()));
+        float a00 = 1f, a01 = 0f, a10 = 0f, a11 = 1f;
+        if (at != null && !at.isIdentity()) {
+            a00 = (float)at.getScaleX();
+            a01 = (float)at.getShearX();
+            a10 = (float)at.getShearY();
+            a11 = (float)at.getScaleY();
         }
-
-        lsink = new Stroker(lsink,
-                            FloatToS15_16(width),
-                            caps,
-                            join,
-                            FloatToS15_16(miterlimit),
-                            t4);
+        lsink = new Stroker(lsink, width, caps, join, miterlimit, a00, a01, a10, a11);
         if (dashes != null) {
-            int fdashes[] = new int[dashes.length];
-            for (int i = 0; i < dashes.length; i++) {
-                fdashes[i] = FloatToS15_16(dashes[i]);
+            lsink = new Dasher(lsink, dashes, dashphase, a00, a01, a10, a11);
+        }
+        PathIterator pi;
+        if (normalize != NormMode.OFF) {
+            pi = new FlatteningPathIterator(
+                    new NormalizingPathIterator(src.getPathIterator(at), normalize),
+                    defaultFlat);
+        } else {
+            pi = src.getPathIterator(at, defaultFlat);
+        }
+        pathTo(pi, lsink);
+    }
+
+    private static class NormalizingPathIterator implements PathIterator {
+
+        private final PathIterator src;
+
+        // the adjustment applied to the current position.
+        private float curx_adjust, cury_adjust;
+        // the adjustment applied to the last moveTo position.
+        private float movx_adjust, movy_adjust;
+
+        // constants used in normalization computations
+        private final float lval, rval;
+
+        NormalizingPathIterator(PathIterator src, NormMode mode) {
+            this.src = src;
+            switch (mode) {
+            case ON_NO_AA:
+                // round to nearest (0.25, 0.25) pixel
+                lval = rval = 0.25f;
+                break;
+            case ON_WITH_AA:
+                // round to nearest pixel center
+                lval = 0f;
+                rval = 0.5f;
+                break;
+            case OFF:
+                throw new InternalError("A NormalizingPathIterator should " +
+                         "not be created if no normalization is being done");
+            default:
+                throw new InternalError("Unrecognized normalization mode");
             }
-            lsink = new Dasher(lsink,
-                               fdashes,
-                               FloatToS15_16(dashphase),
-                               t4);
         }
 
-        PathIterator pi = src.getPathIterator(at, defaultFlat);
-        pathTo(pi, lsink);
+        public int currentSegment(float[] coords) {
+            int type = src.currentSegment(coords);
+
+            int lastCoord;
+            switch(type) {
+            case PathIterator.SEG_CUBICTO:
+                lastCoord = 4;
+                break;
+            case PathIterator.SEG_QUADTO:
+                lastCoord = 2;
+                break;
+            case PathIterator.SEG_LINETO:
+            case PathIterator.SEG_MOVETO:
+                lastCoord = 0;
+                break;
+            case PathIterator.SEG_CLOSE:
+                // we don't want to deal with this case later. We just exit now
+                curx_adjust = movx_adjust;
+                cury_adjust = movy_adjust;
+                return type;
+            default:
+                throw new InternalError("Unrecognized curve type");
+            }
+
+            // normalize endpoint
+            float x_adjust = (float)Math.floor(coords[lastCoord] + lval) + rval -
+                         coords[lastCoord];
+            float y_adjust = (float)Math.floor(coords[lastCoord+1] + lval) + rval -
+                         coords[lastCoord + 1];
+
+            coords[lastCoord    ] += x_adjust;
+            coords[lastCoord + 1] += y_adjust;
+
+            // now that the end points are done, normalize the control points
+            switch(type) {
+            case PathIterator.SEG_CUBICTO:
+                coords[0] += curx_adjust;
+                coords[1] += cury_adjust;
+                coords[2] += x_adjust;
+                coords[3] += y_adjust;
+                break;
+            case PathIterator.SEG_QUADTO:
+                coords[0] += (curx_adjust + x_adjust) / 2;
+                coords[1] += (cury_adjust + y_adjust) / 2;
+                break;
+            case PathIterator.SEG_LINETO:
+                break;
+            case PathIterator.SEG_MOVETO:
+                movx_adjust = x_adjust;
+                movy_adjust = y_adjust;
+                break;
+            case PathIterator.SEG_CLOSE:
+                throw new InternalError("This should be handled earlier.");
+            }
+            curx_adjust = x_adjust;
+            cury_adjust = y_adjust;
+            return type;
+        }
+
+        public int currentSegment(double[] coords) {
+            float[] tmp = new float[6];
+            int type = this.currentSegment(tmp);
+            for (int i = 0; i < 6; i++) {
+                coords[i] = (float) tmp[i];
+            }
+            return type;
+        }
+
+        public int getWindingRule() {
+            return src.getWindingRule();
+        }
+
+        public boolean isDone() {
+            return src.isDone();
+        }
+
+        public void next() {
+            src.next();
+        }
     }
 
     void pathTo(PathIterator pi, LineSink lsink) {
@@ -302,13 +398,11 @@ public class PiscesRenderingEngine extends RenderingEngine {
         while (!pi.isDone()) {
             switch (pi.currentSegment(coords)) {
             case PathIterator.SEG_MOVETO:
-                lsink.moveTo(FloatToS15_16(coords[0]),
-                             FloatToS15_16(coords[1]));
+                lsink.moveTo(coords[0], coords[1]);
                 break;
             case PathIterator.SEG_LINETO:
                 lsink.lineJoin();
-                lsink.lineTo(FloatToS15_16(coords[0]),
-                             FloatToS15_16(coords[1]));
+                lsink.lineTo(coords[0], coords[1]);
                 break;
             case PathIterator.SEG_CLOSE:
                 lsink.lineJoin();
@@ -378,18 +472,28 @@ public class PiscesRenderingEngine extends RenderingEngine {
                                               int bbox[])
     {
         PiscesCache pc = PiscesCache.createInstance();
-        Renderer r = new Renderer();
-        r.setCache(pc);
-        r.setAntialiasing(3, 3);
-        r.beginRendering(clip.getLoX(), clip.getLoY(),
-                         clip.getWidth(), clip.getHeight());
+        Renderer r;
+        NormMode norm = (normalize) ? NormMode.ON_WITH_AA : NormMode.OFF;
         if (bs == null) {
-            PathIterator pi = s.getPathIterator(at, defaultFlat);
-            r.setWindingRule(pi.getWindingRule());
+            PathIterator pi;
+            if (normalize) {
+                pi = new FlatteningPathIterator(
+                        new NormalizingPathIterator(s.getPathIterator(at), norm),
+                        defaultFlat);
+            } else {
+                pi = s.getPathIterator(at, defaultFlat);
+            }
+            r = new Renderer(3, 3,
+                             clip.getLoX(), clip.getLoY(),
+                             clip.getWidth(), clip.getHeight(),
+                             pi.getWindingRule(), pc);
             pathTo(pi, r);
         } else {
-            r.setWindingRule(PathIterator.WIND_NON_ZERO);
-            strokeTo(s, at, bs, thin, normalize, true, r);
+            r = new Renderer(3, 3,
+                             clip.getLoX(), clip.getLoY(),
+                             clip.getWidth(), clip.getHeight(),
+                             PathIterator.WIND_NON_ZERO, pc);
+            strokeTo(s, at, bs, thin, norm, true, r);
         }
         r.endRendering();
         PiscesTileGenerator ptg = new PiscesTileGenerator(pc, r.MAX_AA_ALPHA);
@@ -420,3 +524,4 @@ public class PiscesRenderingEngine extends RenderingEngine {
         }
     }
 }
+

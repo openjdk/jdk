@@ -229,10 +229,6 @@ objArrayKlassKlass::oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr) {
 }
 
 #ifndef SERIALGC
-void objArrayKlassKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->blueprint()->oop_is_objArrayKlass(),"must be an obj array klass");
-}
-
 void objArrayKlassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->blueprint()->oop_is_objArrayKlass(),"must be an obj array klass");
 }

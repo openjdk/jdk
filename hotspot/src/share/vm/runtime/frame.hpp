@@ -174,7 +174,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   address  sender_pc() const;
 
   // Support for deoptimization
-  void deoptimize(JavaThread* thread, bool thread_is_known_safe = false);
+  void deoptimize(JavaThread* thread);
 
   // The frame's original SP, before any extension by an interpreted callee;
   // used for packing debug info into vframeArray objects and vframeArray lookup.
