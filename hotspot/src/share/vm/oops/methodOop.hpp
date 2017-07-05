@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,8 +196,15 @@ class methodOopDesc : public oopDesc {
   static char* name_and_sig_as_C_string(Klass* klass, symbolOop method_name, symbolOop signature);
   static char* name_and_sig_as_C_string(Klass* klass, symbolOop method_name, symbolOop signature, char* buf, int size);
 
+  Bytecodes::Code java_code_at(int bci) const {
+    return Bytecodes::java_code_at(this, bcp_from(bci));
+  }
+  Bytecodes::Code code_at(int bci) const {
+    return Bytecodes::code_at(this, bcp_from(bci));
+  }
+
   // JVMTI breakpoints
-  Bytecodes::Code orig_bytecode_at(int bci);
+  Bytecodes::Code orig_bytecode_at(int bci) const;
   void        set_orig_bytecode_at(int bci, Bytecodes::Code code);
   void set_breakpoint(int bci);
   void clear_breakpoint(int bci);
@@ -655,8 +662,6 @@ class methodOopDesc : public oopDesc {
   void set_queued_for_compilation()    { _access_flags.set_queued_for_compilation();     }
   void clear_queued_for_compilation()  { _access_flags.clear_queued_for_compilation();   }
 
-  static methodOop method_from_bcp(address bcp);
-
   // Resolve all classes in signature, return 'true' if successful
   static bool load_signature_classes(methodHandle m, TRAPS);
 
@@ -787,11 +792,11 @@ class BreakpointInfo : public CHeapObj {
   void                 set_next(BreakpointInfo* n)    { _next = n; }
 
   // helps for searchers
-  bool match(methodOop m, int bci) {
+  bool match(const methodOopDesc* m, int bci) {
     return bci == _bci && match(m);
   }
 
-  bool match(methodOop m) {
+  bool match(const methodOopDesc* m) {
     return _name_index == m->name_index() &&
       _signature_index == m->signature_index();
   }

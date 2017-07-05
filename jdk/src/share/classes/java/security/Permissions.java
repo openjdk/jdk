@@ -362,7 +362,7 @@ implements Serializable
 
         // Copy perms into a Hashtable
         Hashtable<Class<?>, PermissionCollection> perms =
-            new Hashtable<Class<?>, PermissionCollection>(permsMap.size()*2); // no sync; estimate
+            new Hashtable<>(permsMap.size()*2); // no sync; estimate
         synchronized (this) {
             perms.putAll(permsMap);
         }
@@ -567,7 +567,7 @@ implements Serializable
 
         // Copy perms into a Hashtable
         Hashtable<Permission, Permission> perms =
-                new Hashtable<Permission, Permission>(permsMap.size()*2);
+                new Hashtable<>(permsMap.size()*2);
         synchronized (this) {
             perms.putAll(permsMap);
         }

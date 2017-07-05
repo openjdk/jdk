@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1863,9 +1863,9 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
 #ifndef SHARK
   if (!method()->is_native()) {
     SimpleScopeDesc ssd(this, fr.pc());
-    Bytecode_invoke* call = Bytecode_invoke_at(ssd.method(), ssd.bci());
-    bool has_receiver = call->has_receiver();
-    symbolOop signature = call->signature();
+    Bytecode_invoke call(ssd.method(), ssd.bci());
+    bool has_receiver = call.has_receiver();
+    symbolOop signature = call.signature();
     fr.oops_compiled_arguments_do(signature, has_receiver, reg_map, f);
   }
 #endif // !SHARK
@@ -2698,8 +2698,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
       } else if (sd->method()->is_native()) {
         st->print("method is native");
       } else {
-        address bcp  = sd->method()->bcp_from(sd->bci());
-        Bytecodes::Code bc = Bytecodes::java_code_at(bcp);
+        Bytecodes::Code bc = sd->method()->java_code_at(sd->bci());
         st->print(";*%s", Bytecodes::name(bc));
         switch (bc) {
         case Bytecodes::_invokevirtual:
@@ -2707,10 +2706,10 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
         case Bytecodes::_invokestatic:
         case Bytecodes::_invokeinterface:
           {
-            Bytecode_invoke* invoke = Bytecode_invoke_at(sd->method(), sd->bci());
+            Bytecode_invoke invoke(sd->method(), sd->bci());
             st->print(" ");
-            if (invoke->name() != NULL)
-              invoke->name()->print_symbol_on(st);
+            if (invoke.name() != NULL)
+              invoke.name()->print_symbol_on(st);
             else
               st->print("<UNKNOWN>");
             break;
@@ -2720,10 +2719,10 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
         case Bytecodes::_getstatic:
         case Bytecodes::_putstatic:
           {
-            Bytecode_field* field = Bytecode_field_at(sd->method(), sd->bci());
+            Bytecode_field field(sd->method(), sd->bci());
             st->print(" ");
-            if (field->name() != NULL)
-              field->name()->print_symbol_on(st);
+            if (field.name() != NULL)
+              field.name()->print_symbol_on(st);
             else
               st->print("<UNKNOWN>");
           }
