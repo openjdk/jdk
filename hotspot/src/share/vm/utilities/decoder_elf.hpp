@@ -43,6 +43,10 @@ public:
 
   bool demangle(const char* symbol, char *buf, int buflen);
   bool decode(address addr, char *buf, int buflen, int* offset, const char* filepath = NULL);
+  bool decode(address addr, char *buf, int buflen, int* offset, const void *base) {
+    ShouldNotReachHere();
+    return false;
+  }
 
 private:
   ElfFile*         get_elf_file(const char* filepath);

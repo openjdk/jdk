@@ -375,6 +375,13 @@ private:
   // this method will be found dead by the marking cycle).
   void allocate_dummy_regions() PRODUCT_RETURN;
 
+  // Clear RSets after a compaction. It also resets the GC time stamps.
+  void clear_rsets_post_compaction();
+
+  // If the HR printer is active, dump the state of the regions in the
+  // heap after a compaction.
+  void print_hrs_post_compaction();
+
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
 
@@ -1061,10 +1068,17 @@ public:
     clear_cset_start_regions();
   }
 
+  void check_gc_time_stamps() PRODUCT_RETURN;
+
   void increment_gc_time_stamp() {
     ++_gc_time_stamp;
     OrderAccess::fence();
   }
+
+  // Reset the given region's GC timestamp. If it's starts humongous,
+  // also reset the GC timestamp of its corresponding
+  // continues humongous regions too.
+  void reset_gc_time_stamps(HeapRegion* hr);
 
   void iterate_dirty_card_closure(CardTableEntryClosure* cl,
                                   DirtyCardQueue* into_cset_dcq,
@@ -1302,11 +1316,6 @@ public:
   // iteration early if the "doHeapRegion" method returns "true".
   void heap_region_iterate(HeapRegionClosure* blk) const;
 
-  // Iterate over heap regions starting with r (or the first region if "r"
-  // is NULL), in address order, terminating early if the "doHeapRegion"
-  // method returns "true".
-  void heap_region_iterate_from(HeapRegion* r, HeapRegionClosure* blk) const;
-
   // Return the region with the given index. It assumes the index is valid.
   HeapRegion* region_at(uint index) const { return _hrs.at(index); }
 
@@ -1350,6 +1359,11 @@ public:
   // Given the id of a worker, obtain or calculate a suitable
   // starting region for iterating over the current collection set.
   HeapRegion* start_cset_region_for_worker(int worker_i);
+
+  // This is a convenience method that is used by the
+  // HeapRegionIterator classes to calculate the starting region for
+  // each worker so that they do not all start from the same region.
+  HeapRegion* start_region_for_worker(uint worker_i, uint no_of_par_workers);
 
   // Iterate over the regions (if any) in the current collection set.
   void collection_set_iterate(HeapRegionClosure* blk);
@@ -1558,24 +1572,6 @@ public:
   bool isMarkedPrev(oop obj) const;
   bool isMarkedNext(oop obj) const;
 
-  // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseNextMarking -> use "next" marking information,
-  // vo == UseMarkWord    -> use mark word from object header
-  bool is_obj_dead_cond(const oop obj,
-                        const HeapRegion* hr,
-                        const VerifyOption vo) const {
-
-    switch (vo) {
-      case VerifyOption_G1UsePrevMarking:
-        return is_obj_dead(obj, hr);
-      case VerifyOption_G1UseNextMarking:
-        return is_obj_ill(obj, hr);
-      default:
-        assert(vo == VerifyOption_G1UseMarkWord, "must be");
-        return !obj->is_gc_marked();
-    }
-  }
-
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs. An object is dead
   // iff a) it was not allocated since the last mark and b) it
@@ -1586,15 +1582,6 @@ public:
       !hr->obj_allocated_since_prev_marking(obj) &&
       !isMarkedPrev(obj);
   }
-
-  // This is used when copying an object to survivor space.
-  // If the object is marked live, then we mark the copy live.
-  // If the object is allocated since the start of this mark
-  // cycle, then we mark the copy live.
-  // If the object has been around since the previous mark
-  // phase, and hasn't been marked yet during this phase,
-  // then we don't mark it, we just wait for the
-  // current marking cycle to get to it.
 
   // This function returns true when an object has been
   // around since the previous marking and hasn't yet
@@ -1612,23 +1599,6 @@ public:
 
   // Added if it is in permanent gen it isn't dead.
   // Added if it is NULL it isn't dead.
-
-  // vo == UsePrevMarking -> use "prev" marking information,
-  // vo == UseNextMarking -> use "next" marking information,
-  // vo == UseMarkWord    -> use mark word from object header
-  bool is_obj_dead_cond(const oop obj,
-                        const VerifyOption vo) const {
-
-    switch (vo) {
-      case VerifyOption_G1UsePrevMarking:
-        return is_obj_dead(obj);
-      case VerifyOption_G1UseNextMarking:
-        return is_obj_ill(obj);
-      default:
-        assert(vo == VerifyOption_G1UseMarkWord, "must be");
-        return !obj->is_gc_marked();
-    }
-  }
 
   bool is_obj_dead(const oop obj) const {
     const HeapRegion* hr = heap_region_containing(obj);
@@ -1651,6 +1621,42 @@ public:
     }
     else return is_obj_ill(obj, hr);
   }
+
+  // The methods below are here for convenience and dispatch the
+  // appropriate method depending on value of the given VerifyOption
+  // parameter. The options for that parameter are:
+  //
+  // vo == UsePrevMarking -> use "prev" marking information,
+  // vo == UseNextMarking -> use "next" marking information,
+  // vo == UseMarkWord    -> use mark word from object header
+
+  bool is_obj_dead_cond(const oop obj,
+                        const HeapRegion* hr,
+                        const VerifyOption vo) const {
+    switch (vo) {
+    case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj, hr);
+    case VerifyOption_G1UseNextMarking: return is_obj_ill(obj, hr);
+    case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+    default:                            ShouldNotReachHere();
+    }
+    return false; // keep some compilers happy
+  }
+
+  bool is_obj_dead_cond(const oop obj,
+                        const VerifyOption vo) const {
+    switch (vo) {
+    case VerifyOption_G1UsePrevMarking: return is_obj_dead(obj);
+    case VerifyOption_G1UseNextMarking: return is_obj_ill(obj);
+    case VerifyOption_G1UseMarkWord:    return !obj->is_gc_marked();
+    default:                            ShouldNotReachHere();
+    }
+    return false; // keep some compilers happy
+  }
+
+  bool allocated_since_marking(oop obj, HeapRegion* hr, VerifyOption vo);
+  HeapWord* top_at_mark_start(HeapRegion* hr, VerifyOption vo);
+  bool is_marked(oop obj, VerifyOption vo);
+  const char* top_at_mark_start_str(VerifyOption vo);
 
   // The following is just to alert the verification code
   // that a full collection has occurred and that the
