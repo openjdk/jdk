@@ -158,6 +158,8 @@ ifneq ($(strip $(DEMO_ALL_NATIVE_SOURCES)),)
     #       bit between them.
     LINK.demo   = $(LINK.c)
     LDLIBS.demo = $(EXTRA_LIBS) $(LFLAGS_$(COMPILER_VERSION))
+    DEMO_VERSION_INFO = $(OBJDIR)/$(LIBRARY).res
+    LDLIBS.demo += $(DEMO_VERSION_INFO)
   else
     ifneq ($(DEMO_NEEDS_CPP),)
       LINK.demo   = $(LINK.cpp)
@@ -288,6 +290,13 @@ ifndef DEMO_SKIP_SRCZIP
 	$(install-file)
 endif
 
+ifeq ($(PLATFORM),windows)
+# JDK name required here
+RC_FLAGS += /D "JDK_FNAME=$(LIBRARY).dll" \
+            /D "JDK_INTERNAL_NAME=$(LIBRARY)" \
+            /D "JDK_FTYPE=0x2L"
+endif
+
 # Native library building
 ifdef DEMO_LIBRARY
 
@@ -308,6 +317,9 @@ $(OBJDIR)/%.$(OBJECT_SUFFIX): $(DEMO_BUILD_SRCDIR)/%.cpp
   # Actual creation of the native shared library (C++ and C are different)
 $(DEMO_LIBRARY): $(DEMO_FULL_OBJECTS)
 	@$(prep-target)
+  ifeq ($(PLATFORM),windows)
+	$(RC) $(RC_FLAGS) $(CC_OBJECT_OUTPUT_FLAG)$(DEMO_VERSION_INFO) $(VERSIONINFO_RESOURCE)
+  endif
 	$(LINK.demo) $(SHARED_LIBRARY_FLAG) $(CC_PROGRAM_OUTPUT_FLAG)$@ \
 	    $(DEMO_FULL_OBJECTS) $(LDLIBS.demo)
 	@$(call binary_file_verification,$@)

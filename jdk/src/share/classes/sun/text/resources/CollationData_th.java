@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,18 +103,13 @@ public class CollationData_th extends ListResourceBundle {
                 //
                 // Normal vowels
                 //
+                + "< \u0E4D "                   //  NIKHAHIT
                 + "< \u0E30 "                   //  SARA A
                 + "< \u0E31 "                   //  MAI HAN-AKAT
                 + "< \u0E32 "                   //  SARA AA
 
-                // Normalizer will decompose this character to \u0e4d\u0e32.  This is
-                // a Bad Thing, because we want the separate characters to sort
-                // differently than this individual one.  Since there's no public way to
-                // set the decomposition to be used when creating a collator, there's
-                // no way around this right now.
-                // It's best to go ahead and leave the character in, because it occurs
-                // this way a lot more often than it occurs as separate characters.
-                + "< \u0E33 "                   //  SARA AM
+                // Normalizer will decompose this character to \u0e4d\u0e32.
+                + "< \u0E33 = \u0E4D\u0E32 "                   //  SARA AM
 
                 + "< \u0E34 "                   //  SARA I
 
@@ -133,62 +128,58 @@ public class CollationData_th extends ListResourceBundle {
                 + "< \u0E43 "                   //  SARA AI MAIMUAN
                 + "< \u0E44 "                   //  SARA AI MAIMALAI
 
-                //
-                // Digits
-                //
-                + "< \u0E50 "                   //  DIGIT ZERO
-                + "< \u0E51 "                   //  DIGIT ONE
-                + "< \u0E52 "                   //  DIGIT TWO
-                + "< \u0E53 "                   //  DIGIT THREE
-                + "< \u0E54 "                   //  DIGIT FOUR
-                + "< \u0E55 "                   //  DIGIT FIVE
-                + "< \u0E56 "                   //  DIGIT SIX
-                + "< \u0E57 "                   //  DIGIT SEVEN
-                + "< \u0E58 "                   //  DIGIT EIGHT
-                + "< \u0E59 "                   //  DIGIT NINE
 
-                // Sorta tonal marks, but maybe not really
-                + "< \u0E4D "                   //  NIKHAHIT
+                //according to CLDR, it's after 0e44
+                + "< \u0E3A "                   //  PHINTHU
 
-                //
-                // Thai symbols are supposed to sort "after white space".
-                // I'm treating this as making them sort just after the normal Latin-1
-                // symbols, which are in turn after the white space.
-                //
-                + "&'\u007d'"  //  right-brace
-                + "< \u0E2F "                   //  PAIYANNOI      (ellipsis, abbreviation)
-                + "< \u0E46 "                   //  MAIYAMOK
-                + "< \u0E4F "                   //  FONGMAN
-                + "< \u0E5A "                   //  ANGKHANKHU
-                + "< \u0E5B "                   //  KHOMUT
-                + "< \u0E3F "                   //  CURRENCY SYMBOL BAHT
 
-                // These symbols are supposed to be "after all characters"
-                + "< \u0E4E "                   //  YAMAKKAN
 
-                // This rare symbol also comes after all characters.  But when it is
-                // used in combination with RU and LU, the combination is treated as
-                // a separate letter, ala "CH" sorting after "C" in traditional Spanish.
+                // This rare symbol comes after all characters.
                 + "< \u0E45 "                   //  LAKKHANGYAO
-                + "& \u0E24 < \u0E24\u0E45 "
-                + "& \u0E26 < \u0E26\u0E45 "
+                + "& \u0E32 , \0E45 "           // According to CLDR, 0E45 is after 0E32 in tertiary level
 
-                // Tonal marks are primary ignorables but are treated as secondary
-                // differences
+
+
+
+                // Below are thai puntuation marks and Tonal(Accent) marks. According to CLDR 1.9 and
+                // ISO/IEC 14651, Annex C, C.2.1 Thai ordering principles, 0E2F to 0E5B are punctuaion marks that need to be ignored
+                // in the first three leveles.  0E4E to 0E4B are tonal marks to be compared in secondary level.
+                // In real implmentation, set puncutation marks in tertiary as there is no fourth level in Java.
+                // Set all these special marks after \u0301, the accute accent.
                 + "& \u0301 "   // acute accent
+
+                //puncutation marks
+                + ", \u0E2F "                   //  PAIYANNOI      (ellipsis, abbreviation)
+                + ", \u0E46 "                   //  MAIYAMOK
+                + ", \u0E4F "                   //  FONGMAN
+                + ", \u0E5A "                   //  ANGKHANKHU
+                + ", \u0E5B "                   //  KHOMUT
+
+                //tonal marks
+                + "; \u0E4E "                   //  YAMAKKAN
+                + "; \u0E4C "                   //  THANTHAKHAT
                 + "; \u0E47 "                   //  MAITAIKHU
                 + "; \u0E48 "                   //  MAI EK
                 + "; \u0E49 "                   //  MAI THO
                 + "; \u0E4A "                   //  MAI TRI
                 + "; \u0E4B "                   //  MAI CHATTAWA
-                + "; \u0E4C "                   //  THANTHAKHAT
+
+                //
+                // Digits are equal to their corresponding Arabic digits in the first level
+                //
+                + "& 0 = \u0E50 "                   //  DIGIT ZERO
+                + "& 1 = \u0E51 "                   //  DIGIT ONE
+                + "& 2 = \u0E52 "                   //  DIGIT TWO
+                + "& 3 = \u0E53 "                   //  DIGIT THREE
+                + "& 4 = \u0E54 "                   //  DIGIT FOUR
+                + "& 5 = \u0E55 "                   //  DIGIT FIVE
+                + "& 6 = \u0E56 "                   //  DIGIT SIX
+                + "& 7 = \u0E57 "                   //  DIGIT SEVEN
+                + "& 8 = \u0E58 "                   //  DIGIT EIGHT
+                + "& 9 = \u0E59 "                   //  DIGIT NINE
 
 
-                // These are supposed to be ignored, so I'm treating them as controls
-                + "& \u0001 "
-                + "= \u0E3A "                   //  PHINTHU
-                + "= '.' "                      //  period
-                }
+            }
         };
     }
 }

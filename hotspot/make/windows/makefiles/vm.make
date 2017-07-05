@@ -134,6 +134,7 @@ CPP_INCLUDE_DIRS=$(CPP_INCLUDE_DIRS) /I "$(ALTSRC)\cpu\$(Platform_arch)\vm"
 
 CPP_INCLUDE_DIRS=$(CPP_INCLUDE_DIRS) \
   /I "$(COMMONSRC)\share\vm" \
+  /I "$(COMMONSRC)\share\vm\precompiled" \
   /I "$(COMMONSRC)\share\vm\prims" \
   /I "$(COMMONSRC)\os\windows\vm" \
   /I "$(COMMONSRC)\os_cpu\windows_$(Platform_arch)\vm" \
