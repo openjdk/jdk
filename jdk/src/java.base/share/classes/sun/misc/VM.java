@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,6 +401,36 @@ public class VM {
      * or -1 if the value is not available.
      */
     public static native long getegid();
+
+    /**
+     * Get a nanosecond time stamp adjustment in the form of a single long.
+     *
+     * This value can be used to create an instant using
+     * {@link java.time.Instant#ofEpochSecond(long, long)
+     *  java.time.Instant.ofEpochSecond(offsetInSeconds,
+     *  getNanoTimeAdjustment(offsetInSeconds))}.
+     * <p>
+     * The value returned has the best resolution available to the JVM on
+     * the current system.
+     * This is usually down to microseconds - or tenth of microseconds -
+     * depending on the OS/Hardware and the JVM implementation.
+     *
+     * @param offsetInSeconds The offset in seconds from which the nanosecond
+     *        time stamp should be computed.
+     *
+     * @apiNote The offset should be recent enough - so that
+     *         {@code offsetInSeconds} is within {@code +/- 2^32} seconds of the
+     *         current UTC time. If the offset is too far off, {@code -1} will be
+     *         returned. As such, {@code -1} must not be considered as a valid
+     *         nano time adjustment, but as an exception value indicating
+     *         that an offset closer to the current time should be used.
+     *
+     * @return A nanosecond time stamp adjustment in the form of a single long.
+     *     If the offset is too far off the current time, this method returns -1.
+     *     In that case, the caller should call this method again, passing a
+     *     more accurate offset.
+     */
+    public static native long getNanoTimeAdjustment(long offsetInSeconds);
 
     static {
         initialize();

@@ -39,6 +39,7 @@ import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.text.MessageFormat;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
@@ -360,7 +361,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private Object invokeImpl(final Object selfObject, final String name, final Object... args) throws ScriptException, NoSuchMethodException {
-        name.getClass(); // null check
+        Objects.requireNonNull(name);
         assert !(selfObject instanceof ScriptObject) : "raw ScriptObject not expected here";
 
         Global invokeGlobal = null;

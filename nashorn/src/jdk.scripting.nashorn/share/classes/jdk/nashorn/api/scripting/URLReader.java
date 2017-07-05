@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Objects;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
@@ -77,8 +78,7 @@ public final class URLReader extends Reader {
      * @throws NullPointerException if url is null
      */
     public URLReader(final URL url, final Charset cs) {
-        // null check
-        url.getClass();
+        Objects.requireNonNull(url);
         this.url = url;
         this.cs  = cs;
     }

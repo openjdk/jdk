@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,7 +409,7 @@ public final class TimeZoneNames_de extends TimeZoneNamesBundle {
             {"America/Buenos_Aires", AGT},
             {"America/Cambridge_Bay", MST},
             {"America/Campo_Grande", AMT},
-            {"America/Cancun", CST},
+            {"America/Cancun", EST},
             {"America/Caracas", new String[] {"Venezuelanische Zeit", "VET",
                                               "Venezuelanische Sommerzeit", "VEST",
                                               "Venezuelanische Zeit", "VET"}},

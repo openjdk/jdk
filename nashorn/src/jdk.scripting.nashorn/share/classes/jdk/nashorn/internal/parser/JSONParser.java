@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,38 +25,59 @@
 
 package jdk.nashorn.internal.parser;
 
-import static jdk.nashorn.internal.parser.TokenType.COLON;
-import static jdk.nashorn.internal.parser.TokenType.COMMARIGHT;
-import static jdk.nashorn.internal.parser.TokenType.EOF;
-import static jdk.nashorn.internal.parser.TokenType.ESCSTRING;
-import static jdk.nashorn.internal.parser.TokenType.RBRACE;
-import static jdk.nashorn.internal.parser.TokenType.RBRACKET;
-import static jdk.nashorn.internal.parser.TokenType.STRING;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.nashorn.internal.ir.Expression;
-import jdk.nashorn.internal.ir.LiteralNode;
-import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.ObjectNode;
-import jdk.nashorn.internal.ir.PropertyNode;
-import jdk.nashorn.internal.ir.UnaryNode;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator;
+import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.runtime.ECMAErrors;
 import jdk.nashorn.internal.runtime.ErrorManager;
+import jdk.nashorn.internal.runtime.JSErrorType;
+import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ParserException;
+import jdk.nashorn.internal.runtime.Property;
+import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.SpillProperty;
+import jdk.nashorn.internal.runtime.arrays.ArrayData;
+import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
+import jdk.nashorn.internal.scripts.JO;
+
+import static jdk.nashorn.internal.parser.TokenType.STRING;
 
 /**
  * Parses JSON text and returns the corresponding IR node. This is derived from the objectLiteral production of the main parser.
  *
  * See: 15.12.1.2 The JSON Syntactic Grammar
  */
-public class JSONParser extends AbstractParser {
+public class JSONParser {
+
+    final private String source;
+    final private Global global;
+    final int length;
+    int pos = 0;
+
+    private static PropertyMap EMPTY_MAP = PropertyMap.newMap();
+
+    private static final int EOF = -1;
+
+    private static final String TRUE  = "true";
+    private static final String FALSE = "false";
+    private static final String NULL  = "null";
+
+    private static final int STATE_EMPTY          = 0;
+    private static final int STATE_ELEMENT_PARSED = 1;
+    private static final int STATE_COMMA_PARSED   = 2;
 
     /**
      * Constructor
      * @param source  the source
-     * @param errors  the error manager
+     * @param global the global object
      */
-    public JSONParser(final Source source, final ErrorManager errors) {
-        super(source, errors, false, 0);
+    public JSONParser(final String source, final Global global ) {
+        this.source = source;
+        this.global = global;
+        this.length = source.length();
     }
 
     /**
@@ -114,329 +135,409 @@ public class JSONParser extends AbstractParser {
     }
 
     /**
-     * Public parsed method - start lexing a new token stream for
-     * a JSON script
+     * Public parse method. Parse a string into a JSON object.
      *
-     * @return the JSON literal
+     * @return the parsed JSON Object
      */
-    public Node parse() {
-        stream = new TokenStream();
-
-        lexer = new Lexer(source, stream) {
-
-            @Override
-            protected boolean skipComments() {
-                return false;
-            }
-
-            @Override
-            protected boolean isStringDelimiter(final char ch) {
-                return ch == '\"';
-            }
-
-            // ECMA 15.12.1.1 The JSON Lexical Grammar - JSONWhiteSpace
-            @Override
-            protected boolean isWhitespace(final char ch) {
-                return Lexer.isJsonWhitespace(ch);
-            }
-
-            @Override
-            protected boolean isEOL(final char ch) {
-                return Lexer.isJsonEOL(ch);
-            }
-
-            // ECMA 15.12.1.1 The JSON Lexical Grammar - JSONNumber
-            @Override
-            protected void scanNumber() {
-                // Record beginning of number.
-                final int startPosition = position;
-                // Assume value is a decimal.
-                TokenType valueType = TokenType.DECIMAL;
-
-                // floating point can't start with a "." with no leading digit before
-                if (ch0 == '.') {
-                    error(Lexer.message("json.invalid.number"), STRING, position, limit);
-                }
-
-                // First digit of number.
-                final int digit = convertDigit(ch0, 10);
-
-                // skip first digit
-                skip(1);
-
-                if (digit != 0) {
-                    // Skip over remaining digits.
-                    while (convertDigit(ch0, 10) != -1) {
-                        skip(1);
-                    }
-                }
-
-                if (ch0 == '.' || ch0 == 'E' || ch0 == 'e') {
-                    // Must be a double.
-                    if (ch0 == '.') {
-                        // Skip period.
-                        skip(1);
-
-                        boolean mantissa = false;
-                        // Skip mantissa.
-                        while (convertDigit(ch0, 10) != -1) {
-                            mantissa = true;
-                            skip(1);
-                        }
-
-                        if (! mantissa) {
-                            // no digit after "."
-                            error(Lexer.message("json.invalid.number"), STRING, position, limit);
-                        }
-                    }
-
-                    // Detect exponent.
-                    if (ch0 == 'E' || ch0 == 'e') {
-                        // Skip E.
-                        skip(1);
-                        // Detect and skip exponent sign.
-                        if (ch0 == '+' || ch0 == '-') {
-                            skip(1);
-                        }
-                        boolean exponent = false;
-                        // Skip exponent.
-                        while (convertDigit(ch0, 10) != -1) {
-                            exponent = true;
-                            skip(1);
-                        }
-
-                        if (! exponent) {
-                            // no digit after "E"
-                            error(Lexer.message("json.invalid.number"), STRING, position, limit);
-                        }
-                    }
-
-                    valueType = TokenType.FLOATING;
-                }
-
-                // Add number token.
-                add(valueType, startPosition);
-            }
-
-            // ECMA 15.12.1.1 The JSON Lexical Grammar - JSONEscapeCharacter
-            @Override
-            protected boolean isEscapeCharacter(final char ch) {
-                switch (ch) {
-                    case '"':
-                    case '/':
-                    case '\\':
-                    case 'b':
-                    case 'f':
-                    case 'n':
-                    case 'r':
-                    case 't':
-                    // could be unicode escape
-                    case 'u':
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-        };
-
-        k = -1;
-
-        next();
-
-        final Node resultNode = jsonLiteral();
-        expect(EOF);
-
-        return resultNode;
-    }
-
-    @SuppressWarnings("fallthrough")
-    private LiteralNode<?> getStringLiteral() {
-        final LiteralNode<?> literal = getLiteral();
-        final String         str     = (String)literal.getValue();
-
-        for (int i = 0; i < str.length(); i++) {
-            final char ch = str.charAt(i);
-            switch (ch) {
-            default:
-                if (ch > 0x001f) {
-                    break;
-                }
-            case '"':
-            case '\\':
-                throw error(AbstractParser.message("unexpected.token", str));
-            }
+    public Object parse() {
+        final Object value = parseLiteral();
+        skipWhiteSpace();
+        if (pos < length) {
+            throw expectedError(pos, "eof", toString(peek()));
         }
-
-        return literal;
+        return value;
     }
 
-    /**
-     * Parse a JSON literal from the token stream
-     * @return the JSON literal as a Node
-     */
-    private Expression jsonLiteral() {
-        final long literalToken = token;
+    private Object parseLiteral() {
+        skipWhiteSpace();
 
-        switch (type) {
-        case STRING:
-            return getStringLiteral();
-        case ESCSTRING:
-        case DECIMAL:
-        case FLOATING:
-            return getLiteral();
-        case FALSE:
-            next();
-            return LiteralNode.newInstance(literalToken, finish, false);
-        case TRUE:
-            next();
-            return LiteralNode.newInstance(literalToken, finish, true);
-        case NULL:
-            next();
-            return LiteralNode.newInstance(literalToken, finish);
-        case LBRACKET:
-            return arrayLiteral();
-        case LBRACE:
-            return objectLiteral();
-        /*
-         * A.8.1 JSON Lexical Grammar
-         *
-         * JSONNumber :: See 15.12.1.1
-         *    -opt DecimalIntegerLiteral JSONFractionopt ExponentPartopt
-         */
-        case SUB:
-            next();
-
-            final long realToken = token;
-            final Object value = getValue();
-
-            if (value instanceof Number) {
-                next();
-                return new UnaryNode(literalToken, LiteralNode.newInstance(realToken, finish, (Number)value));
-            }
-
-            throw error(AbstractParser.message("expected", "number", type.getNameOrType()));
+        final int c = peek();
+        if (c == EOF) {
+            throw expectedError(pos, "json literal", "eof");
+        }
+        switch (c) {
+        case '{':
+            return parseObject();
+        case '[':
+            return parseArray();
+        case '"':
+            return parseString();
+        case 'f':
+            return parseKeyword(FALSE, Boolean.FALSE);
+        case 't':
+            return parseKeyword(TRUE, Boolean.TRUE);
+        case 'n':
+            return parseKeyword(NULL, null);
         default:
-            break;
+            if (isDigit(c) || c == '-') {
+                return parseNumber();
+            } else if (c == '.') {
+                throw numberError(pos);
+            } else {
+                throw expectedError(pos, "json literal", toString(c));
+            }
         }
-
-        throw error(AbstractParser.message("expected", "json literal", type.getNameOrType()));
     }
 
-    /**
-     * Parse an array literal from the token stream
-     * @return the array literal as a Node
-     */
-    private LiteralNode<Expression[]> arrayLiteral() {
-        // Unlike JavaScript array literals, elison is not permitted in JSON.
+    private Object parseObject() {
+        PropertyMap propertyMap = EMPTY_MAP;
+        ArrayData arrayData = ArrayData.EMPTY_ARRAY;
+        final ArrayList<Object> values = new ArrayList<>();
+        int state = STATE_EMPTY;
 
-        // Capture LBRACKET token.
-        final long arrayToken = token;
-        // LBRACKET tested in caller.
-        next();
+        assert peek() == '{';
+        pos++;
 
-        LiteralNode<Expression[]> result = null;
-        // Prepare to accummulating elements.
-        final List<Expression> elements = new ArrayList<>();
+        while (pos < length) {
+            skipWhiteSpace();
+            final int c = peek();
 
-loop:
-        while (true) {
-            switch (type) {
-            case RBRACKET:
-                next();
-                result = LiteralNode.newInstance(arrayToken, finish, elements);
-                break loop;
-
-            case COMMARIGHT:
-                next();
-                // check for trailing comma - not allowed in JSON
-                if (type == RBRACKET) {
-                    throw error(AbstractParser.message("trailing.comma.in.json", type.getNameOrType()));
+            switch (c) {
+            case '"':
+                if (state == STATE_ELEMENT_PARSED) {
+                    throw expectedError(pos - 1, ", or }", toString(c));
                 }
+                final String id = parseString();
+                expectColon();
+                final Object value = parseLiteral();
+                final int index = ArrayIndex.getArrayIndex(id);
+                if (ArrayIndex.isValidArrayIndex(index)) {
+                    arrayData = addArrayElement(arrayData, index, value);
+                } else {
+                    propertyMap = addObjectProperty(propertyMap, values, id, value);
+                }
+                state = STATE_ELEMENT_PARSED;
                 break;
-
-            default:
-                // Add expression element.
-                elements.add(jsonLiteral());
-                // Comma between array elements is mandatory in JSON.
-                if (type != COMMARIGHT && type != RBRACKET) {
-                   throw error(AbstractParser.message("expected", ", or ]", type.getNameOrType()));
+            case ',':
+                if (state != STATE_ELEMENT_PARSED) {
+                    throw error(AbstractParser.message("trailing.comma.in.json"), pos);
                 }
+                state = STATE_COMMA_PARSED;
+                pos++;
+                break;
+            case '}':
+                if (state == STATE_COMMA_PARSED) {
+                    throw error(AbstractParser.message("trailing.comma.in.json"), pos);
+                }
+                pos++;
+                return createObject(propertyMap, values, arrayData);
+            default:
+                throw expectedError(pos, ", or }", toString(c));
+            }
+        }
+        throw expectedError(pos, ", or }", "eof");
+    }
+
+    private static ArrayData addArrayElement(final ArrayData arrayData, final int index, final Object value) {
+        final long oldLength = arrayData.length();
+        final long longIndex = ArrayIndex.toLongIndex(index);
+        ArrayData newArrayData = arrayData;
+        if (longIndex >= oldLength) {
+            newArrayData = newArrayData.ensure(longIndex);
+            if (longIndex > oldLength) {
+                newArrayData = newArrayData.delete(oldLength, longIndex - 1);
+            }
+        }
+        return newArrayData.set(index, value, false);
+    }
+
+    private static PropertyMap addObjectProperty(final PropertyMap propertyMap, final List<Object> values,
+                                                 final String id, final Object value) {
+        final Property oldProperty = propertyMap.findProperty(id);
+        final Property newProperty;
+        final PropertyMap newMap;
+        final Class<?> type = ObjectClassGenerator.OBJECT_FIELDS_ONLY ? Object.class : getType(value);
+
+        if (oldProperty != null) {
+            values.set(oldProperty.getSlot(), value);
+            newProperty = new SpillProperty(id, 0, oldProperty.getSlot());
+            newProperty.setType(type);
+            newMap = propertyMap.replaceProperty(oldProperty, newProperty);;
+        } else {
+            values.add(value);
+            newProperty = new SpillProperty(id, 0, propertyMap.size());
+            newProperty.setType(type);
+            newMap = propertyMap.addProperty(newProperty);
+        }
+
+        return newMap;
+    }
+
+    private Object createObject(final PropertyMap propertyMap, final List<Object> values, final ArrayData arrayData) {
+        final long[] primitiveSpill = new long[values.size()];
+        final Object[] objectSpill = new Object[values.size()];
+
+        for (final Property property : propertyMap.getProperties()) {
+            if (property.getType() == Object.class) {
+                objectSpill[property.getSlot()] = values.get(property.getSlot());
+            } else {
+                primitiveSpill[property.getSlot()] = ObjectClassGenerator.pack((Number) values.get(property.getSlot()));
+            }
+        }
+
+        final ScriptObject object = new JO(propertyMap, primitiveSpill, objectSpill);
+        object.setInitialProto(global.getObjectPrototype());
+        object.setArray(arrayData);
+        return object;
+    }
+
+    private static Class<?> getType(final Object value) {
+        if (value instanceof Integer) {
+            return int.class;
+        } else if (value instanceof Long) {
+            return long.class;
+        } else if (value instanceof Double) {
+            return double.class;
+        } else {
+            return Object.class;
+        }
+    }
+
+    private void expectColon() {
+        skipWhiteSpace();
+        final int n = next();
+        if (n != ':') {
+            throw expectedError(pos - 1, ":", toString(n));
+        }
+    }
+
+    private Object parseArray() {
+        ArrayData arrayData = ArrayData.EMPTY_ARRAY;
+        int state = STATE_EMPTY;
+
+        assert peek() == '[';
+        pos++;
+
+        while (pos < length) {
+            skipWhiteSpace();
+            final int c = peek();
+
+            switch (c) {
+            case ',':
+                if (state != STATE_ELEMENT_PARSED) {
+                    throw error(AbstractParser.message("trailing.comma.in.json"), pos);
+                }
+                state = STATE_COMMA_PARSED;
+                pos++;
+                break;
+            case ']':
+                if (state == STATE_COMMA_PARSED) {
+                    throw error(AbstractParser.message("trailing.comma.in.json"), pos);
+                }
+                pos++;
+                return global.wrapAsObject(arrayData);
+            default:
+                if (state == STATE_ELEMENT_PARSED) {
+                    throw expectedError(pos, ", or ]", toString(c));
+                }
+                final long index = arrayData.length();
+                arrayData = arrayData.ensure(index).set((int) index, parseLiteral(), true);
+                state = STATE_ELEMENT_PARSED;
                 break;
             }
         }
 
-        return result;
+        throw expectedError(pos, ", or ]", "eof");
     }
 
-    /**
-     * Parse an object literal from the token stream
-     * @return the object literal as a Node
-     */
-    private ObjectNode objectLiteral() {
-        // Capture LBRACE token.
-        final long objectToken = token;
-        // LBRACE tested in caller.
-        next();
+    private String parseString() {
+        // String buffer is only instantiated if string contains escape sequences.
+        int start = ++pos;
+        StringBuilder sb = null;
 
-        // Prepare to accumulate elements.
-        final List<PropertyNode> elements = new ArrayList<>();
+        while (pos < length) {
+            final int c = next();
+            if (c <= 0x1f) {
+                // Characters < 0x1f are not allowed in JSON strings.
+                throw syntaxError(pos, "String contains control character");
 
-        // Create a block for the object literal.
-loop:
-        while (true) {
-            switch (type) {
-            case RBRACE:
-                next();
-                break loop;
-
-            case COMMARIGHT:
-                next();
-                // check for trailing comma - not allowed in JSON
-                if (type == RBRACE) {
-                    throw error(AbstractParser.message("trailing.comma.in.json", type.getNameOrType()));
+            } else if (c == '\\') {
+                if (sb == null) {
+                    sb = new StringBuilder(pos - start + 16);
                 }
-                break;
+                sb.append(source, start, pos - 1);
+                sb.append(parseEscapeSequence());
+                start = pos;
 
-            default:
-                // Get and add the next property.
-                final PropertyNode property = propertyAssignment();
-                elements.add(property);
-
-                // Comma between property assigments is mandatory in JSON.
-                if (type != RBRACE && type != COMMARIGHT) {
-                    throw error(AbstractParser.message("expected", ", or }", type.getNameOrType()));
+            } else if (c == '"') {
+                if (sb != null) {
+                    sb.append(source, start, pos - 1);
+                    return sb.toString();
                 }
-                break;
+                return source.substring(start, pos - 1);
             }
         }
 
-        // Construct new object literal.
-        return new ObjectNode(objectToken, finish, elements);
+        throw error(Lexer.message("missing.close.quote"), pos, length);
     }
 
-    /**
-     * Parse a property assignment from the token stream
-     * @return the property assignment as a Node
-     */
-    private PropertyNode propertyAssignment() {
-        // Capture firstToken.
-        final long propertyToken = token;
-        LiteralNode<?> name = null;
-
-        if (type == STRING) {
-            name = getStringLiteral();
-        } else if (type == ESCSTRING) {
-            name = getLiteral();
+    private char parseEscapeSequence() {
+        final int c = next();
+        switch (c) {
+        case '"':
+            return '"';
+        case '\\':
+            return '\\';
+        case '/':
+            return '/';
+        case 'b':
+            return '\b';
+        case 'f':
+            return '\f';
+        case 'n':
+            return '\n';
+        case 'r':
+            return '\r';
+        case 't':
+            return '\t';
+        case 'u':
+            return parseUnicodeEscape();
+        default:
+            throw error(Lexer.message("invalid.escape.char"), pos - 1, length);
         }
-
-        if (name != null) {
-            expect(COLON);
-            final Expression value = jsonLiteral();
-            return new PropertyNode(propertyToken, value.getFinish(), name, value, null, null);
-        }
-
-        // Raise an error.
-        throw error(AbstractParser.message("expected", "string", type.getNameOrType()));
     }
 
+    private char parseUnicodeEscape() {
+        return (char) (parseHexDigit() << 12 | parseHexDigit() << 8 | parseHexDigit() << 4 | parseHexDigit());
+    }
+
+    private int parseHexDigit() {
+        final int c = next();
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        } else if (c >= 'A' && c <= 'F') {
+            return c + 10 - 'A';
+        } else if (c >= 'a' && c <= 'f') {
+            return c + 10 - 'a';
+        }
+        throw error(Lexer.message("invalid.hex"), pos - 1, length);
+    }
+
+    private boolean isDigit(final int c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private void skipDigits() {
+        while (pos < length) {
+            final int c = peek();
+            if (!isDigit(c)) {
+                break;
+            }
+            pos++;
+        }
+    }
+
+    private Number parseNumber() {
+        final int start = pos;
+        int c = next();
+
+        if (c == '-') {
+            c = next();
+        }
+        if (!isDigit(c)) {
+            throw numberError(start);
+        }
+        // no more digits allowed after 0
+        if (c != '0') {
+            skipDigits();
+        }
+
+        // fraction
+        if (peek() == '.') {
+            pos++;
+            if (!isDigit(next())) {
+                throw numberError(pos - 1);
+            }
+            skipDigits();
+        }
+
+        // exponent
+        c = peek();
+        if (c == 'e' || c == 'E') {
+            pos++;
+            c = next();
+            if (c == '-' || c == '+') {
+                c = next();
+            }
+            if (!isDigit(c)) {
+                throw numberError(pos - 1);
+            }
+            skipDigits();
+        }
+
+        final double d = Double.parseDouble(source.substring(start, pos));
+        if (JSType.isRepresentableAsInt(d)) {
+            return (int) d;
+        } else if (JSType.isRepresentableAsLong(d)) {
+            return (long) d;
+        }
+        return d;
+    }
+
+    private Object parseKeyword(final String keyword, final Object value) {
+        if (!source.regionMatches(pos, keyword, 0, keyword.length())) {
+            throw expectedError(pos, "json literal", "ident");
+        }
+        pos += keyword.length();
+        return value;
+    }
+
+    private int peek() {
+        if (pos >= length) {
+            return -1;
+        }
+        return source.charAt(pos);
+    }
+
+    private int next() {
+        final int next = peek();
+        pos++;
+        return next;
+    }
+
+    private void skipWhiteSpace() {
+        while (pos < length) {
+            switch (peek()) {
+            case '\t':
+            case '\r':
+            case '\n':
+            case ' ':
+                pos++;
+                break;
+            default:
+                return;
+            }
+        }
+    }
+
+    private static String toString(final int c) {
+        return c == EOF ? "eof" : String.valueOf((char) c);
+    }
+
+    ParserException error(final String message, final int start, final int length) throws ParserException {
+        final long token     = Token.toDesc(STRING, start, length);
+        final int  pos       = Token.descPosition(token);
+        final Source src     = Source.sourceFor("<json>", source);
+        final int  lineNum   = src.getLine(pos);
+        final int  columnNum = src.getColumn(pos);
+        final String formatted = ErrorManager.format(message, src, lineNum, columnNum, token);
+        return new ParserException(JSErrorType.SYNTAX_ERROR, formatted, src, lineNum, columnNum, token);
+    }
+
+    private ParserException error(final String message, final int start) {
+        return error(message, start, length);
+    }
+
+    private ParserException numberError(final int start) {
+        return error(Lexer.message("json.invalid.number"), start);
+    }
+
+    private ParserException expectedError(final int start, final String expected, final String found) {
+        return error(AbstractParser.message("expected", expected, found), start);
+    }
+
+    private ParserException syntaxError(final int start, final String reason) {
+        final String message = ECMAErrors.getMessage("syntax.error.invalid.json", reason);
+        return error(message, start);
+    }
 }

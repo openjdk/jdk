@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.codegen;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import jdk.nashorn.internal.ir.CompileUnitHolder;
@@ -113,7 +114,7 @@ public final class CompileUnit implements Comparable<CompileUnit>, Serializable 
      * @param clazz class with code for this compile unit
      */
     void setCode(final Class<?> clazz) {
-        clazz.getClass(); // null check
+        Objects.requireNonNull(clazz);
         this.clazz = clazz;
         // Revisit this - refactor to avoid null-ed out non-final fields
         // null out emitter
