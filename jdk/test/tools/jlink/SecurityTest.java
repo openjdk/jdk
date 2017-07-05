@@ -25,12 +25,12 @@
  * @test
  * @summary Test JlinkPermission
  * @author Jean-Francois Denise
- * @modules jdk.jlink/jdk.tools.jlink
+ * @modules jdk.jlink/jdk.tools.jlink.internal
  * @run main/othervm SecurityTest
  */
 
 import java.security.AccessControlException;
-import jdk.tools.jlink.Jlink;
+import jdk.tools.jlink.internal.Jlink;
 
 public class SecurityTest {
 

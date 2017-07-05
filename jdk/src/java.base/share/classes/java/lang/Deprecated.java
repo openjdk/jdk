@@ -79,7 +79,7 @@ public @interface Deprecated {
     /**
      * Returns the version in which the annotated element became deprecated.
      * The version string is in the same format and namespace as the value of
-     * the {@code &#64;since} javadoc tag. The default value is the empty
+     * the {@code @since} javadoc tag. The default value is the empty
      * string.
      *
      * @return the version string
