@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,7 @@ AGENT_SRC_DIR = $(AGENT_DIR)/src/share/classes
 AGENT_FILES = \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/asm/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/asm/amd64/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/asm/ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/asm/sparc/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/asm/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/bugspot/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/bugspot/tree/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/c1/*.java \
@@ -59,10 +56,8 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/basic/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/basic/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/cdbg/basic/amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/dummy/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/amd64/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/linux/sparc/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/posix/*.java \
@@ -79,7 +74,6 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/sparc/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/win32/coff/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/amd64/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/windbg/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/debugger/x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/gc_implementation/g1/*.java \
@@ -98,10 +92,8 @@ $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/bsd/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/bsd_amd64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/bsd_x86/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/linux/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/linux_amd64/*.java \
-$(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/linux_ia64/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/linux_x86/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/linux_sparc/*.java \
 $(AGENT_SRC_DIR)/sun/jvm/hotspot/runtime/posix/*.java \
