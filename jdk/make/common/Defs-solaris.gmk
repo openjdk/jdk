@@ -86,15 +86,16 @@ HPIS = native
 #
 # Java default optimization (-x04/-O2) etc.  Applies to the VM.
 #
-ifeq ($(PRODUCT), java)
-    _OPT = $(CC_HIGHER_OPT)
-else
-    _OPT = $(CC_LOWER_OPT)
-    CPPFLAGS_DBG    += -DLOGGING -DDBINFO
+ifndef OPTIMIZATION_LEVEL
+  ifeq ($(PRODUCT), java)
+    OPTIMIZATION_LEVEL = HIGHER
+  else
+    OPTIMIZATION_LEVEL = LOWER
+  endif
 endif
 
 #
-# If -Xa is in CFLAGS_COMMON it will end up ahead of $(POPT) for the
+# If -Xa is in CFLAGS_COMMON it will end up ahead of $(CC_OPT) for the
 # optimized build, and that ordering of the flags completely freaks
 # out cc.  Hence, -Xa is instead in each CFLAGS variant.
 #
@@ -123,8 +124,8 @@ endif
 #
 # Debug flag for C and C++ compiler
 #
-CFLAGS_DEBUG_OPTION=-g
-CXXFLAGS_DEBUG_OPTION=-g
+CFLAGS_DEBUG_OPTION    = -g $(CC_OPT/NONE)
+CXXFLAGS_DEBUG_OPTION  = -g $(CXX_OPT/NONE)
 
 # Turn off -g if we are doing tcov build
 ifdef TCOV_BUILD
@@ -142,9 +143,8 @@ endif
 #        Performance/size of files should be about the same, maybe smaller.
 #
 ifeq ($(FASTDEBUG), true)
-  CC_FASTDEBUG_OPT       = $(CC_LOWER_OPT)
-  CFLAGS_DEBUG_OPTION    = -g   $(CC_FASTDEBUG_OPT)
-  CXXFLAGS_DEBUG_OPTION  = -g0  $(CC_FASTDEBUG_OPT)
+  CFLAGS_DEBUG_OPTION    = -g  $(CC_OPT/LOWER)
+  CXXFLAGS_DEBUG_OPTION  = -g0 $(CXX_OPT/LOWER)
 endif
 
 CFLAGS_COMMON   = -L$(OBJDIR)
@@ -160,7 +160,7 @@ CFLAGS_COMMON   += -errshort=tags
 CXXFLAGS_COMMON += -errtags=yes
 
 # Optimization flags
-CFLAGS_OPT      = $(POPT)
+CFLAGS_OPT      = $(CC_OPT)
 
 # Debug version flags
 CFLAGS_DBG      = $(CFLAGS_DEBUG_OPTION)
@@ -197,7 +197,7 @@ ifeq ($(COMPILER_WARNINGS_FATAL),true)
   CXXFLAGS_COMMON += -errwarn=%all
 endif
 
-CXXFLAGS_OPT	= $(POPT)
+CXXFLAGS_OPT	= $(CXX_OPT)
 CXXFLAGS_DBG	= $(CXXFLAGS_DEBUG_OPTION)
 CXXFLAGS_COMMON += $(CFLAGS_REQUIRED)
 
@@ -266,6 +266,10 @@ LINTFLAGS_COMMON += $(LINT_XARCH_OPTION)
 CPPFLAGS_COMMON = -D__solaris__  -D$(ARCH_FAMILY)
 CPPFLAGS_OPT    = -DNDEBUG
 CPPFLAGS_DBG    = -DDEBUG
+
+ifneq ($(PRODUCT), java)
+  CPPFLAGS_DBG    += -DLOGGING -DDBINFO
+endif
 
 ifeq ($(ARCH_FAMILY), i586)
   # The macro _LITTLE_ENDIAN needs to be defined the same to avoid the
@@ -410,63 +414,151 @@ endif
 # Different "levels" of optimization.
 #
 ifeq ($(CC_VERSION),gcc)
-  CC_HIGHEST_OPT = -O3
-  CC_HIGHER_OPT  = -O3
-  CC_LOWER_OPT   = -O2
+  
+  CC_OPT/NONE     =
+  CC_OPT/LOWER    = -O2
+  CC_OPT/HIGHER   = -O3
+  CC_OPT/HIGHEST  = -O3
+
+  CXX_OPT/NONE    =
+  CXX_OPT/LOWER   = -O2
+  CXX_OPT/HIGHER  = -O3
+  CXX_OPT/HIGHEST = -O3
+
   CFLAGS_REQUIRED_i586  += -fno-omit-frame-pointer
   CFLAGS_REQUIRED_amd64 += -fno-omit-frame-pointer
+  
   # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
   #   (See Rules.gmk) May need to wait for gcc 5?
   AUTOMATIC_PCH_OPTION = 
+
 else
+  
   # Highest could be -xO5, but indications are that -xO5 should be reserved
   #    for a per-file use, on sources with known performance impacts.
-  CC_HIGHEST_OPT = -xO4
-  CC_HIGHER_OPT  = -xO4
-  CC_LOWER_OPT   = -xO2
+  OPT_LEVEL/LOWER    = 2
+  OPT_LEVEL/HIGHER   = 4
+  OPT_LEVEL/HIGHEST  = 4
+  
+  CC_OPT/NONE     =
+  CC_OPT/LOWER    = $(OPT_LEVEL/LOWER:%=-xO%)
+  CC_OPT/HIGHER   = $(OPT_LEVEL/HIGHER:%=-xO%)
+  CC_OPT/HIGHEST  = $(OPT_LEVEL/HIGHEST:%=-xO%)
+  
+  CXX_OPT/NONE    =
+  CXX_OPT/LOWER   = $(OPT_LEVEL/LOWER:%=-xO%)
+  CXX_OPT/HIGHER  = $(OPT_LEVEL/HIGHER:%=-xO%)
+  CXX_OPT/HIGHEST = $(OPT_LEVEL/HIGHEST:%=-xO%)
+    
+  # We need stack frames at all times
+  USE_XKEEPFRAME_OPTION = false
+  ifeq ($(USE_XKEEPFRAME_OPTION),true)
+    
+    # Unknown spelling on this option at this time (Maybe in SS13?)
+    CC_XKEEPFRAME_OPTIONS  = -xkeepframe
+    CXX_XKEEPFRAME_OPTIONS = -xkeepframe
+  
+  else
+  
+    # On X86, make sure tail call optimization is off
+    #    The z and y are the tail call optimizations.
+    ifeq ($(ARCH_FAMILY), i586)
+      ifeq ($(shell $(EXPR) $(CC_VER) \> 5.8), 1)
+        # Somehow, tail call optimization is creeping in.
+        #    Make sure it is off.
+	# WARNING: These may cause compiler warnings about duplicate -O options
+        CC_XKEEPFRAME_OPTIONS  += -Wu,-O$(OPT_LEVEL/$(OPTIMIZATION_LEVEL))~yz
+        CXX_XKEEPFRAME_OPTIONS += -Qoption ube -O$(OPT_LEVEL/$(OPTIMIZATION_LEVEL))~yz
+      endif
+    endif
+  
+    #  On i586 we need to tell the code generator to ALWAYS use a
+    #   frame pointer.
+    ifeq ($(ARCH_FAMILY), i586)
+      # Note that in 5.7, this is done with -xregs=no%frameptr
+      ifeq ($(CC_VER), 5.5)
+        # It's not exactly clear when this optimization kicks in, the
+        #   current assumption is -xO4 or greater and for C++ with
+        #   the -features=no%except option and -xO4 and greater.
+        #   Bottom line is, we ALWAYS want a frame pointer!
+        CC_XKEEPFRAME_OPTIONS  += -Wu,-Z~B
+        CXX_XKEEPFRAME_OPTIONS += -Qoption ube -Z~B
+      endif
+      ifeq ($(shell $(EXPR) $(CC_VER) \> 5.6), 1)
+        # Do NOT use frame pointer register as a general purpose opt register
+        CC_OPT/NONE            += -xregs=no%frameptr
+        CXX_OPT/NONE           += -xregs=no%frameptr
+        CC_XKEEPFRAME_OPTIONS  += -xregs=no%frameptr
+        CXX_XKEEPFRAME_OPTIONS += -xregs=no%frameptr
+      endif
+    endif
+  
+    #  Optimizer for sparc needs to be told not to do certain things
+    #   related to frames or save instructions.
+    ifeq ($(ARCH_FAMILY), sparc)
+      #  Do not use save instructions instead of add instructions
+      #  This was an optimization starting in SC5.0 that made it hard for us to
+      #    find the "save" instruction (which got turned into an "add")
+      CC_XKEEPFRAME_OPTIONS  += -Wc,-Qrm-s
+      CXX_XKEEPFRAME_OPTIONS += -Qoption cg -Qrm-s
+      # Don't allow tail call code optimization. Started in SC5.0.
+      #    We don't like code of this form:
+      #	save
+      #	<code>
+      #	call foo
+      #	   restore
+      #   because we can't tell if the method will have a stack frame
+      #   and register windows or not.
+      CC_XKEEPFRAME_OPTIONS  += -Wc,-Qiselect-T0
+      CXX_XKEEPFRAME_OPTIONS += -Qoption cg -Qiselect-T0
+    endif
+  
+  endif
+
+  # Extra options used with HIGHEST
   #
-  # WARNING: Use of _OPT=$(CC_HIGHEST_OPT) in your Makefile needs to be
+  # WARNING: Use of OPTIMIZATION_LEVEL=HIGHEST in your Makefile needs to be
   #          done with care, there are some assumptions below that need to
   #          be understood about the use of pointers, and IEEE behavior.
   #
   # Use non-standard floating point mode (not IEEE 754)
-  CC_HIGHEST_OPT += -fns
+  CC_HIGHEST_EXTRAS += -fns
   # Do some simplification of floating point arithmetic (not IEEE 754)
-  CC_HIGHEST_OPT += -fsimple
+  CC_HIGHEST_EXTRAS += -fsimple
   # Use single precision floating point with 'float'
-  CC_HIGHEST_OPT += -fsingle
+  CC_HIGHEST_EXTRAS += -fsingle
   # Assume memory references via basic pointer types do not alias
   #   (Source with excessing pointer casting and data access with mixed 
   #    pointer types are not recommended)
-  CC_HIGHEST_OPT += -xalias_level=basic
+  CC_HIGHEST_EXTRAS += -xalias_level=basic
   # Use intrinsic or inline versions for math/std functions
   #   (If you expect perfect errno behavior, do not use this)
-  CC_HIGHEST_OPT += -xbuiltin=%all
+  CC_HIGHEST_EXTRAS += -xbuiltin=%all
   # Loop data dependency optimizations (need -xO3 or higher)
-  CC_HIGHEST_OPT += -xdepend
+  CC_HIGHEST_EXTRAS += -xdepend
   # Pointer parameters to functions do not overlap
   #   (Similar to -xalias_level=basic usage, but less obvious sometimes.
   #    If you pass in multiple pointers to the same data, do not use this)
-  CC_HIGHEST_OPT += -xrestrict
+  CC_HIGHEST_EXTRAS += -xrestrict
   # Inline some library routines
   #   (If you expect perfect errno behavior, do not use this)
-  CC_HIGHEST_OPT += -xlibmil
+  CC_HIGHEST_EXTRAS += -xlibmil
   # Use optimized math routines
   #   (If you expect perfect errno behavior, do not use this)
   #  Can cause undefined external on Solaris 8 X86 on __sincos, removing for now
-  #  CC_HIGHEST_OPT += -xlibmopt
+  #  CC_HIGHEST_EXTRAS += -xlibmopt
   ifeq ($(ARCH_FAMILY), sparc)
     # Assume at most 8byte alignment, raise SIGBUS on error
     ### Presents an ABI issue with customer JNI libs?
-    ####CC_HIGHEST_OPT  += -xmemalign=8s
+    ####CC_HIGHEST_EXTRAS  += -xmemalign=8s
     # Automatic prefetch instructions, explicit prefetch macros
-    CC_HIGHEST_OPT  += -xprefetch=auto,explicit
+    CC_HIGHEST_EXTRAS += -xprefetch=auto,explicit
     # Pick ultra as the chip to optimize to
-    CC_HIGHEST_OPT  += -xchip=ultra
+    CC_HIGHEST_EXTRAS += -xchip=ultra
   endif
   ifeq ($(ARCH), i586)
     # Pick pentium as the chip to optimize to
-    CC_HIGHEST_OPT  += -xchip=pentium
+    CC_HIGHEST_EXTRAS += -xchip=pentium
   endif
   ifdef LIBRARY
     # The Solaris CBE (Common Build Environment) requires that the use
@@ -476,9 +568,6 @@ else
     CFLAGS_REQUIRED_sparcv9  += -xregs=no%appl
   endif
   ifeq ($(shell $(EXPR) $(CC_VER) \> 5.6), 1)
-    # Do NOT use the frame pointer register as a general purpose opt register
-    CFLAGS_REQUIRED_i586  += -xregs=no%frameptr
-    CFLAGS_REQUIRED_amd64 += -xregs=no%frameptr
     # We MUST allow data alignment of 4 for sparc V8 (32bit)
     #     Presents an ABI issue with customer JNI libs? We must be able to
     #     to handle 4byte aligned objects? (rare occurance, but possible?)
@@ -492,76 +581,27 @@ else
   # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
   #   (See Rules.gmk) The SS11 -xpch=auto* options appear to be broken.
   AUTOMATIC_PCH_OPTION =
+  
+  # Add in keep frame options
+  CC_OPT/LOWER    += $(CC_XKEEPFRAME_OPTIONS)
+  CC_OPT/HIGHER   += $(CC_XKEEPFRAME_OPTIONS)
+  CC_OPT/HIGHEST  += $(CC_XKEEPFRAME_OPTIONS)
+  CXX_OPT/LOWER   += $(CXX_XKEEPFRAME_OPTIONS)
+  CXX_OPT/HIGHER  += $(CXX_XKEEPFRAME_OPTIONS)
+  CXX_OPT/HIGHEST += $(CXX_XKEEPFRAME_OPTIONS)
+ 
+  # Add in highest optimization settings
+  CC_OPT/HIGHEST  += $(CC_HIGHEST_EXTRAS)
+  CXX_OPT/HIGHEST += $(CC_HIGHEST_EXTRAS)
+  
 endif
-CC_NO_OPT      = 
 
-# If NO_OPTIMIZATIONS is defined in the environment, turn all optimzations off
-ifdef NO_OPTIMIZATIONS
-  CC_HIGHEST_OPT = $(CC_NO_OPT)
-  CC_HIGHER_OPT  = $(CC_NO_OPT)
-  CC_LOWER_OPT   = $(CC_NO_OPT)
-endif
+# Default optimization settings based on level.
+CC_OPT  = $(CC_OPT/$(OPTIMIZATION_LEVEL))
+CXX_OPT = $(CXX_OPT/$(OPTIMIZATION_LEVEL))
 
 # Flags required all the time
 CFLAGS_REQUIRED = $(CFLAGS_REQUIRED_$(ARCH))
-
-# Add processor specific options for optimizations
-CC_HIGHEST_OPT += $(_OPT_$(ARCH))
-CC_HIGHER_OPT  += $(_OPT_$(ARCH))
-CC_LOWER_OPT   += $(_OPT_$(ARCH))
-
-# Secret compiler optimization options that should be in the above macros
-#    but since they differ in format from C to C++, are added into the C or
-#    C++ specific macros for compiler flags.
-#
-#  On i586 we need to tell the code generator to ALWAYS use a
-#   frame pointer.
-ifeq ($(ARCH_FAMILY), i586)
-  # Note that in 5.7, this is done with -xregs=no%frameptr
-  ifeq ($(CC_VER), 5.5)
-    #       It's not exactly clear when this optimization kicks in, the
-    #       current assumption is -xO4 or greater and for C++ with
-    #       the -features=no%except option and -xO4 and greater.
-    #       Bottom line is, we ALWAYS want a frame pointer!
-    CXXFLAGS_OPT += -Qoption ube -Z~B
-    CFLAGS_OPT   +=          -Wu,-Z~B
-    ifeq ($(FASTDEBUG), true)
-        CXXFLAGS_DBG += -Qoption ube -Z~B
-        CFLAGS_DBG   +=          -Wu,-Z~B
-    endif
-  endif
-endif
-#
-#  Optimizer for sparc needs to be told not to do certain things
-#   related to frames or save instructions.
-ifeq ($(ARCH_FAMILY), sparc)
-  # NOTE: Someday the compilers will provide a high-level option for this.
-  #   Use save instructions instead of add instructions
-  #    This was an optimization starting in SC5.0 that made it hard for us to
-  #    find the "save" instruction (which got turned into an "add")
-  CXXFLAGS_OPT += -Qoption cg -Qrm-s
-  CFLAGS_OPT   +=         -Wc,-Qrm-s
-  ifeq ($(FASTDEBUG), true)
-    CXXFLAGS_DBG += -Qoption cg -Qrm-s
-    CFLAGS_DBG   +=         -Wc,-Qrm-s
-  endif
-  #
-  # NOTE: Someday the compilers will provide a high-level option for this.
-  #   Don't allow tail call code optimization. Started in SC5.0.
-  #    We don't like code of this form:
-  #	save
-  #	<code>
-  #	call foo
-  #	   restore
-  #   because we can't tell if the method will have a stack frame
-  #   and register windows or not.
-  CXXFLAGS_OPT += -Qoption cg -Qiselect-T0
-  CFLAGS_OPT   +=         -Wc,-Qiselect-T0
-  ifeq ($(FASTDEBUG), true)
-    CXXFLAGS_DBG += -Qoption cg -Qiselect-T0
-    CFLAGS_DBG   +=         -Wc,-Qiselect-T0
-  endif
-endif
 
 #
 # Path and option to link against the VM, if you have to.  Note that

@@ -1900,7 +1900,6 @@ static void
 dump_heap_segment_and_reset(jlong segment_size)
 {
     int   fd;
-    char *last_chunk;
     jlong last_chunk_len;
 
     HPROF_ASSERT(gdata->heap_fd >= 0);

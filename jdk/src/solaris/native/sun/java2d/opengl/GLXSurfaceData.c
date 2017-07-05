@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,9 @@ extern UnlockFunc     OGLSD_Unlock;
 extern DisposeFunc    OGLSD_Dispose;
 
 extern struct MComponentPeerIDs mComponentPeerIDs;
+
+extern void
+    OGLSD_SetNativeDimensions(JNIEnv *env, OGLSDOps *oglsdo, jint w, jint h);
 
 jboolean surfaceCreationFailed = JNI_FALSE;
 
@@ -459,6 +462,8 @@ Java_sun_java2d_opengl_GLXSurfaceData_initPbuffer
 
     glxsdo->drawable = pbuffer;
     glxsdo->xdrawable = 0;
+
+    OGLSD_SetNativeDimensions(env, oglsdo, width, height);
 
     return JNI_TRUE;
 }

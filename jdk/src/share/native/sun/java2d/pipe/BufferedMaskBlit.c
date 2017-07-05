@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
 {
     SurfaceDataOps *srcOps = (SurfaceDataOps *)jlong_to_ptr(pSrcOps);
     SurfaceDataRasInfo srcInfo;
-    unsigned char *pMask;
     unsigned char *bbuf;
     jint *pBuf;
 
@@ -97,13 +96,6 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
         return bpos;
     }
 
-    pMask = (*env)->GetPrimitiveArrayCritical(env, maskArray, 0);
-    if (pMask == NULL) {
-        J2dRlsTraceLn(J2D_TRACE_ERROR,
-            "BufferedMaskBlit_enqueueTile: cannot lock mask array");
-        return bpos;
-    }
-
     srcInfo.bounds.x1 = srcx;
     srcInfo.bounds.y1 = srcy;
     srcInfo.bounds.x2 = srcx + width;
@@ -112,8 +104,6 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
     if (srcOps->Lock(env, srcOps, &srcInfo, SD_LOCK_READ) != SD_SUCCESS) {
         J2dRlsTraceLn(J2D_TRACE_WARNING,
                       "BufferedMaskBlit_enqueueTile: could not acquire lock");
-        (*env)->ReleasePrimitiveArrayCritical(env, maskArray,
-                                              pMask, JNI_ABORT);
         return bpos;
     }
 
@@ -129,6 +119,15 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
                 PtrCoord(srcInfo.rasBase,
                          srcInfo.bounds.x1, srcInfo.pixelStride,
                          srcInfo.bounds.y1, srcInfo.scanStride);
+            unsigned char *pMask =
+                (*env)->GetPrimitiveArrayCritical(env, maskArray, 0);
+            if (pMask == NULL) {
+                J2dRlsTraceLn(J2D_TRACE_ERROR,
+                    "BufferedMaskBlit_enqueueTile: cannot lock mask array");
+                SurfaceData_InvokeRelease(env, srcOps, &srcInfo);
+                SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
+                return bpos;
+            }
 
             width = srcInfo.bounds.x2 - srcInfo.bounds.x1;
             height = srcInfo.bounds.y2 - srcInfo.bounds.y1;
@@ -166,18 +165,22 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
                 do {
                     jint w = width;
                     do {
-                        jubyte pathA = *pMask++;
+                        jint pathA = *pMask++;
                         if (!pathA) {
                             pBuf[0] = 0;
                         } else {
-                            jint cr, cg, cb, ca;
-                            jubyte r, g, b, a;
-                            LoadIntArgbTo4ByteArgb(pSrc, c, 0, ca, cr, cg, cb);
-                            a = MUL8(ca, pathA);
-                            r = MUL8(cr, a);
-                            g = MUL8(cg, a);
-                            b = MUL8(cb, a);
-                            pBuf[0] = (a << 24) | (r << 16) | (g << 8) | b;
+                            jint pixel = pSrc[0];
+                            if (pathA == 0xff && (pixel >> 24) + 1 == 0) {
+                                pBuf[0] = pixel;
+                            } else {
+                                jint r, g, b, a;
+                                ExtractIntDcmComponents1234(pixel, a, r, g, b);
+                                a = MUL8(pathA, a);
+                                r = MUL8(a, r);
+                                g = MUL8(a, g);
+                                b = MUL8(a, b);
+                                pBuf[0] = (a << 24) | (r << 16) | (g << 8) | b;
+                            }
                         }
                         pSrc = PtrAddBytes(pSrc, srcPixelStride);
                         pBuf++;
@@ -191,17 +194,17 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
                 do {
                     jint w = width;
                     do {
-                        jubyte pathA = *pMask++;
+                        jint pathA = *pMask++;
                         if (!pathA) {
                             pBuf[0] = 0;
                         } else if (pathA == 0xff) {
                             pBuf[0] = pSrc[0];
                         } else {
-                            jubyte r, g, b, a;
-                            a = MUL8((pSrc[0] >> 24) & 0xff, pathA);
-                            r = MUL8((pSrc[0] >> 16) & 0xff, pathA);
-                            g = MUL8((pSrc[0] >>  8) & 0xff, pathA);
-                            b = MUL8((pSrc[0] >>  0) & 0xff, pathA);
+                            jint r, g, b, a;
+                            a = MUL8(pathA, (pSrc[0] >> 24) & 0xff);
+                            r = MUL8(pathA, (pSrc[0] >> 16) & 0xff);
+                            g = MUL8(pathA, (pSrc[0] >>  8) & 0xff);
+                            b = MUL8(pathA, (pSrc[0] >>  0) & 0xff);
                             pBuf[0] = (a << 24) | (r << 16) | (g << 8) | b;
                         }
                         pSrc = PtrAddBytes(pSrc, srcPixelStride);
@@ -216,17 +219,18 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
                 do {
                     jint w = width;
                     do {
-                        jubyte pathA = *pMask++;
+                        jint pathA = *pMask++;
                         if (!pathA) {
                             pBuf[0] = 0;
+                        } else if (pathA == 0xff) {
+                            pBuf[0] = pSrc[0] | 0xff000000;
                         } else {
-                            jint cr, cg, cb;
-                            jubyte r, g, b, a;
-                            LoadIntRgbTo3ByteRgb(pSrc, c, 0, cr, cg, cb);
+                            jint r, g, b, a;
+                            LoadIntRgbTo3ByteRgb(pSrc, c, 0, r, g, b);
                             a = pathA;
-                            r = MUL8(cr, a);
-                            g = MUL8(cg, a);
-                            b = MUL8(cb, a);
+                            r = MUL8(a, r);
+                            g = MUL8(a, g);
+                            b = MUL8(a, b);
                             pBuf[0] = (a << 24) | (r << 16) | (g << 8) | b;
                         }
                         pSrc = PtrAddBytes(pSrc, srcPixelStride);
@@ -241,17 +245,16 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
                 do {
                     jint w = width;
                     do {
-                        jubyte pathA = *pMask++;
+                        jint pathA = *pMask++;
                         if (!pathA) {
                             pBuf[0] = 0;
                         } else {
-                            jint cr, cg, cb;
-                            jubyte r, g, b, a;
-                            LoadIntBgrTo3ByteRgb(pSrc, c, 0, cr, cg, cb);
+                            jint r, g, b, a;
+                            LoadIntBgrTo3ByteRgb(pSrc, c, 0, r, g, b);
                             a = pathA;
-                            r = MUL8(cr, a);
-                            g = MUL8(cg, a);
-                            b = MUL8(cb, a);
+                            r = MUL8(a, r);
+                            g = MUL8(a, g);
+                            b = MUL8(a, b);
                             pBuf[0] = (a << 24) | (r << 16) | (g << 8) | b;
                         }
                         pSrc = PtrAddBytes(pSrc, srcPixelStride);
@@ -269,13 +272,13 @@ Java_sun_java2d_pipe_BufferedMaskBlit_enqueueTile
 
             // increment current byte position
             bpos += width * height * sizeof(jint);
+
+            (*env)->ReleasePrimitiveArrayCritical(env, maskArray,
+                                                  pMask, JNI_ABORT);
         }
         SurfaceData_InvokeRelease(env, srcOps, &srcInfo);
     }
     SurfaceData_InvokeUnlock(env, srcOps, &srcInfo);
-
-    (*env)->ReleasePrimitiveArrayCritical(env, maskArray,
-                                          pMask, JNI_ABORT);
 
     // return the current byte position
     return bpos;

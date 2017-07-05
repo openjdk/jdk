@@ -185,7 +185,8 @@ endef # import-binary-plug-file
 define import-binary-plug-classes
 @$(MKDIR) -p $(CLASSDESTDIR)
 @$(CAT) $1 | $(SED) -e 's/^/PLUG IMPORT: /'
-($(CD) $(CLASSDESTDIR) && $(BOOT_JAR_CMD) xf $(PLUG_IMPORT_JARFILE) @$1)
+($(CD) $(CLASSDESTDIR) && $(BOOT_JAR_CMD) xf $(PLUG_IMPORT_JARFILE) @$1 $(BOOT_JAR_JFLAGS) )
+($(CD) $(CLASSDESTDIR) && $(java-vm-cleanup) )
 endef # import-binary-plug-classes
 
 # Import specific area classes (the classes are always created)
@@ -275,7 +276,8 @@ $(PLUG_EXPORT_JARFILE): $(PLUG_TEMPDIR)/all.clist $(PLUG_TEMPDIR)/all.jargs
 	@$(prep-target)
 	@$(ECHO) "PLUG EXPORT: $(@F)"
 	@$(CAT) $(PLUG_TEMPDIR)/all.clist | $(SED) -e 's/^/PLUG EXPORT: /'
-	$(BOOT_JAR_CMD) cf $@ @$(PLUG_TEMPDIR)/all.jargs
+	$(BOOT_JAR_CMD) cf $@ @$(PLUG_TEMPDIR)/all.jargs $(BOOT_JAR_JFLAGS)
+	@$(java-vm-cleanup)
 export-binary-plugs-jar: $(PLUG_EXPORT_JARFILE)
 
 # Export native libraries

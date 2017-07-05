@@ -294,6 +294,15 @@ JNIEXPORT int JNICALL NET_SocketClose(int fd);
 
 JNIEXPORT int JNICALL NET_Timeout(int fd, long timeout);
 
+int NET_Socket(int domain, int type, int protocol);
+
+void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
+         const char *defaultDetail);
+
+void NET_ThrowSocketException(JNIEnv *env, char* msg);
+
+jboolean NET_addrtransAvailable();
+
 /*
  * differs from NET_Timeout() as follows:
  *

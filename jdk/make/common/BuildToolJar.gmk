@@ -46,7 +46,7 @@ $(BUILDTOOL_JAR_FILE): $(BUILDTOOL_MANIFEST_FILE) \
 	    -sourcepath $(BUILDTOOL_SOURCE_ROOT) $(BUILDTOOL_MAIN_SOURCE_FILE)
 	$(BOOT_JAR_CMD) cfm $@ $(BUILDTOOL_MANIFEST_FILE) \
 	    -C $(BUILDTOOLCLASSDIR) $(PKGDIR) \
-	    $(JAR_JFLAGS) || $(RM) $@
+	    $(BOOT_JAR_JFLAGS) || $(RM) $@
 	@$(java-vm-cleanup)
 
 # Printing out a build tool information line

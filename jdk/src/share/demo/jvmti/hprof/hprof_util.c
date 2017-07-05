@@ -1174,7 +1174,7 @@ add_class_fields(JNIEnv *env, ClassIndex top_cnum, ClassIndex cnum,
 
         finfo           = empty_finfo;
         finfo.cnum      = cnum;
-        finfo.modifiers = getFieldModifiers(klass, idlist[i]);
+        finfo.modifiers = (unsigned short)getFieldModifiers(klass, idlist[i]);
         if ( ( finfo.modifiers & JVM_ACC_STATIC ) == 0 ||
              !skip_static_field_names ) {
             char *field_name;
