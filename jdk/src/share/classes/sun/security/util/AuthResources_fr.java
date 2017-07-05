@@ -111,17 +111,15 @@ public class AuthResources_fr extends java.util.ListResourceBundle {
 
         // com.sun.security.auth.PolicyParser
         {"expected.keystore.type", "type de fichier de cl\u00E9s attendu"},
-        {"can.not.specify.Principal.with.a.",
-                "impossible de sp\u00E9cifier le principal avec une "},
-        {"wildcard.class.without.a.wildcard.name",
-                "classe g\u00E9n\u00E9rique sans nom g\u00E9n\u00E9rique"},
+        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
+                "impossible de sp\u00E9cifier le principal avec une classe g\u00E9n\u00E9rique sans nom g\u00E9n\u00E9rique"},
         {"expected.codeBase.or.SignedBy", "codeBase ou SignedBy attendu"},
         {"only.Principal.based.grant.entries.permitted",
                 "seules les entr\u00E9es bas\u00E9es sur Principal sont autoris\u00E9es"},
         {"expected.permission.entry", "entr\u00E9e de droit attendue"},
         {"number.", "nombre "},
-        {"expected.", "attendu "},
-        {".read.end.of.file", ", lecture de fin de fichier"},
+        {"expected.expect.read.end.of.file.",
+                "attendu {0}, lecture de fin de fichier"},
         {"expected.read.end.of.file", "attendu ';', lecture de fin de fichier"},
         {"line.", "ligne "},
         {".expected.", ": attendu '"},
@@ -136,6 +134,9 @@ public class AuthResources_fr extends java.util.ListResourceBundle {
         {"SolarisNumericUserPrincipal.",
                 "SolarisNumericUserPrincipal : "},
         {"SolarisPrincipal.", "SolarisPrincipal : "},
+        // provided.null.name is the NullPointerException message when a
+        // developer incorrectly passes a null name to the constructor of
+        // subclasses of java.security.Principal
         {"provided.null.name", "nom NULL fourni"}
 
     };

@@ -1,4 +1,4 @@
-." Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
 ." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 ."
 ." This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 ." or visit www.oracle.com if you need additional information or have any
 ." questions.
 ."
-.TH apt 1 "14 Apr 2011"
+.TH apt 1 "07 May 2011"
 
 .LP
 .SH "NAME"
@@ -50,7 +50,10 @@ sourcefiles
 .SH "説明"
 .LP
 .LP
-注釈処理ツール \f2apt\fP は、新しいリフレクト API とサポートインフラストラクチャーから構成され、プログラム注釈を処理します。\f2apt\fP リフレクト API は、 構築時のソースベースで、プログラム構造に関する読み取り専用ビューを提供します。これらのリフレクト API は、総称を追加した後に、Java(TM) プログラミング言語の型システムを正しくモデル化するように設計されています。最初に、\f2apt\fP は、新しいソースコードと他のファイルを作成する注釈プロセッサを実行します。次に、\f2apt\fP は、元のソースファイルと生成したソースファイルの両方をコンパイルするため、開発が楽になります。ツールとのインタフェースに使用されるリフレクト API などの API は、\f2com.sun.mirror\fP のサブパッケージです。
+\f3注\fP: \f2apt\fP ツールと、パッケージ \f2com.sun.mirror\fP に含まれているそれに関連した API は、JDK 7 以降非推奨になっており、JDK の次のメジャーリリースで削除される予定です。\f2javac(1)\fP ツールで利用可能なオプションと、パッケージ \f2javax.annotation.processing\fP および \f2javax.lang.model\fP に含まれている API を使用して、注釈を処理してください。
+.LP
+.LP
+注釈処理ツール \f2apt\fP は、リフレクト API とサポートインフラストラクチャーから構成され、プログラム注釈を処理します。\f2apt\fP リフレクト API は、 構築時のソースベースで、プログラム構造に関する読み取り専用ビューを提供します。これらのリフレクト API は、総称を追加した後に、Java(TM) プログラミング言語の型システムを正しくモデル化するように設計されています。最初に、\f2apt\fP は、新しいソースコードと他のファイルを作成する注釈プロセッサを実行します。次に、\f2apt\fP は、元のソースファイルと生成したソースファイルの両方をコンパイルするため、開発が楽になります。ツールとのインタフェースに使用されるリフレクト API などの API は、\f2com.sun.mirror\fP のサブパッケージです。
 .LP
 .LP
 ツールの機能に関する詳細と、\f2apt\fP を使用した開発方法については、
@@ -58,13 +61,6 @@ sourcefiles
 \f4「apt 入門」\fP @
 .fi
 http://java.sun.com/javase/6/docs/technotes/guides/apt/GettingStarted.htmlを参照してください。
-.LP
-.RS 3
-.TP 3
-注: 
-\f2apt\fP の機能は、\f2javac(1)\fP ツールの一部となった注釈処理インフラストラクチャーに組み込まれ、すべての Java コンパイラで使用できるように標準化されました。この新しいインフラストラクチャーは、言語モデルおよび Java プラットフォームの一部となった注釈処理 API に依存します。注釈プロセッサの開発は、新しい API および \f2javac\fP ツールに基づいて行うようお勧めします。 
-.RE
-
 .LP
 .SH "オプション"
 .LP
@@ -143,7 +139,7 @@ javac と共用するオプション
 .SH "注"
 .LP
 .LP
-\f2apt\fP の機能は、\f2javac\fP により提供される標準注釈処理インフラストラクチャーに組み込まれました。今後の JDK リリースでは、\f2apt\fP および関連する API のサポートが中止する可能性があります。
+\f2apt\fP ツールと、パッケージ \f2com.sun.mirror\fP に含まれているそれに関連した API は、JDK 7 以降非推奨になっており、JDK の次のメジャーリリースで削除される予定です。\f2javac(1)\fP ツールで利用可能なオプションと、パッケージ \f2javax.annotation.processing\fP および \f2javax.lang.model\fP に含まれている API を使用して、注釈を処理してください。
 .LP
 .SH "関連項目"
 .LP

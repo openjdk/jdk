@@ -111,17 +111,15 @@ public class AuthResources_it extends java.util.ListResourceBundle {
 
         // com.sun.security.auth.PolicyParser
         {"expected.keystore.type", "tipo keystore previsto"},
-        {"can.not.specify.Principal.with.a.",
-                "impossibile specificare il principal con una "},
-        {"wildcard.class.without.a.wildcard.name",
-                "classe carattere jolly senza un nome carattere jolly"},
+        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
+                "impossibile specificare un principal con una classe carattere jolly senza un nome carattere jolly"},
         {"expected.codeBase.or.SignedBy", "previsto codeBase o SignedBy"},
         {"only.Principal.based.grant.entries.permitted",
                 "sono consentiti solo valori garantiti basati sul principal"},
         {"expected.permission.entry", "prevista voce di autorizzazione"},
         {"number.", "numero "},
-        {"expected.", "previsto "},
-        {".read.end.of.file", ", letto end of file"},
+        {"expected.expect.read.end.of.file.",
+                "previsto {0}, letto end of file"},
         {"expected.read.end.of.file", "previsto ';', letto end of file"},
         {"line.", "riga "},
         {".expected.", ": previsto '"},
@@ -136,6 +134,9 @@ public class AuthResources_it extends java.util.ListResourceBundle {
         {"SolarisNumericUserPrincipal.",
                 "SolarisNumericUserPrincipal: "},
         {"SolarisPrincipal.", "SolarisPrincipal: "},
+        // provided.null.name is the NullPointerException message when a
+        // developer incorrectly passes a null name to the constructor of
+        // subclasses of java.security.Principal
         {"provided.null.name", "il nome fornito \u00E8 nullo"}
 
     };

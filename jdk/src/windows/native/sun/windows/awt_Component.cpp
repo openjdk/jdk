@@ -549,8 +549,6 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
 
     m_hwnd = hwnd;
 
-    ImmAssociateContext(NULL);
-
     SetDrawState((jint)JAWT_LOCK_SURFACE_CHANGED |
         (jint)JAWT_LOCK_BOUNDS_CHANGED |
         (jint)JAWT_LOCK_CLIP_CHANGED);
@@ -1203,7 +1201,7 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_IME_COMPOSITIONFULL)
         WIN_MSG(WM_IME_SELECT)
         WIN_MSG(WM_IME_CHAR)
-        FMT_MSG(0x0288, "WM_IME_REQUEST")
+        FMT_MSG(WM_IME_REQUEST)
         WIN_MSG(WM_IME_KEYDOWN)
         WIN_MSG(WM_IME_KEYUP)
         FMT_MSG(0x02A1, "WM_MOUSEHOVER")
@@ -1733,7 +1731,7 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
       case WM_IME_SELECT:
       case WM_IME_KEYUP:
       case WM_IME_KEYDOWN:
-      case 0x0288: // WM_IME_REQUEST
+      case WM_IME_REQUEST:
           CallProxyDefWindowProc(message, wParam, lParam, retValue, mr);
           break;
       case WM_CHAR:
@@ -1969,7 +1967,9 @@ MsgRouting AwtComponent::WmDestroy()
 {
     // fix for 6259348: we should enter the SyncCall critical section before
     // disposing the native object, that is value 1 of lParam is intended for
-    AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSE, (WPARAM)this, (LPARAM)1);
+    if(m_peerObject != NULL) { // is not being terminating
+        AwtToolkit::GetInstance().SendMessage(WM_AWT_DISPOSE, (WPARAM)m_peerObject, (LPARAM)1);
+    }
 
     return mrConsume;
 }
@@ -2020,25 +2020,6 @@ MsgRouting AwtComponent::WmExitMenuLoop(BOOL isTrackPopupMenu)
 
 MsgRouting AwtComponent::WmShowWindow(BOOL show, UINT status)
 {
-    // NULL-InputContext is associated to all window just after they created.
-    // ( see CreateHWnd() )
-    // But to TextField and TextArea on Win95, valid InputContext is associated
-    // by system after that. This is not happen on NT4.0
-    // For workaround, force context to NULL here.
-
-    // Fix for 4730228
-    // Check if we already have Java-associated input method
-    HIMC context = 0;
-    if (m_InputMethod != NULL) {
-        // If so get the appropriate context from it and use it instead of empty context
-        JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-        context = (HIMC)(UINT_PTR)(JNU_GetFieldByName(env, NULL, m_InputMethod, "context", "I").i);
-    }
-
-    if (ImmGetContext() != 0 && ImmGetContext() != context) {
-        ImmAssociateContext(context);
-    }
-
     return mrDoDefault;
 }
 
@@ -4655,10 +4636,6 @@ void* AwtComponent::SetNativeFocusOwner(void *self) {
 ret:
     if (c && ::IsWindow(c->GetHWnd())) {
         sm_focusOwner = c->GetHWnd();
-        AwtFrame *owner = (AwtFrame*)GetComponent(c->GetProxyToplevelContainer());
-        if (owner) {
-            owner->SetLastProxiedFocusOwner(sm_focusOwner);
-        }
     } else {
         sm_focusOwner = NULL;
     }
@@ -6534,8 +6511,7 @@ Java_sun_awt_windows_WComponentPeer__1dispose(JNIEnv *env, jobject self)
 {
     TRY_NO_HANG;
 
-    PDATA pData = JNI_GET_PDATA(self);
-    AwtObject::_Dispose(pData);
+    AwtObject::_Dispose(self);
 
     CATCH_BAD_ALLOC;
 }

@@ -32,8 +32,6 @@ import com.sun.jdi.StackFrame;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
-import java.io.*;
 
 class ThreadInfo {
     // This is a list of all known ThreadInfo objects. It survives
