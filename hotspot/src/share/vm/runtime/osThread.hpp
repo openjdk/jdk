@@ -29,7 +29,6 @@
 #include "runtime/handles.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/objectMonitor.hpp"
-#include "utilities/top.hpp"
 
 // The OSThread class holds OS-specific thread information.  It is equivalent
 // to the sys_thread_t structure of the classic JVM implementation.

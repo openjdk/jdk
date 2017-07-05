@@ -305,8 +305,10 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
 
 # This guy should remain a single colon rule because
 # otherwise we can't specify the output filename.
+# NOTE: Changes in this file was just to give a proper command line when linking
+# for use when developing the new build, and should not be integrated.
 {$(COMMONSRC)\os\windows\vm}.rc.res:
-        @$(RC) $(RC_FLAGS) /fo"$@" $<
+        $(RC) $(RC_FLAGS) /fo"$@" $<
 
 {$(COMMONSRC)\cpu\$(Platform_arch)\vm}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<

@@ -55,6 +55,7 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ergo, cset)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ergo, heap)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ergo, ihop)) \
+  LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, ergo, refine)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, heap)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, heap, region)) \
   LOG_PREFIX(GCId::print_prefix, LOG_TAGS(gc, freelist)) \

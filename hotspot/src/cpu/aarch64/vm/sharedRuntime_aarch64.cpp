@@ -198,6 +198,16 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
 bool SharedRuntime::is_wide_vector(int size) {
   return size > 8;
 }
+
+size_t SharedRuntime::trampoline_size() {
+  return 16;
+}
+
+void SharedRuntime::generate_trampoline(MacroAssembler *masm, address destination) {
+  __ mov(rscratch1, destination);
+  __ br(rscratch1);
+}
+
 // The java_calling_convention describes stack locations as ideal slots on
 // a frame with no abi restrictions. Since we must observe abi restrictions
 // (like the placement of the register window) the slots must be biased by

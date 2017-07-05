@@ -44,7 +44,7 @@ public:
   static void print(bool verbose, const char* msg, ...);
 };
 
-class CommandLineFlagRange : public CHeapObj<mtInternal> {
+class CommandLineFlagRange : public CHeapObj<mtArguments> {
 private:
   const char* _name;
 public:

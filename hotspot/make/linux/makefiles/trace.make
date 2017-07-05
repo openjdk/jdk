@@ -53,13 +53,13 @@ VPATH += $(Src_Dirs_V:%=%:)
 
 TraceGeneratedNames =     \
     traceEventClasses.hpp \
-    traceEventIds.hpp     \
-    traceTypes.hpp
+	traceEventIds.hpp     \
+	traceTypes.hpp
 
 ifeq ($(HAS_ALT_SRC), true)
-  TraceGeneratedNames +=  \
-      traceRequestables.hpp \
-      traceEventControl.hpp
+TraceGeneratedNames +=  \
+	traceRequestables.hpp \
+    traceEventControl.hpp
 endif
 
 TraceGeneratedFiles = $(TraceGeneratedNames:%=$(TraceOutDir)/%)

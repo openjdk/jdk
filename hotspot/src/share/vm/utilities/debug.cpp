@@ -52,7 +52,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
 
 #if INCLUDE_TRACE

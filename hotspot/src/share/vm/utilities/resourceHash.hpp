@@ -26,7 +26,6 @@
 #define SHARE_VM_UTILITIES_RESOURCEHASH_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/top.hpp"
 
 template<typename K> struct ResourceHashtableFns {
     typedef unsigned (*hash_fn)(K const&);

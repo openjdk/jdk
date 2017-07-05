@@ -38,29 +38,29 @@ import sun.hotspot.WhiteBox;
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=300
- *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC
- *     -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintGC -XX:+PrintGCTimeStamps -Xlog:gc
- *     -Xmx500m -XX:G1HeapRegionSize=1m -XX:MaxGCPauseMillis=1000 TestStressRSetCoarsening  1  0 300
+ *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
+ *     -Xmx500m -XX:G1HeapRegionSize=1m TestStressRSetCoarsening  1  0 300
  * @run main/othervm/timeout=300
- *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC
- *     -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintGC -XX:+PrintGCTimeStamps -Xlog:gc
- *     -Xmx500m -XX:G1HeapRegionSize=8m -XX:MaxGCPauseMillis=1000 TestStressRSetCoarsening  1 10 300
+ *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
+ *     -Xmx500m -XX:G1HeapRegionSize=8m TestStressRSetCoarsening  1 10 300
  * @run main/othervm/timeout=300
- *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC
- *     -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintGC -XX:+PrintGCTimeStamps -Xlog:gc
- *     -Xmx500m -XX:G1HeapRegionSize=32m -XX:MaxGCPauseMillis=1000 TestStressRSetCoarsening 42 10 300
+ *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
+ *     -Xmx500m -XX:G1HeapRegionSize=32m TestStressRSetCoarsening 42 10 300
  * @run main/othervm/timeout=300
- *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC
- *     -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintGC -XX:+PrintGCTimeStamps -Xlog:gc
- *     -Xmx500m -XX:G1HeapRegionSize=1m -XX:MaxGCPauseMillis=1000 TestStressRSetCoarsening  2 0 300
+ *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
+ *     -Xmx500m -XX:G1HeapRegionSize=1m TestStressRSetCoarsening  2 0 300
  * @run main/othervm/timeout=1800
- *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC
- *     -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintGC -XX:+PrintGCTimeStamps -Xlog:gc
- *     -Xmx1G -XX:G1HeapRegionSize=1m -XX:MaxGCPauseMillis=1000 TestStressRSetCoarsening 500 0  1800
+ *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
+ *     -Xmx1G -XX:G1HeapRegionSize=1m TestStressRSetCoarsening 500 0  1800
  * @run main/othervm/timeout=1800
- *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseG1GC
- *     -XX:+IgnoreUnrecognizedVMOptions -XX:+PrintGC -XX:+PrintGCTimeStamps -Xlog:gc
- *     -Xmx1G -XX:G1HeapRegionSize=1m -XX:MaxGCPauseMillis=1000 TestStressRSetCoarsening 10  10 1800
+ *     -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *     -XX:+UseG1GC -Xlog:gc* -XX:MaxGCPauseMillis=1000
+ *     -Xmx1G -XX:G1HeapRegionSize=1m TestStressRSetCoarsening 10  10 1800
  */
 
 /**
@@ -179,7 +179,13 @@ public class TestStressRSetCoarsening {
         //                 sizeOf(Object[N]) ~=  (N+4)*refSize
         // ==>
         //                 N = regionSize / K / refSize - 4;
-        N = (int) ((regionSize / K) / refSize) - 5;
+        int n = (int) ((regionSize / K) / refSize) - 5;  // best guess
+        long objSize = WB.getObjectSize(new Object[n]);
+        while (K*objSize > regionSize) {   // adjust to avoid OOME
+            n = n - 1;
+            objSize = WB.getObjectSize(new Object[n]);
+        }
+        N = n;
 
         /*
          *   --------------
@@ -202,8 +208,9 @@ public class TestStressRSetCoarsening {
         System.out.println("%% Objects");
         System.out.println("%%   N (array length)      : " + N);
         System.out.println("%%   K (objects in regions): " + K);
+        System.out.println("%%   Object size           : " + objSize +
+                "  (sizeOf(new Object[" + N + "])");
         System.out.println("%%   Reference size        : " + refSize);
-        System.out.println("%%   Approximate obj size  : " + (N + 2) * refSize / KB + "K)");
 
         storage = new Object[regionCount * K][];
         for (int i = 0; i < storage.length; i++) {
