@@ -449,8 +449,8 @@ public class LayerUI<V extends Component>
 
     /**
      * Configures the {@code JLayer} this {@code LayerUI} is set to.
-     * The default implementation registers the {@code LayerUI}
-     * as a property change listener for the passed {@code JLayer} component.
+     * The default implementation registers the passed {@code JLayer} component
+     * as a {@code PropertyChangeListener} for the property changes of this {@code LayerUI}.
      *
      * @param c the {@code JLayer} component where this UI delegate is being installed
      */
@@ -461,8 +461,8 @@ public class LayerUI<V extends Component>
     /**
      * Reverses the configuration which was previously set
      * in the {@link #installUI(JComponent)} method.
-     * The default implementation unregisters the property change listener
-     * for the passed JLayer component.
+     * The default implementation unregisters the passed {@code JLayer} component
+     * as a {@code PropertyChangeListener} for the property changes of this {@code LayerUI}.
      *
      * @param c the component from which this UI delegate is being removed.
      */

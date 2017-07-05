@@ -56,6 +56,9 @@ class FixedLengthInputStream extends LeftOverInputStream {
         int n = in.read(b, off, len);
         if (n > -1) {
             remaining -= n;
+            if (remaining == 0) {
+                t.getServerImpl().requestCompleted (t.getConnection());
+            }
         }
         return n;
     }

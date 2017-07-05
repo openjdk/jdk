@@ -47,7 +47,7 @@ class StringCharBuffer                                  // package-private
                                     0,
                                     this.remaining(),
                                     this.remaining(),
-                                    this.position());
+                                    offset + this.position());
     }
 
     private StringCharBuffer(CharSequence s,

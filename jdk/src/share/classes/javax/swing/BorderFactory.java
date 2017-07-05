@@ -273,7 +273,7 @@ public class BorderFactory
      * @since 1.7
      */
     public static Border createSoftBevelBorder(int type, Color highlight, Color shadow) {
-        return new BevelBorder(type, highlight, shadow);
+        return new SoftBevelBorder(type, highlight, shadow);
     }
 
     /**
@@ -295,7 +295,7 @@ public class BorderFactory
      * @since 1.7
      */
     public static Border createSoftBevelBorder(int type, Color highlightOuter, Color highlightInner, Color shadowOuter, Color shadowInner) {
-        return new BevelBorder(type, highlightOuter, highlightInner, shadowOuter, shadowInner);
+        return new SoftBevelBorder(type, highlightOuter, highlightInner, shadowOuter, shadowInner);
     }
 
 //// EtchedBorder ///////////////////////////////////////////////////////////
