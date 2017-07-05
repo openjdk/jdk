@@ -136,8 +136,7 @@ define SetupDemo
 			$$(wildcard $$(addprefix $(JDK_TOPDIR)/src/$6share/demo/$2/$1/,$7)))
     ifneq ($7,)
         $(JDK_OUTPUTDIR)/demo/$2/$1/% : $(JDK_TOPDIR)/src/$6share/demo/$2/$1/%
-		$(MKDIR) -p $$(@D)
-		$(CP) $$< $$@
+		$$(call install-file)
 		$(CHMOD) -f ug+w $$@
 
         BUILD_DEMOS += $$($1_COPY_TARGETS)
@@ -190,8 +189,7 @@ ifndef OPENJDK
 			$(JDK_OUTPUTDIR)/demo/nbproject/%,\
 			$(call CacheFind,$(JDK_TOPDIR)/src/closed/share/demo/nbproject))
     $(JDK_OUTPUTDIR)/demo/nbproject/% : $(JDK_TOPDIR)/src/closed/share/demo/nbproject/%
-		$(MKDIR) -p $(@D)
-		$(CP) $< $@
+		$(call install-file)
 		$(CHMOD) -f ug+w $@
 endif
 
@@ -268,8 +266,7 @@ define SetupJVMTIDemo
 		ZIP:=$(JDK_OUTPUTDIR)/demo/jvmti/$1/src.zip))
 
      $(JDK_OUTPUTDIR)/demo/jvmti/$1/README.txt : $(JDK_TOPDIR)/src/share/demo/jvmti/$1/README.txt
-		$(MKDIR) -p $$(@D)
-		$(CP) $$< $$@
+		$$(call install-file)
 		$(CHMOD) -f ug+w $$@
 
      ifneq (,$$(wildcard $(JDK_TOPDIR)/src/share/demo/jvmti/$1/*.java))
@@ -325,23 +322,22 @@ JPDA_SOURCES:=$(call CacheFind,$(JDK_TOPDIR)/src/share/classes/com/sun/tools/exa
 JPDA_FILES:=$(subst $(JDK_TOPDIR)/src/share/classes/,,$(JPDA_SOURCES))
 
 $(JDK_OUTPUTDIR)/demo/jpda/src.zip : $(JPDA_SOURCES)
-		$(MKDIR) -p $(@D)
-		(cd $(JDK_TOPDIR)/src/share/classes && $(ZIP) -qru $@ com -i "com/sun/tools/example/*")
+	$(MKDIR) -p $(@D)
+	(cd $(JDK_TOPDIR)/src/share/classes && $(ZIP) -qru $@ com -i "com/sun/tools/example/*")
 
 $(JDK_OUTPUTDIR)/demo/jpda/examples.jar : $(JPDA_SOURCES)
-		$(MKDIR) -p $(@D)
-		$(RM) $(@D)/_the.sources
-		$(call ListPathsSafely,JPDA_FILES,\n, >> $(@D)/_the.sources)
-		$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" 		\
-		       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" $(JDK_TOPDIR)/make/tools/manifest.mf > $(@D)/_the.manifest
-		$(ECHO) "Main-Class: " >> $(@D)/_the.manifest
-		(cd $(JDK_TOPDIR)/src/share/classes && $(JAR) cfm  $@ $(@D)/_the.manifest @$(@D)/_the.sources)
-		(cd $(JDK_TOPDIR)/src/share/classes/com/sun/tools/example && $(JAR) uf $@ README)
+	$(MKDIR) -p $(@D)
+	$(RM) $(@D)/_the.sources
+	$(call ListPathsSafely,JPDA_FILES,\n, >> $(@D)/_the.sources)
+	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" 		\
+	       -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" $(JDK_TOPDIR)/make/tools/manifest.mf > $(@D)/_the.manifest
+	$(ECHO) "Main-Class: " >> $(@D)/_the.manifest
+	(cd $(JDK_TOPDIR)/src/share/classes && $(JAR) cfm  $@ $(@D)/_the.manifest @$(@D)/_the.sources)
+	(cd $(JDK_TOPDIR)/src/share/classes/com/sun/tools/example && $(JAR) uf $@ README)
 
 $(JDK_OUTPUTDIR)/demo/jpda/com/sun/tools/example/README : $(JDK_TOPDIR)/src/share/classes/com/sun/tools/example/README
-		$(MKDIR) -p $(@D)
-		$(CP) $< $@
-		$(CHMOD) -f ug+w $@
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
 
 BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jpda/src.zip $(JDK_OUTPUTDIR)/demo/jpda/examples.jar \
 		$(JDK_OUTPUTDIR)/demo/jpda/com/sun/tools/example/README
@@ -349,14 +345,12 @@ BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jpda/src.zip $(JDK_OUTPUTDIR)/demo/jpda/exa
 ##################################################################################################
 
 $(JDK_OUTPUTDIR)/demo/management/index.html : $(JDK_TOPDIR)/src/share/demo/management/index.html
-		$(MKDIR) -p $(@D)
-		$(CP) $< $@
-		$(CHMOD) -f ug+w $@
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
 
 $(JDK_OUTPUTDIR)/demo/jvmti/index.html : $(JDK_TOPDIR)/src/share/demo/jvmti/index.html
-		$(MKDIR) -p $(@D)
-		$(CP) $< $@
-		$(CHMOD) -f ug+w $@
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
 
 BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/management/index.html \
 		$(JDK_OUTPUTDIR)/demo/jvmti/index.html
@@ -369,15 +363,13 @@ BUILD_DEMOS += $(patsubst $(JDK_TOPDIR)/src/share/demo/nbproject/%,\
 		$(call CacheFind,$(JDK_TOPDIR)/src/share/demo/nbproject))
 
 $(JDK_OUTPUTDIR)/demo/nbproject/% : $(JDK_TOPDIR)/src/share/demo/nbproject/%
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 	$(CHMOD) -f ug+w $@
 
 ##################################################################################################
 
 $(JDK_OUTPUTDIR)/demo/README: $(JDK_TOPDIR)/src/share/demo/README
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 
 BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/README
 
@@ -386,14 +378,12 @@ BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/README
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 
 $(JDK_OUTPUTDIR)/democlasses/jni/Poller/% : $(JDK_TOPDIR)/src/solaris/demo/jni/Poller/%
-		$(MKDIR) -p $(@D)
-		$(CP) $< $@
-		$(CHMOD) -f ug+w $@
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
 
 $(JDK_OUTPUTDIR)/demo/jni/Poller/README.txt : $(JDK_TOPDIR)/src/solaris/demo/jni/Poller/README.txt
-		$(MKDIR) -p $(@D)
-		$(CP) $< $@
-		$(CHMOD) -f ug+w $@
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
 
 $(JDK_OUTPUTDIR)/demo/jni/Poller/Poller.jar : \
   $(JDK_OUTPUTDIR)/democlasses/jni/Poller/README.txt $(JDK_OUTPUTDIR)/democlasses/jni/Poller/Poller.c
@@ -433,8 +423,7 @@ $(JDK_OUTPUTDIR)/demoobjs/jni/Poller/Poller.o : $(JDK_OUTPUTDIR)/demo/jni/Poller
 
 $(JDK_OUTPUTDIR)/demo/jni/Poller/lib/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX) : \
   $(JDK_OUTPUTDIR)/demoobjs/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX)
-	$(MKDIR) -p $(@D)
-	$(CP) $< $@
+	$(call install-file)
 
 BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jni/Poller/lib/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX)
 
@@ -456,8 +445,8 @@ ifndef OPENJDK
      $(JDK_OUTPUTDIR)/demo/db/README-JDK-DEMOS.html: \
 		$(JDK_TOPDIR)/src/closed/share/db/README-JDK-DEMOS.html \
 		| $(JDK_OUTPUTDIR)/demo/_the.db.unzipped
-	$(MKDIR) -p $(@D)
-	$(CP) '$<' '$@'
+	$(call install-file)
+
      BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/_the.db.unzipped $(JDK_OUTPUTDIR)/demo/db/README-JDK-DEMOS.html
 endif
 

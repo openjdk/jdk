@@ -582,6 +582,9 @@ class MacroAssembler: public Assembler {
   // only if +VerifyFPU
   void verify_FPU(int stack_depth, const char* s = "illegal FPU state");
 
+  // Verify or restore cpu control state after JNI call
+  void restore_cpu_control_state_after_jni();
+
   // prints msg, dumps registers and stops execution
   void stop(const char* msg);
 

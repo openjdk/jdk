@@ -953,15 +953,6 @@ void Universe::update_heap_info_at_gc() {
 void universe2_init() {
   EXCEPTION_MARK;
   Universe::genesis(CATCH);
-  // Although we'd like to verify here that the state of the heap
-  // is good, we can't because the main thread has not yet added
-  // itself to the threads list (so, using current interfaces
-  // we can't "fill" its TLAB), unless TLABs are disabled.
-  if (VerifyBeforeGC && !UseTLAB &&
-      Universe::heap()->total_collections() >= VerifyGCStartAt) {
-     Universe::heap()->prepare_for_verify();
-     Universe::verify();   // make sure we're starting with a clean slate
-  }
 }
 
 

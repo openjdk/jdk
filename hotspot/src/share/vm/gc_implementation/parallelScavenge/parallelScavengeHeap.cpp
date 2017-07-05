@@ -326,6 +326,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
 
   uint loop_count = 0;
   uint gc_count = 0;
+  int gclocker_stalled_count = 0;
 
   while (result == NULL) {
     // We don't want to have multiple collections for a single filled generation.
@@ -354,6 +355,10 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         return result;
       }
 
+      if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
+        return NULL;
+      }
+
       // Failed to allocate without a gc.
       if (GC_locker::is_active_and_needs_gc()) {
         // If this thread is not in a jni critical section, we stall
@@ -366,6 +371,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate(
         if (!jthr->in_critical()) {
           MutexUnlocker mul(Heap_lock);
           GC_locker::stall_until_clear();
+          gclocker_stalled_count += 1;
           continue;
         } else {
           if (CheckJNICalls) {
