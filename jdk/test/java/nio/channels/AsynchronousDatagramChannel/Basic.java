@@ -371,17 +371,22 @@ public class Basic {
     static void doMulticastTests() throws Exception {
         final byte[] msg = "hello".getBytes();
 
+        InetAddress lh = InetAddress.getLocalHost();
+        NetworkInterface interf = NetworkInterface.getByInetAddress(lh);
+        if (interf.isLoopback() || !interf.supportsMulticast()) {
+            System.out.println("Multicasting not tested");
+            return;
+        }
+
         AsynchronousDatagramChannel ch = AsynchronousDatagramChannel
             .open(StandardProtocolFamily.INET, null)
             .setOption(StandardSocketOption.SO_REUSEADDR, true)
             .bind(new InetSocketAddress(0));
 
-        InetAddress lh = InetAddress.getLocalHost();
         int port = ((InetSocketAddress)(ch.getLocalAddress())).getPort();
 
         // join group
         InetAddress group = InetAddress.getByName("225.4.5.6");
-        NetworkInterface interf = NetworkInterface.getByInetAddress(lh);
         MembershipKey key = ch.join(group, interf);
 
         // check key

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public final class MethodFinder extends AbstractFinder<Method> {
      * @throws NoSuchMethodException if method is not accessible or is not found
      *                               in specified superclass or interface
      */
-    private static Method findAccessibleMethod(Method method) throws NoSuchMethodException {
+    public static Method findAccessibleMethod(Method method) throws NoSuchMethodException {
         Class<?> type = method.getDeclaringClass();
         if (Modifier.isPublic(type.getModifiers())) {
             return method;

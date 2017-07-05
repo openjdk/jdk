@@ -61,6 +61,9 @@ public class Basic2 {
         writerThread.join();
         readerThread.join();
 
+        // shutdown listener
+        listener.close();
+
         // check that reader received what we expected
         if (reader.total() != writer.total())
             throw new RuntimeException("Unexpected number of bytes read");

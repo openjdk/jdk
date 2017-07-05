@@ -72,6 +72,7 @@ public class BytecodeDisassembler {
       addBytecodeClass(Bytecodes._invokestatic, BytecodeInvoke.class);
       addBytecodeClass(Bytecodes._invokespecial, BytecodeInvoke.class);
       addBytecodeClass(Bytecodes._invokeinterface, BytecodeInvoke.class);
+      addBytecodeClass(Bytecodes._invokedynamic, BytecodeInvoke.class);
       addBytecodeClass(Bytecodes._jsr, BytecodeJsr.class);
       addBytecodeClass(Bytecodes._jsr_w, BytecodeJsrW.class);
       addBytecodeClass(Bytecodes._iload, BytecodeLoad.class);

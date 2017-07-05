@@ -107,7 +107,7 @@ import java.util.List;
  * @author Florian Bomers
  */
 
-public interface MidiDevice {
+public interface MidiDevice extends AutoCloseable {
 
 
     /**

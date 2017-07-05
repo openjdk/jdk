@@ -94,6 +94,8 @@ public class TestX11CNS {
     }
 
     static void compare(Charset newCS, Charset oldCS) throws Exception {
+        if (newCS == null)
+            return;  // does not exist on this platform
         char[] cc = getChars(newCS, oldCS);
         System.out.printf("    Diff <%s> <%s>...%n", newCS.name(), oldCS.name());
 
@@ -120,14 +122,22 @@ public class TestX11CNS {
         }
     }
 
+    private static Charset getCharset(String czName)
+        throws Exception {
+        try {
+            return (Charset)Class.forName(czName).newInstance();
+        } catch (ClassNotFoundException e){}
+        return null;  // does not exist
+    }
+
     public static void main(String[] args) throws Exception {
-        compare(new sun.awt.motif.X11CNS11643P1(),
+        compare(getCharset("sun.awt.motif.X11CNS11643P1"),
                 new X11CNS11643P1());
 
-        compare(new sun.awt.motif.X11CNS11643P2(),
+        compare(getCharset("sun.awt.motif.X11CNS11643P2"),
                 new X11CNS11643P2());
 
-        compare(new sun.awt.motif.X11CNS11643P3(),
+        compare(getCharset("sun.awt.motif.X11CNS11643P3"),
                 new X11CNS11643P3());
 
     }

@@ -44,9 +44,19 @@ size_t ciCPCache::get_f1_offset(int index) {
 // ciCPCache::is_f1_null_at
 bool ciCPCache::is_f1_null_at(int index) {
   VM_ENTRY_MARK;
-  constantPoolCacheOop cpcache = (constantPoolCacheOop) get_oop();
-  oop f1 = cpcache->secondary_entry_at(index)->f1();
+  oop f1 = entry_at(index)->f1();
   return (f1 == NULL);
+}
+
+
+// ------------------------------------------------------------------
+// ciCPCache::get_pool_index
+int ciCPCache::get_pool_index(int index) {
+  VM_ENTRY_MARK;
+  ConstantPoolCacheEntry* e = entry_at(index);
+  if (e->is_secondary_entry())
+    e = entry_at(e->main_entry_index());
+  return e->constant_pool_index();
 }
 
 

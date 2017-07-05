@@ -217,8 +217,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   register_new_node(phi, blk1);
 
   // Remove cloned-up value from optimizer; use phi instead
-  _igvn.hash_delete(n);
-  _igvn.subsume_node( n, phi );
+  _igvn.replace_node( n, phi );
 
   // (There used to be a self-recursive call to split_up() here,
   // but it is not needed.  All necessary forward walking is done
@@ -352,8 +351,7 @@ Node *PhaseIdealLoop::find_use_block( Node *use, Node *def, Node *old_false, Nod
   }
 
   if (use_blk == NULL) {        // He's dead, Jim
-    _igvn.hash_delete(use);
-    _igvn.subsume_node(use, C->top());
+    _igvn.replace_node(use, C->top());
   }
 
   return use_blk;

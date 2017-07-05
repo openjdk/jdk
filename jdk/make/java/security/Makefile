@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1996, 2010 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,11 @@ POLICY_BUILD = $(LIBDIR)/security/java.policy
 CACERTS_SRC =	$(CACERTS_FILE)
 CACERTS_BUILD = $(LIBDIR)/security/cacerts
 
+ifndef OPENJDK
+  BLACKLIST_SRC =	$(CLOSED_SHARE_SRC)/lib/security/blacklist
+  BLACKLIST_BUILD = $(LIBDIR)/security/blacklist
+endif
+
 FILES_class = $(FILES_java:%.java=$(CLASSBINDIR)/%.class)
 
 #
@@ -69,7 +74,11 @@ FILES_class = $(FILES_java:%.java=$(CLASSBINDIR)/%.class)
 #
 include $(BUILDDIR)/common/Rules.gmk
 
+ifdef OPENJDK
 build: properties policy cacerts
+else
+build: properties policy cacerts blacklist
+endif
 
 install: all
 
@@ -78,6 +87,8 @@ properties: classes  $(PROPS_BUILD)
 policy: classes  $(POLICY_BUILD)
 
 cacerts: classes $(CACERTS_BUILD)
+
+blacklist: classes $(BLACKLIST_BUILD)
 
 $(PROPS_BUILD): $(PROPS_SRC)
 	$(install-file)
@@ -88,9 +99,12 @@ $(POLICY_BUILD): $(POLICY_SRC)
 $(CACERTS_BUILD): $(CACERTS_SRC)
 	$(install-file)
 
+$(BLACKLIST_BUILD): $(BLACKLIST_SRC)
+	$(install-file)
+
 clean clobber:: .delete.classlist
 	$(RM) -r $(CLASSBINDIR)/java/security
-	$(RM) $(PROPS_BUILD) $(POLICY_BUILD) $(CACERTS_BUILD)
+	$(RM) $(PROPS_BUILD) $(POLICY_BUILD) $(CACERTS_BUILD) $(BLACKLIST_BUILD)
 
 # Additional Rule for building sun.security.util
 $(CLASSBINDIR)/%.class: $(SHARE_SRC)/sun/%.java

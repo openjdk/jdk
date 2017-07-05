@@ -270,6 +270,7 @@ class Thread: public ThreadShadow {
   static void interrupt(Thread* thr);
   static bool is_interrupted(Thread* thr, bool clear_interrupted);
 
+  ObjectMonitor** omInUseList_addr()             { return (ObjectMonitor **)&omInUseList; }
   Monitor* SR_lock() const                       { return _SR_lock; }
 
   bool has_async_exception() const { return (_suspend_flags & _has_async_exception) != 0; }

@@ -242,10 +242,10 @@ void Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
   code->insts()->initialize_shared_locs((relocInfo*)locs_buffer,
                                         locs_buffer_size / sizeof(relocInfo));
   code->initialize_consts_size(Compilation::desired_max_constant_size());
-  // Call stubs + deopt/exception handler
+  // Call stubs + two deopt handlers (regular and MH) + exception handler
   code->initialize_stubs_size((call_stub_estimate * LIR_Assembler::call_stub_size) +
                               LIR_Assembler::exception_handler_size +
-                              LIR_Assembler::deopt_handler_size);
+                              2 * LIR_Assembler::deopt_handler_size);
 }
 
 

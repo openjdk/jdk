@@ -36,7 +36,7 @@ package java.io;
  * @see java.io.ObjectInputStream
  * @since   JDK1.1
  */
-public interface ObjectInput extends DataInput {
+public interface ObjectInput extends DataInput, AutoCloseable {
     /**
      * Read and return an object. The class that implements this interface
      * defines where the object is "read" from.

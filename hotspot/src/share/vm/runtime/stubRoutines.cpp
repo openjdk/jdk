@@ -135,28 +135,32 @@ typedef void (*arraycopy_fn)(address src, address dst, int count);
 static void test_arraycopy_func(address func, int alignment) {
   int v = 0xcc;
   int v2 = 0x11;
-  jlong lbuffer[2];
-  jlong lbuffer2[2];
-  address buffer  = (address) lbuffer;
-  address buffer2 = (address) lbuffer2;
+  jlong lbuffer[8];
+  jlong lbuffer2[8];
+  address fbuffer  = (address) lbuffer;
+  address fbuffer2 = (address) lbuffer2;
   unsigned int i;
   for (i = 0; i < sizeof(lbuffer); i++) {
-    buffer[i] = v; buffer2[i] = v2;
+    fbuffer[i] = v; fbuffer2[i] = v2;
   }
+  // C++ does not guarantee jlong[] array alignment to 8 bytes.
+  // Use middle of array to check that memory before it is not modified.
+  address buffer  = (address) round_to((intptr_t)&lbuffer[4], BytesPerLong);
+  address buffer2 = (address) round_to((intptr_t)&lbuffer2[4], BytesPerLong);
   // do an aligned copy
   ((arraycopy_fn)func)(buffer, buffer2, 0);
   for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(buffer[i] == v && buffer2[i] == v2, "shouldn't have copied anything");
+    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
   }
   // adjust destination alignment
   ((arraycopy_fn)func)(buffer, buffer2 + alignment, 0);
   for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(buffer[i] == v && buffer2[i] == v2, "shouldn't have copied anything");
+    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
   }
   // adjust source alignment
   ((arraycopy_fn)func)(buffer + alignment, buffer2, 0);
   for (i = 0; i < sizeof(lbuffer); i++) {
-    assert(buffer[i] == v && buffer2[i] == v2, "shouldn't have copied anything");
+    assert(fbuffer[i] == v && fbuffer2[i] == v2, "shouldn't have copied anything");
   }
 }
 #endif
@@ -183,13 +187,32 @@ void StubRoutines::initialize2() {
   test_arraycopy_func(arrayof_##type##_arraycopy(),          sizeof(HeapWord)); \
   test_arraycopy_func(arrayof_##type##_disjoint_arraycopy(), sizeof(HeapWord))
 
-  // Make sure all the arraycopy stubs properly handle zeros
+  // Make sure all the arraycopy stubs properly handle zero count
   TEST_ARRAYCOPY(jbyte);
   TEST_ARRAYCOPY(jshort);
   TEST_ARRAYCOPY(jint);
   TEST_ARRAYCOPY(jlong);
 
 #undef TEST_ARRAYCOPY
+
+#define TEST_COPYRTN(type) \
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_##type##s_atomic),  sizeof(type)); \
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::arrayof_conjoint_##type##s), (int)MAX2(sizeof(HeapWord), sizeof(type)))
+
+  // Make sure all the copy runtime routines properly handle zero count
+  TEST_COPYRTN(jbyte);
+  TEST_COPYRTN(jshort);
+  TEST_COPYRTN(jint);
+  TEST_COPYRTN(jlong);
+
+#undef TEST_COPYRTN
+
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::conjoint_words), sizeof(HeapWord));
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words), sizeof(HeapWord));
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::disjoint_words_atomic), sizeof(HeapWord));
+  // Aligned to BytesPerLong
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_conjoint_words), sizeof(jlong));
+  test_arraycopy_func(CAST_FROM_FN_PTR(address, Copy::aligned_disjoint_words), sizeof(jlong));
 
 #endif
 }
@@ -221,15 +244,13 @@ JRT_LEAF(void, StubRoutines::jbyte_copy(jbyte* src, jbyte* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
-  Copy::conjoint_bytes_atomic(src, dest, count);
+  Copy::conjoint_jbytes_atomic(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::jshort_copy(jshort* src, jshort* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jshort_array_copy_ctr++;     // Slow-path short/char array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::conjoint_jshorts_atomic(src, dest, count);
 JRT_END
 
@@ -237,7 +258,6 @@ JRT_LEAF(void, StubRoutines::jint_copy(jint* src, jint* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jint_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::conjoint_jints_atomic(src, dest, count);
 JRT_END
 
@@ -245,7 +265,6 @@ JRT_LEAF(void, StubRoutines::jlong_copy(jlong* src, jlong* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jlong_array_copy_ctr++;      // Slow-path long/double array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::conjoint_jlongs_atomic(src, dest, count);
 JRT_END
 
@@ -263,15 +282,13 @@ JRT_LEAF(void, StubRoutines::arrayof_jbyte_copy(HeapWord* src, HeapWord* dest, s
 #ifndef PRODUCT
   SharedRuntime::_jbyte_array_copy_ctr++;      // Slow-path byte array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
-  Copy::arrayof_conjoint_bytes(src, dest, count);
+  Copy::arrayof_conjoint_jbytes(src, dest, count);
 JRT_END
 
 JRT_LEAF(void, StubRoutines::arrayof_jshort_copy(HeapWord* src, HeapWord* dest, size_t count))
 #ifndef PRODUCT
   SharedRuntime::_jshort_array_copy_ctr++;     // Slow-path short/char array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::arrayof_conjoint_jshorts(src, dest, count);
 JRT_END
 
@@ -279,7 +296,6 @@ JRT_LEAF(void, StubRoutines::arrayof_jint_copy(HeapWord* src, HeapWord* dest, si
 #ifndef PRODUCT
   SharedRuntime::_jint_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::arrayof_conjoint_jints(src, dest, count);
 JRT_END
 
@@ -287,7 +303,6 @@ JRT_LEAF(void, StubRoutines::arrayof_jlong_copy(HeapWord* src, HeapWord* dest, s
 #ifndef PRODUCT
   SharedRuntime::_jlong_array_copy_ctr++;       // Slow-path int/float array copy
 #endif // !PRODUCT
-  assert(count != 0, "count should be non-zero");
   Copy::arrayof_conjoint_jlongs(src, dest, count);
 JRT_END
 

@@ -25,6 +25,7 @@
  * @bug 4938372 6541641
  * @summary Flushing dirty pages prior to unmap can cause Cleaner thread to
  *          abort VM if memory system has pages locked
+ * @run main/othervm ExpandingMap
  */
 import java.io.File;
 import java.io.RandomAccessFile;

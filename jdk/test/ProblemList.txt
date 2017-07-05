@@ -295,9 +295,6 @@ java/math/BigInteger/ModPow65537.java			 	generic-all
 
 # jdk_misc
 
-# On Windows com.sun.java.swing.plaf.gtk does not exist, always fails there
-com/sun/java/swing/plaf/gtk/Test6635110.java		 	windows-all
-
 # Need to be marked othervm, or changed to be samevm safe
 com/sun/jndi/ldap/ReadTimeoutTest.java				generic-all
 com/sun/jndi/rmi/registry/RegistryContext/UnbindIdempotent.java	generic-all
@@ -378,9 +375,6 @@ sun/net/www/http/KeepAliveStream/KeepAliveStreamCloseWithWrongContentLength.java
 # Dies on Solaris 10 sparc and sparcv9, Linux  -ea -esa with 
 #   Interrupted or IO exception, maybe writing to non-unique named file?
 com/sun/net/httpserver/bugs/B6373555.java			generic-all
-
-# Fails on OpenSolaris, BindException unexpected 
-java/net/BindException/Test.java				generic-all
 
 # Fails on OpenSolaris, times out
 java/net/MulticastSocket/SetOutgoingIf.java			generic-all
@@ -507,24 +501,45 @@ sun/net/www/protocol/http/DigestTest.java			generic-all
 
 ############################################################################
 
+# jdk_io
+
+# 6962637
+java/io/File/MaxPathLength.java                                 windows-all
+
+############################################################################
+
 # jdk_nio
 
-# Suspect many of these tests auffer from using fixed ports, no concrete 
-#   evidence.
+# 6944810
+java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java       windows-all
 
-# Occasionally Failing with java.lang.AssertionError on Windows X64
-#  at sun.nio.ch.PendingIoCache.clearPendingIoMap(PendingIoCache.java:144)
-#java/nio/channels/FileChannel/ReleaseOnCloseDeadlock.java	windows-all
+# 6963118
+java/nio/channels/Selector/Wakeup.java                          windows-all
 
-# Some kind of sleep/wake problem on Windows X64
-java/nio/channels/Selector/Wakeup.java				windows-all
+# The asynchronous I/O implementation on Windows requires Windows XP or newer.
+# We can remove the following once all Windows 2000 machines have been
+# decommissioned.
+java/nio/channels/AsynchronousChannelGroup/Basic.java           windows-5.0
+java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java      windows-5.0
+java/nio/channels/AsynchronousChannelGroup/Identity.java        windows-5.0
+java/nio/channels/AsynchronousChannelGroup/Restart.java         windows-5.0
+java/nio/channels/AsynchronousChannelGroup/Unbounded.java       windows-5.0
+java/nio/channels/AsynchronousDatagramChannel/Basic.java        windows-5.0
+java/nio/channels/AsynchronousFileChannel/Lock.java             windows-5.0
+java/nio/channels/AsynchronousServerSocketChannel/Basic.java    windows-5.0
+java/nio/channels/AsynchronousServerSocketChannel/WithSecurityManager.java windows-5.0
+java/nio/channels/AsynchronousSocketChannel/Basic.java          windows-5.0
+java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java windows-5.0
+java/nio/channels/AsynchronousSocketChannel/Leaky.java          windows-5.0
+java/nio/channels/AsynchronousSocketChannel/StressLoopback.java windows-5.0
+java/nio/channels/Channels/Basic2.java                          windows-5.0
+
+# 6959891
+com/sun/nio/sctp/SctpChannel/SocketOptionTests.java
 
 # Fails with -ea -esa, Assertion error, but only on Solaris 10 machines?
 com/sun/nio/sctp/SctpChannel/Send.java				generic-all
 com/sun/nio/sctp/SctpChannel/Shutdown.java			generic-all
-
-# Fails on Windows 2000,  times out
-java/nio/channels/FileChannel/Transfer.java			generic-all
 
 # Fails on OpenSolaris, IllegalStateException: Cannot add or remove addresses 
 #    from a channel that is bound to the wildcard address
@@ -532,18 +547,6 @@ com/sun/nio/sctp/SctpChannel/Bind.java				generic-all
 
 # Failed on OpenSolaris, java.lang.AssertionError: Unknown event type
 com/sun/nio/sctp/SctpChannel/Receive.java			generic-all
-
-# Triggers a hotspot crash on Fedora 9 32bit -server and Windows X64  samevm
-sun/nio/cs/TestUTF8.java					generic-all
-
-# Runtime exception on windows X64, samevm mode
-java/nio/channels/Selector/WakeupNow.java			generic-all
-
-# Occasional errors, solarix x86, address already in use, othervm mode
-java/nio/channels/Selector/SelectorTest.java			generic-all
-
-# Fails on Linux Fedora 9 X64
-sun/nio/cs/FindDecoderBugs.java					generic-all
 
 # Solaris 11 gave assert error and "connection refused", samevm issues?
 com/sun/nio/sctp/SctpServerChannel/NonBlockingAccept.java 	generic-all
@@ -554,49 +557,6 @@ com/sun/nio/sctp/SctpChannel/Connect.java			generic-all
 com/sun/nio/sctp/SctpMultiChannel/Branch.java			generic-all
 com/sun/nio/sctp/SctpMultiChannel/Send.java			generic-all
 com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java	generic-all
-
-# Linux 64bit failures. too many files open
-java/nio/channels/Selector/HelperSlowToDie.java			generic-all
-
-# Gets java.lang.ExceptionInInitializerError on Windows 2000 (need XP or newer)
-java/nio/channels/AsynchronousChannelGroup/Basic.java	 	windows-5.0
-java/nio/channels/AsynchronousChannelGroup/GroupOfOne.java 	windows-5.0
-java/nio/channels/AsynchronousChannelGroup/Identity.java 	windows-5.0
-java/nio/channels/AsynchronousChannelGroup/Restart.java 	windows-5.0
-java/nio/channels/AsynchronousChannelGroup/Unbounded.java	windows-5.0
-java/nio/channels/AsynchronousDatagramChannel/Basic.java 	windows-5.0
-java/nio/channels/AsynchronousFileChannel/Lock.java	 	windows-5.0
-java/nio/channels/AsynchronousServerSocketChannel/Basic.java 	windows-5.0
-java/nio/channels/AsynchronousServerSocketChannel/WithSecurityManager.java windows-5.0
-java/nio/channels/AsynchronousSocketChannel/Basic.java	 	windows-5.0
-java/nio/channels/AsynchronousSocketChannel/DieBeforeComplete.java windows-5.0
-java/nio/channels/AsynchronousSocketChannel/Leaky.java	 	windows-5.0
-java/nio/channels/AsynchronousSocketChannel/StressLoopback.java windows-5.0
-java/nio/channels/Channels/Basic2.java			 	windows-5.0
-
-# Failed loopback connection? On windows 32bit? 
-#   Considered a stress test, can consume all resources.
-java/nio/channels/Selector/LotsOfChannels.java		 	generic-all
-
-# Windows i586 client, crashed hotspot? Unpredictable
-#   Considered a stress test, can consume all resources.
-java/nio/channels/Selector/RegAfterPreClose.java	 	generic-all
-
-# Solaris i586, cannot assign address, samevm issues
-java/nio/channels/Selector/SelectorLimit.java		 	generic-all
-
-# Socket timeout windows X64
-java/nio/channels/ServerSocketChannel/AdaptServerSocket.java 	windows-all
-
-# Timeouts etc. on Window
-java/nio/channels/SocketChannel/ConnectState.java	 	windows-all
-java/nio/channels/SocketChannel/FinishConnect.java	 	windows-all
-
-# Fails on all platforms due to overlap of JDK jar file contents:
-sun/nio/cs/Test4200310.sh				 	generic-all
-
-# Depends on motif packages that do not exist all the time:
-sun/nio/cs/TestX11CNS.java				 	generic-all
 
 ############################################################################
 
@@ -847,9 +807,6 @@ sun/security/tools/keytool/selfissued.sh		 	solaris-all
 ############################################################################
 
 # jdk_swing (not using samevm)
-
-# Fails on solaris 10 sparc, throws RuntimeException that just says "failed"
-javax/swing/JLabel/6501991/bug6501991.java			generic-all
 
 # Fails on solaris 11 i586, with othervm
 javax/swing/JFileChooser/6570445/bug6570445.java		generic-all

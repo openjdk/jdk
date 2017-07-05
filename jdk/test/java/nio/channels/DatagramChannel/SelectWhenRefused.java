@@ -43,9 +43,9 @@ public class SelectWhenRefused {
         SocketAddress refuser = new InetSocketAddress(InetAddress.getLocalHost(), port);
 
         dc = DatagramChannel.open().bind(new InetSocketAddress(0));
+        Selector sel = Selector.open();
         try {
             dc.configureBlocking(false);
-            Selector sel = Selector.open();
             dc.register(sel, SelectionKey.OP_READ);
 
             /* Test 1: not connected so ICMP port unreachable should not be received */
@@ -81,6 +81,7 @@ public class SelectWhenRefused {
             }
 
         } finally {
+            sel.close();
             dc.close();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,18 @@ public final class PropertyEditorFinder
     }
 
     public void register(Class<?> type, Class<?> editor) {
-        this.registry.put(type, editor);
+        synchronized (this.registry) {
+            this.registry.put(type, editor);
+        }
     }
 
     @Override
     public PropertyEditor find(Class<?> type) {
-        PropertyEditor editor = instantiate(this.registry.get(type), null);
+        Class<?> predefined;
+        synchronized (this.registry) {
+            predefined = this.registry.get(type);
+        }
+        PropertyEditor editor = instantiate(predefined, null);
         if (editor == null) {
             editor = super.find(type);
             if ((editor == null) && (null != type.getEnumConstants())) {

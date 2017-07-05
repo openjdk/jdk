@@ -28,14 +28,14 @@ package java.io;
 import java.io.IOException;
 
 /**
- * A <tt>Closeable</tt> is a source or destination of data that can be closed.
+ * A {@code Closeable} is a source or destination of data that can be closed.
  * The close method is invoked to release resources that the object is
  * holding (such as open files).
  *
  * @since 1.5
  */
 
-public interface Closeable {
+public interface Closeable extends AutoCloseable {
 
     /**
      * Closes this stream and releases any system resources associated
@@ -45,5 +45,4 @@ public interface Closeable {
      * @throws IOException if an I/O error occurs
      */
     public void close() throws IOException;
-
 }

@@ -778,8 +778,8 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
                                                           x, y,
                                                           xbe.get_x_root(),
                                                           xbe.get_y_root(),
-                                                          clickCount,false,MouseWheelEvent.WHEEL_UNIT_SCROLL,
-                                                          3,button==4 ?  -1 : 1);
+                                                          1,false,MouseWheelEvent.WHEEL_UNIT_SCROLL,
+                                                          3,button==4 ?  -1*clickCount : 1*clickCount);
                 postEventToEventQueue(mwe);
             }
         }

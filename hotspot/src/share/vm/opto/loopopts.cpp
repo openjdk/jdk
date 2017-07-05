@@ -354,8 +354,7 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
     register_new_node( var_scale, n_ctrl );
     Node *var_add = new (C, 3) AddINode( var_scale, inv_scale );
     register_new_node( var_add, n_ctrl );
-    _igvn.hash_delete( n );
-    _igvn.subsume_node( n, var_add );
+    _igvn.replace_node( n, var_add );
     return var_add;
   }
 
@@ -390,8 +389,7 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
           register_new_node( add1, n_loop->_head->in(LoopNode::EntryControl) );
           Node *add2 = new (C, 4) AddPNode( n->in(1), add1, n->in(2)->in(3) );
           register_new_node( add2, n_ctrl );
-          _igvn.hash_delete( n );
-          _igvn.subsume_node( n, add2 );
+          _igvn.replace_node( n, add2 );
           return add2;
         }
       }
@@ -412,8 +410,7 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
           register_new_node( add1, n_loop->_head->in(LoopNode::EntryControl) );
           Node *add2 = new (C, 4) AddPNode( n->in(1), add1, V );
           register_new_node( add2, n_ctrl );
-          _igvn.hash_delete( n );
-          _igvn.subsume_node( n, add2 );
+          _igvn.replace_node( n, add2 );
           return add2;
         }
       }
@@ -555,8 +552,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
     }
     Node *cmov = CMoveNode::make( C, cmov_ctrl, iff->in(1), phi->in(1+flip), phi->in(2-flip), _igvn.type(phi) );
     register_new_node( cmov, cmov_ctrl );
-    _igvn.hash_delete(phi);
-    _igvn.subsume_node( phi, cmov );
+    _igvn.replace_node( phi, cmov );
 #ifndef PRODUCT
     if( VerifyLoopOptimizations ) verify();
 #endif
@@ -642,8 +638,7 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
 
   // Found a Phi to split thru!
   // Replace 'n' with the new phi
-  _igvn.hash_delete(n);
-  _igvn.subsume_node( n, phi );
+  _igvn.replace_node( n, phi );
   // Moved a load around the loop, 'en-registering' something.
   if( n_blk->Opcode() == Op_Loop && n->is_Load() &&
       !phi->in(LoopNode::LoopBackControl)->is_Load() )
@@ -789,13 +784,11 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
 
     // Found a Phi to split thru!
     // Replace 'n' with the new phi
-    _igvn.hash_delete(n);
-    _igvn.subsume_node( n, phi );
+    _igvn.replace_node( n, phi );
 
     // Now split the bool up thru the phi
     Node *bolphi = split_thru_phi( bol, n_ctrl, -1 );
-    _igvn.hash_delete(bol);
-    _igvn.subsume_node( bol, bolphi );
+    _igvn.replace_node( bol, bolphi );
     assert( iff->in(1) == bolphi, "" );
     if( bolphi->Value(&_igvn)->singleton() )
       return;
@@ -803,8 +796,7 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
     // Conditional-move?  Must split up now
     if( !iff->is_If() ) {
       Node *cmovphi = split_thru_phi( iff, n_ctrl, -1 );
-      _igvn.hash_delete(iff);
-      _igvn.subsume_node( iff, cmovphi );
+      _igvn.replace_node( iff, cmovphi );
       return;
     }
 
@@ -950,9 +942,7 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
   if( n_op == Op_Opaque2 &&
       n->in(1) != NULL &&
       get_loop(get_ctrl(n)) == get_loop(get_ctrl(n->in(1))) ) {
-    _igvn.add_users_to_worklist(n);
-    _igvn.hash_delete(n);
-    _igvn.subsume_node( n, n->in(1) );
+    _igvn.replace_node( n, n->in(1) );
   }
 }
 
@@ -1425,7 +1415,7 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
           // IGVN does CSE).
           Node *hit = _igvn.hash_find_insert(use);
           if( hit )             // Go ahead and re-hash for hits.
-            _igvn.subsume_node( use, hit );
+            _igvn.replace_node( use, hit );
         }
 
         // If 'use' was in the loop-exit block, it now needs to be sunk
