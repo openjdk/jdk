@@ -1,4 +1,4 @@
-#
+
 # Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -23,20 +23,24 @@
 # questions.
 #
 
+include $(SPEC)
+include MakeBase.gmk
+
 default: all
 
-include $(SPEC)
+IDEA_OUTPUT_DIR := $(TESTMAKE_OUTPUTDIR)/verify-idea
 
-make-base:
-	+$(MAKE) -f TestMakeBase.gmk $(TEST_SUBTARGET)
+clean-idea:
+	$(RM) -r $(IDEA_OUTPUT_DIR)
 
-java-compilation:
-	+$(MAKE) -f TestJavaCompilation.gmk $(TEST_SUBTARGET)
+verify-idea:
+	$(MKDIR) -p $(IDEA_OUTPUT_DIR)
+	$(BASH) $(TOPDIR)/common/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea1
+	$(BASH) $(TOPDIR)/common/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea2 java.base
+	$(BASH) $(TOPDIR)/common/bin/idea.sh -o $(IDEA_OUTPUT_DIR)/idea3 java.base jdk.compiler
 
-test-idea:
-	+$(MAKE) -f TestIdea.gmk $(TEST_SUBTARGET)
+TEST_TARGETS += verify-idea 
 
+all: $(TEST_TARGETS)
 
-all: make-base java-compilation test-idea
-
-.PHONY: default all make-base java-compilation test-idea
+.PHONY: default all verify-idea
