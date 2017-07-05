@@ -75,7 +75,7 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
      * to an empty Map.
      */
     public RMIServerImpl(Map<String,?> env) {
-        this.env = (env == null) ? Collections.EMPTY_MAP : env;
+        this.env = (env == null) ? Collections.<String,Object>emptyMap() : env;
     }
 
     void setRMIConnectorServer(RMIConnectorServer connServer)
@@ -337,8 +337,9 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
 
         synchronized (clientList) {
             dropDeadReferences();
-            for (Iterator it = clientList.iterator(); it.hasNext(); ) {
-                WeakReference wr = (WeakReference) it.next();
+            for (Iterator<WeakReference<RMIConnection>> it = clientList.iterator();
+                 it.hasNext(); ) {
+                WeakReference<RMIConnection> wr = it.next();
                 if (wr.get() == client) {
                     it.remove();
                     break;
@@ -417,9 +418,10 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
                    dropDeadReferences(), this will usually be the first
                    element of the list, but a garbage collection could have
                    happened in between.  */
-                for (Iterator it = clientList.iterator(); it.hasNext(); ) {
-                    WeakReference wr = (WeakReference) it.next();
-                    RMIConnection client = (RMIConnection) wr.get();
+                for (Iterator<WeakReference<RMIConnection>> it = clientList.iterator();
+                     it.hasNext(); ) {
+                    WeakReference<RMIConnection> wr = it.next();
+                    RMIConnection client = wr.get();
                     it.remove();
                     if (client != null) {
                         try {
@@ -475,10 +477,10 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
             buf.append("//").append(clientHost);
         buf.append(" ");
         if (subject != null) {
-            Set principals = subject.getPrincipals();
+            Set<Principal> principals = subject.getPrincipals();
             String sep = "";
-            for (Iterator it = principals.iterator(); it.hasNext(); ) {
-                Principal p = (Principal) it.next();
+            for (Iterator<Principal> it = principals.iterator(); it.hasNext(); ) {
+                Principal p = it.next();
                 String name = p.getName().replace(' ', '_').replace(';', ':');
                 buf.append(sep).append(name);
                 sep = ";";
@@ -492,8 +494,9 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
 
     private void dropDeadReferences() {
         synchronized (clientList) {
-            for (Iterator it = clientList.iterator(); it.hasNext(); ) {
-                WeakReference wr = (WeakReference) it.next();
+            for (Iterator<WeakReference<RMIConnection>> it = clientList.iterator();
+                 it.hasNext(); ) {
+                WeakReference<RMIConnection> wr = it.next();
                 if (wr.get() == null)
                     it.remove();
             }
@@ -522,7 +525,7 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
 
     private MBeanServer mbeanServer;
 
-    private final Map env;
+    private final Map<String, ?> env;
 
     private RMIConnectorServer connServer;
 

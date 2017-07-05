@@ -108,7 +108,7 @@ public class RelationSupport
     //   via Relation Service setRole() and setRoles() methods
     // - if the relation is internal to the Relation Service, via
     //   setRoleInt() and setRolesInt() methods.
-    private Map<String,Role> myRoleName2ValueMap = new HashMap<String,Role>();
+    private final Map<String,Role> myRoleName2ValueMap = new HashMap<String,Role>();
 
     // Flag to indicate if the object has been added in the Relation Service
     private final AtomicBoolean myInRelServFlg = new AtomicBoolean();
@@ -424,7 +424,7 @@ public class RelationSupport
             }
         }
 
-        ArrayList roleValue = (ArrayList)(role.getRoleValue());
+        List<ObjectName> roleValue = role.getRoleValue();
 
         RELATION_LOGGER.exiting(RelationSupport.class.getName(),
                 "getRoleCardinality");
@@ -855,8 +855,7 @@ public class RelationSupport
                 // Note: no need to test if role value (list) not null before
                 //       cloning, null value not allowed, empty list if
                 //       nothing.
-                result = (ArrayList)
-                    (((ArrayList)(role.getRoleValue())).clone());
+                result = new ArrayList<ObjectName>(role.getRoleValue());
 
             } else {
                 // Role retrieved during multi-role retrieval: returns the
@@ -1492,10 +1491,7 @@ public class RelationSupport
         RoleList roleList = new RoleList();
         RoleUnresolvedList roleUnresList = new RoleUnresolvedList();
 
-        for (Iterator roleIter = list.iterator();
-             roleIter.hasNext();) {
-
-            Role currRole = (Role)(roleIter.next());
+        for (Role currRole : list.asList()) {
 
             Object currResult = null;
             // Can throw:
@@ -1617,12 +1613,10 @@ public class RelationSupport
 
         synchronized(myRoleName2ValueMap) {
 
-            for (Iterator roleIter = list.iterator();
-                 roleIter.hasNext();) {
+            for (Role currRole : list.asList()) {
 
                 // No need to check if role is null, it is not allowed to store
                 // a null role in a RoleList :)
-                Role currRole = (Role)(roleIter.next());
                 String currRoleName = currRole.getRoleName();
 
                 if (myRoleName2ValueMap.containsKey(currRoleName)) {

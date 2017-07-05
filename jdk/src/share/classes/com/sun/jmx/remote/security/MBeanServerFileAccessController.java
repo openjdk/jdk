@@ -249,9 +249,8 @@ public class MBeanServerFileAccessController
                     }
                 });
         if (s == null) return; /* security has not been enabled */
-        final Set principals = s.getPrincipals();
-        for (Iterator i = principals.iterator(); i.hasNext(); ) {
-            final Principal p = (Principal) i.next();
+        final Set<Principal> principals = s.getPrincipals();
+        for (Principal p : principals) {
             String grantedAccessLevel;
             synchronized (props) {
                 grantedAccessLevel = props.getProperty(p.getName());
@@ -271,8 +270,8 @@ public class MBeanServerFileAccessController
     }
 
     private void checkValues(Properties props) {
-        Collection c = props.values();
-        for (Iterator i = c.iterator(); i.hasNext(); ) {
+        Collection<?> c = props.values();
+        for (Iterator<?> i = c.iterator(); i.hasNext(); ) {
             final String accessLevel = (String) i.next();
             if (!accessLevel.equals(READONLY) &&
                 !accessLevel.equals(READWRITE)) {

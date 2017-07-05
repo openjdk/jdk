@@ -53,6 +53,7 @@ Node *PhaseChaitin::get_spillcopy_wide( Node *def, Node *use, uint uidx ) {
   // Bail rather than abort
   int ireg = def->ideal_reg();
   if( ireg == 0 || ireg == Op_RegFlags ) {
+    assert(false, "attempted to spill a non-spillable item");
     C->record_method_not_compilable("attempted to spill a non-spillable item");
     return NULL;
   }

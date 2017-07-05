@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import java.awt.BorderLayout;
 import java.io.Serializable;
+import javax.swing.SwingUtilities;
 import org.openide.ErrorManager;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
@@ -151,13 +152,17 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
     }
 
     public void resultChanged(LookupEvent lookupEvent) {
-        InputGraphProvider p = Lookup.getDefault().lookup(InputGraphProvider.class);
+        final InputGraphProvider p = Lookup.getDefault().lookup(InputGraphProvider.class);
         if (p != null) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
             InputGraph graph = p.getGraph();
             if (graph != null) {
                 Group g = graph.getGroup();
                 rootNode.update(graph, g.getMethod());
             }
+        }
+            });
         }
     }
 

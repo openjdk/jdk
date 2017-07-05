@@ -55,30 +55,30 @@ class MLetObjectInputStream extends ObjectInputStream {
         this.loader = loader;
     }
 
-    private Class primitiveType(char c) {
+    private Class<?> primitiveType(char c) {
         switch(c) {
-        case 66: /* 'B' */
+        case 'B':
             return Byte.TYPE;
 
-        case 67: /* 'C' */
+        case 'C':
             return Character.TYPE;
 
-        case 68: /* 'D' */
+        case 'D':
             return Double.TYPE;
 
-        case 70: /* 'F' */
+        case 'F':
             return Float.TYPE;
 
-        case 73: /* 'I' */
+        case 'I':
             return Integer.TYPE;
 
-        case 74: /* 'J' */
+        case 'J':
             return Long.TYPE;
 
-        case 83: /* 'S' */
+        case 'S':
             return Short.TYPE;
 
-        case 90: /* 'Z' */
+        case 'Z':
             return Boolean.TYPE;
         }
         return null;
@@ -87,14 +87,15 @@ class MLetObjectInputStream extends ObjectInputStream {
     /**
      * Use the given ClassLoader rather than using the system class
      */
-    protected Class resolveClass(ObjectStreamClass objectstreamclass)
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass objectstreamclass)
         throws IOException, ClassNotFoundException {
 
         String s = objectstreamclass.getName();
         if (s.startsWith("[")) {
             int i;
             for (i = 1; s.charAt(i) == '['; i++);
-            Class class1;
+            Class<?> class1;
             if (s.charAt(i) == 'L') {
                 class1 = loader.loadClass(s.substring(i + 1, s.length() - 1));
             } else {

@@ -156,29 +156,55 @@ public interface ModelMBeanInfo
 
 
     /**
-     * Returns the ModelMBean's descriptor which contains MBean wide policies.  This descriptor contains
-     * metadata about the MBean and default policies for persistence and caching.
-     * <P>
-     * The fields in the descriptor are defined, but not limited to, the following:
-     * <PRE>
-     * name           : MBean name
-     * descriptorType : must be "mbean"
-     * displayName    : name of attribute to be used in displays
-     * persistPolicy  : OnUpdate|OnTimer|NoMoreOftenThan|OnUnregister|Always|Never
-     * persistLocation : The fully qualified directory name where the MBean should be persisted (if appropriate)
-     * persistFile    : File name into which the MBean should be persisted
-     * persistPeriod  : seconds - frequency of persist cycle for OnTime and NoMoreOftenThan PersistPolicy
-     * currencyTimeLimit : how long value is valid, &lt;0 never, =0 always, &gt;0 seconds
-     * log            : where t: log all notifications f: log no notifications
-     * logfile        : fully qualified filename to log events to
-     * visibility     : 1-4 where 1: always visible 4: rarely visible
-     * export         : name to be used to export/expose this MBean so that it is findable by
-     *                  other JMX Agents.
-     * presentationString : xml formatted string to allow presentation of data to be associated with the MBean.
-     * </PRE>
+     * <p>Returns the ModelMBean's descriptor which contains MBean wide
+     * policies.  This descriptor contains metadata about the MBean and default
+     * policies for persistence and caching.</p>
+     *
+     * <P id="descriptor">
+     * The fields in the descriptor are defined, but not limited to, the
+     * following.  Note that when the Type in this table is Number, a String
+     * that is the decimal representation of a Long can also be used.</P>
+     *
+     * <table border="1" cellpadding="5">
+     * <tr><th>Name</th><th>Type</th><th>Meaning</th></tr>
+     * <tr><td>name</td><td>String</td>
+     *     <td>MBean name.</td></tr>
+     * <tr><td>descriptorType</td><td>String</td>
+     *     <td>Must be "mbean".</td></tr>
+     * <tr><td>displayName</td><td>String</td>
+     *     <td>Name of MBean to be used in displays.</td></tr>
+     * <tr><td>persistPolicy</td><td>String</td>
+     *     <td>One of: OnUpdate|OnTimer|NoMoreOftenThan|OnUnregister|Always|Never.
+     *         See the section "MBean Descriptor Fields" in the JMX specification
+     *         document.</td></tr>
+     * <tr><td>persistLocation</td><td>String</td>
+     *     <td>The fully qualified directory name where the MBean should be
+     *         persisted (if appropriate).</td></tr>
+     * <tr><td>persistFile</td><td>String</td>
+     *     <td>File name into which the MBean should be persisted.</td></tr>
+     * <tr><td>persistPeriod</td><td>Number</td>
+     *     <td>Frequency of persist cycle in seconds, for OnTime and
+     *         NoMoreOftenThan PersistPolicy</td></tr>
+     * <tr><td>currencyTimeLimit</td><td>Number</td>
+     *     <td>How long cached value is valid: &lt;0 never, =0 always,
+     *         &gt;0 seconds.</td></tr>
+     * <tr><td>log</td><td>String</td>
+     *     <td>t: log all notifications, f: log no notifications.</td></tr>
+     * <tr><td>logfile</td><td>String</td>
+     *     <td>Fully qualified filename to log events to.</td></tr>
+     * <tr><td>visibility</td><td>Number</td>
+     *     <td>1-4 where 1: always visible 4: rarely visible.</td></tr>
+     * <tr><td>export</td><td>String</td>
+     *     <td>Name to be used to export/expose this MBean so that it is
+     *         findable by other JMX Agents.</td></tr>
+     * <tr><td>presentationString</td><td>String</td>
+     *     <td>XML formatted string to allow presentation of data to be
+     *         associated with the MBean.</td></tr>
+     * </table>
+     *
      * <P>
      * The default descriptor is: name=className,descriptorType="mbean", displayName=className,
-     *  persistPolicy="never",log="F",export="F",visibility="1"
+     *  persistPolicy="never",log="F",visibility="1"
      * If the descriptor does not contain all these fields, they will be added with these default values.
      *
      * <p><b>Note:</b> because of inconsistencies in previous versions of
@@ -207,7 +233,7 @@ public interface ModelMBeanInfo
      * does a complete replacement of the descriptor, no merging is done. If the descriptor to
      * set to is null then the default descriptor will be created.
      * The default descriptor is: name=className,descriptorType="mbean", displayName=className,
-     *  persistPolicy="never",log="F",export="F",visibility="1"
+     *  persistPolicy="never",log="F",visibility="1"
      * If the descriptor does not contain all these fields, they will be added with these default values.
      *
      * See {@link #getMBeanDescriptor getMBeanDescriptor} method javadoc for description of valid field names.
