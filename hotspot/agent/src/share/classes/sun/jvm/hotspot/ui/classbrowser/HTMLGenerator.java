@@ -1116,20 +1116,15 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                 InstanceKlass kls = (InstanceKlass) obj;
                 buf.append(" " + kls.getName().asString() + "={");
                 int flen = ov.fieldsSize();
-
-                TypeArray klfields = kls.getFields();
-                int klen = (int) klfields.getLength();
-
-                ConstantPool cp = kls.getConstants();
+                int klen = kls.getJavaFieldsCount();
                 int findex = 0;
-                for (int index = 0; index < klen; index += kls.NEXT_OFFSET) {
-                    int accsFlags = klfields.getShortAt(index + kls.ACCESS_FLAGS_OFFSET);
-                    int nameIndex = klfields.getShortAt(index + kls.NAME_INDEX_OFFSET);
+                for (int index = 0; index < klen; index++) {
+                    int accsFlags = kls.getFieldAccessFlags(index);
+                    Symbol f_name = kls.getFieldName(index);
                     AccessFlags access = new AccessFlags(accsFlags);
                     if (!access.isStatic()) {
                         ScopeValue svf = ov.getFieldAt(findex++);
                         String    fstr = scopeValueAsString(sd, svf);
-                        Symbol f_name  = cp.getSymbolAt(nameIndex);
                         buf.append(" [" + f_name.asString() + " :"+ index + "]=(#" + fstr + ")");
                     }
                 }
@@ -1819,13 +1814,11 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
    protected String genHTMLListForFields(InstanceKlass klass) {
       Formatter buf = new Formatter(genHTML);
-      TypeArray fields = klass.getFields();
-      int numFields = (int) fields.getLength();
-      ConstantPool cp = klass.getConstants();
+      int numFields = klass.getJavaFieldsCount();
       if (numFields != 0) {
          buf.h3("Fields");
          buf.beginList();
-         for (int f = 0; f < numFields; f += InstanceKlass.NEXT_OFFSET) {
+         for (int f = 0; f < numFields; f++) {
            sun.jvm.hotspot.oops.Field field = klass.getFieldByIndex(f);
            String f_name = ((NamedFieldIdentifier)field.getID()).getName();
            Symbol f_sig  = field.getSignature();

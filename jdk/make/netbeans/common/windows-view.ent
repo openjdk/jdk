@@ -31,7 +31,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 
-<source-folder style="packages">
+<source-folder style="tree">
     <label>Sources for Windows Platform</label>
     <location>${root}/src/windows/classes</location>
     <includes>${includes}</includes>

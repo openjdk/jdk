@@ -322,6 +322,7 @@ class CollectedHeap : public CHeapObj {
   // General obj/array allocation facilities.
   inline static oop obj_allocate(KlassHandle klass, int size, TRAPS);
   inline static oop array_allocate(KlassHandle klass, int size, int length, TRAPS);
+  inline static oop array_allocate_nozero(KlassHandle klass, int size, int length, TRAPS);
 
   // Special obj/array allocation facilities.
   // Some heaps may want to manage "permanent" data uniquely. These default

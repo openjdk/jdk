@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  */
 
 import sun.misc.DoubleConsts;
-import sun.misc.FpUtils;
 
 public class HyperbolicTests {
     private HyperbolicTests(){}
@@ -266,7 +265,7 @@ public class HyperbolicTests {
         // double significand.
 
         for(int i = DoubleConsts.MIN_SUB_EXPONENT; i < -27; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testSinhCaseWithUlpDiff(d, d, 2.5);
@@ -280,7 +279,7 @@ public class HyperbolicTests {
         long trans22 = Double.doubleToLongBits(22.0);
         // (approximately) largest value such that exp shouldn't
         // overflow
-        long transExpOvfl = Double.doubleToLongBits(FpUtils.nextDown(709.7827128933841));
+        long transExpOvfl = Double.doubleToLongBits(Math.nextDown(709.7827128933841));
 
         for(long i = trans22;
             i < transExpOvfl;
@@ -344,7 +343,7 @@ public class HyperbolicTests {
         // sinh(x) overflows for values greater than 710; in
         // particular, it overflows for all 2^i, i > 10.
         for(int i = 10; i <= DoubleConsts.MAX_EXPONENT; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testSinhCaseWithUlpDiff(d,
@@ -625,7 +624,7 @@ public class HyperbolicTests {
         // rounded.
 
         for(int i = DoubleConsts.MIN_SUB_EXPONENT; i < -27; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testCoshCaseWithUlpDiff(d, 1.0, 2.5);
@@ -639,7 +638,7 @@ public class HyperbolicTests {
         long trans22 = Double.doubleToLongBits(22.0);
         // (approximately) largest value such that exp shouldn't
         // overflow
-        long transExpOvfl = Double.doubleToLongBits(FpUtils.nextDown(709.7827128933841));
+        long transExpOvfl = Double.doubleToLongBits(Math.nextDown(709.7827128933841));
 
         for(long i = trans22;
             i < transExpOvfl;
@@ -703,7 +702,7 @@ public class HyperbolicTests {
         // cosh(x) overflows for values greater than 710; in
         // particular, it overflows for all 2^i, i > 10.
         for(int i = 10; i <= DoubleConsts.MAX_EXPONENT; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testCoshCaseWithUlpDiff(d,
@@ -984,7 +983,7 @@ public class HyperbolicTests {
         // double significand.
 
         for(int i = DoubleConsts.MIN_SUB_EXPONENT; i < -27; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
             failures += testTanhCaseWithUlpDiff(d, d, 2.5);
@@ -998,7 +997,7 @@ public class HyperbolicTests {
         }
 
         for(int i = 5; i <= DoubleConsts.MAX_EXPONENT; i++) {
-            double d = FpUtils.scalb(2.0, i);
+            double d = Math.scalb(2.0, i);
 
             failures += testTanhCaseWithUlpDiff(d, 1.0, 2.5);
         }

@@ -74,6 +74,7 @@ public:
     set_method_handle(MethodHandle_vmtarget_oop(), THREAD);
   }
 
+  Handle root()                 { return _root; }
   Handle method_handle()        { return _method_handle; }
   oop    method_handle_oop()    { return _method_handle(); }
   oop    method_type_oop()      { return MethodHandle_type_oop(); }
@@ -110,7 +111,6 @@ public:
   // the signature for each method.  The signatures are printed in
   // slot order to make it easier to understand.
   void print();
-  static void print(Handle mh);
   static void print(oopDesc* mh);
 #endif
 };
@@ -277,6 +277,10 @@ private:
   KlassHandle  _target_klass;
   Thread*      _thread;
 
+  int          _selectAlternative_bci; // These are used for capturing profiles from GWTs
+  int          _taken_count;
+  int          _not_taken_count;
+
   // Values used by the compiler.
   static jvalue zero_jvalue;
   static jvalue one_jvalue;
@@ -372,6 +376,7 @@ private:
 
   unsigned char* bytecode()        const { return _bytecode.adr_at(0); }
   int            bytecode_length() const { return _bytecode.length(); }
+  int            cur_bci()         const { return _bytecode.length(); }
 
   // Fake constant pool.
   int cpool_oop_put(int tag, Handle con) {
@@ -436,6 +441,8 @@ private:
   }
 
   void emit_bc(Bytecodes::Code op, int index = 0, int args_size = -1);
+  void update_branch_dest(int src, int dst);
+  void emit_load(ArgToken arg);
   void emit_load(BasicType bt, int index);
   void emit_store(BasicType bt, int index);
   void emit_load_constant(ArgToken arg);
@@ -455,11 +462,14 @@ private:
   virtual ArgToken make_fetch(BasicType type, klassOop tk, Bytecodes::Code op, const ArgToken& base, const ArgToken& offset, TRAPS);
   virtual ArgToken make_invoke(methodHandle m, vmIntrinsics::ID iid, Bytecodes::Code op, bool tailcall, int argc, ArgToken* argv, TRAPS);
 
+  // Check for profiling information on a GWT and return true if it's found
+  bool fetch_counts(ArgToken a1, ArgToken a2);
+
   // Get a real constant pool.
   constantPoolHandle get_constant_pool(TRAPS) const;
 
   // Get a real methodOop.
-  methodHandle get_method_oop(TRAPS) const;
+  methodHandle get_method_oop(TRAPS);
 
 public:
   MethodHandleCompiler(Handle root, Symbol* name, Symbol* signature, int invoke_count, bool for_invokedynamic, TRAPS);

@@ -37,6 +37,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
 elapsedTimer CMSAdaptiveSizePolicy::_concurrent_timer;
 elapsedTimer CMSAdaptiveSizePolicy::_STW_timer;
 

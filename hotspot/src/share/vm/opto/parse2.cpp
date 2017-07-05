@@ -752,20 +752,12 @@ void Parse::do_jsr() {
 // Handle ret bytecode
 void Parse::do_ret() {
   // Find to whom we return.
-#if 0 // %%%% MAKE THIS WORK
-  Node* con = local();
-  const TypePtr* tp = con->bottom_type()->isa_ptr();
-  assert(tp && tp->singleton(), "");
-  int return_bci = (int) tp->get_con();
-  merge(return_bci);
-#else
   assert(block()->num_successors() == 1, "a ret can only go one place now");
   Block* target = block()->successor_at(0);
   assert(!target->is_ready(), "our arrival must be expected");
   profile_ret(target->flow()->start());
   int pnum = target->next_path_num();
   merge_common(target, pnum);
-#endif
 }
 
 //--------------------------dynamic_branch_prediction--------------------------
