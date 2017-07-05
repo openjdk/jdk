@@ -784,11 +784,22 @@ initial-image-jre:: initial-image-jre-setup \
 		    $(RT_JAR) $(RESOURCES_JAR) $(JSSE_JAR) $(JFR_JAR) \
 		    $(BUILDMETAINDEX_JARFILE)
 	@# Copy in bin directory
+ifeq ($(USING_MSYS),true)
+        # No cpio in MinGW/MSYS
+	$(CD) $(OUTPUTDIR) && $(TAR) -cf - bin | ($(CD) $(JRE_IMAGE_DIR) && $(TAR) -xpf -)
+else
 	$(CD) $(OUTPUTDIR) && $(FIND) bin -depth | $(CPIO) -pdum $(JRE_IMAGE_DIR)
+endif
 	@# CTE plugin security change require new empty directory lib/applet
 	$(MKDIR) -p $(JRE_IMAGE_DIR)/lib/applet
 	@# Copy in lib directory
+ifeq ($(USING_MSYS),true)
+        # No cpio in MinGW/MSYS
+	$(CD) $(OUTPUTDIR) && $(TAR) -cf - lib | ($(CD) $(JRE_IMAGE_DIR) && $(TAR) -xpf -)
+else
 	$(CD) $(OUTPUTDIR) && $(FIND) lib -depth | $(CPIO) -pdum $(JRE_IMAGE_DIR)
+endif
+
   ifeq ($(USING_CYGWIN),true)
 	  $(RM) -rf $(JRE_IMAGE_DIR)/[A-Za-z]:
 	  $(RM) -rf $(OUTPUTDIR)/[A-Za-z]:
@@ -919,11 +930,17 @@ endif
 # only places from which we copy everything), but because the presence
 # of this file causes cygwin's find to bomb out, thus breaking the build
 # in "install".
+
 initial-image-jdk-setup:
 	$(RM) -r $(JDK_IMAGE_DIR)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/jre
+ifeq ($(USING_MSYS),true)
+	($(CD) $(JRE_IMAGE_DIR) && $(TAR) -cf - . \
+	      | ($(CD) $(JDK_IMAGE_DIR)/jre && $(TAR) -xpf -))
+else
 	($(CD) $(JRE_IMAGE_DIR) && $(FIND) . -depth -print \
 	      | $(CPIO) -pdum $(JDK_IMAGE_DIR)/jre )
+endif
   ifeq ($(USING_CYGWIN),true)
 	  $(RM) -rf $(JRE_IMAGE_DIR)/[A-Za-z]:
 	  $(RM) -rf $(JDK_IMAGE_DIR)/jre/[A-Za-z]:
