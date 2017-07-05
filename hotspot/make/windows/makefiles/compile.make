@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,20 @@ CPP_FLAGS=$(CPP_FLAGS) /D "IA32"
 !ifndef DEFAULT_COMPILER_NAME
 CPP=ARCH_ERROR
 !endif
+
+CPP_FLAGS=$(CPP_FLAGS) /D "WIN32" /D "_WINDOWS"
+
+# Must specify this for sharedRuntimeTrig.cpp
+CPP_FLAGS=$(CPP_FLAGS) /D "VM_LITTLE_ENDIAN"
+
+# Used for platform dispatching
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_FAMILY_windows
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_ARCH_$(Platform_arch)
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_ARCH_MODEL_$(Platform_arch_model)
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_ARCH_windows_$(Platform_arch)
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_OS_ARCH_MODEL_windows_$(Platform_arch_model)
+CPP_FLAGS=$(CPP_FLAGS) /D TARGET_COMPILER_visCPP
+
 
 # MSC_VER is a 4 digit number that tells us what compiler is being used
 #    and is generated when the local.make file is created by build.make

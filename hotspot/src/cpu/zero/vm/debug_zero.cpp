@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,14 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_debug_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "code/codeCache.hpp"
+#include "code/nmethod.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/init.hpp"
+#include "runtime/os.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/top.hpp"
 
 void pd_ps(frame f) {
   ShouldNotCallThis();

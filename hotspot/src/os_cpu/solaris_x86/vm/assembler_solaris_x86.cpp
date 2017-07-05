@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,11 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_assembler_solaris_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "assembler_x86.inline.hpp"
+#include "runtime/os.hpp"
+#include "runtime/threadLocalStorage.hpp"
 
 
 void MacroAssembler::int3() {

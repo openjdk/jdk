@@ -287,9 +287,12 @@ ifdef BUILD_NUMBER
   FULL_VERSION = $(RELEASE)-$(BUILD_NUMBER)
 else
   BUILD_NUMBER = b00
-  BUILD_DATE := $(shell $(DATE) '+%Y_%m_%d_%H_%M')
-  CLEAN_USERNAME := $(shell $(ECHO) "$(USER)" | $(TR) -d -c '[:alnum:]')
-  USER_RELEASE_SUFFIX := $(shell $(ECHO) "$(CLEAN_USERNAME)_$(BUILD_DATE)" | $(TR) '[:upper:]' '[:lower:]' )
+  ifndef USER_RELEASE_SUFFIX
+    BUILD_DATE := $(shell $(DATE) '+%Y_%m_%d_%H_%M')
+    CLEAN_USERNAME := $(shell $(ECHO) "$(USER)" | $(TR) -d -c '[:alnum:]')
+    USER_RELEASE_SUFFIX := $(shell $(ECHO) "$(CLEAN_USERNAME)_$(BUILD_DATE)" | $(TR) '[:upper:]' '[:lower:]' )
+  endif
+  export USER_RELEASE_SUFFIX
   FULL_VERSION = $(RELEASE)-$(USER_RELEASE_SUFFIX)-$(BUILD_NUMBER)
 endif
 
@@ -335,7 +338,9 @@ endif
 
 # Include any private definitions for this set of workspaces
 _PRIVATE_DEFS_FILE=$(JDK_MAKE_SHARED_DIR)/PrivateDefs.gmk
-USING_PRIVATE_DEFS:=$(shell if [ -f $(_PRIVATE_DEFS_FILE) ]; then echo true; else echo false; fi)
+ifeq ($(USING_PRIVATE_DEFS),)
+  USING_PRIVATE_DEFS:=$(shell if [ -f $(_PRIVATE_DEFS_FILE) ]; then echo true; else echo false; fi)
+endif
 ifeq ($(USING_PRIVATE_DEFS),true)
 dummy:=$(warning "WARNING: Using definitions from $(_PRIVATE_DEFS_FILE)")
 include $(_PRIVATE_DEFS_FILE)

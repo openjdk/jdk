@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,9 @@ fi
 echo "EXPORTS" > vm1.def
 
 AWK="$MKS_HOME/awk.exe"
+if [ ! -e $AWK ]; then
+    AWK="$MKS_HOME/gawk.exe"
+fi
 GREP="$MKS_HOME/grep.exe"
 SORT="$MKS_HOME/sort.exe"
 UNIQ="$MKS_HOME/uniq.exe"
@@ -57,7 +60,7 @@ if [ "x$1" != "x" ]; then
 LINK_VER="$1"
 fi
 
-if [ "x$LINK_VER" != "x800" -a  "x$LINK_VER" != "x900" ]; then
+if [ "x$LINK_VER" != "x800" -a  "x$LINK_VER" != "x900" -a "x$LINK_VER" != "x1000" ]; then
 $DUMPBIN /symbols *.obj | "$GREP" "??_7.*@@6B@" | "$GREP" -v "type_info" | "$AWK" '{print $7}' | "$SORT" | "$UNIQ" > vm2.def
 else
 # Can't use pipes when calling cl.exe or link.exe from IDE. Using transit file vm3.def

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 
 package com.sun.security.auth.module;
-
-import javax.security.auth.*;
-import javax.security.auth.login.*;
 
 /**
  * <p> This class implementation retrieves and makes available Unix
@@ -92,6 +89,6 @@ public class UnixSystem {
      * @return the supplementary groups for the current Unix user.
      */
     public long[] getGroups() {
-        return groups;
+        return groups == null ? null : groups.clone();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_GLOBALDEFINITIONS_SPARCWORKS_HPP
+#define SHARE_VM_UTILITIES_GLOBALDEFINITIONS_SPARCWORKS_HPP
+
+#include "prims/jni.h"
 
 // This file holds compiler-dependent includes,
 // globally used constants & types, class (forward)
@@ -263,3 +268,5 @@ int local_vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr);
 #endif // _LP64
 
 #define offset_of(klass,field) offsetof(klass,field)
+
+#endif // SHARE_VM_UTILITIES_GLOBALDEFINITIONS_SPARCWORKS_HPP

@@ -22,8 +22,18 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_loopTransform.cpp.incl"
+#include "precompiled.hpp"
+#include "compiler/compileLog.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/rootnode.hpp"
+#include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
 
 //------------------------------is_loop_exit-----------------------------------
 // Given an IfNode, return the loop-exiting projection or NULL if both

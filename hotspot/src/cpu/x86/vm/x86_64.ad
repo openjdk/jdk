@@ -833,6 +833,25 @@ void encode_CopyXD( CodeBuffer &cbuf, int dst_encoding, int src_encoding ) {
 
 
 //=============================================================================
+const bool Matcher::constant_table_absolute_addressing = true;
+const RegMask& MachConstantBaseNode::_out_RegMask = RegMask::Empty;
+
+void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
+  // Empty encoding
+}
+
+uint MachConstantBaseNode::size(PhaseRegAlloc* ra_) const {
+  return 0;
+}
+
+#ifndef PRODUCT
+void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
+  st->print("# MachConstantBaseNode (empty encoding)");
+}
+#endif
+
+
+//=============================================================================
 #ifndef PRODUCT
 void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
@@ -1922,28 +1941,6 @@ int emit_deopt_handler(CodeBuffer& cbuf)
   return offset;
 }
 
-static void emit_double_constant(CodeBuffer& cbuf, double x) {
-  int mark = cbuf.insts()->mark_off();
-  MacroAssembler _masm(&cbuf);
-  address double_address = __ double_constant(x);
-  cbuf.insts()->set_mark_off(mark);  // preserve mark across masm shift
-  emit_d32_reloc(cbuf,
-                 (int) (double_address - cbuf.insts_end() - 4),
-                 internal_word_Relocation::spec(double_address),
-                 RELOC_DISP32);
-}
-
-static void emit_float_constant(CodeBuffer& cbuf, float x) {
-  int mark = cbuf.insts()->mark_off();
-  MacroAssembler _masm(&cbuf);
-  address float_address = __ float_constant(x);
-  cbuf.insts()->set_mark_off(mark);  // preserve mark across masm shift
-  emit_d32_reloc(cbuf,
-                 (int) (float_address - cbuf.insts_end() - 4),
-                 internal_word_Relocation::spec(float_address),
-                 RELOC_DISP32);
-}
-
 
 const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
@@ -2789,43 +2786,6 @@ encode %{
     }
   %}
 
-  enc_class load_immF(regF dst, immF con)
-  %{
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    emit_rm(cbuf, 0x0, $dst$$reg & 7, 0x5); // 00 reg 101
-    emit_float_constant(cbuf, $con$$constant);
-  %}
-
-  enc_class load_immD(regD dst, immD con)
-  %{
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    emit_rm(cbuf, 0x0, $dst$$reg & 7, 0x5); // 00 reg 101
-    emit_double_constant(cbuf, $con$$constant);
-  %}
-
-  enc_class load_conF (regF dst, immF con) %{    // Load float constant
-    emit_opcode(cbuf, 0xF3);
-    if ($dst$$reg >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, 0x10);
-    emit_rm(cbuf, 0x0, $dst$$reg & 7, 0x5); // 00 reg 101
-    emit_float_constant(cbuf, $con$$constant);
-  %}
-
-  enc_class load_conD (regD dst, immD con) %{    // Load double constant
-    // UseXmmLoadAndClearUpper ? movsd(dst, con) : movlpd(dst, con)
-    emit_opcode(cbuf, UseXmmLoadAndClearUpper ? 0xF2 : 0x66);
-    if ($dst$$reg >= 8) {
-      emit_opcode(cbuf, Assembler::REX_R);
-    }
-    emit_opcode(cbuf, 0x0F);
-    emit_opcode(cbuf, UseXmmLoadAndClearUpper ? 0x10 : 0x12);
-    emit_rm(cbuf, 0x0, $dst$$reg & 7, 0x5); // 00 reg 101
-    emit_double_constant(cbuf, $con$$constant);
-  %}
-
   // Encode a reg-reg copy.  If it is useless, then empty encoding.
   enc_class enc_copy(rRegI dst, rRegI src)
   %{
@@ -2924,63 +2884,6 @@ encode %{
     // Output immediate memory reference
     emit_rm(cbuf, 0x00, $t1$$reg, 0x05 );
     emit_d32(cbuf, 0x00);
-  %}
-
-  enc_class jump_enc(rRegL switch_val, rRegI dest) %{
-    MacroAssembler masm(&cbuf);
-
-    Register switch_reg = as_Register($switch_val$$reg);
-    Register dest_reg   = as_Register($dest$$reg);
-    address table_base  = masm.address_table_constant(_index2label);
-
-    // We could use jump(ArrayAddress) except that the macro assembler needs to use r10
-    // to do that and the compiler is using that register as one it can allocate.
-    // So we build it all by hand.
-    // Address index(noreg, switch_reg, Address::times_1);
-    // ArrayAddress dispatch(table, index);
-
-    Address dispatch(dest_reg, switch_reg, Address::times_1);
-
-    masm.lea(dest_reg, InternalAddress(table_base));
-    masm.jmp(dispatch);
-  %}
-
-  enc_class jump_enc_addr(rRegL switch_val, immI2 shift, immL32 offset, rRegI dest) %{
-    MacroAssembler masm(&cbuf);
-
-    Register switch_reg = as_Register($switch_val$$reg);
-    Register dest_reg   = as_Register($dest$$reg);
-    address table_base  = masm.address_table_constant(_index2label);
-
-    // We could use jump(ArrayAddress) except that the macro assembler needs to use r10
-    // to do that and the compiler is using that register as one it can allocate.
-    // So we build it all by hand.
-    // Address index(noreg, switch_reg, (Address::ScaleFactor)$shift$$constant, (int)$offset$$constant);
-    // ArrayAddress dispatch(table, index);
-
-    Address dispatch(dest_reg, switch_reg, (Address::ScaleFactor)$shift$$constant, (int)$offset$$constant);
-
-    masm.lea(dest_reg, InternalAddress(table_base));
-    masm.jmp(dispatch);
-  %}
-
-  enc_class jump_enc_offset(rRegL switch_val, immI2 shift, rRegI dest) %{
-    MacroAssembler masm(&cbuf);
-
-    Register switch_reg = as_Register($switch_val$$reg);
-    Register dest_reg   = as_Register($dest$$reg);
-    address table_base  = masm.address_table_constant(_index2label);
-
-    // We could use jump(ArrayAddress) except that the macro assembler needs to use r10
-    // to do that and the compiler is using that register as one it can allocate.
-    // So we build it all by hand.
-    // Address index(noreg, switch_reg, (Address::ScaleFactor)$shift$$constant);
-    // ArrayAddress dispatch(table, index);
-
-    Address dispatch(dest_reg, switch_reg, (Address::ScaleFactor)$shift$$constant);
-    masm.lea(dest_reg, InternalAddress(table_base));
-    masm.jmp(dispatch);
-
   %}
 
   enc_class lock_prefix()
@@ -6641,12 +6544,11 @@ instruct loadConL32(rRegL dst, immL32 src)
   ins_pipe(ialu_reg);
 %}
 
-instruct loadConP(rRegP dst, immP src)
-%{
-  match(Set dst src);
+instruct loadConP(rRegP dst, immP con) %{
+  match(Set dst con);
 
-  format %{ "movq    $dst, $src\t# ptr" %}
-  ins_encode(load_immP(dst, src));
+  format %{ "movq    $dst, $con\t# ptr" %}
+  ins_encode(load_immP(dst, con));
   ins_pipe(ialu_reg_fat); // XXX
 %}
 
@@ -6673,13 +6575,13 @@ instruct loadConP31(rRegP dst, immP31 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
-instruct loadConF(regF dst, immF src)
-%{
-  match(Set dst src);
+instruct loadConF(regF dst, immF con) %{
+  match(Set dst con);
   ins_cost(125);
-
-  format %{ "movss   $dst, [$src]" %}
-  ins_encode(load_conF(dst, src));
+  format %{ "movss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -6721,13 +6623,13 @@ instruct loadConF0(regF dst, immF0 src)
 %}
 
 // Use the same format since predicate() can not be used here.
-instruct loadConD(regD dst, immD src)
-%{
-  match(Set dst src);
+instruct loadConD(regD dst, immD con) %{
+  match(Set dst con);
   ins_cost(125);
-
-  format %{ "movsd   $dst, [$src]" %}
-  ins_encode(load_conD(dst, src));
+  format %{ "movsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -7694,9 +7596,18 @@ instruct jumpXtnd_offset(rRegL switch_val, immI2 shift, rRegI dest) %{
   predicate(false);
   effect(TEMP dest);
 
-  format %{ "leaq    $dest, table_base\n\t"
+  format %{ "leaq    $dest, [$constantaddress]\n\t"
             "jmp     [$dest + $switch_val << $shift]\n\t" %}
-  ins_encode(jump_enc_offset(switch_val, shift, dest));
+  ins_encode %{
+    // We could use jump(ArrayAddress) except that the macro assembler needs to use r10
+    // to do that and the compiler is using that register as one it can allocate.
+    // So we build it all by hand.
+    // Address index(noreg, switch_reg, (Address::ScaleFactor)$shift$$constant);
+    // ArrayAddress dispatch(table, index);
+    Address dispatch($dest$$Register, $switch_val$$Register, (Address::ScaleFactor) $shift$$constant);
+    __ lea($dest$$Register, $constantaddress);
+    __ jmp(dispatch);
+  %}
   ins_pipe(pipe_jmp);
   ins_pc_relative(1);
 %}
@@ -7706,9 +7617,18 @@ instruct jumpXtnd_addr(rRegL switch_val, immI2 shift, immL32 offset, rRegI dest)
   ins_cost(350);
   effect(TEMP dest);
 
-  format %{ "leaq    $dest, table_base\n\t"
+  format %{ "leaq    $dest, [$constantaddress]\n\t"
             "jmp     [$dest + $switch_val << $shift + $offset]\n\t" %}
-  ins_encode(jump_enc_addr(switch_val, shift, offset, dest));
+  ins_encode %{
+    // We could use jump(ArrayAddress) except that the macro assembler needs to use r10
+    // to do that and the compiler is using that register as one it can allocate.
+    // So we build it all by hand.
+    // Address index(noreg, switch_reg, (Address::ScaleFactor) $shift$$constant, (int) $offset$$constant);
+    // ArrayAddress dispatch(table, index);
+    Address dispatch($dest$$Register, $switch_val$$Register, (Address::ScaleFactor) $shift$$constant, (int) $offset$$constant);
+    __ lea($dest$$Register, $constantaddress);
+    __ jmp(dispatch);
+  %}
   ins_pipe(pipe_jmp);
   ins_pc_relative(1);
 %}
@@ -7718,9 +7638,18 @@ instruct jumpXtnd(rRegL switch_val, rRegI dest) %{
   ins_cost(350);
   effect(TEMP dest);
 
-  format %{ "leaq    $dest, table_base\n\t"
+  format %{ "leaq    $dest, [$constantaddress]\n\t"
             "jmp     [$dest + $switch_val]\n\t" %}
-  ins_encode(jump_enc(switch_val, dest));
+  ins_encode %{
+    // We could use jump(ArrayAddress) except that the macro assembler needs to use r10
+    // to do that and the compiler is using that register as one it can allocate.
+    // So we build it all by hand.
+    // Address index(noreg, switch_reg, Address::times_1);
+    // ArrayAddress dispatch(table, index);
+    Address dispatch($dest$$Register, $switch_val$$Register, Address::times_1);
+    __ lea($dest$$Register, $constantaddress);
+    __ jmp(dispatch);
+  %}
   ins_pipe(pipe_jmp);
   ins_pc_relative(1);
 %}
@@ -10376,30 +10305,36 @@ instruct cmpF_cc_memCF(rFlagsRegUCF cr, regF src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpF_cc_imm(rFlagsRegU cr, regF src1, immF src2)
-%{
-  match(Set cr (CmpF src1 src2));
+instruct cmpF_cc_imm(rFlagsRegU cr, regF src, immF con) %{
+  match(Set cr (CmpF src con));
 
   ins_cost(145);
-  format %{ "ucomiss $src1, $src2\n\t"
+  format %{ "ucomiss $src, [$constantaddress]\t# load from constant table: float=$con\n\t"
             "jnp,s   exit\n\t"
             "pushfq\t# saw NaN, set CF\n\t"
             "andq    [rsp], #0xffffff2b\n\t"
             "popfq\n"
     "exit:   nop\t# avoid branch to branch" %}
-  opcode(0x0F, 0x2E);
-  ins_encode(REX_reg_mem(src1, src2), OpcP, OpcS, load_immF(src1, src2),
-             cmpfp_fixup);
+  ins_encode %{
+    Label L_exit;
+    __ ucomiss($src$$XMMRegister, $constantaddress($con));
+    __ jcc(Assembler::noParity, L_exit);
+    __ pushf();
+    __ andq(rsp, 0xffffff2b);
+    __ popf();
+    __ bind(L_exit);
+    __ nop();
+  %}
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpF_cc_immCF(rFlagsRegUCF cr, regF src1, immF src2) %{
-  match(Set cr (CmpF src1 src2));
-
+instruct cmpF_cc_immCF(rFlagsRegUCF cr, regF src, immF con) %{
+  match(Set cr (CmpF src con));
   ins_cost(100);
-  format %{ "ucomiss $src1, $src2" %}
-  opcode(0x0F, 0x2E);
-  ins_encode(REX_reg_mem(src1, src2), OpcP, OpcS, load_immF(src1, src2));
+  format %{ "ucomiss $src, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_encode %{
+    __ ucomiss($src$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10458,30 +10393,36 @@ instruct cmpD_cc_memCF(rFlagsRegUCF cr, regD src1, memory src2) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpD_cc_imm(rFlagsRegU cr, regD src1, immD src2)
-%{
-  match(Set cr (CmpD src1 src2));
+instruct cmpD_cc_imm(rFlagsRegU cr, regD src, immD con) %{
+  match(Set cr (CmpD src con));
 
   ins_cost(145);
-  format %{ "ucomisd $src1, [$src2]\n\t"
+  format %{ "ucomisd $src, [$constantaddress]\t# load from constant table: double=$con\n\t"
             "jnp,s   exit\n\t"
             "pushfq\t# saw NaN, set CF\n\t"
             "andq    [rsp], #0xffffff2b\n\t"
             "popfq\n"
     "exit:   nop\t# avoid branch to branch" %}
-  opcode(0x66, 0x0F, 0x2E);
-  ins_encode(OpcP, REX_reg_mem(src1, src2), OpcS, OpcT, load_immD(src1, src2),
-             cmpfp_fixup);
+  ins_encode %{
+    Label L_exit;
+    __ ucomisd($src$$XMMRegister, $constantaddress($con));
+    __ jcc(Assembler::noParity, L_exit);
+    __ pushf();
+    __ andq(rsp, 0xffffff2b);
+    __ popf();
+    __ bind(L_exit);
+    __ nop();
+  %}
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpD_cc_immCF(rFlagsRegUCF cr, regD src1, immD src2) %{
-  match(Set cr (CmpD src1 src2));
-
+instruct cmpD_cc_immCF(rFlagsRegUCF cr, regD src, immD con) %{
+  match(Set cr (CmpD src con));
   ins_cost(100);
-  format %{ "ucomisd $src1, [$src2]" %}
-  opcode(0x66, 0x0F, 0x2E);
-  ins_encode(OpcP, REX_reg_mem(src1, src2), OpcS, OpcT, load_immD(src1, src2));
+  format %{ "ucomisd $src, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_encode %{
+    __ ucomisd($src$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10528,23 +10469,29 @@ instruct cmpF_mem(rRegI dst, regF src1, memory src2, rFlagsReg cr)
 %}
 
 // Compare into -1,0,1
-instruct cmpF_imm(rRegI dst, regF src1, immF src2, rFlagsReg cr)
-%{
-  match(Set dst (CmpF3 src1 src2));
+instruct cmpF_imm(rRegI dst, regF src, immF con, rFlagsReg cr) %{
+  match(Set dst (CmpF3 src con));
   effect(KILL cr);
 
   ins_cost(275);
-  format %{ "ucomiss $src1, [$src2]\n\t"
+  format %{ "ucomiss $src, [$constantaddress]\t# load from constant table: float=$con\n\t"
             "movl    $dst, #-1\n\t"
             "jp,s    done\n\t"
             "jb,s    done\n\t"
             "setne   $dst\n\t"
             "movzbl  $dst, $dst\n"
     "done:" %}
-
-  opcode(0x0F, 0x2E);
-  ins_encode(REX_reg_mem(src1, src2), OpcP, OpcS, load_immF(src1, src2),
-             cmpfp3(dst));
+  ins_encode %{
+    Label L_done;
+    Register Rdst = $dst$$Register;
+    __ ucomiss($src$$XMMRegister, $constantaddress($con));
+    __ movl(Rdst, -1);
+    __ jcc(Assembler::parity, L_done);
+    __ jcc(Assembler::below, L_done);
+    __ setb(Assembler::notEqual, Rdst);
+    __ movzbl(Rdst, Rdst);
+    __ bind(L_done);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10591,23 +10538,29 @@ instruct cmpD_mem(rRegI dst, regD src1, memory src2, rFlagsReg cr)
 %}
 
 // Compare into -1,0,1
-instruct cmpD_imm(rRegI dst, regD src1, immD src2, rFlagsReg cr)
-%{
-  match(Set dst (CmpD3 src1 src2));
+instruct cmpD_imm(rRegI dst, regD src, immD con, rFlagsReg cr) %{
+  match(Set dst (CmpD3 src con));
   effect(KILL cr);
 
   ins_cost(275);
-  format %{ "ucomisd $src1, [$src2]\n\t"
+  format %{ "ucomisd $src, [$constantaddress]\t# load from constant table: double=$con\n\t"
             "movl    $dst, #-1\n\t"
             "jp,s    done\n\t"
             "jb,s    done\n\t"
             "setne   $dst\n\t"
             "movzbl  $dst, $dst\n"
     "done:" %}
-
-  opcode(0x66, 0x0F, 0x2E);
-  ins_encode(OpcP, REX_reg_mem(src1, src2), OpcS, OpcT, load_immD(src1, src2),
-             cmpfp3(dst));
+  ins_encode %{
+    Register Rdst = $dst$$Register;
+    Label L_done;
+    __ ucomisd($src$$XMMRegister, $constantaddress($con));
+    __ movl(Rdst, -1);
+    __ jcc(Assembler::parity, L_done);
+    __ jcc(Assembler::below, L_done);
+    __ setb(Assembler::notEqual, Rdst);
+    __ movzbl(Rdst, Rdst);
+    __ bind(L_done);
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10633,14 +10586,13 @@ instruct addF_mem(regF dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct addF_imm(regF dst, immF src)
-%{
-  match(Set dst (AddF dst src));
-
-  format %{ "addss   $dst, [$src]" %}
+instruct addF_imm(regF dst, immF con) %{
+  match(Set dst (AddF dst con));
+  format %{ "addss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x58);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immF(dst, src));
+  ins_encode %{
+    __ addss($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10666,14 +10618,13 @@ instruct addD_mem(regD dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct addD_imm(regD dst, immD src)
-%{
-  match(Set dst (AddD dst src));
-
-  format %{ "addsd   $dst, [$src]" %}
+instruct addD_imm(regD dst, immD con) %{
+  match(Set dst (AddD dst con));
+  format %{ "addsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x58);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immD(dst, src));
+  ins_encode %{
+    __ addsd($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10699,14 +10650,13 @@ instruct subF_mem(regF dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct subF_imm(regF dst, immF src)
-%{
-  match(Set dst (SubF dst src));
-
-  format %{ "subss   $dst, [$src]" %}
+instruct subF_imm(regF dst, immF con) %{
+  match(Set dst (SubF dst con));
+  format %{ "subss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x5C);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immF(dst, src));
+  ins_encode %{
+    __ subss($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10732,14 +10682,13 @@ instruct subD_mem(regD dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct subD_imm(regD dst, immD src)
-%{
-  match(Set dst (SubD dst src));
-
-  format %{ "subsd   $dst, [$src]" %}
+instruct subD_imm(regD dst, immD con) %{
+  match(Set dst (SubD dst con));
+  format %{ "subsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x5C);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immD(dst, src));
+  ins_encode %{
+    __ subsd($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10765,14 +10714,13 @@ instruct mulF_mem(regF dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct mulF_imm(regF dst, immF src)
-%{
-  match(Set dst (MulF dst src));
-
-  format %{ "mulss   $dst, [$src]" %}
+instruct mulF_imm(regF dst, immF con) %{
+  match(Set dst (MulF dst con));
+  format %{ "mulss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x59);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immF(dst, src));
+  ins_encode %{
+    __ mulss($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10798,14 +10746,13 @@ instruct mulD_mem(regD dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct mulD_imm(regD dst, immD src)
-%{
-  match(Set dst (MulD dst src));
-
-  format %{ "mulsd   $dst, [$src]" %}
+instruct mulD_imm(regD dst, immD con) %{
+  match(Set dst (MulD dst con));
+  format %{ "mulsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x59);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immD(dst, src));
+  ins_encode %{
+    __ mulsd($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10831,14 +10778,13 @@ instruct divF_mem(regF dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct divF_imm(regF dst, immF src)
-%{
-  match(Set dst (DivF dst src));
-
-  format %{ "divss   $dst, [$src]" %}
+instruct divF_imm(regF dst, immF con) %{
+  match(Set dst (DivF dst con));
+  format %{ "divss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x5E);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immF(dst, src));
+  ins_encode %{
+    __ divss($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10864,14 +10810,13 @@ instruct divD_mem(regD dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct divD_imm(regD dst, immD src)
-%{
-  match(Set dst (DivD dst src));
-
-  format %{ "divsd   $dst, [$src]" %}
+instruct divD_imm(regD dst, immD con) %{
+  match(Set dst (DivD dst con));
+  format %{ "divsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x5E);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immD(dst, src));
+  ins_encode %{
+    __ divsd($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10897,14 +10842,13 @@ instruct sqrtF_mem(regF dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct sqrtF_imm(regF dst, immF src)
-%{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
-
-  format %{ "sqrtss  $dst, [$src]" %}
+instruct sqrtF_imm(regF dst, immF con) %{
+  match(Set dst (ConvD2F (SqrtD (ConvF2D con))));
+  format %{ "sqrtss  $dst, [$constantaddress]\t# load from constant table: float=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF3, 0x0F, 0x51);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immF(dst, src));
+  ins_encode %{
+    __ sqrtss($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 
@@ -10930,14 +10874,13 @@ instruct sqrtD_mem(regD dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct sqrtD_imm(regD dst, immD src)
-%{
-  match(Set dst (SqrtD src));
-
-  format %{ "sqrtsd  $dst, [$src]" %}
+instruct sqrtD_imm(regD dst, immD con) %{
+  match(Set dst (SqrtD con));
+  format %{ "sqrtsd  $dst, [$constantaddress]\t# load from constant table: double=$con" %}
   ins_cost(150); // XXX
-  opcode(0xF2, 0x0F, 0x51);
-  ins_encode(OpcP, REX_reg_mem(dst, src), OpcS, OpcT, load_immD(dst, src));
+  ins_encode %{
+    __ sqrtsd($dst$$XMMRegister, $constantaddress($con));
+  %}
   ins_pipe(pipe_slow);
 %}
 

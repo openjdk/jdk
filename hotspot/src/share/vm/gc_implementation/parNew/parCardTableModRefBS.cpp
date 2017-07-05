@@ -22,8 +22,16 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_parCardTableModRefBS.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/sharedHeap.hpp"
+#include "memory/space.inline.hpp"
+#include "memory/universe.hpp"
+#include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/virtualspace.hpp"
 
 void CardTableModRefBS::par_non_clean_card_iterate_work(Space* sp, MemRegion mr,
                                                         DirtyCardToOopClosure* dcto_cl,

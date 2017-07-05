@@ -22,6 +22,18 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_HPP
+
+#include "gc_implementation/parallelScavenge/objectStartArray.hpp"
+#include "gc_implementation/parallelScavenge/psGCAdaptivePolicyCounters.hpp"
+#include "gc_implementation/parallelScavenge/psOldGen.hpp"
+#include "gc_implementation/parallelScavenge/psPermGen.hpp"
+#include "gc_implementation/parallelScavenge/psYoungGen.hpp"
+#include "gc_implementation/shared/gcPolicyCounters.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "utilities/ostream.hpp"
+
 class AdjoiningGenerations;
 class GCTaskManager;
 class PSAdaptiveSizePolicy;
@@ -263,3 +275,5 @@ inline size_t ParallelScavengeHeap::set_alignment(size_t& var, size_t val)
   var = round_to(val, intra_heap_alignment());
   return var;
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PARALLELSCAVENGEHEAP_HPP

@@ -22,8 +22,24 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_assembler_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_x86.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/cardTableModRefBS.hpp"
+#include "memory/resourceArea.hpp"
+#include "prims/methodHandles.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/os.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#endif
 
 // Implementation of AddressLiteral
 
@@ -2633,6 +2649,37 @@ void Assembler::sqrtsd(XMMRegister dst, XMMRegister src) {
   emit_byte(0xC0 | encode);
 }
 
+void Assembler::sqrtsd(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  emit_byte(0xF2);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x51);
+  emit_operand(dst, src);
+}
+
+void Assembler::sqrtss(XMMRegister dst, XMMRegister src) {
+  // HMM Table D-1 says sse2
+  // NOT_LP64(assert(VM_Version::supports_sse(), ""));
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  emit_byte(0xF3);
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0x51);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::sqrtss(XMMRegister dst, Address src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionMark im(this);
+  emit_byte(0xF3);
+  prefix(src, dst);
+  emit_byte(0x0F);
+  emit_byte(0x51);
+  emit_operand(dst, src);
+}
+
 void Assembler::stmxcsr( Address dst) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
   InstructionMark im(this);
@@ -4342,16 +4389,6 @@ void Assembler::shrq(Register dst) {
   emit_byte(0xE8 | encode);
 }
 
-void Assembler::sqrtsd(XMMRegister dst, Address src) {
-  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
-  InstructionMark im(this);
-  emit_byte(0xF2);
-  prefix(src, dst);
-  emit_byte(0x0F);
-  emit_byte(0x51);
-  emit_operand(dst, src);
-}
-
 void Assembler::subq(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefixq(dst);
@@ -4912,10 +4949,6 @@ void MacroAssembler::movptr(Address dst, intptr_t src) {
   movl(dst, src);
 }
 
-
-void MacroAssembler::movsd(XMMRegister dst, AddressLiteral src) {
-  movsd(dst, as_Address(src));
-}
 
 void MacroAssembler::pop_callee_saved_registers() {
   pop(rcx);
@@ -5522,17 +5555,14 @@ void MacroAssembler::stop(const char* msg) {
 }
 
 void MacroAssembler::warn(const char* msg) {
-  push(r12);
-  movq(r12, rsp);
+  push(rsp);
   andq(rsp, -16);     // align stack as required by push_CPU_state and call
 
   push_CPU_state();   // keeps alignment at 16 bytes
   lea(c_rarg0, ExternalAddress((address) msg));
   call_VM_leaf(CAST_FROM_FN_PTR(address, warning), c_rarg0);
   pop_CPU_state();
-
-  movq(rsp, r12);
-  pop(r12);
+  pop(rsp);
 }
 
 #ifndef PRODUCT
@@ -5844,6 +5874,10 @@ void MacroAssembler::call_VM_base(Register oop_result,
   // debugging support
   assert(number_of_arguments >= 0   , "cannot have negative number of arguments");
   LP64_ONLY(assert(java_thread == r15_thread, "unexpected register"));
+#ifdef ASSERT
+  LP64_ONLY(if (UseCompressedOops) verify_heapbase("call_VM_base");)
+#endif // ASSERT
+
   assert(java_thread != oop_result  , "cannot use the same register for java_thread & oop_result");
   assert(java_thread != last_java_sp, "cannot use the same register for java_thread & last_java_sp");
 

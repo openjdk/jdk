@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMCMSOPERATIONS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMCMSOPERATIONS_HPP
+
+#include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "gc_interface/gcCause.hpp"
+#include "runtime/vm_operations.hpp"
 
 // The VM_CMS_Operation is slightly different from
 // a VM_GC_Operation -- and would not have subclassed easily
@@ -136,3 +144,5 @@ class VM_GenCollectFullConcurrent: public VM_GC_Operation {
   virtual bool is_cheap_allocated() const { return false; }
   virtual bool evaluate_at_safepoint() const;
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMCMSOPERATIONS_HPP

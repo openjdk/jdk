@@ -22,6 +22,18 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPARALLELCOMPACT_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPARALLELCOMPACT_HPP
+
+#include "gc_implementation/parallelScavenge/objectStartArray.hpp"
+#include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
+#include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
+#include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/markSweep.hpp"
+#include "gc_implementation/shared/mutableSpace.hpp"
+#include "memory/sharedHeap.hpp"
+#include "oops/oop.hpp"
+
 class ParallelScavengeHeap;
 class PSAdaptiveSizePolicy;
 class PSYoungGen;
@@ -1514,3 +1526,5 @@ public:
 private:
   ObjectStartArray* const _start_array;
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSPARALLELCOMPACT_HPP

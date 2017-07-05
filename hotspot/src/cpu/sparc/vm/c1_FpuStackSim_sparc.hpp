@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,5 +22,10 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_C1_FPUSTACKSIM_SPARC_HPP
+#define CPU_SPARC_VM_C1_FPUSTACKSIM_SPARC_HPP
+
 // No FPU stack on SPARC
 class FpuStackSim;
+
+#endif // CPU_SPARC_VM_C1_FPUSTACKSIM_SPARC_HPP

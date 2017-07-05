@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_INTERPRETER_CPPINTERPRETER_HPP
+#define SHARE_VM_INTERPRETER_CPPINTERPRETER_HPP
+
+#include "interpreter/abstractInterpreter.hpp"
 
 #ifdef CC_INTERP
 
@@ -76,8 +81,19 @@ class CppInterpreter: public AbstractInterpreter {
   static address    return_entry  (TosState state, int length);
   static address    deopt_entry   (TosState state, int length);
 
-#include "incls/_cppInterpreter_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "cppInterpreter_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "cppInterpreter_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "cppInterpreter_zero.hpp"
+#endif
+
 
 };
 
 #endif // CC_INTERP
+
+#endif // SHARE_VM_INTERPRETER_CPPINTERPRETER_HPP

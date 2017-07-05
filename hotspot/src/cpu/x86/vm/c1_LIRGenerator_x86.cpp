@@ -22,8 +22,20 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_c1_LIRGenerator_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_LIRAssembler.hpp"
+#include "c1/c1_LIRGenerator.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "ci/ciArray.hpp"
+#include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciTypeArrayKlass.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "vmreg_x86.inline.hpp"
 
 #ifdef ASSERT
 #define __ gen()->lir(__FILE__, __LINE__)->
@@ -862,6 +874,10 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
 
 void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   assert(x->number_of_arguments() == 5, "wrong type");
+
+  // Make all state_for calls early since they can emit code
+  CodeEmitInfo* info = state_for(x, x->state());
+
   LIRItem src(x->argument_at(0), this);
   LIRItem src_pos(x->argument_at(1), this);
   LIRItem dst(x->argument_at(2), this);
@@ -904,7 +920,6 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   ciArrayKlass* expected_type;
   arraycopy_helper(x, &flags, &expected_type);
 
-  CodeEmitInfo* info = state_for(x, x->state()); // we may want to have stack (deoptimization?)
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp, expected_type, flags, info); // does add_safepoint
 }
 
@@ -1139,9 +1154,12 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
     stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
   LIR_Opr reg = rlock_result(x);
+  LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
+  if (!x->klass()->is_loaded() || UseCompressedOops) {
+    tmp3 = new_register(objectType);
+  }
   __ checkcast(reg, obj.result(), x->klass(),
-               new_register(objectType), new_register(objectType),
-               !x->klass()->is_loaded() ? new_register(objectType) : LIR_OprFact::illegalOpr,
+               new_register(objectType), new_register(objectType), tmp3,
                x->direct_compare(), info_for_exception, patching_info, stub,
                x->profiled_method(), x->profiled_bci());
 }
@@ -1158,9 +1176,12 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
     patching_info = state_for(x, x->state_before());
   }
   obj.load_item();
+  LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
+  if (!x->klass()->is_loaded() || UseCompressedOops) {
+    tmp3 = new_register(objectType);
+  }
   __ instanceof(reg, obj.result(), x->klass(),
-                new_register(objectType), new_register(objectType),
-                !x->klass()->is_loaded() ? new_register(objectType) : LIR_OprFact::illegalOpr,
+                new_register(objectType), new_register(objectType), tmp3,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
 }
 

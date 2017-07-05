@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_machnode.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "opto/machnode.hpp"
+#include "opto/regalloc.hpp"
 
 //=============================================================================
 // Return the value requested
@@ -486,6 +488,20 @@ void MachTypeNode::dump_spec(outputStream *st) const {
   _bottom_type->dump_on(st);
 }
 #endif
+
+
+//=============================================================================
+int MachConstantNode::constant_offset() {
+  int offset = _constant.offset();
+  // Bind the offset lazily.
+  if (offset == -1) {
+    Compile::ConstantTable& constant_table = Compile::current()->constant_table();
+    offset = constant_table.table_base_offset() + constant_table.find_offset(_constant);
+    _constant.set_offset(offset);
+  }
+  return offset;
+}
+
 
 //=============================================================================
 #ifndef PRODUCT

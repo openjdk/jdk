@@ -1839,8 +1839,15 @@ public class SimpleDateFormat extends DateFormat {
                 break parsing;
 
             case PATTERN_HOUR_OF_DAY1: // 'k' 1-based.  eg, 23:59 + 1 hour =>> 24:59
+                if (!isLenient()) {
+                    // Validate the hour value in non-lenient
+                    if (value < 1 || value > 24) {
+                        break parsing;
+                    }
+                }
                 // [We computed 'value' above.]
-                if (value == calendar.getMaximum(Calendar.HOUR_OF_DAY)+1) value = 0;
+                if (value == calendar.getMaximum(Calendar.HOUR_OF_DAY)+1)
+                    value = 0;
                 calb.set(Calendar.HOUR_OF_DAY, value);
                 return pos.index;
 
@@ -1886,8 +1893,15 @@ public class SimpleDateFormat extends DateFormat {
                 break parsing;
 
             case PATTERN_HOUR1: // 'h' 1-based.  eg, 11PM + 1 hour =>> 12 AM
+                if (!isLenient()) {
+                    // Validate the hour value in non-lenient
+                    if (value < 1 || value > 12) {
+                        break parsing;
+                    }
+                }
                 // [We computed 'value' above.]
-                if (value == calendar.getLeastMaximum(Calendar.HOUR)+1) value = 0;
+                if (value == calendar.getLeastMaximum(Calendar.HOUR)+1)
+                    value = 0;
                 calb.set(Calendar.HOUR, value);
                 return pos.index;
 

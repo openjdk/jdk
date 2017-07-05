@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_CFGPrinter.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_CFGPrinter.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_LIR.hpp"
+#include "c1/c1_LinearScan.hpp"
+#include "c1/c1_ValueStack.hpp"
 
 #ifndef PRODUCT
 

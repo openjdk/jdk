@@ -22,8 +22,56 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sharedRuntime.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "code/compiledIC.hpp"
+#include "code/scopeDesc.hpp"
+#include "code/vtableStubs.hpp"
+#include "compiler/abstractCompiler.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/compilerOracle.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "memory/gcLocker.inline.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/forte.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "prims/methodHandles.hpp"
+#include "prims/nativeLookup.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vframeArray.hpp"
+#include "utilities/copy.hpp"
+#include "utilities/dtrace.hpp"
+#include "utilities/events.hpp"
+#include "utilities/hashtable.inline.hpp"
+#include "utilities/xmlstream.hpp"
+#ifdef TARGET_ARCH_x86
+# include "nativeInst_x86.hpp"
+# include "vmreg_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "nativeInst_sparc.hpp"
+# include "vmreg_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "nativeInst_zero.hpp"
+# include "vmreg_zero.inline.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
+
 #include <math.h>
 
 HS_DTRACE_PROBE_DECL4(hotspot, object__alloc, Thread*, char*, int, size_t);

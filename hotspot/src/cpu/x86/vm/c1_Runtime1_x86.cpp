@@ -22,8 +22,20 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_Runtime1_x86.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_Defs.hpp"
+#include "c1/c1_MacroAssembler.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "interpreter/interpreter.hpp"
+#include "nativeInst_x86.hpp"
+#include "oops/compiledICHolderOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "register_x86.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vframeArray.hpp"
+#include "vmreg_x86.inline.hpp"
 
 
 // Implementation of StubAssembler
@@ -1249,7 +1261,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // load the klass and check the has finalizer flag
         Label register_finalizer;
         Register t = rsi;
-        __ movptr(t, Address(rax, oopDesc::klass_offset_in_bytes()));
+        __ load_klass(t, rax);
         __ movl(t, Address(t, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc)));
         __ testl(t, JVM_ACC_HAS_FINALIZER);
         __ jcc(Assembler::notZero, register_finalizer);

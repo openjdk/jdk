@@ -116,7 +116,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * into fair and nonfair versions below. Uses AQS state to
      * represent the number of holds on the lock.
      */
-    static abstract class Sync extends AbstractQueuedSynchronizer {
+    abstract static class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = -5179523762034025860L;
 
         /**
@@ -200,7 +200,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     /**
      * Sync object for non-fair locks
      */
-    final static class NonfairSync extends Sync {
+    static final class NonfairSync extends Sync {
         private static final long serialVersionUID = 7316153563782823691L;
 
         /**
@@ -222,7 +222,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     /**
      * Sync object for fair locks
      */
-    final static class FairSync extends Sync {
+    static final class FairSync extends Sync {
         private static final long serialVersionUID = -3000897897090466540L;
 
         final void lock() {
@@ -269,7 +269,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @param fair {@code true} if this lock should use a fair ordering policy
      */
     public ReentrantLock(boolean fair) {
-        sync = (fair)? new FairSync() : new NonfairSync();
+        sync = fair ? new FairSync() : new NonfairSync();
     }
 
     /**
@@ -440,7 +440,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * @throws NullPointerException if the time unit is null
      *
      */
-    public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean tryLock(long timeout, TimeUnit unit)
+            throws InterruptedException {
         return sync.tryAcquireNanos(1, unit.toNanos(timeout));
     }
 

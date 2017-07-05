@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_SCOPEDESC_HPP
+#define SHARE_VM_CODE_SCOPEDESC_HPP
+
+#include "code/debugInfo.hpp"
+#include "code/pcDesc.hpp"
+#include "oops/methodOop.hpp"
+#include "utilities/growableArray.hpp"
 
 // SimpleScopeDesc is used when all you need to extract from
 // a given pc,nmethod pair is a methodOop and a bci. This is
@@ -125,3 +133,5 @@ class ScopeDesc : public ResourceObj {
   void print_value_on(outputStream* st) const;
 #endif
 };
+
+#endif // SHARE_VM_CODE_SCOPEDESC_HPP

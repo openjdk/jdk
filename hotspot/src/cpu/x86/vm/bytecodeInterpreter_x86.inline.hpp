@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_BYTECODEINTERPRETER_X86_INLINE_HPP
+#define CPU_X86_VM_BYTECODEINTERPRETER_X86_INLINE_HPP
 
 // Inline interpreter functions for IA32
 
@@ -278,3 +281,5 @@ inline jshort BytecodeInterpreter::VMint2Short(jint val) {
 inline jbyte BytecodeInterpreter::VMint2Byte(jint val) {
   return (jbyte) val;
 }
+
+#endif // CPU_X86_VM_BYTECODEINTERPRETER_X86_INLINE_HPP

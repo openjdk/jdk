@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,24 @@
  *
  */
 
-// Thread-Local Edens support
+#include "precompiled.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/threadLocalAllocBuffer.inline.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "utilities/copy.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
-# include "incls/_precompiled.incl"
-# include "incls/_threadLocalAllocBuffer.cpp.incl"
+// Thread-Local Edens support
 
 // static member initialization
 unsigned         ThreadLocalAllocBuffer::_target_refills = 0;

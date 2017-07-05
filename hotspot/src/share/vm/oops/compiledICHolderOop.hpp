@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_COMPILEDICHOLDEROOP_HPP
+#define SHARE_VM_OOPS_COMPILEDICHOLDEROOP_HPP
+
+#include "oops/oop.hpp"
 
 // A compiledICHolderOop is a helper object for the inline cache implementation.
 // It holds an intermediate value (method+klass pair) used when converting from
@@ -54,3 +59,5 @@ class compiledICHolderOopDesc : public oopDesc {
   oop* adr_holder_method() const      { return (oop*)&_holder_method; }
   oop* adr_holder_klass() const       { return (oop*)&_holder_klass; }
 };
+
+#endif // SHARE_VM_OOPS_COMPILEDICHOLDEROOP_HPP

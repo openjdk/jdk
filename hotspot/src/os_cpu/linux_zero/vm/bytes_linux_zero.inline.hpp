@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef OS_CPU_LINUX_ZERO_VM_BYTES_LINUX_ZERO_INLINE_HPP
+#define OS_CPU_LINUX_ZERO_VM_BYTES_LINUX_ZERO_INLINE_HPP
+
 // Efficient swapping of data bytes from Java byte
 // ordering to native byte ordering and vice versa.
 
@@ -38,3 +41,5 @@ inline u4 Bytes::swap_u4(u4 x) {
 inline u8 Bytes::swap_u8(u8 x) {
   return bswap_64(x);
 }
+
+#endif // OS_CPU_LINUX_ZERO_VM_BYTES_LINUX_ZERO_INLINE_HPP

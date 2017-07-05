@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,21 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKTOPLEVELBLOCK_HPP
+#define SHARE_VM_SHARK_SHARKTOPLEVELBLOCK_HPP
+
+#include "ci/ciStreams.hpp"
+#include "ci/ciType.hpp"
+#include "ci/ciTypeFlow.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/allocation.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkBlock.hpp"
+#include "shark/sharkBuilder.hpp"
+#include "shark/sharkFunction.hpp"
+#include "shark/sharkState.hpp"
+#include "shark/sharkValue.hpp"
 
 class SharkTopLevelBlock : public SharkBlock {
  public:
@@ -428,3 +443,5 @@ class SharkTopLevelBlock : public SharkBlock {
   void do_monitorenter();
   void do_monitorexit();
 };
+
+#endif // SHARE_VM_SHARK_SHARKTOPLEVELBLOCK_HPP

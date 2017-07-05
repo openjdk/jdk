@@ -22,6 +22,20 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_MACROASSEMBLER_HPP
+#define SHARE_VM_C1_C1_MACROASSEMBLER_HPP
+
+#include "asm/assembler.hpp"
+#ifdef TARGET_ARCH_x86
+# include "assembler_x86.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "assembler_sparc.inline.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "assembler_zero.inline.hpp"
+#endif
+
 class CodeEmitInfo;
 
 class C1_MacroAssembler: public MacroAssembler {
@@ -41,7 +55,13 @@ class C1_MacroAssembler: public MacroAssembler {
   void verify_stack_oop(int offset) PRODUCT_RETURN;
   void verify_not_null_oop(Register r)  PRODUCT_RETURN;
 
-#include "incls/_c1_MacroAssembler_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "c1_MacroAssembler_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_MacroAssembler_sparc.hpp"
+#endif
+
 };
 
 
@@ -80,3 +100,5 @@ class StubAssembler: public C1_MacroAssembler {
   int call_RT(Register oop_result1, Register oop_result2, address entry, Register arg1, Register arg2);
   int call_RT(Register oop_result1, Register oop_result2, address entry, Register arg1, Register arg2, Register arg3);
 };
+
+#endif // SHARE_VM_C1_C1_MACROASSEMBLER_HPP

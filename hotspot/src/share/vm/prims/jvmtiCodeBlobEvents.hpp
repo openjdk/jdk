@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  *
  */
 
-#ifndef _JVMTI_CODE_BLOB_EVENTS_H_
-#define _JVMTI_CODE_BLOB_EVENTS_H_
+#ifndef SHARE_VM_PRIMS_JVMTICODEBLOBEVENTS_HPP
+#define SHARE_VM_PRIMS_JVMTICODEBLOBEVENTS_HPP
+
+#ifndef JVMTI_KERNEL
+#include "jvmtifiles/jvmti.h"
+#endif
 
 // forward declaration
 class JvmtiEnv;
@@ -51,4 +55,4 @@ class JvmtiCodeBlobEvents : public AllStatic {
                                             jint *map_length);
 };
 
-#endif
+#endif // SHARE_VM_PRIMS_JVMTICODEBLOBEVENTS_HPP

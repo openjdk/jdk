@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,15 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_biasedLocking.cpp.incl"
+#include "precompiled.hpp"
+#include "oops/klass.inline.hpp"
+#include "oops/markOop.hpp"
+#include "runtime/basicLock.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/task.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
 
 static bool _biased_locking_enabled = false;
 BiasedLockingCounters BiasedLocking::_counters;

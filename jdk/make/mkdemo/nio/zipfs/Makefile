@@ -33,8 +33,8 @@ DEMONAME = zipfs
 include $(BUILDDIR)/common/Defs.gmk
 
 DEMO_ROOT       = $(SHARE_SRC)/demo/nio/$(DEMONAME)
-DEMO_TOPFILES   = ./README.txt
-DEMO_SRCDIR     = $(DEMO_ROOT)
+DEMO_TOPFILES   = README.txt Demo.java
+DEMO_SRCDIR     = $(DEMO_ROOT)/src
 DEMO_DESTDIR    = $(DEMODIR)/nio/$(DEMONAME)
 
 #
@@ -42,10 +42,10 @@ DEMO_DESTDIR    = $(DEMODIR)/nio/$(DEMONAME)
 #
 include $(BUILDDIR)/common/Demo.gmk
 
-#EXTJAR = $(EXTDIR)/$(DEMONAME).jar
-#
-#all : build $(EXTJAR)
-#
-#$(EXTJAR) : $(DEMO_JAR)
-#	$(prep-target)
-#	$(CP) $(DEMO_JAR) $(EXTJAR)
+EXTJAR = $(EXTDIR)/$(DEMONAME).jar
+
+all : build $(EXTJAR)
+
+$(EXTJAR) : $(DEMO_JAR)
+	$(prep-target)
+	$(CP) $(DEMO_JAR) $(EXTJAR)

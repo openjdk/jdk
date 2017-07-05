@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SHARK_SHARKINTRINSICS_HPP
+#define SHARE_VM_SHARK_SHARKINTRINSICS_HPP
+
+#include "ci/ciMethod.hpp"
+#include "memory/allocation.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkState.hpp"
 
 class SharkIntrinsics : public SharkTargetInvariants {
  public:
@@ -52,3 +60,5 @@ class SharkIntrinsics : public SharkTargetInvariants {
   void do_Thread_currentThread();
   void do_Unsafe_compareAndSwapInt();
 };
+
+#endif // SHARE_VM_SHARK_SHARKINTRINSICS_HPP

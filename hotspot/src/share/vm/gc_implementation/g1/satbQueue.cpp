@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,12 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_satbQueue.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/satbQueue.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/sharedHeap.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/thread.hpp"
 
 void ObjPtrQueue::apply_closure(ObjectClosure* cl) {
   if (_buf != NULL) {

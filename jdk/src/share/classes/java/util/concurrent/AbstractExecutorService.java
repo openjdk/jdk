@@ -51,20 +51,20 @@ import java.util.*;
  * <p> <b>Extension example</b>. Here is a sketch of a class
  * that customizes {@link ThreadPoolExecutor} to use
  * a <tt>CustomTask</tt> class instead of the default <tt>FutureTask</tt>:
- * <pre>
+ *  <pre> {@code
  * public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
  *
- *   static class CustomTask&lt;V&gt; implements RunnableFuture&lt;V&gt; {...}
+ *   static class CustomTask<V> implements RunnableFuture<V> {...}
  *
- *   protected &lt;V&gt; RunnableFuture&lt;V&gt; newTaskFor(Callable&lt;V&gt; c) {
- *       return new CustomTask&lt;V&gt;(c);
+ *   protected <V> RunnableFuture<V> newTaskFor(Callable<V> c) {
+ *       return new CustomTask<V>(c);
  *   }
- *   protected &lt;V&gt; RunnableFuture&lt;V&gt; newTaskFor(Runnable r, V v) {
- *       return new CustomTask&lt;V&gt;(r, v);
+ *   protected <V> RunnableFuture<V> newTaskFor(Runnable r, V v) {
+ *       return new CustomTask<V>(r, v);
  *   }
  *   // ... add constructors, etc.
- * }
- * </pre>
+ * }}</pre>
+ *
  * @since 1.5
  * @author Doug Lea
  */
@@ -106,7 +106,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
      */
     public Future<?> submit(Runnable task) {
         if (task == null) throw new NullPointerException();
-        RunnableFuture<Object> ftask = newTaskFor(task, null);
+        RunnableFuture<Void> ftask = newTaskFor(task, null);
         execute(ftask);
         return ftask;
     }
@@ -158,7 +158,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
             // Record exceptions so that if we fail to obtain any
             // result, we can throw the last exception we got.
             ExecutionException ee = null;
-            long lastTime = (timed)? System.nanoTime() : 0;
+            long lastTime = timed ? System.nanoTime() : 0;
             Iterator<? extends Callable<T>> it = tasks.iterator();
 
             // Start one task for sure; the rest incrementally
@@ -191,8 +191,6 @@ public abstract class AbstractExecutorService implements ExecutorService {
                     --active;
                     try {
                         return f.get();
-                    } catch (InterruptedException ie) {
-                        throw ie;
                     } catch (ExecutionException eex) {
                         ee = eex;
                     } catch (RuntimeException rex) {

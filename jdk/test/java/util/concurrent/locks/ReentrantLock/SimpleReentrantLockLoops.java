@@ -34,7 +34,7 @@
 /*
  * @test
  * @bug 4486658
- * @compile SimpleReentrantLockLoops.java
+ * @compile -source 1.5 SimpleReentrantLockLoops.java
  * @run main/timeout=4500 SimpleReentrantLockLoops
  * @summary multiple threads using a single lock
  */
