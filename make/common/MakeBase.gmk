@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,18 @@
 ifndef _MAKEBASE_GMK
 _MAKEBASE_GMK := 1
 
+################################################################################
+# This macro translates $ into \$ to protect the $ from expansion in the shell.
+# To make this macro resilient against already escaped strings, first remove
+# any present escapes before escaping so that no double escapes are added.
+EscapeDollar = $(subst $$,\$$,$(subst \$$,$$,$(strip $1)))
+
+################################################################################
+# This macro translates $ into $$ to protect the string from make itself.
+DoubleDollar = $(subst $$,$$$$,$(strip $1))
+
+################################################################################
+
 # If the variable that you want to send to stdout for piping into a file or otherwise,
 # is potentially long, for example the a list of file paths, eg a list of all package directories.
 # Then you need to use ListPathsSafely, which optimistically splits the output into several shell
@@ -57,7 +69,7 @@ endef
 
 define ListPathsSafely_Printf
 	$(if $(strip $($1_LPS$4)),$(if $(findstring $(LOG_LEVEL),trace),,@)printf \
-	    -- "$(strip $($1_LPS$4))\n" | $(decompress_paths) $3)
+	    -- "$(strip $(call EscapeDollar, $($1_LPS$4)))\n" | $(decompress_paths) $3)
 endef
 
 # Receipt example:
@@ -410,15 +422,19 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
 	if [ -n "`$(XATTR) -l '$@'`" ]; then $(XATTR) -c '$@'; fi
   endef
 else
+  # Running mkdir and cp in the same shell speeds up copy intensive tasks in Cygwin
+  # significantly.
   define install-file
-	$(MKDIR) -p $(@D)
-	$(CP) -fP '$<' '$@'
+	$(MKDIR) -p $(@D) && $(CP) -fP '$<' '$@'
   endef
 endif
 
 # Convenience functions for working around make's limitations with $(filter ).
-containing = $(foreach v,$2,$(if $(findstring $1,$v),$v))
-not-containing = $(foreach v,$2,$(if $(findstring $1,$v),,$v))
+containing = $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$v),$v)))
+not-containing = $(strip $(foreach v,$(strip $2),$(if $(findstring $(strip $1),$v),,$v)))
+
+# Filter out duplicate sub strings while preserving order. Keeps the first occurance.
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
 
 ifneq ($(DISABLE_CACHE_FIND), true)
   ################################################################################
@@ -457,6 +473,8 @@ ifneq ($(DISABLE_CACHE_FIND), true)
   # Otherwise reverts to shell find. This is safe to call on all platforms, even if
   # cache is deactivated.
   #
+  # $1 can be either a directory or a file. If it's a directory, make
+  # sure we have exactly one trailing slash before the wildcard.
   # The extra - is needed when FIND_CACHE_DIRS is empty but should be harmless.
   #
   # Param 1 - Dirs to find in
@@ -464,8 +482,9 @@ ifneq ($(DISABLE_CACHE_FIND), true)
   define CacheFind
     $(if $(filter-out $(addsuffix /%,- $(FIND_CACHE_DIRS)) $(FIND_CACHE_DIRS),$1), \
     $(shell $(FIND) $1 \( -type f -o -type l \) $2), \
-    $(filter $(addsuffix %,$1),$(FIND_CACHE)))
+    $(filter $(addsuffix /%,$(patsubst %/,%,$1)) $1,$(FIND_CACHE)))
   endef
+
 else
   # If CacheFind is disabled, just run the find command.
   # Param 1 - Dirs to find in
@@ -476,5 +495,111 @@ else
 endif
 
 ################################################################################
+
+define AddFileToCopy
+  # Helper macro for SetupCopyFiles
+  # 1 : Source file
+  # 2 : Dest file
+  # 3 : Variable to add targets to
+  # 4 : Macro to call for copy operation
+
+  $2: $1
+	$(ECHO) $(LOG_INFO) Copying $$(patsubst $(OUTPUT_ROOT)/%,%,$$@)
+	$$($$(strip $4))
+
+  $3 += $2
+endef
+
+define SetupCopyFiles
+  # param 1 is for example COPY_MYFILES
+  # param 2,3,4,5 are named args.
+  #   SRC   : Source root dir
+  #   DEST  : Dest root dir
+  #   FILES : List of files to copy with absolute paths, or path relative to SRC. Must be in SRC.
+  #   FLATTEN : Set to flatten the directory structure in the DEST dir.
+  #   MACRO : Optionally override the default macro used for making the copy. Default is 'install-file'
+  $(foreach i,2 3 4 5 6, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupCopyFiles($1),$2,$3,$4,$5,$6)
+  $(if $(7),$(error Internal makefile error: Too many arguments to SetupCopyFiles))
+
+  ifeq ($$($1_MACRO), )
+    $1_MACRO := install-file
+  endif
+
+  $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
+      $$(eval $$(call AddFileToCopy, $$($1_SRC)/$$f, \
+      $$($1_DEST)/$$(if $$($1_FLATTEN),$$(notdir $$f),$$f), $1, $$($1_MACRO))))
+
+endef
+
+################################################################################
+# Module list macros
+
+ALL_TOP_SRC_DIRS := \
+    $(JDK_TOPDIR)/src \
+    $(LANGTOOLS_TOPDIR)/src \
+    $(CORBA_TOPDIR)/src \
+    $(JAXP_TOPDIR)/src \
+    $(JAXWS_TOPDIR)/src \
+    $(NASHORN_TOPDIR)/src \
+    #
+
+# There are snmp classes in the open but they are not included in OpenJDK
+JAVA_MODULES_FILTER := jdk.snmp
+
+# Find all modules with java sources by looking in the source dirs
+define FindJavaModules
+  $(filter-out $(JAVA_MODULES_FILTER), $(sort $(notdir \
+      $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir $(patsubst %/,%, $(dir \
+      $(wildcard $(patsubst %,%/*/share/classes/*, $(ALL_TOP_SRC_DIRS)) \
+          $(patsubst %,%/*/$(OPENJDK_TARGET_OS_API_DIR)/classes/*, $(ALL_TOP_SRC_DIRS)) \
+          $(patsubst %,%/*/$(OPENJDK_TARGET_OS)/classes/*, $(ALL_TOP_SRC_DIRS))))))))))))
+endef
+
+MODULES_LIST_FILE := $(SRC_ROOT)/make/common/modules.list
+
+# Param 1: Module to find deps for
+define FindDepsForModule
+  $(if $(filter-out java.base, $1), java.base $(filter-out jdk.scripting.nashorn, $(filter-out java.base, $(wordlist 2, 100, $(shell $(GREP) '^$(strip $1):' $(MODULES_LIST_FILE))))))
+endef
+
+# Find all modules with source for the target platform.
+define FindAllModules
+  $(sort $(filter-out closed demo sample, $(notdir $(patsubst %/,%, $(dir \
+      $(wildcard $(patsubst %, %/*/share, $(ALL_TOP_SRC_DIRS)) \
+      $(patsubst %, %/*/$(OPENJDK_TARGET_OS), $(ALL_TOP_SRC_DIRS)) \
+      $(patsubst %, %/*/$(OPENJDK_TARGET_OS_API_DIR), $(ALL_TOP_SRC_DIRS))))))))
+endef
+
+################################################################################
+
+MAKE_DIR_LIST := $(JDK_TOPDIR)/make
+
+# Find all modules that has a makefile for a certain build phase
+# Param 1: Make subdir to look in
+# Param 2: File prefix to look for
+FindModulesWithMakefileFor = $(sort $(foreach d, $(MAKE_DIR_LIST), \
+    $(patsubst $d/$(strip $1)/$(strip $2)-%.gmk,%, \
+    $(wildcard $d/$(strip $1)/$(strip $2)-*.gmk))))
+
+# Declare a recipe for calling such a makefile
+# Param 1: Module name
+# Param 2: Suffix for rule
+# Param 3: Make subdir
+# Param 4: Makefile prefix
+define DeclareRecipeForModuleMakefile
+  $$(strip $1)-$$(strip $2):
+	+($(CD) $$(dir $$(firstword $$(wildcard $$(addsuffix /$$(strip $3)/$$(strip $4)-$$(strip $1).gmk, \
+	        $(MAKE_DIR_LIST))))) \
+	    && $(MAKE) $(MAKE_ARGS) \
+	    -f $$(strip $4)-$$(strip $1).gmk \
+	    $$(addprefix -I, $$(wildcard $(MAKE_DIR_LIST) \
+	        $$(addsuffix /$$(strip $3), $(MAKE_DIR_LIST)))))
+endef
+
+################################################################################
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , common/MakeBase.gmk))
 
 endif # _MAKEBASE_GMK
