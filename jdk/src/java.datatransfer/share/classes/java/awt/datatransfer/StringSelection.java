@@ -39,6 +39,7 @@ import java.io.*;
  * and all equivalent flavors is <b>deprecated</b>. No other
  * <code>DataFlavor</code>s are supported.
  *
+ * @since 1.1
  * @see java.awt.datatransfer.DataFlavor#stringFlavor
  * @see java.awt.datatransfer.DataFlavor#plainTextFlavor
  */

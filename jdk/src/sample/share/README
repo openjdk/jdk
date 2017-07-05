@@ -1,6 +1,0 @@
-The source code provided with samples and demos for the JDK is meant
-to illustrate the usage of a given feature or technique and has been
-deliberately simplified. Additional steps required for a
-production-quality application, such as security checks, input
-validation, and proper error handling, might not be present in the
-sample code.

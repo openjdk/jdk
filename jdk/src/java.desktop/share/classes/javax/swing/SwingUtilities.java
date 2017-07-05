@@ -346,6 +346,7 @@ public class SwingUtilities implements SwingConstants
      *
      * @return the new mouse event
      */
+    @SuppressWarnings("deprecation")
     public static MouseEvent convertMouseEvent(Component source,
                                                MouseEvent sourceEvent,
                                                Component destination) {

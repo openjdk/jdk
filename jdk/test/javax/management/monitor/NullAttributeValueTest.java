@@ -29,7 +29,7 @@
  *          being monitored returns a null value.
  * @author Luis-Miguel Alventosa
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean NullAttributeValueTest
  * @run build NullAttributeValueTest
  * @run main NullAttributeValueTest
