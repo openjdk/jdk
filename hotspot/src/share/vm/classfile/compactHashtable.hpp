@@ -276,9 +276,9 @@ public:
 
   void corrupted(const char *p, const char *msg);
 
-  inline void corrupted_if(bool cond) {
+  inline void corrupted_if(bool cond, const char *msg) {
     if (cond) {
-      corrupted(_p, NULL);
+      corrupted(_p, msg);
     }
   }
 
@@ -287,27 +287,30 @@ public:
   void skip_past(char c);
   void check_version(const char* ver);
 
-  inline bool get_num(char delim, int *utf8_length) {
+  inline void get_num(char delim, int *num) {
     const char* p   = _p;
     const char* end = _end;
-    int num = 0;
+    u8 n = 0;
 
     while (p < end) {
       char c = *p ++;
       if ('0' <= c && c <= '9') {
-        num = num * 10 + (c - '0');
+        n = n * 10 + (c - '0');
+        if (n > (u8)INT_MAX) {
+          corrupted(_p, "Num overflow");
+        }
       } else if (c == delim) {
         _p = p;
-        *utf8_length = num;
-        return true;
+        *num = (int)n;
+        return;
       } else {
         // Not [0-9], not 'delim'
-        return false;
+        corrupted(_p, "Unrecognized format");;
       }
     }
+
     corrupted(_end, "Incorrect format");
     ShouldNotReachHere();
-    return false;
   }
 
   void scan_prefix_type();

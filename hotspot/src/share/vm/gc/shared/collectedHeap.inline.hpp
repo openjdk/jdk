@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.inline.hpp"
@@ -248,7 +249,7 @@ inline HeapWord* CollectedHeap::align_allocation_or_fail(HeapWord* addr,
   assert(is_size_aligned(alignment_in_bytes, HeapWordSize),
          "Alignment size %u is incorrect.", alignment_in_bytes);
 
-  HeapWord* new_addr = (HeapWord*) align_pointer_up(addr, alignment_in_bytes);
+  HeapWord* new_addr = (HeapWord*) align_ptr_up(addr, alignment_in_bytes);
   size_t padding = pointer_delta(new_addr, addr);
 
   if (padding == 0) {

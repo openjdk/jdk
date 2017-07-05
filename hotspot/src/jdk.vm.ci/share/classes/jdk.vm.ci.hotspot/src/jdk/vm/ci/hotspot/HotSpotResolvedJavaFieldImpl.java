@@ -56,7 +56,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotP
     public static class FieldLocationIdentity extends LocationIdentity {
         HotSpotResolvedJavaField inner;
 
-        public FieldLocationIdentity(HotSpotResolvedJavaFieldImpl inner) {
+        FieldLocationIdentity(HotSpotResolvedJavaFieldImpl inner) {
             this.inner = inner;
         }
 
