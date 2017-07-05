@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ public class AquaEditorPaneUI extends BasicEditorPaneUI {
     }
 
     boolean oldDragState = false;
+    @Override
     protected void installDefaults(){
         super.installDefaults();
         if(!GraphicsEnvironment.isHeadless()){
@@ -47,6 +48,7 @@ public class AquaEditorPaneUI extends BasicEditorPaneUI {
         }
     }
 
+    @Override
     protected void uninstallDefaults(){
         if(!GraphicsEnvironment.isHeadless()){
             getComponent().setDragEnabled(oldDragState);
@@ -55,12 +57,14 @@ public class AquaEditorPaneUI extends BasicEditorPaneUI {
     }
 
     FocusListener focusListener;
+    @Override
     protected void installListeners(){
         super.installListeners();
         focusListener = createFocusListener();
         getComponent().addFocusListener(focusListener);
     }
 
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
         AquaKeyBindings bindings = AquaKeyBindings.instance();
@@ -69,6 +73,7 @@ public class AquaEditorPaneUI extends BasicEditorPaneUI {
         bindings.installAquaUpDownActions(c);
     }
 
+    @Override
     protected void uninstallListeners(){
         getComponent().removeFocusListener(focusListener);
         super.uninstallListeners();
@@ -78,12 +83,12 @@ public class AquaEditorPaneUI extends BasicEditorPaneUI {
         return new AquaFocusHandler();
     }
 
-    protected Caret createCaret(){
-        final Window owningWindow = SwingUtilities.getWindowAncestor(getComponent());
-        final AquaCaret returnValue = new AquaCaret(owningWindow, getComponent());
-        return returnValue;
+    @Override
+    protected Caret createCaret() {
+        return new AquaCaret();
     }
 
+    @Override
     protected Highlighter createHighlighter(){
         return new AquaHighlighter();
     }

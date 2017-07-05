@@ -112,7 +112,7 @@ public final class ConfigFile extends Configuration {
         spi.engineRefresh();
     }
 
-    public final static class Spi extends ConfigurationSpi {
+    public static final class Spi extends ConfigurationSpi {
 
         private URL url;
         private boolean expandProp = true;

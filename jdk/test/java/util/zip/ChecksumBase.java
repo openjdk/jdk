@@ -31,7 +31,7 @@ import java.util.zip.Checksum;
 
 public class ChecksumBase {
 
-    private final static byte[] BYTES_123456789 = "123456789".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] BYTES_123456789 = "123456789".getBytes(StandardCharsets.US_ASCII);
 
     public static void testAll(Checksum checksum, long expected) {
         testBytes(checksum, expected);

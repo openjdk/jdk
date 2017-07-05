@@ -45,19 +45,12 @@ import org.w3c.dom.Element;
 public abstract class Provider {
 
     /**
-     * A constant representing the property used to lookup the
-     * name of a {@code Provider} implementation
-     * class.
-     */
-    static public final String JAXWSPROVIDER_PROPERTY = "javax.xml.ws.spi.Provider";
-
-    /**
      * A constant representing the name of the default
      * {@code Provider} implementation class.
      **/
     // Using two strings so that package renaming doesn't change it
-    static final String DEFAULT_JAXWSPROVIDER
-            = "com.sun"+".xml.internal.ws.spi.ProviderImpl";
+    private static final String DEFAULT_JAXWSPROVIDER =
+            "com.sun"+".xml.internal.ws.spi.ProviderImpl";
 
     /**
      * Creates a new instance of Provider
@@ -72,64 +65,27 @@ public abstract class Provider {
      * The algorithm used to locate the provider subclass to use consists
      * of the following steps:
      * <ul>
-     * <li>
-     *   If a resource with the name of
-     *   {@code META-INF/services/javax.xml.ws.spi.Provider}
-     *   exists, then its first line, if present, is used as the UTF-8 encoded
-     *   name of the implementation class.
-     * </li>
-     * <li>
-     *   If the $java.home/lib/jaxws.properties file exists and it is readable by
-     *   the {@code java.util.Properties.load(InputStream)} method and it contains
-     *   an entry whose key is {@code javax.xml.ws.spi.Provider}, then the value of
-     *   that entry is used as the name of the implementation class.
-     * </li>
-     * <li>
-     *   If a system property with the name {@code javax.xml.ws.spi.Provider}
-     *   is defined, then its value is used as the name of the implementation class.
-     * </li>
-     * <li>
-     *   Finally, a default implementation class name is used.
-     * </li>
+     *  <li> Use the service-provider loading facilities, defined by the {@link java.util.ServiceLoader} class,
+     *  to attempt to locate and load an implementation of {@link javax.xml.ws.spi.Provider} service using
+     *  the {@linkplain java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}.
+     *  <li>Use the configuration file "jaxws.properties". The file is in standard
+     *  {@link java.util.Properties} format and typically located in the
+     *  {@code conf} directory of the Java installation. It contains the fully qualified
+     *  name of the implementation class with the key {@code javax.xml.ws.spi.Provider}.
+     *  <li> If a system property with the name {@code javax.xml.ws.spi.Provider}
+     *  is defined, then its value is used as the name of the implementation class.
+     *  <li> Finally, a platform default implementation is used.
      * </ul>
      *
      */
     public static Provider provider() {
         try {
-            Object provider = getProviderUsingServiceLoader();
-            if (provider == null) {
-                provider = FactoryFinder.find(JAXWSPROVIDER_PROPERTY, DEFAULT_JAXWSPROVIDER);
-            }
-            if (!(provider instanceof Provider)) {
-                Class pClass = Provider.class;
-                String classnameAsResource = pClass.getName().replace('.', '/') + ".class";
-                ClassLoader loader = pClass.getClassLoader();
-                if(loader == null) {
-                    loader = ClassLoader.getSystemClassLoader();
-                }
-                URL targetTypeURL  = loader.getResource(classnameAsResource);
-                throw new LinkageError("ClassCastException: attempting to cast" +
-                       provider.getClass().getClassLoader().getResource(classnameAsResource) +
-                       "to" + targetTypeURL.toString() );
-            }
-            return (Provider) provider;
+            return FactoryFinder.find(Provider.class, DEFAULT_JAXWSPROVIDER);
         } catch (WebServiceException ex) {
             throw ex;
         } catch (Exception ex) {
             throw new WebServiceException("Unable to createEndpointReference Provider", ex);
         }
-    }
-
-    private static Provider getProviderUsingServiceLoader() {
-        ServiceLoader<Provider> sl;
-        Iterator<Provider> it;
-        try {
-            sl = ServiceLoader.load(Provider.class);
-            it = (Iterator<Provider>)sl.iterator();
-        } catch (Exception e) {
-            throw new WebServiceException("Cannot invoke java.util.ServiceLoader#iterator()", e);
-        }
-        return ((it != null) && it.hasNext()) ? it.next() : null;
     }
 
     /**

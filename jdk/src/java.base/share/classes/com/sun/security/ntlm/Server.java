@@ -49,8 +49,8 @@ import java.util.Locale;
  * </pre>
  */
 public abstract class Server extends NTLM {
-    final private String domain;
-    final private boolean allVersion;
+    private final String domain;
+    private final boolean allVersion;
     /**
      * Creates a Server instance.
      * @param version the NTLM version to use, which can be:

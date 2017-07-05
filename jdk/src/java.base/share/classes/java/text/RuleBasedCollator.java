@@ -750,12 +750,12 @@ public class RuleBasedCollator extends Collator{
     // private
     // ==============================================================
 
-    final static int CHARINDEX = 0x70000000;  // need look up in .commit()
-    final static int EXPANDCHARINDEX = 0x7E000000; // Expand index follows
-    final static int CONTRACTCHARINDEX = 0x7F000000;  // contract indexes follow
-    final static int UNMAPPED = 0xFFFFFFFF;
+    static final int CHARINDEX = 0x70000000;  // need look up in .commit()
+    static final int EXPANDCHARINDEX = 0x7E000000; // Expand index follows
+    static final int CONTRACTCHARINDEX = 0x7F000000;  // contract indexes follow
+    static final int UNMAPPED = 0xFFFFFFFF;
 
-    private final static int COLLATIONKEYOFFSET = 1;
+    private static final int COLLATIONKEYOFFSET = 1;
 
     private RBCollationTables tables = null;
 

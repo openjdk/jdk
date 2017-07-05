@@ -51,12 +51,12 @@ import sun.security.jca.JCAUtil;
 public final class RSACore {
 
     // globally enable/disable use of blinding
-    private final static boolean ENABLE_BLINDING = true;
+    private static final boolean ENABLE_BLINDING = true;
 
     // cache for blinding parameters. Map<BigInteger, BlindingParameters>
     // use a weak hashmap so that cached values are automatically cleared
     // when the modulus is GC'ed
-    private final static Map<BigInteger, BlindingParameters>
+    private static final Map<BigInteger, BlindingParameters>
                 blindingCache = new WeakHashMap<>();
 
     private RSACore() {
@@ -311,7 +311,7 @@ public final class RSACore {
      *
      * The total performance cost is small.
      */
-    private final static class BlindingRandomPair {
+    private static final class BlindingRandomPair {
         final BigInteger u;
         final BigInteger v;
 
@@ -332,8 +332,8 @@ public final class RSACore {
      * since sharing moduli is fundamentally broken and insecure, this
      * does not matter.
      */
-    private final static class BlindingParameters {
-        private final static BigInteger BIG_TWO = BigInteger.valueOf(2L);
+    private static final class BlindingParameters {
+        private static final BigInteger BIG_TWO = BigInteger.valueOf(2L);
 
         // RSA public exponent
         private final BigInteger e;

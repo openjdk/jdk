@@ -241,6 +241,10 @@ public:
   // Return the actual number of uncommitted regions.
   uint shrink_by(uint num_regions_to_remove);
 
+  // Uncommit a number of regions starting at the specified index, which must be available,
+  // empty, and free.
+  void shrink_at(uint index, size_t num_regions);
+
   void verify();
 
   // Do some sanity checking.

@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8029849 8132082
+ * @bug 8029849 8132082 8133535
  * @summary Make sure signing via encrypt and verifying via decrypt are not
  * supported by OracleUcrypto provider.
  * @author Anthony Scarpino
@@ -89,8 +89,7 @@ public class CipherSignNotSupported extends UcryptoTest {
                 ct = c.doFinal(pt);
                 throw new RuntimeException("Encrypt operation should have failed.");
             } catch (InvalidKeyException e) {
-                if (e.getMessage().compareTo("RSAPublicKey required for " +
-                        "encryption") != 0) {
+                if (!e.getMessage().contains("RSAPublicKey required for encryption")) {
                     System.out.println("Wrong exception thrown.");
                     throw e;
                 }
@@ -103,8 +102,7 @@ public class CipherSignNotSupported extends UcryptoTest {
             c.doFinal(ct);
             throw new RuntimeException("Decrypt operation should have failed.");
         } catch (InvalidKeyException e) {
-            if (e.getMessage().compareTo("RSAPrivateKey required for " +
-                    "decryption") != 0) {
+            if (!e.getMessage().contains("RSAPrivateKey required for decryption")) {
                 System.out.println("Wrong exception thrown.");
                 throw e;
             }

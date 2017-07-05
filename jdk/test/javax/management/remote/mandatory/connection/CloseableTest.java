@@ -40,7 +40,6 @@ import javax.management.remote.rmi.RMIConnection;
 import javax.management.remote.rmi.RMIConnectionImpl;
 import javax.management.remote.rmi.RMIConnectionImpl_Stub;
 import javax.management.remote.rmi.RMIConnector;
-import javax.management.remote.rmi.RMIIIOPServerImpl;
 import javax.management.remote.rmi.RMIJRMPServerImpl;
 import javax.management.remote.rmi.RMIServerImpl;
 
@@ -52,7 +51,6 @@ public class CloseableTest {
         RMIConnectionImpl.class,
         RMIConnectionImpl_Stub.class,
         RMIServerImpl.class,
-        RMIIIOPServerImpl.class,
         RMIJRMPServerImpl.class
     };
 

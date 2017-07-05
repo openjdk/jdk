@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
@@ -158,7 +157,7 @@ final class Splitter extends NodeVisitor<LexicalContext> implements Loggable {
 
         assert functionNode.getCompileUnit() != null;
 
-        return functionNode.setState(null, CompilationState.SPLIT);
+        return functionNode;
     }
 
     private static List<FunctionNode> directChildren(final FunctionNode functionNode) {

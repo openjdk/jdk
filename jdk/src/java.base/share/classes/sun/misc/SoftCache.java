@@ -117,9 +117,9 @@ public class SoftCache extends AbstractMap<Object, Object> implements Map<Object
      */
 
 
-    static private class ValueCell extends SoftReference<Object> {
-        static private Object INVALID_KEY = new Object();
-        static private int dropped = 0;
+    private static class ValueCell extends SoftReference<Object> {
+        private static Object INVALID_KEY = new Object();
+        private static int dropped = 0;
         private Object key;
 
         private ValueCell(Object key, Object value, ReferenceQueue<Object> queue) {

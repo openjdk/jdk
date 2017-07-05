@@ -134,7 +134,7 @@ import java.io.ObjectOutputStream;
  *
  * @since       JDK1.2
  */
-abstract public class AbstractObjectOutputStream extends ObjectOutputStream
+public abstract class AbstractObjectOutputStream extends ObjectOutputStream
 {
     protected OutputStream out;
     /* Stream Management Methods. */
@@ -156,9 +156,9 @@ abstract public class AbstractObjectOutputStream extends ObjectOutputStream
         this.out = out;
     }
 
-    abstract public void reset() throws IOException;
-    abstract protected void drain() throws IOException;
-    abstract public void close() throws IOException;
+    public abstract void reset() throws IOException;
+    protected abstract void drain() throws IOException;
+    public abstract void close() throws IOException;
 
     /*******************************************************************/
 
@@ -214,14 +214,14 @@ abstract public class AbstractObjectOutputStream extends ObjectOutputStream
      * @exception NotActiveException  Thrown if a writeObject method is not
      *                                active.
      */
-    abstract public void defaultWriteObject() throws IOException;
+    public abstract void defaultWriteObject() throws IOException;
 
     /*************************************************************/
     /* Use the methods of PutField to map between Serializable fields
      * and actual fields of a Serializable class.
      */
 
-    abstract public ObjectOutputStream.PutField putFields() throws IOException;
+    public abstract ObjectOutputStream.PutField putFields() throws IOException;
 
     /**
      * Note: The PutField being serialized is not passed to this method.
@@ -229,25 +229,25 @@ abstract public class AbstractObjectOutputStream extends ObjectOutputStream
      *       the state of the last putFields call and
      *       only allowed this method to be invoked for that PutFields object.
      */
-    abstract public void writeFields() throws IOException;
+    public abstract void writeFields() throws IOException;
 
-    abstract protected boolean enableReplaceObject(boolean enable) throws SecurityException;
+    protected abstract boolean enableReplaceObject(boolean enable) throws SecurityException;
 
     /*******************************************************************/
     /* Write Primitive Data to stream.  DataOutput methods. */
 
-    abstract public void write(int data) throws IOException;
-    abstract public void write(byte b[]) throws IOException;
-    abstract public void write(byte b[], int off, int len) throws IOException;
-    abstract public void writeBoolean(boolean data) throws IOException;
-    abstract public void writeByte(int data) throws IOException;
-    abstract public void writeShort(int data)  throws IOException;
-    abstract public void writeChar(int data)  throws IOException;
-    abstract public void writeInt(int data)  throws IOException;
-    abstract public void writeLong(long data)  throws IOException;
-    abstract public void writeFloat(float data) throws IOException;
-    abstract public void writeDouble(double data) throws IOException;
-    abstract public void writeBytes(String data) throws IOException;
-    abstract public void writeChars(String data) throws IOException;
-    abstract public void writeUTF(String data) throws IOException;
+    public abstract void write(int data) throws IOException;
+    public abstract void write(byte b[]) throws IOException;
+    public abstract void write(byte b[], int off, int len) throws IOException;
+    public abstract void writeBoolean(boolean data) throws IOException;
+    public abstract void writeByte(int data) throws IOException;
+    public abstract void writeShort(int data)  throws IOException;
+    public abstract void writeChar(int data)  throws IOException;
+    public abstract void writeInt(int data)  throws IOException;
+    public abstract void writeLong(long data)  throws IOException;
+    public abstract void writeFloat(float data) throws IOException;
+    public abstract void writeDouble(double data) throws IOException;
+    public abstract void writeBytes(String data) throws IOException;
+    public abstract void writeChars(String data) throws IOException;
+    public abstract void writeUTF(String data) throws IOException;
 };

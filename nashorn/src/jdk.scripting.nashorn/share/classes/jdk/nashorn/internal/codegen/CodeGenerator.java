@@ -93,7 +93,6 @@ import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.GetSplitState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
@@ -2142,7 +2141,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 markOptimistic = false;
             }
 
-            FunctionNode newFunctionNode = functionNode.setState(lc, CompilationState.BYTECODE_GENERATED);
+            FunctionNode newFunctionNode = functionNode;
             if (markOptimistic) {
                 newFunctionNode = newFunctionNode.setFlag(lc, FunctionNode.IS_DEOPTIMIZABLE);
             }

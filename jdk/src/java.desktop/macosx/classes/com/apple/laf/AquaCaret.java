@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,19 +36,27 @@ import javax.swing.plaf.UIResource;
 import javax.swing.text.*;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-public class AquaCaret extends DefaultCaret implements UIResource, PropertyChangeListener {
-    final boolean isMultiLineEditor;
-    final JTextComponent c;
+public class AquaCaret extends DefaultCaret
+        implements UIResource, PropertyChangeListener {
 
-    boolean mFocused = false;
+    private boolean isMultiLineEditor;
+    private boolean mFocused = false;
+    private boolean fPainting = false;
 
-    public AquaCaret(final Window inParentWindow, final JTextComponent inComponent) {
-        super();
-        c = inComponent;
-        isMultiLineEditor = (c instanceof JTextArea || c instanceof JEditorPane);
-        inComponent.addPropertyChangeListener(this);
+    @Override
+    public void install(final JTextComponent c) {
+        super.install(c);
+        isMultiLineEditor = c instanceof JTextArea || c instanceof JEditorPane;
+        c.addPropertyChangeListener(this);
     }
 
+    @Override
+    public void deinstall(final JTextComponent c) {
+        c.removePropertyChangeListener(this);
+        super.deinstall(c);
+    }
+
+    @Override
     protected Highlighter.HighlightPainter getSelectionPainter() {
         return AquaHighlighter.getInstance();
     }
@@ -56,11 +64,13 @@ public class AquaCaret extends DefaultCaret implements UIResource, PropertyChang
     /**
      * Only show the flashing caret if the selection range is zero
      */
+    @Override
     public void setVisible(boolean e) {
         if (e) e = getDot() == getMark();
         super.setVisible(e);
     }
 
+    @Override
     protected void fireStateChanged() {
         // If we have focus the caret should only flash if the range length is zero
         if (mFocused) setVisible(getComponent().isEditable());
@@ -68,6 +78,7 @@ public class AquaCaret extends DefaultCaret implements UIResource, PropertyChang
         super.fireStateChanged();
     }
 
+    @Override
     public void propertyChange(final PropertyChangeEvent evt) {
         final String propertyName = evt.getPropertyName();
 
@@ -87,6 +98,7 @@ public class AquaCaret extends DefaultCaret implements UIResource, PropertyChang
     // --- FocusListener methods --------------------------
 
     private boolean shouldSelectAllOnFocus = true;
+    @Override
     public void focusGained(final FocusEvent e) {
         final JTextComponent component = getComponent();
         if (!component.isEnabled() || !component.isEditable()) {
@@ -122,12 +134,13 @@ public class AquaCaret extends DefaultCaret implements UIResource, PropertyChang
         super.focusGained(e);
     }
 
+    @Override
     public void focusLost(final FocusEvent e) {
         mFocused = false;
         shouldSelectAllOnFocus = true;
         if (isMultiLineEditor) {
             setVisible(false);
-            c.repaint();
+            getComponent().repaint();
         } else {
             super.focusLost(e);
         }
@@ -136,6 +149,7 @@ public class AquaCaret extends DefaultCaret implements UIResource, PropertyChang
     // This fixes the problem where when on the mac you have to ctrl left click to
     // get popup triggers the caret has code that only looks at button number.
     // see radar # 3125390
+    @Override
     public void mousePressed(final MouseEvent e) {
         if (!e.isPopupTrigger()) {
             super.mousePressed(e);
@@ -153,6 +167,7 @@ public class AquaCaret extends DefaultCaret implements UIResource, PropertyChang
      * @param r  the current location of the caret
      * @see #paint
      */
+    @Override
     protected synchronized void damage(final Rectangle r) {
         if (r == null || fPainting) return;
 
@@ -182,12 +197,12 @@ public class AquaCaret extends DefaultCaret implements UIResource, PropertyChang
         repaint();
     }
 
-    boolean fPainting = false;
-
-    // See <rdar://problem/3833837> 1.4.2_05-141.3: JTextField performance with Aqua L&F
-    // We are getting into a circular condition with the BasicCaret paint code since it doesn't know about the fact that our
-    // damage routine above elminates the border. Sadly we can't easily change either one, so we will
-    // add a painting flag and not damage during a repaint.
+    // See <rdar://problem/3833837> 1.4.2_05-141.3: JTextField performance with
+    // Aqua L&F. We are getting into a circular condition with the BasicCaret
+    // paint code since it doesn't know about the fact that our damage routine
+    // above elminates the border. Sadly we can't easily change either one, so
+    // we will add a painting flag and not damage during a repaint.
+    @Override
     public void paint(final Graphics g) {
         if (isVisible()) {
             fPainting = true;

@@ -131,7 +131,8 @@ public abstract class NativeDigest extends MessageDigestSpi
         try {
             int len = engineDigest(digest, 0, digestLen);
             if (len != digestLen) {
-                throw new UcryptoException("Digest length mismatch");
+                throw new UcryptoException("Digest length mismatch." +
+                    " Len: " + len + ". digestLen: " + digestLen);
             }
             return digest;
         } catch (DigestException de) {
@@ -144,10 +145,11 @@ public abstract class NativeDigest extends MessageDigestSpi
             throws DigestException {
         if (len < digestLen) {
             throw new DigestException("Output buffer must be at least " +
-                                      digestLen + " bytes long");
+                          digestLen + " bytes long. Got: " + len);
         }
         if ((ofs < 0) || (len < 0) || (ofs > out.length - len)) {
-            throw new DigestException("Buffer too short to store digest");
+            throw new DigestException("Buffer too short to store digest. " +
+                "ofs: " + ofs + ". len: " + len + ". out.length: " + out.length);
         }
 
         if (pCtxt == null) {
@@ -177,7 +179,8 @@ public abstract class NativeDigest extends MessageDigestSpi
             return;
         }
         if ((ofs < 0) || (len < 0) || (ofs > in.length - len)) {
-            throw new ArrayIndexOutOfBoundsException();
+            throw new ArrayIndexOutOfBoundsException("ofs: " + ofs + ". len: "
+                + len + ". in.length: " + in.length);
         }
         if (pCtxt == null) {
             pCtxt = new DigestContextRef(this, nativeInit(mech), mech);

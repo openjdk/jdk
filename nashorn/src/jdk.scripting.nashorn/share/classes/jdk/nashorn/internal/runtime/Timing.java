@@ -220,19 +220,20 @@ public final class Timing implements Loggable {
             }
 
             final long total = t - startTime;
-            sb.append('\n');
-            sb.append("Total runtime: ").
+            return sb.append("\nTotal runtime: ").
                 append(toMillisPrint(total)).
                 append(" ms (Non-runtime: ").
                 append(toMillisPrint(knownTime)).
                 append(" ms [").
                 append((int)(knownTime * 100.0 / total)).
-                append("%])");
-
-            sb.append("\n\nEmitted compile units: ").
-                append(CompileUnit.getEmittedUnitCount());
-
-            return sb.toString();
+                append("%])").
+                append("\n\nEmitted compile units: ").
+                append(CompileUnit.getEmittedUnitCount()).
+                append("\nCompile units installed as named classes: ").
+                append(Context.getNamedInstalledScriptCount()).
+                append("\nCompile units installed as anonymous classes: ").
+                append(Context.getAnonymousInstalledScriptCount()).
+                toString();
         }
 
         private void accumulateTime(final String module, final long duration) {

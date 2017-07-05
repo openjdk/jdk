@@ -3482,7 +3482,7 @@ JvmtiEnv::SetSystemProperty(const char* property, const char* value_ptr) {
 
   for (SystemProperty* p = Arguments::system_properties(); p != NULL; p = p->next()) {
     if (strcmp(property, p->key()) == 0) {
-      if (p->set_value((char *)value_ptr)) {
+      if (p->set_value(value_ptr)) {
         err =  JVMTI_ERROR_NONE;
       }
     }

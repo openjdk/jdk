@@ -63,7 +63,7 @@ public abstract class Builder {
      * Authority Information Access extension shall be enabled. Currently
      * disabled by default for compatibility reasons.
      */
-    final static boolean USE_AIA = AccessController.doPrivileged
+    static final boolean USE_AIA = AccessController.doPrivileged
         (new GetBooleanAction("com.sun.security.enableAIAcaIssuers"));
 
     /**

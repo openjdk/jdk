@@ -36,13 +36,12 @@ if (arguments.length == 0) {
 
 var Files = Java.type("java.nio.file.Files")
 var FileSystems = Java.type("java.nio.file.FileSystems")
-var FileVisitOption = Java.type("java.nio.file.FileVisitOption")
 var Paths = Java.type("java.nio.file.Paths")
 
 var zipfile = Paths.get(arguments[0])
 var fs = FileSystems.newFileSystem(zipfile, null)
 var root = fs.rootDirectories[0]
-Files.walk(root, FileVisitOption.FOLLOW_LINKS).forEach(
+Files.walk(root).forEach(
    function(p) (print(p), print(Files.readAttributes(p, "zip:*")))
 )
 fs.close()

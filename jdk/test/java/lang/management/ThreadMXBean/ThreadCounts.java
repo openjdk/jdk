@@ -37,11 +37,11 @@
 import java.lang.management.*;
 
 public class ThreadCounts {
-    final static int DAEMON_THREADS = 21;
-    final static int USER_THREADS_1 = 11;
-    final static int USER_THREADS_2 = 9;
-    final static int USER_THREADS = USER_THREADS_1 + USER_THREADS_2;
-    final static int ALL_THREADS = DAEMON_THREADS + USER_THREADS;
+    static final int DAEMON_THREADS = 21;
+    static final int USER_THREADS_1 = 11;
+    static final int USER_THREADS_2 = 9;
+    static final int USER_THREADS = USER_THREADS_1 + USER_THREADS_2;
+    static final int ALL_THREADS = DAEMON_THREADS + USER_THREADS;
     private static volatile boolean live[] = new boolean[ALL_THREADS];
     private ThreadMXBean mbean = ManagementFactory.getThreadMXBean();
     private static boolean testFailed = false;

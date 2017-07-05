@@ -30,56 +30,56 @@ import org.omg.CORBA.portable.OutputStream;
 
 
 /**
- * The Holder for <tt>Boolean</tt>.  For more information on
+ * The Holder for {@code Boolean}. For more information on
  * Holder files, see <a href="doc-files/generatedfiles.html#holder">
  * "Generated Files: Holder Files"</a>.<P>
- * A Holder class for a <code>boolean</code>
+ * A Holder class for a {@code boolean}
  * that is used to store "out" and "inout" parameters in IDL methods.
- * If an IDL method signature has an IDL <code>boolean</code> as an "out"
+ * If an IDL method signature has an IDL {@code boolean} as an "out"
  * or "inout" parameter, the programmer must pass an instance of
- * <code>BooleanHolder</code> as the corresponding
+ * {@code BooleanHolder} as the corresponding
  * parameter in the method invocation; for "inout" parameters, the programmer
  * must also fill the "in" value to be sent to the server.
  * Before the method invocation returns, the ORB will fill in the
  * value corresponding to the "out" value returned from the server.
  * <P>
- * If <code>myBooleanHolder</code> is an instance of <code>BooleanHolder</code>,
- * the value stored in its <code>value</code> field can be accessed with
- * <code>myBooleanHolder.value</code>.
+ * If {@code myBooleanHolder} is an instance of {@code BooleanHolder},
+ * the value stored in its {@code value} field can be accessed with
+ * {@code myBooleanHolder.value}.
  *
  * @since       JDK1.2
  */
 public final class BooleanHolder implements Streamable {
 
     /**
-     * The <code>boolean</code> value held by this <code>BooleanHolder</code>
+     * The {@code boolean} value held by this {@code BooleanHolder}
      * object.
      */
     public boolean value;
 
     /**
-     * Constructs a new <code>BooleanHolder</code> object with its
-     * <code>value</code> field initialized to <code>false</code>.
+     * Constructs a new {@code BooleanHolder} object with its
+     * {@code value} field initialized to {@code false}.
      */
     public BooleanHolder() {
     }
 
     /**
-     * Constructs a new <code>BooleanHolder</code> object with its
-     * <code>value</code> field initialized with the given <code>boolean</code>.
-     * @param initial the <code>boolean</code> with which to initialize
-     *                the <code>value</code> field of the newly-created
-     *                <code>BooleanHolder</code> object
+     * Constructs a new {@code BooleanHolder} object with its
+     * {@code value} field initialized with the given {@code boolean}.
+     * @param initial the {@code boolean} with which to initialize
+     *                the {@code value} field of the newly-created
+     *                {@code BooleanHolder} object
      */
     public BooleanHolder(boolean initial) {
         value = initial;
     }
 
     /**
-     * Reads unmarshalled data from <code>input</code> and assigns it to this
-     * <code>BooleanHolder</code> object's <code>value</code> field.
+     * Reads unmarshalled data from {@code input} and assigns it to this
+     * {@code BooleanHolder} object's {@code value} field.
      *
-     * @param input the <code>InputStream</code> object containing
+     * @param input the {@code InputStream} object containing
      *              CDR formatted data from the wire
      */
     public void _read(InputStream input) {
@@ -87,8 +87,8 @@ public final class BooleanHolder implements Streamable {
     }
 
     /**
-     * Marshals the value in this <code>BooleanHolder</code> object's
-     * <code>value</code> field to the output stream <code>output</code>.
+     * Marshals the value in this {@code BooleanHolder} object's
+     * {@code value} field to the output stream {@code output}.
      *
      * @param output the OutputStream which will contain the CDR formatted data
      */
@@ -97,11 +97,11 @@ public final class BooleanHolder implements Streamable {
     }
 
     /**
-     * Retrieves the <code>TypeCode</code> object that corresponds to the
-     * value held in this <code>BooleanHolder</code> object.
+     * Retrieves the {@code TypeCode} object that corresponds to the
+     * value held in this {@code BooleanHolder} object.
      *
-     * @return    the <code>TypeCode</code> for the value held
-     *            in this <code>BooleanHolder</code> object
+     * @return    the {@code TypeCode} for the value held
+     *            in this {@code BooleanHolder} object
      */
     public TypeCode _type() {
         return ORB.init().get_primitive_tc(TCKind.tk_boolean);
