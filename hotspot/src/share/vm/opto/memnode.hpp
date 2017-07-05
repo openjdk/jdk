@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1375,26 +1375,6 @@ class MergeMemStream : public StackObj {
 };
 
 //------------------------------Prefetch---------------------------------------
-
-// Non-faulting prefetch load.  Prefetch for many reads.
-class PrefetchReadNode : public Node {
-public:
-  PrefetchReadNode(Node *abio, Node *adr) : Node(0,abio,adr) {}
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return NotAMachineReg; }
-  virtual uint match_edge(uint idx) const { return idx==2; }
-  virtual const Type *bottom_type() const { return Type::ABIO; }
-};
-
-// Non-faulting prefetch load.  Prefetch for many reads & many writes.
-class PrefetchWriteNode : public Node {
-public:
-  PrefetchWriteNode(Node *abio, Node *adr) : Node(0,abio,adr) {}
-  virtual int Opcode() const;
-  virtual uint ideal_reg() const { return NotAMachineReg; }
-  virtual uint match_edge(uint idx) const { return idx==2; }
-  virtual const Type *bottom_type() const { return Type::ABIO; }
-};
 
 // Allocation prefetch which may fault, TLAB size have to be adjusted.
 class PrefetchAllocationNode : public Node {

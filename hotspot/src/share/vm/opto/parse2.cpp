@@ -37,6 +37,7 @@
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/runtime.hpp"
 #include "runtime/deoptimization.hpp"
@@ -763,35 +764,64 @@ void Parse::do_ret() {
   merge_common(target, pnum);
 }
 
+static bool has_injected_profile(BoolTest::mask btest, Node* test, int& taken, int& not_taken) {
+  if (btest != BoolTest::eq && btest != BoolTest::ne) {
+    // Only ::eq and ::ne are supported for profile injection.
+    return false;
+  }
+  if (test->is_Cmp() &&
+      test->in(1)->Opcode() == Op_ProfileBoolean) {
+    ProfileBooleanNode* profile = (ProfileBooleanNode*)test->in(1);
+    int false_cnt = profile->false_count();
+    int  true_cnt = profile->true_count();
+
+    // Counts matching depends on the actual test operation (::eq or ::ne).
+    // No need to scale the counts because profile injection was designed
+    // to feed exact counts into VM.
+    taken     = (btest == BoolTest::eq) ? false_cnt :  true_cnt;
+    not_taken = (btest == BoolTest::eq) ?  true_cnt : false_cnt;
+
+    profile->consume();
+    return true;
+  }
+  return false;
+}
 //--------------------------dynamic_branch_prediction--------------------------
 // Try to gather dynamic branch prediction behavior.  Return a probability
 // of the branch being taken and set the "cnt" field.  Returns a -1.0
 // if we need to use static prediction for some reason.
-float Parse::dynamic_branch_prediction(float &cnt) {
+float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* test) {
   ResourceMark rm;
 
   cnt  = COUNT_UNKNOWN;
 
-  // Use MethodData information if it is available
-  // FIXME: free the ProfileData structure
-  ciMethodData* methodData = method()->method_data();
-  if (!methodData->is_mature())  return PROB_UNKNOWN;
-  ciProfileData* data = methodData->bci_to_data(bci());
-  if (!data->is_JumpData())  return PROB_UNKNOWN;
-
-  // get taken and not taken values
-  int     taken = data->as_JumpData()->taken();
+  int     taken = 0;
   int not_taken = 0;
-  if (data->is_BranchData()) {
-    not_taken = data->as_BranchData()->not_taken();
+
+  bool use_mdo = !has_injected_profile(btest, test, taken, not_taken);
+
+  if (use_mdo) {
+    // Use MethodData information if it is available
+    // FIXME: free the ProfileData structure
+    ciMethodData* methodData = method()->method_data();
+    if (!methodData->is_mature())  return PROB_UNKNOWN;
+    ciProfileData* data = methodData->bci_to_data(bci());
+    if (!data->is_JumpData())  return PROB_UNKNOWN;
+
+    // get taken and not taken values
+    taken = data->as_JumpData()->taken();
+    not_taken = 0;
+    if (data->is_BranchData()) {
+      not_taken = data->as_BranchData()->not_taken();
+    }
+
+    // scale the counts to be commensurate with invocation counts:
+    taken = method()->scale_count(taken);
+    not_taken = method()->scale_count(not_taken);
   }
 
-  // scale the counts to be commensurate with invocation counts:
-  taken = method()->scale_count(taken);
-  not_taken = method()->scale_count(not_taken);
-
   // Give up if too few (or too many, in which case the sum will overflow) counts to be meaningful.
-  // We also check that individual counters are positive first, overwise the sum can become positive.
+  // We also check that individual counters are positive first, otherwise the sum can become positive.
   if (taken < 0 || not_taken < 0 || taken + not_taken < 40) {
     if (C->log() != NULL) {
       C->log()->elem("branch target_bci='%d' taken='%d' not_taken='%d'", iter().get_dest(), taken, not_taken);
@@ -841,8 +871,9 @@ float Parse::dynamic_branch_prediction(float &cnt) {
 //-----------------------------branch_prediction-------------------------------
 float Parse::branch_prediction(float& cnt,
                                BoolTest::mask btest,
-                               int target_bci) {
-  float prob = dynamic_branch_prediction(cnt);
+                               int target_bci,
+                               Node* test) {
+  float prob = dynamic_branch_prediction(cnt, btest, test);
   // If prob is unknown, switch to static prediction
   if (prob != PROB_UNKNOWN)  return prob;
 
@@ -932,7 +963,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   Block* next_block   = successor_for_bci(iter().next_bci());
 
   float cnt;
-  float prob = branch_prediction(cnt, btest, target_bci);
+  float prob = branch_prediction(cnt, btest, target_bci, c);
   if (prob == PROB_UNKNOWN) {
     // (An earlier version of do_ifnull omitted this trap for OSR methods.)
 #ifndef PRODUCT
@@ -1013,7 +1044,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   Block* next_block   = successor_for_bci(iter().next_bci());
 
   float cnt;
-  float prob = branch_prediction(cnt, btest, target_bci);
+  float prob = branch_prediction(cnt, btest, target_bci, c);
   float untaken_prob = 1.0 - prob;
 
   if (prob == PROB_UNKNOWN) {

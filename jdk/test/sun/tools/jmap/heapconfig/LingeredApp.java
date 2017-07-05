@@ -363,6 +363,41 @@ public class LingeredApp {
     }
 
     /**
+     * LastModified time might not work correctly in some cases it might
+     * cause later failures
+     */
+
+    public static boolean isLastModifiedWorking() {
+        boolean sane = true;
+        try {
+            long lm = lastModified(".");
+            if (lm == 0) {
+                System.err.println("SANITY Warning! The lastModifiedTime() doesn't work on this system, it returns 0");
+                sane = false;
+            }
+
+            long now = epoch();
+            if (lm > now) {
+                System.err.println("SANITY Warning! The Clock is wrong on this system lastModifiedTime() > getTime()");
+                sane = false;
+            }
+
+            setLastModified(".", epoch());
+            long lm1 = lastModified(".");
+            if (lm1 <= lm) {
+                System.err.println("SANITY Warning! The setLastModified doesn't work on this system");
+                sane = false;
+            }
+        }
+        catch(IOException e) {
+            System.err.println("SANITY Warning! IOException during sanity check " + e);
+            sane = false;
+        }
+
+        return sane;
+    }
+
+    /**
      * This part is the application it self
      */
     public static void main(String args[]) {
@@ -378,16 +413,8 @@ public class LingeredApp {
             Path path = Paths.get(theLockFileName);
 
             while (Files.exists(path)) {
-                long lm = lastModified(theLockFileName);
-                long now = epoch();
-
-                // A bit of paranoja, don't allow test app to run more than an hour
-                if (now - lm > 3600) {
-                    throw new IOException("Lock is too old. Aborting");
-                }
-
-                // Touch lock to indicate our rediness
-                setLastModified(theLockFileName, now);
+                // Touch the lock to indicate our readiness
+                setLastModified(theLockFileName, epoch());
                 Thread.sleep(spinDelay);
             }
 

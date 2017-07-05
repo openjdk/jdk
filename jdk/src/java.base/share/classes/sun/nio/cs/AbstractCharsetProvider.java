@@ -111,6 +111,12 @@ public class AbstractCharsetProvider
         }
     }
 
+    protected boolean hasCharset(String name) {
+        synchronized (this) {
+            return classMap.containsKey(name);
+        }
+    }
+
     /* Late initialization hook, needed by some providers
      */
     protected void init() { }

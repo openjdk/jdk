@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  */
 /*
  * @test
- * @bug 7044060
+ * @bug 7044060 8042967
  * @run main/othervm/timeout=250 TestDSA2
- * @summary verify that DSA signature works using SHA and SHA-224 and SHA-256 digests.
+ * @summary verify that DSA signature works using SHA and SHA-224 and
+ *          SHA-256 digests.
  */
 
 
@@ -40,7 +41,14 @@ public class TestDSA2 {
     private static final String PROV = "SUN";
 
     private static final String[] SIG_ALGOS = {
-        "SHA1withDSA", "SHA224withDSA", "SHA256withDSA"
+        "NONEwithDSA",
+        "SHA1withDSA",
+        "SHA224withDSA",
+        "SHA256withDSA",
+        "NONEwithDSAinP1363Format",
+        "SHA1withDSAinP1363Format",
+        "SHA224withDSAinP1363Format",
+        "SHA256withDSAinP1363Format"
     };
 
     private static final int[] KEYSIZES = {
@@ -48,15 +56,20 @@ public class TestDSA2 {
     };
 
     public static void main(String[] args) throws Exception {
-        boolean[] expectedToPass = { true, true, true };
+        boolean[] expectedToPass = { true, true, true, true,
+                                     true, true, true, true };
         test(1024, expectedToPass);
-        boolean[] expectedToPass2 = { true, true, true };
+        boolean[] expectedToPass2 = { true, true, true, true,
+                                      true, true, true, true };
         test(2048, expectedToPass2);
     }
 
     private static void test(int keySize, boolean[] testStatus)
-        throws Exception {
-        byte[] data = "1234567890".getBytes();
+            throws Exception {
+        // Raw DSA requires the data to be exactly 20 bytes long. Use a
+        // 20-byte array for these tests so that the NONEwithDSA* algorithms
+        // don't complain.
+        byte[] data = "12345678901234567890".getBytes();
         System.out.println("Test against key size: " + keySize);
 
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA", PROV);

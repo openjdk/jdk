@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,9 +103,6 @@ class     UnsafeObjectOp;
 class       UnsafeGetObject;
 class       UnsafePutObject;
 class         UnsafeGetAndSetObject;
-class       UnsafePrefetch;
-class         UnsafePrefetchRead;
-class         UnsafePrefetchWrite;
 class   ProfileCall;
 class   ProfileReturnType;
 class   ProfileInvoke;
@@ -209,8 +206,6 @@ class InstructionVisitor: public StackObj {
   virtual void do_UnsafeGetObject(UnsafeGetObject* x) = 0;
   virtual void do_UnsafePutObject(UnsafePutObject* x) = 0;
   virtual void do_UnsafeGetAndSetObject(UnsafeGetAndSetObject* x) = 0;
-  virtual void do_UnsafePrefetchRead (UnsafePrefetchRead*  x) = 0;
-  virtual void do_UnsafePrefetchWrite(UnsafePrefetchWrite* x) = 0;
   virtual void do_ProfileCall    (ProfileCall*     x) = 0;
   virtual void do_ProfileReturnType (ProfileReturnType*  x) = 0;
   virtual void do_ProfileInvoke  (ProfileInvoke*   x) = 0;
@@ -2440,34 +2435,6 @@ LEAF(UnsafeGetAndSetObject, UnsafeObjectOp)
   // generic
   virtual void input_values_do(ValueVisitor* f)   { UnsafeObjectOp::input_values_do(f);
                                                    f->visit(&_value); }
-};
-
-BASE(UnsafePrefetch, UnsafeObjectOp)
- public:
-  UnsafePrefetch(Value object, Value offset)
-  : UnsafeObjectOp(T_VOID, object, offset, false, false)
-  {
-  }
-};
-
-
-LEAF(UnsafePrefetchRead, UnsafePrefetch)
- public:
-  UnsafePrefetchRead(Value object, Value offset)
-  : UnsafePrefetch(object, offset)
-  {
-    ASSERT_VALUES
-  }
-};
-
-
-LEAF(UnsafePrefetchWrite, UnsafePrefetch)
- public:
-  UnsafePrefetchWrite(Value object, Value offset)
-  : UnsafePrefetch(object, offset)
-  {
-    ASSERT_VALUES
-  }
 };
 
 LEAF(ProfileCall, Instruction)

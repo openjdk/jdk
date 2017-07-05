@@ -87,5 +87,31 @@ class Opaque3Node : public Opaque2Node {
   bool rtm_opt() const { return (_opt == RTM_OPT); }
 };
 
+//------------------------------ProfileBooleanNode-------------------------------
+// A node represents value profile for a boolean during parsing.
+// Once parsing is over, the node goes away (during IGVN).
+// It is used to override branch frequencies from MDO (see has_injected_profile in parse2.cpp).
+class ProfileBooleanNode : public Node {
+  uint _false_cnt;
+  uint _true_cnt;
+  bool _consumed;
+  bool _delay_removal;
+  virtual uint hash() const ;                  // { return NO_HASH; }
+  virtual uint cmp( const Node &n ) const;
+  public:
+  ProfileBooleanNode(Node *n, uint false_cnt, uint true_cnt) : Node(0, n),
+          _false_cnt(false_cnt), _true_cnt(true_cnt), _delay_removal(true), _consumed(false) {}
+
+  uint false_count() const { return _false_cnt; }
+  uint  true_count() const { return  _true_cnt; }
+
+  void consume() { _consumed = true;  }
+
+  virtual int Opcode() const;
+  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node *Identity(PhaseTransform *phase);
+  virtual const Type *bottom_type() const { return TypeInt::BOOL; }
+};
+
 #endif // SHARE_VM_OPTO_OPAQUENODE_HPP
 
