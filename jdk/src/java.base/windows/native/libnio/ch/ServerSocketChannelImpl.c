@@ -95,7 +95,7 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
     int addrlen = sizeof(sa);
 
     memset((char *)&sa, 0, sizeof(sa));
-    newfd = (jint)accept(ssfd, (struct sockaddr *)&sa, &addrlen);
+    newfd = (jint)accept(ssfd, &sa.sa, &addrlen);
     if (newfd == INVALID_SOCKET) {
         int theErr = (jint)WSAGetLastError();
         if (theErr == WSAEWOULDBLOCK) {
@@ -107,7 +107,7 @@ Java_sun_nio_ch_ServerSocketChannelImpl_accept0(JNIEnv *env, jobject this,
 
     SetHandleInformation((HANDLE)(UINT_PTR)newfd, HANDLE_FLAG_INHERIT, 0);
     (*env)->SetIntField(env, newfdo, fd_fdID, newfd);
-    remote_ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, (int *)&remote_port);
+    remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
     CHECK_NULL_RETURN(remote_ia, IOS_THROWN);
 
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, remote_ia, remote_port);

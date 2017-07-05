@@ -260,6 +260,7 @@ public class PopupFactory {
      * Obtains the appropriate <code>Popup</code> based on
      * <code>popupType</code>.
      */
+    @SuppressWarnings("deprecation")
     private Popup getPopup(Component owner, Component contents,
                            int ownerX, int ownerY, int popupType) {
         if (GraphicsEnvironment.isHeadless()) {

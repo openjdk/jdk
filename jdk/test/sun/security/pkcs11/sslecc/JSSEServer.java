@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,11 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -40,24 +43,37 @@ class JSSEServer extends CipherTest.Server {
     JSSEServer(CipherTest cipherTest) throws Exception {
         super(cipherTest);
         SSLContext serverContext = SSLContext.getInstance("TLS");
-        serverContext.init(new KeyManager[] {cipherTest.keyManager}, new TrustManager[] {cipherTest.trustManager}, cipherTest.secureRandom);
+        serverContext.init(
+                new KeyManager[] { CipherTest.keyManager },
+                new TrustManager[] { CipherTest.trustManager },
+                CipherTest.secureRandom);
 
         SSLServerSocketFactory factory = (SSLServerSocketFactory)serverContext.getServerSocketFactory();
         serverSocket = (SSLServerSocket)factory.createServerSocket(0);
-        cipherTest.serverPort = serverSocket.getLocalPort();
+        serverSocket.setSoTimeout(CipherTest.TIMEOUT);
+        CipherTest.serverPort = serverSocket.getLocalPort();
         serverSocket.setEnabledCipherSuites(factory.getSupportedCipherSuites());
         serverSocket.setWantClientAuth(true);
     }
 
     @Override
     public void run() {
-        System.out.println("JSSE Server listening on port " + cipherTest.serverPort);
+        System.out.println("JSSE Server listening on port " + CipherTest.serverPort);
         Executor exec = Executors.newFixedThreadPool
                             (CipherTest.THREADS, DaemonThreadFactory.INSTANCE);
+
         try {
+            if (!CipherTest.clientCondition.await(CipherTest.TIMEOUT,
+                    TimeUnit.MILLISECONDS)) {
+                System.out.println(
+                        "The client is not the expected one or timeout. "
+                                + "Ignore in server side.");
+                return;
+            }
+
             while (true) {
                 final SSLSocket socket = (SSLSocket)serverSocket.accept();
-                socket.setSoTimeout(cipherTest.TIMEOUT);
+                socket.setSoTimeout(CipherTest.TIMEOUT);
                 Runnable r = new Runnable() {
                     @Override
                     public void run() {
@@ -86,11 +102,12 @@ class JSSEServer extends CipherTest.Server {
                 };
                 exec.execute(r);
             }
-        } catch (IOException e) {
+        } catch (SocketTimeoutException ste) {
+            System.out.println("The server got timeout for waiting for the connection, "
+                    + "so ignore the test.");
+        } catch (Exception e) {
             cipherTest.setFailed();
             e.printStackTrace();
-            //
         }
     }
-
 }
