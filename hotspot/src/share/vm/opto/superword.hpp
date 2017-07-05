@@ -308,7 +308,7 @@ class SuperWord : public ResourceObj {
   void dependence_graph();
   // Return a memory slice (node list) in predecessor order starting at "start"
   void mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds);
-  // Can s1 and s2 be in a pack with s1 immediately preceeding s2 and  s1 aligned at "align"
+  // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
   bool stmts_can_pack(Node* s1, Node* s2, int align);
   // Does s exist in a pack at position pos?
   bool exists_at(Node* s, uint pos);

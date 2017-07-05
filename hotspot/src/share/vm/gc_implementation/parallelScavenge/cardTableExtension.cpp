@@ -78,7 +78,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
   }
 
   // Card marks are not precise. The current system can leave us with
-  // a mismash of precise marks and begining of object marks. This means
+  // a mismash of precise marks and beginning of object marks. This means
   // we test for missing precise marks first. If any are found, we don't
   // fail unless the object head is also unmarked.
   virtual void do_object(oop obj) {
@@ -258,7 +258,7 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
     if (!start_array->object_starts_in_range(slice_start, slice_end)) {
       continue;
     }
-    // Update our begining addr
+    // Update our beginning addr
     HeapWord* first_object = start_array->object_start(slice_start);
     debug_only(oop* first_object_within_slice = (oop*) first_object;)
     if (first_object < slice_start) {

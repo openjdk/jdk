@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -75,6 +75,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestInit
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jMechanismToCKMechanism(env, jMechanism, &ckMechanism);
+    if ((*env)->ExceptionCheck(env)) { return; }
 
     rv = (*ckpFunctions->C_DigestInit)(ckSessionHandle, &ckMechanism);
 
@@ -82,7 +83,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestInit
         free(ckMechanism.pParameter);
     }
 
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
 #endif
 
@@ -114,6 +115,7 @@ JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestSingle
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jMechanismToCKMechanism(env, jMechanism, &ckMechanism);
+    if ((*env)->ExceptionCheck(env)) { return 0; }
 
     rv = (*ckpFunctions->C_DigestInit)(ckSessionHandle, &ckMechanism);
 
@@ -121,29 +123,32 @@ JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestSingle
         free(ckMechanism.pParameter);
     }
 
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return 0; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return 0; }
 
     if (jInLen <= MAX_STACK_BUFFER_LEN) {
         bufP = BUF;
     } else {
         /* always use single part op, even for large data */
-        bufP = (CK_BYTE_PTR)malloc((size_t)jInLen);
+        bufP = (CK_BYTE_PTR) malloc((size_t)jInLen);
+        if (bufP == NULL) {
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return 0;
+        }
     }
 
     (*env)->GetByteArrayRegion(env, jIn, jInOfs, jInLen, (jbyte *)bufP);
-    rv = (*ckpFunctions->C_Digest)(ckSessionHandle, bufP, jInLen, DIGESTBUF, &ckDigestLength);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
-        if (bufP != BUF) {
-            free(bufP);
-        }
+    if ((*env)->ExceptionCheck(env)) {
+        if (bufP != BUF) { free(bufP); }
         return 0;
     }
 
-    (*env)->SetByteArrayRegion(env, jDigest, jDigestOfs, ckDigestLength, (jbyte *)DIGESTBUF);
-
-    if (bufP != BUF) {
-        free(bufP);
+    rv = (*ckpFunctions->C_Digest)(ckSessionHandle, bufP, jInLen, DIGESTBUF, &ckDigestLength);
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        (*env)->SetByteArrayRegion(env, jDigest, jDigestOfs, ckDigestLength, (jbyte *)DIGESTBUF);
     }
+
+    if (bufP != BUF) { free(bufP); }
+
     return ckDigestLength;
 }
 #endif
@@ -183,17 +188,23 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestUpdate
         bufP = BUF;
     } else {
         bufLen = min(MAX_HEAP_BUFFER_LEN, jInLen);
-        bufP = (CK_BYTE_PTR)malloc((size_t)bufLen);
+        bufP = (CK_BYTE_PTR) malloc((size_t)bufLen);
+        if (bufP == NULL) {
+            JNU_ThrowOutOfMemoryError(env, 0);
+            return;
+        }
     }
 
     while (jInLen > 0) {
         jsize chunkLen = min(bufLen, jInLen);
         (*env)->GetByteArrayRegion(env, jIn, jInOfs, chunkLen, (jbyte *)bufP);
+        if ((*env)->ExceptionCheck(env)) {
+            if (bufP != BUF) { free(bufP); }
+            return;
+        }
         rv = (*ckpFunctions->C_DigestUpdate)(ckSessionHandle, bufP, chunkLen);
-        if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
-            if (bufP != BUF) {
-                free(bufP);
-            }
+        if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+            if (bufP != BUF) { free(bufP); }
             return;
         }
         jInOfs += chunkLen;
@@ -229,7 +240,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestKey
     ckKeyHandle = jLongToCKULong(jKeyHandle);
 
     rv = (*ckpFunctions->C_DigestKey)(ckSessionHandle, ckKeyHandle);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
 #endif
 
@@ -257,10 +268,9 @@ JNIEXPORT jint JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DigestFinal
     ckSessionHandle = jLongToCKULong(jSessionHandle);
 
     rv = (*ckpFunctions->C_DigestFinal)(ckSessionHandle, BUF, &ckDigestLength);
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return 0 ; }
-
-    (*env)->SetByteArrayRegion(env, jDigest, jDigestOfs, ckDigestLength, (jbyte *)BUF);
-
+    if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
+        (*env)->SetByteArrayRegion(env, jDigest, jDigestOfs, ckDigestLength, (jbyte *)BUF);
+    }
     return ckDigestLength;
 }
 #endif
@@ -288,12 +298,13 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1SeedRandom
 
     ckSessionHandle = jLongToCKULong(jSessionHandle);
     jByteArrayToCKByteArray(env, jSeed, &ckpSeed, &ckSeedLength);
+    if ((*env)->ExceptionCheck(env)) { return; }
 
     rv = (*ckpFunctions->C_SeedRandom)(ckSessionHandle, ckpSeed, ckSeedLength);
 
     free(ckpSeed);
 
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
 #endif
 
@@ -322,6 +333,7 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GenerateRandom
 
     jRandomBufferLength = (*env)->GetArrayLength(env, jRandomData);
     jRandomBuffer = (*env)->GetByteArrayElements(env, jRandomData, NULL);
+    if (jRandomBuffer == NULL) { return; }
 
     rv = (*ckpFunctions->C_GenerateRandom)(ckSessionHandle,
                                          (CK_BYTE_PTR) jRandomBuffer,
@@ -330,6 +342,6 @@ JNIEXPORT void JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1GenerateRandom
     /* copy back generated bytes */
     (*env)->ReleaseByteArrayElements(env, jRandomData, jRandomBuffer, 0);
 
-    if(ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
+    if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) { return; }
 }
 #endif

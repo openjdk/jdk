@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ public:
   const char    *_ins_pipe;        // Instruction Scheduline description class
 
   uint          *_uniq_idx;        // Indexes of unique operands
+  int            _uniq_idx_length; // Length of _uniq_idx array
   uint           _num_uniq;        // Number  of unique operands
   ComponentList  _components;      // List of Components matches MachNode's
                                    // operand structure
@@ -257,11 +258,13 @@ public:
   void                set_unique_opnds();
   uint                num_unique_opnds() { return _num_uniq; }
   uint                unique_opnds_idx(int idx) {
-                        if( _uniq_idx != NULL && idx > 0 )
+                        if( _uniq_idx != NULL && idx > 0 ) {
+                          assert(idx < _uniq_idx_length, "out of bounds");
                           return _uniq_idx[idx];
-                        else
+                        } else {
                           return idx;
-                      }
+                        }
+  }
 
   // Operands which are only KILLs aren't part of the input array and
   // require special handling in some cases.  Their position in this
@@ -274,7 +277,7 @@ public:
   //
   // Generate the format call for the replacement variable
   void                rep_var_format(FILE *fp, const char *rep_var);
-  // Generate index values needed for determing the operand position
+  // Generate index values needed for determining the operand position
   void                index_temps   (FILE *fp, FormDict &globals, const char *prefix = "", const char *receiver = "");
   // ---------------------------
 
@@ -341,7 +344,7 @@ public:
 
   // --------------------------- Code Block
   // Add code
-  void add_code(const char *string_preceeding_replacement_var);
+  void add_code(const char *string_preceding_replacement_var);
   // Add a replacement variable or one of its subfields
   // Subfields are stored with a leading '$'
   void add_rep_var(char *replacement_var);
@@ -917,8 +920,8 @@ public:
   // return 1 if found and position is incremented by operand offset in rule
   bool       find_name(const char *str, int &position) const;
   bool       find_type(const char *str, int &position) const;
-  void       append_components(FormDict &locals, ComponentList &components,
-                               bool def_flag) const;
+  virtual void append_components(FormDict& locals, ComponentList& components,
+                                 bool def_flag = false) const;
   bool       base_operand(uint &position, FormDict &globals,
                          const char * &result, const char * &name,
                          const char * &opType) const;
@@ -944,12 +947,12 @@ public:
   const char *reduce_left (FormDict &globals)  const;
 
   // Recursive version of check in MatchRule
-  int        cisc_spill_match(FormDict &globals, RegisterForm *registers,
-                              MatchNode *mRule2, const char * &operand,
-                              const char * &reg_type);
+  int        cisc_spill_match(FormDict& globals, RegisterForm* registers,
+                              MatchNode* mRule2, const char* &operand,
+                              const char* &reg_type);
   int        cisc_spill_merge(int left_result, int right_result);
 
-  bool       equivalent(FormDict &globals, MatchNode *mNode2);
+  virtual bool equivalent(FormDict& globals, MatchNode* mNode2);
 
   void       count_commutative_op(int& count);
   void       swap_commutative_op(bool atroot, int count);
@@ -976,7 +979,7 @@ public:
   MatchRule(ArchDesc &ad, MatchNode* mroot, int depth, char* construct, int numleaves);
   ~MatchRule();
 
-  void       append_components(FormDict &locals, ComponentList &components) const;
+  virtual void append_components(FormDict& locals, ComponentList& components, bool def_flag = false) const;
   // Recursive call on all operands' match rules in my match rule.
   bool       base_operand(uint &position, FormDict &globals,
                          const char * &result, const char * &name,
@@ -1003,14 +1006,14 @@ public:
   Form::DataType is_ideal_store() const;// node matches ideal 'StoreXNode'
 
   // Check if 'mRule2' is a cisc-spill variant of this MatchRule
-  int        cisc_spill_match(FormDict &globals, RegisterForm *registers,
-                              MatchRule *mRule2, const char * &operand,
-                              const char * &reg_type);
+  int        matchrule_cisc_spill_match(FormDict &globals, RegisterForm* registers,
+                                        MatchRule* mRule2, const char* &operand,
+                                        const char* &reg_type);
 
   // Check if 'mRule2' is equivalent to this MatchRule
-  bool       equivalent(FormDict &globals, MatchRule *mRule2);
+  virtual bool equivalent(FormDict& globals, MatchNode* mRule2);
 
-  void       swap_commutative_op(const char* instr_ident, int count, int& match_rules_cnt);
+  void       matchrule_swap_commutative_op(const char* instr_ident, int count, int& match_rules_cnt);
 
   void dump();
   void output(FILE *fp);
