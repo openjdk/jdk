@@ -146,7 +146,14 @@ public class LogManager {
     // The global LogManager object
     private static final LogManager manager;
 
-    private Properties props = new Properties();
+    // 'props' is assigned within a lock but accessed without it.
+    // Declaring it volatile makes sure that another thread will not
+    // be able to see a partially constructed 'props' object.
+    // (seeing a partially constructed 'props' object can result in
+    // NPE being thrown in Hashtable.get(), because it leaves the door
+    // open for props.getProperties() to be called before the construcor
+    // of Hashtable is actually completed).
+    private volatile Properties props = new Properties();
     private final static Level defaultLevel = Level.INFO;
 
     // The map of the registered listeners. The map value is the registration
@@ -670,7 +677,7 @@ public class LogManager {
             if (logger == null) {
                 // Hashtable holds stale weak reference
                 // to a logger which has been GC-ed.
-                removeLogger(name);
+                ref.dispose();
             }
             return logger;
         }
@@ -756,7 +763,7 @@ public class LogManager {
                     // It's possible that the Logger was GC'ed after a
                     // drainLoggerRefQueueBounded() call above so allow
                     // a new one to be registered.
-                    removeLogger(name);
+                    ref.dispose();
                 } else {
                     // We already have a registered logger with the given name.
                     return false;
@@ -808,10 +815,8 @@ public class LogManager {
             return true;
         }
 
-        // note: all calls to removeLogger are synchronized on LogManager's
-        // intrinsic lock
-        void removeLogger(String name) {
-            namedLoggers.remove(name);
+        synchronized void removeLoggerRef(String name, LoggerWeakRef ref) {
+            namedLoggers.remove(name, ref);
         }
 
         synchronized Enumeration<String> getLoggerNames() {
@@ -993,6 +998,7 @@ public class LogManager {
         private String                name;       // for namedLoggers cleanup
         private LogNode               node;       // for loggerRef cleanup
         private WeakReference<Logger> parentRef;  // for kids cleanup
+        private boolean disposed = false;         // avoid calling dispose twice
 
         LoggerWeakRef(Logger logger) {
             super(logger, loggerRefQueue);
@@ -1002,14 +1008,45 @@ public class LogManager {
 
         // dispose of this LoggerWeakRef object
         void dispose() {
-            if (node != null) {
-                // if we have a LogNode, then we were a named Logger
-                // so clear namedLoggers weak ref to us
-                node.context.removeLogger(name);
-                name = null;  // clear our ref to the Logger's name
+            // Avoid calling dispose twice. When a Logger is gc'ed, its
+            // LoggerWeakRef will be enqueued.
+            // However, a new logger of the same name may be added (or looked
+            // up) before the queue is drained. When that happens, dispose()
+            // will be called by addLocalLogger() or findLogger().
+            // Later when the queue is drained, dispose() will be called again
+            // for the same LoggerWeakRef. Marking LoggerWeakRef as disposed
+            // avoids processing the data twice (even though the code should
+            // now be reentrant).
+            synchronized(this) {
+                // Note to maintainers:
+                // Be careful not to call any method that tries to acquire
+                // another lock from within this block - as this would surely
+                // lead to deadlocks, given that dispose() can be called by
+                // multiple threads, and from within different synchronized
+                // methods/blocks.
+                if (disposed) return;
+                disposed = true;
+            }
 
-                node.loggerRef = null;  // clear LogNode's weak ref to us
-                node = null;            // clear our ref to LogNode
+            final LogNode n = node;
+            if (n != null) {
+                // n.loggerRef can only be safely modified from within
+                // a lock on LoggerContext. removeLoggerRef is already
+                // synchronized on LoggerContext so calling
+                // n.context.removeLoggerRef from within this lock is safe.
+                synchronized (n.context) {
+                    // if we have a LogNode, then we were a named Logger
+                    // so clear namedLoggers weak ref to us
+                    n.context.removeLoggerRef(name, this);
+                    name = null;  // clear our ref to the Logger's name
+
+                    // LogNode may have been reused - so only clear
+                    // LogNode.loggerRef if LogNode.loggerRef == this
+                    if (n.loggerRef == this) {
+                        n.loggerRef = null;  // clear LogNode's weak ref to us
+                    }
+                    node = null;            // clear our ref to LogNode
+                }
             }
 
             if (parentRef != null) {
@@ -1062,7 +1099,7 @@ public class LogManager {
     //   - maximum: 10.9 ms
     //
     private final static int MAX_ITERATIONS = 400;
-    final synchronized void drainLoggerRefQueueBounded() {
+    final void drainLoggerRefQueueBounded() {
         for (int i = 0; i < MAX_ITERATIONS; i++) {
             if (loggerRefQueue == null) {
                 // haven't finished loading LogManager yet

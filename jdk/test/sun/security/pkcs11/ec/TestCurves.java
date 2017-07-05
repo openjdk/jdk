@@ -56,47 +56,49 @@ public class TestCurves extends PKCS11Test {
             return;
         }
 
+        // Check if this is sparc for later failure avoidance.
+        boolean sparc = false;
+        if (System.getProperty("os.arch").equals("sparcv9")) {
+            sparc = true;
+            System.out.println("This is a sparcv9");
+        }
+
         Random random = new Random();
         byte[] data = new byte[2048];
         random.nextBytes(data);
 
         Vector<ECParameterSpec> curves = getKnownCurves(p);
-
         for (ECParameterSpec params : curves) {
             System.out.println("Testing " + params + "...");
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", p);
             kpg.initialize(params);
             KeyPair kp1, kp2;
 
-            try {
-                kp1 = kpg.generateKeyPair();
-                kp2 = kpg.generateKeyPair();
-            } catch (Exception e) {
-                // The root cause of the exception might be NSS not having
-                // "ECC Extended" support curves.  If so, we can ignore it.
-                if (e instanceof java.security.ProviderException) {
-                    Throwable t = e.getCause();
-                    if (t instanceof
-                            sun.security.pkcs11.wrapper.PKCS11Exception &&
-                            t.getMessage().equals("CKR_DOMAIN_PARAMS_INVALID") &&
-                            isNSS(p) && (getNSSECC() == ECCState.Basic) &&
-                            (!params.toString().startsWith("secp256r1") &&
-                            !params.toString().startsWith("secp384r1") &&
-                            !params.toString().startsWith("secp521r1"))) {
-                        System.out.println("NSS Basic ECC.  Failure expected");
-                        continue;
-                    }
-                }
-
-                throw e;
-            }
+            kp1 = kpg.generateKeyPair();
+            kp2 = kpg.generateKeyPair();
 
             testSigning(p, "SHA1withECDSA", data, kp1, kp2);
-            testSigning(p, "SHA224withECDSA", data, kp1, kp2);
-            testSigning(p, "SHA256withECDSA", data, kp1, kp2);
-            testSigning(p, "SHA384withECDSA", data, kp1, kp2);
-            testSigning(p, "SHA512withECDSA", data, kp1, kp2);
-            // System.out.println();
+            // Check because Solaris ncp driver does not support these but
+            // Solaris metaslot causes them to be run.
+            try {
+                testSigning(p, "SHA224withECDSA", data, kp1, kp2);
+                testSigning(p, "SHA256withECDSA", data, kp1, kp2);
+                testSigning(p, "SHA384withECDSA", data, kp1, kp2);
+                testSigning(p, "SHA512withECDSA", data, kp1, kp2);
+            } catch (ProviderException e) {
+                if (sparc) {
+                    Throwable t = e.getCause();
+                    if (t instanceof sun.security.pkcs11.wrapper.PKCS11Exception &&
+                        t.getMessage().equals("CKR_ATTRIBUTE_VALUE_INVALID")) {
+                        System.out.print("-Failure not uncommon.  Probably pre-T4.");
+                    } else {
+                        throw e;
+                    }
+                } else {
+                    throw e;
+                }
+            }
+            System.out.println();
 
             KeyAgreement ka1 = KeyAgreement.getInstance("ECDH", p);
             ka1.init(kp1.getPrivate());
@@ -116,70 +118,9 @@ public class TestCurves extends PKCS11Test {
         System.out.println("OK");
     }
 
-    private static Vector<ECParameterSpec>
-            getKnownCurves(Provider p) throws Exception {
-
-        int index;
-        int begin;
-        int end;
-        String curve;
-        Vector<ECParameterSpec> results = new Vector<ECParameterSpec>();
-        // Get Curves to test from SunEC.
-        String kcProp = Security.getProvider("SunEC").
-                getProperty("AlgorithmParameters.EC SupportedCurves");
-
-        if (kcProp == null) {
-            throw new RuntimeException(
-            "\"AlgorithmParameters.EC SupportedCurves property\" not found");
-        }
-
-        index = 0;
-        for (;;) {
-            // Each set of curve names is enclosed with brackets.
-            begin = kcProp.indexOf('[', index);
-            end = kcProp.indexOf(']', index);
-            if (begin == -1 || end == -1) {
-                break;
-            }
-
-            /*
-             * Each name is separated by a comma.
-             * Just get the first name in the set.
-             */
-            index = end + 1;
-            begin++;
-            end = kcProp.indexOf(',', begin);
-            if (end == -1) {
-                // Only one name in the set.
-                end = index -1;
-            }
-
-            curve = kcProp.substring(begin, end);
-
-            results.add(getECParameterSpec(p, curve));
-        }
-
-        if (results.size() == 0) {
-            throw new RuntimeException("No supported EC curves found");
-        }
-
-        return results;
-    }
-
-    private static ECParameterSpec getECParameterSpec(Provider p, String name)
-            throws Exception {
-
-        AlgorithmParameters parameters =
-            AlgorithmParameters.getInstance("EC", p);
-
-        parameters.init(new ECGenParameterSpec(name));
-
-        return parameters.getParameterSpec(ECParameterSpec.class);
-    }
-
     private static void testSigning(Provider p, String algorithm,
             byte[] data, KeyPair kp1, KeyPair kp2) throws Exception {
-        // System.out.print("  " + algorithm);
+        System.out.print("  " + algorithm);
         Signature s = Signature.getInstance(algorithm, p);
         s.initSign(kp1.getPrivate());
         s.update(data);

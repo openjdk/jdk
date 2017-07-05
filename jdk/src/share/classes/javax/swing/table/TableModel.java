@@ -34,7 +34,7 @@ import javax.swing.event.*;
  *
  *  The <code>JTable</code> can be set up to display any data
  *  model which implements the
- *  <code>TableModel</code> interface with a couple of lines of code:  <p>
+ *  <code>TableModel</code> interface with a couple of lines of code:
  *  <pre>
  *      TableModel myData = new MyTableModel();
  *      JTable table = new JTable(myData);
@@ -42,7 +42,7 @@ import javax.swing.event.*;
  *
  * For further documentation, see <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/table.html#data">Creating a Table Model</a>
  * in <em>The Java Tutorial</em>.
- * <p>
+ *
  * @author Philip Milne
  * @see JTable
  */

@@ -43,15 +43,15 @@ import java.lang.instrument.ClassDefinition;
 public class RedefineAgent implements ClassFileTransformer {
 
     static byte[] classfilebytes;
-    static final String targetName = "java.math.BigInteger";
-    static final String targetNameSlashes = "java/math/BigInteger";
+    static final String targetName = "RedefineDummy";
+    static final String targetNameSlashes = "RedefineDummy";
     static boolean gotRedefineTransform = false;
 
     // test transform and capture class bytes for redefine
     public byte[] transform(ClassLoader loader,
                             String className,
                             Class<?> classBeingRedefined,
-                            ProtectionDomain    protectionDomain,
+                            ProtectionDomain  protectionDomain,
                             byte[] classfileBuffer) {
         if (className.equals(targetNameSlashes)) {
             if (classBeingRedefined == null) {

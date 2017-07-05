@@ -80,7 +80,7 @@ check-keystore:
 	  exit 2; \
 	fi
 
-$(JCE_OUTPUTDIR)/%: $(JDK_OUTPUTDIR)/unsigned/%
+$(JDK_OUTPUTDIR)/jce/signed/%: $(JDK_OUTPUTDIR)/jce/unsigned/%
 	$(call install-file)
 	$(JARSIGNER) -keystore $(SIGNING_KEYSTORE) \
 	    $@ $(SIGNING_ALIAS) < $(SIGNING_PASSPHRASE)
@@ -88,26 +88,33 @@ $(JCE_OUTPUTDIR)/%: $(JDK_OUTPUTDIR)/unsigned/%
 
 JAR_LIST := \
     jce.jar \
-    local_policy.jar \
+    policy/limited/local_policy.jar \
+    policy/limited/US_export_policy.jar \
+    policy/unlimited/local_policy.jar \
+    policy/unlimited/US_export_policy.jar \
     sunec.jar \
     sunjce_provider.jar \
     sunpkcs11.jar \
-    US_export_policy.jar \
     sunmscapi.jar \
     ucrypto.jar \
     #
 
-UNSIGNED_JARS := $(wildcard $(addprefix $(JDK_OUTPUTDIR)/unsigned/, $(JAR_LIST)))
+UNSIGNED_JARS := $(wildcard $(addprefix $(JDK_OUTPUTDIR)/jce/unsigned/, $(JAR_LIST)))
 
 ifeq ($(UNSIGNED_JARS), )
-  $(error No jars found in $(JDK_OUTPUTDIR)/unsigned/)
+  $(error No jars found in $(JDK_OUTPUTDIR)/jce/unsigned/)
 endif
 
-SIGNED_JARS := $(patsubst $(JDK_OUTPUTDIR)/unsigned/%,$(JCE_OUTPUTDIR)/%, $(UNSIGNED_JARS))
+SIGNED_JARS := $(patsubst $(JDK_OUTPUTDIR)/jce/unsigned/%,$(JDK_OUTPUTDIR)/jce/signed/%, \
+    $(UNSIGNED_JARS))
 
 $(SIGNED_JARS): check-keystore
 
-all: $(SIGNED_JARS)
+$(JDK_OUTPUTDIR)/jce/signed/policy/unlimited/README.txt: \
+    $(JDK_OUTPUTDIR)/jce/unsigned/policy/unlimited/README.txt
+	$(install-file)
+
+all: $(SIGNED_JARS) $(JDK_OUTPUTDIR)/jce/signed/policy/unlimited/README.txt
 	@$(PRINTF) "\n*** The jar files built by the 'sign-jars' target are developer      ***"
 	@$(PRINTF) "\n*** builds only and *MUST NOT* be checked into the closed workspace. ***"
 	@$(PRINTF) "\n***                                                                  ***"

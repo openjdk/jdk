@@ -2594,7 +2594,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
                 requests = new MessageHeader();
                 setRequests = false;
-                setRequestMethod("GET");
+                super.setRequestMethod("GET"); // avoid the connecting check
                 poster = null;
                 if (!checkReuseConnection())
                     connect();

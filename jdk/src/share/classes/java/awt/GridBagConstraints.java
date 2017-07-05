@@ -457,7 +457,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
      * resize the component, and if so, how.
      * <p>
      * The following values are valid for <code>fill</code>:
-     * <p>
+     *
      * <ul>
      * <li>
      * <code>NONE</code>: Do not resize the component.

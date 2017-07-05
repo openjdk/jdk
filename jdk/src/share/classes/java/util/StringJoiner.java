@@ -131,7 +131,7 @@ public final class StringJoiner {
     /**
      * Sets the sequence of characters to be used when determining the string
      * representation of this {@code StringJoiner} and no elements have been
-     * added yet, i.e. when it is empty.  A copy of the {@code emptyValue}
+     * added yet, that is, when it is empty.  A copy of the {@code emptyValue}
      * parameter is made for this purpose. Note that once an add method has been
      * called, the {@code StringJoiner} is no longer considered empty, even if
      * the element(s) added correspond to the empty {@code String}.
@@ -228,8 +228,8 @@ public final class StringJoiner {
     }
 
     /**
-     * The length of the {@code StringJoiner} value, i.e. the length of
-     * {@code String} representation of the {@code StringJoiner}. Note that if
+     * Returns the length of the {@code String} representation
+     * of this {@code StringJoiner}. Note that if
      * no add methods have been called, then the length of the {@code String}
      * representation (either {@code prefix + suffix} or {@code emptyValue})
      * will be returned. The value should be equivalent to

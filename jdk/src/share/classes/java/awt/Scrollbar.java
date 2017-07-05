@@ -46,7 +46,7 @@ import javax.accessibility.*;
  * <p>
  * Each scroll bar in this example could be created with
  * code similar to the following:
- * <p>
+ *
  * <hr><blockquote><pre>
  * redSlider=new Scrollbar(Scrollbar.VERTICAL, 0, 1, 0, 255);
  * add(redSlider);
@@ -65,7 +65,7 @@ import javax.accessibility.*;
  * The value range represented by the bubble in this example
  * is the <em>visible amount</em>. The horizontal scroll bar
  * in this example could be created with code like the following:
- * <p>
+ *
  * <hr><blockquote><pre>
  * ranger = new Scrollbar(Scrollbar.HORIZONTAL, 0, 60, 0, 300);
  * add(ranger);
@@ -103,7 +103,7 @@ import javax.accessibility.*;
  * <p>
  * The <code>AdjustmentEvent</code> class defines five types
  * of adjustment event, listed here:
- * <p>
+ *
  * <ul>
  * <li><code>AdjustmentEvent.TRACK</code> is sent out when the
  * user drags the scroll bar's bubble.
@@ -136,7 +136,7 @@ import javax.accessibility.*;
  * that are associated with scroll bars in previous platform versions.
  * The following list gives the adjustment event type,
  * and the corresponding JDK&nbsp;1.0 event type it replaces.
- * <p>
+ *
  * <ul>
  * <li><code>AdjustmentEvent.TRACK</code> replaces
  * <code>Event.SCROLL_ABSOLUTE</code>
@@ -295,7 +295,7 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * Constructs a new vertical scroll bar.
      * The default properties of the scroll bar are listed in
      * the following table:
-     * <p>
+     *
      * <table border=1 summary="Scrollbar default properties">
      * <tr>
      *   <th>Property</th>
@@ -1104,11 +1104,11 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
      * This method is not called unless adjustment events are
      * enabled for this component. Adjustment events are enabled
      * when one of the following occurs:
-     * <p><ul>
+     * <ul>
      * <li>An <code>AdjustmentListener</code> object is registered
      * via <code>addAdjustmentListener</code>.
      * <li>Adjustment events are enabled via <code>enableEvents</code>.
-     * </ul><p>
+     * </ul>
      * <p>Note that if the event parameter is <code>null</code>
      * the behavior is unspecified and may result in an
      * exception.

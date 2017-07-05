@@ -569,7 +569,6 @@ int ObjArrayKlass::oop_adjust_pointers(oop obj) {
   // Get size before changing pointers.
   // Don't call size() or oop_size() since that is a virtual call.
   int size = a->object_size();
-  MarkSweep::adjust_klass(a->klass());
   ObjArrayKlass_OOP_ITERATE(a, p, MarkSweep::adjust_pointer(p))
   return size;
 }

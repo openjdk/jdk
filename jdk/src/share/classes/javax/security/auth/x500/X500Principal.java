@@ -314,7 +314,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
      * this method returns an RFC 2253 conformant string representation
      * with the following additional canonicalizations:
      *
-     * <p><ol>
+     * <ol>
      * <li> Leading zeros are removed from attribute types
      *          that are encoded as dotted decimal OIDs
      * <li> DirectoryString attribute values of type
