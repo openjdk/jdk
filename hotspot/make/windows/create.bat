@@ -1,6 +1,6 @@
 @echo off
 REM
-REM Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+REM Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
 REM DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 REM
 REM This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,7 @@ goto end
 
 
 :testit
-cl 2>&1 | grep "IA-64" >NUL
-if %errorlevel% == 0 goto isia64
-cl 2>&1 | grep "AMD64" >NUL
+cl 2>&1 | grep "x64" >NUL
 if %errorlevel% == 0 goto amd64
 set ARCH=x86
 set BUILDARCH=i486
@@ -64,12 +62,6 @@ set ARCH=x86
 set BUILDARCH=amd64
 set Platform_arch=x86
 set Platform_arch_model=x86_64
-goto done
-:isia64
-set ARCH=ia64
-set BUILDARCH=ia64
-set Platform_arch=ia64
-set Platform_arch_model=ia64
 :done
 
 setlocal
@@ -81,7 +73,7 @@ if not "%2" == "" goto usage
 REM Set HotSpotWorkSpace to the directy two steps above this script
 for %%i in ("%~dp0..") do ( set HotSpotWorkSpace=%%~dpi)
 set HotSpotBuildRoot=%HotSpotWorkSpace%build
-set HotSpotBuildSpace=%HotSpotBuildRoot%\vs
+set HotSpotBuildSpace=%HotSpotBuildRoot%\vs-%BUILDARCH%
 set HotSpotJDKDist=%1
 
 
@@ -89,9 +81,9 @@ REM figure out MSC version
 for /F %%i in ('sh %HotSpotWorkSpace%/make/windows/get_msc_ver.sh') do set %%i
 
 echo **************************************************************
-set ProjectFile=jvm.vcproj
+set ProjectFile=%HotSpotBuildSpace%\jvm.vcproj
 if "%MSC_VER%" == "1200" (
-set ProjectFile=jvm.dsp
+set ProjectFile=%HotSpotBuildSpace%\jvm.dsp
 echo Will generate VC6 project {unsupported}
 ) else (
 if "%MSC_VER%" == "1400" (
@@ -163,7 +155,7 @@ copy %HotSpotWorkSpace%\make\windows\projectfiles\%%i\* %HotSpotBuildSpace%\%%i\
 )
 
 REM force regneration of ProjectFile
-if exist %HotSpotBuildSpace%\%ProjectFile% del %HotSpotBuildSpace%\%ProjectFile%
+if exist %ProjectFile% del %ProjectFile%
 
 for /D %%i in (compiler1, compiler2, tiered, core, kernel) do (
 echo -- %%i --
@@ -182,6 +174,7 @@ echo ARCH=%ARCH%                           >>    %HotSpotBuildSpace%\%%i\local.m
 echo BUILDARCH=%BUILDARCH%                 >>    %HotSpotBuildSpace%\%%i\local.make
 echo Platform_arch=%Platform_arch%         >>    %HotSpotBuildSpace%\%%i\local.make
 echo Platform_arch_model=%Platform_arch_model% >>    %HotSpotBuildSpace%\%%i\local.make
+echo MSC_VER=%MSC_VER% 			   >>    %HotSpotBuildSpace%\%%i\local.make
 
 for /D %%j in (debug, fastdebug, product) do (
 if NOT EXIST %HotSpotBuildSpace%\%%i\%%j mkdir %HotSpotBuildSpace%\%%i\%%j
@@ -196,7 +189,7 @@ popd
 pushd %HotSpotBuildRoot%
 
 REM It doesn't matter which variant we use here, "compiler1" is as good as any of the others - we need the common variables
-nmake /nologo /F %HotSpotWorkSpace%/make/windows/projectfiles/common/Makefile LOCAL_MAKE=%HotSpotBuildSpace%\compiler1\local.make %HotSpotBuildRoot%/%ProjectFile%
+nmake /nologo /F %HotSpotWorkSpace%/make/windows/projectfiles/common/Makefile LOCAL_MAKE=%HotSpotBuildSpace%\compiler1\local.make %ProjectFile%
 
 popd
 

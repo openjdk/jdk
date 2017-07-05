@@ -46,6 +46,7 @@ ciInstanceKlass::ciInstanceKlass(KlassHandle h_k) :
   ciKlass(h_k), _non_static_fields(NULL)
 {
   assert(get_Klass()->oop_is_instance(), "wrong type");
+  assert(get_instanceKlass()->is_loaded(), "must be at least loaded");
   instanceKlass* ik = get_instanceKlass();
 
   AccessFlags access_flags = ik->access_flags();

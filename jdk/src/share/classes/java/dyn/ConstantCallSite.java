@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,46 @@ package java.dyn;
  * @author John Rose, JSR 292 EG
  */
 public class ConstantCallSite extends CallSite {
-    /** Create a call site with a permanent target.
+    /**
+     * Creates a call site with a permanent target.
+     * @param target the target to be permanently associated with this call site
      * @throws NullPointerException if the proposed target is null
      */
     public ConstantCallSite(MethodHandle target) {
         super(target);
     }
+
     /**
-     * Throw an {@link UnsupportedOperationException}, because this kind of call site cannot change its target.
+     * Returns the target method of the call site, which behaves
+     * like a {@code final} field of the {@code ConstantCallSite}.
+     * That is, the the target is always the original value passed
+     * to the constructor call which created this instance.
+     *
+     * @return the immutable linkage state of this call site, a constant method handle
+     * @throws UnsupportedOperationException because this kind of call site cannot change its target
+     */
+    @Override public final MethodHandle getTarget() {
+        return target;
+    }
+
+    /**
+     * Always throws an {@link UnsupportedOperationException}.
+     * This kind of call site cannot change its target.
+     * @param ignore a new target proposed for the call site, which is ignored
+     * @throws UnsupportedOperationException because this kind of call site cannot change its target
      */
     @Override public final void setTarget(MethodHandle ignore) {
         throw new UnsupportedOperationException("ConstantCallSite");
+    }
+
+    /**
+     * Returns this call site's permanent target.
+     * Since that target will never change, this is a correct implementation
+     * of {@link CallSite#dynamicInvoker CallSite.dynamicInvoker}.
+     * @return the immutable linkage state of this call site, a constant method handle
+     */
+    @Override
+    public final MethodHandle dynamicInvoker() {
+        return getTarget();
     }
 }

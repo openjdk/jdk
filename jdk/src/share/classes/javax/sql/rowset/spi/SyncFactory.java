@@ -32,6 +32,7 @@ import java.sql.*;
 import javax.sql.*;
 
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 
@@ -366,7 +367,9 @@ public class SyncFactory {
                     // Load user's implementation of SyncProvider
                     // here. -Drowset.properties=/abc/def/pqr.txt
                     ROWSET_PROPERTIES = strRowsetProperties;
-                    properties.load(new FileInputStream(ROWSET_PROPERTIES));
+                    try (FileInputStream fis = new FileInputStream(ROWSET_PROPERTIES)) {
+                        properties.load(fis);
+                    }
                     parseProperties(properties);
                 }
 
@@ -376,12 +379,19 @@ public class SyncFactory {
                 ROWSET_PROPERTIES = "javax" + strFileSep + "sql" +
                         strFileSep + "rowset" + strFileSep +
                         "rowset.properties";
-                // properties.load(
-                //                ClassLoader.getSystemResourceAsStream(ROWSET_PROPERTIES));
 
                 ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
-                properties.load(cl.getResourceAsStream(ROWSET_PROPERTIES));
+                try (InputStream stream =
+                         (cl == null) ? ClassLoader.getSystemResourceAsStream(ROWSET_PROPERTIES)
+                                      : cl.getResourceAsStream(ROWSET_PROPERTIES)) {
+                    if (stream == null) {
+                        throw new SyncFactoryException(
+                            "Resource " + ROWSET_PROPERTIES + " not found");
+                    }
+                    properties.load(stream);
+                }
+
                 parseProperties(properties);
 
             // removed else, has properties should sum together

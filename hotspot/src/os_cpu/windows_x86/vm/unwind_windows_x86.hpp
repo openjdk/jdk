@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ typedef struct _DISPATCHER_CONTEXT {
     PVOID HandlerData;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
-#if MSC_VER < 1500
+#if _MSC_VER < 1500
 
 /* Not needed for VS2008 compiler, comes from winnt.h. */
 typedef EXCEPTION_DISPOSITION (*PEXCEPTION_ROUTINE) (
