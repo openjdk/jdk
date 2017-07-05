@@ -604,8 +604,8 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
   // If both are single def, then src_def powers one live range
   // and def_copy powers the other.  After merging, src_def powers
   // the combined live range.
-  lrgs(lr1)._def = (lrgs(lr1)._def == NodeSentinel ||
-                        lrgs(lr2)._def == NodeSentinel )
+  lrgs(lr1)._def = (lrgs(lr1).is_multidef() ||
+                        lrgs(lr2).is_multidef() )
     ? NodeSentinel : src_def;
   lrgs(lr2)._def = NULL;    // No def for lrg 2
   lrgs(lr2).Clear();        // Force empty mask for LRG 2

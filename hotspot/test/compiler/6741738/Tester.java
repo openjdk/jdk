@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,49 +19,32 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_assembler_linux_x86_64.cpp.incl"
+/*
+ * @test
+ * @bug 6741738
+ * @summary TypePtr::add_offset() set incorrect offset when the add overflows
+ * @run main/othervm -Xcomp -XX:CompileOnly=Tester.foo Tester
+ */
 
-void MacroAssembler::int3() {
-  call(RuntimeAddress(CAST_FROM_FN_PTR(address, os::breakpoint)));
-}
+public class Tester {
+        private String[] values;
+        private int count;
 
-void MacroAssembler::get_thread(Register thread) {
-  // call pthread_getspecific
-  // void * pthread_getspecific(pthread_key_t key);
-   if (thread != rax) {
-     pushq(rax);
-   }
-   pushq(rdi);
-   pushq(rsi);
-   pushq(rdx);
-   pushq(rcx);
-   pushq(r8);
-   pushq(r9);
-   pushq(r10);
-   // XXX
-   movq(r10, rsp);
-   andq(rsp, -16);
-   pushq(r10);
-   pushq(r11);
+        String foo() {
+                int i = Integer.MAX_VALUE-1;
+                String s;
+                try {
+                    s = values[i];
+                } catch (Throwable e) {
+                    s = "";
+                }
+                return s;
+        }
 
-   movl(rdi, ThreadLocalStorage::thread_index());
-   call(RuntimeAddress(CAST_FROM_FN_PTR(address, pthread_getspecific)));
-
-   popq(r11);
-   popq(rsp);
-   popq(r10);
-   popq(r9);
-   popq(r8);
-   popq(rcx);
-   popq(rdx);
-   popq(rsi);
-   popq(rdi);
-   if (thread != rax) {
-       movq(thread, rax);
-       popq(rax);
-   }
+        public static void main(String[] args) {
+                Tester t = new Tester();
+                String s = t.foo();
+        }
 }

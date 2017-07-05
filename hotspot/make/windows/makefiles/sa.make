@@ -49,15 +49,22 @@ SA_PROPERTIES = $(SA_CLASSDIR)\sa.properties
 
 default::  $(GENERATED)\sa-jdi.jar
 
-$(GENERATED)\sa-jdi.jar: $(AGENT_ALLFILES:/=\) 
+$(GENERATED)\sa-jdi.jar: $(AGENT_FILES1:/=\) $(AGENT_FILES2:/=\)
 	@if not exist $(SA_CLASSDIR) mkdir $(SA_CLASSDIR)
 	@echo ...Building sa-jdi.jar
 	@echo ...$(COMPILE_JAVAC) -source 1.4 -classpath $(SA_CLASSPATH) -g -d $(SA_CLASSDIR) ....
-	@$(COMPILE_JAVAC) -source 1.4 -classpath $(SA_CLASSPATH) -g -d $(SA_CLASSDIR) $(AGENT_ALLFILES:/=\)
+	@$(COMPILE_JAVAC) -source 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -g -d $(SA_CLASSDIR) $(AGENT_FILES1:/=\)
+	@$(COMPILE_JAVAC) -source 1.4 -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -g -d $(SA_CLASSDIR) $(AGENT_FILES2:/=\)
 	$(COMPILE_RMIC) -classpath $(SA_CLASSDIR) -d $(SA_CLASSDIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	$(QUIETLY) echo $(SA_BUILD_VERSION_PROP) > $(SA_PROPERTIES)
 	$(RUN_JAR) cf $@ -C saclasses . 
 	$(RUN_JAR) uf $@ -C $(AGENT_SRC_DIR:/=\) META-INF\services\com.sun.jdi.connect.Connector 
+	$(QUIETLY) rm -f $(SA_CLASSDIR)/sun/jvm/hotspot/utilities/soql/sa.js
+	$(QUIETLY) cp $(AGENT_SRC_DIR)/sun/jvm/hotspot/utilities/soql/sa.js $(SA_CLASSDIR)/sun/jvm/hotspot/utilities/soql
+	$(QUIETLY) mkdir -p $(SA_CLASSDIR)/sun/jvm/hotspot/ui/resources
+	$(QUIETLY) rm -f $(SA_CLASSDIR)/sun/jvm/hotspot/ui/resources/*
+	$(QUIETLY) cp $(AGENT_SRC_DIR)/sun/jvm/hotspot/ui/resources/*.png $(SA_CLASSDIR)/sun/jvm/hotspot/ui/resources/
+	$(QUIETLY) cp -r $(AGENT_SRC_DIR)/images/* $(SA_CLASSDIR)/
 	$(RUN_JAVAH) -classpath $(SA_CLASSDIR) -jni sun.jvm.hotspot.debugger.windbg.WindbgDebuggerLocal
 	$(RUN_JAVAH) -classpath $(SA_CLASSDIR) -jni sun.jvm.hotspot.debugger.x86.X86ThreadContext 
 	$(RUN_JAVAH) -classpath $(SA_CLASSDIR) -jni sun.jvm.hotspot.debugger.ia64.IA64ThreadContext 

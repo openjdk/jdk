@@ -467,6 +467,10 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   // get successor block succ_no
   assert(succ_no < in->_num_succs, "illegal successor number");
   Block* out = in->_succs[succ_no];
+  // Compute frequency of the new block. Do this before inserting
+  // new block in case succ_prob() needs to infer the probability from
+  // surrounding blocks.
+  float freq = in->_freq * in->succ_prob(succ_no);
   // get ProjNode corresponding to the succ_no'th successor of the in block
   ProjNode* proj = in->_nodes[in->_nodes.size() - in->_num_succs + succ_no]->as_Proj();
   // create region for basic block
@@ -491,6 +495,8 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   }
   // remap predecessor's successor to new block
   in->_succs.map(succ_no, block);
+  // Set the frequency of the new block
+  block->_freq = freq;
   // add new basic block to basic block list
   _blocks.insert(block_no + 1, block);
   _num_blocks++;
