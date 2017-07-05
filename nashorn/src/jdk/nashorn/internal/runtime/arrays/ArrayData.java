@@ -56,7 +56,7 @@ public abstract class ArrayData {
      * Constructor
      * @param length Virtual length of the array.
      */
-    public ArrayData(final long length) {
+    protected ArrayData(final long length) {
         this.length = length;
     }
 
@@ -181,6 +181,14 @@ public abstract class ArrayData {
     public final long length() {
         return length;
     }
+
+    /**
+     * Return a copy of the array that can be modified without affecting this instance.
+     * It is safe to return themselves for immutable subclasses.
+     *
+     * @return a new array
+     */
+    public abstract ArrayData copy();
 
     /**
      * Return a copy of the array data as an Object array.

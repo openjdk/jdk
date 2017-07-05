@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ public interface BeanContextServices extends BeanContext, BeanContextServicesLis
      * @param serviceClass     the service to add
      * @param serviceProvider  the <code>BeanContextServiceProvider</code>
      * associated with the service
+     * @return true if the service was successful added, false otherwise
      */
     boolean addService(Class serviceClass, BeanContextServiceProvider serviceProvider);
 
@@ -108,7 +109,7 @@ public interface BeanContextServices extends BeanContext, BeanContextServicesLis
      * @param bcsrl the
      * <code>BeanContextServiceRevokedListener</code> to notify
      * if the service should later become revoked
-     * @throws TooManyListenersException
+     * @throws TooManyListenersException if there are too many listeners
      * @return a reference to this context's named
      * Service as requested or <code>null</code>
      */

@@ -1319,10 +1319,8 @@ public class BasicDouble extends Basic {
              Math.nextDown(DoubleConsts.MIN_NORMAL));
         test("%.1a", "0x1.0p-1022",
              Math.nextDown(DoubleConsts.MIN_NORMAL));
-        test("%.11a", "0x1.ffffffffffep-1023",
-             Double.parseDouble("0x0.fffffffffffp-1022"));
-        test("%.1a", "0x1.0p-1022",
-             Double.parseDouble("0x0.fffffffffffp-1022"));
+        test("%.11a", "0x1.ffffffffffep-1023", 0x0.fffffffffffp-1022);
+        test("%.1a", "0x1.0p-1022", 0x0.fffffffffffp-1022);
         test("%.30a", "0x0.000000000000100000000000000000p-1022", Double.MIN_VALUE);
         test("%.13a", "0x0.0000000000001p-1022", Double.MIN_VALUE);
         test("%.11a", "0x1.00000000000p-1074", Double.MIN_VALUE);
@@ -1336,19 +1334,50 @@ public class BasicDouble extends Basic {
         test("%.13a", "0x1.fffffffffffffp1023", Double.MAX_VALUE);
         test("%.11a", "0x1.00000000000p1024", Double.MAX_VALUE);
         test("%.1a", "0x1.0p1024", Double.MAX_VALUE);
-        test("%.11a", "0x1.18000000000p0", Double.parseDouble("0x1.18p0"));
-        test("%.1a", "0x1.2p0", Double.parseDouble("0x1.18p0"));
+        test("%.11a", "0x1.18000000000p0", 0x1.18p0);
+        test("%.1a", "0x1.2p0", 0x1.18p0);
 
-        test("%.11a", "0x1.18000000000p0",
-             Double.parseDouble("0x1.180000000001p0"));
-        test("%.1a", "0x1.2p0",
-             Double.parseDouble("0x1.180000000001p0"));
-        test("%.11a", "0x1.28000000000p0", Double.parseDouble("0x1.28p0"));
-        test("%.1a", "0x1.2p0", Double.parseDouble("0x1.28p0"));
+        test("%.11a", "0x1.18000000000p0", 0x1.180000000001p0);
+        test("%.1a", "0x1.2p0", 0x1.180000000001p0);
+        test("%.11a", "0x1.28000000000p0", 0x1.28p0);
+        test("%.1a", "0x1.2p0", 0x1.28p0);
 
-        test("%.11a", "0x1.28000000000p0",
-             Double.parseDouble("0x1.280000000001p0"));
-        test("%.1a", "0x1.3p0", Double.parseDouble("0x1.280000000001p0"));
+        test("%.11a", "0x1.28000000000p0", 0x1.280000000001p0);
+        test("%.1a", "0x1.3p0", 0x1.280000000001p0);
+
+        test("%a", "0x0.123p-1022", 0x0.123p-1022);
+        test("%1.3a", "0x1.230p-1026", 0x0.123p-1022);
+        test("%1.12a", "0x1.230000000000p-1026", 0x0.123p-1022);
+        test("%1.15a", "0x0.123000000000000p-1022", 0x0.123p-1022);
+        test("%1.5a", "0x1.00000p-1074", 0x0.0000000000001p-1022);
+        test("%1.7a", "0x1.0000000p-1022", 0x0.fffffffffffffp-1022);
+
+        test("%1.6a", "0x1.230000p-1026", 0x0.123000057p-1022);
+        test("%1.7a", "0x1.2300005p-1026", 0x0.123000057p-1022);
+        test("%1.8a", "0x1.23000057p-1026", 0x0.123000057p-1022);
+        test("%1.9a", "0x1.230000570p-1026", 0x0.123000057p-1022);
+
+        test("%1.6a", "0x1.230000p-1026", 0x0.123000058p-1022);
+        test("%1.7a", "0x1.2300006p-1026", 0x0.123000058p-1022);
+        test("%1.8a", "0x1.23000058p-1026", 0x0.123000058p-1022);
+        test("%1.9a", "0x1.230000580p-1026", 0x0.123000058p-1022);
+
+        test("%1.6a", "0x1.230000p-1026", 0x0.123000059p-1022);
+        test("%1.7a", "0x1.2300006p-1026", 0x0.123000059p-1022);
+        test("%1.8a", "0x1.23000059p-1026", 0x0.123000059p-1022);
+        test("%1.9a", "0x1.230000590p-1026", 0x0.123000059p-1022);
+
+        test("%1.4a", "0x1.0000p-1022", Math.nextDown(Double.MIN_NORMAL));
+
+        test("%a", "0x1.fffffffffffffp1023", Double.MAX_VALUE);
+        test("%1.1a", "0x1.0p1024", Double.MAX_VALUE);
+        test("%1.2a", "0x1.00p1024", Double.MAX_VALUE);
+        test("%1.6a", "0x1.000000p1024", Double.MAX_VALUE);
+        test("%1.9a", "0x1.000000000p1024", Double.MAX_VALUE);
+        test("%1.11a", "0x1.00000000000p1024", Double.MAX_VALUE);
+        test("%1.12a", "0x1.000000000000p1024", Double.MAX_VALUE);
+        test("%1.13a", "0x1.fffffffffffffp1023", Double.MAX_VALUE);
+
 
 
         //---------------------------------------------------------------------

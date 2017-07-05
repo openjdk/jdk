@@ -26,6 +26,7 @@ package java.util;
 
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+import java.util.stream.Collector;
 
 /**
  * A state object for collecting statistics such as count, min, max, sum, and
@@ -36,24 +37,24 @@ import java.util.function.LongConsumer;
  * summary statistics on a stream of longs with:
  * <pre> {@code
  * LongSummaryStatistics stats = longStream.collect(LongSummaryStatistics::new,
- *     LongSummaryStatistics::accept,
- *     LongSummaryStatistics::combine);
+ *                                                  LongSummaryStatistics::accept,
+ *                                                  LongSummaryStatistics::combine);
  * }</pre>
  *
  * <p>{@code LongSummaryStatistics} can be used as a
- * {@linkplain java.util.stream.Stream#reduce(java.util.function.BinaryOperator) reduction}
+ * {@linkplain java.util.stream.Stream#collect(Collector)} reduction}
  * target for a {@linkplain java.util.stream.Stream stream}. For example:
  *
  * <pre> {@code
  * LongSummaryStatistics stats = people.stream()
- *     .collect(Collectors.toLongSummaryStatistics(Person::getAge));
+ *                                     .collect(Collectors.summarizingLong(Person::getAge));
  *}</pre>
  *
  * This computes, in a single pass, the count of people, as well as the minimum,
- * maximum, sum, and average of their ages in milliseconds.
+ * maximum, sum, and average of their ages.
  *
  * @implNote This implementation is not thread safe. However, it is safe to use
- * {@link java.util.stream.Collectors#toLongSummaryStatistics(java.util.function.ToLongFunction)
+ * {@link java.util.stream.Collectors#summarizingLong(java.util.function.ToLongFunction)
  * Collectors.toLongStatistics()} on a parallel stream, because the parallel
  * implementation of {@link java.util.stream.Stream#collect Stream.collect()}
  * provides the necessary partitioning, isolation, and merging of results for
@@ -152,10 +153,10 @@ public class LongSummaryStatistics implements LongConsumer, IntConsumer {
     }
 
     /**
-     * Returns the average of values recorded, or zero if no values have been
+     * Returns the arithmetic mean of values recorded, or zero if no values have been
      * recorded.
      *
-     * @return The average of values, or zero if none
+     * @return The arithmetic mean of values, or zero if none
      */
     public final double getAverage() {
         return getCount() > 0 ? (double) getSum() / getCount() : 0.0d;

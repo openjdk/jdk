@@ -148,6 +148,7 @@ abstract class LongPipeline<E_IN>
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     final Spliterator.OfLong lazySpliterator(Supplier<? extends Spliterator<Long>> supplier) {
         return new StreamSpliterators.DelegatingSpliterator.OfLong((Supplier<Spliterator.OfLong>) supplier);
     }
@@ -209,6 +210,7 @@ abstract class LongPipeline<E_IN>
             Sink<Long> opWrapSink(int flags, Sink<Long> sink) {
                 return new Sink.ChainedLong(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(long t) {
                         downstream.accept(mapper.applyAsLong(t));
                     }
@@ -226,6 +228,7 @@ abstract class LongPipeline<E_IN>
             Sink<Long> opWrapSink(int flags, Sink<U> sink) {
                 return new Sink.ChainedLong(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(long t) {
                         downstream.accept(mapper.apply(t));
                     }
@@ -243,6 +246,7 @@ abstract class LongPipeline<E_IN>
             Sink<Long> opWrapSink(int flags, Sink<Integer> sink) {
                 return new Sink.ChainedLong(sink) {
                     @Override
+                    @SuppressWarnings("unchecked")
                     public void accept(long t) {
                         downstream.accept(mapper.applyAsInt(t));
                     }

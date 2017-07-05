@@ -928,6 +928,7 @@ public class Hashtable<K,V>
         return (null == result) ? defaultValue : result;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public synchronized void forEach(BiConsumer<? super K, ? super V> action) {
         Objects.requireNonNull(action);     // explicit check required in case
@@ -947,6 +948,7 @@ public class Hashtable<K,V>
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public synchronized void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         Objects.requireNonNull(function);     // explicit check required in case

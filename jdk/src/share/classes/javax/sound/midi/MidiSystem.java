@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,7 @@ import com.sun.media.sound.MidiDeviceTransmitterEnvelope;
  * consider them:
  *
  * <table border=0>
+ *  <caption>MIDI System Property Keys</caption>
  *  <tr>
  *   <th>Property Key</th>
  *   <th>Interface</th>
@@ -425,6 +426,8 @@ public class MidiSystem {
      * it is used to identify the default sequencer.
      * For details, refer to the {@link MidiSystem class description}.
      *
+     * @param connected whether or not the returned {@code Sequencer}
+     * is connected to the default {@code Synthesizer}
      * @return the default sequencer
      * @throws MidiUnavailableException if the sequencer is not
      *         available due to resource restrictions,

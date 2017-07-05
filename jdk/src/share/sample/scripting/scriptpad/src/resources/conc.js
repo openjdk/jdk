@@ -221,7 +221,7 @@ sleep.docString = "wrapper for java.lang.Thread.sleep method";
  * @return timeout ID (which is nothing but Thread instance)
  */
 function setTimeout(callback, interval) {
-    if (! (callback instanceof Function) && typeof callback !== "function") {
+    if (! (callback instanceof Function)) {
         callback = new Function(callback);
     }
 
@@ -255,7 +255,7 @@ clearTimeout.docString = "interrupt a setTimeout timer";
  * @return timeout ID (which is nothing but Thread instance)
  */
 function setInterval(callback, interval) {
-    if (! (callback instanceof Function) && typeof callback !== "function") {
+    if (! (callback instanceof Function)) {
         callback = new Function(callback);
     }
 

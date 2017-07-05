@@ -128,6 +128,7 @@ class ArrayPrefixHelpers {
             this.lo = lo; this.hi = hi;
         }
 
+        @SuppressWarnings("unchecked")
         public final void compute() {
             final BinaryOperator<T> fn;
             final T[] a;
@@ -692,6 +693,4 @@ class ArrayPrefixHelpers {
             }
         }
     }
-
-
 }

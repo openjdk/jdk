@@ -45,7 +45,7 @@ import javax.print.attribute.Attribute;
  * <code>MediaSize.getMediaSizeForName(MediaSizeName)</code>
  * to find the physical dimensions of the MediaSizeName instances
  * enumerated in this API. This is useful for clients which need this
- * information to format & paginate printing.
+ * information to format {@literal &} paginate printing.
  * <P>
  *
  * @author  Phil Race, Alan Kaminsky
@@ -71,8 +71,8 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      *     <CODE>Size2DSyntax.MM</CODE>.
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>x</CODE> < 0 or <CODE>y</CODE>
-     *     < 0 or <CODE>units</CODE> < 1 or <CODE>x</CODE> > <CODE>y</CODE>.
+     *   (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0} or
+     *   {@code units < 1} or {@code x > y}.
      */
     public MediaSize(float x, float y,int units) {
         super (x, y, units);
@@ -92,8 +92,8 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      *     <CODE>Size2DSyntax.MM</CODE>.
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>x</CODE> < 0 or <CODE>y</CODE>
-     *     < 0 or <CODE>units</CODE> < 1 or <CODE>x</CODE> > <CODE>y</CODE>.
+     *   (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0} or
+     *   {@code units < 1} or {@code x > y}.
      */
     public MediaSize(int x, int y,int units) {
         super (x, y, units);
@@ -115,8 +115,8 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @param media a media name to associate with this MediaSize
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>x</CODE> < 0 or <CODE>y</CODE>
-     *     < 0 or <CODE>units</CODE> < 1 or <CODE>x</CODE> > <CODE>y</CODE>.
+     *   (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0} or
+     *   {@code units < 1} or {@code x > y}.
      */
     public MediaSize(float x, float y,int units, MediaSizeName media) {
         super (x, y, units);
@@ -141,8 +141,8 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      * @param media a media name to associate with this MediaSize
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>x</CODE> < 0 or <CODE>y</CODE>
-     *     < 0 or <CODE>units</CODE> < 1 or <CODE>x</CODE> > <CODE>y</CODE>.
+     *   (Unchecked exception) Thrown if {@code x < 0} or {@code y < 0} or
+     *   {@code units < 1} or {@code x > y}.
      */
     public MediaSize(int x, int y,int units, MediaSizeName media) {
         super (x, y, units);
@@ -194,7 +194,8 @@ public class MediaSize extends Size2DSyntax implements Attribute {
      *     Unit conversion factor, e.g. <CODE>Size2DSyntax.INCH</CODE> or
      *     <CODE>Size2DSyntax.MM</CODE>
      * @return MediaSizeName matching these dimensions, or null.
-     * @exception IllegalArgumentException if x <= 0, y <= 0, or units < 1
+     * @exception IllegalArgumentException if {@code x <= 0},
+     *      {@code y <= 0}, or {@code units < 1}.
      *
      */
     public static MediaSizeName findMedia(float x, float y, int units) {

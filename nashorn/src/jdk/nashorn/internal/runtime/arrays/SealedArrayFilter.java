@@ -39,6 +39,11 @@ class SealedArrayFilter extends ArrayFilter {
     }
 
     @Override
+    public ArrayData copy() {
+        return new SealedArrayFilter(underlying.copy());
+    }
+
+    @Override
     public ArrayData slice(final long from, final long to) {
         return getUnderlying().slice(from, to);
     }

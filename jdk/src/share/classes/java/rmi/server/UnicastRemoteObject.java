@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,26 @@ import sun.rmi.server.UnicastServerRef2;
  *
  * </ul>
  * </ul>
+ *
+ * <p>If an object is exported with the
+ * {@link #exportObject(Remote) exportObject(Remote)}
+ * or
+ * {@link #exportObject(Remote, int) exportObject(Remote, port)}
+ * methods, or if a subclass constructor invokes one of the
+ * {@link #UnicastRemoteObject()}
+ * or
+ * {@link #UnicastRemoteObject(int) UnicastRemoteObject(port)}
+ * constructors, the object is exported with a server socket created using the
+ * {@link RMISocketFactory}
+ * class.
+ *
+ * @implNote
+ * <p>By default, server sockets created by the {@link RMISocketFactory} class
+ * listen on all network interfaces. See the
+ * {@link RMISocketFactory} class and the section
+ * <a href="{@docRoot}/../platform/rmi/spec/rmi-server29.html">RMI Socket Factories</a>
+ * in the
+ * <a href="{@docRoot}/../platform/rmi/spec/rmiTOC.html">Java RMI Specification</a>.
  *
  * @author  Ann Wollrath
  * @author  Peter Jones
