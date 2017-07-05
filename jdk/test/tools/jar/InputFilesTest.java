@@ -30,6 +30,8 @@
  *          demonstrating identical behavior to JDK 8 jar tool.
  * @library /test/lib
  * @modules jdk.jartool
+ * @build jdk.test.lib.Platform
+ *        jdk.test.lib.util.FileUtils
  * @run testng InputFilesTest
  */
 

@@ -30,6 +30,7 @@ import jdk.test.lib.util.JarUtils;
  * @summary Test for badKeyUsage warning
  * @library /lib/testlibrary /test/lib ../
  * @ignore until 8026393 is fixed
+ * @build jdk.test.lib.util.JarUtils
  * @run main BadKeyUsageTest
  */
 public class BadKeyUsageTest extends Test {

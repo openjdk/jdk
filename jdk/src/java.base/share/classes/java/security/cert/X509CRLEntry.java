@@ -62,6 +62,7 @@ import sun.security.x509.X509CRLEntryImpl;
  * @see X509Extension
  *
  * @author Hemma Prafullchandra
+ * @since 1.2
  */
 
 public abstract class X509CRLEntry implements X509Extension {

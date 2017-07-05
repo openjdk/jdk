@@ -27,7 +27,14 @@
  * @modules java.base/jdk.internal.misc
  *          jdk.compiler
  *          jdk.jartool
- * @build MRTestBase
+ * @build jdk.test.lib.util.FileUtils
+ *        jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
+ *        MRTestBase
  * @run testng Basic
  */
 

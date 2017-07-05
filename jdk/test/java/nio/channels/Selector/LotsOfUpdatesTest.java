@@ -28,7 +28,13 @@
  *     Solaris if maximum number of file descriptors is less than 10000
  * @requires (os.family != "windows")
  * @library /test/lib
- * @build LotsOfUpdates
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.JDKToolFinder
+ *        jdk.test.lib.JDKToolLauncher
+ *        jdk.test.lib.Platform
+ *        jdk.test.lib.process.*
+ *        LotsOfUpdates
  * @run main LotsOfUpdatesTest
  */
 

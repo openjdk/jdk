@@ -38,6 +38,7 @@ package java.security;
  *
  * @author Li Gong
  * @author Roland Schemers
+ * @since 1.2
  */
 
 public class AccessControlException extends SecurityException {

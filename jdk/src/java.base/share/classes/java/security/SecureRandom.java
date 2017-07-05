@@ -143,6 +143,7 @@ import sun.security.util.Debug;
  *
  * @author Benjamin Renaud
  * @author Josh Bloch
+ * @since 1.1
  */
 
 public class SecureRandom extends java.util.Random {
