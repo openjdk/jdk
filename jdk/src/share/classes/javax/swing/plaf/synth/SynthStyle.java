@@ -33,6 +33,7 @@ import javax.swing.text.DefaultEditorKit;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.text.JTextComponent;
+import sun.swing.SwingUtilities2;
 
 /**
  * <code>SynthStyle</code> is a set of style properties.
@@ -303,7 +304,8 @@ public abstract class SynthStyle {
               }));
 
         DEFAULT_VALUES.put("InternalFrame.icon",
-                           LookAndFeel.makeIcon(BasicLookAndFeel.class,
+                           SwingUtilities2.makeIcon(BasicLookAndFeel.class,
+                                                    BasicLookAndFeel.class,
                                                     "icons/JavaCup16.png"));
 
         DEFAULT_VALUES.put("InternalFrame.windowBindings",

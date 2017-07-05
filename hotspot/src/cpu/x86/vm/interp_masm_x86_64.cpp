@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -841,7 +841,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 void InterpreterMacroAssembler::test_method_data_pointer(Register mdp,
                                                          Label& zero_continue) {
   assert(ProfileInterpreter, "must be profiling interpreter");
-  movptr(mdp, Address(rbp, frame::interpreter_frame_mdx_offset * wordSize));
+  movptr(mdp, Address(rbp, frame::interpreter_frame_mdp_offset * wordSize));
   testptr(mdp, mdp);
   jcc(Assembler::zero, zero_continue);
 }
@@ -868,7 +868,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   addptr(rbx, in_bytes(MethodData::data_offset()));
   addptr(rax, rbx);
   bind(set_mdp);
-  movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), rax);
+  movptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), rax);
   pop(rbx);
   pop(rax);
 }
@@ -991,7 +991,7 @@ void InterpreterMacroAssembler::update_mdp_by_offset(Register mdp_in,
   assert(ProfileInterpreter, "must be profiling interpreter");
   Address disp_address(mdp_in, offset_of_disp);
   addptr(mdp_in, disp_address);
-  movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), mdp_in);
+  movptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), mdp_in);
 }
 
 
@@ -1001,7 +1001,7 @@ void InterpreterMacroAssembler::update_mdp_by_offset(Register mdp_in,
   assert(ProfileInterpreter, "must be profiling interpreter");
   Address disp_address(mdp_in, reg, Address::times_1, offset_of_disp);
   addptr(mdp_in, disp_address);
-  movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), mdp_in);
+  movptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), mdp_in);
 }
 
 
@@ -1009,7 +1009,7 @@ void InterpreterMacroAssembler::update_mdp_by_constant(Register mdp_in,
                                                        int constant) {
   assert(ProfileInterpreter, "must be profiling interpreter");
   addptr(mdp_in, constant);
-  movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), mdp_in);
+  movptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), mdp_in);
 }
 
 

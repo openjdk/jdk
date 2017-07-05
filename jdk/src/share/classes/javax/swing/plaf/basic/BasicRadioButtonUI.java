@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
 {
     private static final Object BASIC_RADIO_BUTTON_UI_KEY = new Object();
 
+    /**
+     * The icon.
+     */
     protected Icon icon;
 
     private boolean defaults_initialized = false;
@@ -53,6 +56,13 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
     // ********************************
     //        Create PLAF
     // ********************************
+
+    /**
+     * Returns an instance of {@code BasicRadioButtonUI}.
+     *
+     * @param b a component
+     * @return an instance of {@code BasicRadioButtonUI}
+     */
     public static ComponentUI createUI(JComponent b) {
         AppContext appContext = AppContext.getAppContext();
         BasicRadioButtonUI radioButtonUI =
@@ -87,6 +97,11 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
         defaults_initialized = false;
     }
 
+    /**
+     * Returns the default icon.
+     *
+     * @return the default icon
+     */
     public Icon getDefaultIcon() {
         return icon;
     }
@@ -195,6 +210,13 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
         }
     }
 
+    /**
+     * Paints focused radio button.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param textRect bounds
+     * @param size the size of radio button
+     */
     protected void paintFocus(Graphics g, Rectangle textRect, Dimension size){
     }
 

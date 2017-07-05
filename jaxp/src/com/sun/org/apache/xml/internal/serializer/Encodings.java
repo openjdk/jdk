@@ -153,6 +153,24 @@ public final class Encodings extends Object
     }
 
     /**
+     * Determines if the encoding specified was recognized by the
+     * serializer or not.
+     *
+     * @param encoding The encoding
+     * @return boolean - true if the encoding was recognized else false
+     */
+    public static boolean isRecognizedEncoding(String encoding)
+    {
+        EncodingInfo ei;
+
+        String normalizedEncoding = toUpperCaseFast(encoding);
+        ei = _encodingInfos.findEncoding(normalizedEncoding);
+        if (ei != null)
+            return true;
+        return false;
+    }
+
+    /**
      * A fast and cheap way to uppercase a String that is
      * only made of printable ASCII characters.
      * <p>

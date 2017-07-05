@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,7 +388,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      * convert from CS_CIEXYZ to the output color space.
      * See {@link #toCIEXYZ(float[]) toCIEXYZ} and
      * {@link #fromCIEXYZ(float[]) fromCIEXYZ} for further information.
-     * <p>
+     *
      * @param colorvalue a float array with length of at least the number
      *        of components in this ColorSpace
      * @return a float array of length 3
@@ -412,7 +412,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      * convert from CS_CIEXYZ to the output color space.
      * See {@link #toCIEXYZ(float[]) toCIEXYZ} and
      * {@link #fromCIEXYZ(float[]) fromCIEXYZ} for further information.
-     * <p>
+     *
      * @param rgbvalue a float array with length of at least 3
      * @return a float array with length equal to the number of
      *         components in this ColorSpace
@@ -439,7 +439,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      * that would be measured using current CIE recommended practices.
      * See the {@link ICC_ColorSpace#toCIEXYZ(float[]) toCIEXYZ} method of
      * <code>ICC_ColorSpace</code> for further information.
-     * <p>
+     *
      * @param colorvalue a float array with length of at least the number
      *        of components in this ColorSpace
      * @return a float array of length 3
@@ -467,7 +467,7 @@ public abstract class ColorSpace implements java.io.Serializable {
      * relative values before being passed to this method.
      * See the {@link ICC_ColorSpace#fromCIEXYZ(float[]) fromCIEXYZ} method of
      * <code>ICC_ColorSpace</code> for further information.
-     * <p>
+     *
      * @param colorvalue a float array with length of at least 3
      * @return a float array with length equal to the number of
      *         components in this ColorSpace

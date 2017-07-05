@@ -41,6 +41,6 @@ str +="g()";
 try {
     eval(str);
 } catch (e) {
-    print(e.stack.replace(/\\/g, '/'));
+    print(e.stack.replace(/\\/g, '/').replace(/<eval>@[0-9]+/, '<eval>@<id>'));
 }
 

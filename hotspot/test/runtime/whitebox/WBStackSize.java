@@ -39,7 +39,6 @@
  * Please file a test bug, if this is a problem.
  */
 
-import com.sun.management.HotSpotDiagnosticMXBean;
 import sun.hotspot.WhiteBox;
 
 public class WBStackSize {
@@ -81,8 +80,7 @@ public class WBStackSize {
     }
 
     public static void main(String[] args) {
-        HotSpotDiagnosticMXBean bean = sun.management.ManagementFactoryHelper.getDiagnosticMXBean();
-        long configStackSize = Long.valueOf(bean.getVMOption("ThreadStackSize").getValue()) * K;
+        long configStackSize = wb.getIntxVMFlag("ThreadStackSize") * K;
 
         System.out.println("ThreadStackSize VM option: " + configStackSize);
 

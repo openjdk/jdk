@@ -222,8 +222,8 @@ class BinaryConstantPool implements Constants {
      * Get a list of dependencies, ie: all the classes referenced in this
      * constant pool.
      */
-    public Vector getDependencies(Environment env) {
-        Vector v = new Vector();
+    public Vector<ClassDeclaration> getDependencies(Environment env) {
+        Vector<ClassDeclaration> v = new Vector<>();
         for (int i = 1 ; i < cpool.length ; i++) {
             switch(types[i]) {
               case CONSTANT_CLASS:
@@ -234,8 +234,9 @@ class BinaryConstantPool implements Constants {
         return v;
     }
 
-    Hashtable indexHashObject, indexHashAscii;
-    Vector MoreStuff;
+    Hashtable<Object, Integer> indexHashObject;
+    Hashtable<Object, Integer> indexHashAscii;
+    Vector<String> MoreStuff;
 
     /**
      * Find the index of an Object in the constant pool
@@ -243,7 +244,7 @@ class BinaryConstantPool implements Constants {
     public int indexObject(Object obj, Environment env) {
         if (indexHashObject == null)
             createIndexHash(env);
-        Integer result = (Integer)indexHashObject.get(obj);
+        Integer result = indexHashObject.get(obj);
         if (result == null)
             throw new IndexOutOfBoundsException("Cannot find object " + obj + " of type " +
                                 obj.getClass() + " in constant pool");
@@ -257,9 +258,9 @@ class BinaryConstantPool implements Constants {
     public int indexString(String string, Environment env) {
         if (indexHashObject == null)
             createIndexHash(env);
-        Integer result = (Integer)indexHashAscii.get(string);
+        Integer result = indexHashAscii.get(string);
         if (result == null) {
-            if (MoreStuff == null) MoreStuff = new Vector();
+            if (MoreStuff == null) MoreStuff = new Vector<>();
             result = cpool.length + MoreStuff.size();
             MoreStuff.addElement(string);
             indexHashAscii.put(string, result);
@@ -273,8 +274,8 @@ class BinaryConstantPool implements Constants {
      */
 
     public void createIndexHash(Environment env) {
-        indexHashObject = new Hashtable();
-        indexHashAscii = new Hashtable();
+        indexHashObject = new Hashtable<>();
+        indexHashAscii = new Hashtable<>();
         for (int i = 1; i < cpool.length; i++) {
             if (types[i] == CONSTANT_UTF8) {
                 indexHashAscii.put(cpool[i], i);
@@ -342,7 +343,7 @@ class BinaryConstantPool implements Constants {
             }
         }
         for (int i = cpool.length; i < length; i++) {
-            String string = (String)(MoreStuff.elementAt(i - cpool.length));
+            String string = MoreStuff.elementAt(i - cpool.length);
             out.writeByte(CONSTANT_UTF8);
             out.writeUTF(string);
         }

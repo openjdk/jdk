@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
@@ -232,19 +233,34 @@ public abstract class Node implements Cloneable {
     }
 
     //on change, we have to replace the entire list, that's we can't simple do ListIterator.set
-    static <T extends Node> List<T> accept(final NodeVisitor<? extends LexicalContext> visitor, final Class<T> clazz, final List<T> list) {
-        boolean changed = false;
-        final List<T> newList = new ArrayList<>();
-
-        for (final Node node : list) {
-            final T newNode = node == null ? null : clazz.cast(node.accept(visitor));
-            if (newNode != node) {
-                changed = true;
-            }
-            newList.add(newNode);
+    static <T extends Node> List<T> accept(final NodeVisitor<? extends LexicalContext> visitor, final List<T> list) {
+        final int size = list.size();
+        if (size == 0) {
+            return list;
         }
 
-        return changed ? newList : list;
+         List<T> newList = null;
+
+        for (int i = 0; i < size; i++) {
+            final T node = list.get(i);
+            @SuppressWarnings("unchecked")
+            final T newNode = node == null ? null : (T)node.accept(visitor);
+            if (newNode != node) {
+                if (newList == null) {
+                    newList = new ArrayList<>(size);
+                    for (int j = 0; j < i; j++) {
+                        newList.add(list.get(j));
+                    }
+                }
+                newList.add(newNode);
+            } else {
+                if (newList != null) {
+                    newList.add(node);
+                }
+            }
+        }
+
+        return newList == null ? list : newList;
     }
 
     static <T extends LexicalContextNode> T replaceInLexicalContext(final LexicalContext lc, final T oldNode, final T newNode) {

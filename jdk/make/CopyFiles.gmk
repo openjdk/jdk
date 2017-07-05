@@ -122,18 +122,13 @@ COPY_FILES += $(PSFONTPROPFILE_TARGET_FILES)
 
 ##########################################################################################
 #
-# Copy flavormap.properties, cursor.properties and cursors gif files to LIBDIR
+# Copy cursor.properties and cursors gif files to LIBDIR
 #
 ifneq ($(OPENJDK_TARGET_OS), macosx)
   OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib
 else
   OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/macosx/lib
 endif
-
-$(LIBDIR)/flavormap.properties: $(OPENJDK_TARGET_OS_LIB_SRC)/flavormap.properties
-	$(call install-file)
-
-COPY_FILES += $(LIBDIR)/flavormap.properties
 
 CURSORS_DEST_DIR = $(LIBDIR)/images/cursors
 CURSORS_OPENJDK_TARGET_OS_LIB_SRC = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/lib/images/cursors

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,23 +31,8 @@
 #include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_LinearScan.hpp"
 #include "c1/c1_ValueStack.hpp"
+#include "code/vmreg.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
-#ifdef TARGET_ARCH_x86
-# include "vmreg_x86.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "vmreg_sparc.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "vmreg_zero.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "vmreg_arm.inline.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "vmreg_ppc.inline.hpp"
-#endif
-
 
 #ifndef PRODUCT
 

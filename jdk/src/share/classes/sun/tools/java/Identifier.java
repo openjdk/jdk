@@ -58,7 +58,7 @@ class Identifier implements Constants {
     /**
      * The hashtable of identifiers
      */
-    static Hashtable hash = new Hashtable(3001, 0.5f);
+    static Hashtable<String, Identifier> hash = new Hashtable<>(3001, 0.5f);
 
     /**
      * The name of the identifier
@@ -115,7 +115,7 @@ class Identifier implements Constants {
      */
     public static synchronized Identifier lookup(String s) {
         //System.out.println("lookup(" + s + ")");
-        Identifier id = (Identifier)hash.get(s);
+        Identifier id = hash.get(s);
         if (id == null) {
             hash.put(s, id = new Identifier(s));
         }

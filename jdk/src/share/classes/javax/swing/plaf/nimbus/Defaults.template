@@ -398,7 +398,7 @@ ${UI_DEFAULT_INIT}
         @Override
         public Object createValue(UIDefaults table) {
             try {
-                Class c;
+                Class<?> c;
                 Object cl;
                 // See if we should use a separate ClassLoader
                 if (table == null || !((cl = table.get("ClassLoader"))
@@ -412,7 +412,7 @@ ${UI_DEFAULT_INIT}
                 }
 
                 c = Class.forName(className, true, (ClassLoader)cl);
-                Constructor constructor = c.getConstructor(
+                Constructor<?> constructor = c.getConstructor(
                         AbstractRegionPainter.PaintContext.class, int.class);
                 if (constructor == null) {
                     throw new NullPointerException(
@@ -564,7 +564,7 @@ ${UI_DEFAULT_INIT}
                 //if c is not named, and parts[partIndex] has an expected class
                 //type registered, then check to make sure c is of the
                 //right type;
-                Class clazz = parts[partIndex].c;
+                Class<?> clazz = parts[partIndex].c;
                 if (clazz != null && clazz.isAssignableFrom(c.getClass())) {
                     //so far so good, recurse
                     return matches(c.getParent(), partIndex - 1);
@@ -636,7 +636,7 @@ ${UI_DEFAULT_INIT}
             private String s;
             //true if this part represents a component name
             private boolean named;
-            private Class c;
+            private Class<?> c;
 
             Part(String s) {
                 named = s.charAt(0) == '"' && s.charAt(s.length() - 1) == '"';
@@ -816,7 +816,7 @@ ${UI_DEFAULT_INIT}
 
     private static final class PainterBorder implements Border, UIResource {
         private Insets insets;
-        private Painter painter;
+        private Painter<Component> painter;
         private String painterKey;
         
         PainterBorder(String painterKey, Insets insets) {
@@ -827,7 +827,9 @@ ${UI_DEFAULT_INIT}
         @Override
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
             if (painter == null) {
-                painter = (Painter)UIManager.get(painterKey);
+                @SuppressWarnings("unchecked")
+                Painter<Component> temp = (Painter<Component>)UIManager.get(painterKey);
+                painter = temp;
                 if (painter == null) return;
             }
             

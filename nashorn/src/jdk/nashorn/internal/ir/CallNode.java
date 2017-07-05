@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -175,10 +176,10 @@ public final class CallNode extends LexicalContextExpression implements Optimist
         if (visitor.enterCallNode(this)) {
             final CallNode newCallNode = (CallNode)visitor.leaveCallNode(
                     setFunction((Expression)function.accept(visitor)).
-                    setArgs(Node.accept(visitor, Expression.class, args)).
+                    setArgs(Node.accept(visitor, args)).
                     setEvalArgs(evalArgs == null ?
                             null :
-                            evalArgs.setArgs(Node.accept(visitor, Expression.class, evalArgs.getArgs()))));
+                            evalArgs.setArgs(Node.accept(visitor, evalArgs.getArgs()))));
             // Theoretically, we'd need to instead pass lc to every setter and do a replacement on each. In practice,
             // setType from TypeOverride can't accept a lc, and we don't necessarily want to go there now.
             if (this != newCallNode) {

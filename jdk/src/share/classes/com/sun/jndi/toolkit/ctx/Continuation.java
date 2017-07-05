@@ -172,7 +172,7 @@ public class Continuation extends ResolveResult {
      *
      * This method is typically called by _nns methods that have been
      * given a name to process. It might process part of that name but
-     * encountered some error. Consequenetly, it would call setErrorNNS()
+     * encountered some error. Consequently, it would call setErrorNNS()
      * with the remaining name. Since the _nns method was expected to
      * operate upon the "nns" of the original name, the remaining name
      * must include the "nns". That's why this method adds a trailing "/".
@@ -219,7 +219,7 @@ public class Continuation extends ResolveResult {
      *
      * This method is typically called by methods that have been
      * given a name to process. It might process part of that name but
-     * encountered some error. Consequenetly, it would call setError()
+     * encountered some error. Consequently, it would call setError()
      * with the resolved object and the remaining name.
      *<p>
      * After this method is called, isContinuing() returns false.

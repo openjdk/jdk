@@ -394,3 +394,112 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
     unlink(filename);
     return sizeArray;
 }
+
+/*
+ * Populates the supplied ArrayList<Integer> with resolutions.
+ * The first pair of elements will be the default resolution.
+ * If resolution isn't supported the list will be empty.
+ * If needed we can add a 2nd ArrayList<String> which would
+ * be populated with the corresponding UI name.
+ * PPD specifies the syntax for resolution as either "Ndpi" or "MxNdpi",
+ * eg 300dpi or 600x600dpi. The former is a shorthand where xres==yres.
+ * We will always expand to the latter as we use a single array list.
+ * Note: getMedia() and getPageSizes() both open the ppd file
+ * This is not going to scale forever so if we add anymore we
+ * should look to consolidate this.
+ */
+JNIEXPORT void JNICALL
+Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
+                                          jobject printObj,
+                                          jstring printer,
+                                          jobject arrayList)
+{
+    ppd_file_t *ppd = NULL;
+    ppd_option_t *resolution;
+    int defx = 0, defy = 0;
+    int resx = 0, resy = 0;
+    jclass intCls, cls;
+    jmethodID intCtr, arrListAddMID;
+    int i;
+
+    intCls = (*env)->FindClass(env, "java/lang/Integer");
+    CHECK_NULL(intCls);
+    intCtr = (*env)->GetMethodID(env, intCls, "<init>", "(I)V");
+    CHECK_NULL(intCtr);
+    cls = (*env)->FindClass(env, "java/util/ArrayList");
+    CHECK_NULL(cls);
+    arrListAddMID =
+        (*env)->GetMethodID(env, cls, "add", "(Ljava/lang/Object;)Z");
+    CHECK_NULL(arrListAddMID);
+
+    const char *name = (*env)->GetStringUTFChars(env, printer, NULL);
+    if (name == NULL) {
+        (*env)->ExceptionClear(env);
+        JNU_ThrowOutOfMemoryError(env, "Could not create printer name");
+    }
+    const char *filename;
+
+    // NOTE: cupsGetPPD returns a pointer to a filename of a temporary file.
+    // unlink() must be called to remove the file after using it.
+    filename = j2d_cupsGetPPD(name);
+    (*env)->ReleaseStringUTFChars(env, printer, name);
+    CHECK_NULL(filename);
+    if ((ppd = j2d_ppdOpenFile(filename)) == NULL) {
+        unlink(filename);
+        DPRINTF("unable to open PPD  %s\n", filename)
+    }
+    resolution = j2d_ppdFindOption(ppd, "Resolution");
+    if (resolution != NULL) {
+        int matches = sscanf(resolution->defchoice, "%dx%ddpi", &defx, &defy);
+        if (matches == 2) {
+           if (defx <= 0 || defy <= 0) {
+              defx = 0;
+              defy = 0;
+           }
+        } else {
+            matches = sscanf(resolution->defchoice, "%ddpi", &defx);
+            if (matches == 1) {
+                if (defx <= 0) {
+                   defx = 0;
+                } else {
+                   defy = defx;
+                }
+            }
+        }
+        if (defx > 0) {
+          jobject rxObj = (*env)->NewObject(env, intCls, intCtr, defx);
+          jobject ryObj = (*env)->NewObject(env, intCls, intCtr, defy);
+          (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
+          (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
+        }
+
+        for (i = 0; i < resolution->num_choices; i++) {
+            char *resStr = resolution->choices[i].choice;
+            int matches = sscanf(resStr, "%dx%ddpi", &resx, &resy);
+            if (matches == 2) {
+               if (resx <= 0 || resy <= 0) {
+                  resx = 0;
+                  resy = 0;
+               }
+            } else {
+                matches = sscanf(resStr, "%ddpi", &resx);
+                if (matches == 1) {
+                    if (resx <= 0) {
+                       resx = 0;
+                    } else {
+                       resy = resx;
+                    }
+                }
+            }
+            if (resx > 0 && (resx != defx || resy != defy )) {
+              jobject rxObj = (*env)->NewObject(env, intCls, intCtr, resx);
+              jobject ryObj = (*env)->NewObject(env, intCls, intCtr, resy);
+              (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
+              (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
+            }
+        }
+    }
+
+    j2d_ppdClose(ppd);
+    unlink(filename);
+}

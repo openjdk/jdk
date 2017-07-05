@@ -61,7 +61,7 @@ class SuperExpression extends ThisExpression {
     /**
      * Check expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = checkCommon(env, ctx, vset, exp);
         if (type != Type.tError) {
             // "super" is not allowed in this context:
@@ -74,13 +74,13 @@ class SuperExpression extends ThisExpression {
      * Check if the present name is part of a scoping prefix.
      */
     public Vset checkAmbigName(Environment env, Context ctx,
-                               Vset vset, Hashtable exp,
+                               Vset vset, Hashtable<Object, Object> exp,
                                UnaryExpression loc) {
         return checkCommon(env, ctx, vset, exp);
     }
 
     /** Common code for checkValue and checkAmbigName */
-    private Vset checkCommon(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    private Vset checkCommon(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         ClassDeclaration superClass = ctx.field.getClassDefinition().getSuperClass();
         if (superClass == null) {
             env.error(where, "undef.var", idSuper);

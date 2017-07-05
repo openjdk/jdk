@@ -162,7 +162,7 @@ final public class LdapURL extends Uri {
     }
 
     /**
-     * Derermines whether an LDAP URL has query components.
+     * Determines whether an LDAP URL has query components.
      */
     public static boolean hasQueryComponents(String url) {
         return (url.lastIndexOf('?') != -1);

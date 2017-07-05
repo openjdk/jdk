@@ -131,7 +131,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         c.setSelectionBackground(UIManager.getColor(bgName));
     }
 
-    static void swapSelectionColors(final String prefix, final JList c, final Object value) {
+    static void swapSelectionColors(final String prefix, final JList<?> c, final Object value) {
         if (!isComponentValid(c)) return;
 
         final Color bg = c.getSelectionBackground();
@@ -149,7 +149,7 @@ public class AquaFocusHandler implements FocusListener, PropertyChangeListener {
         }
     }
 
-    static void setSelectionColors(final JList c, final String fgName, final String bgName) {
+    static void setSelectionColors(final JList<?> c, final String fgName, final String bgName) {
         c.setSelectionForeground(UIManager.getColor(fgName));
         c.setSelectionBackground(UIManager.getColor(bgName));
     }

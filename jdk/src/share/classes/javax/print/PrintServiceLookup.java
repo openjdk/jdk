@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,6 @@ public abstract class PrintServiceLookup {
      * available that is not part of the installation.
      * If the lookup service is already registered, or cannot be registered,
      * the method returns false.
-     * <p>
      *
      * @param sp an implementation of a lookup service.
      * @return <code>true</code> if the new lookup service is newly
@@ -305,7 +304,6 @@ public abstract class PrintServiceLookup {
     * <p>
     * Locates MultiDoc print services which can be positively confirmed
     * to support the combination of attributes and DocFlavors specified.
-    * <p>
     *
     * @param flavors of documents required. If null or empty it is ignored.
     * @param attributes required to be supported. If null this

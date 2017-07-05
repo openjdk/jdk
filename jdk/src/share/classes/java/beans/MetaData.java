@@ -123,13 +123,13 @@ static final class ArrayPersistenceDelegate extends PersistenceDelegate {
         Class<?> oldClass = oldInstance.getClass();
         return new Expression(oldInstance, Array.class, "newInstance",
                    new Object[]{oldClass.getComponentType(),
-                                new Integer(Array.getLength(oldInstance))});
+                                Array.getLength(oldInstance)});
         }
 
     protected void initialize(Class<?> type, Object oldInstance, Object newInstance, Encoder out) {
         int n = Array.getLength(oldInstance);
         for (int i = 0; i < n; i++) {
-            Object index = new Integer(i);
+            Object index = i;
             // Expression oldGetExp = new Expression(Array.class, "get", new Object[]{oldInstance, index});
             // Expression newGetExp = new Expression(Array.class, "get", new Object[]{newInstance, index});
             Expression oldGetExp = new Expression(oldInstance, "get", new Object[]{index});
@@ -635,7 +635,7 @@ static class java_util_List_PersistenceDelegate extends DefaultPersistenceDelega
             newSize = 0;
         }
         for (int i = 0; i < newSize; i++) {
-            Object index = new Integer(i);
+            Object index = i;
 
             Expression oldGetExp = new Expression(oldInstance, "get", new Object[]{index});
             Expression newGetExp = new Expression(newInstance, "get", new Object[]{index});
@@ -892,7 +892,7 @@ static final class java_awt_MenuShortcut_PersistenceDelegate extends Persistence
     protected Expression instantiate(Object oldInstance, Encoder out) {
         java.awt.MenuShortcut m = (java.awt.MenuShortcut)oldInstance;
         return new Expression(oldInstance, m.getClass(), "new",
-                   new Object[]{new Integer(m.getKey()), Boolean.valueOf(m.usesShiftModifier())});
+                   new Object[]{m.getKey(), Boolean.valueOf(m.usesShiftModifier())});
     }
 }
 

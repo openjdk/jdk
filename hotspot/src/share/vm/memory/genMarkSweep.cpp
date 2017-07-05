@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,6 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool c
   // When collecting the permanent generation Method*s may be moving,
   // so we either have to flush all bcp data or convert it into bci.
   CodeCache::gc_prologue();
-  Threads::gc_prologue();
 
   // Increment the invocation count
   _total_invocations++;
@@ -132,7 +131,6 @@ void GenMarkSweep::invoke_at_safepoint(int level, ReferenceProcessor* rp, bool c
     rs->invalidate_or_clear(old_gen);
   }
 
-  Threads::gc_epilogue();
   CodeCache::gc_epilogue();
   JvmtiExport::gc_epilogue();
 

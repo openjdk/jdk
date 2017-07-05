@@ -56,7 +56,7 @@ class SynchronizedStatement extends Statement {
     /**
      * Check statement
      */
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         checkLabel(env, ctx);
         CheckContext newctx = new CheckContext(ctx, this);
         vset = reach(env, vset);

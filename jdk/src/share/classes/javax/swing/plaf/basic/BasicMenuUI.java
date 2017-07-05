@@ -48,7 +48,14 @@ import java.util.ArrayList;
  */
 public class BasicMenuUI extends BasicMenuItemUI
 {
+    /**
+     * The instance of {@code ChangeListener}.
+     */
     protected ChangeListener         changeListener;
+
+    /**
+     * The instance of {@code MenuListener}.
+     */
     protected MenuListener           menuListener;
 
     private int lastMnemonic = 0;
@@ -63,6 +70,12 @@ public class BasicMenuUI extends BasicMenuItemUI
 
     private static boolean crossMenuMnemonic = true;
 
+    /**
+     * Constructs a new instance of {@code BasicMenuUI}.
+     *
+     * @param x a component
+     * @return a new instance of {@code BasicMenuUI}
+     */
     public static ComponentUI createUI(JComponent x) {
         return new BasicMenuUI();
     }
@@ -152,10 +165,22 @@ public class BasicMenuUI extends BasicMenuItemUI
         return getHandler();
     }
 
+    /**
+     * Returns an instance of {@code MenuListener}.
+     *
+     * @param c a component
+     * @return an instance of {@code MenuListener}
+     */
     protected MenuListener createMenuListener(JComponent c) {
         return null;
     }
 
+    /**
+     * Returns an instance of {@code ChangeListener}.
+     *
+     * @param c a component
+     * @return an instance of {@code ChangeListener}
+     */
     protected ChangeListener createChangeListener(JComponent c) {
         return null;
     }
@@ -208,6 +233,11 @@ public class BasicMenuUI extends BasicMenuItemUI
         return null;
     }
 
+    /**
+     * Sets timer to the {@code menu}.
+     *
+     * @param menu an instance of {@code JMenu}.
+     */
     protected void setupPostTimer(JMenu menu) {
         Timer timer = new Timer(menu.getDelay(), new Actions(
                                     Actions.SELECT, menu,false));
@@ -388,11 +418,32 @@ public class BasicMenuUI extends BasicMenuItemUI
      * is now obsolete. KeyBindings are now managed by the popup menu.
      */
     public class ChangeHandler implements ChangeListener {
+        /**
+         * The instance of {@code JMenu}.
+         */
         public JMenu    menu;
+
+        /**
+         * The instance of {@code BasicMenuUI}.
+         */
         public BasicMenuUI ui;
+
+        /**
+         * {@code true} if an item of popup menu is selected.
+         */
         public boolean  isSelected = false;
+
+        /**
+         * The component that was focused.
+         */
         public Component wasFocused;
 
+        /**
+         * Constructs a new instance of {@code ChangeHandler}.
+         *
+         * @param m an instance of {@code JMenu}
+         * @param ui an instance of {@code BasicMenuUI}
+         */
         public ChangeHandler(JMenu m, BasicMenuUI ui) {
             menu = m;
             this.ui = ui;

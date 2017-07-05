@@ -57,7 +57,7 @@ public class CInputMethodDescriptor implements InputMethodDescriptor {
     }
 
     static Object[] getAvailableLocalesInternal() {
-        List workList = nativeGetAvailableLocales();
+        List<?> workList = nativeGetAvailableLocales();
 
         if (workList != null) {
             return workList.toArray();
@@ -119,5 +119,5 @@ public class CInputMethodDescriptor implements InputMethodDescriptor {
     }
 
     private static native void nativeInit();
-    private static native List nativeGetAvailableLocales();
+    private static native List<?> nativeGetAvailableLocales();
 }

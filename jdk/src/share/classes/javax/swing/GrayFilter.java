@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ public class GrayFilter extends RGBImageFilter {
 
     /**
      * Creates a disabled image
+     *
+     * @param i  an {@code Image} to be created as disabled
+     * @return  the new grayscale image created from {@code i}
      */
     public static Image createDisabledImage (Image i) {
         GrayFilter filter = new GrayFilter(true, 50);

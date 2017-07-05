@@ -212,7 +212,7 @@ class Main implements Constants {
 //end JCOV
         int flags = F_WARNINGS | F_DEBUG_LINES | F_DEBUG_SOURCE;
         long tm = System.currentTimeMillis();
-        Vector v = new Vector();
+        Vector<String> v = new Vector<>();
         boolean nowrite = false;
         String props = null;
         String encoding = null;
@@ -500,8 +500,8 @@ class Main implements Constants {
 
         try {
             // Parse all input files
-            for (Enumeration e = v.elements() ; e.hasMoreElements() ;) {
-                File file = new File((String)e.nextElement());
+            for (Enumeration<String> e = v.elements() ; e.hasMoreElements() ;) {
+                File file = new File(e.nextElement());
                 try {
                     env.parseFile(new ClassFile(file));
                 } catch (FileNotFoundException ee) {
@@ -512,8 +512,8 @@ class Main implements Constants {
 
             // Do a post-read check on all newly-parsed classes,
             // after they have all been read.
-            for (Enumeration e = env.getClasses() ; e.hasMoreElements() ; ) {
-                ClassDeclaration c = (ClassDeclaration)e.nextElement();
+            for (Enumeration<ClassDeclaration> e = env.getClasses() ; e.hasMoreElements() ; ) {
+                ClassDeclaration c = e.nextElement();
                 if (c.getStatus() == CS_PARSED) {
                     if (c.getClassDefinition().isLocal())
                         continue;
@@ -531,8 +531,8 @@ class Main implements Constants {
             do {
                 done = true;
                 env.flushErrors();
-                for (Enumeration e = env.getClasses() ; e.hasMoreElements() ; ) {
-                    ClassDeclaration c = (ClassDeclaration)e.nextElement();
+                for (Enumeration<ClassDeclaration> e = env.getClasses() ; e.hasMoreElements() ; ) {
+                    ClassDeclaration c = e.nextElement();
                     SourceClass src;
 
                     switch (c.getStatus()) {
