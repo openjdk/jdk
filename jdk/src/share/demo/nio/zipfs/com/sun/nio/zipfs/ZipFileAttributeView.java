@@ -32,7 +32,6 @@
 
 package com.sun.nio.zipfs;
 
-import java.nio.file.ReadOnlyFileSystemException;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileTime;
@@ -113,6 +112,10 @@ public class ZipFileAttributeView implements BasicFileAttributeView
         try {
             if (AttrID.valueOf(attribute) == AttrID.lastModifiedTime)
                 setTimes ((FileTime)value, null, null);
+            if (AttrID.valueOf(attribute) == AttrID.lastAccessTime)
+                setTimes (null, (FileTime)value, null);
+            if (AttrID.valueOf(attribute) == AttrID.creationTime)
+                setTimes (null, null, (FileTime)value);
             return;
         } catch (IllegalArgumentException x) {}
         throw new UnsupportedOperationException("'" + attribute +

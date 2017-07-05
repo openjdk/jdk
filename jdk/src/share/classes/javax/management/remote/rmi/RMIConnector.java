@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -291,7 +291,24 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             if (tracing)
                 logger.trace("connect",idstr + " getting connection...");
             Object credentials = usemap.get(CREDENTIALS);
-            connection = getConnection(stub, credentials, checkStub);
+
+            try {
+                connection = getConnection(stub, credentials, checkStub);
+            } catch (java.rmi.RemoteException re) {
+                if (jmxServiceURL != null) {
+                    final String pro = jmxServiceURL.getProtocol();
+                    final String path = jmxServiceURL.getURLPath();
+
+                    if ("rmi".equals(pro) &&
+                        path.startsWith("/jndi/iiop:")) {
+                        MalformedURLException mfe = new MalformedURLException(
+                              "Protocol is rmi but JNDI scheme is iiop: " + jmxServiceURL);
+                        mfe.initCause(re);
+                        throw mfe;
+                    }
+                }
+                throw re;
+            }
 
             // Always use one of:
             //   ClassLoader provided in Map at connect time,

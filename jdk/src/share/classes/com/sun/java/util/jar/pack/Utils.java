@@ -25,18 +25,27 @@
 
 package com.sun.java.util.jar.pack;
 
-import com.sun.java.util.jar.pack.Attribute.Layout;
 import com.sun.java.util.jar.pack.ConstantPool.ClassEntry;
 import com.sun.java.util.jar.pack.ConstantPool.DescriptorEntry;
 import com.sun.java.util.jar.pack.ConstantPool.LiteralEntry;
 import com.sun.java.util.jar.pack.ConstantPool.MemberEntry;
 import com.sun.java.util.jar.pack.ConstantPool.SignatureEntry;
 import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
-import java.util.*;
-import java.util.jar.*;
-import java.util.zip.*;
-import java.io.*;
-
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
 import sun.util.logging.PlatformLogger;
 
 class Utils {

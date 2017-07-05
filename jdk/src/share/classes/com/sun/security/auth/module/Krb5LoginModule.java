@@ -27,7 +27,6 @@
 package com.sun.security.auth.module;
 
 import java.io.*;
-import java.net.*;
 import java.text.MessageFormat;
 import java.util.*;
 
@@ -38,9 +37,6 @@ import javax.security.auth.login.*;
 import javax.security.auth.spi.*;
 
 import sun.security.krb5.*;
-import sun.security.krb5.Config;
-import sun.security.krb5.RealmException;
-import sun.security.util.AuthResources;
 import sun.security.jgss.krb5.Krb5Util;
 import sun.security.krb5.Credentials;
 import sun.misc.HexDumpEncoder;
@@ -685,32 +681,27 @@ public class Krb5LoginModule implements LoginModule {
                     }
 
                 }
+
+                KrbAsReqBuilder builder;
                 // We can't get the key from the keytab so prompt
                 if (encKeys == null) {
                     promptForPass(getPasswdFromSharedState);
-
-                    encKeys = EncryptionKey.acquireSecretKeys(
-                        password, principal.getSalt());
-
+                    builder = new KrbAsReqBuilder(principal, password);
                     if (isInitiator) {
-                        if (debug)
-                            System.out.println("Acquire TGT using AS Exchange");
-                        cred = Credentials.acquireTGT(principal,
-                                                encKeys, password);
-                        // update keys after pre-auth
-                        encKeys = EncryptionKey.acquireSecretKeys(password,
-                                                        principal.getSalt());
+                        // XXX Even if isInitiator=false, it might be
+                        // better to do an AS-REQ so that keys can be
+                        // updated with PA info
+                        cred = builder.action().getCreds();
                     }
+                    encKeys = builder.getKeys();
                 } else {
+                    builder = new KrbAsReqBuilder(principal, encKeys);
                     if (isInitiator) {
-                        if (debug)
-                            System.out.println("Acquire TGT using AS Exchange");
-                        cred = Credentials.acquireTGT(principal,
-                                                encKeys, password);
+                        cred = builder.action().getCreds();
                     }
                 }
+                builder.destroy();
 
-                // Get the TGT using AS Exchange
                 if (debug) {
                     System.out.println("principal is " + principal);
                     HexDumpEncoder hd = new HexDumpEncoder();
@@ -780,7 +771,7 @@ public class Krb5LoginModule implements LoginModule {
                 Callback[] callbacks = new Callback[1];
                 MessageFormat form = new MessageFormat(
                                        rb.getString(
-                                       "Kerberos username [[defUsername]]: "));
+                                       "Kerberos.username.defUsername."));
                 Object[] source =  {defUsername};
                 callbacks[0] = new NameCallback(form.format(source));
                 callbackHandler.handle(callbacks);
@@ -835,7 +826,7 @@ public class Krb5LoginModule implements LoginModule {
                 String userName = krb5PrincName.toString();
                 MessageFormat form = new MessageFormat(
                                          rb.getString(
-                                         "Kerberos password for [username]: "));
+                                         "Kerberos.password.for.username."));
                 Object[] source = {userName};
                 callbacks[0] = new PasswordCallback(
                                                     form.format(source),

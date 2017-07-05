@@ -51,8 +51,8 @@ import javax.net.ssl.HttpsURLConnection;
  */
 class SunConnection {
 
-    private static String JDK_REGISTRATION_URL = "https://inventory.sun.com/";
-    private static String SANDBOX_TESTING_URL = "https://inventory-beta.sun.com/";
+    private static String JDK_REGISTRATION_URL = "https://hs-ws1.oracle.com/";
+    private static String SANDBOX_TESTING_URL = "https://hs-ws1-tst.oracle.com/";
     private static String REGISTRATION_WEB_PATH = "RegistrationWeb/register";
 
     // System properties for testing

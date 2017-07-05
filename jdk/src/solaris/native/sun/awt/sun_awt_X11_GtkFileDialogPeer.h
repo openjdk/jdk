@@ -11,6 +11,14 @@ extern "C"
 
 /*
  * Class:     sun_awt_X11_GtkFileDialogPeer
+ * Method:    initIDs
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_sun_awt_X11_GtkFileDialogPeer_initIDs
+(JNIEnv *, jclass);
+
+/*
+ * Class:     sun_awt_X11_GtkFileDialogPeer
  * Method:    run
  * Signature: (Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/io/FilenameFilter;Z;)V
  */

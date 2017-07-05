@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4684810
+ * @bug 4684810 6994717
  * @summary Verify that RFC822 name constraints are checked correctly
  */
 
@@ -38,6 +38,7 @@ import java.security.cert.PKIXReason;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -100,6 +101,9 @@ public final class ValidateCertPath {
         Set<TrustAnchor> anchors = Collections.singleton(anchor);
         params = new PKIXParameters(anchors);
         params.setRevocationEnabled(false);
+        // The certificates expired on 10/22/10, so set the validity date to
+        // 05/01/2009 to avoid expiration failures
+        params.setDate(new Date(1243828800000l));
     }
 
     /*
