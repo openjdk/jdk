@@ -1652,12 +1652,10 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 void CompileBroker::handle_full_code_cache() {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
-    CompilerThread* thread = CompilerThread::current();
-    CompileLog* log = thread->log();
-    if (log != NULL) {
-      log->begin_elem("code_cache_full");
-      log->stamp();
-      log->end_elem();
+    if (xtty != NULL) {
+      xtty->begin_elem("code_cache_full");
+      xtty->stamp();
+      xtty->end_elem();
     }
     warning("CodeCache is full. Compiler has been disabled.");
     warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");

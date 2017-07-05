@@ -59,14 +59,20 @@ public:
   inline void record_steal(bool success);
   inline void record_overflow(size_t new_length);
 
+  TaskQueueStats & operator +=(const TaskQueueStats & addend);
+
   inline size_t get(StatId id) const { return _stats[id]; }
   inline const size_t* get() const   { return _stats; }
 
   inline void reset();
 
+  // Print the specified line of the header (does not include a line separator).
   static void print_header(unsigned int line, outputStream* const stream = tty,
                            unsigned int width = 10);
+  // Print the statistics (does not include a line separator).
   void print(outputStream* const stream = tty, unsigned int width = 10) const;
+
+  DEBUG_ONLY(void verify() const;)
 
 private:
   size_t                    _stats[last_stat_id];

@@ -507,6 +507,7 @@ class CMSCollector: public CHeapObj {
   friend class VM_CMS_Operation;
   friend class VM_CMS_Initial_Mark;
   friend class VM_CMS_Final_Remark;
+  friend class TraceCMSMemoryManagerStats;
 
  private:
   jlong _time_of_last_gc;
@@ -1009,10 +1010,10 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // Non-product stat counters
   NOT_PRODUCT(
-    int _numObjectsPromoted;
-    int _numWordsPromoted;
-    int _numObjectsAllocated;
-    int _numWordsAllocated;
+    size_t _numObjectsPromoted;
+    size_t _numWordsPromoted;
+    size_t _numObjectsAllocated;
+    size_t _numWordsAllocated;
   )
 
   // Used for sizing decisions
@@ -1858,3 +1859,11 @@ public:
     _dead_bit_map(dead_bit_map) {}
   size_t do_blk(HeapWord* addr);
 };
+
+class TraceCMSMemoryManagerStats : public TraceMemoryManagerStats {
+
+ public:
+  TraceCMSMemoryManagerStats(CMSCollector::CollectorState phase);
+  TraceCMSMemoryManagerStats();
+};
+

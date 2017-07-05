@@ -1035,22 +1035,47 @@ Zone	Europe/Tallinn	1:39:00	-	LMT	1880
 			2:00	EU	EE%sT
 
 # Finland
-#
+
 # From Hannu Strang (1994-09-25 06:03:37 UTC):
 # Well, here in Helsinki we're just changing from summer time to regular one,
 # and it's supposed to change at 4am...
+
+# From Janne Snabb (2010-0715):
 #
-# From Paul Eggert (2006-03-22):
-# Shanks & Pottenger say Finland has switched at 02:00 standard time
-# since 1981.  Go with Strang instead.
+# I noticed that the Finland data is not accurate for years 1981 and 1982.
+# During these two first trial years the DST adjustment was made one hour
+# earlier than in forthcoming years. Starting 1983 the adjustment was made
+# according to the central European standards.
 #
+# This is documented in Heikki Oja: Aikakirja 2007, published by The Almanac
+# Office of University of Helsinki, ISBN 952-10-3221-9, available online (in
+# Finnish) at
+#
+# <a href="http://almanakka.helsinki.fi/aikakirja/Aikakirja2007kokonaan.pdf">
+# http://almanakka.helsinki.fi/aikakirja/Aikakirja2007kokonaan.pdf
+# </a>
+#
+# Page 105 (56 in PDF version) has a handy table of all past daylight savings
+# transitions. It is easy enough to interpret without Finnish skills.
+#
+# This is also confirmed by Finnish Broadcasting Company's archive at:
+#
+# <a href="http://www.yle.fi/elavaarkisto/?s=s&g=1&ag=5&t=&a=3401">
+# http://www.yle.fi/elavaarkisto/?s=s&g=1&ag=5&t=&a=3401
+# </a>
+#
+# The news clip from 1981 says that "the time between 2 and 3 o'clock does not
+# exist tonight."
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Finland	1942	only	-	Apr	3	0:00	1:00	S
 Rule	Finland	1942	only	-	Oct	3	0:00	0	-
+Rule	Finland	1981	1982	-	Mar	lastSun	2:00	1:00	S
+Rule	Finland	1981	1982	-	Sep	lastSun	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Helsinki	1:39:52 -	LMT	1878 May 31
 			1:39:52	-	HMT	1921 May    # Helsinki Mean Time
-			2:00	Finland	EE%sT	1981 Mar 29 2:00
+			2:00	Finland	EE%sT	1983
 			2:00	EU	EE%sT
 
 # Aaland Is

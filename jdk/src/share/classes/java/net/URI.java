@@ -856,9 +856,7 @@ public final class URI
         try {
             return new URI(str);
         } catch (URISyntaxException x) {
-            IllegalArgumentException y = new IllegalArgumentException();
-            y.initCause(x);
-            throw y;
+            throw new IllegalArgumentException(x.getMessage(), x);
         }
     }
 

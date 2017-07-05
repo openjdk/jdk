@@ -273,41 +273,8 @@ ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_DEFN_m)
 
 #ifndef SERIALGC
 template <class T>
-void specialized_oop_copy_contents(instanceRefKlass *ref,
-                                   PSPromotionManager* pm, oop obj) {
-  assert(!pm->depth_first(), "invariant");
-  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
-  if (PSScavenge::should_scavenge(referent_addr)) {
-    ReferenceProcessor* rp = PSScavenge::reference_processor();
-    if (rp->discover_reference(obj, ref->reference_type())) {
-      // reference already enqueued, referent and next will be traversed later
-      ref->instanceKlass::oop_copy_contents(pm, obj);
-      return;
-    } else {
-      // treat referent as normal oop
-      pm->claim_or_forward_breadth(referent_addr);
-    }
-  }
-  // treat next as normal oop
-  T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
-  if (PSScavenge::should_scavenge(next_addr)) {
-    pm->claim_or_forward_breadth(next_addr);
-  }
-  ref->instanceKlass::oop_copy_contents(pm, obj);
-}
-
-void instanceRefKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  if (UseCompressedOops) {
-    specialized_oop_copy_contents<narrowOop>(this, pm, obj);
-  } else {
-    specialized_oop_copy_contents<oop>(this, pm, obj);
-  }
-}
-
-template <class T>
 void specialized_oop_push_contents(instanceRefKlass *ref,
                                    PSPromotionManager* pm, oop obj) {
-  assert(pm->depth_first(), "invariant");
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
   if (PSScavenge::should_scavenge(referent_addr)) {
     ReferenceProcessor* rp = PSScavenge::reference_processor();

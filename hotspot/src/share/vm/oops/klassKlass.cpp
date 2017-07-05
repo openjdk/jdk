@@ -161,9 +161,6 @@ int klassKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void klassKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-}
-
 void klassKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
 }
 
