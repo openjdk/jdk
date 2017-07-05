@@ -382,6 +382,11 @@ JavaMain(void * _args)
         exit(1);
     }
 
+    if (showSettings != NULL) {
+        ShowSettings(env, showSettings);
+        CHECK_EXCEPTION_LEAVE(1);
+    }
+
     if (printVersion || showVersion) {
         PrintJavaVersion(env, showVersion);
         CHECK_EXCEPTION_LEAVE(0);
@@ -390,10 +395,6 @@ JavaMain(void * _args)
         }
     }
 
-    if (showSettings != NULL) {
-        ShowSettings(env, showSettings);
-        CHECK_EXCEPTION_LEAVE(1);
-    }
     /* If the user specified neither a class name nor a JAR file */
     if (printXUsage || printUsage || what == 0 || mode == LM_UNKNOWN) {
         PrintUsage(env, printXUsage);

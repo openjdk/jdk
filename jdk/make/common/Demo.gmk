@@ -319,9 +319,12 @@ $(DEMO_LIBRARY): $(DEMO_FULL_OBJECTS)
 	@$(prep-target)
   ifeq ($(PLATFORM),windows)
 	$(RC) $(RC_FLAGS) $(CC_OBJECT_OUTPUT_FLAG)$(DEMO_VERSION_INFO) $(VERSIONINFO_RESOURCE)
-  endif
-	$(LINK.demo) $(SHARED_LIBRARY_FLAG) $(CC_PROGRAM_OUTPUT_FLAG)$@ \
+	$(LINK.demo) $(SHARED_LIBRARY_FLAG) -Fe$@ \
 	    $(DEMO_FULL_OBJECTS) $(LDLIBS.demo)
+  else
+	$(LINK.demo) $(SHARED_LIBRARY_FLAG) -o $@ \
+	    $(DEMO_FULL_OBJECTS) $(LDLIBS.demo)
+  endif
 	@$(call binary_file_verification,$@)
 
   # Generation of any javah include file, make sure objects are dependent on it

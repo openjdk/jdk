@@ -31,6 +31,9 @@ BUILDDIR = ../..
 PACKAGE = com.sun.tools.example.debug.tty
 PRODUCT = jpda
 PROGRAM = jdb
+JAVAC_MAX_WARNINGS = true
+JAVAC_WARNINGS_FATAL = true
+
 include $(BUILDDIR)/common/Defs.gmk
 
 # This program must contain a manifest that defines the execution level
