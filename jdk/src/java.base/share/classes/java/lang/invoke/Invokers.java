@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,9 +305,7 @@ class Invokers {
     /** Static definition of MethodHandle.invokeExact checking code. */
     /*non-public*/ static
     @ForceInline
-    void checkExactType(Object mhObj, Object expectedObj) {
-        MethodHandle mh = (MethodHandle) mhObj;
-        MethodType expected = (MethodType) expectedObj;
+    void checkExactType(MethodHandle mh, MethodType expected) {
         MethodType actual = mh.type();
         if (actual != expected)
             throw newWrongMethodTypeException(expected, actual);
@@ -319,9 +317,7 @@ class Invokers {
      */
     /*non-public*/ static
     @ForceInline
-    Object checkGenericType(Object mhObj, Object expectedObj) {
-        MethodHandle mh = (MethodHandle) mhObj;
-        MethodType expected = (MethodType) expectedObj;
+    MethodHandle checkGenericType(MethodHandle mh,  MethodType expected) {
         return mh.asType(expected);
         /* Maybe add more paths here.  Possible optimizations:
          * for (R)MH.invoke(a*),
@@ -390,14 +386,13 @@ class Invokers {
     /** Static definition of MethodHandle.invokeGeneric checking code. */
     /*non-public*/ static
     @ForceInline
-    Object getCallSiteTarget(Object site) {
-        return ((CallSite)site).getTarget();
+    MethodHandle getCallSiteTarget(CallSite site) {
+        return site.getTarget();
     }
 
     /*non-public*/ static
     @ForceInline
-    void checkCustomized(Object o) {
-        MethodHandle mh = (MethodHandle)o;
+    void checkCustomized(MethodHandle mh) {
         if (MethodHandleImpl.isCompileConstant(mh)) return;
         if (mh.form.customized == null) {
             maybeCustomize(mh);
@@ -425,13 +420,13 @@ class Invokers {
         try {
             NamedFunction nfs[] = {
                 NF_checkExactType = new NamedFunction(Invokers.class
-                        .getDeclaredMethod("checkExactType", Object.class, Object.class)),
+                        .getDeclaredMethod("checkExactType", MethodHandle.class,  MethodType.class)),
                 NF_checkGenericType = new NamedFunction(Invokers.class
-                        .getDeclaredMethod("checkGenericType", Object.class, Object.class)),
+                        .getDeclaredMethod("checkGenericType", MethodHandle.class,  MethodType.class)),
                 NF_getCallSiteTarget = new NamedFunction(Invokers.class
-                        .getDeclaredMethod("getCallSiteTarget", Object.class)),
+                        .getDeclaredMethod("getCallSiteTarget", CallSite.class)),
                 NF_checkCustomized = new NamedFunction(Invokers.class
-                        .getDeclaredMethod("checkCustomized", Object.class))
+                        .getDeclaredMethod("checkCustomized", MethodHandle.class))
             };
             // Each nf must be statically invocable or we get tied up in our bootstraps.
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(nfs));

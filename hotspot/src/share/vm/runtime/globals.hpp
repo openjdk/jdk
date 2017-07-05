@@ -2966,16 +2966,16 @@ public:
                                                                             \
   product(intx,  AllocatePrefetchLines, 3,                                  \
           "Number of lines to prefetch ahead of array allocation pointer")  \
-          range(1, max_jint / 2)                                            \
+          range(1, 64)                                                      \
                                                                             \
   product(intx,  AllocateInstancePrefetchLines, 1,                          \
           "Number of lines to prefetch ahead of instance allocation "       \
           "pointer")                                                        \
-          range(1, max_jint / 2)                                            \
+          range(1, 64)                                                      \
                                                                             \
   product(intx,  AllocatePrefetchStepSize, 16,                              \
           "Step size in bytes of sequential prefetch instructions")         \
-          range(1, max_jint)                                                \
+          range(1, 512)                                                     \
           constraint(AllocatePrefetchStepSizeConstraintFunc,AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchInstr, 0,                                  \

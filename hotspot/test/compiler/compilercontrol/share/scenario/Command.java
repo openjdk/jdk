@@ -32,8 +32,8 @@ import java.util.Arrays;
 public enum Command {
     COMPILEONLY("compileonly", ".*", "-Xbatch"),
     EXCLUDE("exclude", "", "-Xbatch"),
-    INLINE("inline", ".*"),
-    DONTINLINE("dontinline", ""),
+    INLINE("inline", ".*", "-Xbatch"),
+    DONTINLINE("dontinline", "", "-Xbatch"),
     LOG("log", "", "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+LogCompilation", "-XX:LogFile=" + LogProcessor.LOG_FILE),
     PRINT("print", ""),

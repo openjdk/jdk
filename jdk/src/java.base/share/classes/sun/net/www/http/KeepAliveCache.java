@@ -30,7 +30,7 @@ import java.io.NotSerializableException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.net.URL;
-import sun.misc.InnocuousThread;
+import jdk.internal.misc.InnocuousThread;
 
 /**
  * A class that implements a cache of idle Http connections for keep-alive
