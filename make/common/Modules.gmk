@@ -391,7 +391,10 @@ define ReadSingleImportMetaData
       else ifeq ($$(classloader), ext)
         PLATFORM_MODULES += $1
       endif
-      DOCS_MODULES += $1
+      ifneq ($$(include_in_docs), false)
+        # defaults to true if unspecified
+        DOCS_MODULES += $1
+      endif
     else
       # Default to include in all
       JRE_MODULES += $1

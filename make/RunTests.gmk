@@ -299,6 +299,12 @@ define SetupRunJtregTestBody
   $1_TEST_NAME := $$(strip $$(patsubst jtreg:%, %, $$($1_TEST)))
   $1_COMPONENT := $$(firstword $$(subst /, $$(SPACE), $$($1_TEST_NAME)))
 
+  ifeq ($$(JT_HOME), )
+    $$(info Error: jtreg framework is not found.)
+    $$(info Please run configure using --with-jtreg.)
+    $$(error Cannot continue)
+  endif
+
   # Unfortunately, we need different defaults for some JTREG values,
   # depending on what component we're running.
 
