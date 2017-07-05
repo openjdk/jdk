@@ -778,6 +778,10 @@ PRINT(" SetUpCGContext")
             qsdo->graphicsStateInfo.simpleStroke = NO;
             jint length = (*env)->GetArrayLength(env, dasharray);
             jfloat* jdashes = (jfloat*)(*env)->GetPrimitiveArrayCritical(env, dasharray, NULL);
+            if (jdashes == NULL) {
+                CGContextSetLineDash(cgRef, 0, NULL, 0);
+                return;
+            }
             CGFloat* dashes = (CGFloat*)malloc(sizeof(CGFloat)*length);
             if (dashes != NULL)
             {

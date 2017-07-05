@@ -457,6 +457,13 @@ definitions %{
 // This is a block of C++ code which provides values, functions, and
 // definitions necessary in the rest of the architecture description
 source_hpp %{
+// Header information of the source block.
+// Method declarations/definitions which are used outside
+// the ad-scope can conveniently be defined here.
+//
+// To keep related declarations/definitions/uses close together,
+// we switch between source %{ }% and source_hpp %{ }% freely as needed.
+
 // Must be visible to the DFA in dfa_sparc.cpp
 extern bool can_branch_register( Node *bol, Node *cmp );
 
@@ -467,6 +474,46 @@ extern bool use_block_zeroing(Node* count);
 // Prevents accidentally using G1 instead of G0.
 #define LONG_HI_REG(x) (x)
 #define LONG_LO_REG(x) (x)
+
+class CallStubImpl {
+
+  //--------------------------------------------------------------
+  //---<  Used for optimization in Compile::Shorten_branches  >---
+  //--------------------------------------------------------------
+
+ public:
+  // Size of call trampoline stub.
+  static uint size_call_trampoline() {
+    return 0; // no call trampolines on this platform
+  }
+
+  // number of relocations needed by a call trampoline stub
+  static uint reloc_call_trampoline() {
+    return 0; // no call trampolines on this platform
+  }
+};
+
+class HandlerImpl {
+
+ public:
+
+  static int emit_exception_handler(CodeBuffer &cbuf);
+  static int emit_deopt_handler(CodeBuffer& cbuf);
+
+  static uint size_exception_handler() {
+    if (TraceJumps) {
+      return (400); // just a guess
+    }
+    return ( NativeJump::instruction_size ); // sethi;jmp;nop
+  }
+
+  static uint size_deopt_handler() {
+    if (TraceJumps) {
+      return (400); // just a guess
+    }
+    return ( 4+  NativeJump::instruction_size ); // save;sethi;jmp;restore
+  }
+};
 
 %}
 
@@ -1710,22 +1757,9 @@ uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
 
 //=============================================================================
 
-uint size_exception_handler() {
-  if (TraceJumps) {
-    return (400); // just a guess
-  }
-  return ( NativeJump::instruction_size ); // sethi;jmp;nop
-}
-
-uint size_deopt_handler() {
-  if (TraceJumps) {
-    return (400); // just a guess
-  }
-  return ( 4+  NativeJump::instruction_size ); // save;sethi;jmp;restore
-}
 
 // Emit exception handler code.
-int emit_exception_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
   Register temp_reg = G3;
   AddressLiteral exception_blob(OptoRuntime::exception_blob()->entry_point());
   MacroAssembler _masm(&cbuf);
@@ -1746,7 +1780,7 @@ int emit_exception_handler(CodeBuffer& cbuf) {
   return offset;
 }
 
-int emit_deopt_handler(CodeBuffer& cbuf) {
+int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   // Can't use any of the current frame's registers as we may have deopted
   // at a poll and everything (including G3) can be live.
   Register temp_reg = L0;

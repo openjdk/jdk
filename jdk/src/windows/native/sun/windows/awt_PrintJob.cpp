@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,21 +281,15 @@ static void setPaperValues(JNIEnv *env, jobject paper, const POINT *paperSize,
 static long convertFromPoints(double value, int units);
 static double convertToPoints(long value, int units);
 void setCapabilities(JNIEnv *env, jobject self, HDC printDC);
-static inline WORD getPrintPaperSize(JNIEnv *env, jobject self);
-static inline void setPrintPaperSize(JNIEnv *env, jobject self, WORD sz);
-static jint getIntField(JNIEnv *env, jobject self, const char *fieldName);
-static jlong getLongField(JNIEnv *env, jobject self, const char *fieldName);
-static void setIntField(JNIEnv *env, jobject self,
-                            const char *fieldName, jint value);
-static void setLongField(JNIEnv *env, jobject self,
-                            const char *fieldName, jlong value);
-static jfieldID getIdOfIntField(JNIEnv *env, jobject self,
+static inline WORD getPrintPaperSize(JNIEnv *env, jboolean* err, jobject self);
+static inline jboolean setPrintPaperSize(JNIEnv *env, jobject self, WORD sz);
+static jint getIntField(JNIEnv *env, jboolean* err, jobject self, const char *fieldName);
+static jboolean setIntField(JNIEnv *env, jobject self,
+                        const char *fieldName, jint value);
+static jboolean getBooleanField(JNIEnv *env, jboolean* err, jobject self,
                             const char *fieldName);
-static jfieldID getIdOfLongField(JNIEnv *env, jobject self,
-                            const char *fieldName);
-static void setBooleanField(JNIEnv *env, jobject self,
+static jboolean setBooleanField(JNIEnv *env, jobject self,
                             const char *fieldName, jboolean value);
-
 static jbyte *findNonWhite(jbyte *image, long sy, long width, long height,
                            long scanLineStride, long *numLinesP);
 static jbyte *findWhite(jbyte *image, long sy, long width, long height,
@@ -577,7 +571,8 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          * If both are null, then there is no default printer.
          */
         if ((setup.hDevMode == NULL) && (setup.hDevNames == NULL)) {
-            return JNI_FALSE;
+            doIt = JNI_FALSE;
+            goto done;
         }
     } else {
         int measure = PSD_INTHOUSANDTHSOFINCHES;
@@ -602,8 +597,11 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
      * into the Windows setup structure so that the format can
      * be displayed in the dialog.
      */
-    pageFormatToSetup(env, self, page, &setup,
-                      AwtPrintControl::getPrintDC(env, self));
+    pageFormatToSetup(env, self, page, &setup, AwtPrintControl::getPrintDC(env, self));
+    if (env->ExceptionCheck()) {
+        doIt = JNI_FALSE;
+        goto done;
+    }
 
     setup.lpfnPageSetupHook = reinterpret_cast<LPPAGESETUPHOOK>(pageDlgHook);
     setup.Flags = PSD_ENABLEPAGESETUPHOOK | PSD_MARGINS;
@@ -614,7 +612,10 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
     if (ret) {
 
         jobject paper = getPaper(env, page);
-
+        if (paper == NULL) {
+            doIt = JNI_FALSE;
+            goto done;
+        }
         int units = setup.Flags & PSD_INTHOUSANDTHSOFINCHES ?
                                                 MM_HIENGLISH :
                                                 MM_HIMETRIC;
@@ -653,27 +654,39 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
          * and place them into a Paper instance.
          */
         setPaperValues(env, paper, &paperSize, &margins, units);
-
-        /* Put the updated Paper instance and the orientation into
+         if (env->ExceptionCheck()) {
+             doIt = JNI_FALSE;
+             goto done;
+         }
+        /*
+         * Put the updated Paper instance and the orientation into
          * the PageFormat.
          */
         setPaper(env, page, paper);
-
+        if (env->ExceptionCheck()) {
+             doIt = JNI_FALSE;
+             goto done;
+        }
         setPageFormatOrientation(env, page, orientation);
-
+        if (env->ExceptionCheck()) {
+             doIt = JNI_FALSE;
+             goto done;
+        }
         if (setup.hDevMode != NULL) {
             DEVMODE *devmode = (DEVMODE *)::GlobalLock(setup.hDevMode);
             if (devmode != NULL) {
                 if (devmode->dmFields & DM_PAPERSIZE) {
-                    setPrintPaperSize(env, self, devmode->dmPaperSize);
+                    jboolean err = setPrintPaperSize(env, self, devmode->dmPaperSize);
+                    if (err) {
+                        doIt = JNI_FALSE;
+                        goto done;
+                    }
                 }
             }
             ::GlobalUnlock(setup.hDevMode);
         }
         doIt = JNI_TRUE;
     }
-
-    DASSERT(env->GetLongField(peer, AwtComponent::hwndID) == 0L);
 
     AwtDialog::CheckUninstallModalHook();
 
@@ -689,6 +702,7 @@ Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
         AwtPrintControl::setPrintHDName(env, self, setup.hDevNames);
     }
 
+done:
     env->DeleteGlobalRef(peerGlobalRef);
     if (target != NULL) {
         env->DeleteLocalRef(target);
@@ -826,8 +840,14 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
           margins.bottom = convertFromPoints(72, units);;
 
           jobject paper = getPaper(env, page);
+          if (paper == NULL) {
+            goto done;
+          }
+
           setPaperValues(env, paper, &paperSize, &margins, units);
+          if (env->ExceptionCheck()) goto done;
           setPaper(env, page, paper);
+          if (env->ExceptionCheck()) goto done;
 
           if ((pDevMode->dmFields & DM_ORIENTATION) &&
               (pDevMode->dmOrientation == DMORIENT_LANDSCAPE)) {
@@ -837,8 +857,10 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
         }
 
     } else {
-        setBooleanField(env, self, NO_DEFAULTPRINTER_STR, (jint)JNI_TRUE);
+         setBooleanField(env, self, NO_DEFAULTPRINTER_STR, (jint)JNI_TRUE);
     }
+
+done:
     ::GlobalFree(pDevMode);
 
     free ((LPTSTR) printerName);
@@ -890,9 +912,7 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
         }
     }
 
-    if (printDC == NULL) {
-       return;
-    }
+    JNI_CHECK_NULL_GOTO(printDC, "Invalid printDC", done);
 
     /* We try to mitigate the effects of floating point rounding errors
      * by only setting a value if it would differ from the value in the
@@ -903,7 +923,9 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     const double epsilon = 0.10;
 
     jdouble paperWidth, paperHeight;
-    WORD dmPaperSize = getPrintPaperSize(env, self);
+    jboolean err;
+    WORD dmPaperSize = getPrintPaperSize(env, &err, self);
+    if (err) goto done;
 
     double ix, iy, iw, ih, pw, ph;
 
@@ -911,17 +933,24 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     jmethodID getID;
 
     jclass paperClass = env->GetObjectClass(origPaper);
+    JNI_CHECK_NULL_GOTO(paperClass, "paper class not found", done);
     getID = env->GetMethodID(paperClass, GETWIDTH_STR, GETWIDTH_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getWidth method", done);
     pw = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETHEIGHT_STR, GETHEIGHT_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getHeight method", done);
     ph = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_X_STR, GETIMG_X_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getX method", done);
     ix = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_Y_STR, GETIMG_Y_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getY method", done);
     iy = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_W_STR, GETIMG_W_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getW method", done);
     iw = env->CallDoubleMethod(origPaper, getID);
     getID = env->GetMethodID(paperClass, GETIMG_H_STR, GETIMG_H_SIG);
+    JNI_CHECK_NULL_GOTO(getID, "no getH method", done);
     ih = env->CallDoubleMethod(origPaper, getID);
 
     matchPaperSize(printDC, hDevMode, hDevNames, pw, ph,
@@ -1014,12 +1043,16 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
 
     jmethodID setSizeID = env->GetMethodID(paperClass,
                                         SETSIZE_STR, SETSIZE_SIG);
+    JNI_CHECK_NULL_GOTO(setSizeID, "no setSize method", done);
+
     jmethodID setImageableID = env->GetMethodID(paperClass,
                                         SETIMAGEABLE_STR, SETIMAGEABLE_SIG);
+    JNI_CHECK_NULL_GOTO(setImageableID, "no setImageable method", done);
 
     env->CallVoidMethod(newPaper, setSizeID, paperWidth, paperHeight);
     env->CallVoidMethod(newPaper, setImageableID, ix, iy, iw, ih);
 
+done:
     /* Free any resources allocated */
     if (privateDC == TRUE) {
         if (printDC != NULL) {
@@ -1066,6 +1099,7 @@ static void initPrinter(JNIEnv *env, jobject self) {
 JNIEXPORT void JNICALL
 Java_sun_awt_windows_WPrinterJob_initPrinter(JNIEnv *env, jobject self) {
     TRY;
+    jboolean err;
 
     initPrinter(env, self);
 
@@ -1089,17 +1123,19 @@ Java_sun_awt_windows_WPrinterJob_initPrinter(JNIEnv *env, jobject self) {
             ::GlobalUnlock(devnames);
 
             if (devLandRotation == 270) {
-              setBooleanField(env, self, LANDSCAPE_270_STR, JNI_TRUE);
+                err = setBooleanField(env, self, LANDSCAPE_270_STR, JNI_TRUE);
             } else {
-              setBooleanField(env, self, LANDSCAPE_270_STR, JNI_FALSE);
+                err = setBooleanField(env, self, LANDSCAPE_270_STR, JNI_FALSE);
             }
+            if (err) return;
         }
 
         if (dmFields & DM_COLLATE) {
-            setBooleanField(env, self, DRIVER_COLLATE_STR, JNI_TRUE);
+            err = setBooleanField(env, self, DRIVER_COLLATE_STR, JNI_TRUE);
         } else {
-            setBooleanField(env, self, DRIVER_COLLATE_STR, JNI_FALSE);
+            err = setBooleanField(env, self, DRIVER_COLLATE_STR, JNI_FALSE);
         }
+        if (err) return;
 
         if (dmFields & DM_COPIES) {
             setBooleanField(env, self, DRIVER_COPIES_STR, JNI_TRUE);
@@ -1110,39 +1146,54 @@ Java_sun_awt_windows_WPrinterJob_initPrinter(JNIEnv *env, jobject self) {
 }
 
 
-static bool setPrintReqAttribute(JNIEnv *env, jobject self, DEVMODE* devmode) {
+/*
+ *   returns 0 if print capabilities has been changed
+ *           1 if print capabilities has not been changed
+ *          -1 in case of error
+ */
+static int setPrintReqAttribute(JNIEnv *env, jobject self, DEVMODE* devmode) {
 
     /* The xRes/yRes fields are only initialised if there is a resolution
      * attribute. Otherwise they both will be zero, in which case default
      * resolution should be fine. Consider calling getXRes()/getResY()
      * rather than accessing the fields directly
      */
-    int xRes=getIntField(env, self, ATTXRES_STR);
-    int yRes=getIntField(env, self, ATTYRES_STR);
-    int quality=getIntField(env, self, ATTQUALITY_STR);
-    int printColor = getIntField(env, self, ATTCHROMATICITY_STR);
-    int sides = getIntField(env, self, ATTSIDES_STR);
-    int collate = getIntField(env, self, ATTCOLLATE_STR);
+    jboolean err;
+    int xRes=getIntField(env, &err, self, ATTXRES_STR);
+    if (err) return -1;
+    int yRes=getIntField(env, &err, self, ATTYRES_STR);
+    if (err) return -1;
+    int quality=getIntField(env, &err, self, ATTQUALITY_STR);
+    if (err) return -1;
+    int printColor = getIntField(env, &err, self, ATTCHROMATICITY_STR);
+    if (err) return -1;
+    int sides = getIntField(env, &err, self, ATTSIDES_STR);
+    if (err) return -1;
+    int collate = getIntField(env, &err, self, ATTCOLLATE_STR);
+    if (err) return -1;
     int copies = 1;
-    jclass myClass = env->GetObjectClass(self);
     // There may be cases when driver reports it cannot handle
     // multiple copies although it actually can .  So this modification
     // handles that, to make sure that we report copies = 1 because
     // we already emulated multiple copies.
-    jfieldID fieldId = env->GetFieldID(myClass, DRIVER_COPIES_STR, "Z");
-    if (env->GetBooleanField(self, fieldId)) {
-      copies = getIntField(env, self, ATTCOPIES_STR);
+    jboolean driverHandlesCopies = getBooleanField(env, &err, self, DRIVER_COPIES_STR);
+    if (err) return -1;
+    if (driverHandlesCopies) {
+       copies = getIntField(env, &err, self, ATTCOPIES_STR);
+      if (err) return -1;
     } // else "driverDoesMultipleCopies" is false, copies should be 1 (default)
-    int mediatray = getIntField(env, self, ATTMEDIATRAY_STR);
-    int mediaszname = getIntField(env, self, ATTMEDIASZNAME_STR);
-    bool ret = true;
+    int mediatray = getIntField(env, &err, self, ATTMEDIATRAY_STR);
+    if (err) return -1;
+    int mediaszname = getIntField(env, &err, self, ATTMEDIASZNAME_STR);
+    if (err) return -1;
+    int ret = 1;
 
     if (quality && quality < 0) {
         if (quality != devmode->dmPrintQuality) {
             devmode->dmPrintQuality = quality;
             devmode->dmFields |= DM_PRINTQUALITY;
-            // ret of "false" means that setCapabilities needs to be called
-            ret = false;
+            // ret of 0 means that setCapabilities needs to be called
+            ret = 0;
         }
     } else {
         /* If we didn't set quality, maybe we have resolution settings. */
@@ -1256,7 +1307,7 @@ LPTSTR VerifyDestination(JNIEnv *env, jobject wPrinterJob) {
         if (port != NULL && isFilePort(port)) {
             LPTSTR defPort = GetPrinterPort(env, printer);
             if (!isFilePort(defPort)) { // not a FILE: port by default
-                int len = wcslen(defPort);
+                size_t len = wcslen(defPort);
                 if (len > 0 && port[len-1] == L':') { // is a device port
                     dest = defPort;
                 } else {
@@ -1291,12 +1342,19 @@ Java_sun_awt_windows_WPrinterJob__1startDoc(JNIEnv *env, jobject self,
     LPTSTR destination = NULL;
     if (dest != NULL) {
         destination = (LPTSTR)JNU_GetStringPlatformChars(env, dest, NULL);
+        CHECK_NULL_RETURN(destination, JNI_FALSE);
     } else {
         destination = VerifyDestination(env, self);
     }
     LPTSTR docname = NULL;
     if (jobname != NULL) {
         LPTSTR tmp = (LPTSTR)JNU_GetStringPlatformChars(env, jobname, NULL);
+        if (tmp == NULL) {
+            if (dest != NULL) {
+                JNU_ReleaseStringPlatformChars(env, dest, destination);
+            }
+            return JNI_FALSE;
+        }
         docname = _tcsdup(tmp);
         JNU_ReleaseStringPlatformChars(env, jobname, tmp);
     } else {
@@ -1317,23 +1375,33 @@ Java_sun_awt_windows_WPrinterJob__1startDoc(JNIEnv *env, jobject self,
     HGLOBAL hDevMode = AwtPrintControl::getPrintHDMode(env, self);
     if (printDC != NULL && hDevMode != NULL) {
         DEVMODE *devmode = (DEVMODE *)::GlobalLock(hDevMode);
+        bool success = true;
         if (devmode != NULL) {
                 devmode->dmFields |= DM_ORIENTATION;
                 devmode->dmOrientation = DMORIENT_PORTRAIT;
                 /* set attribute values into devmode */
-                bool ret = setPrintReqAttribute(env, self, devmode);
+                int ret = setPrintReqAttribute(env, self, devmode);
                 ::ResetDC(printDC, devmode);
                 RESTORE_CONTROLWORD
 
-                if (!ret) {
+                if (ret == 0) {
                     /*
                       Need to read in updated device capabilities because
                       print quality has been changed.
                     */
                     setCapabilities(env, self, printDC);
+                    if (env->ExceptionCheck()) success = false;
+                } else if (ret < 0) {
+                    success = false;
                 }
         }
         ::GlobalUnlock(hDevMode);
+        if (!success) {
+            if (dest != NULL) {
+                JNU_ReleaseStringPlatformChars(env, dest, destination);
+            }
+            return JNI_FALSE;
+        }
     }
 
     if (printDC){
@@ -1358,13 +1426,13 @@ Java_sun_awt_windows_WPrinterJob__1startDoc(JNIEnv *env, jobject self,
         } else {
             err = 0;
         }
-        if (dest != NULL) {
-            JNU_ReleaseStringPlatformChars(env, dest, destination);
-        }
     }
     else {
-        jclass printerException = env->FindClass(PRINTEREXCEPTION_STR);
-        env->ThrowNew(printerException, "No printer found.");
+        JNU_ThrowByName(env, PRINTEREXCEPTION_STR, "No printer found.");
+    }
+
+    if (dest != NULL) {
+        JNU_ReleaseStringPlatformChars(env, dest, destination);
     }
 
     if (err && err != ERROR_CANCELLED) {
@@ -1481,7 +1549,9 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_deviceStartPage
         LONG retval = 0;
         HGLOBAL hDevMode = AwtPrintControl::getPrintHDMode(env, self);
         HGLOBAL hDevNames = AwtPrintControl::getPrintHDName(env, self);
-        WORD dmPaperSize = getPrintPaperSize(env, self);
+        jboolean err;
+        WORD dmPaperSize = getPrintPaperSize(env, &err, self);
+        if (err) return;
         SAVE_CONTROLWORD
           // Unless the PageFormat has been changed, do not set the paper
           // size for a new page. Doing so is unnecessary, perhaps expensive,
@@ -1492,7 +1562,9 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_deviceStartPage
             RectDouble paperSize;
             RectDouble margins;
             jobject paper = getPaper(env, format);
+            CHECK_NULL(paper);
             getPaperValues(env, paper, &paperSize, &margins);
+            JNU_CHECK_EXCEPTION(env);
             double paperWidth, paperHeight;
             matchPaperSize(printDC, hDevMode, hDevNames,
                            paperSize.width,  paperSize.height,
@@ -1656,6 +1728,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WEmbeddedFrame_printBand
     jbyte *image = NULL;
     try {
         image = (jbyte *)env->GetPrimitiveArrayCritical(imageArray, 0);
+        CHECK_NULL(image);
         struct {
             BITMAPINFOHEADER bmiHeader;
             DWORD*                 bmiColors;
@@ -2194,6 +2267,7 @@ static jboolean jFontToWFontW(JNIEnv *env, HDC printDC, jstring fontName,
     memset(&matchedLogFont, 0, sizeof(matchedLogFont));
 
     LPCWSTR fontNameW = JNU_GetStringPlatformChars(env, fontName, NULL);
+    CHECK_NULL_RETURN(fontNameW, JNI_FALSE);
 
     /* Describe the GDI fonts we want enumerated. We
      * simply supply the java font name and let GDI
@@ -2383,6 +2457,7 @@ JNIEXPORT jint JNICALL Java_sun_awt_windows_WPrinterJob_getGDIAdvance
 {
     SIZE size;
     LPCWSTR wText = JNU_GetStringPlatformChars(env, text, NULL);
+    CHECK_NULL_RETURN(wText, 0);
     size_t strLen = wcslen(wText);
     BOOL ok = GetTextExtentPoint32((HDC)printDC, wText, (int)strLen, &size);
     JNU_ReleaseStringPlatformChars(env, text, wText);
@@ -2438,6 +2513,7 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
     long posY = ROUND_TO_LONG(y);
     int flags = (glyphCodes !=0) ? ETO_GLYPH_INDEX : 0;
     LPCWSTR wText = JNU_GetStringPlatformChars(env, text, NULL);
+    CHECK_NULL(wText);
 
     int *advances = NULL, *xadvances = NULL, *xyadvances = NULL;
     BOOL useYAdvances = FALSE;
@@ -2841,10 +2917,12 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_drawDIBImage
                 numCols = MAXCOLS; /* don't write past end of struct */
             }
             bmiCols = (BYTE*)env->GetPrimitiveArrayCritical(bmiColorsArray, 0);
+            CHECK_NULL(bmiCols);
             memcpy(&(bmi.bmiColors[0]), bmiCols, (numCols*4));
             env->ReleasePrimitiveArrayCritical(bmiColorsArray, bmiCols, 0);
         }
         imageBits = (jint *)env->GetPrimitiveArrayCritical(image, 0);
+        CHECK_NULL(imageBits);
 
         // Workaround for drivers/apps that do not support top-down.
         // Because we don't know if they support or not,
@@ -2900,6 +2978,7 @@ static void doPrintBand(JNIEnv *env, jboolean browserPrinting,
     try {
         long scanLineStride = J2DRasterBPP * width;
         image = (jbyte *)env->GetPrimitiveArrayCritical(imageArray, 0);
+        CHECK_NULL(image);
         jbyte *startImage;
         jbyte *endImage = NULL;
         long startY = 0;
@@ -3132,6 +3211,9 @@ static HDC getDefaultPrinterDC(JNIEnv *env, jobject printerJob) {
          */
         int maxCopies = 1;
         int nCopies = getCopies(env, printerJob);
+        if (nCopies < 0) {
+            return NULL;
+        }
         SAVE_CONTROLWORD
         if (pd.hDevNames != NULL) {
             DEVNAMES *devnames = (DEVNAMES *)::GlobalLock(pd.hDevNames);
@@ -3176,11 +3258,14 @@ static HDC getDefaultPrinterDC(JNIEnv *env, jobject printerJob) {
             AwtPrintControl::setPrintHDName(env, printerJob, pd.hDevNames);
         }
 
-        setBooleanField(env, printerJob, DRIVER_COPIES_STR,
-                        (devWillDoCopies ? JNI_TRUE : JNI_FALSE));
-        setBooleanField(env, printerJob, DRIVER_COLLATE_STR, JNI_FALSE);
-        setBooleanField(env, printerJob, USER_COLLATE_STR, JNI_FALSE);
-
+        jboolean err;
+        err = setBooleanField(env, printerJob, DRIVER_COPIES_STR,
+                              (devWillDoCopies ? JNI_TRUE : JNI_FALSE));
+        if (err) return NULL;
+        err = setBooleanField(env, printerJob, DRIVER_COLLATE_STR, JNI_FALSE);
+        if (err) return NULL;
+        err = setBooleanField(env, printerJob, USER_COLLATE_STR, JNI_FALSE);
+        if (err) return NULL;
     }
 
     return printDC;
@@ -3200,6 +3285,7 @@ static void pageFormatToSetup(JNIEnv *env, jobject job,
     /* Move the orientation from PageFormat to Windows.
      */
     jint orient = getPageFormatOrientation(env, page);
+    if (orient < 0) return;
     int gdiOrientation = (orient == PAGEFORMAT_PORTRAIT) ?
         DMORIENT_PORTRAIT : DMORIENT_LANDSCAPE;
     setOrientationInDevMode(setup->hDevMode, orient == PAGEFORMAT_PORTRAIT);
@@ -3208,7 +3294,9 @@ static void pageFormatToSetup(JNIEnv *env, jobject job,
                                                 ? MM_HIENGLISH
                                                 : MM_HIMETRIC;
     jobject paper = getPaper(env, page);
+    CHECK_NULL(paper);
     getPaperValues(env, paper, &paperSize, &margins);
+    JNU_CHECK_EXCEPTION(env);
     // Setting the paper size appears to be a futile exercise, as its not one
     // of the values you can initialise - its an out-only arg. Margins are OK.
     // set it into the DEVMODE if there is one ..
@@ -3218,7 +3306,9 @@ static void pageFormatToSetup(JNIEnv *env, jobject job,
     if (setup->hDevMode != NULL) {
 
         double paperWidth, paperHeight;
-        WORD dmPaperSize = getPrintPaperSize(env, job);
+        jboolean err;
+        WORD dmPaperSize = getPrintPaperSize(env, &err, job);
+        if (err) return;
         matchPaperSize(hDC, setup->hDevMode, setup->hDevNames,
                        paperSize.width,  paperSize.height,
                        &paperWidth, &paperHeight, &dmPaperSize);
@@ -3444,6 +3534,7 @@ static jint getCopies(JNIEnv *env, jobject printerJob)
     jclass printerJobClass = env->GetObjectClass(printerJob);
     jmethodID getCopiesID = env->GetMethodID(printerJobClass, GETCOPIES_STR,
                                              GETCOPIES_SIG);
+    CHECK_NULL_RETURN(getCopiesID, -1);
     jint copies = env->CallIntMethod(printerJob, getCopiesID);
 
     return copies;
@@ -3462,6 +3553,7 @@ static jobject getPaper(JNIEnv *env, jobject page) {
     jclass pageClass = env->GetObjectClass(page);
     jmethodID getPaperID = env->GetMethodID(pageClass, GETPAPER_STR,
                                                         GETPAPER_SIG);
+    CHECK_NULL_RETURN(getPaperID, NULL);
 
     return env->CallObjectMethod(page, getPaperID);
 }
@@ -3479,12 +3571,14 @@ static void setPaper(JNIEnv *env, jobject page, jobject paper) {
     jclass pageClass = env->GetObjectClass(page);
     jmethodID setPaperID = env->GetMethodID(pageClass, SETPAPER_STR,
                                                         SETPAPER_SIG);
+    CHECK_NULL(setPaperID);
     env->CallVoidMethod(page, setPaperID, paper);
 }
 
 /**
  * Return the integer ID for the orientation in the PageFormat.
  * Caution: this is the Java spec ID, not the GDI ID.
+ * In case of error returns -1
  */
 static jint getPageFormatOrientation(JNIEnv *env, jobject page) {
     // Because this function may call client Java code,
@@ -3494,6 +3588,7 @@ static jint getPageFormatOrientation(JNIEnv *env, jobject page) {
     jclass pageClass = env->GetObjectClass(page);
     jmethodID getOrientID = env->GetMethodID(pageClass, GETORIENT_STR,
                                                         GETORIENT_SIG);
+    CHECK_NULL_RETURN(getOrientID, -1);
     return env->CallIntMethod(page, getOrientID);
 }
 
@@ -3506,6 +3601,7 @@ static void setPageFormatOrientation(JNIEnv *env,
     jclass pageClass = env->GetObjectClass(page);
     jmethodID setOrientID = env->GetMethodID(pageClass, SETORIENT_STR,
                                                         SETORIENT_SIG);
+    CHECK_NULL(setOrientID);
     env->CallVoidMethod(page, setOrientID, orientation);
 }
 
@@ -3527,24 +3623,29 @@ static void getPaperValues(JNIEnv *env, jobject paper, RectDouble *paperSize,
     jclass paperClass = env->GetObjectClass(paper);
 
     getID = env->GetMethodID(paperClass, GETWIDTH_STR, GETWIDTH_SIG);
+    CHECK_NULL(getID);
     paperSize->width = env->CallDoubleMethod(paper, getID);
 
     getID = env->GetMethodID(paperClass, GETHEIGHT_STR, GETHEIGHT_SIG);
+    CHECK_NULL(getID);
     paperSize->height = env->CallDoubleMethod(paper, getID);
 
     getID = env->GetMethodID(paperClass, GETIMG_X_STR, GETIMG_X_SIG);
+    CHECK_NULL(getID);
     margins->x = env->CallDoubleMethod(paper, getID);
     if (margins-> x < 0 ) {
         margins-> x = 0;
     }
 
     getID = env->GetMethodID(paperClass, GETIMG_Y_STR, GETIMG_Y_SIG);
+    CHECK_NULL(getID);
     margins->y = env->CallDoubleMethod(paper, getID);
     if (margins-> y < 0 ) {
         margins-> y = 0;
     }
 
     getID = env->GetMethodID(paperClass, GETIMG_W_STR, GETIMG_W_SIG);
+    CHECK_NULL(getID);
     if (widthAsMargin) {
         margins->width = paperSize->width - margins->x
                                       - env->CallDoubleMethod(paper, getID);
@@ -3557,6 +3658,7 @@ static void getPaperValues(JNIEnv *env, jobject paper, RectDouble *paperSize,
     }
 
     getID = env->GetMethodID(paperClass, GETIMG_H_STR, GETIMG_H_SIG);
+    CHECK_NULL(getID);
     if (widthAsMargin) {
         margins->height = paperSize->height - margins->y
                                         - env->CallDoubleMethod(paper, getID);
@@ -3567,7 +3669,6 @@ static void getPaperValues(JNIEnv *env, jobject paper, RectDouble *paperSize,
     if (margins->height < 0) {
         margins->height = 0;
     }
-
 }
 
 /**
@@ -3587,8 +3688,10 @@ static void setPaperValues(JNIEnv *env, jobject paper, const POINT *paperSize,
     jclass paperClass = env->GetObjectClass(paper);
     jmethodID setSizeID = env->GetMethodID(paperClass,
                                         SETSIZE_STR, SETSIZE_SIG);
+    CHECK_NULL(setSizeID);
     jmethodID setImageableID = env->GetMethodID(paperClass,
                                         SETIMAGEABLE_STR, SETIMAGEABLE_SIG);
+    CHECK_NULL(setImageableID);
 
     /* Set the physical size of the paper.
      */
@@ -3608,7 +3711,6 @@ static void setPaperValues(JNIEnv *env, jobject paper, const POINT *paperSize,
     jdouble width = convertToPoints(intWidth, units);
     jdouble height = convertToPoints(intHeight, units);
     env->CallVoidMethod(paper, setImageableID, x, y, width, height);
-
 }
 
 /**
@@ -3682,13 +3784,16 @@ static double convertToPoints(long value, int units) {
  */
 void setCapabilities(JNIEnv *env, jobject self, HDC printDC) {
 
+    jboolean err;
     // width of page in pixels
     jint pageWid = GetDeviceCaps(printDC, PHYSICALWIDTH);
-    setIntField(env, self, PAGEW_STR, pageWid);
+    err = setIntField(env, self, PAGEW_STR, pageWid);
+    if (err) return;
 
     // height of page in pixels
     jint pageHgt = GetDeviceCaps(printDC, PHYSICALHEIGHT);
-    setIntField(env, self, PAGEH_STR, pageHgt);
+    err = setIntField(env, self, PAGEH_STR, pageHgt);
+    if (err) return;
 
     // x scaling factor of printer
     jint xsf = GetDeviceCaps(printDC, SCALINGFACTORX);
@@ -3716,111 +3821,67 @@ void setCapabilities(JNIEnv *env, jobject self, HDC printDC) {
 
     // pixels per inch in x direction
     jint xRes = GetDeviceCaps(printDC, LOGPIXELSX);
-    setIntField(env, self, XRES_STR, xRes);
+    err = setIntField(env, self, XRES_STR, xRes);
+    if (err) return;
 
     // pixels per inch in y direction
     jint yRes = GetDeviceCaps(printDC, LOGPIXELSY);
-    setIntField(env, self, YRES_STR, yRes);
+    err = setIntField(env, self, YRES_STR, yRes);
 
     // x coord of printable area in pixels
     jint xOrg = GetDeviceCaps(printDC, PHYSICALOFFSETX);
-    setIntField(env, self, PHYSX_STR, xOrg);
+    err = setIntField(env, self, PHYSX_STR, xOrg);
+    if (err) return;
 
     // y coord of printable area in pixels
     jint yOrg = GetDeviceCaps(printDC, PHYSICALOFFSETY);
-    setIntField(env, self, PHYSY_STR, yOrg);
+    err = setIntField(env, self, PHYSY_STR, yOrg);
+    if (err) return;
 
     // width of printable area in pixels
     jint printWid = GetDeviceCaps(printDC, HORZRES);
-    setIntField(env, self, PHYSW_STR, printWid);
+    err = setIntField(env, self, PHYSW_STR, printWid);
+    if (err) return;
 
     // height of printable area in pixels
     jint printHgt = GetDeviceCaps(printDC, VERTRES);
     setIntField(env, self, PHYSH_STR, printHgt);
-
 }
 
-
-static inline WORD getPrintPaperSize(JNIEnv *env, jobject self) {
-    return (WORD)getIntField(env, self, PRINTPAPERSIZE_STR);
+static inline WORD getPrintPaperSize(JNIEnv *env, jboolean* err, jobject self) {
+    return (WORD)getIntField(env, err, self, PRINTPAPERSIZE_STR);
 }
 
-static inline void setPrintPaperSize(JNIEnv *env, jobject self, WORD sz) {
-    setIntField(env, self, PRINTPAPERSIZE_STR, (jint)sz);
+static inline jboolean setPrintPaperSize(JNIEnv *env, jobject self, WORD sz) {
+    return setIntField(env, self, PRINTPAPERSIZE_STR, (jint)sz);
 }
 
 /**
  *      Return the java int value of the field 'fieldName' in the
  *      java instance 'self'.
  */
-static jint getIntField(JNIEnv *env, jobject self, const char *fieldName) {
-    jfieldID fieldId = getIdOfIntField(env, self, fieldName);
-    return env->GetIntField(self, fieldId);
-}
-
-/**
- *      Return the java long value of the field 'fieldName' in the
- *      java instance 'self'.
- */
-static jlong getLongField(JNIEnv *env, jobject self, const char *fieldName) {
-    jfieldID fieldId = getIdOfLongField(env, self, fieldName);
-    return env->GetLongField(self, fieldId);
+static jint getIntField(JNIEnv *env, jboolean* err, jobject self, const char *fieldName) {
+    return JNU_GetFieldByName(env, err, self, fieldName, "I").i;
 }
 
 /**
  *      Set the int field named 'fieldName' of the java instance
  *      'self' to the value 'value'.
  */
-static void setIntField(JNIEnv *env, jobject self, const char *fieldName,
-                                                                jint value) {
-    jfieldID fieldId = getIdOfIntField(env, self, fieldName);
-    env->SetIntField(self, fieldId, value);
+static jboolean setIntField(JNIEnv *env, jobject self, const char *fieldName, jint value) {
+    jboolean err;
+    JNU_SetFieldByName(env, &err, self, fieldName, "I", value);
+    return err;
 }
 
-/**
- *      Set the long field named 'fieldName' of the java instance
- *      'self' to the value 'value'.
- */
-static void setLongField(JNIEnv *env, jobject self, const char *fieldName,
-                                                                jlong value) {
-    jfieldID fieldId = getIdOfLongField(env, self, fieldName);
-    env->SetLongField(self, fieldId, value);
+static jboolean getBooleanField(JNIEnv *env, jboolean* err, jobject self, const char *fieldName) {
+    return JNU_GetFieldByName(env, err, self, fieldName, "Z").z;
 }
 
-/**
- *      Return the field id of the java instance 'self' of the
- *      java int field named 'fieldName'.
- */
-static jfieldID getIdOfIntField(JNIEnv *env, jobject self,
-                                                const char *fieldName) {
-    jclass myClass = env->GetObjectClass(self);
-    jfieldID fieldId = env->GetFieldID(myClass, fieldName, kJavaIntStr);
-    DASSERT(fieldId != 0);
-
-    return fieldId;
-
-}
-
-/**
- *      Return the field id of the java instance 'self' of the
- *      java long field named 'fieldName'.
- */
-static jfieldID getIdOfLongField(JNIEnv *env, jobject self,
-                                                const char *fieldName) {
-    jclass myClass = env->GetObjectClass(self);
-    jfieldID fieldId = env->GetFieldID(myClass, fieldName, kJavaLongStr);
-    DASSERT(fieldId != 0);
-
-    return fieldId;
-
-}
-
-static void setBooleanField(JNIEnv *env, jobject self, const char *fieldName,
-                                                              jboolean value) {
-    jclass myClass = env->GetObjectClass(self);
-    jfieldID fieldId = env->GetFieldID(myClass, fieldName, "Z");
-    DASSERT(fieldId != 0);
-    env->SetBooleanField(self, fieldId, value);
+static jboolean setBooleanField(JNIEnv *env, jobject self, const char *fieldName, jboolean value) {
+    jboolean err;
+    JNU_SetFieldByName(env, &err, self, fieldName, "Z", value);
+    return err;
 }
 
 /**
@@ -3830,8 +3891,6 @@ static void setBooleanField(JNIEnv *env, jobject self, const char *fieldName,
 static void throwPrinterException(JNIEnv *env, DWORD err) {
     char errStr[256];
     TCHAR t_errStr[256];
-    jclass printerException = env->FindClass(PRINTEREXCEPTION_STR);
-
     errStr[0] = '\0';
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                   NULL,
@@ -3843,7 +3902,7 @@ static void throwPrinterException(JNIEnv *env, DWORD err) {
 
     WideCharToMultiByte(CP_UTF8, 0, t_errStr, -1,
                         errStr, sizeof(errStr), NULL, NULL);
-    env->ThrowNew(printerException, errStr);
+    JNU_ThrowByName(env, PRINTEREXCEPTION_STR, errStr);
 }
 
 
@@ -4176,8 +4235,9 @@ Java_sun_awt_windows_WPrinterJob_setNativePrintService(JNIEnv *env,
                                                        jstring printer)
 {
     TRY;
-    LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env,
-                                                            printer, NULL);
+    LPTSTR printerName = (LPTSTR)JNU_GetStringPlatformChars(env, printer, NULL);
+    CHECK_NULL(printerName);
+
     HDC hDC = AwtPrintControl::getPrintDC(env, name);
     if (hDC != NULL) {
         DeletePrintDC(hDC);
@@ -4188,8 +4248,7 @@ Java_sun_awt_windows_WPrinterJob_setNativePrintService(JNIEnv *env,
     hDC = ::CreateDC(TEXT("WINSPOOL"), printerName, NULL, NULL);
     RESTORE_CONTROLWORD
     if (hDC == NULL) {
-        jclass printerException = env->FindClass(PRINTEREXCEPTION_STR);
-        env->ThrowNew(printerException, "Invalid name of PrintService.");
+        JNU_ThrowByName(env, PRINTEREXCEPTION_STR, "Invalid name of PrintService.");
         JNU_ReleaseStringPlatformChars(env, printer, printerName);
         return;
     }
@@ -4223,11 +4282,19 @@ Java_sun_awt_windows_WPrinterJob_setNativePrintService(JNIEnv *env,
 
     if (devmode != NULL) {
         if (devmode->dmFields & DM_COPIES) {
-          setBooleanField(env, name, DRIVER_COPIES_STR, JNI_TRUE);
+            jboolean err = setBooleanField(env, name, DRIVER_COPIES_STR, JNI_TRUE);
+            if (err) {
+                JNU_ReleaseStringPlatformChars(env, printer, printerName);
+                return;
+            }
         }
 
         if (devmode->dmFields & DM_COLLATE) {
-           setBooleanField(env, name, DRIVER_COLLATE_STR, JNI_TRUE);
+            jboolean err = setBooleanField(env, name, DRIVER_COLLATE_STR, JNI_TRUE);
+            if (err) {
+                JNU_ReleaseStringPlatformChars(env, printer, printerName);
+                return;
+            }
         }
 
         ::GlobalUnlock(hDevMode);
@@ -4237,7 +4304,6 @@ Java_sun_awt_windows_WPrinterJob_setNativePrintService(JNIEnv *env,
 
     JNU_ReleaseStringPlatformChars(env, printer, printerName);
     CATCH_BAD_ALLOC;
-
 }
 
 
@@ -4299,14 +4365,15 @@ Java_sun_awt_windows_WPrinterJob_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
 
-    AwtPrintDialog::controlID =
-      env->GetFieldID(cls, "pjob", "Ljava/awt/print/PrinterJob;");
-    jclass printDialogPeerClass = env->FindClass("sun/awt/windows/WPrintDialogPeer");
-    AwtPrintDialog::setHWndMID =
-      env->GetMethodID(printDialogPeerClass, "setHWnd", "(J)V");
-
+    AwtPrintDialog::controlID = env->GetFieldID(cls, "pjob", "Ljava/awt/print/PrinterJob;");
     DASSERT(AwtPrintDialog::controlID != NULL);
+    CHECK_NULL(AwtPrintDialog::controlID);
+
+    jclass printDialogPeerClass = env->FindClass("sun/awt/windows/WPrintDialogPeer");
+    CHECK_NULL(printDialogPeerClass);
+    AwtPrintDialog::setHWndMID = env->GetMethodID(printDialogPeerClass, "setHWnd", "(J)V");
     DASSERT(AwtPrintDialog::setHWndMID != NULL);
+    CHECK_NULL(AwtPrintDialog::setHWndMID);
 
     AwtPrintControl::initIDs(env, cls);
     CATCH_BAD_ALLOC;

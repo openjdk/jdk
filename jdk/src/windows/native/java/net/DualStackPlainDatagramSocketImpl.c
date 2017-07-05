@@ -384,15 +384,19 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainDatagramSocketImpl_socketRece
         if (packetAddress == NULL) {
             packetAddress = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa,
                                                       &port);
-            /* stuff the new Inetaddress into the packet */
-            (*env)->SetObjectField(env, dpObj, dp_addressID, packetAddress);
+            if (packetAddress != NULL) {
+                /* stuff the new Inetaddress into the packet */
+                (*env)->SetObjectField(env, dpObj, dp_addressID, packetAddress);
+            }
         }
 
-        /* populate the packet */
-        (*env)->SetByteArrayRegion(env, packetBuffer, packetBufferOffset, rv,
+        if (!(*env)->ExceptionCheck(env)) {
+            /* populate the packet */
+            (*env)->SetByteArrayRegion(env, packetBuffer, packetBufferOffset, rv,
                                    (jbyte *)fullPacket);
-        (*env)->SetIntField(env, dpObj, dp_portID, port);
-        (*env)->SetIntField(env, dpObj, dp_lengthID, rv);
+            (*env)->SetIntField(env, dpObj, dp_portID, port);
+            (*env)->SetIntField(env, dpObj, dp_lengthID, rv);
+        }
     }
 
     if (packetBufferLen > MAX_BUFFER_LEN) {

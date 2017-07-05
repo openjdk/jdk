@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -558,13 +558,15 @@ Java_java_awt_Checkbox_initIDs(JNIEnv *env, jclass cls)
 
     AwtCheckbox::labelID =
       env->GetFieldID(cls, "label", "Ljava/lang/String;");
+    DASSERT(AwtCheckbox::labelID != NULL);
+    CHECK_NULL(AwtCheckbox::labelID);
+
     AwtCheckbox::groupID =
       env->GetFieldID(cls, "group", "Ljava/awt/CheckboxGroup;");
-    AwtCheckbox::stateID =
-      env->GetFieldID(cls, "state", "Z");
-
-    DASSERT(AwtCheckbox::labelID != NULL);
     DASSERT(AwtCheckbox::groupID != NULL);
+    CHECK_NULL(AwtCheckbox::groupID);
+
+    AwtCheckbox::stateID = env->GetFieldID(cls, "state", "Z");
     DASSERT(AwtCheckbox::stateID != NULL);
 
     CATCH_BAD_ALLOC;

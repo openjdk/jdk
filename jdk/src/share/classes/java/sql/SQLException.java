@@ -61,7 +61,7 @@ public class SQLException extends java.lang.Exception
      * The <code>cause</code> is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
-     * <p>
+     *
      * @param reason a description of the exception
      * @param SQLState an XOPEN or SQL:2003 code identifying the exception
      * @param vendorCode a database vendor-specific exception code
@@ -88,7 +88,7 @@ public class SQLException extends java.lang.Exception
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method. The vendor code
      * is initialized to 0.
-     * <p>
+     *
      * @param reason a description of the exception
      * @param SQLState an XOPEN or SQL:2003 code identifying the exception
      */
@@ -112,7 +112,7 @@ public class SQLException extends java.lang.Exception
      * The <code>cause</code> is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
-     * <p>
+     *
      * @param reason a description of the exception
      */
     public SQLException(String reason) {
@@ -155,7 +155,7 @@ public class SQLException extends java.lang.Exception
      * The <code>reason</code>  is initialized to <code>null</code> if
      * <code>cause==null</code> or to <code>cause.toString()</code> if
      * <code>cause!=null</code>.
-     * <p>
+     *
      * @param cause the underlying reason for this <code>SQLException</code>
      * (which is saved for later retrieval by the <code>getCause()</code> method);
      * may be null indicating the cause is non-existent or unknown.
@@ -176,7 +176,7 @@ public class SQLException extends java.lang.Exception
      * <code>reason</code> and  <code>cause</code>.
      * The <code>SQLState</code> is  initialized to <code>null</code>
      * and the vendor code is initialized to 0.
-     * <p>
+     *
      * @param reason a description of the exception.
      * @param cause the underlying reason for this <code>SQLException</code>
      * (which is saved for later retrieval by the <code>getCause()</code> method);
@@ -197,7 +197,7 @@ public class SQLException extends java.lang.Exception
      * Constructs a <code>SQLException</code> object with a given
      * <code>reason</code>, <code>SQLState</code> and  <code>cause</code>.
      * The vendor code is initialized to 0.
-     * <p>
+     *
      * @param reason a description of the exception.
      * @param sqlState an XOPEN or SQL:2003 code identifying the exception
      * @param cause the underlying reason for this <code>SQLException</code>
@@ -223,7 +223,7 @@ public class SQLException extends java.lang.Exception
      * Constructs a <code>SQLException</code> object with a given
      * <code>reason</code>, <code>SQLState</code>, <code>vendorCode</code>
      * and  <code>cause</code>.
-     * <p>
+     *
      * @param reason a description of the exception
      * @param sqlState an XOPEN or SQL:2003 code identifying the exception
      * @param vendorCode a database vendor-specific exception code

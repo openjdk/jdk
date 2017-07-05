@@ -56,7 +56,6 @@ import static sun.swing.SwingUtilities2.IMPLIED_CR;
  * expanded if this view is embedded in a container that does
  * tab expansion.  ParagraphView is an example of a container
  * that does tab expansion.
- * <p>
  *
  * @since 1.3
  *

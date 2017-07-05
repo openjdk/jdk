@@ -43,35 +43,7 @@
 // An InstanceKlass is the VM level representation of a Java class.
 // It contains all information needed for at class at execution runtime.
 
-//  InstanceKlass layout:
-//    [C++ vtbl pointer           ] Klass
-//    [subtype cache              ] Klass
-//    [instance size              ] Klass
-//    [java mirror                ] Klass
-//    [super                      ] Klass
-//    [access_flags               ] Klass
-//    [name                       ] Klass
-//    [first subklass             ] Klass
-//    [next sibling               ] Klass
-//    [array klasses              ]
-//    [methods                    ]
-//    [local interfaces           ]
-//    [transitive interfaces      ]
-//    [fields                     ]
-//    [constants                  ]
-//    [class loader               ]
-//    [source file name           ]
-//    [inner classes              ]
-//    [static field size          ]
-//    [nonstatic field size       ]
-//    [static oop fields size     ]
-//    [nonstatic oop maps size    ]
-//    [has finalize method        ]
-//    [deoptimization mark bit    ]
-//    [initialization state       ]
-//    [initializing thread        ]
-//    [Java vtable length         ]
-//    [oop map cache (stack maps) ]
+//  InstanceKlass embedded field layout (after declared fields):
 //    [EMBEDDED Java vtable             ] size in words = vtable_len
 //    [EMBEDDED nonstatic oop-map blocks] size in words = nonstatic_oop_map_size
 //      The embedded nonstatic oop-map blocks are short pairs (offset, length)
@@ -1031,16 +1003,16 @@ private:
 
   // Static methods that are used to implement member methods where an exposed this pointer
   // is needed due to possible GCs
-  static bool link_class_impl                           (instanceKlassHandle this_oop, bool throw_verifyerror, TRAPS);
-  static bool verify_code                               (instanceKlassHandle this_oop, bool throw_verifyerror, TRAPS);
-  static void initialize_impl                           (instanceKlassHandle this_oop, TRAPS);
-  static void eager_initialize_impl                     (instanceKlassHandle this_oop);
-  static void set_initialization_state_and_notify_impl  (instanceKlassHandle this_oop, ClassState state, TRAPS);
-  static void call_class_initializer_impl               (instanceKlassHandle this_oop, TRAPS);
-  static Klass* array_klass_impl                      (instanceKlassHandle this_oop, bool or_null, int n, TRAPS);
-  static void do_local_static_fields_impl               (instanceKlassHandle this_oop, void f(fieldDescriptor* fd, TRAPS), TRAPS);
+  static bool link_class_impl                           (instanceKlassHandle this_k, bool throw_verifyerror, TRAPS);
+  static bool verify_code                               (instanceKlassHandle this_k, bool throw_verifyerror, TRAPS);
+  static void initialize_impl                           (instanceKlassHandle this_k, TRAPS);
+  static void eager_initialize_impl                     (instanceKlassHandle this_k);
+  static void set_initialization_state_and_notify_impl  (instanceKlassHandle this_k, ClassState state, TRAPS);
+  static void call_class_initializer_impl               (instanceKlassHandle this_k, TRAPS);
+  static Klass* array_klass_impl                        (instanceKlassHandle this_k, bool or_null, int n, TRAPS);
+  static void do_local_static_fields_impl               (instanceKlassHandle this_k, void f(fieldDescriptor* fd, TRAPS), TRAPS);
   /* jni_id_for_impl for jfieldID only */
-  static JNIid* jni_id_for_impl                         (instanceKlassHandle this_oop, int offset);
+  static JNIid* jni_id_for_impl                         (instanceKlassHandle this_k, int offset);
 
   // Returns the array class for the n'th dimension
   Klass* array_klass_impl(bool or_null, int n, TRAPS);

@@ -176,6 +176,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
   #
   # Set the debug level
   #    release: no debug information, all optimizations, no asserts.
+  #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
   #    fastdebug: debug information (-g), all optimizations, all asserts
   #    slowdebug: debug information (-g), no optimizations, all asserts
   #
@@ -189,7 +190,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
       ], [ENABLE_DEBUG="no"])
 
   AC_ARG_WITH([debug-level], [AS_HELP_STRING([--with-debug-level],
-      [set the debug level (release, fastdebug, slowdebug) @<:@release@:>@])],
+      [set the debug level (release, fastdebug, slowdebug, optimized (HotSpot build only)) @<:@release@:>@])],
       [
         DEBUG_LEVEL="${withval}"
         if test "x$ENABLE_DEBUG" = xyes; then
@@ -199,6 +200,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
   AC_MSG_RESULT([$DEBUG_LEVEL])
 
   if test "x$DEBUG_LEVEL" != xrelease && \
+      test "x$DEBUG_LEVEL" != xoptimized && \
       test "x$DEBUG_LEVEL" != xfastdebug && \
       test "x$DEBUG_LEVEL" != xslowdebug; then
     AC_MSG_ERROR([Allowed debug levels are: release, fastdebug and slowdebug])
@@ -235,7 +237,29 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
       HOTSPOT_DEBUG_LEVEL="jvmg"
       HOTSPOT_EXPORT="debug"
       ;;
+    optimized )
+      VARIANT="OPT"
+      FASTDEBUG="false"
+      DEBUG_CLASSFILES="false"
+      BUILD_VARIANT_RELEASE="-optimized"
+      HOTSPOT_DEBUG_LEVEL="optimized"
+      HOTSPOT_EXPORT="optimized"
+      ;;
   esac
+
+  # The debug level 'optimized' is a little special because it is currently only
+  # applicable to the HotSpot build where it means to build a completely
+  # optimized version of the VM without any debugging code (like for the
+  # 'release' debug level which is called 'product' in the HotSpot build) but
+  # with the exception that it can contain additional code which is otherwise
+  # protected by '#ifndef PRODUCT' macros. These 'optimized' builds are used to
+  # test new and/or experimental features which are not intended for customer
+  # shipment. Because these new features need to be tested and benchmarked in
+  # real world scenarios, we want to build the containing JDK at the 'release'
+  # debug level.
+  if test "x$DEBUG_LEVEL" = xoptimized; then
+    DEBUG_LEVEL="release"
+  fi
 
   #####
   # Generate the legacy makefile targets for hotspot.

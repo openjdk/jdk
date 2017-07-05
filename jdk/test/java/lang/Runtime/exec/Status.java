@@ -35,10 +35,15 @@ public class Status {
     public static void main(String args[])
         throws Exception
     {
-        if (!System.getProperty("os.name").equals("Linux"))
+        if (!System.getProperty("os.name").equals("Linux")) {
+            System.out.println("Only for Linux");
             return;
+        }
+        UnixCommands.ensureCommandsAvailable("false");
+
+        final String falseCmd = UnixCommands.findCommand("false");
         for (int i = 0; i < N; i++) {
-            Process p = Runtime.getRuntime().exec("false");
+            Process p = Runtime.getRuntime().exec(falseCmd);
             int s = p.waitFor();
             System.out.print(s);
             System.out.print(' ');

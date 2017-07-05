@@ -48,8 +48,6 @@
 #define BASE_STRATUM_NAME "Java"
 
 #define null NULL
-#define true JNI_TRUE
-#define false JNI_FALSE
 #define String char *
 #define private static
 
@@ -147,7 +145,7 @@ private jboolean isValid(void);
             defaultStratumId = null;
             defaultStratumIndex = -1;
             baseStratumIndex = -2; /* so as not to match -1 above */
-            sourceMapIsValid = false;
+            sourceMapIsValid = JNI_FALSE;
 
             if (getSourceDebugExtension(clazz, &sourceDebugExtension) ==
                 JVMTI_ERROR_NONE) {
@@ -667,7 +665,7 @@ private jboolean isValid(void);
         jplsFilename = readLine();
         defaultStratumId = readLine();
         createJavaStratum();
-        while (true) {
+        while (1) {
             if (sdeRead() != '*') {
                 syntax("expected '*'");
             }
@@ -684,7 +682,7 @@ private jboolean isValid(void);
                 case 'E':
                     /* set end points */
                     storeStratum("*terminator*");
-                    sourceMapIsValid = true;
+                    sourceMapIsValid = JNI_TRUE;
                     return;
                 default:
                     ignoreSection();

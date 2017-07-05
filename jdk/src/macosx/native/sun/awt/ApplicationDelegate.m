@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,8 +255,6 @@ AWT_ASSERT_APPKIT_THREAD;
 
     [super dealloc];
 }
-//- (void)finalize { [super finalize]; } // GC
-
 
 #pragma mark Callbacks from AppKit
 
@@ -623,8 +621,7 @@ JNIEXPORT jlong JNICALL Java_com_apple_eawt__1AppDockIconHandler_nativeGetDockIc
 JNF_COCOA_ENTER(env);
 
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        image = [ApplicationDelegate _dockIconImage];
-        CFRetain(image);
+        image = [[ApplicationDelegate _dockIconImage] retain];
     }];
 
 JNF_COCOA_EXIT(env);

@@ -459,6 +459,11 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
       }
     }
 
+    if ((sig == SIGSEGV) && VM_Version::is_cpuinfo_segv_addr(pc)) {
+      // Verify that OS save/restore AVX registers.
+      stub = VM_Version::cpuinfo_cont_addr();
+    }
+
     if (thread->thread_state() == _thread_in_vm) {
       if (sig == SIGBUS && info->si_code == BUS_OBJERR && thread->doing_unsafe_access()) {
         stub = StubRoutines::handler_for_unsafe_access();

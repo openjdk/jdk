@@ -260,7 +260,6 @@ ifeq ($(JVM_VARIANT_SERVER),true)
       EXPORT_LIST += $(EXPORT_SERVER_DIR)/jvm.map
     endif
   endif
-  EXPORT_LIST += $(EXPORT_LIB_DIR)/jvm.lib
 endif
 ifeq ($(JVM_VARIANT_CLIENT),true)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
@@ -274,6 +273,8 @@ ifeq ($(JVM_VARIANT_CLIENT),true)
     endif
   endif
 endif
+
+EXPORT_LIST += $(EXPORT_LIB_DIR)/jvm.lib
 
 ifeq ($(BUILD_WIN_SA), 1)
   EXPORT_LIST += $(EXPORT_JRE_BIN_DIR)/sawindbg.$(LIBRARY_SUFFIX)

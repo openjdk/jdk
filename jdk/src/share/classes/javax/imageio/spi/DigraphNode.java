@@ -132,17 +132,17 @@ class DigraphNode<E> implements Cloneable, Serializable {
      * appropriately.
      */
     public void dispose() {
-        @SuppressWarnings("unchecked")
-        DigraphNode<E>[] inNodesArray = (DigraphNode<E>[])inNodes.toArray();
+        Object[] inNodesArray = inNodes.toArray();
         for(int i=0; i<inNodesArray.length; i++) {
-            DigraphNode<E> node = inNodesArray[i];
+            @SuppressWarnings("unchecked")
+            DigraphNode<E> node = (DigraphNode<E>)inNodesArray[i];
             node.removeEdge(this);
         }
 
-        @SuppressWarnings("unchecked")
-        DigraphNode<E>[] outNodesArray = (DigraphNode<E>[])outNodes.toArray();
+        Object[] outNodesArray = outNodes.toArray();
         for(int i=0; i<outNodesArray.length; i++) {
-            DigraphNode<E> node = outNodesArray[i];
+            @SuppressWarnings("unchecked")
+            DigraphNode<E> node = (DigraphNode<E>)outNodesArray[i];
             removeEdge(node);
         }
     }

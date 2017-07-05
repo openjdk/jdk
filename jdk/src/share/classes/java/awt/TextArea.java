@@ -49,7 +49,7 @@ import javax.accessibility.*;
  * <hr><blockquote><pre>
  * new TextArea("Hello", 5, 40);
  * </pre></blockquote><hr>
- * <p>
+ *
  * @author      Sami Shaio
  * @since       JDK1.0
  */

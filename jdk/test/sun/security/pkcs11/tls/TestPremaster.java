@@ -34,6 +34,7 @@ import java.security.Provider;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import java.util.Formatter;
 
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 
@@ -59,27 +60,51 @@ public class TestPremaster extends PKCS11Test {
             System.out.println("OK: " + e);
         }
 
-        test(kg, 3, 0);
-        test(kg, 3, 1);
-        test(kg, 3, 2);
-        test(kg, 4, 0);
+        int[] protocolVersions = {0x0300, 0x0301, 0x0302, 0x0400};
+        for (int clientVersion : protocolVersions) {
+            for (int serverVersion : protocolVersions) {
+                test(kg, clientVersion, serverVersion);
+                if (serverVersion >= clientVersion) {
+                    break;
+                }
+            }
+        }
 
         System.out.println("Done.");
     }
 
-    private static void test(KeyGenerator kg, int major, int minor)
-            throws Exception {
+    private static void test(KeyGenerator kg,
+            int clientVersion, int serverVersion) throws Exception {
 
-        kg.init(new TlsRsaPremasterSecretParameterSpec(major, minor));
+        System.out.printf(
+                "Testing RSA pre-master secret key generation between " +
+                "client (0x%04X) and server(0x%04X)%n",
+                clientVersion, serverVersion);
+        kg.init(new TlsRsaPremasterSecretParameterSpec(
+                                    clientVersion, serverVersion));
         SecretKey key = kg.generateKey();
         byte[] encoded = key.getEncoded();
-        if (encoded.length != 48) {
-            throw new Exception("length: " + encoded.length);
-        }
-        if ((encoded[0] != major) || (encoded[1] != minor)) {
-            throw new Exception("version mismatch: "  + encoded[0] +
-                "." + encoded[1]);
-        }
-        System.out.println("OK: " + major + "." + minor);
+        if (encoded != null) {  // raw key material may be not extractable
+            if (encoded.length != 48) {
+                throw new Exception("length: " + encoded.length);
+            }
+            int v = versionOf(encoded[0], encoded[1]);
+            if (clientVersion != v) {
+                if (serverVersion != v || clientVersion >= 0x0302) {
+                    throw new Exception(String.format(
+                        "version mismatch: (0x%04X) rather than (0x%04X) " +
+                        "is used in pre-master secret", v, clientVersion));
+                }
+                System.out.printf("Use compatible version (0x%04X)%n", v);
+            }
+            System.out.println("Passed, version matches!");
+       } else {
+            System.out.println("Raw key material is not extractable");
+       }
     }
+
+    private static int versionOf(int major, int minor) {
+        return ((major & 0xFF) << 8) | (minor & 0xFF);
+    }
+
 }

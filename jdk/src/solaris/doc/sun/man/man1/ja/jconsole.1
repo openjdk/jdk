@@ -1,157 +1,156 @@
-." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jconsole 1 "07 May 2011"
-
-.LP
-.SH "名前"
-jconsole \- Java 監視および管理コンソール
-.LP
-.RS 3
-.TP 2
-o
-形式 
-.TP 2
-o
-パラメータ 
-.TP 2
-o
-説明 
-.TP 2
-o
-オプション 
-.TP 2
-o
-関連項目 
-.RE
-
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: jconsole
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: Javaトラブルシューティング、プロファイリング、モニタリングおよび管理ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "jconsole" "1" "2013年11月21日" "JDK 8" "Javaトラブルシューティング、プロファイリング、モニタリン"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+jconsole \- Javaアプリケーションを監視および管理するためのグラフィカル・コンソールを開始します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3jconsole\fP [ \f2options\fP ] [ connection ... ]
-.fl
-
-.fl
+\fIjconsole\fR [ \fIoptions\fR ] [ connection \&.\&.\&. ]
 .fi
-
-.LP
-.SH "パラメータ"
-.LP
-.RS 3
-.TP 3
-options 
-オプションを使用する場合、コマンド名の直後に記述してください。 
-.TP 3
-connection = pid | host:port | jmxUrl 
-.RS 3
-.TP 2
-o
-\f2pid\fPローカルの Java VM のプロセス ID。Java VM は、jconsole を実行しているユーザー ID と同じユーザー ID を使用して実行する必要があります。詳細については、
-.na
-\f2「JMX 監視および管理」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/management/agent.htmlを参照してください。 
-.TP 2
-o
-\f2host\fP:\f2port\fP Java VM が実行しているホストシステムの名前と、JVM を起動したときにシステムプロパティー \f2com.sun.management.jmxremote.port\fP で指定したポート番号。詳細については、
-.na
-\f2「JMX 監視および管理」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/management/agent.htmlを参照してください。 
-.TP 2
-o
-\f2jmxUrl\fP 接続先の JMX エージェントのアドレス。これについては、
-.na
-\f2JMXServiceURL\fP @
-.fi
-http://java.sun.com/javase/6/docs/api/javax/management/remote/JMXServiceURL.html を参照してください。 
+.if n \{\
 .RE
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
 .RE
-
-.LP
-.SH " 説明"
-.LP
-.LP
-\f3jconsole\fP コマンドは、ローカルマシンまたはリモートマシン上の Java アプリケーションと仮想マシンの監視と管理を行うグラフィカルコンソールツールを起動します。
-.LP
-.LP
-Windows 上では、\f3jconsole\fP はコンソールウィンドウと関連付けられていません。ただし、なんらかの理由で \f3jconsole\fP コマンドが失敗すると、エラー情報を示すダイアログボックスが表示されます。
-.LP
+.PP
+connection = \fIpid\fR | \fIhost\fR:\fIport\fR | \fIjmxURL\fR
+.RS 4
+\fIpid\fR値はローカルのJava仮想マシン(JVM)のプロセスIDです。JVMは\fIjconsole\fRコマンドを実行しているユーザーIDと同じユーザーIDで実行する必要があります。\fIhost:port\fR値はJVMが動作しているホスト・システムの名前と、JVMが開始したときにシステム・プロパティ\fIcom\&.sun\&.management\&.jmxremote\&.port\fRで指定したポート番号です。\fIjmxUrl\fR値は、JMXServiceURLで記述されている、接続されるJMXエージェントのアドレスです。
+.sp
+\fIconnection\fRパラメータの詳細は、JMXテクノロジを使用したモニタリングおよび管理
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/management/agent\&.html)を参照してください
+.sp
+\fIJMXServiceURL\fRクラスの説明(
+http://docs\&.oracle\&.com/javase/8/docs/api/javax/management/remote/JMXServiceURL\&.html)も参照してください
+.RE
+.SH "説明"
+.PP
+\fIjconsole\fRコマンドは、ローカル・マシンまたはリモート・マシン上のJavaアプリケーションと仮想マシンの監視と管理を行うグラフィカル・コンソール・ツールを起動します。
+.PP
+Windows上では、\fIjconsole\fRコマンドはコンソール・ウィンドウと関連付けられていません。ただし、\fIjconsole\fRコマンドが失敗すると、エラー情報を示すダイアログ・ボックスが表示されます。
 .SH "オプション"
-.LP
-.RS 3
-.TP 3
-\-interval=n 
-更新間隔を \f2n\fP 秒に設定します (デフォルトは 4 秒)。 
-.TP 3
-\-notile 
-最初にウィンドウをタイリングしません (複数の接続のため)。 
-.TP 3
-\-pluginpath plugins 
-JConsole プラグインの検索先となるディレクトリまたは JAR ファイルのリストを指定します。\f2plugins\fP パスには、次の名前のプロバイダ構成ファイルを含めてください。
-.br
-.nf
-\f3
-.fl
-   META\-INF/services/com.sun.tools.jconsole.JConsolePlugin
-.fl
-\fP
-.fi
-.LP
-これには、
-.na
-\f2com.sun.tools.jconsole.JConsolePlugin\fP @
-.fi
-http://java.sun.com/javase/6/docs/jdk/api/jconsole/spec/com/sun/tools/jconsole/JConsolePlugin.html クラスを実装するクラスの完全修飾クラス名を指定する行が、プラグインごとに 1 行ずつ含まれています。  
-.TP 3
-\-version 
-バージョン情報を出力して終了します。 
-.TP 3
-\-help 
-ヘルプメッセージを出力して終了します。 
-.TP 3
-\-J<flag> 
-jconsole が実行されている Java 仮想マシンに <flag> を渡します。 
+.PP
+\-interval\fI=n\fR
+.RS 4
+更新間隔を\fIn\fR秒に設定します(デフォルトは4秒)。
 .RE
-
-.LP
+.PP
+\-notile
+.RS 4
+最初にウィンドウをタイリングしません(複数接続の場合)。
+.RE
+.PP
+\-pluginpath \fIplugins\fR
+.RS 4
+\fIJConsole\fRプラグインを検索するディレクトリまたはJARファイルのリストを指定します。\fIplugins\fRパスには\fIMETA\-INF/services/com\&.sun\&.tools\&.jconsole\&.JConsolePlugin\fRという名前のプロバイダ構成ファイルを含んでいる必要があり、これにはプラグインごとに1行が含まれています。その行は\fIcom\&.sun\&.tools\&.jconsole\&.JConsolePlugin\fRクラスを実装しているクラスの完全修飾クラス名を指定します。
+.RE
+.PP
+\-version
+.RS 4
+リリース情報を表示して終了します。
+.RE
+.PP
+\-help
+.RS 4
+ヘルプ・メッセージを表示します。
+.RE
+.PP
+\-J\fIflag\fR
+.RS 4
+\fIjconsole\fRコマンドを実行したJVMに\fIflag\fRを渡します。
+.RE
 .SH "関連項目"
-.LP
-.RS 3
-.TP 2
-o
-.na
-\f2JConsole の使用\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/management/jconsole.html 
-.TP 2
-o
-.na
-\f2「Java プラットフォームの監視および管理」\fP @
-.fi
-http://java.sun.com/javase/6/docs/technotes/guides/management/index.html 
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+JConsoleの使用
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/management/jconsole\&.html)
 .RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+JMXテクノロジを使用したモニタリングおよび管理
 
-.LP
- 
+(http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/management/agent\&.html)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIJMXServiceURL\fRクラスの説明(
+http://docs\&.oracle\&.com/javase/8/docs/api/javax/management/remote/JMXServiceURL\&.html)
+.RE
+.br
+'pl 8.5i
+'bp

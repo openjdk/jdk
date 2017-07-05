@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,14 +462,14 @@ JNIEXPORT void JNICALL
 Java_sun_awt_image_JPEGImageDecoder_initIDs(JNIEnv *env, jclass cls,
                                             jclass InputStreamClass)
 {
-    sendHeaderInfoID = (*env)->GetMethodID(env, cls, "sendHeaderInfo",
-                                           "(IIZZZ)Z");
-    sendPixelsByteID = (*env)->GetMethodID(env, cls, "sendPixels", "([BI)Z");
-    sendPixelsIntID = (*env)->GetMethodID(env, cls, "sendPixels", "([II)Z");
-    InputStream_readID = (*env)->GetMethodID(env, InputStreamClass,
-                                             "read", "([BII)I");
-    InputStream_availableID = (*env)->GetMethodID(env, InputStreamClass,
-                                                  "available", "()I");
+    CHECK_NULL(sendHeaderInfoID = (*env)->GetMethodID(env, cls, "sendHeaderInfo",
+                                           "(IIZZZ)Z"));
+    CHECK_NULL(sendPixelsByteID = (*env)->GetMethodID(env, cls, "sendPixels", "([BI)Z"));
+    CHECK_NULL(sendPixelsIntID = (*env)->GetMethodID(env, cls, "sendPixels", "([II)Z"));
+    CHECK_NULL(InputStream_readID = (*env)->GetMethodID(env, InputStreamClass,
+                                             "read", "([BII)I"));
+    CHECK_NULL(InputStream_availableID = (*env)->GetMethodID(env, InputStreamClass,
+                                                  "available", "()I"));
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,6 +467,7 @@ void AwtComponent::InitPeerGraphicsConfig(JNIEnv *env, jobject peer)
         jclass win32GCCls = env->FindClass("sun/awt/Win32GraphicsConfig");
         DASSERT(win32GCCls != NULL);
         DASSERT(env->IsInstanceOf(compGC, win32GCCls));
+        CHECK_NULL(win32GCCls);
         env->SetObjectField(peer, AwtComponent::peerGCID, compGC);
     }
 }
@@ -530,10 +531,15 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
         if (dw == ERROR_OUTOFMEMORY)
         {
             jstring errorMsg = JNU_NewStringPlatform(env, L"too many window handles");
-            createError = JNU_NewObjectByName(env, "java/lang/OutOfMemoryError",
+            if (errorMsg == NULL || env->ExceptionCheck()) {
+                env->ExceptionClear();
+                createError = JNU_NewObjectByName(env, "java/lang/OutOfMemoryError", "()V");
+            } else {
+                createError = JNU_NewObjectByName(env, "java/lang/OutOfMemoryError",
                                                       "(Ljava/lang/String;)V",
                                                       errorMsg);
-            env->DeleteLocalRef(errorMsg);
+                env->DeleteLocalRef(errorMsg);
+            }
         }
         else
         {
@@ -542,14 +548,18 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
                 NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                 (LPTSTR)&buf, 0, NULL);
             jstring s = JNU_NewStringPlatform(env, buf);
-            createError = JNU_NewObjectByName(env, "java/lang/InternalError",
-                                                  "(Ljava/lang/String;)V", s);
+            if (s == NULL || env->ExceptionCheck()) {
+                env->ExceptionClear();
+                createError = JNU_NewObjectByName(env, "java/lang/InternalError", "()V");
+            } else {
+                createError = JNU_NewObjectByName(env, "java/lang/InternalError",
+                                                                  "(Ljava/lang/String;)V", s);
+                env->DeleteLocalRef(s);
+            }
             LocalFree(buf);
-            env->DeleteLocalRef(s);
         }
-        env->SetObjectField(peer, AwtObject::createErrorID, createError);
-        if (createError != NULL)
-        {
+        if (createError != NULL) {
+            env->SetObjectField(peer, AwtObject::createErrorID, createError);
             env->DeleteLocalRef(createError);
         }
         env->DeleteLocalRef(target);
@@ -3309,10 +3319,7 @@ AwtComponent::BuildPrimaryDynamicTable() {
     if( extKeyCodesCls == NULL) {
         jclass extKeyCodesClsLocal = env->FindClass("sun/awt/ExtendedKeyCodes");
         DASSERT(extKeyCodesClsLocal);
-        if (extKeyCodesClsLocal == NULL) {
-            /* exception already thrown */
-            return;
-        }
+        CHECK_NULL(extKeyCodesClsLocal);
         extKeyCodesCls = (jclass)env->NewGlobalRef(extKeyCodesClsLocal);
         env->DeleteLocalRef(extKeyCodesClsLocal);
     }
@@ -3321,6 +3328,7 @@ AwtComponent::BuildPrimaryDynamicTable() {
         getExtendedKeyCodeForChar =
                   env->GetStaticMethodID(extKeyCodesCls, "getExtendedKeyCodeForChar", "(I)I");
         DASSERT(getExtendedKeyCodeForChar);
+        CHECK_NULL(getExtendedKeyCodeForChar);
     }
     jint extJKC; //extended Java key code
 
@@ -3940,11 +3948,19 @@ void AwtComponent::SendInputMethodEvent(jint id, jstring text,
     if (cClause && rgClauseBoundary && rgClauseReading) {
         // convert clause boundary offset array to java array
         clauseBoundary = env->NewIntArray(cClause+1);
+        DASSERT(clauseBoundary);
+        CHECK_NULL(clauseBoundary);
         env->SetIntArrayRegion(clauseBoundary, 0, cClause+1, (jint *)rgClauseBoundary);
         DASSERT(!safe_ExceptionOccurred(env));
 
         // convert clause reading string array to java array
-        clauseReading = env->NewObjectArray(cClause, JNU_ClassString(env), NULL);
+        jclass stringCls = JNU_ClassString(env);
+        DASSERT(stringCls);
+        CHECK_NULL(stringCls);
+        clauseReading = env->NewObjectArray(cClause, stringCls, NULL);
+        env->DeleteLocalRef(stringCls);
+        DASSERT(clauseReading);
+        CHECK_NULL(clauseReading);
         for (int i=0; i<cClause; i++)   env->SetObjectArrayElement(clauseReading, i, rgClauseReading[i]);
         DASSERT(!safe_ExceptionOccurred(env));
     }
@@ -3963,11 +3979,15 @@ void AwtComponent::SendInputMethodEvent(jint id, jstring text,
     if (cAttrBlock && rgAttrBoundary && rgAttrValue) {
         // convert attribute boundary offset array to java array
         attrBoundary = env->NewIntArray(cAttrBlock+1);
+        DASSERT(attrBoundary);
+        CHECK_NULL(attrBoundary);
         env->SetIntArrayRegion(attrBoundary, 0, cAttrBlock+1, (jint *)rgAttrBoundary);
         DASSERT(!safe_ExceptionOccurred(env));
 
         // convert attribute value byte array to java array
         attrValue = env->NewByteArray(cAttrBlock);
+        DASSERT(attrValue);
+        CHECK_NULL(attrValue);
         env->SetByteArrayRegion(attrValue, 0, cAttrBlock, (jbyte *)rgAttrValue);
         DASSERT(!safe_ExceptionOccurred(env));
     }
@@ -3978,10 +3998,7 @@ void AwtComponent::SendInputMethodEvent(jint id, jstring text,
     if (wInputMethodCls == NULL) {
         jclass wInputMethodClsLocal = env->FindClass("sun/awt/windows/WInputMethod");
         DASSERT(wInputMethodClsLocal);
-        if (wInputMethodClsLocal == NULL) {
-            /* exception already thrown */
-            return;
-        }
+        CHECK_NULL(wInputMethodClsLocal);
         wInputMethodCls = (jclass)env->NewGlobalRef(wInputMethodClsLocal);
         env->DeleteLocalRef(wInputMethodClsLocal);
     }
@@ -3992,6 +4009,7 @@ void AwtComponent::SendInputMethodEvent(jint id, jstring text,
         sendIMEventMid =  env->GetMethodID(wInputMethodCls, "sendInputMethodEvent",
                                            "(IJLjava/lang/String;[I[Ljava/lang/String;[I[BIII)V");
         DASSERT(sendIMEventMid);
+        CHECK_NULL(sendIMEventMid);
     }
 
     // call m_InputMethod.sendInputMethod()
@@ -4017,10 +4035,7 @@ void AwtComponent::InquireCandidatePosition()
     if (wInputMethodCls == NULL) {
         jclass wInputMethodClsLocal = env->FindClass("sun/awt/windows/WInputMethod");
         DASSERT(wInputMethodClsLocal);
-        if (wInputMethodClsLocal == NULL) {
-            /* exception already thrown */
-            return;
-        }
+        CHECK_NULL(wInputMethodClsLocal);
         wInputMethodCls = (jclass)env->NewGlobalRef(wInputMethodClsLocal);
         env->DeleteLocalRef(wInputMethodClsLocal);
     }
@@ -4028,10 +4043,10 @@ void AwtComponent::InquireCandidatePosition()
     // get method ID of sendInputMethodEvent() (run only once)
     static jmethodID inqCandPosMid = 0;
     if (inqCandPosMid == 0) {
-        inqCandPosMid =  env->GetMethodID(wInputMethodCls, "inquireCandidatePosition",
-                                           "()V");
+        inqCandPosMid =  env->GetMethodID(wInputMethodCls, "inquireCandidatePosition", "()V");
         DASSERT(!safe_ExceptionOccurred(env));
         DASSERT(inqCandPosMid);
+        CHECK_NULL(inqCandPosMid);
     }
 
     // call m_InputMethod.sendInputMethod()
@@ -4313,6 +4328,11 @@ void AwtComponent::DrawListItem(JNIEnv *env, DRAWITEMSTRUCT &drawInfo)
     if ((int) (drawInfo.itemID) >= 0) {
             jobject font = GET_FONT(target, peer);
             jstring text = GetItemString(env, target, drawInfo.itemID);
+            if (env->ExceptionCheck()) {
+                env->DeleteLocalRef(font);
+                env->DeleteLocalRef(target);
+                return;
+            }
             SIZE size = AwtFont::getMFStringSize(hDC, font, text);
             AwtFont::drawMFString(hDC, font, text,
                                   (GetRTL()) ? rect.right - size.cx - 1
@@ -4772,6 +4792,7 @@ void AwtComponent::SendKeyEvent(jint id, jlong when, jint raw, jint cooked,
         keyEventConst =  env->GetMethodID(keyEventCls, "<init>",
                                           "(Ljava/awt/Component;IJIICI)V");
         DASSERT(keyEventConst);
+        CHECK_NULL(keyEventConst);
     }
     if (env->EnsureLocalCapacity(2) < 0) {
         return;
@@ -4783,6 +4804,10 @@ void AwtComponent::SendKeyEvent(jint id, jlong when, jint raw, jint cooked,
     if (safe_ExceptionOccurred(env)) env->ExceptionDescribe();
     DASSERT(!safe_ExceptionOccurred(env));
     DASSERT(keyEvent != NULL);
+    if (keyEvent == NULL) {
+        env->DeleteLocalRef(target);
+        return;
+    }
     env->SetLongField(keyEvent, AwtKeyEvent::rawCodeID, nativeCode);
     if( nativeCode && nativeCode < 256 ) {
         env->SetLongField(keyEvent, AwtKeyEvent::primaryLevelUnicodeID, (jlong)(dynPrimaryKeymap[nativeCode].unicode));
@@ -4866,10 +4891,7 @@ void AwtComponent::SendMouseEvent(jint id, jlong when, jint x, jint y,
     if (mouseEventCls == NULL) {
         jclass mouseEventClsLocal =
             env->FindClass("java/awt/event/MouseEvent");
-        if (!mouseEventClsLocal) {
-            /* exception already thrown */
-            return;
-        }
+        CHECK_NULL(mouseEventClsLocal);
         mouseEventCls = (jclass)env->NewGlobalRef(mouseEventClsLocal);
         env->DeleteLocalRef(mouseEventClsLocal);
     }
@@ -4882,6 +4904,7 @@ void AwtComponent::SendMouseEvent(jint id, jlong when, jint x, jint y,
             env->GetMethodID(mouseEventCls, "<init>",
                  "(Ljava/awt/Component;IJIIIIIIZI)V");
         DASSERT(mouseEventConst);
+        CHECK_NULL(mouseEventConst);
     }
     if (env->EnsureLocalCapacity(2) < 0) {
         return;
@@ -4894,7 +4917,7 @@ void AwtComponent::SendMouseEvent(jint id, jlong when, jint x, jint y,
                                         target,
                                         id, when, modifiers,
                                         x+insets.left, y+insets.top,
-                    xAbs, yAbs,
+                                        xAbs, yAbs,
                                         clickCount, popupTrigger, button);
 
     if (safe_ExceptionOccurred(env)) {
@@ -4903,6 +4926,7 @@ void AwtComponent::SendMouseEvent(jint id, jlong when, jint x, jint y,
     }
 
     DASSERT(mouseEvent != NULL);
+    CHECK_NULL(mouseEvent);
     if (pMsg != 0) {
         AwtAWTEvent::saveMSG(env, pMsg, mouseEvent);
     }
@@ -4931,10 +4955,7 @@ AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
     if (mouseWheelEventCls == NULL) {
         jclass mouseWheelEventClsLocal =
             env->FindClass("java/awt/event/MouseWheelEvent");
-        if (!mouseWheelEventClsLocal) {
-            /* exception already thrown */
-            return;
-        }
+        CHECK_NULL(mouseWheelEventClsLocal);
         mouseWheelEventCls = (jclass)env->NewGlobalRef(mouseWheelEventClsLocal);
         env->DeleteLocalRef(mouseWheelEventClsLocal);
     }
@@ -4947,6 +4968,7 @@ AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
             env->GetMethodID(mouseWheelEventCls, "<init>",
                            "(Ljava/awt/Component;IJIIIIIIZIIID)V");
         DASSERT(mouseWheelEventConst);
+        CHECK_NULL(mouseWheelEventConst);
     }
     if (env->EnsureLocalCapacity(2) < 0) {
         return;
@@ -4963,11 +4985,14 @@ AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
                                              clickCount, popupTrigger,
                                              scrollType, scrollAmount,
                                              roundedWheelRotation, preciseWheelRotation);
-    if (safe_ExceptionOccurred(env)) {
+
+    DASSERT(mouseWheelEvent != NULL);
+    if (mouseWheelEvent == NULL || safe_ExceptionOccurred(env)) {
         env->ExceptionDescribe();
         env->ExceptionClear();
+        env->DeleteLocalRef(target);
+        return;
     }
-    DASSERT(mouseWheelEvent != NULL);
     if (pMsg != NULL) {
         AwtAWTEvent::saveMSG(env, pMsg, mouseWheelEvent);
     }
@@ -4992,10 +5017,7 @@ void AwtComponent::SendFocusEvent(jint id, HWND opposite)
         jclass focusEventClsLocal
             = env->FindClass("java/awt/event/FocusEvent");
         DASSERT(focusEventClsLocal);
-        if (focusEventClsLocal == NULL) {
-            /* exception already thrown */
-            return;
-        }
+        CHECK_NULL(focusEventClsLocal);
         focusEventCls = (jclass)env->NewGlobalRef(focusEventClsLocal);
         env->DeleteLocalRef(focusEventClsLocal);
     }
@@ -5006,6 +5028,7 @@ void AwtComponent::SendFocusEvent(jint id, HWND opposite)
             env->GetMethodID(focusEventCls, "<init>",
                              "(Ljava/awt/Component;IZLjava/awt/Component;)V");
         DASSERT(focusEventConst);
+        CHECK_NULL(focusEventConst);
     }
 
     static jclass sequencedEventCls;
@@ -5013,10 +5036,7 @@ void AwtComponent::SendFocusEvent(jint id, HWND opposite)
         jclass sequencedEventClsLocal =
             env->FindClass("java/awt/SequencedEvent");
         DASSERT(sequencedEventClsLocal);
-        if (sequencedEventClsLocal == NULL) {
-            /* exception already thrown */
-            return;
-        }
+        CHECK_NULL(sequencedEventClsLocal);
         sequencedEventCls =
             (jclass)env->NewGlobalRef(sequencedEventClsLocal);
         env->DeleteLocalRef(sequencedEventClsLocal);
@@ -5027,6 +5047,8 @@ void AwtComponent::SendFocusEvent(jint id, HWND opposite)
         sequencedEventConst =
             env->GetMethodID(sequencedEventCls, "<init>",
                              "(Ljava/awt/AWTEvent;)V");
+        DASSERT(sequencedEventConst);
+        CHECK_NULL(sequencedEventConst);
     }
 
     if (env->EnsureLocalCapacity(3) < 0) {
@@ -5049,6 +5071,7 @@ void AwtComponent::SendFocusEvent(jint id, HWND opposite)
         env->DeleteLocalRef(jOpposite); jOpposite = NULL;
     }
     env->DeleteLocalRef(target); target = NULL;
+    CHECK_NULL(focusEvent);
 
     jobject sequencedEvent = env->NewObject(sequencedEventCls,
                                             sequencedEventConst,
@@ -5056,7 +5079,7 @@ void AwtComponent::SendFocusEvent(jint id, HWND opposite)
     DASSERT(!safe_ExceptionOccurred(env));
     DASSERT(sequencedEvent != NULL);
     env->DeleteLocalRef(focusEvent); focusEvent = NULL;
-
+    CHECK_NULL(sequencedEvent);
     SendEvent(sequencedEvent);
 
     env->DeleteLocalRef(sequencedEvent);
@@ -5227,7 +5250,7 @@ void AwtComponent::SynthesizeMouseMessage(JNIEnv *env, jobject mouseEvent)
                                                "getWheelRotation",
                                                "()I").i;
           DASSERT(!safe_ExceptionOccurred(env));
-          //DASSERT(wheelAmt);
+          JNU_CHECK_EXCEPTION(env);
           DTRACE_PRINTLN1("wheelAmt = %i\n", wheelAmt);
 
           // convert Java wheel amount value to Win32
@@ -6306,10 +6329,12 @@ Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
     jclass inputEventClazz = env->FindClass("java/awt/event/InputEvent");
+    CHECK_NULL(inputEventClazz);
     jmethodID getButtonDownMasksID = env->GetStaticMethodID(inputEventClazz, "getButtonDownMasks", "()[I");
+    CHECK_NULL(getButtonDownMasksID);
     jintArray obj = (jintArray)env->CallStaticObjectMethod(inputEventClazz, getButtonDownMasksID);
     jint * tmp = env->GetIntArrayElements(obj, JNI_FALSE);
-
+    CHECK_NULL(tmp);
     jsize len = env->GetArrayLength(obj);
     AwtComponent::masks = SAFE_SIZE_NEW_ARRAY(jint, len);
     for (int i = 0; i < len; i++) {
@@ -6322,68 +6347,112 @@ Java_java_awt_Component_initIDs(JNIEnv *env, jclass cls)
     jclass peerCls = env->FindClass("sun/awt/windows/WComponentPeer");
 
     DASSERT(peerCls);
+    CHECK_NULL(peerCls);
 
     /* field ids */
     AwtComponent::peerID =
       env->GetFieldID(cls, "peer", "Ljava/awt/peer/ComponentPeer;");
+    DASSERT(AwtComponent::peerID);
+    CHECK_NULL(AwtComponent::peerID);
+
     AwtComponent::xID = env->GetFieldID(cls, "x", "I");
+    DASSERT(AwtComponent::xID);
+    CHECK_NULL(AwtComponent::xID);
+
     AwtComponent::yID = env->GetFieldID(cls, "y", "I");
+    DASSERT(AwtComponent::yID);
+    CHECK_NULL(AwtComponent::yID);
+
     AwtComponent::heightID = env->GetFieldID(cls, "height", "I");
+    DASSERT(AwtComponent::heightID);
+    CHECK_NULL(AwtComponent::heightID);
+
     AwtComponent::widthID = env->GetFieldID(cls, "width", "I");
+    DASSERT(AwtComponent::widthID);
+    CHECK_NULL(AwtComponent::widthID);
+
     AwtComponent::visibleID = env->GetFieldID(cls, "visible", "Z");
+    DASSERT(AwtComponent::visibleID);
+    CHECK_NULL(AwtComponent::visibleID);
+
     AwtComponent::backgroundID =
         env->GetFieldID(cls, "background", "Ljava/awt/Color;");
+    DASSERT(AwtComponent::backgroundID);
+    CHECK_NULL(AwtComponent::backgroundID);
+
     AwtComponent::foregroundID =
         env->GetFieldID(cls, "foreground", "Ljava/awt/Color;");
+    DASSERT(AwtComponent::foregroundID);
+    CHECK_NULL(AwtComponent::foregroundID);
+
     AwtComponent::enabledID = env->GetFieldID(cls, "enabled", "Z");
+    DASSERT(AwtComponent::enabledID);
+    CHECK_NULL(AwtComponent::enabledID);
+
     AwtComponent::parentID = env->GetFieldID(cls, "parent", "Ljava/awt/Container;");
+    DASSERT(AwtComponent::parentID);
+    CHECK_NULL(AwtComponent::parentID);
+
     AwtComponent::graphicsConfigID =
      env->GetFieldID(cls, "graphicsConfig", "Ljava/awt/GraphicsConfiguration;");
+    DASSERT(AwtComponent::graphicsConfigID);
+    CHECK_NULL(AwtComponent::graphicsConfigID);
+
     AwtComponent::focusableID = env->GetFieldID(cls, "focusable", "Z");
+    DASSERT(AwtComponent::focusableID);
+    CHECK_NULL(AwtComponent::focusableID);
 
     AwtComponent::appContextID = env->GetFieldID(cls, "appContext",
                                                  "Lsun/awt/AppContext;");
+    DASSERT(AwtComponent::appContextID);
+    CHECK_NULL(AwtComponent::appContextID);
 
     AwtComponent::peerGCID = env->GetFieldID(peerCls, "winGraphicsConfig",
                                         "Lsun/awt/Win32GraphicsConfig;");
+    DASSERT(AwtComponent::peerGCID);
+    CHECK_NULL(AwtComponent::peerGCID);
 
     AwtComponent::hwndID = env->GetFieldID(peerCls, "hwnd", "J");
+    DASSERT(AwtComponent::hwndID);
+    CHECK_NULL(AwtComponent::hwndID);
 
     AwtComponent::cursorID = env->GetFieldID(cls, "cursor", "Ljava/awt/Cursor;");
+    DASSERT(AwtComponent::cursorID);
+    CHECK_NULL(AwtComponent::cursorID);
 
     /* method ids */
     AwtComponent::getFontMID =
         env->GetMethodID(cls, "getFont_NoClientCode", "()Ljava/awt/Font;");
+    DASSERT(AwtComponent::getFontMID);
+    CHECK_NULL(AwtComponent::getFontMID);
+
     AwtComponent::getToolkitMID =
         env->GetMethodID(cls, "getToolkitImpl", "()Ljava/awt/Toolkit;");
+    DASSERT(AwtComponent::getToolkitMID);
+    CHECK_NULL(AwtComponent::getToolkitMID);
+
     AwtComponent::isEnabledMID = env->GetMethodID(cls, "isEnabledImpl", "()Z");
+    DASSERT(AwtComponent::isEnabledMID);
+    CHECK_NULL(AwtComponent::isEnabledMID);
+
     AwtComponent::getLocationOnScreenMID =
         env->GetMethodID(cls, "getLocationOnScreen_NoTreeLock", "()Ljava/awt/Point;");
+    DASSERT(AwtComponent::getLocationOnScreenMID);
+    CHECK_NULL(AwtComponent::getLocationOnScreenMID);
+
     AwtComponent::replaceSurfaceDataMID =
         env->GetMethodID(peerCls, "replaceSurfaceData", "()V");
+    DASSERT(AwtComponent::replaceSurfaceDataMID);
+    CHECK_NULL(AwtComponent::replaceSurfaceDataMID);
+
     AwtComponent::replaceSurfaceDataLaterMID =
         env->GetMethodID(peerCls, "replaceSurfaceDataLater", "()V");
-    AwtComponent::disposeLaterMID = env->GetMethodID(peerCls, "disposeLater", "()V");
-
-    DASSERT(AwtComponent::xID);
-    DASSERT(AwtComponent::yID);
-    DASSERT(AwtComponent::heightID);
-    DASSERT(AwtComponent::widthID);
-    DASSERT(AwtComponent::visibleID);
-    DASSERT(AwtComponent::backgroundID);
-    DASSERT(AwtComponent::foregroundID);
-    DASSERT(AwtComponent::enabledID);
-    DASSERT(AwtComponent::parentID);
-    DASSERT(AwtComponent::hwndID);
-
-    DASSERT(AwtComponent::getFontMID);
-    DASSERT(AwtComponent::getToolkitMID);
-    DASSERT(AwtComponent::isEnabledMID);
-    DASSERT(AwtComponent::getLocationOnScreenMID);
-    DASSERT(AwtComponent::replaceSurfaceDataMID);
     DASSERT(AwtComponent::replaceSurfaceDataLaterMID);
-    DASSERT(AwtComponent::disposeLaterMID);
+    CHECK_NULL(AwtComponent::replaceSurfaceDataLaterMID);
 
+    AwtComponent::disposeLaterMID = env->GetMethodID(peerCls, "disposeLater", "()V");
+    DASSERT(AwtComponent::disposeLaterMID);
+    CHECK_NULL(AwtComponent::disposeLaterMID);
 
     CATCH_BAD_ALLOC;
 }

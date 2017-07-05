@@ -101,19 +101,12 @@ import java.util.Objects;
  * <h3>When to use this interface</h3>
  * The design of the API encourages the use of {@code LocalDate} rather than this
  * interface, even in the case where the application needs to deal with multiple
- * calendar systems. The rationale for this is explored in the following documentation.
+ * calendar systems.
  * <p>
- * The primary use case where this interface should be used is where the generic
- * type parameter {@code <D>} is fully defined as a specific chronology.
- * In that case, the assumptions of that chronology are known at development
- * time and specified in the code.
- * <p>
- * When the chronology is defined in the generic type parameter as ? or otherwise
- * unknown at development time, the rest of the discussion below applies.
- * <p>
- * To emphasize the point, declaring a method signature, field or variable as this
- * interface type can initially seem like the sensible way to globalize an application,
- * however it is usually the wrong approach.
+ * This concept can seem surprising at first, as the natural way to globalize an
+ * application might initially appear to be to abstract the calendar system.
+ * However, as explored below, abstracting the calendar system is usually the wrong
+ * approach, resulting in logic errors and hard to find bugs.
  * As such, it should be considered an application-wide architectural decision to choose
  * to use this interface as opposed to {@code LocalDate}.
  *

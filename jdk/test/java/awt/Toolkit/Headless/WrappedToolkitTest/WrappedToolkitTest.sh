@@ -1,7 +1,7 @@
 #!/bin/ksh -p
 
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 #
 #   @test
-#   @bug 6282388
+#   @bug 6282388 8030640
 #   @summary Tests that AWT use correct toolkit to be wrapped into HeadlessToolkit
 #   @author artem.ananiev@sun.com: area=awt.headless
 #   @compile TestWrapped.java
@@ -59,28 +59,12 @@ pass()
 # Checking for proper OS
 OS=`uname -s`
 case "$OS" in
-   SunOS )
-      VAR="One value for Sun"
-      DEFAULT_JDK=/usr/local/java/jdk1.2/solaris
+   SunOS | Linux | Darwin | CYGWIN* )
       FILESEP="/"
       ;;
-
-   Linux )
-      VAR="A different value for Linux"
-      DEFAULT_JDK=/usr/local/java/jdk1.4/linux-i386
-      FILESEP="/"
-      ;;
-
-   Windows* | CYGWIN* )
-      VAR="A different value for Win32"
-      DEFAULT_JDK=/usr/local/java/jdk1.2/win32
+    
+   Windows* )
       FILESEP="\\"
-      ;;
-
-    Darwin)
-      VAR="Lets not forget about Mac"
-      DEFAULT_JDK=$(/usr/libexec/java_home)
-      FILESEP="/"
       ;;
 
    # catch all other OSs
@@ -113,8 +97,7 @@ if [ -z "${TESTJAVA}" ] ; then
    # THIS IS THE JDK BEING TESTED.
    if [ -n "$1" ] ;
       then TESTJAVA=$1
-      else echo "no JDK specified on command line so using default!"
-     TESTJAVA=$DEFAULT_JDK
+      else fail "no JDK specified on command line!"
    fi
    TESTSRC=.
    TESTCLASSES=.

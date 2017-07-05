@@ -92,7 +92,7 @@ public class NamingManager {
      * The builder can only be installed if the executing thread is allowed
      * (by the security manager's checkSetFactory() method) to do so.
      * Once installed, the builder cannot be replaced.
-     *<p>
+     *
      * @param builder The factory builder to install. If null, no builder
      *                  is installed.
      * @exception SecurityException builder cannot be installed

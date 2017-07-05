@@ -700,24 +700,26 @@ class ZipFile implements ZipConstants, Closeable {
         }
 
         public int read(byte b[], int off, int len) throws IOException {
-            if (rem == 0) {
-                return -1;
-            }
-            if (len <= 0) {
-                return 0;
-            }
-            if (len > rem) {
-                len = (int) rem;
-            }
             synchronized (ZipFile.this) {
-                ensureOpenOrZipException();
+                long rem = this.rem;
+                long pos = this.pos;
+                if (rem == 0) {
+                    return -1;
+                }
+                if (len <= 0) {
+                    return 0;
+                }
+                if (len > rem) {
+                    len = (int) rem;
+                }
 
+                ensureOpenOrZipException();
                 len = ZipFile.read(ZipFile.this.jzfile, jzentry, pos, b,
                                    off, len);
-            }
-            if (len > 0) {
-                pos += len;
-                rem -= len;
+                if (len > 0) {
+                    this.pos = (pos + len);
+                    this.rem = (rem - len);
+                }
             }
             if (rem == 0) {
                 close();
