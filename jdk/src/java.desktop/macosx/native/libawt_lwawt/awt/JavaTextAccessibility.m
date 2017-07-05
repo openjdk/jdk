@@ -427,13 +427,15 @@ NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
     return javaIntArrayToNSRangeValue(env, axTextRange);
 }
 
-- (NSDictionary *)getActions:(JNIEnv *)env {
-    // cmcnote: this isn't correct; text can have actions. Not yet implemented. radr://3941691
-    // Editable text has AXShowMenu. Textfields have AXConfirm. Static text has no actions.
-#ifdef JAVA_AX_DEBUG
-    NSLog(@"Not yet implemented: %s\n", __FUNCTION__);
-#endif
-    return nil;
-}
+/* 
+ * - (NSDictionary *)getActions:(JNIEnv *)env { ... }
+ *
+ * In the future, possibly add support: Editable text has AXShowMenu.
+ * Textfields have AXConfirm.
+ *
+ * Note: JLabels (static text) in JLists have a press/click selection action
+ *   which is currently handled in superclass JavaComponentAccessibility.
+ *   If function is added here be sure to use [super getActions:env] for JLabels.
+ */
 
 @end

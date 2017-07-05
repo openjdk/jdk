@@ -33,7 +33,6 @@ import com.sun.org.apache.bcel.internal.generic.LDC;
 import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
-import com.sun.org.apache.xalan.internal.utils.FeatureManager;
 import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.BooleanType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
@@ -55,6 +54,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Vector;
+import jdk.xml.internal.JdkXmlFeatures;
 
 /**
  * @author Jacek Ambroziak
@@ -741,7 +741,7 @@ class FunctionCall extends Expression {
         final InstructionList il = methodGen.getInstructionList();
         final boolean isSecureProcessing = classGen.getParser().getXSLTC().isSecureProcessing();
         final boolean isExtensionFunctionEnabled = classGen.getParser().getXSLTC()
-                .getFeature(FeatureManager.Feature.ORACLE_ENABLE_EXTENSION_FUNCTION);
+                .getFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION);
         int index;
 
         // Translate calls to methods in the BasisLibrary
@@ -971,7 +971,7 @@ class FunctionCall extends Expression {
                 if (_clazz == null) {
                     final boolean isSecureProcessing = getXSLTC().isSecureProcessing();
                     final boolean isExtensionFunctionEnabled = getXSLTC()
-                            .getFeature(FeatureManager.Feature.ORACLE_ENABLE_EXTENSION_FUNCTION);
+                            .getFeature(JdkXmlFeatures.XmlFeature.ENABLE_EXTENSION_FUNCTION);
 
                     //Check if FSP and SM - only then process with loading
                     if (namespace != null && isSecureProcessing

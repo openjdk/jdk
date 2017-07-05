@@ -261,27 +261,10 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
 {
     CGKeyCode keyCode = GetCGKeyCode(javaKeyCode);
 
-    if ((javaKeyCode >= java_awt_event_KeyEvent_VK_0) &&
-		(javaKeyCode <= java_awt_event_KeyEvent_VK_9))
-    {
-        AXUIElementRef elem = AXUIElementCreateSystemWide();
-        AXUIElementPostKeyboardEvent(elem, (CGCharCode)0, keyCode, keyPressed);
-        CFRelease(elem);
-    } else {
-        /*
-         * JDK-8155740: AXUIElementPostKeyboardEvent posts correct key codes for
-         * number keys whereas CGEventPost posts Numpad keys for corresponding
-         * number key. Hence AXUIElementPostKeyboardEvent is used for posting
-         * numbers and CGEventCreateKeyboardEvent/CGEventPost is used for other
-         * keys.
-         * Key code for modifier key is required to distinguish between ALT and
-         * ALT-GR key for fixing issue 8155740.
-         */
-        CGEventRef event = CGEventCreateKeyboardEvent(NULL, keyCode, keyPressed);
-        if (event != NULL) {
-            CGEventPost(kCGSessionEventTap, event);
-            CFRelease(event);
-        }
+    CGEventRef event = CGEventCreateKeyboardEvent(NULL, keyCode, keyPressed);
+    if (event != NULL) {
+        CGEventPost(kCGSessionEventTap, event);
+        CFRelease(event);
     }
 }
 

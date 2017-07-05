@@ -48,9 +48,11 @@ import com.sun.xml.internal.stream.XMLEntityStorage;
 import com.sun.xml.internal.stream.dtd.DTDGrammarUtil;
 import java.io.EOFException;
 import java.io.IOException;
+import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.events.XMLEvent;
+import jdk.xml.internal.JdkXmlUtils;
 
 /**
  *
@@ -175,7 +177,8 @@ public class XMLDocumentFragmentScannerImpl
                 VALIDATION,
                 NOTIFY_BUILTIN_REFS,
                 NOTIFY_CHAR_REFS,
-                Constants.STAX_REPORT_CDATA_EVENT
+                Constants.STAX_REPORT_CDATA_EVENT,
+                XMLConstants.USE_CATALOG
     };
 
     /** Feature defaults. */
@@ -184,15 +187,20 @@ public class XMLDocumentFragmentScannerImpl
                 null,
                 Boolean.FALSE,
                 Boolean.FALSE,
-                Boolean.TRUE
+                Boolean.TRUE,
+                JdkXmlUtils.USE_CATALOG_DEFAULT
     };
 
     /** Recognized properties. */
     private static final String[] RECOGNIZED_PROPERTIES = {
-        SYMBOL_TABLE,
+                SYMBOL_TABLE,
                 ERROR_REPORTER,
                 ENTITY_MANAGER,
-                XML_SECURITY_PROPERTY_MANAGER
+                XML_SECURITY_PROPERTY_MANAGER,
+                JdkXmlUtils.CATALOG_DEFER,
+                JdkXmlUtils.CATALOG_FILES,
+                JdkXmlUtils.CATALOG_PREFER,
+                JdkXmlUtils.CATALOG_RESOLVE
     };
 
     /** Property defaults. */
@@ -200,8 +208,13 @@ public class XMLDocumentFragmentScannerImpl
                 null,
                 null,
                 null,
+                null,
+                null,
+                null,
+                null,
                 null
     };
+
 
     private static final char [] cdata = {'[','C','D','A','T','A','['};
     static final char [] xmlDecl = {'<','?','x','m','l'};

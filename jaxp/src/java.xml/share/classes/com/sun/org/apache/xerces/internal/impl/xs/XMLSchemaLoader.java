@@ -76,6 +76,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.WeakHashMap;
 import javax.xml.XMLConstants;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMError;
 import org.w3c.dom.DOMErrorHandler;
@@ -173,7 +174,8 @@ XSLoader, DOMConfiguration {
         HONOUR_ALL_SCHEMALOCATIONS,
         NAMESPACE_GROWTH,
         TOLERATE_DUPLICATES,
-        USE_SERVICE_MECHANISM
+        USE_SERVICE_MECHANISM,
+        XMLConstants.USE_CATALOG
     };
 
     // property identifiers
@@ -187,7 +189,7 @@ XSLoader, DOMConfiguration {
         Constants.XERCES_PROPERTY_PREFIX + Constants.ERROR_REPORTER_PROPERTY;
 
     /** Property identifier: error handler. */
-    protected static final String ERROR_HANDLER =
+    public static final String ERROR_HANDLER =
         Constants.XERCES_PROPERTY_PREFIX + Constants.ERROR_HANDLER_PROPERTY;
 
     /** Property identifier: entity resolver. */
@@ -244,7 +246,11 @@ XSLoader, DOMConfiguration {
         SECURITY_MANAGER,
         LOCALE,
         SCHEMA_DV_FACTORY,
-        XML_SECURITY_PROPERTY_MANAGER
+        XML_SECURITY_PROPERTY_MANAGER,
+        JdkXmlUtils.CATALOG_DEFER,
+        JdkXmlUtils.CATALOG_FILES,
+        JdkXmlUtils.CATALOG_PREFER,
+        JdkXmlUtils.CATALOG_RESOLVE
     };
 
     // Data
@@ -813,7 +819,7 @@ XSLoader, DOMConfiguration {
         // InputSource also, apart from [] of type Object.
         Object[] objArr = (Object[]) fJAXPSource;
         // make local array for storing target namespaces of schemasources specified in object arrays.
-        ArrayList jaxpSchemaSourceNamespaces = new ArrayList();
+        ArrayList<String> jaxpSchemaSourceNamespaces = new ArrayList<>();
         for (int i = 0; i < objArr.length; i++) {
             if (objArr[i] instanceof InputStream ||
                     objArr[i] instanceof InputSource) {
@@ -1280,7 +1286,7 @@ XSLoader, DOMConfiguration {
      */
     public DOMStringList getParameterNames() {
         if (fRecognizedParameters == null){
-            ArrayList v = new ArrayList();
+            ArrayList<String> v = new ArrayList<>();
             v.add(Constants.DOM_VALIDATE);
             v.add(Constants.DOM_ERROR_HANDLER);
             v.add(Constants.DOM_RESOURCE_RESOLVER);
@@ -1381,7 +1387,7 @@ XSLoader, DOMConfiguration {
 
     }
 
-        XMLInputSource dom2xmlInputSource(LSInput is) {
+    XMLInputSource dom2xmlInputSource(LSInput is) {
         // need to wrap the LSInput with an XMLInputSource
         XMLInputSource xis = null;
 

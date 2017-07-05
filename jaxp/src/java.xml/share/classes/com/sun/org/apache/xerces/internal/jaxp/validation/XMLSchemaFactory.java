@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,20 +19,6 @@
  */
 
 package com.sun.org.apache.xerces.internal.jaxp.validation;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-
-import javax.xml.XMLConstants;
-import javax.xml.stream.XMLEventReader;
-import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.stax.StAXSource;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaLoader;
@@ -49,6 +38,20 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import javax.xml.XMLConstants;
+import javax.xml.catalog.CatalogFeatures.Feature;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.stax.StAXSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import jdk.xml.internal.JdkXmlUtils;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.ErrorHandler;
@@ -156,6 +159,12 @@ public final class XMLSchemaFactory extends SchemaFactory {
         fSecurityPropertyMgr = new XMLSecurityPropertyManager();
         fXMLSchemaLoader.setProperty(XML_SECURITY_PROPERTY_MANAGER,
                 fSecurityPropertyMgr);
+
+        // use catalog
+        fXMLSchemaLoader.setFeature(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
+        for (Feature f : Feature.values()) {
+            fXMLSchemaLoader.setProperty(f.getPropertyName(), null);
+        }
     }
 
     /**

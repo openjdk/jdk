@@ -31,9 +31,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.ModulePool;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.Plugin;
 
 /**
@@ -145,22 +146,22 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     }
 
     @Override
-    public void visit(ModulePool in, ModulePool out) {
+    public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         in.entries().forEach(data -> {
-            if (("/java.base/" + BMH + ".class").equals(data.getPath())) {
+            if (("/java.base/" + BMH + ".class").equals(data.path())) {
                 // Add BoundMethodHandle unchanged
                 out.add(data);
                 speciesTypes.forEach(types -> generateConcreteClass(types, data, out));
             } else {
-                if (!out.contains(data)) {
-                    out.add(data);
-                }
+                out.add(data);
             }
         });
+
+        return out.build();
     }
 
     @SuppressWarnings("unchecked")
-    private void generateConcreteClass(String types, ModuleEntry data, ModulePool out) {
+    private void generateConcreteClass(String types, ResourcePoolEntry data, ResourcePoolBuilder out) {
         try {
             // Generate class
             Map.Entry<String, byte[]> result = (Map.Entry<String, byte[]>)
@@ -169,12 +170,10 @@ public final class GenerateJLIClassesPlugin implements Plugin {
             byte[] bytes = result.getValue();
 
             // Add class to pool
-            ModuleEntry ndata = ModuleEntry.create(
+            ResourcePoolEntry ndata = ResourcePoolEntry.create(
                     "/java.base/" + className + ".class",
                     bytes);
-            if (!out.contains(ndata)) {
-                out.add(ndata);
-            }
+            out.add(ndata);
         } catch (Exception ex) {
             throw new PluginException(ex);
         }
