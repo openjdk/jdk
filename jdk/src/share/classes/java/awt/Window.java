@@ -3474,14 +3474,20 @@ public class Window extends Container implements Accessible {
      * level of 0 may or may not disable the mouse event handling on this
      * window. This is a platform-dependent behavior.
      * <p>
-     * In order for this method to enable the translucency effect, the {@link
-     * GraphicsDevice#isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency)} method must indicate that
-     * the {@link GraphicsDevice.WindowTranslucency#TRANSLUCENT TRANSLUCENT}
-     * translucency is supported.
+     * The following conditions must be met in order to set the opacity value
+     * less than {@code 1.0f}:
+     * <ul>
+     * <li>The {@link GraphicsDevice.WindowTranslucency#TRANSLUCENT TRANSLUCENT}
+     * translucency must be supported by the underlying system
+     * <li>The window must be undecorated (see {@link Frame#setUndecorated}
+     * and {@link Dialog#setUndecorated})
+     * <li>The window must not be in full-screen mode (see {@link
+     * GraphicsDevice#setFullScreenWindow(Window)})
+     * </ul>
      * <p>
-     * Also note that the window must not be in the full-screen mode when
-     * setting the opacity value &lt; 1.0f. Otherwise the {@code
-     * IllegalComponentStateException} is thrown.
+     * If the requested opacity value is less than {@code 1.0f}, and any of the
+     * above conditions are not met, the window opacity will not change,
+     * and the {@code IllegalComponentStateException} will be thrown.
      * <p>
      * The translucency levels of individual pixels may also be effected by the
      * alpha component of their color (see {@link Window#setBackground(Color)}) and the
@@ -3491,15 +3497,20 @@ public class Window extends Container implements Accessible {
      *
      * @throws IllegalArgumentException if the opacity is out of the range
      *     [0..1]
+     * @throws IllegalComponentStateException if the window is decorated and
+     *     the opacity is less than {@code 1.0f}
      * @throws IllegalComponentStateException if the window is in full screen
-     *     mode, and the opacity is less than 1.0f
+     *     mode, and the opacity is less than {@code 1.0f}
      * @throws UnsupportedOperationException if the {@code
      *     GraphicsDevice.WindowTranslucency#TRANSLUCENT TRANSLUCENT}
-     *     translucency kind is not supported and the opacity is less than 1.0f
+     *     translucency is not supported and the opacity is less than
+     *     {@code 1.0f}
      *
      * @see Window#getOpacity
      * @see Window#setBackground(Color)
      * @see Window#setShape(Shape)
+     * @see Frame#isUndecorated
+     * @see Dialog#isUndecorated
      * @see GraphicsDevice.WindowTranslucency
      * @see GraphicsDevice#isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency)
      *
@@ -3557,24 +3568,26 @@ public class Window extends Container implements Accessible {
     /**
      * Sets the shape of the window.
      * <p>
-     * Setting a shape enables cutting off some parts of the window, leaving
-     * visible and clickable only those parts belonging to the given shape
-     * (see {@link Shape}). If the shape argument is null, this methods
-     * restores the default shape (making the window rectangular on most
-     * platforms.)
+     * Setting a shape cuts off some parts of the window. Only the parts that
+     * belong to the given {@link Shape} remain visible and clickable. If
+     * the shape argument is {@code null}, this method restores the default
+     * shape, making the window rectangular on most platforms.
      * <p>
-     * The following conditions must be met in order to set a non-null shape:
+     * The following conditions must be met to set a non-null shape:
      * <ul>
      * <li>The {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSPARENT
-     * PERPIXEL_TRANSPARENT} translucency kind must be supported by the
+     * PERPIXEL_TRANSPARENT} translucency must be supported by the
      * underlying system
-     * <i>and</i>
-     * <li>The window must not be in the full-screen mode (see
-     * {@link GraphicsDevice#setFullScreenWindow(Window)})
+     * <li>The window must be undecorated (see {@link Frame#setUndecorated}
+     * and {@link Dialog#setUndecorated})
+     * <li>The window must not be in full-screen mode (see {@link
+     * GraphicsDevice#setFullScreenWindow(Window)})
      * </ul>
-     * If a certain condition is not met, either the {@code
-     * UnsupportedOperationException} or {@code IllegalComponentStateException}
-     * is thrown.
+     * <p>
+     * If the requested shape is not {@code null}, and any of the above
+     * conditions are not met, the shape of this window will not change,
+     * and either the {@code UnsupportedOperationException} or {@code
+     * IllegalComponentStateException} will be thrown.
      * <p>
      * The tranlucency levels of individual pixels may also be effected by the
      * alpha component of their color (see {@link Window#setBackground(Color)}) and the
@@ -3584,6 +3597,8 @@ public class Window extends Container implements Accessible {
      * @param shape the shape to set to the window
      *
      * @throws IllegalComponentStateException if the shape is not {@code
+     *     null} and the window is decorated
+     * @throws IllegalComponentStateException if the shape is not {@code
      *     null} and the window is in full-screen mode
      * @throws UnsupportedOperationException if the shape is not {@code
      *     null} and {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSPARENT
@@ -3592,6 +3607,8 @@ public class Window extends Container implements Accessible {
      * @see Window#getShape()
      * @see Window#setBackground(Color)
      * @see Window#setOpacity(float)
+     * @see Frame#isUndecorated
+     * @see Dialog#isUndecorated
      * @see GraphicsDevice.WindowTranslucency
      * @see GraphicsDevice#isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency)
      *
@@ -3645,37 +3662,46 @@ public class Window extends Container implements Accessible {
      * GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT PERPIXEL_TRANSLUCENT}
      * tranclucency, the alpha component of the given background color
      * may effect the mode of operation for this window: it indicates whether
-     * this window must be opaque (alpha == 1.0f) or per-pixel translucent
-     * (alpha &lt; 1.0f).  All the following conditions must be met in order
-     * to be able to enable the per-pixel transparency mode for this window:
+     * this window must be opaque (alpha equals {@code 1.0f}) or per-pixel translucent
+     * (alpha is less than {@code 1.0f}). If the given background color is
+     * {@code null}, the window is considered completely opaque.
+     * <p>
+     * All the following conditions must be met to enable the per-pixel
+     * transparency mode for this window:
      * <ul>
      * <li>The {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
-     * PERPIXEL_TRANSLUCENT} translucency must be supported
-     * by the graphics device where this window is located <i>and</i>
-     * <li>The window must not be in the full-screen mode (see {@link
+     * PERPIXEL_TRANSLUCENT} translucency must be supported by the graphics
+     * device where this window is located
+     * <li>The window must be undecorated (see {@link Frame#setUndecorated}
+     * and {@link Dialog#setUndecorated})
+     * <li>The window must not be in full-screen mode (see {@link
      * GraphicsDevice#setFullScreenWindow(Window)})
      * </ul>
-     * If a certain condition is not met at the time of calling this method,
-     * the alpha component of the given background color will not effect the
-     * mode of operation for this window.
+     * <p>
+     * If the alpha component of the requested background color is less than
+     * {@code 1.0f}, and any of the above conditions are not met, the background
+     * color of this window will not change, the alpha component of the given
+     * background color will not affect the mode of operation for this window,
+     * and either the {@code UnsupportedOperationException} or {@code
+     * IllegalComponentStateException} will be thrown.
      * <p>
      * When the window is per-pixel translucent, the drawing sub-system
      * respects the alpha value of each individual pixel. If a pixel gets
      * painted with the alpha color component equal to zero, it becomes
-     * visually transparent, if the alpha of the pixel is equal to 1.0f, the
+     * visually transparent. If the alpha of the pixel is equal to 1.0f, the
      * pixel is fully opaque. Interim values of the alpha color component make
-     * the pixel semi-transparent. In this mode the background of the window
-     * gets painted with the alpha value of the given background color (meaning
-     * that it is not painted at all if the alpha value of the argument of this
-     * method is equal to zero.)
+     * the pixel semi-transparent. In this mode, the background of the window
+     * gets painted with the alpha value of the given background color. If the
+     * alpha value of the argument of this method is equal to {@code 0}, the
+     * background is not painted at all.
      * <p>
      * The actual level of translucency of a given pixel also depends on window
      * opacity (see {@link #setOpacity(float)}), as well as the current shape of
      * this window (see {@link #setShape(Shape)}).
      * <p>
-     * Note that painting a pixel with the alpha value of 0 may or may not
-     * disable the mouse event handling on this pixel. This is a
-     * platform-dependent behavior. To make sure the mouse clicks do not get
+     * Note that painting a pixel with the alpha value of {@code 0} may or may
+     * not disable the mouse event handling on this pixel. This is a
+     * platform-dependent behavior. To make sure the mouse events do not get
      * dispatched to a particular pixel, the pixel must be excluded from the
      * shape of the window.
      * <p>
@@ -3685,17 +3711,21 @@ public class Window extends Container implements Accessible {
      * @param bgColor the color to become this window's background color.
      *
      * @throws IllegalComponentStateException if the alpha value of the given
-     *     background color is less than 1.0f and the window is in
+     *     background color is less than {@code 1.0f} and the window is decorated
+     * @throws IllegalComponentStateException if the alpha value of the given
+     *     background color is less than {@code 1.0f} and the window is in
      *     full-screen mode
      * @throws UnsupportedOperationException if the alpha value of the given
-     *     background color is less than 1.0f and
-     *     {@link GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
+     *     background color is less than {@code 1.0f} and {@link
+     *     GraphicsDevice.WindowTranslucency#PERPIXEL_TRANSLUCENT
      *     PERPIXEL_TRANSLUCENT} translucency is not supported
      *
      * @see Window#getBackground
      * @see Window#isOpaque
      * @see Window#setOpacity(float)
      * @see Window#setShape(Shape)
+     * @see Frame#isUndecorated
+     * @see Dialog#isUndecorated
      * @see GraphicsDevice.WindowTranslucency
      * @see GraphicsDevice#isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency)
      * @see GraphicsConfiguration#isTranslucencyCapable()
@@ -3739,7 +3769,7 @@ public class Window extends Container implements Accessible {
      * <p>
      * The method returns {@code false} if the background color of the window
      * is not {@code null} and the alpha component of the color is less than
-     * 1.0f. The method returns {@code true} otherwise.
+     * {@code 1.0f}. The method returns {@code true} otherwise.
      *
      * @return {@code true} if the window is opaque, {@code false} otherwise
      *

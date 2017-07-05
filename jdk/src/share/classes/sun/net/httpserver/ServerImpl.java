@@ -37,6 +37,7 @@ import java.util.logging.Level;
 import javax.net.ssl.*;
 import com.sun.net.httpserver.*;
 import com.sun.net.httpserver.spi.*;
+import sun.net.httpserver.HttpConnection.State;
 
 /**
  * Provides implementation for both HTTP and HTTPS
@@ -55,6 +56,12 @@ class ServerImpl implements TimeSource {
     private SelectionKey listenerKey;
     private Set<HttpConnection> idleConnections;
     private Set<HttpConnection> allConnections;
+    /* following two are used to keep track of the times
+     * when a connection/request is first received
+     * and when we start to send the response
+     */
+    private Set<HttpConnection> reqConnections;
+    private Set<HttpConnection> rspConnections;
     private List<Event> events;
     private Object lolock = new Object();
     private volatile boolean finished = false;
@@ -62,14 +69,19 @@ class ServerImpl implements TimeSource {
     private boolean bound = false;
     private boolean started = false;
     private volatile long time;  /* current time */
+    private volatile long subticks = 0;
     private volatile long ticks; /* number of clock ticks since server started */
     private HttpServer wrapper;
 
     final static int CLOCK_TICK = ServerConfig.getClockTick();
     final static long IDLE_INTERVAL = ServerConfig.getIdleInterval();
     final static int MAX_IDLE_CONNECTIONS = ServerConfig.getMaxIdleConnections();
+    final static long TIMER_MILLIS = ServerConfig.getTimerMillis ();
+    final static long MAX_REQ_TIME=getTimeMillis(ServerConfig.getMaxReqTime());
+    final static long MAX_RSP_TIME=getTimeMillis(ServerConfig.getMaxRspTime());
+    final static boolean timer1Enabled = MAX_REQ_TIME != -1 || MAX_RSP_TIME != -1;
 
-    private Timer timer;
+    private Timer timer, timer1;
     private Logger logger;
 
     ServerImpl (
@@ -79,6 +91,7 @@ class ServerImpl implements TimeSource {
         this.protocol = protocol;
         this.wrapper = wrapper;
         this.logger = Logger.getLogger ("com.sun.net.httpserver");
+        ServerConfig.checkLegacyProperties (logger);
         https = protocol.equalsIgnoreCase ("https");
         this.address = addr;
         contexts = new ContextList();
@@ -94,9 +107,18 @@ class ServerImpl implements TimeSource {
         dispatcher = new Dispatcher();
         idleConnections = Collections.synchronizedSet (new HashSet<HttpConnection>());
         allConnections = Collections.synchronizedSet (new HashSet<HttpConnection>());
+        reqConnections = Collections.synchronizedSet (new HashSet<HttpConnection>());
+        rspConnections = Collections.synchronizedSet (new HashSet<HttpConnection>());
         time = System.currentTimeMillis();
         timer = new Timer ("server-timer", true);
         timer.schedule (new ServerTimerTask(), CLOCK_TICK, CLOCK_TICK);
+        if (timer1Enabled) {
+            timer1 = new Timer ("server-timer1", true);
+            timer1.schedule (new ServerTimerTask1(),TIMER_MILLIS,TIMER_MILLIS);
+            logger.config ("HttpServer timer1 enabled period in ms:  "+TIMER_MILLIS);
+            logger.config ("MAX_REQ_TIME:  "+MAX_REQ_TIME);
+            logger.config ("MAX_RSP_TIME:  "+MAX_RSP_TIME);
+        }
         events = new LinkedList<Event>();
         logger.config ("HttpServer created "+protocol+" "+ addr);
     }
@@ -181,6 +203,9 @@ class ServerImpl implements TimeSource {
         allConnections.clear();
         idleConnections.clear();
         timer.cancel();
+        if (timer1Enabled) {
+            timer1.cancel();
+        }
     }
 
     Dispatcher dispatcher;
@@ -236,13 +261,6 @@ class ServerImpl implements TimeSource {
         }
     }
 
-    int resultSize () {
-        synchronized (lolock) {
-            return events.size ();
-        }
-    }
-
-
     /* main server listener task */
 
     class Dispatcher implements Runnable {
@@ -257,7 +275,7 @@ class ServerImpl implements TimeSource {
                     if (terminating && exchanges == 0) {
                         finished = true;
                     }
-                    SocketChannel chan = c.getChannel();
+                    responseCompleted (c);
                     LeftOverInputStream is = t.getOriginalInputStream();
                     if (!is.isEOF()) {
                         t.close = true;
@@ -268,17 +286,10 @@ class ServerImpl implements TimeSource {
                     } else {
                         if (is.isDataBuffered()) {
                             /* don't re-enable the interestops, just handle it */
+                            requestStarted (c);
                             handle (c.getChannel(), c);
                         } else {
-                            /* re-enable interestops */
-                            SelectionKey key = c.getSelectionKey();
-                            if (key.isValid()) {
-                                key.interestOps (
-                                    key.interestOps()|SelectionKey.OP_READ
-                                );
-                            }
-                            c.time = getTime() + IDLE_INTERVAL;
-                            idleConnections.add (c);
+                            connsToRegister.add (c);
                         }
                     }
                 }
@@ -290,21 +301,50 @@ class ServerImpl implements TimeSource {
             }
         }
 
+        final LinkedList<HttpConnection> connsToRegister =
+                new LinkedList<HttpConnection>();
+
+        void reRegister (HttpConnection c) {
+            /* re-register with selector */
+            try {
+                SocketChannel chan = c.getChannel();
+                chan.configureBlocking (false);
+                SelectionKey key = chan.register (selector, SelectionKey.OP_READ);
+                key.attach (c);
+                c.selectionKey = key;
+                c.time = getTime() + IDLE_INTERVAL;
+                idleConnections.add (c);
+            } catch (IOException e) {
+                dprint(e);
+                logger.log(Level.FINER, "Dispatcher(8)", e);
+                c.close();
+            }
+        }
+
         public void run() {
             while (!finished) {
                 try {
+                    ListIterator<HttpConnection> li =
+                        connsToRegister.listIterator();
+                    for (HttpConnection c : connsToRegister) {
+                        reRegister(c);
+                    }
+                    connsToRegister.clear();
 
-                    /* process the events list first */
-
-                    while (resultSize() > 0) {
-                        Event r;
-                        synchronized (lolock) {
-                            r = events.remove(0);
-                            handleEvent (r);
+                    List<Event> list = null;
+                    selector.select(1000);
+                    synchronized (lolock) {
+                        if (events.size() > 0) {
+                            list = events;
+                            events = new LinkedList<Event>();
                         }
                     }
 
-                    selector.select(1000);
+                    if (list != null) {
+                        for (Event r: list) {
+                            handleEvent (r);
+                        }
+                    }
 
                     /* process the selected list now  */
 
@@ -327,6 +367,7 @@ class ServerImpl implements TimeSource {
                             c.selectionKey = newkey;
                             c.setChannel (chan);
                             newkey.attach (c);
+                            requestStarted (c);
                             allConnections.add (c);
                         } else {
                             try {
@@ -334,25 +375,42 @@ class ServerImpl implements TimeSource {
                                     boolean closed;
                                     SocketChannel chan = (SocketChannel)key.channel();
                                     HttpConnection conn = (HttpConnection)key.attachment();
-                                    // interestOps will be restored at end of read
-                                    key.interestOps (0);
+
+                                    key.cancel();
+                                    chan.configureBlocking (true);
+                                    if (idleConnections.remove(conn)) {
+                                        // was an idle connection so add it
+                                        // to reqConnections set.
+                                        requestStarted (conn);
+                                    }
                                     handle (chan, conn);
                                 } else {
                                     assert false;
                                 }
+                            } catch (CancelledKeyException e) {
+                                handleException(key, null);
                             } catch (IOException e) {
-                                HttpConnection conn = (HttpConnection)key.attachment();
-                                logger.log (
-                                    Level.FINER, "Dispatcher (2)", e
-                                );
-                                conn.close();
+                                handleException(key, e);
                             }
                         }
                     }
+                    // call the selector just to process the cancelled keys
+                    selector.selectNow();
+                } catch (IOException e) {
+                    logger.log (Level.FINER, "Dispatcher (4)", e);
                 } catch (Exception e) {
-                    logger.log (Level.FINER, "Dispatcher (3)", e);
+                    e.printStackTrace();
+                    logger.log (Level.FINER, "Dispatcher (7)", e);
                 }
             }
+        }
+
+        private void handleException (SelectionKey key, Exception e) {
+            HttpConnection conn = (HttpConnection)key.attachment();
+            if (e != null) {
+                logger.log (Level.FINER, "Dispatcher (2)", e);
+            }
+            closeConnection(conn);
         }
 
         public void handle (SocketChannel chan, HttpConnection conn)
@@ -363,10 +421,10 @@ class ServerImpl implements TimeSource {
                 executor.execute (t);
             } catch (HttpError e1) {
                 logger.log (Level.FINER, "Dispatcher (4)", e1);
-                conn.close();
+                closeConnection(conn);
             } catch (IOException e) {
                 logger.log (Level.FINER, "Dispatcher (5)", e);
-                conn.close();
+                closeConnection(conn);
             }
         }
     }
@@ -390,7 +448,26 @@ class ServerImpl implements TimeSource {
         return logger;
     }
 
-    /* per exchange task */
+    private void closeConnection(HttpConnection conn) {
+        conn.close();
+        allConnections.remove(conn);
+        switch (conn.getState()) {
+        case REQUEST:
+            reqConnections.remove(conn);
+            break;
+        case RESPONSE:
+            rspConnections.remove(conn);
+            break;
+        case IDLE:
+            idleConnections.remove(conn);
+            break;
+        }
+        assert !reqConnections.remove(conn);
+        assert !rspConnections.remove(conn);
+        assert !idleConnections.remove(conn);
+    }
+
+        /* per exchange task */
 
     class Exchange implements Runnable {
         SocketChannel chan;
@@ -450,8 +527,7 @@ class ServerImpl implements TimeSource {
                 requestLine = req.requestLine();
                 if (requestLine == null) {
                     /* connection closed */
-                    connection.close();
-                    allConnections.remove(connection);
+                    closeConnection(connection);
                     return;
                 }
                 int space = requestLine.indexOf (' ');
@@ -481,6 +557,9 @@ class ServerImpl implements TimeSource {
                     s = headers.getFirst ("Content-Length");
                     if (s != null) {
                         clen = Long.parseLong(s);
+                    }
+                    if (clen == 0) {
+                        requestCompleted (connection);
                     }
                 }
                 ctx = contexts.findContext (protocol, uri.getPath());
@@ -560,7 +639,7 @@ class ServerImpl implements TimeSource {
 
             } catch (IOException e1) {
                 logger.log (Level.FINER, "ServerImpl.Exchange (1)", e1);
-                connection.close();
+                closeConnection(connection);
             } catch (NumberFormatException e3) {
                 reject (Code.HTTP_BAD_REQUEST,
                         requestLine, "NumberFormatException thrown");
@@ -569,7 +648,7 @@ class ServerImpl implements TimeSource {
                         requestLine, "URISyntaxException thrown");
             } catch (Exception e4) {
                 logger.log (Level.FINER, "ServerImpl.Exchange (2)", e4);
-                connection.close();
+                closeConnection(connection);
             }
         }
 
@@ -591,47 +670,60 @@ class ServerImpl implements TimeSource {
             rejected = true;
             logReply (code, requestStr, message);
             sendReply (
-                code, true, "<h1>"+code+Code.msg(code)+"</h1>"+message
+                code, false, "<h1>"+code+Code.msg(code)+"</h1>"+message
             );
-            /* connection is already closed by sendReply, now remove it */
-            allConnections.remove(connection);
+            closeConnection(connection);
         }
 
         void sendReply (
             int code, boolean closeNow, String text)
         {
             try {
-                String s = "HTTP/1.1 " + code + Code.msg(code) + "\r\n";
+                StringBuilder builder = new StringBuilder (512);
+                builder.append ("HTTP/1.1 ")
+                    .append (code).append (Code.msg(code)).append ("\r\n");
+
                 if (text != null && text.length() != 0) {
-                    s = s + "Content-Length: "+text.length()+"\r\n";
-                    s = s + "Content-Type: text/html\r\n";
+                    builder.append ("Content-Length: ")
+                        .append (text.length()).append ("\r\n")
+                        .append ("Content-Type: text/html\r\n");
                 } else {
-                    s = s + "Content-Length: 0\r\n";
+                    builder.append ("Content-Length: 0\r\n");
                     text = "";
                 }
                 if (closeNow) {
-                    s = s + "Connection: close\r\n";
+                    builder.append ("Connection: close\r\n");
                 }
-                s = s + "\r\n" + text;
+                builder.append ("\r\n").append (text);
+                String s = builder.toString();
                 byte[] b = s.getBytes("ISO8859_1");
                 rawout.write (b);
                 rawout.flush();
                 if (closeNow) {
-                    connection.close();
+                    closeConnection(connection);
                 }
             } catch (IOException e) {
                 logger.log (Level.FINER, "ServerImpl.sendReply", e);
-                connection.close();
+                closeConnection(connection);
             }
         }
 
     }
 
     void logReply (int code, String requestStr, String text) {
+        if (!logger.isLoggable(Level.FINE)) {
+            return;
+        }
         if (text == null) {
             text = "";
         }
-        String message = requestStr + " [" + code + " " +
+        String r;
+        if (requestStr.length() > 80) {
+           r = requestStr.substring (0, 80) + "<TRUNCATED>";
+        } else {
+           r = requestStr;
+        }
+        String message = r + " [" + code + " " +
                     Code.msg(code) + "] ("+text+")";
         logger.fine (message);
     }
@@ -667,6 +759,34 @@ class ServerImpl implements TimeSource {
         return wrapper;
     }
 
+    void requestStarted (HttpConnection c) {
+        c.creationTime = getTime();
+        c.setState (State.REQUEST);
+        reqConnections.add (c);
+    }
+
+    // called after a request has been completely read
+    // by the server. This stops the timer which would
+    // close the connection if the request doesn't arrive
+    // quickly enough. It then starts the timer
+    // that ensures the client reads the response in a timely
+    // fashion.
+
+    void requestCompleted (HttpConnection c) {
+        assert c.getState() == State.REQUEST;
+        reqConnections.remove (c);
+        c.rspStartedTime = getTime();
+        rspConnections.add (c);
+        c.setState (State.RESPONSE);
+    }
+
+    // called after response has been sent
+    void responseCompleted (HttpConnection c) {
+        assert c.getState() == State.RESPONSE;
+        rspConnections.remove (c);
+        c.setState (State.IDLE);
+    }
+
     /**
      * TimerTask run every CLOCK_TICK ms
      */
@@ -687,6 +807,64 @@ class ServerImpl implements TimeSource {
                     c.close();
                 }
             }
+        }
+    }
+
+    class ServerTimerTask1 extends TimerTask {
+
+        // runs every TIMER_MILLIS
+        public void run () {
+            LinkedList<HttpConnection> toClose = new LinkedList<HttpConnection>();
+            time = System.currentTimeMillis();
+            synchronized (reqConnections) {
+                if (MAX_REQ_TIME != -1) {
+                    for (HttpConnection c : reqConnections) {
+                        if (c.creationTime + TIMER_MILLIS + MAX_REQ_TIME <= time) {
+                            toClose.add (c);
+                        }
+                    }
+                    for (HttpConnection c : toClose) {
+                        logger.log (Level.FINE, "closing: no request: " + c);
+                        reqConnections.remove (c);
+                        allConnections.remove (c);
+                        c.close();
+                    }
+                }
+            }
+            toClose = new LinkedList<HttpConnection>();
+            synchronized (rspConnections) {
+                if (MAX_RSP_TIME != -1) {
+                    for (HttpConnection c : rspConnections) {
+                        if (c.rspStartedTime + TIMER_MILLIS +MAX_RSP_TIME <= time) {
+                            toClose.add (c);
+                        }
+                    }
+                    for (HttpConnection c : toClose) {
+                        logger.log (Level.FINE, "closing: no response: " + c);
+                        rspConnections.remove (c);
+                        allConnections.remove (c);
+                        c.close();
+                    }
+                }
+            }
+        }
+    }
+
+    void logStackTrace (String s) {
+        logger.finest (s);
+        StringBuilder b = new StringBuilder ();
+        StackTraceElement[] e = Thread.currentThread().getStackTrace();
+        for (int i=0; i<e.length; i++) {
+            b.append (e[i].toString()).append("\n");
+        }
+        logger.finest (b.toString());
+    }
+
+    static long getTimeMillis(long secs) {
+        if (secs == -1) {
+            return -1;
+        } else {
+            return secs * 1000;
         }
     }
 }

@@ -75,7 +75,8 @@ public class J2DBench {
 
     static JFrame guiFrame;
 
-    static final SimpleDateFormat sdf = new SimpleDateFormat("MM.dd.yyyy 'at' HH:mm aaa z");
+    static final SimpleDateFormat sdf =
+        new SimpleDateFormat("MM.dd.yyyy 'at' HH:mm aaa z");
 
     public static void init() {
         progoptroot = new Group("prog", "Program Options");
@@ -176,6 +177,8 @@ public class J2DBench {
     public static void main(String argv[]) {
         init();
         TestEnvironment.init();
+        Result.init();
+
         Destinations.init();
         GraphicsTests.init();
         RenderTests.init();
@@ -323,7 +326,7 @@ public class J2DBench {
                     } else if (type.equalsIgnoreCase("m")) {
                         multiplyWith = 60;
                     } else {
-                        System.out.println("Invalid \"-loop\" option specified.");
+                        System.err.println("Invalid \"-loop\" option specified.");
                         usage(1);
                     }
 
@@ -331,32 +334,20 @@ public class J2DBench {
                     try {
                         val = Integer.parseInt(argv[i].substring(0, argv[i].length() - 1));
                     } catch(Exception e) {
-                        System.out.println("Invalid \"-loop\" option specified.");
+                        System.err.println("Invalid \"-loop\" option specified.");
                         usage(1);
                     }
 
                     requiredLoopTime = val * multiplyWith * 1000;
                 }
 
-            } else if (arg.length() > 7 &&
-                       arg.substring(0, 7).equalsIgnoreCase("-report"))
-            {
-                for (int j = 7; j < arg.length(); j++) {
-                    char c = arg.charAt(j);
-                    switch (c) {
-                    case 'N': Result.unitScale = Result.UNITS_WHOLE;     break;
-                    case 'M': Result.unitScale = Result.UNITS_MILLIONS;  break;
-                    case 'K': Result.unitScale = Result.UNITS_THOUSANDS; break;
-                    case 'A': Result.unitScale = Result.UNITS_AUTO;      break;
-                    case 'U': Result.useUnits = true; break;
-                    case 'O': Result.useUnits = false; break;
-                    case 's': Result.timeScale = Result.SECONDS_WHOLE;  break;
-                    case 'm': Result.timeScale = Result.SECONDS_MILLIS; break;
-                    case 'u': Result.timeScale = Result.SECONDS_MICROS; break;
-                    case 'n': Result.timeScale = Result.SECONDS_NANOS;  break;
-                    case 'a': Result.timeScale = Result.SECONDS_AUTO;   break;
-                    case '/': Result.invertRate = !Result.invertRate; break;
-                    }
+           } else if (arg.length() > 8 &&
+                        arg.substring(0, 8).equalsIgnoreCase("-report:"))
+           {
+                String error = Result.parseRateOpt(arg.substring(8));
+                if (error != null) {
+                     System.err.println("Invalid rate: "+error);
+                     usage(1);
                 }
             } else {
                 String reason = Group.root.setOption(arg);
@@ -411,7 +402,7 @@ public class J2DBench {
                         writer.flush();
                     } catch(IOException ioe) {
                         ioe.printStackTrace();
-                        System.out.println("\nERROR : Could not create Loop-Report. Exit");
+                        System.err.println("\nERROR : Could not create Loop-Report. Exit");
                         System.exit(1);
                     }
                 }
@@ -466,7 +457,7 @@ public class J2DBench {
 
             } while(J2DBench.looping);
 
-            if(J2DBench.looping) {
+            if (J2DBench.looping) {
                 writer.println("</html>");
                 writer.flush();
                 writer.close();
