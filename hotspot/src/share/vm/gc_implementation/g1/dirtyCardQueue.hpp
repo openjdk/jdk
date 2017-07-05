@@ -32,7 +32,7 @@ class FreeIdSet;
 
 // A closure class for processing card table entries.  Note that we don't
 // require these closure objects to be stack-allocated.
-class CardTableEntryClosure: public CHeapObj {
+class CardTableEntryClosure: public CHeapObj<mtGC> {
 public:
   // Process the card whose card table entry is "card_ptr".  If returns
   // "false", terminate the iteration early.

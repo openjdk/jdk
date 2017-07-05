@@ -158,6 +158,7 @@ public:
   CmpUNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual const Type *sub( const Type *, const Type * ) const;
+  bool is_index_range_check() const;
 };
 
 //------------------------------CmpPNode---------------------------------------

@@ -42,7 +42,7 @@
 // insertions only enqueue old versions for deletions, but do not delete
 // old versions synchronously.
 
-class SparsePRTEntry: public CHeapObj {
+class SparsePRTEntry: public CHeapObj<mtGC> {
 public:
   enum SomePublicConstants {
     NullEntry     = -1,
@@ -101,7 +101,7 @@ public:
 };
 
 
-class RSHashTable : public CHeapObj {
+class RSHashTable : public CHeapObj<mtGC> {
 
   friend class RSHashTableIter;
 

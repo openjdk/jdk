@@ -617,7 +617,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
 // A parallel-GC-thread-local allocation buffer for allocation into a
 // CompactibleFreeListSpace.
-class CFLS_LAB : public CHeapObj {
+class CFLS_LAB : public CHeapObj<mtGC> {
   // The space that this buffer allocates into.
   CompactibleFreeListSpace* _cfls;
 

@@ -98,7 +98,7 @@ class AttachListener: AllStatic {
 };
 
 #ifndef SERVICES_KERNEL
-class AttachOperation: public CHeapObj {
+class AttachOperation: public CHeapObj<mtInternal> {
  public:
   enum {
     name_length_max = 16,       // maximum length of  name

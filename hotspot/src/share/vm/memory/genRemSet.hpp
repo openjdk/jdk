@@ -35,7 +35,7 @@ class BarrierSet;
 class OopsInGenClosure;
 class CardTableRS;
 
-class GenRemSet: public CHeapObj {
+class GenRemSet: public CHeapObj<mtGC> {
   friend class Generation;
 
   BarrierSet* _bs;

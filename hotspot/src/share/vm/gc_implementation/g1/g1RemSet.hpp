@@ -36,7 +36,7 @@ class ConcurrentG1Refine;
 // external heap references into it.  Uses a mod ref bs to track updates,
 // so that they can be used to update the individual region remsets.
 
-class G1RemSet: public CHeapObj {
+class G1RemSet: public CHeapObj<mtGC> {
 protected:
   G1CollectedHeap* _g1;
   unsigned _conc_refine_cards;

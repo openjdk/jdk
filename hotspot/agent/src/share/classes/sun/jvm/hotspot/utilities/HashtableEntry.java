@@ -41,7 +41,7 @@ public class HashtableEntry extends BasicHashtableEntry {
   }
 
   private static synchronized void initialize(TypeDataBase db) {
-    Type type = db.lookupType("HashtableEntry<intptr_t>");
+    Type type = db.lookupType("IntptrHashtableEntry");
     literalField   = type.getAddressField("_literal");
   }
 
