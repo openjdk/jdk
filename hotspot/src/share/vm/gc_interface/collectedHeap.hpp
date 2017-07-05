@@ -466,6 +466,10 @@ class CollectedHeap : public CHeapObj {
   // This includes objects in permanent memory.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
+  // Similar to object_iterate() except iterates only
+  // over live objects.
+  virtual void safe_object_iterate(ObjectClosure* cl) = 0;
+
   // Behaves the same as oop_iterate, except only traverses
   // interior pointers contained in permanent memory. If there
   // is no permanent memory, does nothing.

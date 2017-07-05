@@ -141,6 +141,7 @@ class java_lang_Class : AllStatic {
   static void compute_offsets();
   static bool offsets_computed;
   static int classRedefinedCount_offset;
+  static int parallelCapable_offset;
 
  public:
   // Instance creation
@@ -168,6 +169,8 @@ class java_lang_Class : AllStatic {
   // Support for classRedefinedCount field
   static int classRedefinedCount(oop the_class_mirror);
   static void set_classRedefinedCount(oop the_class_mirror, int value);
+  // Support for parallelCapable field
+  static bool parallelCapable(oop the_class_mirror);
   // Debugging
   friend class JavaClasses;
   friend class instanceKlass;   // verification code accesses offsets

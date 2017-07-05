@@ -238,8 +238,8 @@ struct FileMapHeader {
   // Ignore the rest of the FileMapHeader. We don't need those fields here.
 };
 
-static bool read_int(struct ps_prochandle* ph, uintptr_t addr, int* pvalue) {
-   int i;
+static bool read_jboolean(struct ps_prochandle* ph, uintptr_t addr, jboolean* pvalue) {
+   jboolean i;
    if (ps_pdread(ph, (psaddr_t) addr, &i, sizeof(i)) == PS_OK) {
       *pvalue = i;
       return true;
@@ -295,7 +295,7 @@ static bool init_classsharing_workaround(struct ps_prochandle* ph) {
          int fd = -1, m = 0;
          uintptr_t base = 0, useSharedSpacesAddr = 0;
          uintptr_t sharedArchivePathAddrAddr = 0, sharedArchivePathAddr = 0;
-         int useSharedSpaces = 0;
+         jboolean useSharedSpaces = 0;
          map_info* mi = 0;
 
          memset(classes_jsa, 0, sizeof(classes_jsa));
@@ -306,12 +306,15 @@ static bool init_classsharing_workaround(struct ps_prochandle* ph) {
             return false;
          }
 
-         if (read_int(ph, useSharedSpacesAddr, &useSharedSpaces) != true) {
+         // Hotspot vm types are not exported to build this library. So
+         // using equivalent type jboolean to read the value of
+         // UseSharedSpaces which is same as hotspot type "bool".
+         if (read_jboolean(ph, useSharedSpacesAddr, &useSharedSpaces) != true) {
             print_debug("can't read the value of 'UseSharedSpaces' flag\n");
             return false;
          }
 
-         if (useSharedSpaces == 0) {
+         if ((int)useSharedSpaces == 0) {
             print_debug("UseSharedSpaces is false, assuming -Xshare:off!\n");
             return true;
          }

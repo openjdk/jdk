@@ -163,7 +163,7 @@
 #ifdef USELABELS
 // Have to do this dispatch this way in C++ because otherwise gcc complains about crossing an
 // initialization (which is is the initialization of the table pointer...)
-#define DISPATCH(opcode) goto *dispatch_table[opcode]
+#define DISPATCH(opcode) goto *(void*)dispatch_table[opcode]
 #define CONTINUE {                              \
         opcode = *pc;                           \
         DO_UPDATE_INSTRUCTION_COUNT(opcode);    \
@@ -341,7 +341,7 @@
  */
 #undef CHECK_NULL
 #define CHECK_NULL(obj_)                                                 \
-    if ((obj_) == 0) {                                                   \
+    if ((obj_) == NULL) {                                                \
         VM_JAVA_ERROR(vmSymbols::java_lang_NullPointerException(), "");  \
     }
 
@@ -1362,7 +1362,7 @@ run:
 
 #define NULL_COMPARISON_NOT_OP(name)                                         \
       CASE(_if##name): {                                                     \
-          int skip = (!(STACK_OBJECT(-1) == 0))                              \
+          int skip = (!(STACK_OBJECT(-1) == NULL))                           \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
           UPDATE_PC_AND_TOS(skip, -1);                                       \
@@ -1372,7 +1372,7 @@ run:
 
 #define NULL_COMPARISON_OP(name)                                             \
       CASE(_if##name): {                                                     \
-          int skip = ((STACK_OBJECT(-1) == 0))                               \
+          int skip = ((STACK_OBJECT(-1) == NULL))                            \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
           address branch_pc = pc;                                            \
           UPDATE_PC_AND_TOS(skip, -1);                                       \

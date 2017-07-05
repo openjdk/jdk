@@ -1087,15 +1087,24 @@ inline int build_int_from_shorts( jushort low, jushort high ) {
 // Format macros that allow the field width to be specified.  The width must be
 // a string literal (e.g., "8") or a macro that evaluates to one.
 #ifdef _LP64
+#define UINTX_FORMAT_W(width)   UINT64_FORMAT_W(width)
 #define SSIZE_FORMAT_W(width)   INT64_FORMAT_W(width)
 #define SIZE_FORMAT_W(width)    UINT64_FORMAT_W(width)
 #else
+#define UINTX_FORMAT_W(width)   UINT32_FORMAT_W(width)
 #define SSIZE_FORMAT_W(width)   INT32_FORMAT_W(width)
 #define SIZE_FORMAT_W(width)    UINT32_FORMAT_W(width)
 #endif // _LP64
 
 // Format pointers and size_t (or size_t-like integer types) which change size
-// between 32- and 64-bit.
+// between 32- and 64-bit. The pointer format theoretically should be "%p",
+// however, it has different output on different platforms. On Windows, the data
+// will be padded with zeros automatically. On Solaris, we can use "%016p" &
+// "%08p" on 64 bit & 32 bit platforms to make the data padded with extra zeros.
+// On Linux, "%016p" or "%08p" is not be allowed, at least on the latest GCC
+// 4.3.2. So we have to use "%016x" or "%08x" to simulate the printing format.
+// GCC 4.3.2, however requires the data to be converted to "intptr_t" when
+// using "%x".
 #ifdef  _LP64
 #define PTR_FORMAT    PTR64_FORMAT
 #define UINTX_FORMAT  UINT64_FORMAT
