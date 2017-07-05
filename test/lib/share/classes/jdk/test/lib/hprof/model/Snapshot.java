@@ -276,10 +276,8 @@ public class Snapshot implements AutoCloseable {
         fakeClasses.clear();
 
         weakReferenceClass = findClass("java.lang.ref.Reference");
-        if (weakReferenceClass == null)  {      // JDK 1.1.x
-            weakReferenceClass = findClass("sun.misc.Ref");
-            referentFieldIndex = 0;
-        } else {
+        referentFieldIndex = 0;
+        if (weakReferenceClass != null)  {
             JavaField[] fields = weakReferenceClass.getFieldsForInstance();
             for (int i = 0; i < fields.length; i++) {
                 if ("referent".equals(fields[i].getName())) {
