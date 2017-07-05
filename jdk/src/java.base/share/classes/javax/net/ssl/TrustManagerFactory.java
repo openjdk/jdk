@@ -40,7 +40,7 @@ import sun.security.jca.GetInstance;
  * <p> Every implementation of the Java platform is required to support the
  * following standard {@code TrustManagerFactory} algorithm:
  * <ul>
- * <li><tt>PKIX</tt></li>
+ * <li>{@code PKIX}</li>
  * </ul>
  * This algorithm is described in the <a href=
  * "{@docRoot}/../technotes/guides/security/StandardNames.html#TrustManagerFactory">

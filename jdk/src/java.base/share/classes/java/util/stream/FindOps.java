@@ -54,9 +54,10 @@ final class FindOps {
      *        first element in the encounter order
      * @return a {@code TerminalOp} implementing the find operation
      */
+    @SuppressWarnings("unchecked")
     public static <T> TerminalOp<T, Optional<T>> makeRef(boolean mustFindFirst) {
-        return new FindOp<>(mustFindFirst, StreamShape.REFERENCE, Optional.empty(),
-                            Optional::isPresent, FindSink.OfRef::new);
+        return (TerminalOp<T, Optional<T>>)
+                (mustFindFirst ? FindSink.OfRef.OP_FIND_FIRST : FindSink.OfRef.OP_FIND_ANY);
     }
 
     /**
@@ -67,8 +68,7 @@ final class FindOps {
      * @return a {@code TerminalOp} implementing the find operation
      */
     public static TerminalOp<Integer, OptionalInt> makeInt(boolean mustFindFirst) {
-        return new FindOp<>(mustFindFirst, StreamShape.INT_VALUE, OptionalInt.empty(),
-                            OptionalInt::isPresent, FindSink.OfInt::new);
+        return mustFindFirst ? FindSink.OfInt.OP_FIND_FIRST : FindSink.OfInt.OP_FIND_ANY;
     }
 
     /**
@@ -79,8 +79,7 @@ final class FindOps {
      * @return a {@code TerminalOp} implementing the find operation
      */
     public static TerminalOp<Long, OptionalLong> makeLong(boolean mustFindFirst) {
-        return new FindOp<>(mustFindFirst, StreamShape.LONG_VALUE, OptionalLong.empty(),
-                            OptionalLong::isPresent, FindSink.OfLong::new);
+        return mustFindFirst ? FindSink.OfLong.OP_FIND_FIRST : FindSink.OfLong.OP_FIND_ANY;
     }
 
     /**
@@ -91,8 +90,7 @@ final class FindOps {
      * @return a {@code TerminalOp} implementing the find operation
      */
     public static TerminalOp<Double, OptionalDouble> makeDouble(boolean mustFindFirst) {
-        return new FindOp<>(mustFindFirst, StreamShape.DOUBLE_VALUE, OptionalDouble.empty(),
-                            OptionalDouble::isPresent, FindSink.OfDouble::new);
+        return mustFindFirst ? FindSink.OfDouble.OP_FIND_FIRST : FindSink.OfDouble.OP_FIND_ANY;
     }
 
     /**
@@ -195,6 +193,14 @@ final class FindOps {
             public Optional<T> get() {
                 return hasValue ? Optional.of(value) : null;
             }
+
+            static final TerminalOp<?, ?> OP_FIND_FIRST = new FindOp<>(true,
+                    StreamShape.REFERENCE, Optional.empty(),
+                    Optional::isPresent, FindSink.OfRef::new);
+
+            static final TerminalOp<?, ?> OP_FIND_ANY = new FindOp<>(false,
+                    StreamShape.REFERENCE, Optional.empty(),
+                    Optional::isPresent, FindSink.OfRef::new);
         }
 
         /** Specialization of {@code FindSink} for int streams */
@@ -210,6 +216,13 @@ final class FindOps {
             public OptionalInt get() {
                 return hasValue ? OptionalInt.of(value) : null;
             }
+
+            static final TerminalOp<Integer, OptionalInt> OP_FIND_FIRST = new FindOp<>(true,
+                    StreamShape.INT_VALUE, OptionalInt.empty(),
+                    OptionalInt::isPresent, FindSink.OfInt::new);
+            static final TerminalOp<Integer, OptionalInt> OP_FIND_ANY = new FindOp<>(false,
+                    StreamShape.INT_VALUE, OptionalInt.empty(),
+                    OptionalInt::isPresent, FindSink.OfInt::new);
         }
 
         /** Specialization of {@code FindSink} for long streams */
@@ -225,6 +238,13 @@ final class FindOps {
             public OptionalLong get() {
                 return hasValue ? OptionalLong.of(value) : null;
             }
+
+            static final TerminalOp<Long, OptionalLong> OP_FIND_FIRST = new FindOp<>(true,
+                    StreamShape.LONG_VALUE, OptionalLong.empty(),
+                    OptionalLong::isPresent, FindSink.OfLong::new);
+            static final TerminalOp<Long, OptionalLong> OP_FIND_ANY = new FindOp<>(false,
+                    StreamShape.LONG_VALUE, OptionalLong.empty(),
+                    OptionalLong::isPresent, FindSink.OfLong::new);
         }
 
         /** Specialization of {@code FindSink} for double streams */
@@ -240,6 +260,13 @@ final class FindOps {
             public OptionalDouble get() {
                 return hasValue ? OptionalDouble.of(value) : null;
             }
+
+            static final TerminalOp<Double, OptionalDouble> OP_FIND_FIRST = new FindOp<>(true,
+                    StreamShape.DOUBLE_VALUE, OptionalDouble.empty(),
+                    OptionalDouble::isPresent, FindSink.OfDouble::new);
+            static final TerminalOp<Double, OptionalDouble> OP_FIND_ANY = new FindOp<>(false,
+                    StreamShape.DOUBLE_VALUE, OptionalDouble.empty(),
+                    OptionalDouble::isPresent, FindSink.OfDouble::new);
         }
     }
 

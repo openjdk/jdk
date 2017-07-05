@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ import static java.util.stream.Collectors.*;
 
 import jdk.tools.jlink.internal.BasicImageWriter;
 import jdk.tools.jlink.internal.ExecutableImage;
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
@@ -133,7 +134,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     private final Map<String, String> launchers;
     private final Path mdir;
     private final Set<String> modules = new HashSet<>();
-    private String targetOsName;
+    private Platform targetPlatform;
 
     /**
      * Default image builder constructor.
@@ -151,11 +152,14 @@ public final class DefaultImageBuilder implements ImageBuilder {
     @Override
     public void storeFiles(ResourcePool files) {
         try {
-            this.targetOsName = files.moduleView().
-                findModule("java.base").get().osName();
-            if (this.targetOsName == null) {
+            String targetOsName = files.moduleView()
+                                       .findModule("java.base")
+                                       .map(ResourcePoolModule::osName)
+                                       .orElse(null);
+            if (targetOsName == null) {
                 throw new PluginException("ModuleTarget attribute is missing for java.base module");
             }
+            this.targetPlatform = Platform.toPlatform(targetOsName);
 
             checkResourcePool(files);
 
@@ -476,7 +480,7 @@ public final class DefaultImageBuilder implements ImageBuilder {
     }
 
     private boolean isWindows() {
-        return targetOsName.startsWith("Windows");
+        return targetPlatform == Platform.WINDOWS;
     }
 
     /**

@@ -124,7 +124,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 gen
 # jdk_lang
 
 java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-all
-java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java    8178776 generic-all
 
 jdk/internal/misc/JavaLangAccess/NewUnsafeString.java           8176188 generic-all
 
@@ -256,8 +255,6 @@ tools/jimage/JImageExtractTest.java                             8170120 generic-
 tools/jimage/JImageListTest.java                                8170120 generic-all
 tools/jimage/JImageVerifyTest.java                              8170120 generic-all
 
-tools/jimage/VerifyJimage.java                                  8178776 generic-all
-
 tools/jar/multiRelease/RuntimeTest.java                         8173905 generic-all
 
 tools/schemagen/MultiReleaseJarTest.java                        8174692 generic-all
@@ -285,8 +282,6 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 
 # jdk_util
 
-java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
-
 ############################################################################
 
 # jdk_instrument
@@ -301,8 +296,6 @@ sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-
 
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    8057732 generic-all
 
-demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java       8151899 generic-all
-
 ############################################################################
 
 # jdk_other
@@ -312,5 +305,8 @@ com/sun/jndi/ldap/DeadSSLLdapTimeoutTest.java                   8169942 linux-i5
 javax/rmi/PortableRemoteObject/8146975/RmiIiopReturnValueTest.java 8169737 linux-all
 
 org/omg/CORBA/OrbPropertiesTest.java			        8175177 generic-all
+
+sample/mergesort/MergeSortTest.java				8178912 generic-all
+sample/chatserver/ChatTest.java					8178912 generic-all
 
 ############################################################################
