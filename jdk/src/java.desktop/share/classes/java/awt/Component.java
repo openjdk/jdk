@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import java.security.AccessControlContext;
 import javax.accessibility.*;
 import java.applet.Applet;
 import javax.swing.JComponent;
+import javax.swing.JRootPane;
 
 import sun.awt.ComponentFactory;
 import sun.security.action.GetPropertyAction;
@@ -6232,7 +6233,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Indicates whether a class or its superclasses override coalesceEvents.
      * Must be called with lock on coalesceMap and privileged.
-     * @see checkCoalescing
+     * @see #checkCoalescing
      */
     private static boolean isCoalesceEventsOverriden(Class<?> clazz) {
         assert Thread.holdsLock(coalesceMap);
@@ -10406,7 +10407,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * </ul>
      * <p>
      * The most common example when the 'mixing-cutout' shape is needed is a
-     * glass pane component. The {@link JRootPane#setGlassPane()} method
+     * glass pane component. The {@link JRootPane#setGlassPane} method
      * automatically sets the <i>empty-shape</i> as the 'mixing-cutout' shape
      * for the given glass pane component.  If a developer needs some other
      * 'mixing-cutout' shape for the glass pane (which is rare), this must be
