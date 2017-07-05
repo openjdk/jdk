@@ -155,7 +155,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
         AC_MSG_RESULT(no)
         COMPILER_COMMAND_FILE_FLAG=
       fi
-      rm -rf command.file
+      $RM command.file
     fi
   fi
   AC_SUBST(COMPILER_TARGET_BITS_FLAG)
