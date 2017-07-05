@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,16 +186,19 @@ public class CPlatformView extends CFRetainedResource {
     }
 
 
-    private void deliverMouseEvent(NSEvent event) {
+    private void deliverMouseEvent(final NSEvent event) {
         int x = event.getX();
         int y = getBounds().height - event.getY();
+        int absX = event.getAbsX();
+        int absY = event.getAbsY();
 
         if (event.getType() == CocoaConstants.NSScrollWheel) {
-            responder.handleScrollEvent(x, y, event.getModifierFlags(),
+            responder.handleScrollEvent(x, y, absX, absY, event.getModifierFlags(),
                                         event.getScrollDeltaX(), event.getScrollDeltaY());
         } else {
             responder.handleMouseEvent(event.getType(), event.getModifierFlags(), event.getButtonNumber(),
-                                       event.getClickCount(), x, y, event.getAbsX(), event.getAbsY());
+                                       event.getClickCount(), x, y,
+                                       absX, absY);
         }
     }
 

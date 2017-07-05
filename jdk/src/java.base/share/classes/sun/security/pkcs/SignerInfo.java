@@ -180,7 +180,7 @@ public class SignerInfo implements DerEncoder {
 
     /**
      * DER encode this object onto an output stream.
-     * Implements the <code>DerEncoder</code> interface.
+     * Implements the {@code DerEncoder} interface.
      *
      * @param out
      * the output stream on which to write the DER encoding.
@@ -454,7 +454,7 @@ public class SignerInfo implements DerEncoder {
      * Extracts a timestamp from a PKCS7 SignerInfo.
      *
      * Examines the signer's unsigned attributes for a
-     * <tt>signatureTimestampToken</tt> attribute. If present,
+     * {@code signatureTimestampToken} attribute. If present,
      * then it is parsed to extract the date and time at which the
      * timestamp was generated.
      *

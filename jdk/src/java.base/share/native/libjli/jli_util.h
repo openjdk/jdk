@@ -29,7 +29,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <jni.h>
+
+#ifndef NO_JNI
+  #include <jni.h>
+#else
+  #define jboolean int
+  #define JNI_TRUE  1
+  #define JNI_FALSE 0
+#endif
+
 #define JLDEBUG_ENV_ENTRY "_JAVA_LAUNCHER_DEBUG"
 
 void *JLI_MemAlloc(size_t size);
@@ -45,6 +53,7 @@ typedef struct {
 
 StdArg *JLI_GetStdArgs();
 int     JLI_GetStdArgc();
+int     JLI_GetAppArgIndex();
 
 #define JLI_StrLen(p1)          strlen((p1))
 #define JLI_StrChr(p1, p2)      strchr((p1), (p2))
@@ -101,5 +110,30 @@ void JLI_CmdToArgs(char *cmdline);
 void     JLI_TraceLauncher(const char* fmt, ...);
 void     JLI_SetTraceLauncher();
 jboolean JLI_IsTraceLauncher();
+
+/*
+ * JLI_List - a dynamic list of char*
+ */
+struct JLI_List_
+{
+    char **elements;
+    size_t size;
+    size_t capacity;
+};
+typedef struct JLI_List_ *JLI_List;
+
+JLI_List JLI_List_new(size_t capacity);
+void JLI_List_free(JLI_List l);
+void JLI_List_ensureCapacity(JLI_List l, size_t capacity);
+/* e must be JLI_MemFree-able */
+void JLI_List_add(JLI_List l, char *e);
+/* a copy is made out of beg */
+void JLI_List_addSubstring(JLI_List l, const char *beg, size_t len);
+char *JLI_List_combine(JLI_List sl);
+char *JLI_List_join(JLI_List l, char sep);
+JLI_List JLI_List_split(const char *str, char sep);
+
+void JLI_InitArgProcessing(jboolean isJava, jboolean disableArgFile);
+JLI_List JLI_PreprocessArg(const char *arg);
 
 #endif  /* _JLI_UTIL_H */

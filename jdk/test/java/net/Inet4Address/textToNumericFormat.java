@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4749938
+ * @bug 4749938 8087190
  * @summary Bug in the parsing IPv4 literal addresses
  * @modules java.base/sun.net.spi.nameservice
  * @compile -XDignore.symbol.file=true DummyNameService.java DummyNameServiceDescriptor.java
@@ -63,7 +63,11 @@ public class textToNumericFormat {
                            "2380.255.255.255",
                            "239.255.65536",
                            "239.16777216",
-                           "4294967296" };
+                           "4294967296",
+                           ".1.1.1",
+                           "1..1.1",
+                           "1.1.1.",
+                           "..." };
 
         for (int i=0; i<goodAddrs.length; i++) {
             try {

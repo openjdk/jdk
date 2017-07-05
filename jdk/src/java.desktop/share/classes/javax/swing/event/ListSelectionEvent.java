@@ -80,7 +80,7 @@ public class ListSelectionEvent extends EventObject
 
     /**
      * Returns the index of the first row whose selection may have changed.
-     * {@code getFirstIndex() &lt;= getLastIndex()}
+     * {@code getFirstIndex() <= getLastIndex()}
      *
      * @return the first row whose selection value may have changed,
      *         where zero is the first row
@@ -89,7 +89,7 @@ public class ListSelectionEvent extends EventObject
 
     /**
      * Returns the index of the last row whose selection may have changed.
-     * {@code getLastIndex() &gt;= getFirstIndex()}
+     * {@code getLastIndex() >= getFirstIndex()}
      *
      * @return the last row whose selection value may have changed,
      *         where zero is the first row

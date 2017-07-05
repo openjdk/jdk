@@ -55,20 +55,20 @@ package java.lang.invoke;
  * At that point {@code guardWithTest} may ignore {@code T} and return {@code F}.
  * <p>
  * Here is an example of a switch point in action:
- * <blockquote><pre>{@code
-MethodHandle MH_strcat = MethodHandles.lookup()
-    .findVirtual(String.class, "concat", MethodType.methodType(String.class, String.class));
-SwitchPoint spt = new SwitchPoint();
-assert(!spt.hasBeenInvalidated());
-// the following steps may be repeated to re-use the same switch point:
-MethodHandle worker1 = MH_strcat;
-MethodHandle worker2 = MethodHandles.permuteArguments(MH_strcat, MH_strcat.type(), 1, 0);
-MethodHandle worker = spt.guardWithTest(worker1, worker2);
-assertEquals("method", (String) worker.invokeExact("met", "hod"));
-SwitchPoint.invalidateAll(new SwitchPoint[]{ spt });
-assert(spt.hasBeenInvalidated());
-assertEquals("hodmet", (String) worker.invokeExact("met", "hod"));
- * }</pre></blockquote>
+ * <pre>{@code
+ * MethodHandle MH_strcat = MethodHandles.lookup()
+ *     .findVirtual(String.class, "concat", MethodType.methodType(String.class, String.class));
+ * SwitchPoint spt = new SwitchPoint();
+ * assert(!spt.hasBeenInvalidated());
+ * // the following steps may be repeated to re-use the same switch point:
+ * MethodHandle worker1 = MH_strcat;
+ * MethodHandle worker2 = MethodHandles.permuteArguments(MH_strcat, MH_strcat.type(), 1, 0);
+ * MethodHandle worker = spt.guardWithTest(worker1, worker2);
+ * assertEquals("method", (String) worker.invokeExact("met", "hod"));
+ * SwitchPoint.invalidateAll(new SwitchPoint[]{ spt });
+ * assert(spt.hasBeenInvalidated());
+ * assertEquals("hodmet", (String) worker.invokeExact("met", "hod"));
+ * }</pre>
  * <p style="font-size:smaller;">
  * <em>Discussion:</em>
  * Switch points are useful without subclassing.  They may also be subclassed.
@@ -82,31 +82,31 @@ assertEquals("hodmet", (String) worker.invokeExact("met", "hod"));
  * <em>Implementation Note:</em>
  * A switch point behaves as if implemented on top of {@link MutableCallSite},
  * approximately as follows:
- * <blockquote><pre>{@code
-public class SwitchPoint {
-  private static final MethodHandle
-    K_true  = MethodHandles.constant(boolean.class, true),
-    K_false = MethodHandles.constant(boolean.class, false);
-  private final MutableCallSite mcs;
-  private final MethodHandle mcsInvoker;
-  public SwitchPoint() {
-    this.mcs = new MutableCallSite(K_true);
-    this.mcsInvoker = mcs.dynamicInvoker();
-  }
-  public MethodHandle guardWithTest(
-                MethodHandle target, MethodHandle fallback) {
-    // Note:  mcsInvoker is of type ()boolean.
-    // Target and fallback may take any arguments, but must have the same type.
-    return MethodHandles.guardWithTest(this.mcsInvoker, target, fallback);
-  }
-  public static void invalidateAll(SwitchPoint[] spts) {
-    List&lt;MutableCallSite&gt; mcss = new ArrayList&lt;&gt;();
-    for (SwitchPoint spt : spts)  mcss.add(spt.mcs);
-    for (MutableCallSite mcs : mcss)  mcs.setTarget(K_false);
-    MutableCallSite.syncAll(mcss.toArray(new MutableCallSite[0]));
-  }
-}
- * }</pre></blockquote>
+ * <pre>{@code
+ * public class SwitchPoint {
+ *     private static final MethodHandle
+ *         K_true  = MethodHandles.constant(boolean.class, true),
+ *         K_false = MethodHandles.constant(boolean.class, false);
+ *     private final MutableCallSite mcs;
+ *     private final MethodHandle mcsInvoker;
+ *     public SwitchPoint() {
+ *         this.mcs = new MutableCallSite(K_true);
+ *         this.mcsInvoker = mcs.dynamicInvoker();
+ *     }
+ *     public MethodHandle guardWithTest(
+ *             MethodHandle target, MethodHandle fallback) {
+ *         // Note:  mcsInvoker is of type ()boolean.
+ *         // Target and fallback may take any arguments, but must have the same type.
+ *         return MethodHandles.guardWithTest(this.mcsInvoker, target, fallback);
+ *     }
+ *     public static void invalidateAll(SwitchPoint[] spts) {
+ *         List<MutableCallSite> mcss = new ArrayList<>();
+ *         for (SwitchPoint spt : spts)  mcss.add(spt.mcs);
+ *         for (MutableCallSite mcs : mcss)  mcs.setTarget(K_false);
+ *         MutableCallSite.syncAll(mcss.toArray(new MutableCallSite[0]));
+ *     }
+ * }
+ * }</pre>
  * @author Remi Forax, JSR 292 EG
  */
 public class SwitchPoint {

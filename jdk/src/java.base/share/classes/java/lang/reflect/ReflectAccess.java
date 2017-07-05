@@ -139,6 +139,9 @@ class ReflectAccess implements sun.reflect.LangReflectAccess {
     public Method      copyMethod(Method arg) {
         return arg.copy();
     }
+    public Method      leafCopyMethod(Method arg) {
+        return arg.leafCopy();
+    }
 
     public Field       copyField(Field arg) {
         return arg.copy();
