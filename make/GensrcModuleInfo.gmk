@@ -78,21 +78,30 @@ ifneq ($(MOD_FILES), )
   # let space represent new lines in the variable as $(shell) normalizes all
   # whitespace.
   $(foreach f, $(MOD_FILES), \
-    $(eval MOD_FILE_CONTENTS += $(shell $(GREP) -v ".\*" $f | $(TR) ' ' '/')))
+    $(eval MOD_FILE_CONTENTS += $(shell $(GREP) -v -e ".\*" -e "//" $f | $(TR) ' ' '/')))
+
+  # Separate the modifications into qualified exports and the rest
+  MODS_QUALIFIED_EXPORTS := $(call containing, /to/, $(MOD_FILE_CONTENTS))
+  MODS_REST := $(filter-out $(MODS_QUALIFIED_EXPORTS), $(MOD_FILE_CONTENTS))
 
   # Filter the contents for modules that are actually being built
   MODULES_FILTER := $(addprefix %/, $(addsuffix ;, $(ALL_MODULES)))
-  MODULES_FILTER += provides%
-  MODIFICATIONS := $(filter $(MODULES_FILTER), $(MOD_FILE_CONTENTS))
+  MODIFICATIONS := $(filter $(MODULES_FILTER), $(MODS_QUALIFIED_EXPORTS)) \
+      $(MODS_REST)
 
   # Convert the modification lines into arguments for the modification tool.
   # Filter out modifications for non existing to-modules.
   $(foreach line, $(MODIFICATIONS), \
     $(eval split_line := $(subst /,$(SPACE),$(line))) \
     $(eval command := $(word 1, $(split_line))) \
-    $(eval package := $(word 2, $(split_line))) \
+    $(eval package := $(patsubst %;,%,$(word 2, $(split_line)))) \
     $(eval to_module := $(patsubst %;,%,$(word 4, $(split_line)))) \
-    $(eval ARGS += -$(command) $(package)/$(to_module)))
+    $(if $(to_module), \
+      $(eval ARGS += -$(command) $(package)/$(to_module)) \
+    , \
+      $(eval ARGS += -$(command) $(package)) \
+    ) \
+  )
 
   ifneq ($(ARGS), )
     $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/module-info.java: \

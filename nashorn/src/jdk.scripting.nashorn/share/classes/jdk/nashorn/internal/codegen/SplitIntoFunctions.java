@@ -175,7 +175,9 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
                 // we still use IS_SPLIT as the criteria in CompilationPhase.SERIALIZE_SPLIT_PHASE.
                 FunctionNode.IS_ANONYMOUS | FunctionNode.USES_ANCESTOR_SCOPE | FunctionNode.IS_SPLIT,
                 body,
-                null
+                null,
+                originalFn.getModule(),
+                originalFn.getDebugFlags()
         )
         .setCompileUnit(lc, splitNode.getCompileUnit());
 

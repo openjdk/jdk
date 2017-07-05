@@ -33,6 +33,7 @@ import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
+import jdk.nashorn.internal.ir.ClassNode;
 import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.DebuggerNode;
 import jdk.nashorn.internal.ir.EmptyNode;
@@ -897,5 +898,23 @@ public abstract class NodeVisitor<T extends LexicalContext> {
         return leaveDefault(withNode);
     }
 
+    /**
+     * Callback for entering a ClassNode
+     *
+     * @param  classNode  the node
+     * @return true if traversal should continue and node children be traversed, false otherwise
+     */
+    public boolean enterClassNode(final ClassNode classNode) {
+        return enterDefault(classNode);
+    }
 
+    /**
+     * Callback for leaving a ClassNode
+     *
+     * @param  classNode  the node
+     * @return processed node, which will replace the original one, or the original node
+     */
+    public Node leaveClassNode(final ClassNode classNode) {
+        return leaveDefault(classNode);
+    }
 }

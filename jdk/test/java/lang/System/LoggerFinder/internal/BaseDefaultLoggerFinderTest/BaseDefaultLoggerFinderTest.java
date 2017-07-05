@@ -55,6 +55,7 @@ import java.util.function.Function;
 import jdk.internal.logger.DefaultLoggerFinder;
 import jdk.internal.logger.SimpleConsoleLogger;
 import sun.util.logging.PlatformLogger;
+import java.lang.reflect.Module;
 
 /**
  * @test
@@ -112,10 +113,10 @@ public class BaseDefaultLoggerFinderTest {
         public final static AtomicLong sequencer = new AtomicLong();
 
 
-        public Logger getLogger(String name, Class<?> caller);
-        public Logger getLocalizedLogger(String name, ResourceBundle bundle, Class<?> caller);
-        void setLevel(Logger logger, Level level, Class<?> caller);
-        void setLevel(Logger logger, PlatformLogger.Level level, Class<?> caller);
+        public Logger getLogger(String name, Module caller);
+        public Logger getLocalizedLogger(String name, ResourceBundle bundle, Module caller);
+        void setLevel(Logger logger, Level level, Module caller);
+        void setLevel(Logger logger, PlatformLogger.Level level, Module caller);
         PlatformLogger.Bridge asPlatformLoggerBridge(Logger logger);
     }
 
@@ -130,7 +131,7 @@ public class BaseDefaultLoggerFinderTest {
         }
 
         @Override
-        public void setLevel(Logger logger, Level level, Class<?> caller) {
+        public void setLevel(Logger logger, Level level, Module caller) {
             PrivilegedAction<Void> pa = () -> {
                 setLevel(logger, PlatformLogger.toPlatformLevel(level), caller);
                 return null;
@@ -139,7 +140,7 @@ public class BaseDefaultLoggerFinderTest {
         }
 
         @Override
-        public void setLevel(Logger logger, PlatformLogger.Level level, Class<?> caller) {
+        public void setLevel(Logger logger, PlatformLogger.Level level, Module caller) {
             PrivilegedAction<Logger> pa = () -> demandLoggerFor(logger.getName(), caller);
             Logger impl = AccessController.doPrivileged(pa);
             SimpleConsoleLogger.class.cast(impl)
@@ -606,11 +607,12 @@ public class BaseDefaultLoggerFinderTest {
             String name,
             ResourceBundle loggerBundle,
             Logger logger,
-            Class<?> caller) {
+            Class<?> callerClass) {
 
         System.out.println("Testing " + loggerDescMap.get(logger) + " [" + logger +"]");
         AtomicLong sequencer = TestLoggerFinder.sequencer;
 
+        Module caller = callerClass.getModule();
         Foo foo = new Foo();
         String fooMsg = foo.toString();
         for (Level loggerLevel : Level.values()) {

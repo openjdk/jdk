@@ -435,7 +435,7 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
     }
 
     @Override
-    public Node leaveBIND(final BinaryNode binaryNode) {
+    public Node leaveARROW(final BinaryNode binaryNode) {
         return binaryNodeWeight(binaryNode);
     }
 

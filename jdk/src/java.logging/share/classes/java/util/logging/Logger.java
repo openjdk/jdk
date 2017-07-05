@@ -40,6 +40,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import static jdk.internal.logger.DefaultLoggerFinder.isSystem;
 
 /**
  * A Logger object is used to log messages for a specific
@@ -379,7 +380,8 @@ public class Logger {
         this(name, resourceBundleName, null, LogManager.getLogManager(), false);
     }
 
-    Logger(String name, String resourceBundleName, Class<?> caller, LogManager manager, boolean isSystemLogger) {
+    Logger(String name, String resourceBundleName, Module caller,
+           LogManager manager, boolean isSystemLogger) {
         this.manager = manager;
         this.isSystemLogger = isSystemLogger;
         setupResourceInfo(resourceBundleName, caller);
@@ -387,10 +389,7 @@ public class Logger {
         levelValue = Level.INFO.intValue();
     }
 
-    private void setCallerModuleRef(Class<?> caller) {
-        Module callerModule = ((caller != null)
-                                        ? caller.getModule()
-                                        : null);
+    private void setCallerModuleRef(Module callerModule) {
         if (callerModule != null) {
             this.callerModuleRef = new WeakReference<>(callerModule);
         }
@@ -618,7 +617,7 @@ public class Logger {
         // all loggers in the system context will default to
         // the system logger's resource bundle - therefore the caller won't
         // be needed and can be null.
-        Logger result = manager.demandSystemLogger(name, SYSTEM_LOGGER_RB_NAME, null);
+        Logger result = manager.demandSystemLogger(name, SYSTEM_LOGGER_RB_NAME, (Module)null);
         return result;
     }
 
@@ -681,8 +680,10 @@ public class Logger {
         LogManager manager = LogManager.getLogManager();
         // cleanup some Loggers that have been GC'ed
         manager.drainLoggerRefQueueBounded();
+        final Class<?> callerClass = Reflection.getCallerClass();
+        final Module module = callerClass.getModule();
         Logger result = new Logger(null, resourceBundleName,
-                                   Reflection.getCallerClass(), manager, false);
+                                   module, manager, false);
         result.anonymous = true;
         Logger root = manager.getLogger("");
         result.doSetParent(root);
@@ -2046,6 +2047,11 @@ public class Logger {
         }
     }
 
+    private void setupResourceInfo(String name, Class<?> caller) {
+        final Module module = caller == null ? null : caller.getModule();
+        setupResourceInfo(name, module);
+    }
+
     // Private utility method to initialize our one entry
     // resource bundle name cache and the callers Module
     // Note: for consistency reasons, we are careful to check
@@ -2053,7 +2059,7 @@ public class Logger {
     // resourceBundleName field.
     // Synchronized to prevent races in setting the fields.
     private synchronized void setupResourceInfo(String name,
-                                                Class<?> callerClass) {
+                                                Module callerModule) {
         final LoggerBundle lb = loggerBundle;
         if (lb.resourceBundleName != null) {
             // this Logger already has a ResourceBundle
@@ -2072,8 +2078,9 @@ public class Logger {
             return;
         }
 
-        setCallerModuleRef(callerClass);
-        if (isSystemLogger && (callerClass != null && callerClass.getClassLoader() != null)) {
+        setCallerModuleRef(callerModule);
+
+        if (isSystemLogger && (callerModule != null && !isSystem(callerModule))) {
             checkPermission();
         }
 

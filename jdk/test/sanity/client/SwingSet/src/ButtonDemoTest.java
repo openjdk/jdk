@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.JHyperlink;
 import com.sun.swingset3.demos.button.ButtonDemo;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -38,7 +39,7 @@ import org.netbeans.jemmy.operators.JFrameOperator;
 import static com.sun.swingset3.demos.button.ButtonDemo.*;
 import org.jemmy2ext.JemmyExt;
 import org.jemmy2ext.JemmyExt.MultiThreadedTryCatch;
-import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -48,12 +49,13 @@ import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
  *          on buttons before and after click.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.button.ButtonDemo
  * @run testng ButtonDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class ButtonDemoTest {
 
     private static final String[] BUTTON_TEXT_AFTER = {
@@ -92,34 +94,30 @@ public class ButtonDemoTest {
     @Test
     public void test() throws Exception {
 
-        captureDebugInfoOnFail(() -> {
+        new ClassReference(ButtonDemo.class.getCanonicalName()).startApplication();
 
-            new ClassReference(ButtonDemo.class.getCanonicalName()).startApplication();
+        JFrameOperator mainFrame = new JFrameOperator(DEMO_TITLE);
+        mainFrame.setComparator(EXACT_STRING_COMPARATOR);
 
-            JFrameOperator mainFrame = new JFrameOperator(DEMO_TITLE);
-            mainFrame.setComparator(EXACT_STRING_COMPARATOR);
+        // Check all the buttons
+        for (int i = 0; i < BUTTON_TOOLTIP.length; i++) {
+            String tooltip = BUTTON_TOOLTIP[i];
 
-            // Check all the buttons
-            for (int i = 0; i < BUTTON_TOOLTIP.length; i++) {
-                String tooltip = BUTTON_TOOLTIP[i];
+            JButtonOperator button = new JButtonOperator(mainFrame, new ByToolTipChooser(tooltip));
 
-                JButtonOperator button = new JButtonOperator(mainFrame, new ByToolTipChooser(tooltip));
+            assertEquals(BUTTON_TEXT_BEFORE[i], button.getText());
 
-                assertEquals(BUTTON_TEXT_BEFORE[i], button.getText());
-
-                // Two buttons are hyperlinks, we don't want to click them
-                if (!button.getSource().getClass().equals(JHyperlink.class)) {
-                    checkButton(button);
-                }
-
-                if (BUTTON_TEXT_AFTER.length > i) {
-                    assertEquals(BUTTON_TEXT_AFTER[i], button.getText());
-                } else {
-                    assertEquals(BUTTON_TEXT_BEFORE[i], button.getText());
-                }
+            // Two buttons are hyperlinks, we don't want to click them
+            if (!button.getSource().getClass().equals(JHyperlink.class)) {
+                checkButton(button);
             }
 
-        });
+            if (BUTTON_TEXT_AFTER.length > i) {
+                assertEquals(BUTTON_TEXT_AFTER[i], button.getText());
+            } else {
+                assertEquals(BUTTON_TEXT_BEFORE[i], button.getText());
+            }
+        }
     }
 
     private void checkButton(JButtonOperator button) throws Exception {

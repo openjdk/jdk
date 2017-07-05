@@ -79,7 +79,6 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     static void updateStyle(JTextComponent comp, SynthContext context,
@@ -179,7 +178,6 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
         SynthLookAndFeel.update(context, g);
         paintBackground(context, g, c);
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -262,7 +260,6 @@ public class SynthTextFieldUI extends BasicTextFieldUI implements SynthUI {
         getComponent().removeFocusListener(handler);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
         super.uninstallDefaults();
     }

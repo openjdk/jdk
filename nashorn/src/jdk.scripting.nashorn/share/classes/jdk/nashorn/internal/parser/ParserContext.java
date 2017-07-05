@@ -278,7 +278,12 @@ class ParserContext {
         return new NodeIterator<>(ParserContextFunctionNode.class);
     }
 
-    private class NodeIterator <T extends ParserContextNode> implements Iterator<T> {
+    public ParserContextModuleNode getCurrentModule() {
+        final Iterator<ParserContextModuleNode> iter = new NodeIterator<>(ParserContextModuleNode.class, getCurrentFunction());
+        return iter.hasNext() ? iter.next() : null;
+    }
+
+    private class NodeIterator<T extends ParserContextNode> implements Iterator<T> {
         private int index;
         private T next;
         private final Class<T> clazz;

@@ -44,7 +44,7 @@ class CookieFilter implements HeaderFilter {
     @Override
     public void request(HttpRequestImpl r) throws IOException {
         Map<String,List<String>> userheaders, cookies;
-        userheaders = r.getUserHeaders().directMap();
+        userheaders = r.getUserHeaders().map();
         cookies = cookieMan.get(r.uri(), userheaders);
         // add the returned cookies
         HttpHeadersImpl systemHeaders = r.getSystemHeaders();

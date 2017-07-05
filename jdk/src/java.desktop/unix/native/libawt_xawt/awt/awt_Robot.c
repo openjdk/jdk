@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "awt_GraphicsEnv.h"
 #define XK_MISCELLANY
 #include <X11/keysymdef.h>
-#include <X11/Intrinsic.h>
 #include <X11/Xutil.h>
 #include <X11/Xmd.h>
 #include <X11/extensions/xtestext1.h>
@@ -45,7 +44,7 @@
 #include "wsutils.h"
 #include "list.h"
 #include "multiVis.h"
-#include "gtk2_interface.h"
+#include "gtk_interface.h"
 
 #if defined(__linux__) || defined(MACOSX)
 #include <sys/socket.h>
@@ -264,70 +263,10 @@ Java_sun_awt_X11_XRobotPeer_getRGBPixelsImpl( JNIEnv *env,
     int index;
 
     if (isGtkSupported) {
-        GdkPixbuf *pixbuf;
-        (*fp_gdk_threads_enter)();
-        GdkWindow *root = (*fp_gdk_get_default_root_window)();
-
-        pixbuf = (*fp_gdk_pixbuf_get_from_drawable)(NULL, root, NULL,
-                                                    x, y, 0, 0, width, height);
-        if (pixbuf && scale != 1) {
-            GdkPixbuf *scaledPixbuf;
-            x /= scale;
-            y /= scale;
-            width /= scale;
-            height /= scale;
-            dx /= scale;
-            dy /= scale;
-            scaledPixbuf = (*fp_gdk_pixbuf_scale_simple)(pixbuf, width, height,
-                                                         GDK_INTERP_BILINEAR);
-            (*fp_g_object_unref)(pixbuf);
-            pixbuf = scaledPixbuf;
-        }
-
-        if (pixbuf) {
-            int nchan = (*fp_gdk_pixbuf_get_n_channels)(pixbuf);
-            int stride = (*fp_gdk_pixbuf_get_rowstride)(pixbuf);
-
-            if ((*fp_gdk_pixbuf_get_width)(pixbuf) == width
-                    && (*fp_gdk_pixbuf_get_height)(pixbuf) == height
-                    && (*fp_gdk_pixbuf_get_bits_per_sample)(pixbuf) == 8
-                    && (*fp_gdk_pixbuf_get_colorspace)(pixbuf) == GDK_COLORSPACE_RGB
-                    && nchan >= 3
-                    ) {
-                guchar *p, *pix = (*fp_gdk_pixbuf_get_pixels)(pixbuf);
-
-                ary = (*env)->GetPrimitiveArrayCritical(env, pixelArray, NULL);
-                if (!ary) {
-                    (*fp_g_object_unref)(pixbuf);
-                    (*fp_gdk_threads_leave)();
-                    AWT_UNLOCK();
-                    return;
-                }
-
-                for (_y = 0; _y < height; _y++) {
-                    for (_x = 0; _x < width; _x++) {
-                        p = pix + _y * stride + _x * nchan;
-
-                        index = (_y + dy) * jwidth + (_x + dx);
-                        ary[index] = 0xff000000
-                                        | (p[0] << 16)
-                                        | (p[1] << 8)
-                                        | (p[2]);
-
-                    }
-                }
-                (*env)->ReleasePrimitiveArrayCritical(env, pixelArray, ary, 0);
-                if ((*env)->ExceptionCheck(env)) {
-                    (*fp_g_object_unref)(pixbuf);
-                    (*fp_gdk_threads_leave)();
-                    AWT_UNLOCK();
-                    return;
-                }
-                gtk_failed = FALSE;
-            }
-            (*fp_g_object_unref)(pixbuf);
-        }
-        (*fp_gdk_threads_leave)();
+        gtk->gdk_threads_enter();
+        gtk_failed = gtk->get_drawable_data(env, pixelArray, x, y, width,
+                                            height, jwidth, dx, dy, scale);
+        gtk->gdk_threads_leave();
     }
 
     if (gtk_failed) {

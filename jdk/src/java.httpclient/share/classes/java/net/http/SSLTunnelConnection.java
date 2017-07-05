@@ -130,12 +130,8 @@ class SSLTunnelConnection extends HttpConnection {
     }
 
     @Override
-    void close() {
-        try {
-            //System.err.println ("Closing: " + this);
-            delegate.channel().close(); // TODO: proper close
-        } catch (IOException ex) {
-        }
+    public void close() {
+        Utils.close(delegate.channel());
     }
 
     @Override

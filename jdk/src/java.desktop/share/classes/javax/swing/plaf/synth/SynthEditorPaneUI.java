@@ -83,7 +83,6 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
         c.putClientProperty("caretAspectRatio", null);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         Object clientProperty =
@@ -127,7 +126,6 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     /**
@@ -165,7 +163,6 @@ public class SynthEditorPaneUI extends BasicEditorPaneUI implements SynthUI {
         SynthLookAndFeel.update(context, g);
         paintBackground(context, g, c);
         paint(context, g);
-        context.dispose();
     }
 
     /**

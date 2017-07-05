@@ -6,7 +6,7 @@
     "properties": [
       {
         "getter": "null",
-        "endPosition": "8",
+        "endPosition": "12",
         "kind": "PROPERTY",
         "setter": "null",
         "value": {
@@ -38,7 +38,7 @@
     "properties": [
       {
         "getter": "null",
-        "endPosition": "34",
+        "endPosition": "37",
         "kind": "PROPERTY",
         "setter": "null",
         "value": {
@@ -57,7 +57,7 @@
       },
       {
         "getter": "null",
-        "endPosition": "41",
+        "endPosition": "43",
         "kind": "PROPERTY",
         "setter": "null",
         "value": {
@@ -83,7 +83,7 @@
     "properties": [
       {
         "getter": "null",
-        "endPosition": "57",
+        "endPosition": "60",
         "kind": "PROPERTY",
         "setter": "null",
         "value": {
@@ -102,7 +102,7 @@
       },
       {
         "getter": "null",
-        "endPosition": "66",
+        "endPosition": "68",
         "kind": "PROPERTY",
         "setter": "null",
         "value": {

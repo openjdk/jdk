@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.scrollpane.ScrollPaneDemo;
 import static com.sun.swingset3.demos.scrollpane.ScrollPaneDemo.DEMO_TITLE;
 import static org.testng.AssertJUnit.*;
@@ -28,7 +29,7 @@ import org.testng.annotations.Test;
 import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JScrollPaneOperator;
-import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -37,73 +38,73 @@ import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
  *          to left and to right and checking scroll bar values.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.scrollpane.ScrollPaneDemo
  * @run testng ScrollPaneDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class ScrollPaneDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(ScrollPaneDemo.class.getName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
-            JScrollPaneOperator jspo = new JScrollPaneOperator(frame);
+        new ClassReference(ScrollPaneDemo.class.getName()).startApplication();
 
-            // Set initial scrollbar positions
-            int initialVerticalValue = jspo.getVerticalScrollBar().getValue();
-            int initialHorizontalValue = jspo.getHorizontalScrollBar().getValue();
+        JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+        JScrollPaneOperator jspo = new JScrollPaneOperator(frame);
 
-            System.out.println("Initial Vertical Value = " + jspo.getVerticalScrollBar().getValue());
-            System.out.println("Initial HoriZontal Value = " + jspo.getHorizontalScrollBar().getValue());
+        // Set initial scrollbar positions
+        int initialVerticalValue = jspo.getVerticalScrollBar().getValue();
+        int initialHorizontalValue = jspo.getHorizontalScrollBar().getValue();
 
-            // Check scroll to Bottom
-            {
-                jspo.scrollToBottom();
-                int currentValue = jspo.getVerticalScrollBar().getValue();
-                System.out.println("Final Value = " + currentValue);
-                assertTrue("Scroll to Bottom of Pane "
-                        + "(initialVerticalValue, actual value: " + initialVerticalValue + " "
-                        + "< currentValue, actual value = " + currentValue + ")",
-                        initialVerticalValue < currentValue);
-            }
+        System.out.println("Initial Vertical Value = " + jspo.getVerticalScrollBar().getValue());
+        System.out.println("Initial HoriZontal Value = " + jspo.getHorizontalScrollBar().getValue());
 
-            // Check scroll to Top
-            {
-                jspo.scrollToTop();
-                int currentValue = jspo.getVerticalScrollBar().getValue();
-                System.out.println("Top Scroll Final Value = " + currentValue);
-                assertTrue("Scroll to Top of Pane "
-                        + "(initialVerticalValue, actual value: " + initialVerticalValue + " "
-                        + "> currentValue, actual value = " + currentValue + ")",
-                        initialVerticalValue > currentValue);
-            }
+        // Check scroll to Bottom
+        {
+            jspo.scrollToBottom();
+            int currentValue = jspo.getVerticalScrollBar().getValue();
+            System.out.println("Final Value = " + currentValue);
+            assertTrue("Scroll to Bottom of Pane "
+                    + "(initialVerticalValue, actual value: " + initialVerticalValue + " "
+                    + "< currentValue, actual value = " + currentValue + ")",
+                    initialVerticalValue < currentValue);
+        }
 
-            // Check scroll to Left
-            {
-                jspo.scrollToLeft();
-                int currentValue = jspo.getHorizontalScrollBar().getValue();
-                System.out.println("Scroll to Left Final Value = " + currentValue);
-                assertTrue("Scroll to Left of Pane "
-                        + "(initialHorizontalValue, actual value: " + initialHorizontalValue + " "
-                        + "> currentValue, actual value = " + currentValue + ")",
-                        initialHorizontalValue > currentValue);
-            }
+        // Check scroll to Top
+        {
+            jspo.scrollToTop();
+            int currentValue = jspo.getVerticalScrollBar().getValue();
+            System.out.println("Top Scroll Final Value = " + currentValue);
+            assertTrue("Scroll to Top of Pane "
+                    + "(initialVerticalValue, actual value: " + initialVerticalValue + " "
+                    + "> currentValue, actual value = " + currentValue + ")",
+                    initialVerticalValue > currentValue);
+        }
 
-            // Check scroll to Right
-            {
-                jspo.scrollToRight();
-                int currentValue = jspo.getHorizontalScrollBar().getValue();
-                System.out.println("Scroll to Right Final Value = " + currentValue);
-                assertTrue("Scroll to Right of Pane "
-                        + "(initialHorizontalValue, actual value: " + initialHorizontalValue + " "
-                        + "< currentValue, actual value = " + currentValue + ")",
-                        initialHorizontalValue < currentValue);
-            }
-        });
+        // Check scroll to Left
+        {
+            jspo.scrollToLeft();
+            int currentValue = jspo.getHorizontalScrollBar().getValue();
+            System.out.println("Scroll to Left Final Value = " + currentValue);
+            assertTrue("Scroll to Left of Pane "
+                    + "(initialHorizontalValue, actual value: " + initialHorizontalValue + " "
+                    + "> currentValue, actual value = " + currentValue + ")",
+                    initialHorizontalValue > currentValue);
+        }
+
+        // Check scroll to Right
+        {
+            jspo.scrollToRight();
+            int currentValue = jspo.getHorizontalScrollBar().getValue();
+            System.out.println("Scroll to Right Final Value = " + currentValue);
+            assertTrue("Scroll to Right of Pane "
+                    + "(initialHorizontalValue, actual value: " + initialHorizontalValue + " "
+                    + "< currentValue, actual value = " + currentValue + ")",
+                    initialHorizontalValue < currentValue);
+        }
     }
 
 }
