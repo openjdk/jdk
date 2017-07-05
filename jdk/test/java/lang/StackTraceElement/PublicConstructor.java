@@ -29,7 +29,6 @@
  */
 
 import java.lang.module.ModuleDescriptor;
-import java.lang.reflect.Module;
 
 public class PublicConstructor {
     public static void main(String... args) {

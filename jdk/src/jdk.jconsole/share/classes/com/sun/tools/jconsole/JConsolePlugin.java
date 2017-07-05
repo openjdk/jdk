@@ -34,8 +34,8 @@ import javax.swing.SwingWorker;
 
 /**
  * A JConsole plugin class.  JConsole uses the
- * <a href="{@docRoot}/../../../../api/java/util/ServiceLoader.html">
- * service provider</a> mechanism to search the JConsole plugins.
+ * {@link java.util.ServiceLoader service provider}
+ * mechanism to search the JConsole plugins.
  * Users can provide their JConsole plugins in a jar file
  * containing a file named
  *
@@ -67,8 +67,7 @@ import javax.swing.SwingWorker;
  * call its {@link #getTabs getTabs} method and add the returned
  * tabs to the JConsole window.
  *
- * @see <a href="{@docRoot}/../../../../api/java/util/ServiceLoader.html">
- * java.util.ServiceLoader</a>
+ * @see java.util.ServiceLoader
  *
  * @since 1.6
  */

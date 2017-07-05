@@ -27,7 +27,7 @@
  * @summary Tests that MBeanServerFileAccessController supports
  *          principals other than JMXPrincipal.
  * @author Luis-Miguel Alventosa
- * @modules java.management.rmi
+ *
  * @run clean NonJMXPrincipalsTest SimpleStandard SimpleStandardMBean
  * @run build NonJMXPrincipalsTest SimpleStandard SimpleStandardMBean
  * @run main NonJMXPrincipalsTest

@@ -69,7 +69,7 @@ import jdk.internal.misc.SharedSecrets;
  * constant time if their argument is also an enum set.
  *
  * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
+ * <a href="{@docRoot}/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
  * @author Josh Bloch

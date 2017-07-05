@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import jdk.internal.jimage.ImageLocation;
  * @test
  * @summary Verify jimage
  * @modules java.base/jdk.internal.jimage
- * @run main/othervm --add-modules=ALL-SYSTEM,jdk.incubator.httpclient VerifyJimage
+ * @run main/othervm --add-modules ALL-SYSTEM VerifyJimage
  */
 
 /**
@@ -76,8 +76,8 @@ public class VerifyJimage {
 
         long start = System.nanoTime();
         int numThreads = Integer.getInteger("jdk.test.threads", 1);
-        List<JImageReader> readers = newJImageReaders();
-        VerifyJimage verify = new VerifyJimage(readers, numThreads);
+        JImageReader reader = newJImageReader();
+        VerifyJimage verify = new VerifyJimage(reader, numThreads);
         if (args.length == 0) {
             // load classes from jimage
             verify.loadClasses();
@@ -90,9 +90,7 @@ public class VerifyJimage {
         }
         verify.waitForCompletion();
         long end = System.nanoTime();
-        int entries = readers.stream()
-                             .mapToInt(JImageReader::entries)
-                             .sum();
+        int entries = reader.entries();
         System.out.format("%d entries %d files verified: %d ms %d errors%n",
                           entries, verify.count.get(),
                           TimeUnit.NANOSECONDS.toMillis(end - start), failed.size());
@@ -105,11 +103,11 @@ public class VerifyJimage {
     }
 
     private final AtomicInteger count = new AtomicInteger(0);
-    private final List<JImageReader> readers;
+    private final JImageReader reader;
     private final ExecutorService pool;
 
-    VerifyJimage(List<JImageReader> readers, int numThreads) {
-        this.readers = readers;
+    VerifyJimage(JImageReader reader, int numThreads) {
+        this.reader = reader;
         this.pool = Executors.newFixedThreadPool(numThreads);
     }
 
@@ -132,7 +130,7 @@ public class VerifyJimage {
                                            -> !Files.isDirectory(p) &&
                                               !mdir.relativize(p).toString().startsWith("_") &&
                                               !p.getFileName().toString().equals("MANIFEST.MF"))
-                                     .forEach(p -> compare(mdir, p, readers));
+                                     .forEach(p -> compare(mdir, p, reader));
                             } catch (IOException e) {
                                 throw new UncheckedIOException(e);
                             }
@@ -154,7 +152,7 @@ public class VerifyJimage {
         "jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector"
     );
 
-    private void compare(Path mdir, Path p, List<JImageReader> readers) {
+    private void compare(Path mdir, Path p, JImageReader reader) {
         String entry = p.getFileName().toString().equals(MODULE_INFO)
                 ? mdir.getFileName().toString() + "/" + MODULE_INFO
                 : mdir.relativize(p).toString().replace(File.separatorChar, '/');
@@ -167,52 +165,59 @@ public class VerifyJimage {
             return;
         }
 
-        String jimage = "modules";
-        JImageReader reader = readers.stream()
-                .filter(r -> r.findLocation(entry) != null)
-                .filter(r -> jimage.isEmpty() || r.imageName().equals(jimage))
-                .findFirst().orElse(null);
-        if (reader == null) {
-            failed.add(entry + " not found: " + p.getFileName().toString());
-        } else {
+        if (reader.findLocation(entry) != null) {
             reader.compare(entry, p);
         }
     }
 
     private void loadClasses() {
         ClassLoader loader = ClassLoader.getSystemClassLoader();
-        for (JImageReader reader : readers) {
-            Arrays.stream(reader.getEntryNames())
-                    .filter(n -> n.endsWith(".class") && !n.endsWith(MODULE_INFO))
-                    .forEach(n -> {
-                        String cn = removeModule(n).replaceAll("\\.class$", "").replace('/', '.');
-                        count.incrementAndGet();
-                        try {
-                            System.out.println("Loading " + cn);
-                            Class.forName(cn, false, loader);
-                        } catch (VerifyError ve) {
-                            System.err.println("VerifyError for " + cn);
-                            failed.add(reader.imageName() + ": " + cn + " not verified: " + ve.getMessage());
-                        } catch (ClassNotFoundException e) {
-                            failed.add(reader.imageName() + ": " + cn + " not found");
-                        }
-                    });
+        Stream.of(reader.getEntryNames())
+              .filter(this::accept)
+              .map(this::toClassName)
+              .forEach(cn -> {
+                  count.incrementAndGet();
+                  try {
+                      System.out.println("Loading " + cn);
+                      Class.forName(cn, false, loader);
+                  } catch (VerifyError ve) {
+                      System.err.println("VerifyError for " + cn);
+                      failed.add(reader.imageName() + ": " + cn + " not verified: " + ve.getMessage());
+                  } catch (ClassNotFoundException e) {
+                      failed.add(reader.imageName() + ": " + cn + " not found");
+                  }
+              });
+    }
+
+    private String toClassName(String entry) {
+        int index = entry.indexOf('/', 1);
+        return entry.substring(index + 1, entry.length())
+                    .replaceAll("\\.class$", "").replace('/', '.');
+    }
+
+    private static Set<String> EXCLUDED_MODULES =
+        Set.of("javafx.deploy", "jdk.deploy", "jdk.plugin", "jdk.javaws",
+            // All JVMCI packages other than jdk.vm.ci.services are dynamically
+            // exported to jdk.internal.vm.compiler and jdk.aot
+            "jdk.internal.vm.compiler", "jdk.aot"
+        );
+
+    private boolean accept(String entry) {
+        int index = entry.indexOf('/', 1);
+        String mn = index > 1 ? entry.substring(1, index) : "";
+        // filter deployment modules
+
+        if (mn.isEmpty() || EXCLUDED_MODULES.contains(mn)) {
+            return false;
         }
+        return entry.endsWith(".class") && !entry.endsWith(MODULE_INFO);
     }
 
-    private String removeModule(String path) {
-        int index = path.indexOf('/', 1);
-        return path.substring(index + 1, path.length());
-    }
-
-    private static List<JImageReader> newJImageReaders() throws IOException {
+    private static JImageReader newJImageReader() throws IOException {
         String home = System.getProperty("java.home");
         Path jimage = Paths.get(home, "lib", "modules");
-        JImageReader reader = new JImageReader(jimage);
-        List<JImageReader> result = new ArrayList<>();
         System.out.println("opened " + jimage);
-        result.add(reader);
-        return result;
+        return new JImageReader(jimage);
     }
 
     static class JImageReader extends BasicImageReader {

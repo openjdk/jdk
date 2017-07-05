@@ -38,7 +38,7 @@
 import static jdk.test.lib.Asserts.assertEQ;
 import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.assertTrue;
-import jdk.test.lib.DynamicVMOption;
+import jdk.test.lib.management.DynamicVMOption;
 
 public class TestDynMinHeapFreeRatio {
 

@@ -25,11 +25,9 @@
  * @test
  * @bug     4530538
  * @summary Basic unit test of the synchronization statistics support:
- *
  * @author  Mandy Chung
  * @author  Jaroslav Bachorik
  *
- * @modules java.management
  * @run main/othervm SynchronizationStatistics
  */
 
