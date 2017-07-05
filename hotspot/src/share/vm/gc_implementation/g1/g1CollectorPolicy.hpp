@@ -119,6 +119,8 @@ protected:
   double _cur_satb_drain_time_ms;
   double _cur_clear_ct_time_ms;
   bool   _satb_drain_time_set;
+  double _cur_ref_proc_time_ms;
+  double _cur_ref_enq_time_ms;
 
 #ifndef PRODUCT
   // Card Table Count Cache stats
@@ -986,6 +988,14 @@ public:
     _cur_aux_times_ms[i] += ms;
   }
 
+  void record_ref_proc_time(double ms) {
+    _cur_ref_proc_time_ms = ms;
+  }
+
+  void record_ref_enq_time(double ms) {
+    _cur_ref_enq_time_ms = ms;
+  }
+
 #ifndef PRODUCT
   void record_cc_clear_time(double ms) {
     if (_min_clear_cc_time_ms < 0.0 || ms <= _min_clear_cc_time_ms)
@@ -1137,6 +1147,10 @@ public:
     size_t young_list_length = _g1->young_list()->length();
     size_t young_list_max_length = _young_list_max_length;
     return young_list_length < young_list_max_length;
+  }
+
+  size_t young_list_max_length() {
+    return _young_list_max_length;
   }
 
   void update_region_num(bool young);

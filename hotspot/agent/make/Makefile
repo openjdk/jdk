@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,7 @@ sun.jvm.hotspot.debugger.windbg.ia64 \
 sun.jvm.hotspot.debugger.windbg.x86 \
 sun.jvm.hotspot.debugger.x86 \
 sun.jvm.hotspot.gc_implementation \
+sun.jvm.hotspot.gc_implementation.g1 \
 sun.jvm.hotspot.gc_implementation.parallelScavenge \
 sun.jvm.hotspot.gc_implementation.shared \
 sun.jvm.hotspot.gc_interface \
@@ -176,6 +177,9 @@ sun/jvm/hotspot/debugger/windbg/*.java \
 sun/jvm/hotspot/debugger/windbg/ia64/*.java \
 sun/jvm/hotspot/debugger/windbg/x86/*.java \
 sun/jvm/hotspot/debugger/x86/*.java \
+sun/jvm/hotspot/gc_implementation/g1/*.java \
+sun/jvm/hotspot/gc_implementation/parallelScavenge/*.java \
+sun/jvm/hotspot/gc_implementation/shared/*.java \
 sun/jvm/hotspot/interpreter/*.java \
 sun/jvm/hotspot/jdi/*.java \
 sun/jvm/hotspot/livejvm/*.java \

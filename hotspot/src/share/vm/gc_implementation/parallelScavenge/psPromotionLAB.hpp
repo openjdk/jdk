@@ -73,7 +73,7 @@ class PSPromotionLAB : public CHeapObj {
 
   bool is_flushed()                  { return _state == flushed; }
 
-  bool unallocate_object(oop obj);
+  bool unallocate_object(HeapWord* obj, size_t obj_size);
 
   // Returns a subregion containing all objects in this space.
   MemRegion used_region()            { return MemRegion(bottom(), top()); }
