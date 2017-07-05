@@ -373,7 +373,7 @@ const Type* Type::make_constant_from_field(ciField* field, ciInstance* holder,
   if (con_type != NULL && field->is_call_site_target()) {
     ciCallSite* call_site = holder->as_call_site();
     if (!call_site->is_constant_call_site()) {
-      ciMethodHandle* target = call_site->get_target();
+      ciMethodHandle* target = con.as_object()->as_method_handle();
       Compile::current()->dependencies()->assert_call_site_target_value(call_site, target);
     }
   }

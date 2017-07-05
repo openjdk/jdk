@@ -61,104 +61,109 @@ package org.w3c.dom;
  * <p>The values of <code>nodeName</code>,
  * <code>nodeValue</code>, and <code>attributes</code> vary according to the
  * node type as follows:
- * <table border='1' cellpadding='3'>
+ * <table class="striped">
+ * <caption style="display:none">Interface table</caption>
+ * <thead>
  * <tr>
  * <th>Interface</th>
  * <th>nodeName</th>
  * <th>nodeValue</th>
  * <th>attributes</th>
  * </tr>
+ * </thead>
+ * <tbody>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <code>Attr</code></td>
- * <td valign='top' rowspan='1' colspan='1'>same as <code>Attr.name</code></td>
- * <td valign='top' rowspan='1' colspan='1'>same as
+ * <td>same as <code>Attr.name</code></td>
+ * <td>same as
  * <code>Attr.value</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'><code>CDATASection</code></td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td><code>CDATASection</code></td>
+ * <td>
  * <code>"#cdata-section"</code></td>
- * <td valign='top' rowspan='1' colspan='1'>same as <code>CharacterData.data</code>, the
+ * <td>same as <code>CharacterData.data</code>, the
  * content of the CDATA Section</td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'><code>Comment</code></td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td><code>Comment</code></td>
+ * <td>
  * <code>"#comment"</code></td>
- * <td valign='top' rowspan='1' colspan='1'>same as <code>CharacterData.data</code>, the
+ * <td>same as <code>CharacterData.data</code>, the
  * content of the comment</td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'><code>Document</code></td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td><code>Document</code></td>
+ * <td>
  * <code>"#document"</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <code>DocumentFragment</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>"#document-fragment"</code></td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td><code>"#document-fragment"</code></td>
+ * <td>
  * <code>null</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'><code>DocumentType</code></td>
- * <td valign='top' rowspan='1' colspan='1'>same as
+ * <td><code>DocumentType</code></td>
+ * <td>same as
  * <code>DocumentType.name</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>
  * <code>Element</code></td>
- * <td valign='top' rowspan='1' colspan='1'>same as <code>Element.tagName</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td>same as <code>Element.tagName</code></td>
+ * <td><code>null</code></td>
+ * <td>
  * <code>NamedNodeMap</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'><code>Entity</code></td>
- * <td valign='top' rowspan='1' colspan='1'>entity name</td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td><code>Entity</code></td>
+ * <td>entity name</td>
+ * <td><code>null</code></td>
+ * <td>
  * <code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'><code>EntityReference</code></td>
- * <td valign='top' rowspan='1' colspan='1'>name of entity referenced</td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td><code>EntityReference</code></td>
+ * <td>name of entity referenced</td>
+ * <td>
  * <code>null</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'><code>Notation</code></td>
- * <td valign='top' rowspan='1' colspan='1'>notation name</td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td><code>Notation</code></td>
+ * <td>notation name</td>
+ * <td>
  * <code>null</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'><code>ProcessingInstruction</code></td>
- * <td valign='top' rowspan='1' colspan='1'>same
+ * <td><code>ProcessingInstruction</code></td>
+ * <td>same
  * as <code>ProcessingInstruction.target</code></td>
- * <td valign='top' rowspan='1' colspan='1'>same as
+ * <td>same as
  * <code>ProcessingInstruction.data</code></td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
  * <tr>
- * <td valign='top' rowspan='1' colspan='1'><code>Text</code></td>
- * <td valign='top' rowspan='1' colspan='1'>
+ * <td><code>Text</code></td>
+ * <td>
  * <code>"#text"</code></td>
- * <td valign='top' rowspan='1' colspan='1'>same as <code>CharacterData.data</code>, the content
+ * <td>same as <code>CharacterData.data</code>, the content
  * of the text node</td>
- * <td valign='top' rowspan='1' colspan='1'><code>null</code></td>
+ * <td><code>null</code></td>
  * </tr>
+ * </tbody>
  * </table>
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
  */
@@ -687,30 +692,35 @@ public interface Node {
      * textual content.
      * <br>The string returned is made of the text content of this node
      * depending on its type, as defined below:
-     * <table border='1' cellpadding='3'>
+     * <table class="striped">
+     * <caption style="display:none">Node/Content table</caption>
+     * <thead>
      * <tr>
      * <th>Node type</th>
      * <th>Content</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'>
+     * <td>
      * ELEMENT_NODE, ATTRIBUTE_NODE, ENTITY_NODE, ENTITY_REFERENCE_NODE,
      * DOCUMENT_FRAGMENT_NODE</td>
-     * <td valign='top' rowspan='1' colspan='1'>concatenation of the <code>textContent</code>
+     * <td>concatenation of the <code>textContent</code>
      * attribute value of every child node, excluding COMMENT_NODE and
      * PROCESSING_INSTRUCTION_NODE nodes. This is the empty string if the
      * node has no children.</td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'>TEXT_NODE, CDATA_SECTION_NODE, COMMENT_NODE,
+     * <td>TEXT_NODE, CDATA_SECTION_NODE, COMMENT_NODE,
      * PROCESSING_INSTRUCTION_NODE</td>
-     * <td valign='top' rowspan='1' colspan='1'><code>nodeValue</code></td>
+     * <td><code>nodeValue</code></td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'>DOCUMENT_NODE,
+     * <td>DOCUMENT_NODE,
      * DOCUMENT_TYPE_NODE, NOTATION_NODE</td>
-     * <td valign='top' rowspan='1' colspan='1'><em>null</em></td>
+     * <td><em>null</em></td>
      * </tr>
+     * </tbody>
      * </table>
      * @exception DOMException
      *   DOMSTRING_SIZE_ERR: Raised when it would return more characters than
@@ -737,30 +747,35 @@ public interface Node {
      * textual content.
      * <br>The string returned is made of the text content of this node
      * depending on its type, as defined below:
-     * <table border='1' cellpadding='3'>
+     * <table class="striped">
+     * <caption style="display:none">Node/Content table</caption>
+     * <thead>
      * <tr>
      * <th>Node type</th>
      * <th>Content</th>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'>
+     * <td>
      * ELEMENT_NODE, ATTRIBUTE_NODE, ENTITY_NODE, ENTITY_REFERENCE_NODE,
      * DOCUMENT_FRAGMENT_NODE</td>
-     * <td valign='top' rowspan='1' colspan='1'>concatenation of the <code>textContent</code>
+     * <td>concatenation of the <code>textContent</code>
      * attribute value of every child node, excluding COMMENT_NODE and
      * PROCESSING_INSTRUCTION_NODE nodes. This is the empty string if the
      * node has no children.</td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'>TEXT_NODE, CDATA_SECTION_NODE, COMMENT_NODE,
+     * <td>TEXT_NODE, CDATA_SECTION_NODE, COMMENT_NODE,
      * PROCESSING_INSTRUCTION_NODE</td>
-     * <td valign='top' rowspan='1' colspan='1'><code>nodeValue</code></td>
+     * <td><code>nodeValue</code></td>
      * </tr>
      * <tr>
-     * <td valign='top' rowspan='1' colspan='1'>DOCUMENT_NODE,
+     * <td>DOCUMENT_NODE,
      * DOCUMENT_TYPE_NODE, NOTATION_NODE</td>
-     * <td valign='top' rowspan='1' colspan='1'><em>null</em></td>
+     * <td><em>null</em></td>
      * </tr>
+     * </tbody>
      * </table>
      * @exception DOMException
      *   NO_MODIFICATION_ALLOWED_ERR: Raised when the node is readonly.

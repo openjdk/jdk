@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.JavaFileManager;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Kinds.KindName;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
@@ -155,6 +156,7 @@ public class Enter extends JCTree.Visitor {
 
     public Env<AttrContext> getClassEnv(TypeSymbol sym) {
         Env<AttrContext> localEnv = getEnv(sym);
+        if (localEnv == null) return null;
         Env<AttrContext> lintEnv = localEnv;
         while (lintEnv.info.lint == null)
             lintEnv = lintEnv.next;
@@ -400,8 +402,14 @@ public class Enter extends JCTree.Visitor {
             c = syms.enterClass(env.toplevel.modle, tree.name, packge);
             packge.members().enterIfAbsent(c);
             if ((tree.mods.flags & PUBLIC) != 0 && !classNameMatchesFileName(c, env)) {
+                KindName topElement = KindName.CLASS;
+                if ((tree.mods.flags & ENUM) != 0) {
+                    topElement = KindName.ENUM;
+                } else if ((tree.mods.flags & INTERFACE) != 0) {
+                    topElement = KindName.INTERFACE;
+                }
                 log.error(tree.pos(),
-                          "class.public.should.be.in.file", tree.name);
+                          "class.public.should.be.in.file", topElement, tree.name);
             }
         } else {
             if (!tree.name.isEmpty() &&
