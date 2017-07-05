@@ -1989,6 +1989,10 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
       flags = JVM_ACC_STATIC;
     } else if ((flags & JVM_ACC_STATIC) == JVM_ACC_STATIC) {
       flags &= JVM_ACC_STATIC | JVM_ACC_STRICT;
+    } else {
+      // As of major_version 51, a method named <clinit> without ACC_STATIC is
+      // just another method. So, do a normal method modifer check.
+      verify_legal_method_modifiers(flags, is_interface, name, CHECK_(nullHandle));
     }
   } else {
     verify_legal_method_modifiers(flags, is_interface, name, CHECK_(nullHandle));

@@ -224,11 +224,12 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   address entry_point = __ pc();
 
   if (VerifyMethodHandles) {
+    assert(Method::intrinsic_id_size_in_bytes() == 2, "assuming Method::_intrinsic_id is u2");
+
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
     __ load_sized_value(temp1, Method::intrinsic_id_offset_in_bytes(), R19_method,
-                        sizeof(u1), /*is_signed*/ false);
-    // assert(sizeof(u1) == sizeof(Method::_intrinsic_id), "");
+                        sizeof(u2), /*is_signed*/ false);
     __ cmpwi(CCR1, temp1, (int) iid);
     __ beq(CCR1, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
