@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,6 @@ public class UnsupportedCallbackException extends Exception {
      * Constructs a {@code UnsupportedCallbackException}
      * with no detail message.
      *
-     * <p>
-     *
      * @param callback the unrecognized {@code Callback}.
      */
     public UnsupportedCallbackException(Callback callback) {
@@ -57,9 +55,7 @@ public class UnsupportedCallbackException extends Exception {
      * message.  A detail message is a String that describes this particular
      * exception.
      *
-     * <p>
-     *
-     * @param callback the unrecognized {@code Callback}. <p>
+     * @param callback the unrecognized {@code Callback}.
      *
      * @param msg the detail message.
      */
@@ -70,8 +66,6 @@ public class UnsupportedCallbackException extends Exception {
 
     /**
      * Get the unrecognized {@code Callback}.
-     *
-     * <p>
      *
      * @return the unrecognized {@code Callback}.
      */

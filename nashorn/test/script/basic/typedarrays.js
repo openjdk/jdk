@@ -28,6 +28,17 @@
  * @run
  */
 
+//JDK-8066217, constructor for arraybuffer not behaving as per spec
+function checkLength(ab, l) {
+    if (ab.byteLength != l) {
+        throw "length error: " + ab.byteLength + " != " + l;
+    }
+}
+checkLength(new ArrayBuffer(), 0);
+checkLength(new ArrayBuffer(0), 0);
+checkLength(new ArrayBuffer(1024), 1024);
+checkLength(new ArrayBuffer(1,2,3), 1);
+checkLength(new ArrayBuffer([17]), 17);
 
 var typeDefinitions = [
 Int8Array,

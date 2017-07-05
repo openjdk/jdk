@@ -27,6 +27,7 @@
  * @summary SocketPermission tests for legacy socket types
  * @library ../../../lib/testlibrary
  * @run testng/othervm/policy=policy SocketPermissionTest
+ * @key intermittent
  */
 import java.io.IOException;
 import java.net.DatagramPacket;

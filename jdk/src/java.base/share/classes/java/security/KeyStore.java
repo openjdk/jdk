@@ -120,7 +120,7 @@ import sun.security.util.Debug;
  *      KeyStore ks = KeyStore.getInstance("JKS");
  * </pre>
  * The system will return the most preferred implementation of the
- * specified keystore type available in the environment. <p>
+ * specified keystore type available in the environment.
  * </ul>
  *
  * <p> Before a keystore can be accessed, it must be
@@ -617,7 +617,6 @@ public class KeyStore {
 
         /**
          * Retrieves the attributes associated with an entry.
-         * <p>
          *
          * @return an unmodifiable {@code Set} of attributes, possibly empty
          *
@@ -708,7 +707,6 @@ public class KeyStore {
 
         /**
          * Retrieves the attributes associated with an entry.
-         * <p>
          *
          * @return an unmodifiable {@code Set} of attributes, possibly empty
          *
@@ -792,7 +790,6 @@ public class KeyStore {
 
         /**
          * Retrieves the attributes associated with an entry.
-         * <p>
          *
          * @return an unmodifiable {@code Set} of attributes, possibly empty
          *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1039,36 +1039,36 @@ private:
   NumberSeq                   _all_clock_intervals_ms;
   double                      _interval_start_time_ms;
 
-  int                         _aborted;
-  int                         _aborted_overflow;
-  int                         _aborted_cm_aborted;
-  int                         _aborted_yield;
-  int                         _aborted_timed_out;
-  int                         _aborted_satb;
-  int                         _aborted_termination;
+  size_t                      _aborted;
+  size_t                      _aborted_overflow;
+  size_t                      _aborted_cm_aborted;
+  size_t                      _aborted_yield;
+  size_t                      _aborted_timed_out;
+  size_t                      _aborted_satb;
+  size_t                      _aborted_termination;
 
-  int                         _steal_attempts;
-  int                         _steals;
+  size_t                      _steal_attempts;
+  size_t                      _steals;
 
-  int                         _clock_due_to_marking;
-  int                         _clock_due_to_scanning;
+  size_t                      _clock_due_to_marking;
+  size_t                      _clock_due_to_scanning;
 
-  int                         _local_pushes;
-  int                         _local_pops;
-  int                         _local_max_size;
-  int                         _objs_scanned;
+  size_t                      _local_pushes;
+  size_t                      _local_pops;
+  size_t                      _local_max_size;
+  size_t                      _objs_scanned;
 
-  int                         _global_pushes;
-  int                         _global_pops;
-  int                         _global_max_size;
+  size_t                      _global_pushes;
+  size_t                      _global_pops;
+  size_t                      _global_max_size;
 
-  int                         _global_transfers_to;
-  int                         _global_transfers_from;
+  size_t                      _global_transfers_to;
+  size_t                      _global_transfers_from;
 
-  int                         _regions_claimed;
-  int                         _objs_found_on_bitmap;
+  size_t                      _regions_claimed;
+  size_t                      _objs_found_on_bitmap;
 
-  int                         _satb_buffers_processed;
+  size_t                      _satb_buffers_processed;
 #endif // _MARKING_STATS_
 
   // it updates the local fields after this task has claimed

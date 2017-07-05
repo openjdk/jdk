@@ -44,10 +44,17 @@ BOOT_JAVA_HOME=
 !endif
 
 # Settings for javac
-BOOT_SOURCE_LANGUAGE_VERSION=6
-BOOT_TARGET_CLASS_VERSION=6
 JAVAC_FLAGS=-g -encoding ascii
-BOOTSTRAP_JAVAC_FLAGS=$(JAVAC_FLAGS) -source $(BOOT_SOURCE_LANGUAGE_VERSION) -target $(BOOT_TARGET_CLASS_VERSION)
+
+# Prefer BOOT_JDK_SOURCETARGET if it's set (typically by the top build system)
+# Fall back to the values here if it's not set (hotspot only builds)
+!ifndef BOOT_JDK_SOURCETARGET
+BOOTSTRAP_SOURCETARGET=-source 8 -target 8
+!else
+BOOTSTRAP_SOURCETARGET=$(BOOT_JDK_SOURCETARGET)
+!endif
+
+BOOTSTRAP_JAVAC_FLAGS=$(JAVAC_FLAGS) $(BOOTSTRAP_SOURCETARGET)
 
 # VS2012 and VS2013 loads VS10 projects just fine (and will
 # upgrade them automatically to VS2012 format).

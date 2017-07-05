@@ -1,0 +1,50 @@
+[
+  {
+    "expression": {
+      "endPosition": "14",
+      "kind": "IDENTIFIER",
+      "name": "obj",
+      "startPosition": "11"
+    },
+    "endPosition": "18",
+    "kind": "FOR_IN_LOOP",
+    "forEach": "false",
+    "variable": {
+      "endPosition": "7",
+      "kind": "IDENTIFIER",
+      "name": "i",
+      "startPosition": "6"
+    },
+    "statement": {
+      "endPosition": "18",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "16"
+    },
+    "startPosition": "1"
+  },
+  {
+    "expression": {
+      "endPosition": "36",
+      "kind": "IDENTIFIER",
+      "name": "obj",
+      "startPosition": "33"
+    },
+    "endPosition": "40",
+    "kind": "FOR_IN_LOOP",
+    "forEach": "false",
+    "variable": {
+      "endPosition": "29",
+      "kind": "IDENTIFIER",
+      "name": "i",
+      "startPosition": "28"
+    },
+    "statement": {
+      "endPosition": "40",
+      "kind": "BLOCK",
+      "statements": [],
+      "startPosition": "38"
+    },
+    "startPosition": "19"
+  }
+]

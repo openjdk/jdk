@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,13 +392,20 @@
 #define NOT_E500V2(code) code
 #endif
 
-
 #ifdef ARM
 #define ARM_ONLY(code) code
 #define NOT_ARM(code)
 #else
 #define ARM_ONLY(code)
 #define NOT_ARM(code) code
+#endif
+
+#ifdef ARM32
+#define ARM32_ONLY(code) code
+#define NOT_ARM32(code)
+#else
+#define ARM32_ONLY(code)
+#define NOT_ARM32(code) code
 #endif
 
 #ifdef AARCH64

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,8 @@ else
     PLATFORM_FILE = $(GAMMADIR)/make/$(OS_FAMILY)/platform_$(BUILDARCH).suncc
   else
     PLATFORM_FILE = $(GAMMADIR)/make/$(OS_FAMILY)/platform_$(BUILDARCH)
+    ALT_PLATFORM_FILE = $(HS_ALT_MAKE)/$(OS_FAMILY)/platform_$(BUILDARCH)
+    PLATFORM_FILE := $(if $(wildcard $(ALT_PLATFORM_FILE)),$(ALT_PLATFORM_FILE),$(PLATFORM_FILE))
   endif
 endif
 
@@ -203,7 +205,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
-	echo "Platform_file = $(PLATFORM_FILE)" | sed 's|$(GAMMADIR)|$$(GAMMADIR)|'; \
+	echo "Platform_file = $(PLATFORM_FILE)" | sed -e 's|$(HS_ALT_MAKE)|$$(HS_ALT_MAKE)|' -e 's|$(GAMMADIR)|$$(GAMMADIR)|'; \
 	sed -n '/=/s/^ */Platform_/p' < $(PLATFORM_FILE); \
 	echo; \
 	echo "GAMMADIR = $(GAMMADIR)"; \

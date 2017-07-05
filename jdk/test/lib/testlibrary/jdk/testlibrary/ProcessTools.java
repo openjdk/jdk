@@ -88,24 +88,12 @@ public final class ProcessTools {
                                        ProcessBuilder processBuilder,
                                        Consumer<String> consumer)
     throws IOException {
-        Process p = null;
         try {
-            p = startProcess(
-                name,
-                processBuilder,
-                line -> {
-                    if (consumer != null) {
-                        consumer.accept(line);
-                    }
-                    return false;
-                },
-                -1,
-                TimeUnit.NANOSECONDS
-            );
+            return startProcess(name, processBuilder, consumer, null, -1, TimeUnit.NANOSECONDS);
         } catch (InterruptedException | TimeoutException e) {
-            // can't ever happen
+            // will never happen
+            throw new RuntimeException(e);
         }
-        return p;
     }
 
     /**
@@ -134,6 +122,38 @@ public final class ProcessTools {
                                        long timeout,
                                        TimeUnit unit)
     throws IOException, InterruptedException, TimeoutException {
+        return startProcess(name, processBuilder, null, linePredicate, timeout, unit);
+    }
+
+    /**
+     * <p>Starts a process from its builder.</p>
+     * <span>The default redirects of STDOUT and STDERR are started</span>
+     * <p>
+     * It is possible to wait for the process to get to a warmed-up state
+     * via {@linkplain Predicate} condition on the STDOUT and monitor the
+     * in-streams via the provided {@linkplain Consumer}
+     * </p>
+     * @param name The process name
+     * @param processBuilder The process builder
+     * @param lineConsumer  The {@linkplain Consumer} the lines will be forwarded to
+     * @param linePredicate The {@linkplain Predicate} to use on the STDOUT
+     *                      Used to determine the moment the target app is
+     *                      properly warmed-up.
+     *                      It can be null - in that case the warmup is skipped.
+     * @param timeout The timeout for the warmup waiting; -1 = no wait; 0 = wait forever
+     * @param unit The timeout {@linkplain TimeUnit}
+     * @return Returns the initialized {@linkplain Process}
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws TimeoutException
+     */
+    public static Process startProcess(String name,
+                                       ProcessBuilder processBuilder,
+                                       final Consumer<String> lineConsumer,
+                                       final Predicate<String> linePredicate,
+                                       long timeout,
+                                       TimeUnit unit)
+    throws IOException, InterruptedException, TimeoutException {
         System.out.println("["+name+"]:" + processBuilder.command().stream().collect(Collectors.joining(" ")));
         Process p = processBuilder.start();
         StreamPumper stdout = new StreamPumper(p.getInputStream());
@@ -141,6 +161,18 @@ public final class ProcessTools {
 
         stdout.addPump(new LineForwarder(name, System.out));
         stderr.addPump(new LineForwarder(name, System.err));
+        if (lineConsumer != null) {
+            StreamPumper.LinePump pump = new StreamPumper.LinePump() {
+                @Override
+                protected void processLine(String line) {
+                    lineConsumer.accept(line);
+                }
+            };
+            stdout.addPump(pump);
+            stderr.addPump(pump);
+        }
+
+
         CountDownLatch latch = new CountDownLatch(1);
         if (linePredicate != null) {
             StreamPumper.LinePump pump = new StreamPumper.LinePump() {
