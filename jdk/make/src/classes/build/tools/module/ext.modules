@@ -1,0 +1,9 @@
+jdk.crypto.ec
+jdk.crypto.mscapi
+jdk.crypto.pkcs11
+jdk.crypto.ucrypto
+jdk.localedata
+jdk.naming.dns
+jdk.scripting.nashorn
+jdk.zipfs
+oracle.accessbridge

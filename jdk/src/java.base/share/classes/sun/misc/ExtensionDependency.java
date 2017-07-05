@@ -65,8 +65,11 @@ import sun.net.www.ParseUtil;
  * This class also maintain versioning consistency of installed
  * extensions dependencies declared in jar file manifest.
  * </p>
+ *
+ * @deprecated this class will be removed in a future release.
  * @author  Jerome Dochez
  */
+@Deprecated
 public class ExtensionDependency {
 
     /* Callbak interfaces to delegate installation of missing extensions */

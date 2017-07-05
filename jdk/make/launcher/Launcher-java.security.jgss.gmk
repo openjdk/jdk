@@ -36,8 +36,3 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.krb5.internal.tools.Ktab"$(COMMA) }'))
 endif
 
-java.security.jgss: $(LAUNCHERS)
-
-all: java.security.jgss
-
-.PHONY: all java.security.jgss

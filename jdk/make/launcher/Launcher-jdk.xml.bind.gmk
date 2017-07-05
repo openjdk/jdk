@@ -31,8 +31,3 @@ $(eval $(call SetupLauncher,schemagen, \
 $(eval $(call SetupLauncher,xjc, \
     -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.internal.xjc.Driver"$(COMMA) }'))
 
-jdk.xml.bind: $(LAUNCHERS)
-
-all: jdk.xml.bind
-
-.PHONY: all jdk.xml.bind

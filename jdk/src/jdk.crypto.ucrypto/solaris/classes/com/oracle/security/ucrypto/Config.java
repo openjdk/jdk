@@ -35,8 +35,6 @@ import java.security.*;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.PropertyExpander;
 
-import sun.security.pkcs11.wrapper.*;
-
 /**
  * Configuration container and file parsing.
  *

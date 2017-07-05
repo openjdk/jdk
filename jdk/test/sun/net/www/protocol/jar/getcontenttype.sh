@@ -32,6 +32,20 @@ fi
 if [ x"$TESTCLASSES" = x ]; then TESTCLASSES=.; fi
 if [ x"$TESTSRC" = x ]; then TESTSRC=.; fi
 
+OS=`uname -s`;
+# Set classpath separator
+case "$OS" in
+        Windows* | CYGWIN* )
+        SEP=";"
+        FS="\\"
+        ;;
+
+        * )
+        SEP=":"
+        FS="/"
+        ;;
+esac
+
 # now start the test
-${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.ext.dirs=$TESTSRC -cp $TESTCLASSES GetContentType
+${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${TESTSRC}${FS}resource.jar${SEP}${TESTCLASSES} GetContentType
 

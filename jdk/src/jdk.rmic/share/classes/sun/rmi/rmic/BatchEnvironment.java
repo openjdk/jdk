@@ -70,17 +70,16 @@ public class BatchEnvironment extends sun.tools.javac.BatchEnvironment {
      * Create a ClassPath object for rmic from a class path string.
      */
     public static ClassPath createClassPath(String classPathString) {
-        ClassPath[] paths = classPaths(null, classPathString, null, null);
+        ClassPath[] paths = classPaths(null, classPathString, null);
         return paths[1];
     }
 
     /**
      * Create a ClassPath object for rmic from the relevant command line
-     * options for class path, boot class path, and extension directories.
+     * options for class path and boot class path.
      */
     public static ClassPath createClassPath(String classPathString,
-                                            String sysClassPathString,
-                                            String extDirsString)
+                                            String sysClassPathString)
     {
         /**
          * Previously, this method delegated to the
@@ -107,13 +106,6 @@ public class BatchEnvironment extends sun.tools.javac.BatchEnvironment {
          * everywhere except in the boot class path.
          */
         path.expandJarClassPaths(true);
-
-        if (extDirsString == null) {
-            extDirsString = System.getProperty("java.ext.dirs");
-        }
-        if (extDirsString != null) {
-            path.addDirectories(extDirsString);
-        }
 
         /*
          * In the application class path, an empty element means
@@ -389,7 +381,8 @@ public class BatchEnvironment extends sun.tools.javac.BatchEnvironment {
                 /* File is an ordinay file  */
                 String arcname = file.toLowerCase();
                 if (! (arcname.endsWith(".zip") ||
-                       arcname.endsWith(".jar"))) {
+                       arcname.endsWith(".jar") ||
+                       arcname.endsWith(".jimage"))) {
                     /* File name don't have right extension */
 //                      if (warn)
 //                          log.warning(Position.NOPOS,

@@ -21,10 +21,12 @@
  * questions.
  */
 
-import java.nio.file.*;
-import java.net.*;
-import java.util.*;
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 
 /**
  *
@@ -33,7 +35,7 @@ import java.io.IOException;
  * @summary Tests path operations for zip provider.
  *
  * @run main PathOps
- * @run main/othervm/java.security.policy=test.policy.readonly PathOps
+ * @run main/othervm/java.security.policy=test.policy PathOps
  */
 
 public class PathOps {
@@ -452,12 +454,16 @@ public class PathOps {
 
     }
 
-    public static void main(String[] args) throws Throwable {
-        Path zipfile = Paths.get(System.getProperty("test.jdk"),
-                                 "jre/lib/ext/zipfs.jar");
-        fs = FileSystems.newFileSystem(zipfile, null);
+    public static void main(String[] args) throws IOException {
+        // create empty JAR file, test doesn't require any contents
+        Path emptyJar = Utils.createJarFile("empty.jar");
+
+        fs = FileSystems.newFileSystem(emptyJar, null);
+        try {
         npes();
         doPathOpTests();
+        } finally {
         fs.close();
     }
+}
 }

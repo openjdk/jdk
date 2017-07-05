@@ -46,10 +46,8 @@ import java.util.NoSuchElementException;
  * <p> A <i>service</i> is a well-known set of interfaces and (usually
  * abstract) classes.  A <i>service provider</i> is a specific implementation
  * of a service.  The classes in a provider typically implement the interfaces
- * and subclass the classes defined in the service itself.  Service providers
- * can be installed in an implementation of the Java platform in the form of
- * extensions, that is, jar files placed into any of the usual extension
- * directories.  Providers can also be made available by adding them to the
+ * and subclass the classes defined in the service itself.
+ * Providers can be made available by adding them to the
  * application's class path or by some other platform-specific means.
  *
  * <p> For the purpose of loading, a service is represented by a single type,

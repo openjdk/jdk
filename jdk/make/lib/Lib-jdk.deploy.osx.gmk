@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,19 +39,19 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(LIBAPPLESCRIPTENGINE_SRC) \
-          -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.deploy.osx, \
+          -I$(SUPPORT_OUTPUTDIR)/headers/jdk.deploy.osx, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX := -framework Cocoa \
           -framework Carbon \
           -framework JavaNativeFoundation \
           $(LDFLAGS_JDKLIB_SUFFIX), \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libAppleScriptEngine, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libAppleScriptEngine, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  $(BUILD_LIBAPPLESCRIPTENGINE): $(BUILD_LIBJAVA)
+  $(BUILD_LIBAPPLESCRIPTENGINE): $(call FindLib, java.base, java)
 
-  DEPLOY_OSX_LIBRARIES += $(BUILD_LIBAPPLESCRIPTENGINE)
+  TARGETS += $(BUILD_LIBAPPLESCRIPTENGINE)
 
   ################################################################################
 
@@ -59,8 +59,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBOSX_CFLAGS := -I$(LIBOSX_DIRS) \
       -I$(JDK_TOPDIR)/src/java.desktop/macosx/native/libosxapp \
       $(LIBJAVA_HEADER_FLAGS) \
-      -I$(JDK_OUTPUTDIR)/gensrc_headers/java.desktop \
-      -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.deploy.osx \
+      -I$(SUPPORT_OUTPUTDIR)/headers/java.desktop \
+      -I$(SUPPORT_OUTPUTDIR)/headers/jdk.deploy.osx \
       #
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBOSX, \
@@ -72,6 +72,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBOSX_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
+          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.desktop \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX_macosx := \
           -losxapp \
@@ -82,21 +83,15 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework Security \
           -framework SystemConfiguration \
           $(LDFLAGS_JDKLIB_SUFFIX), \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libosx, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosx, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  DEPLOY_OSX_LIBRARIES += $(BUILD_LIBOSX)
+  TARGETS += $(BUILD_LIBOSX)
 
-  $(BUILD_LIBOSX): $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)osxapp$(SHARED_LIBRARY_SUFFIX)
+  $(BUILD_LIBOSX): $(call FindLib, java.desktop, osxapp)
 
-  $(BUILD_LIBOSX): $(BUILD_LIBJAVA)
+  $(BUILD_LIBOSX): $(call FindLib, java.base, java)
 
   ################################################################################
 
 endif
-
-jdk.deploy.osx: $(DEPLOY_OSX_LIBRARIES)
-
-all: jdk.deploy.osx
-
-.PHONY: all jdk.deploy.osx
