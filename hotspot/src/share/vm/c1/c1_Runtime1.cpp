@@ -842,6 +842,13 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
     if (TracePatching) {
       tty->print_cr("Deoptimizing for patching volatile field reference");
     }
+    // It's possible the nmethod was invalidated in the last
+    // safepoint, but if it's still alive then make it not_entrant.
+    nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
+    if (nm != NULL) {
+      nm->make_not_entrant();
+    }
+
     VM_DeoptimizeFrame deopt(thread, caller_frame.id());
     VMThread::execute(&deopt);
 

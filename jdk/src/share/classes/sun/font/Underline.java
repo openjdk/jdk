@@ -126,7 +126,9 @@ abstract class Underline {
         private BasicStroke createStroke(float lineThickness) {
 
             if (dashPattern == null) {
-                return new BasicStroke(lineThickness);
+                return new BasicStroke(lineThickness,
+                                       BasicStroke.CAP_BUTT,
+                                       BasicStroke.JOIN_MITER);
             }
             else {
                 return new BasicStroke(lineThickness,

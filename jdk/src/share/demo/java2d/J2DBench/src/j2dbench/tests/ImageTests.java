@@ -60,6 +60,9 @@ import java.awt.image.VolatileImage;
 import java.awt.image.WritableRaster;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
+import java.awt.image.DataBufferByte;
+import java.awt.image.DataBufferInt;
+import java.awt.image.DataBufferShort;
 import java.util.ArrayList;
 import javax.swing.JComponent;
 
@@ -84,6 +87,7 @@ public abstract class ImageTests extends GraphicsTests {
     static Group.EnableSet bufimgsrcroot;
 
     static Group imgtestroot;
+    static Group imgoptionsroot;
 
     static Group imageOpRoot;
     static Group imageOpOptRoot;
@@ -92,6 +96,7 @@ public abstract class ImageTests extends GraphicsTests {
     static Group bufImgOpTestRoot;
     static Group rasterOpTestRoot;
     static Option opList;
+    static Option doTouchSrc;
 
     static String transNodeNames[] = {
         null, "opaque", "bitmask", "translucent",
@@ -105,9 +110,19 @@ public abstract class ImageTests extends GraphicsTests {
         imageroot = new Group(graphicsroot, "imaging",
                               "Imaging Benchmarks");
         imageroot.setTabbed();
+
         imgsrcroot = new Group.EnableSet(imageroot, "src",
                                          "Image Rendering Sources");
         imgsrcroot.setBordered(true);
+
+        imgoptionsroot = new Group(imgsrcroot, "options",
+                                "Image Source Options");
+        imgoptionsroot.setBordered(true);
+        doTouchSrc =
+            new Option.Toggle(imgoptionsroot, "touchsrc",
+                              "Touch src image before every operation",
+                               Option.Toggle.Off);
+
         imgtestroot = new Group(imageroot, "tests",
                                 "Image Rendering Tests");
         imgtestroot.setBordered(true);
@@ -131,7 +146,11 @@ public abstract class ImageTests extends GraphicsTests {
             new BufImg(BufferedImage.TYPE_INT_RGB);
             new BufImg(BufferedImage.TYPE_INT_ARGB);
             new BufImg(BufferedImage.TYPE_BYTE_GRAY);
+            new BufImg(BufferedImage.TYPE_3BYTE_BGR);
             new BmByteIndexBufImg();
+            new BufImg(BufferedImage.TYPE_INT_RGB, true);
+            new BufImg(BufferedImage.TYPE_INT_ARGB, true);
+            new BufImg(BufferedImage.TYPE_3BYTE_BGR, true);
 
             imageOpRoot = new Group(imageroot, "imageops",
                                     "Image Op Benchmarks");
@@ -193,6 +212,7 @@ public abstract class ImageTests extends GraphicsTests {
     }
 
     public static class Context extends GraphicsTests.Context {
+        boolean touchSrc;
         Image src;
         AffineTransform tx;
     }
@@ -206,6 +226,7 @@ public abstract class ImageTests extends GraphicsTests {
     {
         super(parent, nodeName, description);
         addDependency(imgsrcroot, srcFilter);
+        addDependency(doTouchSrc);
     }
 
     public GraphicsTests.Context createContext() {
@@ -217,6 +238,7 @@ public abstract class ImageTests extends GraphicsTests {
         ImageTests.Context ictx = (ImageTests.Context) ctx;
 
         ictx.src = env.getSrcImage();
+        ictx.touchSrc = env.isEnabled(doTouchSrc);
     }
 
     public abstract static class TriStateImageType extends Group {
@@ -272,13 +294,6 @@ public abstract class ImageTests extends GraphicsTests {
     public static class CompatImg extends TriStateImageType {
         int transparency;
 
-        public static String Descriptions[] = {
-            "Default Compatible Image",
-            "Opaque Compatible Image",
-            "Bitmask Compatible Image",
-            "Translucent Compatible Image",
-        };
-
         public CompatImg(int transparency) {
             super(imgsrcroot,
                   Destinations.CompatImg.ShortNames[transparency],
@@ -296,6 +311,7 @@ public abstract class ImageTests extends GraphicsTests {
 
     public static class BufImg extends TriStateImageType {
         int type;
+        boolean unmanaged;
 
         static int Transparencies[] = {
             Transparency.TRANSLUCENT, // "custom",
@@ -315,15 +331,37 @@ public abstract class ImageTests extends GraphicsTests {
         };
 
         public BufImg(int type) {
+            this(type, false);
+        }
+
+        public BufImg(int type, boolean unmanaged) {
             super(bufimgsrcroot,
+                  (unmanaged ? "unmanaged" : "") +
                   Destinations.BufImg.ShortNames[type],
+                  (unmanaged ? "Unmanaged " : "") +
                   Destinations.BufImg.Descriptions[type],
                   Transparencies[type]);
             this.type = type;
+            this.unmanaged = unmanaged;
         }
 
         public Image makeImage(TestEnvironment env, int w, int h) {
-            return new BufferedImage(w, h, type);
+            BufferedImage img = new BufferedImage(w, h, type);
+            if (unmanaged) {
+                DataBuffer db = img.getRaster().getDataBuffer();
+                if (db instanceof DataBufferInt) {
+                    ((DataBufferInt)db).getData();
+                } else if (db instanceof DataBufferShort) {
+                    ((DataBufferShort)db).getData();
+                } else if (db instanceof DataBufferByte) {
+                    ((DataBufferByte)db).getData();
+                } else {
+                    try {
+                        img.setAccelerationPriority(0.0f);
+                    } catch (Throwable e) {}
+                }
+            }
+            return img;
         }
     }
 
@@ -471,15 +509,33 @@ public abstract class ImageTests extends GraphicsTests {
             g.translate(ictx.orgX, ictx.orgY);
             Image src = ictx.src;
             if (ictx.animate) {
-                do {
-                    g.drawImage(src, x, y, null);
-                    if ((x -= 3) < 0) x += ictx.maxX;
-                    if ((y -= 1) < 0) y += ictx.maxY;
-                } while (--numReps > 0);
+                if (ictx.touchSrc) {
+                    Graphics srcG = src.getGraphics();
+                    do {
+                        srcG.fillRect(0, 0, 1, 1);
+                        g.drawImage(src, x, y, null);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        g.drawImage(src, x, y, null);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                }
             } else {
-                do {
-                    g.drawImage(src, x, y, null);
-                } while (--numReps > 0);
+                if (ictx.touchSrc) {
+                    Graphics srcG = src.getGraphics();
+                    do {
+                        srcG.fillRect(0, 0, 1, 1);
+                        g.drawImage(src, x, y, null);
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        g.drawImage(src, x, y, null);
+                    } while (--numReps > 0);
+                }
             }
             g.translate(-ictx.orgX, -ictx.orgY);
         }
@@ -505,15 +561,33 @@ public abstract class ImageTests extends GraphicsTests {
             Image src = ictx.src;
             Color bg = Color.orange;
             if (ictx.animate) {
-                do {
-                    g.drawImage(src, x, y, bg, null);
-                    if ((x -= 3) < 0) x += ictx.maxX;
-                    if ((y -= 1) < 0) y += ictx.maxY;
-                } while (--numReps > 0);
+                if (ictx.touchSrc) {
+                    Graphics srcG = src.getGraphics();
+                    do {
+                        srcG.fillRect(0, 0, 1, 1);
+                        g.drawImage(src, x, y, bg, null);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        g.drawImage(src, x, y, bg, null);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                }
             } else {
-                do {
-                    g.drawImage(src, x, y, bg, null);
-                } while (--numReps > 0);
+                if (ictx.touchSrc) {
+                    Graphics srcG = src.getGraphics();
+                    do {
+                        srcG.fillRect(0, 0, 1, 1);
+                        g.drawImage(src, x, y, bg, null);
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        g.drawImage(src, x, y, bg, null);
+                    } while (--numReps > 0);
+                }
             }
             g.translate(-ictx.orgX, -ictx.orgY);
         }
@@ -524,7 +598,7 @@ public abstract class ImageTests extends GraphicsTests {
 
         public DrawImageScale(String dir, float scale) {
             super(imgtestroot, "drawimagescale"+dir,
-                  "drawImage(img, x, y, w*"+scale+", h*"+scale+", obs);");
+                               "drawImage(img, x, y, w*"+scale+", h*"+scale+", obs);");
             this.scale = scale;
         }
 
@@ -546,15 +620,33 @@ public abstract class ImageTests extends GraphicsTests {
             g.translate(ictx.orgX, ictx.orgY);
             Image src = ictx.src;
             if (ictx.animate) {
-                do {
-                    g.drawImage(src, x, y, w, h, null);
-                    if ((x -= 3) < 0) x += ictx.maxX;
-                    if ((y -= 1) < 0) y += ictx.maxY;
-                } while (--numReps > 0);
+                if (ictx.touchSrc) {
+                    Graphics srcG = src.getGraphics();
+                    do {
+                        srcG.fillRect(0, 0, 1, 1);
+                        g.drawImage(src, x, y, w, h, null);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        g.drawImage(src, x, y, w, h, null);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                }
             } else {
-                do {
-                    g.drawImage(src, x, y, w, h, null);
-                } while (--numReps > 0);
+                Graphics srcG = src.getGraphics();
+                if (ictx.touchSrc) {
+                    do {
+                        srcG.fillRect(0, 0, 1, 1);
+                        g.drawImage(src, x, y, w, h, null);
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        g.drawImage(src, x, y, w, h, null);
+                    } while (--numReps > 0);
+                }
             }
             g.translate(-ictx.orgX, -ictx.orgY);
         }
@@ -588,17 +680,36 @@ public abstract class ImageTests extends GraphicsTests {
             Image src = ictx.src;
             AffineTransform tx = ictx.tx;
             if (ictx.animate) {
-                do {
-                    tx.setTransform(1.0, 0.1, 0.1, 1.0, x, y);
-                    g.drawImage(src, tx, null);
-                    if ((x -= 3) < 0) x += ictx.maxX;
-                    if ((y -= 1) < 0) y += ictx.maxY;
-                } while (--numReps > 0);
+                if (ictx.touchSrc) {
+                    Graphics srcG = src.getGraphics();
+                    do {
+                        tx.setTransform(1.0, 0.1, 0.1, 1.0, x, y);
+                        srcG.fillRect(0, 0, 1, 1);
+                        g.drawImage(src, tx, null);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        tx.setTransform(1.0, 0.1, 0.1, 1.0, x, y);
+                        g.drawImage(src, tx, null);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                }
             } else {
                 tx.setTransform(1.0, 0.1, 0.1, 1.0, x, y);
-                do {
-                    g.drawImage(src, tx, null);
-                } while (--numReps > 0);
+                if (ictx.touchSrc) {
+                    Graphics srcG = src.getGraphics();
+                    do {
+                        srcG.fillRect(0, 0, 1, 1);
+                        g.drawImage(src, tx, null);
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        g.drawImage(src, tx, null);
+                    } while (--numReps > 0);
+                }
             }
             g.translate(-ictx.orgX, -ictx.orgY);
         }
@@ -736,15 +847,33 @@ public abstract class ImageTests extends GraphicsTests {
             Graphics2D g2 = (Graphics2D)ictx.graphics;
             g2.translate(ictx.orgX, ictx.orgY);
             if (ictx.animate) {
-                do {
-                    g2.drawImage(src, op, x, y);
-                    if ((x -= 3) < 0) x += ictx.maxX;
-                    if ((y -= 1) < 0) y += ictx.maxY;
-                } while (--numReps > 0);
+                if (ictx.touchSrc) {
+                    Graphics gSrc = src.getGraphics();
+                    do {
+                        gSrc.fillRect(0, 0, 1, 1);
+                        g2.drawImage(src, op, x, y);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        g2.drawImage(src, op, x, y);
+                        if ((x -= 3) < 0) x += ictx.maxX;
+                        if ((y -= 1) < 0) y += ictx.maxY;
+                    } while (--numReps > 0);
+                }
             } else {
-                do {
-                    g2.drawImage(src, op, x, y);
-                } while (--numReps > 0);
+                if (ictx.touchSrc) {
+                    Graphics gSrc = src.getGraphics();
+                    do {
+                        gSrc.fillRect(0, 0, 1, 1);
+                        g2.drawImage(src, op, x, y);
+                    } while (--numReps > 0);
+                } else {
+                    do {
+                        g2.drawImage(src, op, x, y);
+                    } while (--numReps > 0);
+                }
             }
             g2.translate(-ictx.orgX, -ictx.orgY);
         }
@@ -778,9 +907,17 @@ public abstract class ImageTests extends GraphicsTests {
             BufferedImageOp op = ictx.bufImgOp;
             BufferedImage src = ictx.bufSrc;
             BufferedImage dst = ictx.bufDst;
-            do {
-                op.filter(src, dst);
-            } while (--numReps > 0);
+            if (ictx.touchSrc) {
+                Graphics gSrc = src.getGraphics();
+                do {
+                    gSrc.fillRect(0, 0, 1, 1);
+                    op.filter(src, dst);
+                } while (--numReps > 0);
+            } else {
+                do {
+                    op.filter(src, dst);
+                } while (--numReps > 0);
+            }
         }
     }
 
@@ -814,9 +951,17 @@ public abstract class ImageTests extends GraphicsTests {
             RasterOp op = ictx.rasterOp;
             Raster src = ictx.rasSrc;
             WritableRaster dst = ictx.rasDst;
-            do {
-                op.filter(src, dst);
-            } while (--numReps > 0);
+            if (ictx.touchSrc) {
+                Graphics gSrc = ictx.bufSrc.getGraphics();
+                do {
+                    gSrc.fillRect(0, 0, 1, 1);
+                    op.filter(src, dst);
+                } while (--numReps > 0);
+            } else {
+                do {
+                    op.filter(src, dst);
+                } while (--numReps > 0);
+            }
         }
     }
 }

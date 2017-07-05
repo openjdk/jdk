@@ -283,7 +283,7 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
     } else {
       entry = byte_after(old_region.last());
     }
-    assert(index_for(new_region.last()) < (int) _guard_index,
+    assert(index_for(new_region.last()) <  _guard_index,
       "The guard card will be overwritten");
     // This line commented out cleans the newly expanded region and
     // not the aligned up expanded region.

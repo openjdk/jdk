@@ -51,14 +51,14 @@ void ParGCAllocBuffer::retire(bool end_of_gc, bool retain) {
   if (_retained) {
     // If the buffer had been retained shorten the previous filler object.
     assert(_retained_filler.end() <= _top, "INVARIANT");
-    SharedHeap::fill_region_with_object(_retained_filler);
+    CollectedHeap::fill_with_object(_retained_filler);
     // Wasted space book-keeping, otherwise (normally) done in invalidate()
     _wasted += _retained_filler.word_size();
     _retained = false;
   }
   assert(!end_of_gc || !_retained, "At this point, end_of_gc ==> !_retained.");
   if (_top < _hard_end) {
-    SharedHeap::fill_region_with_object(MemRegion(_top, _hard_end));
+    CollectedHeap::fill_with_object(_top, _hard_end);
     if (!retain) {
       invalidate();
     } else {
@@ -155,7 +155,7 @@ ParGCAllocBufferWithBOT::ParGCAllocBufferWithBOT(size_t word_sz,
 // modifying the _next_threshold state in the BOT.
 void ParGCAllocBufferWithBOT::fill_region_with_block(MemRegion mr,
                                                      bool contig) {
-  SharedHeap::fill_region_with_object(mr);
+  CollectedHeap::fill_with_object(mr);
   if (contig) {
     _bt.alloc_block(mr.start(), mr.end());
   } else {
@@ -171,7 +171,7 @@ HeapWord* ParGCAllocBufferWithBOT::allocate_slow(size_t word_sz) {
            "or else _true_end should be equal to _hard_end");
     assert(_retained, "or else _true_end should be equal to _hard_end");
     assert(_retained_filler.end() <= _top, "INVARIANT");
-    SharedHeap::fill_region_with_object(_retained_filler);
+    CollectedHeap::fill_with_object(_retained_filler);
     if (_top < _hard_end) {
       fill_region_with_block(MemRegion(_top, _hard_end), true);
     }
@@ -316,11 +316,9 @@ void ParGCAllocBufferWithBOT::retire(bool end_of_gc, bool retain) {
         while (_top <= chunk_boundary) {
           assert(pointer_delta(_hard_end, chunk_boundary) >= AlignmentReserve,
                  "Consequence of last card handling above.");
-          MemRegion chunk_portion(chunk_boundary, _hard_end);
-          _bt.BlockOffsetArray::alloc_block(chunk_portion.start(),
-                                            chunk_portion.end());
-          SharedHeap::fill_region_with_object(chunk_portion);
-          _hard_end = chunk_portion.start();
+          _bt.BlockOffsetArray::alloc_block(chunk_boundary, _hard_end);
+          CollectedHeap::fill_with_object(chunk_boundary, _hard_end);
+          _hard_end = chunk_boundary;
           chunk_boundary -= ChunkSizeInWords;
         }
         _end = _hard_end - AlignmentReserve;

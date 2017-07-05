@@ -127,12 +127,14 @@ public class WGLGraphicsConfig
                 new WGLGetConfigInfo(device.getScreen(), pixfmt);
             rq.flushAndInvokeNow(action);
             cfginfo = action.getConfigInfo();
-            OGLContext.setScratchSurface(cfginfo);
-            rq.flushAndInvokeNow(new Runnable() {
-                public void run() {
-                    ids[0] = OGLContext.getOGLIdString();
-                }
-            });
+            if (cfginfo != 0L) {
+                OGLContext.setScratchSurface(cfginfo);
+                rq.flushAndInvokeNow(new Runnable() {
+                    public void run() {
+                        ids[0] = OGLContext.getOGLIdString();
+                    }
+                });
+            }
         } finally {
             rq.unlock();
         }

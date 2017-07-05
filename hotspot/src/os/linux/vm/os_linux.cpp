@@ -2500,7 +2500,7 @@ bool os::guard_memory(char* addr, size_t size) {
 }
 
 bool os::unguard_memory(char* addr, size_t size) {
-  return linux_mprotect(addr, size, PROT_READ|PROT_WRITE|PROT_EXEC);
+  return linux_mprotect(addr, size, PROT_READ|PROT_WRITE);
 }
 
 // Large page support
