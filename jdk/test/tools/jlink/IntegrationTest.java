@@ -145,7 +145,7 @@ public class IntegrationTest {
             throw new Exception("Plugin should be null");
         }
 
-        Plugin p2 = Jlink.newPlugin("compress", Collections.emptyMap(), null);
+        Plugin p2 = Jlink.newPlugin("compress", Map.of("compress", "1"), null);
         if (p2 == null) {
             throw new Exception("Plugin should not be null");
         }
