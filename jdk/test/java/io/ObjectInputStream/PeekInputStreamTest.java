@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 /*
  * @test
  * @bug 8067870
+ * @modules java.base/java.io:open
  * @summary verifies java.io.ObjectInputStream.PeekInputStream.skip works
  *          as intended
  */

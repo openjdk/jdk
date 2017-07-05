@@ -27,6 +27,7 @@
  *  @bug 5008856 5023573 5024917 5062569 7172176
  *  @summary 'missing resource key' error for key = "Operating system"
  *  @modules jdk.jconsole/sun.tools.jconsole
+ *           jdk.jconsole/sun.tools.jconsole.resources:open
  *  @run main ResourceCheckTest
  */
 

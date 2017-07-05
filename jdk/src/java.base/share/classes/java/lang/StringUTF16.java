@@ -811,7 +811,9 @@ final class StringUTF16 {
                 throw new NullPointerException();
             if (((a = array).length >> 1) >= (hi = fence) &&
                 (i = index) >= 0 && i < (index = hi)) {
-                do { action.accept(getChar(a, i)); } while (++i < hi);
+                do {
+                    action.accept(charAt(a, i));
+                } while (++i < hi);
             }
         }
 
@@ -819,8 +821,10 @@ final class StringUTF16 {
         public boolean tryAdvance(IntConsumer action) {
             if (action == null)
                 throw new NullPointerException();
-            if (index >= 0 && index < fence) {
-                action.accept(getChar(array, index++));
+            int i = index;
+            if (i >= 0 && i < fence) {
+                action.accept(charAt(array, i));
+                index++;
                 return true;
             }
             return false;
@@ -860,8 +864,8 @@ final class StringUTF16 {
 
             int midOneLess;
             // If the mid-point intersects a surrogate pair
-            if (Character.isLowSurrogate(getChar(array, mid)) &&
-                Character.isHighSurrogate(getChar(array, midOneLess = (mid -1)))) {
+            if (Character.isLowSurrogate(charAt(array, mid)) &&
+                Character.isHighSurrogate(charAt(array, midOneLess = (mid -1)))) {
                 // If there is only one pair it cannot be split
                 if (lo >= midOneLess)
                     return null;
@@ -898,10 +902,10 @@ final class StringUTF16 {
         // Advance one code point from the index, i, and return the next
         // index to advance from
         private static int advance(byte[] a, int i, int hi, IntConsumer action) {
-            char c1 = getChar(a, i++);
+            char c1 = charAt(a, i++);
             int cp = c1;
             if (Character.isHighSurrogate(c1) && i < hi) {
-                char c2 = getChar(a, i);
+                char c2 = charAt(a, i);
                 if (Character.isLowSurrogate(c2)) {
                     i++;
                     cp = Character.toCodePoint(c1, c2);

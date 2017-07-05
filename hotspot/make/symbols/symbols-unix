@@ -190,8 +190,6 @@ JVM_AddModuleExportsToAll
 JVM_AddModuleExportsToAllUnnamed
 JVM_AddModulePackage
 JVM_AddReadsModule
-JVM_CanReadModule
 JVM_DefineModule
-JVM_IsExportedToModule
 JVM_SetBootLoaderUnnamedModule
 JVM_GetModuleByPackageName

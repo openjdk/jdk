@@ -68,7 +68,7 @@ public class ResourcesTest {
             .compile(Paths.get(TEST_SRC, "Main.java"),
                      CLASSES_DIR,
                      "--module-path", MODS_DIR.toString(),
-                     "--add-modules", "m1,m2,m3");
+                     "--add-modules", "m1,m2");
         assertTrue(compiled);
 
     }
@@ -80,7 +80,7 @@ public class ResourcesTest {
 
         int exitValue
             = executeTestJava("--module-path", MODS_DIR.toString(),
-                              "--add-modules", "m1,m2,m3",
+                              "--add-modules", "m1,m2",
                                "-cp", CLASSES_DIR.toString(),
                               "Main")
                 .outputTo(System.out)

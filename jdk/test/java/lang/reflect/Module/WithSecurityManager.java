@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @modules java.logging
+ * @modules jdk.compiler
  * @summary Test java.lang.reflect.Module methods that specify permission checks
  * @run main/othervm -Djava.security.policy=${test.src}/allow.policy WithSecurityManager allow
  * @run main/othervm WithSecurityManager deny
@@ -47,8 +47,8 @@ import java.util.Set;
 public class WithSecurityManager {
 
     // a module that will be loaded into a child layer
-    static final String ANOTHER_MODULE          = "java.logging";
-    static final String ANOTHER_MODULE_RESOURCE = "java/util/logging/Logger.class";
+    static final String ANOTHER_MODULE          = "jdk.compiler";
+    static final String ANOTHER_MODULE_RESOURCE = "com/sun/tools/javac/Main.class";
 
     public static void main(String[] args) throws IOException {
         boolean allow = args[0].equals("allow");

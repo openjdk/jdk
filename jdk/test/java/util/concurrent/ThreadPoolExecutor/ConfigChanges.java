@@ -247,7 +247,13 @@ public class ConfigChanges {
                tg.activeCount() > 0)
             Thread.sleep(4);
         equal(tg.activeCount(), 0);
-        check(System.nanoTime() - t0 >= tpe.getKeepAliveTime(NANOSECONDS));
+
+        // The following assertion is almost always true, but may
+        // exceptionally not be during a transition from core count
+        // too high to allowCoreThreadTimeOut.  Users will never
+        // notice, and we accept the small loss of testability.
+        //
+        // check(System.nanoTime() - t0 >= tpe.getKeepAliveTime(NANOSECONDS));
 
         //report("idle", tpe);
 

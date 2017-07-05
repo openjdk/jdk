@@ -24,7 +24,8 @@
 /**
  * @test
  * @build ModuleSetAccessibleTest
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/java.lang:open
+ *          java.base/jdk.internal.misc:+open
  * @run testng ModuleSetAccessibleTest
  * @summary Test java.lang.reflect.AccessibleObject with modules
  */
@@ -138,81 +139,6 @@ public class ModuleSetAccessibleTest {
         } catch (InaccessibleObjectException expected) { }
 
         f.setAccessible(false); // should succeed
-    }
-
-
-    /**
-     * Test that only public members of java.lang.reflect.Module can be make
-     * accessible.
-     */
-    public void testJavaLangReflectModule() throws Exception {
-
-        // non-public constructor
-        Constructor<?> ctor
-            = Module.class.getDeclaredConstructor(ClassLoader.class,
-                                                  ModuleDescriptor.class);
-        AccessibleObject[] ctors = { ctor };
-
-        try {
-            ctor.setAccessible(true);
-            assertTrue(false);
-        } catch (InaccessibleObjectException expected) { }
-
-        try {
-            AccessibleObject.setAccessible(ctors, true);
-            assertTrue(false);
-        } catch (InaccessibleObjectException expected) { }
-
-        // should succeed
-        ctor.setAccessible(false);
-        AccessibleObject.setAccessible(ctors, false);
-
-
-        // public method
-        Method method = Module.class.getMethod("addReads", Module.class);
-        AccessibleObject[] methods = { method };
-        method.setAccessible(true);
-        AccessibleObject.setAccessible(methods, true);
-        method.setAccessible(false);
-        AccessibleObject.setAccessible(methods, false);
-
-        // non-public method
-        method = Module.class.getDeclaredMethod("implAddReadsNoSync", Module.class);
-        methods[0] = method;
-
-        try {
-            method.setAccessible(true);
-            assertTrue(false);
-        } catch (InaccessibleObjectException expected) { }
-
-        try {
-            AccessibleObject.setAccessible(methods, true);
-            assertTrue(false);
-        } catch (InaccessibleObjectException expected) { }
-
-        // should succeed
-        method.setAccessible(false);
-        AccessibleObject.setAccessible(methods, false);
-
-
-        // non-public field
-        Field field = Module.class.getDeclaredField("name");
-        AccessibleObject[] fields = { field };
-
-        try {
-            field.setAccessible(true);
-            assertTrue(false);
-        } catch (InaccessibleObjectException expected) { }
-
-        try {
-            AccessibleObject.setAccessible(fields, true);
-            assertTrue(false);
-        } catch (InaccessibleObjectException expected) { }
-
-        // should succeed
-        field.setAccessible(false);
-        AccessibleObject.setAccessible(fields, false);
-
     }
 
 

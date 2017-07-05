@@ -25,6 +25,7 @@
  *
  * @test
  * @bug 8164705
+ * @modules java.base/java.io:open
  * @summary Remove pathname canonicalization from FilePermission
  */
 
