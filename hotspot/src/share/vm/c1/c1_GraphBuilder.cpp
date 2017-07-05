@@ -3505,8 +3505,10 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
   }
 
   // now perform tests that are based on flag settings
-  if (callee->should_inline()) {
+  if (callee->force_inline() || callee->should_inline()) {
     // ignore heuristic controls on inlining
+    if (callee->force_inline())
+      CompileTask::print_inlining(callee, scope()->level(), bci(), "force inline by annotation");
   } else {
     if (inline_level() > MaxInlineLevel                         ) INLINE_BAILOUT("too-deep inlining");
     if (recursive_inline_level(callee) > MaxRecursiveInlineLevel) INLINE_BAILOUT("too-deep recursive inlining");
@@ -3531,7 +3533,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, BlockBeg
   }
 
 #ifndef PRODUCT
-      // printing
+  // printing
   if (PrintInlining) {
     print_inline_result(callee, true);
   }
