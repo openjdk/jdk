@@ -27,7 +27,7 @@
 #include "services/memTracker.hpp"
 
 volatile jint SequenceGenerator::_seq_number = 1;
-DEBUG_ONLY(jint SequenceGenerator::_max_seq_number = 1;)
+NOT_PRODUCT(jint SequenceGenerator::_max_seq_number = 1;)
 DEBUG_ONLY(volatile unsigned long SequenceGenerator::_generation = 0;)
 
 jint SequenceGenerator::next() {
@@ -36,7 +36,7 @@ jint SequenceGenerator::next() {
     MemTracker::shutdown(MemTracker::NMT_sequence_overflow);
   }
   assert(seq > 0, "counter overflow");
-  DEBUG_ONLY(_max_seq_number = (seq > _max_seq_number) ? seq : _max_seq_number;)
+  NOT_PRODUCT(_max_seq_number = (seq > _max_seq_number) ? seq : _max_seq_number;)
   return seq;
 }
 

@@ -237,7 +237,6 @@ JDK_MAN_PAGES =            \
         jstack.1           \
         jstat.1            \
         jstatd.1           \
-	jvisualvm.1        \
 	native2ascii.1     \
 	rmic.1             \
         schemagen.1        \
@@ -245,6 +244,10 @@ JDK_MAN_PAGES =            \
         wsgen.1            \
         wsimport.1         \
         xjc.1
+
+ifndef OPENJDK
+  JDK_MAN_PAGES += jvisualvm.1
+endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
     MAN_SRC_DIR:=$(JDK_TOPDIR)/src/linux/doc
