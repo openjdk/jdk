@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8138766
+ * @key intermittent
  * @summary New default -sigalg for keytool
  * @modules java.base/sun.security.tools.keytool
  * @modules jdk.crypto.ec

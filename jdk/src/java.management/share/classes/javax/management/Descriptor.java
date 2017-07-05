@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,8 @@ import javax.management.openmbean.OpenType;
  * of the mapped Java type, called <em>opendata</em>(J) in the <a
  * href="MXBean.html#mapping-rules">MXBean type mapping rules</a>.</p>
  *
- * <table border="1" cellpadding="5" summary="Descriptor Fields">
+ * <table class="striped">
+ * <caption style="display:none">Descriptor Fields</caption>
  *
  * <tr><th>Name</th><th>Type</th><th>Used in</th><th>Meaning</th></tr>
  *
@@ -330,7 +331,8 @@ import javax.management.openmbean.OpenType;
  * interest outside Model MBeans, for example.  But only Model MBeans have
  * a predefined behavior for these fields.</p>
  *
- * <table border="1" cellpadding="5" summary="ModelMBean Fields">
+ * <table class="striped">
+ * <caption style="display:none">ModelMBean Fields</caption>
  *
  * <tr><th>Name</th><th>Type</th><th>Used in</th><th>Meaning</th></tr>
  *

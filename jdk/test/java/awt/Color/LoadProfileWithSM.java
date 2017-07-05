@@ -25,7 +25,7 @@ import java.awt.color.*;
 
 /*
  * @test
- * @bug 8058969
+ * @bug 8058969 8178708
  * @summary test standard profiles loads with SecurityManager installed.
  * @run main/othervm LoadProfileWithSM
  */

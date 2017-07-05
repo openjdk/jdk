@@ -22,16 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4272800 4274208 4392010
- *  @summary Test debugger operations in finalize() methods
- *  @author Gordon Hirsch  (modified for HotSpot by tbell & rfield)
+ * @test
+ * @bug 4272800 4274208 4392010
+ * @summary Test debugger operations in finalize() methods
+ * @author Gordon Hirsch  (modified for HotSpot by tbell & rfield)
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g FinalizerTest.java
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g FinalizerTest.java
  *
- *  @run driver FinalizerTest
+ * @run driver FinalizerTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
  * {@link java.util.concurrent.Executor} object. If none is provided a default
  * implementation is used.
  * <p>
- * <a name="mapping_description"></a>
+ * <a id="mapping_description"></a>
  * <b>Mapping request URIs to HttpContext paths</b><p>
  * When a HTTP request is received,
  * the appropriate HttpContext (and handler) is located by finding the context
@@ -59,7 +59,7 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
  * Paths are matched literally, which means that the strings are compared
  * case sensitively, and with no conversion to or from any encoded forms.
  * For example. Given a HttpServer with the following HttpContexts configured.
- * <table>
+ * <table><caption style="display:none">description</caption>
  * <tr><td><i>Context</i></td><td><i>Context path</i></td></tr>
  * <tr><td>ctx1</td><td>"/"</td></tr>
  * <tr><td>ctx2</td><td>"/apps/"</td></tr>
@@ -68,7 +68,7 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
  * <p>
  * the following table shows some request URIs and which, if any context they would
  * match with.
- * <table>
+ * <table><caption style="display:none">description</caption>
  * <tr><td><i>Request URI</i></td><td><i>Matches context</i></td></tr>
  * <tr><td>"http://foo.com/apps/foo/bar"</td><td>ctx3</td></tr>
  * <tr><td>"http://foo.com/apps/Foo/bar"</td><td>no match, wrong case</td></tr>

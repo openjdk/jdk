@@ -116,6 +116,13 @@ class Feedback {
                 name, type, value, unresolved, errorLines);
     }
 
+    public String format(String field, FormatCase fc, FormatAction fa, FormatWhen fw,
+                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                    String name, String type, String value, String unresolved, List<String> errorLines) {
+        return mode.format(field, fc, fa, fw, fr, fu, fe,
+                name, type, value, unresolved, errorLines);
+    }
+
     public String truncateVarValue(String value) {
         return mode.truncateVarValue(value);
     }
@@ -463,6 +470,14 @@ class Feedback {
         String format(FormatCase fc, FormatAction fa, FormatWhen fw,
                     FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
                     String name, String type, String value, String unresolved, List<String> errorLines) {
+            return format("display", fc, fa, fw, fr, fu, fe,
+                name, type, value, unresolved, errorLines);
+        }
+
+        // Compute the display output given full context and values
+        String format(String field, FormatCase fc, FormatAction fa, FormatWhen fw,
+                    FormatResolve fr, FormatUnresolved fu, FormatErrors fe,
+                    String name, String type, String value, String unresolved, List<String> errorLines) {
             // Convert the context into a bit representation used as selectors for store field formats
             long bits = bits(fc, fa, fw, fr, fu, fe);
             String fname = name==null? "" : name;
@@ -476,7 +491,7 @@ class Feedback {
                             fname, ftype, fvalue, funresolved, "*cannot-use-errors-here*", el))
                     .collect(joining());
             return String.format(
-                    format("display", bits),
+                    format(field, bits),
                     fname, ftype, fvalue, funresolved, errors, "*cannot-use-err-here*");
         }
 

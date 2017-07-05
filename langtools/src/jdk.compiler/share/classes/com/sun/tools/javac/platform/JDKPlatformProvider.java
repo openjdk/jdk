@@ -26,6 +26,8 @@
 package com.sun.tools.javac.platform;
 
 import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -41,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Stream;
 
 import javax.annotation.processing.Processor;
 
@@ -90,7 +93,6 @@ public class JDKPlatformProvider implements PlatformProvider {
             } catch (IOException | ProviderNotFoundException ex) {
             }
         }
-        SUPPORTED_JAVA_PLATFORM_VERSIONS.add(targetNumericVersion(Target.DEFAULT));
     }
 
     private static String targetNumericVersion(Target target) {
@@ -108,10 +110,6 @@ public class JDKPlatformProvider implements PlatformProvider {
 
         @Override
         public Collection<Path> getPlatformPath() {
-            if (Target.lookup(version) == Target.DEFAULT) {
-                return null;
-            }
-
             List<Path> paths = new ArrayList<>();
             Path file = findCtSym();
             // file == ${jdk.home}/lib/ct.sym
@@ -128,7 +126,21 @@ public class JDKPlatformProvider implements PlatformProvider {
                 try (DirectoryStream<Path> dir = Files.newDirectoryStream(root)) {
                     for (Path section : dir) {
                         if (section.getFileName().toString().contains(version)) {
-                            paths.add(section);
+                            Path systemModules = section.resolve("system-modules");
+
+                            if (Files.isRegularFile(systemModules)) {
+                                Path modules =
+                                        FileSystems.getFileSystem(URI.create("jrt:/"))
+                                                   .getPath("modules");
+                                try (Stream<String> lines =
+                                        Files.lines(systemModules, Charset.forName("UTF-8"))) {
+                                    lines.map(line -> modules.resolve(line))
+                                         .filter(mod -> Files.exists(mod))
+                                         .forEach(mod -> paths.add(mod));
+                                }
+                            } else {
+                                paths.add(section);
+                            }
                         }
                     }
                 } catch (IOException ex) {
