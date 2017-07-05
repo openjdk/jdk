@@ -2151,6 +2151,8 @@ class StubGenerator: public StubCodeGenerator {
   // if they expect all registers to be preserved.
   enum layout {
     thread_off,    // last_java_sp
+    arg1_off,
+    arg2_off,
     rbp_off,       // callee saved register
     ret_pc,
     framesize
@@ -2185,7 +2187,7 @@ class StubGenerator: public StubCodeGenerator {
   // either at call sites or otherwise assume that stack unwinding will be initiated,
   // so caller saved registers were assumed volatile in the compiler.
   address generate_throw_exception(const char* name, address runtime_entry,
-                                   bool restore_saved_exception_pc) {
+                                   bool restore_saved_exception_pc, Register arg1 = noreg, Register arg2 = noreg) {
 
     int insts_size = 256;
     int locs_size  = 32;
@@ -2218,6 +2220,13 @@ class StubGenerator: public StubCodeGenerator {
 
     // push java thread (becomes first argument of C function)
     __ movptr(Address(rsp, thread_off * wordSize), java_thread);
+    if (arg1 != noreg) {
+      __ movptr(Address(rsp, arg1_off * wordSize), arg1);
+    }
+    if (arg2 != noreg) {
+      assert(arg1 != noreg, "missing reg arg");
+      __ movptr(Address(rsp, arg2_off * wordSize), arg2);
+    }
 
     // Set up last_Java_sp and last_Java_fp
     __ set_last_Java_frame(java_thread, rsp, rbp, NULL);
@@ -2309,6 +2318,12 @@ class StubGenerator: public StubCodeGenerator {
                                                                                    CAST_FROM_FN_PTR(address, SharedRuntime::d2i));
     StubRoutines::_d2l_wrapper                              = generate_d2i_wrapper(T_LONG,
                                                                                    CAST_FROM_FN_PTR(address, SharedRuntime::d2l));
+
+    // Build this early so it's available for the interpreter
+    StubRoutines::_throw_WrongMethodTypeException_entry =
+      generate_throw_exception("WrongMethodTypeException throw_exception",
+                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_WrongMethodTypeException),
+                               false, rax, rcx);
   }
 
 

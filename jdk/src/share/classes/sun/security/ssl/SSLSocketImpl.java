@@ -2443,11 +2443,12 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
             entrySet, HandshakeCompletedEvent e) {
 
             super("HandshakeCompletedNotify-Thread");
-            targets = entrySet;
+            targets = new HashSet<>(entrySet);          // clone the entry set
             event = e;
         }
 
         public void run() {
+            // Don't need to synchronize, as it only runs in one thread.
             for (Map.Entry<HandshakeCompletedListener,AccessControlContext>
                 entry : targets) {
 

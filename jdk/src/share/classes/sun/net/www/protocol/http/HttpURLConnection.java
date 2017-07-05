@@ -1880,14 +1880,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private void sendCONNECTRequest() throws IOException {
         int port = url.getPort();
 
-        // setRequests == true indicates the std. request headers
-        // have been set in (previous) requests.
-        // so the first one must be the http method (GET, etc.).
-        // we need to set it to CONNECT soon, remove this one first.
-        // otherwise, there may have 2 http methods in headers
-        if (setRequests) requests.set(0, null, null);
-
-        requests.prepend(HTTP_CONNECT + " " + connectRequestURI(url)
+        requests.set(0, HTTP_CONNECT + " " + connectRequestURI(url)
                          + " " + httpVersion, null);
         requests.setIfNotSet("User-Agent", userAgent);
 
@@ -1912,8 +1905,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
         }
 
         http.writeRequests(requests, null);
-        // remove CONNECT header
-        requests.set(0, null, null);
     }
 
     /**

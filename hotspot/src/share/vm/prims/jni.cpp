@@ -70,15 +70,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/histogram.hpp"
-#ifdef TARGET_ARCH_x86
-# include "jniTypes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "jniTypes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "jniTypes_zero.hpp"
-#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"
 # include "thread_linux.inline.hpp"
@@ -3296,6 +3287,19 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
   return ret;
 }
 
+#ifndef PRODUCT
+
+#include "utilities/quickSort.hpp"
+
+void execute_internal_vm_tests() {
+  if (ExecuteInternalVMTests) {
+    assert(QuickSort::test_quick_sort(), "test_quick_sort failed");
+    tty->print_cr("All tests passed");
+  }
+}
+
+#endif
+
 HS_DTRACE_PROBE_DECL3(hotspot_jni, CreateJavaVM__entry, vm, penv, args);
 DT_RETURN_MARK_DECL(CreateJavaVM, jint);
 
@@ -3386,6 +3390,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
   }
 
   NOT_PRODUCT(test_error_handler(ErrorHandlerTest));
+  NOT_PRODUCT(execute_internal_vm_tests());
   return result;
 }
 

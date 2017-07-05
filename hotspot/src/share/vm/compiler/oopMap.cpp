@@ -638,7 +638,9 @@ void DerivedPointerTable::add(oop *derived_loc, oop *base_loc) {
     assert(*derived_loc != (oop)base_loc, "location already added");
     assert(_list != NULL, "list must exist");
     intptr_t offset = value_of_loc(derived_loc) - value_of_loc(base_loc);
-    assert(offset >= -1000000, "wrong derived pointer info");
+    // This assert is invalid because derived pointers can be
+    // arbitrarily far away from their base.
+    // assert(offset >= -1000000, "wrong derived pointer info");
 
     if (TraceDerivedPointers) {
       tty->print_cr(

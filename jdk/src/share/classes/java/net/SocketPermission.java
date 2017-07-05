@@ -956,10 +956,16 @@ implements java.io.Serializable
         String thisHost = hostname;
         String thatHost = that.hostname;
 
-        if (thisHost == null)
+        if (thisHost == null) {
             return false;
-        else
+        } else if (this.wildcard) {
+            final int cnameLength = this.cname.length();
+            return thatHost.regionMatches(true,
+                                          (thatHost.length() - cnameLength),
+                                          this.cname, 0, cnameLength);
+        } else {
             return thisHost.equalsIgnoreCase(thatHost);
+        }
     }
 
     /**

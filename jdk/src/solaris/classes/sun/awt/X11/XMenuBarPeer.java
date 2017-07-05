@@ -415,7 +415,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      * Overriden XWindow painting & printing
      *
      ************************************************/
-    public void paint(Graphics g) {
+    public void paintPeer(Graphics g) {
         resetColors();
         /* Calculate menubar dimension. */
         int width = getWidth();

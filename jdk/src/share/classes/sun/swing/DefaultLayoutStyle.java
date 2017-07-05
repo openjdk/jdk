@@ -48,10 +48,12 @@ public class DefaultLayoutStyle extends LayoutStyle {
     @Override
     public int getPreferredGap(JComponent component1, JComponent component2,
             ComponentPlacement type, int position, Container parent) {
-
         if (component1 == null || component2 == null || type == null) {
             throw new NullPointerException();
         }
+
+        checkPosition(position);
+
         if (type == ComponentPlacement.INDENT &&
                 (position == SwingConstants.EAST ||
                  position == SwingConstants.WEST)) {

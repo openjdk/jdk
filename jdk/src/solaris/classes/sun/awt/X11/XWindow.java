@@ -502,9 +502,8 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     public boolean isEmbedded() {
         return embedded;
     }
-
     public  void repaint(int x,int y, int width, int height) {
-        if (!isVisible()) {
+        if (!isVisible() || getWidth() == 0 || getHeight() == 0) {
             return;
         }
         Graphics g = getGraphics();
@@ -517,12 +516,11 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             }
         }
     }
-
-    public  void repaint() {
-        if (!isVisible()) {
+    void repaint() {
+        if (!isVisible() || getWidth() == 0 || getHeight() == 0) {
             return;
         }
-        Graphics g = getGraphics();
+        final Graphics g = getGraphics();
         if (g != null) {
             try {
                 paint(g);
@@ -531,10 +529,13 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             }
         }
     }
-
-    void paint(Graphics g) {
+    public void paint(final Graphics g) {
+        // paint peer
+        paintPeer(g);
     }
 
+    void paintPeer(final Graphics g) {
+    }
     //used by Peers to avoid flickering withing paint()
     protected void flush(){
         XToolkit.awtLock();
