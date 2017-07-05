@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,30 +53,30 @@ public class AuthResources_es extends java.util.ListResourceBundle {
 
         // UnixPrincipals
         {"UnixNumericGroupPrincipal [Primary Group]: name",
-        "UnixNumericGroupPrincipal [Grupo principal] {0}"},
+                "UnixNumericGroupPrincipal [Grupo principal] {0}"},
         {"UnixNumericGroupPrincipal [Supplementary Group]: name",
-        "UnixNumericGroupPrincipal [Grupo adicional] {0}"},
+                "UnixNumericGroupPrincipal [Grupo adicional] {0}"},
         {"UnixNumericUserPrincipal: name", "UnixNumericUserPrincipal: {0}"},
         {"UnixPrincipal: name", "UnixPrincipal: {0}"},
 
         // com.sun.security.auth.login.ConfigFile
         {"Unable to properly expand config", "No se puede ampliar correctamente {0}"},
         {"extra_config (No such file or directory)",
-        "{0} (No existe tal archivo o directorio)"},
-        {"Unable to locate a login configuration",
-        "No se puede localizar una configuraci\u00f3n de inicio de sesi\u00f3n"},
+                "{0} (No existe tal archivo o directorio)"},
+        {"Configuration Error:\n\tNo such file or directory",
+                "Error de configuraci\u00f3n:\n\tNo se encuentra archivo o directorio"},
         {"Configuration Error:\n\tInvalid control flag, flag",
-        "Error de configuraci\u00f3n:\n\tIndicador de control no v\u00e1lido, {0}"},
+                "Error de configuraci\u00f3n:\n\tIndicador de control no v\u00e1lido, {0}"},
         {"Configuration Error:\n\tCan not specify multiple entries for appName",
-        "Error de configuraci\u00f3n:\n\tNo se pueden especificar m\u00faltiples entradas para {0}"},
+            "Error de configuraci\u00f3n:\n\tNo se pueden especificar m\u00faltiples entradas para {0}"},
         {"Configuration Error:\n\texpected [expect], read [end of file]",
-        "Error de configuraci\u00f3n:\n\tse esperaba [{0}], se ha le\u00eddo [end of file]"},
+                "Error de configuraci\u00f3n:\n\tse esperaba [{0}], se ha le\u00eddo [end of file]"},
         {"Configuration Error:\n\tLine line: expected [expect], found [value]",
-        "Error de configuraci\u00f3n:\n\tL\u00ednea {0}: se esperaba [{1}], se ha encontrado [{2}]"},
+            "Error de configuraci\u00f3n:\n\tL\u00ednea {0}: se esperaba [{1}], se ha encontrado [{2}]"},
         {"Configuration Error:\n\tLine line: expected [expect]",
-        "Error de configuraci\u00f3n:\n\tL\u00ednea {0}: se esperaba [{1}]"},
+            "Error de configuraci\u00f3n:\n\tL\u00ednea {0}: se esperaba [{1}]"},
         {"Configuration Error:\n\tLine line: system property [value] expanded to empty value",
-        "Error de configuraci\u00f3n:\n\tL\u00ednea {0}: propiedad de sistema [{1}] ampliada a valor vac\u00edo"},
+            "Error de configuraci\u00f3n:\n\tL\u00ednea {0}: propiedad de sistema [{1}] ampliada a valor vac\u00edo"},
 
         // com.sun.security.auth.module.JndiLoginModule
         {"username: ","nombre de usuario: "},
@@ -88,13 +88,13 @@ public class AuthResources_es extends java.util.ListResourceBundle {
         {"Keystore alias: ","Alias de almac\u00e9n de claves: "},
         {"Keystore password: ","Contrase\u00f1a de almac\u00e9n de claves: "},
         {"Private key password (optional): ",
-        "Contrase\u00f1a de clave privada (opcional): "},
+            "Contrase\u00f1a de clave privada (opcional): "},
 
         // com.sun.security.auth.module.Krb5LoginModule
         {"Kerberos username [[defUsername]]: ",
-        "Nombre de usuario de Kerberos [{0}]: "},
+                "Nombre de usuario de Kerberos [{0}]: "},
         {"Kerberos password for [username]: ",
-            "Contrase\u00f1a de Kerberos de {0}: "},
+                "Contrase\u00f1a de Kerberos de {0}: "},
 
         /***    EVERYTHING BELOW IS DEPRECATED  ***/
 
@@ -107,17 +107,17 @@ public class AuthResources_es extends java.util.ListResourceBundle {
         {"(", "("},
         {")", ")"},
         {"attempt to add a Permission to a readonly PermissionCollection",
-        "se ha intentado agregar un Permiso a una Colecci\u00f3n de permisos de s\u00f3lo lectura"},
+            "se ha intentado agregar un Permiso a una Colecci\u00f3n de permisos de s\u00f3lo lectura"},
 
         // com.sun.security.auth.PolicyParser
         {"expected keystore type", "se esperaba un tipo de almac\u00e9n de claves"},
         {"can not specify Principal with a ",
-        "no se puede especificar Principal con una "},
+                "no se puede especificar Principal con una "},
         {"wildcard class without a wildcard name",
-        "clase comod\u00edn sin nombre de comod\u00edn"},
+                "clase comod\u00edn sin nombre de comod\u00edn"},
         {"expected codeBase or SignedBy", "se esperaba base de c\u00f3digos o SignedBy"},
         {"only Principal-based grant entries permitted",
-        "s\u00f3lo se permite conceder entradas basadas en Principal"},
+                "s\u00f3lo se permite conceder entradas basadas en Principal"},
         {"expected permission entry", "se esperaba un permiso de entrada"},
         {"number ", "n\u00famero "},
         {"expected ", "se esperaba "},
@@ -130,11 +130,11 @@ public class AuthResources_es extends java.util.ListResourceBundle {
 
         // SolarisPrincipals
         {"SolarisNumericGroupPrincipal [Primary Group]: ",
-        "SolarisNumericGroupPrincipal [Grupo principal]: "},
+                "SolarisNumericGroupPrincipal [Grupo principal]: "},
         {"SolarisNumericGroupPrincipal [Supplementary Group]: ",
-        "SolarisNumericGroupPrincipal [Grupo adicional]: "},
+                "SolarisNumericGroupPrincipal [Grupo adicional]: "},
         {"SolarisNumericUserPrincipal: ",
-        "SolarisNumericUserPrincipal: "},
+                "SolarisNumericUserPrincipal: "},
         {"SolarisPrincipal: ", "SolarisPrincipal: "},
         {"provided null name", "se ha proporcionado un nombre nulo"}
 

@@ -156,27 +156,27 @@ public class MToolkit extends UNIXToolkit implements Runnable {
             Thread toolkitThread = new Thread(this, "AWT-Motif");
             toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
             toolkitThread.setDaemon(true);
-            ThreadGroup mainTG = (ThreadGroup)AccessController.doPrivileged(
-                new PrivilegedAction() {
-                    public Object run() {
-                        ThreadGroup currentTG =
-                            Thread.currentThread().getThreadGroup();
-                        ThreadGroup parentTG = currentTG.getParent();
-                        while (parentTG != null) {
-                            currentTG = parentTG;
-                            parentTG = currentTG.getParent();
-                        }
-                        return currentTG;
-                    }
-            });
 
-            Runtime.getRuntime().addShutdownHook(
-                new Thread(mainTG, new Runnable() {
-                    public void run() {
-                        shutdown();
+            PrivilegedAction<Void> a = new PrivilegedAction<Void>() {
+                public Void run() {
+                    ThreadGroup mainTG = Thread.currentThread().getThreadGroup();
+                    ThreadGroup parentTG = mainTG.getParent();
+
+                    while (parentTG != null) {
+                        mainTG = parentTG;
+                        parentTG = mainTG.getParent();
                     }
-                }, "Shutdown-Thread")
-            );
+                    Thread shutdownThread = new Thread(mainTG, new Runnable() {
+                            public void run() {
+                                shutdown();
+                            }
+                        }, "Shutdown-Thread");
+                    shutdownThread.setContextClassLoader(null);
+                    Runtime.getRuntime().addShutdownHook(shutdownThread);
+                    return null;
+                }
+            };
+            AccessController.doPrivileged(a);
 
             /*
              * Fix for 4701990.

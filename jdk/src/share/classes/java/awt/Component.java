@@ -4941,9 +4941,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 // If we dispatch the event to toplevel ancestor,
                 // this could encolse the loop: 6480024.
                 anc.dispatchEventToSelf(newMWE);
+                if (newMWE.isConsumed()) {
+                    e.consume();
+                }
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     boolean checkWindowClosingException() {

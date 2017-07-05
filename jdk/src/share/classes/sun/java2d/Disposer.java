@@ -84,6 +84,7 @@ public class Disposer implements Runnable {
                          tg = tgn, tgn = tg.getParent());
                     Thread t =
                         new Thread(tg, disposerInstance, "Java2D Disposer");
+                    t.setContextClassLoader(null);
                     t.setDaemon(true);
                     t.setPriority(Thread.MAX_PRIORITY);
                     t.start();
