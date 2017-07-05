@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2014 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<ldml>
+	<identity>
+		<version number="$Revision: 11170 $"/>
+		<generation date="$Date: 2015-02-09 23:12:33 -0600 (Mon, 09 Feb 2015) $"/>
+		<language type="de"/>
+		<territory type="CH"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="be">Weissrussisch</language>
+			<language type="prg" draft="contributed">Altpreussisch</language>
+		</languages>
+		<territories>
+			<territory type="BD">Bangladesh</territory>
+			<territory type="BN">Brunei</territory>
+			<territory type="BW">Botswana</territory>
+			<territory type="BY">Weissrussland</territory>
+			<territory type="CV" draft="provisional">Kapverden</territory>
+			<territory type="DJ" draft="provisional">Djibouti</territory>
+			<territory type="GB">Grossbritannien</territory>
+			<territory type="MH">Marshall-Inseln</territory>
+			<territory type="QO">Äusseres Ozeanien</territory>
+			<territory type="RW" draft="provisional">Rwanda</territory>
+			<territory type="SB">Salomon-Inseln</territory>
+			<territory type="ST" draft="provisional">Sao Tomé und Principe</territory>
+			<territory type="ZW">Zimbabwe</territory>
+		</territories>
+		<keys>
+			<key type="colCaseFirst" draft="contributed">Sortierung nach Gross- bzw. Kleinbuchstaben</key>
+			<key type="colCaseLevel" draft="contributed">Sortierung nach Gross- oder Kleinschreibung</key>
+		</keys>
+		<types>
+			<type type="no" key="colCaseLevel" draft="contributed">Ohne Gross-/Kleinschreibung sortieren</type>
+			<type type="upper" key="colCaseFirst" draft="contributed">Grossbuchstaben zuerst aufführen</type>
+			<type type="yes" key="colCaseLevel" draft="contributed">Nach Gross-/Kleinschreibung sortieren</type>
+		</types>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a ä b c d e f g h i j k l m n o ö p q r s t u ü v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á à ă â å ã ā æ ç é è ĕ ê ë ē ğ í ì ĭ î ï İ ī ı ñ ó ò ŏ ô ø ō œ ş ß ú ù ŭ û ū ÿ]</exemplarCharacters>
+	</characters>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>'</group>
+		</symbols>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern>¤ #,##0.00;¤-#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="BYR">
+				<displayName>Weissrussischer Rubel</displayName>
+				<displayName count="one">Weissrussischer Rubel</displayName>
+				<displayName count="other">Weissrussische Rubel</displayName>
+			</currency>
+			<currency type="CHF">
+				<symbol>CHF</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="area-square-foot">
+				<displayName>Quadratfuss</displayName>
+				<unitPattern count="one">{0} Quadratfuss</unitPattern>
+				<unitPattern count="other">{0} Quadratfuss</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>Fuss</displayName>
+				<unitPattern count="one">{0} Fuss</unitPattern>
+				<unitPattern count="other">{0} Fuss</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>Kubikfuss</displayName>
+				<unitPattern count="one">{0} Kubikfuss</unitPattern>
+				<unitPattern count="other">{0} Kubikfuss</unitPattern>
+			</unit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="length-foot">
+				<displayName>Fuss</displayName>
+			</unit>
+		</unitLength>
+	</units>
+</ldml>
+

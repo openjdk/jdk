@@ -23,8 +23,9 @@
 
 /*
  *@test
- *@bug 6271396
+ *@bug 6271396 8008577
  *@summary Test case for verifying typo of timezone display name Australia/Lord_Howe
+ *@run main/othervm -Djava.locale.providers=JRE,SPI Bug6271396
  */
 
 import java.util.Locale;

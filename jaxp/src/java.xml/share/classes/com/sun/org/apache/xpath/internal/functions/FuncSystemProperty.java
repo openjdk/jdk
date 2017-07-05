@@ -27,11 +27,9 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import com.sun.org.apache.xpath.internal.XPathContext;
-import com.sun.org.apache.xpath.internal.objects.XNumber;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.objects.XString;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 
 /**
@@ -69,7 +67,7 @@ public class FuncSystemProperty extends FunctionOneArg
     // property argument is to be looked for.
     Properties xsltInfo = new Properties();
 
-    loadPropertyFile(XSLT_PROPERTIES, xsltInfo);
+    loadPropertyFile(xsltInfo);
 
     if (indexOfNSSep > 0)
     {
@@ -159,25 +157,21 @@ public class FuncSystemProperty extends FunctionOneArg
   }
 
   /**
-   * Retrieve a propery bundle from a specified file
+   * Retrieve a property bundle from XSLT_PROPERTIES
    *
-   * @param file The string name of the property file.  The name
-   * should already be fully qualified as path/filename
    * @param target The target property bag the file will be placed into.
    */
-  public void loadPropertyFile(String file, Properties target)
+  private void loadPropertyFile(Properties target)
   {
     try
     {
-      // Use SecuritySupport class to provide priveleged access to property file
-      InputStream is = SecuritySupport.getResourceAsStream(ObjectFactory.findClassLoader(),
-                                              file);
+      // Use SecuritySupport class to provide privileged access to property file
+      InputStream is = SecuritySupport.getResourceAsStream(XSLT_PROPERTIES);
 
       // get a buffered version
-      BufferedInputStream bis = new BufferedInputStream(is);
-
-      target.load(bis);  // and load up the property bag from this
-      bis.close();  // close out after reading
+      try (BufferedInputStream bis = new BufferedInputStream(is)) {
+          target.load(bis);  // and load up the property bag from this
+      }
     }
     catch (Exception ex)
     {

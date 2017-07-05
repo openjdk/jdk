@@ -120,7 +120,7 @@ then
 fi
 
 # run
-RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${SECURITYOPTS} -classpath ${CLASSPATHARG} $2 "
+RUNCMD="${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${SECURITYOPTS} -classpath ${CLASSPATHARG} -Djava.locale.providers=JRE,SPI $2 "
 
 echo ${RUNCMD}
 ${RUNCMD}
