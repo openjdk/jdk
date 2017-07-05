@@ -32,7 +32,13 @@
   #define JNICALL
 
   typedef int jint;
+
+#ifdef _LP64
+  typedef long jlong;
+#else
   typedef long long jlong;
+#endif
+
 #else
   #define JNIEXPORT __declspec(dllexport)
   #define JNIIMPORT __declspec(dllimport)

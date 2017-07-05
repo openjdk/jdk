@@ -34,17 +34,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#undef bzero
-inline void bzero(void *b, int len) { memset(b,0,len); }
-#undef bcopy
-inline void bcopy(const void *s, void *d, size_t len) { memmove(d,s,len); }
-#undef bcmp
-inline int bcmp(const void *s,const void *t,int len) { return memcmp(s,t,len);}
-extern "C" unsigned long strtoul(const char *s, char **end, int base);
-
-// Definition for sys_errlist varies from Sun 4.1 & Solaris.
-// We use the new Solaris definition.
-#include <string.h>
 
 // Access to the C++ class virtual function pointer
 // Put the class in the macro
