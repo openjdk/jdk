@@ -196,10 +196,9 @@ import java.util.Objects;
  * of the JDK reference implementation.
  * <p>
  * This implementation supports the Hash_DRBG and HMAC_DRBG mechanisms with
- * DRBG algorithm SHA-1, SHA-224, SHA-512/224, SHA-256, SHA-512/256,
- * SHA-384 and SHA-512, and CTR_DRBG (both using derivation function and
- * not using derivation function) with DRBG algorithm 3KeyTDEA
- * (also known as DESede in JCE), AES-128, AES-192 and AES-256.
+ * DRBG algorithm SHA-224, SHA-512/224, SHA-256, SHA-512/256, SHA-384 and
+ * SHA-512, and CTR_DRBG (both using derivation function and not using
+ * derivation function) with DRBG algorithm AES-128, AES-192 and AES-256.
  * <p>
  * The mechanism name and DRBG algorithm name are determined by the
  * {@linkplain Security#getProperty(String) security property}

@@ -210,6 +210,10 @@ sun/security/krb5/auto/Unreachable.java                         7164518 macosx-a
 java/security/KeyPairGenerator/SolarisShortDSA.java             7041639 solaris-all
 sun/security/tools/keytool/standard.sh                          7041639 solaris-all
 
+sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
+
+sun/security/mscapi/ShortRSAKey1024.sh                          8153948 windows-all
+
 java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         8062758 generic-all
 
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-all
@@ -224,6 +228,8 @@ sun/security/pkcs11/Cipher/TestSymmCiphersNoPad.java            8077138,8023434 
 sun/security/pkcs11/KeyAgreement/TestDH.java                    8077138,8023434 windows-all
 sun/security/pkcs11/KeyAgreement/TestInterop.java               8077138,8023434 windows-all
 sun/security/pkcs11/KeyAgreement/TestShort.java                 8077138,8023434 windows-all
+sun/security/pkcs11/KeyAgreement/SupportedDHKeys.java           8154910 windows-all
+sun/security/pkcs11/KeyAgreement/UnsupportedDHKeys.java         8154910 windows-all
 sun/security/pkcs11/KeyGenerator/DESParity.java                 8077138,8023434 windows-all
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java          8077138,8023434 windows-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java            8077138,8023434 windows-all

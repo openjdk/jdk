@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,12 +71,15 @@ import static org.testng.Assert.fail;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.chrono.ThaiBuddhistDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.IsoFields;
 import java.time.temporal.Temporal;
+import java.time.temporal.TemporalField;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 
 import org.testng.annotations.DataProvider;
@@ -436,6 +439,29 @@ public class TCKIsoFields {
                 .toFormatter().withResolverStyle(ResolverStyle.LENIENT);
         LocalDate parsed = LocalDate.parse(str, f);
         assertEquals(parsed, expected);
+    }
+
+    //-----------------------------------------------------------------------
+    // range refinedby
+    //-----------------------------------------------------------------------
+    @DataProvider(name="isofields")
+    Object[][] data_isofields() {
+        return new Object[][] {
+               {IsoFields.DAY_OF_QUARTER},
+               {IsoFields.QUARTER_OF_YEAR},
+               {IsoFields.WEEK_OF_WEEK_BASED_YEAR},
+               {IsoFields.WEEK_BASED_YEAR},
+        };
+    }
+
+    @Test(dataProvider = "isofields")
+    public void test_isofields_rangerefinedby(TemporalField field) {
+        field.rangeRefinedBy(LocalDate.now());
+    }
+
+    @Test(dataProvider = "isofields", expectedExceptions = UnsupportedTemporalTypeException.class)
+    public void test_nonisofields_rangerefinedby(TemporalField field) {
+        field.rangeRefinedBy(ThaiBuddhistDate.now());
     }
 
     //-----------------------------------------------------------------------

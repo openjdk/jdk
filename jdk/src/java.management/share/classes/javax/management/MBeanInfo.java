@@ -670,7 +670,7 @@ public class MBeanInfo implements Cloneable, Serializable, DescriptorRead {
      *    <ul>
      *    <li>1. The method {@link ObjectInputStream#readObject readObject()}
      *       is called twice to obtain the field names (a {@code String[]}) and
-     *       the field values (a {@code Object[]}) of the {@code descriptor}.
+     *       the field values (an {@code Object[]}) of the {@code descriptor}.
      *       The two obtained values then are used to construct
      *       an {@link ImmutableDescriptor} instance for the field
      *       {@code descriptor};</li>

@@ -59,7 +59,9 @@ import java.lang.reflect.Module;
  * @modules java.base/sun.util.logging
  *          java.base/jdk.internal.logger
  *          java.logging/sun.util.logging.internal
- * @run  main/othervm DefaultLoggerBridgeTest
+ * @run  main/othervm DefaultLoggerBridgeTest NOSECURITY
+ * @run  main/othervm DefaultLoggerBridgeTest NOPERMISSIONS
+ * @run  main/othervm DefaultLoggerBridgeTest WITHPERMISSIONS
  * @author danielfuchs
  */
 public class DefaultLoggerBridgeTest {
@@ -275,7 +277,6 @@ public class DefaultLoggerBridgeTest {
             };
 
         Stream.of(args).map(TestCases::valueOf).forEach((testCase) -> {
-            LoggerFinder provider;
             switch (testCase) {
                 case NOSECURITY:
                     System.out.println("\n*** Without Security Manager\n");
@@ -396,10 +397,10 @@ public class DefaultLoggerBridgeTest {
         final boolean old = allowAll.get().get();
         allowAll.get().set(true);
         try {
-            sysSink = LoggingProviderImpl.getLogManagerAccess().demandLoggerFor(
-                    LogManager.getLogManager(), "foo", Thread.class.getModule());
             appSink = LoggingProviderImpl.getLogManagerAccess().demandLoggerFor(
                     LogManager.getLogManager(), "foo", DefaultLoggerBridgeTest.class.getModule());
+            sysSink = LoggingProviderImpl.getLogManagerAccess().demandLoggerFor(
+                    LogManager.getLogManager(), "foo", Thread.class.getModule());
             if (appSink == sysSink) {
                 throw new RuntimeException("identical backend loggers");
             }

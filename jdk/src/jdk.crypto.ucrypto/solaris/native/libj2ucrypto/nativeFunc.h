@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,15 +69,12 @@ typedef int (*UCRYPTO_ENCRYPT_INIT_FN_PTR)
      (crypto_ctx_t *context, ucrypto_mech_t mech_type,
       uchar_t *key_str, size_t key_len,
       void *iv, size_t iv_len);
-
 typedef int (*UCRYPTO_ENCRYPT_UPDATE_FN_PTR)
      (crypto_ctx_t *context, uchar_t *in,
       size_t in_len, uchar_t *out, size_t *out_len);
-
 typedef int (*UCRYPTO_ENCRYPT_FINAL_FN_PTR)
      (crypto_ctx_t *context, uchar_t *out,
       size_t *out_len);
-
 typedef int (*UCRYPTO_ENCRYPT_FN_PTR)
      (ucrypto_mech_t mech_type, uchar_t *key_str,
       size_t key_len, void *iv, size_t iv_len, uchar_t *in,
@@ -87,15 +84,12 @@ typedef int (*UCRYPTO_DECRYPT_INIT_FN_PTR)
      (crypto_ctx_t *context,
       ucrypto_mech_t mech_type, uchar_t *key_str, size_t key_len,
       void *iv, size_t iv_len);
-
 typedef int (*UCRYPTO_DECRYPT_UPDATE_FN_PTR)
      (crypto_ctx_t *context, uchar_t *in,
       size_t in_len, uchar_t *out, size_t *out_len);
-
 typedef int (*UCRYPTO_DECRYPT_FINAL_FN_PTR)
      (crypto_ctx_t *context, uchar_t *out,
       size_t *out_len);
-
 typedef int (*UCRYPTO_DECRYPT_FN_PTR)
      (ucrypto_mech_t mech_type, uchar_t *key_str,
       size_t key_len, void *iv, size_t iv_len, uchar_t *in,
@@ -105,10 +99,8 @@ typedef int (*UCRYPTO_SIGN_INIT_FN_PTR)
      (crypto_ctx_t *context, ucrypto_mech_t mech_type,
       uchar_t *key_str, size_t key_len,
       void *iv, size_t iv_len);
-
 typedef int (*UCRYPTO_SIGN_UPDATE_FN_PTR)
      (crypto_ctx_t *context, uchar_t *data_str, size_t data_len);
-
 typedef int (*UCRYPTO_SIGN_FINAL_FN_PTR)
      (crypto_ctx_t *context, uchar_t *sig_str, size_t *sig_len);
 
@@ -116,12 +108,23 @@ typedef int (*UCRYPTO_VERIFY_INIT_FN_PTR)
      (crypto_ctx_t *context, ucrypto_mech_t mech_type,
       uchar_t *key_str, size_t key_len,
       void *iv, size_t iv_len);
-
 typedef int (*UCRYPTO_VERIFY_UPDATE_FN_PTR)
      (crypto_ctx_t *context, uchar_t *data_str, size_t data_len);
-
 typedef int (*UCRYPTO_VERIFY_FINAL_FN_PTR)
      (crypto_ctx_t *context, uchar_t *sig_str, size_t *sig_len);
+
+typedef int (*UCRYPTO_DIGEST_INIT_FN_PTR)
+     (crypto_ctx_t *context, ucrypto_mech_t mech_type,
+      void *param, size_t param_len);
+typedef int (*UCRYPTO_DIGEST_UPDATE_FN_PTR)
+     (crypto_ctx_t *context, const uchar_t *data, size_t data_len);
+typedef int (*UCRYPTO_DIGEST_FINAL_FN_PTR)
+     (crypto_ctx_t *context, uchar_t *digest, size_t *digest_len);
+
+typedef void (*UCRYPTO_FREE_CONTEXT_FN_PTR)
+     (crypto_ctx_t *context);
+
+typedef char* (*UCRYPTO_STRERROR_FN_PTR)(int rv);
 
 
 
@@ -153,6 +156,11 @@ typedef struct T4CRYPTO_FUNCTION_TABLE {
   UCRYPTO_VERIFY_INIT_FN_PTR     ucryptoVerifyInit;
   UCRYPTO_VERIFY_UPDATE_FN_PTR   ucryptoVerifyUpdate;
   UCRYPTO_VERIFY_FINAL_FN_PTR    ucryptoVerifyFinal;
+  UCRYPTO_DIGEST_INIT_FN_PTR     ucryptoDigestInit;
+  UCRYPTO_DIGEST_UPDATE_FN_PTR   ucryptoDigestUpdate;
+  UCRYPTO_DIGEST_FINAL_FN_PTR    ucryptoDigestFinal;
+  UCRYPTO_FREE_CONTEXT_FN_PTR    ucryptoFreeContext;
+  UCRYPTO_STRERROR_FN_PTR        ucryptoStrerror;
 } T4CRYPTO_FUNCTION_TABLE;
 
 typedef T4CRYPTO_FUNCTION_TABLE *T4CRYPTO_FUNCTION_TABLE_PTR;

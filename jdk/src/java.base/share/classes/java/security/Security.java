@@ -549,7 +549,7 @@ public final class Security {
 
     /**
      * Returns an array containing all installed providers that satisfy the
-     * specified* selection criteria, or null if no such providers have been
+     * specified selection criteria, or null if no such providers have been
      * installed. The returned providers are ordered
      * according to their
      * {@linkplain #insertProviderAt(java.security.Provider, int)

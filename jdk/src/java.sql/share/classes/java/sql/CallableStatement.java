@@ -1882,7 +1882,7 @@ public interface CallableStatement extends PreparedStatement {
        throws SQLException;
 
     /**
-     * Sets the designated parameter to a {@code InputStream} object.
+     * Sets the designated parameter to an {@code InputStream} object.
      * The <code>Inputstream</code> must contain the number
      * of characters specified by length, otherwise a <code>SQLException</code> will be
      * generated when the <code>CallableStatement</code> is executed.
@@ -2379,7 +2379,7 @@ public interface CallableStatement extends PreparedStatement {
        throws SQLException;
 
     /**
-     * Sets the designated parameter to a {@code InputStream} object.
+     * Sets the designated parameter to an {@code InputStream} object.
      * This method differs from the <code>setBinaryStream (int, InputStream)</code>
      * method because it informs the driver that the parameter value should be
      * sent to the server as a <code>BLOB</code>.  When the <code>setBinaryStream</code> method is used,
