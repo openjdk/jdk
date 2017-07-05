@@ -29,8 +29,6 @@
 #include "gc_implementation/g1/survRateGroup.hpp"
 #include "memory/allocation.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 SurvRateGroup::SurvRateGroup(G1CollectorPolicy* g1p,
                              const char* name,
                              size_t summary_surv_rates_len) :

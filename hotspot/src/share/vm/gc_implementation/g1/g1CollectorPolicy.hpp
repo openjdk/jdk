@@ -700,6 +700,8 @@ public:
   void record_heap_size_info_at_start(bool full);
 
   // Print heap sizing transition (with less and more detail).
+
+  void print_heap_transition(size_t bytes_before);
   void print_heap_transition();
   void print_detailed_heap_transition(bool full = false);
 

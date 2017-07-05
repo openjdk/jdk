@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ class ParallelScavengeHeap : public CollectedHeap {
     MarkSweep
   };
 
-  ParallelScavengeHeap::Name kind() const {
+  virtual Name kind() const {
     return CollectedHeap::ParallelScavengeHeap;
   }
 
@@ -140,10 +140,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   bool is_in(const void* p) const;
 
   bool is_in_reserved(const void* p) const;
-
-#ifdef ASSERT
-  virtual bool is_in_partial_collection(const void *p);
-#endif
 
   bool is_in_young(oop p);  // reserved part
   bool is_in_old(oop p);    // reserved part

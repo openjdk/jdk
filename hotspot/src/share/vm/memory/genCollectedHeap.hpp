@@ -67,8 +67,6 @@ public:
   Generation* _young_gen;
   Generation* _old_gen;
 
-  GenerationSpec** _gen_specs;
-
   // The singleton Gen Remembered Set.
   GenRemSet* _rem_set;
 
@@ -141,12 +139,12 @@ public:
   // Initialize ("weak") refs processing support
   virtual void ref_processing_init();
 
-  virtual CollectedHeap::Name kind() const {
+  virtual Name kind() const {
     return CollectedHeap::GenCollectedHeap;
   }
 
-  Generation* young_gen() { return _young_gen; }
-  Generation* old_gen()   { return _old_gen; }
+  Generation* young_gen() const { return _young_gen; }
+  Generation* old_gen()   const { return _old_gen; }
 
   // The generational collector policy.
   GenCollectorPolicy* gen_policy() const { return _gen_policy; }
@@ -217,7 +215,7 @@ public:
   bool is_in_young(oop p);
 
 #ifdef ASSERT
-  virtual bool is_in_partial_collection(const void* p);
+  bool is_in_partial_collection(const void* p);
 #endif
 
   virtual bool is_scavengable(const void* addr) {
