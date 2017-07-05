@@ -26,7 +26,7 @@
  * @bug 8076987
  * @bug 8078438
  * @summary Verify UseCondCardMark works
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build Basic
  * @run main/othervm -Xint Basic
  * @run main/othervm -Xint -XX:+UseCondCardMark Basic

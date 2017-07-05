@@ -30,7 +30,7 @@ import java.util.EnumSet;
  * @test
  * @bug 8015774
  * @summary Verify that PrintCodeCache option print correct information.
- * @library /testlibrary .. /../../test/lib
+ * @library /testlibrary .. /test/lib
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management

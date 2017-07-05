@@ -2190,7 +2190,7 @@ run:
                 result->set_mark(markOopDesc::prototype());
               }
               result->set_klass_gap(0);
-              result->set_klass(k_entry);
+              result->set_klass(ik);
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.
               OrderAccess::storestore();

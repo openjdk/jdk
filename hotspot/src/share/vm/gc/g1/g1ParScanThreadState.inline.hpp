@@ -101,7 +101,7 @@ inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
     // so that the heap remains parsable in case of evacuation failure.
     to_obj_array->set_length(end);
   }
-  _scanner.set_region(_g1h->heap_region_containing_raw(to_obj));
+  _scanner.set_region(_g1h->heap_region_containing(to_obj));
   // Process indexes [start,end). It will also process the header
   // along with the first chunk (i.e., the chunk with start == 0).
   // Note that at this point the length field of to_obj_array is not
@@ -115,10 +115,7 @@ inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
 
 template <class T> inline void G1ParScanThreadState::deal_with_reference(T* ref_to_scan) {
   if (!has_partial_array_mask(ref_to_scan)) {
-    // Note: we can use "raw" versions of "region_containing" because
-    // "obj_to_scan" is definitely in the heap, and is not in a
-    // humongous region.
-    HeapRegion* r = _g1h->heap_region_containing_raw(ref_to_scan);
+    HeapRegion* r = _g1h->heap_region_containing(ref_to_scan);
     do_oop_evac(ref_to_scan, r);
   } else {
     do_oop_partial_array((oop*)ref_to_scan);

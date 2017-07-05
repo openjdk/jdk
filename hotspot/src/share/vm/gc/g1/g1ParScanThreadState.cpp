@@ -216,7 +216,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
                                                  oop const old,
                                                  markOop const old_mark) {
   const size_t word_sz = old->size();
-  HeapRegion* const from_region = _g1h->heap_region_containing_raw(old);
+  HeapRegion* const from_region = _g1h->heap_region_containing(old);
   // +1 to make the -1 indexes valid...
   const int young_index = from_region->young_index_in_cset()+1;
   assert( (from_region->is_young() && young_index >  0) ||
@@ -294,9 +294,9 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
     if (G1StringDedup::is_enabled()) {
       const bool is_from_young = state.is_young();
       const bool is_to_young = dest_state.is_young();
-      assert(is_from_young == _g1h->heap_region_containing_raw(old)->is_young(),
+      assert(is_from_young == _g1h->heap_region_containing(old)->is_young(),
              "sanity");
-      assert(is_to_young == _g1h->heap_region_containing_raw(obj)->is_young(),
+      assert(is_to_young == _g1h->heap_region_containing(obj)->is_young(),
              "sanity");
       G1StringDedup::enqueue_from_evacuation(is_from_young,
                                              is_to_young,
@@ -314,7 +314,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
       oop* old_p = set_partial_array_mask(old);
       push_on_queue(old_p);
     } else {
-      HeapRegion* const to_region = _g1h->heap_region_containing_raw(obj_ptr);
+      HeapRegion* const to_region = _g1h->heap_region_containing(obj_ptr);
       _scanner.set_region(to_region);
       obj->oop_iterate_backwards(&_scanner);
     }
