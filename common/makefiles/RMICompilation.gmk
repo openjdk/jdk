@@ -24,74 +24,74 @@
 #
 
 define SetupRMICompilation
-    # param 1 is a name for a variable to depend on.
-    # param 2 and up are named args.
-    #   CLASSES:=List of classes to generate stubs for
-    #   CLASSES_DIR:=Directory where to look for classes
-    #   STUB_CLASSES_DIR:=Directory in where to put stub classes
-    #   RUN_V11:=Set to run rmic with -v1.1
-    #   RUN_V12:=Set to run rmic with -v1.2
-    #   RUN_IIOP:=Set to run rmic with -iiop
-    #   RUN_IIOP_STDPKG:=Set to run rmic with -iiop -standardPackage
-    #   KEEP_GENERATED:=Set to keep generated sources around
-    $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
-    $(call LogSetupMacroEntry,SetupRMICompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
-    $(if $(16),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
+  # param 1 is a name for a variable to depend on.
+  # param 2 and up are named args.
+  #   CLASSES:=List of classes to generate stubs for
+  #   CLASSES_DIR:=Directory where to look for classes
+  #   STUB_CLASSES_DIR:=Directory in where to put stub classes
+  #   RUN_V11:=Set to run rmic with -v1.1
+  #   RUN_V12:=Set to run rmic with -v1.2
+  #   RUN_IIOP:=Set to run rmic with -iiop
+  #   RUN_IIOP_STDPKG:=Set to run rmic with -iiop -standardPackage
+  #   KEEP_GENERATED:=Set to keep generated sources around
+  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NEWLINE))
+  $(call LogSetupMacroEntry,SetupRMICompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
+  $(if $(16),$(error Internal makefile error: Too many arguments to SetupRMICompilation, please update RMICompilation.gmk))
 
-    $1_DEP_FILE := $$($1_STUB_CLASSES_DIR)/$1_rmic
+  $1_DEP_FILE := $$($1_STUB_CLASSES_DIR)/$1_rmic
 
-    $1_CLASSES_SLASH := $$(subst .,/,$$($1_CLASSES))
-    $1_CLASS_FILES := $$(addprefix $$($1_CLASSES_DIR)/,$$(addsuffix .class,$$($1_CLASSES_SLASH)))
-    $1_STUB_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/,$$(addsuffix _Stub.class,$$($1_CLASSES_SLASH)))
-    $1_TARGETS := $$($1_STUB_FILES)
-    $1_ARGS :=
-    ifneq (,$$($1_RUN_V11))
-        $1_SKEL_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/,$$(addsuffix _Skel.class,$$($1_CLASSES_SLASH)))
-        $1_TARGETS += $$($1_SKEL_FILES)
-        $1_ARGS += -v1.1
-    endif
-    ifneq (,$$($1_RUN_V12))
-        $1_ARGS += -v1.2
-    endif
+  $1_CLASSES_SLASH := $$(subst .,/,$$($1_CLASSES))
+  $1_CLASS_FILES := $$(addprefix $$($1_CLASSES_DIR)/,$$(addsuffix .class,$$($1_CLASSES_SLASH)))
+  $1_STUB_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/,$$(addsuffix _Stub.class,$$($1_CLASSES_SLASH)))
+  $1_TARGETS := $$($1_STUB_FILES)
+  $1_ARGS :=
+  ifneq (,$$($1_RUN_V11))
+    $1_SKEL_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/,$$(addsuffix _Skel.class,$$($1_CLASSES_SLASH)))
+    $1_TARGETS += $$($1_SKEL_FILES)
+    $1_ARGS += -v1.1
+  endif
+  ifneq (,$$($1_RUN_V12))
+    $1_ARGS += -v1.2
+  endif
 
-    $1_TIE_BASE_FILES := $$(foreach f,$$($1_CLASSES_SLASH),$$(dir $$f)_$$(notdir $$f))
-    $1_TIE_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/org/omg/stub/,$$(addsuffix _Tie.class,$$($1_TIE_BASE_FILES)))
-    $1_TIE_STDPKG_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/,$$(addsuffix _Tie.class,$$($1_TIE_BASE_FILES)))
+  $1_TIE_BASE_FILES := $$(foreach f,$$($1_CLASSES_SLASH),$$(dir $$f)_$$(notdir $$f))
+  $1_TIE_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/org/omg/stub/,$$(addsuffix _Tie.class,$$($1_TIE_BASE_FILES)))
+  $1_TIE_STDPKG_FILES := $$(addprefix $$($1_STUB_CLASSES_DIR)/,$$(addsuffix _Tie.class,$$($1_TIE_BASE_FILES)))
 
-    ifneq (,$$($1_RUN_IIOP))
-        $1_TARGETS += $$($1_TIE_FILES)
-        $1_ARGS += -iiop
-    endif
-    ifneq (,$$($1_RUN_IIOP_STDPKG))
-        $1_TARGETS += $$($1_TIE_STDPKG_FILES)
-        $1_ARGS2 := -iiop -standardPackage
-    endif
+  ifneq (,$$($1_RUN_IIOP))
+    $1_TARGETS += $$($1_TIE_FILES)
+    $1_ARGS += -iiop
+  endif
+  ifneq (,$$($1_RUN_IIOP_STDPKG))
+    $1_TARGETS += $$($1_TIE_STDPKG_FILES)
+    $1_ARGS2 := -iiop -standardPackage
+  endif
 
-    ifneq (,$$($1_KEEP_GENERATED))
-        $1_ARGS += -keepgenerated
-        $1_TARGETS += $$(subst .class,.java,$$($1_TARGETS))
-    endif
+  ifneq (,$$($1_KEEP_GENERATED))
+    $1_ARGS += -keepgenerated
+    $1_TARGETS += $$(subst .class,.java,$$($1_TARGETS))
+  endif
 
-    $1_DOLLAR_SAFE_CLASSES := $$(subst $$$$,\$$$$,$$($1_CLASSES))
+  $1_DOLLAR_SAFE_CLASSES := $$(subst $$$$,\$$$$,$$($1_CLASSES))
 
-    $$($1_TARGETS): $$($1_DEP_FILE) $$($1_CLASS_FILES)
+  $$($1_TARGETS): $$($1_DEP_FILE) $$($1_CLASS_FILES)
 
-    $$($1_DEP_FILE): $$($1_CLASS_FILES)
+  $$($1_DEP_FILE): $$($1_CLASS_FILES)
 	$(MKDIR) -p $$($1_STUB_CLASSES_DIR)
 	if [ "x$$($1_ARGS)" != "x" ]; then \
-	    $(ECHO) $(LOG_INFO) Running rmic $$($1_ARGS) for $$($1_DOLLAR_SAFE_CLASSES) &&\
-	    $(RMIC) $$($1_ARGS) -classpath "$$($1_CLASSES_DIR)" \
-			-d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES);\
+	  $(ECHO) $(LOG_INFO) Running rmic $$($1_ARGS) for $$($1_DOLLAR_SAFE_CLASSES) && \
+	  $(RMIC) $$($1_ARGS) -classpath "$$($1_CLASSES_DIR)" \
+	      -d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES); \
 	fi;
 	if [ "x$$($1_ARGS2)" != "x" ]; then \
-	    $(ECHO) $(LOG_INFO) Running rmic $$($1_ARGS2) for $$($1_DOLLAR_SAFE_CLASSES) &&\
-	    $(RMIC) $$($1_ARGS2) -classpath "$$($1_CLASSES_DIR)" \
-			-d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES);\
+	  $(ECHO) $(LOG_INFO) Running rmic $$($1_ARGS2) for $$($1_DOLLAR_SAFE_CLASSES) && \
+	  $(RMIC) $$($1_ARGS2) -classpath "$$($1_CLASSES_DIR)" \
+	      -d $$($1_STUB_CLASSES_DIR) $$($1_DOLLAR_SAFE_CLASSES); \
 	fi;
 
 
-    $1 := $$($1_TARGETS)
+  $1 := $$($1_TARGETS)
 
-    # By marking as secondary, this "touch" file doesn't need to be touched and will never exist.
-    .SECONDARY: $$($1_DEP_FILE)
+  # By marking as secondary, this "touch" file doesn't need to be touched and will never exist.
+  .SECONDARY: $$($1_DEP_FILE)
 endef

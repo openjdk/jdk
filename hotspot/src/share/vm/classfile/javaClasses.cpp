@@ -1376,8 +1376,15 @@ char* java_lang_Throwable::print_stack_element_to_buffer(Handle mirror,
   const char* klass_name  = holder->external_name();
   int buf_len = (int)strlen(klass_name);
 
-  // pushing to the stack trace added one.
+  // The method id may point to an obsolete method, can't get more stack information
   Method* method = holder->method_with_idnum(method_id);
+  if (method == NULL) {
+    char* buf = NEW_RESOURCE_ARRAY(char, buf_len + 64);
+    // This is what the java code prints in this case - added Redefined
+    sprintf(buf, "\tat %s.null (Redefined)", klass_name);
+    return buf;
+  }
+
   char* method_name = method->name()->as_C_string();
   buf_len += (int)strlen(method_name);
 
@@ -1773,7 +1780,8 @@ oop java_lang_Throwable::get_stack_trace_element(oop throwable, int index, TRAPS
   return element;
 }
 
-oop java_lang_StackTraceElement::create(Handle mirror, int method_id, int version, int bci, TRAPS) {
+oop java_lang_StackTraceElement::create(Handle mirror, int method_id,
+                                        int version, int bci, TRAPS) {
   // Allocate java.lang.StackTraceElement instance
   Klass* k = SystemDictionary::StackTraceElement_klass();
   assert(k != NULL, "must be loaded in 1.4+");
@@ -1790,8 +1798,16 @@ oop java_lang_StackTraceElement::create(Handle mirror, int method_id, int versio
   oop classname = StringTable::intern((char*) str, CHECK_0);
   java_lang_StackTraceElement::set_declaringClass(element(), classname);
 
-  // Fill in method name
   Method* method = holder->method_with_idnum(method_id);
+  // Method on stack may be obsolete because it was redefined so cannot be
+  // found by idnum.
+  if (method == NULL) {
+    // leave name and fileName null
+    java_lang_StackTraceElement::set_lineNumber(element(), -1);
+    return element();
+  }
+
+  // Fill in method name
   oop methodname = StringTable::intern(method->name(), CHECK_0);
   java_lang_StackTraceElement::set_methodName(element(), methodname);
 

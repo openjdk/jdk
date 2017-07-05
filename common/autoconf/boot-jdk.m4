@@ -44,7 +44,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring])
           AC_MSG_NOTICE([(This might be an JRE instead of an JDK)])
           BOOT_JDK_FOUND=no
-        else 
+        else
           # Do we have an rt.jar? (On MacOSX it is called classes.jar)
           if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
             AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring])
@@ -79,70 +79,70 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
 # Test: Is bootjdk explicitely set by command line arguments?
 AC_DEFUN([BOOTJDK_CHECK_ARGUMENTS],
 [
-if test "x$with_boot_jdk" != x; then
+  if test "x$with_boot_jdk" != x; then
     BOOT_JDK=$with_boot_jdk
     BOOT_JDK_FOUND=maybe
     AC_MSG_NOTICE([Found potential Boot JDK using configure arguments])
-fi
+  fi
 ])
 
 # Test: Is bootjdk available from builddeps?
 AC_DEFUN([BOOTJDK_CHECK_BUILDDEPS],
 [
-    BDEPS_CHECK_MODULE(BOOT_JDK, bootjdk, xxx, [BOOT_JDK_FOUND=maybe], [BOOT_JDK_FOUND=no])
+  BDEPS_CHECK_MODULE(BOOT_JDK, bootjdk, xxx, [BOOT_JDK_FOUND=maybe], [BOOT_JDK_FOUND=no])
 ])
 
 # Test: Is $JAVA_HOME set?
 AC_DEFUN([BOOTJDK_CHECK_JAVA_HOME],
 [
-    if test "x$JAVA_HOME" != x; then
-        JAVA_HOME_PROCESSED="$JAVA_HOME"
-        BASIC_FIXUP_PATH(JAVA_HOME_PROCESSED)
-        if test ! -d "$JAVA_HOME_PROCESSED"; then
-            AC_MSG_NOTICE([Your JAVA_HOME points to a non-existing directory!])
-        else
-          # Aha, the user has set a JAVA_HOME
-          # let us use that as the Boot JDK.
-          BOOT_JDK="$JAVA_HOME_PROCESSED"
-          BOOT_JDK_FOUND=maybe
-          AC_MSG_NOTICE([Found potential Boot JDK using JAVA_HOME])
-        fi
+  if test "x$JAVA_HOME" != x; then
+    JAVA_HOME_PROCESSED="$JAVA_HOME"
+    BASIC_FIXUP_PATH(JAVA_HOME_PROCESSED)
+    if test ! -d "$JAVA_HOME_PROCESSED"; then
+      AC_MSG_NOTICE([Your JAVA_HOME points to a non-existing directory!])
+    else
+      # Aha, the user has set a JAVA_HOME
+      # let us use that as the Boot JDK.
+      BOOT_JDK="$JAVA_HOME_PROCESSED"
+      BOOT_JDK_FOUND=maybe
+      AC_MSG_NOTICE([Found potential Boot JDK using JAVA_HOME])
     fi
+  fi
 ])
 
 # Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
 AC_DEFUN([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK],
 [
-    AC_PATH_PROG(JAVAC_CHECK, javac)
-    AC_PATH_PROG(JAVA_CHECK, java)
-    BINARY="$JAVAC_CHECK"
-    if test "x$JAVAC_CHECK" = x; then
-        BINARY="$JAVA_CHECK"
+  AC_PATH_PROG(JAVAC_CHECK, javac)
+  AC_PATH_PROG(JAVA_CHECK, java)
+  BINARY="$JAVAC_CHECK"
+  if test "x$JAVAC_CHECK" = x; then
+    BINARY="$JAVA_CHECK"
+  fi
+  if test "x$BINARY" != x; then
+    # So there is a java(c) binary, it might be part of a JDK.
+    # Lets find the JDK/JRE directory by following symbolic links.
+    # Linux/GNU systems often have links from /usr/bin/java to
+    # /etc/alternatives/java to the real JDK binary.
+    BASIC_REMOVE_SYMBOLIC_LINKS(BINARY)
+    BOOT_JDK=`dirname "$BINARY"`
+    BOOT_JDK=`cd "$BOOT_JDK/.."; pwd`
+    if test -x "$BOOT_JDK/bin/javac" && test -x "$BOOT_JDK/bin/java"; then
+      # Looks like we found ourselves an JDK
+      BOOT_JDK_FOUND=maybe
+      AC_MSG_NOTICE([Found potential Boot JDK using java(c) in PATH])
     fi
-    if test "x$BINARY" != x; then
-        # So there is a java(c) binary, it might be part of a JDK.
-        # Lets find the JDK/JRE directory by following symbolic links.
-        # Linux/GNU systems often have links from /usr/bin/java to 
-        # /etc/alternatives/java to the real JDK binary.
-        BASIC_REMOVE_SYMBOLIC_LINKS(BINARY)
-        BOOT_JDK=`dirname "$BINARY"`
-        BOOT_JDK=`cd "$BOOT_JDK/.."; pwd`
-        if test -x "$BOOT_JDK/bin/javac" && test -x "$BOOT_JDK/bin/java"; then
-            # Looks like we found ourselves an JDK
-            BOOT_JDK_FOUND=maybe
-            AC_MSG_NOTICE([Found potential Boot JDK using java(c) in PATH])
-        fi
-    fi
+  fi
 ])
 
 # Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
 AC_DEFUN([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME],
 [
-    if test -x /usr/libexec/java_home; then
-        BOOT_JDK=`/usr/libexec/java_home`
-        BOOT_JDK_FOUND=maybe
-        AC_MSG_NOTICE([Found potential Boot JDK using /usr/libexec/java_home])
-    fi
+  if test -x /usr/libexec/java_home; then
+    BOOT_JDK=`/usr/libexec/java_home`
+    BOOT_JDK_FOUND=maybe
+    AC_MSG_NOTICE([Found potential Boot JDK using /usr/libexec/java_home])
+  fi
 ])
 
 # Look for a jdk in the given path. If there are multiple, try to select the newest.
@@ -204,123 +204,123 @@ AC_DEFUN([BOOTJDK_CHECK_TOOL_IN_BOOTJDK],
   AC_MSG_CHECKING([for $2 in Boot JDK])
   $1=$BOOT_JDK/bin/$2
   if test ! -x [$]$1; then
-      AC_MSG_RESULT(not found)
-      AC_MSG_NOTICE([Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk])
-      AC_MSG_ERROR([Could not find $2 in the Boot JDK])
+    AC_MSG_RESULT(not found)
+    AC_MSG_NOTICE([Your Boot JDK seems broken. This might be fixed by explicitely setting --with-boot-jdk])
+    AC_MSG_ERROR([Could not find $2 in the Boot JDK])
   fi
   AC_MSG_RESULT(ok)
 ])
 
 ###############################################################################
 #
-# We need a Boot JDK to bootstrap the build. 
+# We need a Boot JDK to bootstrap the build.
 #
 
 AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
 [
-BOOT_JDK_FOUND=no
-AC_ARG_WITH(boot-jdk, [AS_HELP_STRING([--with-boot-jdk],
-    [path to Boot JDK (used to bootstrap build) @<:@probed@:>@])])
+  BOOT_JDK_FOUND=no
+  AC_ARG_WITH(boot-jdk, [AS_HELP_STRING([--with-boot-jdk],
+      [path to Boot JDK (used to bootstrap build) @<:@probed@:>@])])
 
-# We look for the Boot JDK through various means, going from more certain to
-# more of a guess-work. After each test, BOOT_JDK_FOUND is set to "yes" if
-# we detected something (if so, the path to the jdk is in BOOT_JDK). But we 
-# must check if this is indeed valid; otherwise we'll continue looking.
+  # We look for the Boot JDK through various means, going from more certain to
+  # more of a guess-work. After each test, BOOT_JDK_FOUND is set to "yes" if
+  # we detected something (if so, the path to the jdk is in BOOT_JDK). But we
+  # must check if this is indeed valid; otherwise we'll continue looking.
 
-# Test: Is bootjdk explicitely set by command line arguments?
-BOOTJDK_DO_CHECK([BOOTJDK_CHECK_ARGUMENTS])
-if test "x$with_boot_jdk" != x && test "x$BOOT_JDK_FOUND" = xno; then
-  # Having specified an argument which is incorrect will produce an instant failure;
-  # we should not go on looking
-  AC_MSG_ERROR([The path given by --with-boot-jdk does not contain a valid Boot JDK])
-fi
+  # Test: Is bootjdk explicitely set by command line arguments?
+  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_ARGUMENTS])
+  if test "x$with_boot_jdk" != x && test "x$BOOT_JDK_FOUND" = xno; then
+    # Having specified an argument which is incorrect will produce an instant failure;
+    # we should not go on looking
+    AC_MSG_ERROR([The path given by --with-boot-jdk does not contain a valid Boot JDK])
+  fi
 
-# Test: Is bootjdk available from builddeps?
-BOOTJDK_DO_CHECK([BOOTJDK_CHECK_BUILDDEPS])
+  # Test: Is bootjdk available from builddeps?
+  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_BUILDDEPS])
 
-# Test: Is $JAVA_HOME set?
-BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_HOME])
+  # Test: Is $JAVA_HOME set?
+  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_HOME])
 
-# Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
-BOOTJDK_DO_CHECK([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME])
+  # Test: Is there a /usr/libexec/java_home? (Typically on MacOSX)
+  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_LIBEXEC_JAVA_HOME])
 
-# Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
-BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK])
+  # Test: Is there a java or javac in the PATH, which is a symlink to the JDK?
+  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_JAVA_IN_PATH_IS_SYMLINK])
 
-# Test: Is there a JDK installed in default, well-known locations?
-BOOTJDK_DO_CHECK([BOOTJDK_CHECK_WELL_KNOWN_LOCATIONS])
+  # Test: Is there a JDK installed in default, well-known locations?
+  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_WELL_KNOWN_LOCATIONS])
 
-# If we haven't found anything yet, we've truly lost. Give up.
-if test "x$BOOT_JDK_FOUND" = xno; then
-  HELP_MSG_MISSING_DEPENDENCY([openjdk])
-  AC_MSG_NOTICE([Could not find a valid Boot JDK. $HELP_MSG])
-  AC_MSG_NOTICE([This might be fixed by explicitely setting --with-boot-jdk])
-  AC_MSG_ERROR([Cannot continue])
-fi
+  # If we haven't found anything yet, we've truly lost. Give up.
+  if test "x$BOOT_JDK_FOUND" = xno; then
+    HELP_MSG_MISSING_DEPENDENCY([openjdk])
+    AC_MSG_NOTICE([Could not find a valid Boot JDK. $HELP_MSG])
+    AC_MSG_NOTICE([This might be fixed by explicitely setting --with-boot-jdk])
+    AC_MSG_ERROR([Cannot continue])
+  fi
 
-# Setup proper paths for what we found
-BOOT_RTJAR="$BOOT_JDK/jre/lib/rt.jar"
-if test ! -f "$BOOT_RTJAR"; then
+  # Setup proper paths for what we found
+  BOOT_RTJAR="$BOOT_JDK/jre/lib/rt.jar"
+  if test ! -f "$BOOT_RTJAR"; then
     # On MacOSX it is called classes.jar
     BOOT_RTJAR="$BOOT_JDK/../Classes/classes.jar"
     if test -f "$BOOT_RTJAR"; then
-      # Remove the .. 
+      # Remove the ..
       BOOT_RTJAR="`cd ${BOOT_RTJAR%/*} && pwd`/${BOOT_RTJAR##*/}"
     fi
-fi
-BOOT_TOOLSJAR="$BOOT_JDK/lib/tools.jar"
-BOOT_JDK="$BOOT_JDK"
-AC_SUBST(BOOT_RTJAR)
-AC_SUBST(BOOT_TOOLSJAR)
-AC_SUBST(BOOT_JDK)
+  fi
+  BOOT_TOOLSJAR="$BOOT_JDK/lib/tools.jar"
+  BOOT_JDK="$BOOT_JDK"
+  AC_SUBST(BOOT_RTJAR)
+  AC_SUBST(BOOT_TOOLSJAR)
+  AC_SUBST(BOOT_JDK)
 
-# Setup tools from the Boot JDK.
-BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVA,java)
-BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC,javac)
-BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAH,javah)
-BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAP,javap)
-BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR,jar)
-BOOTJDK_CHECK_TOOL_IN_BOOTJDK(RMIC,rmic)
-BOOTJDK_CHECK_TOOL_IN_BOOTJDK(NATIVE2ASCII,native2ascii)
+  # Setup tools from the Boot JDK.
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVA,java)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAC,javac)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAH,javah)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAVAP,javap)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(JAR,jar)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(RMIC,rmic)
+  BOOTJDK_CHECK_TOOL_IN_BOOTJDK(NATIVE2ASCII,native2ascii)
 
-# Finally, set some other options...
+  # Finally, set some other options...
 
-# When compiling code to be executed by the Boot JDK, force jdk7 compatibility.
-BOOT_JDK_SOURCETARGET="-source 7 -target 7"
-AC_SUBST(BOOT_JDK_SOURCETARGET)
-AC_SUBST(JAVAC_FLAGS)
+  # When compiling code to be executed by the Boot JDK, force jdk7 compatibility.
+  BOOT_JDK_SOURCETARGET="-source 7 -target 7"
+  AC_SUBST(BOOT_JDK_SOURCETARGET)
+  AC_SUBST(JAVAC_FLAGS)
 ])
 
 AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
 [
-##############################################################################
-#
-# Specify options for anything that is run with the Boot JDK.
-#
-AC_ARG_WITH(boot-jdk-jvmargs, [AS_HELP_STRING([--with-boot-jdk-jvmargs],
-	[specify JVM arguments to be passed to all invocations of the Boot JDK, overriding the default values,
-     e.g --with-boot-jdk-jvmargs="-Xmx8G -enableassertions"])])
+  ##############################################################################
+  #
+  # Specify options for anything that is run with the Boot JDK.
+  #
+  AC_ARG_WITH(boot-jdk-jvmargs, [AS_HELP_STRING([--with-boot-jdk-jvmargs],
+  [specify JVM arguments to be passed to all invocations of the Boot JDK, overriding the default values,
+  e.g --with-boot-jdk-jvmargs="-Xmx8G -enableassertions"])])
 
-if test "x$with_boot_jdk_jvmargs" = x; then
+  if test "x$with_boot_jdk_jvmargs" = x; then
     # Not all JVM:s accept the same arguments on the command line.
     # OpenJDK specific increase in thread stack for JDK build,
     # well more specifically, when running javac.
     if test "x$BUILD_NUM_BITS" = x32; then
-       STACK_SIZE=768
+      STACK_SIZE=768
     else
-       # Running Javac on a JVM on a 64-bit machine, the stack takes more space
-       # since 64-bit pointers are pushed on the stach. Apparently, we need
-       # to increase the stack space when javacing the JDK....
-       STACK_SIZE=1536
+      # Running Javac on a JVM on a 64-bit machine, the stack takes more space
+      # since 64-bit pointers are pushed on the stach. Apparently, we need
+      # to increase the stack space when javacing the JDK....
+      STACK_SIZE=1536
     fi
 
     # Minimum amount of heap memory.
     ADD_JVM_ARG_IF_OK([-Xms64M],boot_jdk_jvmargs,[$JAVA])
     if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-        # Why does macosx need more heap? Its the huge JDK batch.
-        ADD_JVM_ARG_IF_OK([-Xmx1600M],boot_jdk_jvmargs,[$JAVA])
+      # Why does macosx need more heap? Its the huge JDK batch.
+      ADD_JVM_ARG_IF_OK([-Xmx1600M],boot_jdk_jvmargs,[$JAVA])
     else
-        ADD_JVM_ARG_IF_OK([-Xmx1100M],boot_jdk_jvmargs,[$JAVA])
+      ADD_JVM_ARG_IF_OK([-Xmx1100M],boot_jdk_jvmargs,[$JAVA])
     fi
     # When is adding -client something that speeds up the JVM?
     # ADD_JVM_ARG_IF_OK([-client],boot_jdk_jvmargs,[$JAVA])
@@ -329,7 +329,7 @@ if test "x$with_boot_jdk_jvmargs" = x; then
     ADD_JVM_ARG_IF_OK([-XX:ThreadStackSize=$STACK_SIZE],boot_jdk_jvmargs,[$JAVA])
     # Disable special log output when a debug build is used as Boot JDK...
     ADD_JVM_ARG_IF_OK([-XX:-PrintVMOptions -XX:-UnlockDiagnosticVMOptions -XX:-LogVMOutput],boot_jdk_jvmargs,[$JAVA])
-fi
+  fi
 
-AC_SUBST(BOOT_JDK_JVMARGS, $boot_jdk_jvmargs)
+  AC_SUBST(BOOT_JDK_JVMARGS, $boot_jdk_jvmargs)
 ])

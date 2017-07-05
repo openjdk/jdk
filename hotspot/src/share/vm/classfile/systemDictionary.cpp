@@ -1697,6 +1697,24 @@ int SystemDictionary::calculate_systemdictionary_size(int classcount) {
   return newsize;
 }
 
+#ifdef ASSERT
+class VerifySDReachableAndLiveClosure : public OopClosure {
+private:
+  BoolObjectClosure* _is_alive;
+
+  template <class T> void do_oop_work(T* p) {
+    oop obj = oopDesc::load_decode_heap_oop(p);
+    guarantee(_is_alive->do_object_b(obj), "Oop in system dictionary must be live");
+  }
+
+public:
+  VerifySDReachableAndLiveClosure(BoolObjectClosure* is_alive) : OopClosure(), _is_alive(is_alive) { }
+
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+};
+#endif
+
 // Assumes classes in the SystemDictionary are only unloaded at a safepoint
 // Note: anonymous classes are not in the SD.
 bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive) {
@@ -1707,7 +1725,15 @@ bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive) {
     unloading_occurred = dictionary()->do_unloading();
     constraints()->purge_loader_constraints();
     resolution_errors()->purge_resolution_errors();
-}
+  }
+  // Oops referenced by the system dictionary may get unreachable independently
+  // of the class loader (eg. cached protection domain oops). So we need to
+  // explicitly unlink them here instead of in Dictionary::do_unloading.
+  dictionary()->unlink(is_alive);
+#ifdef ASSERT
+  VerifySDReachableAndLiveClosure cl(is_alive);
+  dictionary()->oops_do(&cl);
+#endif
   return unloading_occurred;
 }
 
