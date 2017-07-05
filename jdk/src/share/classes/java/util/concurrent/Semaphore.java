@@ -191,8 +191,11 @@ public class Semaphore implements java.io.Serializable {
 
         protected final boolean tryReleaseShared(int releases) {
             for (;;) {
-                int p = getState();
-                if (compareAndSetState(p, p + releases))
+                int current = getState();
+                int next = current + releases;
+                if (next < current) // overflow
+                    throw new Error("Maximum permit count exceeded");
+                if (compareAndSetState(current, next))
                     return true;
             }
         }
@@ -201,6 +204,8 @@ public class Semaphore implements java.io.Serializable {
             for (;;) {
                 int current = getState();
                 int next = current - reductions;
+                if (next > current) // underflow
+                    throw new Error("Permit count underflow");
                 if (compareAndSetState(current, next))
                     return;
             }

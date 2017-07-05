@@ -69,6 +69,9 @@ final class ServerHandshaker extends Handshaker {
     // flag to check for clientCertificateVerify message
     private boolean             needClientVerify = false;
 
+    // indicate a renegotiation handshaking
+    private boolean             isRenegotiation = false;
+
     /*
      * For exportable ciphersuites using non-exportable key sizes, we use
      * ephemeral RSA keys. We could also do anonymous RSA in the same way
@@ -96,20 +99,28 @@ final class ServerHandshaker extends Handshaker {
      * Constructor ... use the keys found in the auth context.
      */
     ServerHandshaker(SSLSocketImpl socket, SSLContextImpl context,
-            ProtocolList enabledProtocols, byte clientAuth) {
+            ProtocolList enabledProtocols, byte clientAuth,
+            boolean isRenegotiation, ProtocolVersion activeProtocolVersion) {
+
         super(socket, context, enabledProtocols,
                         (clientAuth != SSLEngineImpl.clauth_none), false);
         doClientAuth = clientAuth;
+        this.isRenegotiation = isRenegotiation;
+        this.activeProtocolVersion = activeProtocolVersion;
     }
 
     /*
      * Constructor ... use the keys found in the auth context.
      */
     ServerHandshaker(SSLEngineImpl engine, SSLContextImpl context,
-            ProtocolList enabledProtocols, byte clientAuth) {
+            ProtocolList enabledProtocols, byte clientAuth,
+            boolean isRenegotiation, ProtocolVersion activeProtocolVersion) {
+
         super(engine, context, enabledProtocols,
                         (clientAuth != SSLEngineImpl.clauth_none), false);
         doClientAuth = clientAuth;
+        this.isRenegotiation = isRenegotiation;
+        this.activeProtocolVersion = activeProtocolVersion;
     }
 
     /*
@@ -257,6 +268,45 @@ final class ServerHandshaker extends Handshaker {
         if (debug != null && Debug.isOn("handshake")) {
             mesg.print(System.out);
         }
+
+        // if it is a renegotiation request and renegotiation is not allowed
+        if (isRenegotiation && !renegotiable) {
+            if (activeProtocolVersion.v >= ProtocolVersion.TLS10.v) {
+                // response with a no_negotiation warning,
+                warningSE(Alerts.alert_no_negotiation);
+
+                // invalidate the handshake so that the caller can
+                // dispose this object.
+                invalidated = true;
+
+                // If there is still unread block in the handshake
+                // input stream, it would be truncated with the disposal
+                // and the next handshake message will become incomplete.
+                //
+                // However, according to SSL/TLS specifications, no more
+                // handshake message could immediately follow ClientHello
+                // or HelloRequest. But in case of any improper messages,
+                // we'd better check to ensure there is no remaining bytes
+                // in the handshake input stream.
+                if (input.available() > 0) {
+                    fatalSE(Alerts.alert_unexpected_message,
+                        "ClientHello followed by an unexpected  " +
+                        "handshake message");
+
+                }
+
+                return;
+            } else {
+                // For SSLv3, send the handshake_failure fatal error.
+                // Note that SSLv3 does not define a no_negotiation alert
+                // like TLSv1. However we cannot ignore the message
+                // simply, otherwise the other side was waiting for a
+                // response that would never come.
+                fatalSE(Alerts.alert_handshake_failure,
+                    "renegotiation is not allowed");
+            }
+        }
+
         /*
          * Always make sure this entire record has been digested before we
          * start emitting output, to ensure correct digesting order.

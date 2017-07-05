@@ -28,39 +28,24 @@ package sun.net.www.protocol.https;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.FileInputStream;
 import java.io.PrintStream;
 import java.io.BufferedOutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.CookieHandler;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
 import java.security.Principal;
-import java.security.KeyStore;
-import java.security.PrivateKey;
 import java.security.cert.*;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.util.Collection;
-import java.util.List;
-import java.util.Iterator;
 import java.security.AccessController;
 
 import javax.security.auth.x500.X500Principal;
 
 import javax.net.ssl.*;
-import sun.security.x509.X500Name;
-import sun.misc.Regexp;
-import sun.misc.RegexpPool;
-import sun.net.www.HeaderParser;
-import sun.net.www.MessageHeader;
 import sun.net.www.http.HttpClient;
 import sun.security.action.*;
 
@@ -125,6 +110,7 @@ final class HttpsClient extends HttpClient
     private static final int    httpsPortNumber = 443;
 
     /** Returns the default HTTPS port (443) */
+    @Override
     protected int getDefaultPort() { return httpsPortNumber; }
 
     private HostnameVerifier hv;
@@ -368,11 +354,39 @@ final class HttpsClient extends HttpClient
         return sslSocketFactory;
     }
 
+    /**
+     * The following method, createSocket, is defined in NetworkClient
+     * and overridden here so that the socket facroty is used to create
+     * new sockets.
+     */
+    @Override
+    protected Socket createSocket() throws IOException {
+        try {
+            return sslSocketFactory.createSocket();
+        } catch (SocketException se) {
+            //
+            // bug 6771432
+            // javax.net.SocketFactory throws a SocketException with an
+            // UnsupportedOperationException as its cause to indicate that
+            // unconnected sockets have not been implemented.
+            //
+            Throwable t = se.getCause();
+            if (t != null && t instanceof UnsupportedOperationException) {
+                return super.createSocket();
+            } else {
+                throw se;
+            }
+        }
+    }
+
+
+    @Override
     public boolean needsTunneling() {
         return (proxy != null && proxy.type() != Proxy.Type.DIRECT
                 && proxy.type() != Proxy.Type.SOCKS);
     }
 
+    @Override
     public void afterConnect() throws IOException, UnknownHostException {
         if (!isCachedConnection()) {
             SSLSocket s = null;
@@ -383,6 +397,9 @@ final class HttpsClient extends HttpClient
                                                         host, port, true);
                 } else {
                     s = (SSLSocket)serverSocket;
+                    if (s instanceof SSLSocketImpl) {
+                        ((SSLSocketImpl)s).setHost(host);
+                    }
                 }
             } catch (IOException ex) {
                 // If we fail to connect through the tunnel, try it
@@ -451,7 +468,6 @@ final class HttpsClient extends HttpClient
         //
         // Get authenticated server name, if any
         //
-        boolean done = false;
         String host = url.getHost();
 
         // if IPv6 strip off the "[]"
@@ -467,7 +483,7 @@ final class HttpsClient extends HttpClient
 
             // Use ciphersuite to determine whether Kerberos is present.
             if (cipher.startsWith("TLS_KRB5")) {
-                if (!checker.match(host, getPeerPrincipal())) {
+                if (!HostnameChecker.match(host, getPeerPrincipal())) {
                     throw new SSLPeerUnverifiedException("Hostname checker" +
                                 " failed for Kerberos");
                 }
@@ -514,6 +530,7 @@ final class HttpsClient extends HttpClient
                               + url.getHost() + ">");
     }
 
+    @Override
     protected void putInKeepAliveCache() {
         kac.put(url, sslSocketFactory, this);
     }
@@ -521,6 +538,7 @@ final class HttpsClient extends HttpClient
     /*
      * Close an idle connection to this URL (if it exists in the cache).
      */
+    @Override
     public void closeIdleConnection() {
         HttpClient http = (HttpClient) kac.get(url, sslSocketFactory);
         if (http != null) {
@@ -626,11 +644,12 @@ final class HttpsClient extends HttpClient
      * @return the proxy host being used for this client, or null
      *          if we're not going through a proxy
      */
+    @Override
     public String getProxyHostUsed() {
         if (!needsTunneling()) {
             return null;
         } else {
-            return ((InetSocketAddress)proxy.address()).getHostName();
+            return super.getProxyHostUsed();
         }
     }
 
@@ -638,6 +657,7 @@ final class HttpsClient extends HttpClient
      * @return the proxy port being used for this client.  Meaningless
      *          if getProxyHostUsed() gives null.
      */
+    @Override
     public int getProxyPortUsed() {
         return (proxy == null || proxy.type() == Proxy.Type.DIRECT ||
                 proxy.type() == Proxy.Type.SOCKS)? -1:

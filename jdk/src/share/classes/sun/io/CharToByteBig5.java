@@ -26,24 +26,24 @@
 
 package sun.io;
 
+import sun.nio.cs.ext.DoubleByte;
 import sun.nio.cs.ext.Big5;
 
 /**
  * Tables and data to convert Unicode to Big5
  *
- * @author  ConverterGenerator tool
  */
 
-public class CharToByteBig5 extends CharToByteDoubleByte {
+public class CharToByteBig5 extends CharToByteDBCS_ASCII {
 
-    private static final Big5 nioCoder = new Big5();
+    private static DoubleByte.Encoder enc =
+        (DoubleByte.Encoder)new Big5().newEncoder();
 
     public String getCharacterEncoding() {
         return "Big5";
     }
 
     public CharToByteBig5() {
-        super.index1 = nioCoder.getEncoderIndex1();
-        super.index2 = nioCoder.getEncoderIndex2();
+        super(enc);
     }
 }

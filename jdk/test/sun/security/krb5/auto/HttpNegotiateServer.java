@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 6578647
+ * @bug 6578647 6829283
  * @summary Undefined requesting URL in java.net.Authenticator.getPasswordAuthentication()
+ * @summary HTTP/Negotiate: Authenticator triggered again when user cancels the first one
  */
 
 import com.sun.net.httpserver.Headers;
@@ -35,6 +36,8 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpPrincipal;
 import com.sun.security.auth.module.Krb5LoginModule;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -78,6 +81,9 @@ public class HttpNegotiateServer {
 
     // web page content
     final static String CONTENT = "Hello, World!";
+
+    // For 6829283, count how many times the Authenticator is called.
+    static int count = 0;
 
     // URLs for web test, proxy test. The proxy server is not a real proxy
     // since it fakes the same content for any URL. :)
@@ -134,6 +140,17 @@ public class HttpNegotiateServer {
         }
     }
 
+    /**
+     * This Authenticator knows nothing
+     */
+    static class KnowNothingAuthenticator extends java.net.Authenticator {
+        @Override
+        public PasswordAuthentication getPasswordAuthentication () {
+            HttpNegotiateServer.count++;
+            return null;
+        }
+    }
+
     public static void main(String[] args)
             throws Exception {
 
@@ -147,7 +164,6 @@ public class HttpNegotiateServer {
         kdcp.addPrincipalRandKey("krbtgt/" + REALM_PROXY);
         kdcp.addPrincipalRandKey("HTTP/" + PROXY_HOST);
 
-        KDC.writeMultiKtab(KRB5_TAB, kdcw, kdcp);
         KDC.saveConfig(KRB5_CONF, kdcw, kdcp,
                 "default_keytab_name = " + KRB5_TAB,
                 "[domain_realm]",
@@ -157,6 +173,19 @@ public class HttpNegotiateServer {
 
         System.setProperty("java.security.krb5.conf", KRB5_CONF);
         Config.refresh();
+        KDC.writeMultiKtab(KRB5_TAB, kdcw, kdcp);
+
+        // Write a customized JAAS conf file, so that any kinit cache
+        // will be ignored.
+        System.setProperty("java.security.auth.login.config", OneKDC.JAAS_CONF);
+        File f = new File(OneKDC.JAAS_CONF);
+        FileOutputStream fos = new FileOutputStream(f);
+        fos.write((
+                "com.sun.security.jgss.krb5.initiate {\n" +
+                "    com.sun.security.auth.module.Krb5LoginModule required;\n};\n"
+                ).getBytes());
+        fos.close();
+        f.deleteOnExit();
 
         HttpServer h1 = httpd(WEB_PORT, "Negotiate", false,
                 "HTTP/" + WEB_HOST + "@" + REALM_WEB, KRB5_TAB);
@@ -164,28 +193,60 @@ public class HttpNegotiateServer {
                 "HTTP/" + PROXY_HOST + "@" + REALM_PROXY, KRB5_TAB);
 
         try {
-
-            BufferedReader reader;
-            java.net.Authenticator.setDefault(new KnowAllAuthenticator());
-
-            reader = new BufferedReader(new InputStreamReader(
-                    webUrl.openConnection().getInputStream()));
-            if (!reader.readLine().equals(CONTENT)) {
-                throw new RuntimeException("Bad content");
+            Exception e1 = null, e2 = null;
+            try {
+                test6578647();
+            } catch (Exception e) {
+                e1 = e;
+                e.printStackTrace();
             }
-
-            reader = new BufferedReader(new InputStreamReader(
-                    proxyUrl.openConnection(
-                    new Proxy(Proxy.Type.HTTP,
-                        new InetSocketAddress(PROXY_HOST, PROXY_PORT)))
-                    .getInputStream()));
-            if (!reader.readLine().equals(CONTENT)) {
-                throw new RuntimeException("Bad content");
+            try {
+                test6829283();
+            } catch (Exception e) {
+                e2 = e;
+                e.printStackTrace();
+            }
+            if (e1 != null || e2 != null) {
+                throw new RuntimeException("Test error");
             }
         } finally {
             // Must stop. Seems there's no HttpServer.startAsDaemon()
             if (h1 != null) h1.stop(0);
             if (h2 != null) h2.stop(0);
+        }
+    }
+
+    static void test6578647() throws Exception {
+        BufferedReader reader;
+        java.net.Authenticator.setDefault(new KnowAllAuthenticator());
+
+        reader = new BufferedReader(new InputStreamReader(
+                webUrl.openConnection().getInputStream()));
+        if (!reader.readLine().equals(CONTENT)) {
+            throw new RuntimeException("Bad content");
+        }
+
+        reader = new BufferedReader(new InputStreamReader(
+                proxyUrl.openConnection(
+                new Proxy(Proxy.Type.HTTP,
+                    new InetSocketAddress(PROXY_HOST, PROXY_PORT)))
+                .getInputStream()));
+        if (!reader.readLine().equals(CONTENT)) {
+            throw new RuntimeException("Bad content");
+        }
+    }
+
+    static void test6829283() throws Exception {
+        BufferedReader reader;
+        java.net.Authenticator.setDefault(new KnowNothingAuthenticator());
+        try {
+            new BufferedReader(new InputStreamReader(
+                    webUrl.openConnection().getInputStream()));
+        } catch (IOException ioe) {
+            // Will fail since no username and password is provided.
+        }
+        if (count > 1) {
+            throw new RuntimeException("Authenticator called twice");
         }
     }
 

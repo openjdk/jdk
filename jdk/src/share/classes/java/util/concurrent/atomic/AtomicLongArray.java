@@ -56,7 +56,7 @@ public class AtomicLongArray implements java.io.Serializable {
     private long rawIndex(int i) {
         if (i < 0 || i >= array.length)
             throw new IndexOutOfBoundsException("index " + i);
-        return base + i * scale;
+        return base + (long) i * scale;
     }
 
     /**

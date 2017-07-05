@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,11 @@ import sun.security.ssl.CipherSuite.*;
  */
 abstract class Handshaker {
 
-    // current protocol version
+    // protocol version being established using this Handshaker
     ProtocolVersion protocolVersion;
+
+    // the currently active protocol version during a renegotiation
+    ProtocolVersion     activeProtocolVersion;
 
     // list of enabled protocols
     ProtocolList enabledProtocols;
@@ -124,6 +127,13 @@ abstract class Handshaker {
     /* Class and subclass dynamic debugging support */
     static final Debug debug = Debug.getInstance("ssl");
 
+    // By default, disable the unsafe legacy session renegotiation
+    static final boolean renegotiable = Debug.getBooleanProperty(
+                    "sun.security.ssl.allowUnsafeRenegotiation", false);
+
+    // need to dispose the object when it is invalidated
+    boolean invalidated;
+
     Handshaker(SSLSocketImpl c, SSLContextImpl context,
             ProtocolList enabledProtocols, boolean needCertVerify,
             boolean isClient) {
@@ -144,6 +154,7 @@ abstract class Handshaker {
         this.sslContext = context;
         this.isClient = isClient;
         enableNewSession = true;
+        invalidated = false;
 
         setCipherSuite(CipherSuite.C_NULL);
 
@@ -489,7 +500,9 @@ abstract class Handshaker {
      */
     void processLoop() throws IOException {
 
-        while (input.available() > 0) {
+        // need to read off 4 bytes at least to get the handshake
+        // message type and length.
+        while (input.available() >= 4) {
             byte messageType;
             int messageLen;
 
