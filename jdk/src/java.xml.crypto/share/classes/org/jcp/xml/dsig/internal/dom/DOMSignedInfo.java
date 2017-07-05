@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMSignedInfo.java 1333415 2012-05-03 12:03:51Z coheigea $
@@ -45,7 +45,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import com.sun.org.apache.xml.internal.security.utils.Base64;
-import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream;
 
 /**
@@ -55,21 +54,8 @@ import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream
  */
 public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
 
-    /**
-     * The maximum number of references per Manifest, if secure validation is enabled.
-     */
-    public static final int MAXIMUM_REFERENCE_COUNT = 30;
-
     private static java.util.logging.Logger log =
         java.util.logging.Logger.getLogger("org.jcp.xml.dsig.internal.dom");
-
-    /** Signature - NOT Recommended RSAwithMD5 */
-    private static final String ALGO_ID_SIGNATURE_NOT_RECOMMENDED_RSA_MD5 =
-        Constants.MoreAlgorithmsSpecNS + "rsa-md5";
-
-    /** HMAC - NOT Recommended HMAC-MD5 */
-    private static final String ALGO_ID_MAC_HMAC_NOT_RECOMMENDED_MD5 =
-        Constants.MoreAlgorithmsSpecNS + "hmac-md5";
 
     private List<Reference> references;
     private CanonicalizationMethod canonicalizationMethod;
@@ -158,10 +144,10 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
         boolean secVal = Utils.secureValidation(context);
 
         String signatureMethodAlgorithm = signatureMethod.getAlgorithm();
-        if (secVal && ((ALGO_ID_MAC_HMAC_NOT_RECOMMENDED_MD5.equals(signatureMethodAlgorithm)
-                || ALGO_ID_SIGNATURE_NOT_RECOMMENDED_RSA_MD5.equals(signatureMethodAlgorithm)))) {
+        if (secVal && Policy.restrictAlg(signatureMethodAlgorithm)) {
             throw new MarshalException(
-                "It is forbidden to use algorithm " + signatureMethod + " when secure validation is enabled"
+                "It is forbidden to use algorithm " + signatureMethodAlgorithm +
+                " when secure validation is enabled"
             );
         }
 
@@ -179,9 +165,10 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
             }
             refList.add(new DOMReference(refElem, context, provider));
 
-            if (secVal && (refList.size() > MAXIMUM_REFERENCE_COUNT)) {
-                String error = "A maxiumum of " + MAXIMUM_REFERENCE_COUNT + " "
-                    + "references per Manifest are allowed with secure validation";
+            if (secVal && Policy.restrictNumReferences(refList.size())) {
+                String error = "A maximum of " + Policy.maxReferences()
+                    + " references per Manifest are allowed when"
+                    + " secure validation is enabled";
                 throw new MarshalException(error);
             }
             refElem = DOMUtils.getNextSiblingElement(refElem);

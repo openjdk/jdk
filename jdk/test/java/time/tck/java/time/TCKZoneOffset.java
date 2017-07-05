@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,6 +419,21 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
         ZoneOffset.ofHoursMinutesSeconds(-19, 0, 0);
     }
 
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_factory_int_hours_minutes_seconds_minutesMinValue() {
+        ZoneOffset.ofHoursMinutesSeconds(0, Integer.MIN_VALUE, -1);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_factory_int_hours_minutes_seconds_secondsMinValue() {
+        ZoneOffset.ofHoursMinutesSeconds(0, 0, Integer.MIN_VALUE);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_factory_int_hours_minutes_seconds_minutesAndSecondsMinValue() {
+        ZoneOffset.ofHoursMinutesSeconds(0, Integer.MIN_VALUE, Integer.MIN_VALUE);
+    }
+
     //-----------------------------------------------------------------------
     @Test
     public void test_factory_ofTotalSeconds() {
@@ -435,6 +450,11 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
     @Test(expectedExceptions=DateTimeException.class)
     public void test_factory_ofTotalSeconds_tooSmall() {
         ZoneOffset.ofTotalSeconds(-18 * 60 * 60 - 1);
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_factory_ofTotalSeconds_minValue() {
+        ZoneOffset.ofTotalSeconds(Integer.MIN_VALUE);
     }
 
     //-----------------------------------------------------------------------
