@@ -91,6 +91,7 @@ public class TCKClock_Fixed extends AbstractTCKTest {
         Clock test = Clock.fixed(INSTANT, PARIS);
         assertEquals(test.instant(), INSTANT);
         assertEquals(test.getZone(), PARIS);
+   assertEquals(test.instant().getEpochSecond()*1000, test.millis());
     }
 
     @Test(expectedExceptions = NullPointerException.class)

@@ -38,8 +38,12 @@ import jdk.internal.dynalink.DynamicLinkerFactory;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.RuntimeCallSite;
+import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -65,6 +69,41 @@ public final class Bootstrap {
             factory.setUnstableRelinkThreshold(relinkThreshold);
         }
         dynamicLinker = factory.createLinker();
+    }
+
+    /**
+     * Returns if the given object is a "callable"
+     * @param obj object to be checked for callability
+     * @return true if the obj is callable
+     */
+    public static boolean isCallable(final Object obj) {
+        if (obj == ScriptRuntime.UNDEFINED || obj == null) {
+            return false;
+        }
+
+        return obj instanceof ScriptFunction ||
+            ((obj instanceof ScriptObjectMirror) && ((ScriptObjectMirror)obj).isFunction()) ||
+            isDynamicMethod(obj) ||
+            isFunctionalInterfaceObject(obj);
+    }
+
+    /**
+     * Returns if the given object is a dynalink Dynamic method
+     * @param obj object to be checked
+     * @return true if the obj is a dynamic method
+     */
+    public static boolean isDynamicMethod(final Object obj) {
+        return obj instanceof BoundDynamicMethod || BeansLinker.isDynamicMethod(obj);
+    }
+
+    /**
+     * Returns if the given object is an instance of an interface annotated with
+     * java.lang.FunctionalInterface
+     * @param obj object to be checked
+     * @return true if the obj is an instance of @FunctionalInterface interface
+     */
+    public static boolean isFunctionalInterfaceObject(final Object obj) {
+        return !JSType.isPrimitive(obj) && (NashornBottomLinker.getFunctionalInterfaceMethod(obj.getClass()) != null);
     }
 
     /**

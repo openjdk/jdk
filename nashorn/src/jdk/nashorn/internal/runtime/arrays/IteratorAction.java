@@ -31,6 +31,7 @@ import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
  * Helper class for the various map/apply functions in {@link jdk.nashorn.internal.objects.NativeArray}.
@@ -103,6 +104,8 @@ public abstract class IteratorAction<T> {
         } else if (callbackfn instanceof ScriptObjectMirror &&
             ((ScriptObjectMirror)callbackfn).isFunction()) {
             strict = ((ScriptObjectMirror)callbackfn).isStrictFunction();
+        } else if (Bootstrap.isDynamicMethod(callbackfn) || Bootstrap.isFunctionalInterfaceObject(callbackfn)) {
+            strict = false;
         } else {
             throw typeError("not.a.function", ScriptRuntime.safeToString(callbackfn));
         }

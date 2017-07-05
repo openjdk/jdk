@@ -56,16 +56,22 @@
  */
 package tck.java.time.temporal;
 
+import static java.time.format.ResolverStyle.LENIENT;
+import static java.time.format.ResolverStyle.SMART;
+import static java.time.format.ResolverStyle.STRICT;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
-
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertSame;
+import static org.testng.Assert.assertTrue;
 
 import java.io.IOException;
+import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -376,14 +382,13 @@ public class TCKWeekFields extends AbstractTCKTest {
         TemporalField womField = week.weekOfMonth();
 
         for (int i = 1; i <= 60; i++) {
-            // Test that with dayOfWeek and Week of month it computes the date
             DateTimeFormatter f = new DateTimeFormatterBuilder()
-                    .appendValue(YEAR).appendLiteral('-')
-                    .appendValue(MONTH_OF_YEAR).appendLiteral('-')
-                    .appendValue(womField).appendLiteral('-')
-                    .appendValue(DAY_OF_WEEK).toFormatter();
-            String str = date.getYear() + "-" + date.getMonthValue() + "-" +
-                    date.get(womField) + "-" + date.get(DAY_OF_WEEK);
+                    .appendValue(YEAR).appendLiteral(':')
+                    .appendValue(MONTH_OF_YEAR).appendLiteral(':')
+                    .appendValue(womField).appendLiteral(':')
+                    .appendValue(DAY_OF_WEEK).toFormatter().withResolverStyle(SMART);
+            String str = date.getYear() + ":" + date.getMonthValue() + ":" +
+                    date.get(womField) + ":" + date.get(DAY_OF_WEEK);
             LocalDate parsed = LocalDate.parse(str, f);
             assertEquals(parsed, date, " ::" + str + "::" + i);
 
@@ -392,6 +397,52 @@ public class TCKWeekFields extends AbstractTCKTest {
     }
 
     @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWom_lenient(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 15);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField womField = week.weekOfMonth();
+
+        for (int i = 1; i <= 60; i++) {
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(YEAR).appendLiteral(':')
+                    .appendValue(MONTH_OF_YEAR).appendLiteral(':')
+                    .appendValue(womField).appendLiteral(':')
+                    .appendValue(DAY_OF_WEEK).toFormatter().withResolverStyle(LENIENT);
+            int wom = date.get(womField);
+            int dow = date.get(DAY_OF_WEEK);
+            for (int j = wom - 10; j < wom + 10; j++) {
+                String str = date.getYear() + ":" + date.getMonthValue() + ":" + j + ":" + dow;
+                LocalDate parsed = LocalDate.parse(str, f);
+                assertEquals(parsed, date.plusWeeks(j - wom), " ::" + str + ": :" + i + "::" + j);
+            }
+
+            date = date.plusDays(1);
+        }
+    }
+
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWom_strict(DayOfWeek firstDayOfWeek, int minDays) {
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField womField = week.weekOfMonth();
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral(':')
+                .appendValue(MONTH_OF_YEAR).appendLiteral(':')
+                .appendValue(womField).appendLiteral(':')
+                .appendValue(DAY_OF_WEEK).toFormatter().withResolverStyle(STRICT);
+        String str = "2012:1:0:1";
+        try {
+            LocalDate date = LocalDate.parse(str, f);
+            assertEquals(date.getYear(), 2012);
+            assertEquals(date.getMonthValue(), 1);
+            assertEquals(date.get(womField), 0);
+            assertEquals(date.get(DAY_OF_WEEK), 1);
+        } catch (DateTimeException ex) {
+            // expected
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="weekFields")
     public void test_parse_resolve_localizedWomDow(DayOfWeek firstDayOfWeek, int minDays) {
         LocalDate date = LocalDate.of(2012, 12, 15);
         WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
@@ -399,14 +450,13 @@ public class TCKWeekFields extends AbstractTCKTest {
         TemporalField womField = week.weekOfMonth();
 
         for (int i = 1; i <= 15; i++) {
-            // Test that with dayOfWeek and Week of month it computes the date
             DateTimeFormatter f = new DateTimeFormatterBuilder()
-                    .appendValue(YEAR).appendLiteral('-')
-                    .appendValue(MONTH_OF_YEAR).appendLiteral('-')
-                    .appendValue(womField).appendLiteral('-')
+                    .appendValue(YEAR).appendLiteral(':')
+                    .appendValue(MONTH_OF_YEAR).appendLiteral(':')
+                    .appendValue(womField).appendLiteral(':')
                     .appendValue(dowField).toFormatter();
-            String str = date.getYear() + "-" + date.getMonthValue() + "-" +
-                    date.get(womField) + "-" + date.get(dowField);
+            String str = date.getYear() + ":" + date.getMonthValue() + ":" +
+                    date.get(womField) + ":" + date.get(dowField);
             LocalDate parsed = LocalDate.parse(str, f);
             assertEquals(parsed, date, " :: " + str + " " + i);
 
@@ -415,20 +465,44 @@ public class TCKWeekFields extends AbstractTCKTest {
     }
 
     @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWomDow_lenient(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 15);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField dowField = week.dayOfWeek();
+        TemporalField womField = week.weekOfMonth();
+
+        for (int i = 1; i <= 60; i++) {
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(YEAR).appendLiteral(':')
+                    .appendValue(MONTH_OF_YEAR).appendLiteral(':')
+                    .appendValue(womField).appendLiteral(':')
+                    .appendValue(dowField).toFormatter().withResolverStyle(LENIENT);
+            int wom = date.get(womField);
+            int dow = date.get(dowField);
+            for (int j = wom - 10; j < wom + 10; j++) {
+                String str = date.getYear() + ":" + date.getMonthValue() + ":" + j + ":" + dow;
+                LocalDate parsed = LocalDate.parse(str, f);
+                assertEquals(parsed, date.plusWeeks(j - wom), " ::" + str + ": :" + i + "::" + j);
+            }
+
+            date = date.plusDays(1);
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="weekFields")
     public void test_parse_resolve_localizedWoy(DayOfWeek firstDayOfWeek, int minDays) {
         LocalDate date = LocalDate.of(2012, 12, 15);
         WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
         TemporalField woyField = week.weekOfYear();
 
         for (int i = 1; i <= 60; i++) {
-            // Test that with dayOfWeek and Week of month it computes the date
             DateTimeFormatter f = new DateTimeFormatterBuilder()
-                    .appendValue(YEAR).appendLiteral('-')
-                    .appendValue(MONTH_OF_YEAR).appendLiteral('-')
-                    .appendValue(woyField).appendLiteral('-')
+                    .appendValue(YEAR).appendLiteral(':')
+                    .appendValue(woyField).appendLiteral(':')
                     .appendValue(DAY_OF_WEEK).toFormatter();
-            String str = date.getYear() + "-" + date.getMonthValue() + "-" +
-                    date.get(woyField) + "-" + date.get(DAY_OF_WEEK);
+            String str = date.getYear() + ":" +
+                    date.get(woyField) + ":" + date.get(DAY_OF_WEEK);
             LocalDate parsed = LocalDate.parse(str, f);
             assertEquals(parsed, date, " :: " + str + " " + i);
 
@@ -436,6 +510,49 @@ public class TCKWeekFields extends AbstractTCKTest {
         }
     }
 
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWoy_lenient(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 15);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField woyField = week.weekOfYear();
+
+        for (int i = 1; i <= 60; i++) {
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(YEAR).appendLiteral(':')
+                    .appendValue(woyField).appendLiteral(':')
+                    .appendValue(DAY_OF_WEEK).toFormatter().withResolverStyle(LENIENT);
+            int woy = date.get(woyField);
+            int dow = date.get(DAY_OF_WEEK);
+            for (int j = woy - 60; j < woy + 60; j++) {
+                String str = date.getYear() + ":" + j + ":" + dow;
+                LocalDate parsed = LocalDate.parse(str, f);
+                assertEquals(parsed, date.plusWeeks(j - woy), " ::" + str + ": :" + i + "::" + j);
+            }
+
+            date = date.plusDays(1);
+        }
+    }
+
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWoy_strict(DayOfWeek firstDayOfWeek, int minDays) {
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField woyField = week.weekOfYear();
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(YEAR).appendLiteral(':')
+                .appendValue(woyField).appendLiteral(':')
+                .appendValue(DAY_OF_WEEK).toFormatter().withResolverStyle(STRICT);
+        String str = "2012:0:1";
+        try {
+            LocalDate date = LocalDate.parse(str, f);
+            assertEquals(date.getYear(), 2012);
+            assertEquals(date.get(woyField), 0);
+            assertEquals(date.get(DAY_OF_WEEK), 1);
+        } catch (DateTimeException ex) {
+            // expected
+        }
+    }
+
+    //-----------------------------------------------------------------------
     @Test(dataProvider="weekFields")
     public void test_parse_resolve_localizedWoyDow(DayOfWeek firstDayOfWeek, int minDays) {
         LocalDate date = LocalDate.of(2012, 12, 15);
@@ -444,14 +561,13 @@ public class TCKWeekFields extends AbstractTCKTest {
         TemporalField woyField = week.weekOfYear();
 
         for (int i = 1; i <= 60; i++) {
-            // Test that with dayOfWeek and Week of month it computes the date
             DateTimeFormatter f = new DateTimeFormatterBuilder()
-                    .appendValue(YEAR).appendLiteral('-')
-                    .appendValue(MONTH_OF_YEAR).appendLiteral('-')
-                    .appendValue(woyField).appendLiteral('-')
+                    .appendValue(YEAR).appendLiteral(':')
+                    .appendValue(MONTH_OF_YEAR).appendLiteral(':')
+                    .appendValue(woyField).appendLiteral(':')
                     .appendValue(dowField).toFormatter();
-            String str = date.getYear() + "-" + date.getMonthValue() + "-" +
-                    date.get(woyField) + "-" + date.get(dowField);
+            String str = date.getYear() + ":" + date.getMonthValue() + ":" +
+                    date.get(woyField) + ":" + date.get(dowField);
             LocalDate parsed = LocalDate.parse(str, f);
             assertEquals(parsed, date, " :: " + str + " " + i);
 
@@ -460,6 +576,31 @@ public class TCKWeekFields extends AbstractTCKTest {
     }
 
     @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWoyDow_lenient(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 15);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField dowField = week.dayOfWeek();
+        TemporalField woyField = week.weekOfYear();
+
+        for (int i = 1; i <= 60; i++) {
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(YEAR).appendLiteral(':')
+                    .appendValue(woyField).appendLiteral(':')
+                    .appendValue(dowField).toFormatter().withResolverStyle(LENIENT);
+            int woy = date.get(woyField);
+            int dow = date.get(dowField);
+            for (int j = woy - 60; j < woy + 60; j++) {
+                String str = date.getYear() + ":" + j + ":" + dow;
+                LocalDate parsed = LocalDate.parse(str, f);
+                assertEquals(parsed, date.plusWeeks(j - woy), " ::" + str + ": :" + i + "::" + j);
+            }
+
+            date = date.plusDays(1);
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="weekFields")
     public void test_parse_resolve_localizedWoWBY(DayOfWeek firstDayOfWeek, int minDays) {
         LocalDate date = LocalDate.of(2012, 12, 31);
         WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
@@ -467,12 +608,11 @@ public class TCKWeekFields extends AbstractTCKTest {
         TemporalField yowbyField = week.weekBasedYear();
 
         for (int i = 1; i <= 60; i++) {
-            // Test that with dayOfWeek, week of year and year of week-based-year it computes the date
             DateTimeFormatter f = new DateTimeFormatterBuilder()
-                    .appendValue(yowbyField).appendLiteral('-')
-                    .appendValue(wowbyField).appendLiteral('-')
+                    .appendValue(yowbyField).appendLiteral(':')
+                    .appendValue(wowbyField).appendLiteral(':')
                     .appendValue(DAY_OF_WEEK).toFormatter();
-            String str = date.get(yowbyField) + "-" + date.get(wowbyField) + "-" +
+            String str = date.get(yowbyField) + ":" + date.get(wowbyField) + ":" +
                     date.get(DAY_OF_WEEK);
             LocalDate parsed = LocalDate.parse(str, f);
             assertEquals(parsed, date, " :: " + str + " " + i);
@@ -482,6 +622,51 @@ public class TCKWeekFields extends AbstractTCKTest {
     }
 
     @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWoWBY_lenient(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 31);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField wowbyField = week.weekOfWeekBasedYear();
+        TemporalField yowbyField = week.weekBasedYear();
+
+        for (int i = 1; i <= 60; i++) {
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(yowbyField).appendLiteral(':')
+                    .appendValue(wowbyField).appendLiteral(':')
+                    .appendValue(DAY_OF_WEEK).toFormatter().withResolverStyle(LENIENT);
+            int wowby = date.get(wowbyField);
+            int dow = date.get(DAY_OF_WEEK);
+            for (int j = wowby - 60; j < wowby + 60; j++) {
+                String str = date.get(yowbyField) + ":" + j + ":" + dow;
+                LocalDate parsed = LocalDate.parse(str, f);
+                assertEquals(parsed, date.plusWeeks(j - wowby), " ::" + str + ": :" + i + "::" + j);
+            }
+
+            date = date.plusDays(1);
+        }
+    }
+
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWoWBY_strict(DayOfWeek firstDayOfWeek, int minDays) {
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField wowbyField = week.weekOfWeekBasedYear();
+        TemporalField yowbyField = week.weekBasedYear();
+        DateTimeFormatter f = new DateTimeFormatterBuilder()
+                .appendValue(yowbyField).appendLiteral(':')
+                .appendValue(wowbyField).appendLiteral(':')
+                .appendValue(DAY_OF_WEEK).toFormatter().withResolverStyle(STRICT);
+        String str = "2012:0:1";
+        try {
+            LocalDate date = LocalDate.parse(str, f);
+            assertEquals(date.get(yowbyField), 2012);
+            assertEquals(date.get(wowbyField), 0);
+            assertEquals(date.get(DAY_OF_WEEK), 1);
+        } catch (DateTimeException ex) {
+            // expected
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    @Test(dataProvider="weekFields")
     public void test_parse_resolve_localizedWoWBYDow(DayOfWeek firstDayOfWeek, int minDays) {
         LocalDate date = LocalDate.of(2012, 12, 31);
         WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
@@ -490,15 +675,39 @@ public class TCKWeekFields extends AbstractTCKTest {
         TemporalField yowbyField = week.weekBasedYear();
 
         for (int i = 1; i <= 60; i++) {
-            // Test that with dayOfWeek, week of year and year of week-based-year it computes the date
             DateTimeFormatter f = new DateTimeFormatterBuilder()
-                    .appendValue(yowbyField).appendLiteral('-')
-                    .appendValue(wowbyField).appendLiteral('-')
+                    .appendValue(yowbyField).appendLiteral(':')
+                    .appendValue(wowbyField).appendLiteral(':')
                     .appendValue(dowField).toFormatter();
-            String str = date.get(yowbyField) + "-" + date.get(wowbyField) + "-" +
+            String str = date.get(yowbyField) + ":" + date.get(wowbyField) + ":" +
                     date.get(dowField);
             LocalDate parsed = LocalDate.parse(str, f);
             assertEquals(parsed, date, " :: " + str + " " + i);
+
+            date = date.plusDays(1);
+        }
+    }
+
+    @Test(dataProvider="weekFields")
+    public void test_parse_resolve_localizedWoWBYDow_lenient(DayOfWeek firstDayOfWeek, int minDays) {
+        LocalDate date = LocalDate.of(2012, 12, 31);
+        WeekFields week = WeekFields.of(firstDayOfWeek, minDays);
+        TemporalField dowField = week.dayOfWeek();
+        TemporalField wowbyField = week.weekOfWeekBasedYear();
+        TemporalField yowbyField = week.weekBasedYear();
+
+        for (int i = 1; i <= 60; i++) {
+            DateTimeFormatter f = new DateTimeFormatterBuilder()
+                    .appendValue(yowbyField).appendLiteral(':')
+                    .appendValue(wowbyField).appendLiteral(':')
+                    .appendValue(dowField).toFormatter().withResolverStyle(LENIENT);
+            int wowby = date.get(wowbyField);
+            int dow = date.get(dowField);
+            for (int j = wowby - 60; j < wowby + 60; j++) {
+                String str = date.get(yowbyField) + ":" + j + ":" + dow;
+                LocalDate parsed = LocalDate.parse(str, f);
+                assertEquals(parsed, date.plusWeeks(j - wowby), " ::" + str + ": :" + i + "::" + j);
+            }
 
             date = date.plusDays(1);
         }
@@ -585,6 +794,23 @@ public class TCKWeekFields extends AbstractTCKTest {
         assertEquals(date.get(dowField), dow.getValue());
         assertEquals(date.get(wowbyField), week);
         assertEquals(date.get(yowbyField), wby);
+    }
+
+    //-----------------------------------------------------------------------
+    // equals() and hashCode().
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_equals() {
+        WeekFields weekDef_iso = WeekFields.ISO;
+        WeekFields weekDef_sundayStart = WeekFields.SUNDAY_START;
+
+        assertTrue(weekDef_iso.equals(WeekFields.of(DayOfWeek.MONDAY, 4)));
+        assertTrue(weekDef_sundayStart.equals(WeekFields.of(DayOfWeek.SUNDAY, 1)));
+        assertEquals(weekDef_iso.hashCode(), WeekFields.of(DayOfWeek.MONDAY, 4).hashCode());
+        assertEquals(weekDef_sundayStart.hashCode(), WeekFields.of(DayOfWeek.SUNDAY, 1).hashCode());
+
+        assertFalse(weekDef_iso.equals(weekDef_sundayStart));
+        assertNotEquals(weekDef_iso.hashCode(), weekDef_sundayStart.hashCode());
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * Interfaces and classes providing access to file and file system attributes.
  *
  * <blockquote><table cellspacing=1 cellpadding=0 summary="Attribute views">
- * <tr><th><p align="left">Attribute views</p></th><th><p align="left">Description</p></th></tr>
+ * <tr><th align="left">Attribute views</th><th align="left">Description</th></tr>
  * <tr><td valign=top><tt><i>{@link java.nio.file.attribute.AttributeView}</i></tt></td>
  *     <td>Can read or update non-opaque values associated with objects in a file system</td></tr>
  * <tr><td valign=top><tt>&nbsp;&nbsp;<i>{@link java.nio.file.attribute.FileAttributeView}</i></tt></td>
@@ -38,7 +38,7 @@
  *     <td>Can read or update POSIX defined file attributes</td></tr>
  * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.DosFileAttributeView}&nbsp;&nbsp;</i></tt></td>
  *     <td>Can read or update FAT file attributes</td></tr>
- * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp<i>{@link java.nio.file.attribute.FileOwnerAttributeView}&nbsp;&nbsp;</i></tt></td>
+ * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.FileOwnerAttributeView}&nbsp;&nbsp;</i></tt></td>
  *     <td>Can read or update the owner of a file</td></tr>
  * <tr><td valign=top><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>{@link java.nio.file.attribute.AclFileAttributeView}&nbsp;&nbsp;</i></tt></td>
  *     <td>Can read or update Access Control Lists</td></tr>
@@ -86,14 +86,14 @@
  *
  * <ul>
  *
- *   <p><li> The {@link java.nio.file.attribute.UserPrincipal} and
+ *   <li> The {@link java.nio.file.attribute.UserPrincipal} and
  *   {@link java.nio.file.attribute.GroupPrincipal} interfaces represent an
  *   identity or group identity. </li>
  *
- *   <p><li> The {@link java.nio.file.attribute.UserPrincipalLookupService}
+ *   <li> The {@link java.nio.file.attribute.UserPrincipalLookupService}
  *   interface defines methods to lookup user or group principals. </li>
  *
- *   <p><li> The {@link java.nio.file.attribute.FileAttribute} interface
+ *   <li> The {@link java.nio.file.attribute.FileAttribute} interface
  *   represents the value of an attribute for cases where the attribute value is
  *   required to be set atomically when creating an object in the file system. </li>
  *

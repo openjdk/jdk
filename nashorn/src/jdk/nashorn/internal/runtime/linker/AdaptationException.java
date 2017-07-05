@@ -26,7 +26,7 @@
 package jdk.nashorn.internal.runtime.linker;
 
 @SuppressWarnings("serial")
-class AdaptationException extends Exception {
+final class AdaptationException extends Exception {
     private final AdaptationResult adaptationResult;
 
     AdaptationException(final AdaptationResult.Outcome outcome, final String classList) {

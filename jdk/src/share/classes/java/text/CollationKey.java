@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,28 +68,28 @@ package java.text;
  * The following example shows how <code>CollationKey</code>s might be used
  * to sort a list of <code>String</code>s.
  * <blockquote>
- * <pre>
+ * <pre>{@code
  * // Create an array of CollationKeys for the Strings to be sorted.
  * Collator myCollator = Collator.getInstance();
  * CollationKey[] keys = new CollationKey[3];
  * keys[0] = myCollator.getCollationKey("Tom");
  * keys[1] = myCollator.getCollationKey("Dick");
  * keys[2] = myCollator.getCollationKey("Harry");
- * sort( keys );
- * <br>
+ * sort(keys);
+ *
  * //...
- * <br>
+ *
  * // Inside body of sort routine, compare keys this way
- * if( keys[i].compareTo( keys[j] ) > 0 )
+ * if (keys[i].compareTo(keys[j]) > 0)
  *    // swap keys[i] and keys[j]
- * <br>
+ *
  * //...
- * <br>
+ *
  * // Finally, when we've returned from sort.
- * System.out.println( keys[0].getSourceString() );
- * System.out.println( keys[1].getSourceString() );
- * System.out.println( keys[2].getSourceString() );
- * </pre>
+ * System.out.println(keys[0].getSourceString());
+ * System.out.println(keys[1].getSourceString());
+ * System.out.println(keys[2].getSourceString());
+ * }</pre>
  * </blockquote>
  *
  * @see          Collator
@@ -112,6 +112,8 @@ public abstract class CollationKey implements Comparable<CollationKey> {
 
     /**
      * Returns the String that this CollationKey represents.
+     *
+     * @return the source string of this CollationKey
      */
     public String getSourceString() {
         return source;
@@ -123,6 +125,8 @@ public abstract class CollationKey implements Comparable<CollationKey> {
      * could be legitimately compared, then one could compare the byte arrays
      * for each of those keys to obtain the same result.  Byte arrays are
      * organized most significant byte first.
+     *
+     * @return a byte array representation of the CollationKey
      */
     abstract public byte[] toByteArray();
 
@@ -130,8 +134,8 @@ public abstract class CollationKey implements Comparable<CollationKey> {
   /**
    * CollationKey constructor.
    *
-   * @param source - the source string.
-   * @exception NullPointerException if <code>source</code> is null.
+   * @param source the source string
+   * @exception NullPointerException if {@code source} is null
    * @since 1.6
    */
     protected CollationKey(String source) {

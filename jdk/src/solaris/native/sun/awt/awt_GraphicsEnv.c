@@ -926,6 +926,11 @@ void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
     *shmExt = canUseShmExt = CANT_USE_MITSHM;
     *shmPixmaps = canUseShmExtPixmaps = CANT_USE_MITSHM;
 
+    if (awt_display == (Display *)NULL) {
+        AWT_NOFLUSH_UNLOCK();
+        return;
+    }
+
     /**
      * XShmQueryExtension returns False in remote server case.
      * Unfortunately it also returns True in ssh case, so

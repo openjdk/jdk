@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@ public final class PasswordAuthentication {
     private char[] password;
 
     /**
-     * Creates a new <code>PasswordAuthentication</code> object from the given
+     * Creates a new {@code PasswordAuthentication} object from the given
      * user name and password.
      *
      * <p> Note that the given user password is cloned before it is stored in
-     * the new <code>PasswordAuthentication</code> object.
+     * the new {@code PasswordAuthentication} object.
      *
      * @param userName the user name
      * @param password the user's password

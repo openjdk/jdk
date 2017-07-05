@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import jdk.nashorn.tools.Shell;
 import org.testng.Assert;
 import org.testng.ITest;
 import org.testng.annotations.Test;
@@ -53,9 +55,6 @@ import org.testng.annotations.Test;
  * corresponding .EXPECTED file.
  */
 public final class ScriptRunnable extends AbstractScriptRunnable implements ITest {
-    // when test is run in a separate process, this is the command line
-    protected final ArrayList<String> separateProcessArgs;
-
     public ScriptRunnable(final String framework, final File testFile, final List<String> engineOptions, final Map<String, String> testOptions,  final List<String> scriptArguments) {
         super(framework, testFile, engineOptions, testOptions, scriptArguments);
 
@@ -63,9 +62,6 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
           // add --dump-on-error option always so that we can get detailed error msg.
           engineOptions.add("-doe");
         }
-
-        final String separateProcess = System.getProperty("test.js.separateprocess");
-        this.separateProcessArgs = separateProcess == null ? null : new ArrayList<>(Arrays.asList(separateProcess.split(" ")));
     }
 
     @Override
@@ -81,7 +77,7 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
 
     @Override
     protected void execute() {
-        if (separateProcessArgs != null) {
+        if (fork) {
             executeInNewProcess();
         } else {
             executeInThisProcess();
@@ -172,15 +168,24 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
     }
 
     private void executeInNewProcess() {
-        final List<String> args = separateProcessArgs;
+
+        final String separator = System.getProperty("file.separator");
+        final List<String> cmd = new ArrayList<>();
+
+        cmd.add(System.getProperty("java.home") + separator + "bin" + separator + "java");
+        cmd.add("-Djava.ext.dirs=dist");
+        for (String str : forkJVMOptions) {
+            cmd.add(str);
+        }
+        cmd.add(Shell.class.getName());
         // now add the rest of the "in process" runtime arguments
-        args.addAll(getRuntimeArgs());
+        cmd.addAll(getRuntimeArgs());
 
         final File outputFileHandle = new File(outputFileName);
         final File errorFileHandle = new File(errorFileName);
 
         try {
-            final ProcessBuilder pb = new ProcessBuilder(args);
+            final ProcessBuilder pb = new ProcessBuilder(cmd);
             pb.redirectOutput(outputFileHandle);
             pb.redirectError(errorFileHandle);
             final Process process = pb.start();

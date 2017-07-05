@@ -299,7 +299,7 @@ class CompileReplay : public StackObj {
     Symbol* method_signature = parse_symbol(CHECK_NULL);
     Method* m = k->find_method(method_name, method_signature);
     if (m == NULL) {
-      report_error("can't find method");
+      report_error("Can't find method");
     }
     return m;
   }
@@ -398,8 +398,8 @@ class CompileReplay : public StackObj {
 
   // compile <klass> <name> <signature> <entry_bci> <comp_level>
   void process_compile(TRAPS) {
-    // methodHandle method;
     Method* method = parse_method(CHECK);
+    if (had_error()) return;
     int entry_bci = parse_int("entry_bci");
     const char* comp_level_label = "comp_level";
     int comp_level = parse_int(comp_level_label);
@@ -440,6 +440,7 @@ class CompileReplay : public StackObj {
   //
   void process_ciMethod(TRAPS) {
     Method* method = parse_method(CHECK);
+    if (had_error()) return;
     ciMethodRecord* rec = new_ciMethod(method);
     rec->invocation_counter = parse_int("invocation_counter");
     rec->backedge_counter = parse_int("backedge_counter");
@@ -451,6 +452,7 @@ class CompileReplay : public StackObj {
   // ciMethodData <klass> <name> <signature> <state> <current mileage> orig <length> # # ... data <length> # # ... oops <length>
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
+    if (had_error()) return;
     /* jsut copied from Method, to build interpret data*/
     if (InstanceRefKlass::owns_pending_list_lock((JavaThread*)THREAD)) {
       return;

@@ -138,15 +138,6 @@ public final class JavaAdapterFactory {
     }
 
     /**
-     * Tells if the given Class is an adapter or support class
-     * @param clazz Class object
-     * @return true if the Class given is adapter or support class
-     */
-    public static boolean isAdapterClass(Class<?> clazz) {
-        return JavaAdapterClassLoader.isAdapterClass(clazz);
-    }
-
-    /**
      * Returns whether an instance of the specified class/interface can be generated from a ScriptFunction. Returns true
      * iff: the adapter for the class/interface can be created, it is abstract (this includes interfaces), it has at
      * least one abstract method, all the abstract methods share the same name, and it has a public or protected default

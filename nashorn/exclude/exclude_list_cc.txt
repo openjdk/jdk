@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<excludeList>
+  <test id="JDK-8014647.js" />
+  <test id="javaclassoverrides.js" />
+</excludeList>

@@ -80,9 +80,11 @@ public final class DOMX509IssuerSerial extends DOMStructure
      *
      * @param isElem an X509IssuerSerial element
      */
-    public DOMX509IssuerSerial(Element isElem) {
-        Element iNElem = DOMUtils.getFirstChildElement(isElem);
-        Element sNElem = DOMUtils.getNextSiblingElement(iNElem);
+    public DOMX509IssuerSerial(Element isElem) throws MarshalException {
+        Element iNElem = DOMUtils.getFirstChildElement(isElem,
+                                                       "X509IssuerName");
+        Element sNElem = DOMUtils.getNextSiblingElement(iNElem,
+                                                        "X509SerialNumber");
         issuerName = iNElem.getFirstChild().getNodeValue();
         serialNumber = new BigInteger(sNElem.getFirstChild().getNodeValue());
     }

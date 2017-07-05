@@ -33,7 +33,7 @@ import java.lang.invoke.MethodHandle;
  * This is a subclass that represents a script function that may not be regenerated.
  * This is used for example for bound functions and builtins.
  */
-public final class FinalScriptFunctionData extends ScriptFunctionData {
+final class FinalScriptFunctionData extends ScriptFunctionData {
 
     /**
      * Constructor - used for bind

@@ -1281,8 +1281,12 @@ public class MethodEmitter implements Emitter {
     }
 
     MethodEmitter registerReturn() {
-        this.hasReturn = true;
+        setHasReturn();
         return this;
+    }
+
+    void setHasReturn() {
+        this.hasReturn = true;
     }
 
     /**

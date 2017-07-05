@@ -303,14 +303,13 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
     private static MethodHandle unreflectSafely(AccessibleObject m) {
         if(m instanceof Method) {
             final Method reflMethod = (Method)m;
-            final MethodHandle handle = SafeUnreflector.unreflect(reflMethod);
+            final MethodHandle handle = Lookup.PUBLIC.unreflect(reflMethod);
             if(Modifier.isStatic(reflMethod.getModifiers())) {
                 return StaticClassIntrospector.editStaticMethodHandle(handle);
             }
             return handle;
         }
-        return StaticClassIntrospector.editConstructorMethodHandle(SafeUnreflector.unreflectConstructor(
-                (Constructor<?>)m));
+        return StaticClassIntrospector.editConstructorMethodHandle(Lookup.PUBLIC.unreflectConstructor((Constructor<?>)m));
     }
 
     private static DynamicMethod mergeMethods(SingleDynamicMethod method, DynamicMethod existing, Class<?> clazz, String name) {

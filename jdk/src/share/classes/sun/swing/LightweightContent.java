@@ -161,4 +161,22 @@ public interface LightweightContent {
      * application that the frame has ungrabbed focus.
      */
     public void focusUngrabbed();
+
+    /**
+     * {@code JLightweightFrame} calls this method to notify the client
+     * application that the content preferred size has changed.
+     */
+    public void preferredSizeChanged(int width, int height);
+
+    /**
+     * {@code JLightweightFrame} calls this method to notify the client
+     * application that the content maximum size has changed.
+     */
+    public void maximumSizeChanged(int width, int height);
+
+    /**
+     * {@code JLightweightFrame} calls this method to notify the client
+     * application that the content minimum size has changed.
+     */
+    public void minimumSizeChanged(int width, int height);
 }

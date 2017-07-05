@@ -71,6 +71,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
      *
      * @param tclass the class of the objects holding the field
      * @param fieldName the name of the field to be updated
+     * @param <U> the type of instances of tclass
      * @return the updater
      * @throws IllegalArgumentException if the field is not a
      * volatile integer type

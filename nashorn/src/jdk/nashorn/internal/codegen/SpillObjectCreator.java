@@ -65,7 +65,7 @@ public class SpillObjectCreator extends ObjectCreator {
 
         final int      length       = keys.size();
         final Object[] presetValues = new Object[propertyMap.size()];
-        final Class    clazz        = JO.class;
+        final Class<?> clazz        = JO.class;
 
         // Compute constant values
         for (int i = 0; i < length; i++) {

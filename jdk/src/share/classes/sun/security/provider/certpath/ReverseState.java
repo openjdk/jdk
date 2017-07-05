@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXCertPathChecker;
+import java.security.cert.PKIXRevocationChecker;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -235,9 +236,16 @@ class ReverseState implements State {
         for (PKIXCertPathChecker checker : userCheckers) {
             if (checker instanceof AlgorithmChecker) {
                 ((AlgorithmChecker)checker).trySetTrustAnchor(anchor);
-            } else if (checker instanceof RevocationChecker) {
-                ((RevocationChecker)checker).init(anchor, buildParams);
-                ((RevocationChecker)checker).init(false);
+            } else if (checker instanceof PKIXRevocationChecker) {
+                if (revCheckerAdded) {
+                    throw new CertPathValidatorException(
+                        "Only one PKIXRevocationChecker can be specified");
+                }
+                // if it's our own, initialize it
+                if (checker instanceof RevocationChecker) {
+                    ((RevocationChecker)checker).init(anchor, buildParams);
+                }
+                ((PKIXRevocationChecker)checker).init(false);
                 revCheckerAdded = true;
             }
         }

@@ -363,6 +363,90 @@ public class ScriptEngineTest {
     }
 
     @Test
+    /**
+     * Check that we can get interface out of a script object even after
+     * switching to use different ScriptContext.
+     */
+    public void getInterfaceDifferentContext() {
+       ScriptEngineManager m = new ScriptEngineManager();
+       ScriptEngine e = m.getEngineByName("nashorn");
+       try {
+           Object obj = e.eval("({ run: function() { } })");
+
+           // change script context
+           ScriptContext ctxt = new SimpleScriptContext();
+           ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
+           e.setContext(ctxt);
+
+           Runnable r = ((Invocable)e).getInterface(obj, Runnable.class);
+           r.run();
+       }catch (final Exception exp) {
+            exp.printStackTrace();
+            fail(exp.getMessage());
+       }
+    }
+
+    @Test
+    /**
+     * Check that getInterface on non-script object 'thiz' results in IllegalArgumentException.
+     */
+    public void getInterfaceNonScriptObjectThizTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            ((Invocable)e).getInterface(new Object(), Runnable.class);
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that getInterface on null 'thiz' results in IllegalArgumentException.
+     */
+    public void getInterfaceNullThizTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            ((Invocable)e).getInterface(null, Runnable.class);
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that calling getInterface on mirror created by another engine results in IllegalArgumentException.
+     */
+    public void getInterfaceMixEnginesTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine engine1 = m.getEngineByName("nashorn");
+        final ScriptEngine engine2 = m.getEngineByName("nashorn");
+
+        try {
+            Object obj = engine1.eval("({ run: function() {} })");
+            // pass object from engine1 to engine2 as 'thiz' for getInterface
+            ((Invocable)engine2).getInterface(obj, Runnable.class);
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
     public void accessGlobalTest() {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
@@ -649,6 +733,133 @@ public class ScriptEngineTest {
     }
 
     @Test
+    /**
+     * Check that we can call invokeMethod on an object that we got by evaluating
+     * script with different Context set.
+     */
+    public void invokeMethodDifferentContextTest() {
+       ScriptEngineManager m = new ScriptEngineManager();
+       ScriptEngine e = m.getEngineByName("nashorn");
+
+       try {
+           // define an object with method on it
+           Object obj = e.eval("({ hello: function() { return 'Hello World!'; } })");
+
+           final ScriptContext ctxt = new SimpleScriptContext();
+           ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
+           e.setContext(ctxt);
+
+           // invoke 'func' on obj - but with current script context changed
+           final Object res = ((Invocable)e).invokeMethod(obj, "hello");
+           assertEquals(res, "Hello World!");
+       } catch (final Exception exp) {
+           exp.printStackTrace();
+           fail(exp.getMessage());
+       }
+    }
+
+    @Test
+    /**
+     * Check that invokeMethod throws NPE on null method name.
+     */
+    public void invokeMethodNullNameTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            final Object obj = e.eval("({})");
+            final Object res = ((Invocable)e).invokeMethod(obj, null);
+            fail("should have thrown NPE");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NullPointerException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that invokeMethod throws NoSuchMethodException on missing method.
+     */
+    public void invokeMethodMissingTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            final Object obj = e.eval("({})");
+            final Object res = ((Invocable)e).invokeMethod(obj, "nonExistentMethod");
+            fail("should have thrown NoSuchMethodException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NoSuchMethodException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that calling method on non-script object 'thiz' results in IllegalArgumentException.
+     */
+    public void invokeMethodNonScriptObjectThizTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            ((Invocable)e).invokeMethod(new Object(), "toString");
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that calling method on null 'thiz' results in IllegalArgumentException.
+     */
+    public void invokeMethodNullThizTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            ((Invocable)e).invokeMethod(null, "toString");
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+
+    @Test
+    /**
+     * Check that calling method on mirror created by another engine results in IllegalArgumentException.
+     */
+    public void invokeMethodMixEnginesTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine engine1 = m.getEngineByName("nashorn");
+        final ScriptEngine engine2 = m.getEngineByName("nashorn");
+
+        try {
+            Object obj = engine1.eval("({ run: function() {} })");
+            // pass object from engine1 to engine2 as 'thiz' for invokeMethod
+            ((Invocable)engine2).invokeMethod(obj, "run");
+            fail("should have thrown IllegalArgumentException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof IllegalArgumentException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
     public void noEnumerablePropertiesTest() {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
@@ -763,6 +974,70 @@ public class ScriptEngineTest {
         } catch (final Exception exp) {
             exp.printStackTrace();
             fail(exp.getMessage());
+        }
+    }
+
+    @Test
+    /**
+     * check that null function name results in NPE.
+     */
+    public void invokeFunctionNullNameTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            final Object res = ((Invocable)e).invokeFunction(null);
+            fail("should have thrown NPE");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NullPointerException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that attempt to call missing function results in NoSuchMethodException.
+     */
+    public void invokeFunctionMissingTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            final Object res = ((Invocable)e).invokeFunction("NonExistentFunc");
+            fail("should have thrown NoSuchMethodException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NoSuchMethodException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
+        }
+    }
+
+    @Test
+    /**
+     * Check that invokeFunction calls functions only from current context's Bindings.
+     */
+    public void invokeFunctionDifferentContextTest() {
+        ScriptEngineManager m = new ScriptEngineManager();
+        ScriptEngine e = m.getEngineByName("nashorn");
+
+        try {
+            // define an object with method on it
+            Object obj = e.eval("function hello() { return 'Hello World!'; }");
+            final ScriptContext ctxt = new SimpleScriptContext();
+            ctxt.setBindings(e.createBindings(), ScriptContext.ENGINE_SCOPE);
+            // change engine's current context
+            e.setContext(ctxt);
+
+            ((Invocable)e).invokeFunction("hello"); // no 'hello' in new context!
+            fail("should have thrown NoSuchMethodException");
+        } catch (final Exception exp) {
+            if (! (exp instanceof NoSuchMethodException)) {
+                exp.printStackTrace();
+                fail(exp.getMessage());
+            }
         }
     }
 
@@ -944,5 +1219,39 @@ public class ScriptEngineTest {
         final VariableArityTestInterface itf = ((Invocable)e).getInterface(VariableArityTestInterface.class);
         Assert.assertEquals(itf.test1(42, "a", "b"), "i == 42, strings instanceof java.lang.String[] == true, strings == [a, b]");
         Assert.assertEquals(itf.test2(44, "c", "d", "e"), "arguments[0] == 44, arguments[1] instanceof java.lang.String[] == true, arguments[1] == [c, d, e]");
+    }
+
+    @Test
+    // check that print function prints arg followed by newline char
+    public void printTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final StringWriter sw = new StringWriter();
+        e.getContext().setWriter(sw);
+        try {
+            e.eval("print('hello')");
+        } catch (final Throwable t) {
+            t.printStackTrace();
+            fail(t.getMessage());
+        }
+
+        assertEquals(sw.toString(), "hello\n");
+    }
+
+    @Test
+    // check that print prints all arguments (more than one)
+    public void printManyTest() {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final StringWriter sw = new StringWriter();
+        e.getContext().setWriter(sw);
+        try {
+            e.eval("print(34, true, 'hello')");
+        } catch (final Throwable t) {
+            t.printStackTrace();
+            fail(t.getMessage());
+        }
+
+        assertEquals(sw.toString(), "34 true hello\n");
     }
 }
