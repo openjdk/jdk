@@ -1,7 +1,8 @@
-// Individual Permissions to for GlobalFilterTest
+// Individual Permissions to for GlobalFilterTest and FilterWithSecurityManager
 grant {
         // Specific permission under test
-        permission java.security.SerializablePermission "serialFilter";
+        permission java.io.SerializablePermission "serialFilter";
+
         // Permissions needed to run the test
         permission java.util.PropertyPermission "*", "read";
         permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete";

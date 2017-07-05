@@ -1894,6 +1894,22 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     __ beq(combined_check, slow);
   }
 
+  if (flags & LIR_OpArrayCopy::type_check) {
+    if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::dst_objarray)) {
+      __ load_klass(tmp, dst);
+      __ lwz(tmp2, in_bytes(Klass::layout_helper_offset()), tmp);
+      __ cmpwi(CCR0, tmp2, Klass::_lh_neutral_value);
+      __ bge(CCR0, slow);
+    }
+
+    if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::src_objarray)) {
+      __ load_klass(tmp, src);
+      __ lwz(tmp2, in_bytes(Klass::layout_helper_offset()), tmp);
+      __ cmpwi(CCR0, tmp2, Klass::_lh_neutral_value);
+      __ bge(CCR0, slow);
+    }
+  }
+
   // Higher 32bits must be null.
   __ extsw(length, length);
 

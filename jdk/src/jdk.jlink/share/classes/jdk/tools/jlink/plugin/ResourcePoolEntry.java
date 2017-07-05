@@ -24,13 +24,12 @@
  */
 package jdk.tools.jlink.plugin;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
+
 import jdk.tools.jlink.internal.ResourcePoolEntryFactory;
 
 /**
@@ -64,6 +63,8 @@ public interface ResourcePoolEntry {
         CONFIG,
         NATIVE_CMD,
         NATIVE_LIB,
+        HEADER_FILE,
+        MAN_PAGE,
         TOP,
         OTHER
     }

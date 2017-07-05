@@ -46,6 +46,7 @@ UOBJECT_DEFINE_RTTI_IMPLEMENTATION(ContextualGlyphSubstitutionProcessor)
 ContextualGlyphSubstitutionProcessor::ContextualGlyphSubstitutionProcessor(const LEReferenceTo<MorphSubtableHeader> &morphSubtableHeader, LEErrorCode &success)
   : StateTableProcessor(morphSubtableHeader, success), entryTable(), contextualGlyphSubstitutionHeader(morphSubtableHeader, success)
 {
+  if (LE_FAILURE(success)) return;
   contextualGlyphSubstitutionHeader.orphan();
   substitutionTableOffset = SWAPW(contextualGlyphSubstitutionHeader->substitutionTableOffset);
 
@@ -66,10 +67,10 @@ void ContextualGlyphSubstitutionProcessor::beginStateTable()
     markGlyph = 0;
 }
 
-ByteOffset ContextualGlyphSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index)
+ByteOffset ContextualGlyphSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyphStorage, le_int32 &currGlyph, EntryTableIndex index, LEErrorCode &success)
 {
-  LEErrorCode success = LE_NO_ERROR;
   const ContextualGlyphSubstitutionStateEntry *entry = entryTable.getAlias(index, success);
+  if (LE_FAILURE(success)) return 0;
   ByteOffset newState = SWAPW(entry->newStateOffset);
   le_int16 flags = SWAPW(entry->flags);
   WordOffset markOffset = SWAPW(entry->markOffset);
