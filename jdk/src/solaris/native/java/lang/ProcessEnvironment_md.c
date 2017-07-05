@@ -28,6 +28,11 @@
 #include "jni.h"
 #include "jni_util.h"
 
+#ifdef __APPLE__
+#include <crt_externs.h>
+#define environ (*_NSGetEnviron())
+#endif
+
 JNIEXPORT jobjectArray JNICALL
 Java_java_lang_ProcessEnvironment_environ(JNIEnv *env, jclass ign)
 {
@@ -37,7 +42,9 @@ Java_java_lang_ProcessEnvironment_environ(JNIEnv *env, jclass ign)
      * no standard (not even de-facto) header file where the
      * declaration is to be found.  See:
      * http://www.opengroup.org/onlinepubs/007908799/xbd/envvar.html */
+#ifndef __APPLE__
     extern char ** environ; /* environ[i] looks like: VAR=VALUE\0 */
+#endif
 
     jsize count = 0;
     jsize i, j;

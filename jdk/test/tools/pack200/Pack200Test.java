@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class Pack200Test {
     private static ArrayList <File> jarList = new ArrayList<File>();
     static final MemoryMXBean mmxbean = ManagementFactory.getMemoryMXBean();
     static final long m0 = getUsedMemory();
-    static final int LEAK_TOLERANCE = 20000; // OS and GC related variations.
+    static final int LEAK_TOLERANCE = 21000; // OS and GC related variations.
 
     /** Creates a new instance of Pack200Test */
     private Pack200Test() {}

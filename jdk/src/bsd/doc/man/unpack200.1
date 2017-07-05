@@ -1,0 +1,156 @@
+." Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH unpack200 1 "10 May 2011"
+
+.LP
+.SH "Name"
+unpack200 \- JAR Unpacking tool
+.LP
+.SH "SYNOPSIS"
+.LP
+.LP
+\f4unpack200\fP\f2 [ \fP\f2options\fP ] \f2input\-file\fP \f2JAR\-file\fP
+.LP
+.LP
+Options may be in any order. The last option on the command line supersedes all previously specified options.
+.LP
+.RS 3
+.TP 3
+input\-file
+Name of the input file, which can be a pack200 gzip file or a pack200 file. The input could also be JAR file produced by pack200(1) with an effort of 0. In this case the contents of the input file will be copied to the output JAR file with the Pack200 marker.
+.TP 3
+JAR\-file
+Name of the output JAR file.
+.RE
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+\f2unpack200\fP is a native implementation that transforms a packed file produced by \f2pack200\fP(1) into a JAR file. Typical usage:
+.LP
+.LP
+\f2% unpack200 myarchive.pack.gz myarchive.jar\fP
+.LP
+.LP
+In this example, the \f2myarchive.jar\fP is produced from \f2myarchive.pack.gz\fP using the default \f2unpack200\fP settings.
+.LP
+.SH "OPTIONS"
+.LP
+.LP
+\f4\-Hvalue \-\-deflate\-hint=\fP\f2value\fP
+.LP
+.LP
+Sets the deflation to be \f2true\fP, \f2false\fP, or \f2keep\fP on all entries within a JAR file. The default mode is \f2keep\fP. If \f2true\fP or \f2false\fP, overrides the default behavior and sets the deflation mode on all entries within the output JAR file.
+.LP
+.LP
+\f4\-r \-\-remove\-pack\-file\fP
+.LP
+.LP
+Removes the input packed file.
+.LP
+.LP
+\f4\-v \-\-verbose\fP
+.LP
+.LP
+Outputs minimal messages. Multiple specification of this option will output more verbose messages.
+.LP
+.LP
+\f4\-q \-\-quiet\fP
+.LP
+.LP
+Specifies quiet operation with no messages.
+.LP
+.LP
+\f4\-lfilename \-\-log\-file=\fP\f2filename\fP
+.LP
+.LP
+Specifies a log file to output messages.
+.LP
+.LP
+\f4\-? \-h \-\-help\fP
+.LP
+.LP
+Prints help information about this command.
+.LP
+.LP
+\f4\-V \-\-version\fP
+.LP
+.LP
+Prints version information about this command.
+.LP
+.LP
+\f4\-J\fP\f2option\fP
+.LP
+.LP
+Passes \f2option\fP to the Java launcher called by \f2unpack200\fP.
+.LP
+.SH "EXIT STATUS"
+.LP
+.LP
+The following exit values are returned:
+.LP
+.LP
+\f2\ 0\fP if successful completion;
+.LP
+.LP
+\f2>0\fP if an error occurred.
+.LP
+.SH "SEE ALSO"
+.LP
+.RS 3
+.TP 2
+o
+pack200(1)
+.TP 2
+o
+.na
+\f2Java SE Documentation\fP @
+.fi
+http://download.oracle.com/javase/7/docs/index.html
+.TP 2
+o
+.na
+\f2Java Deployment Guide \- Pack200\fP @
+.fi
+http://download.oracle.com/javase/7/docs/technotes/guides/deployment/deployment\-guide/pack200.html
+.TP 2
+o
+jar(1) \- Java Archive Tool
+.TP 2
+o
+jarsigner(1) \- JAR Signer tool
+.TP 2
+o
+\f2attributes(5)\fP man page
+.RE
+
+.LP
+.SH "NOTES"
+.LP
+.LP
+This command should not be confused with \f2unpack(1)\fP. They are distinctly separate products.
+.LP
+.LP
+The Java SE API Specification provided with the JDK is the superseding authority, in case of discrepancies.
+.LP
+

@@ -43,6 +43,10 @@ case "$OS" in
     PS=":"
     FS="/"
     ;;
+  Darwin )
+    PS=":"
+    FS="/"
+    ;;
   Windows*)
     PS=";"
     OS="Windows"

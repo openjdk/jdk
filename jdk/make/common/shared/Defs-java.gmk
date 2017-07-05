@@ -66,7 +66,11 @@ JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS = \
    -XX:-PrintVMOptions -XX:+UnlockDiagnosticVMOptions -XX:-LogVMOutput
 
 # JVM options
-JAVA_JVM_FLAGS = $(JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS)
+ifeq ($(PLATFORM), macosx)
+  JAVA_JVM_FLAGS = $(JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS) -Djava.awt.headless=true
+else
+  JAVA_JVM_FLAGS = $(JAVA_HOTSPOT_DISABLE_PRINT_VMOPTIONS)
+endif
 
 ifeq ($(ADD_CLIENT_VM_OPTION), true)
   JAVA_JVM_FLAGS += -client

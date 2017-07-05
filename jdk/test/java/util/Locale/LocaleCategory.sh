@@ -2,7 +2,7 @@
 #
 # @test
 # @bug 4700857 6997928 7079486
-# @summary tests for Locale.getDefault(Locale.Category) and 
+# @summary tests for Locale.getDefault(Locale.Category) and
 #    Locale.setDefault(Locale.Category, Locale)
 # @build LocaleCategory
 # @run shell/timeout=600 LocaleCategory.sh
@@ -30,7 +30,7 @@ echo "CLASSPATH=${CLASSPATH}"
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
-  SunOS | Linux )
+  SunOS | Linux | *BSD | Darwin )
     PS=":"
     FS="/"
     ;;

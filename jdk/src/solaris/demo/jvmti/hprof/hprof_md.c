@@ -42,7 +42,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#ifndef LINUX
+#if !defined(LINUX) && !defined(_ALLBSD_SOURCE)
 #include <procfs.h>
 #endif
 
@@ -62,6 +62,7 @@
 #include <time.h>
 
 #include "jni.h"
+#include "jvm_md.h"
 #include "hprof.h"
 
 int
@@ -85,7 +86,7 @@ md_sleep(unsigned seconds)
 void
 md_init(void)
 {
-#ifdef LINUX
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
     /* No Hi-Res timer option? */
 #else
     if ( gdata->micro_state_accounting ) {
@@ -247,7 +248,7 @@ md_timeofday(void)
 jlong
 md_get_microsecs(void)
 {
-#ifdef LINUX
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
     return (jlong)(md_timeofday() * (jlong)1000); /* Milli to micro */
 #else
     return (jlong)(gethrtime()/(hrtime_t)1000); /* Nano seconds to micro seconds */
@@ -265,7 +266,7 @@ md_get_timemillis(void)
 jlong
 md_get_thread_cpu_timemillis(void)
 {
-#ifdef LINUX
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
     return md_timeofday();
 #else
     return (jlong)(gethrvtime()/1000); /* Nano seconds to milli seconds */
@@ -280,7 +281,7 @@ md_get_prelude_path(char *path, int path_len, char *filename)
     Dl_info dlinfo;
 
     libdir[0] = 0;
-#ifdef LINUX
+#if defined(LINUX) || defined(_ALLBSD_SOURCE)
     addr = (void*)&Agent_OnLoad;
 #else
     /* Just using &Agent_OnLoad will get the first external symbol with
@@ -308,10 +309,13 @@ md_get_prelude_path(char *path, int path_len, char *filename)
         if ( lastSlash != NULL ) {
             *lastSlash = '\0';
         }
+#ifndef __APPLE__
+        // not sure why other platforms have to go up two levels, but on macos we only need up one
         lastSlash = strrchr(libdir, '/');
         if ( lastSlash != NULL ) {
             *lastSlash = '\0';
         }
+#endif /* __APPLE__ */
     }
     (void)snprintf(path, path_len, "%s/%s", libdir, filename);
 }
@@ -388,9 +392,9 @@ md_build_library_name(char *holder, int holderlen, char *pname, char *fname)
 
     /* Construct path to library */
     if (pnamelen == 0) {
-        (void)snprintf(holder, holderlen, "lib%s.so", fname);
+        (void)snprintf(holder, holderlen, "lib%s" JNI_LIB_SUFFIX, fname);
     } else {
-        (void)snprintf(holder, holderlen, "%s/lib%s.so", pname, fname);
+        (void)snprintf(holder, holderlen, "%s/lib%s" JNI_LIB_SUFFIX, pname, fname);
     }
 }
 

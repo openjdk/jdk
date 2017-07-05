@@ -176,6 +176,24 @@ $(OBJDIR)/%.$(OBJECT_SUFFIX): %.s
     endif
 	@$(check-conventions)
 
+# Obj-C files (Mac OS X only).
+ifeq ($(PLATFORM), macosx)
+$(OBJDIR)/%.$(OBJECT_SUFFIX): %.m
+	@$(prep-target)
+	$(COMPILE.c) $(CC_OBJECT_OUTPUT_FLAG)$@ $(CFLAGS_GPROF) $<
+	@$(check-conventions)
+
+$(OBJDIR)/%.$(OBJECT_SUFFIX): %.mm
+	@$(prep-target)
+	$(COMPILE.cc) $(CC_OBJECT_OUTPUT_FLAG)$@ $(CFLAGS_GPROF) $<
+	@$(check-conventions)
+
+$(OBJDIR)/%.$(OBJECT_SUFFIX): %.c
+	@$(prep-target)
+	$(COMPILE.c) $(CC_OBJECT_OUTPUT_FLAG)$@ $(CFLAGS_GPROF) $<
+	@$(check-conventions)
+endif # PLATFORM
+
 #
 # Quick hack for making the compiler generate just the assembly file.
 #	$ gnumake obj/sparc/myfile.s

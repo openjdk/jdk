@@ -48,6 +48,12 @@
 #include "threads_md.h"
 #endif
 
+#ifdef __APPLE__
+#define LIB_SUFFIX "dylib"
+#else
+#define LIB_SUFFIX "so"
+#endif
+
 /*
  * create a string for the JNI native function name by adding the
  * appropriate decorations.
@@ -77,9 +83,9 @@ dbgsysBuildLibName(char *holder, int holderlen, char *pname, char *fname)
     }
 
     if (pnamelen == 0) {
-        (void)snprintf(holder, holderlen, "lib%s.so", fname);
+        (void)snprintf(holder, holderlen, "lib%s." LIB_SUFFIX, fname);
     } else {
-        (void)snprintf(holder, holderlen, "%s/lib%s.so", pname, fname);
+        (void)snprintf(holder, holderlen, "%s/lib%s." LIB_SUFFIX, pname, fname);
     }
 }
 

@@ -94,37 +94,51 @@ typedef struct Splash
     pthread_mutex_t lock;
     Cursor cursor;
     XWMHints* wmHints;
+#elif defined(WITH_MACOSX)
+    pthread_mutex_t lock;
+    int controlpipe[2];
+    NSWindow * window;
 #endif
 } Splash;
 
 /* various shared and/or platform dependent splash screen functions */
 
+/*************** Platform-specific ******************/
+
+/* To be implemented in the platform-specific native code. */
+
+
+void SplashInitPlatform(Splash * splash);
+void SplashCreateThread(Splash * splash);
+void SplashCleanupPlatform(Splash * splash);
+void SplashDonePlatform(Splash * splash);
+
+unsigned SplashTime();
+char* SplashConvertStringAlloc(const char* in, int *size);
+
+void SplashLock(Splash * splash);
+void SplashUnlock(Splash * splash);
+
+void SplashInitFrameShape(Splash * splash, int imageIndex);
+
+void SplashUpdate(Splash * splash);
+void SplashReconfigure(Splash * splash);
+void SplashClosePlatform(Splash * splash);
+
+
+
+/********************* Shared **********************/
 Splash *SplashGetInstance();
 
 int SplashIsStillLooping(Splash * splash);
 void SplashNextFrame(Splash * splash);
 void SplashStart(Splash * splash);
-void SplashCreateThread(Splash * splash);
-unsigned SplashTime();
 void SplashDone(Splash * splash);
 
-void SplashInitPlatform(Splash * splash);
-void SplashDonePlatform(Splash * splash);
-void SplashDone(Splash * splash);
-void SplashUpdate(Splash * splash);
 void SplashUpdateScreenData(Splash * splash);
 
-void SplashLock(Splash * splash);
-void SplashUnlock(Splash * splash);
-
 void SplashCleanup(Splash * splash);
-void SplashCleanupPlatform(Splash * splash);
 
-void SplashClosePlatform();
-
-void SplashReconfigure();
-
-char* SplashConvertStringAlloc(const char* in, int *size);
 
 typedef struct SplashStream {
     int (*read)(void* pStream, void* pData, int nBytes);
@@ -152,8 +166,6 @@ int SplashDecodePngStream(Splash * splash, SplashStream * stream);
 /* utility functions */
 
 int BitmapToYXBandedRectangles(ImageRect * pSrcRect, RECT_T * out);
-
-void SplashInitFrameShape(Splash * splash, int imageIndex);
 
 #define SAFE_TO_ALLOC(c, sz)                                               \
     (((c) > 0) && ((sz) > 0) &&                                            \

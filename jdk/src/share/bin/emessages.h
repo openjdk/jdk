@@ -87,6 +87,7 @@
 #define JRE_ERROR10     "Error: Unable to resolve current executable"
 #define JRE_ERROR11     "Error: Path length exceeds maximum length (PATH_MAX)"
 #define JRE_ERROR12     "Error: Exec of %s failed"
+#define JRE_ERROR13     "Error: String processing operation failed"
 
 #define DLL_ERROR1      "Error: dl failure on line %d"
 #define DLL_ERROR2      "Error: failed %s, because %s"

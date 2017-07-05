@@ -99,5 +99,34 @@ JNIEXPORT jint JNICALL Java_com_sun_media_sound_Platform_nGetLibraryForFeature
         return com_sun_media_sound_Platform_LIB_ALSA;
     }
 #endif
+#if (X_PLATFORM == X_MACOSX)
+    switch (feature) {
+    case com_sun_media_sound_Platform_FEATURE_MIDIIO:
+        return com_sun_media_sound_Platform_LIB_MAIN;
+    case com_sun_media_sound_Platform_FEATURE_PORTS:
+        return com_sun_media_sound_Platform_LIB_MAIN;
+    case com_sun_media_sound_Platform_FEATURE_DIRECT_AUDIO:
+        return com_sun_media_sound_Platform_LIB_MAIN;
+    }
+#endif
+#if (X_PLATFORM == X_BSD)
+    switch (feature) {
+    case com_sun_media_sound_Platform_FEATURE_MIDIIO:
+       return com_sun_media_sound_Platform_LIB_MAIN;
+#ifdef __FreeBSD__
+    case com_sun_media_sound_Platform_FEATURE_PORTS:
+       return com_sun_media_sound_Platform_LIB_ALSA;
+    case com_sun_media_sound_Platform_FEATURE_DIRECT_AUDIO:
+       return com_sun_media_sound_Platform_LIB_ALSA;
+#else
+    case com_sun_media_sound_Platform_FEATURE_PORTS:
+       return com_sun_media_sound_Platform_LIB_MAIN;
+    case com_sun_media_sound_Platform_FEATURE_DIRECT_AUDIO:
+       // XXXBSD: When native Direct Audio support is ported change
+       // this back to returning com_sun_media_sound_Platform_LIB_MAIN
+       return 0;
+#endif
+    }
+#endif
     return 0;
 }

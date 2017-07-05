@@ -1,0 +1,317 @@
+." Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+."
+." This code is free software; you can redistribute it and/or modify it
+." under the terms of the GNU General Public License version 2 only, as
+." published by the Free Software Foundation.
+."
+." This code is distributed in the hope that it will be useful, but WITHOUT
+." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+." version 2 for more details (a copy is included in the LICENSE file that
+." accompanied this code).
+."
+." You should have received a copy of the GNU General Public License version
+." 2 along with this work; if not, write to the Free Software Foundation,
+." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+."
+." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+." or visit www.oracle.com if you need additional information or have any
+." questions.
+."
+.TH javap 1 "10 May 2011"
+
+.LP
+.SH "Name"
+javap \- The Java Class File Disassembler
+.LP
+.LP
+Disassembles class files.
+.LP
+.SH "SYNOPSIS"
+.LP
+.nf
+\f3
+.fl
+javap [ \fP\f3options\fP\f3 ] classes
+.fl
+\fP
+.fi
+
+.LP
+.SH "DESCRIPTION"
+.LP
+.LP
+The \f3javap\fP command disassembles one or more class files. Its output depends on the options used. If no options are used, \f3javap\fP prints out the package, protected, and public fields and methods of the classes passed to it. \f3javap\fP prints its output to stdout.
+.LP
+.RS 3
+.TP 3
+options
+Command\-line options.
+.TP 3
+classes
+List of one or more classes (separated by spaces) to be processed for annotations (such as \f2DocFooter.class\fP). You may specify a class that can be found in the class path, by its file name (for example, \f2/home/user/myproject/src/DocFooter.class\fP), or with a URL (for example, \f2file:///home/user/myproject/src/DocFooter.class\fP).
+.RE
+
+.LP
+.LP
+For example, compile the following class declaration:
+.LP
+.nf
+\f3
+.fl
+import java.awt.*;
+.fl
+import java.applet.*;
+.fl
+
+.fl
+public class DocFooter extends Applet {
+.fl
+        String date;
+.fl
+        String email;
+.fl
+
+.fl
+        public void init() {
+.fl
+                resize(500,100);
+.fl
+                date = getParameter("LAST_UPDATED");
+.fl
+                email = getParameter("EMAIL");
+.fl
+        }
+.fl
+
+.fl
+        public void paint(Graphics g) {
+.fl
+                g.drawString(date + " by ",100, 15);
+.fl
+                g.drawString(email,290,15);
+.fl
+        }
+.fl
+}
+.fl
+\fP
+.fi
+
+.LP
+.LP
+The output from \f3javap DocFooter.class\fP yields:
+.LP
+.nf
+\f3
+.fl
+Compiled from "DocFooter.java"
+.fl
+public class DocFooter extends java.applet.Applet {
+.fl
+  java.lang.String date;
+.fl
+  java.lang.String email;
+.fl
+  public DocFooter();
+.fl
+  public void init();
+.fl
+  public void paint(java.awt.Graphics);
+.fl
+}
+.fl
+\fP
+.fi
+
+.LP
+.LP
+The output from \f3javap \-c DocFooter.class\fP yields:
+.LP
+.nf
+\f3
+.fl
+Compiled from "DocFooter.java"
+.fl
+public class DocFooter extends java.applet.Applet {
+.fl
+  java.lang.String date;
+.fl
+
+.fl
+  java.lang.String email;
+.fl
+
+.fl
+  public DocFooter();
+.fl
+    Code:
+.fl
+       0: aload_0
+.fl
+       1: invokespecial #1                  // Method java/applet/Applet."<init>":()V
+.fl
+       4: return
+.fl
+
+.fl
+  public void init();
+.fl
+    Code:
+.fl
+       0: aload_0
+.fl
+       1: sipush        500
+.fl
+       4: bipush        100
+.fl
+       6: invokevirtual #2                  // Method resize:(II)V
+.fl
+       9: aload_0
+.fl
+      10: aload_0
+.fl
+      11: ldc           #3                  // String LAST_UPDATED
+.fl
+      13: invokevirtual #4                  // Method getParameter:(Ljava/lang/String;)Ljava/lang/String;
+.fl
+      16: putfield      #5                  // Field date:Ljava/lang/String;
+.fl
+      19: aload_0
+.fl
+      20: aload_0
+.fl
+      21: ldc           #6                  // String EMAIL
+.fl
+      23: invokevirtual #4                  // Method getParameter:(Ljava/lang/String;)Ljava/lang/String;
+.fl
+      26: putfield      #7                  // Field email:Ljava/lang/String;
+.fl
+      29: return
+.fl
+
+.fl
+  public void paint(java.awt.Graphics);
+.fl
+    Code:
+.fl
+       0: aload_1
+.fl
+       1: new           #8                  // class java/lang/StringBuilder
+.fl
+       4: dup
+.fl
+       5: invokespecial #9                  // Method java/lang/StringBuilder."<init>":()V
+.fl
+       8: aload_0
+.fl
+       9: getfield      #5                  // Field date:Ljava/lang/String;
+.fl
+      12: invokevirtual #10                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+.fl
+      15: ldc           #11                 // String  by
+.fl
+      17: invokevirtual #10                 // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+.fl
+      20: invokevirtual #12                 // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+.fl
+      23: bipush        100
+.fl
+      25: bipush        15
+.fl
+      27: invokevirtual #13                 // Method java/awt/Graphics.drawString:(Ljava/lang/String;II)V
+.fl
+      30: aload_1
+.fl
+      31: aload_0
+.fl
+      32: getfield      #7                  // Field email:Ljava/lang/String;
+.fl
+      35: sipush        290
+.fl
+      38: bipush        15
+.fl
+      40: invokevirtual #13                 // Method java/awt/Graphics.drawString:(Ljava/lang/String;II)V
+.fl
+      43: return
+.fl
+}
+.fl
+\fP
+.fi
+
+.LP
+.SH "OPTIONS"
+.LP
+.RS 3
+.TP 3
+\-help \-\-help \-?
+Prints out help message for \f3javap\fP.
+.TP 3
+\-version
+Prints out version information.
+.TP 3
+\-l
+Prints out line and local variable tables.
+.TP 3
+\-public
+Shows only public classes and members.
+.TP 3
+\-protected
+Shows only protected and public classes and members.
+.TP 3
+\-package
+Shows only package, protected, and public classes and members. This is the default.
+.TP 3
+\-private \-p
+Shows all classes and members.
+.TP 3
+\-Jflag
+Pass \f2flag\fP directly to the runtime system. Some examples:
+.nf
+\f3
+.fl
+javap \-J\-version
+.fl
+javap \-J\-Djava.security.manager \-J\-Djava.security.policy=MyPolicy MyClassName
+.fl
+\fP
+.fi
+.TP 3
+\-s
+Prints internal type signatures.
+.TP 3
+\-sysinfo
+Shows system information (path, size, date, MD5 hash) of the class being processed.
+.TP 3
+\-constants
+Shows static final constants.
+.TP 3
+\-c
+Prints out disassembled code, i.e., the instructions that comprise the Java bytecodes, for each of the methods in the class. These are documented in the
+.na
+\f2Java Virtual Machine Specification\fP @
+.fi
+http://java.sun.com/docs/books/vmspec/.
+.TP 3
+\-verbose
+Prints stack size, number of \f2locals\fP and \f2args\fP for methods.
+.TP 3
+\-classpath path
+Specifies the path \f3javap\fP uses to look up classes. Overrides the default or the CLASSPATH environment variable if it is set.
+.TP 3
+\-bootclasspath path
+Specifies path from which to load bootstrap classes. By default, the bootstrap classes are the classes implementing the core Java platform located in \f2jre/lib/rt.jar\fP and several other jar files.
+.TP 3
+\-extdirs dirs
+Overrides location at which installed extensions are searched for. The default location for extensions is the value of \f2java.ext.dirs\fP.
+.RE
+
+.LP
+.SH "SEE ALSO"
+.LP
+.LP
+javac(1), java(1), jdb(1), javah(1), javadoc(1)
+.LP
+

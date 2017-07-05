@@ -64,7 +64,7 @@ public class TCPChannel implements Channel {
     private final TCPTransport tr;
     /** list of cached connections */
     private final List<TCPConnection> freeList =
-        new ArrayList<TCPConnection>();
+        new ArrayList<>();
     /** frees cached connections that have expired (guarded by freeList) */
     private Future<?> reaper = null;
 
@@ -480,7 +480,7 @@ class ConnectionAcceptor implements Runnable {
     private TCPTransport transport;
 
     /** queue of connections to be accepted */
-    private List<Connection> queue = new ArrayList<Connection>();
+    private List<Connection> queue = new ArrayList<>();
 
     /** thread ID counter */
     private static int threadNum = 0;
