@@ -1,0 +1,4 @@
+java.security.AccessControlException: access denied ("java.lang.RuntimePermission" "exitVM.0")
+java.security.AccessControlException: access denied ("java.lang.RuntimePermission" "exitVM.0")
+java.security.AccessControlException: access denied ("java.lang.RuntimePermission" "exitVM.0")
+Success, didn't exit!

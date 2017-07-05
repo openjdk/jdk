@@ -26,8 +26,12 @@
 package java.lang.invoke;
 
 import java.lang.reflect.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import sun.invoke.WrapperInstance;
 import java.util.ArrayList;
+import sun.reflect.Reflection;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class consists exclusively of static methods that help adapt
@@ -137,6 +141,21 @@ public class MethodHandleProxies {
     <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
             throw new IllegalArgumentException("not a public interface: "+intfc.getName());
+        final MethodHandle mh;
+        if (System.getSecurityManager() != null) {
+            final int CALLER_FRAME = 2; // 0: Reflection, 1: asInterfaceInstance, 2: caller
+            final Class<?> caller = Reflection.getCallerClass(CALLER_FRAME);
+            final ClassLoader ccl = caller != null ? caller.getClassLoader() : null;
+            ReflectUtil.checkProxyPackageAccess(ccl, intfc);
+            mh = ccl != null ? bindCaller(target, caller) : target;
+        } else {
+            mh = target;
+        }
+        ClassLoader proxyLoader = intfc.getClassLoader();
+        if (proxyLoader == null) {
+            ClassLoader cl = Thread.currentThread().getContextClassLoader(); // avoid use of BCP
+            proxyLoader = cl != null ? cl : ClassLoader.getSystemClassLoader();
+        }
         final Method[] methods = getSingleNameMethods(intfc);
         if (methods == null)
             throw new IllegalArgumentException("not a single-method interface: "+intfc.getName());
@@ -144,31 +163,58 @@ public class MethodHandleProxies {
         for (int i = 0; i < methods.length; i++) {
             Method sm = methods[i];
             MethodType smMT = MethodType.methodType(sm.getReturnType(), sm.getParameterTypes());
-            MethodHandle checkTarget = target.asType(smMT);  // make throw WMT
+            MethodHandle checkTarget = mh.asType(smMT);  // make throw WMT
             checkTarget = checkTarget.asType(checkTarget.type().changeReturnType(Object.class));
             vaTargets[i] = checkTarget.asSpreader(Object[].class, smMT.parameterCount());
         }
-        return intfc.cast(Proxy.newProxyInstance(
-                intfc.getClassLoader(),
-                new Class<?>[]{ intfc, WrapperInstance.class },
-                new InvocationHandler() {
-                    private Object getArg(String name) {
-                        if ((Object)name == "getWrapperInstanceTarget")  return target;
-                        if ((Object)name == "getWrapperInstanceType")    return intfc;
-                        throw new AssertionError();
+        final InvocationHandler ih = new InvocationHandler() {
+                private Object getArg(String name) {
+                    if ((Object)name == "getWrapperInstanceTarget")  return target;
+                    if ((Object)name == "getWrapperInstanceType")    return intfc;
+                    throw new AssertionError();
+                }
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    for (int i = 0; i < methods.length; i++) {
+                        if (method.equals(methods[i]))
+                            return vaTargets[i].invokeExact(args);
                     }
-                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                        for (int i = 0; i < methods.length; i++) {
-                            if (method.equals(methods[i]))
-                                return vaTargets[i].invokeExact(args);
-                        }
-                        if (method.getDeclaringClass() == WrapperInstance.class)
-                            return getArg(method.getName());
-                        if (isObjectMethod(method))
-                            return callObjectMethod(proxy, method, args);
-                        throw new InternalError("bad proxy method: "+method);
-                    }
-                }));
+                    if (method.getDeclaringClass() == WrapperInstance.class)
+                        return getArg(method.getName());
+                    if (isObjectMethod(method))
+                        return callObjectMethod(proxy, method, args);
+                    throw new InternalError("bad proxy method: "+method);
+                }
+            };
+
+        final Object proxy;
+        if (System.getSecurityManager() != null) {
+            // sun.invoke.WrapperInstance is a restricted interface not accessible
+            // by any non-null class loader.
+            final ClassLoader loader = proxyLoader;
+            proxy = AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                public Object run() {
+                    return Proxy.newProxyInstance(
+                            loader,
+                            new Class<?>[]{ intfc, WrapperInstance.class },
+                            ih);
+                }
+            });
+        } else {
+            proxy = Proxy.newProxyInstance(proxyLoader,
+                                           new Class<?>[]{ intfc, WrapperInstance.class },
+                                           ih);
+        }
+        return intfc.cast(proxy);
+    }
+
+    private static MethodHandle bindCaller(MethodHandle target, Class<?> hostClass) {
+        MethodHandle cbmh = MethodHandleImpl.bindCaller(target, hostClass);
+        if (target.isVarargsCollector()) {
+            MethodType type = cbmh.type();
+            int arity = type.parameterCount();
+            return cbmh.asVarargsCollector(type.parameterType(arity-1));
+        }
+        return cbmh;
     }
 
     /**

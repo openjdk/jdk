@@ -131,6 +131,9 @@ public abstract class SunToolkit extends Toolkit
     public abstract FramePeer createFrame(Frame target)
         throws HeadlessException;
 
+    public abstract FramePeer createLightweightFrame(LightweightFrame target)
+        throws HeadlessException;
+
     public abstract DialogPeer createDialog(Dialog target)
         throws HeadlessException;
 

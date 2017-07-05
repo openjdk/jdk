@@ -387,13 +387,14 @@ public class JFrame  extends Frame implements WindowConstants,
             operation != EXIT_ON_CLOSE) {
             throw new IllegalArgumentException("defaultCloseOperation must be one of: DO_NOTHING_ON_CLOSE, HIDE_ON_CLOSE, DISPOSE_ON_CLOSE, or EXIT_ON_CLOSE");
         }
-        if (this.defaultCloseOperation != operation) {
-            if (operation == EXIT_ON_CLOSE) {
-                SecurityManager security = System.getSecurityManager();
-                if (security != null) {
-                    security.checkExit(0);
-                }
+
+        if (operation == EXIT_ON_CLOSE) {
+            SecurityManager security = System.getSecurityManager();
+            if (security != null) {
+                security.checkExit(0);
             }
+        }
+        if (this.defaultCloseOperation != operation) {
             int oldValue = this.defaultCloseOperation;
             this.defaultCloseOperation = operation;
             firePropertyChange("defaultCloseOperation", oldValue, operation);

@@ -1,0 +1,10 @@
+x undefined? true
+TypeError: Cannot read property "foo" from undefined
+TypeError: Cannot set property "bar" of undefined
+TypeError: Cannot read property "1" from undefined
+TypeError: Cannot set property "0" of undefined
+TypeError: Cannot read property "func" from undefined
+TypeError: Cannot delete property "0" of undefined
+TypeError: Cannot delete property "foo" of undefined
+TypeError: undefined is not an Object
+TypeError: Cannot apply "with" to undefined

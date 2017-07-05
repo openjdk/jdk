@@ -37,6 +37,7 @@ import java.beans.PropertyChangeListener;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.awt.AWTAutoShutdown;
+import sun.awt.LightweightFrame;
 import sun.awt.SunToolkit;
 import sun.awt.Win32GraphicsDevice;
 import sun.awt.Win32GraphicsEnvironment;
@@ -394,6 +395,12 @@ public class WToolkit extends SunToolkit implements Runnable {
 
     public FramePeer  createFrame(Frame target) {
         FramePeer peer = new WFramePeer(target);
+        targetCreatedPeer(target, peer);
+        return peer;
+    }
+
+    public FramePeer createLightweightFrame(LightweightFrame target) {
+        FramePeer peer = new WLightweightFramePeer(target);
         targetCreatedPeer(target, peer);
         return peer;
     }

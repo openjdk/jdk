@@ -1,0 +1,9 @@
+x === 0
+x === 1
+default case x 2
+default case x hello
+x === null
+x === undefined
+x === true
+x === false
+default case x [object Object]

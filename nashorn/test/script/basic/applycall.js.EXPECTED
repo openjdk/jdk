@@ -1,0 +1,14 @@
+function call() { [native code] }
+func.call.length = 1
+hello, 
+world
+hello, 
+world
+hello, 
+world
+invokedynamic
+ is great!
+func.apply.length = 2
+I am func2
+undefined
+undefined

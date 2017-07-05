@@ -86,11 +86,11 @@ public final class AnnotationSupport {
             Class<? extends Annotation> containerClass = containerInstance.annotationType();
             AnnotationType annoType = AnnotationType.getInstance(containerClass);
             if (annoType == null)
-                throw new InvalidContainerAnnotationError(containerInstance + " is an invalid container for repeating annotations");
+                throw new AnnotationFormatError(containerInstance + " is an invalid container for repeating annotations");
 
             Method m = annoType.members().get("value");
             if (m == null)
-                throw new InvalidContainerAnnotationError(containerInstance +
+                throw new AnnotationFormatError(containerInstance +
                                                           " is an invalid container for repeating annotations");
             m.setAccessible(true);
 
@@ -103,11 +103,9 @@ public final class AnnotationSupport {
                  IllegalArgumentException | // parameters doesn't match
                  InvocationTargetException | // the value method threw an exception
                  ClassCastException e) { // well, a cast failed ...
-            throw new InvalidContainerAnnotationError(
+            throw new AnnotationFormatError(
                     containerInstance + " is an invalid container for repeating annotations",
-                    e,
-                    containerInstance,
-                    null);
+                    e);
         }
     }
 
@@ -129,12 +127,10 @@ public final class AnnotationSupport {
             return l;
         } catch (ClassCastException |
                  NullPointerException e) {
-            throw new InvalidContainerAnnotationError(
+            throw new AnnotationFormatError(
                     String.format("%s is an invalid container for repeating annotations of type: %s",
                         containerInstance, annotationClass),
-                    e,
-                    containerInstance,
-                    annotationClass);
+                    e);
         }
     }
 }

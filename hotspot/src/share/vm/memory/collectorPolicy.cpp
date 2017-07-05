@@ -620,7 +620,7 @@ HeapWord* GenCollectorPolicy::mem_allocate_work(size_t size,
 
       const bool limit_exceeded = size_policy()->gc_overhead_limit_exceeded();
       const bool softrefs_clear = all_soft_refs_clear();
-      assert(!limit_exceeded || softrefs_clear, "Should have been cleared");
+
       if (limit_exceeded && softrefs_clear) {
         *gc_overhead_limit_was_exceeded = true;
         size_policy()->set_gc_overhead_limit_exceeded(false);

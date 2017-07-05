@@ -44,6 +44,8 @@
 void ConstantPoolCacheEntry::initialize_entry(int index) {
   assert(0 < index && index < 0x10000, "sanity check");
   _indices = index;
+  _f1 = NULL;
+  _f2 = _flags = 0;
   assert(constant_pool_index() == index, "");
 }
 
@@ -533,13 +535,17 @@ void ConstantPoolCacheEntry::verify(outputStream* st) const {
 
 // Implementation of ConstantPoolCache
 
-ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
+ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
+                                     int length,
+                                     const intStack& index_map,
+                                     const intStack& invokedynamic_map, TRAPS) {
   int size = ConstantPoolCache::size(length);
 
-  return new (loader_data, size, false, THREAD) ConstantPoolCache(length);
+  return new (loader_data, size, false, THREAD) ConstantPoolCache(length, index_map, invokedynamic_map);
 }
 
-void ConstantPoolCache::initialize(intArray& inverse_index_map, intArray& invokedynamic_references_map) {
+void ConstantPoolCache::initialize(const intArray& inverse_index_map,
+                                   const intArray& invokedynamic_references_map) {
   assert(inverse_index_map.length() == length(), "inverse index map must have same length as cache");
   for (int i = 0; i < length(); i++) {
     ConstantPoolCacheEntry* e = entry_at(i);

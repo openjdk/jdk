@@ -118,8 +118,8 @@ endif
 # Compiler warnings are treated as errors 
 WARNINGS_ARE_ERRORS = -Werror 
 # Enable these warnings. See 'info gcc' about details on these options
-ADDITIONAL_WARNINGS = -Wpointer-arith -Wconversion -Wsign-compare 
-CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(ADDITIONAL_WARNINGS) 
+WARNING_FLAGS = -Wpointer-arith -Wconversion -Wsign-compare -Wundef
+CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(WARNING_FLAGS)
 # Special cases 
 CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@))  
 

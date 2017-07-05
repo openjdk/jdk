@@ -77,6 +77,7 @@ $(call make-launcher, jmap, sun.tools.jmap.JMap, \
   -J-Dsun.jvm.hotspot.debugger.useWindbgDebugger, )
 $(call make-launcher, jps, sun.tools.jps.Jps, , )
 $(call make-launcher, jrunscript, com.sun.tools.script.shell.Main, , )
+$(call make-launcher, jjs, jdk.nashorn.tools.Shell, , )
 $(call make-launcher, jsadebugd, sun.jvm.hotspot.jdi.SADebugServer, , )
 $(call make-launcher, jstack, sun.tools.jstack.JStack, \
   -J-Dsun.jvm.hotspot.debugger.useProcDebugger \
