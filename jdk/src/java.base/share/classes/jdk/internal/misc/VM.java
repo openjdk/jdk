@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
 import static java.lang.Thread.State.*;
 import java.util.Properties;

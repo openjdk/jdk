@@ -23,12 +23,12 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
 public class OSEnvironment {
 
     /*
-     * Initialize any miscellenous operating system settings that need to be set
+     * Initialize any miscellaneous operating system settings that need to be set
      * for the class libraries.
      */
     public static void initialize() {

@@ -29,5 +29,4 @@
  * implementations.
  */
 
-@jdk.Exported
 package com.sun.jdi.connect.spi;

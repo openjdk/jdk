@@ -473,7 +473,7 @@ public class ManagementFactoryHelper {
     public static Thread.State toThreadState(int state) {
         // suspended and native bits may be set in state
         int threadStatus = state & ~JMM_THREAD_STATE_FLAG_MASK;
-        return sun.misc.VM.toThreadState(threadStatus);
+        return jdk.internal.misc.VM.toThreadState(threadStatus);
     }
 
     // These values are defined in jmm.h

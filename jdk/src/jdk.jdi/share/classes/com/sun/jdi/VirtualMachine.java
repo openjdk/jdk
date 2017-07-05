@@ -70,7 +70,6 @@ import java.util.Map;
  * @author James McIlree
  * @since  1.3
  */
-@jdk.Exported
 public interface VirtualMachine extends Mirror {
 
     /**

@@ -30,5 +30,4 @@
  * @since 1.8
  */
 
-@jdk.Exported
 package jdk.net;

@@ -215,7 +215,6 @@ import javax.security.auth.Subject;
  * @see java.security.ProtectionDomain
  * @see java.security.Security security properties
  */
-@jdk.Exported(false)
 @Deprecated
 public class PolicyFile extends javax.security.auth.Policy {
 

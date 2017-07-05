@@ -28,6 +28,7 @@ package java.lang;
 import java.lang.annotation.Native;
 import java.util.Objects;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.VM;
 
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
@@ -1018,7 +1019,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * may be controlled by the {@code -XX:AutoBoxCacheMax=<size>} option.
      * During VM initialization, java.lang.Integer.IntegerCache.high property
      * may be set and saved in the private system properties in the
-     * sun.misc.VM class.
+     * jdk.internal.misc.VM class.
      */
 
     private static class IntegerCache {
@@ -1030,7 +1031,7 @@ public final class Integer extends Number implements Comparable<Integer> {
             // high value may be configured by property
             int h = 127;
             String integerCacheHighPropValue =
-                sun.misc.VM.getSavedProperty("java.lang.Integer.IntegerCache.high");
+                VM.getSavedProperty("java.lang.Integer.IntegerCache.high");
             if (integerCacheHighPropValue != null) {
                 try {
                     int i = parseInt(integerCacheHighPropValue);

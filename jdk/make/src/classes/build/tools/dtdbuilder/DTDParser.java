@@ -35,8 +35,6 @@ import java.util.Hashtable;
 import java.util.BitSet;
 import java.text.MessageFormat;
 
-import sun.misc.MessageUtils;
-
 /**
  * A parser for DTDs. This parser roughly corresponds to the
  * rules specified in "The SGML Handbook" by Charles F. Goldfarb.

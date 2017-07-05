@@ -32,7 +32,6 @@ package com.sun.jdi;
  * @author Gordon Hirsch
  * @since  1.3
  */
-@jdk.Exported
 public class VMOutOfMemoryException extends RuntimeException {
     private static final long serialVersionUID = 71504228548910686L;
     public VMOutOfMemoryException() {

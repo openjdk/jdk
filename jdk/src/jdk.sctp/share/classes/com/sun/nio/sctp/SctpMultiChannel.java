@@ -134,7 +134,6 @@ import java.nio.channels.SelectionKey;
  *
  * @since 1.7
  */
-@jdk.Exported
 public abstract class SctpMultiChannel
     extends AbstractSelectableChannel
 {

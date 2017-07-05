@@ -34,7 +34,6 @@ import java.net.SocketOption;
  *
  * @since 1.8
  */
-@jdk.Exported
 public final class ExtendedSocketOptions {
 
     private static class ExtSocketOption<T> implements SocketOption<T> {

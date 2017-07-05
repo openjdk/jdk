@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2085,8 +2085,10 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
         String calendarType = getCalendarType();
         int fieldValue = get(field);
-        // the standalone and narrow styles are supported only through CalendarDataProviders.
-        if (isStandaloneStyle(style) || isNarrowFormatStyle(style)) {
+        // the standalone/narrow styles and short era are supported only through
+        // CalendarNameProviders.
+        if (isStandaloneStyle(style) || isNarrowFormatStyle(style) ||
+            field == ERA && (style & SHORT) == SHORT) {
             String val = CalendarDataUtility.retrieveFieldValueName(calendarType,
                                                                     field, fieldValue,
                                                                     style, locale);

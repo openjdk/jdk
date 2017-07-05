@@ -21,13 +21,13 @@
  * questions.
  */
 import java.util.Objects;
-import sun.misc.VM;
+import jdk.internal.misc.VM;
 
 /**
  * @test
  * @bug 8068730
  * @summary tests that VM.getgetNanoTimeAdjustment() works as expected.
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @run main GetNanoTimeAdjustment
  * @author danielfuchs
  */

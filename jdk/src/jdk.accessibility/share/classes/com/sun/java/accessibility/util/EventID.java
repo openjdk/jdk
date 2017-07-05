@@ -35,7 +35,6 @@ package com.sun.java.accessibility.util;
  * @see SwingEventMonitor
  *
  */
-@jdk.Exported
 public class EventID {
 
     /**

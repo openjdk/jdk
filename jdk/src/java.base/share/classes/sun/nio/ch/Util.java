@@ -389,7 +389,7 @@ public class Util {
 
     static boolean atBugLevel(String bl) {              // package-private
         if (bugLevel == null) {
-            if (!sun.misc.VM.isBooted())
+            if (!jdk.internal.misc.VM.isBooted())
                 return false;
             String value = AccessController.doPrivileged(
                 new GetPropertyAction("sun.nio.ch.bugLevel"));

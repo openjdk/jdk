@@ -56,7 +56,6 @@ import javax.accessibility.*;
  * @see AWTEventMonitor
  *
  */
-@jdk.Exported
 public class SwingEventMonitor extends AWTEventMonitor {
 
     /**
