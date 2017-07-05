@@ -45,13 +45,6 @@ void VM_Version::initialize() {
   if( cache_line_size > AllocatePrefetchStepSize )
     AllocatePrefetchStepSize = cache_line_size;
 
-  assert(AllocatePrefetchLines > 0, "invalid value");
-  if( AllocatePrefetchLines < 1 )     // set valid value in product VM
-    AllocatePrefetchLines = 3;
-  assert(AllocateInstancePrefetchLines > 0, "invalid value");
-  if( AllocateInstancePrefetchLines < 1 ) // set valid value in product VM
-    AllocateInstancePrefetchLines = 1;
-
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 

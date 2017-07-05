@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
+/**
  * @test
- * @bug 8137167
- * @summary Tests CompileCommand=log
- * @library /testlibrary /test/lib /compiler/testlibrary ../share /
- * @build compiler.compilercontrol.commands.LogTest
- *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
- *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm compiler.compilercontrol.commands.LogTest
+ * @bug 8147645
+ * @summary Array.fill intrinsification code doesn't mark replaced control as dead
+ * @run main/othervm  -XX:-TieredCompilation -XX:CompileCommand=dontinline,TestArraysFillDeadControl::dont_inline TestArraysFillDeadControl
+ *
  */
 
-package compiler.compilercontrol.commands;
+import java.util.Arrays;
 
-import compiler.compilercontrol.share.SingleCommand;
-import compiler.compilercontrol.share.scenario.Command;
-import compiler.compilercontrol.share.scenario.Scenario;
+public class TestArraysFillDeadControl {
 
-public class LogTest {
+    static void dont_inline() {
+    }
+
+    static int i = 1;
+
     public static void main(String[] args) {
-        new SingleCommand(Command.LOG, Scenario.Type.OPTION).test();
+        for (int j = 0; j < 200000; j++) {
+            int[] a = new int[2];
+            int b = i;
+
+            Arrays.fill(a, 1);
+            Arrays.fill(a, 1+b);
+
+            dont_inline();
+        }
     }
 }
