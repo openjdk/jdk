@@ -130,6 +130,12 @@ public class SoftMixingSourceDataLine extends SoftMixingDataLine implements
         if (len % framesize != 0)
             throw new IllegalArgumentException(
                     "Number of bytes does not represent an integral number of sample frames.");
+        if (off < 0) {
+            throw new ArrayIndexOutOfBoundsException(off);
+        }
+        if ((long)off + (long)len > (long)b.length) {
+            throw new ArrayIndexOutOfBoundsException(b.length);
+        }
 
         byte[] buff = cycling_buffer;
         int buff_len = cycling_buffer.length;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,6 +284,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         Iterator<TrustAnchor> iter = buildParams.getTrustAnchors().iterator();
         while (iter.hasNext()) {
             TrustAnchor anchor = iter.next();
+
             /* check if anchor satisfies target constraints */
             if (anchorIsTarget(anchor, targetSel)) {
                 this.trustAnchor = anchor;
@@ -303,6 +304,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
             currentState.crlChecker =
                 new CrlRevocationChecker(null, buildParams, null, onlyEECert);
             currentState.algorithmChecker = new AlgorithmChecker(anchor);
+            currentState.untrustedChecker = new UntrustedChecker();
             try {
                 depthFirstSearchReverse(null, currentState,
                 new ReverseBuilder(buildParams, targetSubjectDN), adjacencyList,
@@ -349,6 +351,7 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
         // init the crl checker
         currentState.crlChecker
             = new CrlRevocationChecker(null, buildParams, null, onlyEECert);
+        currentState.untrustedChecker = new UntrustedChecker();
 
         depthFirstSearchForward(targetSubjectDN, currentState,
           new ForwardBuilder
@@ -645,8 +648,8 @@ public final class SunCertPathBuilder extends CertPathBuilderSpi {
             vertex.setIndex(adjList.size() - 1);
 
             /* recursively search for matching certs at next dN */
-            depthFirstSearchForward(cert.getIssuerX500Principal(), nextState, builder,
-                adjList, certPathList);
+            depthFirstSearchForward(cert.getIssuerX500Principal(),
+                                    nextState, builder, adjList, certPathList);
 
             /*
              * If path has been completed, return ASAP!
