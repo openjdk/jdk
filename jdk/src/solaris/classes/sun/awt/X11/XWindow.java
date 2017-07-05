@@ -456,6 +456,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             ColorModel cm = getColorModel();
             int pixel = PixelConverter.instance.rgbToPixel(c.getRGB(), cm);
             XlibWrapper.XSetWindowBackground(XToolkit.getDisplay(), getContentWindow(), pixel);
+            XlibWrapper.XClearWindow(XToolkit.getDisplay(), getContentWindow());
         }
         finally {
             XToolkit.awtUnlock();

@@ -1325,10 +1325,11 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
                                ImageWriteParam bmpParam) throws IOException {
         String format =
             compressionType == BI_JPEG ? "jpeg" : "png";
-        Iterator iterator = ImageIO.getImageWritersByFormatName(format);
+        Iterator<ImageWriter> iterator =
+               ImageIO.getImageWritersByFormatName(format);
         ImageWriter writer = null;
         if (iterator.hasNext())
-            writer = (ImageWriter)iterator.next();
+            writer = iterator.next();
         if (writer != null) {
             if (embedded_stream == null) {
                 throw new RuntimeException("No stream for writing embedded image!");

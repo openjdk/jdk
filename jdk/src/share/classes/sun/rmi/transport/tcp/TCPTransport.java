@@ -49,6 +49,7 @@ import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UID;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,9 +74,6 @@ import sun.rmi.transport.Target;
 import sun.rmi.transport.Transport;
 import sun.rmi.transport.TransportConstants;
 import sun.rmi.transport.proxy.HttpReceiveSocket;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetLongAction;
-import sun.security.action.GetPropertyAction;
 
 /**
  * TCPTransport is the socket-based implementation of the RMI Transport
@@ -90,19 +88,18 @@ public class TCPTransport extends Transport {
     /* tcp package log */
     static final Log tcpLog = Log.getLog("sun.rmi.transport.tcp", "tcp",
         LogStream.parseLevel(AccessController.doPrivileged(
-            new GetPropertyAction("sun.rmi.transport.tcp.logLevel"))));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.rmi.transport.tcp.logLevel"))));
 
     /** maximum number of connection handler threads */
     private static final int maxConnectionThreads =     // default no limit
-        AccessController.doPrivileged(
-            new GetIntegerAction("sun.rmi.transport.tcp.maxConnectionThreads",
-                                 Integer.MAX_VALUE));
+        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+            Integer.getInteger("sun.rmi.transport.tcp.maxConnectionThreads",
+                               Integer.MAX_VALUE));
 
     /** keep alive time for idle connection handler threads */
     private static final long threadKeepAliveTime =     // default 1 minute
-        AccessController.doPrivileged(
-            new GetLongAction("sun.rmi.transport.tcp.threadKeepAliveTime",
-                              60000));
+        AccessController.doPrivileged((PrivilegedAction<Long>) () ->
+            Long.getLong("sun.rmi.transport.tcp.threadKeepAliveTime", 60000));
 
     /** thread pool for connection handlers */
     private static final ExecutorService connectionThreadPool =
@@ -143,9 +140,8 @@ public class TCPTransport extends Transport {
      * and 20 hours.
      */
     private static final int connectionReadTimeout =    // default 2 hours
-        AccessController.doPrivileged(
-            new GetIntegerAction("sun.rmi.transport.tcp.readTimeout",
-                                 2 * 3600 * 1000));
+        AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+            Integer.getInteger("sun.rmi.transport.tcp.readTimeout", 2 * 3600 * 1000));
 
     /**
      * Constructs a TCPTransport.

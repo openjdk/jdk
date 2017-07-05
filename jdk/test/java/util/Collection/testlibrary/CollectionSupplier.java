@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.lang.Exception;
 import java.lang.Integer;
 import java.lang.Iterable;
 import java.lang.Override;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,6 +37,7 @@ import static org.testng.Assert.assertTrue;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -44,18 +46,22 @@ import java.util.function.Supplier;
  */
 public final class CollectionSupplier<C extends Collection<Integer>> implements Supplier<Iterable<CollectionSupplier.TestCase<C>>> {
 
-    private final Supplier<C>[] classes;
+    private final List<Function<Collection<Integer>, C>> suppliers;
     private final int size;
 
     /**
      * A Collection test case.
      */
     public static final class TestCase<C extends Collection<Integer>> {
-
         /**
          * The name of the test case.
          */
         public final String name;
+
+        /**
+         * The supplier of a collection
+         */
+        public Function<Collection<Integer>, C> supplier;
 
         /**
          * Unmodifiable reference collection, useful for comparisons.
@@ -71,11 +77,11 @@ public final class CollectionSupplier<C extends Collection<Integer>> implements 
          * Create a Collection test case.
          *
          * @param name name of the test case
-         * @param expected reference collection
          * @param collection the modifiable test collection
          */
-        public TestCase(String name, C collection) {
+        public TestCase(String name, Function<Collection<Integer>, C> supplier, C collection) {
             this.name = name;
+            this.supplier = supplier;
             this.expected = Collections.unmodifiableList(
                 Arrays.asList(collection.toArray(new Integer[0])));
             this.collection = collection;
@@ -107,54 +113,52 @@ public final class CollectionSupplier<C extends Collection<Integer>> implements 
     }
 
     /**
-     * Create a {@code Supplier} that creates instances of specified collection
-     * classes of specified length.
+     * Create a {@code CollectionSupplier} that creates instances of specified
+     * collection suppliers of the specified size.
      *
-     * @param classNames class names that implement {@code Collection}
+     * @param suppliers the suppliers names that supply {@code Collection}
+     *        instances
      * @param size the desired size of each collection
      */
-    public CollectionSupplier(Supplier<C>[] classes, int size) {
-        this.classes = Arrays.copyOf(classes, classes.length);
+    public CollectionSupplier(List<Function<Collection<Integer>, C>> suppliers, int size) {
+        this.suppliers = suppliers;
         this.size = size;
     }
 
     @Override
     public Iterable<TestCase<C>> get() {
         final Collection<TestCase<C>> cases = new LinkedList<>();
-        for (final Supplier<C> type : classes) {
+        for (final Function<Collection<Integer>, C> supplier : suppliers)
             try {
-                final Collection<Integer> empty = type.get();
-                cases.add(new TestCase("empty", empty));
+                cases.add(new TestCase<>("empty", supplier, supplier.apply(Collections.emptyList())));
 
-                final Collection<Integer> single = type.get();
-                single.add(42);
-                cases.add(new TestCase("single", single));
+                cases.add(new TestCase<>("single", supplier, supplier.apply(Arrays.asList(42))));
 
-                final Collection<Integer> regular = type.get();
+                final Collection<Integer> regular = new ArrayList<>();
                 for (int i = 0; i < size; i++) {
                     regular.add(i);
                 }
-                cases.add(new TestCase("regular", regular));
+                cases.add(new TestCase<>("regular", supplier, supplier.apply(regular)));
 
-                final Collection<Integer> reverse = type.get();
+                final Collection<Integer> reverse = new ArrayList<>();
                 for (int i = size; i >= 0; i--) {
                     reverse.add(i);
                 }
-                cases.add(new TestCase("reverse", reverse));
+                cases.add(new TestCase<>("reverse", supplier, supplier.apply(reverse)));
 
-                final Collection<Integer> odds = type.get();
+                final Collection<Integer> odds = new ArrayList<>();
                 for (int i = 0; i < size; i++) {
                     odds.add((i * 2) + 1);
                 }
-                cases.add(new TestCase("odds", odds));
+                cases.add(new TestCase<>("odds", supplier, supplier.apply(odds)));
 
-                final Collection<Integer> evens = type.get();
+                final Collection<Integer> evens = new ArrayList<>();
                 for (int i = 0; i < size; i++) {
                     evens.add(i * 2);
                 }
-                cases.add(new TestCase("evens", evens));
+                cases.add(new TestCase<>("evens", supplier, supplier.apply(evens)));
 
-                final Collection<Integer> fibonacci = type.get();
+                final Collection<Integer> fibonacci = new ArrayList<>();
                 int prev2 = 0;
                 int prev1 = 1;
                 for (int i = 0; i < size; i++) {
@@ -166,58 +170,62 @@ public final class CollectionSupplier<C extends Collection<Integer>> implements 
                     prev2 = prev1;
                     prev1 = n;
                 }
-                cases.add(new TestCase("fibonacci", fibonacci));
+                cases.add(new TestCase<>("fibonacci", supplier, supplier.apply(fibonacci)));
 
-            // variants where the size of the backing storage != reported size
+
+                boolean isStructurallyModifiable = false;
+                try {
+                    C t = supplier.apply(Collections.emptyList());
+                    t.add(1);
+                    isStructurallyModifiable = true;
+                } catch (UnsupportedOperationException e) { }
+
+                if (!isStructurallyModifiable)
+                    continue;
+
+
+                // variants where the size of the backing storage != reported size
                 // created by removing half of the elements
-                final Collection<Integer> emptyWithSlack = type.get();
+                final C emptyWithSlack = supplier.apply(Collections.emptyList());
                 emptyWithSlack.add(42);
                 assertTrue(emptyWithSlack.remove(42));
-                cases.add(new TestCase("emptyWithSlack", emptyWithSlack));
+                cases.add(new TestCase<>("emptyWithSlack", supplier, emptyWithSlack));
 
-                final Collection<Integer> singleWithSlack = type.get();
+                final C singleWithSlack = supplier.apply(Collections.emptyList());
                 singleWithSlack.add(42);
                 singleWithSlack.add(43);
                 assertTrue(singleWithSlack.remove(43));
-                cases.add(new TestCase("singleWithSlack", singleWithSlack));
+                cases.add(new TestCase<>("singleWithSlack", supplier, singleWithSlack));
 
-                final Collection<Integer> regularWithSlack = type.get();
+                final C regularWithSlack = supplier.apply(Collections.emptyList());
                 for (int i = 0; i < (2 * size); i++) {
                     regularWithSlack.add(i);
                 }
-                assertTrue(regularWithSlack.removeIf((x) -> {
-                    return x >= size;
-                }));
-                cases.add(new TestCase("regularWithSlack", regularWithSlack));
+                assertTrue(regularWithSlack.removeIf(x -> x < size));
+                cases.add(new TestCase<>("regularWithSlack", supplier, regularWithSlack));
 
-                final Collection<Integer> reverseWithSlack = type.get();
+                final C reverseWithSlack = supplier.apply(Collections.emptyList());
                 for (int i = 2 * size; i >= 0; i--) {
                     reverseWithSlack.add(i);
                 }
-                assertTrue(reverseWithSlack.removeIf((x) -> {
-                    return x < size;
-                }));
-                cases.add(new TestCase("reverseWithSlack", reverseWithSlack));
+                assertTrue(reverseWithSlack.removeIf(x -> x < size));
+                cases.add(new TestCase<>("reverseWithSlack", supplier, reverseWithSlack));
 
-                final Collection<Integer> oddsWithSlack = type.get();
+                final C oddsWithSlack = supplier.apply(Collections.emptyList());
                 for (int i = 0; i < 2 * size; i++) {
                     oddsWithSlack.add((i * 2) + 1);
                 }
-                assertTrue(oddsWithSlack.removeIf((x) -> {
-                    return x >= size;
-                }));
-                cases.add(new TestCase("oddsWithSlack", oddsWithSlack));
+                assertTrue(oddsWithSlack.removeIf(x -> x >= size));
+                cases.add(new TestCase<>("oddsWithSlack", supplier, oddsWithSlack));
 
-                final Collection<Integer> evensWithSlack = type.get();
+                final C evensWithSlack = supplier.apply(Collections.emptyList());
                 for (int i = 0; i < 2 * size; i++) {
                     evensWithSlack.add(i * 2);
                 }
-                assertTrue(evensWithSlack.removeIf((x) -> {
-                    return x >= size;
-                }));
-                cases.add(new TestCase("evensWithSlack", evensWithSlack));
+                assertTrue(evensWithSlack.removeIf(x -> x >= size));
+                cases.add(new TestCase<>("evensWithSlack", supplier, evensWithSlack));
 
-                final Collection<Integer> fibonacciWithSlack = type.get();
+                final C fibonacciWithSlack = supplier.apply(Collections.emptyList());
                 prev2 = 0;
                 prev1 = 1;
                 for (int i = 0; i < size; i++) {
@@ -229,15 +237,12 @@ public final class CollectionSupplier<C extends Collection<Integer>> implements 
                     prev2 = prev1;
                     prev1 = n;
                 }
-                assertTrue(fibonacciWithSlack.removeIf((x) -> {
-                    return x < 20;
-                }));
-                cases.add(new TestCase("fibonacciWithSlack",
-                    fibonacciWithSlack));
-            } catch (Exception failed) {
+                assertTrue(fibonacciWithSlack.removeIf(x -> x < 20));
+                cases.add(new TestCase<>("fibonacciWithSlack", supplier, fibonacciWithSlack));
+            }
+            catch (Exception failed) {
                 throw new TestException(failed);
             }
-        }
 
         return cases;
     }

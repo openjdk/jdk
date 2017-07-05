@@ -42,6 +42,7 @@ class Metadata : public MetaspaceObj {
   // Rehashing support for tables containing pointers to this
   unsigned int new_hash(juint seed)   { ShouldNotReachHere();  return 0; }
 
+  virtual bool is_metadata()           const volatile { return true; }
   virtual bool is_klass()              const volatile { return false; }
   virtual bool is_method()             const volatile { return false; }
   virtual bool is_methodData()         const volatile { return false; }

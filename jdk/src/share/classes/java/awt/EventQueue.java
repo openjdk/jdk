@@ -1093,6 +1093,13 @@ public class EventQueue {
                 dispatchThread = null;
             }
             AWTAutoShutdown.getInstance().notifyThreadFree(edt);
+            /*
+             * Event was posted after EDT events pumping had stopped, so start
+             * another EDT to handle this event
+             */
+            if (peekEvent() != null) {
+                initDispatchThread();
+            }
         } finally {
             pushPopLock.unlock();
         }

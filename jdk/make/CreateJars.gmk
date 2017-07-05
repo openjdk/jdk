@@ -30,9 +30,6 @@ include Setup.gmk
 
 default: all
 
-# Prepare the find cache. Only used if running on windows.
-$(eval $(call FillCacheFind, $(JDK_OUTPUTDIR)/classes))
-
 include Tools.gmk
 
 include Profiles.gmk

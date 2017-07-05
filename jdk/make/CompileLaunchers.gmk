@@ -32,7 +32,7 @@ include NativeCompilation.gmk
 # Setup the java compilers for the JDK build.
 include Setup.gmk
 
-# Prepare the find cache. Only used on windows.
+# Prepare the find cache.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/src/share/bin))
 
 # Build tools

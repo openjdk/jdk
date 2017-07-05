@@ -46,6 +46,10 @@ import com.apple.laf.AquaIcon.JRSUIControlSpec;
 import com.apple.laf.AquaIcon.SystemIcon;
 import com.apple.laf.AquaUtils.RecyclableObject;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
+import java.util.Arrays;
+import java.util.List;
+import sun.awt.image.MultiResolutionBufferedImage;
+import sun.awt.image.MultiResolutionImage;
 
 public class AquaImageFactory {
     public static IconUIResource getConfirmImageIcon() {
@@ -120,28 +124,48 @@ public class AquaImageFactory {
 
     private static final int kAlertIconSize = 64;
     static IconUIResource getAppIconCompositedOn(final Image background) {
-        final double scaleFactor = 1.0; // revise for HiDPI
 
-        final int kAlertSubIconSize = (int)(kAlertIconSize * 0.5 * scaleFactor);
-        final int kAlertSubIconInset = (int)(kAlertIconSize * scaleFactor) - kAlertSubIconSize;
-        final Icon smallAppIconScaled = new AquaIcon.CachingScalingIcon(kAlertSubIconSize, kAlertSubIconSize) {
-            Image createImage() {
-                return getThisApplicationsIcon(kAlertSubIconSize, kAlertSubIconSize);
-            }
-        };
+        final BufferedImage iconImage = getAppIconImageCompositedOn(background, 1);
 
-        final BufferedImage image = new BufferedImage(kAlertIconSize, kAlertIconSize, BufferedImage.TYPE_INT_ARGB);
+        if (background instanceof MultiResolutionIconImage) {
+            BufferedImage background2x
+                    = ((MultiResolutionIconImage) background).resolutionVariant;
+            BufferedImage icon2xImage = getAppIconImageCompositedOn(background2x, 2);
+
+            return new IconUIResource(new ImageIcon(
+                    new MultiResolutionIconImage(iconImage, icon2xImage)));
+        }
+        return new IconUIResource(new ImageIcon(iconImage));
+    }
+
+    static BufferedImage getAppIconImageCompositedOn(final Image background, int scaleFactor) {
+
+        final int scaledAlertIconSize = kAlertIconSize * scaleFactor;
+        final int kAlertSubIconSize = (int) (scaledAlertIconSize * 0.5);
+        final int kAlertSubIconInset = scaledAlertIconSize - kAlertSubIconSize;
+        final Icon smallAppIconScaled = new AquaIcon.CachingScalingIcon(
+                kAlertSubIconSize, kAlertSubIconSize) {
+                    Image createImage() {
+                        return getThisApplicationsIcon(kAlertSubIconSize, kAlertSubIconSize);
+                    }
+                };
+
+        final BufferedImage image = new BufferedImage(scaledAlertIconSize,
+                scaledAlertIconSize, BufferedImage.TYPE_INT_ARGB);
         final Graphics g = image.getGraphics();
-        g.drawImage(background, 0, 0, (int)(kAlertIconSize * scaleFactor), (int)(kAlertIconSize * scaleFactor), null);
+        g.drawImage(background, 0, 0,
+                scaledAlertIconSize, scaledAlertIconSize, null);
         if (g instanceof Graphics2D) {
             // improves icon rendering quality in Quartz
-            ((Graphics2D)g).setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
         }
 
-        smallAppIconScaled.paintIcon(null, g, kAlertSubIconInset, kAlertSubIconInset);
+        smallAppIconScaled.paintIcon(null, g,
+                kAlertSubIconInset, kAlertSubIconInset);
         g.dispose();
 
-        return new IconUIResource(new ImageIcon(image));
+        return image;
     }
 
     public static IconUIResource getTreeFolderIcon() {
@@ -207,7 +231,7 @@ public class AquaImageFactory {
 
         @Override
         protected Image getInstance() {
-            return Toolkit.getDefaultToolkit().getImage("NSImage://" + namedImage);
+            return getNSIcon(namedImage);
         }
     }
 
@@ -271,11 +295,27 @@ public class AquaImageFactory {
     }
 
     public static Icon getMenuItemCheckIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(Toolkit.getDefaultToolkit().getImage("NSImage://NSMenuItemSelection"), 25));
+        return new InvertableImageIcon(AquaUtils.generateLightenedImage(
+                getNSIcon("NSMenuItemSelection"), 25));
     }
 
     public static Icon getMenuItemDashIcon() {
-        return new InvertableImageIcon(AquaUtils.generateLightenedImage(Toolkit.getDefaultToolkit().getImage("NSImage://NSMenuMixedState"), 25));
+        return new InvertableImageIcon(AquaUtils.generateLightenedImage(
+                getNSIcon("NSMenuMixedState"), 25));
+    }
+
+    private static Image getNSIcon(String imageName) {
+        Image icon = Toolkit.getDefaultToolkit()
+                .getImage("NSImage://" + imageName);
+
+        if (icon instanceof MultiResolutionImage) {
+            return icon;
+        }
+
+        Image icon2x = AquaUtils.getCImageCreator().createImageFromName(
+                imageName, 2 * icon.getWidth(null), 2 * icon.getHeight(null));
+        return new MultiResolutionBufferedImage(
+                BufferedImage.TYPE_INT_ARGB_PRE, 0, icon, icon2x);
     }
 
     public static class NineSliceMetrics {
@@ -483,5 +523,30 @@ public class AquaImageFactory {
 
     public static Color getSelectionInactiveForegroundColorUIResource() {
         return new SystemColorProxy(LWCToolkit.getAppleColor(LWCToolkit.INACTIVE_SELECTION_FOREGROUND_COLOR));
+    }
+
+    static class MultiResolutionIconImage extends BufferedImage
+            implements MultiResolutionImage {
+
+        BufferedImage resolutionVariant;
+
+        public MultiResolutionIconImage(BufferedImage image, BufferedImage resolutionVariant) {
+            super(image.getWidth(), image.getHeight(), image.getType());
+            this.resolutionVariant = resolutionVariant;
+            Graphics g = getGraphics();
+            g.drawImage(image, 0, 0, null);
+            g.dispose();
+        }
+
+        @Override
+        public Image getResolutionVariant(int width, int height) {
+            return ((width <= getWidth() && height <= getHeight()))
+                    ? this : resolutionVariant;
+        }
+
+        @Override
+        public List<Image> getResolutionVariants() {
+            return Arrays.asList(this, resolutionVariant);
+        }
     }
 }
