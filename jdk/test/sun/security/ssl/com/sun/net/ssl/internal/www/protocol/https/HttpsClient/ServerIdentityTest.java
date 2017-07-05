@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,11 @@
  * @bug 4328195
  * @summary Need to include the alternate subject DN for certs,
  *          https should check for this
+ * @run main/othervm ServerIdentityTest
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
+ *
  * @author Yingxian Wang
  */
 
@@ -136,39 +141,45 @@ public class ServerIdentityTest {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
-        for (int i = 0; i < keyStoreFiles.length; i++) {
-            String keyFilename =
-                System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFiles[i];
-            String trustFilename =
-                System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + trustStoreFiles[i];
+        SSLSocketFactory reservedSFactory =
+                HttpsURLConnection.getDefaultSSLSocketFactory();
+        try {
+            for (int i = 0; i < keyStoreFiles.length; i++) {
+                String keyFilename =
+                    System.getProperty("test.src", ".") + "/" + pathToStores +
+                    "/" + keyStoreFiles[i];
+                String trustFilename =
+                    System.getProperty("test.src", ".") + "/" + pathToStores +
+                    "/" + trustStoreFiles[i];
 
-            System.setProperty("javax.net.ssl.keyStore", keyFilename);
-            System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-            System.setProperty("javax.net.ssl.trustStore", trustFilename);
-            System.setProperty("javax.net.ssl.trustStorePassword", passwd);
+                System.setProperty("javax.net.ssl.keyStore", keyFilename);
+                System.setProperty("javax.net.ssl.keyStorePassword", passwd);
+                System.setProperty("javax.net.ssl.trustStore", trustFilename);
+                System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
-            if (debug)
-                System.setProperty("javax.net.debug", "all");
-            SSLContext context = SSLContext.getInstance("SSL");
+                if (debug)
+                    System.setProperty("javax.net.debug", "all");
+                SSLContext context = SSLContext.getInstance("SSL");
 
-            KeyManager[] kms = new KeyManager[1];
-            KeyStore ks = KeyStore.getInstance("JKS");
-            FileInputStream fis = new FileInputStream(keyFilename);
-            ks.load(fis, passwd.toCharArray());
-            fis.close();
-            KeyManager km = new MyKeyManager(ks, passwd.toCharArray());
-            kms[0] = km;
-            context.init(kms, null, null);
-            HttpsURLConnection.setDefaultSSLSocketFactory(
-                 context.getSocketFactory());
+                KeyManager[] kms = new KeyManager[1];
+                KeyStore ks = KeyStore.getInstance("JKS");
+                FileInputStream fis = new FileInputStream(keyFilename);
+                ks.load(fis, passwd.toCharArray());
+                fis.close();
+                KeyManager km = new MyKeyManager(ks, passwd.toCharArray());
+                kms[0] = km;
+                context.init(kms, null, null);
+                HttpsURLConnection.setDefaultSSLSocketFactory(
+                     context.getSocketFactory());
 
-            /*
-             * Start the tests.
-             */
-            System.out.println("Testing " + keyFilename);
-            new ServerIdentityTest(context, keyStoreFiles[i]);
+                /*
+                 * Start the tests.
+                 */
+                System.out.println("Testing " + keyFilename);
+                new ServerIdentityTest(context, keyStoreFiles[i]);
+            }
+        } finally {
+            HttpsURLConnection.setDefaultSSLSocketFactory(reservedSFactory);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.*;
 import java.io.IOException;
 
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateParsingException;
 
 import sun.security.util.*;
 
@@ -186,7 +185,7 @@ public class OIDMap {
         final ObjectIdentifier oid;
         final String name;
         final String className;
-        private volatile Class clazz;
+        private volatile Class<?> clazz;
 
         OIDInfo(String name, ObjectIdentifier oid, String className) {
             this.name = name;
@@ -194,7 +193,7 @@ public class OIDMap {
             this.className = className;
         }
 
-        OIDInfo(String name, ObjectIdentifier oid, Class clazz) {
+        OIDInfo(String name, ObjectIdentifier oid, Class<?> clazz) {
             this.name = name;
             this.oid = oid;
             this.className = clazz.getName();
@@ -204,17 +203,16 @@ public class OIDMap {
         /**
          * Return the Class object associated with this attribute.
          */
-        Class getClazz() throws CertificateException {
+        Class<?> getClazz() throws CertificateException {
             try {
-                Class c = clazz;
+                Class<?> c = clazz;
                 if (c == null) {
                     c = Class.forName(className);
                     clazz = c;
                 }
                 return c;
             } catch (ClassNotFoundException e) {
-                throw (CertificateException)new CertificateException
-                                ("Could not load class: " + e).initCause(e);
+                throw new CertificateException("Could not load class: " + e, e);
             }
         }
     }
@@ -228,7 +226,7 @@ public class OIDMap {
      * @param clazz the Class object associated with this attribute
      * @exception CertificateException on errors.
      */
-    public static void addAttribute(String name, String oid, Class clazz)
+    public static void addAttribute(String name, String oid, Class<?> clazz)
             throws CertificateException {
         ObjectIdentifier objId;
         try {
@@ -277,7 +275,7 @@ public class OIDMap {
      * @param name the user friendly name.
      * @exception CertificateException if class cannot be instantiated.
      */
-    public static Class getClass(String name) throws CertificateException {
+    public static Class<?> getClass(String name) throws CertificateException {
         OIDInfo info = nameMap.get(name);
         return (info == null) ? null : info.getClazz();
     }
@@ -288,7 +286,7 @@ public class OIDMap {
      * @param oid the name of the object identifier to be returned.
      * @exception CertificateException if class cannot be instatiated.
      */
-    public static Class getClass(ObjectIdentifier oid)
+    public static Class<?> getClass(ObjectIdentifier oid)
             throws CertificateException {
         OIDInfo info = oidMap.get(oid);
         return (info == null) ? null : info.getClazz();

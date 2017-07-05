@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,9 @@ public final class MD4 extends DigestBase {
     private final static Provider md4Provider;
 
     static {
-        md4Provider = new Provider("MD4Provider", 1.0d, "MD4 MessageDigest") {};
+        md4Provider = new Provider("MD4Provider", 1.0d, "MD4 MessageDigest") {
+            private static final long serialVersionUID = -8850464997518327965L;
+        };
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 md4Provider.put("MessageDigest.MD4", "sun.security.provider.MD4");

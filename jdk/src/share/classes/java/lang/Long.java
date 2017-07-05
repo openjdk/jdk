@@ -806,22 +806,20 @@ public final class Long extends Number implements Comparable<Long> {
      * Determines the {@code long} value of the system property
      * with the specified name.
      *
-     * <p>The first argument is treated as the name of a system property.
-     * System properties are accessible through the {@link
+     * <p>The first argument is treated as the name of a system
+     * property.  System properties are accessible through the {@link
      * java.lang.System#getProperty(java.lang.String)} method. The
-     * string value of this property is then interpreted as a
-     * {@code long} value and a {@code Long} object
-     * representing this value is returned.  Details of possible
-     * numeric formats can be found with the definition of
-     * {@code getProperty}.
+     * string value of this property is then interpreted as a {@code
+     * long} value using the grammar supported by {@link Long#decode decode}
+     * and a {@code Long} object representing this value is returned.
      *
      * <p>If there is no property with the specified name, if the
-     * specified name is empty or {@code null}, or if the
-     * property does not have the correct numeric format, then
-     * {@code null} is returned.
+     * specified name is empty or {@code null}, or if the property
+     * does not have the correct numeric format, then {@code null} is
+     * returned.
      *
-     * <p>In other words, this method returns a {@code Long} object equal to
-     * the value of:
+     * <p>In other words, this method returns a {@code Long} object
+     * equal to the value of:
      *
      * <blockquote>
      *  {@code getLong(nm, null)}
@@ -840,14 +838,12 @@ public final class Long extends Number implements Comparable<Long> {
      * Determines the {@code long} value of the system property
      * with the specified name.
      *
-     * <p>The first argument is treated as the name of a system property.
-     * System properties are accessible through the {@link
+     * <p>The first argument is treated as the name of a system
+     * property.  System properties are accessible through the {@link
      * java.lang.System#getProperty(java.lang.String)} method. The
-     * string value of this property is then interpreted as a
-     * {@code long} value and a {@code Long} object
-     * representing this value is returned.  Details of possible
-     * numeric formats can be found with the definition of
-     * {@code getProperty}.
+     * string value of this property is then interpreted as a {@code
+     * long} value using the grammar supported by {@link Long#decode decode}
+     * and a {@code Long} object representing this value is returned.
      *
      * <p>The second argument is the default value. A {@code Long} object
      * that represents the value of the second argument is returned if there
@@ -889,8 +885,8 @@ public final class Long extends Number implements Comparable<Long> {
      * the {@link java.lang.System#getProperty(java.lang.String)}
      * method. The string value of this property is then interpreted
      * as a {@code long} value, as per the
-     * {@code Long.decode} method, and a {@code Long} object
-     * representing this value is returned.
+     * {@link Long#decode decode} method, and a {@code Long} object
+     * representing this value is returned; in summary:
      *
      * <ul>
      * <li>If the property value begins with the two ASCII characters
@@ -921,16 +917,14 @@ public final class Long extends Number implements Comparable<Long> {
      * @param   nm   property name.
      * @param   val   default value.
      * @return  the {@code Long} value of the property.
-     * @see     java.lang.System#getProperty(java.lang.String)
-     * @see java.lang.System#getProperty(java.lang.String, java.lang.String)
-     * @see java.lang.Long#decode
+     * @see     System#getProperty(java.lang.String)
+     * @see     System#getProperty(java.lang.String, java.lang.String)
      */
     public static Long getLong(String nm, Long val) {
         String v = null;
         try {
             v = System.getProperty(nm);
-        } catch (IllegalArgumentException e) {
-        } catch (NullPointerException e) {
+        } catch (IllegalArgumentException | NullPointerException e) {
         }
         if (v != null) {
             try {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.util.*;
-import java.lang.*;
 import java.security.Key;
 import java.security.PublicKey;
 import java.security.PrivateKey;
@@ -140,7 +138,8 @@ public final class DHKeyFactory extends KeyFactorySpi {
      * inappropriate for the given key, or the given key cannot be processed
      * (e.g., the given key has an unrecognized algorithm or format).
      */
-    protected KeySpec engineGetKeySpec(Key key, Class keySpec)
+    protected <T extends KeySpec>
+        T engineGetKeySpec(Key key, Class<T> keySpec)
         throws InvalidKeySpecException {
         DHParameterSpec params;
 
@@ -150,12 +149,12 @@ public final class DHKeyFactory extends KeyFactorySpi {
                 javax.crypto.interfaces.DHPublicKey dhPubKey
                     = (javax.crypto.interfaces.DHPublicKey) key;
                 params = dhPubKey.getParams();
-                return new DHPublicKeySpec(dhPubKey.getY(),
-                                           params.getP(),
-                                           params.getG());
+                return keySpec.cast(new DHPublicKeySpec(dhPubKey.getY(),
+                                                        params.getP(),
+                                                        params.getG()));
 
             } else if (X509EncodedKeySpec.class.isAssignableFrom(keySpec)) {
-                return new X509EncodedKeySpec(key.getEncoded());
+                return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
 
             } else {
                 throw new InvalidKeySpecException
@@ -168,12 +167,12 @@ public final class DHKeyFactory extends KeyFactorySpi {
                 javax.crypto.interfaces.DHPrivateKey dhPrivKey
                     = (javax.crypto.interfaces.DHPrivateKey)key;
                 params = dhPrivKey.getParams();
-                return new DHPrivateKeySpec(dhPrivKey.getX(),
-                                            params.getP(),
-                                            params.getG());
+                return keySpec.cast(new DHPrivateKeySpec(dhPrivKey.getX(),
+                                                         params.getP(),
+                                                         params.getG()));
 
             } else if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec)) {
-                return new PKCS8EncodedKeySpec(key.getEncoded());
+                return keySpec.cast(new PKCS8EncodedKeySpec(key.getEncoded()));
 
             } else {
                 throw new InvalidKeySpecException
@@ -208,8 +207,7 @@ public final class DHKeyFactory extends KeyFactorySpi {
                 }
                 // Convert key to spec
                 DHPublicKeySpec dhPubKeySpec
-                    = (DHPublicKeySpec)engineGetKeySpec
-                    (key, DHPublicKeySpec.class);
+                    = engineGetKeySpec(key, DHPublicKeySpec.class);
                 // Create key from spec, and return it
                 return engineGeneratePublic(dhPubKeySpec);
 
@@ -220,8 +218,7 @@ public final class DHKeyFactory extends KeyFactorySpi {
                 }
                 // Convert key to spec
                 DHPrivateKeySpec dhPrivKeySpec
-                    = (DHPrivateKeySpec)engineGetKeySpec
-                    (key, DHPrivateKeySpec.class);
+                    = engineGetKeySpec(key, DHPrivateKeySpec.class);
                 // Create key from spec, and return it
                 return engineGeneratePrivate(dhPrivKeySpec);
 

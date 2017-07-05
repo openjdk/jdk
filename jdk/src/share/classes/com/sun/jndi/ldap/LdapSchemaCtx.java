@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,9 @@ final class LdapSchemaCtx extends HierMemDirCtx {
 
     private int objectType;
 
-    static DirContext createSchemaTree(Hashtable env, String subschemasubentry,
-        LdapCtx schemaEntry, Attributes schemaAttrs, boolean netscapeBug)
+    static DirContext createSchemaTree(Hashtable<String,Object> env,
+            String subschemasubentry, LdapCtx schemaEntry,
+            Attributes schemaAttrs, boolean netscapeBug)
         throws NamingException {
             try {
                 LdapSchemaParser parser = new LdapSchemaParser(netscapeBug);
@@ -71,7 +72,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
                     schemaEntry, parser);
 
                 LdapSchemaCtx root = new LdapSchemaCtx(SCHEMA_ROOT, env, allinfo);
-                parser.LDAP2JNDISchema(schemaAttrs, root);
+                LdapSchemaParser.LDAP2JNDISchema(schemaAttrs, root);
                 return root;
             } catch (NamingException e) {
                 schemaEntry.close(); // cleanup
@@ -80,7 +81,8 @@ final class LdapSchemaCtx extends HierMemDirCtx {
     }
 
     // Called by createNewCtx
-    private LdapSchemaCtx(int objectType, Hashtable environment, SchemaInfo info) {
+    private LdapSchemaCtx(int objectType, Hashtable<String,Object> environment,
+                          SchemaInfo info) {
         super(environment, LdapClient.caseIgnore);
 
         this.objectType = objectType;
@@ -223,9 +225,9 @@ final class LdapSchemaCtx extends HierMemDirCtx {
     final private static Attributes deepClone(Attributes orig)
         throws NamingException {
         BasicAttributes copy = new BasicAttributes(true);
-        NamingEnumeration attrs = orig.getAll();
+        NamingEnumeration<? extends Attribute> attrs = orig.getAll();
         while (attrs.hasMore()) {
-            copy.put((Attribute)((Attribute)attrs.next()).clone());
+            copy.put((Attribute)attrs.next().clone());
         }
         return copy;
     }
@@ -409,13 +411,14 @@ final class LdapSchemaCtx extends HierMemDirCtx {
             }
         }
 
-        private LdapCtx reopenEntry(Hashtable env) throws NamingException {
+        private LdapCtx reopenEntry(Hashtable<?,?> env) throws NamingException {
             // Use subschemasubentry name as DN
             return new LdapCtx(schemaEntryName, host, port,
                                 env, hasLdapsScheme);
         }
 
-        synchronized void modifyAttributes(Hashtable env, ModificationItem[] mods)
+        synchronized void modifyAttributes(Hashtable<?,?> env,
+                                           ModificationItem[] mods)
             throws NamingException {
             if (schemaEntry == null) {
                 schemaEntry = reopenEntry(env);
@@ -423,7 +426,7 @@ final class LdapSchemaCtx extends HierMemDirCtx {
             schemaEntry.modifyAttributes("", mods);
         }
 
-        synchronized void modifyAttributes(Hashtable env, int mod,
+        synchronized void modifyAttributes(Hashtable<?,?> env, int mod,
             Attributes attrs) throws NamingException {
             if (schemaEntry == null) {
                 schemaEntry = reopenEntry(env);

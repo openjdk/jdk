@@ -30,7 +30,6 @@ import java.util.*;
 
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.PKIXReason;
@@ -44,22 +43,13 @@ import java.security.cert.X509CertSelector;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.Debug;
-import sun.security.util.DerOutputStream;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.PKIXExtensions;
 import sun.security.x509.PolicyMappingsExtension;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
-import sun.security.x509.X509CRLImpl;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
-import sun.security.x509.KeyIdentifier;
-import sun.security.x509.SubjectKeyIdentifierExtension;
-import sun.security.x509.SerialNumber;
-import sun.security.x509.GeneralNames;
-import sun.security.x509.GeneralName;
-import sun.security.x509.GeneralNameInterface;
-import java.math.BigInteger;
 
 /**
  * This class represents a forward builder, which is able to retrieve
@@ -362,6 +352,9 @@ class ForwardBuilder extends Builder {
      * Download Certificates from the given AIA and add them to the
      * specified Collection.
      */
+    // cs.getCertificates(caSelector) returns a collection of X509Certificate's
+    // because of the selector, so the cast is safe
+    @SuppressWarnings("unchecked")
     private boolean getCerts(AuthorityInfoAccessExtension aiaExt,
         Collection<X509Certificate> certs) {
         if (Builder.USE_AIA == false) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         if (algName != null) {
             return algName;
         }
-        if ((params != null) && algid.equals(specifiedWithECDSA_oid)) {
+        if ((params != null) && algid.equals((Object)specifiedWithECDSA_oid)) {
             try {
                 AlgorithmId paramsId =
                         AlgorithmId.parse(new DerValue(getEncodedParams()));
@@ -273,7 +273,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public boolean equals(AlgorithmId other) {
         boolean paramsEqual =
           (params == null ? other.params == null : params.equals(other.params));
-        return (algid.equals(other.algid) && paramsEqual);
+        return (algid.equals((Object)other.algid) && paramsEqual);
     }
 
     /**
@@ -301,7 +301,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * they are the same algorithm, ignoring algorithm parameters.
      */
     public final boolean equals(ObjectIdentifier id) {
-        return algid.equals(id);
+        return algid.equals((Object)id);
     }
 
     /**

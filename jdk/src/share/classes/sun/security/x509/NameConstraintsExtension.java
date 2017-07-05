@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,7 @@ package sun.security.x509;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.Principal;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -268,7 +265,7 @@ implements CertAttrSet<String>, Cloneable {
     /**
      * Get the attribute value.
      */
-    public Object get(String name) throws IOException {
+    public GeneralSubtrees get(String name) throws IOException {
         if (name.equalsIgnoreCase(PERMITTED_SUBTREES)) {
             return (permitted);
         } else if (name.equalsIgnoreCase(EXCLUDED_SUBTREES)) {
@@ -349,8 +346,7 @@ implements CertAttrSet<String>, Cloneable {
          * value and the value indicated in the extension field.
          */
 
-        GeneralSubtrees newExcluded =
-                        (GeneralSubtrees)newConstraints.get(EXCLUDED_SUBTREES);
+        GeneralSubtrees newExcluded = newConstraints.get(EXCLUDED_SUBTREES);
         if (excluded == null) {
             excluded = (newExcluded != null) ?
                         (GeneralSubtrees)newExcluded.clone() : null;
@@ -367,8 +363,7 @@ implements CertAttrSet<String>, Cloneable {
          * previous value and the value indicated in the extension field.
          */
 
-        GeneralSubtrees newPermitted =
-                (GeneralSubtrees)newConstraints.get(PERMITTED_SUBTREES);
+        GeneralSubtrees newPermitted = newConstraints.get(PERMITTED_SUBTREES);
         if (permitted == null) {
             permitted = (newPermitted != null) ?
                         (GeneralSubtrees)newPermitted.clone() : null;
@@ -455,8 +450,8 @@ implements CertAttrSet<String>, Cloneable {
             if (altNameExt != null) {
                 // extract altNames from extension; this call does not
                 // return an IOException on null altnames
-                altNames = (GeneralNames)
-                            (altNameExt.get(altNameExt.SUBJECT_NAME));
+                altNames = altNameExt.get(
+                        SubjectAlternativeNameExtension.SUBJECT_NAME);
             }
         } catch (CertificateException ce) {
             throw new IOException("Unable to extract extensions from " +
@@ -575,10 +570,9 @@ implements CertAttrSet<String>, Cloneable {
      * @throws IOException on error
      */
     public boolean verifyRFC822SpecialCase(X500Name subject) throws IOException {
-        for (Iterator t = subject.allAvas().iterator(); t.hasNext(); ) {
-            AVA ava = (AVA)t.next();
+        for (AVA ava : subject.allAvas()) {
             ObjectIdentifier attrOID = ava.getObjectIdentifier();
-            if (attrOID.equals(PKCS9Attribute.EMAIL_ADDRESS_OID)) {
+            if (attrOID.equals((Object)PKCS9Attribute.EMAIL_ADDRESS_OID)) {
                 String attrValue = ava.getValueString();
                 if (attrValue != null) {
                     RFC822Name emailName;

@@ -26,6 +26,10 @@
  * @bug 6447412
  * @summary Issue with socket.close() for ssl sockets when poweroff on
  *          other system
+ * @run main/othervm AsyncSSLSocketClose
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import javax.net.ssl.*;

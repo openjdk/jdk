@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,10 +205,9 @@ class SubjectCodeSource extends CodeSource implements java.io.Serializable {
 
                 // handle PrincipalComparators
 
-                Class principalComparator = Class.forName(pppe.principalClass,
-                                                        true,
-                                                        sysClassLoader);
-                Constructor c = principalComparator.getConstructor(PARAMS);
+                Class<?> principalComparator = Class.forName(
+                        pppe.principalClass, true, sysClassLoader);
+                Constructor<?> c = principalComparator.getConstructor(PARAMS);
                 PrincipalComparator pc =
                         (PrincipalComparator)c.newInstance
                         (new Object[] { pppe.principalName });

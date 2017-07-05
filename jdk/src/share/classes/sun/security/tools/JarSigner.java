@@ -1425,6 +1425,7 @@ public class JarSigner {
      * lines of attributes plus an empty line. The empty line is included
      * in the header.
      */
+    @SuppressWarnings("fallthrough")
     private int findHeaderEnd(byte[] bs) {
         // Initial state true to deal with empty header
         boolean newline = true;     // just met a newline
@@ -1739,8 +1740,7 @@ public class JarSigner {
                 NetscapeCertTypeExtension extn =
                         new NetscapeCertTypeExtension(encoded);
 
-                Boolean val = (Boolean)extn.get(
-                        NetscapeCertTypeExtension.OBJECT_SIGNING);
+                Boolean val = extn.get(NetscapeCertTypeExtension.OBJECT_SIGNING);
                 if (!val) {
                     if (bad != null) {
                         bad[2] = true;
@@ -2054,7 +2054,7 @@ public class JarSigner {
         ClassLoader appClassLoader = new URLClassLoader(urls);
 
         // attempt to find signer
-        Class signerClass = appClassLoader.loadClass(signerClassName);
+        Class<?> signerClass = appClassLoader.loadClass(signerClassName);
 
         // Check that it implements ContentSigner
         Object signer = signerClass.newInstance();
@@ -2297,9 +2297,7 @@ class SignatureFile {
                     tsaUri = new URI(tsaUrl);
                 }
             } catch (URISyntaxException e) {
-                IOException ioe = new IOException();
-                ioe.initCause(e);
-                throw ioe;
+                throw new IOException(e);
             }
 
             // Assemble parameters for the signing mechanism

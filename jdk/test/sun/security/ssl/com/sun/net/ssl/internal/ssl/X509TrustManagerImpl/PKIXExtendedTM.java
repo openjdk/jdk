@@ -26,6 +26,10 @@
  * @test
  * @bug 6916074
  * @summary Add support for TLS 1.2
+ * @run main/othervm PKIXExtendedTM
+ *
+ *     SunJSSE does not support dynamic system properties, no way to re-use
+ *     system properties in samevm/agentvm mode.
  */
 
 import java.net.*;

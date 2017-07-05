@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -517,7 +517,7 @@ public class Functions {
 
         if (array != null) {
             for (int i = 0; (i < 4) && (i < array.length); i++) {
-                hash ^= ((int) (0xFF & array[i])) << ((i%4) << 3);
+                hash ^= (0xFF & array[i]) << ((i%4) << 3);
             }
         }
 
@@ -537,7 +537,7 @@ public class Functions {
 
         if (array != null) {
             for (int i = 0; (i < 4) && (i < array.length); i++) {
-                hash ^= ((int) (0xFFFF & array[i])) << ((i%2) << 4);
+                hash ^= (0xFFFF & array[i]) << ((i%2) << 4);
             }
         }
 
@@ -557,18 +557,18 @@ public class Functions {
 
         if (date != null) {
             if (date.year.length == 4) {
-                hash ^= ((int) (0xFFFF & date.year[0])) << 16;
-                hash ^= (int) (0xFFFF & date.year[1]);
-                hash ^= ((int) (0xFFFF & date.year[2])) << 16;
-                hash ^= (int) (0xFFFF & date.year[3]);
+                hash ^= (0xFFFF & date.year[0]) << 16;
+                hash ^= 0xFFFF & date.year[1];
+                hash ^= (0xFFFF & date.year[2]) << 16;
+                hash ^= 0xFFFF & date.year[3];
             }
             if (date.month.length == 2) {
-                hash ^= ((int) (0xFFFF & date.month[0])) << 16;
-                hash ^= (int) (0xFFFF & date.month[1]);
+                hash ^= (0xFFFF & date.month[0]) << 16;
+                hash ^= 0xFFFF & date.month[1];
             }
             if (date.day.length == 2) {
-                hash ^= ((int) (0xFFFF & date.day[0])) << 16;
-                hash ^= (int) (0xFFFF & date.day[1]);
+                hash ^= (0xFFFF & date.day[0]) << 16;
+                hash ^= 0xFFFF & date.day[1];
             }
         }
 

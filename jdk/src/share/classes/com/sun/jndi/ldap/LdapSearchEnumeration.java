@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,8 @@ import javax.naming.ldap.LdapName;
 
 import com.sun.jndi.toolkit.ctx.Continuation;
 
-final class LdapSearchEnumeration extends LdapNamingEnumeration {
+final class LdapSearchEnumeration
+        extends AbstractLdapNamingEnumeration<SearchResult> {
 
     private Name startName;             // prefix of names of search results
     private LdapCtx.SearchArgs searchArgs = null;
@@ -52,9 +53,10 @@ final class LdapSearchEnumeration extends LdapNamingEnumeration {
         searchArgs = args;
     }
 
-    protected NameClassPair
-    createItem(String dn, Attributes attrs, Vector respCtls)
-        throws NamingException {
+    @Override
+    protected SearchResult createItem(String dn, Attributes attrs,
+                                      Vector<Control> respCtls)
+            throws NamingException {
 
         Object obj = null;
 
@@ -174,6 +176,7 @@ final class LdapSearchEnumeration extends LdapNamingEnumeration {
         return sr;
     }
 
+    @Override
     public void appendUnprocessedReferrals(LdapReferralException ex) {
 
         // a referral has been followed so do not create relative names
@@ -181,14 +184,16 @@ final class LdapSearchEnumeration extends LdapNamingEnumeration {
         super.appendUnprocessedReferrals(ex);
     }
 
-    protected LdapNamingEnumeration
-    getReferredResults(LdapReferralContext refCtx) throws NamingException {
+    @Override
+    protected LdapSearchEnumeration getReferredResults(
+            LdapReferralContext refCtx) throws NamingException {
         // repeat the original operation at the new context
-        return (LdapSearchEnumeration)
-            refCtx.search(searchArgs.name, searchArgs.filter, searchArgs.cons);
+        return (LdapSearchEnumeration)refCtx.search(
+                searchArgs.name, searchArgs.filter, searchArgs.cons);
     }
 
-    protected void update(LdapNamingEnumeration ne) {
+    @Override
+    protected void update(AbstractLdapNamingEnumeration<SearchResult> ne) {
         super.update(ne);
 
         // Update search-specific variables

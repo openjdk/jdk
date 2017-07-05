@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ public class BasicAttribute implements Attribute {
      */
     protected boolean ordered = false;
 
+    @SuppressWarnings("unchecked")
     public Object clone() {
         BasicAttribute attr;
         try {
@@ -98,7 +99,7 @@ public class BasicAttribute implements Attribute {
         } catch (CloneNotSupportedException e) {
             attr = new BasicAttribute(attrID, ordered);
         }
-        attr.values = (Vector)values.clone();
+        attr.values = (Vector<Object>)values.clone();
         return attr;
     }
 
@@ -149,7 +150,7 @@ public class BasicAttribute implements Attribute {
                         }
                     } else {
                         // order is not relevant; check for existence
-                        Enumeration theirs = target.getAll();
+                        Enumeration<?> theirs = target.getAll();
                         while (theirs.hasMoreElements()) {
                             if (find(theirs.nextElement()) < 0)
                                 return false;
@@ -215,7 +216,7 @@ public class BasicAttribute implements Attribute {
             answer.append("No values");
         } else {
             boolean start = true;
-            for (Enumeration e = values.elements(); e.hasMoreElements(); ) {
+            for (Enumeration<Object> e = values.elements(); e.hasMoreElements(); ) {
                 if (!start)
                     answer.append(", ");
                 answer.append(e.nextElement());
@@ -254,7 +255,7 @@ public class BasicAttribute implements Attribute {
       */
     public BasicAttribute(String id, boolean ordered) {
         attrID = id;
-        values = new Vector();
+        values = new Vector<>();
         this.ordered = ordered;
     }
 
@@ -327,7 +328,7 @@ public class BasicAttribute implements Attribute {
     // For finding first element that has a null in JDK1.1 Vector.
     // In the Java 2 platform, can just replace this with Vector.indexOf(target);
     private int find(Object target) {
-        Class cl;
+        Class<?> cl;
         if (target == null) {
             int ct = values.size();
             for (int i = 0 ; i < ct ; i++) {
@@ -514,7 +515,7 @@ public class BasicAttribute implements Attribute {
             throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();  // read in the attrID
         int n = s.readInt();    // number of values
-        values = new Vector(n);
+        values = new Vector<>(n);
         while (--n >= 0) {
             values.addElement(s.readObject());
         }
@@ -522,31 +523,31 @@ public class BasicAttribute implements Attribute {
 
 
     class ValuesEnumImpl implements NamingEnumeration<Object> {
-    Enumeration list;
+        Enumeration<Object> list;
 
-    ValuesEnumImpl() {
-        list = values.elements();
-    }
+        ValuesEnumImpl() {
+            list = values.elements();
+        }
 
-    public boolean hasMoreElements() {
-        return list.hasMoreElements();
-    }
+        public boolean hasMoreElements() {
+            return list.hasMoreElements();
+        }
 
-    public Object nextElement() {
-        return(list.nextElement());
-    }
+        public Object nextElement() {
+            return(list.nextElement());
+        }
 
-    public Object next() throws NamingException {
-        return list.nextElement();
-    }
+        public Object next() throws NamingException {
+            return list.nextElement();
+        }
 
-    public boolean hasMore() throws NamingException {
-        return list.hasMoreElements();
-    }
+        public boolean hasMore() throws NamingException {
+            return list.hasMoreElements();
+        }
 
-    public void close() throws NamingException {
-        list = null;
-    }
+        public void close() throws NamingException {
+            list = null;
+        }
     }
 
     /**
