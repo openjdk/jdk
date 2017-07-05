@@ -1,0 +1,448 @@
+#
+# Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+#
+# Shared platform (OS/ARCH) variable settings for the JDK builds.
+#
+# Includes basic system requirements, versions of utilities required,
+#   suffixes on files, and basic defaults attributed to the build platform.
+#
+
+#
+# Assumes some basic unix system utilities (e.g. uname) are in the search path
+#   in order to figure out the system.
+#
+
+ifndef PLATFORM_SHARED
+
+PLATFORM_SHARED=done
+
+# Possible Input variables:
+#     ARCH_DATA_MODEL             32 or 64, default to 32
+#     USER, LOGNAME               user name (runs logname, or id if not set)
+#     PROCESSOR_IDENTIFIER        windows only: needed in environment
+#
+# (Also gets input by running the utilities uname, logname, isainfo, or id.)
+#
+# Variables set by this file:
+#     SYSTEM_UNAME                what 'uname' says this system is
+#     USER                        login name of user (minus blanks)
+#     PLATFORM                    windows, solaris, or linux
+#     VARIANT                     OPT or DBG, OPT is the default
+#     OS_NAME                     solaris, linux, or nt
+#     OS_VERSION                  specific version of os, 5.10, 2.4.9-e.3, etc.
+#     OS_VENDOR                   company name
+#     TEMP_DISK                   /tmp or C:/temp
+#     ARCH_DATA_MODEL             32 or 64
+#     ARCH                        sparc, sparcv9, i586, amd64, or ia64
+#     ARCH_FAMILY                 sparc or i586
+#     ARCHPROP                    sparc or x86
+#     ARCH_VM_SUBDIR              jre/bin, jre/lib/sparc, etc.
+#     LIBARCH                     sparc, sparcv9, i386, amd64, or ia64
+#     DEV_NULL                    destination of /dev/null, NUL or /dev/NULL
+#     CLASSPATH_SEPARATOR         separator in classpath, ; or :
+#     LIB_PREFIX                  dynamic or static library prefix, lib or empty
+#     LIB_SUFFIX                  static library file suffix, .lib or .a?
+#     LIBRARY_SUFFIX              dynamic library file suffix, .dll or .so
+#     OBJECT_SUFFIX               object file suffix, .o or .obj
+#     EXE_SUFFIX                  executable file suffix, .exe or empty
+#     BUNDLE_FILE_SUFFIX          suffix for bundles: .tar or .tar.gz
+#     ISA_DIR                     solaris only: /sparcv9 or /amd64
+#     LIBARCH32                   solaris only: sparc or i386
+#     LIBARCH64                   solaris only: sparcv9 or amd64
+#     REQUIRED_WINDOWS_NAME       windows only: basic name of windows 
+#     REQUIRED_WINDOWS_VERSION    windows only: specific version of windows 
+#     USING_CYGWIN                windows only: true or false
+#     WINDOWS_NT_VERSION_STRING   windows only: long version name
+#     REQUIRED_OS_VERSION         required OS version, e.g. 5.10, 2.4
+#     REQUIRED_FREE_SPACE         minimum disk space needed for outputdir
+#     REQUIRED_ZIP_VER            required version of zip
+#     REQUIRED_UNZIP_VER          required version of unzip
+#     LINUX_VERSION_INFO          linux only: location of linux release file
+#     REQUIRED_LINUX_VER          linux only: required version of linux
+#     REQUIRED_LINUX_FULLVER      linux only: required full version of linux
+
+SYSTEM_UNAME := $(shell uname)
+
+# Normal boot jdk is previous release, but a hard requirement is a 1.5 boot
+REQUIRED_BOOT_VER = 1.5
+
+#
+# Prune out all known SCM (Source Code Management) directories
+# so they will not be included when copying directory trees
+# or packaging up .jar files, etc.  This applies to all workspaces.
+#
+SCM_DIRs = .hg .svn CVS RCS SCCS Codemgr_wsdata deleted_files
+# When changing SCM_DIRs also change SCM_DIRS_rexp and SCM_DIRS_prune:
+SCM_DIRS_rexp = ".hg|.svn|CVS|RCS|SCCS|Codemgr_wsdata|deleted_files"
+SCM_DIRS_prune = \( -name .hg -o -name .svn -o -name CVS -o -name RCS -o -name SCCS -o -name Codemgr_wsdata -o -name deleted_files \) -prune
+
+# Don't define this unless it's not defined
+ifndef VARIANT
+  VARIANT=OPT
+endif
+
+# Platform settings specific to Solaris
+ifeq ($(SYSTEM_UNAME), SunOS)
+  PLATFORM = solaris
+  OS_NAME = solaris
+  OS_VERSION := $(shell uname -r)
+  # Solaris sparc build can be either 32-bit or 64-bit.
+  #   Default to 32, but allow explicit setting to 32 or 64.
+  ifndef ARCH_DATA_MODEL
+    ARCH_DATA_MODEL=32
+  endif
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    processor := $(shell uname -p)
+    archExpr = case "$(processor)" in  \
+                i[3-9]86) \
+                    echo i586 \
+                    ;; \
+                sparc*)  \
+                    echo sparc \
+                    ;; \
+                *) \
+                    echo $(processor)  \
+                    ;; \
+        esac
+    ARCH        := $(shell $(archExpr))
+  else
+    ARCH := $(shell isainfo -n)
+    # ISA_DIR is used to locate 64-bit specific libraries which are generally
+    # in the same general place as other libraries under the ./$(ARCH) directory
+    ISA_DIR = /$(ARCH)
+  endif
+  # Need to maintain the jre/lib/i386 location for 32-bit Intel
+  ifeq ($(ARCH), i586)
+     ARCH_FAMILY = $(ARCH)
+     LIBARCH     = i386
+     # Value of Java os.arch property
+     ARCHPROP    = x86
+  else
+     ifeq ($(ARCH), amd64)
+        ARCH_FAMILY = i586
+     else
+        ARCH_FAMILY = sparc
+     endif
+     LIBARCH  = $(ARCH)
+     # Value of Java os.arch property
+     ARCHPROP = $(LIBARCH)
+  endif
+  # The two LIBARCH names
+  ifeq ($(ARCH_FAMILY), sparc)
+    LIBARCH32 = sparc
+    LIBARCH64 = sparcv9
+  else
+    LIBARCH32 = i386
+    LIBARCH64 = amd64
+  endif
+  # Suffix for file bundles used in previous release
+  BUNDLE_FILE_SUFFIX=.tar
+  OS_VENDOR = Sun Microsystems
+  # Required Solaris version
+  REQUIRED_OS_VERSION = 5.10
+  # Minimum disk space needed as determined by running 'du -sk' on 
+  #    a fully built workspace.
+  ifeq ($(ARCH_FAMILY), sparc)
+    REQUIRED_FREE_SPACE=1300000
+  else
+    REQUIRED_FREE_SPACE=1040000
+  endif
+  # How much RAM does this machine have:
+  MB_OF_MEMORY=$(shell /etc/prtconf | fgrep 'Memory size:' | expand | cut -d' ' -f3)
+endif
+
+# Platform settings specific to Linux
+ifeq ($(SYSTEM_UNAME), Linux)
+  PLATFORM = linux
+  OS_NAME = linux
+  OS_VERSION := $(shell uname -r)
+  # Arch and OS name/version
+  mach := $(shell uname -m)
+  archExpr = case "$(mach)" in \
+                i[3-9]86) \
+                    echo i586 \
+                    ;; \
+                ia64) \
+                    echo ia64 \
+                    ;; \
+                x86_64) \
+                    echo amd64 \
+                    ;; \
+                sparc*) \
+                    echo sparc \
+                    ;; \
+                *) \
+                    echo $(mach) \
+                    ;; \
+      esac
+  ARCH        := $(shell $(archExpr) )
+  ARCH_FAMILY := $(ARCH)
+
+  # Linux builds may be 32-bit or 64-bit data model.
+  ifeq ($(ARCH), sparc)
+    # Linux sparc build can be either 32-bit or 64-bit.
+    #   Default to 32, but allow explicit setting to 32 or 64.
+    ifndef ARCH_DATA_MODEL
+      ARCH_DATA_MODEL=32
+    endif
+    ifeq ($(ARCH_DATA_MODEL), 32)
+      ARCH=sparc
+    else
+      ARCH=sparcv9
+    endif
+  else
+    # i586 is 32-bit, amd64 is 64-bit
+    ifndef ARCH_DATA_MODEL
+      ifeq ($(ARCH), i586)
+        ARCH_DATA_MODEL=32
+      else
+        ARCH_DATA_MODEL=64
+      endif
+    endif
+  endif
+
+  # Need to maintain the jre/lib/i386 location for 32-bit Intel
+  ifeq ($(ARCH), i586)
+    LIBARCH = i386
+  else
+    LIBARCH = $(ARCH)
+  endif
+
+  # Value of Java os.arch property
+  ARCHPROP  = $(LIBARCH)
+
+  # Suffix for file bundles used in previous release
+  BUNDLE_FILE_SUFFIX=.tar.gz
+  # Minimum disk space needed as determined by running 'du -sk' on 
+  #    a fully built workspace.
+  REQUIRED_FREE_SPACE=1460000
+  LINUX_VERSION_INFO = /etc/redhat-release
+  OS_VENDOR = Red Hat
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    REQUIRED_LINUX_VER = Advanced Server
+    REQUIRED_LINUX_FULLVER = Advanced Server release 2.1AS
+    REQUIRED_OS_VERSION = 2.4.9-e.3
+  else
+    ifeq ($(ARCH), amd64)
+      LINUX_VERSION_INFO = /etc/SuSE-release
+      OS_VENDOR = SuSE Enterprise
+      REQUIRED_LINUX_VER = 8.1
+      REQUIRED_LINUX_FULLVER = $(REQUIRED_LINUX_VER) SLSE AMD64
+      REQUIRED_OS_VERSION = 2.4.19-SMP
+    else
+      REQUIRED_LINUX_VER = Advanced Server
+      REQUIRED_LINUX_FULLVER = Advanced Server release 2.1AS 64 bit
+      REQUIRED_OS_VERSION = 2.4.19-SMP
+    endif
+  endif
+  # How much RAM does this machine have:
+  MB_OF_MEMORY := $(shell free -m | fgrep Mem: | sed -e 's@\ \ *@ @g' | cut -d' ' -f2)
+endif
+
+# Windows with and without CYGWIN will be slightly different
+ifeq ($(SYSTEM_UNAME), Windows_NT)
+  PLATFORM = windows
+  OS_VERSION := $(shell uname -r)
+  WINDOWS_NT_VERSION_STRING=Windows_NT
+  REQUIRED_MKS_VER=6.1
+endif
+ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
+  PLATFORM = windows
+  OS_VERSION := 5
+  USING_CYGWIN = true
+  export USING_CYGWIN
+  WINDOWS_NT_VERSION_STRING=CYGWIN_NT
+  REQUIRED_CYGWIN_VER=4.0
+endif
+
+# Platform settings specific to Windows
+ifeq ($(PLATFORM), windows)
+  OS_NAME = nt
+  REQUIRED_OS_VERSION=5
+  # Windows builds default to the appropriate for the underlaying
+  # architecture.
+  # Temporary disk area
+  TEMP_DISK=C:/temp
+  # GNU Make or MKS overrides $(PROCESSOR_ARCHITECTURE) to always
+  # return "x86". Use the first word of $(PROCESSOR_IDENTIFIER) instead.
+  ifndef ARCH_DATA_MODEL
+    ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),ia64)
+      ARCH_DATA_MODEL=64
+    else
+      ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)),AMD64)
+        ARCH_DATA_MODEL=64
+      else
+        ARCH_DATA_MODEL=32
+      endif
+    endif
+  endif
+  export ARCH_DATA_MODEL
+  # LIBARCH is used to preserve the jre/lib/i386 directory name for 32-bit intel
+  ARCH=i586
+  LIBARCH=i386
+  # Value of Java os.arch property
+  ARCHPROP=x86
+  REQUIRED_WINDOWS_NAME=Windows Professional 2000
+  REQUIRED_WINDOWS_VERSION=5 0 Service Pack 4
+  ifeq ($(ARCH_DATA_MODEL), 64)
+    # If the user wants to perform a cross compile build then they must
+    # - set ARCH_DATA_MODEL=64 and either
+    #      + set ARCH to ia64 or amd64, or
+    REQUIRED_WINDOWS_NAME=Windows Server 2003
+    REQUIRED_WINDOWS_VERSION=5 2 Service Pack 1
+    ifeq ($(word 1, $(PROCESSOR_IDENTIFIER)), AMD64)
+      ARCH=amd64
+    else
+      ARCH=ia64
+    endif
+    LIBARCH=$(ARCH)
+    # Value of Java os.arch property
+    ARCHPROP=$(LIBARCH)
+  endif
+  ARCH_FAMILY = $(ARCH)
+  # Where is unwanted output to be delivered?
+  DEV_NULL = NUL
+  export DEV_NULL
+  # Classpath separator
+  CLASSPATH_SEPARATOR = ;
+  # The suffix used for object file (.o for unix .obj for windows)
+  OBJECT_SUFFIX = obj
+  # The suffix applied to executables (.exe for windows, nothing for solaris)
+  EXE_SUFFIX = .exe
+  # The prefix applied to library files (lib for solaris, nothing for windows)
+  LIB_PREFIX=
+  LIBRARY_SUFFIX = dll
+  LIB_SUFFIX     = lib
+  # User name determination (set _USER)
+  ifndef USER
+    ifdef USERNAME
+      _USER := $(USERNAME)
+    else
+      ifdef LOGNAME
+        _USER := $(LOGNAME)
+      else
+        _USER := $(shell id -un)
+      endif
+    endif
+  else
+    _USER:=$(USER)
+  endif
+  # Location of client/server directories
+  ARCH_VM_SUBDIR=jre/bin
+  # Suffix for file bundles used in previous release
+  BUNDLE_FILE_SUFFIX=.tar
+  # Minimum disk space needed as determined by running 'du -sk' on 
+  #    a fully built workspace.
+  REQUIRED_FREE_SPACE=500000
+  OS_VENDOR = Microsoft
+  # How much RAM does this machine have:
+  MB_OF_MEMORY := $(shell \
+    if [ -f "C:/cygwin/bin/free.exe" ] ; then \
+      ( C:/cygwin/bin/bash.exe -c "C:/cygwin/bin/free.exe -m" ) | \
+	grep Mem: | \
+	sed -e 's@\ \ *@ @g' | cut -d' ' -f2 ; \
+    else \
+      echo "512"; \
+    fi)
+endif
+
+# Machines with 512Mb or less of real memory are considered low memory
+#    build machines and adjustments will be made to prevent excessing
+#    system swapping during the build.
+#    If we don't know, assume 512. Subtract 128 from MB for VM MAX.
+#    Don't set VM max over 1024-128=896.
+ifneq ($(MB_OF_MEMORY),)
+  LOW_MEMORY_MACHINE := $(shell \
+    if [ $(MB_OF_MEMORY) -le 512 ] ; then \
+      echo "true"; \
+    else \
+      echo "false"; \
+    fi)
+  MAX_VM_MEMORY := $(shell \
+    if [ $(MB_OF_MEMORY) -le 1024 ] ; then \
+      expr $(MB_OF_MEMORY) '-' 128 ; \
+    else \
+      echo "896"; \
+    fi)
+  MIN_VM_MEMORY := $(shell \
+    if [ $(MAX_VM_MEMORY) -le 128 ] ; then \
+      expr $(MAX_VM_MEMORY) '-' 8 ; \
+    else \
+      echo "128"; \
+    fi)
+else
+  MB_OF_MEMORY       := unknown
+  LOW_MEMORY_MACHINE := true
+  MAX_VM_MEMORY      := 384
+  MIN_VM_MEMORY      := 128
+endif
+
+REQUIRED_ZIP_VER = 2.2
+REQUIRED_UNZIP_VER = 5.12
+REQUIRED_MAKE_VER = 3.78
+
+# Unix type settings (same for all unix platforms)
+ifneq ($(PLATFORM), windows)
+  # Temporary disk area
+  TEMP_DISK=/tmp
+  # Where is unwanted output to be delivered?
+  DEV_NULL = /dev/null
+  export DEV_NULL
+  # Character used between entries in classpath 
+  CLASSPATH_SEPARATOR = :
+  # suffix used for object file (.o for unix .obj for windows)
+  OBJECT_SUFFIX = o
+  # The suffix applied to runtime libraries
+  LIBRARY_SUFFIX = so
+  # The suffix applied to link libraries
+  LIB_SUFFIX = so
+  # The suffix applied to executables (.exe for windows, nothing for solaris)
+  EXE_SUFFIX =
+  # The prefix applied to library files (lib for solaris, nothing for windows)
+  LIB_PREFIX = lib
+  # User name determination (set _USER)
+  ifndef USER
+    ifdef LOGNAME
+      _USER := $(LOGNAME)
+    else
+      _USER := $(shell logname)
+    endif
+  else
+    _USER:=$(USER)
+  endif
+  # Location of client/server directories
+  ARCH_VM_SUBDIR=jre/lib/$(LIBARCH)
+endif
+
+# If blanks in the username, use the first 4 words and pack them together
+_USER1:=$(subst ', ,$(_USER))
+_USER2:=$(subst ", ,$(_USER1))
+USER:=$(word 1,$(_USER2))$(word 2,$(_USER2))$(word 3,$(_USER2))$(word 4,$(_USER2))
+export USER
+
+export PLATFORM
+endif
+

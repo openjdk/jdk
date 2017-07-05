@@ -1,0 +1,23 @@
+/*
+ * security policy used by the test process
+ */
+
+grant codeBase "file:${java.home}/lib/ext/*" {
+    permission java.security.AllPermission;
+};
+
+grant {
+
+    // permissions needed to move classes into separate codebase directories
+    permission java.io.FilePermission "${test.classes}${/}-", "read,write,delete";
+    permission java.io.FilePermission ".${/}-", "read,write,delete";
+
+    permission java.lang.RuntimePermission "createClassLoader";
+    permission java.lang.RuntimePermission "setContextClassLoader";
+
+    // used by TestLibrary to determine test environment
+    permission java.util.PropertyPermission "test.classes", "read";
+    permission java.util.PropertyPermission "test.src", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
+    permission java.util.PropertyPermission "java.home", "read";
+};

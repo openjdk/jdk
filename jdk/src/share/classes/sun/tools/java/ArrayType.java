@@ -1,0 +1,65 @@
+/*
+ * Copyright 1994-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package sun.tools.java;
+
+/**
+ * This class represents an Java array type.
+ * It overrides the relevant methods in class Type.
+ *
+ * WARNING: The contents of this source file are not part of any
+ * supported API.  Code that depends on them does so at its own risk:
+ * they are subject to change or removal without notice.
+ *
+ * @author      Arthur van Hoff
+ */
+public final
+class ArrayType extends Type {
+    /**
+     * The type of the element.
+     */
+    Type elemType;
+
+    /**
+     * Construct an array type. Use Type.tArray to create
+     * a new array type.
+     */
+    ArrayType(String typeSig, Type elemType) {
+        super(TC_ARRAY, typeSig);
+        this.elemType = elemType;
+    }
+
+    public Type getElementType() {
+        return elemType;
+    }
+
+    public int getArrayDimension() {
+        return elemType.getArrayDimension() + 1;
+    }
+
+    public String typeString(String id, boolean abbrev, boolean ret) {
+        return getElementType().typeString(id, abbrev, ret) + "[]";
+    }
+}

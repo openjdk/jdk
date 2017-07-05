@@ -1,0 +1,106 @@
+/*
+ * Copyright 1998-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+
+//
+// Standard include file for ADLC parser
+//
+
+// standard library constants
+#include "stdio.h"
+#include "stdlib.h"
+#if _MSC_VER >= 1300  // Visual C++ 7.0 or later
+#include <iostream>
+#else
+#include <iostream.h>
+#endif
+#include "string.h"
+#include "ctype.h"
+#include "stdarg.h"
+#include <sys/types.h>
+
+#if _MSC_VER >= 1300
+using namespace std;
+#endif
+
+// make sure the MSC_VER and _MSC_VER settings make sense
+#if _MSC_VER != MSC_VER && (_MSC_VER != 1400 || MSC_VER != 1399)
+#error "Something is wrong with the detection of MSC_VER in the makefiles"
+#endif
+
+#if _MSC_VER >= 1400 && !defined(_WIN64)
+#define strdup _strdup
+#endif
+
+/* Make sure that we have the intptr_t and uintptr_t definitions */
+#ifdef _WIN32
+#ifndef _INTPTR_T_DEFINED
+#ifdef _WIN64
+typedef __int64 intptr_t;
+#else
+typedef int intptr_t;
+#endif
+#define _INTPTR_T_DEFINED
+#endif
+
+#ifndef _UINTPTR_T_DEFINED
+#ifdef _WIN64
+typedef unsigned __int64 uintptr_t;
+#else
+typedef unsigned int uintptr_t;
+#endif
+#define _UINTPTR_T_DEFINED
+#endif
+#endif // _WIN32
+
+#ifdef LINUX
+  #include <inttypes.h>
+#endif // LINUX
+
+// Macros
+#define uint32 unsigned int
+#define uint   unsigned int
+
+// Macros
+// Debugging note:  Put a breakpoint on "abort".
+#define assert(cond, msg) { if (!(cond)) { fprintf(stderr, "assert fails %s %d: %s\n", __FILE__, __LINE__, msg); abort(); }}
+#define max(a, b)   (((a)>(b)) ? (a) : (b))
+
+// VM components
+#include "opcodes.hpp"
+
+// ADLC components
+#include "arena.hpp"
+#include "adlcVMDeps.hpp"
+#include "filebuff.hpp"
+#include "dict2.hpp"
+#include "forms.hpp"
+#include "formsopt.hpp"
+#include "formssel.hpp"
+#include "archDesc.hpp"
+#include "adlparse.hpp"
+
+// globally define ArchDesc for convenience.  Alternatively every form
+// could have a backpointer to the AD but it's too complicated to pass
+// it everywhere it needs to be available.
+extern ArchDesc* globalAD;

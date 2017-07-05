@@ -1,0 +1,545 @@
+'\" t
+.\"
+.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+.TH tnameserv 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+Java IDL: 一時ネームサービス \- \f2tnameserv\fP
+.LP
+
+.LP
+.LP
+このドキュメントでは、Java IDL 一時ネームサービス \f2tnameserv\fP の使用方法について説明します。Java IDL には ORBD (Object Request Broker Daemon) も含まれています。ORBD は、ブートストラップサービス、一時ネームサービス、\f3持続\fPネームサービス、およびサーバーマネージャを含むデーモンプロセスです。Java IDL のすべてのチュートリアルでは ORBD が使用されていますが、一時ネームサービスを使用する例の \f2orbd\fP はどれも、\f2tnameserv\fP で置き換えることができます。\f2orbd\fP ツールのドキュメントについては、そのマニュアルページか、
+.na
+\f2Java IDL Naming Service Included with ORBD\fP
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/idl/jidlNaming.html) のトピックを参照してください。
+.LP
+.LP
+ここでは、次の項目について説明します。
+.LP
+.RS 3
+.TP 2
+o
+Java\ IDL 一時ネームサービス
+.TP 2
+o
+Java\ IDL 一時ネームサービスの起動
+.TP 2
+o
+Java\ IDL 一時ネームサービスの停止
+.TP 2
+o
+サンプルクライアント: 名前空間へのオブジェクトの追加
+.TP 2
+o
+サンプルクライアント: 名前空間のブラウズ
+.RE
+
+.LP
+.SH "Java\ IDL 一時ネームサービス"
+.IX "Java IDL name server starter script" "" "Java IDL name server starter script \(em \fLtnameserv\fP"
+.IX "tnameserv" "" "\fLtnameserv\fP \(em Java IDL name server starter script"
+.SM CORBA
+の
+.SM COS
+(Common Object Services) ネームサービスは、ファイルシステムがファイルに対してディレクトリ
+構造を提供しているのと同じように、オブジェクト参照に対してツリー構造のディレクトリを提供し
+ます。
+Java
+.SM IDL
+の一時ネームサービス、\f2tnameserv\fP は、
+.SM COS
+ネームサービスの仕様を単純な形で実装したものです。 
+.LP
+オブジェクト参照は名前空間に名前で格納され、オブジェクト参照と名前の組は、
+それぞれ「ネームバインディング」と呼ばれます。ネームバインディングは「ネーミ
+ングコンテキスト」に組み込むことができます。ネーミングコンテキストはそれ自体
+がネームバインディングであり、ファイルシステムのサブディレクトリと同じ編成機
+能を持ちます。すべてのバインディングは「初期ネーミングコンテキスト」に格納さ
+れます。名前空間において、初期ネーミングコンテキストは唯一の持続的バイン
+ディングです。それ以外のネーミングコンテキストは、Java
+.SM IDL
+のネームサーバープロセスが停止し、再起動されると失われます。 
+.LP
+アプレットまたはアプリケーションから
+.SM COS
+ネームサービスを使用するためには、その
+.SM ORB
+はネームサービスが動作しているホストのポートを知っているか、そのネームサービスの
+文字列化された初期ネーミングコンテキストにアクセスできなければなりません。
+ネームサービスは、Java
+.SM IDL
+のネームサービスでもその他の
+.SM COS
+準拠のネームサービスでもかまいません。 
+.LP
+.SH "Java\ IDL 一時ネームサービスの起動"
+.LP
+.LP
+.IX "tnameserv" "Starting the Java IDL Name Server" "\fLtnameserv\fP \(em Java IDL name server starter script"
+Java
+.SM IDL
+ネームサービスは、ネームサービスを使用するアプリケーションまたはアプレットより前に
+起動しておかなければなりません。
+Java\ IDL 製品をインストールすると、Java\ IDL ネームサービスを起動するためのスクリプト (Solaris: \f2tnameserv\fP) または実行可能ファイル (Windows NT: \f2tnameserv.exe\fP) が作成されます。
+バックグラウンドで
+動作するように、ネームサービスを起動してください。
+.LP
+特に指定しない場合、Java
+.SM IDL
+ネームサービスは、
+.SM ORB
+の
+.I resolve_initial_references(\|)
+メソッドと
+.I list_initial_references(\|)
+メソッドの実装に使用するブートストラッププロトコルに対してポート 900 で待機します。
+次のようにします。 
+.LP
+.nf
+\f3
+.fl
+        tnameserv \-ORBInitialPort \fP\f4nameserverport\fP\f3&
+.fl
+\fP
+.fi
+
+.LP
+.LP
+ネームサーバーのポートを指定しなかった場合、デフォルトでポート 900 が使用されます。Solaris ソフトウェアを実行する場合、1024 よりも小さいポートでプロセスを起動するには root になる必要があります。このため、1024 かそれよりも大きいポート番号を使用することをお勧めします。1050 などの異なるポートを指定し、かつネームサービスをバックグラウンドで実行するには、UNIX コマンドシェルから次のように入力します。
+.LP
+.nf
+\f3
+.fl
+        tnameserv \-ORBInitialPort 1050&
+.fl
+\fP
+.fi
+
+.LP
+.LP
+Windows の場合は、MS\-DOS システムプロンプトから次のように入力します。
+.LP
+.nf
+\f3
+.fl
+        start tnameserv \-ORBInitialPort 1050
+.fl
+\fP
+.fi
+
+.LP
+.LP
+ネームサーバーのクライアントには、新しいポート番号を知らせる必要があります。このため、ORB オブジェクトの作成時に \f2org.omg.CORBA.ORBInitialPort\fP プロパティに新しいポート番号を設定します。 
+.LP
+.SS 
+異なるホスト上でのサーバーとクライアントの実行
+.LP
+.LP
+Java IDL および RMI\-IIOP に関するチュートリアルの大部分では、ネームサービス、サーバー、クライアントのすべてが開発マシン上で実行されています。実際の配備では通常、ネームサービスとは異なるホストマシン上でクライアントとサーバーが実行されます。
+.LP
+.LP
+クライアントとサーバーでネームサービスを検索するには、ネームサービスが実行されているポート番号とホストをそれらが知っている必要があります。そこで、クライアントとサーバーのファイル内の \f2org.omg.CORBA.ORBInitialPort\fP と \f2org.omg.CORBA.ORBInitialHost\fP プロパティを、ネームサービスが実行されているマシン名とポート番号に設定します。この例については、
+.na
+「\f2The Hello World Example Using RMI\-IIOP\fP」
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/rmi\-iiop/rmiiiopexample.html) を参照してください。また、コマンド行オプション \f2\-ORBInitialPort\fP \f2nameserverport#\fP と \f2\-ORBInitialHost\fP \f2nameserverhostname\fP を使ってネームサービスの検索場所をクライアントとサーバーに知らせることも可能です。
+.na
+「\f2Java IDL: Running the Hello World Example on TWO Machines\fP」
+.fi
+(http://java.sun.com/javase/6/docs/technotes/guides/idl/tutorial/jidl2machines.html) では、このコマンド行オプションを使う方法の 1 つが示されています。
+.LP
+.LP
+たとえば、一時ネームサービス \f2tnameserv\fP がホスト \f2nameserverhost\fP のポート 1050 上で、クライアントがホスト \f2clienthost\fP 上で、サーバーがホスト \f2serverhost\fP 上で、それぞれ実行されているとします。
+.LP
+.RS 3
+.TP 2
+o
+ホスト \f2nameserverhost\fP 上の \f2tnameserv\fP を次のようにして起動します。
+.nf
+\f3
+.fl
+     tnameserv \-ORBInitialPort 1050
+.fl
+
+.fl
+\fP
+.fi
+.TP 2
+o
+\f2serverhost\fP 上のサーバーを次のようにして起動します。
+.nf
+\f3
+.fl
+     java Server \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost
+.fl
+\fP
+.fi
+.TP 2
+o
+\f2clienthost\fP 上のクライアントを次のようにして起動します。
+.nf
+\f3
+.fl
+     java Client \-ORBInitialPort 1050 \-ORBInitialHost nameserverhost
+.fl
+\fP
+.fi
+.RE
+
+.LP
+.SS 
+\-J オプション
+.LP
+\f2tnameserv\fP で使用可能なコマンド行オプションは、次のとおりです。
+.RS 3
+
+.LP
+.TP 3
+\-Joption 
+\f2option\fP を Java 仮想マシンに渡します。ここで、\f2option\fP は、
+.na
+\f2Java アプリケーション起動ツール\fP
+.fi
+(http://java.sun.com/javase/6/docs/technotes/tools/solaris/java.html) のリファレンスページで説明されているオプションの 1 つです。たとえば、\f3\-J\-Xms48m\fP とすると、起動時のメモリが 48M バイトに設定されます。\f3\-J\fP を使って実行元の仮想マシンにオプションを渡すことは、よく行われています。
+.LP
+.SH "Java IDL 一時ネームサービスの停止"
+.LP
+.LP
+Java\ IDL ネームサービスを停止するには、対応するオペレーティングシステムコマンドを使用します。たとえば、Unix プロセスの場合は \f2kill\fP を、Windows プロセスの場合は \f2Ctrl\-C\fP を、それぞれ使用します。ネームサービスは明示的にシャットダウンされるまで、呼び出しを待ち続けます。なお、ネームサービスを終了させると、Java\ IDL ネームサービスに登録されている名前は失われます。
+.LP
+.SH "サンプルクライアント: 名前空間へのオブジェクトの追加"
+.LP
+.LP
+以下に示すサンプルプログラムは、名前を名前空間に追加する方法を示すものです。このサンプルプログラムは、このままの状態で完全に動作する一時ネームサービスクライアントで、次のような単純なツリーを作成するものです。 
+.LP
+.nf
+\f3
+.fl
+\fP\f3
+.fl
+                    \fP\f4初期\fP\f3
+.fl
+           \fP\f4ネーミングコンテキスト\fP\f3
+.fl
+                  /      \\
+.fl
+                 /        \\
+.fl
+              plans     \fP\f4Personal\fP\f3
+.fl
+                         /   \\
+.fl
+                        /     \\
+.fl
+                   calendar  schedule\fP
+.fl
+.fi
+
+.LP
+.LP
+この例で、\f3plans\fP はオブジェクト参照、\f3Personal\fP は \f3calendar\fP と \f3schedule\fP の 2 つのオブジェクト参照が含まれるネーミングコンテキストです。 
+.LP
+.nf
+\f3
+.fl
+import java.util.Properties;
+.fl
+import org.omg.CORBA.*;
+.fl
+import org.omg.CosNaming.*;
+.fl
+
+.fl
+public class NameClient
+.fl
+{
+.fl
+   public static void main(String args[])
+.fl
+   {
+.fl
+      try {
+.fl
+\fP
+.fi
+
+.LP
+前述の「Java IDL 一時ネームサービスの起動」では、ネームサーバーはポート 1050 を使用して起動しました。次のコードで、このポート番号をクライアントプログラムに知らせます。 
+.nf
+\f3
+.fl
+        Properties props = new Properties();
+.fl
+        props.put("org.omg.CORBA.ORBInitialPort", "1050");
+.fl
+        ORB orb = ORB.init(args, props);
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+このコードでは、初期ネーミングコンテキストを取得し、それを \f3ctx\fP に代入します。2 行目では、\f3ctx\fP をダミーのオブジェクト参照 \f3objref\fP にコピーします。この \f3objref\fP には、あとでさまざまな名前を割り当てて名前空間に追加します。
+.nf
+\f3
+.fl
+        NamingContext ctx =
+.fl
+NamingContextHelper.narrow(orb.resolve_initial_references("NameService"));
+.fl
+        NamingContext objref = ctx;
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+このコードでは、text 型の名前「plans」を作成し、それをダミーのオブジェクト参照にバインドします。その後、\f2rebind\fP を使用して初期ネーミングコンテキストの下に「plans」を追加しています。\f2rebind\fP メソッドを使用すれば、\f2bind\fP を使用した場合に発生する例外を発生させずに、このプログラムを何度も繰り返し実行できます。
+.nf
+\f3
+.fl
+        NameComponent nc1 = new NameComponent("plans", "text");
+.fl
+        NameComponent[] name1 = {nc1};
+.fl
+        ctx.rebind(name1, objref);
+.fl
+        System.out.println("plans rebind sucessful!");
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+このコードでは、directory 型の「Personal」というネーミングコンテキストを作成します。その結果得られるオブジェクト参照 \f3ctx2\fP をこの名前にバインドし、初期ネーミングコンテキストに追加します。 
+.nf
+\f3
+.fl
+        NameComponent nc2 = new NameComponent("Personal", "directory");
+.fl
+        NameComponent[] name2 = {nc2};
+.fl
+        NamingContext ctx2 = ctx.bind_new_context(name2);
+.fl
+        System.out.println("new naming context added..");
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+残りのコードでは、ダミーのオブジェクト参照を「schedule」と「calendar」という名前でネーミングコンテキスト「Personal」(\f3ctx2\fP) にバインドします。 
+.nf
+\f3
+.fl
+        NameComponent nc3 = new NameComponent("schedule", "text");
+.fl
+        NameComponent[] name3 = {nc3};
+.fl
+        ctx2.rebind(name3, objref);
+.fl
+        System.out.println("schedule rebind sucessful!");
+.fl
+
+.fl
+        NameComponent nc4 = new NameComponent("calender", "text");
+.fl
+        NameComponent[] name4 = {nc4};
+.fl
+        ctx2.rebind(name4, objref);
+.fl
+        System.out.println("calender rebind sucessful!");
+.fl
+
+.fl
+
+.fl
+    } catch (Exception e) {
+.fl
+        e.printStackTrace(System.err);
+.fl
+    }
+.fl
+  }
+.fl
+}
+.fl
+\fP
+.fi
+
+.LP
+.SH "サンプルクライアント: 名前空間のブラウズ"
+.LP
+.LP
+次のサンプルプログラムでは、名前空間をブラウズする方法を示します。 
+.LP
+.nf
+\f3
+.fl
+import java.util.Properties;
+.fl
+import org.omg.CORBA.*;
+.fl
+import org.omg.CosNaming.*;
+.fl
+
+.fl
+public class NameClientList
+.fl
+{
+.fl
+   public static void main(String args[])
+.fl
+   {
+.fl
+      try {
+.fl
+\fP
+.fi
+
+.LP
+前述の「Java IDL 一時ネームサービスの起動」で、ネームサーバーはポート 1050 を使用して起動しました。次のコードで、このポート番号をクライアントプログラムに知らせます。 
+.nf
+\f3
+.fl
+
+.fl
+        Properties props = new Properties();
+.fl
+        props.put("org.omg.CORBA.ORBInitialPort", "1050");
+.fl
+        ORB orb = ORB.init(args, props);
+.fl
+
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+次のコードでは、初期ネーミングコンテキストを取得しています。
+.nf
+\f3
+.fl
+        NamingContext nc =
+.fl
+NamingContextHelper.narrow(orb.resolve_initial_references("NameService"));
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+\f2list\fP メソッドは、ネーミングコンテキストに追加されているバインディングをリストします。この場合、最大 1000 個までのバインディングが初期ネーミングコンテキストから BindingListHolder に返されます。残りのバインディングは、BindingIteratorHolder に返されます。 
+.nf
+\f3
+.fl
+        BindingListHolder bl = new BindingListHolder();
+.fl
+        BindingIteratorHolder blIt= new BindingIteratorHolder();
+.fl
+        nc.list(1000, bl, blIt);
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+このコードでは、返された BindingListHolder からバインディングの配列を取得します。バインディングがない場合は、プログラムは終了します。 
+.nf
+\f3
+.fl
+        Binding bindings[] = bl.value;
+.fl
+        if (bindings.length == 0) return;
+.fl
+
+.fl
+\fP
+.fi
+
+.LP
+残りのコードでは、バインディングに対してループ処理を行い、名前を出力します。
+.nf
+\f3
+.fl
+        for (int i=0; i < bindings.length; i++) {
+.fl
+
+.fl
+            // get the object reference for each binding
+.fl
+            org.omg.CORBA.Object obj = nc.resolve(bindings[i].binding_name);
+.fl
+            String objStr = orb.object_to_string(obj);
+.fl
+            int lastIx = bindings[i].binding_name.length\-1;
+.fl
+
+.fl
+            // check to see if this is a naming context
+.fl
+            if (bindings[i].binding_type == BindingType.ncontext) {
+.fl
+              System.out.println( "Context: " +
+.fl
+bindings[i].binding_name[lastIx].id);
+.fl
+            } else {
+.fl
+                System.out.println("Object: " +
+.fl
+bindings[i].binding_name[lastIx].id);
+.fl
+            }
+.fl
+        }
+.fl
+
+.fl
+       } catch (Exception e) {
+.fl
+        e.printStackTrace(System.err);
+.fl
+       }
+.fl
+   }
+.fl
+}
+.fl
+\fP
+.fi
+
+.LP
+
+.LP
+

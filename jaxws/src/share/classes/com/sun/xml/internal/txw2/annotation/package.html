@@ -1,0 +1,24 @@
+<html>
+<body>
+  <p>
+    Defines a set of annotations that can be used on TypedXmlWriter interfaces.
+
+  <h3>Package-level Annotation</h3>
+  <p>
+    {@link XmlNamespace} can be used on a package to designate the namespace URI for the
+    whole package.
+
+  <h3>Interface Annotation</h3>
+  <p>
+    {@link XmlElement} can be used on TypedXmlWriter-derived interfaces to associate
+    a tag name to that interface.
+
+  <h3>Method Annotations</h3>
+  <p>
+    {@link XmlElement}, {@link XmlAttribute}, or {@link XmlValue} can be used on a method
+    declared on a TypedXmLWriter-derived interface. Those annotations are mutually-exclusive.
+    See their javadoc for details. If none of the above three annotations are specified,
+    {@link XmlElement} is assumed.
+
+</body>
+</html>

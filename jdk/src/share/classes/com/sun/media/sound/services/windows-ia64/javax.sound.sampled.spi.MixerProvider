@@ -1,0 +1,6 @@
+# service provider file for Windows IA64: with DirectAudioDeviceProvider
+# last mixer is default mixer
+com.sun.media.sound.PortMixerProvider
+com.sun.media.sound.SimpleInputDeviceProvider
+com.sun.media.sound.DirectAudioDeviceProvider
+com.sun.media.sound.HeadspaceMixerProvider

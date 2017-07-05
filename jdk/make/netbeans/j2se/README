@@ -1,0 +1,13 @@
+Building the entire JavaSE source base
+
+This project exists for building the entire JavaSE source base which is in the
+jdk directory.  Rather than using this project for editing Java code, please
+use one of the other projects which will narrow the scope of the sources to a
+more manageable size.
+
+Given that it can take a rather long time to build all of the JavaSE code, you
+might prefer to build this project from the command line using ant.
+
+The results of building this project are all in the directory
+<install-dir>/jdk/build/<platform>-<arch>.  The other subprojects, with the
+exception of the "world" project, place their results in same build directory.

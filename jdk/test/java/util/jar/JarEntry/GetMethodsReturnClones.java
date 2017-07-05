@@ -1,0 +1,79 @@
+/*
+ * Copyright 2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/*
+ * @test
+ * @bug 6337925
+ * @summary Ensure that callers cannot modify the internal JarEntry cert and
+ *          codesigner arrays.
+ * @author Sean Mullan
+ */
+import java.io.InputStream;
+import java.security.CodeSigner;
+import java.security.cert.Certificate;
+import java.util.*;
+import java.util.jar.*;
+
+public class GetMethodsReturnClones {
+
+    private final static String BASE = System.getProperty("test.src", ".") +
+        System.getProperty("file.separator");
+
+    public static void main(String[] args) throws Exception {
+        JarFile jf = new JarFile(BASE + "test.jar", true);
+
+        byte[] buffer = new byte[8192];
+        Enumeration<JarEntry> e = jf.entries();
+        List<JarEntry> entries = new ArrayList<JarEntry>();
+        while (e.hasMoreElements()) {
+            JarEntry je = e.nextElement();
+            entries.add(je);
+            InputStream is = jf.getInputStream(je);
+            while (is.read(buffer, 0, buffer.length) != -1) {
+                // we just read. this will throw a SecurityException
+                // if  a signature/digest check fails.
+            }
+            is.close();
+        }
+        jf.close();
+
+        for (JarEntry je : entries) {
+            Certificate[] certs = je.getCertificates();
+            CodeSigner[] signers = je.getCodeSigners();
+            if (certs != null) {
+                certs[0] = null;
+                certs = je.getCertificates();
+                if (certs[0] == null) {
+                    throw new Exception("Modified internal certs array");
+                }
+            }
+            if (signers != null) {
+                signers[0] = null;
+                signers = je.getCodeSigners();
+                if (signers[0] == null) {
+                    throw new Exception("Modified internal codesigners array");
+                }
+            }
+        }
+    }
+}

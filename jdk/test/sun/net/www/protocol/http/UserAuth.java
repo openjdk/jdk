@@ -1,0 +1,123 @@
+/*
+ * Copyright 2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/*
+ * @test
+ * @bug 6421122
+ * @run main/othervm UserAuth
+ * @summary Authorization header removed for preemptive authentication by user code
+ */
+
+import java.net.*;
+import com.sun.net.httpserver.*;
+import java.util.*;
+import java.io.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+
+
+public class UserAuth
+{
+    com.sun.net.httpserver.HttpServer httpServer;
+    ExecutorService executorService;
+
+    public static void main(String[] args) {
+        new UserAuth();
+    }
+
+    public UserAuth() {
+        try {
+            startHttpServer();
+            doClient();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
+    void doClient() {
+        try {
+            InetSocketAddress address = httpServer.getAddress();
+
+            // GET Request
+            URL url = new URL("http://" + address.getHostName() + ":" + address.getPort() + "/redirect/");
+            HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+            uc.setRequestProperty("Authorization", "testString:ValueDoesNotMatter");
+            int resp = uc.getResponseCode();
+
+            System.out.println("Response Code is " + resp);
+            if (resp != 200)
+                throw new RuntimeException("Failed: Authorization header was not retained after redirect");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            httpServer.stop(1);
+            executorService.shutdown();
+        }
+    }
+
+     /**
+     * Http Server
+     */
+    void startHttpServer() throws IOException {
+        httpServer = com.sun.net.httpserver.HttpServer.create(new InetSocketAddress(0), 0);
+
+        // create HttpServer context
+        HttpContext ctx = httpServer.createContext("/redirect/", new RedirectHandler());
+        HttpContext ctx1 = httpServer.createContext("/doStuff/", new HasAuthHandler());
+
+        executorService = Executors.newCachedThreadPool();
+        httpServer.setExecutor(executorService);
+        httpServer.start();
+    }
+
+    class RedirectHandler implements HttpHandler {
+        public void handle(HttpExchange t) throws IOException {
+            InetSocketAddress address = httpServer.getAddress();
+            String redirectUrl = "http://" + address.getHostName() + ":" + address.getPort() + "/doStuff/";
+
+            Headers resHeaders = t.getResponseHeaders();
+            resHeaders.add("Location", redirectUrl);
+
+            t.sendResponseHeaders(307, -1);
+            t.close();
+        }
+    }
+
+    class HasAuthHandler implements HttpHandler {
+        public void handle(HttpExchange t) throws IOException {
+            Headers reqHeaders = t.getRequestHeaders();
+
+            List<String> auth = reqHeaders.get("Authorization");
+
+            if (auth == null || !auth.get(0).equals("testString:ValueDoesNotMatter"))
+                t.sendResponseHeaders(400, -1);
+
+            t.sendResponseHeaders(200, -1);
+            t.close();
+        }
+    }
+
+
+
+}

@@ -1,0 +1,76 @@
+/*
+ * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+#include "util.h"
+#include "ClassLoaderReferenceImpl.h"
+#include "inStream.h"
+#include "outStream.h"
+
+static jboolean
+visibleClasses(PacketInputStream *in, PacketOutputStream *out)
+{
+    JNIEnv *env = getEnv();
+    jobject loader;
+
+    loader = inStream_readClassLoaderRef(env, in);
+    if (inStream_error(in)) {
+        return JNI_TRUE;
+    }
+
+    WITH_LOCAL_REFS(env, 1) {
+
+        jvmtiError error;
+        jint count;
+        jclass *classes;
+        int i;
+
+        error = allClassLoaderClasses(loader, &classes, &count);
+        if (error != JVMTI_ERROR_NONE) {
+            outStream_setError(out, map2jdwpError(error));
+        } else {
+            (void)outStream_writeInt(out, count);
+            for (i = 0; i < count; i++) {
+                jbyte tag;
+                jclass clazz;
+
+                clazz = classes[i];
+                tag = referenceTypeTag(clazz);
+
+                (void)outStream_writeByte(out, tag);
+                (void)outStream_writeObjectRef(env, out, clazz);
+            }
+        }
+
+        if ( classes != NULL )
+            jvmtiDeallocate(classes);
+
+     } END_WITH_LOCAL_REFS(env);
+
+    return JNI_TRUE;
+}
+
+void *ClassLoaderReference_Cmds[] = { (void *)0x1
+    ,(void *)visibleClasses
+};

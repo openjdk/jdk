@@ -1,0 +1,119 @@
+/*
+ * Copyright 2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/* @test
+ * @summary Verifies basic correct functioning of proxy serialization.
+ */
+
+import java.io.*;
+import java.lang.reflect.*;
+import java.util.Random;
+
+// proxy interfaces
+interface Foo { int foo(); }
+interface Bar { float bar(); }
+
+// dummy invocation handler
+class Handler implements InvocationHandler, Serializable {
+
+    static Method fooMethod, barMethod;
+    static {
+        try {
+            fooMethod = Foo.class.getDeclaredMethod("foo", new Class[0]);
+            barMethod = Bar.class.getDeclaredMethod("bar", new Class[0]);
+        } catch (NoSuchMethodException ex) {
+            throw new Error();
+        }
+    }
+
+    int foo;
+    float bar;
+
+    Handler(int foo, float bar) {
+        this.foo = foo;
+        this.bar = bar;
+    }
+
+    public Object invoke(Object proxy, Method method, Object[] args)
+        throws Throwable
+    {
+        if (method.equals(fooMethod)) {
+            return new Integer(foo);
+        } else if (method.equals(barMethod)) {
+            return new Float(bar);
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+}
+
+// ObjectInputStream incapable of resolving proxy classes
+class ProxyBlindInputStream extends ObjectInputStream {
+
+    ProxyBlindInputStream(InputStream in) throws IOException { super(in); }
+
+    protected Class resolveProxyClass(String[] interfaces)
+        throws IOException, ClassNotFoundException
+    {
+        throw new ClassNotFoundException();
+    }
+}
+
+public class Basic {
+    public static void main(String[] args) throws Exception {
+        ClassLoader loader = ClassLoader.getSystemClassLoader();
+        Class[] interfaces = new Class[] { Foo.class, Bar.class };
+        Random rand = new Random();
+        int foo = rand.nextInt();
+        float bar = rand.nextFloat();
+        ObjectOutputStream oout;
+        ObjectInputStream oin;
+        ByteArrayOutputStream bout;
+        Object proxy;
+
+
+        // test simple proxy write + read
+        bout = new ByteArrayOutputStream();
+        oout = new ObjectOutputStream(bout);
+        oout.writeObject(Proxy.newProxyInstance(
+            loader, interfaces, new Handler(foo, bar)));
+        oout.close();
+
+        oin = new ObjectInputStream(
+            new ByteArrayInputStream(bout.toByteArray()));
+        proxy = oin.readObject();
+        if ((((Foo) proxy).foo() != foo) || (((Bar) proxy).bar() != bar)) {
+            throw new Error();
+        }
+
+
+        // test missing proxy class ClassNotFoundException
+        oin = new ProxyBlindInputStream(
+            new ByteArrayInputStream(bout.toByteArray()));
+        try {
+            oin.readObject();
+            throw new Error();
+        } catch (ClassNotFoundException ex) {
+        }
+    }
+}

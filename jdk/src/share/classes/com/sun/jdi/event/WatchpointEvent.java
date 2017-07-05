@@ -1,0 +1,67 @@
+/*
+ * Copyright 1998-2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package com.sun.jdi.event;
+
+import com.sun.jdi.*;
+
+/**
+ * Notification of a field triggered event encountered by a thread in the
+ * target VM.
+ *
+ * @see EventQueue
+ * @see VirtualMachine
+ *
+ * @author Robert Field
+ * @since  1.3
+ */
+public interface WatchpointEvent extends LocatableEvent {
+
+    /**
+     * Returns the field that is about to be accessed/modified.
+     *
+     * @return a {@link Field} which mirrors the field
+     * in the target VM.
+     * @throws ObjectCollectedException may be thrown if class
+     * has been garbage collected.
+     */
+    Field field();
+
+    /**
+     * Returns the object whose field is about to be accessed/modified.
+     * Return null is the access is to a static field.
+     *
+     * @return a {@link ObjectReference} which mirrors the event's
+     * object in the target VM.
+     */
+    ObjectReference object();
+
+    /**
+     * Current value of the field.
+     * @throws ObjectCollectedException if object or class have been
+     * garbage collected.
+     */
+    Value valueCurrent();
+}

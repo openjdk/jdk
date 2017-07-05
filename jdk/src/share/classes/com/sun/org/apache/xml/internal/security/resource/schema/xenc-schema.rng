@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- http://www.xml.com/lpt/a/2002/01/23/relaxng.html -->
+<!-- http://www.oasis-open.org/committees/relax-ng/tutorial-20011203.html -->
+<!-- http://www.zvon.org/xxl/XMLSchemaTutorial/Output/ser_wildcards_st8.html -->
+<!-- http://lists.oasis-open.org/archives/relax-ng-comment/200206/maillist.html -->
+
+<grammar xmlns='http://relaxng.org/ns/structure/1.0'
+        xmlns:ds='http://www.w3.org/2000/09/xmldsig#'
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        ns="http://www.w3.org/2001/04/xmlenc#"
+        datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+
+    <include href="http://www.w3.org/Signature/Drafts/xmldsig-core/xmldsig-core-schema.rng">
+    <!-- Used for DigestMethod, KeyInfoType and anyThing -->
+    <!-- Since xmldsig-core also has a start, I have to include it
+        in the include for redefinition. -->
+        <start>
+            <choice>
+                <!-- We get to define the permissible root elements! -->
+                <element name="EncryptedData"><ref name="EncryptedDataType"/></element>
+                <element name="EncryptedKey"><ref name="EncryptedKeyType"/></element>
+            </choice>
+        </start>   
+        
+        <define name='anyThing'>
+            <zeroOrMore>
+                <choice>
+                    <text/>
+                    <element>
+                        <anyName>
+                            <except>
+                                <nsName/>
+                                <nsName ns='http://www.w3.org/2000/09/xmldsig#'/>
+                            </except>
+                        </anyName>
+                        <ref name='anyThing'/>
+                        <zeroOrMore>
+                            <attribute>
+                              <anyName/>
+                            </attribute>
+                        </zeroOrMore>
+                    </element>
+                </choice>
+            </zeroOrMore>
+            </define>
+        
+        
+    </include>
+    
+        <!-- Import definitions from the xmldsig rng -->
+
+        <define name="KeyInfoType" combine="interleave">
+            <zeroOrMore>
+                <choice>
+                    <element name="EncryptedKey"><ref name="EncryptedKeyType"/></element>
+                    <element name="AgreementMethod"><ref name="AgreementMethodType"/></element>
+                </choice>
+            </zeroOrMore>    
+        </define>
+
+        <define name="DigestMethodType" combine="choice">
+            <notAllowed/>
+         </define>
+
+        <define name="TransformType" combine="choice">
+            <notAllowed/>
+         </define>
+
+    <!-- Now redefined in the include statement
+        <define name="anyThing" combine="choice">
+            <notAllowed/>
+         </define>
+    -->
+
+    <!-- End import -->
+        
+  
+    <define name="EncryptedDataType">
+          <ref name="EncryptedType"/>
+    </define>
+  
+  
+    <define name="EncryptedKeyType">
+            <ref name="EncryptedType"/>
+            <optional><element name='ReferenceList'>
+                <ref name="ReferenceListType"/></element>
+            </optional>
+            <optional><element name='CarriedKeyName'><data type="string"/></element></optional>
+            <optional><attribute name='Recipient'> <data type="string"/></attribute></optional>
+    </define>
+
+    
+     <define name="EncryptedType">
+        <element name="EncryptionMethod"><ref name="EncryptionMethodType"/></element>
+        <optional>
+            <element name="KeyInfo" ns="http://www.w3.org/2000/09/xmldsig#">
+                <ref name="KeyInfoType"/>
+            </element>
+        </optional>
+        <optional>
+            <element name="CipherData"><ref name="CipherDataType"/></element>
+        </optional> 
+        <optional>
+             <element name="EncryptionProperties"><ref name="EncryptionPropertiesType"/></element>
+        </optional>
+        <optional><attribute name="Id"><data type="ID"/></attribute></optional>
+        <optional><attribute name="Type"><data type="anyURI"/></attribute></optional>
+        <optional><attribute name="MimeType"><data type="string"/></attribute></optional>
+        <optional><attribute name="Encoding"><data type="anyURI"/></attribute></optional>
+        <optional><attribute name='xsi:schemaLocation'/></optional>
+    </define> 
+
+    <define name="EncryptionMethodType">
+        <zeroOrMore>
+            <choice>
+                <element name="KeySize">
+                    <data type="integer"/>
+                </element>
+                <element name="OAEPparams">
+                    <data type="base64Binary"/>
+                </element>
+                <text/>
+                <element name='DigestMethod' ns="http://www.w3.org/2000/09/xmldsig#">
+                    <ref name="DigestMethodType"/>
+                </element>
+            </choice>
+        </zeroOrMore>
+        <attribute name="Algorithm"><data type="anyURI"/></attribute>
+    </define>
+
+            
+    <define name="AgreementMethodType">
+        <zeroOrMore>
+            <choice>
+                <element name="KA-Nonce">
+                    <data type="base64Binary"/>
+                </element>
+                <element name='DigestMethod' ns="http://www.w3.org/2000/09/xmldsig#">
+                    <ref name="DigestMethodType"/>
+                </element>
+                <text/>
+                <element>
+                    <nsName ns="http://www.w3.org/2000/09/xmldsig#"/>
+                    <ref name="anyThing"/>
+                </element>
+                <element name="OriginatorKeyInfo"><ref name="KeyInfoType"/></element>
+                <element name="RecipientKeyInfo"><ref name="KeyInfoType"/></element>
+            </choice>
+        </zeroOrMore>
+        <attribute name="Algorithm"><data type="anyURI"/></attribute>
+    </define>            
+            
+            
+    <define name="ReferenceListType">
+        <oneOrMore>
+            <choice>
+                <element name="DataReference">
+                    <text/>
+                    <attribute name="URI"><data type="anyURI"/></attribute>
+                </element>
+                <element name="KeyReference">
+                    <text/>
+                    <attribute name="URI"><data type="anyURI"/></attribute>
+                </element>
+            </choice>
+        </oneOrMore>
+    </define>
+    
+    
+    <define name="CipherDataType">
+        <choice>
+            <element name="CipherValue"><data type="base64Binary"/></element>
+            <element name="CipherReference">
+                <element name="Transforms">
+                  <oneOrMore>
+                      <element name='Transform' ns="http://www.w3.org/2000/09/xmldsig#">
+                          <ref name='TransformType'/>
+                        </element>
+                    </oneOrMore>
+                </element>
+                <attribute name="URI">
+                    <data type="anyURI"/>
+                </attribute>      
+            </element>
+        </choice>
+    </define>
+    
+    
+    <define name="EncryptionPropertiesType">        
+        <element name="EncryptionProperty">
+          <zeroOrMore>
+                <element>
+                    <anyName/>
+                    <text/>
+                </element>
+            </zeroOrMore>
+            <optional>
+                <attribute name="Target">
+                    <data type="anyURI"/>
+                </attribute>  
+            </optional>
+            <optional>                
+                <attribute name="Id">
+                    <data type="ID"/>
+                </attribute>    
+            </optional>
+        </element>
+        
+        <optional>
+            <attribute name="Id">
+                <data type="ID"/>
+            </attribute>    
+        </optional>
+        <zeroOrMore>
+            <attribute><nsName ns="http://www.w3.org/XML/1998/namespace"/></attribute>
+        </zeroOrMore>
+    </define>
+
+</grammar>

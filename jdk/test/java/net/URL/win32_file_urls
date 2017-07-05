@@ -1,0 +1,15 @@
+URL: null
+spec: file://c:\JavaSoft\Test
+expected: file://c:/JavaSoft/Test
+
+URL: null
+spec: file:/c:\JavaSoft\Test
+expected: file:/c:/JavaSoft/Test
+
+URL: null
+spec: file:/c:\JavaSoft\Test:something#anchor
+expected: file:/c:/JavaSoft/Test:something#anchor
+
+URL: file:///c:\jdk\eng\index.html
+spec: pulsar.html
+expected: file:/c:/jdk/eng/pulsar.html

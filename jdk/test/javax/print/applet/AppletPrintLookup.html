@@ -1,0 +1,22 @@
+<html>
+<head>
+<title> APL </title>
+</head>
+<body>
+     Wait until 5 applets have initialised and started and display string
+     messages. Applet 0 and Applet 2 should find one less print service
+     than the rest.
+     Specifically all except Applets 0 and 2 should find a service called
+     Applet N printer where N is the number of the applet. They should *NOT*
+     find Applet M printer (where M != N).
+    
+
+<h1>Applet Print Service Lookup</h1>
+
+<APPLET CODE="Applet0.class" CODEBASE=applet0 WIDTH=300 HEIGHT=200></APPLET>
+<APPLET CODE="Applet1.class" ARCHIVE="applet1.jar" CODEBASE=applet1 WIDTH=300 HEIGHT=200></APPLET>
+<APPLET CODE="Applet2.class" CODEBASE=applet2 WIDTH=300 HEIGHT=200></APPLET>
+<APPLET CODE="Applet3.class" CODEBASE=applet3 WIDTH=300 HEIGHT=200></APPLET>
+<APPLET CODE="Applet4.class" CODEBASE=applet4 WIDTH=300 HEIGHT=200></APPLET>
+</body>
+</html>

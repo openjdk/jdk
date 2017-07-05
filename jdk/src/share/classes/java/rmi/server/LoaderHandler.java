@@ -1,0 +1,95 @@
+/*
+ * Copyright 1996-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package java.rmi.server;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
+/**
+ * <code>LoaderHandler</code> is an interface used internally by the RMI
+ * runtime in previous implementation versions.  It should never be accessed
+ * by application code.
+ *
+ * @author  Ann Wollrath
+ * @since   JDK1.1
+ *
+ * @deprecated no replacement
+ */
+@Deprecated
+public interface LoaderHandler {
+
+    /** package of system <code>LoaderHandler</code> implementation. */
+    final static String packagePrefix = "sun.rmi.server";
+
+    /**
+     * Loads a class from the location specified by the
+     * <code>java.rmi.server.codebase</code> property.
+     *
+     * @param  name the name of the class to load
+     * @return the <code>Class</code> object representing the loaded class
+     * @exception MalformedURLException
+     *            if the system property <b>java.rmi.server.codebase</b>
+     *            contains an invalid URL
+     * @exception ClassNotFoundException
+     *            if a definition for the class could not
+     *            be found at the codebase location.
+     * @since JDK1.1
+     * @deprecated no replacement
+     */
+    @Deprecated
+    Class<?> loadClass(String name)
+        throws MalformedURLException, ClassNotFoundException;
+
+    /**
+     * Loads a class from a URL.
+     *
+     * @param codebase  the URL from which to load the class
+     * @param name      the name of the class to load
+     * @return the <code>Class</code> object representing the loaded class
+     * @exception MalformedURLException
+     *            if the <code>codebase</code> paramater
+     *            contains an invalid URL
+     * @exception ClassNotFoundException
+     *            if a definition for the class could not
+     *            be found at the specified URL
+     * @since JDK1.1
+     * @deprecated no replacement
+     */
+    @Deprecated
+    Class<?> loadClass(URL codebase, String name)
+        throws MalformedURLException, ClassNotFoundException;
+
+    /**
+     * Returns the security context of the given class loader.
+     *
+     * @param loader  a class loader from which to get the security context
+     * @return the security context
+     * @since JDK1.1
+     * @deprecated no replacement
+     */
+    @Deprecated
+    Object getSecurityContext(ClassLoader loader);
+}

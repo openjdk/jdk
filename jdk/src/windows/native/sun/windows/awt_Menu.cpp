@@ -1,0 +1,419 @@
+/*
+ * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+#include "awt_Menu.h"
+#include "awt_MenuBar.h"
+#include "awt_Frame.h"
+#include <java_awt_Menu.h>
+#include <sun_awt_windows_WMenuPeer.h>
+#include <java_awt_MenuBar.h>
+#include <sun_awt_windows_WMenuBarPeer.h>
+
+/* IMPORTANT! Read the README.JNI file for notes on JNI converted AWT code.
+ */
+
+/************************************************************************
+ * AwtMenuItem fields
+ */
+
+jmethodID AwtMenu::countItemsMID;
+jmethodID AwtMenu::getItemMID;
+
+
+/************************************************************************
+ * AwtMenuItem methods
+ */
+
+AwtMenu::AwtMenu() {
+    m_hMenu = NULL;
+}
+
+AwtMenu::~AwtMenu()
+{
+}
+
+void AwtMenu::Dispose()
+{
+    if (m_hMenu != NULL) {
+        /*
+         * Don't verify -- may not be a valid anymore if its window
+         * was disposed of first.
+         */
+        ::DestroyMenu(m_hMenu);
+        m_hMenu = NULL;
+    }
+
+    AwtMenuItem::Dispose();
+}
+
+LPCTSTR AwtMenu::GetClassName() {
+    return TEXT("SunAwtMenu");
+}
+
+/* Create a new AwtMenu object and menu.   */
+AwtMenu* AwtMenu::Create(jobject self, AwtMenu* parentMenu)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    jobject target = NULL;
+    AwtMenu* menu = NULL;
+
+    try {
+        if (env->EnsureLocalCapacity(1) < 0) {
+            return NULL;
+        }
+
+        target = env->GetObjectField(self, AwtObject::targetID);
+        JNI_CHECK_NULL_GOTO(target, "null target", done);
+
+        menu = new AwtMenu();
+
+        SetLastError(0);
+        HMENU hMenu = ::CreateMenu();
+        // fix for 5088782
+        if (!CheckMenuCreation(env, self, hMenu))
+        {
+            env->DeleteLocalRef(target);
+            return NULL;
+        }
+
+        menu->SetHMenu(hMenu);
+
+        menu->LinkObjects(env, self);
+        menu->SetMenuContainer(parentMenu);
+        if (parentMenu != NULL) {
+            parentMenu->AddItem(menu);
+        }
+    } catch (...) {
+        env->DeleteLocalRef(target);
+        throw;
+    }
+
+done:
+    if (target != NULL) {
+        env->DeleteLocalRef(target);
+    }
+
+    return menu;
+}
+
+AwtMenuBar* AwtMenu::GetMenuBar() {
+    return (GetMenuContainer() == NULL) ? NULL : GetMenuContainer()->GetMenuBar();
+}
+
+HWND AwtMenu::GetOwnerHWnd() {
+    return (GetMenuContainer() == NULL) ? NULL : GetMenuContainer()->GetOwnerHWnd();
+}
+
+void AwtMenu::AddSeparator() {
+    VERIFY(::AppendMenu(GetHMenu(), MF_SEPARATOR, 0, 0));
+}
+
+void AwtMenu::AddItem(AwtMenuItem* item)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    if (env->EnsureLocalCapacity(2) < 0) {
+        return;
+    }
+
+    if (item->IsSeparator()) {
+        AddSeparator();
+    } else {
+        /* jitem is a java.awt.MenuItem */
+        jobject jitem = item->GetTarget(env);
+
+        jboolean enabled =
+            (jboolean)env->GetBooleanField(jitem, AwtMenuItem::enabledID);
+
+        UINT flags = MF_STRING | (enabled ? MF_ENABLED : MF_GRAYED);
+        flags |= MF_OWNERDRAW;
+        LPCTSTR itemInfo = (LPCTSTR) this;
+
+        if (_tcscmp(item->GetClassName(), TEXT("SunAwtMenu")) == 0) {
+            flags |= MF_POPUP;
+            itemInfo = (LPCTSTR) item;
+        }
+
+        VERIFY(::AppendMenu(GetHMenu(), flags, item->GetID(), itemInfo));
+        if (GetRTL()) {
+            MENUITEMINFO  mif;
+            memset(&mif, 0, sizeof(MENUITEMINFO));
+            mif.cbSize = sizeof(MENUITEMINFO);
+            mif.fMask = MIIM_TYPE;
+            ::GetMenuItemInfo(GetHMenu(), item->GetID(), FALSE, &mif);
+            mif.fType |= MFT_RIGHTJUSTIFY | MFT_RIGHTORDER;
+            ::SetMenuItemInfo(GetHMenu(), item->GetID(), FALSE, &mif);
+        }
+
+        env->DeleteLocalRef(jitem);
+    }
+}
+
+void AwtMenu::DeleteItem(UINT index)
+{
+    VERIFY(::RemoveMenu(GetHMenu(), index, MF_BYPOSITION));
+}
+
+void AwtMenu::SendDrawItem(AwtMenuItem* awtMenuItem,
+                           DRAWITEMSTRUCT& drawInfo)
+{
+    awtMenuItem->DrawItem(drawInfo);
+}
+
+void AwtMenu::SendMeasureItem(AwtMenuItem* awtMenuItem,
+                              HDC hDC, MEASUREITEMSTRUCT& measureInfo)
+{
+    awtMenuItem->MeasureItem(hDC, measureInfo);
+}
+
+int AwtMenu::CountItem(jobject target)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    jint nCount = env->CallIntMethod(target, AwtMenu::countItemsMID);
+    DASSERT(!safe_ExceptionOccurred(env));
+    return nCount;
+}
+
+AwtMenuItem* AwtMenu::GetItem(jobject target, jint index)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    if (env->EnsureLocalCapacity(2) < 0) {
+        return NULL;
+    }
+    jobject menuItem = env->CallObjectMethod(target, AwtMenu::getItemMID,
+                                             index);
+    DASSERT(!safe_ExceptionOccurred(env));
+
+    jobject wMenuItemPeer = GetPeerForTarget(env, menuItem);
+
+    PDATA pData;
+    AwtMenuItem* awtMenuItem = NULL;
+
+    JNI_CHECK_PEER_GOTO(wMenuItemPeer, done);
+    awtMenuItem = (AwtMenuItem*)pData;
+
+ done:
+    env->DeleteLocalRef(menuItem);
+    env->DeleteLocalRef(wMenuItemPeer);
+
+    return awtMenuItem;
+}
+
+void AwtMenu::DrawItems(DRAWITEMSTRUCT& drawInfo)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    if (env->EnsureLocalCapacity(1) < 0) {
+        return;
+    }
+    /* target is a java.awt.Menu */
+    jobject target = GetTarget(env);
+
+    int nCount = CountItem(target);
+    for (int i = 0; i < nCount; i++) {
+        AwtMenuItem* awtMenuItem = GetItem(target, i);
+        if (awtMenuItem != NULL) {
+            SendDrawItem(awtMenuItem, drawInfo);
+        }
+    }
+    env->DeleteLocalRef(target);
+}
+
+void AwtMenu::DrawItem(DRAWITEMSTRUCT& drawInfo)
+{
+    DASSERT(drawInfo.CtlType == ODT_MENU);
+
+    if (drawInfo.itemID == GetID()) {
+        DrawSelf(drawInfo);
+        return;
+    }
+    DrawItems(drawInfo);
+}
+
+void AwtMenu::MeasureItems(HDC hDC, MEASUREITEMSTRUCT& measureInfo)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    if (env->EnsureLocalCapacity(1) < 0) {
+        return;
+    }
+   /* target is a java.awt.Menu */
+    jobject target = GetTarget(env);
+    int nCount = CountItem(target);
+    for (int i = 0; i < nCount; i++) {
+        AwtMenuItem* awtMenuItem = GetItem(target, i);
+        if (awtMenuItem != NULL) {
+            SendMeasureItem(awtMenuItem, hDC, measureInfo);
+        }
+    }
+    env->DeleteLocalRef(target);
+}
+
+void AwtMenu::MeasureItem(HDC hDC, MEASUREITEMSTRUCT& measureInfo)
+{
+    DASSERT(measureInfo.CtlType == ODT_MENU);
+
+    if (measureInfo.itemID == GetID()) {
+        MeasureSelf(hDC, measureInfo);
+        return;
+    }
+
+    MeasureItems(hDC, measureInfo);
+}
+
+BOOL AwtMenu::IsTopMenu()
+{
+    return (GetMenuBar() == GetMenuContainer());
+}
+
+LRESULT AwtMenu::WinThreadExecProc(ExecuteArgs * args)
+{
+    switch( args->cmdId ) {
+        case MENU_ADDSEPARATOR:
+            this->AddSeparator();
+            break;
+
+        case MENU_DELITEM:
+            this->DeleteItem(static_cast<UINT>(args->param1));
+            break;
+
+        default:
+            AwtMenuItem::WinThreadExecProc(args);
+            break;
+    }
+    return 0L;
+}
+
+/************************************************************************
+ * WMenuPeer native methods
+ */
+
+extern "C" {
+
+JNIEXPORT void JNICALL
+Java_java_awt_Menu_initIDs(JNIEnv *env, jclass cls)
+{
+    TRY;
+
+    AwtMenu::countItemsMID = env->GetMethodID(cls, "countItemsImpl", "()I");
+    AwtMenu::getItemMID = env->GetMethodID(cls, "getItemImpl",
+                                           "(I)Ljava/awt/MenuItem;");
+
+    DASSERT(AwtMenu::countItemsMID != NULL);
+    DASSERT(AwtMenu::getItemMID != NULL);
+
+    CATCH_BAD_ALLOC;
+}
+
+} /* extern "C" */
+
+
+/************************************************************************
+ * WMenuPeer native methods
+ */
+
+extern "C" {
+
+/*
+ * Class:     sun_awt_windows_WMenuPeer
+ * Method:    addSeparator
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WMenuPeer_addSeparator(JNIEnv *env, jobject self)
+{
+    TRY;
+
+    PDATA pData;
+    JNI_CHECK_PEER_RETURN(self);
+
+    AwtObject::WinThreadExec(self, AwtMenu::MENU_ADDSEPARATOR);
+
+    CATCH_BAD_ALLOC;
+}
+
+
+/*
+ * Class:     sun_awt_windows_WMenuPeer
+ * Method:    delItem
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WMenuPeer_delItem(JNIEnv *env, jobject self,
+                                       jint index)
+{
+    TRY;
+
+    PDATA pData;
+    JNI_CHECK_PEER_RETURN(self);
+
+    AwtObject::WinThreadExec(self, AwtMenu::MENU_DELITEM, index);
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WMenuPeer
+ * Method:    createMenu
+ * Signature: (Lsun/awt/windows/WMenuBarPeer;)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WMenuPeer_createMenu(JNIEnv *env, jobject self,
+                                          jobject menuBar)
+{
+    TRY;
+
+    PDATA pData;
+    JNI_CHECK_PEER_RETURN(menuBar);
+
+    AwtMenuBar* awtMenuBar = (AwtMenuBar *)pData;
+    AwtToolkit::CreateComponent(self, awtMenuBar,
+                                (AwtToolkit::ComponentFactory)AwtMenu::Create,FALSE);
+    JNI_CHECK_PEER_CREATION_RETURN(self);
+
+    CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WMenuPeer
+ * Method:    createSubMenu
+ * Signature: (Lsun/awt/windows/WMenuPeer;)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WMenuPeer_createSubMenu(JNIEnv *env, jobject self,
+                                             jobject menu)
+{
+    TRY;
+
+    PDATA pData;
+    JNI_CHECK_PEER_RETURN(menu);
+
+    AwtMenu* awtMenu = (AwtMenu *)pData;
+    AwtToolkit::CreateComponent(self, awtMenu,
+                                (AwtToolkit::ComponentFactory)AwtMenu::Create,FALSE);
+    JNI_CHECK_PEER_CREATION_RETURN(self);
+
+    CATCH_BAD_ALLOC;
+}
+
+} /* extern "C" */
