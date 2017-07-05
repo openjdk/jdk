@@ -20,7 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.test.lib;
+
+package jdk.test.lib.management;
 
 import com.sun.management.HotSpotDiagnosticMXBean;
 import java.lang.management.ManagementFactory;
