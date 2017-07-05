@@ -100,6 +100,7 @@ ABS_JAXP_TOPDIR:=$(call OptFullPath,"$(JAXP_TOPDIR)")
 ABS_JAXWS_TOPDIR:=$(call OptFullPath,"$(JAXWS_TOPDIR)")
 ABS_JDK_TOPDIR:=$(call OptFullPath,"$(JDK_TOPDIR)")
 ABS_HOTSPOT_TOPDIR:=$(call OptFullPath,"$(HOTSPOT_TOPDIR)")
+ABS_NASHORN_TOPDIR:=$(call OptFullPath,"$(NASHORN_TOPDIR)")
 ABS_INSTALL_TOPDIR:=$(call OptFullPath,"$(INSTALL_TOPDIR)")
 ABS_SPONSORS_TOPDIR:=$(call OptFullPath,"$(SPONSORS_TOPDIR)")
 ABS_DEPLOY_TOPDIR:=$(call OptFullPath,"$(DEPLOY_TOPDIR)")
@@ -162,6 +163,15 @@ ifeq ($(JDK_SRC_AVAILABLE),true)
   JDK_CLOSED_SRC_AVAILABLE := $(call MkExists,$(JDK_TOPDIR)/src/closed)
   ifeq ($(JDK_CLOSED_SRC_AVAILABLE),false)
     OPENJDK = true
+  endif
+endif
+
+NASHORN_SRC_AVAILABLE := $(call MkExists,$(NASHORN_TOPDIR)/make/Makefile)
+ifndef BUILD_NASHORN
+  ifdef ALT_NASHORN_DIST
+    BUILD_NASHORN := false
+  else
+    BUILD_NASHORN := $(NASHORN_SRC_AVAILABLE)
   endif
 endif
 
@@ -307,6 +317,10 @@ endif
 ifndef ALT_JAXWS_DIST
   JAXWS_OUTPUTDIR = $(ABS_OUTPUTDIR)/jaxws
   ABS_JAXWS_DIST = $(JAXWS_OUTPUTDIR)/dist
+endif
+ifndef ALT_NASHORN_DIST
+  NASHORN_OUTPUTDIR = $(ABS_OUTPUTDIR)/nashorn
+  ABS_NASHORN_DIST = $(NASHORN_OUTPUTDIR)/dist
 endif
 
 # Common make arguments (supplied to all component builds)

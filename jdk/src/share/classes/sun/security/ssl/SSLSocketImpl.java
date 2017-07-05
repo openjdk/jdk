@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -986,29 +986,13 @@ final public class SSLSocketImpl extends BaseSSLSocketImpl {
              * throw a fatal alert if the integrity check fails.
              */
             try {
-                r.decrypt(readCipher);
+                r.decrypt(readMAC, readCipher);
             } catch (BadPaddingException e) {
-                // RFC 2246 states that decryption_failed should be used
-                // for this purpose. However, that allows certain attacks,
-                // so we just send bad record MAC. We also need to make
-                // sure to always check the MAC to avoid a timing attack
-                // for the same issue. See paper by Vaudenay et al.
-                r.checkMAC(readMAC);
-                // use the same alert types as for MAC failure below
                 byte alertType = (r.contentType() == Record.ct_handshake)
                                         ? Alerts.alert_handshake_failure
                                         : Alerts.alert_bad_record_mac;
-                fatal(alertType, "Invalid padding", e);
+                fatal(alertType, e.getMessage(), e);
             }
-            if (!r.checkMAC(readMAC)) {
-                if (r.contentType() == Record.ct_handshake) {
-                    fatal(Alerts.alert_handshake_failure,
-                        "bad handshake record MAC");
-                } else {
-                    fatal(Alerts.alert_bad_record_mac, "bad record MAC");
-                }
-            }
-
 
             // if (!r.decompress(c))
             //     fatal(Alerts.alert_decompression_failure,

@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<project name="nashorn" default="test" basedir="..">
+  <import file="build-nasgen.xml"/>
+  <import file="build-benchmark.xml"/>
+  <import file="code_coverage.xml"/>
+
+
+  <target name="init-conditions">
+    <!-- loading locally defined resources and properties. NB they owerwrite default ones defined later -->
+    <property file="${user.home}/.nashorn.project.local.properties"/>
+
+    <loadproperties srcFile="make/project.properties"/>
+    <path id="nashorn.ext.path">
+      <pathelement location="${dist.dir}"/>
+    </path>
+    <property name="ext.class.path" value="-Djava.ext.dirs=&quot;${toString:nashorn.ext.path}&quot;"/>
+    <condition property="svn.executable" value="/usr/local/bin/svn" else="svn">
+      <available file="/usr/local/bin/svn"/>
+    </condition>
+    <condition property="hg.executable" value="/usr/local/bin/hg" else="hg">
+      <available file="/usr/local/bin/hg"/>
+    </condition>
+    <!-- check if JDK already has ASM classes -->
+    <available property="asm.available" classname="jdk.internal.org.objectweb.asm.Type"/>
+    <!-- check if testng.jar is avaiable -->
+    <available property="testng.available" file="${file.reference.testng.jar}"/>
+
+	<!-- enable/disable make code coverage -->
+	<condition property="cc.enabled">
+		<istrue value="${make.code.coverage}" />
+	</condition>
+  </target>
+
+  <target name="init" depends="init-conditions, init-cc">
+
+	<!-- extends jvm args -->
+	<property name="run.test.jvmargs">${run.test.jvmargs.main}  ${run.test.cc.jvmargs}</property>
+	<property name="run.test.jvmargs.octane" value="${run.test.jvmargs.octane.main}  ${run.test.cc.jvmargs}" />
+
+    <echo message="run.test.jvmargs=${run.test.jvmargs}"/>
+    <echo message="run.test.jvmargs.octane=${run.test.jvmargs.octane}"/>
+
+  </target>
+
+  <target name="prepare" depends="init">
+    <mkdir dir="${build.dir}"/>
+    <mkdir dir="${build.classes.dir}"/>
+    <mkdir dir="${build.classes.dir}/META-INF/services"/>
+    <mkdir dir="${build.test.classes.dir}"/>
+    <mkdir dir="${dist.dir}"/>
+    <mkdir dir="${dist.javadoc.dir}"/>
+  </target>
+
+  <target name="clean" depends="init, clean-nasgen, init-cc-cleanup">
+    <delete includeemptydirs="true">
+      <fileset dir="${build.dir}" erroronmissingdir="false"/>
+    </delete>
+    <delete dir="${dist.dir}"/>
+  </target>
+
+  <!-- do it only if ASM is not available -->
+  <target name="compile-asm" depends="prepare" unless="asm.available">
+    <javac srcdir="${jdk.asm.src.dir}"
+           destdir="${build.classes.dir}"
+           excludes="**/optimizer/* **/xml/* **/attrs/*"
+           source="${javac.source}"
+           target="${javac.target}"
+           debug="${javac.debug}"
+           encoding="${javac.encoding}"
+           includeantruntime="false"/>
+  </target>
+
+  <target name="compile" depends="compile-asm" description="Compiles nashorn">
+    <javac srcdir="${src.dir}"
+           destdir="${build.classes.dir}"
+           classpath="${javac.classpath}"
+           source="${javac.source}"
+           target="${javac.target}"
+           debug="${javac.debug}"
+           encoding="${javac.encoding}"
+           includeantruntime="false">
+      <compilerarg value="-Xlint:unchecked"/>
+      <compilerarg value="-Xlint:deprecation"/>
+      <compilerarg value="-XDignore.symbol.file"/>
+    </javac>
+    <copy todir="${build.classes.dir}/META-INF/services">
+       <fileset dir="${meta.inf.dir}/services/"/>
+    </copy>
+     <copy todir="${build.classes.dir}/jdk/nashorn/api/scripting/resources">
+       <fileset dir="${src.dir}/jdk/nashorn/api/scripting/resources/"/>
+    </copy>
+    <copy todir="${build.classes.dir}/jdk/nashorn/internal/runtime/resources">
+       <fileset dir="${src.dir}/jdk/nashorn/internal/runtime/resources/"/>
+    </copy>
+    <copy todir="${build.classes.dir}/jdk/nashorn/tools/resources">
+       <fileset dir="${src.dir}/jdk/nashorn/tools/resources/"/>
+    </copy>
+    <copy file="${src.dir}/jdk/internal/dynalink/support/messages.properties" todir="${build.classes.dir}/jdk/internal/dynalink/support"/>
+
+    <echo message="full=${nashorn.fullversion}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties"/>
+    <echo file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true">${line.separator}</echo>
+    <echo message="release=${nashorn.version}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
+  </target>
+
+  <target name="jar" depends="compile, run-nasgen" description="Creates nashorn.jar">
+    <jar jarfile="${dist.jar}" manifest="${meta.inf.dir}/MANIFEST.MF" index="true" filesetmanifest="merge">
+      <fileset dir="${build.classes.dir}"/>
+      <manifest>
+        <attribute name="Archiver-Version" value="n/a"/>
+        <attribute name="Build-Jdk" value="${java.runtime.version}"/>
+        <attribute name="Built-By" value="n/a"/>
+        <attribute name="Created-By" value="Ant jar task"/>
+        <section name="jdk/nashorn/">
+          <attribute name="Implementation-Title" value="${nashorn.product.name}"/>
+          <attribute name="Implementation-Version" value="${nashorn.version}"/>
+        </section>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="javadoc" depends="prepare">
+    <javadoc destdir="${dist.javadoc.dir}" use="yes" overview="src/overview.html" windowtitle="${nashorn.product.name} ${nashorn.version}" additionalparam="-quiet" failonerror="true">
+      <classpath>
+        <pathelement location="${build.classes.dir}"/>
+      </classpath>
+      <fileset dir="${src.dir}" includes="**/*.java"/>
+      <fileset dir="${jdk.asm.src.dir}" includes="**/*.java"/>
+      <link href="http://docs.oracle.com/javase/7/docs/api/"/>
+      <!-- The following tags are used only in ASM sources - just ignore these -->
+      <tag name="label" description="label tag in ASM sources" enabled="false"/>
+      <tag name="linked" description="linked tag in ASM sources" enabled="false"/>
+      <tag name="associates" description="associates tag in ASM sources" enabled="false"/>
+    </javadoc>
+  </target>
+
+  <!-- generate shell.html for shell tool documentation -->
+  <target name="shelldoc" depends="jar">
+    <java classname="${nashorn.shell.tool}" dir="${basedir}" output="${dist.dir}/shell.html" failonerror="true" fork="true">
+      <jvmarg line="${ext.class.path}"/>
+      <arg value="-scripting"/>
+      <arg value="docs/genshelldoc.js"/>
+    </java>
+  </target>
+
+  <!-- generate all docs -->
+  <target name="docs" depends="javadoc, shelldoc"/>
+
+  <!-- create .zip and .tar.gz for nashorn binaries and scripts. -->
+  <target name="dist" depends="jar">
+      <zip destfile="${build.zip}" basedir=".."
+          excludes="nashorn/bin/*.sh" includes="nashorn/bin/** nashorn/dist/**"/>
+      <tar destfile="${build.gzip}" basedir=".." compression="gzip"
+          excludes="nashorn/bin/*.sh" includes="nashorn/bin/** nashorn/dist/**"/>
+  </target>
+
+  <target name="compile-test" depends="compile, run-nasgen" if="testng.available">
+    <!-- testng task -->
+    <taskdef name="testng" classname="org.testng.TestNGAntTask"
+        classpath="${file.reference.testng.jar}"/>
+
+    <javac srcdir="${test.src.dir}"
+           destdir="${build.test.classes.dir}"
+           classpath="${javac.test.classpath}"
+           source="${javac.source}"
+           target="${javac.target}"
+           debug="${javac.debug}"
+           encoding="${javac.encoding}"
+           includeantruntime="false"/>
+
+    <!-- tests that check nashorn internals and internal API -->
+    <jar jarfile="${nashorn.internal.tests.jar}">
+      <fileset dir="${build.test.classes.dir}" excludes="**/api/*"/>
+    </jar>
+
+    <!-- tests that check nashorn script engine (jsr-223) API -->
+    <jar jarfile="${nashorn.api.tests.jar}">
+      <fileset dir="${build.test.classes.dir}" includes="**/api/*"/>
+    </jar>
+
+  </target>
+
+  <target name="generate-policy-file" depends="prepare">
+    <!-- Generating nashorn.policy file -->
+
+    <!-- nashorn internal tests jar requires AllPermission -->
+    <echo message="grant codeBase &quot;file:/${basedir}/${nashorn.internal.tests.jar}&quot; {" file="${build.dir}/nashorn.policy"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    
+    <!-- TestNG framework jar needs AllPermission -->
+    <echo message="grant codeBase &quot;file:/${basedir}/${file.reference.testng.jar}&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+
+    <!-- AllPermission to test/script/trusted tests -->
+    <echo message="grant codeBase &quot;file:/${basedir}/test/script/trusted/*&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="    permission java.security.AllPermission;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+
+    <echo message="grant codeBase &quot;file:/${basedir}/test/script/basic/*&quot; {" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    <!-- test/script/basic .js scripts load other script tests -->
+    <echo message="    permission java.io.FilePermission &quot;${basedir}/test/script/-&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="    permission java.io.FilePermission &quot;user.dir&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="    permission java.util.PropertyPermission &quot;user.dir&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    <!-- test/script/basic .js scripts can read nashorn.test.* properties -->
+    <echo message="    permission java.util.PropertyPermission &quot;nashorn.test.*&quot;, &quot;read&quot;;" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="};" file="${build.dir}/nashorn.policy" append="true"/>
+    <echo message="" file="${build.dir}/nashorn.policy" append="true"/>
+
+    <replace file="${build.dir}/nashorn.policy"><replacetoken>\</replacetoken><replacevalue>/</replacevalue></replace>    <!--hack for Windows - to make URLs with normal path separators -->
+    <replace file="${build.dir}/nashorn.policy"><replacetoken>//</replacetoken><replacevalue>/</replacevalue></replace>   <!--hack for Unix - to avoid leading // in URLs -->
+
+  </target>
+
+  <target name="check-external-tests">
+      <available file="${test.external.dir}/prototype" property="test-sys-prop.external.prototype"/>
+      <available file="${test.external.dir}/sunspider" property="test-sys-prop.external.sunspider"/>
+      <available file="${test.external.dir}/underscore" property="test-sys-prop.external.underscore"/>
+      <available file="${test.external.dir}/octane" property="test-sys-prop.external.octane"/>
+      <available file="${test.external.dir}/yui" property="test-sys-prop.external.yui"/>
+      <available file="${test.external.dir}/jquery" property="test-sys-prop.external.jquery"/>
+      <available file="${test.external.dir}/test262" property="test-sys-prop.external.test262"/>
+  </target>
+
+  <target name="check-testng" unless="testng.available">
+    <echo message="WARNING: TestNG not available, will not run tests. Please copy testng.jar under test/lib directory."/>
+  </target>
+
+  <target name="test" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+    <java classname="${nashorn.shell.tool}" fork="true" dir="${test.script.dir}/representations" output="${build.dir}/output1.log" error="${build.dir}/err.log">
+      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="-Dnashorn.fields.dual=true"/>
+      <arg value="NASHORN-592a.js"/>
+    </java>
+    <java classname="${nashorn.shell.tool}" fork="true" dir="${test.script.dir}/representations" output="${build.dir}/output2.log" error="${build.dir}/err.log">
+      <jvmarg line="${ext.class.path}"/>
+      <arg value="NASHORN-592a.js"/>
+    </java>
+    <condition property="representation-ok">
+      <filesmatch file1="${build.dir}/output1.log" file2="${build.dir}/output2.log"/>
+    </condition>
+    <fail unless="representation-ok">Representation test failed - output differs!</fail>
+    <fileset id="test.classes" dir="${build.test.classes.dir}">
+      <include name="**/api/javaaccess/*Test.class"/>
+      <include name="**/api/scripting/*Test.class"/>
+      <include name="**/codegen/*Test.class"/>
+      <include name="**/parser/*Test.class"/>
+      <include name="**/runtime/*Test.class"/>
+      <include name="**/framework/*Test.class"/>
+    </fileset>
+
+    <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
+       verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
+      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${run.test.jvmargs} ${run.test.jvmsecurityargs}"/>
+      <propertyset>
+        <propertyref prefix="test-sys-prop."/>
+        <mapper from="test-sys-prop.*" to="*" type="glob"/>
+      </propertyset>
+      <classpath>
+          <pathelement path="${run.test.classpath}"/>
+      </classpath>
+    </testng>
+  </target>
+
+  <target name="test-basicparallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file">
+      <!-- use just build.test.classes.dir to avoid referring to TestNG -->
+      <java classname="${parallel.test.runner}" dir="${basedir}" classpath="${build.test.classes.dir}" failonerror="true" fork="true">
+      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${run.test.jvmargs} ${run.test.jvmsecurityargs}"/>
+      <syspropertyset>
+          <propertyref prefix="test-sys-prop."/>
+          <mapper type="glob" from="test-sys-prop.*" to="*"/>
+      </syspropertyset>
+      </java>
+  </target>
+
+  <target name="test262" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+    <fileset id="test.classes" dir="${build.test.classes.dir}">
+       <include name="**/framework/*Test.class"/>
+    </fileset>
+
+    <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
+       verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
+      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${run.test.jvmargs} ${run.test.jvmsecurityargs}"/>
+      <propertyset>
+        <propertyref prefix="test262-test-sys-prop."/>
+        <mapper from="test262-test-sys-prop.*" to="*" type="glob"/>
+      </propertyset>
+      <classpath>
+          <pathelement path="${run.test.classpath}"/>
+      </classpath>
+    </testng>
+  </target>
+
+  <target name="test262parallel" depends="test262-parallel"/>
+
+  <target name="test262-parallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+    <!-- use just build.test.classes.dir to avoid referring to TestNG -->
+    <java classname="${parallel.test.runner}" dir="${basedir}" fork="true">
+      <jvmarg line="${ext.class.path}"/>
+      <jvmarg line="${run.test.jvmargs} ${run.test.jvmsecurityargs}"/>
+      <classpath>
+          <pathelement path="${run.test.classpath}"/>
+      </classpath>
+      <syspropertyset>
+          <propertyref prefix="test262-test-sys-prop."/>
+          <mapper type="glob" from="test262-test-sys-prop.*" to="*"/>
+      </syspropertyset>
+    </java>
+  </target>
+
+  <target name="all" depends="test, docs"
+      description="Build, test and generate docs for nashorn"/>
+
+  <target name="run" depends="jar"
+      description="Run the shell with a sample script">
+    <java classname="${nashorn.shell.tool}" fork="true" dir="samples">
+        <jvmarg line="${ext.class.path}"/>
+        <jvmarg line="${run.test.jvmargs}"/>
+        <arg value="-dump-on-error"/>
+        <arg value="test.js"/>
+    </java>
+  </target>
+
+  <target name="debug" depends="jar"
+      description="Debug the shell with a sample script">
+    <java classname="${nashorn.shell.tool}" fork="true" dir="samples">
+        <jvmarg line="${ext.class.path}"/>
+        <jvmarg line="${run.test.jvmargs}"/>
+        <arg value="--print-code"/>
+        <arg value="--verify-code"/>
+        <arg value="--print-symbols"/>
+        <jvmarg value="-Dnashorn.codegen.debug=true"/>
+        <arg value="test.js"/>
+    </java>
+  </target>
+
+  <!-- targets to get external script tests -->
+
+  <!-- test262 test suite -->
+  <target name="get-test262" depends="init" unless="${test-sys-prop.external.test262}">
+    <!-- clone test262 mercurial repo -->
+    <exec executable="${hg.executable}">
+       <arg value="clone"/>
+       <arg value="http://hg.ecmascript.org/tests/test262"/>
+       <arg value="${test.external.dir}/test262"/>
+    </exec>
+  </target>
+  <target name="update-test262" depends="init" if="${test-sys-prop.external.test262}">
+    <!-- update test262 mercurial repo -->
+    <exec executable="${hg.executable}" dir="${test.external.dir}/test262">
+       <arg value="pull"/>
+       <arg value="-u"/>
+    </exec>
+  </target>
+
+  <!-- octane benchmark -->
+  <target name="get-octane" depends="init" unless="${test-sys-prop.external.octane}">
+    <!-- checkout octane benchmarks -->
+    <exec executable="${svn.executable}">
+       <arg value="--non-interactive"/>
+       <arg value="--trust-server-cert"/>
+       <arg value="checkout"/>
+       <arg value="http://octane-benchmark.googlecode.com/svn/trunk/"/>
+       <arg value="${test.external.dir}/octane"/>
+    </exec>
+  </target>
+  <target name="update-octane" depends="init" if="${test-sys-prop.external.octane}">
+    <!-- update octane benchmarks -->
+    <exec executable="${svn.executable}" dir="${test.external.dir}/octane">
+       <arg value="--non-interactive"/>
+       <arg value="--trust-server-cert"/>
+       <arg value="update"/>
+    </exec>
+  </target>
+
+  <!-- sunspider benchmark -->
+  <target name="get-sunspider" depends="init" unless="${test-sys-prop.external.sunspider}">
+    <!-- checkout sunspider -->
+    <exec executable="${svn.executable}">
+       <arg value="--non-interactive"/>
+       <arg value="--trust-server-cert"/>
+       <arg value="checkout"/>
+       <arg value="http://svn.webkit.org/repository/webkit/trunk/PerformanceTests/SunSpider"/>
+       <arg value="${test.external.dir}/sunspider"/>
+    </exec>
+  </target>
+  <target name="update-sunspider" depends="init" if="${test-sys-prop.external.sunspider}">
+    <!-- update sunspider -->
+    <exec executable="${svn.executable}" dir="${test.external.dir}/sunspider">
+       <arg value="--non-interactive"/>
+       <arg value="--trust-server-cert"/>
+       <arg value="update"/>
+    </exec>
+  </target>
+
+  <!-- get all external test scripts -->
+  <target name="externals" depends="init, check-external-tests, get-test262, get-octane, get-sunspider">
+    <!-- make external test dir -->
+    <mkdir dir="${test.external.dir}"/> 
+
+    <!-- jquery -->
+    <mkdir dir="${test.external.dir}/jquery"/>    
+    <get src="http://code.jquery.com/jquery-1.7.2.js" dest="${test.external.dir}/jquery" skipexisting="true" ignoreerrors="true"/>
+    <get src="http://code.jquery.com/jquery-1.7.2.min.js" dest="${test.external.dir}/jquery" skipexisting="true" ignoreerrors="true"/>
+
+    <!-- prototype -->
+    <mkdir dir="${test.external.dir}/prototype"/>    
+    <get src="http://ajax.googleapis.com/ajax/libs/prototype/1.7.0/prototype.js" dest="${test.external.dir}/prototype" usetimestamp="true" skipexisting="true" ignoreerrors="true"/>
+
+    <!-- underscorejs -->
+    <mkdir dir="${test.external.dir}/underscore"/> 
+    <get src="http://underscorejs.org/underscore.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
+    <get src="http://underscorejs.org/underscore-min.js" dest="${test.external.dir}/underscore" skipexisting="true" ignoreerrors="true"/>
+
+    <!-- yui -->
+    <mkdir dir="${test.external.dir}/yui"/> 
+    <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
+    <get src="http://yui.yahooapis.com/3.5.1/build/yui/yui-min.js" dest="${test.external.dir}/yui" skipexisting="true" ignoreerrors="true"/>
+
+  </target>
+
+  <!-- update external test suites that are pulled from source control systems -->
+  <target name="update-externals" depends="init, check-external-tests, update-test262, update-octane, update-sunspider"/>
+
+  <!-- run all perf tests -->
+  <target name="perf" depends="externals, update-externals, sunspider, octane"/>
+
+  <!-- run all tests -->
+  <target name="exit-if-no-testng" depends="init, check-testng" unless="${testng.available}">
+     <fail message="Exiting.."/>
+  </target>
+
+  <target name="alltests" depends="exit-if-no-testng, externals, update-externals, test, test262parallel, perf"/>
+
+</project>

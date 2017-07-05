@@ -1,0 +1,4 @@
+function func() {
+    print("hello world");
+}
+function() { print("run"); }

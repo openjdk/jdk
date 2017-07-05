@@ -28,6 +28,9 @@ PACKAGE = sun.java2d.cmm.lcms
 LIBRARY = lcms
 PRODUCT = sun
 
+# Use highest level of optimization on this library
+OPTIMIZATION_LEVEL = HIGHEST
+
 include $(BUILDDIR)/common/Defs.gmk
 
 #

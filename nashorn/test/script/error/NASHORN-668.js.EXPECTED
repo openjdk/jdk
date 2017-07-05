@@ -1,0 +1,11 @@
+test/script/error/NASHORN-668.js:34:15 Repeated RegExp flag: g
+var x = /xxx/gg;
+               ^
+test/script/error/NASHORN-668.js:36:14 Unsupported RegExp flag: X
+var y = /xxx/X;
+              ^
+test/script/error/NASHORN-668.js:38:13 Dangling meta character '*' near index 2
+2**
+  ^
+var z = /2**/;
+             ^

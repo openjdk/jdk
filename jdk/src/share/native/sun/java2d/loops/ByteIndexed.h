@@ -202,7 +202,10 @@ typedef jubyte  ByteIndexedBmDataType;
     jint PREFIX ## rgb;
 
 #define InitByteIndexedAlphaLoadData(PREFIX, pRasInfo) \
-    PREFIX ## Lut = (pRasInfo)->lutBase
+    do { \
+        PREFIX ## Lut = (pRasInfo)->lutBase; \
+        PREFIX ## rgb = 0; \
+    } while (0)
 
 #define LoadAlphaFromByteIndexedFor4ByteArgb(pRas, PREFIX, COMP_PREFIX) \
     do { \

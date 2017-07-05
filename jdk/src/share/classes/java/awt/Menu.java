@@ -66,7 +66,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
 
         AWTAccessor.setMenuAccessor(
             new AWTAccessor.MenuAccessor() {
-                public Vector getItems(Menu menu) {
+                public Vector<MenuComponent> getItems(Menu menu) {
                     return menu.items;
                 }
             });
@@ -78,7 +78,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
      * @serial
      * @see #countItems()
      */
-    Vector              items = new Vector();
+    Vector<MenuComponent> items = new Vector<>();
 
     /**
      * This field indicates whether the menu has the
@@ -313,7 +313,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             }
 
             int nitems = getItemCount();
-            Vector tempItems = new Vector();
+            Vector<MenuItem> tempItems = new Vector<>();
 
             /* Remove the item at index, nitems-index times
                storing them in a temporary vector in the
@@ -330,7 +330,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                already in the correct order in the temp vector.
             */
             for (int i = 0; i < tempItems.size()  ; i++) {
-                add((MenuItem)tempItems.elementAt(i));
+                add(tempItems.elementAt(i));
             }
         }
     }
@@ -379,7 +379,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
             }
 
             int nitems = getItemCount();
-            Vector tempItems = new Vector();
+            Vector<MenuItem> tempItems = new Vector<>();
 
             /* Remove the item at index, nitems-index times
                storing them in a temporary vector in the
@@ -396,7 +396,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
                already in the correct order in the temp vector.
             */
             for (int i = 0; i < tempItems.size()  ; i++) {
-                add((MenuItem)tempItems.elementAt(i));
+                add(tempItems.elementAt(i));
             }
         }
     }
@@ -475,13 +475,13 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
         return null;
     }
 
-    synchronized Enumeration shortcuts() {
-        Vector shortcuts = new Vector();
+    synchronized Enumeration<MenuShortcut> shortcuts() {
+        Vector<MenuShortcut> shortcuts = new Vector<>();
         int nitems = getItemCount();
         for (int i = 0 ; i < nitems ; i++) {
             MenuItem mi = getItem(i);
             if (mi instanceof Menu) {
-                Enumeration e = ((Menu)mi).shortcuts();
+                Enumeration<MenuShortcut> e = ((Menu)mi).shortcuts();
                 while (e.hasMoreElements()) {
                     shortcuts.addElement(e.nextElement());
                 }

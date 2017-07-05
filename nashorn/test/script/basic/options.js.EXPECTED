@@ -1,0 +1,3 @@
+-scripting = true
+--compile-only = false
+-timezone = Asia/Calcutta

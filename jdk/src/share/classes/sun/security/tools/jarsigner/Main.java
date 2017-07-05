@@ -57,7 +57,7 @@ import sun.security.tools.KeyStoreUtil;
 import sun.security.tools.PathList;
 import sun.security.x509.*;
 import sun.security.util.*;
-import sun.misc.BASE64Encoder;
+import java.util.Base64;
 
 
 /**
@@ -1120,7 +1120,6 @@ public class Main {
              *   different, replace the hash in the manifest with the newly
              *   generated one. (This may invalidate existing signatures!)
              */
-            BASE64Encoder encoder = new JarBASE64Encoder();
             Vector<ZipEntry> mfFiles = new Vector<>();
 
             boolean wasSigned = false;
@@ -1148,15 +1147,14 @@ public class Main {
                 if (manifest.getAttributes(ze.getName()) != null) {
                     // jar entry is contained in manifest, check and
                     // possibly update its digest attributes
-                    if (updateDigests(ze, zipFile, digests, encoder,
+                    if (updateDigests(ze, zipFile, digests,
                                       manifest) == true) {
                         mfModified = true;
                     }
                 } else if (!ze.isDirectory()) {
                     // Add entry to manifest
                     Attributes attrs = getDigestAttributes(ze, zipFile,
-                                                           digests,
-                                                           encoder);
+                                                           digests);
                     mfEntries.put(ze.getName(), attrs);
                     mfModified = true;
                 }
@@ -1955,8 +1953,7 @@ public class Main {
      * of base64-encoded strings.
      */
     private synchronized String[] getDigests(ZipEntry ze, ZipFile zf,
-                                             MessageDigest[] digests,
-                                             BASE64Encoder encoder)
+                                             MessageDigest[] digests)
         throws IOException {
 
         int n, i;
@@ -1980,7 +1977,7 @@ public class Main {
         // complete the digests
         String[] base64Digests = new String[digests.length];
         for (i=0; i<digests.length; i++) {
-            base64Digests[i] = encoder.encode(digests[i].digest());
+            base64Digests[i] = Base64.getEncoder().encodeToString(digests[i].digest());
         }
         return base64Digests;
     }
@@ -1990,11 +1987,10 @@ public class Main {
      * attributes
      */
     private Attributes getDigestAttributes(ZipEntry ze, ZipFile zf,
-                                           MessageDigest[] digests,
-                                           BASE64Encoder encoder)
+                                           MessageDigest[] digests)
         throws IOException {
 
-        String[] base64Digests = getDigests(ze, zf, digests, encoder);
+        String[] base64Digests = getDigests(ze, zf, digests);
         Attributes attrs = new Attributes();
 
         for (int i=0; i<digests.length; i++) {
@@ -2016,12 +2012,11 @@ public class Main {
      */
     private boolean updateDigests(ZipEntry ze, ZipFile zf,
                                   MessageDigest[] digests,
-                                  BASE64Encoder encoder,
                                   Manifest mf) throws IOException {
         boolean update = false;
 
         Attributes attrs = mf.getAttributes(ze.getName());
-        String[] base64Digests = getDigests(ze, zf, digests, encoder);
+        String[] base64Digests = getDigests(ze, zf, digests);
 
         for (int i=0; i<digests.length; i++) {
             // The entry name to be written into attrs
@@ -2094,19 +2089,6 @@ public class Main {
     }
 }
 
-/**
- * This is a BASE64Encoder that does not insert a default newline at the end of
- * every output line. This is necessary because java.util.jar does its own
- * line management (see Manifest.make72Safe()). Inserting additional new lines
- * can cause line-wrapping problems (see CR 6219522).
- */
-class JarBASE64Encoder extends BASE64Encoder {
-    /**
-     * Encode the suffix that ends every output line.
-     */
-    protected void encodeLineSuffix(OutputStream aStream) throws IOException { }
-}
-
 class SignatureFile {
 
     /** SignatureFile */
@@ -2129,7 +2111,6 @@ class SignatureFile {
 
         sf = new Manifest();
         Attributes mattr = sf.getMainAttributes();
-        BASE64Encoder encoder = new JarBASE64Encoder();
 
         mattr.putValue(Attributes.Name.SIGNATURE_VERSION.toString(), "1.0");
         mattr.putValue("Created-By", version + " (" + javaVendor + ")");
@@ -2138,7 +2119,7 @@ class SignatureFile {
             // sign the whole manifest
             for (int i=0; i < digests.length; i++) {
                 mattr.putValue(digests[i].getAlgorithm()+"-Digest-Manifest",
-                               encoder.encode(md.manifestDigest(digests[i])));
+                               Base64.getEncoder().encodeToString(md.manifestDigest(digests[i])));
             }
         }
 
@@ -2149,7 +2130,7 @@ class SignatureFile {
             for (int i=0; i < digests.length; i++) {
                 mattr.putValue(digests[i].getAlgorithm() +
                         "-Digest-" + ManifestDigester.MF_MAIN_ATTRS,
-                        encoder.encode(mde.digest(digests[i])));
+                        Base64.getEncoder().encodeToString(mde.digest(digests[i])));
             }
         } else {
             throw new IllegalStateException
@@ -2170,7 +2151,7 @@ class SignatureFile {
                 Attributes attr = new Attributes();
                 for (int i=0; i < digests.length; i++) {
                     attr.putValue(digests[i].getAlgorithm()+"-Digest",
-                                  encoder.encode(mde.digest(digests[i])));
+                                  Base64.getEncoder().encodeToString(mde.digest(digests[i])));
                 }
                 entries.put(name, attr);
             }

@@ -1007,7 +1007,7 @@ public final class DateTimeFormatterBuilder {
      * is used, with {@code IsoChronology} as the fallback.
      * <p>
      * Note that this method provides similar functionality to methods on
-     * {@code DateFormat} such as {@link DateFormat#getDateTimeInstance(int, int)}.
+     * {@code DateFormat} such as {@link java.text.DateFormat#getDateTimeInstance(int, int)}.
      *
      * @param dateStyle  the date style to use, null means no date required
      * @param timeStyle  the time style to use, null means no time required
