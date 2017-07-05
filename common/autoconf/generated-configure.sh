@@ -906,7 +906,6 @@ ZERO_ARCHDEF
 DEFINE_CROSS_COMPILE_ARCH
 LP64
 OPENJDK_TARGET_OS_EXPORT_DIR
-OPENJDK_TARGET_OS_API_DIR
 OPENJDK_TARGET_CPU_JLI_CFLAGS
 OPENJDK_TARGET_CPU_OSARCH
 OPENJDK_TARGET_CPU_ISADIR
@@ -921,14 +920,14 @@ OPENJDK_TARGET_CPU_BITS
 OPENJDK_TARGET_CPU_ARCH
 OPENJDK_TARGET_CPU
 OPENJDK_TARGET_OS_ENV
-OPENJDK_TARGET_OS_API
+OPENJDK_TARGET_OS_TYPE
 OPENJDK_TARGET_OS
 OPENJDK_BUILD_CPU_ENDIAN
 OPENJDK_BUILD_CPU_BITS
 OPENJDK_BUILD_CPU_ARCH
 OPENJDK_BUILD_CPU
 OPENJDK_BUILD_OS_ENV
-OPENJDK_BUILD_OS_API
+OPENJDK_BUILD_OS_TYPE
 OPENJDK_BUILD_OS
 OPENJDK_BUILD_AUTOCONF_NAME
 OPENJDK_TARGET_AUTOCONF_NAME
@@ -1063,6 +1062,7 @@ with_milestone
 with_update_version
 with_user_release_suffix
 with_build_number
+with_copyright_year
 with_boot_jdk
 with_add_source_root
 with_override_source_root
@@ -1904,6 +1904,7 @@ Optional Packages:
                           Add a custom string to the version string if build
                           number is not set.[username_builddateb00]
   --with-build-number     Set build number value for build [b00]
+  --with-copyright-year   Set copyright year value for build [current year]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
   --with-add-source-root  for each and every source directory, look in this
                           additional source root for the same directory; if it
@@ -3410,7 +3411,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # This will make sure the given variable points to a full and proper
 # path. This means:
-# 1) There will be no spaces in the path. On posix platforms,
+# 1) There will be no spaces in the path. On unix platforms,
 #    spaces in the path will result in an error. On Windows,
 #    the path will be rewritten using short-style to be space-free.
 # 2) The path will be absolute, and it will be in unix-style (on
@@ -3420,7 +3421,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 # This will make sure the given variable points to a executable
 # with a full and proper path. This means:
-# 1) There will be no spaces in the path. On posix platforms,
+# 1) There will be no spaces in the path. On unix platforms,
 #    spaces in the path will result in an error. On Windows,
 #    the path will be rewritten using short-style to be space-free.
 # 2) The path will be absolute, and it will be in unix-style (on
@@ -3968,6 +3969,8 @@ pkgadd_help() {
 
 
 
+
+
 #
 # Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4097,7 +4100,7 @@ pkgadd_help() {
 
 # Support macro for PLATFORM_EXTRACT_TARGET_AND_BUILD.
 # Converts autoconf style OS name to OpenJDK style, into
-# VAR_OS and VAR_OS_API.
+# VAR_OS, VAR_OS_TYPE and VAR_OS_ENV.
 
 
 # Expects $host_os $host_cpu $build_os and $build_cpu
@@ -4326,7 +4329,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1416999037
+DATE_WHEN_GENERATED=1417630847
 
 ###############################################################################
 #
@@ -13523,38 +13526,31 @@ test -n "$target_alias" &&
   case "$build_os" in
     *linux*)
       VAR_OS=linux
-      VAR_OS_API=posix
-      VAR_OS_ENV=linux
+      VAR_OS_TYPE=unix
       ;;
     *solaris*)
       VAR_OS=solaris
-      VAR_OS_API=posix
-      VAR_OS_ENV=solaris
+      VAR_OS_TYPE=unix
       ;;
     *darwin*)
       VAR_OS=macosx
-      VAR_OS_API=posix
-      VAR_OS_ENV=macosx
+      VAR_OS_TYPE=unix
       ;;
     *bsd*)
       VAR_OS=bsd
-      VAR_OS_API=posix
-      VAR_OS_ENV=bsd
+      VAR_OS_TYPE=unix
       ;;
     *cygwin*)
       VAR_OS=windows
-      VAR_OS_API=winapi
       VAR_OS_ENV=windows.cygwin
       ;;
     *mingw*)
       VAR_OS=windows
-      VAR_OS_API=winapi
       VAR_OS_ENV=windows.msys
       ;;
     *aix*)
       VAR_OS=aix
-      VAR_OS_API=posix
-      VAR_OS_ENV=aix
+      VAR_OS_TYPE=unix
       ;;
     *)
       as_fn_error $? "unsupported operating system $build_os" "$LINENO" 5
@@ -13631,8 +13627,16 @@ test -n "$target_alias" &&
 
   # ..and setup our own variables. (Do this explicitely to facilitate searching)
   OPENJDK_BUILD_OS="$VAR_OS"
-  OPENJDK_BUILD_OS_API="$VAR_OS_API"
-  OPENJDK_BUILD_OS_ENV="$VAR_OS_ENV"
+  if test "x$VAR_OS_TYPE" != x; then
+    OPENJDK_BUILD_OS_TYPE="$VAR_OS_TYPE"
+  else
+    OPENJDK_BUILD_OS_TYPE="$VAR_OS"
+  fi
+  if test "x$VAR_OS_ENV" != x; then
+    OPENJDK_BUILD_OS_ENV="$VAR_OS_ENV"
+  else
+    OPENJDK_BUILD_OS_ENV="$VAR_OS"
+  fi
   OPENJDK_BUILD_CPU="$VAR_CPU"
   OPENJDK_BUILD_CPU_ARCH="$VAR_CPU_ARCH"
   OPENJDK_BUILD_CPU_BITS="$VAR_CPU_BITS"
@@ -13655,38 +13659,31 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
   case "$host_os" in
     *linux*)
       VAR_OS=linux
-      VAR_OS_API=posix
-      VAR_OS_ENV=linux
+      VAR_OS_TYPE=unix
       ;;
     *solaris*)
       VAR_OS=solaris
-      VAR_OS_API=posix
-      VAR_OS_ENV=solaris
+      VAR_OS_TYPE=unix
       ;;
     *darwin*)
       VAR_OS=macosx
-      VAR_OS_API=posix
-      VAR_OS_ENV=macosx
+      VAR_OS_TYPE=unix
       ;;
     *bsd*)
       VAR_OS=bsd
-      VAR_OS_API=posix
-      VAR_OS_ENV=bsd
+      VAR_OS_TYPE=unix
       ;;
     *cygwin*)
       VAR_OS=windows
-      VAR_OS_API=winapi
       VAR_OS_ENV=windows.cygwin
       ;;
     *mingw*)
       VAR_OS=windows
-      VAR_OS_API=winapi
       VAR_OS_ENV=windows.msys
       ;;
     *aix*)
       VAR_OS=aix
-      VAR_OS_API=posix
-      VAR_OS_ENV=aix
+      VAR_OS_TYPE=unix
       ;;
     *)
       as_fn_error $? "unsupported operating system $host_os" "$LINENO" 5
@@ -13763,8 +13760,16 @@ $as_echo "$OPENJDK_BUILD_OS-$OPENJDK_BUILD_CPU" >&6; }
 
   # ... and setup our own variables. (Do this explicitely to facilitate searching)
   OPENJDK_TARGET_OS="$VAR_OS"
-  OPENJDK_TARGET_OS_API="$VAR_OS_API"
-  OPENJDK_TARGET_OS_ENV="$VAR_OS_ENV"
+  if test "x$VAR_OS_TYPE" != x; then
+    OPENJDK_TARGET_OS_TYPE="$VAR_OS_TYPE"
+  else
+    OPENJDK_TARGET_OS_TYPE="$VAR_OS"
+  fi
+  if test "x$VAR_OS_ENV" != x; then
+    OPENJDK_TARGET_OS_ENV="$VAR_OS_ENV"
+  else
+    OPENJDK_TARGET_OS_ENV="$VAR_OS"
+  fi
   OPENJDK_TARGET_CPU="$VAR_CPU"
   OPENJDK_TARGET_CPU_ARCH="$VAR_CPU_ARCH"
   OPENJDK_TARGET_CPU_BITS="$VAR_CPU_BITS"
@@ -13932,19 +13937,10 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
 
 
-  # Setup OPENJDK_TARGET_OS_API_DIR, used in source paths.
-  if test "x$OPENJDK_TARGET_OS_API" = xposix; then
-    OPENJDK_TARGET_OS_API_DIR="unix"
-  fi
-  if test "x$OPENJDK_TARGET_OS_API" = xwinapi; then
-    OPENJDK_TARGET_OS_API_DIR="windows"
-  fi
-
-
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       OPENJDK_TARGET_OS_EXPORT_DIR=macosx
   else
-      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_API_DIR}
+      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_TYPE}
   fi
 
 
@@ -14194,7 +14190,7 @@ $as_echo "$as_me: Rewriting CURDIR to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$CURDIR"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -14316,7 +14312,7 @@ $as_echo "$as_me: Rewriting TOPDIR to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$TOPDIR"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -14836,7 +14832,7 @@ $as_echo "$as_me: Rewriting with_devkit to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$with_devkit"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -15310,7 +15306,7 @@ $as_echo "$as_me: Rewriting OUTPUT_ROOT to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$OUTPUT_ROOT"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -15677,7 +15673,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$FOUND_MAKE"
@@ -16050,7 +16046,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$FOUND_MAKE"
@@ -16420,7 +16416,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$FOUND_MAKE"
@@ -16795,7 +16791,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$FOUND_MAKE"
@@ -17164,7 +17160,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$FOUND_MAKE"
@@ -20132,7 +20128,19 @@ fi
 
 
 
-  COPYRIGHT_YEAR=`date +'%Y'`
+
+# Check whether --with-copyright-year was given.
+if test "${with_copyright_year+set}" = set; then :
+  withval=$with_copyright_year;
+fi
+
+  if test "x$with_copyright_year" = xyes; then
+    as_fn_error $? "Copyright year must have a value" "$LINENO" 5
+  elif test "x$with_copyright_year" != x; then
+    COPYRIGHT_YEAR="$with_copyright_year"
+  else
+    COPYRIGHT_YEAR=`date +'%Y'`
+  fi
 
 
   if test "x$JDK_UPDATE_VERSION" != x; then
@@ -20319,7 +20327,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -20651,7 +20659,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -20845,7 +20853,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -21032,7 +21040,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -21218,7 +21226,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -21404,7 +21412,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -21581,7 +21589,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -21727,7 +21735,7 @@ $as_echo "$as_me: Rewriting JAVA_HOME_PROCESSED to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$JAVA_HOME_PROCESSED"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -21899,7 +21907,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -22227,7 +22235,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -22442,7 +22450,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -22622,7 +22630,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -22830,7 +22838,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -23010,7 +23018,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -23218,7 +23226,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -23398,7 +23406,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -23606,7 +23614,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -23786,7 +23794,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -23981,7 +23989,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -24159,7 +24167,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -24355,7 +24363,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -24533,7 +24541,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -24728,7 +24736,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -24906,7 +24914,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -25102,7 +25110,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -25280,7 +25288,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -25457,7 +25465,7 @@ $as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$BOOT_JDK"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -27484,7 +27492,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$VS_ENV_CMD"
@@ -28144,7 +28152,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$CC"
@@ -28601,7 +28609,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$PROPER_COMPILER_CC"
@@ -29884,7 +29892,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$CXX"
@@ -30341,7 +30349,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$PROPER_COMPILER_CXX"
@@ -31203,7 +31211,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$CPP"
@@ -31618,7 +31626,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$CXXCPP"
@@ -31962,7 +31970,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$LD"
@@ -32457,7 +32465,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$AS"
@@ -33085,7 +33093,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$AR"
@@ -33621,7 +33629,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$OBJC"
@@ -34089,7 +34097,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$LIPO"
@@ -34430,7 +34438,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$MT"
@@ -34767,7 +34775,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$RC"
@@ -35086,7 +35094,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$DUMPBIN"
@@ -35601,7 +35609,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$STRIP"
@@ -36069,7 +36077,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$NM"
@@ -36537,7 +36545,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$GNM"
@@ -37006,7 +37014,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$MCS"
@@ -37586,7 +37594,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$STRIP"
@@ -38164,7 +38172,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$NM"
@@ -38751,7 +38759,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$OBJCOPY"
@@ -39335,7 +39343,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$OBJDUMP"
@@ -39828,7 +39836,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$BUILD_CC"
@@ -40296,7 +40304,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$BUILD_CXX"
@@ -40764,7 +40772,7 @@ $as_echo "$as_me: You might be mixing spaces in the path and extra arguments, wh
   fi
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     # First separate the path from the arguments. This will split at the first
     # space.
     complete="$BUILD_LD"
@@ -40990,74 +40998,6 @@ $as_echo "$supports" >&6; }
     HAS_CFLAG_OPTIMIZE_DEBUG=true
   else
     HAS_CFLAG_OPTIMIZE_DEBUG=false
-  fi
-
-
-    # "-fsanitize=undefined" supported for GCC 4.9 and later
-    CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG="-fsanitize=undefined -fsanitize-recover"
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiler supports \"$CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG\"" >&5
-$as_echo_n "checking if compiler supports \"$CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG\"... " >&6; }
-  supports=yes
-
-  saved_cflags="$CFLAGS"
-  CFLAGS="$CFLAGS $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
-  ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int i;
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-else
-  supports=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  CFLAGS="$saved_cflags"
-
-  saved_cxxflags="$CXXFLAGS"
-  CXXFLAGS="$CXXFLAG $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-int i;
-_ACEOF
-if ac_fn_cxx_try_compile "$LINENO"; then :
-
-else
-  supports=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-  ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-  CXXFLAGS="$saved_cxxflags"
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $supports" >&5
-$as_echo "$supports" >&6; }
-  if test "x$supports" = "xyes" ; then
-    HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR=true
-  else
-    HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR=false
   fi
 
 
@@ -41316,7 +41256,7 @@ $as_echo "$as_me: Rewriting JT_HOME to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$JT_HOME"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -41617,9 +41557,9 @@ $as_echo "$tool_specified" >&6; }
 
   # On Windows, we need to set RC flags.
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    RC_FLAGS="-nologo -l 0x409 -r"
+    RC_FLAGS="-nologo -l0x409"
     if test "x$VARIANT" = xOPT; then
-      RC_FLAGS="$RC_FLAGS -d NDEBUG"
+      RC_FLAGS="$RC_FLAGS -DNDEBUG"
     fi
 
     # The version variables used to create RC_FLAGS may be overridden
@@ -41628,13 +41568,13 @@ $as_echo "$tool_specified" >&6; }
     # The \$ are escaped to the shell, and the $(...) variables
     # are evaluated by make.
     RC_FLAGS="$RC_FLAGS \
-        -d \"JDK_BUILD_ID=\$(FULL_VERSION)\" \
-        -d \"JDK_COMPANY=\$(COMPANY_NAME)\" \
-        -d \"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
-        -d \"JDK_VER=\$(JDK_MINOR_VERSION).\$(JDK_MICRO_VERSION).\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0).\$(COOKED_BUILD_NUMBER)\" \
-        -d \"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
-        -d \"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(JDK_MINOR_VERSION) \$(JDK_UPDATE_META_TAG)\" \
-        -d \"JDK_FVER=\$(JDK_MINOR_VERSION),\$(JDK_MICRO_VERSION),\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0),\$(COOKED_BUILD_NUMBER)\""
+        -D\"JDK_BUILD_ID=\$(FULL_VERSION)\" \
+        -D\"JDK_COMPANY=\$(COMPANY_NAME)\" \
+        -D\"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
+        -D\"JDK_VER=\$(JDK_MINOR_VERSION).\$(JDK_MICRO_VERSION).\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0).\$(COOKED_BUILD_NUMBER)\" \
+        -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
+        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(JDK_MINOR_VERSION) \$(JDK_UPDATE_META_TAG)\" \
+        -D\"JDK_FVER=\$(JDK_MINOR_VERSION),\$(JDK_MICRO_VERSION),\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0),\$(COOKED_BUILD_NUMBER)\""
   fi
 
 
@@ -41844,8 +41784,8 @@ done
   LDFLAGS_JDK="${LDFLAGS_JDK}${ADDED_LDFLAGS}"
 
   elif test "x$COMPILE_TYPE" = xreduced; then
-    if test "x$OPENJDK_TARGET_OS" != xwindows; then
-      # Specify -m if running reduced on other Posix platforms
+    if test "x$OPENJDK_TARGET_OS_TYPE" = xunix; then
+      # Specify -m if running reduced on unix platforms
 
   # When we add flags to the "official" CFLAGS etc, we need to
   # keep track of these additions in ADDED_CFLAGS etc. These
@@ -42404,10 +42344,6 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # Add runtime stack smashing and undefined behavior checks
       CFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
       CXXFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
-      if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
-        CFLAGS_DEBUG_OPTIONS="$CFLAGS_DEBUG_OPTIONS  $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
-        CXXFLAGS_DEBUG_OPTIONS="$CXXFLAGS_DEBUG_OPTIONS $CFLAG_DETECT_UNDEFINED_BEHAVIsOR_FLAG"
-      fi
       ;;
     esac
   fi
@@ -42737,7 +42673,7 @@ fi
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
       -I${JDK_TOPDIR}/src/java.base/share/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
-      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_API_DIR/native/include"
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include"
 
   # The shared libraries are compiled using the picflag.
   CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
@@ -42813,26 +42749,6 @@ fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
-  fi
-
-  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    # If undefined behaviour detection is enabled then we need to tell linker.
-    case $DEBUG_LEVEL in
-      release | fastdebug )
-        ;;
-      slowdebug )
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" >&5
-$as_echo "$as_me: WARNING: $HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" >&2;}
-        if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
-          # enable undefined behaviour checking
-          LDFLAGS_JDK="$LDFLAGS_JDK `$ECHO -n $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG | sed -e "s/ *\(^ \+\)/ -Xlinker \1/g"`"
-          LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK `$ECHO -n $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG | sed -e "s/ *\(^ \+\)/ -Xlinker \1/g"`"
-        fi
-        ;;
-      * )
-        as_fn_error $? "Unrecognized \$DEBUG_LEVEL: $DEBUG_LEVEL" "$LINENO" 5
-        ;;
-    esac
   fi
 
   # Customize LDFLAGS for executables
@@ -44723,7 +44639,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -44845,7 +44761,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -45076,7 +44992,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -45198,7 +45114,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -45690,7 +45606,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -45812,7 +45728,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -46018,7 +45934,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -46140,7 +46056,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -46337,7 +46253,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -46459,7 +46375,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -46656,7 +46572,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -46778,7 +46694,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -46976,7 +46892,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -47098,7 +47014,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -47297,7 +47213,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -47419,7 +47335,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -47614,7 +47530,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -47736,7 +47652,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -47931,7 +47847,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -48053,7 +47969,7 @@ $as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$POTENTIAL_FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -48231,7 +48147,7 @@ $as_echo "$as_me: Rewriting FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$FREETYPE_INCLUDE_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -48361,7 +48277,7 @@ $as_echo "$as_me: Rewriting FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$FREETYPE_LIB_PATH"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -50260,7 +50176,7 @@ $as_echo "$as_me: Rewriting MSVCR_DLL to \"$new_path\"" >&6;}
   all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
 
   else
-    # We're on a posix platform. Hooray! :)
+    # We're on a unix platform. Hooray! :)
     path="$MSVCR_DLL"
     has_space=`$ECHO "$path" | $GREP " "`
     if test "x$has_space" != x; then
@@ -52405,15 +52321,15 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
   printf "====================================================\n"
   if test "x$no_create" != "xyes"; then
     if test "x$IS_RECONFIGURE" != "xyes"; then
-      printf "A new configuration has been successfully created in\n %s\n" "$OUTPUT_ROOT"
+      printf "A new configuration has been successfully created in\n%s\n" "$OUTPUT_ROOT"
     else
-      printf "The existing configuration has been successfully updated in\n %s\n" "$OUTPUT_ROOT"
+      printf "The existing configuration has been successfully updated in\n%s\n" "$OUTPUT_ROOT"
     fi
   else
     if test "x$IS_RECONFIGURE" != "xyes"; then
       printf "A configuration has been successfully checked but not created\n"
     else
-      printf "The existing configuration has been successfully checked in\n %s\n" "$OUTPUT_ROOT"
+      printf "The existing configuration has been successfully checked in\n%s\n" "$OUTPUT_ROOT"
     fi
   fi
   if test "x$CONFIGURE_COMMAND_LINE" != x; then
@@ -52483,5 +52399,17 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
     printf "You should run without '--no-create | -n' to create the configuration.\n"
     printf "\n"
   fi
+
+
+
+if test -e "$OUTPUT_ROOT/config.log"; then
+  $GREP '^configure:.*: WARNING:' "$OUTPUT_ROOT/config.log" > /dev/null 2>&1
+  if test $? -eq 0; then
+    printf "The following warnings were produced. Repeated here for convenience:\n"
+    # We must quote sed expression (using []) to stop m4 from eating the [].
+    $GREP '^configure:.*: WARNING:' "$OUTPUT_ROOT/config.log" | $SED -e  's/^configure:[0-9]*: //'
+    printf "\n"
+  fi
+fi
 
 
