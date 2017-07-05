@@ -55,7 +55,7 @@ import java.util.Arrays;
  * object to the operation.  In either case, eight <em>rounding
  * modes</em> are provided for the control of rounding.  Using the
  * integer fields in this class (such as {@link #ROUND_HALF_UP}) to
- * represent rounding mode is largely obsolete; the enumeration values
+ * represent rounding mode is deprecated; the enumeration values
  * of the {@code RoundingMode} {@code enum}, (such as {@link
  * RoundingMode#HALF_UP}) should be used instead.
  *
@@ -93,7 +93,7 @@ import java.util.Arrays;
  * <p>In general the rounding modes and precision setting determine
  * how operations return results with a limited number of digits when
  * the exact result has more digits (perhaps infinitely many in the
- * case of division) than the number of digits returned.
+ * case of division and square root) than the number of digits returned.
  *
  * First, the
  * total number of digits to return is specified by the
@@ -196,17 +196,18 @@ import java.util.Arrays;
  * {@code BigDecimal} value; for example [19, 2] is the
  * {@code BigDecimal} numerically equal to 0.19 having a scale of 2.
  *
- * <p>Note: care should be exercised if {@code BigDecimal} objects
- * are used as keys in a {@link java.util.SortedMap SortedMap} or
- * elements in a {@link java.util.SortedSet SortedSet} since
- * {@code BigDecimal}'s <i>natural ordering</i> is <i>inconsistent
- * with equals</i>.  See {@link Comparable}, {@link
- * java.util.SortedMap} or {@link java.util.SortedSet} for more
- * information.
  *
  * <p>All methods and constructors for this class throw
  * {@code NullPointerException} when passed a {@code null} object
  * reference for any input parameter.
+ *
+ * @apiNote Care should be exercised if {@code BigDecimal} objects
+ * are used as keys in a {@link java.util.SortedMap SortedMap} or
+ * elements in a {@link java.util.SortedSet SortedSet} since
+ * {@code BigDecimal}'s <i>natural ordering</i> is <em>inconsistent
+ * with equals</em>.  See {@link Comparable}, {@link
+ * java.util.SortedMap} or {@link java.util.SortedSet} for more
+ * information.
  *
  * @see     BigInteger
  * @see     MathContext
@@ -377,10 +378,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * same sequence of characters as the {@link #BigDecimal(String)}
      * constructor, while allowing a sub-array to be specified.
      *
-     * <p>Note that if the sequence of characters is already available
+     * @implNote If the sequence of characters is already available
      * within a character array, using this constructor is faster than
      * converting the {@code char} array to string and using the
-     * {@code BigDecimal(String)} constructor .
+     * {@code BigDecimal(String)} constructor.
      *
      * @param  in {@code char} array that is the source of characters.
      * @param  offset first character in the array to inspect.
@@ -401,14 +402,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * constructor, while allowing a sub-array to be specified and
      * with rounding according to the context settings.
      *
-     * <p>Note that if the sequence of characters is already available
+     * @implNote If the sequence of characters is already available
      * within a character array, using this constructor is faster than
      * converting the {@code char} array to string and using the
      * {@code BigDecimal(String)} constructor.
      *
      * @param  in {@code char} array that is the source of characters.
      * @param  offset first character in the array to inspect.
-     * @param  len number of characters to consider..
+     * @param  len number of characters to consider.
      * @param  mc the context to use.
      * @throws ArithmeticException if the result is inexact but the
      *         rounding mode is {@code UNNECESSARY}.
@@ -679,10 +680,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * same sequence of characters as the {@link #BigDecimal(String)}
      * constructor.
      *
-     * <p>Note that if the sequence of characters is already available
+     * @implNote If the sequence of characters is already available
      * as a character array, using this constructor is faster than
      * converting the {@code char} array to string and using the
-     * {@code BigDecimal(String)} constructor .
+     * {@code BigDecimal(String)} constructor.
      *
      * @param in {@code char} array that is the source of characters.
      * @throws NumberFormatException if {@code in} is not a valid
@@ -700,10 +701,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * constructor and with rounding according to the context
      * settings.
      *
-     * <p>Note that if the sequence of characters is already available
+     * @implNote If the sequence of characters is already available
      * as a character array, using this constructor is faster than
      * converting the {@code char} array to string and using the
-     * {@code BigDecimal(String)} constructor .
+     * {@code BigDecimal(String)} constructor.
      *
      * @param  in {@code char} array that is the source of characters.
      * @param  mc the context to use.
@@ -805,7 +806,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * "-0"           [0,0]
      * </pre>
      *
-     * <p>Note: For values other than {@code float} and
+     * @apiNote For values other than {@code float} and
      * {@code double} NaN and &plusmn;Infinity, this constructor is
      * compatible with the values returned by {@link Float#toString}
      * and {@link Double#toString}.  This is generally the preferred
@@ -859,13 +860,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * This is because 0.1 cannot be represented exactly as a
      * {@code double} (or, for that matter, as a binary fraction of
      * any finite length).  Thus, the value that is being passed
-     * <i>in</i> to the constructor is not exactly equal to 0.1,
+     * <em>in</em> to the constructor is not exactly equal to 0.1,
      * appearances notwithstanding.
      *
      * <li>
      * The {@code String} constructor, on the other hand, is
      * perfectly predictable: writing {@code new BigDecimal("0.1")}
-     * creates a {@code BigDecimal} which is <i>exactly</i> equal to
+     * creates a {@code BigDecimal} which is <em>exactly</em> equal to
      * 0.1, as one would expect.  Therefore, it is generally
      * recommended that the {@linkplain #BigDecimal(String)
      * String constructor} be used in preference to this one.
@@ -1199,10 +1200,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Translates a {@code long} unscaled value and an
-     * {@code int} scale into a {@code BigDecimal}.  This
-     * {@literal "static factory method"} is provided in preference to
-     * a ({@code long}, {@code int}) constructor because it
-     * allows for reuse of frequently used {@code BigDecimal} values..
+     * {@code int} scale into a {@code BigDecimal}.
+     *
+     * @apiNote This static factory method is provided in preference
+     * to a ({@code long}, {@code int}) constructor because it allows
+     * for reuse of frequently used {@code BigDecimal} values.
      *
      * @param unscaledVal unscaled value of the {@code BigDecimal}.
      * @param scale scale of the {@code BigDecimal}.
@@ -1222,10 +1224,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     /**
      * Translates a {@code long} value into a {@code BigDecimal}
-     * with a scale of zero.  This {@literal "static factory method"}
-     * is provided in preference to a ({@code long}) constructor
-     * because it allows for reuse of frequently used
-     * {@code BigDecimal} values.
+     * with a scale of zero.
+     *
+     * @apiNote This static factory method is provided in preference
+     * to a ({@code long}) constructor because it allows for reuse of
+     * frequently used {@code BigDecimal} values.
      *
      * @param val value of the {@code BigDecimal}.
      * @return a {@code BigDecimal} whose value is {@code val}.
@@ -1270,11 +1273,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * the {@code double}'s canonical string representation provided
      * by the {@link Double#toString(double)} method.
      *
-     * <p><b>Note:</b> This is generally the preferred way to convert
-     * a {@code double} (or {@code float}) into a
-     * {@code BigDecimal}, as the value returned is equal to that
-     * resulting from constructing a {@code BigDecimal} from the
-     * result of using {@link Double#toString(double)}.
+     * @apiNote This is generally the preferred way to convert a
+     * {@code double} (or {@code float}) into a {@code BigDecimal}, as
+     * the value returned is equal to that resulting from constructing
+     * a {@code BigDecimal} from the result of using {@link
+     * Double#toString(double)}.
      *
      * @param  val {@code double} to convert to a {@code BigDecimal}.
      * @return a {@code BigDecimal} whose value is equal to or approximately
@@ -1896,7 +1899,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * <p>The remainder is given by
      * {@code this.subtract(this.divideToIntegralValue(divisor).multiply(divisor))}.
-     * Note that this is not the modulo operation (the result can be
+     * Note that this is <em>not</em> the modulo operation (the result can be
      * negative).
      *
      * @param  divisor value by which this {@code BigDecimal} is to be divided.
@@ -2037,6 +2040,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code (mc.getRoundingMode()==RoundingMode.UNNECESSARY}) and
      * the exact result cannot fit in {@code mc.getPrecision()}
      * digits.
+     * @see BigInteger#sqrt()
      * @since  9
      */
     public BigDecimal sqrt(MathContext mc) {
@@ -2694,8 +2698,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * in this case, the specified rounding mode is applied to the
      * division.
      *
-     * <p>Note that since BigDecimal objects are immutable, calls of
-     * this method do <i>not</i> result in the original object being
+     * @apiNote Since BigDecimal objects are immutable, calls of
+     * this method do <em>not</em> result in the original object being
      * modified, contrary to the usual convention of having methods
      * named <code>set<i>X</i></code> mutate field <i>{@code X}</i>.
      * Instead, {@code setScale} returns an object with the proper
@@ -2727,8 +2731,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * in this case, the specified rounding mode is applied to the
      * division.
      *
-     * <p>Note that since BigDecimal objects are immutable, calls of
-     * this method do <i>not</i> result in the original object being
+     * @apiNote Since BigDecimal objects are immutable, calls of
+     * this method do <em>not</em> result in the original object being
      * modified, contrary to the usual convention of having methods
      * named <code>set<i>X</i></code> mutate field <i>{@code X}</i>.
      * Instead, {@code setScale} returns an object with the proper
@@ -2822,8 +2826,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * versions of {@code setScale}, but saves the caller the trouble
      * of specifying a rounding mode in cases where it is irrelevant.
      *
-     * <p>Note that since {@code BigDecimal} objects are immutable,
-     * calls of this method do <i>not</i> result in the original
+     * @apiNote Since {@code BigDecimal} objects are immutable,
+     * calls of this method do <em>not</em> result in the original
      * object being modified, contrary to the usual convention of
      * having methods named <code>set<i>X</i></code> mutate field
      * <i>{@code X}</i>.  Instead, {@code setScale} returns an
@@ -3091,7 +3095,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
      * Returns the hash code for this {@code BigDecimal}.  Note that
      * two {@code BigDecimal} objects that are numerically equal but
-     * differ in scale (like 2.0 and 2.00) will generally <i>not</i>
+     * differ in scale (like 2.0 and 2.00) will generally <em>not</em>
      * have the same hash code.
      *
      * @return hash code for this {@code BigDecimal}.
@@ -3342,7 +3346,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Converts this {@code BigDecimal} to a {@code BigInteger}.
      * This conversion is analogous to the
      * <i>narrowing primitive conversion</i> from {@code double} to
-     * {@code long} as defined in section 5.1.3 of
+     * {@code long} as defined in
      * <cite>The Java&trade; Language Specification</cite>:
      * any fractional part of this
      * {@code BigDecimal} will be discarded.  Note that this
@@ -3354,6 +3358,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@link #toBigIntegerExact()} method.
      *
      * @return this {@code BigDecimal} converted to a {@code BigInteger}.
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     public BigInteger toBigInteger() {
         // force to an integer, quietly
@@ -3379,7 +3384,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Converts this {@code BigDecimal} to a {@code long}.
      * This conversion is analogous to the
      * <i>narrowing primitive conversion</i> from {@code double} to
-     * {@code short} as defined in section 5.1.3 of
+     * {@code short} as defined in
      * <cite>The Java&trade; Language Specification</cite>:
      * any fractional part of this
      * {@code BigDecimal} will be discarded, and if the resulting
@@ -3390,6 +3395,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * as return a result with the opposite sign.
      *
      * @return this {@code BigDecimal} converted to a {@code long}.
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
     public long longValue(){
@@ -3448,7 +3454,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Converts this {@code BigDecimal} to an {@code int}.
      * This conversion is analogous to the
      * <i>narrowing primitive conversion</i> from {@code double} to
-     * {@code short} as defined in section 5.1.3 of
+     * {@code short} as defined in
      * <cite>The Java&trade; Language Specification</cite>:
      * any fractional part of this
      * {@code BigDecimal} will be discarded, and if the resulting
@@ -3459,6 +3465,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * value as well as return a result with the opposite sign.
      *
      * @return this {@code BigDecimal} converted to an {@code int}.
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
     public int intValue() {
@@ -3531,7 +3538,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Converts this {@code BigDecimal} to a {@code float}.
      * This conversion is similar to the
      * <i>narrowing primitive conversion</i> from {@code double} to
-     * {@code float} as defined in section 5.1.3 of
+     * {@code float} as defined in
      * <cite>The Java&trade; Language Specification</cite>:
      * if this {@code BigDecimal} has too great a
      * magnitude to represent as a {@code float}, it will be
@@ -3542,6 +3549,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * value.
      *
      * @return this {@code BigDecimal} converted to a {@code float}.
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
     public float floatValue(){
@@ -3575,7 +3583,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * Converts this {@code BigDecimal} to a {@code double}.
      * This conversion is similar to the
      * <i>narrowing primitive conversion</i> from {@code double} to
-     * {@code float} as defined in section 5.1.3 of
+     * {@code float} as defined in
      * <cite>The Java&trade; Language Specification</cite>:
      * if this {@code BigDecimal} has too great a
      * magnitude represent as a {@code double}, it will be
@@ -3586,6 +3594,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * value.
      *
      * @return this {@code BigDecimal} converted to a {@code double}.
+     * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
     public double doubleValue(){

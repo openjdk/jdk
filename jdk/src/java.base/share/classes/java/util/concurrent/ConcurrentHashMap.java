@@ -1242,7 +1242,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public KeySetView<K,V> keySet() {
         KeySetView<K,V> ks;
-        return (ks = keySet) != null ? ks : (keySet = new KeySetView<K,V>(this, null));
+        if ((ks = keySet) != null) return ks;
+        return keySet = new KeySetView<K,V>(this, null);
     }
 
     /**
@@ -1265,7 +1266,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public Collection<V> values() {
         ValuesView<K,V> vs;
-        return (vs = values) != null ? vs : (values = new ValuesView<K,V>(this));
+        if ((vs = values) != null) return vs;
+        return values = new ValuesView<K,V>(this);
     }
 
     /**
@@ -1287,7 +1289,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     public Set<Map.Entry<K,V>> entrySet() {
         EntrySetView<K,V> es;
-        return (es = entrySet) != null ? es : (entrySet = new EntrySetView<K,V>(this));
+        if ((es = entrySet) != null) return es;
+        return entrySet = new EntrySetView<K,V>(this);
     }
 
     /**
