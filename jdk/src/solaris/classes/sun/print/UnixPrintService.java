@@ -686,19 +686,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         }
 
         if (category == Chromaticity.class) {
-            if (flavor == null ||
-                flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
-                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.GIF) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.GIF) ||
-                flavor.equals(DocFlavor.URL.GIF) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.JPEG) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.JPEG) ||
-                flavor.equals(DocFlavor.URL.JPEG) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.PNG) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.PNG) ||
-                flavor.equals(DocFlavor.URL.PNG)) {
-
+            if (flavor == null || isServiceFormattedFlavor(flavor)) {
                 Chromaticity[]arr = new Chromaticity[1];
                 arr[0] = Chromaticity.COLOR;
                 return (arr);
@@ -730,18 +718,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
             }
             return new RequestingUserName(userName, null);
         } else if (category == OrientationRequested.class) {
-            if (flavor == null ||
-                flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
-                flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.GIF) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.JPEG) ||
-                flavor.equals(DocFlavor.INPUT_STREAM.PNG) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.GIF) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.JPEG) ||
-                flavor.equals(DocFlavor.BYTE_ARRAY.PNG) ||
-                flavor.equals(DocFlavor.URL.GIF) ||
-                flavor.equals(DocFlavor.URL.JPEG) ||
-                flavor.equals(DocFlavor.URL.PNG)) {
+            if (flavor == null || isServiceFormattedFlavor(flavor)) {
                 OrientationRequested []arr = new OrientationRequested[3];
                 arr[0] = OrientationRequested.PORTRAIT;
                 arr[1] = OrientationRequested.LANDSCAPE;
@@ -752,7 +729,14 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
             }
         } else if ((category == Copies.class) ||
                    (category == CopiesSupported.class)) {
-            return new CopiesSupported(1, MAXCOPIES);
+            if (flavor == null ||
+                !(flavor.equals(DocFlavor.INPUT_STREAM.POSTSCRIPT) ||
+                  flavor.equals(DocFlavor.URL.POSTSCRIPT) ||
+                  flavor.equals(DocFlavor.BYTE_ARRAY.POSTSCRIPT))) {
+                return new CopiesSupported(1, MAXCOPIES);
+            } else {
+                return null;
+            }
         } else if (category == Media.class) {
             Media []arr = new Media[mediaSizes.length];
             System.arraycopy(mediaSizes, 0, arr, 0, mediaSizes.length);
@@ -917,8 +901,10 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
             }
         }
         else if (attr.getCategory() == Copies.class) {
-            return
-                (flavor == null || isServiceFormattedFlavor(flavor)) &&
+            return (flavor == null ||
+                   !(flavor.equals(DocFlavor.INPUT_STREAM.POSTSCRIPT) ||
+                     flavor.equals(DocFlavor.URL.POSTSCRIPT) ||
+                     flavor.equals(DocFlavor.BYTE_ARRAY.POSTSCRIPT))) &&
                 isSupportedCopies((Copies)attr);
         } else if (attr.getCategory() == Destination.class) {
             URI uri = ((Destination)attr).getURI();

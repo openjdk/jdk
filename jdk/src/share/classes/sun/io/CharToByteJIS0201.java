@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-1998 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ package sun.io;
  * Tables and data to convert Unicode to JIS0201
  *
  * @author  ConverterGenerator tool
+ * @version >= JDK1.1.6
  */
 
 class CharToByteJIS0201 extends CharToByteSingleByte {
@@ -41,8 +42,21 @@ class CharToByteJIS0201 extends CharToByteSingleByte {
         super.mask1 = 0xFF00;
         super.mask2 = 0x00FF;
         super.shift = 8;
+        /*
         super.index1 = index1;
         super.index2 = index2;
+        */
+    }
+
+    public byte getNative(char inputChar) {
+        return (byte)index2.charAt(index1[(inputChar & mask1) >> shift]
+                + (inputChar & mask2));
+    }
+
+   public boolean canConvert(char ch) {
+        if (index2.charAt(index1[((ch & mask1) >> shift)] + (ch & mask2)) != '\u0000')
+            return true;
+        return (ch == '\u0000');
     }
 
     private final static String index2 =

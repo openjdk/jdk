@@ -40,6 +40,7 @@ import javax.management.MBeanServerFactory;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
+import javax.management.RuntimeOperationsException;
 import javax.management.namespace.JMXNamespaces;
 import javax.management.namespace.JMXRemoteNamespace;
 import javax.management.namespace.JMXNamespace;
@@ -215,9 +216,20 @@ public class NullDomainObjectNameTest {
                 assertEquals(proxy.queryNames(
                         new ObjectName(":*"),null).
                         contains(moi3.getObjectName()),true);
-                failed("queryNames(null,null) should have failed for faked//");
-            } catch (IllegalArgumentException x) {
-                System.out.println("Received expected exception for faked//: "+x);
+                failed("queryNames(new ObjectName(\":*\"),null) " +
+                        "should have failed for faked//");
+            } catch (RuntimeOperationsException x) {
+                if (x.getCause() instanceof IllegalArgumentException)
+                    System.out.println(
+                            "Received expected exception for faked//: "+x);
+                else {
+                    System.err.println(
+                            "Expected exception has unexpected cause " +
+                            "for faked//: "+x.getCause());
+                    x.printStackTrace();
+                    failed("queryNames(new ObjectName(\":*\"),null)" +
+                            " failed with unexpected cause for faked//");
+                }
             }
             // These should fail because the ObjectName doesn't start
             // with "faked//"
@@ -226,9 +238,20 @@ public class NullDomainObjectNameTest {
                     "new ObjectName(\":*\"),null) with faked//");
                 assertEquals(proxy.queryMBeans(
                         new ObjectName(":*"),null).contains(moi3),true);
-                failed("queryMBeans(null,null) should have failed for faked//");
-            } catch (IllegalArgumentException x) {
-                System.out.println("Received expected exception for faked//: "+x);
+                failed("queryMBeans(new ObjectName(\":*\"),null)" +
+                    " should have failed for faked//");
+            } catch (RuntimeOperationsException x) {
+                if (x.getCause() instanceof IllegalArgumentException)
+                    System.out.println(
+                            "Received expected exception for faked//: "+x);
+                else {
+                    System.err.println(
+                            "Expected exception has unexpected cause " +
+                            "for faked//: "+x.getCause());
+                    x.printStackTrace();
+                    failed("queryMBeans(new ObjectName(\":*\"),null) " +
+                            "failed with unexpected cause for faked//");
+                }
             }
 
             System.out.println("Checking queryNames(faked//*:*,null)");

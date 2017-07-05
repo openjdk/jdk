@@ -919,6 +919,12 @@ public class DefaultMBeanServerInterceptor
 
         DynamicMBean mbean = Introspector.makeDynamicMBean(object);
 
+        //Access the ObjectName template value only if the provided name is null
+        if(name == null) {
+            name = Introspector.templateToObjectName(mbean.getMBeanInfo().
+                    getDescriptor(), mbean);
+        }
+
         return registerDynamicMBean(classname, mbean, name);
     }
 

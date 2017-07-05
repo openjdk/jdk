@@ -187,9 +187,10 @@ public class EventClient implements EventConsumer, NotificationManager {
      * forwarded by the {@link EventClientDelegateMBean}. If {@code null}, a
      * {@link FetchingEventRelay} object will be used.
      * @param distributingExecutor Used to distribute notifications to local
-     * listeners. If {@code null}, the thread that calls {@link
-     * EventReceiver#receive EventReceiver.receive} from the {@link EventRelay}
-     * object is used.
+     * listeners. Only one job at a time will be submitted to this Executor.
+     * If {@code distributingExecutor} is {@code null}, the thread that calls
+     * {@link EventReceiver#receive EventReceiver.receive} from the {@link
+     * EventRelay} object is used.
      * @param leaseScheduler An object that will be used to schedule the
      * periodic {@linkplain EventClientDelegateMBean#lease lease updates}.
      * If {@code null}, a default scheduler will be used.
@@ -545,7 +546,7 @@ public class EventClient implements EventConsumer, NotificationManager {
      *
      * <P>The method returns the listeners which were added successfully. The
      * elements in the returned collection are a subset of the elements in
-     * {@code infoList}. If all listeners were added successfully, the two
+     * {@code listeners}. If all listeners were added successfully, the two
      * collections are the same. If no listener was added successfully, the
      * returned collection is empty.</p>
      *

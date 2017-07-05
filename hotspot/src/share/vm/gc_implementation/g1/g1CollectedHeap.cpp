@@ -2954,7 +2954,7 @@ public:
       // The object has been either evacuated or is dead. Fill it with a
       // dummy object.
       MemRegion mr((HeapWord*)obj, obj->size());
-      SharedHeap::fill_region_with_object(mr);
+      CollectedHeap::fill_with_object(mr);
       _cm->clearRangeBothMaps(mr);
     }
   }
@@ -3225,7 +3225,7 @@ void G1CollectedHeap::par_allocate_remaining_space(HeapRegion* r) {
     // Otherwise, try to claim it.
     block = r->par_allocate(free_words);
   } while (block == NULL);
-  SharedHeap::fill_region_with_object(MemRegion(block, free_words));
+  fill_with_object(block, free_words);
 }
 
 #define use_local_bitmaps         1
@@ -3619,9 +3619,8 @@ public:
       guarantee(alloc_buffer(purpose)->contains(obj + word_sz - 1),
                 "should contain whole object");
       alloc_buffer(purpose)->undo_allocation(obj, word_sz);
-    }
-    else {
-      SharedHeap::fill_region_with_object(MemRegion(obj, word_sz));
+    } else {
+      CollectedHeap::fill_with_object(obj, word_sz);
       add_to_undo_waste(word_sz);
     }
   }

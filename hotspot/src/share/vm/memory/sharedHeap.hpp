@@ -108,14 +108,6 @@ public:
 
   void set_perm(PermGen* perm_gen) { _perm_gen = perm_gen; }
 
-  // A helper function that fills a region of the heap with
-  // with a single object.
-  static void fill_region_with_object(MemRegion mr);
-
-  // Minimum garbage fill object size
-  static size_t min_fill_size()          { return (size_t)align_object_size(oopDesc::header_size()); }
-  static size_t min_fill_size_in_bytes() { return min_fill_size() * HeapWordSize; }
-
   // This function returns the "GenRemSet" object that allows us to scan
   // generations; at least the perm gen, possibly more in a fully
   // generational heap.

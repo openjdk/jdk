@@ -449,7 +449,8 @@ public abstract class SurfaceData
         // For now the answer can only be true in the following cases:
         if (sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY &&
             sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
-            sg2d.clipState <= SunGraphics2D.CLIP_RECTANGULAR)
+            sg2d.clipState <= SunGraphics2D.CLIP_RECTANGULAR &&
+            sg2d.surfaceData.getTransparency() == Transparency.OPAQUE)
         {
             if (haveLCDLoop == LCDLOOP_UNKNOWN) {
                 DrawGlyphListLCD loop =

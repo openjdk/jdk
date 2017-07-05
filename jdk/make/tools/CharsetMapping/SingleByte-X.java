@@ -1,0 +1,83 @@
+/*
+ * Copyright 2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package $PACKAGE$;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
+import sun.nio.cs.StandardCharsets;
+import sun.nio.cs.SingleByte;
+import sun.nio.cs.HistoricallyNamedCharset;
+import static sun.nio.cs.CharsetMapping.*;
+
+public class $NAME_CLZ$ extends Charset implements HistoricallyNamedCharset
+{
+    public $NAME_CLZ$() {
+        super("$NAME_CS$", $NAME_ALIASES$);
+    }
+
+    public String historicalName() {
+        return "$NAME_HIS$";
+    }
+
+    public boolean contains(Charset cs) {
+        $CONTAINS$;
+    }
+
+    public CharsetDecoder newDecoder() {
+        return new SingleByte.Decoder(this, b2c);
+    }
+
+    public CharsetEncoder newEncoder() {
+        return new SingleByte.Encoder(this, c2b, c2bIndex);
+    }
+
+    public String getDecoderSingleByteMappings() {
+        return b2cTable;
+    }
+
+    public char[] getEncoderIndex2() {
+        return c2b;
+    }
+
+    public char[] getEncoderIndex1() {
+        return c2bIndex;
+    }
+
+    private final static String b2cTable = $B2CTABLE$
+
+    private final static char[] b2c = b2cTable.toCharArray();
+    private final static char[] c2b = new char[$C2BLENGTH$];
+    private final static char[] c2bIndex = new char[0x100];
+
+    static {
+        char[] b2cMap = b2c;
+        char[] c2bNR = null;
+        $NONROUNDTRIP_B2C$
+        $NONROUNDTRIP_C2B$
+        SingleByte.initC2B(b2cMap, c2bNR, c2b, c2bIndex);
+    }
+}

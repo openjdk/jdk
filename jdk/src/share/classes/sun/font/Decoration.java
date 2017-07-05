@@ -267,7 +267,9 @@ public class Decoration {
             CoreMetrics cm = label.getCoreMetrics();
             if (strikethrough) {
                 Stroke savedStroke = g2d.getStroke();
-                g2d.setStroke(new BasicStroke(cm.strikethroughThickness));
+                g2d.setStroke(new BasicStroke(cm.strikethroughThickness,
+                                              BasicStroke.CAP_BUTT,
+                                              BasicStroke.JOIN_MITER));
                 float strikeY = y + cm.strikethroughOffset;
                 g2d.draw(new Line2D.Float(x1, strikeY, x2, strikeY));
                 g2d.setStroke(savedStroke);
@@ -341,7 +343,7 @@ public class Decoration {
 
             Rectangle2D visBounds = label.handleGetVisualBounds();
 
-            if (swapColors || bgPaint != null
+            if (swapColors || bgPaint != null || strikethrough
                         || stdUnderline != null || imUnderline != null) {
 
                 float minX = 0;
@@ -377,6 +379,7 @@ public class Decoration {
             // NOTE:  The performace of the following code may
             // be very poor.
             float ulThickness = cm.underlineThickness;
+            float ulOffset = cm.underlineOffset;
 
             Rectangle2D lb = label.getLogicalBounds();
             float x1 = x;
@@ -385,12 +388,15 @@ public class Decoration {
             Area area = null;
 
             if (stdUnderline != null) {
-                Shape ul = stdUnderline.getUnderlineShape(ulThickness, x1, x2, y);
+                Shape ul = stdUnderline.getUnderlineShape(ulThickness,
+                                                          x1, x2, y+ulOffset);
                 area = new Area(ul);
             }
 
             if (strikethrough) {
-                Stroke stStroke = new BasicStroke(cm.strikethroughThickness);
+                Stroke stStroke = new BasicStroke(cm.strikethroughThickness,
+                                                  BasicStroke.CAP_BUTT,
+                                                  BasicStroke.JOIN_MITER);
                 float shiftY = y + cm.strikethroughOffset;
                 Line2D line = new Line2D.Float(x1, shiftY, x2, shiftY);
                 Area slArea = new Area(stStroke.createStrokedShape(line));
@@ -402,7 +408,8 @@ public class Decoration {
             }
 
             if (imUnderline != null) {
-                Shape ul = imUnderline.getUnderlineShape(ulThickness, x1, x2, y);
+                Shape ul = imUnderline.getUnderlineShape(ulThickness,
+                                                         x1, x2, y+ulOffset);
                 Area ulArea = new Area(ul);
                 if (area == null) {
                     area = ulArea;

@@ -90,7 +90,8 @@ public abstract class BufferedContext {
     private Region          validatedClip;
     private Composite       validatedComp;
     private Paint           validatedPaint;
-    private boolean         isValidatedPaintAColor;
+    // renamed from isValidatedPaintAColor as part of a work around for 6764257
+    private boolean         isValidatedPaintJustAColor;
     private int             validatedRGB;
     private int             validatedFlags;
     private boolean         xformInUse;
@@ -182,7 +183,7 @@ public abstract class BufferedContext {
         if (paint instanceof Color) {
             // REMIND: not 30-bit friendly
             int newRGB = ((Color)paint).getRGB();
-            if (isValidatedPaintAColor) {
+            if (isValidatedPaintJustAColor) {
                 if (newRGB != validatedRGB) {
                     validatedRGB = newRGB;
                     updatePaint = true;
@@ -190,13 +191,13 @@ public abstract class BufferedContext {
             } else {
                 validatedRGB = newRGB;
                 updatePaint = true;
-                isValidatedPaintAColor = true;
+                isValidatedPaintJustAColor = true;
             }
         } else if (validatedPaint != paint) {
             updatePaint = true;
             // this should be set when we are switching from paint to color
             // in which case this condition will be true
-            isValidatedPaintAColor = false;
+            isValidatedPaintJustAColor = false;
         }
 
         if ((currentContext != this) ||
@@ -281,7 +282,7 @@ public abstract class BufferedContext {
             txChanged = true;
         }
         // non-Color paints may require paint revalidation
-        if (!isValidatedPaintAColor && txChanged) {
+        if (!isValidatedPaintJustAColor && txChanged) {
             updatePaint = true;
         }
 
@@ -427,10 +428,12 @@ public abstract class BufferedContext {
         resetTransform();
         resetComposite();
         resetClip();
+        BufferedPaints.resetPaint(rq);
         invalidateSurfaces();
         validatedComp = null;
         validatedClip = null;
         validatedPaint = null;
+        isValidatedPaintJustAColor = false;
         xformInUse = false;
     }
 
