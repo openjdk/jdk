@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_INLINE_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_INLINE_HPP
 
+#include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+
 inline HeapWord* G1OffsetTableContigSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
   if (res != NULL) {

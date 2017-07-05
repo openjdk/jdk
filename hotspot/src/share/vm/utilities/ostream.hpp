@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/timer.hpp"
 
+class GCId;
 DEBUG_ONLY(class ResourceMark;)
 
 // Output streams for printing
@@ -107,6 +108,7 @@ class outputStream : public ResourceObj {
    void date_stamp(bool guard) {
      date_stamp(guard, "", ": ");
    }
+   void gclog_stamp(const GCId& gc_id);
 
    // portable printing of 64 bit integers
    void print_jlong(jlong value);

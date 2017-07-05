@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "services/memBaseline.hpp"
 #include "services/memRecorder.hpp"
 #include "services/memPtr.hpp"

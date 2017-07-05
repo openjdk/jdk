@@ -115,9 +115,19 @@ class CLDClosure : public Closure {
 };
 
 class KlassToOopClosure : public KlassClosure {
+  friend class MetadataAwareOopClosure;
+  friend class MetadataAwareOopsInGenClosure;
+
   OopClosure* _oop_closure;
- public:
-  KlassToOopClosure(OopClosure* oop_closure) : _oop_closure(oop_closure) {}
+
+  // Used when _oop_closure couldn't be set in an initialization list.
+  void initialize(OopClosure* oop_closure) {
+    assert(_oop_closure == NULL, "Should only be called once");
+    _oop_closure = oop_closure;
+  }
+
+public:
+  KlassToOopClosure(OopClosure* oop_closure = NULL) : _oop_closure(oop_closure) {}
   virtual void do_klass(Klass* k);
 };
 
@@ -133,6 +143,29 @@ class CLDToOopClosure : public CLDClosure {
       _must_claim_cld(must_claim_cld) {}
 
   void do_cld(ClassLoaderData* cld);
+};
+
+// The base class for all concurrent marking closures,
+// that participates in class unloading.
+// It's used to proxy through the metadata to the oops defined in them.
+class MetadataAwareOopClosure: public ExtendedOopClosure {
+  KlassToOopClosure _klass_closure;
+
+ public:
+  MetadataAwareOopClosure() : ExtendedOopClosure() {
+    _klass_closure.initialize(this);
+  }
+  MetadataAwareOopClosure(ReferenceProcessor* rp) : ExtendedOopClosure(rp) {
+    _klass_closure.initialize(this);
+  }
+
+  virtual bool do_metadata()    { return do_metadata_nv(); }
+  inline  bool do_metadata_nv() { return true; }
+
+  virtual void do_klass(Klass* k);
+  void do_klass_nv(Klass* k);
+
+  virtual void do_class_loader_data(ClassLoaderData* cld);
 };
 
 // ObjectClosure is used for iterating through an object space
@@ -317,5 +350,17 @@ class SymbolClosure : public StackObj {
     *p = (Symbol*)(intptr_t(sym) | (intptr_t(*p) & 1));
   }
 };
+
+
+// Helper defines for ExtendOopClosure
+
+#define if_do_metadata_checked(closure, nv_suffix)       \
+  /* Make sure the non-virtual and the virtual versions match. */     \
+  assert(closure->do_metadata##nv_suffix() == closure->do_metadata(), \
+      "Inconsistency in do_metadata");                                \
+  if (closure->do_metadata##nv_suffix())
+
+#define assert_should_ignore_metadata(closure, nv_suffix)                                  \
+  assert(!closure->do_metadata##nv_suffix(), "Code to handle metadata is not implemented")
 
 #endif // SHARE_VM_MEMORY_ITERATOR_HPP

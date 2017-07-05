@@ -69,8 +69,8 @@ ISA_DIR=$(OPENJDK_TARGET_CPU_ISADIR)
 # Yet another name for arch used for an extra subdir below the jvm lib.
 # Uses i386 and amd64, instead of x86 and x86_64.
 LIBARCH=$(OPENJDK_TARGET_CPU_LEGACY_LIB)
-# Old name for OPENJDK_TARGET_CPU, uses i586 and amd64, instead of x86 and x86_64.
-ARCH=$(OPENJDK_TARGET_CPU_LEGACY)
+# Set the cpu architecture
+ARCH=$(OPENJDK_TARGET_CPU_ARCH)
 # Legacy setting for building for a 64 bit machine.
 # If yes then this expands to _LP64:=1
 @LP64@

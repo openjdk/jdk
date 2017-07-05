@@ -29,7 +29,6 @@
 #error "This file should only be included from thread.inline.hpp"
 #endif
 
-#include "runtime/atomic.inline.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadLocalStorage.hpp"
 
