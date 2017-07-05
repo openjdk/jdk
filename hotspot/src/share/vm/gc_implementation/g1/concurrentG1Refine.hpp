@@ -26,26 +26,9 @@
 class ConcurrentG1RefineThread;
 class G1RemSet;
 
-// What to do after a yield:
-enum PostYieldAction {
-  PYA_continue,  // Continue the traversal
-  PYA_restart,   // Restart
-  PYA_cancel     // It's been completed by somebody else: cancel.
-};
-
 class ConcurrentG1Refine: public CHeapObj {
-  ConcurrentG1RefineThread* _cg1rThread;
-
-  volatile jint _pya;
-  PostYieldAction _last_pya;
-
-  static bool _enabled;  // Protected by G1ConcRefine_mon.
-  unsigned _traversals;
-
-  // Number of cards processed during last refinement traversal.
-  unsigned _first_traversal;
-  unsigned _last_cards_during;
-
+  ConcurrentG1RefineThread** _threads;
+  int _n_threads;
   // The cache for card refinement.
   bool     _use_cache;
   bool     _def_use_cache;
@@ -74,37 +57,10 @@ class ConcurrentG1Refine: public CHeapObj {
   ~ConcurrentG1Refine();
 
   void init(); // Accomplish some initialization that has to wait.
+  void stop();
 
-  // Enabled Conc refinement, waking up thread if necessary.
-  void enable();
-
-  // Returns the number of traversals performed since this refiner was enabled.
-  unsigned disable();
-
-  // Requires G1ConcRefine_mon to be held.
-  bool enabled() { return _enabled; }
-
-  // Returns only when G1 concurrent refinement has been enabled.
-  void wait_for_ConcurrentG1Refine_enabled();
-
-  // Do one concurrent refinement pass over the card table.  Returns "true"
-  // if heuristics determine that another pass should be done immediately.
-  bool refine();
-
-  // Indicate that an in-progress refinement pass should start over.
-  void set_pya_restart();
-  // Indicate that an in-progress refinement pass should quit.
-  void set_pya_cancel();
-
-  // Get the appropriate post-yield action.  Also sets last_pya.
-  PostYieldAction get_pya();
-
-  // The last PYA read by "get_pya".
-  PostYieldAction get_last_pya();
-
-  bool do_traversal();
-
-  ConcurrentG1RefineThread* cg1rThread() { return _cg1rThread; }
+  // Iterate over the conc refine threads
+  void threads_do(ThreadClosure *tc);
 
   // If this is the first entry for the slot, writes into the cache and
   // returns NULL.  If it causes an eviction, returns the evicted pointer.
@@ -129,4 +85,6 @@ class ConcurrentG1Refine: public CHeapObj {
 
   void clear_and_record_card_counts();
   void print_final_card_counts();
+
+  static size_t thread_num();
 };

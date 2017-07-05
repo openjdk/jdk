@@ -158,6 +158,7 @@ class G1CollectedHeap : public SharedHeap {
   friend class RegionSorter;
   friend class CountRCClosure;
   friend class EvacPopObjClosure;
+  friend class G1ParCleanupCTTask;
 
   // Other related classes.
   friend class G1MarkSweep;
@@ -1190,6 +1191,16 @@ public:
 
   ConcurrentMark* concurrent_mark() const { return _cm; }
   ConcurrentG1Refine* concurrent_g1_refine() const { return _cg1r; }
+
+  // The dirty cards region list is used to record a subset of regions
+  // whose cards need clearing. The list if populated during the
+  // remembered set scanning and drained during the card table
+  // cleanup. Although the methods are reentrant, population/draining
+  // phases must not overlap. For synchronization purposes the last
+  // element on the list points to itself.
+  HeapRegion* _dirty_cards_region_list;
+  void push_dirty_cards_region(HeapRegion* hr);
+  HeapRegion* pop_dirty_cards_region();
 
 public:
   void stop_conc_gc_threads();
