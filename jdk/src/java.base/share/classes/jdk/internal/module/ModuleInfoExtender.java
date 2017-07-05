@@ -56,7 +56,7 @@ public final class ModuleInfoExtender {
     // the packages in the ModulePackages attribute
     private Set<String> packages;
 
-    // the value of the module_version in Module attribute
+    // the value for the module version in the Module attribute
     private Version version;
 
     // the value of the ModuleMainClass attribute
@@ -78,7 +78,11 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the set of packages for the ModulePackages attribute
+     * Sets the packages for the ModulePackages attribute
+     *
+     * @apiNote This method does not check that the package names are legal
+     * package names or that the set of packages is a super set of the
+     * packages in the module.
      */
     public ModuleInfoExtender packages(Set<String> packages) {
         this.packages = Collections.unmodifiableSet(packages);
@@ -86,7 +90,7 @@ public final class ModuleInfoExtender {
     }
 
     /**
-     * Sets the value of the module_version in Module attribute.
+     * Sets the value for the module version in the Module attribute
      */
     public ModuleInfoExtender version(Version version) {
         this.version = version;
@@ -95,6 +99,9 @@ public final class ModuleInfoExtender {
 
     /**
      * Sets the value of the ModuleMainClass attribute.
+     *
+     * @apiNote This method does not check that the main class is a legal
+     * class name in a named package.
      */
     public ModuleInfoExtender mainClass(String mainClass) {
         this.mainClass = mainClass;
@@ -133,7 +140,7 @@ public final class ModuleInfoExtender {
 
     /**
      * A ClassVisitor that supports adding class file attributes. If an
-     * attribute already exists then the first occurence of the attribute
+     * attribute already exists then the first occurrence of the attribute
      * is replaced.
      */
     private static class AttributeAddingClassVisitor extends ClassVisitor {

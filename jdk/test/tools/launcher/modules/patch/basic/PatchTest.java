@@ -105,22 +105,24 @@ public class PatchTest {
                                                 MODS_DIR.resolve("test"));
         assertTrue(compiled, "classes did not compile");
 
-        // javac -Xmodule:$MODULE -d patches1/$MODULE patches1/$MODULE/**
+        // javac --patch-module $MODULE=patches1/$MODULE -d patches1/$MODULE patches1/$MODULE/**
         // jar cf patches/$MODULE-1.jar -C patches1/$MODULE .
         for (Path src : Files.newDirectoryStream(SRC1_DIR)) {
             Path output = PATCHES1_DIR.resolve(src.getFileName());
             String mn = src.getFileName().toString();
-            compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
+            compiled  = CompilerUtils.compile(src, output,
+                                              "--patch-module", mn + "=" + src.toString());
             assertTrue(compiled, "classes did not compile");
             JarUtils.createJarFile(PATCHES_DIR.resolve(mn + "-1.jar"), output);
         }
 
-        // javac -Xmodule:$MODULE -d patches2/$MODULE patches2/$MODULE/**
+        // javac --patch-module $MODULE=patches2/$MODULE -d patches2/$MODULE patches2/$MODULE/**
         // jar cf patches/$MODULE-2.jar -C patches2/$MODULE .
         for (Path src : Files.newDirectoryStream(SRC2_DIR)) {
             Path output = PATCHES2_DIR.resolve(src.getFileName());
             String mn = src.getFileName().toString();
-            compiled  = CompilerUtils.compile(src, output, "-Xmodule:" + mn);
+            compiled  = CompilerUtils.compile(src, output,
+                                              "--patch-module", mn + "=" + src.toString());
             assertTrue(compiled, "classes did not compile");
             JarUtils.createJarFile(PATCHES_DIR.resolve(mn + "-2.jar"), output);
         }

@@ -25,6 +25,8 @@
 
 /**
  * Defines the Java Logging API.
+ *
+ * @since 9
  */
 module java.logging {
     exports java.util.logging;
