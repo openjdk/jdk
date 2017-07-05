@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class StubClassesPermitted
     extends Activatable implements Runnable, CanCreateStubs
 {
     public static boolean sameGroup = false;
-
+    private static int registryPort = -1;
     private static CanCreateStubs canCreateStubs = null;
     private static Registry registry = null;
 
@@ -76,8 +76,8 @@ public class StubClassesPermitted
         try {
             TestLibrary.suggestSecurityManager("java.lang.SecurityManager");
 
-            registry = java.rmi.registry.LocateRegistry.
-                createRegistry(TestLibrary.REGISTRY_PORT);
+            registry = TestLibrary.createRegistryOnUnusedPort();
+            registryPort = TestLibrary.getRegistryPort(registry);
 
             // must run with java.lang.SecurityManager or the test
             // result will be nullified if running with a build where
@@ -192,7 +192,7 @@ public class StubClassesPermitted
 
         // obtain reference to the test registry
         registry = java.rmi.registry.LocateRegistry.
-            getRegistry(TestLibrary.REGISTRY_PORT);
+            getRegistry(registryPort);
     }
 
     /**

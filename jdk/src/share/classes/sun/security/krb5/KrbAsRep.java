@@ -152,11 +152,10 @@ class KrbAsRep extends KrbKdcRep {
 
         DerValue encoding = new DerValue(enc_as_rep_part);
         EncASRepPart enc_part = new EncASRepPart(encoding);
-        rep.ticket.sname.setRealm(rep.ticket.realm);
         rep.encKDCRepPart = enc_part;
 
         ASReq req = asReq.getMessage();
-        check(req, rep);
+        check(true, req, rep);
 
         creds = new Credentials(
                                 rep.ticket,

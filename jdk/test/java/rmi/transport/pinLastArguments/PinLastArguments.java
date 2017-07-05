@@ -78,10 +78,15 @@ public class PinLastArguments {
         }
         impl = null;
 
-        System.gc();
-
-        if (ref.get() != null) {
-            throw new Error("TEST FAILED: impl not garbage collected");
+        // Might require multiple calls to System.gc() for weak-references
+        // processing to be complete. If the weak-reference is not cleared as
+        // expected we will hang here until timed out by the test harness.
+        while (true) {
+            System.gc();
+            Thread.sleep(20);
+            if (ref.get() == null) {
+                break;
+            }
         }
 
         System.err.println("TEST PASSED");
