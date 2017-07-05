@@ -291,7 +291,7 @@ public interface Processor {
      * @apiNote When running in an environment which supports modules,
      * processors are encouraged to include the module prefix when
      * describing their supported annotation types. The method {@link
-     * AbstractProcessor.getSupportedAnnotationTypes
+     * AbstractProcessor#getSupportedAnnotationTypes
      * AbstractProcessor.getSupportedAnnotationTypes} provides support
      * for stripping off the module prefix when running in an
      * environment without modules.

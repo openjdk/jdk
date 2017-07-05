@@ -1152,21 +1152,26 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   Symbol* h_name = k->name();
   assert(class_name == NULL || class_name == h_name, "name mismatch");
 
-  bool define_succeeded = false;
   // Add class just loaded
   // If a class loader supports parallel classloading handle parallel define requests
   // find_or_define_instance_class may return a different InstanceKlass
   if (is_parallelCapable(class_loader)) {
-    instanceKlassHandle defined_k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
-    if (k() == defined_k()) {
-      // we have won over other concurrent threads (if any) that are
-      // competing to define the same class.
-      define_succeeded = true;
+    instanceKlassHandle defined_k = find_or_define_instance_class(h_name, class_loader, k, THREAD);
+    if (!HAS_PENDING_EXCEPTION && defined_k() != k()) {
+      // If a parallel capable class loader already defined this class, register 'k' for cleanup.
+      assert(defined_k.not_null(), "Should have a klass if there's no exception");
+      loader_data->add_to_deallocate_list(k());
+      k = defined_k;
     }
-    k = defined_k;
   } else {
-    define_instance_class(k, CHECK_NULL);
-    define_succeeded = true;
+    define_instance_class(k, THREAD);
+  }
+
+  // If defining the class throws an exception register 'k' for cleanup.
+  if (HAS_PENDING_EXCEPTION) {
+    assert(k.not_null(), "Must have an instance klass here!");
+    loader_data->add_to_deallocate_list(k());
+    return NULL;
   }
 
   // Make sure we have an entry in the SystemDictionary on success
@@ -1518,8 +1523,16 @@ instanceKlassHandle SystemDictionary::load_instance_class(Symbol* class_name, Ha
     // find_or_define_instance_class may return a different InstanceKlass
     if (!k.is_null()) {
       instanceKlassHandle defined_k =
-        find_or_define_instance_class(class_name, class_loader, k, CHECK_(nh));
-      k = defined_k;
+        find_or_define_instance_class(class_name, class_loader, k, THREAD);
+      if (!HAS_PENDING_EXCEPTION && defined_k() != k()) {
+        // If a parallel capable class loader already defined this class, register 'k' for cleanup.
+        assert(defined_k.not_null(), "Should have a klass if there's no exception");
+        loader_data->add_to_deallocate_list(k());
+        k = defined_k;
+      } else if (HAS_PENDING_EXCEPTION) {
+        loader_data->add_to_deallocate_list(k());
+        return nh;
+      }
     }
     return k;
   } else {

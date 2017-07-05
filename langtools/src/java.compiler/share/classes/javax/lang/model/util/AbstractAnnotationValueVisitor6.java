@@ -79,9 +79,9 @@ public abstract class AbstractAnnotationValueVisitor6<R, P>
     protected AbstractAnnotationValueVisitor6() {}
 
     /**
-     * Visits an annotation value as if by passing itself to that
+     * Visits any annotation value as if by passing itself to that
      * value's {@link AnnotationValue#accept accept}.  The invocation
-     * {@code v.visit(av)} is equivalent to {@code av.accept(v, p)}.
+     * {@code v.visit(av, p)} is equivalent to {@code av.accept(v, p)}.
      * @param av {@inheritDoc}
      * @param p  {@inheritDoc}
      */
