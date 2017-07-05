@@ -74,7 +74,7 @@ import java.time.ZoneOffset;
 /**
  * The shared serialization delegate for this package.
  *
- * <h3>Implementation notes</h3>
+ * @implNote
  * This class is mutable and should be created once per serialization.
  *
  * @serial include

@@ -785,53 +785,55 @@ class ConstantPool {
         return new String(sig);
     }
 
-    static private int skipClassNameChars(String sig, int i) {
-        int len = sig.length();
-        for (; i < len; i++) {
-            char ch = sig.charAt(i);
-            if (ch <= ' ')  break;
-            if (ch >= ';' && ch <= '@')  break;
-        }
-        return i;
+    static private int skipTo(char semi, String sig, int i) {
+        i = sig.indexOf(semi, i);
+        return (i >= 0) ? i : sig.length();
     }
 
     static String[] structureSignature(String sig) {
-        sig = sig.intern();
-
-        int formLen = 0;
-        int nparts = 1;
-        for (int i = 0; i < sig.length(); i++) {
-            char ch = sig.charAt(i);
-            formLen++;
-            if (ch == 'L') {
-                nparts++;
-                int i2 = skipClassNameChars(sig, i+1);
-                i = i2-1;  // keep the semicolon in the form
-                int i3 = sig.indexOf('<', i+1);
-                if (i3 > 0 && i3 < i2)
-                    i = i3-1;
-            }
-        }
-        char[] form = new char[formLen];
-        if (nparts == 1) {
+        int firstl = sig.indexOf('L');
+        if (firstl < 0) {
             String[] parts = { sig };
             return parts;
         }
-        String[] parts = new String[nparts];
-        int j = 0;
-        int k = 1;
-        for (int i = 0; i < sig.length(); i++) {
-            char ch = sig.charAt(i);
-            form[j++] = ch;
-            if (ch == 'L') {
-                int i2 = skipClassNameChars(sig, i+1);
-                parts[k++] = sig.substring(i+1, i2);
-                i = i2;
-                --i;  // keep the semicolon in the form
+        // Segment the string like sig.split("L\\([^;<]*\\)").
+        // N.B.: Previous version of this code did a more complex match,
+        // to next ch < ' ' or ch in [';'..'@'].  The only important
+        // characters are ';' and '<', since they are part of the
+        // signature syntax.
+        // Examples:
+        //   "(Ljava/lang/Object;IJLLoo;)V" => {"(L;IJL;)V", "java/lang/Object", "Loo"}
+        //   "Ljava/util/List<Ljava/lang/String;>;" => {"L<L;>;", "java/util/List", "java/lang/String"}
+        char[] form = null;
+        String[] parts = null;
+        for (int pass = 0; pass <= 1; pass++) {
+            // pass 0 is a sizing pass, pass 1 packs the arrays
+            int formPtr = 0;
+            int partPtr = 1;
+            int nextsemi = 0, nextangl = 0;  // next ';' or '<', or zero, or sigLen
+            int lastj = 0;
+            for (int i = firstl + 1, j; i > 0; i = sig.indexOf('L', j) + 1) {
+                // sig[i-1] is 'L', while sig[j] will be the first ';' or '<' after it
+                // each part is in sig[i .. j-1]
+                if (nextsemi < i)  nextsemi = skipTo(';', sig, i);
+                if (nextangl < i)  nextangl = skipTo('<', sig, i);
+                j = (nextsemi < nextangl ? nextsemi : nextangl);
+                if (pass != 0) {
+                    sig.getChars(lastj, i, form, formPtr);
+                    parts[partPtr] = sig.substring(i, j);
+                }
+                formPtr += (i - lastj);
+                partPtr += 1;
+                lastj = j;
             }
+            if (pass != 0) {
+                sig.getChars(lastj, sig.length(), form, formPtr);
+                break;
+            }
+            formPtr += (sig.length() - lastj);
+            form = new char[formPtr];
+            parts = new String[partPtr];
         }
-        assert(j == formLen);
-        assert(k == parts.length);
         parts[0] = new String(form);
         //assert(flattenSignature(parts).equals(sig));
         return parts;

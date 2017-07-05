@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,9 +643,7 @@ final class Config {
     //
 
     private String parseLibrary(String keyword) throws IOException {
-        checkDup(keyword);
-        parseEquals();
-        String lib = parseLine();
+        String lib = parseStringEntry(keyword);
         lib = expand(lib);
         int i = lib.indexOf("/$ISA/");
         if (i != -1) {

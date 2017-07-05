@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,8 @@ static const int BAD_MAGIC  = ENOEXEC;
 static const char * BAD_EXEC_MSG     = "jexec failed";
 static const char * CRAZY_EXEC_MSG   = "missing args";
 static const char * MISSING_JAVA_MSG = "can't locate java";
+static const char * BAD_ARG_MSG      = "incorrect number of arguments";
+static const char * MEM_FAILED_MSG   = "memory allocation failed";
 #ifdef __linux__
 static const char * BAD_PATHNAME_MSG = "invalid path";
 static const char * BAD_FILE_MSG     = "invalid file";
@@ -156,6 +158,7 @@ int main(int argc, const char * argv[]) {
     const char ** nargv = NULL;          /* new args array       */
     int           nargc = 0;             /* new args array count */
     int           argi  = 0;             /* index into old array */
+    size_t        alen  = 0;             /* length of new array */
 
     /* Make sure we have something to work with */
     if ((argc < 1) || (argv == NULL)) {
@@ -168,8 +171,14 @@ int main(int argc, const char * argv[]) {
     if (getJavaPath(argv[argi++], java, RELATIVE_DEPTH) != 0) {
         errorExit(errno, MISSING_JAVA_MSG);
     }
-
-    nargv = (const char **) malloc((argc + 2) * (sizeof (const char *)));
+    alen = (argc + 2) * (sizeof (const char *));
+    if (alen <= 0 || alen > INT_MAX / sizeof(char *)) {
+        errorExit(errno, BAD_ARG_MSG);
+    }
+    nargv = (const char **) malloc(alen);
+    if (nargv == NULL) {
+        errorExit(errno, MEM_FAILED_MSG);
+    }
     nargv[nargc++] = java;
 
 #ifdef __linux__

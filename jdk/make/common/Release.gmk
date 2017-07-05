@@ -969,26 +969,35 @@ else
 
 # Create the list of db *.zip files to bundle with jdk
 ABS_DB_PATH  :=$(call FullPath,$(CLOSED_SHARE_SRC)/db)
-DB_ZIP_LIST = $(shell $(LS) $(ABS_DB_PATH)/*.zip 2>/dev/null)
+DB_BINARY_BUNDLE = $(shell $(LS) $(ABS_DB_PATH)/db-derby-*-bin.zip 2>/dev/null)
 
 # Java DB image. Move the Java DB demo directory into the JDK's demo
 # dir and in the process, rename it to db.  Also remove index.html,
-# since it presumes docs are co-located. Also remove register.html (no
-# longer relevant).
-initial-image-jdk-db: $(DB_ZIP_LIST)
+# since it presumes docs are co-located, javadoc, docs and tests and
+# update the copyright year of the JDK READMEs to that of the release.
+initial-image-jdk-db: $(DB_BINARY_BUNDLE)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/db
-	for d in $(DB_ZIP_LIST); do \
-          ($(CD) $(JDK_IMAGE_DIR)/db && $(UNZIP) -o $$d); \
-	done
-	$(CP) $(ABS_DB_PATH)/README-JDK.html $(JDK_IMAGE_DIR)/db
+	$(CD) $(JDK_IMAGE_DIR)/db && $(UNZIP) -o $(DB_BINARY_BUNDLE)
+	$(CD) $(JDK_IMAGE_DIR)/db && $(MV) db-derby-*-bin/* .
+	$(CD) $(JDK_IMAGE_DIR)/db && $(RM) -r db-derby-*-bin
+	$(CAT) $(ABS_DB_PATH)/README-JDK.html  | \
+		$(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > \
+		$(JDK_IMAGE_DIR)/db/README-JDK.html
+	$(CAT) $(ABS_DB_PATH)/3RDPARTY  | \
+		$(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > \
+		$(JDK_IMAGE_DIR)/db/3RDPARTY
 ifndef NO_DEMOS
-	$(RM) -rf $(DEMODIR)/db
+	$(RM) -r $(DEMODIR)/db
 	$(MV) $(JDK_IMAGE_DIR)/db/demo $(DEMODIR)/db
-	$(CP) $(ABS_DB_PATH)/README-JDK-DEMOS.html $(DEMODIR)/db/
+	$(CAT) $(ABS_DB_PATH)/README-JDK-DEMOS.html  | \
+		$(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > \
+		$(DEMODIR)/db/README-JDK-DEMOS.html
 else
-	$(RM) -rf $(JDK_IMAGE_DIR)/db/demo
+	$(RM) -r $(JDK_IMAGE_DIR)/db/demo
 endif
-	$(RM) $(JDK_IMAGE_DIR)/db/index.html $(JDK_IMAGE_DIR)/db/register.html
+	@# remove stuff from original distro we don't want
+	$(RM) $(JDK_IMAGE_DIR)/db/index.html $(JDK_IMAGE_DIR)/db/KEYS
+	$(RM) -r $(JDK_IMAGE_DIR)/db/{docs,javadoc,test}
 endif
 
 # The launcher source files we need for src.zip

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
-
+import java.util.Objects;
 
 /** Implementing class for ParameterizedType interface. */
 
@@ -47,9 +47,7 @@ public class ParameterizedTypeImpl implements ParameterizedType {
                                   Type ownerType) {
         this.actualTypeArguments = actualTypeArguments;
         this.rawType             = rawType;
-        if (ownerType != null) {
-            this.ownerType = ownerType;
-        } else { this.ownerType = rawType.getDeclaringClass();}
+        this.ownerType = (ownerType != null) ? ownerType : rawType.getDeclaringClass();
         validateConstructorArguments();
     }
 
@@ -62,7 +60,6 @@ public class ParameterizedTypeImpl implements ParameterizedType {
         for (int i = 0; i < actualTypeArguments.length; i++) {
             // check actuals against formals' bounds
         }
-
     }
 
     /**
@@ -189,14 +186,9 @@ public class ParameterizedTypeImpl implements ParameterizedType {
                 return ownerEquality && rawEquality && typeArgEquality;
             }
 
-
             return
-                (ownerType == null ?
-                 thatOwner == null :
-                 ownerType.equals(thatOwner)) &&
-                (rawType == null ?
-                 thatRawType == null :
-                 rawType.equals(thatRawType)) &&
+                Objects.equals(ownerType, thatOwner) &&
+                Objects.equals(rawType, thatRawType) &&
                 Arrays.equals(actualTypeArguments, // avoid clone
                               that.getActualTypeArguments());
         } else
@@ -207,8 +199,8 @@ public class ParameterizedTypeImpl implements ParameterizedType {
     public int hashCode() {
         return
             Arrays.hashCode(actualTypeArguments) ^
-            (ownerType == null ? 0 : ownerType.hashCode() ) ^
-            (rawType == null   ? 0 : rawType.hashCode() );
+            Objects.hashCode(ownerType) ^
+            Objects.hashCode(rawType);
     }
 
     public String toString() {
@@ -239,10 +231,7 @@ public class ParameterizedTypeImpl implements ParameterizedType {
             for(Type t: actualTypeArguments) {
                 if (!first)
                     sb.append(", ");
-                if (t instanceof Class)
-                    sb.append(((Class)t).getName());
-                else
-                    sb.append(t.toString());
+                sb.append(t.getTypeName());
                 first = false;
             }
             sb.append(">");

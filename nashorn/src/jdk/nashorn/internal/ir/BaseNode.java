@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR base for accessing/indexing nodes.
@@ -50,15 +49,14 @@ public abstract class BaseNode extends Node implements FunctionCall, TypeOverrid
     /**
      * Constructor
      *
-     * @param source source code
      * @param token  token
      * @param finish finish
      * @param base   base node
      * @param isFunction is this a function
      * @param hasCallSiteType does this access have a callsite type
      */
-    public BaseNode(final Source source, final long token, final int finish, final Node base, final boolean isFunction, final boolean hasCallSiteType) {
-        super(source, token, base.getStart(), finish);
+    public BaseNode(final long token, final int finish, final Node base, final boolean isFunction, final boolean hasCallSiteType) {
+        super(token, base.getStart(), finish);
         this.base            = base;
         this.isFunction      = isFunction;
         this.hasCallSiteType = hasCallSiteType;

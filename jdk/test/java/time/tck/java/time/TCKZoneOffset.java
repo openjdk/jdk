@@ -73,8 +73,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;
 import java.time.temporal.TemporalAccessor;
@@ -617,6 +619,45 @@ public class TCKZoneOffset extends AbstractDateTimeTest {
         assertEquals(offset1.hashCode() == offset1.hashCode(), true);
         assertEquals(offset2.hashCode() == offset2.hashCode(), true);
         assertEquals(offset2.hashCode() == offset2b.hashCode(), true);
+    }
+
+    //-----------------------------------------------------------------------
+    // adjustInto()
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_adjustInto_ZonedDateTime() {
+        ZoneOffset base = ZoneOffset.ofHoursMinutesSeconds(1, 1, 1);
+        for (String zoneId : ZoneId.getAvailableZoneIds()) {
+            //Do not change offset of ZonedDateTime after adjustInto()
+            ZonedDateTime zonedDateTime_target = ZonedDateTime.of(LocalDate.of(1909, 2, 2), LocalTime.of(10, 10, 10), ZoneId.of(zoneId));
+            ZonedDateTime zonedDateTime_result = (ZonedDateTime)(base.adjustInto(zonedDateTime_target));
+            assertEquals(zonedDateTime_target.getOffset(), zonedDateTime_result.getOffset());
+
+            OffsetDateTime offsetDateTime_target = zonedDateTime_target.toOffsetDateTime();
+            OffsetDateTime offsetDateTime_result = (OffsetDateTime)(base.adjustInto(offsetDateTime_target));
+            assertEquals(base, offsetDateTime_result.getOffset());
+        }
+    }
+
+    @Test
+    public void test_adjustInto_OffsetDateTime() {
+        ZoneOffset base = ZoneOffset.ofHoursMinutesSeconds(1, 1, 1);
+        for (int i=-18; i<=18; i++) {
+            OffsetDateTime offsetDateTime_target = OffsetDateTime.of(LocalDate.of(1909, 2, 2), LocalTime.of(10, 10, 10), ZoneOffset.ofHours(i));
+            OffsetDateTime offsetDateTime_result = (OffsetDateTime)base.adjustInto(offsetDateTime_target);
+            assertEquals(base, offsetDateTime_result.getOffset());
+
+            //Do not change offset of ZonedDateTime after adjustInto()
+            ZonedDateTime zonedDateTime_target = offsetDateTime_target.toZonedDateTime();
+            ZonedDateTime zonedDateTime_result = (ZonedDateTime)(base.adjustInto(zonedDateTime_target));
+            assertEquals(zonedDateTime_target.getOffset(), zonedDateTime_result.getOffset());
+        }
+    }
+
+    @Test(expectedExceptions=DateTimeException.class)
+    public void test_adjustInto_dateOnly() {
+        ZoneOffset base = ZoneOffset.ofHoursMinutesSeconds(1, 1, 1);
+        base.adjustInto((LocalDate.of(1909, 2, 2)));
     }
 
     //-----------------------------------------------------------------------

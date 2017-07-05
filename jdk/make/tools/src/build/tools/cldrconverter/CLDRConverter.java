@@ -34,6 +34,8 @@ import java.nio.file.Path;
 import java.util.*;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
 
 /**
@@ -234,6 +236,17 @@ public class CLDRConverter {
         }
     }
 
+    /**
+     * Configure the parser to allow access to DTDs on the file system.
+     */
+    private static void enableFileAccess(SAXParser parser) throws SAXNotSupportedException {
+        try {
+            parser.setProperty("http://javax.xml.XMLConstants/property/accessExternalDTD", "file");
+        } catch (SAXNotRecognizedException ignore) {
+            // property requires >= JAXP 1.5
+        }
+    }
+
     private static List<Bundle> readBundleList() throws Exception {
         ResourceBundle.Control defCon = ResourceBundle.Control.getControl(ResourceBundle.Control.FORMAT_DEFAULT);
         List<Bundle> retList = new ArrayList<>();
@@ -279,6 +292,7 @@ public class CLDRConverter {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         factory.setValidating(true);
         SAXParser parser = factory.newSAXParser();
+        enableFileAccess(parser);
         LDMLParseHandler handler = new LDMLParseHandler(id);
         File file = new File(SOURCE_FILE_DIR + File.separator + id + ".xml");
         if (!file.exists()) {
@@ -314,6 +328,7 @@ public class CLDRConverter {
         SAXParserFactory factorySuppl = SAXParserFactory.newInstance();
         factorySuppl.setValidating(true);
         SAXParser parserSuppl = factorySuppl.newSAXParser();
+        enableFileAccess(parserSuppl);
         handlerSuppl = new SupplementDataParseHandler();
         File fileSupply = new File(SPPL_SOURCE_FILE);
         parserSuppl.parse(fileSupply, handlerSuppl);
@@ -322,6 +337,7 @@ public class CLDRConverter {
         SAXParserFactory numberingParser = SAXParserFactory.newInstance();
         numberingParser.setValidating(true);
         SAXParser parserNumbering = numberingParser.newSAXParser();
+        enableFileAccess(parserNumbering);
         handlerNumbering = new NumberingSystemsParseHandler();
         File fileNumbering = new File(NUMBERING_SOURCE_FILE);
         parserNumbering.parse(fileNumbering, handlerNumbering);
@@ -330,6 +346,7 @@ public class CLDRConverter {
         SAXParserFactory metazonesParser = SAXParserFactory.newInstance();
         metazonesParser.setValidating(true);
         SAXParser parserMetaZones = metazonesParser.newSAXParser();
+        enableFileAccess(parserMetaZones);
         handlerMetaZones = new MetaZonesParseHandler();
         File fileMetaZones = new File(METAZONES_SOURCE_FILE);
         parserNumbering.parse(fileMetaZones, handlerMetaZones);

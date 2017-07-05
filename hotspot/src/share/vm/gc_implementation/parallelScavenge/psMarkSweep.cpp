@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,8 @@ void PSMarkSweep::invoke(bool maximum_heap_compaction) {
   const bool clear_all_soft_refs =
     heap->collector_policy()->should_clear_all_soft_refs();
 
-  int count = (maximum_heap_compaction)?1:MarkSweepAlwaysCompactCount;
-  IntFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
+  uint count = maximum_heap_compaction ? 1 : MarkSweepAlwaysCompactCount;
+  UIntFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
   PSMarkSweep::invoke_no_policy(clear_all_soft_refs || maximum_heap_compaction);
 }
 
@@ -277,18 +277,36 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
           young_gen->from_space()->capacity_in_bytes() +
           young_gen->to_space()->capacity_in_bytes(),
           "Sizes of space in young gen are out-of-bounds");
+
+        size_t young_live = young_gen->used_in_bytes();
+        size_t eden_live = young_gen->eden_space()->used_in_bytes();
+        size_t old_live = old_gen->used_in_bytes();
+        size_t cur_eden = young_gen->eden_space()->capacity_in_bytes();
+        size_t max_old_gen_size = old_gen->max_gen_size();
         size_t max_eden_size = young_gen->max_size() -
           young_gen->from_space()->capacity_in_bytes() -
           young_gen->to_space()->capacity_in_bytes();
-        size_policy->compute_generation_free_space(young_gen->used_in_bytes(),
-                                 young_gen->eden_space()->used_in_bytes(),
-                                 old_gen->used_in_bytes(),
-                                 young_gen->eden_space()->capacity_in_bytes(),
-                                 old_gen->max_gen_size(),
-                                 max_eden_size,
-                                 true /* full gc*/,
-                                 gc_cause,
-                                 heap->collector_policy());
+
+        // Used for diagnostics
+        size_policy->clear_generation_free_space_flags();
+
+        size_policy->compute_generation_free_space(young_live,
+                                                   eden_live,
+                                                   old_live,
+                                                   cur_eden,
+                                                   max_old_gen_size,
+                                                   max_eden_size,
+                                                   true /* full gc*/);
+
+        size_policy->check_gc_overhead_limit(young_live,
+                                             eden_live,
+                                             max_old_gen_size,
+                                             max_eden_size,
+                                             true /* full gc*/,
+                                             gc_cause,
+                                             heap->collector_policy());
+
+        size_policy->decay_supplemental_growth(true /* full gc*/);
 
         heap->resize_old_gen(size_policy->calculated_old_free_size_in_bytes());
 

@@ -94,7 +94,7 @@ import sun.util.locale.provider.LocaleResources;
 /**
  * A provider to obtain the textual form of a date-time field.
  *
- * <h3>Specification for implementors</h3>
+ * @implSpec
  * Implementations must be thread-safe.
  * Implementations should cache the textual information.
  *

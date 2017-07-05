@@ -121,16 +121,16 @@ public class JoniRegExp extends RegExp {
 
     class JoniMatcher implements RegExpMatcher {
         final String input;
-        final Matcher matcher;
+        final Matcher joniMatcher;
 
         JoniMatcher(final String input) {
             this.input = input;
-            this.matcher = regex.matcher(input.toCharArray());
+            this.joniMatcher = regex.matcher(input.toCharArray());
         }
 
         @Override
         public boolean search(final int start) {
-            return matcher.search(start, input.length(), Option.NONE) > -1;
+            return joniMatcher.search(start, input.length(), Option.NONE) > -1;
         }
 
         @Override
@@ -140,27 +140,27 @@ public class JoniRegExp extends RegExp {
 
         @Override
         public int start() {
-            return matcher.getBegin();
+            return joniMatcher.getBegin();
         }
 
         @Override
         public int start(final int group) {
-            return group == 0 ? start() : matcher.getRegion().beg[group];
+            return group == 0 ? start() : joniMatcher.getRegion().beg[group];
         }
 
         @Override
         public int end() {
-            return matcher.getEnd();
+            return joniMatcher.getEnd();
         }
 
         @Override
         public int end(final int group) {
-            return group == 0 ? end() : matcher.getRegion().end[group];
+            return group == 0 ? end() : joniMatcher.getRegion().end[group];
         }
 
         @Override
         public String group() {
-            return input.substring(matcher.getBegin(), matcher.getEnd());
+            return input.substring(joniMatcher.getBegin(), joniMatcher.getEnd());
         }
 
         @Override
@@ -168,13 +168,13 @@ public class JoniRegExp extends RegExp {
             if (group == 0) {
                 return group();
             }
-            final Region region = matcher.getRegion();
+            final Region region = joniMatcher.getRegion();
             return input.substring(region.beg[group], region.end[group]);
         }
 
         @Override
         public int groupCount() {
-            final Region region = matcher.getRegion();
+            final Region region = joniMatcher.getRegion();
             return region == null ? 0 : region.numRegs - 1;
         }
     }

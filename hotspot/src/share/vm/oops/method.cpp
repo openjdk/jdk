@@ -832,7 +832,9 @@ void Method::link_method(methodHandle h_method, TRAPS) {
   assert(entry != NULL, "interpreter entry must be non-null");
   // Sets both _i2i_entry and _from_interpreted_entry
   set_interpreter_entry(entry);
-  if (is_native() && !is_method_handle_intrinsic()) {
+
+  // Don't overwrite already registered native entries.
+  if (is_native() && !has_native_function()) {
     set_native_function(
       SharedRuntime::native_method_throw_unsatisfied_link_error_entry(),
       !native_bind_event_is_interesting);
@@ -1581,7 +1583,7 @@ int Method::backedge_count() {
 }
 
 int Method::highest_comp_level() const {
-  MethodData* mdo = method_data();
+  const MethodData* mdo = method_data();
   if (mdo != NULL) {
     return mdo->highest_comp_level();
   } else {
@@ -1590,7 +1592,7 @@ int Method::highest_comp_level() const {
 }
 
 int Method::highest_osr_comp_level() const {
-  MethodData* mdo = method_data();
+  const MethodData* mdo = method_data();
   if (mdo != NULL) {
     return mdo->highest_osr_comp_level();
   } else {

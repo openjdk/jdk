@@ -297,7 +297,7 @@ public final class NativeArray extends ScriptObject {
     @Getter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public static Object length(final Object self) {
         if (isArray(self)) {
-            return ((NativeArray) self).getArray().length() & JSType.MAX_UINT;
+            return ((ScriptObject) self).getArray().length() & JSType.MAX_UINT;
         }
 
         return 0;
@@ -311,7 +311,7 @@ public final class NativeArray extends ScriptObject {
     @Setter(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
     public static void length(final Object self, final Object length) {
         if (isArray(self)) {
-            ((NativeArray) self).setLength(validLength(length, true));
+            ((ScriptObject) self).setLength(validLength(length, true));
         }
     }
 
@@ -642,10 +642,9 @@ public final class NativeArray extends ScriptObject {
             final boolean      strict = sobj.isStrictContext();
 
             if (bulkable(sobj)) {
-                final NativeArray nativeArray = (NativeArray)sobj;
-                if (nativeArray.getArray().length() + args.length <= JSType.MAX_UINT) {
-                    final ArrayData newData = nativeArray.getArray().push(nativeArray.isStrictContext(), args);
-                    nativeArray.setArray(newData);
+                if (sobj.getArray().length() + args.length <= JSType.MAX_UINT) {
+                    final ArrayData newData = sobj.getArray().push(sobj.isStrictContext(), args);
+                    sobj.setArray(newData);
                     return newData.length();
                 }
                 //fallthru
@@ -780,8 +779,7 @@ public final class NativeArray extends ScriptObject {
         }
 
         if (bulkable(sobj)) {
-            final NativeArray narray = (NativeArray) sobj;
-            return new NativeArray(narray.getArray().slice(k, finale));
+            return new NativeArray(sobj.getArray().slice(k, finale));
         }
 
         final NativeArray copy = new NativeArray(0);
@@ -1001,11 +999,10 @@ public final class NativeArray extends ScriptObject {
         }
 
         if (bulkable(sobj)) {
-            final NativeArray nativeArray = (NativeArray) sobj;
-            nativeArray.getArray().shiftRight(items.length);
+            sobj.getArray().shiftRight(items.length);
 
             for (int j = 0; j < items.length; j++) {
-                nativeArray.setArray(nativeArray.getArray().set(j, items[j], sobj.isStrictContext()));
+                sobj.setArray(sobj.getArray().set(j, items[j], sobj.isStrictContext()));
             }
         } else {
             for (long k = len; k > 0; k--) {

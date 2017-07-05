@@ -35,7 +35,6 @@ import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * UnaryNode nodes represent single operand operations.
@@ -48,24 +47,23 @@ public final class UnaryNode extends Node implements Assignment<Node> {
     /**
      * Constructor
      *
-     * @param source the source
      * @param token  token
      * @param rhs    expression
      */
-    public UnaryNode(final Source source, final long token, final Node rhs) {
-        this(source, token, Math.min(rhs.getStart(), Token.descPosition(token)), Math.max(Token.descPosition(token) + Token.descLength(token), rhs.getFinish()), rhs);
+    public UnaryNode(final long token, final Node rhs) {
+        this(token, Math.min(rhs.getStart(), Token.descPosition(token)), Math.max(Token.descPosition(token) + Token.descLength(token), rhs.getFinish()), rhs);
     }
 
     /**
      * Constructor
-     * @param source the source
+     *
      * @param token  token
      * @param start  start
      * @param finish finish
      * @param rhs    expression
      */
-    public UnaryNode(final Source source, final long token, final int start, final int finish, final Node rhs) {
-        super(source, token, start, finish);
+    public UnaryNode(final long token, final int start, final int finish, final Node rhs) {
+        super(token, start, finish);
         this.rhs = rhs;
     }
 

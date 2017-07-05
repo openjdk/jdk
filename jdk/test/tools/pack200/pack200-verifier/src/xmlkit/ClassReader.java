@@ -69,6 +69,9 @@ import com.sun.tools.classfile.StackMapTable_attribute;
 import com.sun.tools.classfile.StackMapTable_attribute.*;
 import com.sun.tools.classfile.StackMap_attribute;
 import com.sun.tools.classfile.Synthetic_attribute;
+import com.sun.tools.classfile.TypeAnnotation;
+import com.sun.tools.classfile.TypeAnnotation.Position;
+import static com.sun.tools.classfile.TypeAnnotation.TargetType.THROWS;
 import java.util.*;
 import java.io.*;
 import java.util.jar.JarEntry;
@@ -851,6 +854,7 @@ class ConstantPoolVisitor implements ConstantPool.Visitor<String, Integer> {
     }
 }
 
+
 class AttributeVisitor implements Attribute.Visitor<Element, Element> {
     final ClassFile cf;
     final ClassReader x;
@@ -1088,23 +1092,26 @@ class AttributeVisitor implements Attribute.Visitor<Element, Element> {
         }
         return null; // already added to parent
     }
+    private void parseAnnotation(Annotation anno, Element p) {
+        Element ea = new Element("Annotation");
+        ea.setAttr("name", "" + x.getCpString(anno.type_index));
+        for (Annotation.element_value_pair evp : anno.element_value_pairs) {
+            Element evpe = new Element("Element");
+            evpe.setAttr("tag", "" + evp.value.tag);
+            evpe.setAttr("value", x.getCpString(evp.element_name_index));
+            Element child = aev.visit(evp.value, evpe);
+            if (child != null) {
+                evpe.add(child);
+            }
+            ea.add(evpe);
+        }
+        ea.trimToSize();
+        p.add(ea);
+    }
 
     private void parseAnnotations(Annotation[] ra, Element p) {
-         for (Annotation anno : ra) {
-            Element ea = new Element("Member");
-            ea.setAttr("name", "" + x.getCpString(anno.type_index));
-            for (Annotation.element_value_pair evp : anno.element_value_pairs) {
-                Element evpe = new Element("Element");
-                evpe.setAttr("tag", "" + evp.value.tag);
-                evpe.setAttr("value", x.getCpString(evp.element_name_index));
-                Element child = aev.visit(evp.value, evpe);
-                if (child != null) {
-                    evpe.add(child);
-                }
-                ea.add(evpe);
-            }
-            ea.trimToSize();
-            p.add(ea);
+        for (Annotation anno : ra) {
+            parseAnnotation(anno, p);
         }
     }
 
@@ -1146,6 +1153,145 @@ class AttributeVisitor implements Attribute.Visitor<Element, Element> {
         for (Annotation[] pa : ripa.parameter_annotations) {
             parseAnnotations(pa, e);
         }
+        p.add(e);
+        return null;
+    }
+
+    private void parsePosition(Position ap, Element p) {
+        Element te = new Element();
+        switch (ap.type) {
+            case CLASS_TYPE_PARAMETER: // 0x00
+                te.setName("CLASS_TYPE_PARAMETER");
+                te.setAttr("idx", "" + ap.parameter_index);
+                break;
+            case METHOD_TYPE_PARAMETER: // 0x01
+                te.setName("METHOD_TYPE_PARAMETER");
+                te.setAttr("idx", "" + ap.parameter_index);
+                break;
+            case CLASS_EXTENDS: // 0x10
+                te.setName("CLASS_EXTENDS");
+                te.setAttr("idx", "" + ap.type_index);
+                break;
+            case CLASS_TYPE_PARAMETER_BOUND: // 0x11
+                te.setName("CLASS_TYPE_PARAMETER_BOUND");
+                te.setAttr("idx1", "" + ap.parameter_index);
+                te.setAttr("idx2", "" + ap.bound_index);
+                break;
+            case METHOD_TYPE_PARAMETER_BOUND: // 0x12
+                te.setName("METHOD_TYPE_PARAMETER_BOUND");
+                te.setAttr("idx1", "" + ap.parameter_index);
+                te.setAttr("idx2", "" + ap.bound_index);
+                break;
+            case FIELD: // 0x13
+                te.setName("FIELD");
+                break;
+            case METHOD_RETURN: // 0x14
+                te.setName("METHOD_RETURN");
+                break;
+            case METHOD_RECEIVER: // 0x15
+                te.setName("METHOD_RECEIVER");
+                break;
+            case METHOD_FORMAL_PARAMETER: // 0x16
+                te.setName("METHOD_FORMAL_PARAMETER");
+                te.setAttr("idx", "" + ap.parameter_index);
+                break;
+            case THROWS: // 0x17
+                te.setName("THROWS");
+                te.setAttr("idx", "" + ap.type_index);
+                break;
+            case LOCAL_VARIABLE: // 0x40
+                te.setName("LOCAL_VARIABLE");
+                for (int i = 0; i < ap.lvarIndex.length; i++) {
+                    te.setAttr("lvar_idx_" + i, "" + ap.lvarIndex[i]);
+                    te.setAttr("lvar_len_" + i, "" + ap.lvarLength[i]);
+                    te.setAttr("lvar_off_" + i, "" + ap.lvarOffset[i]);
+                }
+                break;
+            case RESOURCE_VARIABLE: // 0x41
+                te.setName("RESOURCE_VARIABLE");
+                for (int i = 0; i < ap.lvarIndex.length ; i++) {
+                    te.setAttr("lvar_idx_" + i, "" + ap.lvarIndex[i]);
+                    te.setAttr("lvar_len_" + i, "" + ap.lvarLength[i]);
+                    te.setAttr("lvar_off_" + i, "" + ap.lvarOffset[i]);
+                }
+                break;
+            case EXCEPTION_PARAMETER: // 0x42
+                te.setName("EXCEPTION_PARAMETER");
+                te.setAttr("idx", "" + ap.exception_index);
+                break;
+            case INSTANCEOF: // 0x43
+                te.setName("INSTANCE_OF");
+                te.setAttr("off", "" + ap.offset);
+                break;
+            case NEW: // 0x44
+                te.setName("NEW");
+                te.setAttr("off", "" + ap.offset);
+                break;
+            case CONSTRUCTOR_REFERENCE: // 0x45
+                te.setName("CONSTRUCTOR_REFERENCE_RECEIVER");
+                te.setAttr("off", "" + ap.offset);
+                break;
+            case METHOD_REFERENCE: // 0x46
+                te.setName("METHOD_REFERENCE_RECEIVER");
+                te.setAttr("off", "" + ap.offset);
+                break;
+            case CAST: // 0x47
+                te.setName("CAST");
+                te.setAttr("off", "" + ap.offset);
+                te.setAttr("idx", "" + ap.type_index);
+                break;
+            case CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT: // 0x48
+                te.setName("CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT");
+                te.setAttr("off", "" + ap.offset);
+                te.setAttr("idx", "" + ap.type_index);
+                break;
+            case METHOD_INVOCATION_TYPE_ARGUMENT: // 0x49
+                te.setName("METHOD_INVOCATION_TYPE_ARGUMENT");
+                te.setAttr("off", "" + ap.offset);
+                te.setAttr("idx", "" + ap.type_index);
+                break;
+            case CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT: // 0x4A
+                te.setName("CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT");
+                te.setAttr("off", "" + ap.offset);
+                te.setAttr("idx", "" + ap.type_index);
+                break;
+            case METHOD_REFERENCE_TYPE_ARGUMENT: // 0x4B
+                te.setName("METHOD_REFERENCE_TYPE_ARGUMENT");
+                te.setAttr("off", "" + ap.offset);
+                te.setAttr("idx", "" + ap.type_index);
+                break;
+            default:
+                throw new RuntimeException("not implemented");
+        }
+        te.trimToSize();
+        p.add(te);
+    }
+    private void parseTypeAnnotations(TypeAnnotation pa, Element p) {
+        Element pta = new Element("RuntimeVisibleTypeAnnotation");
+        p.add(pta);
+        Position pos = pa.position;
+        parsePosition(pos, pta);
+        parseAnnotation(pa.annotation, pta);
+    }
+
+    @Override
+    public Element visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute rvta, Element p) {
+        Element e = new Element(x.getCpString(rvta.attribute_name_index));
+        for (TypeAnnotation pa : rvta.annotations) {
+            parseTypeAnnotations(pa, e);
+        }
+        e.sort();
+        p.add(e);
+        return null;
+    }
+
+    @Override
+    public Element visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute rita, Element p) {
+        Element e = new Element(x.getCpString(rita.attribute_name_index));
+        for (TypeAnnotation pa : rita.annotations) {
+            parseTypeAnnotations(pa, e);
+        }
+        e.sort();
         p.add(e);
         return null;
     }
@@ -1215,21 +1361,6 @@ class AttributeVisitor implements Attribute.Visitor<Element, Element> {
         e.trimToSize();
         p.add(e);
         return null;
-    }
-
-    /*
-     * TODO
-     * add these two for now to keep the compiler happy, we will implement
-     * these along with the JSR-308 changes.
-     */
-    @Override
-    public Element visitRuntimeVisibleTypeAnnotations(RuntimeVisibleTypeAnnotations_attribute rvta, Element p) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public Element visitRuntimeInvisibleTypeAnnotations(RuntimeInvisibleTypeAnnotations_attribute rita, Element p) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 }
 

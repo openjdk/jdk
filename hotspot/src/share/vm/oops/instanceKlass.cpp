@@ -2724,7 +2724,7 @@ void InstanceKlass::remove_osr_nmethod(nmethod* n) {
   OsrList_lock->unlock();
 }
 
-nmethod* InstanceKlass::lookup_osr_nmethod(Method* const m, int bci, int comp_level, bool match_level) const {
+nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
   OsrList_lock->lock_without_safepoint_check();
   nmethod* osr = osr_nmethods_head();

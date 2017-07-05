@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation of an object literal property.
@@ -50,7 +49,6 @@ public final class PropertyNode extends Node {
     /**
      * Constructor
      *
-     * @param source  the source
      * @param token   token
      * @param finish  finish
      * @param key     the key of this property
@@ -58,8 +56,8 @@ public final class PropertyNode extends Node {
      * @param getter  getter function body
      * @param setter  setter function body
      */
-    public PropertyNode(final Source source, final long token, final int finish, final PropertyKey key, final Node value, final FunctionNode getter, final FunctionNode setter) {
-        super(source, token, finish);
+    public PropertyNode(final long token, final int finish, final PropertyKey key, final Node value, final FunctionNode getter, final FunctionNode setter) {
+        super(token, finish);
         this.key    = key;
         this.value  = value;
         this.getter = getter;

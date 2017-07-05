@@ -49,6 +49,7 @@ class       CallLeafNode;
 class         CallLeafNoFPNode;
 class     AllocateNode;
 class       AllocateArrayNode;
+class     BoxLockNode;
 class     LockNode;
 class     UnlockNode;
 class JVMState;
@@ -235,7 +236,6 @@ public:
 
   int            loc_size() const { return stkoff() - locoff(); }
   int            stk_size() const { return monoff() - stkoff(); }
-  int            arg_size() const { return monoff() - argoff(); }
   int            mon_size() const { return scloff() - monoff(); }
   int            scl_size() const { return endoff() - scloff(); }
 
@@ -298,6 +298,7 @@ public:
   // Miscellaneous utility functions
   JVMState* clone_deep(Compile* C) const;    // recursively clones caller chain
   JVMState* clone_shallow(Compile* C) const; // retains uncloned caller
+  void      set_map_deep(SafePointNode *map);// reset map for all callers
 
 #ifndef PRODUCT
   void      format(PhaseRegAlloc *regalloc, const Node *n, outputStream* st) const;
@@ -439,7 +440,7 @@ public:
   static  bool           needs_polling_address_input();
 
 #ifndef PRODUCT
-  virtual void              dump_spec(outputStream *st) const;
+  virtual void           dump_spec(outputStream *st) const;
 #endif
 };
 
@@ -554,10 +555,10 @@ public:
   virtual bool        guaranteed_safepoint()  { return true; }
   // For macro nodes, the JVMState gets modified during expansion, so when cloning
   // the node the JVMState must be cloned.
-  virtual void        clone_jvms() { }   // default is not to clone
+  virtual void        clone_jvms(Compile* C) { }   // default is not to clone
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase);
+  virtual bool        may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
   // Does this node have a use of n other than in debug information?
   bool                has_non_debug_use(Node *n);
   // Returns the unique CheckCastPP of a call
@@ -630,9 +631,15 @@ class CallStaticJavaNode : public CallJavaNode {
   virtual uint cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
-  CallStaticJavaNode(const TypeFunc* tf, address addr, ciMethod* method, int bci)
+  CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method, int bci)
     : CallJavaNode(tf, addr, method, bci), _name(NULL) {
     init_class_id(Class_CallStaticJava);
+    if (C->eliminate_boxing() && (method != NULL) && method->is_boxing_method()) {
+      init_flags(Flag_is_macro);
+      C->add_macro_node(this);
+    }
+    _is_scalar_replaceable = false;
+    _is_non_escaping = false;
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, int bci,
                      const TypePtr* adr_type)
@@ -640,12 +647,30 @@ public:
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
+    _is_scalar_replaceable = false;
+    _is_non_escaping = false;
   }
-  const char *_name;            // Runtime wrapper name
+  const char *_name;      // Runtime wrapper name
+
+  // Result of Escape Analysis
+  bool _is_scalar_replaceable;
+  bool _is_non_escaping;
 
   // If this is an uncommon trap, return the request code, else zero.
   int uncommon_trap_request() const;
   static int extract_uncommon_trap_request(const Node* call);
+
+  bool is_boxing_method() const {
+    return is_macro() && (method() != NULL) && method()->is_boxing_method();
+  }
+  // Later inlining modifies the JVMState, so we need to clone it
+  // when the call node is cloned (because it is macro node).
+  virtual void  clone_jvms(Compile* C) {
+    if ((jvms() != NULL) && is_boxing_method()) {
+      set_jvms(jvms()->clone_deep(C));
+      jvms()->set_map_deep(this);
+    }
+  }
 
   virtual int         Opcode() const;
 #ifndef PRODUCT
@@ -748,12 +773,12 @@ public:
     ParmLimit
   };
 
-  static const TypeFunc* alloc_type() {
+  static const TypeFunc* alloc_type(const Type* t) {
     const Type** fields = TypeTuple::fields(ParmLimit - TypeFunc::Parms);
     fields[AllocSize]   = TypeInt::POS;
     fields[KlassNode]   = TypeInstPtr::NOTNULL;
     fields[InitialTest] = TypeInt::BOOL;
-    fields[ALength]     = TypeInt::INT;  // length (can be a bad length)
+    fields[ALength]     = t;  // length (can be a bad length)
 
     const TypeTuple *domain = TypeTuple::make(ParmLimit, fields);
 
@@ -766,21 +791,26 @@ public:
     return TypeFunc::make(domain, range);
   }
 
-  bool _is_scalar_replaceable;  // Result of Escape Analysis
+  // Result of Escape Analysis
+  bool _is_scalar_replaceable;
+  bool _is_non_escaping;
 
   virtual uint size_of() const; // Size is bigger
   AllocateNode(Compile* C, const TypeFunc *atype, Node *ctrl, Node *mem, Node *abio,
                Node *size, Node *klass_node, Node *initial_test);
   // Expansion modifies the JVMState, so we need to clone it
-  virtual void  clone_jvms() {
-    set_jvms(jvms()->clone_deep(Compile::current()));
+  virtual void  clone_jvms(Compile* C) {
+    if (jvms() != NULL) {
+      set_jvms(jvms()->clone_deep(C));
+      jvms()->set_map_deep(this);
+    }
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual bool        guaranteed_safepoint()  { return false; }
 
   // allocations do not modify their arguments
-  virtual bool        may_modify(const TypePtr *addr_t, PhaseTransform *phase) { return false;}
+  virtual bool        may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) { return false;}
 
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
@@ -815,10 +845,6 @@ public:
   // are defined in graphKit.cpp, which sets up the bidirectional relation.)
   InitializeNode* initialization();
 
-  // Return the corresponding storestore barrier (or null if none).
-  // Walks out edges to find it...
-  MemBarStoreStoreNode* storestore();
-
   // Convenience for initialization->maybe_set_complete(phase)
   bool maybe_set_complete(PhaseGVN* phase);
 };
@@ -840,7 +866,6 @@ public:
     set_req(AllocateNode::ALength,        count_val);
   }
   virtual int Opcode() const;
-  virtual uint size_of() const; // Size is bigger
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Dig the length operand out of a array allocation site.
@@ -918,7 +943,7 @@ public:
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypePtr *addr_t, PhaseTransform *phase){ return false;}
+  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase){ return false;}
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);
@@ -965,8 +990,11 @@ public:
 
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   // Expansion modifies the JVMState, so we need to clone it
-  virtual void  clone_jvms() {
-    set_jvms(jvms()->clone_deep(Compile::current()));
+  virtual void  clone_jvms(Compile* C) {
+    if (jvms() != NULL) {
+      set_jvms(jvms()->clone_deep(C));
+      jvms()->set_map_deep(this);
+    }
   }
 
   bool is_nested_lock_region(); // Is this Lock nested?

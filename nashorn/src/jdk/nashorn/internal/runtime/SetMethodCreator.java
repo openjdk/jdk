@@ -166,16 +166,18 @@ final class SetMethodCreator {
     }
 
     private SetMethod createNewPropertySetter() {
-        final int nextEmbed = sobj.findEmbed();
-        final SetMethod sm;
-        if (nextEmbed >= ScriptObject.EMBED_SIZE) {
-            sm = createNewSpillPropertySetter();
-        } else {
-            sm = createNewEmbedPropertySetter(nextEmbed);
-        }
-
+        final SetMethod sm = map.getFieldCount() < map.getFieldMaximum() ? createNewFieldSetter() : createNewSpillPropertySetter();
         sobj.notifyPropertyAdded(sobj, sm.property);
         return sm;
+    }
+
+    private SetMethod createNewFieldSetter() {
+        final PropertyMap oldMap = getMap();
+        final Property property = new AccessorProperty(getName(), 0, sobj.getClass(), oldMap.getFieldCount());
+        final PropertyMap newMap = oldMap.addProperty(property);
+        MethodHandle setter = MH.insertArguments(ScriptObject.SETFIELD, 0, desc, oldMap, newMap, property.getSetter(Object.class, newMap));
+
+        return new SetMethod(MH.asType(setter, Lookup.SET_OBJECT_TYPE), property);
     }
 
     private SetMethod createNewSpillPropertySetter() {
@@ -189,7 +191,7 @@ final class SetMethodCreator {
         final MethodHandle getter = MH.asType(MH.insertArguments(MH.arrayElementGetter(Object[].class), 1, nextSpill), Lookup.GET_OBJECT_TYPE);
         final MethodHandle setter = MH.asType(MH.insertArguments(MH.arrayElementSetter(Object[].class), 1, nextSpill), Lookup.SET_OBJECT_TYPE);
 
-        return new SpillProperty(getName(), Property.IS_SPILL, nextSpill, getter, setter);
+        return new AccessorProperty(getName(), Property.IS_SPILL, nextSpill, getter, setter);
     }
 
     private MethodHandle createSpillMethodHandle(final int nextSpill, Property property) {
@@ -205,14 +207,6 @@ final class SetMethodCreator {
             final int newLength = (nextSpill + ScriptObject.SPILL_RATE) / ScriptObject.SPILL_RATE * ScriptObject.SPILL_RATE;
             return MH.insertArguments(ScriptObject.SETSPILLWITHGROW, 0, desc, oldMap, newMap, nextSpill, newLength);
         }
-    }
-
-    private SetMethod createNewEmbedPropertySetter(final int nextEmbed) {
-        sobj.useEmbed(nextEmbed);
-        final Property property = new SpillProperty(getName(), 0, nextEmbed, ScriptObject.GET_EMBED[nextEmbed], ScriptObject.SET_EMBED[nextEmbed]);
-        //TODO specfields
-        final MethodHandle methodHandle = MH.insertArguments(ScriptObject.SETEMBED, 0, desc, getMap(), getNewMap(property), property.getSetter(Object.class, getMap()), nextEmbed);
-        return new SetMethod(methodHandle, property);
     }
 
     private PropertyMap getNewMap(Property property) {

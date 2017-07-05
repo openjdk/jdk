@@ -79,13 +79,15 @@ public class JumpInsnNode extends AbstractInsnNode {
     /**
      * Constructs a new {@link JumpInsnNode}.
      *
-     * @param opcode the opcode of the type instruction to be constructed. This
-     *        opcode must be IFEQ, IFNE, IFLT, IFGE, IFGT, IFLE, IF_ICMPEQ,
-     *        IF_ICMPNE, IF_ICMPLT, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ACMPEQ,
-     *        IF_ACMPNE, GOTO, JSR, IFNULL or IFNONNULL.
-     * @param label the operand of the instruction to be constructed. This
-     *        operand is a label that designates the instruction to which the
-     *        jump instruction may jump.
+     * @param opcode
+     *            the opcode of the type instruction to be constructed. This
+     *            opcode must be IFEQ, IFNE, IFLT, IFGE, IFGT, IFLE, IF_ICMPEQ,
+     *            IF_ICMPNE, IF_ICMPLT, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE,
+     *            IF_ACMPEQ, IF_ACMPNE, GOTO, JSR, IFNULL or IFNONNULL.
+     * @param label
+     *            the operand of the instruction to be constructed. This operand
+     *            is a label that designates the instruction to which the jump
+     *            instruction may jump.
      */
     public JumpInsnNode(final int opcode, final LabelNode label) {
         super(opcode);
@@ -95,10 +97,11 @@ public class JumpInsnNode extends AbstractInsnNode {
     /**
      * Sets the opcode of this instruction.
      *
-     * @param opcode the new instruction opcode. This opcode must be IFEQ, IFNE,
-     *        IFLT, IFGE, IFGT, IFLE, IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT,
-     *        IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ACMPEQ, IF_ACMPNE, GOTO, JSR,
-     *        IFNULL or IFNONNULL.
+     * @param opcode
+     *            the new instruction opcode. This opcode must be IFEQ, IFNE,
+     *            IFLT, IFGE, IFGT, IFLE, IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT,
+     *            IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ACMPEQ, IF_ACMPNE, GOTO,
+     *            JSR, IFNULL or IFNONNULL.
      */
     public void setOpcode(final int opcode) {
         this.opcode = opcode;
@@ -112,10 +115,12 @@ public class JumpInsnNode extends AbstractInsnNode {
     @Override
     public void accept(final MethodVisitor mv) {
         mv.visitJumpInsn(opcode, label.getLabel());
+        acceptAnnotations(mv);
     }
 
     @Override
     public AbstractInsnNode clone(final Map<LabelNode, LabelNode> labels) {
-        return new JumpInsnNode(opcode, clone(label, labels));
+        return new JumpInsnNode(opcode, clone(label, labels))
+                .cloneAnnotations(this);
     }
 }

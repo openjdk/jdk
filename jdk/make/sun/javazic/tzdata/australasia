@@ -241,9 +241,26 @@ Zone Australia/Lord_Howe 10:36:20 -	LMT	1895 Feb
 # no times are set
 #
 # Macquarie
-# permanent occupation (scientific station) since 1948;
-# sealing and penguin oil station operated 1888/1917
-# like Australia/Hobart
+# Permanent occupation (scientific station) 1911-1915 and since 25 March 1948;
+# sealing and penguin oil station operated Nov 1899 to Apr 1919.  See the
+# Tasmania Parks & Wildlife Service history of sealing at Macquarie Island
+# <http://www.parks.tas.gov.au/index.aspx?base=1828>
+# <http://www.parks.tas.gov.au/index.aspx?base=1831>.
+# Guess that it was like Australia/Hobart while inhabited before 2010.
+#
+# From Steffen Thorsen (2010-03-10):
+# We got these changes from the Australian Antarctic Division:
+# - Macquarie Island will stay on UTC+11 for winter and therefore not
+# switch back from daylight savings time when other parts of Australia do
+# on 4 April.
+Zone Antarctica/Macquarie 0	-	zzz	1899 Nov
+			10:00	-	EST	1916 Oct 1 2:00
+			10:00	1:00	EST	1917 Feb
+			10:00	Aus	EST	1919 Apr
+			0	-	zzz	1948 Mar 25
+			10:00	Aus	EST	1967
+			10:00	AT	EST	2010 Apr 4 3:00
+			11:00	-	MIST	# Macquarie I Standard Time
 
 # Christmas
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -269,6 +286,9 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 			6:30	-	CCT	# Cocos Islands Time
 
 # Fiji
+
+# Milne gives 11:55:44 for Suva.
+
 # From Alexander Krivenyshev (2009-11-10):
 # According to Fiji Broadcasting Corporation,  Fiji plans to re-introduce DST
 # from November 29th 2009  to April 25th 2010.
@@ -362,7 +382,7 @@ Rule	Fiji	2010	max	-	Oct	Sun>=18	2:00	1:00	S
 Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
 Rule	Fiji	2012	max	-	Jan	Sun>=18	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	Pacific/Fiji	11:53:40 -	LMT	1915 Oct 26	# Suva
+Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26	# Suva
 			12:00	Fiji	FJ%sT	# Fiji Time
 
 # French Polynesia
@@ -803,9 +823,9 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 
 # This data is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
-# tz@elsie.nci.nih.gov for general use in the future).
+# tz@iana.org for general use in the future).
 
-# From Paul Eggert (2006-03-22):
+# From Paul Eggert (2013-02-21):
 # A good source for time zone historical data outside the U.S. is
 # Thomas G. Shanks and Rique Pottenger, The International Atlas (6th edition),
 # San Diego: ACS Publications, Inc. (2003).
@@ -822,6 +842,10 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # Another source occasionally used is Edward W. Whitman, World Time Differences,
 # Whitman Publishing Co, 2 Niagara Av, Ealing, London (undated), which
 # I found in the UCLA library.
+#
+# For data circa 1899, a common source is:
+# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
+# <http://www.jstor.org/stable/1774359>.
 #
 # A reliable and entertaining source about time zones is
 # Derek Howse, Greenwich time and longitude, Philip Wilson Publishers (1997).

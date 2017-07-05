@@ -368,6 +368,7 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * @see #contains(Object)
      */
     public boolean removeAll(Collection<?> c) {
+        Objects.requireNonNull(c);
         boolean modified = false;
         Iterator<?> it = iterator();
         while (it.hasNext()) {
@@ -401,6 +402,7 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * @see #contains(Object)
      */
     public boolean retainAll(Collection<?> c) {
+        Objects.requireNonNull(c);
         boolean modified = false;
         Iterator<E> it = iterator();
         while (it.hasNext()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,14 +242,18 @@ typedef struct {
     InvocationFunctions ifn;
 } JavaMainArgs;
 
-#define NULL_CHECK0(e) if ((e) == 0) { \
-    JLI_ReportErrorMessage(JNI_ERROR); \
-    return 0; \
-  }
+#define NULL_CHECK_RETURN_VALUE(NCRV_check_pointer, NCRV_return_value) \
+    do { \
+        if ((NCRV_check_pointer) == NULL) { \
+            JLI_ReportErrorMessage(JNI_ERROR); \
+            return NCRV_return_value; \
+        } \
+    } while (JNI_FALSE)
 
-#define NULL_CHECK(e) if ((e) == 0) { \
-    JLI_ReportErrorMessage(JNI_ERROR); \
-    return; \
-  }
+#define NULL_CHECK0(NC0_check_pointer) \
+    NULL_CHECK_RETURN_VALUE(NC0_check_pointer, 0)
+
+#define NULL_CHECK(NC_check_pointer) \
+    NULL_CHECK_RETURN_VALUE(NC_check_pointer, )
 
 #endif /* _JAVA_H_ */

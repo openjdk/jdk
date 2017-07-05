@@ -49,23 +49,23 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
 
     /**
      * Construct a key from its components. Used by the
-     * ECKeyFactory and SunPKCS11.
+     * ECKeyFactory.
      */
     @SuppressWarnings("deprecation")
-    public ECPublicKeyImpl(ECPoint w, ECParameterSpec params)
+    ECPublicKeyImpl(ECPoint w, ECParameterSpec params)
             throws InvalidKeyException {
         this.w = w;
         this.params = params;
         // generate the encoding
         algid = new AlgorithmId
             (AlgorithmId.EC_oid, ECParameters.getAlgorithmParameters(params));
-        key = ECParameters.encodePoint(w, params.getCurve());
+        key = ECUtil.encodePoint(w, params.getCurve());
     }
 
     /**
-     * Construct a key from its encoding. Used by RSAKeyFactory.
+     * Construct a key from its encoding.
      */
-    public ECPublicKeyImpl(byte[] encoded) throws InvalidKeyException {
+    ECPublicKeyImpl(byte[] encoded) throws InvalidKeyException {
         decode(encoded);
     }
 
@@ -104,7 +104,7 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
 
         try {
             params = algParams.getParameterSpec(ECParameterSpec.class);
-            w = ECParameters.decodePoint(key, params.getCurve());
+            w = ECUtil.decodePoint(key, params.getCurve());
         } catch (IOException e) {
             throw new InvalidKeyException("Invalid EC key", e);
         } catch (InvalidParameterSpecException e) {

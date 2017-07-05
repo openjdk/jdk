@@ -84,7 +84,8 @@ public class Attribute {
     /**
      * Constructs a new empty attribute.
      *
-     * @param type the type of the attribute.
+     * @param type
+     *            the type of the attribute.
      */
     protected Attribute(final String type) {
         this.type = type;
@@ -120,39 +121,39 @@ public class Attribute {
     }
 
     /**
-     * Reads a {@link #type type} attribute. This method must return a <i>new</i>
-     * {@link Attribute} object, of type {@link #type type}, corresponding to
-     * the <tt>len</tt> bytes starting at the given offset, in the given class
-     * reader.
+     * Reads a {@link #type type} attribute. This method must return a
+     * <i>new</i> {@link Attribute} object, of type {@link #type type},
+     * corresponding to the <tt>len</tt> bytes starting at the given offset, in
+     * the given class reader.
      *
-     * @param cr the class that contains the attribute to be read.
-     * @param off index of the first byte of the attribute's content in {@link
-     *        ClassReader#b cr.b}. The 6 attribute header bytes, containing the
-     *        type and the length of the attribute, are not taken into account
-     *        here.
-     * @param len the length of the attribute's content.
-     * @param buf buffer to be used to call
-     *        {@link ClassReader#readUTF8 readUTF8},
-     *        {@link ClassReader#readClass(int,char[]) readClass} or
-     *        {@link ClassReader#readConst readConst}.
-     * @param codeOff index of the first byte of code's attribute content in
-     *        {@link ClassReader#b cr.b}, or -1 if the attribute to be read is
-     *        not a code attribute. The 6 attribute header bytes, containing the
-     *        type and the length of the attribute, are not taken into account
-     *        here.
-     * @param labels the labels of the method's code, or <tt>null</tt> if the
-     *        attribute to be read is not a code attribute.
+     * @param cr
+     *            the class that contains the attribute to be read.
+     * @param off
+     *            index of the first byte of the attribute's content in
+     *            {@link ClassReader#b cr.b}. The 6 attribute header bytes,
+     *            containing the type and the length of the attribute, are not
+     *            taken into account here.
+     * @param len
+     *            the length of the attribute's content.
+     * @param buf
+     *            buffer to be used to call {@link ClassReader#readUTF8
+     *            readUTF8}, {@link ClassReader#readClass(int,char[]) readClass}
+     *            or {@link ClassReader#readConst readConst}.
+     * @param codeOff
+     *            index of the first byte of code's attribute content in
+     *            {@link ClassReader#b cr.b}, or -1 if the attribute to be read
+     *            is not a code attribute. The 6 attribute header bytes,
+     *            containing the type and the length of the attribute, are not
+     *            taken into account here.
+     * @param labels
+     *            the labels of the method's code, or <tt>null</tt> if the
+     *            attribute to be read is not a code attribute.
      * @return a <i>new</i> {@link Attribute} object corresponding to the given
      *         bytes.
      */
-    protected Attribute read(
-        final ClassReader cr,
-        final int off,
-        final int len,
-        final char[] buf,
-        final int codeOff,
-        final Label[] labels)
-    {
+    protected Attribute read(final ClassReader cr, final int off,
+            final int len, final char[] buf, final int codeOff,
+            final Label[] labels) {
         Attribute attr = new Attribute(type);
         attr.value = new byte[len];
         System.arraycopy(cr.b, off, attr.value, 0, len);
@@ -162,30 +163,30 @@ public class Attribute {
     /**
      * Returns the byte array form of this attribute.
      *
-     * @param cw the class to which this attribute must be added. This parameter
-     *        can be used to add to the constant pool of this class the items
-     *        that corresponds to this attribute.
-     * @param code the bytecode of the method corresponding to this code
-     *        attribute, or <tt>null</tt> if this attribute is not a code
-     *        attributes.
-     * @param len the length of the bytecode of the method corresponding to this
-     *        code attribute, or <tt>null</tt> if this attribute is not a code
-     *        attribute.
-     * @param maxStack the maximum stack size of the method corresponding to
-     *        this code attribute, or -1 if this attribute is not a code
-     *        attribute.
-     * @param maxLocals the maximum number of local variables of the method
-     *        corresponding to this code attribute, or -1 if this attribute is
-     *        not a code attribute.
+     * @param cw
+     *            the class to which this attribute must be added. This
+     *            parameter can be used to add to the constant pool of this
+     *            class the items that corresponds to this attribute.
+     * @param code
+     *            the bytecode of the method corresponding to this code
+     *            attribute, or <tt>null</tt> if this attribute is not a code
+     *            attributes.
+     * @param len
+     *            the length of the bytecode of the method corresponding to this
+     *            code attribute, or <tt>null</tt> if this attribute is not a
+     *            code attribute.
+     * @param maxStack
+     *            the maximum stack size of the method corresponding to this
+     *            code attribute, or -1 if this attribute is not a code
+     *            attribute.
+     * @param maxLocals
+     *            the maximum number of local variables of the method
+     *            corresponding to this code attribute, or -1 if this attribute
+     *            is not a code attribute.
      * @return the byte array form of this attribute.
      */
-    protected ByteVector write(
-        final ClassWriter cw,
-        final byte[] code,
-        final int len,
-        final int maxStack,
-        final int maxLocals)
-    {
+    protected ByteVector write(final ClassWriter cw, final byte[] code,
+            final int len, final int maxStack, final int maxLocals) {
         ByteVector v = new ByteVector();
         v.data = value;
         v.length = value.length;
@@ -210,30 +211,30 @@ public class Attribute {
     /**
      * Returns the size of all the attributes in this attribute list.
      *
-     * @param cw the class writer to be used to convert the attributes into byte
-     *        arrays, with the {@link #write write} method.
-     * @param code the bytecode of the method corresponding to these code
-     *        attributes, or <tt>null</tt> if these attributes are not code
-     *        attributes.
-     * @param len the length of the bytecode of the method corresponding to
-     *        these code attributes, or <tt>null</tt> if these attributes are
-     *        not code attributes.
-     * @param maxStack the maximum stack size of the method corresponding to
-     *        these code attributes, or -1 if these attributes are not code
-     *        attributes.
-     * @param maxLocals the maximum number of local variables of the method
-     *        corresponding to these code attributes, or -1 if these attributes
-     *        are not code attributes.
+     * @param cw
+     *            the class writer to be used to convert the attributes into
+     *            byte arrays, with the {@link #write write} method.
+     * @param code
+     *            the bytecode of the method corresponding to these code
+     *            attributes, or <tt>null</tt> if these attributes are not code
+     *            attributes.
+     * @param len
+     *            the length of the bytecode of the method corresponding to
+     *            these code attributes, or <tt>null</tt> if these attributes
+     *            are not code attributes.
+     * @param maxStack
+     *            the maximum stack size of the method corresponding to these
+     *            code attributes, or -1 if these attributes are not code
+     *            attributes.
+     * @param maxLocals
+     *            the maximum number of local variables of the method
+     *            corresponding to these code attributes, or -1 if these
+     *            attributes are not code attributes.
      * @return the size of all the attributes in this attribute list. This size
      *         includes the size of the attribute headers.
      */
-    final int getSize(
-        final ClassWriter cw,
-        final byte[] code,
-        final int len,
-        final int maxStack,
-        final int maxLocals)
-    {
+    final int getSize(final ClassWriter cw, final byte[] code, final int len,
+            final int maxStack, final int maxLocals) {
         Attribute attr = this;
         int size = 0;
         while (attr != null) {
@@ -248,30 +249,30 @@ public class Attribute {
      * Writes all the attributes of this attribute list in the given byte
      * vector.
      *
-     * @param cw the class writer to be used to convert the attributes into byte
-     *        arrays, with the {@link #write write} method.
-     * @param code the bytecode of the method corresponding to these code
-     *        attributes, or <tt>null</tt> if these attributes are not code
-     *        attributes.
-     * @param len the length of the bytecode of the method corresponding to
-     *        these code attributes, or <tt>null</tt> if these attributes are
-     *        not code attributes.
-     * @param maxStack the maximum stack size of the method corresponding to
-     *        these code attributes, or -1 if these attributes are not code
-     *        attributes.
-     * @param maxLocals the maximum number of local variables of the method
-     *        corresponding to these code attributes, or -1 if these attributes
-     *        are not code attributes.
-     * @param out where the attributes must be written.
+     * @param cw
+     *            the class writer to be used to convert the attributes into
+     *            byte arrays, with the {@link #write write} method.
+     * @param code
+     *            the bytecode of the method corresponding to these code
+     *            attributes, or <tt>null</tt> if these attributes are not code
+     *            attributes.
+     * @param len
+     *            the length of the bytecode of the method corresponding to
+     *            these code attributes, or <tt>null</tt> if these attributes
+     *            are not code attributes.
+     * @param maxStack
+     *            the maximum stack size of the method corresponding to these
+     *            code attributes, or -1 if these attributes are not code
+     *            attributes.
+     * @param maxLocals
+     *            the maximum number of local variables of the method
+     *            corresponding to these code attributes, or -1 if these
+     *            attributes are not code attributes.
+     * @param out
+     *            where the attributes must be written.
      */
-    final void put(
-        final ClassWriter cw,
-        final byte[] code,
-        final int len,
-        final int maxStack,
-        final int maxLocals,
-        final ByteVector out)
-    {
+    final void put(final ClassWriter cw, final byte[] code, final int len,
+            final int maxStack, final int maxLocals, final ByteVector out) {
         Attribute attr = this;
         while (attr != null) {
             ByteVector b = attr.write(cw, code, len, maxStack, maxLocals);
