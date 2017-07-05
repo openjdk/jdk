@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ public final class GlyphList {
      * throughput on a MP system. If for some reason the reusable
      * GlyphList is checked out for a long time (or never returned?) then
      * we would end up always creating new ones. That situation should not
-     * occur and if if did, it would just lead to some extra garbage being
+     * occur and if it did, it would just lead to some extra garbage being
      * created.
      */
     private static GlyphList reusableGL = new GlyphList();

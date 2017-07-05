@@ -1553,6 +1553,13 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       new_id = expand_instr->name();
 
       InstructForm* expand_instruction = (InstructForm*)globalAD->globalNames()[new_id];
+
+      if (!expand_instruction) {
+        globalAD->syntax_err(node->_linenum, "In %s: instruction %s used in expand not declared\n",
+                             node->_ident, new_id);
+        continue;
+      }
+
       if (expand_instruction->has_temps()) {
         globalAD->syntax_err(node->_linenum, "In %s: expand rules using instructs with TEMPs aren't supported: %s",
                              node->_ident, new_id);
@@ -1611,6 +1618,13 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         // Use 'parameter' at current position in list of new instruction's formals
         // instead of 'opid' when looking up info internal to new_inst
         const char *parameter = formal_lst->iter();
+        if (!parameter) {
+          globalAD->syntax_err(node->_linenum, "Operand %s of expand instruction %s has"
+                               " no equivalent in new instruction %s.",
+                               opid, node->_ident, new_inst->_ident);
+          assert(0, "Wrong expand");
+        }
+
         // Check for an operand which is created in the expand rule
         if ((exp_pos = node->_exprule->_newopers.index(opid)) != -1) {
           new_pos = new_inst->operand_position(parameter,Component::USE);
@@ -1808,18 +1822,26 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
   // If the node is a MachConstantNode, insert the MachConstantBaseNode edge.
   // NOTE: this edge must be the last input (see MachConstantNode::mach_constant_base_node_input).
-  if (node->is_mach_constant()) {
-    fprintf(fp,"  add_req(C->mach_constant_base_node());\n");
+  // There are nodes that don't use $constantablebase, but still require that it
+  // is an input to the node. Example: divF_reg_immN, Repl32B_imm on x86_64.
+  if (node->is_mach_constant() || node->needs_constant_base()) {
+    if (node->is_ideal_call() != Form::invalid_type &&
+        node->is_ideal_call() != Form::JAVA_LEAF) {
+      fprintf(fp, "  // MachConstantBaseNode added in matcher.\n");
+      _needs_clone_jvms = true;
+    } else {
+      fprintf(fp, "  add_req(C->mach_constant_base_node());\n");
+    }
   }
 
-  fprintf(fp,"\n");
-  if( node->expands() ) {
-    fprintf(fp,"  return result;\n");
+  fprintf(fp, "\n");
+  if (node->expands()) {
+    fprintf(fp, "  return result;\n");
   } else {
-    fprintf(fp,"  return this;\n");
+    fprintf(fp, "  return this;\n");
   }
-  fprintf(fp,"}\n");
-  fprintf(fp,"\n");
+  fprintf(fp, "}\n");
+  fprintf(fp, "\n");
 }
 
 
@@ -1921,9 +1943,9 @@ public:
       else if ((strcmp(rep_var, "constanttablebase") == 0) ||
                (strcmp(rep_var, "constantoffset")    == 0) ||
                (strcmp(rep_var, "constantaddress")   == 0)) {
-        if (!_inst.is_mach_constant()) {
+        if (!(_inst.is_mach_constant() || _inst.needs_constant_base())) {
           _AD.syntax_err(_encoding._linenum,
-                         "Replacement variable %s not allowed in instruct %s (only in MachConstantNode).\n",
+                         "Replacement variable %s not allowed in instruct %s (only in MachConstantNode or MachCall).\n",
                          rep_var, _encoding._name);
         }
       }
@@ -2086,16 +2108,21 @@ public:
         if (strcmp(rep_var,"$reg") == 0 || reg_conversion(rep_var) != NULL) {
           _reg_status  = LITERAL_ACCESSED;
         } else {
+          _AD.syntax_err(_encoding._linenum,
+                         "Invalid access to literal register parameter '%s' in %s.\n",
+                         rep_var, _encoding._name);
           assert( false, "invalid access to literal register parameter");
         }
       }
       // literal constant parameters must be accessed as a 'constant' field
-      if ( _constant_status != LITERAL_NOT_SEEN ) {
-        assert( _constant_status == LITERAL_SEEN, "Must have seen constant literal before now");
-        if( strcmp(rep_var,"$constant") == 0 ) {
-          _constant_status  = LITERAL_ACCESSED;
+      if (_constant_status != LITERAL_NOT_SEEN) {
+        assert(_constant_status == LITERAL_SEEN, "Must have seen constant literal before now");
+        if (strcmp(rep_var,"$constant") == 0) {
+          _constant_status = LITERAL_ACCESSED;
         } else {
-          assert( false, "invalid access to literal constant parameter");
+          _AD.syntax_err(_encoding._linenum,
+                         "Invalid access to literal constant parameter '%s' in %s.\n",
+                         rep_var, _encoding._name);
         }
       }
     } // end replacement and/or subfield
@@ -2277,6 +2304,7 @@ private:
 #if defined(IA32) || defined(AMD64)
     if (strcmp(rep_var,"$XMMRegister") == 0)   return "as_XMMRegister";
 #endif
+    if (strcmp(rep_var,"$CondRegister") == 0)  return "as_ConditionRegister";
     return NULL;
   }
 
@@ -2471,7 +2499,113 @@ void ArchDesc::defineSize(FILE *fp, InstructForm &inst) {
   fprintf(fp, "  return (VerifyOops ? MachNode::size(ra_) : %s);\n", inst._size);
 
   // (3) and (4)
-  fprintf(fp,"}\n");
+  fprintf(fp,"}\n\n");
+}
+
+// Emit postalloc expand function.
+void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
+  InsEncode *ins_encode = inst._insencode;
+
+  // Output instruction's postalloc_expand prototype.
+  fprintf(fp, "void  %sNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {\n",
+          inst._ident);
+
+  assert((_encode != NULL) && (ins_encode != NULL), "You must define an encode section.");
+
+  // Output each operand's offset into the array of registers.
+  inst.index_temps(fp, _globalNames);
+
+  // Output variables "unsigned idx_<par_name>", Node *n_<par_name> and "MachOpnd *op_<par_name>"
+  // for each parameter <par_name> specified in the encoding.
+  ins_encode->reset();
+  const char *ec_name = ins_encode->encode_class_iter();
+  assert(ec_name != NULL, "Postalloc expand must specify an encoding.");
+
+  EncClass *encoding = _encode->encClass(ec_name);
+  if (encoding == NULL) {
+    fprintf(stderr, "User did not define contents of this encode_class: %s\n", ec_name);
+    abort();
+  }
+  if (ins_encode->current_encoding_num_args() != encoding->num_args()) {
+    globalAD->syntax_err(ins_encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
+                         inst._ident, ins_encode->current_encoding_num_args(),
+                         ec_name, encoding->num_args());
+  }
+
+  fprintf(fp, "  // Access to ins and operands for postalloc expand.\n");
+  const int buflen = 2000;
+  char idxbuf[buflen]; char *ib = idxbuf; idxbuf[0] = '\0';
+  char nbuf  [buflen]; char *nb = nbuf;   nbuf[0]   = '\0';
+  char opbuf [buflen]; char *ob = opbuf;  opbuf[0]  = '\0';
+
+  encoding->_parameter_type.reset();
+  encoding->_parameter_name.reset();
+  const char *type = encoding->_parameter_type.iter();
+  const char *name = encoding->_parameter_name.iter();
+  int param_no = 0;
+  for (; (type != NULL) && (name != NULL);
+       (type = encoding->_parameter_type.iter()), (name = encoding->_parameter_name.iter())) {
+    const char* arg_name = ins_encode->rep_var_name(inst, param_no);
+    int idx = inst.operand_position_format(arg_name);
+    if (strcmp(arg_name, "constanttablebase") == 0) {
+      ib += sprintf(ib, "  unsigned idx_%-5s = mach_constant_base_node_input(); \t// %s, \t%s\n",
+                    name, type, arg_name);
+      nb += sprintf(nb, "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      // There is no operand for the constanttablebase.
+    } else if (inst.is_noninput_operand(idx)) {
+      globalAD->syntax_err(inst._linenum,
+                           "In %s: you can not pass the non-input %s to a postalloc expand encoding.\n",
+                           inst._ident, arg_name);
+    } else {
+      ib += sprintf(ib, "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
+                    name, idx, type, arg_name);
+      nb += sprintf(nb, "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      ob += sprintf(ob, "  %sOper *op_%s = (%sOper *)opnd_array(%d);\n", type, name, type, idx);
+    }
+    param_no++;
+  }
+  assert(ib < &idxbuf[buflen-1] && nb < &nbuf[buflen-1] && ob < &opbuf[buflen-1], "buffer overflow");
+
+  fprintf(fp, "%s", idxbuf);
+  fprintf(fp, "  Node    *n_region  = lookup(0);\n");
+  fprintf(fp, "%s%s", nbuf, opbuf);
+  fprintf(fp, "  Compile *C = ra_->C;\n");
+
+  // Output this instruction's encodings.
+  fprintf(fp, "  {");
+  const char *ec_code    = NULL;
+  const char *ec_rep_var = NULL;
+  assert(encoding == _encode->encClass(ec_name), "");
+
+  DefineEmitState pending(fp, *this, *encoding, *ins_encode, inst);
+  encoding->_code.reset();
+  encoding->_rep_vars.reset();
+  // Process list of user-defined strings,
+  // and occurrences of replacement variables.
+  // Replacement Vars are pushed into a list and then output.
+  while ((ec_code = encoding->_code.iter()) != NULL) {
+    if (! encoding->_code.is_signal(ec_code)) {
+      // Emit pending code.
+      pending.emit();
+      pending.clear();
+      // Emit this code section.
+      fprintf(fp, "%s", ec_code);
+    } else {
+      // A replacement variable or one of its subfields.
+      // Obtain replacement variable from list.
+      ec_rep_var = encoding->_rep_vars.iter();
+      pending.add_rep_var(ec_rep_var);
+    }
+  }
+  // Emit pending code.
+  pending.emit();
+  pending.clear();
+  fprintf(fp, "  }\n");
+
+  fprintf(fp, "}\n\n");
+
+  ec_name = ins_encode->encode_class_iter();
+  assert(ec_name == NULL, "Postalloc expand may only have one encoding.");
 }
 
 // defineEmit -----------------------------------------------------------------
@@ -2824,7 +2958,7 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
   } else if ( (strcmp(name,"disp") == 0) ) {
     fprintf(fp,"(PhaseRegAlloc *ra_, const Node *node, int idx) const { \n");
   } else {
-    fprintf(fp,"() const { \n");
+    fprintf(fp, "() const {\n");
   }
 
   // Check for hexadecimal value OR replacement variable
@@ -2874,6 +3008,8 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
     // Hex value
     fprintf(fp,"    return %s;\n", encoding);
   } else {
+    globalAD->syntax_err(oper._linenum, "In operand %s: Do not support this encode constant: '%s' for %s.",
+                         oper._ident, encoding, name);
     assert( false, "Do not support octal or decimal encode constants");
   }
   fprintf(fp,"  }\n");
@@ -3038,6 +3174,7 @@ void ArchDesc::defineClasses(FILE *fp) {
     if( instr->expands() || instr->needs_projections() ||
         instr->has_temps() ||
         instr->is_mach_constant() ||
+        instr->needs_constant_base() ||
         instr->_matrule != NULL &&
         instr->num_opnds() != instr->num_unique_opnds() )
       defineExpand(_CPP_EXPAND_file._fp, instr);
@@ -3125,7 +3262,15 @@ void ArchDesc::defineClasses(FILE *fp) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
 
-    if (instr->_insencode)         defineEmit        (fp, *instr);
+    if (instr->_insencode) {
+      if (instr->postalloc_expands()) {
+        // Don't write this to _CPP_EXPAND_file, as the code generated calls C-code
+        // from code sections in ad file that is dumped to fp.
+        define_postalloc_expand(fp, *instr);
+      } else {
+        defineEmit(fp, *instr);
+      }
+    }
     if (instr->is_mach_constant()) defineEvalConstant(fp, *instr);
     if (instr->_size)              defineSize        (fp, *instr);
 
@@ -3486,6 +3631,11 @@ char reg_save_policy(const char *calling_convention) {
   return callconv;
 }
 
+void ArchDesc::generate_needs_clone_jvms(FILE *fp_cpp) {
+  fprintf(fp_cpp, "bool Compile::needs_clone_jvms() { return %s; }\n\n",
+          _needs_clone_jvms ? "true" : "false");
+}
+
 //---------------------------generate_assertion_checks-------------------
 void ArchDesc::generate_adlc_verification(FILE *fp_cpp) {
   fprintf(fp_cpp, "\n");
@@ -3802,8 +3952,10 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
   }
 
   // Fill in the bottom_type where requested
-  if ( inst->captures_bottom_type(_globalNames) ) {
-    fprintf(fp_cpp, "%s node->_bottom_type = _leaf->bottom_type();\n", indent);
+  if (inst->captures_bottom_type(_globalNames)) {
+    if (strncmp("MachCall", inst->mach_base_class(_globalNames), strlen("MachCall"))) {
+      fprintf(fp_cpp, "%s node->_bottom_type = _leaf->bottom_type();\n", indent);
+    }
   }
   if( inst->is_ideal_if() ) {
     fprintf(fp_cpp, "%s node->_prob = _leaf->as_If()->_prob;\n", indent);

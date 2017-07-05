@@ -325,7 +325,7 @@ static void *findJniFunction(JNIEnv *env, void *handle,
     void *entryName = NULL;
     char *jniFunctionName;
     int i;
-    int len;
+    size_t len;
 
     // Check for JNI_On(Un)Load<_libname> function
     if (isLoad) {
@@ -501,9 +501,9 @@ Java_java_lang_ClassLoader_00024NativeLibrary_findBuiltinLib
 {
     const char *cname;
     char *libName;
-    int prefixLen = (int) strlen(JNI_LIB_PREFIX);
-    int suffixLen = (int) strlen(JNI_LIB_SUFFIX);
-    int len;
+    size_t prefixLen = strlen(JNI_LIB_PREFIX);
+    size_t suffixLen = strlen(JNI_LIB_SUFFIX);
+    size_t len;
     jstring lib;
     void *ret;
     const char *onLoadSymbols[] = JNI_ONLOAD_SYMBOLS;

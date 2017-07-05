@@ -446,17 +446,19 @@ void GenCollectorPolicy::initialize_size_info() {
     _max_gen0_size = max_new_size;
   } else {
     size_t desired_new_size = 0;
-    if (!FLAG_IS_DEFAULT(NewSize)) {
-      // If NewSize is set ergonomically (for example by cms), it
-      // would make sense to use it.  If it is used, also use it
-      // to set the initial size.  Although there is no reason
-      // the minimum size and the initial size have to be the same,
-      // the current implementation gets into trouble during the calculation
-      // of the tenured generation sizes if they are different.
-      // Note that this makes the initial size and the minimum size
-      // generally small compared to the NewRatio calculation.
+    if (FLAG_IS_CMDLINE(NewSize)) {
+      // If NewSize is set on the command line, we must use it as
+      // the initial size and it also makes sense to use it as the
+      // lower limit.
       _min_gen0_size = NewSize;
       desired_new_size = NewSize;
+      max_new_size = MAX2(max_new_size, NewSize);
+    } else if (FLAG_IS_ERGO(NewSize)) {
+      // If NewSize is set ergonomically, we should use it as a lower
+      // limit, but use NewRatio to calculate the initial size.
+      _min_gen0_size = NewSize;
+      desired_new_size =
+        MAX2(scale_by_NewRatio_aligned(_initial_heap_byte_size), NewSize);
       max_new_size = MAX2(max_new_size, NewSize);
     } else {
       // For the case where NewSize is the default, use NewRatio
@@ -980,3 +982,110 @@ void MarkSweepPolicy::initialize_gc_policy_counters() {
     _gc_policy_counters = new GCPolicyCounters("Copy:MSC", 2, 3);
   }
 }
+
+/////////////// Unit tests ///////////////
+
+#ifndef PRODUCT
+// Testing that the NewSize flag is handled correct is hard because it
+// depends on so many other configurable variables. This test only tries to
+// verify that there are some basic rules for NewSize honored by the policies.
+class TestGenCollectorPolicy {
+public:
+  static void test() {
+    size_t flag_value;
+
+    save_flags();
+
+    // Set some limits that makes the math simple.
+    FLAG_SET_ERGO(uintx, MaxHeapSize, 180 * M);
+    FLAG_SET_ERGO(uintx, InitialHeapSize, 120 * M);
+    Arguments::set_min_heap_size(40 * M);
+
+    // If NewSize is set on the command line, it should be used
+    // for both min and initial young size if less than min heap.
+    flag_value = 20 * M;
+    FLAG_SET_CMDLINE(uintx, NewSize, flag_value);
+    verify_min(flag_value);
+    verify_initial(flag_value);
+
+    // If NewSize is set on command line, but is larger than the min
+    // heap size, it should only be used for initial young size.
+    flag_value = 80 * M;
+    FLAG_SET_CMDLINE(uintx, NewSize, flag_value);
+    verify_initial(flag_value);
+
+    // If NewSize has been ergonomically set, the collector policy
+    // should use it for min but calculate the initial young size
+    // using NewRatio.
+    flag_value = 20 * M;
+    FLAG_SET_ERGO(uintx, NewSize, flag_value);
+    verify_min(flag_value);
+    verify_scaled_initial(InitialHeapSize);
+
+    restore_flags();
+
+  }
+
+  static void verify_min(size_t expected) {
+    MarkSweepPolicy msp;
+    msp.initialize_all();
+
+    assert(msp.min_gen0_size() <= expected, err_msg("%zu  > %zu", msp.min_gen0_size(), expected));
+  }
+
+  static void verify_initial(size_t expected) {
+    MarkSweepPolicy msp;
+    msp.initialize_all();
+
+    assert(msp.initial_gen0_size() == expected, err_msg("%zu != %zu", msp.initial_gen0_size(), expected));
+  }
+
+  static void verify_scaled_initial(size_t initial_heap_size) {
+    MarkSweepPolicy msp;
+    msp.initialize_all();
+
+    size_t expected = msp.scale_by_NewRatio_aligned(initial_heap_size);
+    assert(msp.initial_gen0_size() == expected, err_msg("%zu != %zu", msp.initial_gen0_size(), expected));
+    assert(FLAG_IS_ERGO(NewSize) && NewSize == expected,
+        err_msg("NewSize should have been set ergonomically to %zu, but was %zu", expected, NewSize));
+  }
+
+private:
+  static size_t original_InitialHeapSize;
+  static size_t original_MaxHeapSize;
+  static size_t original_MaxNewSize;
+  static size_t original_MinHeapDeltaBytes;
+  static size_t original_NewSize;
+  static size_t original_OldSize;
+
+  static void save_flags() {
+    original_InitialHeapSize   = InitialHeapSize;
+    original_MaxHeapSize       = MaxHeapSize;
+    original_MaxNewSize        = MaxNewSize;
+    original_MinHeapDeltaBytes = MinHeapDeltaBytes;
+    original_NewSize           = NewSize;
+    original_OldSize           = OldSize;
+  }
+
+  static void restore_flags() {
+    InitialHeapSize   = original_InitialHeapSize;
+    MaxHeapSize       = original_MaxHeapSize;
+    MaxNewSize        = original_MaxNewSize;
+    MinHeapDeltaBytes = original_MinHeapDeltaBytes;
+    NewSize           = original_NewSize;
+    OldSize           = original_OldSize;
+  }
+};
+
+size_t TestGenCollectorPolicy::original_InitialHeapSize   = 0;
+size_t TestGenCollectorPolicy::original_MaxHeapSize       = 0;
+size_t TestGenCollectorPolicy::original_MaxNewSize        = 0;
+size_t TestGenCollectorPolicy::original_MinHeapDeltaBytes = 0;
+size_t TestGenCollectorPolicy::original_NewSize           = 0;
+size_t TestGenCollectorPolicy::original_OldSize           = 0;
+
+void TestNewSize_test() {
+  TestGenCollectorPolicy::test();
+}
+
+#endif

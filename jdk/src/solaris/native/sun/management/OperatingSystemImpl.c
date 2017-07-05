@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ Java_sun_management_OperatingSystemImpl_getCommittedVirtualMemorySize0
     char* addr;
     int fd;
 
-    fd = JVM_Open("/proc/self/psinfo", O_RDONLY, 0);
+    fd = open64("/proc/self/psinfo", O_RDONLY, 0);
     if (fd < 0) {
         throw_internal_error(env, "Unable to open /proc/self/psinfo");
         return -1;
@@ -204,17 +204,20 @@ Java_sun_management_OperatingSystemImpl_getCommittedVirtualMemorySize0
 
     addr = (char *)&psinfo;
     for (remaining = sizeof(psinfo_t); remaining > 0;) {
-        result = JVM_Read(fd, addr, remaining);
+        result = read(fd, addr, remaining);
         if (result < 0) {
-            JVM_Close(fd);
-            throw_internal_error(env, "Unable to read /proc/self/psinfo");
-            return -1;
+            if (errno != EINTR) {
+                close(fd);
+                throw_internal_error(env, "Unable to read /proc/self/psinfo");
+                return -1;
+            }
+        } else {
+            remaining -= result;
+            addr += result;
         }
-        remaining -= result;
-        addr += result;
     }
 
-    JVM_Close(fd);
+    close(fd);
     return (jlong) psinfo.pr_size * 1024;
 #elif defined(__linux__)
     FILE *fp;

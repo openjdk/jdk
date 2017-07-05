@@ -27,7 +27,7 @@ package javax.naming;
 
 /**
   * This exception is thrown when
-  * a loop was detected will attempting to resolve a link, or an implementation
+  * a loop was detected while attempting to resolve a link, or an implementation
   * specific limit on link counts has been reached.
   * <p>
   * Synchronization and serialization issues that apply to LinkException
@@ -42,7 +42,7 @@ package javax.naming;
 
 public class LinkLoopException extends LinkException {
     /**
-      * Constructs a new instance of LinkLoopException with an explanation
+      * Constructs a new instance of LinkLoopException with an explanation.
       * All the other fields are initialized to null.
       * @param  explanation     A possibly null string containing additional
       *                         detail about this exception.

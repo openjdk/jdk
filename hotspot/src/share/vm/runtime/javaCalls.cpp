@@ -337,7 +337,7 @@ void JavaCalls::call_helper(JavaValue* result, methodHandle* m, JavaCallArgument
     // A klass might not be initialized since JavaCall's might be used during the executing of
     // the <clinit>. For example, a Thread.start might start executing on an object that is
     // not fully initialized! (bad Java programming style)
-    assert(holder->is_linked(), "rewritting must have taken place");
+    assert(holder->is_linked(), "rewriting must have taken place");
   }
 #endif
 

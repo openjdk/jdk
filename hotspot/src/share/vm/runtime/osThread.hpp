@@ -105,6 +105,9 @@ class OSThread: public CHeapObj<mtThread> {
 #ifdef TARGET_OS_FAMILY_windows
 # include "osThread_windows.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "osThread_aix.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "osThread_bsd.hpp"
 #endif

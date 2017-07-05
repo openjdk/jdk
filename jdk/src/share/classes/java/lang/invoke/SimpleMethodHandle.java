@@ -27,8 +27,6 @@ package java.lang.invoke;
 
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A method handle whose behavior is determined only by its LambdaForm.

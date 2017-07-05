@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,16 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"Generates.certificate.from.a.certificate.request",
                 "\u8A3C\u660E\u66F8\u30EA\u30AF\u30A8\u30B9\u30C8\u304B\u3089\u8A3C\u660E\u66F8\u3092\u751F\u6210\u3057\u307E\u3059"}, //-gencert
         {"Generates.CRL", "CRL\u3092\u751F\u6210\u3057\u307E\u3059"}, //-gencrl
+        {"Generated.keyAlgName.secret.key",
+                "{0}\u79D8\u5BC6\u9375\u3092\u751F\u6210\u3057\u307E\u3057\u305F"}, //-genseckey
+        {"Generated.keysize.bit.keyAlgName.secret.key",
+                "{0}\u30D3\u30C3\u30C8{1}\u79D8\u5BC6\u9375\u3092\u751F\u6210\u3057\u307E\u3057\u305F"}, //-genseckey
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "JDK 1.1.x-style\u30A2\u30A4\u30C7\u30F3\u30C6\u30A3\u30C6\u30A3\u30FB\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u304B\u3089\u30A8\u30F3\u30C8\u30EA\u3092\u30A4\u30F3\u30DD\u30FC\u30C8\u3057\u307E\u3059"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
                 "\u8A3C\u660E\u66F8\u307E\u305F\u306F\u8A3C\u660E\u66F8\u30C1\u30A7\u30FC\u30F3\u3092\u30A4\u30F3\u30DD\u30FC\u30C8\u3057\u307E\u3059"}, //-importcert
+        {"Imports.a.password",
+                "\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u30A4\u30F3\u30DD\u30FC\u30C8\u3057\u307E\u3059"}, //-importpass
         {"Imports.one.or.all.entries.from.another.keystore",
                 "\u5225\u306E\u30AD\u30FC\u30B9\u30C8\u30A2\u304B\u30891\u3064\u307E\u305F\u306F\u3059\u3079\u3066\u306E\u30A8\u30F3\u30C8\u30EA\u3092\u30A4\u30F3\u30DD\u30FC\u30C8\u3057\u307E\u3059"}, //-importkeystore
         {"Clones.a.key.entry",
@@ -220,6 +226,8 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"Must.specify.alias", "\u5225\u540D\u3092\u6307\u5B9A\u3059\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
         {"Keystore.password.must.be.at.least.6.characters",
                 "\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u306F6\u6587\u5B57\u4EE5\u4E0A\u3067\u3042\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
+        {"Enter.the.password.to.be.stored.",
+                "\u4FDD\u5B58\u3059\u308B\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044:  "},
         {"Enter.keystore.password.", "\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044:  "},
         {"Enter.source.keystore.password.", "\u30BD\u30FC\u30B9\u30FB\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044:  "},
         {"Enter.destination.keystore.password.", "\u51FA\u529B\u5148\u30AD\u30FC\u30B9\u30C8\u30A2\u306E\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044:  "},
@@ -328,6 +336,7 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"New.prompt.", "\u65B0\u898F{0}: "},
         {"Passwords.must.differ", "\u30D1\u30B9\u30EF\u30FC\u30C9\u306F\u7570\u306A\u3063\u3066\u3044\u308B\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059"},
         {"Re.enter.new.prompt.", "\u65B0\u898F{0}\u3092\u518D\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044: "},
+        {"Re.enter.passpword.", "\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u518D\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044: "},
         {"Re.enter.new.password.", "\u65B0\u898F\u30D1\u30B9\u30EF\u30FC\u30C9\u3092\u518D\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044: "},
         {"They.don.t.match.Try.again", "\u4E00\u81F4\u3057\u307E\u305B\u3093\u3002\u3082\u3046\u4E00\u5EA6\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044"},
         {"Enter.prompt.alias.name.", "{0}\u306E\u5225\u540D\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044:  "},

@@ -56,4 +56,7 @@ grant {
 };
 POLICY
 
-${TESTJAVA}/bin/java -Djava.security.policy=file:./policy -Dsun.net.spi.nameservice.provider.1=simple,sun -cp ${TESTCLASSES}${PS}${TESTSRC} LookupTest -runtest ${port}
+${TESTJAVA}/bin/java ${TESTVMOPTS} \
+    -Djava.security.policy=file:./policy \
+    -Dsun.net.spi.nameservice.provider.1=simple,sun \
+    -cp ${TESTCLASSES}${PS}${TESTSRC} LookupTest -runtest ${port}

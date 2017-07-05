@@ -104,72 +104,6 @@ public class ActivationLibrary {
         }
     }
 
-    /**
-     * Simple method call to see if rmid is running.
-     *
-     * This method intentionally avoids performing a lookup on the
-     * activation system.
-     */
-    public static boolean rmidRunning(int port) {
-        int allowedNotReady = 50;
-        int connectionRefusedExceptions = 0;
-
-        /* We wait as much as a total of 7.5 secs trying to see Rmid running.
-         * We do this by pausing steps of 100 milliseconds (so up to 75 steps),
-         * right after trying to lookup and find RMID running in the other vm.
-         */
-        final long rmidWaitingStepTime = 100;
-        for (int i = 0; i <= 74; i++) {
-
-            try {
-                LocateRegistry.getRegistry(port).lookup(SYSTEM_NAME);
-                mesg("Activation System available after " +
-                     (i * rmidWaitingStepTime) + " milliseconds");
-                return true;
-
-            } catch (java.rmi.ConnectException e) {
-                mesg("Remote connection refused after " +
-                     (i * rmidWaitingStepTime) + " milliseconds");
-
-                // ignore connect exceptions until we decide rmid is not up
-                if ((connectionRefusedExceptions ++) >= allowedNotReady) {
-                    return false;
-                }
-
-            } catch (java.rmi.NoSuchObjectException nsoe) {
-                /* Activation System still unavailable.
-                 * Ignore this since we are just waiting for its availibility.
-                 * Just signal unavailibility.
-                 */
-                mesg("Activation System still unavailable after more than " +
-                     (i * rmidWaitingStepTime) + " milliseconds");
-
-            } catch (NotBoundException e) {
-                return false;
-
-            } catch (Exception e) {
-                /* print out other types of exceptions as an FYI.
-                 * test should not fail as rmid is likely to be in an
-                 * undetermined state at this point.
-                 */
-                mesg("caught an exception trying to" +
-                     " start rmid, last exception was: " +
-                     e.getMessage());
-                e.printStackTrace();
-            }
-
-            // Waiting for another 100 milliseconds.
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                mesg("Thread interrupted while checking if Activation System is running. Exiting check");
-                return false;
-            }
-        }
-        return false;
-    }
-
     /** cleanup after rmid */
     public static void rmidCleanup(RMID rmid) {
         if (rmid != null) {
@@ -217,7 +151,7 @@ public class ActivationLibrary {
         }
 
         public void run() {
-            if (ActivationLibrary.rmidRunning(port)) {
+            if (RMID.lookupSystem(port) != null) {
                 rmid.destroy();
                 synchronized (this) {
                     // flag that the test was able to shutdown rmid

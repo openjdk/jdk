@@ -26,14 +26,14 @@
  * @bug 8026844
  * @summary Test negExact
  * @compile NegExactILoadTest.java Verify.java
- * @run main NegExactILoadTest -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseMathExactIntrinsics
+ * @run main NegExactILoadTest
  *
  */
 
 public class NegExactILoadTest {
     public static void main(String[] args) {
-        Verify.LoadTest.init();
-        Verify.LoadTest.verify(new Verify.UnaryToBinary(new Verify.NegExactI()));
+      Verify.LoadTest.init();
+      Verify.LoadTest.verify(new Verify.UnaryToBinary(new Verify.NegExactI()));
     }
 
 }
