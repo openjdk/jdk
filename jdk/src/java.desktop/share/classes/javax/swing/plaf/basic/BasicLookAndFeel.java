@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import javax.sound.sampled.*;
 
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
-
+import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 import sun.swing.icon.SortArrowIcon;
 
@@ -439,7 +439,9 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
      */
     private void initResourceBundle(UIDefaults table) {
         table.setDefaultLocale( Locale.getDefault() );
-        table.addResourceBundle( "com.sun.swing.internal.plaf.basic.resources.basic" );
+        SwingAccessor.getUIDefaultsAccessor()
+                     .addInternalBundle(table,
+                             "com.sun.swing.internal.plaf.basic.resources.basic");
     }
 
     /**

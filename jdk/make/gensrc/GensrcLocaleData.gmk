@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -89,8 +89,8 @@ define CaptureLocale
   $1_NON_BASE_LOCALES := $$(subst zh-MO,zh-MO$$(SPACE)zh-Hant-MO, $$($1_NON_BASE_LOCALES))
   $1_NON_BASE_LOCALES := $$(subst zh-TW,zh-TW$$(SPACE)zh-Hant-TW, $$($1_NON_BASE_LOCALES))
 
-# Adding implict locales nn-NO and nb-NO
-  $1_NON_BASE_LOCALES += nn-NO  nb-NO
+# Adding implict locales nb nn-NO and nb-NO
+  $1_NON_BASE_LOCALES += nb  nn-NO  nb-NO
   $1_NON_BASE_LOCALES := $$(sort $$($1_NON_BASE_LOCALES))
 
   ALL_BASE_LOCALES += $$($1_BASE_LOCALES)

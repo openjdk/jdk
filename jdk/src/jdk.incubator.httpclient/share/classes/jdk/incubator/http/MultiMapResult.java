@@ -32,6 +32,8 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * A {@link java.util.Map} containing the result of a HTTP/2 request and multi-response.
+ * {@Incubating}
+ * <p>
  * This is one possible implementation of the aggregate result type {@code <U>} returned
  * from {@link HttpClient#sendAsync(HttpRequest,MultiProcessor) }.
  * The map is indexed by {@link HttpRequest} and each value is a

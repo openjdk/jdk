@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -277,10 +277,14 @@ public class Main {
                     try {
                         Process client = new ProcessBuilder(clientProcessStr).
                                 inheritIO().start();
-                        client.waitFor();
-                        int exitValue = client.exitValue();
-                        if (0 != exitValue) {
-                            die("Error: error happened in client process, exitValue = " + exitValue);
+                        try {
+                            client.waitFor();
+                            int exitValue = client.exitValue();
+                            if (0 != exitValue) {
+                                die("Error: error happened in client process, exitValue = " + exitValue);
+                            }
+                        } finally {
+                            client.destroyForcibly();
                         }
                     } catch (IOException ex) {
                         die("Error: Unable start client process, ex=" + ex.getMessage());
