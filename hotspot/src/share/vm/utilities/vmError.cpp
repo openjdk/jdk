@@ -597,6 +597,14 @@ void VMError::report(outputStream* st, bool _verbose) {
        st->cr();
      }
 
+  STEP(245, "(CDS archive access warning)" )
+
+     // Print an explicit hint if we crashed on access to the CDS archive.
+     if (_verbose && _siginfo) {
+       check_failing_cds_access(st, _siginfo);
+       st->cr();
+     }
+
   STEP(250, "(printing register info)")
 
      // decode register contents if possible

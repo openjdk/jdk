@@ -213,7 +213,7 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public final MappedByteBuffer position(int newPosition) {
@@ -223,7 +223,7 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public final MappedByteBuffer limit(int newLimit) {
@@ -233,7 +233,7 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public final MappedByteBuffer mark() {
@@ -243,7 +243,7 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public final MappedByteBuffer reset() {
@@ -253,7 +253,7 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public final MappedByteBuffer clear() {
@@ -263,7 +263,7 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public final MappedByteBuffer flip() {
@@ -273,7 +273,7 @@ public abstract class MappedByteBuffer
 
     /**
      * {@inheritDoc}
-     * @since 1.9
+     * @since 9
      */
     @Override
     public final MappedByteBuffer rewind() {

@@ -166,10 +166,13 @@ final class SignatureAndHashAlgorithm {
 
     // Get supported algorithm collection from an untrusted collection
     static Collection<SignatureAndHashAlgorithm> getSupportedAlgorithms(
+            AlgorithmConstraints constraints,
             Collection<SignatureAndHashAlgorithm> algorithms ) {
         Collection<SignatureAndHashAlgorithm> supported = new ArrayList<>();
         for (SignatureAndHashAlgorithm sigAlg : algorithms) {
-            if (sigAlg.priority <= SUPPORTED_ALG_PRIORITY_MAX_NUM) {
+            if (sigAlg.priority <= SUPPORTED_ALG_PRIORITY_MAX_NUM &&
+                    constraints.permits(SIGNATURE_PRIMITIVE_SET,
+                                sigAlg.algorithm, null)) {
                 supported.add(sigAlg);
             }
         }
@@ -233,30 +236,42 @@ final class SignatureAndHashAlgorithm {
     }
 
     static SignatureAndHashAlgorithm getPreferableAlgorithm(
-        Collection<SignatureAndHashAlgorithm> algorithms,
-        String expected, PrivateKey signingKey) {
+            Collection<SignatureAndHashAlgorithm> algorithms,
+            String expected, PrivateKey signingKey) {
 
-        if (expected == null && !algorithms.isEmpty()) {
-            for (SignatureAndHashAlgorithm sigAlg : algorithms) {
-                if (sigAlg.priority <= SUPPORTED_ALG_PRIORITY_MAX_NUM) {
-                    return sigAlg;
+        int maxDigestLength = getMaxDigestLength(signingKey);
+        for (SignatureAndHashAlgorithm algorithm : algorithms) {
+            int signValue = algorithm.id & 0xFF;
+            if ((expected == null) ||
+                    (expected.equalsIgnoreCase("rsa") &&
+                            signValue == SignatureAlgorithm.RSA.value) ||
+                    (expected.equalsIgnoreCase("dsa") &&
+                            signValue == SignatureAlgorithm.DSA.value) ||
+                    (expected.equalsIgnoreCase("ecdsa") &&
+                            signValue == SignatureAlgorithm.ECDSA.value) ||
+                    (expected.equalsIgnoreCase("ec") &&
+                            signValue == SignatureAlgorithm.ECDSA.value)) {
+
+                if (algorithm.priority <= SUPPORTED_ALG_PRIORITY_MAX_NUM &&
+                        algorithm.hash.length <= maxDigestLength) {
+
+                    return algorithm;
                 }
             }
-
-            return null;  // no supported algorithm
         }
 
-        if (expected == null ) {
-            return null;  // no expected algorithm, no supported algorithm
-        }
+        return null;
+    }
 
-        /*
-         * Need to check RSA key length to match the length of hash value
-         */
+    /*
+     * Need to check key length to match the length of hash value
+     */
+    private static int getMaxDigestLength(PrivateKey signingKey) {
         int maxDigestLength = Integer.MAX_VALUE;
+
+        // only need to check RSA algorithm at present.
         if (signingKey != null &&
-                "rsa".equalsIgnoreCase(signingKey.getAlgorithm()) &&
-                expected.equalsIgnoreCase("rsa")) {
+                "rsa".equalsIgnoreCase(signingKey.getAlgorithm())) {
             /*
              * RSA keys of 512 bits have been shown to be practically
              * breakable, it does not make much sense to use the strong
@@ -284,25 +299,7 @@ final class SignatureAndHashAlgorithm {
                 // preferable hash algorithm.
         }
 
-        for (SignatureAndHashAlgorithm algorithm : algorithms) {
-            int signValue = algorithm.id & 0xFF;
-            if (expected.equalsIgnoreCase("rsa") &&
-                    signValue == SignatureAlgorithm.RSA.value) {
-                if (algorithm.hash.length <= maxDigestLength) {
-                    return algorithm;
-                }
-            } else if (
-                    (expected.equalsIgnoreCase("dsa") &&
-                        signValue == SignatureAlgorithm.DSA.value) ||
-                    (expected.equalsIgnoreCase("ecdsa") &&
-                        signValue == SignatureAlgorithm.ECDSA.value) ||
-                    (expected.equalsIgnoreCase("ec") &&
-                        signValue == SignatureAlgorithm.ECDSA.value)) {
-                return algorithm;
-            }
-        }
-
-        return null;
+        return maxDigestLength;
     }
 
     static enum HashAlgorithm {
@@ -415,12 +412,14 @@ final class SignatureAndHashAlgorithm {
             supports(HashAlgorithm.SHA1,        SignatureAlgorithm.ECDSA,
                     "SHA1withECDSA",        --p);
 
-            supports(HashAlgorithm.SHA224,      SignatureAlgorithm.DSA,
-                    "SHA224withDSA",        --p);
-            supports(HashAlgorithm.SHA224,      SignatureAlgorithm.RSA,
-                    "SHA224withRSA",        --p);
-            supports(HashAlgorithm.SHA224,      SignatureAlgorithm.ECDSA,
-                    "SHA224withECDSA",      --p);
+            if (Security.getProvider("SunMSCAPI") == null) {
+                supports(HashAlgorithm.SHA224,      SignatureAlgorithm.DSA,
+                        "SHA224withDSA",        --p);
+                supports(HashAlgorithm.SHA224,      SignatureAlgorithm.RSA,
+                        "SHA224withRSA",        --p);
+                supports(HashAlgorithm.SHA224,      SignatureAlgorithm.ECDSA,
+                        "SHA224withECDSA",      --p);
+            }
 
             supports(HashAlgorithm.SHA256,      SignatureAlgorithm.DSA,
                     "SHA256withDSA",        --p);

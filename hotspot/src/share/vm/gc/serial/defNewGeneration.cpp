@@ -31,7 +31,7 @@
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
@@ -39,6 +39,7 @@
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
+#include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -134,13 +135,11 @@ void FastScanClosure::do_oop(oop* p)       { FastScanClosure::do_oop_work(p); }
 void FastScanClosure::do_oop(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
 void KlassScanClosure::do_klass(Klass* klass) {
-  if (TraceScavenge) {
-    ResourceMark rm;
-    gclog_or_tty->print_cr("KlassScanClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
-                           p2i(klass),
-                           klass->external_name(),
-                           klass->has_modified_oops() ? "true" : "false");
-  }
+  NOT_PRODUCT(ResourceMark rm);
+  log_develop_trace(gc, scavenge)("KlassScanClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
+                                  p2i(klass),
+                                  klass->external_name(),
+                                  klass->has_modified_oops() ? "true" : "false");
 
   // If the klass has not been dirtied we know that there's
   // no references into  the young gen and we can skip it.
@@ -359,10 +358,7 @@ bool DefNewGeneration::expand(size_t bytes) {
   // but the second succeeds and expands the heap to its maximum
   // value.
   if (GC_locker::is_active()) {
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("Garbage collection disabled, "
-        "expanded heap instead");
-    }
+    log_debug(gc)("Garbage collection disabled, expanded heap instead");
   }
 
   return success;
@@ -429,22 +425,15 @@ void DefNewGeneration::compute_new_size() {
     MemRegion cmr((HeapWord*)_virtual_space.low(),
                   (HeapWord*)_virtual_space.high());
     gch->barrier_set()->resize_covered_region(cmr);
-    if (Verbose && PrintGC) {
-      size_t new_size_after  = _virtual_space.committed_size();
-      size_t eden_size_after = eden()->capacity();
-      size_t survivor_size_after = from()->capacity();
-      gclog_or_tty->print("New generation size " SIZE_FORMAT "K->"
-        SIZE_FORMAT "K [eden="
-        SIZE_FORMAT "K,survivor=" SIZE_FORMAT "K]",
-        new_size_before/K, new_size_after/K,
-        eden_size_after/K, survivor_size_after/K);
-      if (WizardMode) {
-        gclog_or_tty->print("[allowed " SIZE_FORMAT "K extra for %d threads]",
+
+    log_debug(gc, heap, ergo)(
+        "New generation size " SIZE_FORMAT "K->" SIZE_FORMAT "K [eden=" SIZE_FORMAT "K,survivor=" SIZE_FORMAT "K]",
+        new_size_before/K, _virtual_space.committed_size()/K,
+        eden()->capacity()/K, from()->capacity()/K);
+    log_trace(gc, heap, ergo)(
+        "  [allowed " SIZE_FORMAT "K extra for %d threads]",
           thread_increase_size/K, threads_count);
       }
-      gclog_or_tty->cr();
-    }
-  }
 }
 
 void DefNewGeneration::younger_refs_iterate(OopsInGenClosure* cl, uint n_threads) {
@@ -507,34 +496,27 @@ void DefNewGeneration::space_iterate(SpaceClosure* blk,
 // The last collection bailed out, we are running out of heap space,
 // so we try to allocate the from-space, too.
 HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
+  bool should_try_alloc = should_allocate_from_space() || GC_locker::is_active_and_needs_gc();
+
+  // If the Heap_lock is not locked by this thread, this will be called
+  // again later with the Heap_lock held.
+  bool do_alloc = should_try_alloc && (Heap_lock->owned_by_self() || (SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread()));
+
   HeapWord* result = NULL;
-  if (Verbose && PrintGCDetails) {
-    gclog_or_tty->print("DefNewGeneration::allocate_from_space(" SIZE_FORMAT "):"
-                        "  will_fail: %s"
-                        "  heap_lock: %s"
-                        "  free: " SIZE_FORMAT,
+  if (do_alloc) {
+    result = from()->allocate(size);
+  }
+
+  log_trace(gc, alloc)("DefNewGeneration::allocate_from_space(" SIZE_FORMAT "):  will_fail: %s  heap_lock: %s  free: " SIZE_FORMAT "%s%s returns %s",
                         size,
                         GenCollectedHeap::heap()->incremental_collection_will_fail(false /* don't consult_young */) ?
                           "true" : "false",
                         Heap_lock->is_locked() ? "locked" : "unlocked",
-                        from()->free());
-  }
-  if (should_allocate_from_space() || GC_locker::is_active_and_needs_gc()) {
-    if (Heap_lock->owned_by_self() ||
-        (SafepointSynchronize::is_at_safepoint() &&
-         Thread::current()->is_VM_thread())) {
-      // If the Heap_lock is not locked by this thread, this will be called
-      // again later with the Heap_lock held.
-      result = from()->allocate(size);
-    } else if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("  Heap_lock is not owned by self");
-    }
-  } else if (PrintGC && Verbose) {
-    gclog_or_tty->print_cr("  should_allocate_from_space: NOT");
-  }
-  if (PrintGC && Verbose) {
-    gclog_or_tty->print_cr("  returns %s", result == NULL ? "NULL" : "object");
-  }
+                        from()->free(),
+                        should_try_alloc ? "" : "  should_allocate_from_space: NOT",
+                        do_alloc ? "  Heap_lock is not owned by self" : "",
+                        result == NULL ? "NULL" : "object");
+
   return result;
 }
 
@@ -570,9 +552,7 @@ void DefNewGeneration::collect(bool   full,
   // from this generation, pass on collection; let the next generation
   // do it.
   if (!collection_attempt_is_safe()) {
-    if (Verbose && PrintGCDetails) {
-      gclog_or_tty->print(" :: Collection attempt not safe :: ");
-    }
+    log_trace(gc)(":: Collection attempt not safe ::");
     gch->set_incremental_collection_failed(); // Slight lie: we did not even attempt one
     return;
   }
@@ -580,9 +560,7 @@ void DefNewGeneration::collect(bool   full,
 
   init_assuming_no_promotion_failure();
 
-  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL);
-  // Capture heap used before collection (for printing).
-  size_t gch_prev_used = gch->used();
+  GCTraceTime(Trace, gc) tm("DefNew", NULL, gch->gc_cause());
 
   gch->trace_heap_before_gc(&gc_tracer);
 
@@ -677,9 +655,7 @@ void DefNewGeneration::collect(bool   full,
     _promo_failure_scan_stack.clear(true); // Clear cached segments.
 
     remove_forwarding_pointers();
-    if (PrintGCDetails) {
-      gclog_or_tty->print(" (promotion failed) ");
-    }
+    log_debug(gc)("Promotion failed");
     // Add to-space to the list of space to compact
     // when a promotion failure has occurred.  In that
     // case there can be live objects in to-space
@@ -695,9 +671,6 @@ void DefNewGeneration::collect(bool   full,
 
     // Reset the PromotionFailureALot counters.
     NOT_PRODUCT(gch->reset_promotion_should_fail();)
-  }
-  if (PrintGC && !PrintGCDetails) {
-    gch->print_heap_change(gch_prev_used);
   }
   // set new iteration safe limit for the survivor spaces
   from()->set_concurrent_iteration_safe_limit(from()->top());
@@ -760,10 +733,8 @@ void DefNewGeneration::preserve_mark_if_necessary(oop obj, markOop m) {
 }
 
 void DefNewGeneration::handle_promotion_failure(oop old) {
-  if (PrintPromotionFailure && !_promotion_failed) {
-    gclog_or_tty->print(" (promotion failure size = %d) ",
-                        old->size());
-  }
+  log_debug(gc, promotion)("Promotion failure size = %d) ", old->size());
+
   _promotion_failed = true;
   _promotion_failed_info.register_copy_failure(old->size());
   preserve_mark_if_necessary(old, old->mark());
@@ -895,9 +866,7 @@ void DefNewGeneration::reset_scratch() {
 
 bool DefNewGeneration::collection_attempt_is_safe() {
   if (!to()->is_empty()) {
-    if (Verbose && PrintGCDetails) {
-      gclog_or_tty->print(" :: to is not empty :: ");
-    }
+    log_trace(gc)(":: to is not empty ::");
     return false;
   }
   if (_old_gen == NULL) {
@@ -919,17 +888,13 @@ void DefNewGeneration::gc_epilogue(bool full) {
   if (full) {
     DEBUG_ONLY(seen_incremental_collection_failed = false;)
     if (!collection_attempt_is_safe() && !_eden_space->is_empty()) {
-      if (Verbose && PrintGCDetails) {
-        gclog_or_tty->print("DefNewEpilogue: cause(%s), full, not safe, set_failed, set_alloc_from, clear_seen",
+      log_trace(gc)("DefNewEpilogue: cause(%s), full, not safe, set_failed, set_alloc_from, clear_seen",
                             GCCause::to_string(gch->gc_cause()));
-      }
       gch->set_incremental_collection_failed(); // Slight lie: a full gc left us in that state
       set_should_allocate_from_space(); // we seem to be running out of space
     } else {
-      if (Verbose && PrintGCDetails) {
-        gclog_or_tty->print("DefNewEpilogue: cause(%s), full, safe, clear_failed, clear_alloc_from, clear_seen",
+      log_trace(gc)("DefNewEpilogue: cause(%s), full, safe, clear_failed, clear_alloc_from, clear_seen",
                             GCCause::to_string(gch->gc_cause()));
-      }
       gch->clear_incremental_collection_failed(); // We just did a full collection
       clear_should_allocate_from_space(); // if set
     }
@@ -943,16 +908,12 @@ void DefNewGeneration::gc_epilogue(bool full) {
     // a full collection in between.
     if (!seen_incremental_collection_failed &&
         gch->incremental_collection_failed()) {
-      if (Verbose && PrintGCDetails) {
-        gclog_or_tty->print("DefNewEpilogue: cause(%s), not full, not_seen_failed, failed, set_seen_failed",
+      log_trace(gc)("DefNewEpilogue: cause(%s), not full, not_seen_failed, failed, set_seen_failed",
                             GCCause::to_string(gch->gc_cause()));
-      }
       seen_incremental_collection_failed = true;
     } else if (seen_incremental_collection_failed) {
-      if (Verbose && PrintGCDetails) {
-        gclog_or_tty->print("DefNewEpilogue: cause(%s), not full, seen_failed, will_clear_seen_failed",
+      log_trace(gc)("DefNewEpilogue: cause(%s), not full, seen_failed, will_clear_seen_failed",
                             GCCause::to_string(gch->gc_cause()));
-      }
       assert(gch->gc_cause() == GCCause::_scavenge_alot ||
              (GCCause::is_user_requested_gc(gch->gc_cause()) && UseConcMarkSweepGC && ExplicitGCInvokesConcurrent) ||
              !gch->incremental_collection_failed(),

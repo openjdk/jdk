@@ -324,8 +324,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public boolean hasFinalizer() {
-        HotSpotVMConfig config = config();
-        return (getAccessFlags() & config.klassHasFinalizerFlag) != 0;
+        return (getAccessFlags() & config().jvmAccHasFinalizer) != 0;
     }
 
     @Override

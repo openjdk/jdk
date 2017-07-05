@@ -28,7 +28,7 @@
  * @author  Mandy Chung
  *
  * @modules jdk.management
- * @run main/othervm -XX:+PrintGCDetails GetVMOption
+ * @run main/othervm -XX:+HeapDumpOnOutOfMemoryError GetVMOption
  */
 
 import com.sun.management.HotSpotDiagnosticMXBean;
@@ -38,7 +38,7 @@ import java.util.List;
 import javax.management.MBeanServer;
 
 public class GetVMOption {
-    private static final String PRINT_GC_DETAILS = "PrintGCDetails";
+    private static final String HEAP_DUMP_ON_OOM = "HeapDumpOnOutOfMemoryError";
     private static final String EXPECTED_VALUE = "true";
     private static final String BAD_OPTION = "BadOption";
     private static final String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
@@ -58,7 +58,7 @@ public class GetVMOption {
     }
 
     private static void checkVMOption(HotSpotDiagnosticMXBean mbean) {
-        VMOption option = mbean.getVMOption(PRINT_GC_DETAILS);
+        VMOption option = mbean.getVMOption(HEAP_DUMP_ON_OOM);
         if (!option.getValue().equalsIgnoreCase(EXPECTED_VALUE)) {
             throw new RuntimeException("Unexpected value: " +
                 option.getValue() + " expected: " + EXPECTED_VALUE);

@@ -106,7 +106,7 @@ void os::initialize_thread(Thread* thr) {
   // Nothing to do.
 }
 
-address os::Bsd::ucontext_get_pc(ucontext_t* uc) {
+address os::Bsd::ucontext_get_pc(const ucontext_t* uc) {
   ShouldNotCallThis();
   return NULL;
 }
@@ -115,14 +115,14 @@ void os::Bsd::ucontext_set_pc(ucontext_t * uc, address pc) {
   ShouldNotCallThis();
 }
 
-ExtendedPC os::fetch_frame_from_context(void* ucVoid,
+ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
                                         intptr_t** ret_sp,
                                         intptr_t** ret_fp) {
   ShouldNotCallThis();
   return ExtendedPC();
 }
 
-frame os::fetch_frame_from_context(void* ucVoid) {
+frame os::fetch_frame_from_context(const void* ucVoid) {
   ShouldNotCallThis();
   return frame();
 }
@@ -187,11 +187,10 @@ JVM_handle_bsd_signal(int sig,
       address addr = (address) info->si_addr;
 
       // check if fault address is within thread stack
-      if (addr < thread->stack_base() &&
-          addr >= thread->stack_base() - thread->stack_size()) {
+      if (thread->on_local_stack(addr)) {
         // stack overflow
-        if (thread->in_stack_yellow_zone(addr)) {
-          thread->disable_stack_yellow_zone();
+        if (thread->in_stack_yellow_reserved_zone(addr)) {
+          thread->disable_stack_yellow_reserved_zone();
           ShouldNotCallThis();
         }
         else if (thread->in_stack_red_zone(addr)) {
@@ -374,11 +373,11 @@ size_t os::current_stack_size() {
 /////////////////////////////////////////////////////////////////////////////
 // helper functions for fatal error handler
 
-void os::print_context(outputStream* st, void* context) {
+void os::print_context(outputStream* st, const void* context) {
   ShouldNotCallThis();
 }
 
-void os::print_register_info(outputStream *st, void *context) {
+void os::print_register_info(outputStream *st, const void *context) {
   ShouldNotCallThis();
 }
 

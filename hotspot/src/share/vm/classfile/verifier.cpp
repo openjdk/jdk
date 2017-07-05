@@ -106,9 +106,9 @@ void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verif
   const char* resolve = resolve_class->external_name();
   // print in a single call to reduce interleaving between threads
   if (source_file != NULL) {
-    tty->print("RESOLVE %s %s %s (verification)\n", verify, resolve, source_file);
+    log_info(classresolve)("%s %s %s (verification)", verify, resolve, source_file);
   } else {
-    tty->print("RESOLVE %s %s (verification)\n", verify, resolve);
+    log_info(classresolve)("%s %s (verification)", verify, resolve);
   }
 }
 
@@ -206,7 +206,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     ResourceMark rm(THREAD);
     instanceKlassHandle kls =
       SystemDictionary::resolve_or_fail(exception_name, true, CHECK_false);
-    if (TraceClassResolution) {
+    if (log_is_enabled(Info, classresolve)) {
       Verifier::trace_class_resolution(kls(), klass());
     }
 
@@ -1745,7 +1745,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
 #undef bad_type_message
 
-char* ClassVerifier::generate_code_data(methodHandle m, u4 code_length, TRAPS) {
+char* ClassVerifier::generate_code_data(const methodHandle& m, u4 code_length, TRAPS) {
   char* code_data = NEW_RESOURCE_ARRAY(char, code_length);
   memset(code_data, 0, sizeof(char) * code_length);
   RawBytecodeStream bcs(m);
@@ -1814,9 +1814,9 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
 }
 
 void ClassVerifier::verify_local_variable_table(u4 code_length, char* code_data, TRAPS) {
-  int localvariable_table_length = _method()->localvariable_table_length();
+  int localvariable_table_length = _method->localvariable_table_length();
   if (localvariable_table_length > 0) {
-    LocalVariableTableElement* table = _method()->localvariable_table_start();
+    LocalVariableTableElement* table = _method->localvariable_table_start();
     for (int i = 0; i < localvariable_table_length; i++) {
       u2 start_bci = table[i].start_bci;
       u2 length = table[i].length;
@@ -1992,7 +1992,7 @@ Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
     name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
     true, THREAD);
 
-  if (TraceClassResolution) {
+  if (log_is_enabled(Info, classresolve)) {
     instanceKlassHandle cur_class = current_class();
     Verifier::trace_class_resolution(kls, cur_class());
   }

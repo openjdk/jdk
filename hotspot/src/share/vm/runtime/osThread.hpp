@@ -60,6 +60,7 @@ enum ThreadState {
 
 class OSThread: public CHeapObj<mtThread> {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
  private:
   OSThreadStartFunc _start_proc;  // Thread start routine
   void* _start_parm;              // Thread start routine parameter

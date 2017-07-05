@@ -33,7 +33,6 @@ import java.io.*;
 import javax.security.auth.x500.*;
 import sun.security.util.*;
 import sun.security.pkcs.*;
-import sun.security.x509.*;
 
 public class EmailAddressEncoding {
 

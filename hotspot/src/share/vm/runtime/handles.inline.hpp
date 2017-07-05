@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,48 +69,6 @@ inline name##Handle::name##Handle(Thread* thread, type* obj) : _value(obj), _thr
     _thread->metadata_handles()->push((Metadata*)obj);                 \
   }                                                                    \
 }                                                                      \
-inline name##Handle::name##Handle(const name##Handle &h) {             \
-  _value = h._value;                                                   \
-  if (_value != NULL) {                                                \
-    assert(_value->is_valid(), "obj is valid");                        \
-    if (h._thread != NULL) {                                           \
-      assert(h._thread == Thread::current(), "thread must be current");\
-      _thread = h._thread;                                             \
-    } else {                                                           \
-      _thread = Thread::current();                                     \
-    }                                                                  \
-    assert (_thread->is_in_stack((address)this), "not on stack?");     \
-    _thread->metadata_handles()->push((Metadata*)_value);              \
-  } else {                                                             \
-    _thread = NULL;                                                    \
-  }                                                                    \
-}                                                                      \
-inline name##Handle& name##Handle::operator=(const name##Handle &s) {  \
-  remove();                                                            \
-  _value = s._value;                                                   \
-  if (_value != NULL) {                                                \
-    assert(_value->is_valid(), "obj is valid");                        \
-    if (s._thread != NULL) {                                           \
-      assert(s._thread == Thread::current(), "thread must be current");\
-      _thread = s._thread;                                             \
-    } else {                                                           \
-      _thread = Thread::current();                                     \
-    }                                                                  \
-    assert (_thread->is_in_stack((address)this), "not on stack?");     \
-    _thread->metadata_handles()->push((Metadata*)_value);              \
-  } else {                                                             \
-    _thread = NULL;                                                    \
-  }                                                                    \
-  return *this;                                                        \
-}                                                                      \
-inline void name##Handle::remove() {                                   \
-  if (_value != NULL) {                                                \
-    int i = _thread->metadata_handles()->find_from_end((Metadata*)_value); \
-    assert(i!=-1, "not in metadata_handles list");                     \
-    _thread->metadata_handles()->remove_at(i);                         \
-  }                                                                    \
-}                                                                      \
-inline name##Handle::~name##Handle () { remove(); }                    \
 
 DEF_METADATA_HANDLE_FN(method, Method)
 DEF_METADATA_HANDLE_FN(constantPool, ConstantPool)

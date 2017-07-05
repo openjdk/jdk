@@ -493,25 +493,25 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
     /**
      * Weak bidirectional character type "LRI" in the Unicode specification.
-     * @since 1.9
+     * @since 9
      */
     public static final byte DIRECTIONALITY_LEFT_TO_RIGHT_ISOLATE = 19;
 
     /**
      * Weak bidirectional character type "RLI" in the Unicode specification.
-     * @since 1.9
+     * @since 9
      */
     public static final byte DIRECTIONALITY_RIGHT_TO_LEFT_ISOLATE = 20;
 
     /**
      * Weak bidirectional character type "FSI" in the Unicode specification.
-     * @since 1.9
+     * @since 9
      */
     public static final byte DIRECTIONALITY_FIRST_STRONG_ISOLATE = 21;
 
     /**
      * Weak bidirectional character type "PDI" in the Unicode specification.
-     * @since 1.9
+     * @since 9
      */
     public static final byte DIRECTIONALITY_POP_DIRECTIONAL_ISOLATE = 22;
 
@@ -2590,7 +2590,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
         /**
          * Constant for the "Combining Diacritical Marks Extended" Unicode
          * character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock COMBINING_DIACRITICAL_MARKS_EXTENDED =
             new UnicodeBlock("COMBINING_DIACRITICAL_MARKS_EXTENDED",
@@ -2599,7 +2599,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Myanmar Extended-B" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock MYANMAR_EXTENDED_B =
             new UnicodeBlock("MYANMAR_EXTENDED_B",
@@ -2608,7 +2608,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Latin Extended-E" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock LATIN_EXTENDED_E =
             new UnicodeBlock("LATIN_EXTENDED_E",
@@ -2617,7 +2617,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Coptic Epact Numbers" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock COPTIC_EPACT_NUMBERS =
             new UnicodeBlock("COPTIC_EPACT_NUMBERS",
@@ -2626,7 +2626,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Old Permic" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock OLD_PERMIC =
             new UnicodeBlock("OLD_PERMIC",
@@ -2635,14 +2635,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Elbasan" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock ELBASAN =
             new UnicodeBlock("ELBASAN");
 
         /**
          * Constant for the "Caucasian Albanian" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock CAUCASIAN_ALBANIAN =
             new UnicodeBlock("CAUCASIAN_ALBANIAN",
@@ -2651,7 +2651,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Linear A" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock LINEAR_A =
             new UnicodeBlock("LINEAR_A",
@@ -2660,21 +2660,21 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Palmyrene" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock PALMYRENE =
             new UnicodeBlock("PALMYRENE");
 
         /**
          * Constant for the "Nabataean" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock NABATAEAN =
             new UnicodeBlock("NABATAEAN");
 
         /**
          * Constant for the "Old North Arabian" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock OLD_NORTH_ARABIAN =
             new UnicodeBlock("OLD_NORTH_ARABIAN",
@@ -2683,14 +2683,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Manichaean" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock MANICHAEAN =
             new UnicodeBlock("MANICHAEAN");
 
         /**
          * Constant for the "Psalter Pahlavi" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock PSALTER_PAHLAVI =
             new UnicodeBlock("PSALTER_PAHLAVI",
@@ -2699,14 +2699,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Mahajani" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock MAHAJANI =
             new UnicodeBlock("MAHAJANI");
 
         /**
          * Constant for the "Sinhala Archaic Numbers" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock SINHALA_ARCHAIC_NUMBERS =
             new UnicodeBlock("SINHALA_ARCHAIC_NUMBERS",
@@ -2715,49 +2715,49 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Khojki" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock KHOJKI =
             new UnicodeBlock("KHOJKI");
 
         /**
          * Constant for the "Khudawadi" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock KHUDAWADI =
             new UnicodeBlock("KHUDAWADI");
 
         /**
          * Constant for the "Grantha" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock GRANTHA =
             new UnicodeBlock("GRANTHA");
 
         /**
          * Constant for the "Tirhuta" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock TIRHUTA =
             new UnicodeBlock("TIRHUTA");
 
         /**
          * Constant for the "Siddham" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock SIDDHAM =
             new UnicodeBlock("SIDDHAM");
 
         /**
          * Constant for the "Modi" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock MODI =
             new UnicodeBlock("MODI");
 
         /**
          * Constant for the "Warang Citi" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock WARANG_CITI =
             new UnicodeBlock("WARANG_CITI",
@@ -2766,7 +2766,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Pau Cin Hau" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock PAU_CIN_HAU =
             new UnicodeBlock("PAU_CIN_HAU",
@@ -2775,14 +2775,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Mro" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock MRO =
             new UnicodeBlock("MRO");
 
         /**
          * Constant for the "Bassa Vah" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock BASSA_VAH =
             new UnicodeBlock("BASSA_VAH",
@@ -2791,7 +2791,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Pahawh Hmong" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock PAHAWH_HMONG =
             new UnicodeBlock("PAHAWH_HMONG",
@@ -2800,14 +2800,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Duployan" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock DUPLOYAN =
             new UnicodeBlock("DUPLOYAN");
 
         /**
          * Constant for the "Shorthand Format Controls" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock SHORTHAND_FORMAT_CONTROLS =
             new UnicodeBlock("SHORTHAND_FORMAT_CONTROLS",
@@ -2816,7 +2816,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Mende Kikakui" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock MENDE_KIKAKUI =
             new UnicodeBlock("MENDE_KIKAKUI",
@@ -2825,7 +2825,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Ornamental Dingbats" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock ORNAMENTAL_DINGBATS =
             new UnicodeBlock("ORNAMENTAL_DINGBATS",
@@ -2834,7 +2834,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Geometric Shapes Extended" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock GEOMETRIC_SHAPES_EXTENDED =
             new UnicodeBlock("GEOMETRIC_SHAPES_EXTENDED",
@@ -2843,7 +2843,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Supplemental Arrows-C" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock SUPPLEMENTAL_ARROWS_C =
             new UnicodeBlock("SUPPLEMENTAL_ARROWS_C",
@@ -2852,7 +2852,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Cherokee Supplement" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock CHEROKEE_SUPPLEMENT =
             new UnicodeBlock("CHEROKEE_SUPPLEMENT",
@@ -2861,14 +2861,14 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Hatran" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock HATRAN =
             new UnicodeBlock("HATRAN");
 
         /**
          * Constant for the "Old Hungarian" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock OLD_HUNGARIAN =
             new UnicodeBlock("OLD_HUNGARIAN",
@@ -2877,21 +2877,21 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Multani" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock MULTANI =
             new UnicodeBlock("MULTANI");
 
         /**
          * Constant for the "Ahom" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock AHOM =
             new UnicodeBlock("AHOM");
 
         /**
          * Constant for the "Early Dynastic Cuneiform" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock EARLY_DYNASTIC_CUNEIFORM =
             new UnicodeBlock("EARLY_DYNASTIC_CUNEIFORM",
@@ -2900,7 +2900,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Anatolian Hieroglyphs" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock ANATOLIAN_HIEROGLYPHS =
             new UnicodeBlock("ANATOLIAN_HIEROGLYPHS",
@@ -2909,7 +2909,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Constant for the "Sutton SignWriting" Unicode character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock SUTTON_SIGNWRITING =
             new UnicodeBlock("SUTTON_SIGNWRITING",
@@ -2919,7 +2919,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
         /**
          * Constant for the "Supplemental Symbols and Pictographs" Unicode
          * character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock SUPPLEMENTAL_SYMBOLS_AND_PICTOGRAPHS =
             new UnicodeBlock("SUPPLEMENTAL_SYMBOLS_AND_PICTOGRAPHS",
@@ -2929,7 +2929,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
         /**
          * Constant for the "CJK Unified Ideographs Extension E" Unicode
          * character block.
-         * @since 1.9
+         * @since 9
          */
         public static final UnicodeBlock CJK_UNIFIED_IDEOGRAPHS_EXTENSION_E =
             new UnicodeBlock("CJK_UNIFIED_IDEOGRAPHS_EXTENSION_E",
@@ -4189,175 +4189,175 @@ class Character implements java.io.Serializable, Comparable<Character> {
 
         /**
          * Unicode script "Caucasian Albanian".
-         * @since 1.9
+         * @since 9
          */
         CAUCASIAN_ALBANIAN,
 
         /**
          * Unicode script "Bassa Vah".
-         * @since 1.9
+         * @since 9
          */
         BASSA_VAH,
 
         /**
          * Unicode script "Duployan".
-         * @since 1.9
+         * @since 9
          */
         DUPLOYAN,
 
         /**
          * Unicode script "Elbasan".
-         * @since 1.9
+         * @since 9
          */
         ELBASAN,
 
         /**
          * Unicode script "Grantha".
-         * @since 1.9
+         * @since 9
          */
         GRANTHA,
 
         /**
          * Unicode script "Pahawh Hmong".
-         * @since 1.9
+         * @since 9
          */
         PAHAWH_HMONG,
 
         /**
          * Unicode script "Khojki".
-         * @since 1.9
+         * @since 9
          */
         KHOJKI,
 
         /**
          * Unicode script "Linear A".
-         * @since 1.9
+         * @since 9
          */
         LINEAR_A,
 
         /**
          * Unicode script "Mahajani".
-         * @since 1.9
+         * @since 9
          */
         MAHAJANI,
 
         /**
          * Unicode script "Manichaean".
-         * @since 1.9
+         * @since 9
          */
         MANICHAEAN,
 
         /**
          * Unicode script "Mende Kikakui".
-         * @since 1.9
+         * @since 9
          */
         MENDE_KIKAKUI,
 
         /**
          * Unicode script "Modi".
-         * @since 1.9
+         * @since 9
          */
         MODI,
 
         /**
          * Unicode script "Mro".
-         * @since 1.9
+         * @since 9
          */
         MRO,
 
         /**
          * Unicode script "Old North Arabian".
-         * @since 1.9
+         * @since 9
          */
         OLD_NORTH_ARABIAN,
 
         /**
          * Unicode script "Nabataean".
-         * @since 1.9
+         * @since 9
          */
         NABATAEAN,
 
         /**
          * Unicode script "Palmyrene".
-         * @since 1.9
+         * @since 9
          */
         PALMYRENE,
 
         /**
          * Unicode script "Pau Cin Hau".
-         * @since 1.9
+         * @since 9
          */
         PAU_CIN_HAU,
 
         /**
          * Unicode script "Old Permic".
-         * @since 1.9
+         * @since 9
          */
         OLD_PERMIC,
 
         /**
          * Unicode script "Psalter Pahlavi".
-         * @since 1.9
+         * @since 9
          */
         PSALTER_PAHLAVI,
 
         /**
          * Unicode script "Siddham".
-         * @since 1.9
+         * @since 9
          */
         SIDDHAM,
 
         /**
          * Unicode script "Khudawadi".
-         * @since 1.9
+         * @since 9
          */
         KHUDAWADI,
 
         /**
          * Unicode script "Tirhuta".
-         * @since 1.9
+         * @since 9
          */
         TIRHUTA,
 
         /**
          * Unicode script "Warang Citi".
-         * @since 1.9
+         * @since 9
          */
         WARANG_CITI,
 
          /**
          * Unicode script "Ahom".
-         * @since 1.9
+         * @since 9
          */
         AHOM,
 
         /**
          * Unicode script "Anatolian Hieroglyphs".
-         * @since 1.9
+         * @since 9
          */
         ANATOLIAN_HIEROGLYPHS,
 
         /**
          * Unicode script "Hatran".
-         * @since 1.9
+         * @since 9
          */
         HATRAN,
 
         /**
          * Unicode script "Multani".
-         * @since 1.9
+         * @since 9
          */
         MULTANI,
 
         /**
          * Unicode script "Old Hungarian".
-         * @since 1.9
+         * @since 9
          */
         OLD_HUNGARIAN,
 
         /**
          * Unicode script "SignWriting".
-         * @since 1.9
+         * @since 9
          */
         SIGNWRITING,
 

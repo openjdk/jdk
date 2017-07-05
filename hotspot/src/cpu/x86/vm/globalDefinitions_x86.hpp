@@ -27,6 +27,10 @@
 
 const int StackAlignmentInBytes  = 16;
 
+// Indicates whether the C calling conventions require that
+// 32-bit integer argument values are extended to 64 bits.
+const bool CCallingConventionRequiresIntsAsLongs = false;
+
 #define SUPPORTS_NATIVE_CX8
 
 // The expected size in bytes of a cache line, used to pad data structures.
@@ -55,6 +59,10 @@ const int StackAlignmentInBytes  = 16;
 #if defined(COMPILER2) && !defined(JAVASE_EMBEDDED)
 // Include Restricted Transactional Memory lock eliding optimization
 #define INCLUDE_RTM_OPT 1
+#endif
+
+#if defined(LINUX) || defined(SOLARIS) || defined(__APPLE__)
+#define SUPPORT_RESERVED_STACK_AREA
 #endif
 
 #endif // CPU_X86_VM_GLOBALDEFINITIONS_X86_HPP

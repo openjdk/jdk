@@ -140,6 +140,23 @@ public class WhiteBox {
     return g1IsHumongous0(o);
   }
 
+  private native boolean g1BelongsToHumongousRegion0(long adr);
+  public         boolean g1BelongsToHumongousRegion(long adr) {
+    if (adr == 0) {
+      throw new IllegalArgumentException("adr argument should not be null");
+    }
+    return g1BelongsToHumongousRegion0(adr);
+  }
+
+
+  private native boolean g1BelongsToFreeRegion0(long adr);
+  public         boolean g1BelongsToFreeRegion(long adr) {
+    if (adr == 0) {
+      throw new IllegalArgumentException("adr argument should not be null");
+    }
+    return g1BelongsToFreeRegion0(adr);
+  }
+
   public native long    g1NumMaxRegions();
   public native long    g1NumFreeRegions();
   public native int     g1RegionSize();

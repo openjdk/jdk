@@ -42,6 +42,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -948,6 +949,35 @@ const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   return TypeFunc::make(domain, range);
 }
 
+//for counterMode calls of aescrypt encrypt/decrypt, four pointers and a length, returning int
+const TypeFunc* OptoRuntime::counterMode_aescrypt_Type() {
+  // create input type (domain)
+  int num_args = 7;
+  if (Matcher::pass_original_key_for_aes()) {
+    num_args = 8;
+  }
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL; // src
+  fields[argp++] = TypePtr::NOTNULL; // dest
+  fields[argp++] = TypePtr::NOTNULL; // k array
+  fields[argp++] = TypePtr::NOTNULL; // counter array
+  fields[argp++] = TypeInt::INT; // src len
+  fields[argp++] = TypePtr::NOTNULL; // saved_encCounter
+  fields[argp++] = TypePtr::NOTNULL; // saved used addr
+  if (Matcher::pass_original_key_for_aes()) {
+    fields[argp++] = TypePtr::NOTNULL; // original k array
+  }
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+  // returning cipher len (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 /*
  * void implCompress(byte[] buf, int ofs)
  */
@@ -1103,6 +1133,26 @@ const TypeFunc* OptoRuntime::montgomerySquare_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc* OptoRuntime::vectorizedMismatch_Type() {
+  // create input type (domain)
+  int num_args = 4;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // obja
+  fields[argp++] = TypePtr::NOTNULL;    // objb
+  fields[argp++] = TypeInt::INT;        // length, number of elements
+  fields[argp++] = TypeInt::INT;        // log2scale, element size
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+  //return mismatch index (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 // GHASH block processing
 const TypeFunc* OptoRuntime::ghash_processBlocks_Type() {
     int argcnt = 4;
@@ -1211,7 +1261,7 @@ bool OptoRuntime::is_callee_saved_register(MachRegisterNumbers reg) {
 // Exceptions
 //
 
-static void trace_exception(oop exception_oop, address exception_pc, const char* msg) PRODUCT_RETURN;
+static void trace_exception(outputStream* st, oop exception_oop, address exception_pc, const char* msg);
 
 // The method is an entry that is always called by a C++ method not
 // directly from compiled code. Compiled code will call the C++ method following.
@@ -1234,8 +1284,9 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   // normal bytecode execution.
   thread->clear_exception_oop_and_pc();
 
-  if (TraceExceptions) {
-    trace_exception(exception(), pc, "");
+  if (log_is_enabled(Info, exceptions)) {
+    ResourceMark rm;
+    trace_exception(LogHandle(exceptions)::info_stream(), exception(), pc, "");
   }
 
   // for AbortVMOnException flag
@@ -1600,29 +1651,25 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   return c;
 }
 
-//-----------------------------------------------------------------------------
-// Non-product code
-#ifndef PRODUCT
-
 int trace_exception_counter = 0;
-static void trace_exception(oop exception_oop, address exception_pc, const char* msg) {
-  ttyLocker ttyl;
+static void trace_exception(outputStream* st, oop exception_oop, address exception_pc, const char* msg) {
   trace_exception_counter++;
-  tty->print("%d [Exception (%s): ", trace_exception_counter, msg);
-  exception_oop->print_value();
-  tty->print(" in ");
+  stringStream tempst;
+
+  tempst.print("%d [Exception (%s): ", trace_exception_counter, msg);
+  exception_oop->print_value_on(&tempst);
+  tempst.print(" in ");
   CodeBlob* blob = CodeCache::find_blob(exception_pc);
   if (blob->is_nmethod()) {
     nmethod* nm = blob->as_nmethod_or_null();
-    nm->method()->print_value();
+    nm->method()->print_value_on(&tempst);
   } else if (blob->is_runtime_stub()) {
-    tty->print("<runtime-stub>");
+    tempst.print("<runtime-stub>");
   } else {
-    tty->print("<unknown>");
+    tempst.print("<unknown>");
   }
-  tty->print(" at " INTPTR_FORMAT,  p2i(exception_pc));
-  tty->print_cr("]");
+  tempst.print(" at " INTPTR_FORMAT,  p2i(exception_pc));
+  tempst.print("]");
+
+  st->print_raw_cr(tempst.as_string());
 }
-
-#endif  // PRODUCT
-

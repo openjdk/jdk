@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug 8015396
+ * @ignore 8145543
  * @summary double a%b returns NaN for some (a,b) (|a| < inf, |b|>0) (on Core i7 980X)
- * @ignore 8015396
  * @run main ModNaN
  */
 public class ModNaN {

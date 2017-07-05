@@ -39,6 +39,7 @@ class GlobalTLABStats;
 //            used to make it available for such multiplexing.
 class ThreadLocalAllocBuffer: public CHeapObj<mtThread> {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 private:
   HeapWord* _start;                              // address of TLAB
   HeapWord* _top;                                // address after last allocation

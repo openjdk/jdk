@@ -245,13 +245,13 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
   double d = (double)hi1;
 
   // Compute all endpoints & check for overflow
-  int32_t A = lo0*lo1;
+  int32_t A = java_multiply(lo0, lo1);
   if( (double)A != a*c ) return TypeInt::INT; // Overflow?
-  int32_t B = lo0*hi1;
+  int32_t B = java_multiply(lo0, hi1);
   if( (double)B != a*d ) return TypeInt::INT; // Overflow?
-  int32_t C = hi0*lo1;
+  int32_t C = java_multiply(hi0, lo1);
   if( (double)C != b*c ) return TypeInt::INT; // Overflow?
-  int32_t D = hi0*hi1;
+  int32_t D = java_multiply(hi0, hi1);
   if( (double)D != b*d ) return TypeInt::INT; // Overflow?
 
   if( A < B ) { lo0 = A; hi0 = B; } // Sort range endpoints
@@ -341,13 +341,13 @@ const Type *MulLNode::mul_ring(const Type *t0, const Type *t1) const {
   double d = (double)hi1;
 
   // Compute all endpoints & check for overflow
-  jlong A = lo0*lo1;
+  jlong A = java_multiply(lo0, lo1);
   if( (double)A != a*c ) return TypeLong::LONG; // Overflow?
-  jlong B = lo0*hi1;
+  jlong B = java_multiply(lo0, hi1);
   if( (double)B != a*d ) return TypeLong::LONG; // Overflow?
-  jlong C = hi0*lo1;
+  jlong C = java_multiply(hi0, lo1);
   if( (double)C != b*c ) return TypeLong::LONG; // Overflow?
-  jlong D = hi0*hi1;
+  jlong D = java_multiply(hi0, hi1);
   if( (double)D != b*d ) return TypeLong::LONG; // Overflow?
 
   if( A < B ) { lo0 = A; hi0 = B; } // Sort range endpoints
@@ -574,7 +574,8 @@ Node *AndLNode::Identity( PhaseTransform *phase ) {
     // Masking off high bits which are always zero is useless.
     const TypeLong* t1 = phase->type( in(1) )->isa_long();
     if (t1 != NULL && t1->_lo >= 0) {
-      jlong t1_support = ((jlong)1 << (1 + log2_long(t1->_hi))) - 1;
+      int bit_count = log2_long(t1->_hi) + 1;
+      jlong t1_support = jlong(max_julong >> (BitsPerJavaLong - bit_count));
       if ((t1_support & con) == t1_support)
         return usr;
     }
@@ -802,7 +803,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Check for ((x & ((CONST64(1)<<(64-c0))-1)) << c0) which ANDs off high bits
   // before shifting them away.
-  const jlong bits_mask = ((jlong)CONST64(1) << (jlong)(BitsPerJavaLong - con)) - CONST64(1);
+  const jlong bits_mask = jlong(max_julong >> con);
   if( add1_op == Op_AndL &&
       phase->type(add1->in(2)) == TypeLong::make( bits_mask ) )
     return new LShiftLNode( add1->in(1), in(2) );
@@ -1254,7 +1255,7 @@ Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if ( con == 0 ) return NULL;  // let Identity() handle a 0 shift count
                               // note: mask computation below does not work for 0 shift count
   // We'll be wanting the right-shift amount as a mask of that many bits
-  const jlong mask = (((jlong)CONST64(1) << (jlong)(BitsPerJavaLong - con)) -1);
+  const jlong mask = jlong(max_julong >> con);
 
   // Check for ((x << z) + Y) >>> z.  Replace with x + con>>>z
   // The idiom for rounding to a power of 2 is "(Q+(2^z-1)) >>> z".

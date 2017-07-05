@@ -187,27 +187,31 @@ TARGETS += $(POLICY_DST)
 ifeq ($(CACERTS_FILE), )
   CACERTS_FILE := $(JDK_TOPDIR)/src/java.base/share/conf/security/cacerts
 endif
+
 CACERTS_DST := $(LIB_DST_DIR)/security/cacerts
 
 $(CACERTS_DST): $(CACERTS_FILE)
+	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%, %, $@))
 	$(call install-file)
 
 TARGETS += $(CACERTS_DST)
 
 ################################################################################
 
-$(CONF_DST_DIR)/net.properties: $(JDK_TOPDIR)/src/java.base/share/conf/net.properties
-	$(ECHO) $(LOG_INFO) Copying $(@F)
-	$(call install-file)
+$(eval $(call SetupCopyFiles, COPY_NET_PROPERTIES, \
+    FILES := $(JDK_TOPDIR)/src/java.base/share/conf/net.properties, \
+    DEST := $(CONF_DST_DIR), \
+))
 
-TARGETS += $(CONF_DST_DIR)/net.properties
+TARGETS += $(COPY_NET_PROPERTIES)
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
-  $(CONF_DST_DIR)/sdp/sdp.conf.template: $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/sdp/sdp.conf.template
-	$(ECHO) $(LOG_INFO) Copying $(@F)
-	$(call install-file)
+  $(eval $(call SetupCopyFiles, COPY_SDP_CONF, \
+      FILES := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/conf/sdp/sdp.conf.template, \
+      DEST := $(CONF_DST_DIR)/sdp, \
+  ))
 
-  TARGETS += $(CONF_DST_DIR)/sdp/sdp.conf.template
+  TARGETS += $(COPY_SDP_CONF)
 endif
 
 ################################################################################

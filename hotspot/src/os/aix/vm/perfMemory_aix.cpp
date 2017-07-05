@@ -532,7 +532,6 @@ static char* get_user_name(uid_t uid) {
 
   char* pwbuf = NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
-  // POSIX interface to getpwuid_r is used on LINUX
   struct passwd* p;
   int result = getpwuid_r(uid, &pwent, pwbuf, (size_t)bufsize, &p);
 
@@ -983,7 +982,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 // memory region on success or NULL on failure. A return value of
 // NULL will ultimately disable the shared memory feature.
 //
-// On Solaris and Linux, the name space for shared memory objects
+// On AIX, Solaris and Linux, the name space for shared memory objects
 // is the file system name space.
 //
 // A monitoring application attaching to a JVM does not need to know

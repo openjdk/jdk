@@ -35,7 +35,7 @@ import java.util.function.Supplier;
  * to enrich it's functionality
  *
  * @author Petr Pchelko
- * @since 1.9
+ * @since 9
  */
 public interface DesktopDatatransferService {
 
