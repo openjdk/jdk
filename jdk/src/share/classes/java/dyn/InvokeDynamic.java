@@ -26,10 +26,25 @@
 package java.dyn;
 
 /**
- * Syntactic marker interface to request javac to emit an {@code invokedynamic} instruction.
+ * Syntactic marker to request javac to emit an {@code invokedynamic} instruction.
+ * An {@code invokedynamic} instruction is a 5-byte bytecoded instruction
+ * which begins with an opcode byte of value 186 ({@code 0xBA}),
+ * and is followed by a two-byte index of a {@code NameAndType} constant
+ * pool entry, then by two zero bytes.  The constant pool reference gives
+ * the method name and argument and return types of the call site; there
+ * is no other information provided at the call site.
  * <p>
- * This type has no particular meaning as a class or interface supertype, and can never be instantiated.
+ * The {@code invokedynamic} instruction is incomplete without a target method.
+ * The target method is a property of the reified call site object
+ * (of type {@link CallSite}) which is in a one-to-one association with each
+ * corresponding {@code invokedynamic} instruction.  The call site object
+ * is initially produced by a <em>bootstrap method</em> associated with
+ * the call site, via the various overloadings of {@link Linkage#registerBootstrapMethod}.
+ * <p>
+ * The type {@code InvokeDynamic} has no particular meaning as a
+ * class or interface supertype, or an object type; it can never be instantiated.
  * Logically, it denotes a source of all dynamically typed methods.
+ * It may be viewed as a pure syntactic marker (an importable one) of static calls.
  * @author John Rose, JSR 292 EG
  */
 public final class InvokeDynamic {
