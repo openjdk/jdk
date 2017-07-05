@@ -25,9 +25,12 @@
 #ifndef SHARE_VM_GC_SHARED_BLOCKOFFSETTABLE_HPP
 #define SHARE_VM_GC_SHARED_BLOCKOFFSETTABLE_HPP
 
+#include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 // The CollectedHeap type requires subtypes to implement a method
 // "block_start".  For some subtypes, notably generational
@@ -126,6 +129,19 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
   VirtualSpace _vs;
   u_char* _offset_array;          // byte array keeping backwards offsets
 
+  void fill_range(size_t start, size_t num_cards, u_char offset) {
+    void* start_ptr = &_offset_array[start];
+#if INCLUDE_ALL_GCS
+    // If collector is concurrent, special handling may be needed.
+    assert(!UseG1GC, "Shouldn't be here when using G1");
+    if (UseConcMarkSweepGC) {
+      memset_with_concurrent_readers(start_ptr, offset, num_cards);
+      return;
+    }
+#endif // INCLUDE_ALL_GCS
+    memset(start_ptr, offset, num_cards);
+  }
+
  protected:
   // Bounds checking accessors:
   // For performance these have to devolve to array accesses in product builds.
@@ -160,20 +176,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
     assert(left  < right, "Heap addresses out of order");
     size_t num_cards = pointer_delta(right, left) >> LogN_words;
 
-    // Below, we may use an explicit loop instead of memset()
-    // because on certain platforms memset() can give concurrent
-    // readers "out-of-thin-air," phantom zeros; see 6948537.
-    if (UseMemSetInBOT) {
-      memset(&_offset_array[index_for(left)], offset, num_cards);
-    } else {
-      size_t i = index_for(left);
-      const size_t end = i + num_cards;
-      for (; i < end; i++) {
-        // Elided until CR 6977974 is fixed properly.
-        // assert(!reducing || _offset_array[i] >= offset, "Not reducing");
-        _offset_array[i] = offset;
-      }
-    }
+    fill_range(index_for(left), num_cards, offset);
   }
 
   void set_offset_array(size_t left, size_t right, u_char offset, bool reducing = false) {
@@ -182,20 +185,7 @@ class BlockOffsetSharedArray: public CHeapObj<mtGC> {
     assert(left  <= right, "indexes out of order");
     size_t num_cards = right - left + 1;
 
-    // Below, we may use an explicit loop instead of memset
-    // because on certain platforms memset() can give concurrent
-    // readers "out-of-thin-air," phantom zeros; see 6948537.
-    if (UseMemSetInBOT) {
-      memset(&_offset_array[left], offset, num_cards);
-    } else {
-      size_t i = left;
-      const size_t end = i + num_cards;
-      for (; i < end; i++) {
-        // Elided until CR 6977974 is fixed properly.
-        // assert(!reducing || _offset_array[i] >= offset, "Not reducing");
-        _offset_array[i] = offset;
-      }
-    }
+    fill_range(left, num_cards, offset);
   }
 
   void check_offset_array(size_t index, HeapWord* high, HeapWord* low) const {

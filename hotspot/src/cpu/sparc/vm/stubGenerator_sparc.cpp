@@ -981,7 +981,7 @@ class StubGenerator: public StubCodeGenerator {
           __ restore();
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
       case BarrierSet::ModRef:
         break;
@@ -1014,7 +1014,7 @@ class StubGenerator: public StubCodeGenerator {
           __ restore();
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
         {
           CardTableModRefBS* ct = barrier_set_cast<CardTableModRefBS>(bs);
@@ -5110,6 +5110,188 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+#define ADLER32_NUM_TEMPS 16
+
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   O0   - int   adler
+   *   O1   - byte* buff
+   *   O2   - int   len
+   *
+   * Output:
+   *   O0   - int adler result
+   */
+  address generate_updateBytesAdler32() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+    address start = __ pc();
+
+    Label L_cleanup_loop, L_cleanup_loop_check;
+    Label L_main_loop_check, L_main_loop, L_inner_loop, L_inner_loop_check;
+    Label L_nmax_check_done;
+
+    // Aliases
+    Register s1     = O0;
+    Register s2     = O3;
+    Register buff   = O1;
+    Register len    = O2;
+    Register temp[ADLER32_NUM_TEMPS] = {L0, L1, L2, L3, L4, L5, L6, L7, I0, I1, I2, I3, I4, I5, G3, I7};
+
+    // Max number of bytes we can process before having to take the mod
+    // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
+    unsigned long NMAX = 0x15B0;
+
+    // Zero-out the upper bits of len
+    __ clruwu(len);
+
+    // Create the mask 0xFFFF
+    __ set64(0x00FFFF, O4, O5); // O5 is the temp register
+
+    // s1 is initialized to the lower 16 bits of adler
+    // s2 is initialized to the upper 16 bits of adler
+    __ srlx(O0, 16, O5); // adler >> 16
+    __ and3(O0, O4, s1); // s1  = (adler & 0xFFFF)
+    __ and3(O5, O4, s2); // s2  = ((adler >> 16) & 0xFFFF)
+
+    // The pipelined loop needs at least 16 elements for 1 iteration
+    // It does check this, but it is more effective to skip to the cleanup loop
+    // Setup the constant for cutoff checking
+    __ mov(15, O4);
+
+    // Check if we are above the cutoff, if not go to the cleanup loop immediately
+    __ cmp_and_br_short(len, O4, Assembler::lessEqualUnsigned, Assembler::pt, L_cleanup_loop_check);
+
+    // Free up some registers for our use
+    for (int i = 0; i < ADLER32_NUM_TEMPS; i++) {
+      __ movxtod(temp[i], as_FloatRegister(2*i));
+    }
+
+    // Loop maintenance stuff is done at the end of the loop, so skip to there
+    __ ba_short(L_main_loop_check);
+
+    __ BIND(L_main_loop);
+
+    // Prologue for inner loop
+    __ ldub(buff, 0, L0);
+    __ dec(O5);
+
+    for (int i = 1; i < 8; i++) {
+      __ ldub(buff, i, temp[i]);
+    }
+
+    __ inc(buff, 8);
+
+    // Inner loop processes 16 elements at a time, might never execute if only 16 elements
+    // to be processed by the outter loop
+    __ ba_short(L_inner_loop_check);
+
+    __ BIND(L_inner_loop);
+
+    for (int i = 0; i < 8; i++) {
+      __ ldub(buff, (2*i), temp[(8+(2*i)) % ADLER32_NUM_TEMPS]);
+      __ add(s1, temp[i], s1);
+      __ ldub(buff, (2*i)+1, temp[(8+(2*i)+1) % ADLER32_NUM_TEMPS]);
+      __ add(s2, s1, s2);
+    }
+
+    // Original temp 0-7 used and new loads to temp 0-7 issued
+    // temp 8-15 ready to be consumed
+    __ add(s1, I0, s1);
+    __ dec(O5);
+    __ add(s2, s1, s2);
+    __ add(s1, I1, s1);
+    __ inc(buff, 16);
+    __ add(s2, s1, s2);
+
+    for (int i = 0; i < 6; i++) {
+      __ add(s1, temp[10+i], s1);
+      __ add(s2, s1, s2);
+    }
+
+    __ BIND(L_inner_loop_check);
+    __ nop();
+    __ cmp_and_br_short(O5, 0, Assembler::notEqual, Assembler::pt, L_inner_loop);
+
+    // Epilogue
+    for (int i = 0; i < 4; i++) {
+      __ ldub(buff, (2*i), temp[8+(2*i)]);
+      __ add(s1, temp[i], s1);
+      __ ldub(buff, (2*i)+1, temp[8+(2*i)+1]);
+      __ add(s2, s1, s2);
+    }
+
+    __ add(s1, temp[4], s1);
+    __ inc(buff, 8);
+
+    for (int i = 0; i < 11; i++) {
+      __ add(s2, s1, s2);
+      __ add(s1, temp[5+i], s1);
+    }
+
+    __ add(s2, s1, s2);
+
+    // Take the mod for s1 and s2
+    __ set64(0xFFF1, L0, L1);
+    __ udivx(s1, L0, L1);
+    __ udivx(s2, L0, L2);
+    __ mulx(L0, L1, L1);
+    __ mulx(L0, L2, L2);
+    __ sub(s1, L1, s1);
+    __ sub(s2, L2, s2);
+
+    // Make sure there is something left to process
+    __ BIND(L_main_loop_check);
+    __ set64(NMAX, L0, L1);
+    // k = len < NMAX ? len : NMAX
+    __ cmp_and_br_short(len, L0, Assembler::greaterEqualUnsigned, Assembler::pt, L_nmax_check_done);
+    __ andn(len, 0x0F, L0); // only loop a multiple of 16 times
+    __ BIND(L_nmax_check_done);
+    __ mov(L0, O5);
+    __ sub(len, L0, len); // len -= k
+
+    __ srlx(O5, 4, O5); // multiplies of 16
+    __ cmp_and_br_short(O5, 0, Assembler::notEqual, Assembler::pt, L_main_loop);
+
+    // Restore anything we used, take the mod one last time, combine and return
+    // Restore any registers we saved
+    for (int i = 0; i < ADLER32_NUM_TEMPS; i++) {
+      __ movdtox(as_FloatRegister(2*i), temp[i]);
+    }
+
+    // There might be nothing left to process
+    __ ba_short(L_cleanup_loop_check);
+
+    __ BIND(L_cleanup_loop);
+    __ ldub(buff, 0, O4); // load single byte form buffer
+    __ inc(buff); // buff++
+    __ add(s1, O4, s1); // s1 += *buff++;
+    __ dec(len); // len--
+    __ add(s1, s2, s2); // s2 += s1;
+    __ BIND(L_cleanup_loop_check);
+    __ nop();
+    __ cmp_and_br_short(len, 0, Assembler::notEqual, Assembler::pt, L_cleanup_loop);
+
+    // Take the mod one last time
+    __ set64(0xFFF1, O1, O2);
+    __ udivx(s1, O1, O2);
+    __ udivx(s2, O1, O5);
+    __ mulx(O1, O2, O2);
+    __ mulx(O1, O5, O5);
+    __ sub(s1, O2, s1);
+    __ sub(s2, O5, s2);
+
+    // Combine lower bits and higher bits
+    __ sllx(s2, 16, s2); // s2 = s2 << 16
+    __ or3(s1, s2, s1);  // adler = s2 | s1
+    // Final return value is in O0
+    __ retl();
+    __ delayed()->nop();
+
+    return start;
+  }
+
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
@@ -5205,6 +5387,11 @@ class StubGenerator: public StubCodeGenerator {
     // generate CRC32C intrinsic code
     if (UseCRC32CIntrinsics) {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
+    }
+
+    // generate Adler32 intrinsics code
+    if (UseAdler32Intrinsics) {
+      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
   }
 

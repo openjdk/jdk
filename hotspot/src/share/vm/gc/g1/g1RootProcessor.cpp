@@ -28,6 +28,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/bufferingOopClosure.hpp"
+#include "gc/g1/g1CodeBlobClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
@@ -39,57 +40,6 @@
 #include "runtime/fprofiler.hpp"
 #include "runtime/mutex.hpp"
 #include "services/management.hpp"
-
-class G1CodeBlobClosure : public CodeBlobClosure {
-  class HeapRegionGatheringOopClosure : public OopClosure {
-    G1CollectedHeap* _g1h;
-    OopClosure* _work;
-    nmethod* _nm;
-
-    template <typename T>
-    void do_oop_work(T* p) {
-      _work->do_oop(p);
-      T oop_or_narrowoop = oopDesc::load_heap_oop(p);
-      if (!oopDesc::is_null(oop_or_narrowoop)) {
-        oop o = oopDesc::decode_heap_oop_not_null(oop_or_narrowoop);
-        HeapRegion* hr = _g1h->heap_region_containing_raw(o);
-        assert(!_g1h->obj_in_cs(o) || hr->rem_set()->strong_code_roots_list_contains(_nm), "if o still in CS then evacuation failed and nm must already be in the remset");
-        hr->add_strong_code_root(_nm);
-      }
-    }
-
-  public:
-    HeapRegionGatheringOopClosure(OopClosure* oc) : _g1h(G1CollectedHeap::heap()), _work(oc), _nm(NULL) {}
-
-    void do_oop(oop* o) {
-      do_oop_work(o);
-    }
-
-    void do_oop(narrowOop* o) {
-      do_oop_work(o);
-    }
-
-    void set_nm(nmethod* nm) {
-      _nm = nm;
-    }
-  };
-
-  HeapRegionGatheringOopClosure _oc;
-public:
-  G1CodeBlobClosure(OopClosure* oc) : _oc(oc) {}
-
-  void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != NULL) {
-      if (!nm->test_set_oops_do_mark()) {
-        _oc.set_nm(nm);
-        nm->oops_do(&_oc);
-        nm->fix_oop_relocations();
-      }
-    }
-  }
-};
-
 
 void G1RootProcessor::worker_has_discovered_all_strong_classes() {
   assert(ClassUnloadingWithConcurrentMark, "Currently only needed when doing G1 Class Unloading");
@@ -319,14 +269,6 @@ void G1RootProcessor::process_vm_roots(OopClosure* strong_roots,
       StringTable::possibly_parallel_oops_do(weak_roots);
     }
   }
-}
-
-void G1RootProcessor::scan_remembered_sets(G1ParPushHeapRSClosure* scan_rs,
-                                           OopClosure* scan_non_heap_weak_roots,
-                                           uint worker_i) {
-  G1CodeBlobClosure scavenge_cs_nmethods(scan_non_heap_weak_roots);
-
-  _g1h->g1_rem_set()->oops_into_collection_set_do(scan_rs, &scavenge_cs_nmethods, worker_i);
 }
 
 uint G1RootProcessor::n_workers() const {

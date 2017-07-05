@@ -106,7 +106,7 @@ private:
 
   // special iterators for index ranges, returns size of object
 #define ObjArrayOop_OOP_ITERATE_DECL(OopClosureType, nv_suffix)     \
-  int oop_iterate_range(OopClosureType* blk, int start, int end);
+  void oop_iterate_range(OopClosureType* blk, int start, int end);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayOop_OOP_ITERATE_DECL)
