@@ -1407,8 +1407,7 @@ JvmtiEnv::PopFrame(JavaThread* java_thread) {
     // If any of the top 2 frames is a compiled one, need to deoptimize it
     for (int i = 0; i < 2; i++) {
       if (!is_interpreted[i]) {
-        VM_DeoptimizeFrame op(java_thread, frame_sp[i]);
-        VMThread::execute(&op);
+        Deoptimization::deoptimize_frame(java_thread, frame_sp[i]);
       }
     }
 

@@ -38,18 +38,20 @@ class CE_Eliminator: public BlockClosure {
  private:
   IR* _hir;
   int _cee_count;                                // the number of CEs successfully eliminated
+  int _ifop_count;                               // the number of IfOps successfully simplified
   int _has_substitution;
 
  public:
-  CE_Eliminator(IR* hir) : _cee_count(0), _hir(hir) {
+  CE_Eliminator(IR* hir) : _cee_count(0), _ifop_count(0), _hir(hir) {
     _has_substitution = false;
     _hir->iterate_preorder(this);
     if (_has_substitution) {
-      // substituted some phis so resolve the substitution
+      // substituted some ifops/phis, so resolve the substitution
       SubstitutionResolver sr(_hir);
     }
   }
   int cee_count() const                          { return _cee_count; }
+  int ifop_count() const                         { return _ifop_count; }
 
   void adjust_exception_edges(BlockBegin* block, BlockBegin* sux) {
     int e = sux->number_of_exception_handlers();
@@ -68,155 +70,213 @@ class CE_Eliminator: public BlockClosure {
     }
   }
 
-  virtual void block_do(BlockBegin* block) {
-    // 1) find conditional expression
-    // check if block ends with an If
-    If* if_ = block->end()->as_If();
-    if (if_ == NULL) return;
+  virtual void block_do(BlockBegin* block);
 
-    // check if If works on int or object types
-    // (we cannot handle If's working on long, float or doubles yet,
-    // since IfOp doesn't support them - these If's show up if cmp
-    // operations followed by If's are eliminated)
-    ValueType* if_type = if_->x()->type();
-    if (!if_type->is_int() && !if_type->is_object()) return;
-
-    BlockBegin* t_block = if_->tsux();
-    BlockBegin* f_block = if_->fsux();
-    Instruction* t_cur = t_block->next();
-    Instruction* f_cur = f_block->next();
-
-    // one Constant may be present between BlockBegin and BlockEnd
-    Value t_const = NULL;
-    Value f_const = NULL;
-    if (t_cur->as_Constant() != NULL && !t_cur->can_trap()) {
-      t_const = t_cur;
-      t_cur = t_cur->next();
-    }
-    if (f_cur->as_Constant() != NULL && !f_cur->can_trap()) {
-      f_const = f_cur;
-      f_cur = f_cur->next();
-    }
-
-    // check if both branches end with a goto
-    Goto* t_goto = t_cur->as_Goto();
-    if (t_goto == NULL) return;
-    Goto* f_goto = f_cur->as_Goto();
-    if (f_goto == NULL) return;
-
-    // check if both gotos merge into the same block
-    BlockBegin* sux = t_goto->default_sux();
-    if (sux != f_goto->default_sux()) return;
-
-    // check if at least one word was pushed on sux_state
-    ValueStack* sux_state = sux->state();
-    if (sux_state->stack_size() <= if_->state()->stack_size()) return;
-
-    // check if phi function is present at end of successor stack and that
-    // only this phi was pushed on the stack
-    Value sux_phi = sux_state->stack_at(if_->state()->stack_size());
-    if (sux_phi == NULL || sux_phi->as_Phi() == NULL || sux_phi->as_Phi()->block() != sux) return;
-    if (sux_phi->type()->size() != sux_state->stack_size() - if_->state()->stack_size()) return;
-
-    // get the values that were pushed in the true- and false-branch
-    Value t_value = t_goto->state()->stack_at(if_->state()->stack_size());
-    Value f_value = f_goto->state()->stack_at(if_->state()->stack_size());
-
-    // backend does not support floats
-    assert(t_value->type()->base() == f_value->type()->base(), "incompatible types");
-    if (t_value->type()->is_float_kind()) return;
-
-    // check that successor has no other phi functions but sux_phi
-    // this can happen when t_block or f_block contained additonal stores to local variables
-    // that are no longer represented by explicit instructions
-    for_each_phi_fun(sux, phi,
-                     if (phi != sux_phi) return;
-                     );
-    // true and false blocks can't have phis
-    for_each_phi_fun(t_block, phi, return; );
-    for_each_phi_fun(f_block, phi, return; );
-
-    // 2) substitute conditional expression
-    //    with an IfOp followed by a Goto
-    // cut if_ away and get node before
-    Instruction* cur_end = if_->prev(block);
-
-    // append constants of true- and false-block if necessary
-    // clone constants because original block must not be destroyed
-    assert((t_value != f_const && f_value != t_const) || t_const == f_const, "mismatch");
-    if (t_value == t_const) {
-      t_value = new Constant(t_const->type());
-      NOT_PRODUCT(t_value->set_printable_bci(if_->printable_bci()));
-      cur_end = cur_end->set_next(t_value);
-    }
-    if (f_value == f_const) {
-      f_value = new Constant(f_const->type());
-      NOT_PRODUCT(f_value->set_printable_bci(if_->printable_bci()));
-      cur_end = cur_end->set_next(f_value);
-    }
-
-    // it is very unlikely that the condition can be statically decided
-    // (this was checked previously by the Canonicalizer), so always
-    // append IfOp
-    Value result = new IfOp(if_->x(), if_->cond(), if_->y(), t_value, f_value);
-    NOT_PRODUCT(result->set_printable_bci(if_->printable_bci()));
-    cur_end = cur_end->set_next(result);
-
-    // append Goto to successor
-    ValueStack* state_before = if_->is_safepoint() ? if_->state_before() : NULL;
-    Goto* goto_ = new Goto(sux, state_before, if_->is_safepoint() || t_goto->is_safepoint() || f_goto->is_safepoint());
-
-    // prepare state for Goto
-    ValueStack* goto_state = if_->state();
-    while (sux_state->scope() != goto_state->scope()) {
-      goto_state = goto_state->caller_state();
-      assert(goto_state != NULL, "states do not match up");
-    }
-    goto_state = goto_state->copy(ValueStack::StateAfter, goto_state->bci());
-    goto_state->push(result->type(), result);
-    assert(goto_state->is_same(sux_state), "states must match now");
-    goto_->set_state(goto_state);
-
-    cur_end = cur_end->set_next(goto_, goto_state->bci());
-
-    // Adjust control flow graph
-    BlockBegin::disconnect_edge(block, t_block);
-    BlockBegin::disconnect_edge(block, f_block);
-    if (t_block->number_of_preds() == 0) {
-      BlockBegin::disconnect_edge(t_block, sux);
-    }
-    adjust_exception_edges(block, t_block);
-    if (f_block->number_of_preds() == 0) {
-      BlockBegin::disconnect_edge(f_block, sux);
-    }
-    adjust_exception_edges(block, f_block);
-
-    // update block end
-    block->set_end(goto_);
-
-    // substitute the phi if possible
-    if (sux_phi->as_Phi()->operand_count() == 1) {
-      assert(sux_phi->as_Phi()->operand_at(0) == result, "screwed up phi");
-      sux_phi->set_subst(result);
-      _has_substitution = true;
-    }
-
-    // 3) successfully eliminated a conditional expression
-    _cee_count++;
-    if (PrintCEE) {
-      tty->print_cr("%d. CEE in B%d (B%d B%d)", cee_count(), block->block_id(), t_block->block_id(), f_block->block_id());
-    }
-
-    _hir->verify();
-  }
+ private:
+  Value make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval);
 };
 
+void CE_Eliminator::block_do(BlockBegin* block) {
+  // 1) find conditional expression
+  // check if block ends with an If
+  If* if_ = block->end()->as_If();
+  if (if_ == NULL) return;
+
+  // check if If works on int or object types
+  // (we cannot handle If's working on long, float or doubles yet,
+  // since IfOp doesn't support them - these If's show up if cmp
+  // operations followed by If's are eliminated)
+  ValueType* if_type = if_->x()->type();
+  if (!if_type->is_int() && !if_type->is_object()) return;
+
+  BlockBegin* t_block = if_->tsux();
+  BlockBegin* f_block = if_->fsux();
+  Instruction* t_cur = t_block->next();
+  Instruction* f_cur = f_block->next();
+
+  // one Constant may be present between BlockBegin and BlockEnd
+  Value t_const = NULL;
+  Value f_const = NULL;
+  if (t_cur->as_Constant() != NULL && !t_cur->can_trap()) {
+    t_const = t_cur;
+    t_cur = t_cur->next();
+  }
+  if (f_cur->as_Constant() != NULL && !f_cur->can_trap()) {
+    f_const = f_cur;
+    f_cur = f_cur->next();
+  }
+
+  // check if both branches end with a goto
+  Goto* t_goto = t_cur->as_Goto();
+  if (t_goto == NULL) return;
+  Goto* f_goto = f_cur->as_Goto();
+  if (f_goto == NULL) return;
+
+  // check if both gotos merge into the same block
+  BlockBegin* sux = t_goto->default_sux();
+  if (sux != f_goto->default_sux()) return;
+
+  // check if at least one word was pushed on sux_state
+  ValueStack* sux_state = sux->state();
+  if (sux_state->stack_size() <= if_->state()->stack_size()) return;
+
+  // check if phi function is present at end of successor stack and that
+  // only this phi was pushed on the stack
+  Value sux_phi = sux_state->stack_at(if_->state()->stack_size());
+  if (sux_phi == NULL || sux_phi->as_Phi() == NULL || sux_phi->as_Phi()->block() != sux) return;
+  if (sux_phi->type()->size() != sux_state->stack_size() - if_->state()->stack_size()) return;
+
+  // get the values that were pushed in the true- and false-branch
+  Value t_value = t_goto->state()->stack_at(if_->state()->stack_size());
+  Value f_value = f_goto->state()->stack_at(if_->state()->stack_size());
+
+  // backend does not support floats
+  assert(t_value->type()->base() == f_value->type()->base(), "incompatible types");
+  if (t_value->type()->is_float_kind()) return;
+
+  // check that successor has no other phi functions but sux_phi
+  // this can happen when t_block or f_block contained additonal stores to local variables
+  // that are no longer represented by explicit instructions
+  for_each_phi_fun(sux, phi,
+                   if (phi != sux_phi) return;
+                   );
+  // true and false blocks can't have phis
+  for_each_phi_fun(t_block, phi, return; );
+  for_each_phi_fun(f_block, phi, return; );
+
+  // 2) substitute conditional expression
+  //    with an IfOp followed by a Goto
+  // cut if_ away and get node before
+  Instruction* cur_end = if_->prev(block);
+
+  // append constants of true- and false-block if necessary
+  // clone constants because original block must not be destroyed
+  assert((t_value != f_const && f_value != t_const) || t_const == f_const, "mismatch");
+  if (t_value == t_const) {
+    t_value = new Constant(t_const->type());
+    NOT_PRODUCT(t_value->set_printable_bci(if_->printable_bci()));
+    cur_end = cur_end->set_next(t_value);
+  }
+  if (f_value == f_const) {
+    f_value = new Constant(f_const->type());
+    NOT_PRODUCT(f_value->set_printable_bci(if_->printable_bci()));
+    cur_end = cur_end->set_next(f_value);
+  }
+
+  Value result = make_ifop(if_->x(), if_->cond(), if_->y(), t_value, f_value);
+  assert(result != NULL, "make_ifop must return a non-null instruction");
+  if (!result->is_linked() && result->can_be_linked()) {
+    NOT_PRODUCT(result->set_printable_bci(if_->printable_bci()));
+    cur_end = cur_end->set_next(result);
+  }
+
+  // append Goto to successor
+  ValueStack* state_before = if_->is_safepoint() ? if_->state_before() : NULL;
+  Goto* goto_ = new Goto(sux, state_before, if_->is_safepoint() || t_goto->is_safepoint() || f_goto->is_safepoint());
+
+  // prepare state for Goto
+  ValueStack* goto_state = if_->state();
+  while (sux_state->scope() != goto_state->scope()) {
+    goto_state = goto_state->caller_state();
+    assert(goto_state != NULL, "states do not match up");
+  }
+  goto_state = goto_state->copy(ValueStack::StateAfter, goto_state->bci());
+  goto_state->push(result->type(), result);
+  assert(goto_state->is_same(sux_state), "states must match now");
+  goto_->set_state(goto_state);
+
+  cur_end = cur_end->set_next(goto_, goto_state->bci());
+
+  // Adjust control flow graph
+  BlockBegin::disconnect_edge(block, t_block);
+  BlockBegin::disconnect_edge(block, f_block);
+  if (t_block->number_of_preds() == 0) {
+    BlockBegin::disconnect_edge(t_block, sux);
+  }
+  adjust_exception_edges(block, t_block);
+  if (f_block->number_of_preds() == 0) {
+    BlockBegin::disconnect_edge(f_block, sux);
+  }
+  adjust_exception_edges(block, f_block);
+
+  // update block end
+  block->set_end(goto_);
+
+  // substitute the phi if possible
+  if (sux_phi->as_Phi()->operand_count() == 1) {
+    assert(sux_phi->as_Phi()->operand_at(0) == result, "screwed up phi");
+    sux_phi->set_subst(result);
+    _has_substitution = true;
+  }
+
+  // 3) successfully eliminated a conditional expression
+  _cee_count++;
+  if (PrintCEE) {
+    tty->print_cr("%d. CEE in B%d (B%d B%d)", cee_count(), block->block_id(), t_block->block_id(), f_block->block_id());
+    tty->print_cr("%d. IfOp in B%d", ifop_count(), block->block_id());
+  }
+
+  _hir->verify();
+}
+
+Value CE_Eliminator::make_ifop(Value x, Instruction::Condition cond, Value y, Value tval, Value fval) {
+  if (!OptimizeIfOps) {
+    return new IfOp(x, cond, y, tval, fval);
+  }
+
+  tval = tval->subst();
+  fval = fval->subst();
+  if (tval == fval) {
+    _ifop_count++;
+    return tval;
+  }
+
+  x = x->subst();
+  y = y->subst();
+
+  Constant* y_const = y->as_Constant();
+  if (y_const != NULL) {
+    IfOp* x_ifop = x->as_IfOp();
+    if (x_ifop != NULL) {                 // x is an ifop, y is a constant
+      Constant* x_tval_const = x_ifop->tval()->subst()->as_Constant();
+      Constant* x_fval_const = x_ifop->fval()->subst()->as_Constant();
+
+      if (x_tval_const != NULL && x_fval_const != NULL) {
+        Instruction::Condition x_ifop_cond = x_ifop->cond();
+
+        Constant::CompareResult t_compare_res = x_tval_const->compare(cond, y_const);
+        Constant::CompareResult f_compare_res = x_fval_const->compare(cond, y_const);
+
+        guarantee(t_compare_res != Constant::not_comparable && f_compare_res != Constant::not_comparable, "incomparable constants in IfOp");
+
+        Value new_tval = t_compare_res == Constant::cond_true ? tval : fval;
+        Value new_fval = f_compare_res == Constant::cond_true ? tval : fval;
+
+        _ifop_count++;
+        if (new_tval == new_fval) {
+          return new_tval;
+        } else {
+          return new IfOp(x_ifop->x(), x_ifop_cond, x_ifop->y(), new_tval, new_fval);
+        }
+      }
+    } else {
+      Constant* x_const = x->as_Constant();
+      if (x_const != NULL) {         // x and y are constants
+        Constant::CompareResult x_compare_res = x_const->compare(cond, y_const);
+        guarantee(x_compare_res != Constant::not_comparable, "incomparable constants in IfOp");
+
+        _ifop_count++;
+        return x_compare_res == Constant::cond_true ? tval : fval;
+      }
+    }
+  }
+  return new IfOp(x, cond, y, tval, fval);
+}
 
 void Optimizer::eliminate_conditional_expressions() {
   // find conditional expressions & replace them with IfOps
   CE_Eliminator ce(ir());
 }
-
 
 class BlockMerger: public BlockClosure {
  private:

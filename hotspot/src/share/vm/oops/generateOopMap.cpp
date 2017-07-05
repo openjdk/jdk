@@ -1254,7 +1254,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
-        int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
+        int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
         constantPoolOop cp    = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
@@ -1286,7 +1286,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokedynamic:
       case Bytecodes::_invokeinterface:
-        int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2();
+        int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
         constantPoolOop cp    = method()->constants();
         int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
         int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
@@ -1356,8 +1356,8 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
 
     case Bytecodes::_ldc2_w:            ppush(vvCTS);               break;
 
-    case Bytecodes::_ldc:               do_ldc(itr->get_index(),    itr->bci()); break;
-    case Bytecodes::_ldc_w:             do_ldc(itr->get_index_u2(), itr->bci()); break;
+    case Bytecodes::_ldc:               // fall through:
+    case Bytecodes::_ldc_w:             do_ldc(itr->bci());         break;
 
     case Bytecodes::_iload:
     case Bytecodes::_fload:             ppload(vCTS, itr->get_index()); break;
@@ -1829,9 +1829,16 @@ void GenerateOopMap::do_jsr(int targ_bci) {
 
 
 
-void GenerateOopMap::do_ldc(int idx, int bci) {
+void GenerateOopMap::do_ldc(int bci) {
+  Bytecode_loadconstant* ldc = Bytecode_loadconstant_at(method(), bci);
   constantPoolOop cp  = method()->constants();
-  CellTypeState   cts = cp->is_pointer_entry(idx) ? CellTypeState::make_line_ref(bci) : valCTS;
+  BasicType       bt  = ldc->result_type();
+  CellTypeState   cts = (bt == T_OBJECT) ? CellTypeState::make_line_ref(bci) : valCTS;
+  // Make sure bt==T_OBJECT is the same as old code (is_pointer_entry).
+  // Note that CONSTANT_MethodHandle entries are u2 index pairs, not pointer-entries,
+  // and they are processed by _fast_aldc and the CP cache.
+  assert((ldc->has_cache_index() || cp->is_pointer_entry(ldc->pool_index()))
+         ? (bt == T_OBJECT) : true, "expected object type");
   ppush1(cts);
 }
 

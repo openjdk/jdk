@@ -216,6 +216,10 @@ class Deoptimization : AllStatic {
   // Only called from VMDeoptimizeFrame
   // @argument thread.     Thread where stub_frame resides.
   // @argument id.         id of frame that should be deoptimized.
+  static void deoptimize_frame_internal(JavaThread* thread, intptr_t* id);
+
+  // If thread is not the current thread then execute
+  // VM_DeoptimizeFrame otherwise deoptimize directly.
   static void deoptimize_frame(JavaThread* thread, intptr_t* id);
 
   // Statistics

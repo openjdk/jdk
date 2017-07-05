@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -540,6 +540,11 @@ int JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid, int abort_
     pc = (address) uc->uc_mcontext.gregs[REG_PC];
   }
 
+  // Sometimes the register windows are not properly flushed.
+  if(uc->uc_mcontext.gwins != NULL) {
+    ::handle_unflushed_register_windows(uc->uc_mcontext.gwins);
+  }
+
   // unmask current signal
   sigset_t newset;
   sigemptyset(&newset);
@@ -558,6 +563,18 @@ void os::print_context(outputStream *st, void *context) {
   ucontext_t *uc = (ucontext_t*)context;
   st->print_cr("Registers:");
 
+  st->print_cr(" G1=" INTPTR_FORMAT " G2=" INTPTR_FORMAT
+               " G3=" INTPTR_FORMAT " G4=" INTPTR_FORMAT,
+            uc->uc_mcontext.gregs[REG_G1],
+            uc->uc_mcontext.gregs[REG_G2],
+            uc->uc_mcontext.gregs[REG_G3],
+            uc->uc_mcontext.gregs[REG_G4]);
+  st->print_cr(" G5=" INTPTR_FORMAT " G6=" INTPTR_FORMAT
+               " G7=" INTPTR_FORMAT " Y=" INTPTR_FORMAT,
+            uc->uc_mcontext.gregs[REG_G5],
+            uc->uc_mcontext.gregs[REG_G6],
+            uc->uc_mcontext.gregs[REG_G7],
+            uc->uc_mcontext.gregs[REG_Y]);
   st->print_cr(" O0=" INTPTR_FORMAT " O1=" INTPTR_FORMAT
                " O2=" INTPTR_FORMAT " O3=" INTPTR_FORMAT,
                  uc->uc_mcontext.gregs[REG_O0],
@@ -571,81 +588,39 @@ void os::print_context(outputStream *st, void *context) {
             uc->uc_mcontext.gregs[REG_O6],
             uc->uc_mcontext.gregs[REG_O7]);
 
-  st->print_cr(" G1=" INTPTR_FORMAT " G2=" INTPTR_FORMAT
-               " G3=" INTPTR_FORMAT " G4=" INTPTR_FORMAT,
-            uc->uc_mcontext.gregs[REG_G1],
-            uc->uc_mcontext.gregs[REG_G2],
-            uc->uc_mcontext.gregs[REG_G3],
-            uc->uc_mcontext.gregs[REG_G4]);
-  st->print_cr(" G5=" INTPTR_FORMAT " G6=" INTPTR_FORMAT
-               " G7=" INTPTR_FORMAT " Y=" INTPTR_FORMAT,
-            uc->uc_mcontext.gregs[REG_G5],
-            uc->uc_mcontext.gregs[REG_G6],
-            uc->uc_mcontext.gregs[REG_G7],
-            uc->uc_mcontext.gregs[REG_Y]);
+
+  intptr_t *sp = (intptr_t *)os::Solaris::ucontext_get_sp(uc);
+  st->print_cr(" L0=" INTPTR_FORMAT " L1=" INTPTR_FORMAT
+               " L2=" INTPTR_FORMAT " L3=" INTPTR_FORMAT,
+               sp[L0->sp_offset_in_saved_window()],
+               sp[L1->sp_offset_in_saved_window()],
+               sp[L2->sp_offset_in_saved_window()],
+               sp[L3->sp_offset_in_saved_window()]);
+  st->print_cr(" L4=" INTPTR_FORMAT " L5=" INTPTR_FORMAT
+               " L6=" INTPTR_FORMAT " L7=" INTPTR_FORMAT,
+               sp[L4->sp_offset_in_saved_window()],
+               sp[L5->sp_offset_in_saved_window()],
+               sp[L6->sp_offset_in_saved_window()],
+               sp[L7->sp_offset_in_saved_window()]);
+  st->print_cr(" I0=" INTPTR_FORMAT " I1=" INTPTR_FORMAT
+               " I2=" INTPTR_FORMAT " I3=" INTPTR_FORMAT,
+               sp[I0->sp_offset_in_saved_window()],
+               sp[I1->sp_offset_in_saved_window()],
+               sp[I2->sp_offset_in_saved_window()],
+               sp[I3->sp_offset_in_saved_window()]);
+  st->print_cr(" I4=" INTPTR_FORMAT " I5=" INTPTR_FORMAT
+               " I6=" INTPTR_FORMAT " I7=" INTPTR_FORMAT,
+               sp[I4->sp_offset_in_saved_window()],
+               sp[I5->sp_offset_in_saved_window()],
+               sp[I6->sp_offset_in_saved_window()],
+               sp[I7->sp_offset_in_saved_window()]);
 
   st->print_cr(" PC=" INTPTR_FORMAT " nPC=" INTPTR_FORMAT,
             uc->uc_mcontext.gregs[REG_PC],
             uc->uc_mcontext.gregs[REG_nPC]);
-
   st->cr();
   st->cr();
 
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is only for the "general purpose" registers
-
-  st->print_cr("O0=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O0]);
-  print_location(st, uc->uc_mcontext.gregs[REG_O0]);
-  st->cr();
-  st->print_cr("O1=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O1]);
-  print_location(st, uc->uc_mcontext.gregs[REG_O1]);
-  st->cr();
-  st->print_cr("O2=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O2]);
-  print_location(st, uc->uc_mcontext.gregs[REG_O2]);
-  st->cr();
-  st->print_cr("O3=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O3]);
-  print_location(st, uc->uc_mcontext.gregs[REG_O3]);
-  st->cr();
-  st->print_cr("O4=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O4]);
-  print_location(st, uc->uc_mcontext.gregs[REG_O4]);
-  st->cr();
-  st->print_cr("O5=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O5]);
-  print_location(st, uc->uc_mcontext.gregs[REG_O5]);
-  st->cr();
-  st->print_cr("O6=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O6]);
-  print_location(st, uc->uc_mcontext.gregs[REG_O6]);
-  st->cr();
-  st->print_cr("O7=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_O7]);
-  print_location(st, uc->uc_mcontext.gregs[REG_O7]);
-  st->cr();
-
-  st->print_cr("G1=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G1]);
-  print_location(st, uc->uc_mcontext.gregs[REG_G1]);
-  st->cr();
-  st->print_cr("G2=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G2]);
-  print_location(st, uc->uc_mcontext.gregs[REG_G2]);
-  st->cr();
-  st->print_cr("G3=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G3]);
-  print_location(st, uc->uc_mcontext.gregs[REG_G3]);
-  st->cr();
-  st->print_cr("G4=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G4]);
-  print_location(st, uc->uc_mcontext.gregs[REG_G4]);
-  st->cr();
-  st->print_cr("G5=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G5]);
-  print_location(st, uc->uc_mcontext.gregs[REG_G5]);
-  st->cr();
-  st->print_cr("G6=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G6]);
-  print_location(st, uc->uc_mcontext.gregs[REG_G6]);
-  st->cr();
-  st->print_cr("G7=" INTPTR_FORMAT, uc->uc_mcontext.gregs[REG_G7]);
-  print_location(st, uc->uc_mcontext.gregs[REG_G7]);
-
-  st->cr();
-  st->cr();
-
-  intptr_t *sp = (intptr_t *)os::Solaris::ucontext_get_sp(uc);
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
   print_hex_dump(st, (address)sp, (address)(sp + 32), sizeof(intptr_t));
   st->cr();
@@ -656,7 +631,57 @@ void os::print_context(outputStream *st, void *context) {
   ExtendedPC epc = os::Solaris::ucontext_get_ExtendedPC(uc);
   address pc = epc.pc();
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
-  print_hex_dump(st, pc - 16, pc + 16, sizeof(char));
+  print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
+}
+
+void os::print_register_info(outputStream *st, void *context) {
+  if (context == NULL) return;
+
+  ucontext_t *uc = (ucontext_t*)context;
+  intptr_t *sp = (intptr_t *)os::Solaris::ucontext_get_sp(uc);
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  // this is only for the "general purpose" registers
+  st->print("G1="); print_location(st, uc->uc_mcontext.gregs[REG_G1]);
+  st->print("G2="); print_location(st, uc->uc_mcontext.gregs[REG_G2]);
+  st->print("G3="); print_location(st, uc->uc_mcontext.gregs[REG_G3]);
+  st->print("G4="); print_location(st, uc->uc_mcontext.gregs[REG_G4]);
+  st->print("G5="); print_location(st, uc->uc_mcontext.gregs[REG_G5]);
+  st->print("G6="); print_location(st, uc->uc_mcontext.gregs[REG_G6]);
+  st->print("G7="); print_location(st, uc->uc_mcontext.gregs[REG_G7]);
+  st->cr();
+
+  st->print("O0="); print_location(st, uc->uc_mcontext.gregs[REG_O0]);
+  st->print("O1="); print_location(st, uc->uc_mcontext.gregs[REG_O1]);
+  st->print("O2="); print_location(st, uc->uc_mcontext.gregs[REG_O2]);
+  st->print("O3="); print_location(st, uc->uc_mcontext.gregs[REG_O3]);
+  st->print("O4="); print_location(st, uc->uc_mcontext.gregs[REG_O4]);
+  st->print("O5="); print_location(st, uc->uc_mcontext.gregs[REG_O5]);
+  st->print("O6="); print_location(st, uc->uc_mcontext.gregs[REG_O6]);
+  st->print("O7="); print_location(st, uc->uc_mcontext.gregs[REG_O7]);
+  st->cr();
+
+  st->print("L0="); print_location(st, sp[L0->sp_offset_in_saved_window()]);
+  st->print("L1="); print_location(st, sp[L1->sp_offset_in_saved_window()]);
+  st->print("L2="); print_location(st, sp[L2->sp_offset_in_saved_window()]);
+  st->print("L3="); print_location(st, sp[L3->sp_offset_in_saved_window()]);
+  st->print("L4="); print_location(st, sp[L4->sp_offset_in_saved_window()]);
+  st->print("L5="); print_location(st, sp[L5->sp_offset_in_saved_window()]);
+  st->print("L6="); print_location(st, sp[L6->sp_offset_in_saved_window()]);
+  st->print("L7="); print_location(st, sp[L7->sp_offset_in_saved_window()]);
+  st->cr();
+
+  st->print("I0="); print_location(st, sp[I0->sp_offset_in_saved_window()]);
+  st->print("I1="); print_location(st, sp[I1->sp_offset_in_saved_window()]);
+  st->print("I2="); print_location(st, sp[I2->sp_offset_in_saved_window()]);
+  st->print("I3="); print_location(st, sp[I3->sp_offset_in_saved_window()]);
+  st->print("I4="); print_location(st, sp[I4->sp_offset_in_saved_window()]);
+  st->print("I5="); print_location(st, sp[I5->sp_offset_in_saved_window()]);
+  st->print("I6="); print_location(st, sp[I6->sp_offset_in_saved_window()]);
+  st->print("I7="); print_location(st, sp[I7->sp_offset_in_saved_window()]);
+  st->cr();
 }
 
 void os::Solaris::init_thread_fpu_state(void) {

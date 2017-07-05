@@ -137,6 +137,7 @@ class CodeCache : AllStatic {
   static void print_internals();
   static void verify();                          // verifies the code cache
   static void print_trace(const char* event, CodeBlob* cb, int size = 0) PRODUCT_RETURN;
+  static void print_bounds(outputStream* st);    // Prints a summary of the bounds of the code cache
 
   // The full limits of the codeCache
   static address  low_bound()                    { return (address) _heap->low_boundary(); }

@@ -978,17 +978,6 @@ void Arguments::check_compressed_oops_compat() {
     }
   }
 
-  // XXX JSR 292 currently does not support compressed oops
-  if (EnableMethodHandles) {
-    if (is_on_by_default) {
-      FLAG_SET_DEFAULT(UseCompressedOops, false);
-      return;
-    } else {
-      vm_exit_during_initialization(
-        "JSR292 is not supported with compressed oops yet", NULL);
-    }
-  }
-
   // If dumping an archive or forcing its use, disable compressed oops if possible
   if (DumpSharedSpaces || RequireSharedSpaces) {
     if (is_on_by_default) {

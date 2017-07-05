@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -736,8 +736,8 @@ void os::print_date_and_time(outputStream *st) {
 }
 
 // moved from debug.cpp (used to be find()) but still called from there
-// The print_pc parameter is only set by the debug code in one case
-void os::print_location(outputStream* st, intptr_t x, bool print_pc) {
+// The verbose parameter is only set by the debug code in one case
+void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   address addr = (address)x;
   CodeBlob* b = CodeCache::find_blob_unsafe(addr);
   if (b != NULL) {
@@ -745,6 +745,7 @@ void os::print_location(outputStream* st, intptr_t x, bool print_pc) {
       // the interpreter is generated into a buffer blob
       InterpreterCodelet* i = Interpreter::codelet_containing(addr);
       if (i != NULL) {
+        st->print_cr(INTPTR_FORMAT " is an Interpreter codelet", addr);
         i->print_on(st);
         return;
       }
@@ -755,14 +756,14 @@ void os::print_location(outputStream* st, intptr_t x, bool print_pc) {
       }
       //
       if (AdapterHandlerLibrary::contains(b)) {
-        st->print_cr("Printing AdapterHandler");
+        st->print_cr(INTPTR_FORMAT " is an AdapterHandler", addr);
         AdapterHandlerLibrary::print_handler_on(st, b);
       }
       // the stubroutines are generated into a buffer blob
       StubCodeDesc* d = StubCodeDesc::desc_for(addr);
       if (d != NULL) {
         d->print_on(st);
-        if (print_pc) st->cr();
+        if (verbose) st->cr();
         return;
       }
       if (StubRoutines::contains(addr)) {
@@ -781,7 +782,7 @@ void os::print_location(outputStream* st, intptr_t x, bool print_pc) {
         return;
       }
     }
-    if (print_pc && b->is_nmethod()) {
+    if (verbose && b->is_nmethod()) {
       ResourceMark rm;
       st->print("%#p: Compiled ", addr);
       ((nmethod*)b)->method()->print_value_on(st);
@@ -789,11 +790,12 @@ void os::print_location(outputStream* st, intptr_t x, bool print_pc) {
       st->cr();
       return;
     }
+    st->print(INTPTR_FORMAT " ", b);
     if ( b->is_nmethod()) {
       if (b->is_zombie()) {
-        st->print_cr(INTPTR_FORMAT " is zombie nmethod", b);
+        st->print_cr("is zombie nmethod");
       } else if (b->is_not_entrant()) {
-        st->print_cr(INTPTR_FORMAT " is non-entrant nmethod", b);
+        st->print_cr("is non-entrant nmethod");
       }
     }
     b->print_on(st);
@@ -812,6 +814,7 @@ void os::print_location(outputStream* st, intptr_t x, bool print_pc) {
       print = true;
     }
     if (print) {
+      st->print_cr(INTPTR_FORMAT " is an oop", addr);
       oop(p)->print_on(st);
       if (p != (HeapWord*)x && oop(p)->is_constMethod() &&
           constMethodOop(p)->contains(addr)) {
@@ -855,12 +858,16 @@ void os::print_location(outputStream* st, intptr_t x, bool print_pc) {
         thread->privileged_stack_top()->contains(addr)) {
       st->print_cr(INTPTR_FORMAT " is pointing into the privilege stack "
                    "for thread: " INTPTR_FORMAT, addr, thread);
-      thread->print_on(st);
+      if (verbose) thread->print_on(st);
       return;
     }
     // If the addr is a java thread print information about that.
     if (addr == (address)thread) {
-      thread->print_on(st);
+      if (verbose) {
+        thread->print_on(st);
+      } else {
+        st->print_cr(INTPTR_FORMAT " is a thread", addr);
+      }
       return;
     }
     // If the addr is in the stack region for this thread then report that
@@ -869,7 +876,7 @@ void os::print_location(outputStream* st, intptr_t x, bool print_pc) {
         addr > (thread->stack_base() - thread->stack_size())) {
       st->print_cr(INTPTR_FORMAT " is pointing into the stack for thread: "
                    INTPTR_FORMAT, addr, thread);
-      thread->print_on(st);
+      if (verbose) thread->print_on(st);
       return;
     }
 
@@ -879,7 +886,7 @@ void os::print_location(outputStream* st, intptr_t x, bool print_pc) {
     return;
   }
 
-  st->print_cr(INTPTR_FORMAT " is pointing to unknown location", addr);
+  st->print_cr(INTPTR_FORMAT " is an unknown value", addr);
 }
 
 // Looks like all platforms except IA64 can use the same function to check

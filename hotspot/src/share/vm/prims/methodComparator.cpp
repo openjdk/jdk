@@ -147,10 +147,9 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   case Bytecodes::_invokevirtual   : // fall through
   case Bytecodes::_invokespecial   : // fall through
   case Bytecodes::_invokestatic    : // fall through
-  case Bytecodes::_invokedynamic   : // fall through
   case Bytecodes::_invokeinterface : {
-    int cpci_old = _s_old->has_index_u4() ? _s_old->get_index_u4() : _s_old->get_index_u2_cpcache();
-    int cpci_new = _s_new->has_index_u4() ? _s_new->get_index_u4() : _s_new->get_index_u2_cpcache();
+    int cpci_old = _s_old->get_index_u2_cpcache();
+    int cpci_new = _s_new->get_index_u2_cpcache();
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
@@ -160,6 +159,33 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
       return false;
     break;
   }
+  case Bytecodes::_invokedynamic: {
+    int cpci_old = _s_old->get_index_u4();
+    int cpci_new = _s_new->get_index_u4();
+    // Check if the names of classes, field/method names and signatures at these indexes
+    // are the same. Indices which are really into constantpool cache (rather than constant
+    // pool itself) are accepted by the constantpool query routines below.
+    if ((_old_cp->name_ref_at(cpci_old) != _new_cp->name_ref_at(cpci_new)) ||
+        (_old_cp->signature_ref_at(cpci_old) != _new_cp->signature_ref_at(cpci_new)))
+      return false;
+    int cpi_old = _old_cp->cache()->main_entry_at(cpci_old)->constant_pool_index();
+    int cpi_new = _new_cp->cache()->main_entry_at(cpci_new)->constant_pool_index();
+    int bsm_old = _old_cp->invoke_dynamic_bootstrap_method_ref_index_at(cpi_old);
+    int bsm_new = _new_cp->invoke_dynamic_bootstrap_method_ref_index_at(cpi_new);
+    if (!pool_constants_same(bsm_old, bsm_new))
+      return false;
+    int cnt_old = _old_cp->invoke_dynamic_argument_count_at(cpi_old);
+    int cnt_new = _new_cp->invoke_dynamic_argument_count_at(cpi_new);
+    if (cnt_old != cnt_new)
+      return false;
+    for (int arg_i = 0; arg_i < cnt_old; arg_i++) {
+      int idx_old = _old_cp->invoke_dynamic_argument_index_at(cpi_old, arg_i);
+      int idx_new = _new_cp->invoke_dynamic_argument_index_at(cpi_new, arg_i);
+      if (!pool_constants_same(idx_old, idx_new))
+        return false;
+    }
+    break;
+  }
 
   case Bytecodes::_ldc   : // fall through
   case Bytecodes::_ldc_w : {
@@ -167,51 +193,8 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
     Bytecode_loadconstant* ldc_new = Bytecode_loadconstant_at(_s_new->method(), _s_new->bci());
     int cpi_old = ldc_old->pool_index();
     int cpi_new = ldc_new->pool_index();
-    constantTag tag_old = _old_cp->tag_at(cpi_old);
-    constantTag tag_new = _new_cp->tag_at(cpi_new);
-    if (tag_old.is_int() || tag_old.is_float()) {
-      if (tag_old.value() != tag_new.value())
-        return false;
-      if (tag_old.is_int()) {
-        if (_old_cp->int_at(cpi_old) != _new_cp->int_at(cpi_new))
-          return false;
-      } else {
-        // Use jint_cast to compare the bits rather than numerical values.
-        // This makes a difference for NaN constants.
-        if (jint_cast(_old_cp->float_at(cpi_old)) != jint_cast(_new_cp->float_at(cpi_new)))
-          return false;
-      }
-    } else if (tag_old.is_string() || tag_old.is_unresolved_string()) {
-      if (! (tag_new.is_unresolved_string() || tag_new.is_string()))
-        return false;
-      if (strcmp(_old_cp->string_at_noresolve(cpi_old),
-                 _new_cp->string_at_noresolve(cpi_new)) != 0)
-        return false;
-    } else if (tag_old.is_klass() || tag_old.is_unresolved_klass()) {
-      // tag_old should be klass - 4881222
-      if (! (tag_new.is_unresolved_klass() || tag_new.is_klass()))
-        return false;
-      if (_old_cp->klass_at_noresolve(cpi_old) !=
-          _new_cp->klass_at_noresolve(cpi_new))
-        return false;
-    } else if (tag_old.is_method_type() && tag_new.is_method_type()) {
-      int mti_old = _old_cp->method_type_index_at(cpi_old);
-      int mti_new = _new_cp->method_type_index_at(cpi_new);
-      if ((_old_cp->symbol_at(mti_old) != _new_cp->symbol_at(mti_new)))
-        return false;
-    } else if (tag_old.is_method_handle() && tag_new.is_method_handle()) {
-      if (_old_cp->method_handle_ref_kind_at(cpi_old) !=
-          _new_cp->method_handle_ref_kind_at(cpi_new))
-        return false;
-      int mhi_old = _old_cp->method_handle_index_at(cpi_old);
-      int mhi_new = _new_cp->method_handle_index_at(cpi_new);
-      if ((_old_cp->uncached_klass_ref_at_noresolve(mhi_old) != _new_cp->uncached_klass_ref_at_noresolve(mhi_new)) ||
-          (_old_cp->uncached_name_ref_at(mhi_old) != _new_cp->uncached_name_ref_at(mhi_new)) ||
-          (_old_cp->uncached_signature_ref_at(mhi_old) != _new_cp->uncached_signature_ref_at(mhi_new)))
-        return false;
-    } else {
-      return false;  // unknown tag
-    }
+    if (!pool_constants_same(cpi_old, cpi_new))
+      return false;
     break;
   }
 
@@ -389,6 +372,55 @@ bool MethodComparator::args_same(Bytecodes::Code c_old, Bytecodes::Code c_new) {
   }
   }
 
+  return true;
+}
+
+bool MethodComparator::pool_constants_same(int cpi_old, int cpi_new) {
+  constantTag tag_old = _old_cp->tag_at(cpi_old);
+  constantTag tag_new = _new_cp->tag_at(cpi_new);
+  if (tag_old.is_int() || tag_old.is_float()) {
+    if (tag_old.value() != tag_new.value())
+      return false;
+    if (tag_old.is_int()) {
+      if (_old_cp->int_at(cpi_old) != _new_cp->int_at(cpi_new))
+        return false;
+    } else {
+      // Use jint_cast to compare the bits rather than numerical values.
+      // This makes a difference for NaN constants.
+      if (jint_cast(_old_cp->float_at(cpi_old)) != jint_cast(_new_cp->float_at(cpi_new)))
+        return false;
+    }
+  } else if (tag_old.is_string() || tag_old.is_unresolved_string()) {
+    if (! (tag_new.is_unresolved_string() || tag_new.is_string()))
+      return false;
+    if (strcmp(_old_cp->string_at_noresolve(cpi_old),
+               _new_cp->string_at_noresolve(cpi_new)) != 0)
+      return false;
+  } else if (tag_old.is_klass() || tag_old.is_unresolved_klass()) {
+    // tag_old should be klass - 4881222
+    if (! (tag_new.is_unresolved_klass() || tag_new.is_klass()))
+      return false;
+    if (_old_cp->klass_at_noresolve(cpi_old) !=
+        _new_cp->klass_at_noresolve(cpi_new))
+      return false;
+  } else if (tag_old.is_method_type() && tag_new.is_method_type()) {
+    int mti_old = _old_cp->method_type_index_at(cpi_old);
+    int mti_new = _new_cp->method_type_index_at(cpi_new);
+    if ((_old_cp->symbol_at(mti_old) != _new_cp->symbol_at(mti_new)))
+      return false;
+  } else if (tag_old.is_method_handle() && tag_new.is_method_handle()) {
+    if (_old_cp->method_handle_ref_kind_at(cpi_old) !=
+        _new_cp->method_handle_ref_kind_at(cpi_new))
+      return false;
+    int mhi_old = _old_cp->method_handle_index_at(cpi_old);
+    int mhi_new = _new_cp->method_handle_index_at(cpi_new);
+    if ((_old_cp->uncached_klass_ref_at_noresolve(mhi_old) != _new_cp->uncached_klass_ref_at_noresolve(mhi_new)) ||
+        (_old_cp->uncached_name_ref_at(mhi_old) != _new_cp->uncached_name_ref_at(mhi_new)) ||
+        (_old_cp->uncached_signature_ref_at(mhi_old) != _new_cp->uncached_signature_ref_at(mhi_new)))
+      return false;
+  } else {
+    return false;  // unknown tag
+  }
   return true;
 }
 
