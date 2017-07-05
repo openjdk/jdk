@@ -35,6 +35,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.CertStore;
+import java.security.cert.CertStoreException;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
@@ -96,6 +97,25 @@ public abstract class CertStoreHelper {
         }
     }
 
+    static boolean isCausedByNetworkIssue(String type, CertStoreException cse) {
+        switch (type) {
+            case "LDAP":
+            case "SSLServer":
+                try {
+                    CertStoreHelper csh = CertStoreHelper.getInstance(type);
+                    return csh.isCausedByNetworkIssue(cse);
+                } catch (NoSuchAlgorithmException nsae) {
+                    return false;
+                }
+            case "URI":
+                Throwable t = cse.getCause();
+                return (t != null && t instanceof IOException);
+            default:
+                // we don't know about any other remote CertStore types
+                return false;
+        }
+    }
+
     /**
      * Returns a CertStore using the given URI as parameters.
      */
@@ -119,4 +139,10 @@ public abstract class CertStoreHelper {
                          Collection<X500Principal> certIssuers,
                          String dn)
         throws IOException;
+
+    /**
+     * Returns true if the cause of the CertStoreException is a network
+     * related issue.
+     */
+    public abstract boolean isCausedByNetworkIssue(CertStoreException e);
 }

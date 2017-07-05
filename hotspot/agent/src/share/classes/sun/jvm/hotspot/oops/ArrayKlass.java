@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,24 +45,24 @@ public class ArrayKlass extends Klass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type          = db.lookupType("arrayKlass");
-    dimension          = new CIntField(type.getCIntegerField("_dimension"), Oop.getHeaderSize());
-    higherDimension    = new OopField(type.getOopField("_higher_dimension"), Oop.getHeaderSize());
-    lowerDimension     = new OopField(type.getOopField("_lower_dimension"), Oop.getHeaderSize());
-    vtableLen          = new CIntField(type.getCIntegerField("_vtable_len"), Oop.getHeaderSize());
-    allocSize          = new CIntField(type.getCIntegerField("_alloc_size"), Oop.getHeaderSize());
-    componentMirror    = new OopField(type.getOopField("_component_mirror"), Oop.getHeaderSize());
+    dimension          = new CIntField(type.getCIntegerField("_dimension"), 0);
+    higherDimension    = new MetadataField(type.getAddressField("_higher_dimension"), 0);
+    lowerDimension     = new MetadataField(type.getAddressField("_lower_dimension"), 0);
+    vtableLen          = new CIntField(type.getCIntegerField("_vtable_len"), 0);
+    allocSize          = new CIntField(type.getCIntegerField("_alloc_size"), 0);
+    componentMirror    = new OopField(type.getOopField("_component_mirror"), 0);
     javaLangCloneableName = null;
     javaLangObjectName = null;
     javaIoSerializableName = null;
   }
 
-  ArrayKlass(OopHandle handle, ObjectHeap heap) {
-    super(handle, heap);
+  public ArrayKlass(Address addr) {
+    super(addr);
   }
 
   private static CIntField dimension;
-  private static OopField  higherDimension;
-  private static OopField  lowerDimension;
+  private static MetadataField  higherDimension;
+  private static MetadataField  lowerDimension;
   private static CIntField vtableLen;
   private static CIntField allocSize;
   private static OopField  componentMirror;
@@ -141,19 +141,13 @@ public class ArrayKlass extends Klass {
     tty.print("ArrayKlass");
   }
 
-  public long getObjectSize() {
-    return alignObjectSize(InstanceKlass.getHeaderSize() + getVtableLen() * getHeap().getOopSize());
-  }
-
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    if (doVMFields) {
+  public void iterateFields(MetadataVisitor visitor) {
+    super.iterateFields(visitor);
       visitor.doCInt(dimension, true);
-      visitor.doOop(higherDimension, true);
-      visitor.doOop(lowerDimension, true);
+    visitor.doMetadata(higherDimension, true);
+    visitor.doMetadata(lowerDimension, true);
       visitor.doCInt(vtableLen, true);
       visitor.doCInt(allocSize, true);
       visitor.doOop(componentMirror, true);
     }
   }
-}

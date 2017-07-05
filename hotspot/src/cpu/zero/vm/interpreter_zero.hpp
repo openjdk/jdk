@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,10 +27,10 @@
 #define CPU_ZERO_VM_INTERPRETER_ZERO_HPP
 
  public:
-  static void invoke_method(methodOop method, address entry_point, TRAPS) {
+  static void invoke_method(Method* method, address entry_point, TRAPS) {
     ((ZeroEntry *) entry_point)->invoke(method, THREAD);
   }
-  static void invoke_osr(methodOop method,
+  static void invoke_osr(Method* method,
                          address   entry_point,
                          address   osr_buf,
                          TRAPS) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodeInterpreter.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/signature.hpp"
 #ifdef TARGET_ARCH_x86
@@ -58,7 +58,7 @@
 // This file holds platform-independent bodies of inline functions for frames.
 
 // Note: The bcx usually contains the bcp; however during GC it contains the bci
-//       (changed by gc_prologue() and gc_epilogue()) to be methodOop position
+//       (changed by gc_prologue() and gc_epilogue()) to be Method* position
 //       independent. These accessors make sure the correct value is returned
 //       by testing the range of the bcx value. bcp's are guaranteed to be above
 //       max_method_code_size, since methods are always allocated in OldSpace and

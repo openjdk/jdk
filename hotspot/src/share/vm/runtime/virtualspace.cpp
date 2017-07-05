@@ -155,38 +155,27 @@ static bool failed_to_reserve_as_requested(char* base, char* requested_address,
   return true;
 }
 
-ReservedSpace::ReservedSpace(const size_t prefix_size,
-                             const size_t prefix_align,
-                             const size_t suffix_size,
+ReservedSpace::ReservedSpace(const size_t suffix_size,
                              const size_t suffix_align,
                              char* requested_address,
                              const size_t noaccess_prefix)
 {
-  assert(prefix_size != 0, "sanity");
-  assert(prefix_align != 0, "sanity");
   assert(suffix_size != 0, "sanity");
   assert(suffix_align != 0, "sanity");
-  assert((prefix_size & (prefix_align - 1)) == 0,
-    "prefix_size not divisible by prefix_align");
   assert((suffix_size & (suffix_align - 1)) == 0,
     "suffix_size not divisible by suffix_align");
-  assert((suffix_align & (prefix_align - 1)) == 0,
-    "suffix_align not divisible by prefix_align");
 
   // Assert that if noaccess_prefix is used, it is the same as prefix_align.
-  assert(noaccess_prefix == 0 ||
-         noaccess_prefix == prefix_align, "noaccess prefix wrong");
-
-  // Add in noaccess_prefix to prefix_size;
-  const size_t adjusted_prefix_size = prefix_size + noaccess_prefix;
+  // Add in noaccess_prefix to prefix
+  const size_t adjusted_prefix_size = noaccess_prefix;
   const size_t size = adjusted_prefix_size + suffix_size;
 
   // On systems where the entire region has to be reserved and committed up
   // front, the compound alignment normally done by this method is unnecessary.
   const bool try_reserve_special = UseLargePages &&
-    prefix_align == os::large_page_size();
+    suffix_align == os::large_page_size();
   if (!os::can_commit_large_page_memory() && try_reserve_special) {
-    initialize(size, prefix_align, true, requested_address, noaccess_prefix,
+    initialize(size, suffix_align, true, requested_address, noaccess_prefix,
                false);
     return;
   }
@@ -209,12 +198,11 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
       addr = NULL;
     }
   } else {
-    addr = os::reserve_memory(size, NULL, prefix_align);
+    addr = os::reserve_memory(size, NULL, suffix_align);
   }
   if (addr == NULL) return;
 
-  // Check whether the result has the needed alignment (unlikely unless
-  // prefix_align < suffix_align).
+  // Check whether the result has the needed alignment
   const size_t ofs = (size_t(addr) + adjusted_prefix_size) & (suffix_align - 1);
   if (ofs != 0) {
     // Wrong alignment.  Release, allocate more space and do manual alignment.
@@ -229,12 +217,12 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
     }
 
     const size_t extra = MAX2(ofs, suffix_align - ofs);
-    addr = reserve_and_align(size + extra, adjusted_prefix_size, prefix_align,
+    addr = reserve_and_align(size + extra, adjusted_prefix_size, suffix_align,
                              suffix_size, suffix_align);
     if (addr == NULL) {
       // Try an even larger region.  If this fails, address space is exhausted.
       addr = reserve_and_align(size + suffix_align, adjusted_prefix_size,
-                               prefix_align, suffix_size, suffix_align);
+                               suffix_align, suffix_size, suffix_align);
     }
 
     if (requested_address != 0 &&
@@ -249,7 +237,7 @@ ReservedSpace::ReservedSpace(const size_t prefix_size,
 
   _base = addr;
   _size = size;
-  _alignment = prefix_align;
+  _alignment = suffix_align;
   _noaccess_prefix = noaccess_prefix;
 }
 
@@ -499,21 +487,18 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment,
   protect_noaccess_prefix(size);
 }
 
-ReservedHeapSpace::ReservedHeapSpace(const size_t prefix_size,
-                                     const size_t prefix_align,
-                                     const size_t suffix_size,
-                                     const size_t suffix_align,
+ReservedHeapSpace::ReservedHeapSpace(const size_t heap_space_size,
+                                     const size_t alignment,
                                      char* requested_address) :
-  ReservedSpace(prefix_size, prefix_align, suffix_size, suffix_align,
+  ReservedSpace(heap_space_size, alignment,
                 requested_address,
                 (UseCompressedOops && (Universe::narrow_oop_base() != NULL) &&
                  Universe::narrow_oop_use_implicit_null_checks()) ?
-                  lcm(os::vm_page_size(), prefix_align) : 0) {
+                  lcm(os::vm_page_size(), alignment) : 0) {
   if (base() > 0) {
     MemTracker::record_virtual_memory_type((address)base(), mtJavaHeap);
   }
-
-  protect_noaccess_prefix(prefix_size+suffix_size);
+  protect_noaccess_prefix(heap_space_size);
 }
 
 // Reserve space for code segment.  Same as Java heap only we mark this as

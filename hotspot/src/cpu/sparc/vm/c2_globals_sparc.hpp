@@ -89,8 +89,7 @@ define_pd_global(uint64_t,MaxRAM,                    4ULL*G);
 define_pd_global(uintx,CodeCacheMinBlockLength,      4);
 
 // Heap related flags
-define_pd_global(uintx,PermSize,    ScaleForWordSize(16*M));
-define_pd_global(uintx,MaxPermSize, ScaleForWordSize(64*M));
+define_pd_global(uintx,MetaspaceSize,    ScaleForWordSize(16*M));
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);

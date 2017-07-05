@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 // The layout of array Oops is:
 //
 //  markOop
-//  klassOop  // 32 bits if compressed but declared 64 in LP64.
+//  Klass*    // 32 bits if compressed but declared 64 in LP64.
 //  length    // shares klass memory or allocated after declared fields.
 
 
@@ -65,7 +65,7 @@ class arrayOopDesc : public oopDesc {
   // declared nonstatic fields in arrayOopDesc if not compressed, otherwise
   // it occupies the second half of the _klass field in oopDesc.
   static int length_offset_in_bytes() {
-    return UseCompressedOops ? klass_gap_offset_in_bytes() :
+    return UseCompressedKlassPointers ? klass_gap_offset_in_bytes() :
                                sizeof(arrayOopDesc);
   }
 

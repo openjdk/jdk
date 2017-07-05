@@ -36,7 +36,7 @@
 
 // The system dictionary stores all loaded classes and maps:
 //
-//   [class name,class loader] -> class   i.e.  [Symbol*,oop] -> klassOop
+//   [class name,class loader] -> class   i.e.  [Symbol*,oop] -> Klass*
 //
 // Classes are loaded lazily. The default VM class loader is
 // represented as NULL.
@@ -184,9 +184,7 @@ class SymbolPropertyTable;
 
 class SystemDictionary : AllStatic {
   friend class VMStructs;
-  friend class CompactingPermGenGen;
   friend class SystemDictionaryHandles;
-  NOT_PRODUCT(friend class instanceKlassKlass;)
 
  public:
   enum WKID {
@@ -223,25 +221,25 @@ class SystemDictionary : AllStatic {
   // throw_error flag.  For most uses the throw_error argument should be set
   // to true.
 
-  static klassOop resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS);
+  static Klass* resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS);
   // Convenient call for null loader and protection domain.
-  static klassOop resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS);
+  static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS);
 private:
   // handle error translation for resolve_or_null results
-  static klassOop handle_resolution_exception(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, KlassHandle klass_h, TRAPS);
+  static Klass* handle_resolution_exception(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, KlassHandle klass_h, TRAPS);
 
 public:
 
   // Returns a class with a given class name and class loader.
   // Loads the class if needed. If not found NULL is returned.
-  static klassOop resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static Klass* resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
   // Version with null loader and protection domain
-  static klassOop resolve_or_null(Symbol* class_name, TRAPS);
+  static Klass* resolve_or_null(Symbol* class_name, TRAPS);
 
   // Resolve a superclass or superinterface. Called from ClassFileParser,
   // parse_interfaces, resolve_instance_class_or_null, load_shared_class
   // "child_name" is the class whose super class or interface is being resolved.
-  static klassOop resolve_super_or_fail(Symbol* child_name,
+  static Klass* resolve_super_or_fail(Symbol* child_name,
                                         Symbol* class_name,
                                         Handle class_loader,
                                         Handle protection_domain,
@@ -250,7 +248,7 @@ public:
 
   // Parse new stream. This won't update the system dictionary or
   // class hierarchy, simply parse the stream. Used by JVMTI RedefineClasses.
-  static klassOop parse_stream(Symbol* class_name,
+  static Klass* parse_stream(Symbol* class_name,
                                Handle class_loader,
                                Handle protection_domain,
                                ClassFileStream* st,
@@ -258,7 +256,7 @@ public:
     KlassHandle nullHandle;
     return parse_stream(class_name, class_loader, protection_domain, st, nullHandle, NULL, THREAD);
   }
-  static klassOop parse_stream(Symbol* class_name,
+  static Klass* parse_stream(Symbol* class_name,
                                Handle class_loader,
                                Handle protection_domain,
                                ClassFileStream* st,
@@ -267,23 +265,23 @@ public:
                                TRAPS);
 
   // Resolve from stream (called by jni_DefineClass and JVM_DefineClass)
-  static klassOop resolve_from_stream(Symbol* class_name, Handle class_loader,
+  static Klass* resolve_from_stream(Symbol* class_name, Handle class_loader,
                                       Handle protection_domain,
                                       ClassFileStream* st, bool verify, TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
-  static klassOop find(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static Klass* find(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
   // If not found NULL is returned.
-  static klassOop find_instance_or_array_klass(Symbol* class_name,
+  static Klass* find_instance_or_array_klass(Symbol* class_name,
                                                Handle class_loader,
                                                Handle protection_domain,
                                                TRAPS);
 
   // If the given name is known to vmSymbols, return the well-know klass:
-  static klassOop find_well_known_klass(Symbol* class_name);
+  static Klass* find_well_known_klass(Symbol* class_name);
 
   // Lookup an instance or array class that has already been loaded
   // either into the given class loader, or else into another class
@@ -306,34 +304,32 @@ public:
   // satisfied, and it is safe for classes in the given class loader
   // to manipulate strongly-typed values of the found class, subject
   // to local linkage and access checks.
-  static klassOop find_constrained_instance_or_array_klass(Symbol* class_name,
+  static Klass* find_constrained_instance_or_array_klass(Symbol* class_name,
                                                            Handle class_loader,
                                                            TRAPS);
 
   // Iterate over all klasses in dictionary
   //   Just the classes from defining class loaders
-  static void classes_do(void f(klassOop));
+  static void classes_do(void f(Klass*));
   // Added for initialize_itable_for_klass to handle exceptions
-  static void classes_do(void f(klassOop, TRAPS), TRAPS);
+  static void classes_do(void f(Klass*, TRAPS), TRAPS);
   //   All classes, and their class loaders
-  static void classes_do(void f(klassOop, oop));
+  static void classes_do(void f(Klass*, ClassLoaderData*));
   //   All classes, and their class loaders
   //   (added for helpers that use HandleMarks and ResourceMarks)
-  static void classes_do(void f(klassOop, oop, TRAPS), TRAPS);
+  static void classes_do(void f(Klass*, ClassLoaderData*, TRAPS), TRAPS);
   // All entries in the placeholder table and their class loaders
-  static void placeholders_do(void f(Symbol*, oop));
+  static void placeholders_do(void f(Symbol*));
 
   // Iterate over all methods in all klasses in dictionary
-  static void methods_do(void f(methodOop));
+  static void methods_do(void f(Method*));
 
   // Garbage collection support
 
   // This method applies "blk->do_oop" to all the pointers to "system"
   // classes and loaders.
   static void always_strong_oops_do(OopClosure* blk);
-  static void always_strong_classes_do(OopClosure* blk);
-  // This method applies "blk->do_oop" to all the placeholders.
-  static void placeholders_do(OopClosure* blk);
+  static void always_strong_classes_do(KlassClosure* closure);
 
   // Unload (that is, break root links to) all unmarked classes and
   // loaders.  Returns "true" iff something was unloaded.
@@ -348,11 +344,9 @@ public:
   static oop system_loader_lock()           { return _system_loader_lock_obj; }
 
 private:
-  //    Traverses preloaded oops: various system classes.  These are
-  //    guaranteed to be in the perm gen.
-  static void preloaded_oops_do(OopClosure* f);
-  static void lazily_loaded_oops_do(OopClosure* f);
-
+  // Extended Redefine classes support (tbi)
+  static void preloaded_classes_do(KlassClosure* f);
+  static void lazily_loaded_classes_do(KlassClosure* f);
 public:
   // Sharing support.
   static void reorder_dictionary();
@@ -386,28 +380,27 @@ public:
 #endif
 
   // Verify class is in dictionary
-  static void verify_obj_klass_present(Handle obj,
-                                       Symbol* class_name,
-                                       Handle class_loader);
+  static void verify_obj_klass_present(Symbol* class_name,
+                                       ClassLoaderData* loader_data);
 
   // Initialization
   static void initialize(TRAPS);
 
   // Fast access to commonly used classes (preloaded)
-  static klassOop check_klass(klassOop k) {
+  static Klass* check_klass(Klass* k) {
     assert(k != NULL, "preloaded klass not initialized");
     return k;
   }
 
-  static klassOop check_klass_Pre(klassOop k) { return check_klass(k); }
-  static klassOop check_klass_Pre_JSR292(klassOop k) { return EnableInvokeDynamic ? check_klass(k) : k; }
-  static klassOop check_klass_Opt(klassOop k) { return k; }
-  static klassOop check_klass_Opt_Kernel(klassOop k) { return k; } //== Opt
-  static klassOop check_klass_Opt_Only_JDK15(klassOop k) {
+  static Klass* check_klass_Pre(Klass* k) { return check_klass(k); }
+  static Klass* check_klass_Pre_JSR292(Klass* k) { return EnableInvokeDynamic ? check_klass(k) : k; }
+  static Klass* check_klass_Opt(Klass* k) { return k; }
+  static Klass* check_klass_Opt_Kernel(Klass* k) { return k; } //== Opt
+  static Klass* check_klass_Opt_Only_JDK15(Klass* k) {
     assert(JDK_Version::is_gte_jdk15x_version(), "JDK 1.5 only");
     return k;
   }
-  static klassOop check_klass_Opt_Only_JDK14NewRef(klassOop k) {
+  static Klass* check_klass_Opt_Only_JDK14NewRef(Klass* k) {
     assert(JDK_Version::is_gte_jdk14x_version() && UseNewReflection, "JDK 1.4 only");
     // despite the optional loading, if you use this it must be present:
     return check_klass(k);
@@ -422,27 +415,35 @@ public:
 
 public:
   #define WK_KLASS_DECLARE(name, symbol, option) \
-    static klassOop name() { return check_klass_##option(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); }
+    static Klass* name() { return check_klass_##option(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); } \
+    static Klass** name##_addr() {                                                                       \
+      return &SystemDictionary::_well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)];           \
+    }
   WK_KLASSES_DO(WK_KLASS_DECLARE);
   #undef WK_KLASS_DECLARE
 
-  static klassOop well_known_klass(WKID id) {
+  static Klass* well_known_klass(WKID id) {
     assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
     return _well_known_klasses[id];
+  }
+
+  static Klass** well_known_klass_addr(WKID id) {
+    assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
+    return &_well_known_klasses[id];
   }
 
   // Local definition for direct access to the private array:
   #define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
 
-  static klassOop box_klass(BasicType t) {
+  static Klass* box_klass(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
     return check_klass(_box_klasses[t]);
   }
-  static BasicType box_klass_type(klassOop k);  // inverse of box_klass
+  static BasicType box_klass_type(Klass* k);  // inverse of box_klass
 
   // methods returning lazily loaded klasses
   // The corresponding method to load the class must be called before calling them.
-  static klassOop abstract_ownable_synchronizer_klass() { return check_klass(_abstract_ownable_synchronizer_klass); }
+  static Klass* abstract_ownable_synchronizer_klass() { return check_klass(_abstract_ownable_synchronizer_klass); }
 
   static void load_abstract_ownable_synchronizer_klass(TRAPS);
 
@@ -450,12 +451,20 @@ private:
   // Tells whether ClassLoader.loadClassInternal is present
   static bool has_loadClassInternal()       { return _has_loadClassInternal; }
 
+  // Returns the class loader data to be used when looking up/updating the
+  // system dictionary.
+  static ClassLoaderData *class_loader_data(Handle class_loader) {
+    return ClassLoaderData::class_loader_data(class_loader());
+  }
+
 public:
   // Tells whether ClassLoader.checkPackageAccess is present
   static bool has_checkPackageAccess()      { return _has_checkPackageAccess; }
 
   static bool Class_klass_loaded()          { return WK_KLASS(Class_klass) != NULL; }
   static bool Cloneable_klass_loaded()      { return WK_KLASS(Cloneable_klass) != NULL; }
+  static bool Object_klass_loaded()         { return WK_KLASS(Object_klass) != NULL; }
+  static bool ClassLoader_klass_loaded()    { return WK_KLASS(ClassLoader_klass) != NULL; }
 
   // Returns default system loader
   static oop java_system_loader();
@@ -463,6 +472,8 @@ public:
   // Compute the default system loader
   static void compute_java_system_loader(TRAPS);
 
+  // Register a new class loader
+  static ClassLoaderData* register_loader(Handle class_loader);
 private:
   // Mirrors for primitive classes (created eagerly)
   static oop check_mirror(oop m) {
@@ -517,12 +528,17 @@ public:
   // Utility for printing loader "name" as part of tracing constraints
   static const char* loader_name(oop loader) {
     return ((loader) == NULL ? "<bootloader>" :
-            instanceKlass::cast((loader)->klass())->name()->as_C_string() );
+            InstanceKlass::cast((loader)->klass())->name()->as_C_string() );
+  }
+  static const char* loader_name(ClassLoaderData* loader_data) {
+    return (loader_data->is_the_null_class_loader_data() ? "<bootloader>" :
+            InstanceKlass::cast((loader_data->class_loader())->klass())->name()->as_C_string() );
   }
 
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
   static void add_resolution_error(constantPoolHandle pool, int which, Symbol* error);
+  static void delete_resolution_error(ConstantPool* pool);
   static Symbol* find_resolution_error(constantPoolHandle pool, int which);
 
  private:
@@ -574,7 +590,7 @@ public:
 public:
   // for VM_CounterDecay iteration support
   friend class CounterDecay;
-  static klassOop try_get_next_class();
+  static Klass* try_get_next_class();
 
 private:
   static void validate_protection_domain(instanceKlassHandle klass,
@@ -591,8 +607,8 @@ private:
   static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
 
   // Basic loading operations
-  static klassOop resolve_instance_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
-  static klassOop resolve_array_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static Klass* resolve_instance_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
+  static Klass* resolve_array_class_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
   static instanceKlassHandle handle_parallel_super_load(Symbol* class_name, Symbol* supername, Handle class_loader, Handle protection_domain, Handle lockObject, TRAPS);
   // Wait on SystemDictionary_lock; unlocks lockObject before
   // waiting; relocks lockObject with correct recursion count
@@ -613,7 +629,7 @@ private:
   static bool is_parallelCapable(Handle class_loader);
   static bool is_parallelDefine(Handle class_loader);
 
-  static klassOop find_shared_class(Symbol* class_name);
+  static Klass* find_shared_class(Symbol* class_name);
 
   // Setup link to hierarchy
   static void add_to_hierarchy(instanceKlassHandle k, TRAPS);
@@ -623,31 +639,31 @@ private:
   // the SystemDictionary_lock.
 
   // Basic find on loaded classes
-  static klassOop find_class(int index, unsigned int hash,
-                             Symbol* name, Handle loader);
-  static klassOop find_class(Symbol* class_name, Handle class_loader);
+  static Klass* find_class(int index, unsigned int hash,
+                             Symbol* name, ClassLoaderData* loader_data);
+  static Klass* find_class(Symbol* class_name, ClassLoaderData* loader_data);
 
   // Basic find on classes in the midst of being loaded
-  static Symbol* find_placeholder(Symbol* name, Handle loader);
+  static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
 
   // Updating entry in dictionary
   // Add a completely loaded class
   static void add_klass(int index, Symbol* class_name,
-                        Handle class_loader, KlassHandle obj);
+                        ClassLoaderData* loader_data, KlassHandle obj);
 
   // Add a placeholder for a class being loaded
   static void add_placeholder(int index,
                               Symbol* class_name,
-                              Handle class_loader);
+                              ClassLoaderData* loader_data);
   static void remove_placeholder(int index,
                                  Symbol* class_name,
-                                 Handle class_loader);
+                                 ClassLoaderData* loader_data);
 
   // Performs cleanups after resolve_super_or_fail. This typically needs
   // to be called on failure.
   // Won't throw, but can block.
   static void resolution_cleanups(Symbol* class_name,
-                                  Handle class_loader,
+                                  ClassLoaderData* loader_data,
                                   TRAPS);
 
   // Initialization
@@ -659,35 +675,22 @@ private:
                                 bool defining, TRAPS);
   static void update_dictionary(int d_index, unsigned int d_hash,
                                 int p_index, unsigned int p_hash,
-                                instanceKlassHandle k, Handle loader, TRAPS);
+                                instanceKlassHandle k, Handle loader,
+                                TRAPS);
 
   // Variables holding commonly used klasses (preloaded)
-  static klassOop _well_known_klasses[];
+  static Klass* _well_known_klasses[];
 
   // Lazily loaded klasses
-  static volatile klassOop _abstract_ownable_synchronizer_klass;
+  static Klass* volatile _abstract_ownable_synchronizer_klass;
 
   // table of box klasses (int_klass, etc.)
-  static klassOop _box_klasses[T_VOID+1];
+  static Klass* _box_klasses[T_VOID+1];
 
   static oop  _java_system_loader;
 
   static bool _has_loadClassInternal;
   static bool _has_checkPackageAccess;
-};
-
-class SystemDictionaryHandles : AllStatic {
-public:
-  #define WK_KLASS_HANDLE_DECLARE(name, ignore_symbol, option) \
-    static KlassHandle name() { \
-      SystemDictionary::name(); \
-      klassOop* loc = &SystemDictionary::_well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]; \
-      return KlassHandle(loc, true); \
-    }
-  WK_KLASSES_DO(WK_KLASS_HANDLE_DECLARE);
-  #undef WK_KLASS_HANDLE_DECLARE
-
-  static KlassHandle box_klass(BasicType t);
 };
 
 #endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARY_HPP

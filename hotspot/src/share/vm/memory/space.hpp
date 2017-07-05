@@ -65,7 +65,6 @@
 //       - OffsetTableContigSpace -- contiguous space with a block offset array
 //                          that allows "fast" block_start calls
 //         - TenuredSpace -- (used for TenuredGeneration)
-//         - ContigPermSpace -- an offset table contiguous space for perm gen
 
 // Forward decls.
 class Space;
@@ -79,9 +78,9 @@ class CardTableRS;
 class DirtyCardToOopClosure;
 
 // An oop closure that is circumscribed by a filtering memory region.
-class SpaceMemRegionOopsIterClosure: public OopClosure {
+class SpaceMemRegionOopsIterClosure: public ExtendedOopClosure {
  private:
-  OopClosure* _cl;
+  ExtendedOopClosure* _cl;
   MemRegion   _mr;
  protected:
   template <class T> void do_oop_work(T* p) {
@@ -90,10 +89,17 @@ class SpaceMemRegionOopsIterClosure: public OopClosure {
     }
   }
  public:
-  SpaceMemRegionOopsIterClosure(OopClosure* cl, MemRegion mr):
+  SpaceMemRegionOopsIterClosure(ExtendedOopClosure* cl, MemRegion mr):
     _cl(cl), _mr(mr) {}
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
+  virtual bool do_metadata() {
+    // _cl is of type ExtendedOopClosure instead of OopClosure, so that we can check this.
+    assert(!_cl->do_metadata(), "I've checked all call paths, this shouldn't happen.");
+    return false;
+  }
+  virtual void do_klass(Klass* k)                         { ShouldNotReachHere(); }
+  virtual void do_class_loader_data(ClassLoaderData* cld) { ShouldNotReachHere(); }
 };
 
 // A Space describes a heap area. Class Space is an abstract
@@ -209,12 +215,12 @@ class Space: public CHeapObj<mtGC> {
   // Iterate over all the ref-containing fields of all objects in the
   // space, calling "cl.do_oop" on each.  Fields in objects allocated by
   // applications of the closure are not included in the iteration.
-  virtual void oop_iterate(OopClosure* cl);
+  virtual void oop_iterate(ExtendedOopClosure* cl);
 
   // Same as above, restricted to the intersection of a memory region and
   // the space.  Fields in objects allocated by applications of the closure
   // are not included in the iteration.
-  virtual void oop_iterate(MemRegion mr, OopClosure* cl) = 0;
+  virtual void oop_iterate(MemRegion mr, ExtendedOopClosure* cl) = 0;
 
   // Iterate over all objects in the space, calling "cl.do_object" on
   // each.  Objects allocated by applications of the closure are not
@@ -246,7 +252,7 @@ class Space: public CHeapObj<mtGC> {
   // overriden to return the appropriate type of closure
   // depending on the type of space in which the closure will
   // operate. ResourceArea allocated.
-  virtual DirtyCardToOopClosure* new_dcto_cl(OopClosure* cl,
+  virtual DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
                                              CardTableModRefBS::PrecisionStyle precision,
                                              HeapWord* boundary = NULL);
 
@@ -321,7 +327,7 @@ class Space: public CHeapObj<mtGC> {
 
 class DirtyCardToOopClosure: public MemRegionClosureRO {
 protected:
-  OopClosure* _cl;
+  ExtendedOopClosure* _cl;
   Space* _sp;
   CardTableModRefBS::PrecisionStyle _precision;
   HeapWord* _boundary;          // If non-NULL, process only non-NULL oops
@@ -351,7 +357,7 @@ protected:
   virtual void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
 
 public:
-  DirtyCardToOopClosure(Space* sp, OopClosure* cl,
+  DirtyCardToOopClosure(Space* sp, ExtendedOopClosure* cl,
                         CardTableModRefBS::PrecisionStyle precision,
                         HeapWord* boundary) :
     _sp(sp), _cl(cl), _precision(precision), _boundary(boundary),
@@ -394,8 +400,6 @@ public:
 class CompactibleSpace: public Space {
   friend class VMStructs;
   friend class CompactibleFreeListSpace;
-  friend class CompactingPermGenGen;
-  friend class CMSPermGenGen;
 private:
   HeapWord* _compaction_top;
   CompactibleSpace* _next_compaction_space;
@@ -532,7 +536,7 @@ protected:
    * Occasionally, we want to ensure a full compaction, which is determined  \
    * by the MarkSweepAlwaysCompactCount parameter.                           \
    */                                                                        \
-  int invocations = SharedHeap::heap()->perm_gen()->stat_record()->invocations;\
+  int invocations = MarkSweep::total_invocations();                          \
   bool skip_dead = (MarkSweepAlwaysCompactCount < 1)                         \
     ||((invocations % MarkSweepAlwaysCompactCount) != 0);                    \
                                                                              \
@@ -562,7 +566,6 @@ protected:
     if (block_is_obj(q) && oop(q)->is_gc_marked()) {                         \
       /* prefetch beyond q */                                                \
       Prefetch::write(q, interval);                                          \
-      /* size_t size = oop(q)->size();  changing this for cms for perm gen */\
       size_t size = block_size(q);                                           \
       compact_top = cp->space->forward(oop(q), size, cp, compact_top);       \
       q += size;                                                             \
@@ -647,7 +650,7 @@ protected:
       /* I originally tried to conjoin "block_start(q) == q" to the             \
        * assertion below, but that doesn't work, because you can't              \
        * accurately traverse previous objects to get to the current one         \
-       * after their pointers (including pointers into permGen) have been       \
+       * after their pointers have been                                         \
        * updated, until the actual compaction is done.  dld, 4/00 */            \
       assert(block_is_obj(q),                                                   \
              "should be at block boundaries, and should be looking at objs");   \
@@ -871,8 +874,8 @@ class ContiguousSpace: public CompactibleSpace {
   }
 
   // Iteration
-  void oop_iterate(OopClosure* cl);
-  void oop_iterate(MemRegion mr, OopClosure* cl);
+  void oop_iterate(ExtendedOopClosure* cl);
+  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
   void object_iterate(ObjectClosure* blk);
   // For contiguous spaces this method will iterate safely over objects
   // in the space (i.e., between bottom and top) when at a safepoint.
@@ -891,6 +894,7 @@ class ContiguousSpace: public CompactibleSpace {
     assert(new_limit <= top(), "uninitialized objects in the safe range");
     _concurrent_iteration_safe_limit = new_limit;
   }
+
 
 #ifndef SERIALGC
   // In support of parallel oop_iterate.
@@ -911,7 +915,7 @@ class ContiguousSpace: public CompactibleSpace {
   virtual size_t minimum_free_block_size() const { return 0; }
 
   // Override.
-  DirtyCardToOopClosure* new_dcto_cl(OopClosure* cl,
+  DirtyCardToOopClosure* new_dcto_cl(ExtendedOopClosure* cl,
                                      CardTableModRefBS::PrecisionStyle precision,
                                      HeapWord* boundary = NULL);
 
@@ -981,13 +985,13 @@ protected:
   // apparent.
   virtual void walk_mem_region_with_cl(MemRegion mr,
                                        HeapWord* bottom, HeapWord* top,
-                                       OopClosure* cl) = 0;
+                                       ExtendedOopClosure* cl) = 0;
   virtual void walk_mem_region_with_cl(MemRegion mr,
                                        HeapWord* bottom, HeapWord* top,
                                        FilteringClosure* cl) = 0;
 
 public:
-  Filtering_DCTOC(Space* sp, OopClosure* cl,
+  Filtering_DCTOC(Space* sp, ExtendedOopClosure* cl,
                   CardTableModRefBS::PrecisionStyle precision,
                   HeapWord* boundary) :
     DirtyCardToOopClosure(sp, cl, precision, boundary) {}
@@ -1010,13 +1014,13 @@ protected:
 
   virtual void walk_mem_region_with_cl(MemRegion mr,
                                        HeapWord* bottom, HeapWord* top,
-                                       OopClosure* cl);
+                                       ExtendedOopClosure* cl);
   virtual void walk_mem_region_with_cl(MemRegion mr,
                                        HeapWord* bottom, HeapWord* top,
                                        FilteringClosure* cl);
 
 public:
-  ContiguousSpaceDCTOC(ContiguousSpace* sp, OopClosure* cl,
+  ContiguousSpaceDCTOC(ContiguousSpace* sp, ExtendedOopClosure* cl,
                        CardTableModRefBS::PrecisionStyle precision,
                        HeapWord* boundary) :
     Filtering_DCTOC(sp, cl, precision, boundary)
@@ -1076,7 +1080,7 @@ class ConcEdenSpace : public EdenSpace {
 // A ContigSpace that Supports an efficient "block_start" operation via
 // a BlockOffsetArray (whose BlockOffsetSharedArray may be shared with
 // other spaces.)  This is the abstract base class for old generation
-// (tenured, perm) spaces.
+// (tenured) spaces.
 
 class OffsetTableContigSpace: public ContiguousSpace {
   friend class VMStructs;
@@ -1108,9 +1112,6 @@ class OffsetTableContigSpace: public ContiguousSpace {
 
   // Debugging
   void verify() const;
-
-  // Shared space support
-  void serialize_block_offset_array_offsets(SerializeOopClosure* soc);
 };
 
 
@@ -1127,19 +1128,4 @@ class TenuredSpace: public OffsetTableContigSpace {
                MemRegion mr) :
     OffsetTableContigSpace(sharedOffsetArray, mr) {}
 };
-
-
-// Class ContigPermSpace is used by CompactingPermGen
-
-class ContigPermSpace: public OffsetTableContigSpace {
-  friend class VMStructs;
- protected:
-  // Mark sweep support
-  size_t allowed_dead_ratio() const;
- public:
-  // Constructor
-  ContigPermSpace(BlockOffsetSharedArray* sharedOffsetArray, MemRegion mr) :
-    OffsetTableContigSpace(sharedOffsetArray, mr) {}
-};
-
 #endif // SHARE_VM_MEMORY_SPACE_HPP

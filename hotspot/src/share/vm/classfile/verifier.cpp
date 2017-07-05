@@ -153,7 +153,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
       if (HAS_PENDING_EXCEPTION) {
         tty->print("Verification for %s has", klassName);
         tty->print_cr(" exception pending %s ",
-          instanceKlass::cast(PENDING_EXCEPTION->klass())->external_name());
+          InstanceKlass::cast(PENDING_EXCEPTION->klass())->external_name());
       } else if (exception_name != NULL) {
         tty->print_cr("Verification for %s failed", klassName);
       }
@@ -186,7 +186,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
 
 bool Verifier::is_eligible_for_verification(instanceKlassHandle klass, bool should_verify_class) {
   Symbol* name = klass->name();
-  klassOop refl_magic_klass = SystemDictionary::reflect_MagicAccessorImpl_klass();
+  Klass* refl_magic_klass = SystemDictionary::reflect_MagicAccessorImpl_klass();
 
   return (should_verify_for(klass->class_loader(), should_verify_class) &&
     // return if the class is a bootstrapping class
@@ -361,7 +361,7 @@ void TypeOrigin::print_on(outputStream* str) const {
 }
 #endif
 
-void ErrorContext::details(outputStream* ss, methodOop method) const {
+void ErrorContext::details(outputStream* ss, Method* method) const {
   if (is_valid()) {
     ss->print_cr("");
     ss->print_cr("Exception Details:");
@@ -434,7 +434,7 @@ void ErrorContext::reason_details(outputStream* ss) const {
   ss->print_cr("");
 }
 
-void ErrorContext::location_details(outputStream* ss, methodOop method) const {
+void ErrorContext::location_details(outputStream* ss, Method* method) const {
   if (_bci != -1 && method != NULL) {
     streamIndentor si(ss);
     const char* bytecode_name = "<invalid>";
@@ -446,7 +446,7 @@ void ErrorContext::location_details(outputStream* ss, methodOop method) const {
           bytecode_name = "<illegal>";
       }
     }
-    instanceKlass* ik = instanceKlass::cast(method->method_holder());
+    InstanceKlass* ik = InstanceKlass::cast(method->method_holder());
     ss->indent().print_cr("Location:");
     streamIndentor si2(ss);
     ss->indent().print_cr("%s.%s%s @%d: %s",
@@ -469,7 +469,7 @@ void ErrorContext::frame_details(outputStream* ss) const {
   }
 }
 
-void ErrorContext::bytecode_details(outputStream* ss, methodOop method) const {
+void ErrorContext::bytecode_details(outputStream* ss, Method* method) const {
   if (method != NULL) {
     streamIndentor si(ss);
     ss->indent().print_cr("Bytecode:");
@@ -478,7 +478,7 @@ void ErrorContext::bytecode_details(outputStream* ss, methodOop method) const {
   }
 }
 
-void ErrorContext::handler_details(outputStream* ss, methodOop method) const {
+void ErrorContext::handler_details(outputStream* ss, Method* method) const {
   if (method != NULL) {
     streamIndentor si(ss);
     ExceptionTable table(method);
@@ -493,13 +493,13 @@ void ErrorContext::handler_details(outputStream* ss, methodOop method) const {
   }
 }
 
-void ErrorContext::stackmap_details(outputStream* ss, methodOop method) const {
+void ErrorContext::stackmap_details(outputStream* ss, Method* method) const {
   if (method != NULL && method->has_stackmap_table()) {
     streamIndentor si(ss);
     ss->indent().print_cr("Stackmap Table:");
-    typeArrayOop data = method->stackmap_data();
+    Array<u1>* data = method->stackmap_data();
     stack_map_table* sm_table =
-        stack_map_table::at((address)data->byte_at_addr(0));
+        stack_map_table::at((address)data->adr_at(0));
     stack_map_frame* sm_frame = sm_table->entries();
     streamIndentor si2(ss);
     int current_offset = -1;
@@ -547,14 +547,14 @@ void ClassVerifier::verify_class(TRAPS) {
       _klass->external_name());
   }
 
-  objArrayHandle methods(THREAD, _klass->methods());
+  Array<Method*>* methods = _klass->methods();
   int num_methods = methods->length();
 
   for (int index = 0; index < num_methods; index++) {
     // Check for recursive re-verification before each method.
     if (was_recursively_verified())  return;
 
-    methodOop m = (methodOop)methods->obj_at(index);
+    Method* m = methods->at(index);
     if (m->is_native() || m->is_abstract()) {
       // If m is native or abstract, skip it.  It is checked in class file
       // parser that methods do not override a final method.
@@ -571,6 +571,7 @@ void ClassVerifier::verify_class(TRAPS) {
 }
 
 void ClassVerifier::verify_method(methodHandle m, TRAPS) {
+  HandleMark hm(THREAD);
   _method = m;   // initialize _method
   if (VerboseVerification) {
     tty->print_cr("Verifying method %s", m->name_and_sig_as_C_string());
@@ -613,7 +614,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
     verify_local_variable_table(code_length, code_data, CHECK_VERIFY(this));
   }
 
-  typeArrayHandle stackmap_data(THREAD, m->stackmap_data());
+  Array<u1>* stackmap_data = m->stackmap_data();
   StackMapStream stream(stackmap_data);
   StackMapReader reader(this, &stream, code_data, code_length, THREAD);
   StackMapTable stackmap_table(&reader, &current_frame, max_locals, max_stack,
@@ -1848,7 +1849,7 @@ void ClassVerifier::verify_cp_index(
   if ((index <= 0) || (index >= nconstants)) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
         "Illegal constant pool index %d in class %s",
-        index, instanceKlass::cast(cp->pool_holder())->external_name());
+        index, InstanceKlass::cast(cp->pool_holder())->external_name());
     return;
   }
 }
@@ -1867,7 +1868,7 @@ void ClassVerifier::verify_cp_type(
   if ((types & (1 << tag)) == 0) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
       "Illegal type at constant pool entry %d in class %s",
-      index, instanceKlass::cast(cp->pool_holder())->external_name());
+      index, InstanceKlass::cast(cp->pool_holder())->external_name());
     return;
   }
 }
@@ -1879,7 +1880,7 @@ void ClassVerifier::verify_cp_class_type(
   if (!tag.is_klass() && !tag.is_unresolved_klass()) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
         "Illegal type at constant pool entry %d in class %s",
-        index, instanceKlass::cast(cp->pool_holder())->external_name());
+        index, InstanceKlass::cast(cp->pool_holder())->external_name());
     return;
   }
 }
@@ -1915,7 +1916,7 @@ void ClassVerifier::class_format_error(const char* msg, ...) {
   _message = ss.as_string();
 }
 
-klassOop ClassVerifier::load_class(Symbol* name, TRAPS) {
+Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
   // Get current loader and protection domain first.
   oop loader = current_class()->class_loader();
   oop protection_domain = current_class()->protection_domain();
@@ -1926,7 +1927,7 @@ klassOop ClassVerifier::load_class(Symbol* name, TRAPS) {
 }
 
 bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
-                                        klassOop target_class,
+                                        Klass* target_class,
                                         Symbol* field_name,
                                         Symbol* field_sig,
                                         bool is_method) {
@@ -1937,17 +1938,17 @@ bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
     return false;
   }
   // Check if the specified method or field is protected
-  instanceKlass* target_instance = instanceKlass::cast(target_class);
+  InstanceKlass* target_instance = InstanceKlass::cast(target_class);
   fieldDescriptor fd;
   if (is_method) {
-    methodOop m = target_instance->uncached_lookup_method(field_name, field_sig);
+    Method* m = target_instance->uncached_lookup_method(field_name, field_sig);
     if (m != NULL && m->is_protected()) {
       if (!this_class->is_same_class_package(m->method_holder())) {
         return true;
       }
     }
   } else {
-    klassOop member_klass = target_instance->find_field(field_name, field_sig, &fd);
+    Klass* member_klass = target_instance->find_field(field_name, field_sig, &fd);
     if (member_klass != NULL && fd.is_protected()) {
       if (!this_class->is_same_class_package(member_klass)) {
         return true;
@@ -1964,7 +1965,7 @@ void ClassVerifier::verify_ldc(
   constantTag tag = cp->tag_at(index);
   unsigned int types;
   if (opcode == Bytecodes::_ldc || opcode == Bytecodes::_ldc_w) {
-    if (!tag.is_unresolved_string() && !tag.is_unresolved_klass()) {
+    if (!tag.is_unresolved_klass()) {
       types = (1 << JVM_CONSTANT_Integer) | (1 << JVM_CONSTANT_Float)
             | (1 << JVM_CONSTANT_String)  | (1 << JVM_CONSTANT_Class)
             | (1 << JVM_CONSTANT_MethodHandle) | (1 << JVM_CONSTANT_MethodType);
@@ -1979,7 +1980,7 @@ void ClassVerifier::verify_ldc(
   }
   if (tag.is_string() && cp->is_pseudo_string_at(index)) {
     current_frame->push_stack(object_type(), CHECK_VERIFY(this));
-  } else if (tag.is_string() || tag.is_unresolved_string()) {
+  } else if (tag.is_string()) {
     current_frame->push_stack(
       VerificationType::reference_type(
         vmSymbols::java_lang_String()), CHECK_VERIFY(this));
@@ -2086,12 +2087,12 @@ void ClassVerifier::verify_switch(
 
 bool ClassVerifier::name_in_supers(
     Symbol* ref_name, instanceKlassHandle current) {
-  klassOop super = current->super();
+  Klass* super = current->super();
   while (super != NULL) {
-    if (super->klass_part()->name() == ref_name) {
+    if (super->name() == ref_name) {
       return true;
     }
-    super = super->klass_part()->super();
+    super = super->super();
   }
   return false;
 }
@@ -2200,7 +2201,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         //    be a superclass of it. See revised JVMS 5.4.4.
         break;
 
-      klassOop ref_class_oop = load_class(ref_class_name, CHECK);
+      Klass* ref_class_oop = load_class(ref_class_name, CHECK);
       if (is_protected_access(current_class(), ref_class_oop, field_name,
                               field_sig, false)) {
         // It's protected access, check if stack object is assignable to
@@ -2230,9 +2231,9 @@ void ClassVerifier::verify_invoke_init(
     VerificationType::reference_check(), CHECK_VERIFY(this));
   if (type == VerificationType::uninitialized_this_type()) {
     // The method must be an <init> method of this class or its superclass
-    klassOop superk = current_class()->super();
+    Klass* superk = current_class()->super();
     if (ref_class_type.name() != current_class()->name() &&
-        ref_class_type.name() != superk->klass_part()->name()) {
+        ref_class_type.name() != superk->name()) {
       verify_error(ErrorContext::bad_type(bci,
           TypeOrigin::implicit(ref_class_type),
           TypeOrigin::implicit(current_type())),
@@ -2270,9 +2271,9 @@ void ClassVerifier::verify_invoke_init(
     // of the current class.
     VerificationType objectref_type = new_class_type;
     if (name_in_supers(ref_class_type.name(), current_class())) {
-      klassOop ref_klass = load_class(
+      Klass* ref_klass = load_class(
         ref_class_type.name(), CHECK_VERIFY(this));
-      methodOop m = instanceKlass::cast(ref_klass)->uncached_lookup_method(
+      Method* m = InstanceKlass::cast(ref_klass)->uncached_lookup_method(
         vmSymbols::object_initializer_name(),
         cp->signature_ref_at(bcs->get_index_u2()));
       instanceKlassHandle mh(THREAD, m->method_holder());
@@ -2416,7 +2417,7 @@ void ClassVerifier::verify_invoke_instructions(
   } else if (opcode == Bytecodes::_invokespecial
              && !ref_class_type.equals(current_type())
              && !ref_class_type.equals(VerificationType::reference_type(
-                  current_class()->super()->klass_part()->name()))) {
+                  current_class()->super()->name()))) {
     bool subtype = ref_class_type.is_assignable_from(
       current_type(), this, CHECK_VERIFY(this));
     if (!subtype) {
@@ -2450,7 +2451,7 @@ void ClassVerifier::verify_invoke_instructions(
           // See the comments in verify_field_instructions() for
           // the rationale behind this.
           if (name_in_supers(ref_class_name, current_class())) {
-            klassOop ref_class = load_class(ref_class_name, CHECK);
+            Klass* ref_class = load_class(ref_class_name, CHECK);
             if (is_protected_access(
                   _klass, ref_class, method_name, method_sig, true)) {
               // It's protected access, check if stack object is

@@ -120,10 +120,7 @@ TraceTime::TraceTime(const char* title,
 
   if (_active) {
     _accum = NULL;
-    if (PrintGCTimeStamps) {
-      _logfile->stamp();
-      _logfile->print(": ");
-    }
+    _logfile->stamp(PrintGCTimeStamps);
     _logfile->print("[%s", title);
     _logfile->flush();
     _t.start();
@@ -141,10 +138,7 @@ TraceTime::TraceTime(const char* title,
   _logfile = (logfile != NULL) ? logfile : tty;
   if (_active) {
     if (_verbose) {
-      if (PrintGCTimeStamps) {
-        _logfile->stamp();
-        _logfile->print(": ");
-      }
+      _logfile->stamp(PrintGCTimeStamps);
       _logfile->print("[%s", title);
       _logfile->flush();
     }

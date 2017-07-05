@@ -77,7 +77,7 @@ bool GCNotifier::has_event() {
 
 static Handle getGcInfoBuilder(GCMemoryManager *gcManager,TRAPS) {
 
-  klassOop k = Management::sun_management_GarbageCollectorImpl_klass(CHECK_NH);
+  Klass* k = Management::sun_management_GarbageCollectorImpl_klass(CHECK_NH);
   instanceKlassHandle gcMBeanKlass (THREAD, k);
 
   instanceOop i = gcManager->get_memory_manager_instance(THREAD);
@@ -100,7 +100,7 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
   // Fill the arrays of MemoryUsage objects with before and after GC
   // per pool memory usage
 
-  klassOop mu_klass = Management::java_lang_management_MemoryUsage_klass(CHECK_NH);
+  Klass* mu_klass = Management::java_lang_management_MemoryUsage_klass(CHECK_NH);
   instanceKlassHandle mu_kh(THREAD, mu_klass);
 
   // The array allocations below should use a handle containing mu_klass
@@ -133,7 +133,7 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
   // The type is 'I'
   objArrayOop extra_args_array = oopFactory::new_objArray(SystemDictionary::Integer_klass(), 1, CHECK_NH);
   objArrayHandle extra_array (THREAD, extra_args_array);
-  klassOop itKlass = SystemDictionary::Integer_klass();
+  Klass* itKlass = SystemDictionary::Integer_klass();
   instanceKlassHandle intK(THREAD, itKlass);
 
   instanceHandle extra_arg_val = intK->allocate_instance_handle(CHECK_NH);
@@ -153,7 +153,7 @@ static Handle createGcInfo(GCMemoryManager *gcManager, GCStatInfo *gcStatInfo,TR
   }
   extra_array->obj_at_put(0,extra_arg_val());
 
-  klassOop gcInfoklass = Management::com_sun_management_GcInfo_klass(CHECK_NH);
+  Klass* gcInfoklass = Management::com_sun_management_GcInfo_klass(CHECK_NH);
   instanceKlassHandle ik(THREAD, gcInfoklass);
 
   Handle gcInfo_instance = ik->allocate_instance_handle(CHECK_NH);
@@ -215,7 +215,7 @@ void GCNotifier::sendNotificationInternal(TRAPS) {
     Handle objAction = java_lang_String::create_from_platform_dependent_str(request->gcAction, CHECK);
     Handle objCause = java_lang_String::create_from_platform_dependent_str(request->gcCause, CHECK);
 
-    klassOop k = Management::sun_management_GarbageCollectorImpl_klass(CHECK);
+    Klass* k = Management::sun_management_GarbageCollectorImpl_klass(CHECK);
     instanceKlassHandle gc_mbean_klass(THREAD, k);
 
     instanceOop gc_mbean = request->gcManager->get_memory_manager_instance(THREAD);

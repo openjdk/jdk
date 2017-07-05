@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,11 @@
 
 // Convert the raw encoding form into the form expected by the
 // constructor for Address.
-Address Address::make_raw(int base, int index, int scale, int disp, bool disp_is_oop) {
+Address Address::make_raw(int base, int index, int scale, int disp, relocInfo::relocType disp_reloc) {
   assert(scale == 0, "not supported");
   RelocationHolder rspec;
-  if (disp_is_oop) {
-    rspec = Relocation::spec_simple(relocInfo::oop_type);
+  if (disp_reloc != relocInfo::none) {
+    rspec = Relocation::spec_simple(disp_reloc);
   }
 
   Register rindex = as_Register(index);
@@ -1250,12 +1250,11 @@ void MacroAssembler::get_vm_result(Register oop_result) {
 }
 
 
-void MacroAssembler::get_vm_result_2(Register oop_result) {
+void MacroAssembler::get_vm_result_2(Register metadata_result) {
   verify_thread();
   Address vm_result_addr_2(G2_thread, JavaThread::vm_result_2_offset());
-  ld_ptr(vm_result_addr_2, oop_result);
+  ld_ptr(vm_result_addr_2, metadata_result);
   st_ptr(G0, vm_result_addr_2);
-  verify_oop(oop_result);
 }
 
 
@@ -1281,6 +1280,17 @@ void MacroAssembler::set_vm_result(Register oop_result) {
 # endif
 
   st_ptr(oop_result, vm_result_addr);
+}
+
+
+void MacroAssembler::ic_call(address entry, bool emit_delay) {
+  RelocationHolder rspec = virtual_call_Relocation::spec(pc());
+  patchable_set((intptr_t)Universe::non_oop_word(), G5_inline_cache_reg);
+  relocate(rspec);
+  call(entry, relocInfo::none);
+  if (emit_delay) {
+    delayed()->nop();
+  }
 }
 
 
@@ -1612,15 +1622,24 @@ void MacroAssembler::save_frame_and_mov(int extraWords,
 }
 
 
-AddressLiteral MacroAssembler::allocate_oop_address(jobject obj) {
-  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
-  int oop_index = oop_recorder()->allocate_index(obj);
-  return AddressLiteral(obj, oop_Relocation::spec(oop_index));
+AddressLiteral MacroAssembler::allocate_metadata_address(Metadata* obj) {
+  assert(oop_recorder() != NULL, "this assembler needs a Recorder");
+  int index = oop_recorder()->allocate_metadata_index(obj);
+  RelocationHolder rspec = metadata_Relocation::spec(index);
+  return AddressLiteral((address)obj, rspec);
+}
+
+AddressLiteral MacroAssembler::constant_metadata_address(Metadata* obj) {
+  assert(oop_recorder() != NULL, "this assembler needs a Recorder");
+  int index = oop_recorder()->find_index(obj);
+  RelocationHolder rspec = metadata_Relocation::spec(index);
+  return AddressLiteral((address)obj, rspec);
 }
 
 
 AddressLiteral MacroAssembler::constant_oop_address(jobject obj) {
   assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  assert(Universe::heap()->is_in_reserved(JNIHandles::resolve(obj)), "not an oop");
   int oop_index = oop_recorder()->find_index(obj);
   return AddressLiteral(obj, oop_Relocation::spec(oop_index));
 }
@@ -1906,22 +1925,14 @@ void MacroAssembler::verify_oop_subroutine() {
     br_null_short(O0_obj, pn, succeed);
   }
 
-  // Check the klassOop of this object for being in the right area of memory.
+  // Check the Klass* of this object for being in the right area of memory.
   // Cannot do the load in the delay above slot in case O0 is null
   load_klass(O0_obj, O0_obj);
-  // assert((klass & klass_mask) == klass_bits);
-  if( Universe::verify_klass_mask() != Universe::verify_oop_mask() )
-    set(Universe::verify_klass_mask(), O2_mask);
-  if( Universe::verify_klass_bits() != Universe::verify_oop_bits() )
-    set(Universe::verify_klass_bits(), O3_bits);
-  and3(O0_obj, O2_mask, O4_temp);
-  cmp_and_brx_short(O4_temp, O3_bits, notEqual, pn, fail);
-  // Check the klass's klass
-  load_klass(O0_obj, O0_obj);
-  and3(O0_obj, O2_mask, O4_temp);
-  cmp(O4_temp, O3_bits);
-  brx(notEqual, false, pn, fail);
-  delayed()->wrccr( O5_save_flags ); // Restore CCR's
+  // assert((klass != NULL)
+  br_null_short(O0_obj, pn, fail);
+  // TODO: Future assert that klass is lower 4g memory for UseCompressedKlassPointers
+
+  wrccr( O5_save_flags ); // Restore CCR's
 
   // mark upper end of faulting range
   _verify_oop_implicit_branch[1] = pc();
@@ -2065,25 +2076,27 @@ void MacroAssembler::stop_subroutine() {
 
 void MacroAssembler::debug(char* msg, RegistersForDebugging* regs) {
   if ( ShowMessageBoxOnError ) {
-      JavaThreadState saved_state = JavaThread::current()->thread_state();
-      JavaThread::current()->set_thread_state(_thread_in_vm);
+    JavaThread* thread = JavaThread::current();
+    JavaThreadState saved_state = thread->thread_state();
+    thread->set_thread_state(_thread_in_vm);
       {
         // In order to get locks work, we need to fake a in_VM state
         ttyLocker ttyl;
         ::tty->print_cr("EXECUTION STOPPED: %s\n", msg);
         if (CountBytecodes || TraceBytecodes || StopInterpreterAt) {
-          ::tty->print_cr("Interpreter::bytecode_counter = %d", BytecodeCounter::counter_value());
+        BytecodeCounter::print();
         }
         if (os::message_box(msg, "Execution stopped, print registers?"))
           regs->print(::tty);
       }
+    BREAKPOINT;
       ThreadStateTransition::transition(JavaThread::current(), _thread_in_vm, saved_state);
   }
-  else
+  else {
      ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n", msg);
+  }
   assert(false, err_msg("DEBUG MESSAGE: %s", msg));
 }
-
 
 #ifndef PRODUCT
 void MacroAssembler::test() {
@@ -2931,11 +2944,11 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
          "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
-  int vtable_base = instanceKlass::vtable_start_offset() * wordSize;
+  int vtable_base = InstanceKlass::vtable_start_offset() * wordSize;
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size() * wordSize;
 
-  lduw(recv_klass, instanceKlass::vtable_length_offset() * wordSize, scan_temp);
+  lduw(recv_klass, InstanceKlass::vtable_length_offset() * wordSize, scan_temp);
   // %%% We should store the aligned, prescaled offset in the klassoop.
   // Then the next several instructions would fold away.
 
@@ -2950,7 +2963,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   add(scan_temp, itb_offset, scan_temp);
   if (round_to_unit != 0) {
     // Round up to align_object_offset boundary
-    // see code for instanceKlass::start_of_itable!
+    // see code for InstanceKlass::start_of_itable!
     // Was: round_to(scan_temp, BytesPerLong);
     // Hoisted: add(scan_temp, BytesPerLong-1, scan_temp);
     and3(scan_temp, -round_to_unit, scan_temp);
@@ -3011,7 +3024,7 @@ void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            Register method_result) {
   assert_different_registers(recv_klass, method_result, vtable_index.register_or_noreg());
   Register sethi_temp = method_result;
-  const int base = (instanceKlass::vtable_start_offset() * wordSize +
+  const int base = (InstanceKlass::vtable_start_offset() * wordSize +
                     // method pointer offset within the vtable entry:
                     vtableEntry::method_offset_in_bytes());
   RegisterOrConstant vtable_offset = vtable_index;
@@ -3212,46 +3225,28 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   // We will consult the secondary-super array.
   ld_ptr(sub_klass, ss_offset, scan_temp);
 
-  // Compress superclass if necessary.
   Register search_key = super_klass;
-  bool decode_super_klass = false;
-  if (UseCompressedOops) {
-    if (coop_reg != noreg) {
-      encode_heap_oop_not_null(super_klass, coop_reg);
-      search_key = coop_reg;
-    } else {
-      encode_heap_oop_not_null(super_klass);
-      decode_super_klass = true; // scarce temps!
-    }
-    // The superclass is never null; it would be a basic system error if a null
-    // pointer were to sneak in here.  Note that we have already loaded the
-    // Klass::super_check_offset from the super_klass in the fast path,
-    // so if there is a null in that register, we are already in the afterlife.
-  }
 
   // Load the array length.  (Positive movl does right thing on LP64.)
-  lduw(scan_temp, arrayOopDesc::length_offset_in_bytes(), count_temp);
+  lduw(scan_temp, Array<Klass*>::length_offset_in_bytes(), count_temp);
 
   // Check for empty secondary super list
   tst(count_temp);
 
+  // In the array of super classes elements are pointer sized.
+  int element_size = wordSize;
+
   // Top of search loop
   bind(L_loop);
   br(Assembler::equal, false, Assembler::pn, *L_failure);
-  delayed()->add(scan_temp, heapOopSize, scan_temp);
-  assert(heapOopSize != 0, "heapOopSize should be initialized");
+  delayed()->add(scan_temp, element_size, scan_temp);
 
   // Skip the array header in all array accesses.
-  int elem_offset = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
-  elem_offset -= heapOopSize;   // the scan pointer was pre-incremented also
+  int elem_offset = Array<Klass*>::base_offset_in_bytes();
+  elem_offset -= element_size;   // the scan pointer was pre-incremented also
 
   // Load next super to check
-  if (UseCompressedOops) {
-    // Don't use load_heap_oop; we don't want to decode the element.
-    lduw(   scan_temp, elem_offset, scratch_reg );
-  } else {
     ld_ptr( scan_temp, elem_offset, scratch_reg );
-  }
 
   // Look for Rsuper_klass on Rsub_klass's secondary super-class-overflow list
   cmp(scratch_reg, search_key);
@@ -3259,9 +3254,6 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   // A miss means we are NOT a subtype and need to keep looping
   brx(Assembler::notEqual, false, Assembler::pn, L_loop);
   delayed()->deccc(count_temp); // decrement trip counter in delay slot
-
-  // Falling out the bottom means we found a hit; we ARE a subtype
-  if (decode_super_klass) decode_heap_oop(super_klass);
 
   // Success.  Cache the super we found and proceed in triumph.
   st_ptr(super_klass, sub_klass, sc_offset);
@@ -4658,7 +4650,7 @@ void MacroAssembler::load_klass(Register src_oop, Register klass) {
   // The number of bytes in this code is used by
   // MachCallDynamicJavaNode::ret_addr_offset()
   // if this changes, change that.
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     lduw(src_oop, oopDesc::klass_offset_in_bytes(), klass);
     decode_heap_oop_not_null(klass);
   } else {
@@ -4667,7 +4659,7 @@ void MacroAssembler::load_klass(Register src_oop, Register klass) {
 }
 
 void MacroAssembler::store_klass(Register klass, Register dst_oop) {
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     assert(dst_oop != klass, "not enough registers");
     encode_heap_oop_not_null(klass);
     st(klass, dst_oop, oopDesc::klass_offset_in_bytes());
@@ -4677,7 +4669,7 @@ void MacroAssembler::store_klass(Register klass, Register dst_oop) {
 }
 
 void MacroAssembler::store_klass_gap(Register s, Register d) {
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     assert(s != d, "not enough registers");
     st(s, d, oopDesc::klass_gap_offset_in_bytes());
   }

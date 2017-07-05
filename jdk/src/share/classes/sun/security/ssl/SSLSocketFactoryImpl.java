@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,6 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
      * certain kinds of certificates to use certain cipher suites.
      */
     public String[] getSupportedCipherSuites() {
-        return context.getSuportedCipherSuiteList().toStringArray();
+        return context.getSupportedCipherSuiteList().toStringArray();
     }
 }

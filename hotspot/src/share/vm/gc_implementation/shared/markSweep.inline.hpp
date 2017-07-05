@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,8 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p, bool isroot) {
     oop new_obj = oop(obj->mark()->decode_pointer());
     assert(new_obj != NULL ||                         // is forwarding ptr?
            obj->mark() == markOopDesc::prototype() || // not gc marked?
-           (UseBiasedLocking && obj->mark()->has_bias_pattern()) ||
+           (UseBiasedLocking && obj->mark()->has_bias_pattern()),
                                                       // not gc marked?
-           obj->is_shared(),                          // never forwarded?
            "should be forwarded");
     if (new_obj != NULL) {
       assert(Universe::heap()->is_in_reserved(new_obj),

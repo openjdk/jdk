@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,25 +27,13 @@
 
 #include "gc_interface/collectedHeap.hpp"
 #include "memory/generation.hpp"
-#include "memory/permGen.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.hpp"
 
 // Implementation of all inlined member functions defined in oop.hpp
 // We need a separate file to avoid circular references
 
-// Separate this out to break dependency.
-inline bool oopDesc::is_perm() const {
-  return Universe::heap()->is_in_permanent(this);
-}
-
-// Check for NULL also.
-inline bool oopDesc::is_perm_or_null() const {
-  return this == NULL || is_perm();
-}
-
 inline bool oopDesc::is_scavengable() const {
   return Universe::heap()->is_scavengable(this);
 }
-
 #endif // SHARE_VM_OOPS_OOP_INLINE2_HPP

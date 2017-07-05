@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,13 +70,13 @@ void VM_GC_Operation::notify_gc_end() {
 
 void VM_GC_Operation::acquire_pending_list_lock() {
   // we may enter this with pending exception set
-  instanceRefKlass::acquire_pending_list_lock(&_pending_list_basic_lock);
+  InstanceRefKlass::acquire_pending_list_lock(&_pending_list_basic_lock);
 }
 
 
 void VM_GC_Operation::release_and_notify_pending_list_lock() {
 
-  instanceRefKlass::release_and_notify_pending_list_lock(&_pending_list_basic_lock);
+  InstanceRefKlass::release_and_notify_pending_list_lock(&_pending_list_basic_lock);
 }
 
 // Allocations may fail in several threads at about the same time,
@@ -192,31 +192,63 @@ void VM_GenCollectFull::doit() {
   gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_level);
 }
 
-void VM_GenCollectForPermanentAllocation::doit() {
+void VM_CollectForMetadataAllocation::doit() {
   SvcGCMarker sgcm(SvcGCMarker::FULL);
 
-  SharedHeap* heap = (SharedHeap*)Universe::heap();
+  CollectedHeap* heap = Universe::heap();
   GCCauseSetter gccs(heap, _gc_cause);
-  switch (heap->kind()) {
-    case (CollectedHeap::GenCollectedHeap): {
-      GenCollectedHeap* gch = (GenCollectedHeap*)heap;
-      gch->do_full_collection(gch->must_clear_all_soft_refs(),
-                              gch->n_gens() - 1);
-      break;
+
+  bool do_cms_concurrent = false;
+
+  // Check again if the space is available.  Another thread
+  // may have similarly failed a metadata allocation and induced
+  // a GC that freed space for the allocation.
+  if (!MetadataAllocationFailALot) {
+    _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
     }
-#ifndef SERIALGC
-    case (CollectedHeap::G1CollectedHeap): {
-      G1CollectedHeap* g1h = (G1CollectedHeap*)heap;
-      g1h->do_full_collection(_gc_cause == GCCause::_last_ditch_collection);
-      break;
+
+  if (_result == NULL) {
+    if (!UseConcMarkSweepGC) {
+      // Don't clear the soft refs the first time.
+      heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
+      _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+      // Don't do this for now
+      // This seems too costly to do a second full GC
+      // Let the metaspace grow instead
+      // if (_result == NULL) {
+      //  // If allocation fails again, clear soft refs
+      //  heap->collect_as_vm_thread(GCCause::_last_ditch_collection);
+      //  _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+      // }
+    } else {
+      MetaspaceGC::set_should_concurrent_collect(true);
+      do_cms_concurrent = true;
     }
-#endif // SERIALGC
-    default:
-      ShouldNotReachHere();
+    if (_result == NULL) {
+      // If still failing, allow the Metaspace to expand.
+      // See delta_capacity_until_GC() for explanation of the
+      // amount of the expansion.
+      // This should work unless there really is no more space
+      // or a MaxMetaspaceSize has been specified on the command line.
+      _result =
+        _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
+
+      if (do_cms_concurrent && _result == NULL) {
+        // Rather than fail with a metaspace out-of-memory, do a full
+        // GC for CMS.
+        heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
+        _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+      }
+      if (_result == NULL) {
+        if (PrintGCDetails) {
+          gclog_or_tty->print_cr("\nAfter Metaspace GC failed to allocate size "
+                                 SIZE_FORMAT, _size);
+        }
+      }
+    }
   }
-  _res = heap->perm_gen()->allocate(_size, false);
-  assert(heap->is_in_reserved_or_null(_res), "result not in heap");
-  if (_res == NULL && GC_locker::is_active_and_needs_gc()) {
+
+  if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 //
 // The class caches indexed constant pool lookups.
 //
-// Usage note: this klass has nothing to do with constantPoolCacheOop.
+// Usage note: this klass has nothing to do with ConstantPoolCache*.
 class ciConstantPoolCache : public ResourceObj {
 private:
   GrowableArray<intptr_t>*   _keys;

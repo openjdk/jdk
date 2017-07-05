@@ -25,7 +25,7 @@
  * @test
  * @bug 6216082
  * @library ../../../httpstest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction TunnelProxy
+ * @build HttpCallback TestHttpsServer ClosedChannelList HttpTransaction TunnelProxy
  * @summary  Redirect problem with HttpsURLConnection using a proxy
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
@@ -39,7 +39,7 @@ import java.util.*;
 
 public class B6216082 {
     static SimpleHttpTransaction httpTrans;
-    static HttpServer server;
+    static TestHttpsServer server;
     static TunnelProxy proxy;
 
     // it seems there's no proxy ever if a url points to 'localhost',
@@ -133,7 +133,7 @@ public class B6216082 {
         // Both the https server and the proxy let the
         // system pick up an ephemeral port.
         httpTrans = new SimpleHttpTransaction();
-        server = new HttpServer(httpTrans, 1, 10, 0);
+        server = new TestHttpsServer(httpTrans, 1, 10, 0);
         proxy = new TunnelProxy(1, 10, 0);
     }
 

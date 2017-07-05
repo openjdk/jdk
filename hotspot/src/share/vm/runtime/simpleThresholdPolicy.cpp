@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@
 void SimpleThresholdPolicy::print_counters(const char* prefix, methodHandle mh) {
   int invocation_count = mh->invocation_count();
   int backedge_count = mh->backedge_count();
-  methodDataHandle mdh = mh->method_data();
+  MethodData* mdh = mh->method_data();
   int mdo_invocations = 0, mdo_backedges = 0;
   int mdo_invocations_start = 0, mdo_backedges_start = 0;
-  if (mdh() != NULL) {
+  if (mdh != NULL) {
     mdo_invocations = mdh->invocation_count();
     mdo_backedges = mdh->backedge_count();
     mdo_invocations_start = mdh->invocation_count_start();
@@ -147,10 +147,10 @@ void SimpleThresholdPolicy::set_carry_if_necessary(InvocationCounter *counter) {
 }
 
 // Set carry flags on the counters if necessary
-void SimpleThresholdPolicy::handle_counter_overflow(methodOop method) {
+void SimpleThresholdPolicy::handle_counter_overflow(Method* method) {
   set_carry_if_necessary(method->invocation_counter());
   set_carry_if_necessary(method->backedge_counter());
-  methodDataOop mdo = method->method_data();
+  MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     set_carry_if_necessary(mdo->invocation_counter());
     set_carry_if_necessary(mdo->backedge_counter());
@@ -168,7 +168,7 @@ void SimpleThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
       methodHandle mh(sd->method());
       print_event(REPROFILE, mh, mh, InvocationEntryBci, CompLevel_none);
     }
-    methodDataOop mdo = sd->method()->method_data();
+    MethodData* mdo = sd->method()->method_data();
     if (mdo != NULL) {
       mdo->reset_start_counters();
     }
@@ -272,9 +272,9 @@ bool SimpleThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level) {
 }
 
 // Determine is a method is mature.
-bool SimpleThresholdPolicy::is_mature(methodOop method) {
+bool SimpleThresholdPolicy::is_mature(Method* method) {
   if (is_trivial(method)) return true;
-  methodDataOop mdo = method->method_data();
+  MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     int i = mdo->invocation_count();
     int b = mdo->backedge_count();
@@ -286,7 +286,7 @@ bool SimpleThresholdPolicy::is_mature(methodOop method) {
 }
 
 // Common transition function. Given a predicate determines if a method should transition to another level.
-CompLevel SimpleThresholdPolicy::common(Predicate p, methodOop method, CompLevel cur_level) {
+CompLevel SimpleThresholdPolicy::common(Predicate p, Method* method, CompLevel cur_level) {
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
@@ -306,7 +306,7 @@ CompLevel SimpleThresholdPolicy::common(Predicate p, methodOop method, CompLevel
     case CompLevel_limited_profile:
     case CompLevel_full_profile:
       {
-        methodDataOop mdo = method->method_data();
+        MethodData* mdo = method->method_data();
         if (mdo != NULL) {
           if (mdo->would_profile()) {
             int mdo_i = mdo->invocation_count_delta();
@@ -326,7 +326,7 @@ CompLevel SimpleThresholdPolicy::common(Predicate p, methodOop method, CompLevel
 }
 
 // Determine if a method should be compiled with a normal entry point at a different level.
-CompLevel SimpleThresholdPolicy::call_event(methodOop method,  CompLevel cur_level) {
+CompLevel SimpleThresholdPolicy::call_event(Method* method,  CompLevel cur_level) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(),
                              common(&SimpleThresholdPolicy::loop_predicate, method, cur_level));
   CompLevel next_level = common(&SimpleThresholdPolicy::call_predicate, method, cur_level);
@@ -335,7 +335,7 @@ CompLevel SimpleThresholdPolicy::call_event(methodOop method,  CompLevel cur_lev
   // equalized by raising the regular method level in order to avoid OSRs during each
   // invocation of the method.
   if (osr_level == CompLevel_full_optimization && cur_level == CompLevel_full_profile) {
-    methodDataOop mdo = method->method_data();
+    MethodData* mdo = method->method_data();
     guarantee(mdo != NULL, "MDO should not be NULL");
     if (mdo->invocation_count() >= 1) {
       next_level = CompLevel_full_optimization;
@@ -348,7 +348,7 @@ CompLevel SimpleThresholdPolicy::call_event(methodOop method,  CompLevel cur_lev
 }
 
 // Determine if we should do an OSR compilation of a given method.
-CompLevel SimpleThresholdPolicy::loop_event(methodOop method, CompLevel cur_level) {
+CompLevel SimpleThresholdPolicy::loop_event(Method* method, CompLevel cur_level) {
   CompLevel next_level = common(&SimpleThresholdPolicy::loop_predicate, method, cur_level);
   if (cur_level == CompLevel_none) {
     // If there is a live OSR method that means that we deopted to the interpreter

@@ -27,7 +27,7 @@ package java.lang.management;
 
 import javax.management.openmbean.CompositeData;
 import java.util.concurrent.locks.*;
-import java.beans.ConstructorProperties;
+import sun.management.LockInfoCompositeData;
 
 /**
  * Information about a <em>lock</em>.  A lock can be a built-in object monitor,
@@ -44,8 +44,7 @@ import java.beans.ConstructorProperties;
  *
  * <h4><a name="MappedType">MXBean Mapping</a></h4>
  * <tt>LockInfo</tt> is mapped to a {@link CompositeData CompositeData}
- * as specified in the <a href="../../../javax/management/MXBean.html#mapping-rules">
- * type mapping rules</a> of {@linkplain javax.management.MXBean MXBeans}.
+ * as specified in the {@link #from from} method.
  *
  * @see java.util.concurrent.locks.AbstractOwnableSynchronizer
  * @see java.util.concurrent.locks.Condition
@@ -66,7 +65,6 @@ public class LockInfo {
      * @param identityHashCode the {@link System#identityHashCode
      *                         identity hash code} of the lock object.
      */
-    @ConstructorProperties({"className", "identityHashCode"})
     public LockInfo(String className, int identityHashCode) {
         if (className == null) {
             throw new NullPointerException("Parameter className cannot be null");
@@ -100,6 +98,50 @@ public class LockInfo {
      */
     public int getIdentityHashCode() {
         return identityHashCode;
+    }
+
+    /**
+     * Returns a {@code LockInfo} object represented by the
+     * given {@code CompositeData}.
+     * The given {@code CompositeData} must contain the following attributes:
+     * <blockquote>
+     * <table border>
+     * <tr>
+     *   <th align=left>Attribute Name</th>
+     *   <th align=left>Type</th>
+     * </tr>
+     * <tr>
+     *   <td>className</td>
+     *   <td><tt>java.lang.String</tt></td>
+     * </tr>
+     * <tr>
+     *   <td>identityHashCode</td>
+     *   <td><tt>java.lang.Integer</tt></td>
+     * </tr>
+     * </table>
+     * </blockquote>
+     *
+     * @param cd {@code CompositeData} representing a {@code LockInfo}
+     *
+     * @throws IllegalArgumentException if {@code cd} does not
+     *   represent a {@code LockInfo} with the attributes described
+     *   above.
+     * @return a {@code LockInfo} object represented
+     *         by {@code cd} if {@code cd} is not {@code null};
+     *         {@code null} otherwise.
+     *
+     * @since 1.8
+     */
+    public static LockInfo from(CompositeData cd) {
+        if (cd == null) {
+            return null;
+        }
+
+        if (cd instanceof LockInfoCompositeData) {
+            return ((LockInfoCompositeData) cd).getLockInfo();
+        } else {
+            return LockInfoCompositeData.toLockInfo(cd);
+        }
     }
 
     /**

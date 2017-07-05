@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_UTILITIES_HASHTABLE_HPP
 #define SHARE_VM_UTILITIES_HASHTABLE_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
 #include "oops/symbol.hpp"
@@ -283,9 +284,6 @@ protected:
 
  private:
   static jint _seed;
-
-  unsigned int new_hash(Symbol* s);
-  unsigned int new_hash(oop string);
 };
 
 
@@ -302,18 +300,17 @@ protected:
     : Hashtable<T, F>(table_size, entry_size, t, number_of_entries) {}
 
 public:
-  unsigned int compute_hash(Symbol* name, Handle loader) {
-    // Be careful with identity_hash(), it can safepoint and if this
-    // were one expression, the compiler could choose to unhandle each
-    // oop before calling identity_hash() for either of them.  If the first
-    // causes a GC, the next would fail.
+  unsigned int compute_hash(Symbol* name, ClassLoaderData* loader_data) {
     unsigned int name_hash = name->identity_hash();
-    unsigned int loader_hash = loader.is_null() ? 0 : loader->identity_hash();
+    // loader is null with CDS
+    assert(loader_data != NULL || UseSharedSpaces || DumpSharedSpaces,
+           "only allowed with shared spaces");
+    unsigned int loader_hash = loader_data == NULL ? 0 : loader_data->identity_hash();
     return name_hash ^ loader_hash;
   }
 
-  int index_for(Symbol* name, Handle loader) {
-    return this->hash_to_index(compute_hash(name, loader));
+  int index_for(Symbol* name, ClassLoaderData* loader_data) {
+    return this->hash_to_index(compute_hash(name, loader_data));
   }
 };
 

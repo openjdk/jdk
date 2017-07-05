@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ class CompileQueue;
  *   The intuition is to equalize the time that is spend profiling each method.
  *   The same predicate is used to control the transition from level 3 to level 4 (C2). It should be
  *   noted though that the thresholds are relative. Moreover i and b for the 0->3 transition come
- *   from methodOop and for 3->4 transition they come from MDO (since profiled invocations are
+ *   from Method* and for 3->4 transition they come from MDO (since profiled invocations are
  *   counted separately).
  *
  *   OSR transitions are controlled simply with b > TierXBackEdgeThreshold * s predicates.
@@ -168,38 +168,38 @@ class AdvancedThresholdPolicy : public SimpleThresholdPolicy {
   bool call_predicate(int i, int b, CompLevel cur_level);
   bool loop_predicate(int i, int b, CompLevel cur_level);
   // Common transition function. Given a predicate determines if a method should transition to another level.
-  CompLevel common(Predicate p, methodOop method, CompLevel cur_level, bool disable_feedback = false);
+  CompLevel common(Predicate p, Method* method, CompLevel cur_level, bool disable_feedback = false);
   // Transition functions.
   // call_event determines if a method should be compiled at a different
   // level with a regular invocation entry.
-  CompLevel call_event(methodOop method, CompLevel cur_level);
+  CompLevel call_event(Method* method, CompLevel cur_level);
   // loop_event checks if a method should be OSR compiled at a different
   // level.
-  CompLevel loop_event(methodOop method, CompLevel cur_level);
+  CompLevel loop_event(Method* method, CompLevel cur_level);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
   // very low activity (see select_task()).
-  inline bool is_old(methodOop method);
+  inline bool is_old(Method* method);
   // Was a given method inactive for a given number of milliseconds.
   // If it is, we would remove it from the queue (see select_task()).
-  inline bool is_stale(jlong t, jlong timeout, methodOop m);
+  inline bool is_stale(jlong t, jlong timeout, Method* m);
   // Compute the weight of the method for the compilation scheduling
-  inline double weight(methodOop method);
+  inline double weight(Method* method);
   // Apply heuristics and return true if x should be compiled before y
-  inline bool compare_methods(methodOop x, methodOop y);
+  inline bool compare_methods(Method* x, Method* y);
   // Compute event rate for a given method. The rate is the number of event (invocations + backedges)
   // per millisecond.
-  inline void update_rate(jlong t, methodOop m);
+  inline void update_rate(jlong t, Method* m);
   // Compute threshold scaling coefficient
   inline double threshold_scale(CompLevel level, int feedback_k);
   // If a method is old enough and is still in the interpreter we would want to
   // start profiling without waiting for the compiled method to arrive. This function
   // determines whether we should do that.
-  inline bool should_create_mdo(methodOop method, CompLevel cur_level);
+  inline bool should_create_mdo(Method* method, CompLevel cur_level);
   // Create MDO if necessary.
   void create_mdo(methodHandle mh, JavaThread* thread);
   // Is method profiled enough?
-  bool is_method_profiled(methodOop method);
+  bool is_method_profiled(Method* method);
 
 protected:
   void print_specific(EventType type, methodHandle mh, methodHandle imh, int bci, CompLevel level);

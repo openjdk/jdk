@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ class StubAssembler;
   stub(deoptimize)                   \
   stub(access_field_patching)        \
   stub(load_klass_patching)          \
+  stub(load_mirror_patching)         \
   stub(g1_pre_barrier_slow)          \
   stub(g1_post_barrier_slow)         \
   stub(fpu2long_stub)                \
@@ -131,12 +132,12 @@ class Runtime1: public AllStatic {
                                        Register arg1 = noreg, Register arg2 = noreg, Register arg3 = noreg);
 
   // runtime entry points
-  static void new_instance    (JavaThread* thread, klassOopDesc* klass);
-  static void new_type_array  (JavaThread* thread, klassOopDesc* klass, jint length);
-  static void new_object_array(JavaThread* thread, klassOopDesc* klass, jint length);
-  static void new_multi_array (JavaThread* thread, klassOopDesc* klass, int rank, jint* dims);
+  static void new_instance    (JavaThread* thread, Klass* klass);
+  static void new_type_array  (JavaThread* thread, Klass* klass, jint length);
+  static void new_object_array(JavaThread* thread, Klass* klass, jint length);
+  static void new_multi_array (JavaThread* thread, Klass* klass, int rank, jint* dims);
 
-  static address counter_overflow(JavaThread* thread, int bci, methodOopDesc* method);
+  static address counter_overflow(JavaThread* thread, int bci, Method* method);
 
   static void unimplemented_entry   (JavaThread* thread, StubID id);
 
@@ -157,6 +158,7 @@ class Runtime1: public AllStatic {
 
   static int access_field_patching(JavaThread* thread);
   static int move_klass_patching(JavaThread* thread);
+  static int move_mirror_patching(JavaThread* thread);
 
   static void patch_code(JavaThread* thread, StubID stub_id);
 

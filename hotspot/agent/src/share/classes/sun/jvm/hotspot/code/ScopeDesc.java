@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class ScopeDesc {
     DebugInfoReadStream stream  = streamAt(decodeOffset);
 
     senderDecodeOffset = stream.readInt();
-    method = (Method) VM.getVM().getObjectHeap().newOop(stream.readOopHandle());
+    method = stream.readMethod();
     bci    = stream.readBCI();
     // Decode offsets for body and sender
     localsDecodeOffset      = stream.readInt();
@@ -79,7 +79,7 @@ public class ScopeDesc {
     DebugInfoReadStream stream  = streamAt(decodeOffset);
 
     senderDecodeOffset = stream.readInt();
-    method = (Method) VM.getVM().getObjectHeap().newOop(stream.readOopHandle());
+    method = stream.readMethod();
     bci    = stream.readBCI();
     // Decode offsets for body and sender
     localsDecodeOffset      = stream.readInt();

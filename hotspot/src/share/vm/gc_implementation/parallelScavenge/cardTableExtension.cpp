@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
   // fail unless the object head is also unmarked.
   virtual void do_object(oop obj) {
     CheckForUnmarkedOops object_check(_young_gen, _card_table);
-    obj->oop_iterate(&object_check);
+    obj->oop_iterate_no_header(&object_check);
     if (object_check.has_unmarked_oop()) {
       assert(_card_table->addr_is_marked_imprecise(obj), "Found unmarked young_gen object");
     }
@@ -229,8 +229,9 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
   int dirty_card_count = 0;
 
   oop* sp_top = (oop*)space_top;
+  oop* sp_last = sp->bottom() == space_top ? sp_top : sp_top - 1;
   jbyte* start_card = byte_for(sp->bottom());
-  jbyte* end_card   = byte_for(sp_top - 1) + 1;
+  jbyte* end_card   = byte_for(sp_last) + 1;
   oop* last_scanned = NULL; // Prevent scanning objects more than once
   // The width of the stripe ssize*stripe_total must be
   // consistent with the number of stripes so that the complete slice
@@ -406,10 +407,8 @@ void CardTableExtension::verify_all_young_refs_imprecise() {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   PSOldGen* old_gen = heap->old_gen();
-  PSPermGen* perm_gen = heap->perm_gen();
 
   old_gen->object_iterate(&check);
-  perm_gen->object_iterate(&check);
 }
 
 // This should be called immediately after a scavenge, before mutators resume.
@@ -418,15 +417,12 @@ void CardTableExtension::verify_all_young_refs_precise() {
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
 
   PSOldGen* old_gen = heap->old_gen();
-  PSPermGen* perm_gen = heap->perm_gen();
 
   CheckForPreciseMarks check(heap->young_gen(), (CardTableExtension*)heap->barrier_set());
 
-  old_gen->oop_iterate(&check);
-  perm_gen->oop_iterate(&check);
+  old_gen->oop_iterate_no_header(&check);
 
   verify_all_young_refs_precise_helper(old_gen->object_space()->used_region());
-  verify_all_young_refs_precise_helper(perm_gen->object_space()->used_region());
 }
 
 void CardTableExtension::verify_all_young_refs_precise_helper(MemRegion mr) {

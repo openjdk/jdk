@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -664,9 +664,7 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
       // See if neither subclasses the other, or if the class on top
       // is precise.  In either of these cases, the compare is known
       // to fail if at least one of the pointers is provably not null.
-      if (klass0->equals(klass1)   ||   // if types are unequal but klasses are
-          !klass0->is_java_klass() ||   // types not part of Java language?
-          !klass1->is_java_klass()) {   // types not part of Java language?
+      if (klass0->equals(klass1)) {  // if types are unequal but klasses are equal
         // Do nothing; we know nothing for imprecise types
       } else if (klass0->is_subtype_of(klass1)) {
         // If klass1's type is PRECISE, then classes are unrelated.
@@ -744,7 +742,7 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
   }
 
   // return the ConP(Foo.klass)
-  assert(mirror_type->is_klass(), "mirror_type should represent a klassOop");
+  assert(mirror_type->is_klass(), "mirror_type should represent a Klass*");
   return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass()));
 }
 
@@ -891,9 +889,7 @@ const Type *CmpNNode::sub( const Type *t1, const Type *t2 ) const {
       // See if neither subclasses the other, or if the class on top
       // is precise.  In either of these cases, the compare is known
       // to fail if at least one of the pointers is provably not null.
-      if (klass0->equals(klass1)   ||   // if types are unequal but klasses are
-          !klass0->is_java_klass() ||   // types not part of Java language?
-          !klass1->is_java_klass()) {   // types not part of Java language?
+      if (klass0->equals(klass1)) { // if types are unequal but klasses are equal
         // Do nothing; we know nothing for imprecise types
       } else if (klass0->is_subtype_of(klass1)) {
         // If klass1's type is PRECISE, then classes are unrelated.

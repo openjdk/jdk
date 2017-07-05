@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,13 @@
 #include "compiler/compileBroker.hpp"
 #include "gc_implementation/shared/markSweep.inline.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
-#include "oops/methodDataOop.hpp"
+#include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 
+unsigned int            MarkSweep::_total_invocations = 0;
+
 Stack<oop, mtGC>              MarkSweep::_marking_stack;
-Stack<DataLayout*, mtGC>      MarkSweep::_revisit_mdo_stack;
-Stack<Klass*, mtGC>           MarkSweep::_revisit_klass_stack;
 Stack<ObjArrayTask, mtGC>     MarkSweep::_objarray_stack;
 
 Stack<oop, mtGC>              MarkSweep::_preserved_oop_stack;
@@ -62,47 +62,6 @@ GrowableArray<HeapWord*>* MarkSweep::_last_gc_live_oops_moved_to = NULL;
 GrowableArray<size_t>   * MarkSweep::_last_gc_live_oops_size = NULL;
 #endif
 
-void MarkSweep::revisit_weak_klass_link(Klass* k) {
-  _revisit_klass_stack.push(k);
-}
-
-void MarkSweep::follow_weak_klass_links() {
-  // All klasses on the revisit stack are marked at this point.
-  // Update and follow all subklass, sibling and implementor links.
-  if (PrintRevisitStats) {
-    gclog_or_tty->print_cr("#classes in system dictionary = %d",
-                           SystemDictionary::number_of_classes());
-    gclog_or_tty->print_cr("Revisit klass stack size = " SIZE_FORMAT,
-                           _revisit_klass_stack.size());
-  }
-  while (!_revisit_klass_stack.is_empty()) {
-    Klass* const k = _revisit_klass_stack.pop();
-    k->follow_weak_klass_links(&is_alive, &keep_alive);
-  }
-  follow_stack();
-}
-
-void MarkSweep::revisit_mdo(DataLayout* p) {
-  _revisit_mdo_stack.push(p);
-}
-
-void MarkSweep::follow_mdo_weak_refs() {
-  // All strongly reachable oops have been marked at this point;
-  // we can visit and clear any weak references from MDO's which
-  // we memoized during the strong marking phase.
-  assert(_marking_stack.is_empty(), "Marking stack should be empty");
-  if (PrintRevisitStats) {
-    gclog_or_tty->print_cr("#classes in system dictionary = %d",
-                           SystemDictionary::number_of_classes());
-    gclog_or_tty->print_cr("Revisit MDO stack size = " SIZE_FORMAT,
-                           _revisit_mdo_stack.size());
-  }
-  while (!_revisit_mdo_stack.is_empty()) {
-    _revisit_mdo_stack.pop()->follow_weak_refs(&is_alive);
-  }
-  follow_stack();
-}
-
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 CodeBlobToOopClosure MarkSweep::follow_code_root_closure(&MarkSweep::follow_root_closure, /*do_marking=*/ true);
 
@@ -110,9 +69,41 @@ void MarkSweep::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
 void MarkSweep::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
 
 MarkSweep::MarkAndPushClosure MarkSweep::mark_and_push_closure;
+MarkSweep::FollowKlassClosure MarkSweep::follow_klass_closure;
+MarkSweep::AdjustKlassClosure MarkSweep::adjust_klass_closure;
 
-void MarkSweep::MarkAndPushClosure::do_oop(oop* p)       { assert(*p == NULL || (*p)->is_oop(), ""); mark_and_push(p); }
+void MarkSweep::MarkAndPushClosure::do_oop(oop* p)       { mark_and_push(p); }
 void MarkSweep::MarkAndPushClosure::do_oop(narrowOop* p) { mark_and_push(p); }
+
+void MarkSweep::FollowKlassClosure::do_klass(Klass* klass) {
+  klass->oops_do(&MarkSweep::mark_and_push_closure);
+}
+void MarkSweep::AdjustKlassClosure::do_klass(Klass* klass) {
+  klass->oops_do(&MarkSweep::adjust_pointer_closure);
+}
+
+void MarkSweep::follow_klass(Klass* klass) {
+  ClassLoaderData* cld = klass->class_loader_data();
+  // The actual processing of the klass is done when we
+  // traverse the list of Klasses in the class loader data.
+  MarkSweep::follow_class_loader(cld);
+}
+
+void MarkSweep::adjust_klass(Klass* klass) {
+  ClassLoaderData* cld = klass->class_loader_data();
+  // The actual processing of the klass is done when we
+  // traverse the list of Klasses in the class loader data.
+  MarkSweep::adjust_class_loader(cld);
+}
+
+void MarkSweep::follow_class_loader(ClassLoaderData* cld) {
+  cld->oops_do(&MarkSweep::mark_and_push_closure, &MarkSweep::follow_klass_closure, true);
+}
+
+void MarkSweep::adjust_class_loader(ClassLoaderData* cld) {
+  cld->oops_do(&MarkSweep::adjust_root_pointer_closure, &MarkSweep::adjust_klass_closure, true);
+}
+
 
 void MarkSweep::follow_stack() {
   do {
@@ -124,7 +115,7 @@ void MarkSweep::follow_stack() {
     // Process ObjArrays one at a time to avoid marking stack bloat.
     if (!_objarray_stack.is_empty()) {
       ObjArrayTask task = _objarray_stack.pop();
-      objArrayKlass* const k = (objArrayKlass*)task.obj()->blueprint();
+      objArrayKlass* const k = (objArrayKlass*)task.obj()->klass();
       k->oop_follow_contents(task.obj(), task.index());
     }
   } while (!_marking_stack.is_empty() || !_objarray_stack.is_empty());
@@ -237,7 +228,7 @@ void MarkSweep::track_interior_pointers(oop obj) {
     _pointer_tracking = true;
 
     AdjusterTracker checker;
-    obj->oop_iterate(&checker);
+    obj->oop_iterate_no_header(&checker);
   }
 }
 
@@ -248,10 +239,10 @@ void MarkSweep::check_interior_pointers() {
   }
 }
 
-void MarkSweep::reset_live_oop_tracking(bool at_perm) {
+void MarkSweep::reset_live_oop_tracking() {
   if (ValidateMarkSweep) {
     guarantee((size_t)_live_oops->length() == _live_oops_index, "should be at end of live oops");
-    _live_oops_index = at_perm ? _live_oops_index_at_perm : 0;
+    _live_oops_index = 0;
   }
 }
 
