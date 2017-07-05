@@ -449,7 +449,6 @@ ResourceBitMap ciMethod::live_local_oops_at_bci(int bci) {
   OopMapCache::compute_one_oop_map(get_Method(), bci, &mask);
   int mask_size = max_locals();
   ResourceBitMap result(mask_size);
-  result.clear();
   int i;
   for (i = 0; i < mask_size ; i++ ) {
     if (mask.is_oop(i)) result.set_bit(i);

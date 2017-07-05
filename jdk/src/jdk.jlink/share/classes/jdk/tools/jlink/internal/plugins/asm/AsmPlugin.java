@@ -25,7 +25,7 @@
 package jdk.tools.jlink.internal.plugins.asm;
 
 import java.util.Objects;
-import jdk.tools.jlink.plugin.TransformerPlugin;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.internal.ModulePoolImpl;
@@ -35,7 +35,7 @@ import jdk.tools.jlink.internal.ModulePoolImpl;
  * resources.
  *
  */
-public abstract class AsmPlugin implements TransformerPlugin {
+public abstract class AsmPlugin implements Plugin {
 
     public AsmPlugin() {
     }

@@ -109,7 +109,7 @@ inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
   _old_set.remove(hr);
 }
 
-// It dirties the cards that cover the block so that so that the post
+// It dirties the cards that cover the block so that the post
 // write barrier never queues anything when updating objects on this
 // block. It is assumed (and in fact we assert) that the block
 // belongs to a young region.

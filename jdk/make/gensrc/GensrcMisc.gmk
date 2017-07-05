@@ -34,7 +34,11 @@ $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
         @@LAUNCHER_NAME@@ => $(LAUNCHER_NAME) ; \
         @@RUNTIME_NAME@@ => $(RUNTIME_NAME) ; \
         @@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
-        @@VERSION_STRING@@ => $(VERSION_STRING), \
+        @@VERSION_STRING@@ => $(VERSION_STRING) ; \
+        @@VERSION_NUMBER@@ => $(VERSION_NUMBER) ; \
+        @@VERSION_PRE@@ => $(VERSION_PRE) ; \
+        @@VERSION_BUILD@@ => $(VERSION_BUILD) ; \
+        @@VERSION_OPT@@ => $(VERSION_OPT), \
 ))
 
 GENSRC_JAVA_BASE += $(BUILD_VERSION_JAVA)

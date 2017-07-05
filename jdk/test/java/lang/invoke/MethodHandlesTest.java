@@ -2792,7 +2792,7 @@ public class MethodHandlesTest {
             System.arraycopy(steps, 0, preSteps, 1, nargs);
             System.arraycopy(finis, 0, preFinis, 0, nargs); // finis are also offset by 1 for pre-checked loops
             // Convert to clause-major form.
-            MethodHandle[][] preClauses = new MethodHandle[nargs+1][4];
+            MethodHandle[][] preClauses = new MethodHandle[nargs + 1][4];
             MethodHandle[][] postClauses = new MethodHandle[nargs][4];
             toClauseMajor(preClauses, preInits, preSteps, prePreds, preFinis);
             toClauseMajor(postClauses, inits, steps, usePreds, finis);

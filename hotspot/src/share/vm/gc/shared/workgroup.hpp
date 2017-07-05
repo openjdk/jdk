@@ -170,6 +170,9 @@ class AbstractWorkGang : public CHeapObj<mtInternal> {
   // Add GC workers as needed.
   void add_workers(bool initializing);
 
+  // Add GC workers as needed to reach the specified number of workers.
+  void add_workers(uint active_workers, bool initializing);
+
   // Return the Ith worker.
   AbstractGangWorker* worker(uint i) const;
 
@@ -214,7 +217,8 @@ public:
   virtual void run_task(AbstractGangTask* task);
   // Run a task with the given number of workers, returns
   // when the task is done. The number of workers must be at most the number of
-  // active workers.
+  // active workers.  Additional workers may be created if an insufficient
+  // number currently exists.
   void run_task(AbstractGangTask* task, uint num_workers);
 
 protected:
