@@ -26,7 +26,6 @@
 package com.sun.java.swing.plaf.gtk;
 
 import java.awt.*;
-import java.awt.event.*;
 import java.beans.*;
 import java.io.File;
 import java.lang.ref.*;
@@ -41,6 +40,8 @@ import javax.swing.text.DefaultEditorKit;
 
 import com.sun.java.swing.plaf.gtk.GTKConstants.PositionType;
 import com.sun.java.swing.plaf.gtk.GTKConstants.StateType;
+import java.util.HashMap;
+import java.util.Map;
 import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
 import sun.awt.OSInfo;
@@ -61,7 +62,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
      * We should assume ON - or some variation of ON as no GTK desktop
      * ships with it OFF.
      */
-    static Object aaTextInfo;
+    static Map<Object, Object> aaTextInfo;
 
     /**
      * Solaris, or Linux with Sun JDS in a CJK Locale.
@@ -1337,7 +1338,9 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         if (fallbackFont != null) {
             table.put("TitledBorder.font", fallbackFont);
         }
-        table.put(SwingUtilities2.AA_TEXT_PROPERTY_KEY, aaTextInfo);
+        if (aaTextInfo != null) {
+            table.putAll(aaTextInfo);
+        }
     }
 
     protected void initSystemColorDefaults(UIDefaults table) {
@@ -1477,7 +1480,8 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
          * XRender.
          */
         gtkAAFontSettingsCond = !isSunCJK && SwingUtilities2.isLocalDisplay();
-        aaTextInfo = SwingUtilities2.AATextInfo.getAATextInfo(gtkAAFontSettingsCond);
+        aaTextInfo = new HashMap<>(2);
+        SwingUtilities2.putAATextInfo(gtkAAFontSettingsCond, aaTextInfo);
     }
 
     static ReferenceQueue<GTKLookAndFeel> queue = new ReferenceQueue<GTKLookAndFeel>();

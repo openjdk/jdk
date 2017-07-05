@@ -77,7 +77,7 @@ public final class StoredScript implements Serializable {
         return compilationId;
     }
 
-    private Map<String, Class<?>> installClasses(final Source source, final CodeInstaller<ScriptEnvironment> installer) {
+    private Map<String, Class<?>> installClasses(final Source source, final CodeInstaller installer) {
         final Map<String, Class<?>> installedClasses = new HashMap<>();
         final byte[]   mainClassBytes = classBytes.get(mainClassName);
         final Class<?> mainClass      = installer.install(mainClassName, mainClassBytes);
@@ -96,7 +96,7 @@ public final class StoredScript implements Serializable {
         return installedClasses;
     }
 
-    FunctionInitializer installFunction(final RecompilableScriptFunctionData data, final CodeInstaller<ScriptEnvironment> installer) {
+    FunctionInitializer installFunction(final RecompilableScriptFunctionData data, final CodeInstaller installer) {
         final Map<String, Class<?>> installedClasses = installClasses(data.getSource(), installer);
 
         assert initializers != null;
@@ -124,7 +124,7 @@ public final class StoredScript implements Serializable {
      * @param installer the installer
      * @return main script class
      */
-    Class<?> installScript(final Source source, final CodeInstaller<ScriptEnvironment> installer) {
+    Class<?> installScript(final Source source, final CodeInstaller installer) {
 
         final Map<String, Class<?>> installedClasses = installClasses(source, installer);
 

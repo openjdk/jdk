@@ -214,7 +214,7 @@ class CompiledIC: public ResourceObj {
   //
   // They all takes a TRAP argument, since they can cause a GC if the inline-cache buffer is full.
   //
-  void set_to_clean();
+  void set_to_clean(bool in_use = true);
   void set_to_monomorphic(CompiledICInfo& info);
   void clear_ic_stub();
 

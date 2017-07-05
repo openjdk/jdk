@@ -138,6 +138,8 @@ public final class JpsBase {
         String tmp = str.replace("\\", "\\\\");
         tmp = tmp.replace("+", "\\+");
         tmp = tmp.replace(".", "\\.");
+        tmp = tmp.replace("\n", "\\\\n");
+        tmp = tmp.replace("\r", "\\\\r");
         return tmp;
     }
 

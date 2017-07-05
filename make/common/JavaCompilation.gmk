@@ -403,6 +403,7 @@ endef
 #   SRC:=one or more directories to search for sources. The order of the source roots
 #        is significant. The first found file of a certain name has priority.
 #   BIN:=store classes here
+#   CLASSPATH:=a list of additional entries to set as classpath to javac
 #   INCLUDES:=myapp.foo means will only compile java files in myapp.foo or any of its sub-packages.
 #   EXCLUDES:=myapp.foo means will do not compile java files in myapp.foo or any of its sub-packages.
 #   COPY:=.prp means copy all prp files to the corresponding package in BIN.
@@ -428,6 +429,9 @@ define SetupJavaCompilationBody
   $1_JVM := $$($$($1_SETUP)_JVM)
   $1_JAVAC := $$($$($1_SETUP)_JAVAC)
   $1_FLAGS := $$($$($1_SETUP)_FLAGS) $(JAVAC_FLAGS) $$($1_ADD_JAVAC_FLAGS)
+  ifneq ($$($1_CLASSPATH), )
+    $1_FLAGS += -cp $$(call PathList, $$($1_CLASSPATH))
+  endif
   ifeq ($$($1_JAVAC),)
     $$(error The Java compilation $1 refers to a non-existant java compiler setup $$($1_SETUP))
   endif
@@ -482,7 +486,7 @@ define SetupJavaCompilationBody
       $$(addprefix -i ,$$(addsuffix /*,$$($1_INCLUDES))) \
       $$(addprefix -xf *,$$(strip $$($1_EXCLUDE_FILES) $$($1_SJAVAC_EXCLUDE_FILES))) \
       $$(addprefix -if *,$$(strip $$($1_INCLUDE_FILES))) \
-      -src "$$(subst $$(SPACE),$$(PATH_SEP),$$(strip $$($1_SRC)))"
+      -src $$(call PathList, $$($1_SRC))
 
   # All files below META-INF are always copied.
   $1_ALL_COPIES := $$(filter $$(addsuffix /META-INF%,$$($1_SRC)),$$($1_ALL_SRCS))

@@ -576,6 +576,14 @@ public class LWWindowPeer
                 : getDefaultMaximizedBounds());
     }
 
+    public Rectangle getMaximizedBounds() {
+        synchronized (getStateLock()) {
+            return (maximizedBounds == null)
+                    ? getDefaultMaximizedBounds()
+                    : maximizedBounds;
+        }
+    }
+
     private void setPlatformMaximizedBounds(Rectangle bounds) {
         platformWindow.setMaximizedBounds(
                 bounds.x, bounds.y,
