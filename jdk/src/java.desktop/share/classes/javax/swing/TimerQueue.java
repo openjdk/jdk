@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.AtomicLong;
 import sun.awt.AppContext;
-import sun.misc.InnocuousThread;
-
+import sun.misc.ManagedLocalsThread;
 
 /**
  * Internal class to manage all Timers using one thread.
@@ -99,12 +98,8 @@ class TimerQueue implements Runnable
                 final ThreadGroup threadGroup = AppContext.getAppContext().getThreadGroup();
                 AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
                     String name = "TimerQueue";
-                    Thread timerThread;
-                    if (System.getSecurityManager() == null) {
-                        timerThread = new Thread(threadGroup, TimerQueue.this, name);
-                    } else {
-                        timerThread = new InnocuousThread(threadGroup, TimerQueue.this, name);
-                    }
+                    Thread timerThread = new ManagedLocalsThread(threadGroup,
+                                                                 this, name);
                     timerThread.setDaemon(true);
                     timerThread.setPriority(Thread.NORM_PRIORITY);
                     timerThread.start();

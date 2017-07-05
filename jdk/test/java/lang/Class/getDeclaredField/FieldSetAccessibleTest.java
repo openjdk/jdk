@@ -221,8 +221,8 @@ public class FieldSetAccessibleTest {
 
         Stream<String> build() {
             return roots.stream().flatMap(this::toStream)
-                    .filter(x -> x.getNameCount() > 1)
-                    .map( x-> x.subpath(1, x.getNameCount()))
+                    .filter(x -> x.getNameCount() > 2)
+                    .map( x-> x.subpath(2, x.getNameCount()))
                     .map( x -> x.toString())
                     .filter(s -> s.endsWith(".class"));
         }

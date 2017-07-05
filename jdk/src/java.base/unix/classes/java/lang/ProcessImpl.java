@@ -64,7 +64,7 @@ final class ProcessImpl extends Process {
     static final boolean SUPPORTS_NORMAL_TERMINATION = true;
 
     private final int pid;
-    private final ProcessHandle processHandle;
+    private final ProcessHandleImpl processHandle;
     private int exitcode;
     private boolean hasExited;
 
@@ -320,7 +320,7 @@ final class ProcessImpl extends Process {
                           dir,
                           fds,
                           redirectErrorStream);
-        processHandle = ProcessHandleImpl.getUnchecked(pid);
+        processHandle = ProcessHandleImpl.getInternal(pid);
 
         try {
             doPrivileged((PrivilegedExceptionAction<Void>) () -> {
@@ -505,7 +505,7 @@ final class ProcessImpl extends Process {
                 // soon, so this is quite safe.
                 synchronized (this) {
                     if (!hasExited)
-                        ProcessHandleImpl.destroyProcess(pid, force);
+                        processHandle.destroyProcess(force);
                 }
                 try { stdin.close();  } catch (IOException ignored) {}
                 try { stdout.close(); } catch (IOException ignored) {}
@@ -521,7 +521,7 @@ final class ProcessImpl extends Process {
                 // soon, so this is quite safe.
                 synchronized (this) {
                     if (!hasExited)
-                        ProcessHandleImpl.destroyProcess(pid, force);
+                        processHandle.destroyProcess(force);
                     try {
                         stdin.close();
                         if (stdout_inner_stream != null)
@@ -542,7 +542,7 @@ final class ProcessImpl extends Process {
     @Override
     public CompletableFuture<Process> onExit() {
         return ProcessHandleImpl.completion(pid, false)
-                .handleAsync((exitStatus, unusedThrowable) -> {
+                .handleAsync((unusedExitStatus, unusedThrowable) -> {
                     boolean interrupted = false;
                     while (true) {
                         // Ensure that the concurrent task setting the exit status has completed

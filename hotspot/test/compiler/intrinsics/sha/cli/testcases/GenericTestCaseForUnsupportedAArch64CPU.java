@@ -49,14 +49,22 @@ public class GenericTestCaseForUnsupportedAArch64CPU extends
                 }, shouldPassMessage, shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
 
-        shouldPassMessage = String.format("JVM should start with '-XX:+"
-                + "%s' flag, but output should contain warning.", optionName);
-        // Verify that when the tested option is explicitly enabled, then
-        // a warning will occur in VM output.
-        CommandLineOptionTest.verifySameJVMStartup(new String[] {
-                        SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
-                }, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
-                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
+        shouldPassMessage = String.format("If JVM is started with '-XX:-"
+                + "%s' '-XX:+%s', output should contain warning.",
+                SHAOptionsBase.USE_SHA_OPTION, optionName);
+
+        // Verify that when the tested option is enabled, then
+        // a warning will occur in VM output if UseSHA is disabled.
+        if (!optionName.equals(SHAOptionsBase.USE_SHA_OPTION)) {
+            CommandLineOptionTest.verifySameJVMStartup(
+                    new String[] { SHAOptionsBase.getWarningForUnsupportedCPU(optionName) },
+                    null,
+                    shouldPassMessage,
+                    shouldPassMessage,
+                    ExitCode.OK,
+                    CommandLineOptionTest.prepareBooleanFlag(SHAOptionsBase.USE_SHA_OPTION, false),
+                    CommandLineOptionTest.prepareBooleanFlag(optionName, true));
+        }
     }
 
     @Override

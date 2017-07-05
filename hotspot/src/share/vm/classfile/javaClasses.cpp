@@ -1707,8 +1707,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle met
     // - rest of the stack
 
     if (!skip_fillInStackTrace_check) {
-      if ((method->name() == vmSymbols::fillInStackTrace_name() ||
-           method->name() == vmSymbols::fillInStackTrace0_name()) &&
+      if (method->name() == vmSymbols::fillInStackTrace_name() &&
           throwable->is_a(method->method_holder())) {
         continue;
       }

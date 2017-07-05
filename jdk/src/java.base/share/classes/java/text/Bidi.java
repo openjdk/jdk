@@ -185,7 +185,7 @@ public final class Bidi {
         AttributedString astr = new AttributedString("");
         Bidi newBidi = new Bidi(astr.getIterator());
 
-        return bidiBase.setLine(this, bidiBase, newBidi, newBidi.bidiBase,lineStart, lineLimit);
+        return bidiBase.setLine(this, bidiBase, newBidi, newBidi.bidiBase, lineStart, lineLimit);
     }
 
     /**

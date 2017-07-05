@@ -377,9 +377,10 @@ public class DHEKeySizing {
     }
 
     public static void main(String args[]) throws Exception {
-        // reset the security property to make sure that the algorithms
+        // reset security properties to make sure that the algorithms
         // and keys used in this test are not disabled.
         Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "");
 
         if (args.length != 4) {
             System.out.println(

@@ -146,6 +146,11 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    public Path readSymbolicLink(Path link) throws IOException {
+        return toJrtPath(link).readSymbolicLink();
+    }
+
+    @Override
     public void copy(Path src, Path target, CopyOption... options)
         throws IOException
     {
@@ -169,7 +174,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
     public <V extends FileAttributeView> V
         getFileAttributeView(Path path, Class<V> type, LinkOption... options)
     {
-        return JrtFileAttributeView.get(toJrtPath(path), type);
+        return JrtFileAttributeView.get(toJrtPath(path), type, options);
     }
 
     @Override
@@ -250,7 +255,7 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
         throws IOException
     {
         if (type == BasicFileAttributes.class || type == JrtFileAttributes.class)
-            return (A)toJrtPath(path).getAttributes();
+            return (A)toJrtPath(path).getAttributes(options);
         return null;
     }
 

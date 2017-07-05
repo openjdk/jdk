@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
- *******************************************************************************
- * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
- *******************************************************************************
+ ******************************************************************************
+ * Copyright (C) 1996-2014, International Business Machines Corporation and
+ * others. All Rights Reserved.
+ ******************************************************************************
  */
 
 package sun.text.normalizer;
@@ -135,93 +131,62 @@ public abstract class Trie
         unserialize(inputStream);
     }
 
-    /**
-    * Trie constructor
-    * @param index array to be used for index
-    * @param options used by the trie
-    * @param dataManipulate object containing the information to parse the
-    *                       trie data
-    */
-    protected Trie(char index[], int options, DataManipulate dataManipulate)
-    {
-        m_options_ = options;
-        if(dataManipulate != null) {
-            m_dataManipulate_ = dataManipulate;
-        } else {
-            m_dataManipulate_ = new DefaultGetFoldingOffset();
-        }
-        m_isLatin1Linear_ = (m_options_ &
-                             HEADER_OPTIONS_LATIN1_IS_LINEAR_MASK_) != 0;
-        m_index_ = index;
-        m_dataOffset_ = m_index_.length;
-    }
-
     // protected data members ------------------------------------------
 
     /**
-    * Lead surrogate code points' index displacement in the index array.
-    * <pre>{@code
-    * 0x10000-0xd800=0x2800
-    * 0x2800 >> INDEX_STAGE_1_SHIFT_
-    * }</pre>
-    */
+     * Lead surrogate code points' index displacement in the index array.
+     * <pre>{@code
+     * 0x10000-0xd800=0x2800
+     * 0x2800 >> INDEX_STAGE_1_SHIFT_
+     * }</pre>
+     */
     protected static final int LEAD_INDEX_OFFSET_ = 0x2800 >> 5;
     /**
-    * Shift size for shifting right the input index. 1..9
-    */
+     * Shift size for shifting right the input index. 1..9
+     */
     protected static final int INDEX_STAGE_1_SHIFT_ = 5;
     /**
-    * Shift size for shifting left the index array values.
-    * Increases possible data size with 16-bit index values at the cost
-    * of compactability.
-    * This requires blocks of stage 2 data to be aligned by
-    * DATA_GRANULARITY.
-    * 0..INDEX_STAGE_1_SHIFT
-    */
+     * Shift size for shifting left the index array values.
+     * Increases possible data size with 16-bit index values at the cost
+     * of compactability.
+     * This requires blocks of stage 2 data to be aligned by
+     * DATA_GRANULARITY.
+     * 0..INDEX_STAGE_1_SHIFT
+     */
     protected static final int INDEX_STAGE_2_SHIFT_ = 2;
     /**
      * Number of data values in a stage 2 (data array) block.
      */
     protected static final int DATA_BLOCK_LENGTH=1<<INDEX_STAGE_1_SHIFT_;
     /**
-    * Mask for getting the lower bits from the input index.
-    * DATA_BLOCK_LENGTH - 1.
-    */
-    protected static final int INDEX_STAGE_3_MASK_ = DATA_BLOCK_LENGTH - 1;
-    /** Number of bits of a trail surrogate that are used in index table lookups. */
-    protected static final int SURROGATE_BLOCK_BITS=10-INDEX_STAGE_1_SHIFT_;
-    /**
-     * Number of index (stage 1) entries per lead surrogate.
-     * Same as number of index entries for 1024 trail surrogates,
-     * {@code ==0x400>>INDEX_STAGE_1_SHIFT_}
+     * Mask for getting the lower bits from the input index.
+     * DATA_BLOCK_LENGTH - 1.
      */
-    protected static final int SURROGATE_BLOCK_COUNT=(1<<SURROGATE_BLOCK_BITS);
-    /** Length of the BMP portion of the index (stage 1) array. */
-    protected static final int BMP_INDEX_LENGTH=0x10000>>INDEX_STAGE_1_SHIFT_;
+    protected static final int INDEX_STAGE_3_MASK_ = DATA_BLOCK_LENGTH - 1;
     /**
-    * Surrogate mask to use when shifting offset to retrieve supplementary
-    * values
-    */
+     * Surrogate mask to use when shifting offset to retrieve supplementary
+     * values
+     */
     protected static final int SURROGATE_MASK_ = 0x3FF;
     /**
-    * Index or UTF16 characters
-    */
+     * Index or UTF16 characters
+     */
     protected char m_index_[];
     /**
-    * Internal TrieValue which handles the parsing of the data value.
-    * This class is to be implemented by the user
-    */
+     * Internal TrieValue which handles the parsing of the data value.
+     * This class is to be implemented by the user
+     */
     protected DataManipulate m_dataManipulate_;
     /**
-    * Start index of the data portion of the trie. CharTrie combines
-    * index and data into a char array, so this is used to indicate the
-    * initial offset to the data portion.
-    * Note this index always points to the initial value.
-    */
+     * Start index of the data portion of the trie. CharTrie combines
+     * index and data into a char array, so this is used to indicate the
+     * initial offset to the data portion.
+     * Note this index always points to the initial value.
+     */
     protected int m_dataOffset_;
     /**
-    * Length of the data array
-    */
+     * Length of the data array
+     */
     protected int m_dataLength_;
 
     // protected methods -----------------------------------------------
@@ -233,19 +198,6 @@ public abstract class Trie
     * @return offset to data
     */
     protected abstract int getSurrogateOffset(char lead, char trail);
-
-    /**
-    * Gets the value at the argument index
-    * @param index value at index will be retrieved
-    * @return 32 bit value
-    */
-    protected abstract int getValue(int index);
-
-    /**
-    * Gets the default initial value
-    * @return 32 bit value
-    */
-    protected abstract int getInitialValue();
 
     /**
     * Gets the offset to the data which the index ch after variable offset
@@ -297,13 +249,13 @@ public abstract class Trie
     }
 
     /**
-    * Internal trie getter from a code point.
-    * Could be faster(?) but longer with
-    * {@code if((c32)<=0xd7ff) { (result)=_TRIE_GET_RAW(trie, data, 0, c32); }}
-    * Gets the offset to data which the codepoint points to
-    * @param ch codepoint
-    * @return offset to data
-    */
+     * Internal trie getter from a code point.
+     * Could be faster(?) but longer with
+     * {@code if((c32)<=0xd7ff) { (result)=_TRIE_GET_RAW(trie, data, 0, c32); }}
+     * Gets the offset to data which the codepoint points to
+     * @param ch codepoint
+     * @return offset to data
+     */
     protected final int getCodePointOffset(int ch)
     {
         // if ((ch >> 16) == 0) slower
@@ -321,7 +273,7 @@ public abstract class Trie
             return getSurrogateOffset(UTF16.getLeadSurrogate(ch),
                                       (char)(ch & SURROGATE_MASK_));
         } else {
-            // return -1 // if there is an error, in this case we return
+            // return -1 if there is an error, in this case we return
             return -1;
         }
     }
@@ -343,15 +295,6 @@ public abstract class Trie
     }
 
     /**
-    * Determines if this is a 32 bit trie
-    * @return true if options specifies this is a 32 bit trie
-    */
-    protected final boolean isIntTrie()
-    {
-        return (m_options_ & HEADER_OPTIONS_DATA_IS_32_BIT_) != 0;
-    }
-
-    /**
     * Determines if this is a 16 bit trie
     * @return true if this is a 16 bit trie
     */
@@ -363,8 +306,8 @@ public abstract class Trie
     // private data members --------------------------------------------
 
     /**
-    * Latin 1 option mask
-    */
+     * Latin 1 option mask
+     */
     protected static final int HEADER_OPTIONS_LATIN1_IS_LINEAR_MASK_ = 0x200;
     /**
     * Constant number to authenticate the byte block
@@ -378,28 +321,28 @@ public abstract class Trie
     protected static final int HEADER_OPTIONS_DATA_IS_32_BIT_ = 0x100;
 
     /**
-    * Flag indicator for Latin quick access data block
-    */
+     * Flag indicator for Latin quick access data block
+     */
     private boolean m_isLatin1Linear_;
 
     /**
-    * <p>Trie options field.</p>
-    * <p>options bit field:<br>
-    * 9  1 = Latin-1 data is stored linearly at data + DATA_BLOCK_LENGTH<br>
-    * 8  0 = 16-bit data, 1=32-bit data<br>
-    * 7..4  INDEX_STAGE_1_SHIFT   // 0..INDEX_STAGE_2_SHIFT<br>
-    * 3..0  INDEX_STAGE_2_SHIFT   // 1..9<br>
-    */
+     * <p>Trie options field.</p>
+     * <p>options bit field:<br>
+     * 9  1 = Latin-1 data is stored linearly at data + DATA_BLOCK_LENGTH<br>
+     * 8  0 = 16-bit data, 1=32-bit data<br>
+     * 7..4  INDEX_STAGE_1_SHIFT   // 0..INDEX_STAGE_2_SHIFT<br>
+     * 3..0  INDEX_STAGE_2_SHIFT   // 1..9<br>
+     */
     private int m_options_;
 
     // private methods ---------------------------------------------------
 
     /**
-    * Authenticates raw data header.
-    * Checking the header information, signature and options.
-    * @param signature This contains the options and type of a Trie
-    * @return true if the header is authenticated valid
-    */
+     * Authenticates raw data header.
+     * Checking the header information, signature and options.
+     * @param signature This contains the options and type of a Trie
+     * @return true if the header is authenticated valid
+     */
     private final boolean checkHeader(int signature)
     {
         // check the signature

@@ -48,6 +48,19 @@ public class GenericTestCaseForUnsupportedSparcCPU extends
                         SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
                 }, shouldPassMessage, shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
+
+        // Verify that when the tested option is enabled, then
+        // a warning will occur in VM output if UseSHA is disabled.
+        if (!optionName.equals(SHAOptionsBase.USE_SHA_OPTION)) {
+            CommandLineOptionTest.verifySameJVMStartup(
+                    new String[] { SHAOptionsBase.getWarningForUnsupportedCPU(optionName) },
+                    null,
+                    shouldPassMessage,
+                    shouldPassMessage,
+                    ExitCode.OK,
+                    CommandLineOptionTest.prepareBooleanFlag(SHAOptionsBase.USE_SHA_OPTION, false),
+                    CommandLineOptionTest.prepareBooleanFlag(optionName, true));
+        }
     }
 
     @Override
