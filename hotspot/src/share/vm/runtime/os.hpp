@@ -507,16 +507,16 @@ class os: AllStatic {
 
   // Symbol lookup, find nearest function name; basically it implements
   // dladdr() for all platforms. Name of the nearest function is copied
-  // to buf. Distance from its base address is returned as offset.
+  // to buf. Distance from its base address is optionally returned as offset.
   // If function name is not found, buf[0] is set to '\0' and offset is
-  // set to -1.
+  // set to -1 (if offset is non-NULL).
   static bool dll_address_to_function_name(address addr, char* buf,
                                            int buflen, int* offset);
 
   // Locate DLL/DSO. On success, full path of the library is copied to
-  // buf, and offset is set to be the distance between addr and the
-  // library's base address. On failure, buf[0] is set to '\0' and
-  // offset is set to -1.
+  // buf, and offset is optionally set to be the distance between addr
+  // and the library's base address. On failure, buf[0] is set to '\0'
+  // and offset is set to -1 (if offset is non-NULL).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
 

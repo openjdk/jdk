@@ -1234,12 +1234,13 @@ bool os::address_is_in_vm(address addr) {
   Dl_info dlinfo;
 
   if (libjvm_base_addr == NULL) {
-    dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo);
-    libjvm_base_addr = (address)dlinfo.dli_fbase;
+    if (dladdr(CAST_FROM_FN_PTR(void *, os::address_is_in_vm), &dlinfo) != 0) {
+      libjvm_base_addr = (address)dlinfo.dli_fbase;
+    }
     assert(libjvm_base_addr !=NULL, "Cannot obtain base address for libjvm");
   }
 
-  if (dladdr((void *)addr, &dlinfo)) {
+  if (dladdr((void *)addr, &dlinfo) != 0) {
     if (libjvm_base_addr == (address)dlinfo.dli_fbase) return true;
   }
 
@@ -1251,35 +1252,40 @@ bool os::address_is_in_vm(address addr) {
 
 bool os::dll_address_to_function_name(address addr, char *buf,
                                       int buflen, int *offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
   char localbuf[MACH_MAXSYMLEN];
 
-  // dladdr will find names of dynamic functions only, but does
-  // it set dli_fbase with mach_header address when it "fails" ?
-  if (dladdr((void*)addr, &dlinfo) && dlinfo.dli_sname != NULL) {
-    if (buf != NULL) {
-      if(!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
+  if (dladdr((void*)addr, &dlinfo) != 0) {
+    // see if we have a matching symbol
+    if (dlinfo.dli_saddr != NULL && dlinfo.dli_sname != NULL) {
+      if (!Decoder::demangle(dlinfo.dli_sname, buf, buflen)) {
         jio_snprintf(buf, buflen, "%s", dlinfo.dli_sname);
       }
+      if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
+      return true;
     }
-    if (offset != NULL) *offset = addr - (address)dlinfo.dli_saddr;
-    return true;
-  } else if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != 0) {
-    if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-       buf, buflen, offset, dlinfo.dli_fname)) {
-       return true;
+    // no matching symbol so try for just file info
+    if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
+      if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
+                          buf, buflen, offset, dlinfo.dli_fname)) {
+         return true;
+      }
     }
-  }
 
-  // Handle non-dymanic manually:
-  if (dlinfo.dli_fbase != NULL &&
-      Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset, dlinfo.dli_fbase)) {
-    if(!Decoder::demangle(localbuf, buf, buflen)) {
-      jio_snprintf(buf, buflen, "%s", localbuf);
+    // Handle non-dynamic manually:
+    if (dlinfo.dli_fbase != NULL &&
+        Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset,
+                        dlinfo.dli_fbase)) {
+      if (!Decoder::demangle(localbuf, buf, buflen)) {
+        jio_snprintf(buf, buflen, "%s", localbuf);
+      }
+      return true;
     }
-    return true;
   }
-  if (buf != NULL) buf[0] = '\0';
+  buf[0] = '\0';
   if (offset != NULL) *offset = -1;
   return false;
 }
@@ -1287,17 +1293,24 @@ bool os::dll_address_to_function_name(address addr, char *buf,
 // ported from solaris version
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
+  // buf is not optional, but offset is optional
+  assert(buf != NULL, "sanity check");
+
   Dl_info dlinfo;
 
-  if (dladdr((void*)addr, &dlinfo)){
-     if (buf) jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
-     if (offset) *offset = addr - (address)dlinfo.dli_fbase;
-     return true;
-  } else {
-     if (buf) buf[0] = '\0';
-     if (offset) *offset = -1;
-     return false;
+  if (dladdr((void*)addr, &dlinfo) != 0) {
+    if (dlinfo.dli_fname != NULL) {
+      jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
+    }
+    if (dlinfo.dli_fbase != NULL && offset != NULL) {
+      *offset = addr - (address)dlinfo.dli_fbase;
+    }
+    return true;
   }
+
+  buf[0] = '\0';
+  if (offset) *offset = -1;
+  return false;
 }
 
 // Loads .dll/.so and
@@ -1520,49 +1533,50 @@ static bool _print_ascii_file(const char* filename, outputStream* st) {
 }
 
 void os::print_dll_info(outputStream *st) {
-   st->print_cr("Dynamic libraries:");
+  st->print_cr("Dynamic libraries:");
 #ifdef RTLD_DI_LINKMAP
-    Dl_info dli;
-    void *handle;
-    Link_map *map;
-    Link_map *p;
+  Dl_info dli;
+  void *handle;
+  Link_map *map;
+  Link_map *p;
 
-    if (!dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli)) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
-    handle = dlopen(dli.dli_fname, RTLD_LAZY);
-    if (handle == NULL) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
-    dlinfo(handle, RTLD_DI_LINKMAP, &map);
-    if (map == NULL) {
-        st->print_cr("Error: Cannot print dynamic libraries.");
-        return;
-    }
+  if (dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli) == 0 ||
+      dli.dli_fname == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
+  handle = dlopen(dli.dli_fname, RTLD_LAZY);
+  if (handle == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
+  dlinfo(handle, RTLD_DI_LINKMAP, &map);
+  if (map == NULL) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+    return;
+  }
 
-    while (map->l_prev != NULL)
-        map = map->l_prev;
+  while (map->l_prev != NULL)
+    map = map->l_prev;
 
-    while (map != NULL) {
-        st->print_cr(PTR_FORMAT " \t%s", map->l_addr, map->l_name);
-        map = map->l_next;
-    }
+  while (map != NULL) {
+    st->print_cr(PTR_FORMAT " \t%s", map->l_addr, map->l_name);
+    map = map->l_next;
+  }
 
-    dlclose(handle);
+  dlclose(handle);
 #elif defined(__APPLE__)
-    uint32_t count;
-    uint32_t i;
+  uint32_t count;
+  uint32_t i;
 
-    count = _dyld_image_count();
-    for (i = 1; i < count; i++) {
-        const char *name = _dyld_get_image_name(i);
-        intptr_t slide = _dyld_get_image_vmaddr_slide(i);
-        st->print_cr(PTR_FORMAT " \t%s", slide, name);
-    }
+  count = _dyld_image_count();
+  for (i = 1; i < count; i++) {
+    const char *name = _dyld_get_image_name(i);
+    intptr_t slide = _dyld_get_image_vmaddr_slide(i);
+    st->print_cr(PTR_FORMAT " \t%s", slide, name);
+  }
 #else
-   st->print_cr("Error: Cannot print dynamic libraries.");
+  st->print_cr("Error: Cannot print dynamic libraries.");
 #endif
 }
 
@@ -1707,8 +1721,11 @@ void os::jvm_path(char *buf, jint buflen) {
   bool ret = dll_address_to_library_name(
                 CAST_FROM_FN_PTR(address, os::jvm_path),
                 dli_fname, sizeof(dli_fname), NULL);
-  assert(ret != 0, "cannot locate libjvm");
-  char *rp = realpath(dli_fname, buf);
+  assert(ret, "cannot locate libjvm");
+  char *rp = NULL;
+  if (ret && dli_fname[0] != '\0') {
+    rp = realpath(dli_fname, buf);
+  }
   if (rp == NULL)
     return;
 
@@ -3747,20 +3764,20 @@ int os::Bsd::safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex,
 bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
-  if (dladdr(addr, &dlinfo)) {
+  if (dladdr(addr, &dlinfo) != 0) {
     st->print(PTR_FORMAT ": ", addr);
-    if (dlinfo.dli_sname != NULL) {
+    if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
       st->print("%s+%#x", dlinfo.dli_sname,
                  addr - (intptr_t)dlinfo.dli_saddr);
-    } else if (dlinfo.dli_fname) {
+    } else if (dlinfo.dli_fbase != NULL) {
       st->print("<offset %#x>", addr - (intptr_t)dlinfo.dli_fbase);
     } else {
       st->print("<absolute address>");
     }
-    if (dlinfo.dli_fname) {
+    if (dlinfo.dli_fname != NULL) {
       st->print(" in %s", dlinfo.dli_fname);
     }
-    if (dlinfo.dli_fbase) {
+    if (dlinfo.dli_fbase != NULL) {
       st->print(" at " PTR_FORMAT, dlinfo.dli_fbase);
     }
     st->cr();
@@ -3773,7 +3790,7 @@ bool os::find(address addr, outputStream* st) {
       if (!lowest)  lowest = (address) dlinfo.dli_fbase;
       if (begin < lowest)  begin = lowest;
       Dl_info dlinfo2;
-      if (dladdr(end, &dlinfo2) && dlinfo2.dli_saddr != dlinfo.dli_saddr
+      if (dladdr(end, &dlinfo2) != 0 && dlinfo2.dli_saddr != dlinfo.dli_saddr
           && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin)
         end = (address) dlinfo2.dli_saddr;
       Disassembler::decode(begin, end, st);

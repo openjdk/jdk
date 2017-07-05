@@ -908,10 +908,11 @@ void VMError::report_and_die() {
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
     if (first_error_tid != mytid) {
-      jio_snprintf(buffer, sizeof(buffer),
+      char msgbuf[64];
+      jio_snprintf(msgbuf, sizeof(msgbuf),
                    "[thread " INT64_FORMAT " also had an error]",
                    mytid);
-      out.print_raw_cr(buffer);
+      out.print_raw_cr(msgbuf);
 
       // error reporting is not MT-safe, block current thread
       os::infinite_sleep();

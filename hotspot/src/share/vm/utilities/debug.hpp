@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ bool is_error_reported();
 void set_error_reported();
 
 /* Test assert(), fatal(), guarantee(), etc. */
-NOT_PRODUCT(void test_error_handler(size_t test_num);)
+NOT_PRODUCT(void test_error_handler();)
 
 void pd_ps(frame f);
 void pd_obfuscate_location(char *buf, size_t buflen);
