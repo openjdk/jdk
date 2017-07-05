@@ -392,6 +392,7 @@ public class ScheduledThreadPoolExecutor
      *
      * @param runnable the submitted Runnable
      * @param task the task created to execute the runnable
+     * @param <V> the type of the task's result
      * @return a task that can execute the runnable
      * @since 1.6
      */
@@ -408,6 +409,7 @@ public class ScheduledThreadPoolExecutor
      *
      * @param callable the submitted Callable
      * @param task the task created to execute the callable
+     * @param <V> the type of the task's result
      * @return a task that can execute the callable
      * @since 1.6
      */

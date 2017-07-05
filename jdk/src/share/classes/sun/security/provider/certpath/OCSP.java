@@ -255,7 +255,9 @@ public final class OCSP {
             }
             response = Arrays.copyOf(response, total);
         } catch (IOException ioe) {
-            throw new NetworkFailureException(ioe);
+            throw new CertPathValidatorException(
+                "Unable to determine revocation status due to network error",
+                ioe, null, -1, BasicReason.UNDETERMINED_REVOCATION_STATUS);
         } finally {
             if (in != null) {
                 try {
@@ -354,18 +356,5 @@ public final class OCSP {
          * Returns a Map of additional extensions.
          */
         Map<String, Extension> getSingleExtensions();
-    }
-
-    static class NetworkFailureException extends CertPathValidatorException {
-        private static final long serialVersionUID = 0l;
-
-        NetworkFailureException(Throwable t) {
-            super(t);
-        }
-
-        @Override
-        public CertPathValidatorException.Reason getReason() {
-            return BasicReason.UNDETERMINED_REVOCATION_STATUS;
-        }
     }
 }

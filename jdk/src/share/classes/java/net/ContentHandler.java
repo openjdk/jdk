@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,21 @@ package java.net;
 import java.io.IOException;
 
 /**
- * The abstract class <code>ContentHandler</code> is the superclass
- * of all classes that read an <code>Object</code> from a
- * <code>URLConnection</code>.
+ * The abstract class {@code ContentHandler} is the superclass
+ * of all classes that read an {@code Object} from a
+ * {@code URLConnection}.
  * <p>
  * An application does not generally call the
- * <code>getContent</code> method in this class directly. Instead, an
- * application calls the <code>getContent</code> method in class
- * <code>URL</code> or in <code>URLConnection</code>.
+ * {@code getContent} method in this class directly. Instead, an
+ * application calls the {@code getContent} method in class
+ * {@code URL} or in {@code URLConnection}.
  * The application's content handler factory (an instance of a class that
- * implements the interface <code>ContentHandlerFactory</code> set
- * up by a call to <code>setContentHandler</code>) is
- * called with a <code>String</code> giving the MIME type of the
+ * implements the interface {@code ContentHandlerFactory} set
+ * up by a call to {@code setContentHandler}) is
+ * called with a {@code String} giving the MIME type of the
  * object being received on the socket. The factory returns an
- * instance of a subclass of <code>ContentHandler</code>, and its
- * <code>getContent</code> method is called to create the object.
+ * instance of a subclass of {@code ContentHandler}, and its
+ * {@code getContent} method is called to create the object.
  * <p>
  * If no content handler could be found, URLConnection will
  * look for a content handler in a user-defineable set of places.
@@ -75,7 +75,7 @@ abstract public class ContentHandler {
      * creates an object from it.
      *
      * @param      urlc   a URL connection.
-     * @return     the object read by the <code>ContentHandler</code>.
+     * @return     the object read by the {@code ContentHandler}.
      * @exception  IOException  if an I/O error occurs while reading the object.
      */
     abstract public Object getContent(URLConnection urlc) throws IOException;
@@ -90,7 +90,7 @@ abstract public class ContentHandler {
      *
      * @param      urlc   a URL connection.
      * @param      classes      an array of types requested
-     * @return     the object read by the <code>ContentHandler</code> that is
+     * @return     the object read by the {@code ContentHandler} that is
      *                 the first match of the suggested types.
      *                 null if none of the requested  are supported.
      * @exception  IOException  if an I/O error occurs while reading the object.

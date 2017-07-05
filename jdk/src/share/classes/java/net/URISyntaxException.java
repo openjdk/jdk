@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,13 +50,13 @@ public class URISyntaxException
      * @param  input   The input string
      * @param  reason  A string explaining why the input could not be parsed
      * @param  index   The index at which the parse error occurred,
-     *                 or <tt>-1</tt> if the index is not known
+     *                 or {@code -1} if the index is not known
      *
      * @throws  NullPointerException
-     *          If either the input or reason strings are <tt>null</tt>
+     *          If either the input or reason strings are {@code null}
      *
      * @throws  IllegalArgumentException
-     *          If the error index is less than <tt>-1</tt>
+     *          If the error index is less than {@code -1}
      */
     public URISyntaxException(String input, String reason, int index) {
         super(reason);
@@ -70,13 +70,13 @@ public class URISyntaxException
 
     /**
      * Constructs an instance from the given input string and reason.  The
-     * resulting object will have an error index of <tt>-1</tt>.
+     * resulting object will have an error index of {@code -1}.
      *
      * @param  input   The input string
      * @param  reason  A string explaining why the input could not be parsed
      *
      * @throws  NullPointerException
-     *          If either the input or reason strings are <tt>null</tt>
+     *          If either the input or reason strings are {@code null}
      */
     public URISyntaxException(String input, String reason) {
         this(input, reason, -1);
@@ -102,7 +102,7 @@ public class URISyntaxException
 
     /**
      * Returns an index into the input string of the position at which the
-     * parse error occurred, or <tt>-1</tt> if this position is not known.
+     * parse error occurred, or {@code -1} if this position is not known.
      *
      * @return  The error index
      */
@@ -113,8 +113,8 @@ public class URISyntaxException
     /**
      * Returns a string describing the parse error.  The resulting string
      * consists of the reason string followed by a colon character
-     * (<tt>':'</tt>), a space, and the input string.  If the error index is
-     * defined then the string <tt>" at index "</tt> followed by the index, in
+     * ({@code ':'}), a space, and the input string.  If the error index is
+     * defined then the string {@code " at index "} followed by the index, in
      * decimal, is inserted after the reason string and before the colon
      * character.
      *

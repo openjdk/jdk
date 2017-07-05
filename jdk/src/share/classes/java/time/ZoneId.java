@@ -401,6 +401,36 @@ public abstract class ZoneId implements Serializable {
     }
 
     /**
+     * Obtains an instance of {@code ZoneId} wrapping an offset.
+     * <p>
+     * If the prefix is "GMT", "UTC", or "UT" a {@code ZoneId}
+     * with the prefix and the non-zero offset is returned.
+     * If the prefix is empty {@code ""} the {@code ZoneOffset} is returned.
+     *
+     * @param prefix  the time-zone ID, not null
+     * @param offset  the offset, not null
+     * @return the zone ID, not null
+     * @throws IllegalArgumentException if the prefix is not one of
+     *     "GMT", "UTC", or "UT", or ""
+     */
+    public static ZoneId ofOffset(String prefix, ZoneOffset offset) {
+        Objects.requireNonNull(prefix, "prefix");
+        Objects.requireNonNull(offset, "offset");
+        if (prefix.length() == 0) {
+            return offset;
+        }
+
+        if (!prefix.equals("GMT") && !prefix.equals("UTC") && !prefix.equals("UT")) {
+             throw new IllegalArgumentException("prefix should be GMT, UTC or UT, is: " + prefix);
+        }
+
+        if (offset.getTotalSeconds() != 0) {
+            prefix = prefix.concat(offset.getId());
+        }
+        return new ZoneRegion(prefix, offset.getRules());
+    }
+
+    /**
      * Parses the ID, taking a flag to indicate whether {@code ZoneRulesException}
      * should be thrown or not, used in deserialization.
      *
@@ -433,7 +463,7 @@ public abstract class ZoneId implements Serializable {
     private static ZoneId ofWithPrefix(String zoneId, int prefixLength, boolean checkAvailable) {
         String prefix = zoneId.substring(0, prefixLength);
         if (zoneId.length() == prefixLength) {
-            return ZoneRegion.ofPrefixedOffset(prefix, ZoneOffset.UTC);
+            return ofOffset(prefix, ZoneOffset.UTC);
         }
         if (zoneId.charAt(prefixLength) != '+' && zoneId.charAt(prefixLength) != '-') {
             return ZoneRegion.ofId(zoneId, checkAvailable);  // drop through to ZoneRulesProvider
@@ -441,9 +471,9 @@ public abstract class ZoneId implements Serializable {
         try {
             ZoneOffset offset = ZoneOffset.of(zoneId.substring(prefixLength));
             if (offset == ZoneOffset.UTC) {
-                return ZoneRegion.ofPrefixedOffset(prefix, offset);
+                return ofOffset(prefix, offset);
             }
-            return ZoneRegion.ofPrefixedOffset(prefix + offset.toString(), offset);
+            return ofOffset(prefix, offset);
         } catch (DateTimeException ex) {
             throw new DateTimeException("Invalid ID for offset-based ZoneId: " + zoneId, ex);
         }

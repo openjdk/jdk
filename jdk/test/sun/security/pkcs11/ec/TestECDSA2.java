@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,13 @@ public class TestECDSA2 extends PKCS11Test {
 
         if (!testP256 && !testP384) {
             System.out.println("ECDSA not supported, skipping");
+            return;
+        }
+
+        if (isNSS(provider) && getNSSVersion() >= 3.11 &&
+                getNSSVersion() < 3.12) {
+            System.out.println("NSS 3.11 has a DER issue that recent " +
+                    "version do not.");
             return;
         }
 

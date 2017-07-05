@@ -92,6 +92,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import jdk.internal.dynalink.support.Lookup;
 
 /**
  * Base for classes that expose class field and method information to an {@link AbstractJavaLinker}. There are
@@ -160,11 +161,11 @@ abstract class FacetIntrospector {
 
 
     MethodHandle unreflectGetter(Field field) {
-        return editMethodHandle(SafeUnreflector.unreflectGetter(field));
+        return editMethodHandle(Lookup.PUBLIC.unreflectGetter(field));
     }
 
     MethodHandle unreflectSetter(Field field) {
-        return editMethodHandle(SafeUnreflector.unreflectSetter(field));
+        return editMethodHandle(Lookup.PUBLIC.unreflectSetter(field));
     }
 
     /**

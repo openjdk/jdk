@@ -27,10 +27,13 @@ package java.util.function;
 import java.util.Objects;
 
 /**
- * An operation which accepts a single integer argument and returns no result.
- * This is the primitive type specialization of {@link Consumer} for {@code int}.
- * Unlike most other functional interfaces, {@code IntConsumer} is expected to
- * operate via side-effects.
+ * Represents an operation that accepts a single {@code int}-valued argument and
+ * returns no result.  This is the primitive type specialization of
+ * {@link Consumer} for {@code int}.  Unlike most other functional interfaces,
+ * {@code IntConsumer} is expected to operate via side-effects.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #accept(int)}.
  *
  * @see Consumer
  * @since 1.8
@@ -39,30 +42,26 @@ import java.util.Objects;
 public interface IntConsumer {
 
     /**
-     * Accept an input value.
+     * Performs this operation on the given argument.
      *
-     * @param value the input value
+     * @param value the input argument
      */
     void accept(int value);
 
     /**
-     * Returns an {@code IntConsumer} which performs, in sequence, the operation
-     * represented by this object followed by the operation represented by
-     * another {@code IntConsumer}.
+     * Returns a composed {@code IntConsumer} that performs, in sequence, this
+     * operation followed by the {@code after} operation. If performing either
+     * operation throws an exception, it is relayed to the caller of the
+     * composed operation.  If performing this operation throws an exception,
+     * the {@code after} operation will not be performed.
      *
-     * <p>Any exceptions thrown by either {@code accept} method are relayed
-     * to the caller; if performing this operation throws an exception, the
-     * other operation will not be performed.
-     *
-     * @param other an IntConsumer which will be chained after this
-     * IntConsumer
-     * @return an IntConsumer which performs in sequence the {@code accept} method
-     * of this IntConsumer and the {@code accept} method of the specified IntConsumer
-     * operation
-     * @throws NullPointerException if other is null
+     * @param after the operation to perform after this operation
+     * @return a composed {@code IntConsumer} that performs in sequence this
+     * operation followed by the {@code after} operation
+     * @throws NullPointerException if {@code after} is null
      */
-    default IntConsumer chain(IntConsumer other) {
-        Objects.requireNonNull(other);
-        return (int t) -> { accept(t); other.accept(t); };
+    default IntConsumer andThen(IntConsumer after) {
+        Objects.requireNonNull(after);
+        return (int t) -> { accept(t); after.accept(t); };
     }
 }

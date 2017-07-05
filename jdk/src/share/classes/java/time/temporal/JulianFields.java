@@ -66,6 +66,9 @@ import static java.time.temporal.ChronoUnit.DAYS;
 import static java.time.temporal.ChronoUnit.FOREVER;
 
 import java.time.DateTimeException;
+import java.time.ZoneId;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
 import java.time.format.ResolverStyle;
 import java.util.Collections;
 import java.util.Map;
@@ -233,11 +236,6 @@ public final class JulianFields {
 
         //-----------------------------------------------------------------------
         @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
         public TemporalUnit getBaseUnit() {
             return baseUnit;
         }
@@ -250,6 +248,11 @@ public final class JulianFields {
         @Override
         public boolean isDateBased() {
             return true;
+        }
+
+        @Override
+        public boolean isTimeBased() {
+            return false;
         }
 
         @Override
@@ -287,15 +290,14 @@ public final class JulianFields {
 
         //-----------------------------------------------------------------------
         @Override
-        public Map<TemporalField, Long> resolve(TemporalAccessor temporal, long value, ResolverStyle resolverStyle) {
-            long epochDay;
+        public ChronoLocalDate resolve(
+                Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+            long value = fieldValues.remove(this);
             if (resolverStyle == ResolverStyle.LENIENT) {
-                epochDay = Math.subtractExact(value, offset);
-            } else {
-                range().checkValidValue(value, this);
-                epochDay = value - offset;
+                return chronology.dateEpochDay(Math.subtractExact(value, offset));
             }
-            return Collections.<TemporalField, Long>singletonMap(EPOCH_DAY, epochDay);
+            range().checkValidValue(value, this);
+            return chronology.dateEpochDay(value - offset);
         }
 
         //-----------------------------------------------------------------------

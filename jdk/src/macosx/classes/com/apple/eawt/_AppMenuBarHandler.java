@@ -31,6 +31,7 @@ import java.awt.peer.MenuComponentPeer;
 import javax.swing.*;
 import javax.swing.plaf.MenuBarUI;
 
+import com.apple.laf.ScreenMenuBar;
 import sun.lwawt.macosx.CMenuBar;
 
 import com.apple.laf.AquaMenuBarUI;
@@ -72,12 +73,15 @@ class _AppMenuBarHandler {
         // scan the current frames, and see if any are foreground
         final Frame[] frames = Frame.getFrames();
         for (final Frame frame : frames) {
-            if (frame.isVisible() && !isFrameMinimized(frame)) return;
+            if (frame.isVisible() && !isFrameMinimized(frame)) {
+                return;
+            }
         }
 
         // if we have no foreground frames, then we have to "kick" the menubar
         final JFrame pingFrame = new JFrame();
         pingFrame.getRootPane().putClientProperty("Window.alpha", new Float(0.0f));
+        pingFrame.setUndecorated(true);
         pingFrame.setVisible(true);
         pingFrame.toFront();
         pingFrame.setVisible(false);
@@ -101,7 +105,6 @@ class _AppMenuBarHandler {
             // Aqua was not installed
             throw new IllegalStateException("Application.setDefaultMenuBar() only works with the Aqua Look and Feel");
         }
-/* TODO: disabled until ScreenMenuBar is working
 
         final AquaMenuBarUI aquaUI = (AquaMenuBarUI)ui;
         final ScreenMenuBar screenMenuBar = aquaUI.getScreenMenuBar();
@@ -118,8 +121,7 @@ class _AppMenuBarHandler {
         }
 
         // grab the pointer to the CMenuBar, and retain it in native
-        nativeSetDefaultMenuBar(((CMenuBar)peer).getNativeMenuBarPeer());
-*/
+        nativeSetDefaultMenuBar(((CMenuBar)peer).getModel());
     }
 
     void setAboutMenuItemVisible(final boolean present) {

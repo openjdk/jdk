@@ -360,7 +360,7 @@ public final class NativeArray extends ScriptObject {
             final ScriptObject sobj = (ScriptObject)obj;
             try {
                 final Object join = JOIN.getGetter().invokeExact(sobj);
-                if (join instanceof ScriptFunction) {
+                if (Bootstrap.isCallable(join)) {
                     return JOIN.getInvoker().invokeExact(join, sobj);
                 }
             } catch (final RuntimeException | Error e) {
@@ -396,7 +396,7 @@ public final class NativeArray extends ScriptObject {
                         final ScriptObject sobj           = (ScriptObject)val;
                         final Object       toLocaleString = TO_LOCALE_STRING.getGetter().invokeExact(sobj);
 
-                        if (toLocaleString instanceof ScriptFunction) {
+                        if (Bootstrap.isCallable(toLocaleString)) {
                             sb.append((String)TO_LOCALE_STRING.getInvoker().invokeExact(toLocaleString, sobj));
                         } else {
                             throw typeError("not.a.function", "toLocaleString");

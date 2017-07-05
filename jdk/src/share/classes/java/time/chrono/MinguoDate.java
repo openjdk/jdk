@@ -96,7 +96,7 @@ import java.util.Objects;
  */
 public final class MinguoDate
         extends ChronoDateImpl<MinguoDate>
-        implements ChronoLocalDate<MinguoDate>, Serializable {
+        implements ChronoLocalDate, Serializable {
 
     /**
      * Serialization version.
@@ -152,7 +152,7 @@ public final class MinguoDate
      * @throws DateTimeException if the current date cannot be obtained
      */
     public static MinguoDate now(Clock clock) {
-        return MinguoChronology.INSTANCE.date(LocalDate.now(clock));
+        return new MinguoDate(LocalDate.now(clock));
     }
 
     /**
@@ -264,7 +264,7 @@ public final class MinguoDate
                 }
                 return getChronology().range(f);
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.rangeRefinedBy(this);
     }
@@ -325,7 +325,7 @@ public final class MinguoDate
             }
             return with(isoDate.with(field, newValue));
         }
-        return ChronoLocalDate.super.with(field, newValue);
+        return super.with(field, newValue);
     }
 
     /**
@@ -370,6 +370,11 @@ public final class MinguoDate
     }
 
     @Override
+    MinguoDate plusWeeks(long weeksToAdd) {
+        return super.plusWeeks(weeksToAdd);
+    }
+
+    @Override
     MinguoDate plusDays(long days) {
         return with(isoDate.plusDays(days));
     }
@@ -382,11 +387,6 @@ public final class MinguoDate
     @Override
     public MinguoDate minus(long amountToAdd, TemporalUnit unit) {
         return super.minus(amountToAdd, unit);
-    }
-
-    @Override
-    MinguoDate plusWeeks(long weeksToAdd) {
-        return super.plusWeeks(weeksToAdd);
     }
 
     @Override
@@ -414,13 +414,14 @@ public final class MinguoDate
     }
 
     @Override        // for javadoc and covariant return type
+    @SuppressWarnings("unchecked")
     public final ChronoLocalDateTime<MinguoDate> atTime(LocalTime localTime) {
-        return super.atTime(localTime);
+        return (ChronoLocalDateTime<MinguoDate>)super.atTime(localTime);
     }
 
     @Override
-    public Period periodUntil(ChronoLocalDate<?> endDate) {
-        return isoDate.periodUntil(endDate);
+    public Period until(ChronoLocalDate endDate) {
+        return isoDate.until(endDate);
     }
 
     @Override  // override for performance
@@ -458,7 +459,7 @@ public final class MinguoDate
         out.writeByte(get(DAY_OF_MONTH));
     }
 
-    static ChronoLocalDate<?> readExternal(DataInput in) throws IOException {
+    static MinguoDate readExternal(DataInput in) throws IOException {
         int year = in.readInt();
         int month = in.readByte();
         int dayOfMonth = in.readByte();

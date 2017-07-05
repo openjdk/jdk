@@ -350,10 +350,12 @@ public class LexicalContext {
      * @return the innermost function in the context.
      */
     public FunctionNode getCurrentFunction() {
-        if (isEmpty()) {
-            return null;
+        for (int i = sp - 1; i >= 0; i--) {
+            if (stack[i] instanceof FunctionNode) {
+                return (FunctionNode) stack[i];
+            }
         }
-        return new NodeIterator<>(FunctionNode.class).next();
+        return null;
     }
 
     /**

@@ -152,14 +152,14 @@ public class ClassGenerator {
     }
 
     static MethodGenerator makeStaticInitializer(final ClassVisitor cv, final String name) {
-        final int access = ACC_PUBLIC | ACC_STATIC;
+        final int access =  ACC_PUBLIC | ACC_STATIC;
         final String desc = DEFAULT_INIT_DESC;
         final MethodVisitor mv = cv.visitMethod(access, name, desc, null, null);
         return new MethodGenerator(mv, access, name, desc);
     }
 
     static MethodGenerator makeConstructor(final ClassVisitor cv) {
-        final int access = ACC_PUBLIC;
+        final int access = 0;
         final String name = INIT;
         final String desc = DEFAULT_INIT_DESC;
         final MethodVisitor mv = cv.visitMethod(access, name, desc, null, null);

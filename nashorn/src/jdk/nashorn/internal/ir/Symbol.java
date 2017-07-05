@@ -35,6 +35,8 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.options.Options;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
+
 /**
  * Maps a name to specific data.
  */
@@ -439,6 +441,14 @@ public final class Symbol implements Comparable<Symbol> {
      */
     public void setRange(final Range range) {
         this.range = range;
+    }
+
+    /**
+     * Check if this symbol represents a return value with a known non-generic type.
+     * @return true if specialized return value
+     */
+    public boolean isNonGenericReturn() {
+        return getName().equals(RETURN.symbolName()) && type != Type.OBJECT;
     }
 
     /**

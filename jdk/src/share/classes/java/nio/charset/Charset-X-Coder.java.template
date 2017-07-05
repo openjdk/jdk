@@ -41,7 +41,7 @@ import java.util.Arrays;
  * An engine that can transform a sequence of $itypesPhrase$ into a sequence of
  * $otypesPhrase$.
  *
- * <a name="steps">
+ * <a name="steps"></a>
  *
  * <p> The input $itype$ sequence is provided in a $itype$ buffer or a series
  * of such buffers.  The output $otype$ sequence is written to a $otype$ buffer
@@ -76,22 +76,22 @@ import java.util.Arrays;
  * examine this object and fill the input buffer, flush the output buffer, or
  * attempt to recover from $a$ $coding$ error, as appropriate, and try again.
  *
- * <a name="ce">
+ * <a name="ce"></a>
  *
  * <p> There are two general types of $coding$ errors.  If the input $itype$
  * sequence is $notLegal$ then the input is considered <i>malformed</i>.  If
  * the input $itype$ sequence is legal but cannot be mapped to a valid
  * $outSequence$ then an <i>unmappable character</i> has been encountered.
  *
- * <a name="cae">
+ * <a name="cae"></a>
  *
  * <p> How $a$ $coding$ error is handled depends upon the action requested for
  * that type of error, which is described by an instance of the {@link
- * CodingErrorAction} class.  The possible error actions are to {@link
- * CodingErrorAction#IGNORE </code>ignore<code>} the erroneous input, {@link
- * CodingErrorAction#REPORT </code>report<code>} the error to the invoker via
- * the returned {@link CoderResult} object, or {@link CodingErrorAction#REPLACE
- * </code>replace<code>} the erroneous input with the current value of the
+ * CodingErrorAction} class.  The possible error actions are to {@linkplain
+ * CodingErrorAction#IGNORE ignore} the erroneous input, {@linkplain
+ * CodingErrorAction#REPORT report} the error to the invoker via
+ * the returned {@link CoderResult} object, or {@linkplain CodingErrorAction#REPLACE
+ * replace} the erroneous input with the current value of the
  * replacement $replTypeName$.  The replacement
  *
 #if[encoder]
@@ -106,7 +106,7 @@ import java.util.Arrays;
  * replaceWith} method.
  *
  * <p> The default action for malformed-input and unmappable-character errors
- * is to {@link CodingErrorAction#REPORT </code>report<code>} them.  The
+ * is to {@linkplain CodingErrorAction#REPORT report} them.  The
  * malformed-input error action may be changed via the {@link
  * #onMalformedInput(CodingErrorAction) onMalformedInput} method; the
  * unmappable-character action may be changed via the {@link
@@ -177,7 +177,7 @@ public abstract class Charset$Coder$ {
      * @param  replacement
      *         The initial replacement; must not be <tt>null</tt>, must have
      *         non-zero length, must not be longer than max$ItypesPerOtype$,
-     *         and must be {@link #isLegalReplacement </code>legal<code>}
+     *         and must be {@linkplain #isLegalReplacement legal}
      *
      * @throws  IllegalArgumentException
      *          If the preconditions on the parameters do not hold
@@ -276,7 +276,7 @@ public abstract class Charset$Coder$ {
      *         The new replacement; must not be <tt>null</tt>, must have
      *         non-zero length, must not be longer than the value returned by
      *         the {@link #max$ItypesPerOtype$() max$ItypesPerOtype$} method, and
-     *         must be {@link #isLegalReplacement </code>legal<code>}
+     *         must be {@link #isLegalReplacement legal}
 #end[encoder]
      *
      * @return  This $coder$
@@ -495,24 +495,24 @@ public abstract class Charset$Coder$ {
      *   typically done by draining any $code$d $otype$s from the output
      *   buffer.  </p></li>
      *
-     *   <li><p> A {@link CoderResult#malformedForLength
-     *   </code>malformed-input<code>} result indicates that a malformed-input
+     *   <li><p> A {@linkplain CoderResult#malformedForLength
+     *   malformed-input} result indicates that a malformed-input
      *   error has been detected.  The malformed $itype$s begin at the input
      *   buffer's (possibly incremented) position; the number of malformed
      *   $itype$s may be determined by invoking the result object's {@link
      *   CoderResult#length() length} method.  This case applies only if the
-     *   {@link #onMalformedInput </code>malformed action<code>} of this $coder$
+     *   {@linkplain #onMalformedInput malformed action} of this $coder$
      *   is {@link CodingErrorAction#REPORT}; otherwise the malformed input
      *   will be ignored or replaced, as requested.  </p></li>
      *
-     *   <li><p> An {@link CoderResult#unmappableForLength
-     *   </code>unmappable-character<code>} result indicates that an
+     *   <li><p> An {@linkplain CoderResult#unmappableForLength
+     *   unmappable-character} result indicates that an
      *   unmappable-character error has been detected.  The $itype$s that
      *   $code$ the unmappable character begin at the input buffer's (possibly
      *   incremented) position; the number of such $itype$s may be determined
      *   by invoking the result object's {@link CoderResult#length() length}
-     *   method.  This case applies only if the {@link #onUnmappableCharacter
-     *   </code>unmappable action<code>} of this $coder$ is {@link
+     *   method.  This case applies only if the {@linkplain #onUnmappableCharacter
+     *   unmappable action} of this $coder$ is {@link
      *   CodingErrorAction#REPORT}; otherwise the unmappable character will be
      *   ignored or replaced, as requested.  </p></li>
      *

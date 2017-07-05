@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.tools.nasgen;
 
+import static jdk.internal.org.objectweb.asm.Opcodes.ACC_FINAL;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.ACC_SUPER;
 import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
@@ -80,7 +81,7 @@ public class ConstructorGenerator extends ClassGenerator {
     byte[] getClassBytes() {
         // new class extensing from ScriptObject
         final String superClass = (constructor != null)? SCRIPTFUNCTIONIMPL_TYPE : SCRIPTOBJECT_TYPE;
-        cw.visit(V1_7, ACC_PUBLIC | ACC_SUPER, className, null, superClass, null);
+        cw.visit(V1_7, ACC_FINAL, className, null, superClass, null);
         if (memberCount > 0) {
             // add fields
             emitFields();

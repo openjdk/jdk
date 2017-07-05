@@ -44,17 +44,25 @@ function checkClass(name) {
 
 // Not exhaustive - but a representative list of classes
 checkClass("jdk.nashorn.internal.codegen.Compiler");
-checkClass("jdk.nashorn.internal.codegen.objects.MapCreator");
 checkClass("jdk.nashorn.internal.codegen.types.Type");
 checkClass("jdk.nashorn.internal.ir.Node");
 checkClass("jdk.nashorn.internal.ir.FunctionNode");
 checkClass("jdk.nashorn.internal.ir.debug.JSONWriter");
 checkClass("jdk.nashorn.internal.ir.visitor.NodeVisitor");
+checkClass("jdk.nashorn.internal.lookup.MethodHandleFactory");
+checkClass("jdk.nashorn.internal.objects.Global");
 checkClass("jdk.nashorn.internal.parser.AbstractParser");
 checkClass("jdk.nashorn.internal.parser.Parser");
 checkClass("jdk.nashorn.internal.parser.JSONParser");
 checkClass("jdk.nashorn.internal.parser.Lexer");
 checkClass("jdk.nashorn.internal.parser.Scanner");
+checkClass("jdk.nashorn.internal.runtime.Context");
+checkClass("jdk.nashorn.internal.runtime.arrays.ArrayData");
+checkClass("jdk.nashorn.internal.runtime.linker.Bootstrap");
+checkClass("jdk.nashorn.internal.runtime.options.Option");
+checkClass("jdk.nashorn.internal.runtime.regexp.RegExp");
+checkClass("jdk.nashorn.internal.scripts.JO");
+checkClass("jdk.nashorn.tools.Shell");
 checkClass("jdk.internal.dynalink.CallSiteDescriptor");
 checkClass("jdk.internal.dynalink.beans.StaticClass");
 checkClass("jdk.internal.dynalink.linker.LinkRequest");

@@ -105,6 +105,18 @@ public final class Label {
         Stack copy() {
             return new Stack(data, sp);
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder builder = new StringBuilder("[");
+            for (int i = 0; i < sp; i++) {
+                builder.append(data[i]);
+                if (i < sp - 1) {
+                    builder.append(", ");
+                }
+            }
+            return builder.append("]").toString();
+        }
     }
 
     /** Name of this label */

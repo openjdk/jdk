@@ -118,7 +118,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * </pre></blockquote>
  * For example, TimeZone.getTimeZone("GMT-8").getID() returns "GMT-08:00".
  *
- * <h4>Three-letter time zone IDs</h4>
+ * <h3>Three-letter time zone IDs</h3>
  *
  * For compatibility with JDK 1.1.x, some other three-letter time zone IDs
  * (such as "PST", "CTT", "AST") are also supported. However, <strong>their
@@ -304,10 +304,10 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * presentation to the user in the default locale.
      *
      * <p>This method is equivalent to:
-     * <pre><blockquote>
+     * <blockquote><pre>
      * getDisplayName(false, {@link #LONG},
      *                Locale.getDefault({@link Locale.Category#DISPLAY}))
-     * </blockquote></pre>
+     * </pre></blockquote>
      *
      * @return the human-readable name of this time zone in the default locale.
      * @since 1.2
@@ -325,9 +325,9 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * presentation to the user in the specified {@code locale}.
      *
      * <p>This method is equivalent to:
-     * <pre><blockquote>
+     * <blockquote><pre>
      * getDisplayName(false, {@link #LONG}, locale)
-     * </blockquote></pre>
+     * </pre></blockquote>
      *
      * @param locale the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
@@ -347,10 +347,10 @@ abstract public class TimeZone implements Serializable, Cloneable {
      * Time). Otherwise, a Standard Time name is returned.
      *
      * <p>This method is equivalent to:
-     * <pre><blockquote>
+     * <blockquote><pre>
      * getDisplayName(daylight, style,
      *                Locale.getDefault({@link Locale.Category#DISPLAY}))
-     * </blockquote></pre>
+     * </pre></blockquote>
      *
      * @param daylight {@code true} specifying a Daylight Saving Time name, or
      *                 {@code false} specifying a Standard Time name
