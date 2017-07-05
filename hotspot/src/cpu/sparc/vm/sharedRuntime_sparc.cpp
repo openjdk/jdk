@@ -3036,6 +3036,7 @@ void SharedRuntime::generate_deopt_blob() {
 
     __ mov((int32_t)Deoptimization::Unpack_reexecute, L0deopt_mode);
     __ mov(G2_thread, O0);
+    __ mov(L0deopt_mode, O2);
     __ call(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
     __ delayed()->nop();
     oop_maps->add_gc_map( __ offset()-start, map->deep_copy());
@@ -3121,6 +3122,7 @@ void SharedRuntime::generate_deopt_blob() {
   // do the call by hand so we can get the oopmap
 
   __ mov(G2_thread, L7_thread_cache);
+  __ mov(L0deopt_mode, O1);
   __ call(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info), relocInfo::runtime_call_type);
   __ delayed()->mov(G2_thread, O0);
 
@@ -3146,6 +3148,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   RegisterSaver::restore_result_registers(masm);
 
+  __ ld(O2UnrollBlock, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes(), G4deopt_mode);
   Label noException;
   __ cmp_and_br_short(G4deopt_mode, Deoptimization::Unpack_exception, Assembler::notEqual, Assembler::pt, noException);
 
@@ -3269,7 +3272,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ save_frame(0);
   __ set_last_Java_frame(SP, noreg);
   __ mov(I0, O2klass_index);
-  __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap), G2_thread, O2klass_index);
+  __ mov(Deoptimization::Unpack_uncommon_trap, O3); // exec mode
+  __ call_VM_leaf(L7_thread_cache, CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap), G2_thread, O2klass_index, O3);
   __ reset_last_Java_frame();
   __ mov(O0, O2UnrollBlock->after_save());
   __ restore();
@@ -3277,6 +3281,15 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // deallocate the deoptimized frame taking care to preserve the return values
   __ mov(O2UnrollBlock, O2UnrollBlock->after_save());
   __ restore();
+
+#ifdef ASSERT
+  { Label L;
+    __ ld(O2UnrollBlock, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes(), O1);
+    __ cmp_and_br_short(O1, Deoptimization::Unpack_uncommon_trap, Assembler::equal, Assembler::pt, L);
+    __ stop("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
+    __ bind(L);
+  }
+#endif
 
   // Allocate new interpreter frame(s) and possible c2i adapter frame
 

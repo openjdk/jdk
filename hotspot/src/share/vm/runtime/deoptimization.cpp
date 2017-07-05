@@ -68,7 +68,8 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
                                          int  number_of_frames,
                                          intptr_t* frame_sizes,
                                          address* frame_pcs,
-                                         BasicType return_type) {
+                                         BasicType return_type,
+                                         int exec_mode) {
   _size_of_deoptimized_frame = size_of_deoptimized_frame;
   _caller_adjustment         = caller_adjustment;
   _caller_actual_parameters  = caller_actual_parameters;
@@ -80,10 +81,11 @@ Deoptimization::UnrollBlock::UnrollBlock(int  size_of_deoptimized_frame,
   _initial_info              = 0;
   // PD (x86 only)
   _counter_temp              = 0;
-  _unpack_kind               = 0;
+  _unpack_kind               = exec_mode;
   _sender_sp_temp            = 0;
 
   _total_frame_sizes         = size_of_frames();
+  assert(exec_mode >= 0 && exec_mode < Unpack_LIMIT, "Unexpected exec_mode");
 }
 
 
@@ -128,7 +130,7 @@ void Deoptimization::UnrollBlock::print() {
 // ResetNoHandleMark and HandleMark were removed from it. The actual reallocation
 // of previously eliminated objects occurs in realloc_objects, which is
 // called from the method fetch_unroll_info_helper below.
-JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(JavaThread* thread))
+JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(JavaThread* thread, int exec_mode))
   // It is actually ok to allocate handles in a leaf method. It causes no safepoints,
   // but makes the entry a little slower. There is however a little dance we have to
   // do in debug mode to get around the NoHandleMark code in the JRT_LEAF macro
@@ -142,12 +144,12 @@ JRT_BLOCK_ENTRY(Deoptimization::UnrollBlock*, Deoptimization::fetch_unroll_info(
   }
   thread->inc_in_deopt_handler();
 
-  return fetch_unroll_info_helper(thread);
+  return fetch_unroll_info_helper(thread, exec_mode);
 JRT_END
 
 
 // This is factored, since it is both called from a JRT_LEAF (deoptimization) and a JRT_ENTRY (uncommon_trap)
-Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread* thread) {
+Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread* thread, int exec_mode) {
 
   // Note: there is a safepoint safety issue here. No matter whether we enter
   // via vanilla deopt or uncommon trap we MUST NOT stop at a safepoint once
@@ -185,6 +187,19 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   }
   assert(vf->is_compiled_frame(), "Wrong frame type");
   chunk->push(compiledVFrame::cast(vf));
+
+  ScopeDesc* trap_scope = chunk->at(0)->scope();
+  Handle exceptionObject;
+  if (trap_scope->rethrow_exception()) {
+    if (PrintDeoptimizationDetails) {
+      tty->print_cr("Exception to be rethrown in the interpreter for method %s::%s at bci %d", trap_scope->method()->method_holder()->name()->as_C_string(), trap_scope->method()->name()->as_C_string(), trap_scope->bci());
+    }
+    GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
+    guarantee(expressions != NULL && expressions->length() > 0, "must have exception to throw");
+    ScopeValue* topOfStack = expressions->top();
+    exceptionObject = StackValue::create_stack_value(&deoptee, &map, topOfStack)->get_obj();
+    assert(exceptionObject() != NULL, "exception oop can not be null");
+  }
 
   bool realloc_failures = false;
 
@@ -474,13 +489,21 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   assert(CodeCache::find_blob_unsafe(frame_pcs[0]) != NULL, "bad pc");
 #endif // SHARK
 
+#ifdef INCLUDE_JVMCI
+  if (exceptionObject() != NULL) {
+    thread->set_exception_oop(exceptionObject());
+    exec_mode = Unpack_exception;
+  }
+#endif
+
   UnrollBlock* info = new UnrollBlock(array->frame_size() * BytesPerWord,
                                       caller_adjustment * BytesPerWord,
                                       caller_was_method_handle ? 0 : callee_parameters,
                                       number_of_frames,
                                       frame_sizes,
                                       frame_pcs,
-                                      return_type);
+                                      return_type,
+                                      exec_mode);
   // On some platforms, we need a way to pass some platform dependent
   // information to the unpacking code so the skeletal frames come out
   // correct (initial fp value, unextended sp, ...)
@@ -1495,18 +1518,6 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
 #endif
 
     Bytecodes::Code trap_bc     = trap_method->java_code_at(trap_bci);
-
-    if (trap_scope->rethrow_exception()) {
-      if (PrintDeoptimizationDetails) {
-        tty->print_cr("Exception to be rethrown in the interpreter for method %s::%s at bci %d", trap_method->method_holder()->name()->as_C_string(), trap_method->name()->as_C_string(), trap_bci);
-      }
-      GrowableArray<ScopeValue*>* expressions = trap_scope->expressions();
-      guarantee(expressions != NULL, "must have exception to throw");
-      ScopeValue* topOfStack = expressions->top();
-      Handle topOfStackObj = StackValue::create_stack_value(&fr, &reg_map, topOfStack)->get_obj();
-      THREAD->set_pending_exception(topOfStackObj(), NULL, 0);
-    }
-
     // Record this event in the histogram.
     gather_statistics(reason, action, trap_bc);
 
@@ -1985,7 +1996,7 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
                            ignore_maybe_prior_recompile);
 }
 
-Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, jint trap_request) {
+Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, jint trap_request, jint exec_mode) {
   if (TraceDeoptimization) {
     tty->print("Uncommon trap ");
   }
@@ -1994,7 +2005,7 @@ Deoptimization::UnrollBlock* Deoptimization::uncommon_trap(JavaThread* thread, j
     // This enters VM and may safepoint
     uncommon_trap_inner(thread, trap_request);
   }
-  return fetch_unroll_info_helper(thread);
+  return fetch_unroll_info_helper(thread, exec_mode);
 }
 
 // Local derived constants.

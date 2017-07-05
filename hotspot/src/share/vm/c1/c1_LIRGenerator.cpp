@@ -1464,10 +1464,10 @@ void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr p
                                                      bool do_load, bool patch, CodeEmitInfo* info) {
   // First we test whether marking is in progress.
   BasicType flag_type;
-  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
     flag_type = T_INT;
   } else {
-    guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1,
+    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
               "Assumption");
     // Use unsigned type T_BOOLEAN here rather than signed T_BYTE since some platforms, eg. ARM,
     // need to use unsigned instructions to use the large offset to load the satb_mark_queue.
@@ -1477,7 +1477,7 @@ void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr p
   LIR_Address* mark_active_flag_addr =
     new LIR_Address(thrd,
                     in_bytes(JavaThread::satb_mark_queue_offset() +
-                             PtrQueue::byte_offset_of_active()),
+                             SATBMarkQueue::byte_offset_of_active()),
                     flag_type);
   // Read the marking-in-progress flag.
   LIR_Opr flag_val = new_register(T_INT);
@@ -1761,7 +1761,7 @@ void LIRGenerator::do_StoreField(StoreField* x) {
     post_barrier(object.result(), value.result());
   }
 
-  if (is_volatile && os::is_MP()) {
+  if (!support_IRIW_for_not_multiple_copy_atomic_cpu && is_volatile && os::is_MP()) {
     __ membar();
   }
 }
@@ -1820,6 +1820,10 @@ void LIRGenerator::do_LoadField(LoadField* x) {
     address = new LIR_Address(object.result(), PATCHED_ADDR, field_type);
   } else {
     address = generate_address(object.result(), x->offset(), field_type);
+  }
+
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu && is_volatile && os::is_MP()) {
+    __ membar();
   }
 
   bool needs_atomic_access = is_volatile || AlwaysAtomicAccesses;
@@ -2238,6 +2242,10 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
 
   LIR_Opr value = rlock_result(x, x->basic_type());
 
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu && x->is_volatile() && os::is_MP()) {
+    __ membar();
+  }
+
   get_Object_unsafe(value, src.result(), off.result(), type, x->is_volatile());
 
 #if INCLUDE_ALL_GCS
@@ -2395,7 +2403,7 @@ void LIRGenerator::do_UnsafePutObject(UnsafePutObject* x) {
 
   if (x->is_volatile() && os::is_MP()) __ membar_release();
   put_Object_unsafe(src.result(), off.result(), data.result(), type, x->is_volatile());
-  if (x->is_volatile() && os::is_MP()) __ membar();
+  if (!support_IRIW_for_not_multiple_copy_atomic_cpu && x->is_volatile() && os::is_MP()) __ membar();
 }
 
 
@@ -2794,7 +2802,7 @@ void LIRGenerator::do_Base(Base* x) {
     assert(obj->is_valid(), "must be valid");
 
     if (method()->is_synchronized() && GenerateSynchronizationCode) {
-      LIR_Opr lock = new_register(T_INT);
+      LIR_Opr lock = syncLockOpr();
       __ load_stack_address_monitor(0, lock);
 
       CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL, x->check_flag(Instruction::DeoptimizeOnException));
@@ -3421,14 +3429,18 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   __ add(result, LIR_OprFact::intConst(InvocationCounter::count_increment), result);
   __ store(result, counter);
   if (notify) {
-    LIR_Opr mask = load_immediate(frequency << InvocationCounter::count_shift, T_INT);
-    LIR_Opr meth = new_register(T_METADATA);
-    __ metadata2reg(method->constant_encoding(), meth);
-    __ logical_and(result, mask, result);
-    __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
+    LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
     // The bci for info can point to cmp for if's we want the if bci
     CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
-    __ branch(lir_cond_equal, T_INT, overflow);
+    int freq = frequency << InvocationCounter::count_shift;
+    if (freq == 0) {
+      __ branch(lir_cond_always, T_ILLEGAL, overflow);
+    } else {
+      LIR_Opr mask = load_immediate(freq, T_INT);
+      __ logical_and(result, mask, result);
+      __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
+      __ branch(lir_cond_equal, T_INT, overflow);
+    }
     __ branch_destination(overflow->continuation());
   }
 }

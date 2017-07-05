@@ -49,7 +49,7 @@ LogTagSet::LogTagSet(LogTagType t0, LogTagType t1, LogTagType t2, LogTagType t3,
   _output_list.set_output_level(LogOutput::Stderr, LogLevel::Default);
 }
 
-bool LogTagSet::is_level(LogLevelType level) {
+bool LogTagSet::is_level(LogLevelType level) const {
   return _output_list.is_level(level);
 }
 
@@ -77,11 +77,11 @@ void LogTagSet::log(LogLevelType level, const char* msg) {
   }
 }
 
-int LogTagSet::label(char* buf, size_t len)  {
+int LogTagSet::label(char* buf, size_t len, const char* separator) const {
   int tot_written = 0;
   for (size_t i = 0; i < _ntags; i++) {
     int written = jio_snprintf(buf + tot_written, len - tot_written, "%s%s",
-                               (i == 0 ? "" : ","),
+                               (i == 0 ? "" : separator),
                                LogTag::name(_tag[i]));
     if (written < 0) {
       return -1;

@@ -41,7 +41,6 @@ import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicToolBarUI;
-import sun.swing.plaf.synth.SynthIcon;
 
 /**
  * Provides the Synth L&amp;F UI delegate for
@@ -281,10 +280,10 @@ public class SynthToolBarUI extends BasicToolBarUI
         if (handleIcon != null && toolBar.isFloatable()) {
             int startX = toolBar.getComponentOrientation().isLeftToRight() ?
                 0 : toolBar.getWidth() -
-                    SynthIcon.getIconWidth(handleIcon, context);
-            SynthIcon.paintIcon(handleIcon, context, g, startX, 0,
-                    SynthIcon.getIconWidth(handleIcon, context),
-                    SynthIcon.getIconHeight(handleIcon, context));
+                    SynthGraphicsUtils.getIconWidth(handleIcon, context);
+            SynthGraphicsUtils.paintIcon(handleIcon, context, g, startX, 0,
+                    SynthGraphicsUtils.getIconWidth(handleIcon, context),
+                    SynthGraphicsUtils.getIconHeight(handleIcon, context));
         }
 
         SynthContext subcontext = getContext(
@@ -358,7 +357,7 @@ public class SynthToolBarUI extends BasicToolBarUI
 
             if (tb.getOrientation() == JToolBar.HORIZONTAL) {
                 dim.width = tb.isFloatable() ?
-                    SynthIcon.getIconWidth(handleIcon, context) : 0;
+                    SynthGraphicsUtils.getIconWidth(handleIcon, context) : 0;
                 Dimension compDim;
                 for (int i = 0; i < tb.getComponentCount(); i++) {
                     Component component = tb.getComponent(i);
@@ -370,7 +369,7 @@ public class SynthToolBarUI extends BasicToolBarUI
                 }
             } else {
                 dim.height = tb.isFloatable() ?
-                    SynthIcon.getIconHeight(handleIcon, context) : 0;
+                    SynthGraphicsUtils.getIconHeight(handleIcon, context) : 0;
                 Dimension compDim;
                 for (int i = 0; i < tb.getComponentCount(); i++) {
                     Component component = tb.getComponent(i);
@@ -396,7 +395,7 @@ public class SynthToolBarUI extends BasicToolBarUI
 
             if (tb.getOrientation() == JToolBar.HORIZONTAL) {
                 dim.width = tb.isFloatable() ?
-                    SynthIcon.getIconWidth(handleIcon, context) : 0;
+                    SynthGraphicsUtils.getIconWidth(handleIcon, context) : 0;
                 Dimension compDim;
                 for (int i = 0; i < tb.getComponentCount(); i++) {
                     Component component = tb.getComponent(i);
@@ -408,7 +407,7 @@ public class SynthToolBarUI extends BasicToolBarUI
                 }
             } else {
                 dim.height = tb.isFloatable() ?
-                    SynthIcon.getIconHeight(handleIcon, context) : 0;
+                    SynthGraphicsUtils.getIconHeight(handleIcon, context) : 0;
                 Dimension compDim;
                 for (int i = 0; i < tb.getComponentCount(); i++) {
                     Component component = tb.getComponent(i);
@@ -449,7 +448,7 @@ public class SynthToolBarUI extends BasicToolBarUI
 
             if (tb.getOrientation() == JToolBar.HORIZONTAL) {
                 int handleWidth = tb.isFloatable() ?
-                    SynthIcon.getIconWidth(handleIcon, context) : 0;
+                    SynthGraphicsUtils.getIconWidth(handleIcon, context) : 0;
 
                 // Note: contentRect does not take insets into account
                 // since it is used for determining the bounds that are
@@ -500,7 +499,7 @@ public class SynthToolBarUI extends BasicToolBarUI
                 }
             } else {
                 int handleHeight = tb.isFloatable() ?
-                    SynthIcon.getIconHeight(handleIcon, context) : 0;
+                    SynthGraphicsUtils.getIconHeight(handleIcon, context) : 0;
 
                 // See notes above regarding the use of insets
                 contentRect.x = 0;

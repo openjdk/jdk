@@ -28,9 +28,14 @@
  * @author Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
+import java.util.Random;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.AbstractQueuedLongSynchronizer;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
 /**
  * This uses a variant of the standard Mutex demo, except with a
@@ -86,7 +91,7 @@ public class FlakyMutex implements Lock {
                 } catch (Throwable t) { unexpected(t); }}});}
         barrier.await();
         es.shutdown();
-        check(es.awaitTermination(30, TimeUnit.SECONDS));
+        check(es.awaitTermination(30L, TimeUnit.SECONDS));
     }
 
     private static class FlakySync extends AbstractQueuedLongSynchronizer {

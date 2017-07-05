@@ -185,7 +185,7 @@ package java.util.concurrent;
  *   }
  * }}</pre>
  *
- * As a further improvement, notice that the left task need not even exist.
+ * As a further optimization, notice that the left task need not even exist.
  * Instead of creating a new one, we can iterate using the original task,
  * and add a pending count for each fork.  Additionally, because no task
  * in this tree implements an {@link #onCompletion(CountedCompleter)} method,
@@ -208,7 +208,7 @@ package java.util.concurrent;
  *   }
  * }}</pre>
  *
- * Additional improvements of such classes might entail precomputing
+ * Additional optimizations of such classes might entail precomputing
  * pending counts so that they can be established in constructors,
  * specializing classes for leaf steps, subdividing by say, four,
  * instead of two per iteration, and using an adaptive threshold
@@ -260,9 +260,9 @@ package java.util.concurrent;
  * }}</pre>
  *
  * In this example, as well as others in which tasks have no other
- * effects except to compareAndSet a common result, the trailing
- * unconditional invocation of {@code tryComplete} could be made
- * conditional ({@code if (result.get() == null) tryComplete();})
+ * effects except to {@code compareAndSet} a common result, the
+ * trailing unconditional invocation of {@code tryComplete} could be
+ * made conditional ({@code if (result.get() == null) tryComplete();})
  * because no further bookkeeping is required to manage completions
  * once the root task completes.
  *
@@ -624,7 +624,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      * any one (versus all) of several subtask results are obtained.
      * However, in the common (and recommended) case in which {@code
      * setRawResult} is not overridden, this effect can be obtained
-     * more simply using {@code quietlyCompleteRoot();}.
+     * more simply using {@link #quietlyCompleteRoot()}.
      *
      * @param rawResult the raw result
      */
@@ -639,9 +639,9 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
 
     /**
      * If this task's pending count is zero, returns this task;
-     * otherwise decrements its pending count and returns {@code
-     * null}. This method is designed to be used with {@link
-     * #nextComplete} in completion traversal loops.
+     * otherwise decrements its pending count and returns {@code null}.
+     * This method is designed to be used with {@link #nextComplete} in
+     * completion traversal loops.
      *
      * @return this task, if pending count was zero, else {@code null}
      */

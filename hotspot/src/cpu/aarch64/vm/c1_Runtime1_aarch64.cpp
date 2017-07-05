@@ -1169,12 +1169,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register tmp = rscratch1;
 
         Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                             PtrQueue::byte_offset_of_active()));
+                                             SATBMarkQueue::byte_offset_of_active()));
 
         Address queue_index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                             PtrQueue::byte_offset_of_index()));
+                                             SATBMarkQueue::byte_offset_of_index()));
         Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                        PtrQueue::byte_offset_of_buf()));
+                                        SATBMarkQueue::byte_offset_of_buf()));
 
         Label done;
         Label runtime;
@@ -1219,9 +1219,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register thread = rthread;
 
         Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                             PtrQueue::byte_offset_of_index()));
+                                             DirtyCardQueue::byte_offset_of_index()));
         Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                        PtrQueue::byte_offset_of_buf()));
+                                        DirtyCardQueue::byte_offset_of_buf()));
 
         const Register card_addr = rscratch2;
         ExternalAddress cardtable((address) ct->byte_map_base);

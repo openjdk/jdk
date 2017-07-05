@@ -28,7 +28,9 @@
  * @author Martin Buchholz
  */
 
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ModifyCorePoolSize {
     static void awaitPoolSize(ThreadPoolExecutor pool, int n) {

@@ -1693,7 +1693,7 @@ void ClassFileParser::parse_annotations(u1* buffer, int limit,
     if (id == AnnotationCollector::_unknown)  continue;
     coll->set_annotation(id);
 
-    if (id == AnnotationCollector::_sun_misc_Contended) {
+    if (id == AnnotationCollector::_jdk_internal_vm_annotation_Contended) {
       // @Contended can optionally specify the contention group.
       //
       // Contended group defines the equivalence class over the fields:
@@ -1767,10 +1767,10 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
     if (_location != _in_field)   break;  // only allow for fields
     if (!privileged)              break;  // only allow in privileged code
     return _field_Stable;
-  case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_misc_Contended_signature):
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Contended_signature):
     if (_location != _in_field && _location != _in_class)          break;  // only allow for fields and classes
     if (!EnableContended || (RestrictContended && !privileged))    break;  // honor privileges
-    return _sun_misc_Contended;
+    return _jdk_internal_vm_annotation_Contended;
   default: break;
   }
   return AnnotationCollector::_unknown;

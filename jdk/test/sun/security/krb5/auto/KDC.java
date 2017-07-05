@@ -1280,7 +1280,11 @@ public class KDC {
                         System.out.println(">>>>> TCP connection established");
                         DataInputStream in = new DataInputStream(socket.getInputStream());
                         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                        byte[] token = new byte[in.readInt()];
+                        int len = in.readInt();
+                        if (len > 65535) {
+                            throw new Exception("Huge request not supported");
+                        }
+                        byte[] token = new byte[len];
                         in.readFully(token);
                         q.put(new Job(processMessage(token), socket, out));
                     } catch (Exception e) {
