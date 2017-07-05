@@ -208,7 +208,7 @@ ifeq ($(PLATFORM), linux)
                         $(wildcard /usr/include/X11/extensions))
 endif
 
-ifeq ($(PLATFORM), macosx))
+ifeq ($(PLATFORM), macosx)
   CPPFLAGS += -I$(OPENWIN_HOME)/include/X11/extensions \
               -I$(OPENWIN_HOME)/include 
 endif

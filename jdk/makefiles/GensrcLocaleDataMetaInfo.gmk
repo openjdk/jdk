@@ -1,0 +1,93 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Scan for all locale resources and extract for which locales there exists
+# resources. Then put this meta information about exiting (supported?) locales
+# into LocaleDataMetaInfo.java
+
+# First go look for all locale files
+LOCALE_FILES:=$(shell $(FIND) $(JDK_TOPDIR)/src/share/classes \
+	-name "FormatData_*.java" -o -name "FormatData_*.properties" -o \
+	-name "CollationData_*.java" -o -name "CollationData_*.properties" -o \
+	-name "TimeZoneNames_*.java" -o -name "TimeZoneNames_*.properties" -o \
+	-name "LocaleNames_*.java" -o -name "LocaleNames_*.properties" -o \
+	-name "CurrencyNames_*.java" -o -name "CurrencyNames_*.properties" -o \
+	-name "CalendarData_*.java" -o -name "CalendarData_*.properties")
+
+# Then translate the locale files into for example: FormatData_sv 
+LOCALE_RESOURCES:=$(sort $(subst .properties,,$(subst .java,,$(notdir $(LOCALE_FILES)))))
+
+# Include the list of resources found during the previous compile.
+-include $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/_the.locale_resources
+
+MISSING_RESOURCES:=$(filter-out $(LOCALE_RESOURCES),$(PREV_LOCALE_RESOURCES))
+NEW_RESOURCES:=$(filter-out $(PREV_LOCALE_RESOURCES),$(LOCALE_RESOURCES))
+
+ifneq (,$(MISSING_RESOURCES)$(NEW_RESOURCES))
+    # There is a difference in the number of supported resources. Trigger a regeneration.
+    $(shell $(RM) $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java)
+endif
+
+# The non-euro zone locales have to be separated from the euro-zone locales.
+NON_EURO_LOCALES:=ar% hi% iw% ja% ko% th% vi% zh%
+
+# This macro creates a sed expression that substitues for example:
+# #FormatData_EuroLocales# with: be be_BY bg bg_BG ca ca_ES... and some more.
+CAPTURE_LOCALE='s/$$(HASH)$1_$2EuroLocales$$(HASH)/ $$($3 $(NON_EURO_LOCALES),$$(filter-out $1,$$(subst $1_,,$$(filter $1_%,$(LOCALE_RESOURCES)))))/g'
+
+SED_ARGS:=-e 's|$(HASH)warn This file is preprocessed before being compiled|// -- This file was mechanically generated: Do not edit! -- //|g'
+#sun.text.resources.FormatData
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,FormatData,,filter-out))
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,FormatData,Non,filter))
+
+#sun.text.resources.CollationData
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CollationData,,filter-out))
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CollationData,Non,filter))
+
+#sun.util.resources.TimeZoneNames
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,TimeZoneNames,,filter-out))
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,TimeZoneNames,Non,filter))
+
+#sun.util.resources.LocaleNames
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,LocaleNames,,filter-out))
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,LocaleNames,Non,filter))
+
+#sun.util.resources.CurrencyNames
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CurrencyNames,,filter-out))
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CurrencyNames,Non,filter))
+
+#sun.util.resources.CalendarData
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CalendarData,,filter-out))
+$(eval SED_ARGS+=-e $(call CAPTURE_LOCALE,CalendarData,Non,filter))
+
+$(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java: \
+		$(JDK_TOPDIR)/src/share/classes/sun/util/LocaleDataMetaInfo-XLocales.java.template
+	mkdir -p $(@D)
+	$(ECHO) Creating sun/util/LocaleDataMetaInfo.java from $(words $(LOCALE_RESOURCES)) found resources.
+	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" > $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/_the.locale_resources
+	$(SED) $(SED_ARGS) $(JDK_TOPDIR)/src/share/classes/sun/util/LocaleDataMetaInfo-XLocales.java.template \
+		> $(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java
+
+GENSRC_LOCALEDATAMETAINFO:=$(JDK_OUTPUTDIR)/gensrc_localedatametainfo/sun/util/LocaleDataMetaInfo.java

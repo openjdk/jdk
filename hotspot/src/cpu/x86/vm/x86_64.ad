@@ -3369,15 +3369,6 @@ operand immP0()
   interface(CONST_INTER);
 %}
 
-operand immP_poll() %{
-  predicate(n->get_ptr() != 0 && n->get_ptr() == (intptr_t)os::get_polling_page());
-  match(ConP);
-
-  // formats are generated automatically for constants and base registers
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Pointer Immediate
 operand immN() %{
   match(ConN);
@@ -5724,16 +5715,6 @@ instruct loadConP0(rRegP dst, immP0 src, rFlagsReg cr)
   opcode(0x33); /* + rd */
   ins_encode(REX_reg_reg(dst, dst), OpcP, reg_reg(dst, dst));
   ins_pipe(ialu_reg);
-%}
-
-instruct loadConP_poll(rRegP dst, immP_poll src) %{
-  match(Set dst src);
-  format %{ "movq    $dst, $src\t!ptr" %}
-  ins_encode %{
-    AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_type);
-    __ lea($dst$$Register, polling_page);
-  %}
-  ins_pipe(ialu_reg_fat);
 %}
 
 instruct loadConP31(rRegP dst, immP31 src, rFlagsReg cr)

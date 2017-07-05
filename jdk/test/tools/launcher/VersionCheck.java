@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,58 +24,76 @@
 /**
  * @test
  * @bug 6545058 6611182
- * @summary validate and test -version, -fullversion, and internal
+ * @summary validate and test -version, -fullversion, and internal, as well as
+ *          sanity checks if a tool can be launched.
  * @compile VersionCheck.java
  * @run main VersionCheck
  */
 
-import java.lang.*;
 import java.io.File;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.FileFilter;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.StringTokenizer;
 
-public class VersionCheck {
+public class VersionCheck extends TestHelper {
 
-    private static String javaBin;
+    // tools that do not accept -J-option
+    static final String[] BLACKLIST_JOPTION = {
+        "controlpanel",
+        "java-rmi",
+        "java-rmi.cgi",
+        "java",
+        "javaw",
+        "javaws",
+        "jcontrol",
+        "jvisualvm",
+        "packager",
+        "unpack200",
+        "wsimport"
+    };
 
-    // A known set of programs we know for sure will behave correctly.
-    private static String[] programs = new String[]{
+    // tools that do not accept -version
+    static final String[] BLACKLIST_VERSION = {
         "appletviewer",
+        "controlpanel",
         "extcheck",
-        "idlj",
         "jar",
         "jarsigner",
-        "javac",
+        "java-rmi",
+        "java-rmi.cgi",
         "javadoc",
-        "javah",
-        "javap",
+        "javaws",
+        "jcmd",
         "jconsole",
-        "jdb",
-        "jhat",
+        "jcontrol",
         "jinfo",
         "jmap",
         "jps",
+        "jrunscript",
+        "jsadebugd",
         "jstack",
         "jstat",
         "jstatd",
+        "jvisualvm",
         "keytool",
+        "kinit",
+        "klist",
+        "ktab",
         "native2ascii",
         "orbd",
         "pack200",
+        "packager",
         "policytool",
         "rmic",
         "rmid",
         "rmiregistry",
-        "schemagen",
+        "schemagen", // returns error code 127
         "serialver",
         "servertool",
         "tnameserv",
+        "unpack200",
         "wsgen",
         "wsimport",
         "xjc"
@@ -85,53 +103,11 @@ public class VersionCheck {
     static String refVersion;
     static String refFullVersion;
 
-    private static List<String> getProcessStreamAsList(boolean javaDebug,
-                                                       String... argv) {
-        List<String> out = new ArrayList<String>();
-        List<String> javaCmds = new ArrayList<String>();
-
-        String prog = javaBin + File.separator + argv[0];
-        if (System.getProperty("os.name").startsWith("Windows")) {
-            prog = prog.concat(".exe");
-        }
-        javaCmds.add(prog);
-        for (int i = 1; i < argv.length; i++) {
-            javaCmds.add(argv[i]);
-        }
-
-        ProcessBuilder pb = new ProcessBuilder(javaCmds);
-        Map<String, String> env = pb.environment();
-        if (javaDebug) {
-            env.put("_JAVA_LAUNCHER_DEBUG", "true");
-        }
-        try {
-            Process p = pb.start();
-            BufferedReader r = (javaDebug) ?
-                new BufferedReader(new InputStreamReader(p.getInputStream())) :
-                new BufferedReader(new InputStreamReader(p.getErrorStream())) ;
-
-            String s = r.readLine();
-            while (s != null) {
-                out.add(s.trim());
-                s = r.readLine();
-            }
-            p.waitFor();
-            p.destroy();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new RuntimeException(ex.getMessage());
-        }
-        return out;
-    }
-
     static String getVersion(String... argv) {
-        List<String> alist = getProcessStreamAsList(false, argv);
-        if (alist.size() == 0) {
-            throw new AssertionError("unexpected process returned null");
-        }
+        TestHelper.TestResult tr = doExec(argv);
         StringBuilder out = new StringBuilder();
         // remove the HotSpot line
-        for (String x : alist) {
+        for (String x : tr.testOutput) {
             if (!x.matches(".*Client.*VM.*|.*Server.*VM.*")) {
                 out = out.append(x + "\n");
             }
@@ -139,9 +115,28 @@ public class VersionCheck {
         return out.toString();
     }
 
-    static boolean compareVersionStrings() {
+    /*
+     * this tests if the tool can take a version string and returns
+     * a 0 exit code, it is not possible to validate the contents
+     * of the -version output as they are inconsistent.
+     */
+    static boolean testToolVersion() {
+        TestResult tr = null;
+        TestHelper.testExitValue = 0;
+        for (File f : new File(JAVA_BIN).listFiles(new ToolFilter(BLACKLIST_VERSION))) {
+            String x = f.getAbsolutePath();
+            System.out.println("Testing (-version): " + x);
+            tr = doExec(x, "-version");
+            tr.checkPositive();
+        }
+        return TestHelper.testExitValue == 0;
+    }
+
+    static boolean compareJVersionStrings() {
         int failcount = 0;
-        for (String x : programs) {
+        for (File f : new File(JAVA_BIN).listFiles(new ToolFilter(BLACKLIST_JOPTION))) {
+            String x = f.getAbsolutePath();
+            System.out.println("Testing (-J-version): " + x);
             String testStr;
 
             testStr = getVersion(x, "-J-version");
@@ -185,8 +180,14 @@ public class VersionCheck {
         String expectedDotVersion = "dotversion:" + jdkMajor + "." + jdkMinor;
         String expectedFullVersion = "fullversion:" + bStr;
 
-        List<String> alist = getProcessStreamAsList(true, "java", "-version");
-
+        Map<String, String> envMap = new HashMap<>();
+        envMap.put(TestHelper.JLDEBUG_KEY, "true");
+        TestHelper.TestResult tr = doExec(envMap, javaCmd, "-version");
+        List<String> alist = new ArrayList<>();
+        alist.addAll(tr.testOutput);
+        for (String x : tr.testOutput) {
+            alist.add(x.trim());
+        }
         if (!alist.contains(expectedDotVersion)) {
             System.out.println("Error: could not find " + expectedDotVersion);
             failcount++;
@@ -202,21 +203,46 @@ public class VersionCheck {
 
     // Initialize
     static void init() {
-        String javaHome = System.getProperty("java.home");
-        if (javaHome.endsWith("jre")) {
-            javaHome = new File(javaHome).getParent();
-        }
-        javaBin = javaHome + File.separator + "bin";
-        refVersion = getVersion("java", "-version");
-        refFullVersion = getVersion("java", "-fullversion");
+        refVersion = getVersion(javaCmd, "-version");
+        refFullVersion = getVersion(javaCmd, "-fullversion");
     }
 
     public static void main(String[] args) {
         init();
-        if (compareVersionStrings() && compareInternalStrings()) {
+        if (compareJVersionStrings() &&
+                compareInternalStrings() &&
+                testToolVersion()) {
             System.out.println("All Version string comparisons: PASS");
         } else {
             throw new AssertionError("Some tests failed");
+        }
+    }
+
+    static class ToolFilter implements FileFilter {
+        final Iterable<String> exclude ;
+        protected ToolFilter(String... exclude) {
+            List<String> tlist = new ArrayList<>();
+            this.exclude = tlist;
+            for (String x : exclude) {
+                String str = x + ((isWindows) ? EXE_FILE_EXT : "");
+                tlist.add(str.toLowerCase());
+            }
+        }
+        @Override
+        public boolean accept(File pathname) {
+            if (!pathname.isFile() || !pathname.canExecute()) {
+                return false;
+            }
+            String name = pathname.getName().toLowerCase();
+            if (isWindows && !name.endsWith(EXE_FILE_EXT)) {
+                return false;
+            }
+            for (String x : exclude) {
+                if (name.endsWith(x)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

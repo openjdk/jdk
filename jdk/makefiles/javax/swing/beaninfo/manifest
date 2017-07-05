@@ -1,0 +1,111 @@
+Name: javax/swing/JApplet.class
+Java-Bean: True
+
+Name: javax/swing/JButton.class
+Java-Bean: True
+
+Name: javax/swing/JCheckBox.class
+Java-Bean: True
+
+Name: javax/swing/JCheckBoxMenuItem.class
+Java-Bean: True
+
+Name: javax/swing/JComboBox.class
+Java-Bean: True
+
+Name: javax/swing/JDialog.class
+Java-Bean: True
+
+Name: javax/swing/JEditorPane.class
+Java-Bean: True
+
+Name: javax/swing/JFormattedTextField.class
+Java-Bean: True
+
+Name: javax/swing/JInternalFrame.class
+Java-Bean: True
+
+Name: javax/swing/JFrame.class
+Java-Bean: True
+
+Name: javax/swing/JLabel.class
+Java-Bean: True
+
+Name: javax/swing/JList.class
+Java-Bean: True
+
+Name: javax/swing/JMenu.class
+Java-Bean: True
+
+Name: javax/swing/JMenuBar.class
+Java-Bean: True
+
+Name: javax/swing/JMenuItem.class
+Java-Bean: True
+
+Name: javax/swing/JOptionPane.class
+Java-Bean: True
+
+Name: javax/swing/JPanel.class
+Java-Bean: True
+
+Name: javax/swing/JPasswordField.class
+Java-Bean: True
+
+Name: javax/swing/JPopupMenu.class
+Java-Bean: True
+
+Name: javax/swing/JProgressBar.class
+Java-Bean: True
+
+Name: javax/swing/JRadioButton.class
+Java-Bean: True
+
+Name: javax/swing/JRadioButtonMenuItem.class
+Java-Bean: True
+
+Name: javax/swing/JScrollBar.class
+Java-Bean: True
+
+Name: javax/swing/JScrollPane.class
+Java-Bean: True
+
+Name: javax/swing/JSeparator.class
+Java-Bean: True
+
+Name: javax/swing/JSlider.class
+Java-Bean: True
+
+Name: javax/swing/JSpinner.class
+Java-Bean: True
+
+Name: javax/swing/JSplitPane.class
+Java-Bean: True
+
+Name: javax/swing/JTabbedPane.class
+Java-Bean: True
+
+Name: javax/swing/JTextArea.class
+Java-Bean: True
+
+Name: javax/swing/JTextField.class
+Java-Bean: True
+
+Name: javax/swing/JTextPane.class
+Java-Bean: True
+
+Name: javax/swing/JToolBar.class
+Java-Bean: True
+
+Name: javax/swing/JTree.class
+Java-Bean: True
+
+Name: javax/swing/JTable.class
+Java-Bean: True
+
+Name: javax/swing/JToggleButton.class
+Java-Bean: True
+
+Name: javax/swing/JWindow.class
+Java-Bean: True
+ 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,21 +36,28 @@ DEFAULT_BUILD_FLAVOR=product
 JPRT_ARCHIVE_BUNDLE=$(ABS_OUTPUTDIR)/$(DEFAULT_BUILD_FLAVOR)-bundle.zip
 JPRT_ARCHIVE_INSTALL_BUNDLE=$(ABS_OUTPUTDIR)/$(DEFAULT_BUILD_FLAVOR)-install-bundle.zip
 
+ifeq ($(PLATFORM),windows)
+  ZIPFLAGS=-q
+else
+  # store symbolic links as the link
+  ZIPFLAGS=-q -y
+endif
+
 jprt_build_product:  sanity all_product_build
 	( $(CD) $(OUTPUTDIR)/$(JDK_IMAGE_DIRNAME) && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 ifdef HAVE_JPRT_SAVE_BUNDLES
 	( $(CD) $(OUTPUTDIR)/bundles && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_INSTALL_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_INSTALL_BUNDLE) . )
 endif
 
 jprt_build_fastdebug: fastdebug_build
 	( $(CD) $(OUTPUTDIR)/$(REL_JDK_FASTDEBUG_IMAGE_DIR) && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 jprt_build_debug: debug_build
 	( $(CD) $(OUTPUTDIR)/$(REL_JDK_DEBUG_IMAGE_DIR) && \
-	  $(ZIPEXE) -q -r $(JPRT_ARCHIVE_BUNDLE) . )
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 ################################################################
 #  PHONY
