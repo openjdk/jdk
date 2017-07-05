@@ -1,0 +1,146 @@
+/*
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+
+
+class JvmtiConstantPoolReconstituter : public StackObj {
+ private:
+  int                  _cpool_size;
+  SymbolHashMap*       _symmap;
+  SymbolHashMap*       _classmap;
+  constantPoolHandle   _cpool;
+  instanceKlassHandle  _ikh;
+  jvmtiError           _err;
+
+ protected:
+  instanceKlassHandle  ikh()     { return _ikh; };
+  constantPoolHandle   cpool()   { return _cpool; };
+
+  u2 symbol_to_cpool_index(symbolOop sym) {
+    return _symmap->symbol_to_value(sym);
+  }
+
+  u2 class_symbol_to_cpool_index(symbolOop sym) {
+    return _classmap->symbol_to_value(sym);
+  }
+
+ public:
+  // Calls to this constructor must be proceeded by a ResourceMark
+  // and a HandleMark
+  JvmtiConstantPoolReconstituter(instanceKlassHandle ikh){
+    set_error(JVMTI_ERROR_NONE);
+    _ikh = ikh;
+    _cpool = constantPoolHandle(Thread::current(), ikh->constants());
+    _symmap = new SymbolHashMap();
+    _classmap = new SymbolHashMap();
+    _cpool_size = _cpool->hash_entries_to(_symmap, _classmap);
+    if (_cpool_size == 0) {
+      set_error(JVMTI_ERROR_OUT_OF_MEMORY);
+    } else if (_cpool_size < 0) {
+      set_error(JVMTI_ERROR_INTERNAL);
+    }
+  }
+
+  ~JvmtiConstantPoolReconstituter() {
+    if (_symmap != NULL) {
+      os::free(_symmap);
+      _symmap = NULL;
+    }
+    if (_classmap != NULL) {
+      os::free(_classmap);
+      _classmap = NULL;
+    }
+  }
+
+
+  void       set_error(jvmtiError err)    { _err = err; }
+  jvmtiError get_error()                  { return _err; }
+
+  int cpool_size()                        { return _cpool_size; }
+
+  void copy_cpool_bytes(unsigned char *cpool_bytes) {
+    if (cpool_bytes == NULL) {
+      assert(cpool_bytes != NULL, "cpool_bytes pointer must not be NULL");
+      return;
+    }
+    cpool()->copy_cpool_bytes(cpool_size(), _symmap, cpool_bytes);
+  }
+};
+
+
+class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
+ private:
+  size_t               _buffer_size;
+  u1*                  _buffer;
+  u1*                  _buffer_ptr;
+  Thread*              _thread;
+
+  enum {
+    // initial size should be power of two
+    initial_buffer_size = 1024
+  };
+
+  inline Thread* thread() { return _thread; }
+
+  void write_class_file_format();
+  void write_field_infos();
+  void write_method_infos();
+  void write_method_info(methodHandle method);
+  void write_code_attribute(methodHandle method);
+  void write_exceptions_attribute(constMethodHandle const_method);
+  void write_synthetic_attribute();
+  void write_class_attributes();
+  void write_source_file_attribute();
+  void write_source_debug_extension_attribute();
+  u2 line_number_table_entries(methodHandle method);
+  void write_line_number_table_attribute(methodHandle method, u2 num_entries);
+  void write_stackmap_table_attribute(methodHandle method, int stackmap_table_len);
+  u2 inner_classes_attribute_length();
+  void write_inner_classes_attribute(int length);
+  void write_signature_attribute(u2 generic_signaure_index);
+  void write_attribute_name_index(const char* name);
+  void write_annotations_attribute(const char* attr_name, typeArrayHandle annos);
+
+  address writeable_address(size_t size);
+  void write_u1(u1 x);
+  void write_u2(u2 x);
+  void write_u4(u4 x);
+  void write_u8(u8 x);
+
+ public:
+  // Calls to this constructor must be proceeded by a ResourceMark
+  // and a HandleMark
+  JvmtiClassFileReconstituter(instanceKlassHandle ikh) :
+                                      JvmtiConstantPoolReconstituter(ikh) {
+    _buffer_size = initial_buffer_size;
+    _buffer = _buffer_ptr = NEW_RESOURCE_ARRAY(u1, _buffer_size);
+    _thread = Thread::current();
+    write_class_file_format();
+  };
+
+  size_t class_file_size()    { return _buffer_ptr - _buffer; }
+
+  u1* class_file_bytes()      { return _buffer; }
+
+  static void copy_bytecodes(methodHandle method, unsigned char* bytecodes);
+};

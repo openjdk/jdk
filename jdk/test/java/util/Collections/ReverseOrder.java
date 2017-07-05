@@ -1,0 +1,62 @@
+/*
+ * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+/*
+ * @test
+ * @bug 4593209
+ * @summary Reverse comparator was subtly broken
+ * @author Josh bloch
+ */
+
+import java.util.*;
+
+public class ReverseOrder {
+    public static void main(String[] args) throws Exception {
+        Foo[] a = { new Foo(2), new Foo(3), new Foo(1) };
+        List list = Arrays.asList(a);
+        Collections.sort(list, Collections.reverseOrder());
+
+        Foo[] golden = { new Foo(3), new Foo(2), new Foo(1) };
+        List goldenList = Arrays.asList(golden);
+        if (!list.equals(goldenList))
+            throw new Exception(list.toString());
+    }
+}
+
+class Foo implements Comparable {
+    int val;
+    Foo(int i) { val = i; }
+
+    public int compareTo(Object o) {
+        Foo f = (Foo)o;
+        return (val < f.val ? Integer.MIN_VALUE : (val == f.val ? 0 : 1));
+    }
+
+    public boolean equals(Object o) {
+        return o instanceof Foo && ((Foo)o).val == val;
+    }
+
+    public int hashCode()    { return val; }
+
+    public String toString() { return Integer.toString(val); }
+}

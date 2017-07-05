@@ -1,0 +1,461 @@
+/*
+ * Copyright 1998-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+
+// This file defines the IndexSet class, a set of sparse integer indices.
+// This data structure is used by the compiler in its liveness analysis and
+// during register allocation.
+
+//-------------------------------- class IndexSet ----------------------------
+// An IndexSet is a piece-wise bitvector.  At the top level, we have an array
+// of pointers to bitvector chunks called BitBlocks.  Each BitBlock has a fixed
+// size and is allocated from a shared free list.  The bits which are set in
+// each BitBlock correspond to the elements of the set.
+
+class IndexSet : public ResourceObj {
+ friend class IndexSetIterator;
+
+ public:
+  // When we allocate an IndexSet, it starts off with an array of top level block
+  // pointers of a set length.  This size is intended to be large enough for the
+  // majority of IndexSets.  In the cases when this size is not large enough,
+  // a separately allocated array is used.
+
+  // The length of the preallocated top level block array
+  enum { preallocated_block_list_size = 16 };
+
+  // Elements of a IndexSet get decomposed into three fields.  The highest order
+  // bits are the block index, which tell which high level block holds the element.
+  // Within that block, the word index indicates which word holds the element.
+  // Finally, the bit index determines which single bit within that word indicates
+  // membership of the element in the set.
+
+  // The lengths of the index bitfields
+  enum { bit_index_length = 5,
+         word_index_length = 3,
+         block_index_length = 8 // not used
+  };
+
+  // Derived constants used for manipulating the index bitfields
+  enum {
+         bit_index_offset = 0, // not used
+         word_index_offset = bit_index_length,
+         block_index_offset = bit_index_length + word_index_length,
+
+         bits_per_word = 1 << bit_index_length,
+         words_per_block = 1 << word_index_length,
+         bits_per_block = bits_per_word * words_per_block,
+
+         bit_index_mask = right_n_bits(bit_index_length),
+         word_index_mask = right_n_bits(word_index_length)
+  };
+
+  // These routines are used for extracting the block, word, and bit index
+  // from an element.
+  static uint get_block_index(uint element) {
+    return element >> block_index_offset;
+  }
+  static uint get_word_index(uint element) {
+    return mask_bits(element >> word_index_offset,word_index_mask);
+  }
+  static uint get_bit_index(uint element) {
+    return mask_bits(element,bit_index_mask);
+  }
+
+  //------------------------------ class BitBlock ----------------------------
+  // The BitBlock class is a segment of a bitvector set.
+
+  class BitBlock : public ResourceObj {
+   friend class IndexSetIterator;
+   friend class IndexSet;
+
+   private:
+    // All of BitBlocks fields and methods are declared private.  We limit
+    // access to IndexSet and IndexSetIterator.
+
+    // A BitBlock is composed of some number of 32 bit words.  When a BitBlock
+    // is not in use by any IndexSet, it is stored on a free list.  The next field
+    // is used by IndexSet to mainting this free list.
+
+    union {
+      uint32 _words[words_per_block];
+      BitBlock *_next;
+    } _data;
+
+    // accessors
+    uint32 *words() { return _data._words; }
+    void set_next(BitBlock *next) { _data._next = next; }
+    BitBlock *next() { return _data._next; }
+
+    // Operations.  A BitBlock supports four simple operations,
+    // clear(), member(), insert(), and remove().  These methods do
+    // not assume that the block index has been masked out.
+
+    void clear() {
+      memset(words(), 0, sizeof(uint32) * words_per_block);
+    }
+
+    bool member(uint element) {
+      uint word_index = IndexSet::get_word_index(element);
+      uint bit_index = IndexSet::get_bit_index(element);
+
+      return ((words()[word_index] & (uint32)(0x1 << bit_index)) != 0);
+    }
+
+    bool insert(uint element) {
+      uint word_index = IndexSet::get_word_index(element);
+      uint bit_index = IndexSet::get_bit_index(element);
+
+      uint32 bit = (0x1 << bit_index);
+      uint32 before = words()[word_index];
+      words()[word_index] = before | bit;
+      return ((before & bit) != 0);
+    }
+
+    bool remove(uint element) {
+      uint word_index = IndexSet::get_word_index(element);
+      uint bit_index = IndexSet::get_bit_index(element);
+
+      uint32 bit = (0x1 << bit_index);
+      uint32 before = words()[word_index];
+      words()[word_index] = before & ~bit;
+      return ((before & bit) != 0);
+    }
+  };
+
+  //-------------------------- BitBlock allocation ---------------------------
+ private:
+
+  // All IndexSets share an arena from which they allocate BitBlocks.  Unused
+  // BitBlocks are placed on a free list.
+
+  // The number of BitBlocks to allocate at a time
+  enum { bitblock_alloc_chunk_size = 50 };
+
+  static Arena *arena() { return Compile::current()->indexSet_arena(); }
+
+  static void populate_free_list();
+
+ public:
+
+  // Invalidate the current free BitBlock list and begin allocation
+  // from a new arena.  It is essential that this method is called whenever
+  // the Arena being used for BitBlock allocation is reset.
+  static void reset_memory(Compile* compile, Arena *arena) {
+    compile->set_indexSet_free_block_list(NULL);
+    compile->set_indexSet_arena(arena);
+
+   // This should probably be done in a static initializer
+   _empty_block.clear();
+  }
+
+ private:
+  friend class BitBlock;
+  // A distinguished BitBlock which always remains empty.  When a new IndexSet is
+  // created, all of its top level BitBlock pointers are initialized to point to
+  // this.
+  static BitBlock _empty_block;
+
+  //-------------------------- Members ------------------------------------------
+
+  // The number of elements in the set
+  uint      _count;
+
+  // Our top level array of bitvector segments
+  BitBlock **_blocks;
+
+  BitBlock  *_preallocated_block_list[preallocated_block_list_size];
+
+  // The number of top level array entries in use
+  uint       _max_blocks;
+
+  // Our assertions need to know the maximum number allowed in the set
+#ifdef ASSERT
+  uint       _max_elements;
+#endif
+
+  // The next IndexSet on the free list (not used at same time as count)
+  IndexSet *_next;
+
+ public:
+  //-------------------------- Free list operations ------------------------------
+  // Individual IndexSets can be placed on a free list.  This is done in PhaseLive.
+
+  IndexSet *next() {
+#ifdef ASSERT
+    if( VerifyOpto ) {
+      check_watch("removed from free list?", ((_next == NULL) ? 0 : _next->_serial_number));
+    }
+#endif
+    return _next;
+  }
+
+  void set_next(IndexSet *next) {
+#ifdef ASSERT
+    if( VerifyOpto ) {
+      check_watch("put on free list?", ((next == NULL) ? 0 : next->_serial_number));
+    }
+#endif
+    _next = next;
+  }
+
+ private:
+  //-------------------------- Utility methods -----------------------------------
+
+  // Get the block which holds element
+  BitBlock *get_block_containing(uint element) const {
+    assert(element < _max_elements, "element out of bounds");
+    return _blocks[get_block_index(element)];
+  }
+
+  // Set a block in the top level array
+  void set_block(uint index, BitBlock *block) {
+#ifdef ASSERT
+    if( VerifyOpto )
+      check_watch("set block", index);
+#endif
+    _blocks[index] = block;
+  }
+
+  // Get a BitBlock from the free list
+  BitBlock *alloc_block();
+
+  // Get a BitBlock from the free list and place it in the top level array
+  BitBlock *alloc_block_containing(uint element);
+
+  // Free a block from the top level array, placing it on the free BitBlock list
+  void free_block(uint i);
+
+ public:
+  //-------------------------- Primitive set operations --------------------------
+
+  void clear() {
+#ifdef ASSERT
+    if( VerifyOpto )
+      check_watch("clear");
+#endif
+    _count = 0;
+    for (uint i = 0; i < _max_blocks; i++) {
+      BitBlock *block = _blocks[i];
+      if (block != &_empty_block) {
+        free_block(i);
+      }
+    }
+  }
+
+  uint count() const { return _count; }
+
+  bool is_empty() const { return _count == 0; }
+
+  bool member(uint element) const {
+    return get_block_containing(element)->member(element);
+  }
+
+  bool insert(uint element) {
+#ifdef ASSERT
+    if( VerifyOpto )
+      check_watch("insert", element);
+#endif
+    if (element == 0) {
+      return 0;
+    }
+    BitBlock *block = get_block_containing(element);
+    if (block == &_empty_block) {
+      block = alloc_block_containing(element);
+    }
+    bool present = block->insert(element);
+    if (!present) {
+      _count++;
+    }
+    return !present;
+  }
+
+  bool remove(uint element) {
+#ifdef ASSERT
+    if( VerifyOpto )
+      check_watch("remove", element);
+#endif
+
+    BitBlock *block = get_block_containing(element);
+    bool present = block->remove(element);
+    if (present) {
+      _count--;
+    }
+    return present;
+  }
+
+  //-------------------------- Compound set operations ------------------------
+  // Compute the union of all elements of one and two which interfere
+  // with the RegMask mask.  If the degree of the union becomes
+  // exceeds fail_degree, the union bails out.  The underlying set is
+  // cleared before the union is performed.
+  uint lrg_union(uint lr1, uint lr2,
+                 const uint fail_degree,
+                 const class PhaseIFG *ifg,
+                 const RegMask &mask);
+
+
+  //------------------------- Construction, initialization -----------------------
+
+  IndexSet() {}
+
+  // This constructor is used for making a deep copy of a IndexSet.
+  IndexSet(IndexSet *set);
+
+  // Perform initialization on a IndexSet
+  void initialize(uint max_element);
+
+  // Initialize a IndexSet.  If the top level BitBlock array needs to be
+  // allocated, do it from the proffered arena.  BitBlocks are still allocated
+  // from the static Arena member.
+  void initialize(uint max_element, Arena *arena);
+
+  // Exchange two sets
+  void swap(IndexSet *set);
+
+  //-------------------------- Debugging and statistics --------------------------
+
+#ifndef PRODUCT
+  // Output a IndexSet for debugging
+  void dump() const;
+#endif
+
+#ifdef ASSERT
+  void tally_iteration_statistics() const;
+
+  // BitBlock allocation statistics
+  static uint _alloc_new;
+  static uint _alloc_total;
+
+  // Block density statistics
+  static long _total_bits;
+  static long _total_used_blocks;
+  static long _total_unused_blocks;
+
+  // Sanity tests
+  void verify() const;
+
+  static int _serial_count;
+  int        _serial_number;
+
+  // Check to see if the serial number of the current set is the one we're tracing.
+  // If it is, print a message.
+  void check_watch(const char *operation, uint operand) const {
+    if (IndexSetWatch != 0) {
+      if (IndexSetWatch == -1 || _serial_number == IndexSetWatch) {
+        tty->print_cr("IndexSet %d : %s ( %d )", _serial_number, operation, operand);
+      }
+    }
+  }
+  void check_watch(const char *operation) const {
+    if (IndexSetWatch != 0) {
+      if (IndexSetWatch == -1 || _serial_number == IndexSetWatch) {
+        tty->print_cr("IndexSet %d : %s", _serial_number, operation);
+      }
+    }
+  }
+
+ public:
+  static void print_statistics();
+
+#endif
+};
+
+
+//-------------------------------- class IndexSetIterator --------------------
+// An iterator for IndexSets.
+
+class IndexSetIterator VALUE_OBJ_CLASS_SPEC {
+ friend class IndexSet;
+
+ public:
+
+  // We walk over the bits in a word in chunks of size window_size.
+  enum { window_size = 5,
+         window_mask = right_n_bits(window_size),
+         table_size  = (1 << window_size) };
+
+  // For an integer of length window_size, what is the first set bit?
+  static const byte _first_bit[table_size];
+
+  // For an integer of length window_size, what is the second set bit?
+  static const byte _second_bit[table_size];
+
+ private:
+  // The current word we are inspecting
+  uint32                _current;
+
+  // What element number are we currently on?
+  uint                  _value;
+
+  // The index of the next word we will inspect
+  uint                  _next_word;
+
+  // A pointer to the contents of the current block
+  uint32               *_words;
+
+  // The index of the next block we will inspect
+  uint                  _next_block;
+
+  // A pointer to the blocks in our set
+  IndexSet::BitBlock **_blocks;
+
+  // The number of blocks in the set
+  uint                  _max_blocks;
+
+  // If the iterator was created from a non-const set, we replace
+  // non-canonical empty blocks with the _empty_block pointer.  If
+  // _set is NULL, we do no replacement.
+  IndexSet            *_set;
+
+  // Advance to the next non-empty word and return the next
+  // element in the set.
+  uint advance_and_next();
+
+
+ public:
+
+  // If an iterator is built from a constant set then empty blocks
+  // are not canonicalized.
+  IndexSetIterator(IndexSet *set);
+  IndexSetIterator(const IndexSet *set);
+
+  // Return the next element of the set.  Return 0 when done.
+  uint next() {
+    uint current = _current;
+    if (current != 0) {
+      uint value = _value;
+      while (mask_bits(current,window_mask) == 0) {
+        current >>= window_size;
+        value += window_size;
+      }
+
+      uint advance = _second_bit[mask_bits(current,window_mask)];
+      _current = current >> advance;
+      _value = value + advance;
+      return value + _first_bit[mask_bits(current,window_mask)];
+    } else {
+      return advance_and_next();
+    }
+  }
+};

@@ -1,0 +1,87 @@
+/*
+ * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package sun.jvmstat.perfdata.monitor;
+
+import java.util.*;
+
+/**
+ * Utility methods for use with {@link CountedTimerTask} instances.
+ *
+ * @author Brian Doherty
+ * @since 1.5
+ */
+public class CountedTimerTaskUtils {
+
+    private static final boolean DEBUG = false;
+
+    /**
+     * Reschedule a CountedTimeTask at a different interval. Probably not
+     * named correctly. This method cancels the old task and computes the
+     * delay for starting the new task based on the new interval and the
+     * time at which the old task was last executed.
+     *
+     * @param timer the Timer for the task
+     * @param oldTask the old Task
+     * @param newTask the new Task
+     * @param oldInterval the old interval; use for debugging output
+     *                    purposes only.
+     * @param newInterval scheduling interval in milliseconds
+     */
+    public static void reschedule(Timer timer, CountedTimerTask oldTask,
+                                  CountedTimerTask newTask, int oldInterval,
+                                  int newInterval) {
+
+        long now = System.currentTimeMillis();
+        long lastRun = oldTask.scheduledExecutionTime();
+        long expired = now - lastRun;
+
+        if (DEBUG) {
+            System.err.println("computing timer delay: "
+                               + " oldInterval = " + oldInterval
+                               + " newInterval = " + newInterval
+                               + " samples = " + oldTask.executionCount()
+                               + " expired = " + expired);
+        }
+
+        /*
+         * check if original task ever ran - if not, then lastRun is
+         * undefined and we simply set the delay to 0.
+         */
+        long delay = 0;
+        if (oldTask.executionCount() > 0) {
+            long remainder = newInterval - expired;
+            delay = remainder >= 0 ? remainder : 0;
+        }
+
+        if (DEBUG) {
+            System.err.println("rescheduling sampler task: interval = "
+                               + newInterval
+                               + " delay = " + delay);
+        }
+
+        timer.schedule(newTask, delay, newInterval);
+    }
+}

@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ *
+ */
+
+// Trim our work_queue so its length is below max at return
+inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {
+  while (_work_queue->size() > max) {
+    oop newOop;
+    if (_work_queue->pop_local(newOop)) {
+      assert(newOop->is_oop(), "Expected an oop");
+      assert(_bit_map->isMarked((HeapWord*)newOop),
+             "only grey objects on this stack");
+      // iterate over the oops in this oop, marking and pushing
+      // the ones in CMS heap (i.e. in _span).
+      newOop->oop_iterate(&_par_pushAndMarkClosure);
+    }
+  }
+}
+
+inline void PushOrMarkClosure::remember_klass(Klass* k) {
+  if (!_revisitStack->push(oop(k))) {
+    fatal("Revisit stack overflow in PushOrMarkClosure");
+  }
+}
+
+inline void Par_PushOrMarkClosure::remember_klass(Klass* k) {
+  if (!_revisit_stack->par_push(oop(k))) {
+    fatal("Revisit stack overflow in PushOrMarkClosure");
+  }
+}
+
+inline void PushOrMarkClosure::do_yield_check() {
+  _parent->do_yield_check();
+}
+
+inline void Par_PushOrMarkClosure::do_yield_check() {
+  _parent->do_yield_check();
+}

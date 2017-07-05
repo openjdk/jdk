@@ -1,0 +1,9 @@
+grant {
+    permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.manager=default";
+    permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.policy=*";
+    permission com.sun.rmi.rmid.ExecOptionPermission "-Dsun.rmi.server.doSomething=true";
+    permission com.sun.rmi.rmid.ExecOptionPermission "-Dfoo.bar=SetChildEnvTest";
+    permission com.sun.rmi.rmid.ExecOptionPermission "-verbosegc";
+    permission com.sun.rmi.rmid.ExecOptionPermission "-Dparameter.count=zero";
+    permission com.sun.rmi.rmid.ExecOptionPermission "-Xmx32m";
+};

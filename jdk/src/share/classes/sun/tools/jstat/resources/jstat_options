@@ -1,0 +1,965 @@
+/*
+ * Copyright 2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+option timestamp {
+  column {
+    header "^Timestamp"
+    data (sun.os.hrt.ticks/sun.os.hrt.frequency)
+    scale sec
+    align right
+    width 15
+    format "0.0"
+  }
+}
+
+option class {
+  column {
+    header "^Loaded^"	/* Number of classes loaded */
+    data java.cls.loadedClasses
+    align right
+    scale raw
+    width 5
+    format "0"
+  }
+  column {
+    header "^Bytes^"	/* Accumulated Size of classes loaded */
+    data sun.cls.loadedBytes
+    align right
+    scale K
+    width 7
+    format "0.0"
+  }
+  column {
+    header "^Unloaded^"	/* Number of classes unloaded */
+    data java.cls.unloadedClasses
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^Bytes^"	/* Accumulated size of classes unloaded */
+    data sun.cls.unloadedBytes
+    align right
+    scale K
+    width 7
+    format "0.0"
+  }
+  column {
+    header "^Time^"	/* Accumulated time for class loading */
+    data sun.cls.time/sun.os.hrt.frequency
+    scale raw
+    align right
+    width 10
+    format "0.00"
+  }
+}
+
+option compiler {
+  column {
+    header "^Compiled^"		/* Number of compilation tasks performed */
+    data sun.ci.totalCompiles
+    scale raw
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^Failed^"		/* Number of failed compilation tasks */
+    data sun.ci.totalBailouts
+    scale raw
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^Invalid^"		/* Number of invalidated compilation tasks */
+    data sun.ci.totalInvalidates
+    scale raw
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^Time^"		/* Time spent in compilation */
+    data java.ci.totalTime/sun.os.hrt.frequency
+    align right
+    scale sec
+    width 8
+    format "0.00"
+  }
+  column {
+    header "^FailedType^"	/* Type of last failed compilation */
+    data sun.ci.lastFailedType
+    scale raw
+    align right
+    width 4
+  }
+  column {
+    header "^FailedMethod"	/* Name of class and method for last failed compile */
+    data sun.ci.lastFailedMethod
+    scale raw
+    align left
+    width 1
+  }
+}
+
+option gc {
+  column {
+    header "^S0C^"	/* Survivor 0 Space Capacity - Current */
+    data sun.gc.generation.0.space.1.capacity
+    scale K
+    align center
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^S1C^"	/* Survivor 1 Space Capacity - Current */
+    data sun.gc.generation.0.space.2.capacity
+    scale K
+    align center
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^S0U^"	/* Survivor 0 Space Used */
+    data sun.gc.generation.0.space.1.used
+    scale K
+    align center
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^S1U^"	/* Survivor 1 Space Used */
+    data sun.gc.generation.0.space.2.used
+    scale K
+    align center
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^EC^"	/* Eden Space Capacity - Current */
+    data sun.gc.generation.0.space.0.capacity
+    align center
+    scale K
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^EU^"	/* Eden Space Used */
+    data sun.gc.generation.0.space.0.used
+    align center
+    scale K
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^OC^"	/* Old Space Capacity - Current */
+    data sun.gc.generation.1.space.0.capacity
+    align center
+    scale K
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^OU^"	/* Old Space Used */
+    data sun.gc.generation.1.space.0.used
+    align center
+    width 10
+    scale K
+    format "0.0"
+  }
+  column {
+    header "^PC^"	/* Perm Space Capacity - Current */
+    data sun.gc.generation.2.space.0.capacity
+    align center
+    width 6
+    scale K
+    format "0.0"
+  }
+  column {
+    header "^PU^"	/* Perm Space Used */
+    data sun.gc.generation.2.space.0.used
+    align center
+    width 6
+    scale K
+    format "0.0"
+  }
+  column {
+    header "^YGC^"	/* Young Generation Collections */
+    data sun.gc.collector.0.invocations
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^YGCT^"	/* Young Generation Garbage Collection Time */
+    data sun.gc.collector.0.time/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+  column {
+    header "^FGC^"	/* Full Collections */
+    data sun.gc.collector.1.invocations
+    align center
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^FGCT^"	/* Full Garbage Collection Time */
+    data sun.gc.collector.1.time/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+  column {
+    header "^GCT^"	/* Total Garbage Collection Time */
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+}
+
+option gccapacity {
+  column {
+    header "^NGCMN^"	/* New Generation Capacity - Minimum */
+    data sun.gc.generation.0.minCapacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^NGCMX^"	/* New Generation Capacity - Maximum */
+    data sun.gc.generation.0.maxCapacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^NGC^"	/* New Generation Capacity - Current */
+    data sun.gc.generation.0.capacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^S0C^"	/* Survivor 0 Space Capacity - Current */
+    data sun.gc.generation.0.space.1.capacity
+    scale K
+    align right
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^S1C"	/* Survivor 1 Space Capacity - Current */
+    data sun.gc.generation.0.space.2.capacity
+    scale K
+    align right
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^EC^"	/* Eden Space Capacity - Current */
+    data sun.gc.generation.0.space.0.capacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^OGCMN^"	/* Old Generation Capacity - Minumum */
+    data sun.gc.generation.1.minCapacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^OGCMX^"	/* Old Generation Capacity - Maximum */
+    data sun.gc.generation.1.maxCapacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^OGC^"	/* Old Generation Capacity - Current */
+    data sun.gc.generation.1.capacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^OC^"	/* Old Space Capacity - Current */
+    data sun.gc.generation.1.space.0.capacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^PGCMN^"	/* Perm Generation Capacity - Minimum */
+    data sun.gc.generation.2.minCapacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^PGCMX^"	/* Perm Generation Capacity - Maximum */
+    data sun.gc.generation.2.maxCapacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^PGC^"	/* Perm Generation Capacity - Current */
+    data sun.gc.generation.2.capacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^PC^"	/* Perm Space Capacity - Current */
+    data sun.gc.generation.2.space.0.capacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^YGC^"	/* Young Generation Collections */
+    data sun.gc.collector.0.invocations
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^FGC^"	/* Full Collections */
+    data sun.gc.collector.1.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+}
+
+option gccause {
+  column {
+    header "^S0^"	/* Survivor 0 Space - Percent Used */
+    data (1-((sun.gc.generation.0.space.1.capacity - sun.gc.generation.0.space.1.used)/sun.gc.generation.0.space.1.capacity)) * 100
+    scale raw
+    align right
+    width 6
+    format "0.00"
+  }
+  column {
+    header "^S1^"	/* Survivor 1 Space - Percent Used */
+    data (1-((sun.gc.generation.0.space.2.capacity - sun.gc.generation.0.space.2.used)/sun.gc.generation.0.space.2.capacity)) * 100
+    scale raw
+    align right
+    width 6
+    format "0.00"
+  }
+  column {
+    header "^E^"	/* Eden Space - Percent Used */
+    data (1-((sun.gc.generation.0.space.0.capacity - sun.gc.generation.0.space.0.used)/sun.gc.generation.0.space.0.capacity)) * 100
+    align right
+    scale raw
+    width 6
+    format "0.00"
+  }
+  column {
+    header "^O^"	/* Old Space - Percent Used */
+    data (1-((sun.gc.generation.1.space.0.capacity - sun.gc.generation.1.space.0.used)/sun.gc.generation.1.space.0.capacity)) * 100
+    align right
+    scale raw
+    width 6
+    format "0.00"
+  }
+  column {
+    header "^P^"	/* Perm Space - Percent Used */
+    data (1-((sun.gc.generation.2.space.0.capacity - sun.gc.generation.2.space.0.used)/sun.gc.generation.2.space.0.capacity)) * 100
+    align right
+    width 6
+    scale raw
+    format "0.00"
+  }
+  column {
+    header "^YGC^"	/* Young Generation Collections */
+    data sun.gc.collector.0.invocations
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^YGCT^"	/* Young Generation Collection Time */
+    data sun.gc.collector.0.time/sun.os.hrt.frequency
+    align right
+    scale sec
+    width 8
+    format "0.000"
+  }
+  column {
+    header "^FGC^"	/* Full Collections */
+    data sun.gc.collector.1.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^FGCT^"	/* Full Collection Time */
+    data sun.gc.collector.1.time/sun.os.hrt.frequency
+    align right
+    scale sec
+    width 8
+    format "0.000"
+  }
+  column {
+    header "^GCT^"	/* Total Garbage Collection Time */
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+  column {
+    header "^LGCC"	/* Last GC Cause */
+    data sun.gc.lastCause
+    align left
+    width 20
+    scale raw
+  }
+  column {
+    header "^GCC"	/* Current GC Cause */
+    data sun.gc.cause
+    align left
+    width 20
+    scale raw
+  }
+}
+
+option gcnew {
+  column {
+    header "^S0C^"	/* Survivor 0 Space Capacity - Current */
+    data sun.gc.generation.0.space.1.capacity
+    scale K
+    align right
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^S1C^"	/* Survivor 1 Space Capacity - Current */
+    data sun.gc.generation.0.space.2.capacity
+    scale K
+    align right
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^S0U^"	/* Survivor 0 Space Used */
+    data sun.gc.generation.0.space.1.used
+    scale K
+    align right
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^S1U^"	/* Survivor 1 Space Used */
+    data sun.gc.generation.0.space.2.used
+    scale K
+    align right
+    width 6
+    format "0.0"
+  }
+  column {
+    header "^TT^"	/* Tenuring Threshold */
+    data sun.gc.policy.tenuringThreshold
+    width 2
+    align right
+    format "0"
+  }
+  column {
+    header "^MTT^"	/* Maximum Tenuring Threshold */
+    data sun.gc.policy.maxTenuringThreshold
+    width 2
+    align right
+    format "0"
+  }
+  column {
+    header "^DSS^"	/* Desired Survivor Size */
+    data sun.gc.policy.desiredSurvivorSize
+    scale K
+    width 6
+    align right
+    format "0.0"
+  }
+  column {
+    header "^EC^"	/* Eden Space Capacity - Current */
+    data sun.gc.generation.0.space.0.capacity
+    scale K
+    width 8
+    align right
+    format "0.0"
+  }
+  column {
+    header "^EU^"	/* Eden Space Used */
+    data sun.gc.generation.0.space.0.used
+    scale K
+    width 8
+    align right
+    format "0.0"
+  }
+  column {
+    header "^YGC^"	/* Young Generation Collections */
+    data sun.gc.collector.0.invocations
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^YGCT^"	/* Young Generation Collection Time */
+    data sun.gc.collector.0.time/sun.os.hrt.frequency
+    align right
+    scale sec
+    width 8
+    format "0.000"
+  }
+}
+
+option gcnewcapacity {
+  column {
+    header "^NGCMN^"	/* New Generation Capacity - Minimum */
+    data sun.gc.generation.0.minCapacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^NGCMX^"	/* New Generation Capacity - Maximum */
+    data sun.gc.generation.0.maxCapacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^NGC^"	/* New Generation Capacity - Current */
+    data sun.gc.generation.0.capacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^S0CMX^"	/* Survivor 0 Space Capacity - Maximum */
+    data sun.gc.generation.0.space.1.capacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^S0C^"	/* Survivor 0 Space Capacity - Current */
+    data sun.gc.generation.0.space.1.maxCapacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^S1CMX^"	/* Survivor 1 Space Capacity - Maximum */
+    data sun.gc.generation.0.space.2.maxCapacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^S1C^"	/* Survivor 1 Space Capacity - Current */
+    data sun.gc.generation.0.space.2.capacity
+    scale K
+    align right
+    width 8
+    format "0.0"
+  }
+  column {
+    header "^ECMX^"	/* Eden Space Capacity - Maximum */
+    data sun.gc.generation.0.space.0.maxCapacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^EC^"	/* Eden Space Capacity - Current */
+    data sun.gc.generation.0.space.0.capacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^YGC^"	/* Young Generation Collections */
+    data sun.gc.collector.0.invocations
+    align right
+    width 5
+    format "0"
+  }
+  column {
+    header "^FGC^"	/* Full Collections */
+    data sun.gc.collector.1.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+}
+
+option gcold {
+  column {
+    header "^PC^"	/* Perm Space Capacity - Current */
+    data sun.gc.generation.2.space.0.capacity
+    width 8
+    align right
+    scale K
+    format "0.0"
+  }
+  column {
+    header "^PU^"	/* Perm Space Used */
+    data sun.gc.generation.2.space.0.used
+    width 8
+    align right
+    scale K
+    format "0.0"
+  }
+  column {
+    header "^OC^"	/* Old Space Capacity - Current */
+    data sun.gc.generation.1.space.0.capacity
+    width 11
+    align right
+    scale K
+    format "0.0"
+  }
+  column {
+    header "^OU^"	/* Old Space Used */
+    data sun.gc.generation.1.space.0.used
+    width 11
+    align right
+    scale K
+    format "0.0"
+  }
+  column {
+    header "^YGC^"	/* Young Generation Collections */
+    data sun.gc.collector.0.invocations
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^FGC^"	/* Full Collections */
+    data sun.gc.collector.1.invocations
+    align right
+    scale raw
+    width 5
+    format "0"
+  }
+  column {
+    header "^FGCT^"	/* Full Collection Time */
+    data sun.gc.collector.1.time/sun.os.hrt.frequency
+    align right
+    scale sec
+    width 8
+    format "0.000"
+  }
+  column {
+    header "^GCT^"	/* Total Garbage Collection Time */
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+}
+
+option gcoldcapacity {
+  column {
+    header "^OGCMN^"	/* Old Generation Capacity - Minumum */
+    data sun.gc.generation.1.minCapacity
+    scale K
+    align right
+    width 11
+    format "0.0"
+  }
+  column {
+    header "^OGCMX^"	/* Old Generation Capacity - Maximum */
+    data sun.gc.generation.1.maxCapacity
+    scale K
+    align right
+    width 11
+    format "0.0"
+  }
+  column {
+    header "^OGC^"	/* Old Generation Capacity - Current */
+    data sun.gc.generation.1.capacity
+    scale K
+    align right
+    width 11
+    format "0.0"
+  }
+  column {
+    header "^OC^"	/* Old Space Capacity - Current */
+    data sun.gc.generation.1.space.0.capacity
+    scale K
+    align right
+    width 11
+    format "0.0"
+  }
+  column {
+    header "^YGC^"	/* Young Generation Collections */
+    data sun.gc.collector.0.invocations
+    align right
+    width 5
+    format "0"
+  }
+  column {
+    header "^FGC^"	/* Full Collections */
+    data sun.gc.collector.1.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^FGCT^"	/* Full Collection Time */
+    data sun.gc.collector.1.time/sun.os.hrt.frequency
+    align right
+    scale sec
+    width 8
+    format "0.000"
+  }
+  column {
+    header "^GCT^"	/* Total Garbage Collection Time */
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+}
+
+option gcpermcapacity {
+  column {
+    header "^PGCMN^"	/* Perm Generation Capacity - Minumum */
+    data sun.gc.generation.2.minCapacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^PGCMX^"	/* Perm Generation Capacity - Maximum */
+    data sun.gc.generation.2.maxCapacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^PGC^"	/* Perm Generation Capacity - Current */
+    data sun.gc.generation.2.capacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^PC^"	/* Perm Space Capacity - Current */
+    data sun.gc.generation.2.space.0.capacity
+    scale K
+    align right
+    width 10
+    format "0.0"
+  }
+  column {
+    header "^YGC^"	/* Young Generation Collections */
+    data sun.gc.collector.0.invocations
+    align right
+    width 5
+    format "0"
+  }
+  column {
+    header "^FGC^"	/* Full Collections */
+    data sun.gc.collector.1.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^FGCT^"	/* Full Collection Time */
+    data sun.gc.collector.1.time/sun.os.hrt.frequency
+    align right
+    scale sec
+    width 8
+    format "0.000"
+  }
+  column {
+    header "^GCT^"	/* Total Garbage Collection Time */
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+}
+
+option gcutil {
+  column {
+    header "^S0^"	/* Survivor 0 Space - Percent Used */
+    data (1-((sun.gc.generation.0.space.1.capacity - sun.gc.generation.0.space.1.used)/sun.gc.generation.0.space.1.capacity)) * 100
+    scale raw
+    align right
+    width 6
+    format "0.00"
+  }
+  column {
+    header "^S1^"	/* Survivor 1 Space - Percent Used */
+    data (1-((sun.gc.generation.0.space.2.capacity - sun.gc.generation.0.space.2.used)/sun.gc.generation.0.space.2.capacity)) * 100
+    scale raw
+    align right
+    width 6
+    format "0.00"
+  }
+  column {
+    header "^E^"	/* Eden Space - Percent Used */
+    data (1-((sun.gc.generation.0.space.0.capacity - sun.gc.generation.0.space.0.used)/sun.gc.generation.0.space.0.capacity)) * 100
+    align right
+    scale raw
+    width 6
+    format "0.00"
+  }
+  column {
+    header "^O^"	/* Old Space - Percent Used */
+    data (1-((sun.gc.generation.1.space.0.capacity - sun.gc.generation.1.space.0.used)/sun.gc.generation.1.space.0.capacity)) * 100
+    align right
+    scale raw
+    width 6
+    format "0.00"
+  }
+  column {
+    header "^P^"	/* Perm Space - Percent Used */
+    data (1-((sun.gc.generation.2.space.0.capacity - sun.gc.generation.2.space.0.used)/sun.gc.generation.2.space.0.capacity)) * 100
+    align right
+    width 6
+    scale raw
+    format "0.00"
+  }
+  column {
+    header "^YGC^"	/* Young Generation Collections */
+    data sun.gc.collector.0.invocations
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^YGCT^"	/* Young Generation Collection Time */
+    data sun.gc.collector.0.time/sun.os.hrt.frequency
+    align right
+    scale sec
+    width 8
+    format "0.000"
+  }
+  column {
+    header "^FGC^"	/* Full Collections */
+    data sun.gc.collector.1.invocations
+    align right
+    width 5
+    scale raw
+    format "0"
+  }
+  column {
+    header "^FGCT^"	/* Full Collection Time */
+    data sun.gc.collector.1.time/sun.os.hrt.frequency
+    align right
+    scale sec
+    width 8
+    format "0.000"
+  }
+  column {
+    header "^GCT^"	/* Total Garbage Collection Time */
+    data (sun.gc.collector.0.time + sun.gc.collector.1.time)/sun.os.hrt.frequency
+    align right
+    width 8
+    scale sec
+    format "0.000"
+  }
+}
+
+option printcompilation {
+  column {
+    header "^Compiled^"		/* Number of compilation tasks performed */
+    data sun.ci.totalCompiles
+    scale raw
+    align right
+    width 6
+    format "0"
+  }
+  column {
+    header "^Size^"		/* Code Size in bytes of last compilation */
+    data sun.ci.lastSize
+    scale raw
+    align right
+    width 6
+  }
+  column {
+    header "^Type^"		/* Type of last compilation */
+    data sun.ci.lastType
+    scale raw
+    align right
+    width 4
+  }
+  column {
+    header "^Method"		/* Name of class and method for last compile */
+    data sun.ci.lastMethod
+    scale raw
+    align left
+    width 1
+  }
+}

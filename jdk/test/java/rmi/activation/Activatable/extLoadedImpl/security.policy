@@ -1,0 +1,28 @@
+grant codeBase "file:${java.home}/lib/ext/*" {
+    permission java.security.AllPermission;
+};
+
+grant {
+  // standard activation permissions
+  permission java.io.FilePermission "..${/}..${/}test.props", "read";
+
+  // test needs to cleanup rmid's log.
+  permission java.io.FilePermission ".${/}log", "read,write,delete";
+  permission java.io.FilePermission ".${/}log${/}-", "read,write,delete";
+
+  // test needs to use java to exec an rmid
+  permission java.io.FilePermission "${java.home}${/}bin${/}java", "execute";
+
+  // test rmid uses these properties to propagate security values to rmid
+  permission java.util.PropertyPermission "java.security.policy", "read";
+  permission java.util.PropertyPermission "java.security.manager", "read";
+
+  // used by TestLibrary to determine test environment 
+  permission java.util.PropertyPermission "test.classes", "read";
+  permission java.util.PropertyPermission "test.src", "read";
+  permission java.util.PropertyPermission "user.dir", "read";
+  permission java.util.PropertyPermission "java.home", "read";
+
+  // allow exporting of remote objects on an arbitrary port.
+  permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
+};

@@ -1,0 +1,125 @@
+#
+# Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Sun designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Sun in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#
+
+FILES_c_shared = \
+        jbidi.c \
+        ubidi.c \
+        ubidiln.c \
+        uchardir.c \
+        DrawGlyphList.c \
+        sunFont.c
+
+ifdef OPENJDK
+FILES_c_shared += $(TARGDIR)freetypeScaler.c 
+endif
+
+FILES_cpp_shared = \
+        CursiveAttachmentSubtables.cpp \
+        ExtensionSubtables.cpp \
+        MPreFixups.cpp \
+        HanLayoutEngine.cpp \
+        LEFontInstance.cpp \
+        ContextualGlyphSubstProc.cpp \
+        IndicRearrangementProcessor.cpp \
+        LigatureSubstProc.cpp \
+        LookupTables.cpp \
+        MorphTables.cpp \
+        NonContextualGlyphSubstProc.cpp \
+        SegmentArrayProcessor.cpp \
+        SegmentSingleProcessor.cpp \
+        SimpleArrayProcessor.cpp \
+        SingleTableProcessor.cpp \
+        StateTableProcessor.cpp \
+        SubtableProcessor.cpp \
+        TrimmedArrayProcessor.cpp \
+        AlternateSubstSubtables.cpp \
+        AnchorTables.cpp \
+        CanonData.cpp \
+        CanonShaping.cpp \
+        ClassDefinitionTables.cpp \
+        ContextualSubstSubtables.cpp \
+        CoverageTables.cpp \
+        DeviceTables.cpp \
+        Features.cpp \
+        GDEFMarkFilter.cpp \
+        GlyphDefinitionTables.cpp \
+        GlyphIterator.cpp \
+        GlyphLookupTables.cpp \
+        GlyphPositionAdjustments.cpp \
+        GlyphPosnLookupProc.cpp \
+        GlyphPositioningTables.cpp \
+        GlyphSubstLookupProc.cpp \
+        GlyphSubstitutionTables.cpp \
+        HebrewLigatureData.cpp \
+        HebrewShaping.cpp \
+        IndicClassTables.cpp \
+        IndicReordering.cpp \
+        KernTable.cpp \
+        KhmerLayoutEngine.cpp \
+        KhmerReordering.cpp \
+        LEGlyphStorage.cpp \
+        LEInsertionList.cpp \
+        LigatureSubstSubtables.cpp \
+        LookupProcessor.cpp \
+        Lookups.cpp \
+        MarkArrays.cpp \
+        MarkToBasePosnSubtables.cpp \
+        MarkToLigaturePosnSubtables.cpp \
+        MarkToMarkPosnSubtables.cpp \
+        MirroredCharData.cpp \
+        MultipleSubstSubtables.cpp \
+        OpenTypeUtilities.cpp \
+        PairPositioningSubtables.cpp \
+        ScriptAndLanguage.cpp \
+        ShapingTypeData.cpp \
+        SinglePositioningSubtables.cpp \
+        SingleSubstitutionSubtables.cpp \
+        SubstitutionLookups.cpp \
+        ThaiShaping.cpp \
+        ThaiStateTables.cpp \
+        ValueRecords.cpp \
+        ArabicLayoutEngine.cpp \
+        ArabicShaping.cpp \
+        GXLayoutEngine.cpp \
+        IndicLayoutEngine.cpp \
+        LayoutEngine.cpp \
+        SunLayoutEngine.cpp \
+        OpenTypeLayoutEngine.cpp \
+        ThaiLayoutEngine.cpp \
+        ScriptAndLanguageTags.cpp \
+        FontInstanceAdapter.cpp
+
+
+ifeq ($(PLATFORM),windows)
+FILES_c_platform = fontpath.c
+FILES_cpp_platform = D3DTextRenderer.cpp
+else
+FILES_c_platform = X11FontScaler.c \
+                   X11TextRenderer.c
+FILES_cpp_platform =
+endif
+
+FILES_c = $(FILES_c_shared)  $(FILES_c_platform)
+FILES_cpp = $(FILES_cpp_shared) $(FILES_cpp_platform)

@@ -1,0 +1,228 @@
+'\" t
+.\"
+.\" Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+.\" CA 95054 USA or visit www.sun.com if you need additional information or
+.\" have any questions.
+.\"
+.\" 
+'\"macro stdmacro
+.TH javah 1 "2006 年 9 月 4 日" "Java SE 6" "ユーザーコマンド"
+.SH "名前"
+javah \- C 言語のヘッダとスタブファイルのジェネレータ
+.\" 
+.\"  This document was created by saving an HTML file as text
+.\"  from the JavaSoft web site:
+.\" 
+.\" http://java.sun.com/products/jdk/1.2/docs/tooldocs/tools.html
+.\" 
+.\"  and adding appropriate troff macros.  Because the JavaSoft web site 
+.\"  man pages can change without notice, it may be helpful to diff
+.\"  files to identify changes other than new functionality. 
+.\" 
+.LP
+
+.LP
+.LP
+\f3javah\fP は、Java クラスから C ヘッダファイルと C ソースファイルを作成します。これらのファイルは、Java プログラミング言語で書かれたコードと、C などのその他の言語で書かれたコードを接続し、コードが相互に作用するようにします。
+.LP
+.SH "形式"
+.B javah 
+[
+.B options
+]
+.I fully-qualified-classname . . .
+.br
+.B javah_g 
+[
+.B options
+]
+.I fully-qualified-classname . . .
+.SH "機能説明"
+.IX "stub file generator" "" "stub file generator \(em \fLjavah\fP"
+.IX "C header and stub file generator" "" "C header and stub file generator \(em \fLjavah\fP"
+.IX "javah" "" "\fLjavah\fP \(em C header and stub file generator"
+.B javah
+コマンドは、ネイティブメソッドを実装するのに必要な
+C
+言語のヘッダおよびソースファイルを生成します。
+C
+のプログラムは、
+生成されたヘッダとソースファイルを使って、
+ネイティブソースコードからオブジェクトのインスタンス
+変数を参照できます。
+.B .h
+ファイルは、対応するクラスに合ったレイアウトの
+構造体定義を含んでいます。
+構造体に含まれるフィールドは、クラス内のインスタンス変数に
+対応しています。
+.LP
+ヘッダファイル名およびヘッダファイル中で定義される構造体名は、
+クラス名から派生します。
+.B javah
+に渡されるクラスがパッケージ内部にあれば、
+そのパッケージ名がファイル名および構造体名の先頭に付加されます。
+名前の間は下線
+(_)
+で区切られます。
+.LP
+デフォルトでは、
+.B javah
+はコマンド行で指定された個々のクラスに対して
+ヘッダファイルを作成し、現在のディレクトリに出力します。
+.B \-stubs
+オプションを指定するとソースファイルが生成されます。
+.B \-o
+オプションを指定すると、指定した全クラスに対する出力ファイル
+を連結して
+1
+個のファイルとして生成します。
+.LP
+新しいネイティブメソッドインタフェースの
+Java Native Interface (JNI)
+は、ヘッダ情報やスタブファイルを必要としません。
+ただし
+.B javah
+コマンドは現在も JNI 形式のネイティブメソッドに必要な
+ネイティブメソッド関数プロトタイプを生成できます。
+.B javah 
+はデフォルトで JNI 形式で出力し、その結果を 
+.B .h
+ファイルに格納します。
+.LP
+.B javah_g
+は非最適化バージョンの
+.B javah
+で、
+.B jdb
+などのデバッガ用の使用に適しています。
+.SH "オプション"
+.TP 15
+.BI \-o " outputfile"
+コマンド行で指定したすべてのクラスに対する結果のヘッダファイルまたは
+ソースファイルを連結し、
+.BR outputfile 
+に格納します。
+.B \-o
+オプションまたは 
+.B \-d
+オプションだけを使用できます。
+.TP 15
+.BI \-d " directory"
+.B javah
+がヘッダファイルまたはスタブファイルを書き出す
+ディレクトリを指定します。
+.TP 15
+.B \-stubs
+Java オブジェクトファイルから C 言語の宣言を生成します。
+.TP 15
+.B \-verbose
+詳細情報の出力を要求します。
+.B javah
+は、生成されたファイルの状態に関するメッセージを
+.B stdout
+に書き出します。
+.TP 15
+.B  \-help
+.B javah
+の使用法についてヘルプメッセージを出力します。
+.TP 15
+.B \-version
+javah バージョン情報を出力します。
+.TP 15
+.B  \-jni
+JNI 形式のネイティブなメソッド関数のプロトタイプが入った出力ファイルを
+作成します。これはデフォルトの出力であるため、
+-B \-jni
+は省略可能です。
+.TP 15
+.BI \-classpath " path"
+.B javah
+がクラスを検索するために用いるパスを
+.I path
+で指定します。この指定値は、デフォルトおよび
+.B CLASSPATH
+環境変数の設定値をオーバーライドします。
+複数のディレクトリを指定する場合はコロンで区切ります。
+したがって
+.I path
+の通常の形式は次のようになります。
+.RS 20
+.sp 1n
+.LP
+.BI .:< your_path >
+.sp 1n
+.RE
+.RS 15
+.LP
+パスの指定例：
+.RE
+.RS 20
+.sp 1n
+.LP
+.B .:/home/avh/classes:/usr/local/java/classes
+.sp 1n
+.RE
+.LP
+便宜上、\f2*\fP のベース名を含むクラスパス要素は、ディレクトリ内の拡張子 \f2.jar\fP または \f2.JAR\fP を持つすべてのファイルのリストを指定するのと同じとみなされます (Java プログラムはこの 2 つの呼び出しを区別できない)。
+.br
+.br
+たとえば、ディレクトリ \f2foo\fP に \f2a.jar\fP と \f2b.JAR\fP が含まれている場合、クラスパス要素 \f2foo/*\fP は \f2A.jar:b.JAR\fP に展開されます。ただし、JAR ファイルの順番は未定義となります。このリストには、隠しファイルも含め、指定されたディレクトリ内のすべての JAR ファイルが含まれます。\f2*\fP だけから成るクラスパスエントリは、カレントディレクトリ内のすべての JAR ファイルのリストに展開されます。\f2CLASSPATH\fP 環境変数も、定義時には同様に展開されます。クラスパスのワイルドカード展開は必ず、Java 仮想マシンの起動前に実行されます。したがって、\f2System.getenv("CLASSPATH")\fP 呼び出しなどの環境に対する問い合わせを行わない限り、展開されていないワイルドカードを Java プログラムは認識しません。   
+.TP 15
+.BI \-bootclasspath " path"
+bootstrap クラスをロードするパスを指定します。デフォルトでは、bootstrap 
+クラスはコアとなる Java 2 プラットフォームを実装するクラスで、
+.B jre/lib/rt.jar
+および他の重要な jar ファイルに含まれています。
+.TP 15
+.B \-old
+古い JDK 1.0 形式のヘッダファイルを生成します。
+.TP 15
+.B  \-force
+常に出力ファイルに書き込むことを指定します。
+.TP 15
+.BI \-J "option"
+.I option
+を Java 仮想マシンに渡します。ここで、
+.I option
+は、Java アプリケーション起動プログラムの参照ページで
+説明されているオプションの 1 つです。たとえば、
+.I \-J-Xms48m
+は、起動時に使用するメモリを 48M バイトに設定します。
+.SH "環境変数"
+.TP 15
+.B CLASSPATH
+ユーザ定義クラスへのパスをシステムに通知するために使用します。
+複数のディレクトリを指定する場合はコロンで区切ります。
+以下に例を示します。
+.RS 10
+.sp 1n
+.LP
+.B .:/home/avh/classes:/usr/local/java/classes
+.RE
+.SH "関連項目"
+.LP
+
+.LP
+.LP
+javac、java、jdb、javap、javadoc
+.LP
+
+.LP
+ 

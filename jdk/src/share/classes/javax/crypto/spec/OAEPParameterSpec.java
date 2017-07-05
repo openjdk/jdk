@@ -1,0 +1,168 @@
+/*
+ * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package javax.crypto.spec;
+
+import java.math.BigInteger;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.MGF1ParameterSpec;
+
+/**
+ * This class specifies the set of parameters used with OAEP Padding,
+ * as defined in the
+ * <a href="http://www.ietf.org/rfc/rfc3447.txt">PKCS #1</a>
+ * standard.
+ *
+ * Its ASN.1 definition in PKCS#1 standard is described below:
+ * <pre>
+ * RSAES-OAEP-params ::= SEQUENCE {
+ *   hashAlgorithm      [0] OAEP-PSSDigestAlgorithms     DEFAULT sha1,
+ *   maskGenAlgorithm   [1] PKCS1MGFAlgorithms  DEFAULT mgf1SHA1,
+ *   pSourceAlgorithm   [2] PKCS1PSourceAlgorithms  DEFAULT pSpecifiedEmpty
+ * }
+ * </pre>
+ * where
+ * <pre>
+ * OAEP-PSSDigestAlgorithms    ALGORITHM-IDENTIFIER ::= {
+ *   { OID id-sha1 PARAMETERS NULL   }|
+ *   { OID id-sha256 PARAMETERS NULL }|
+ *   { OID id-sha384 PARAMETERS NULL }|
+ *   { OID id-sha512 PARAMETERS NULL },
+ *   ...  -- Allows for future expansion --
+ * }
+ * PKCS1MGFAlgorithms    ALGORITHM-IDENTIFIER ::= {
+ *   { OID id-mgf1 PARAMETERS OAEP-PSSDigestAlgorithms },
+ *   ...  -- Allows for future expansion --
+ * }
+ * PKCS1PSourceAlgorithms    ALGORITHM-IDENTIFIER ::= {
+ *   { OID id-pSpecified PARAMETERS OCTET STRING },
+ *   ...  -- Allows for future expansion --
+ * }
+ * </pre>
+ * <p>Note: the OAEPParameterSpec.DEFAULT uses the following:
+ *     message digest  -- "SHA-1"
+ *     mask generation function (mgf) -- "MGF1"
+ *     parameters for mgf -- MGF1ParameterSpec.SHA1
+ *     source of encoding input -- PSource.PSpecified.DEFAULT
+ *
+ * @see java.security.spec.MGF1ParameterSpec
+ * @see PSource
+ *
+ * @author Valerie Peng
+ *
+ * @since 1.5
+ */
+public class OAEPParameterSpec implements AlgorithmParameterSpec {
+
+    private String mdName = "SHA-1";
+    private String mgfName = "MGF1";
+    private AlgorithmParameterSpec mgfSpec = MGF1ParameterSpec.SHA1;
+    private PSource pSrc = PSource.PSpecified.DEFAULT;
+
+    /**
+     * The OAEP parameter set with all default values.
+     */
+    public static final OAEPParameterSpec DEFAULT = new OAEPParameterSpec();
+
+    /**
+     * Constructs a parameter set for OAEP padding as defined in
+     * the PKCS #1 standard using the default values.
+     */
+    private OAEPParameterSpec() {
+    }
+
+    /**
+     * Constructs a parameter set for OAEP padding as defined in
+     * the PKCS #1 standard using the specified message digest
+     * algorithm <code>mdName</code>, mask generation function
+     * algorithm <code>mgfName</code>, parameters for the mask
+     * generation function <code>mgfSpec</code>, and source of
+     * the encoding input P <code>pSrc</code>.
+     *
+     * @param mdName the algorithm name for the message digest.
+     * @param mgfName the algorithm name for the mask generation
+     * function.
+     * @param mgfSpec the parameters for the mask generation function.
+     * If null is specified, null will be returned by getMGFParameters().
+     * @param pSrc the source of the encoding input P.
+     * @exception NullPointerException if <code>mdName</code>,
+     * <code>mgfName</code>, or <code>pSrc</code> is null.
+     */
+    public OAEPParameterSpec(String mdName, String mgfName,
+                             AlgorithmParameterSpec mgfSpec,
+                             PSource pSrc) {
+        if (mdName == null) {
+            throw new NullPointerException("digest algorithm is null");
+        }
+        if (mgfName == null) {
+            throw new NullPointerException("mask generation function " +
+                                           "algorithm is null");
+        }
+        if (pSrc == null) {
+            throw new NullPointerException("source of the encoding input " +
+                                           "is null");
+        }
+        this.mdName =  mdName;
+        this.mgfName =  mgfName;
+        this.mgfSpec =  mgfSpec;
+        this.pSrc =  pSrc;
+    }
+
+    /**
+     * Returns the message digest algorithm name.
+     *
+     * @return the message digest algorithm name.
+     */
+    public String getDigestAlgorithm() {
+        return mdName;
+    }
+
+    /**
+     * Returns the mask generation function algorithm name.
+     *
+     * @return the mask generation function algorithm name.
+     */
+    public String getMGFAlgorithm() {
+        return mgfName;
+    }
+
+    /**
+     * Returns the parameters for the mask generation function.
+     *
+     * @return the parameters for the mask generation function.
+     */
+    public AlgorithmParameterSpec getMGFParameters() {
+        return mgfSpec;
+    }
+
+    /**
+     * Returns the source of encoding input P.
+     *
+     * @return the source of encoding input P.
+     */
+    public PSource getPSource() {
+        return pSrc;
+    }
+}

@@ -1,0 +1,204 @@
+/*
+ * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+package com.sun.jndi.ldap;
+
+import java.util.Vector;
+import javax.naming.*;
+import javax.naming.directory.*;
+import javax.naming.spi.*;
+import javax.naming.ldap.*;
+import javax.naming.ldap.LdapName;
+
+import com.sun.jndi.toolkit.ctx.Continuation;
+
+final class LdapSearchEnumeration extends LdapNamingEnumeration {
+
+    private Name startName;             // prefix of names of search results
+    private LdapCtx.SearchArgs searchArgs = null;
+
+    LdapSearchEnumeration(LdapCtx homeCtx, LdapResult search_results,
+        String starter, LdapCtx.SearchArgs args, Continuation cont)
+        throws NamingException {
+
+        super(homeCtx, search_results,
+              args.name, /* listArg */
+              cont);
+
+        // fully qualified name of starting context of search
+        startName = new LdapName(starter);
+        searchArgs = args;
+    }
+
+    protected NameClassPair
+    createItem(String dn, Attributes attrs, Vector respCtls)
+        throws NamingException {
+
+        Object obj = null;
+
+        String relStart;         // name relative to starting search context
+        String relHome;          // name relative to homeCtx.currentDN
+        boolean relative = true; // whether relative to currentDN
+
+        // need to strip off all but lowest component of dn
+        // so that is relative to current context (currentDN)
+
+        try {
+            Name parsed = new LdapName(dn);
+            // System.err.println("dn string: " + dn);
+            // System.err.println("dn name: " + parsed);
+
+            if (startName != null && parsed.startsWith(startName)) {
+                relStart = parsed.getSuffix(startName.size()).toString();
+                relHome = parsed.getSuffix(homeCtx.currentParsedDN.size()).toString();
+            } else {
+                relative = false;
+                relHome = relStart =
+                    LdapURL.toUrlString(homeCtx.hostname, homeCtx.port_number,
+                    dn, homeCtx.hasLdapsScheme);
+            }
+        } catch (NamingException e) {
+            // could not parse name
+            relative = false;
+            relHome = relStart =
+                LdapURL.toUrlString(homeCtx.hostname, homeCtx.port_number,
+                dn, homeCtx.hasLdapsScheme);
+        }
+
+        // Name relative to search context
+        CompositeName cn = new CompositeName();
+        if (!relStart.equals("")) {
+            cn.add(relStart);
+        }
+
+        // Name relative to homeCtx
+        CompositeName rcn = new CompositeName();
+        if (!relHome.equals("")) {
+            rcn.add(relHome);
+        }
+        //System.err.println("relStart: " + cn);
+        //System.err.println("relHome: " + rcn);
+
+        // Fix attributes to be able to get schema
+        homeCtx.setParents(attrs, rcn);
+
+        // only generate object when requested
+        if (searchArgs.cons.getReturningObjFlag()) {
+
+            if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
+                // Entry contains Java-object attributes (ser/ref object)
+                // serialized object or object reference
+                obj = Obj.decodeObject(attrs);
+
+            }
+            if (obj == null) {
+                obj = new LdapCtx(homeCtx, dn);
+            }
+
+            // Call getObjectInstance before removing unrequested attributes
+            try {
+                // rcn is either relative to homeCtx or a fully qualified DN
+                obj = DirectoryManager.getObjectInstance(
+                    obj, rcn, (relative ? homeCtx : null),
+                    homeCtx.envprops, attrs);
+            } catch (NamingException e) {
+                throw e;
+            } catch (Exception e) {
+                NamingException ne =
+                    new NamingException(
+                            "problem generating object using object factory");
+                ne.setRootCause(e);
+                throw ne;
+            }
+
+            // remove Java attributes from result, if necessary
+            // Even if CLASSNAME attr not there, there might be some
+            // residual attributes
+
+            String[] reqAttrs;
+            if ((reqAttrs = searchArgs.reqAttrs) != null) {
+                // create an attribute set for those requested
+                Attributes rattrs = new BasicAttributes(true); // caseignore
+                for (int i = 0; i < reqAttrs.length; i++) {
+                    rattrs.put(reqAttrs[i], null);
+                }
+                for (int i = 0; i < Obj.JAVA_ATTRIBUTES.length; i++) {
+                    // Remove Java-object attributes if not requested
+                    if (rattrs.get(Obj.JAVA_ATTRIBUTES[i]) == null) {
+                        attrs.remove(Obj.JAVA_ATTRIBUTES[i]);
+                    }
+                }
+            }
+
+        }
+
+        /*
+         * name in search result is either the stringified composite name
+         * relative to the search context that can be passed directly to
+         * methods of the search context, or the fully qualified DN
+         * which can be used with the initial context.
+         */
+        SearchResult sr;
+        if (respCtls != null) {
+            sr = new SearchResultWithControls(
+                (relative ? cn.toString() : relStart), obj, attrs,
+                relative, homeCtx.convertControls(respCtls));
+        } else {
+            sr = new SearchResult(
+                (relative ? cn.toString() : relStart),
+                obj, attrs, relative);
+        }
+        sr.setNameInNamespace(dn);
+        return sr;
+    }
+
+    public void appendUnprocessedReferrals(LdapReferralException ex) {
+
+        // a referral has been followed so do not create relative names
+        startName = null;
+        super.appendUnprocessedReferrals(ex);
+    }
+
+    protected LdapNamingEnumeration
+    getReferredResults(LdapReferralContext refCtx) throws NamingException {
+        // repeat the original operation at the new context
+        return (LdapSearchEnumeration)
+            refCtx.search(searchArgs.name, searchArgs.filter, searchArgs.cons);
+    }
+
+    protected void update(LdapNamingEnumeration ne) {
+        super.update(ne);
+
+        // Update search-specific variables
+        LdapSearchEnumeration se = (LdapSearchEnumeration)ne;
+        startName = se.startName;
+//VR - keep original args, don't overwite with current args
+//      searchArgs = se.searchArgs;
+    }
+
+    void setStartName(Name nm) {
+        startName = nm;
+    }
+}

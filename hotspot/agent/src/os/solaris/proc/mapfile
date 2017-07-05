@@ -1,0 +1,50 @@
+#
+
+#
+# Copyright 2003-2004 Sun Microsystems, Inc.  All Rights Reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+# CA 95054 USA or visit www.sun.com if you need additional information or
+# have any questions.
+#  
+#
+
+# Define public interface.
+
+SUNWprivate_1.1 {
+	global:
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_attach0__Ljava_lang_String_2;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_attach0__Ljava_lang_String_2Ljava_lang_String_2;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_demangle0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_detach0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_fillCFrameList0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_fillLoadObjectList0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_fillThreadList0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_getPageSize0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_getRemoteProcessAddressSize0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_getThreadIntegerRegisterSet0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_initIDs;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_lookupByAddress0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_lookupByName0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_readBytesFromProcess0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_resume0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_suspend0;
+		Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_writeBytesToProcess0;
+local:
+	*;
+};
