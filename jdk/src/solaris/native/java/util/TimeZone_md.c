@@ -651,7 +651,7 @@ findJavaTZ_md(const char *java_home_dir, const char *country)
     }
 
 #ifdef __solaris__
-    if (strcmp(tz, "localtime") == 0) {
+    if (tz != NULL && strcmp(tz, "localtime") == 0) {
         tz = getSolarisDefaultZoneID();
         freetz = tz;
     }

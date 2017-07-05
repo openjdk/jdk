@@ -50,11 +50,20 @@ class AdaptiveWeightedAverage : public CHeapObj {
   unsigned         _weight;         // The weight used to smooth the averages
                                     //   A higher weight favors the most
                                     //   recent data.
+  bool             _is_old;         // Has enough historical data
+
+  const static unsigned OLD_THRESHOLD = 100;
 
  protected:
   float            _last_sample;    // The last value sampled.
 
-  void  increment_count()       { _sample_count++;       }
+  void  increment_count() {
+    _sample_count++;
+    if (!_is_old && _sample_count > OLD_THRESHOLD) {
+      _is_old = true;
+    }
+  }
+
   void  set_average(float avg)  { _average = avg;        }
 
   // Helper function, computes an adaptive weighted average
@@ -64,13 +73,15 @@ class AdaptiveWeightedAverage : public CHeapObj {
  public:
   // Input weight must be between 0 and 100
   AdaptiveWeightedAverage(unsigned weight, float avg = 0.0) :
-    _average(avg), _sample_count(0), _weight(weight), _last_sample(0.0) {
+    _average(avg), _sample_count(0), _weight(weight), _last_sample(0.0),
+    _is_old(false) {
   }
 
   void clear() {
     _average = 0;
     _sample_count = 0;
     _last_sample = 0;
+    _is_old = false;
   }
 
   // Useful for modifying static structures after startup.
@@ -84,7 +95,8 @@ class AdaptiveWeightedAverage : public CHeapObj {
   float    average() const       { return _average;       }
   unsigned weight()  const       { return _weight;        }
   unsigned count()   const       { return _sample_count;  }
-  float    last_sample() const   { return _last_sample; }
+  float    last_sample() const   { return _last_sample;   }
+  bool     is_old()  const       { return _is_old;        }
 
   // Update data with a new sample.
   void sample(float new_sample);

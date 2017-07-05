@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public class TestSignatures extends PKCS11Test {
         testSignature("MD2withRSA", privateKey, publicKey);
         testSignature("MD5withRSA", privateKey, publicKey);
         testSignature("SHA1withRSA", privateKey, publicKey);
+        testSignature("SHA224withRSA", privateKey, publicKey);
         testSignature("SHA256withRSA", privateKey, publicKey);
         RSAPublicKey rsaKey = (RSAPublicKey)publicKey;
         if (rsaKey.getModulus().bitLength() > 512) {
