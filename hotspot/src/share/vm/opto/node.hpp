@@ -42,7 +42,6 @@ class AliasInfo;
 class AllocateArrayNode;
 class AllocateNode;
 class Block;
-class Block_Array;
 class BoolNode;
 class BoxLockNode;
 class CMoveNode;
