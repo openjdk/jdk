@@ -132,7 +132,9 @@ public class StartDateTest {
 
     static Date getIssueDate() throws Exception {
         KeyStore ks = KeyStore.getInstance("jks");
-        ks.load(new FileInputStream("jks"), "changeit".toCharArray());
+        try (FileInputStream fis = new FileInputStream("jks")) {
+            ks.load(fis, "changeit".toCharArray());
+        }
         X509Certificate cert = (X509Certificate)ks.getCertificate("me");
         return cert.getNotBefore();
     }

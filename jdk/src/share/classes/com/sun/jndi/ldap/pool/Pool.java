@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.util.WeakHashMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.LinkedList;
 
 import java.io.PrintStream;
@@ -83,17 +82,18 @@ final public class Pool {
     /*
      * Used for connections cleanup
      */
-    private static final ReferenceQueue queue = new ReferenceQueue();
-    private static final Collection weakRefs =
-                Collections.synchronizedList(new LinkedList());
+    private static final ReferenceQueue<ConnectionsRef> queue =
+        new ReferenceQueue<>();
+    private static final Collection<Reference<ConnectionsRef>> weakRefs =
+        Collections.synchronizedList(new LinkedList<Reference<ConnectionsRef>>());
 
     final private int maxSize;    // max num of identical conn per pool
     final private int prefSize;   // preferred num of identical conn per pool
     final private int initSize;   // initial number of identical conn to create
-    final private Map map;
+    final private Map<Object, ConnectionsRef> map;
 
     public Pool(int initSize, int prefSize, int maxSize) {
-        map = new WeakHashMap();
+        map = new WeakHashMap<>();
         this.prefSize = prefSize;
         this.maxSize = maxSize;
         this.initSize = initSize;
@@ -135,7 +135,8 @@ final public class Pool {
                 map.put(id, connsRef);
 
                 // Create a weak reference to ConnectionsRef
-                Reference weakRef = new ConnectionsWeakRef(connsRef, queue);
+                Reference<ConnectionsRef> weakRef =
+                        new ConnectionsWeakRef(connsRef, queue);
 
                 // Keep the weak reference through the element of a linked list
                 weakRefs.add(weakRef);
@@ -148,7 +149,7 @@ final public class Pool {
     }
 
     private Connections getConnections(Object id) {
-        ConnectionsRef ref = (ConnectionsRef) map.get(id);
+        ConnectionsRef ref = map.get(id);
         return (ref != null) ? ref.getConnections() : null;
     }
 
@@ -163,11 +164,10 @@ final public class Pool {
      */
     public void expire(long threshold) {
         synchronized (map) {
-            Collection coll = map.values();
-            Iterator iter = coll.iterator();
+            Iterator<ConnectionsRef> iter = map.values().iterator();
             Connections conns;
             while (iter.hasNext()) {
-                conns = ((ConnectionsRef) (iter.next())).getConnections();
+                conns = iter.next().getConnections();
                 if (conns.expire(threshold)) {
                     d("expire(): removing ", conns);
                     iter.remove();
@@ -202,7 +202,6 @@ final public class Pool {
 
 
     public void showStats(PrintStream out) {
-        Map.Entry entry;
         Object id;
         Connections conns;
 
@@ -212,13 +211,9 @@ final public class Pool {
         out.println("initial pool size: " + initSize);
         out.println("current pool size: " + map.size());
 
-        Set entries = map.entrySet();
-        Iterator iter = entries.iterator();
-
-        while (iter.hasNext()) {
-            entry = (Map.Entry) iter.next();
+        for (Map.Entry<Object, ConnectionsRef> entry : map.entrySet()) {
             id = entry.getKey();
-            conns = ((ConnectionsRef) entry.getValue()).getConnections();
+            conns = entry.getValue().getConnections();
             out.println("   " + id + ":" + conns.getStats());
         }
 

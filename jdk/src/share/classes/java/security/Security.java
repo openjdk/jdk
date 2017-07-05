@@ -33,8 +33,6 @@ import java.net.URL;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 
-import java.security.Provider.Service;
-
 import sun.security.jca.*;
 
 /**
@@ -660,15 +658,16 @@ public final class Security {
     }
 
     // Map containing cached Spi Class objects of the specified type
-    private static final Map<String, Class> spiMap = new ConcurrentHashMap<>();
+    private static final Map<String, Class<?>> spiMap =
+            new ConcurrentHashMap<>();
 
     /**
      * Return the Class object for the given engine type
      * (e.g. "MessageDigest"). Works for Spis in the java.security package
      * only.
      */
-    private static Class getSpiClass(String type) {
-        Class clazz = spiMap.get(type);
+    private static Class<?> getSpiClass(String type) {
+        Class<?> clazz = spiMap.get(type);
         if (clazz != null) {
             return clazz;
         }
@@ -1078,7 +1077,7 @@ public final class Security {
 
         if ((serviceName == null) || (serviceName.length() == 0) ||
             (serviceName.endsWith("."))) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
 
         HashSet<String> result = new HashSet<>();
@@ -1088,8 +1087,10 @@ public final class Security {
             // Check the keys for each provider.
             for (Enumeration<Object> e = providers[i].keys();
                                                 e.hasMoreElements(); ) {
-                String currentKey = ((String)e.nextElement()).toUpperCase();
-                if (currentKey.startsWith(serviceName.toUpperCase())) {
+                String currentKey =
+                        ((String)e.nextElement()).toUpperCase(Locale.ENGLISH);
+                if (currentKey.startsWith(
+                        serviceName.toUpperCase(Locale.ENGLISH))) {
                     // We should skip the currentKey if it contains a
                     // whitespace. The reason is: such an entry in the
                     // provider property contains attributes for the
@@ -1097,7 +1098,8 @@ public final class Security {
                     // in entries which lead to the implementation
                     // classes.
                     if (currentKey.indexOf(" ") < 0) {
-                        result.add(currentKey.substring(serviceName.length() + 1));
+                        result.add(currentKey.substring(
+                                                serviceName.length() + 1));
                     }
                 }
             }

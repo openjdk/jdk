@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.naming.Context;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
 import javax.naming.directory.ModificationItem;
 
 /**
@@ -50,7 +51,7 @@ import javax.naming.directory.ModificationItem;
 
 class ContinuationDirContext extends ContinuationContext implements DirContext {
 
-    ContinuationDirContext(CannotProceedException cpe, Hashtable env) {
+    ContinuationDirContext(CannotProceedException cpe, Hashtable<?,?> env) {
         super(cpe, env);
     }
 
@@ -204,7 +205,7 @@ class ContinuationDirContext extends ContinuationContext implements DirContext {
                 res.getDirContext().createSubcontext(res.getString(), attrs);
         }
 
-    public NamingEnumeration search(Name name,
+    public NamingEnumeration<SearchResult> search(Name name,
                                     Attributes matchingAttributes,
                                     String[] attributesToReturn)
         throws NamingException  {
@@ -213,7 +214,7 @@ class ContinuationDirContext extends ContinuationContext implements DirContext {
                                              attributesToReturn);
         }
 
-    public NamingEnumeration search(String name,
+    public NamingEnumeration<SearchResult> search(String name,
                                     Attributes matchingAttributes,
                                     String[] attributesToReturn)
         throws NamingException  {
@@ -223,13 +224,13 @@ class ContinuationDirContext extends ContinuationContext implements DirContext {
                                              attributesToReturn);
         }
 
-    public NamingEnumeration search(Name name,
+    public NamingEnumeration<SearchResult> search(Name name,
                                     Attributes matchingAttributes)
         throws NamingException  {
             DirContextNamePair res = getTargetContext(name);
             return res.getDirContext().search(res.getName(), matchingAttributes);
         }
-    public NamingEnumeration search(String name,
+    public NamingEnumeration<SearchResult> search(String name,
                                     Attributes matchingAttributes)
         throws NamingException  {
             DirContextStringPair res = getTargetContext(name);
@@ -237,7 +238,7 @@ class ContinuationDirContext extends ContinuationContext implements DirContext {
                                              matchingAttributes);
         }
 
-    public NamingEnumeration search(Name name,
+    public NamingEnumeration<SearchResult> search(Name name,
                                     String filter,
                                     SearchControls cons)
         throws NamingException {
@@ -245,7 +246,7 @@ class ContinuationDirContext extends ContinuationContext implements DirContext {
             return res.getDirContext().search(res.getName(), filter, cons);
         }
 
-    public NamingEnumeration search(String name,
+    public NamingEnumeration<SearchResult> search(String name,
                                     String filter,
                                     SearchControls cons)
         throws NamingException {
@@ -253,7 +254,7 @@ class ContinuationDirContext extends ContinuationContext implements DirContext {
             return res.getDirContext().search(res.getString(), filter, cons);
         }
 
-    public NamingEnumeration search(Name name,
+    public NamingEnumeration<SearchResult> search(Name name,
                                     String filterExpr,
                                     Object[] args,
                                     SearchControls cons)
@@ -263,7 +264,7 @@ class ContinuationDirContext extends ContinuationContext implements DirContext {
                                              cons);
         }
 
-    public NamingEnumeration search(String name,
+    public NamingEnumeration<SearchResult> search(String name,
                                     String filterExpr,
                                     Object[] args,
                                     SearchControls cons)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class Reference implements Cloneable, java.io.Serializable {
       */
     public Reference(String className) {
         this.className  = className;
-        addrs = new Vector();
+        addrs = new Vector<>();
     }
 
     /**
@@ -134,7 +134,7 @@ public class Reference implements Cloneable, java.io.Serializable {
       */
     public Reference(String className, RefAddr addr) {
         this.className = className;
-        addrs = new Vector();
+        addrs = new Vector<>();
         addrs.addElement(addr);
     }
 
@@ -225,7 +225,7 @@ public class Reference implements Cloneable, java.io.Serializable {
         int len = addrs.size();
         RefAddr addr;
         for (int i = 0; i < len; i++) {
-            addr = (RefAddr) addrs.elementAt(i);
+            addr = addrs.elementAt(i);
             if (addr.getType().compareTo(addrType) == 0)
                 return addr;
         }
@@ -241,7 +241,7 @@ public class Reference implements Cloneable, java.io.Serializable {
       *         range.
       */
     public RefAddr get(int posn) {
-        return ((RefAddr) addrs.elementAt(posn));
+        return addrs.elementAt(posn);
     }
 
     /**
@@ -331,8 +331,8 @@ public class Reference implements Cloneable, java.io.Serializable {
             // ignore factory information
             if (target.className.equals(this.className) &&
                 target.size() ==  this.size()) {
-                Enumeration mycomps = getAll();
-                Enumeration comps = target.getAll();
+                Enumeration<RefAddr> mycomps = getAll();
+                Enumeration<RefAddr> comps = target.getAll();
                 while (mycomps.hasMoreElements())
                     if (!(mycomps.nextElement().equals(comps.nextElement())))
                         return false;
@@ -350,7 +350,7 @@ public class Reference implements Cloneable, java.io.Serializable {
       */
     public int hashCode() {
         int hash = className.hashCode();
-        for (Enumeration e = getAll(); e.hasMoreElements();)
+        for (Enumeration<RefAddr> e = getAll(); e.hasMoreElements();)
             hash += e.nextElement().hashCode();
         return hash;
     }
@@ -382,7 +382,7 @@ public class Reference implements Cloneable, java.io.Serializable {
     public Object clone() {
         Reference r = new Reference(className, classFactory, classFactoryLocation);
         Enumeration<RefAddr> a = getAll();
-        r.addrs = new Vector();
+        r.addrs = new Vector<>();
 
         while (a.hasMoreElements())
             r.addrs.addElement(a.nextElement());

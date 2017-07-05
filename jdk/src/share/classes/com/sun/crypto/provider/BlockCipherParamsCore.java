@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.crypto.provider;
 
-import java.util.*;
 import java.io.*;
 import sun.security.util.*;
 import sun.misc.HexDumpEncoder;
@@ -64,7 +63,7 @@ final class BlockCipherParamsCore {
             throw new InvalidParameterSpecException("IV not " +
                         block_size + " bytes long");
         }
-        iv = (byte[]) tmpIv.clone();
+        iv = tmpIv.clone();
     }
 
     void init(byte[] encoded) throws IOException {
@@ -90,11 +89,11 @@ final class BlockCipherParamsCore {
         init(encoded);
     }
 
-    AlgorithmParameterSpec getParameterSpec(Class paramSpec)
+    <T extends AlgorithmParameterSpec> T getParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException
     {
         if (IvParameterSpec.class.isAssignableFrom(paramSpec)) {
-            return new IvParameterSpec(this.iv);
+            return paramSpec.cast(new IvParameterSpec(this.iv));
         } else {
             throw new InvalidParameterSpecException
                 ("Inappropriate parameter specification");

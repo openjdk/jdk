@@ -27,6 +27,7 @@
  * @summary store a NSS PKCS11 PrivateKeyEntry to JKS KeyStore throws confusing NPE
  * @author Wang Weijun
  * @library ..
+ * @run main/othervm JksSetPrivateKey
  */
 
 import java.util.*;

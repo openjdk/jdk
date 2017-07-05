@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ public class CertificateIssuerUniqueIdentity implements CertAttrSet<String> {
     /**
      * Get the attribute value.
      */
-    public Object get(String name) throws IOException {
+    public UniqueIdentity get(String name) throws IOException {
         if (name.equalsIgnoreCase(ID)) {
             return (id);
         } else {

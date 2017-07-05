@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import javax.naming.spi.NamingManager;
 import javax.naming.spi.ResolveResult;
 
 import java.util.Hashtable;
-import java.util.Vector;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.io.InputStream;
@@ -63,7 +62,7 @@ public class CNCtx implements javax.naming.Context {
     public NamingContext _nc;   // public for accessing underlying NamingContext
     private NameComponent[] _name = null;
 
-    Hashtable _env; // used by ExceptionMapper
+    Hashtable<String, java.lang.Object> _env; // used by ExceptionMapper
     static final CNNameParser parser = new CNNameParser();
 
     private static final String FED_PROP = "com.sun.jndi.cosnaming.federation";
@@ -82,11 +81,12 @@ public class CNCtx implements javax.naming.Context {
       * @param env Environment properties for initializing name service.
       * @exception NamingException Cannot initialize ORB or naming context.
       */
-    CNCtx(Hashtable env) throws NamingException {
+    @SuppressWarnings("unchecked")
+    CNCtx(Hashtable<?,?> env) throws NamingException {
         if (env != null) {
-            env = (Hashtable) env.clone();
+            env = (Hashtable<?,?>)env.clone();
         }
-        _env = env;
+        _env = (Hashtable<String, java.lang.Object>)env;
         federation = "true".equals(env != null ? env.get(FED_PROP) : null);
         initOrbAndRootContext(env);
     }
@@ -97,13 +97,14 @@ public class CNCtx implements javax.naming.Context {
     /**
      * This method is used by the iiop and iiopname URL Context factories.
      */
-    public static ResolveResult createUsingURL(String url, Hashtable env)
+    @SuppressWarnings("unchecked")
+    public static ResolveResult createUsingURL(String url, Hashtable<?,?> env)
     throws NamingException {
         CNCtx ctx = new CNCtx();
         if (env != null) {
-            env = (Hashtable) env.clone();
+            env = (Hashtable<?,?>) env.clone();
         }
-        ctx._env = env;
+        ctx._env = (Hashtable<String, java.lang.Object>)env;
         String rest = ctx.initUsingUrl(
             env != null ?
                 (org.omg.CORBA.ORB) env.get("java.naming.corba.orb")
@@ -128,8 +129,8 @@ public class CNCtx implements javax.naming.Context {
       * @param name The name of this context relative to the root
       */
 
-    CNCtx(ORB orb, OrbReuseTracker tracker, NamingContext nctx, Hashtable env,
-                        NameComponent[]name)
+    CNCtx(ORB orb, OrbReuseTracker tracker, NamingContext nctx,
+          Hashtable<String, java.lang.Object> env, NameComponent[]name)
         throws NamingException {
             if (orb == null || nctx == null)
                 throw new ConfigurationException(
@@ -207,7 +208,7 @@ public class CNCtx implements javax.naming.Context {
       * @exception NamingException When an error occurs while initializing the
       * ORB or the naming context.
       */
-    private void initOrbAndRootContext(Hashtable env) throws NamingException {
+    private void initOrbAndRootContext(Hashtable<?,?> env) throws NamingException {
         org.omg.CORBA.ORB inOrb = null;
         String ncIor = null;
 
@@ -240,7 +241,7 @@ public class CNCtx implements javax.naming.Context {
 
             // If name supplied in URL, resolve it to a NamingContext
             if (insName.length() > 0) {
-                _name = parser.nameToCosName(parser.parse(insName));
+                _name = CNNameParser.nameToCosName(parser.parse(insName));
                 try {
                     org.omg.CORBA.Object obj = _nc.resolve(_name);
                     _nc = NamingContextHelper.narrow(obj);
@@ -271,7 +272,7 @@ public class CNCtx implements javax.naming.Context {
     }
 
 
-    private String initUsingUrl(ORB orb, String url, Hashtable env)
+    private String initUsingUrl(ORB orb, String url, Hashtable<?,?> env)
         throws NamingException {
         if (url.startsWith("iiop://") || url.startsWith("iiopname://")) {
             return initUsingIiopUrl(orb, url, env);
@@ -283,17 +284,14 @@ public class CNCtx implements javax.naming.Context {
     /**
      * Handles "iiop" and "iiopname" URLs (INS 98-10-11)
      */
-    private String initUsingIiopUrl(ORB defOrb, String url, Hashtable env)
+    private String initUsingIiopUrl(ORB defOrb, String url, Hashtable<?,?> env)
         throws NamingException {
         try {
             IiopUrl parsedUrl = new IiopUrl(url);
 
-            Vector addrs = parsedUrl.getAddresses();
-            IiopUrl.Address addr;
             NamingException savedException = null;
 
-            for (int i = 0; i < addrs.size(); i++) {
-                addr = (IiopUrl.Address)addrs.elementAt(i);
+            for (IiopUrl.Address addr : parsedUrl.getAddresses()) {
 
                 try {
                     if (defOrb != null) {
@@ -341,7 +339,7 @@ public class CNCtx implements javax.naming.Context {
     /**
      * Initializes using "corbaname" URL (INS 99-12-03)
      */
-    private String initUsingCorbanameUrl(ORB orb, String url, Hashtable env)
+    private String initUsingCorbanameUrl(ORB orb, String url, Hashtable<?,?> env)
         throws NamingException {
         try {
             CorbanameUrl parsedUrl = new CorbanameUrl(url);
@@ -731,7 +729,7 @@ public class CNCtx implements javax.naming.Context {
                 // as per JNDI spec
 
                 if (leafNotFound(e, path[path.length-1])) {
-                    ; // do nothing
+                    // do nothing
                 } else {
                     throw ExceptionMapper.mapException(e, this, path);
                 }
@@ -829,7 +827,7 @@ public class CNCtx implements javax.naming.Context {
       * with a non-null argument
       * @return a list of name-class objects as a NameClassEnumeration.
       */
-    public  NamingEnumeration list(String name) throws NamingException {
+    public  NamingEnumeration<NameClassPair> list(String name) throws NamingException {
             return list(new CompositeName(name));
     }
 
@@ -840,9 +838,10 @@ public class CNCtx implements javax.naming.Context {
       * @exception NamingException All exceptions thrown by lookup
       * @return a list of name-class objects as a NameClassEnumeration.
       */
-    public  NamingEnumeration list(Name name)
+    @SuppressWarnings("unchecked")
+    public  NamingEnumeration<NameClassPair> list(Name name)
         throws NamingException {
-            return listBindings(name);
+            return (NamingEnumeration)listBindings(name);
     }
 
     /**
@@ -852,7 +851,7 @@ public class CNCtx implements javax.naming.Context {
       * @exception NamingException all exceptions returned by lookup
       * @return a list of bindings as a BindingEnumeration.
       */
-    public  NamingEnumeration listBindings(String name)
+    public  NamingEnumeration<javax.naming.Binding> listBindings(String name)
         throws NamingException {
             return listBindings(new CompositeName(name));
     }
@@ -864,7 +863,7 @@ public class CNCtx implements javax.naming.Context {
       * @exception NamingException all exceptions returned by lookup.
       * @return a list of bindings as a BindingEnumeration.
       */
-    public  NamingEnumeration listBindings(Name name)
+    public  NamingEnumeration<javax.naming.Binding> listBindings(Name name)
         throws NamingException {
             if (_nc == null)
                 throw new ConfigurationException(
@@ -1064,11 +1063,12 @@ public class CNCtx implements javax.naming.Context {
       * Returns the current environment.
       * @return Environment.
       */
-    public  Hashtable getEnvironment() throws NamingException {
+    @SuppressWarnings("unchecked")
+    public  Hashtable<String, java.lang.Object> getEnvironment() throws NamingException {
         if (_env == null) {
-            return new Hashtable(5, 0.75f);
+            return new Hashtable<>(5, 0.75f);
         } else {
-            return (Hashtable)_env.clone();
+            return (Hashtable<String, java.lang.Object>)_env.clone();
         }
     }
 
@@ -1090,25 +1090,27 @@ public class CNCtx implements javax.naming.Context {
       * @param propVal  The ORB.
       * @return the previous value of this property if any.
       */
+    @SuppressWarnings("unchecked")
     public java.lang.Object addToEnvironment(String propName,
         java.lang.Object propValue)
         throws NamingException {
             if (_env == null) {
-                _env = new Hashtable(7, 0.75f);
+                _env = new Hashtable<>(7, 0.75f);
             } else {
                 // copy-on-write
-                _env = (Hashtable)_env.clone();
+                _env = (Hashtable<String, java.lang.Object>)_env.clone();
             }
 
             return _env.put(propName, propValue);
     }
 
     // Record change but do not reinitialize ORB
+    @SuppressWarnings("unchecked")
     public java.lang.Object removeFromEnvironment(String propName)
         throws NamingException {
             if (_env != null  && _env.get(propName) != null) {
                 // copy-on-write
-                _env = (Hashtable)_env.clone();
+                _env = (Hashtable<String, java.lang.Object>)_env.clone();
                 return _env.remove(propName);
             }
             return null;

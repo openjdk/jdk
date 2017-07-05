@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package com.sun.jndi.toolkit.ctx;
 
 import javax.naming.*;
 import javax.naming.directory.*;
-
-import javax.naming.spi.ResolveResult;
 
 /* Direct subclasses of ComponentDirContext must provide implementations for
  * the abstract c_ DirContext methods, and override the c_ Context methods
@@ -81,23 +79,26 @@ public abstract class ComponentDirContext extends PartialCompositeDirContext {
                                                     Continuation cont)
         throws NamingException;
 
-    protected abstract NamingEnumeration c_search(Name name,
-                                               Attributes matchingAttributes,
-                                               String[] attributesToReturn,
-                                               Continuation cont)
+    protected abstract NamingEnumeration<SearchResult> c_search(
+                            Name name,
+                            Attributes matchingAttributes,
+                            String[] attributesToReturn,
+                            Continuation cont)
         throws NamingException;
 
-    protected abstract NamingEnumeration c_search(Name name,
-                                               String filter,
-                                               SearchControls cons,
-                                               Continuation cont)
+    protected abstract NamingEnumeration<SearchResult> c_search(
+                            Name name,
+                            String filter,
+                            SearchControls cons,
+                            Continuation cont)
         throws NamingException;
 
-    protected abstract NamingEnumeration c_search(Name name,
-                                                  String filterExpr,
-                                                  Object[] filterArgs,
-                                                  SearchControls cons,
-                                                  Continuation cont)
+    protected abstract NamingEnumeration<SearchResult> c_search(
+                            Name name,
+                            String filterExpr,
+                            Object[] filterArgs,
+                            SearchControls cons,
+                            Continuation cont)
         throws NamingException;
 
     protected abstract DirContext c_getSchema(Name name, Continuation cont)
@@ -172,29 +173,32 @@ public abstract class ComponentDirContext extends PartialCompositeDirContext {
             return null;
         }
 
-    protected NamingEnumeration c_search_nns(Name name,
-                                          Attributes matchingAttributes,
-                                          String[] attributesToReturn,
-                                          Continuation cont)
+    protected NamingEnumeration<SearchResult> c_search_nns(
+                        Name name,
+                        Attributes matchingAttributes,
+                        String[] attributesToReturn,
+                        Continuation cont)
         throws NamingException {
             c_processJunction_nns(name, cont);
             return null;
         }
 
-    protected NamingEnumeration c_search_nns(Name name,
-                                          String filter,
-                                          SearchControls cons,
-                                          Continuation cont)
+    protected NamingEnumeration<SearchResult> c_search_nns(
+                        Name name,
+                        String filter,
+                        SearchControls cons,
+                        Continuation cont)
         throws NamingException  {
             c_processJunction_nns(name, cont);
             return null;
         }
 
-    protected NamingEnumeration c_search_nns(Name name,
-                                             String filterExpr,
-                                             Object[] filterArgs,
-                                             SearchControls cons,
-                                             Continuation cont)
+    protected NamingEnumeration<SearchResult> c_search_nns(
+                        Name name,
+                        String filterExpr,
+                        Object[] filterArgs,
+                        SearchControls cons,
+                        Continuation cont)
         throws NamingException  {
             c_processJunction_nns(name, cont);
             return null;
@@ -345,13 +349,14 @@ public abstract class ComponentDirContext extends PartialCompositeDirContext {
         return answer;
     }
 
-    protected NamingEnumeration p_search(Name name,
-                                      Attributes matchingAttributes,
-                                      String[] attributesToReturn,
-                                      Continuation cont)
+    protected NamingEnumeration<SearchResult> p_search(
+                    Name name,
+                    Attributes matchingAttributes,
+                    String[] attributesToReturn,
+                    Continuation cont)
         throws NamingException {
         HeadTail res = p_resolveIntermediate(name, cont);
-        NamingEnumeration answer = null;
+        NamingEnumeration<SearchResult> answer = null;
         switch (res.getStatus()) {
             case TERMINAL_NNS_COMPONENT:
                 answer = c_search_nns(res.getHead(), matchingAttributes,
@@ -371,12 +376,13 @@ public abstract class ComponentDirContext extends PartialCompositeDirContext {
         return answer;
     }
 
-    protected NamingEnumeration p_search(Name name,
-                                      String filter,
-                                      SearchControls cons, Continuation cont)
+    protected NamingEnumeration<SearchResult> p_search(Name name,
+                                                       String filter,
+                                                       SearchControls cons,
+                                                       Continuation cont)
         throws NamingException {
         HeadTail res = p_resolveIntermediate(name, cont);
-        NamingEnumeration answer = null;
+        NamingEnumeration<SearchResult> answer = null;
         switch (res.getStatus()) {
             case TERMINAL_NNS_COMPONENT:
                 answer = c_search_nns(res.getHead(), filter, cons, cont);
@@ -394,14 +400,14 @@ public abstract class ComponentDirContext extends PartialCompositeDirContext {
         return answer;
     }
 
-    protected NamingEnumeration p_search(Name name,
-                                         String filterExpr,
-                                         Object[] filterArgs,
-                                         SearchControls cons,
-                                         Continuation cont)
+    protected NamingEnumeration<SearchResult> p_search(Name name,
+                                                       String filterExpr,
+                                                       Object[] filterArgs,
+                                                       SearchControls cons,
+                                                       Continuation cont)
             throws NamingException {
         HeadTail res = p_resolveIntermediate(name, cont);
-        NamingEnumeration answer = null;
+        NamingEnumeration<SearchResult> answer = null;
         switch (res.getStatus()) {
             case TERMINAL_NNS_COMPONENT:
                 answer = c_search_nns(res.getHead(),

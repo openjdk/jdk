@@ -33,6 +33,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.NoSuchElementException;
 import java.util.Vector;
+import java.util.Locale;
 
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
@@ -166,7 +167,8 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     }
 
     private String getKey(String hostname, int port) {
-        return (hostname + ":" + String.valueOf(port)).toLowerCase();
+        return (hostname + ":" +
+            String.valueOf(port)).toLowerCase(Locale.ENGLISH);
     }
 
     // cache a SSLSession
