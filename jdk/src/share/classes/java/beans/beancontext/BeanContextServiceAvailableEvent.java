@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.Iterator;
  */
 
 public class BeanContextServiceAvailableEvent extends BeanContextEvent {
+    private static final long serialVersionUID = -5333985775656400778L;
 
     /**
      * Construct a <code>BeanContextAvailableServiceEvent</code>.

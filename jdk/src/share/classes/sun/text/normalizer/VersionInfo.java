@@ -1,5 +1,5 @@
 /*
- * Portions Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Portions Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 /*
  *******************************************************************************
- * (C) Copyright IBM Corp. 1996-2005 - All Rights Reserved                     *
+ * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
  *                                                                             *
  * The original version of this source code and documentation is copyrighted   *
  * and owned by IBM, These materials are provided under terms of a License     *

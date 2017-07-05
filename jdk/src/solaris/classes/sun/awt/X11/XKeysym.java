@@ -1,7 +1,7 @@
 // This is a generated file: do not edit! Edit keysym2ucs.h if necessary.
 
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,13 +89,46 @@ public class XKeysym {
         Character ch = keysym2UCSHash.get(ks);
         return ch == null ? (char)0 : ch.charValue();
     }
-    static long xkeycode2keysym(XKeyEvent ev, int ndx) {
+    static long xkeycode2keysym_noxkb(XKeyEvent ev, int ndx) {
         XToolkit.awtLock();
         try {
-            return XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), ndx );
+            return XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), ndx);
         } finally {
             XToolkit.awtUnlock();
         }
+    }
+    static long xkeycode2keysym_xkb(XKeyEvent ev, int ndx) {
+        XToolkit.awtLock();
+        try {
+            int mods = ev.get_state();
+            if ((ndx == 0) && ((mods & XConstants.ShiftMask) != 0)) {
+                // I don't know all possible meanings of 'ndx' in case of XKB
+                // and don't want to speculate. But this particular case
+                // clearly means that caller needs a so called primary keysym.
+                mods ^= XConstants.ShiftMask;
+            }
+            XlibWrapper.XkbTranslateKeyCode(XToolkit.getXKBKbdDesc(), ev.get_keycode(),
+                       mods, XlibWrapper.iarg1, XlibWrapper.larg3);
+            //XXX unconsumed modifiers?
+            return Native.getLong(XlibWrapper.larg3);
+        } finally {
+            XToolkit.awtUnlock();
+        }
+    }
+    static long xkeycode2keysym(XKeyEvent ev, int ndx) {
+        XToolkit.awtLock();
+        try {
+            if (XToolkit.canUseXKBCalls()) {
+                return xkeycode2keysym_xkb(ev, ndx);
+            }else{
+                return xkeycode2keysym_noxkb(ev, ndx);
+            }
+        } finally {
+            XToolkit.awtUnlock();
+        }
+    }
+    static long xkeycode2primary_keysym(XKeyEvent ev) {
+        return xkeycode2keysym(ev, 0);
     }
     public static boolean isKPEvent( XKeyEvent ev )
     {
@@ -196,6 +229,27 @@ public class XKeysym {
     }
     static int getJavaKeycodeOnly( XKeyEvent ev ) {
         Keysym2JavaKeycode jkc = getJavaKeycode( ev );
+        return jkc == null ? java.awt.event.KeyEvent.VK_UNDEFINED : jkc.getJavaKeycode();
+    }
+    /**
+     * Return an integer java keycode apprx as it was before extending keycodes range.
+     * This call would ignore for instance XKB and process whatever is on the bottom
+     * of keysym stack. Result will not depend on actual locale, will differ between
+     * dual/multiple keyboard setup systems (e.g. English+Russian vs French+Russian)
+     * but will be someway compatible with old releases.
+     */
+    static int getLegacyJavaKeycodeOnly( XKeyEvent ev ) {
+        long keysym = XConstants.NoSymbol;
+        int ndx = 0;
+        if( (ev.get_state() & XToolkit.numLockMask) != 0 &&
+             isKPEvent(ev)) {
+            keysym = getKeypadKeysym( ev );
+        } else {
+            // we only need primary-layer keysym to derive a java keycode.
+            ndx = 0;
+            keysym = xkeycode2keysym_noxkb(ev, ndx);
+        }
+        Keysym2JavaKeycode jkc = keysym2JavaKeycodeHash.get( keysym );
         return jkc == null ? java.awt.event.KeyEvent.VK_UNDEFINED : jkc.getJavaKeycode();
     }
     static long javaKeycode2Keysym( int jkey ) {

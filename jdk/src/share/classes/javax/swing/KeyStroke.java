@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,9 @@ public class KeyStroke extends AWTKeyStroke {
      * <li>java.awt.event.KeyEvent.VK_TAB
      * <li>java.awt.event.KeyEvent.VK_SPACE
      * </ul>
+     * Alternatively, the key code may be obtained by calling
+     * <code>java.awt.event.KeyEvent.getExtendedKeyCodeForChar</code>.
+     *
      * The modifiers consist of any combination of:<ul>
      * <li>java.awt.event.InputEvent.SHIFT_DOWN_MASK
      * <li>java.awt.event.InputEvent.CTRL_DOWN_MASK
@@ -210,6 +213,9 @@ public class KeyStroke extends AWTKeyStroke {
      * <li>java.awt.event.KeyEvent.VK_TAB
      * <li>java.awt.event.KeyEvent.VK_SPACE
      * </ul>
+     * Alternatively, the key code may be obtained by calling
+     * <code>java.awt.event.KeyEvent.getExtendedKeyCodeForChar</code>.
+     *
      * The modifiers consist of any combination of:<ul>
      * <li>java.awt.event.InputEvent.SHIFT_DOWN_MASK
      * <li>java.awt.event.InputEvent.CTRL_DOWN_MASK

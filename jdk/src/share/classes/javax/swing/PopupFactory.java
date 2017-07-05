@@ -552,14 +552,15 @@ public class PopupFactory {
             boolean result = false;
             Component component = getComponent();
             if (owner != null && component != null) {
-                Container parent = (Container) SwingUtilities.getRoot(owner);
                 int popupWidth = component.getWidth();
                 int popupHeight = component.getHeight();
-                Rectangle parentBounds = parent.getBounds();
+
+                Container parent = (Container) SwingUtilities.getRoot(owner);
                 if (parent instanceof JFrame ||
                     parent instanceof JDialog ||
                     parent instanceof JWindow) {
 
+                    Rectangle parentBounds = parent.getBounds();
                     Insets i = parent.getInsets();
                     parentBounds.x += i.left;
                     parentBounds.y += i.top;
@@ -577,11 +578,11 @@ public class PopupFactory {
                                 .contains(x, y, popupWidth, popupHeight);
                     }
                 } else if (parent instanceof JApplet) {
+                    Rectangle parentBounds = parent.getBounds();
                     Point p = parent.getLocationOnScreen();
                     parentBounds.x = p.x;
                     parentBounds.y = p.y;
-                    result = parentBounds
-                            .contains(x, y, popupWidth, popupHeight);
+                    result = parentBounds.contains(x, y, popupWidth, popupHeight);
                 }
             }
             return result;

@@ -380,7 +380,6 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
 
             // fix for 4868278
             peer.updateGC();
-            peer.resetTargetGC();
         }
     }
 
