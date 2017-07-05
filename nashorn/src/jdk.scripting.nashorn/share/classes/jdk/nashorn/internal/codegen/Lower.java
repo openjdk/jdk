@@ -178,6 +178,15 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     }
 
     @Override
+    public boolean enterCatchNode(final CatchNode catchNode) {
+        Expression exception = catchNode.getException();
+        if ((exception != null) && !(exception instanceof IdentNode)) {
+            throwNotImplementedYet("es6.destructuring", exception);
+        }
+        return true;
+    }
+
+    @Override
     public Node leaveCatchNode(final CatchNode catchNode) {
         return addStatement(catchNode);
     }
