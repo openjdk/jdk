@@ -194,11 +194,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                 (HeapWord*)_virtual_space.high());
   Universe::heap()->barrier_set()->resize_covered_region(cmr);
 
-  if (GenCollectedHeap::heap()->collector_policy()->has_soft_ended_eden()) {
-    _eden_space = new ConcEdenSpace(this);
-  } else {
-    _eden_space = new EdenSpace(this);
-  }
+  _eden_space = new ContiguousSpace();
   _from_space = new ContiguousSpace();
   _to_space   = new ContiguousSpace();
 
@@ -1038,38 +1034,12 @@ HeapWord* DefNewGeneration::allocate(size_t word_size,
     if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
       _next_gen->sample_eden_chunk();
     }
-    return result;
-  }
-  do {
-    HeapWord* old_limit = eden()->soft_end();
-    if (old_limit < eden()->end()) {
-      // Tell the next generation we reached a limit.
-      HeapWord* new_limit =
-        next_gen()->allocation_limit_reached(eden(), eden()->top(), word_size);
-      if (new_limit != NULL) {
-        Atomic::cmpxchg_ptr(new_limit, eden()->soft_end_addr(), old_limit);
-      } else {
-        assert(eden()->soft_end() == eden()->end(),
-               "invalid state after allocation_limit_reached returned null");
-      }
-    } else {
-      // The allocation failed and the soft limit is equal to the hard limit,
-      // there are no reasons to do an attempt to allocate
-      assert(old_limit == eden()->end(), "sanity check");
-      break;
-    }
-    // Try to allocate until succeeded or the soft limit can't be adjusted
-    result = eden()->par_allocate(word_size);
-  } while (result == NULL);
-
-  // If the eden is full and the last collection bailed out, we are running
-  // out of heap space, and we try to allocate the from-space, too.
-  // allocate_from_space can't be inlined because that would introduce a
-  // circular dependency at compile time.
-  if (result == NULL) {
+  } else {
+    // If the eden is full and the last collection bailed out, we are running
+    // out of heap space, and we try to allocate the from-space, too.
+    // allocate_from_space can't be inlined because that would introduce a
+    // circular dependency at compile time.
     result = allocate_from_space(word_size);
-  } else if (CMSEdenChunksRecordAlways && _next_gen != NULL) {
-    _next_gen->sample_eden_chunk();
   }
   return result;
 }
@@ -1081,11 +1051,6 @@ HeapWord* DefNewGeneration::par_allocate(size_t word_size,
     _next_gen->sample_eden_chunk();
   }
   return res;
-}
-
-void DefNewGeneration::gc_prologue(bool full) {
-  // Ensure that _end and _soft_end are the same in eden space.
-  eden()->set_soft_end(eden()->end());
 }
 
 size_t DefNewGeneration::tlab_capacity() const {

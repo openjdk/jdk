@@ -752,7 +752,7 @@ class DatagramChannelImpl
                             }
                             do {
                                 tmpBuf.clear();
-                            } while (read(tmpBuf) > 0);
+                            } while (receive(tmpBuf) != null);
                         } finally {
                             if (blocking) {
                                 configureBlocking(true);

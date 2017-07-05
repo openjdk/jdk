@@ -31,7 +31,6 @@
 #include "runtime/mutex.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/macros.hpp"
-
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
 #endif // INCLUDE_ALL_GCS

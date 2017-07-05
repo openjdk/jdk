@@ -27,8 +27,6 @@
    @author Pavel Porvatov
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -43,7 +41,8 @@ public class bug7107099 {
     private static int extent;
 
     public static void main(String[] args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+
+        java.awt.Robot robot = new java.awt.Robot();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -61,7 +60,7 @@ public class bug7107099 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -81,7 +80,7 @@ public class bug7107099 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override

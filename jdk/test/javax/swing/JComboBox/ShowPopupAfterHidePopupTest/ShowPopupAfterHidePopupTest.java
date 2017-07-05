@@ -25,14 +25,13 @@
    @bug 8006417
    @summary JComboBox.showPopup(), hidePopup() fails in JRE 1.7 on OS X
    @author Anton Litvinov
+   @run main ShowPopupAfterHidePopupTest
 */
 
 import java.awt.*;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.*;
-
-import sun.awt.SunToolkit;
 
 public class ShowPopupAfterHidePopupTest {
     private static JFrame frame = null;
@@ -41,6 +40,7 @@ public class ShowPopupAfterHidePopupTest {
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel(new MetalLookAndFeel());
+        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
@@ -51,8 +51,7 @@ public class ShowPopupAfterHidePopupTest {
                 frame.setVisible(true);
             }
         });
-        final SunToolkit toolkit = (SunToolkit)Toolkit.getDefaultToolkit();
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
@@ -62,7 +61,7 @@ public class ShowPopupAfterHidePopupTest {
                 comboBox.showPopup();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
 
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override

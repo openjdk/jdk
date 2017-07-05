@@ -64,6 +64,7 @@ import sun.net.www.http.HttpClient;
 // For both copies of the file, uncomment one line and comment the other
 // public class HttpsURLConnectionImpl
 //      extends javax.net.ssl.HttpsURLConnection {
+@SuppressWarnings("deprecation") // HttpsURLConnection is deprecated
 public class HttpsURLConnectionOldImpl
         extends com.sun.net.ssl.HttpsURLConnection {
 

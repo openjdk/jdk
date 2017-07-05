@@ -198,7 +198,7 @@ public abstract class AbstractInterruptibleChannel
         blockedOn(null);
         Thread interrupted = this.interrupted;
         if (interrupted != null && interrupted == Thread.currentThread()) {
-            interrupted = null;
+            this.interrupted = null;
             throw new ClosedByInterruptException();
         }
         if (!completed && !open)

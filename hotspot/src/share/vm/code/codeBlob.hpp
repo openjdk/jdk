@@ -83,6 +83,7 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
  public:
   // Returns the space needed for CodeBlob
   static unsigned int allocation_size(CodeBuffer* cb, int header_size);
+  static unsigned int align_code_offset(int offset);
 
   // Creation
   // a) simple CodeBlob
@@ -207,7 +208,7 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   }
 };
 
-
+class WhiteBox;
 //----------------------------------------------------------------------------------------------------
 // BufferBlob: used to hold non-relocatable machine code such as the interpreter, stubroutines, etc.
 
@@ -215,6 +216,7 @@ class BufferBlob: public CodeBlob {
   friend class VMStructs;
   friend class AdapterBlob;
   friend class MethodHandlesAdapterBlob;
+  friend class WhiteBox;
 
  private:
   // Creation support

@@ -1167,10 +1167,14 @@ JVM_NativePath(char *);
  * be renamed to JVM_* in the future?
  */
 
-/*
- * BE CAREFUL! The following functions do not implement the
- * full feature set of standard C printf formats.
- */
+/* jio_snprintf() and jio_vsnprintf() behave like snprintf(3) and vsnprintf(3),
+ *  respectively, with the following differences:
+ * - The string written to str is always zero-terminated, also in case of
+ *   truncation (count is too small to hold the result string), unless count
+ *   is 0. In case of truncation count-1 characters are written and '\0'
+ *   appendend.
+ * - If count is too small to hold the whole string, -1 is returned across
+ *   all platforms. */
 JNIEXPORT int
 jio_vsnprintf(char *str, size_t count, const char *fmt, va_list args);
 

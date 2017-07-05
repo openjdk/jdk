@@ -28,8 +28,6 @@
    @run main bug6989617
 */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -38,7 +36,7 @@ public class bug6989617 {
     private static JButton button;
 
     public static void main(String... args) throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
+        Robot robot = new Robot();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 JFrame frame = new JFrame();
@@ -56,14 +54,14 @@ public class bug6989617 {
         // Testing the panel as a painting origin,
         // the panel.paintImmediately() must be triggered
         // when button.repaint() is called
-        toolkit.realSync();
+        robot.waitForIdle();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 panel.resetPaintRectangle();
                 button.repaint();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 Rectangle pr = panel.getPaintRectangle();
@@ -78,7 +76,7 @@ public class bug6989617 {
         // Testing the panel as NOT a painting origin
         // the panel.paintImmediately() must NOT be triggered
         // when button.repaint() is called
-        toolkit.realSync();
+        robot.waitForIdle();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 panel.resetPaintRectangle();
@@ -89,7 +87,7 @@ public class bug6989617 {
                 button.repaint();
             }
         });
-        toolkit.realSync();
+        robot.waitForIdle();
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 if(panel.getPaintRectangle() != null) {

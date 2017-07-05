@@ -60,7 +60,7 @@ public abstract
 class Authenticator {
 
     // The system-wide authenticator object.  See setDefault().
-    private static Authenticator theAuthenticator;
+    private static volatile Authenticator theAuthenticator;
 
     private String requestingHost;
     private InetAddress requestingSite;

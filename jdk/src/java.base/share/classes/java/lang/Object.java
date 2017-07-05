@@ -453,7 +453,7 @@ public class Object {
                                 "nanosecond timeout value out of range");
         }
 
-        if (nanos >= 500000 || (nanos != 0 && timeout == 0)) {
+        if (nanos > 0) {
             timeout++;
         }
 

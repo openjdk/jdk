@@ -24,6 +24,8 @@
  */
 package javax.swing.plaf.basic;
 
+import sun.datatransfer.DataFlavorUtil;
+
 import java.io.*;
 import java.awt.datatransfer.*;
 import javax.swing.plaf.UIResource;
@@ -145,7 +147,7 @@ class BasicTransferable implements Transferable, UIResource {
             } else if (Reader.class.equals(flavor.getRepresentationClass())) {
                 return new StringReader(data);
             } else if (InputStream.class.equals(flavor.getRepresentationClass())) {
-                return new StringBufferInputStream(data);
+                return createInputStream(flavor, data);
             }
             // fall through to unsupported
         } else if (isPlainFlavor(flavor)) {
@@ -156,7 +158,7 @@ class BasicTransferable implements Transferable, UIResource {
             } else if (Reader.class.equals(flavor.getRepresentationClass())) {
                 return new StringReader(data);
             } else if (InputStream.class.equals(flavor.getRepresentationClass())) {
-                return new StringBufferInputStream(data);
+                return createInputStream(flavor, data);
             }
             // fall through to unsupported
 
@@ -166,6 +168,15 @@ class BasicTransferable implements Transferable, UIResource {
             return data;
         }
         throw new UnsupportedFlavorException(flavor);
+    }
+
+    private InputStream createInputStream(DataFlavor flavor, String data)
+            throws IOException, UnsupportedFlavorException {
+        String cs = DataFlavorUtil.getTextCharset(flavor);
+        if (cs == null) {
+            throw new UnsupportedFlavorException(flavor);
+        }
+        return new ByteArrayInputStream(data.getBytes(cs));
     }
 
     // --- richer subclass flavors ----------------------------------------------

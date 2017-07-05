@@ -47,17 +47,17 @@ public class Zombies {
         try {
             rt.exec("no-such-file");
             throw new Error("expected IOException not thrown");
-        } catch (IOException _) {/* OK */}
+        } catch (IOException expected) {/* OK */}
 
         try {
             rt.exec(".");
             throw new Error("expected IOException not thrown");
-        } catch (IOException _) {/* OK */}
+        } catch (IOException expected) {/* OK */}
 
         try {
             rt.exec(TrueCommand, null, new File("no-such-dir"));
             throw new Error("expected IOException not thrown");
-        } catch (IOException _) {/* OK */}
+        } catch (IOException expected) {/* OK */}
 
         rt.exec(TrueCommand).waitFor();
 

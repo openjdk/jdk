@@ -95,8 +95,8 @@ ifneq ($(COMPILE_TYPE), cross)
       -I$(JDK_TOPDIR)/src/java.base/share/native/include \
       -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include \
       -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
-      -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjava \
-      -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/common/awt \
+      -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjava \
+      -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_TYPE)/native/common/awt \
       -I$(JDK_TOPDIR)/src/java.desktop/share/native/common/awt/debug \
       -I$(JDK_TOPDIR)/src/java.desktop/share/native/libawt/awt/image/cvutils \
       #

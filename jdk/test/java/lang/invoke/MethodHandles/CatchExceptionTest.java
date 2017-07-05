@@ -24,6 +24,8 @@ package test.java.lang.invoke.MethodHandles;
 
 import com.oracle.testlibrary.jsr292.Helper;
 import jdk.testlibrary.Asserts;
+import jdk.testlibrary.TimeLimitedRunner;
+import jdk.testlibrary.Utils;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -33,6 +35,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.concurrent.TimeUnit;
 
 /* @test
  * @library /lib/testlibrary/jsr292 /lib/testlibrary/
@@ -93,14 +96,23 @@ public class CatchExceptionTest {
     }
 
     public static void main(String[] args) throws Throwable {
+        TestFactory factory = new TestFactory();
+        long timeout = Helper.IS_THOROUGH ? 0L : Utils.adjustTimeout(Utils.DEFAULT_TEST_TIMEOUT);
+        // substract vm init time and reserve time for vm exit
+        timeout *= 0.9;
+        TimeLimitedRunner runner = new TimeLimitedRunner(timeout, 2.0d,
+                () -> {
+                    CatchExceptionTest test = factory.nextTest();
+                    if (test != null) {
+                        test.runTest();
+                        return true;
+                    }
+                    return false;
+                });
         for (CatchExceptionTest test : TestFactory.MANDATORY_TEST_CASES) {
             test.runTest();
         }
-        TestFactory factory = new TestFactory();
-        CatchExceptionTest test;
-        while ((test = factory.nextTest()) != null ) {
-            test.runTest();
-        }
+        runner.call();
     }
 
     private List<Class<?>> getThrowerParams(boolean isVararg, int argsCount) {

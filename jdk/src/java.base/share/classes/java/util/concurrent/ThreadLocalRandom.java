@@ -36,8 +36,6 @@
 package java.util.concurrent;
 
 import java.io.ObjectStreamField;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
 import java.util.Random;
 import java.util.Spliterator;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -147,34 +145,7 @@ public class ThreadLocalRandom extends Random {
                 s = (s << 8) | ((long)(seedBytes[i]) & 0xffL);
             return s;
         }
-        long h = 0L;
-        try {
-            Enumeration<NetworkInterface> ifcs =
-                    NetworkInterface.getNetworkInterfaces();
-            boolean retry = false; // retry once if getHardwareAddress is null
-            while (ifcs.hasMoreElements()) {
-                NetworkInterface ifc = ifcs.nextElement();
-                if (!ifc.isVirtual()) { // skip fake addresses
-                    byte[] bs = ifc.getHardwareAddress();
-                    if (bs != null) {
-                        int n = bs.length;
-                        int m = Math.min(n >>> 1, 4);
-                        for (int i = 0; i < m; ++i)
-                            h = (h << 16) ^ (bs[i] << 8) ^ bs[n-1-i];
-                        if (m < 4)
-                            h = (h << 8) ^ bs[n-1-m];
-                        h = mix64(h);
-                        break;
-                    }
-                    else if (!retry)
-                        retry = true;
-                    else
-                        break;
-                }
-            }
-        } catch (Exception ignore) {
-        }
-        return (h ^ mix64(System.currentTimeMillis()) ^
+        return (mix64(System.currentTimeMillis()) ^
                 mix64(System.nanoTime()));
     }
 

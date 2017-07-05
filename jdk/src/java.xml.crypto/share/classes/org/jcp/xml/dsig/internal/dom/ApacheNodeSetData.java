@@ -39,7 +39,7 @@ import com.sun.org.apache.xml.internal.security.signature.NodeFilter;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 
-public class ApacheNodeSetData implements ApacheData, NodeSetData {
+public class ApacheNodeSetData implements ApacheData, NodeSetData<Node> {
 
     private XMLSignatureInput xi;
 

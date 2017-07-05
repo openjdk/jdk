@@ -191,11 +191,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         MethodType dstType = target.type();
         if (srcType == dstType)
             return target;
-        if (USE_LAMBDA_FORM_EDITOR) {
-            return makePairwiseConvertByEditor(target, srcType, strict, monobox);
-        } else {
-            return makePairwiseConvertIndirect(target, srcType, strict, monobox);
-        }
+        return makePairwiseConvertByEditor(target, srcType, strict, monobox);
     }
 
     private static int countNonNull(Object[] array) {
