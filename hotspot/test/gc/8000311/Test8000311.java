@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
 /**
- * @test
- * @bug 6850611
- * @summary int / long arithmetic seems to be broken in 1.6.0_14 HotSpot Server VM (Win XP)
- *
- * @run main/timeout=480 Test6850611
+ * @test Test8000311
+ * @key gc
+ * @bug 8000311
+ * @summary G1: ParallelGCThreads==0 broken
+ * @run main/othervm -XX:+UseG1GC -XX:ParallelGCThreads=0 -XX:+ResizePLAB -XX:+ExplicitGCInvokesConcurrent Test8000311
+ * @author filipp.zhinkin@oracle.com
  */
 
-public class Test6850611 {
+import java.util.*;
 
-    public static void main(String[] args) {
-        test();
+public class Test8000311 {
+  public static void main(String args[]) {
+    for(int i = 0; i<100; i++) {
+      byte[] garbage = new byte[1000];
+      System.gc();
     }
-
-    private static void test() {
-        for (int j = 0; j < 5; ++j) {
-            long x = 0;
-            for (int i = Integer.MIN_VALUE; i < Integer.MAX_VALUE; ++i) {
-                x += i;
-            }
-            System.out.println("sum: " + x);
-            if (x != -4294967295l) {
-                System.out.println("FAILED");
-                System.exit(97);
-            }
-        }
-    }
+  }
 }
-
