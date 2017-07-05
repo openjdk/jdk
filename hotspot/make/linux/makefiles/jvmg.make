@@ -37,7 +37,6 @@ CFLAGS += $(DEBUG_CFLAGS/BYFILE) -D_NMT_NOINLINE_
 # Linker mapfile
 MAPFILE = $(GAMMADIR)/make/linux/makefiles/mapfile-vers-debug
 
-G_SUFFIX = _g
 VERSION = debug
 SYSDEFS += -DASSERT -DDEBUG
 PICFLAGS = DEFAULT

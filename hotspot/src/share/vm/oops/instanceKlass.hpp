@@ -538,6 +538,12 @@ class InstanceKlass: public Klass {
     }
   }
 
+  // Oop that keeps the metadata for this class from being unloaded
+  // in places where the metadata is stored in other places, like nmethods
+  oop klass_holder() const {
+    return is_anonymous() ? java_mirror() : class_loader();
+  }
+
   // signers
   objArrayOop signers() const              { return _signers; }
   void set_signers(objArrayOop s)          { klass_oop_store((oop*)&_signers, s); }
