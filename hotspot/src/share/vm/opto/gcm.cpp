@@ -1130,6 +1130,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_List &stack) {
         Node *def = self->in(1);
         if (def != NULL && def->bottom_type()->base() == Type::RawPtr) {
           early->add_inst(self);
+#ifdef ASSERT
+          _raw_oops.push(def);
+#endif
           continue;
         }
         break;
