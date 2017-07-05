@@ -47,11 +47,13 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/checked \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/PrivateInterfaceMethods \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/ToStringInInterfaceTest \
+    $(HOTSPOT_TOPDIR)/test/runtime/jni/CalleeSavedRegisters \
     $(HOTSPOT_TOPDIR)/test/runtime/modules/getModuleJNI \
     $(HOTSPOT_TOPDIR)/test/runtime/SameObject \
     $(HOTSPOT_TOPDIR)/test/runtime/BoolReturn \
     $(HOTSPOT_TOPDIR)/test/compiler/floatingpoint/ \
     $(HOTSPOT_TOPDIR)/test/compiler/calls \
+    $(HOTSPOT_TOPDIR)/test/compiler/native \
     $(HOTSPOT_TOPDIR)/test/serviceability/jvmti/GetNamedModule \
     $(HOTSPOT_TOPDIR)/test/testlibrary/jvmti \
     $(HOTSPOT_TOPDIR)/test/compiler/jvmci/jdk.vm.ci.code.test \
@@ -89,6 +91,11 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
     BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeinvoke := -ljvm -lpthread
     BUILD_TEST_invoke_exeinvoke.c_OPTIMIZATION := NONE
+    BUILD_HOTSPOT_JTREG_EXECUTABLES_LDFLAGS_exeFPRegs := -ldl
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+    BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
 endif
 
 BUILD_HOTSPOT_JTREG_OUTPUT_DIR := $(BUILD_OUTPUT)/support/test/hotspot/jtreg/native

@@ -551,11 +551,6 @@ ClassStatsDCmd::ClassStatsDCmd(outputStream* output, bool heap) :
 }
 
 void ClassStatsDCmd::execute(DCmdSource source, TRAPS) {
-  if (!UnlockDiagnosticVMOptions) {
-    output()->print_cr("GC.class_stats command requires -XX:+UnlockDiagnosticVMOptions");
-    return;
-  }
-
   VM_GC_HeapInspection heapop(output(),
                               true /* request_full_gc */);
   heapop.set_csv_format(_csv.value());
@@ -996,8 +991,8 @@ TouchedMethodsDCmd::TouchedMethodsDCmd(outputStream* output, bool heap) :
 {}
 
 void TouchedMethodsDCmd::execute(DCmdSource source, TRAPS) {
-  if (!UnlockDiagnosticVMOptions) {
-    output()->print_cr("VM.touched_methods command requires -XX:+UnlockDiagnosticVMOptions");
+  if (!LogTouchedMethods) {
+    output()->print_cr("VM.print_touched_methods command requires -XX:+LogTouchedMethods");
     return;
   }
   VM_DumpTouchedMethods dumper(output());

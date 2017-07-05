@@ -3187,7 +3187,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   if (flags & LIR_OpArrayCopy::length_positive_check) {
     __ testl(length, length);
     __ jcc(Assembler::less, *stub->entry());
-    __ jcc(Assembler::zero, *stub->continuation());
   }
 
 #ifdef _LP64

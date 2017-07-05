@@ -437,17 +437,15 @@ void StringTable::dump(outputStream* st, bool verbose) {
           st->print("%d: ", length);
         } else {
           ResourceMark rm(THREAD);
-          int utf8_length;
+          int utf8_length = length;
           char* utf8_string;
 
           if (!is_latin1) {
             jchar* chars = value->char_at_addr(0);
-            utf8_length = UNICODE::utf8_length(chars, length);
-            utf8_string = UNICODE::as_utf8(chars, length);
+            utf8_string = UNICODE::as_utf8(chars, utf8_length);
           } else {
             jbyte* bytes = value->byte_at_addr(0);
-            utf8_length = UNICODE::utf8_length(bytes, length);
-            utf8_string = UNICODE::as_utf8(bytes, length);
+            utf8_string = UNICODE::as_utf8(bytes, utf8_length);
           }
 
           st->print("%d: ", utf8_length);

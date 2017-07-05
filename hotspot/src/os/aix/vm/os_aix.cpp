@@ -321,7 +321,7 @@ size_t os::Aix::query_pagesize(void* addr) {
 
   if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
     // AS/400 older than V6R1: no vmgetinfo here, default to 4K
-    return SIZE_4K;
+    return 4*K;
   }
 
   vm_page_info pi;
@@ -330,7 +330,7 @@ size_t os::Aix::query_pagesize(void* addr) {
     return pi.pagesize;
   } else {
     assert(false, "vmgetinfo failed to retrieve page size");
-    return SIZE_4K;
+    return 4*K;
   }
 }
 
@@ -351,10 +351,10 @@ void os::Aix::initialize_system_info() {
 // Helper function for tracing page sizes.
 static const char* describe_pagesize(size_t pagesize) {
   switch (pagesize) {
-    case SIZE_4K : return "4K";
-    case SIZE_64K: return "64K";
-    case SIZE_16M: return "16M";
-    case SIZE_16G: return "16G";
+    case 4*K : return "4K";
+    case 64*K: return "64K";
+    case 16*M: return "16M";
+    case 16*G: return "16G";
     default:
       assert(false, "surprise");
       return "??";
@@ -372,14 +372,14 @@ static void query_multipage_support() {
   g_multipage_support.pagesize = ::sysconf(_SC_PAGESIZE);
 
   // This really would surprise me.
-  assert(g_multipage_support.pagesize == SIZE_4K, "surprise!");
+  assert(g_multipage_support.pagesize == 4*K, "surprise!");
 
   // Query default data page size (default page size for C-Heap, pthread stacks and .bss).
   // Default data page size is defined either by linker options (-bdatapsize)
   // or by environment variable LDR_CNTRL (suboption DATAPSIZE). If none is given,
   // default should be 4K.
   {
-    void* p = ::malloc(SIZE_16M);
+    void* p = ::malloc(16*M);
     g_multipage_support.datapsize = os::Aix::query_pagesize(p);
     ::free(p);
   }
@@ -447,7 +447,7 @@ static void query_multipage_support() {
     // Can we use 64K, 16M pages?
     for (int i = 0; i < num_psizes; i ++) {
       const size_t pagesize = sizes[i];
-      if (pagesize != SIZE_64K && pagesize != SIZE_16M) {
+      if (pagesize != 64*K && pagesize != 16*M) {
         continue;
       }
       bool can_use = false;
@@ -477,9 +477,9 @@ static void query_multipage_support() {
         ::shmdt(p);
       }
       trcVerbose("Can use: %s", (can_use ? "yes" : "no"));
-      if (pagesize == SIZE_64K) {
+      if (pagesize == 64*K) {
         g_multipage_support.can_use_64K_pages = can_use;
-      } else if (pagesize == SIZE_16M) {
+      } else if (pagesize == 16*M) {
         g_multipage_support.can_use_16M_pages = can_use;
       }
     }
@@ -506,11 +506,11 @@ query_multipage_support_end:
       g_multipage_support.error);
 
   // sanity checks
-  assert0(g_multipage_support.pagesize == SIZE_4K);
-  assert0(g_multipage_support.datapsize == SIZE_4K || g_multipage_support.datapsize == SIZE_64K);
-  assert0(g_multipage_support.textpsize == SIZE_4K || g_multipage_support.textpsize == SIZE_64K);
+  assert0(g_multipage_support.pagesize == 4*K);
+  assert0(g_multipage_support.datapsize == 4*K || g_multipage_support.datapsize == 64*K);
+  assert0(g_multipage_support.textpsize == 4*K || g_multipage_support.textpsize == 64*K);
   assert0(g_multipage_support.pthr_stack_pagesize == g_multipage_support.datapsize);
-  assert0(g_multipage_support.shmpsize == SIZE_4K || g_multipage_support.shmpsize == SIZE_64K);
+  assert0(g_multipage_support.shmpsize == 4*K || g_multipage_support.shmpsize == 64*K);
 
 }
 
@@ -1924,7 +1924,7 @@ static char* reserve_shmated_memory (
   }
 
   // Align size of shm up to 64K to avoid errors if we later try to change the page size.
-  const size_t size = align_size_up(bytes, SIZE_64K);
+  const size_t size = align_size_up(bytes, 64*K);
 
   // Reserve the shared segment.
   int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
@@ -1941,10 +1941,10 @@ static char* reserve_shmated_memory (
 
   struct shmid_ds shmbuf;
   memset(&shmbuf, 0, sizeof(shmbuf));
-  shmbuf.shm_pagesize = SIZE_64K;
+  shmbuf.shm_pagesize = 64*K;
   if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) != 0) {
     trcVerbose("Failed to set page size (need " UINTX_FORMAT " 64K pages) - shmctl failed with %d.",
-               size / SIZE_64K, errno);
+               size / (64*K), errno);
     // I want to know if this ever happens.
     assert(false, "failed to set page size for shmat");
   }
@@ -2122,7 +2122,7 @@ static char* reserve_mmaped_memory(size_t bytes, char* requested_addr, size_t al
   }
 
   // bookkeeping
-  vmembk_add(addr, size, SIZE_4K, VMEM_MAPPED);
+  vmembk_add(addr, size, 4*K, VMEM_MAPPED);
 
   // Test alignment, see above.
   assert0(is_aligned_to(addr, os::vm_page_size()));
@@ -2218,7 +2218,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 
   if (UseExplicitCommit) {
     // AIX commits memory on touch. So, touch all pages to be committed.
-    for (char* p = addr; p < (addr + size); p += SIZE_4K) {
+    for (char* p = addr; p < (addr + size); p += 4*K) {
       *p = '\0';
     }
   }
@@ -2330,7 +2330,7 @@ char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment
 
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
-  if (os::vm_page_size() == SIZE_4K) {
+  if (os::vm_page_size() == 4*K) {
     return reserve_mmaped_memory(bytes, requested_addr, alignment_hint);
   } else {
     if (bytes >= Use64KPagesThreshold) {
@@ -2519,7 +2519,7 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
 
   // In 4K mode always use mmap.
   // In 64K mode allocate small sizes with mmap, large ones with 64K shmatted.
-  if (os::vm_page_size() == SIZE_4K) {
+  if (os::vm_page_size() == 4*K) {
     return reserve_mmaped_memory(bytes, requested_addr, 0);
   } else {
     if (bytes >= Use64KPagesThreshold) {
@@ -3399,7 +3399,7 @@ void os::init(void) {
   // We explicitly leave no option to change page size, because only upgrading would work,
   // not downgrading (if stack page size is 64k you cannot pretend its 4k).
 
-  if (g_multipage_support.datapsize == SIZE_4K) {
+  if (g_multipage_support.datapsize == 4*K) {
     // datapsize = 4K. Data segment, thread stacks are 4K paged.
     if (g_multipage_support.can_use_64K_pages) {
       // .. but we are able to use 64K pages dynamically.
@@ -3414,16 +3414,16 @@ void os::init(void) {
       // -XX:-Use64KPages.
       if (Use64KPages) {
         trcVerbose("64K page mode (faked for data segment)");
-        Aix::_page_size = SIZE_64K;
+        Aix::_page_size = 64*K;
       } else {
         trcVerbose("4K page mode (Use64KPages=off)");
-        Aix::_page_size = SIZE_4K;
+        Aix::_page_size = 4*K;
       }
     } else {
       // .. and not able to allocate 64k pages dynamically. Here, just
       // fall back to 4K paged mode and use mmap for everything.
       trcVerbose("4K page mode");
-      Aix::_page_size = SIZE_4K;
+      Aix::_page_size = 4*K;
       FLAG_SET_ERGO(bool, Use64KPages, false);
     }
   } else {
@@ -3432,7 +3432,7 @@ void os::init(void) {
     // (There is one special case where this may be false: EXTSHM=on.
     // but we decided to not support that mode).
     assert0(g_multipage_support.can_use_64K_pages);
-    Aix::_page_size = SIZE_64K;
+    Aix::_page_size = 64*K;
     trcVerbose("64K page mode");
     FLAG_SET_ERGO(bool, Use64KPages, true);
   }
