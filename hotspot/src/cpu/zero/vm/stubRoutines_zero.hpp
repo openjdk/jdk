@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,14 +47,5 @@
   enum method_handles_platform_dependent_constants {
     method_handles_adapters_code_size = 0
   };
-
-#ifdef IA32
-  class x86 {
-    friend class VMStructs;
-
-   private:
-    static address _call_stub_compiled_return;
-  };
-#endif // IA32
 
 #endif // CPU_ZERO_VM_STUBROUTINES_ZERO_HPP

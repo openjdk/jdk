@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008 Red Hat, Inc.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2007, 2008, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,6 +298,20 @@ inline void* Atomic::cmpxchg_ptr(void* exchange_value,
   return (void *) cmpxchg_ptr((intptr_t) exchange_value,
                               (volatile intptr_t*) dest,
                               (intptr_t) compare_value);
+}
+
+inline jlong Atomic::load(volatile jlong* src) {
+  volatile jlong dest;
+  os::atomic_copy64(src, &dest);
+  return dest;
+}
+
+inline void Atomic::store(jlong store_value, jlong* dest) {
+  os::atomic_copy64((volatile jlong*)&store_value, (volatile jlong*)dest);
+}
+
+inline void Atomic::store(jlong store_value, volatile jlong* dest) {
+  os::atomic_copy64((volatile jlong*)&store_value, dest);
 }
 
 #endif // OS_CPU_LINUX_ZERO_VM_ATOMIC_LINUX_ZERO_INLINE_HPP

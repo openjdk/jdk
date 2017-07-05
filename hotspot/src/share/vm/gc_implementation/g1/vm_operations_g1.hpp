@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ protected:
 public:
   VM_G1OperationWithAllocRequest(unsigned int gc_count_before,
                                  size_t       word_size)
-    : VM_GC_Operation(gc_count_before),
+    : VM_GC_Operation(gc_count_before, GCCause::_allocation_failure),
       _word_size(word_size), _result(NULL), _pause_succeeded(false) { }
   HeapWord* result() { return _result; }
   bool pause_succeeded() { return _pause_succeeded; }
@@ -55,9 +55,7 @@ public:
   VM_G1CollectFull(unsigned int gc_count_before,
                    unsigned int full_gc_count_before,
                    GCCause::Cause cause)
-    : VM_GC_Operation(gc_count_before, full_gc_count_before) {
-    _gc_cause = cause;
-  }
+    : VM_GC_Operation(gc_count_before, cause, full_gc_count_before) { }
   virtual VMOp_Type type() const { return VMOp_G1CollectFull; }
   virtual void doit();
   virtual const char* name() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -240,9 +240,30 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("call_stub_return_address:");
     return_address = __ pc();
 
-    Label common_return;
+#ifdef COMPILER2
+    {
+      Label L_skip;
+      if (UseSSE >= 2) {
+        __ verify_FPU(0, "call_stub_return");
+      } else {
+        for (int i = 1; i < 8; i++) {
+          __ ffree(i);
+        }
 
-    __ BIND(common_return);
+        // UseSSE <= 1 so double result should be left on TOS
+        __ movl(rsi, result_type);
+        __ cmpl(rsi, T_DOUBLE);
+        __ jcc(Assembler::equal, L_skip);
+        if (UseSSE == 0) {
+          // UseSSE == 0 so float result should be left on TOS
+          __ cmpl(rsi, T_FLOAT);
+          __ jcc(Assembler::equal, L_skip);
+        }
+        __ ffree(0);
+      }
+      __ BIND(L_skip);
+    }
+#endif // COMPILER2
 
     // store result depending on type
     // (everything that is not T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
@@ -304,37 +325,6 @@ class StubGenerator: public StubCodeGenerator {
       __ fstp_d(Address(rdi, 0));
     }
     __ jmp(exit);
-
-    // If we call compiled code directly from the call stub we will
-    // need to adjust the return back to the call stub to a specialized
-    // piece of code that can handle compiled results and cleaning the fpu
-    // stack. compiled code will be set to return here instead of the
-    // return above that handles interpreter returns.
-
-    BLOCK_COMMENT("call_stub_compiled_return:");
-    StubRoutines::x86::set_call_stub_compiled_return( __ pc());
-
-#ifdef COMPILER2
-    if (UseSSE >= 2) {
-      __ verify_FPU(0, "call_stub_compiled_return");
-    } else {
-      for (int i = 1; i < 8; i++) {
-        __ ffree(i);
-      }
-
-      // UseSSE <= 1 so double result should be left on TOS
-      __ movl(rsi, result_type);
-      __ cmpl(rsi, T_DOUBLE);
-      __ jcc(Assembler::equal, common_return);
-      if (UseSSE == 0) {
-        // UseSSE == 0 so float result should be left on TOS
-        __ cmpl(rsi, T_FLOAT);
-        __ jcc(Assembler::equal, common_return);
-      }
-      __ ffree(0);
-    }
-#endif /* COMPILER2 */
-    __ jmp(common_return);
 
     return start;
   }

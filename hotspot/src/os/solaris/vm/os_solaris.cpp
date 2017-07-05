@@ -1975,7 +1975,11 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       #ifndef RTLD_DL_SYMENT
       #define RTLD_DL_SYMENT 1
       #endif
-      Sym * info;
+#ifdef _LP64
+      Elf64_Sym * info;
+#else
+      Elf32_Sym * info;
+#endif
       if (dladdr1_func((void *)addr, &dlinfo, (void **)&info,
                        RTLD_DL_SYMENT)) {
         if ((char *)dlinfo.dli_saddr + info->st_size > (char *)addr) {
@@ -6424,4 +6428,3 @@ int os::bind(int fd, struct sockaddr *him, int len) {
    INTERRUPTIBLE_RETURN_INT_NORESTART(::bind(fd, him, len),\
      os::Solaris::clear_interrupted);
 }
-
