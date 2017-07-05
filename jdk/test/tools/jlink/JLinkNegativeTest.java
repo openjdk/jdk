@@ -193,7 +193,7 @@ public class JLinkNegativeTest {
                     .output(imageFile)
                     .addMods("not_zip")
                     .modulePath(helper.defaultModulePath())
-                    .call().assertFailure("Error: java.io.IOException: Invalid jmod file");
+                    .call().assertFailure("Error: java.io.IOException: Invalid JMOD file");
         } finally {
             deleteDirectory(jmod);
         }

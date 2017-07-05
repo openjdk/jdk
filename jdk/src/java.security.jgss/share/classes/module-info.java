@@ -28,6 +28,7 @@
  * <P>
  * This module also contains GSS-API mechanisms including Kerberos v5 and SPNEGO.
  *
+ * @moduleGraph
  * @since 9
  */
 module java.security.jgss {

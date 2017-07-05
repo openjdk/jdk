@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang;
 
-/**
- * Permission to access {@link StackWalker.StackFrame}.
- *
- * @see java.lang.StackWalker.Option#RETAIN_CLASS_REFERENCE
- * @see StackWalker.StackFrame#getDeclaringClass()
+package sun.print;
+
+import javax.print.attribute.Attribute;
+import javax.print.attribute.PrintRequestAttribute;
+
+/*
+ * An implementation class used to request the dialog be set always-on-top.
+ * It needs to be read and honoured by the dialog code which will use
+ * java.awt.Window.setAlwaysOnTop(true) in cases where it is supported.
  */
-public class StackFramePermission extends java.security.BasicPermission {
-    private static final long serialVersionUID = 2841894854386706014L;
+public class DialogOnTop implements PrintRequestAttribute {
 
-    /**
-     * Creates a new {@code StackFramePermission} object.
-     *
-     * @param name Permission name.  Must be "retainClassReference".
-     *
-     * @throws IllegalArgumentException if {@code name} is invalid.
-     * @throws NullPointerException if {@code name} is {@code null}.
-     */
-    public StackFramePermission(String name) {
-        super(name);
-        if (!name.equals("retainClassReference")) {
-            throw new IllegalArgumentException("name: " + name);
-        }
+    private static final long serialVersionUID = -1901909867156076547L;
+
+    long id;
+
+    public DialogOnTop() {
+    }
+
+    public DialogOnTop(long id) {
+        this.id = id;
+    }
+
+    public final Class<? extends Attribute> getCategory() {
+        return DialogOnTop.class;
+    }
+
+    public long getID() {
+        return id;
+    }
+
+    public final String getName() {
+        return "dialog-on-top";
+    }
+
+    public String toString() {
+       return "dialog-on-top";
     }
 }

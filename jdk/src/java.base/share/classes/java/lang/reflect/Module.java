@@ -39,8 +39,10 @@ import java.net.URI;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,11 +53,11 @@ import java.util.stream.Stream;
 
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
-import jdk.internal.loader.ResourceHelper;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.JavaLangReflectModuleAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.module.ServicesCatalog;
+import jdk.internal.module.Resources;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
@@ -369,28 +371,19 @@ public final class Module implements AnnotatedElement {
      * If {@code syncVM} is {@code true} then the VM is notified.
      */
     private void implAddReads(Module other, boolean syncVM) {
-        Objects.requireNonNull(other);
-
-        // nothing to do
-        if (other == this || !this.isNamed())
-            return;
-
-        // check if we already read this module
-        Set<Module> reads = this.reads;
-        if (reads != null && reads.contains(other))
-            return;
-
-        // update VM first, just in case it fails
-        if (syncVM) {
-            if (other == ALL_UNNAMED_MODULE) {
-                addReads0(this, null);
-            } else {
-                addReads0(this, other);
+        if (!canRead(other)) {
+            // update VM first, just in case it fails
+            if (syncVM) {
+                if (other == ALL_UNNAMED_MODULE) {
+                    addReads0(this, null);
+                } else {
+                    addReads0(this, other);
+                }
             }
-        }
 
-        // add reflective read
-        reflectivelyReads.putIfAbsent(this, other, Boolean.TRUE);
+            // add reflective read
+            reflectivelyReads.putIfAbsent(this, other, Boolean.TRUE);
+        }
     }
 
 
@@ -553,7 +546,7 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module exports or opens a package to
      * the given module via its module declaration.
      */
-    boolean isStaticallyExportedOrOpen(String pn, Module other, boolean open) {
+    private boolean isStaticallyExportedOrOpen(String pn, Module other, boolean open) {
         // package is open to everyone or <other>
         Map<String, Set<Module>> openPackages = this.openPackages;
         if (openPackages != null) {
@@ -909,9 +902,7 @@ public final class Module implements AnnotatedElement {
      * Returns an array of the package names of the packages in this module.
      *
      * <p> For named modules, the returned array contains an element for each
-     * package in the module. It may contain elements corresponding to packages
-     * added to the module, <a href="Proxy.html#dynamicmodule">dynamic modules</a>
-     * for example, after it was loaded.
+     * package in the module. </p>
      *
      * <p> For unnamed modules, this method is the equivalent to invoking the
      * {@link ClassLoader#getDefinedPackages() getDefinedPackages} method of
@@ -947,15 +938,6 @@ public final class Module implements AnnotatedElement {
             }
             return packages.map(Package::getName).toArray(String[]::new);
         }
-    }
-
-    /**
-     * Add a package to this module.
-     *
-     * @apiNote This method is for Proxy use.
-     */
-    void addPackage(String pn) {
-        implAddPackage(pn, true);
     }
 
     /**
@@ -1080,20 +1062,28 @@ public final class Module implements AnnotatedElement {
 
             // reads
             Set<Module> reads = new HashSet<>();
+
+            // name -> source Module when in parent layer
+            Map<String, Module> nameToSource = Collections.emptyMap();
+
             for (ResolvedModule other : resolvedModule.reads()) {
                 Module m2 = null;
                 if (other.configuration() == cf) {
-                    String dn = other.reference().descriptor().name();
-                    m2 = nameToModule.get(dn);
+                    // this configuration
+                    m2 = nameToModule.get(other.name());
+                    assert m2 != null;
                 } else {
+                    // parent layer
                     for (Layer parent: layer.parents()) {
                         m2 = findModule(parent, other);
                         if (m2 != null)
                             break;
                     }
+                    assert m2 != null;
+                    if (nameToSource.isEmpty())
+                        nameToSource = new HashMap<>();
+                    nameToSource.put(other.name(), m2);
                 }
-                assert m2 != null;
-
                 reads.add(m2);
 
                 // update VM view
@@ -1107,7 +1097,7 @@ public final class Module implements AnnotatedElement {
             }
 
             // exports and opens
-            initExportsAndOpens(descriptor, nameToModule, m);
+            initExportsAndOpens(m, nameToSource, nameToModule, layer.parents());
         }
 
         // register the modules in the boot layer
@@ -1159,15 +1149,17 @@ public final class Module implements AnnotatedElement {
                 .orElse(null);
     }
 
+
     /**
      * Initialize the maps of exported and open packages for module m.
      */
-    private static void initExportsAndOpens(ModuleDescriptor descriptor,
+    private static void initExportsAndOpens(Module m,
+                                            Map<String, Module> nameToSource,
                                             Map<String, Module> nameToModule,
-                                            Module m)
-    {
+                                            List<Layer> parents) {
         // The VM doesn't special case open or automatic modules so need to
         // export all packages
+        ModuleDescriptor descriptor = m.getDescriptor();
         if (descriptor.isOpen() || descriptor.isAutomatic()) {
             assert descriptor.opens().isEmpty();
             for (String source : descriptor.packages()) {
@@ -1187,8 +1179,7 @@ public final class Module implements AnnotatedElement {
                 // qualified opens
                 Set<Module> targets = new HashSet<>();
                 for (String target : opens.targets()) {
-                    // only open to modules that are in this configuration
-                    Module m2 = nameToModule.get(target);
+                    Module m2 = findModule(target, nameToSource, nameToModule, parents);
                     if (m2 != null) {
                         addExports0(m, source, m2);
                         targets.add(m2);
@@ -1217,8 +1208,7 @@ public final class Module implements AnnotatedElement {
                 // qualified exports
                 Set<Module> targets = new HashSet<>();
                 for (String target : exports.targets()) {
-                    // only export to modules that are in this configuration
-                    Module m2 = nameToModule.get(target);
+                    Module m2 = findModule(target, nameToSource, nameToModule, parents);
                     if (m2 != null) {
                         // skip qualified export if already open to m2
                         if (openToTargets == null || !openToTargets.contains(m2)) {
@@ -1242,6 +1232,32 @@ public final class Module implements AnnotatedElement {
             m.openPackages = openPackages;
         if (!exportedPackages.isEmpty())
             m.exportedPackages = exportedPackages;
+    }
+
+    /**
+     * Find the runtime Module with the given name. The module name is the
+     * name of a target module in a qualified exports or opens directive.
+     *
+     * @param target The target module to find
+     * @param nameToSource The modules in parent layers that are read
+     * @param nameToModule The modules in the layer under construction
+     * @param parents The parent layers
+     */
+    private static Module findModule(String target,
+                                     Map<String, Module> nameToSource,
+                                     Map<String, Module> nameToModule,
+                                     List<Layer> parents) {
+        Module m = nameToSource.get(target);
+        if (m == null) {
+            m = nameToModule.get(target);
+            if (m == null) {
+                for (Layer parent : parents) {
+                    m = parent.findModule(target).orElse(null);
+                    if (m != null) break;
+                }
+            }
+        }
+        return m;
     }
 
 
@@ -1428,12 +1444,12 @@ public final class Module implements AnnotatedElement {
             name = name.substring(1);
         }
 
-        if (isNamed() && !ResourceHelper.isSimpleResource(name)) {
+        if (isNamed() && Resources.canEncapsulate(name)) {
             Module caller = Reflection.getCallerClass().getModule();
             if (caller != this && caller != Object.class.getModule()) {
                 // ignore packages added for proxies via addPackage
                 Set<String> packages = getDescriptor().packages();
-                String pn = ResourceHelper.getPackageName(name);
+                String pn = Resources.toPackageName(name);
                 if (packages.contains(pn) && !isOpen(pn, caller)) {
                     // resource is in package not open to caller
                     return null;
@@ -1531,24 +1547,24 @@ public final class Module implements AnnotatedElement {
                     m.implAddReads(Module.ALL_UNNAMED_MODULE);
                 }
                 @Override
+                public void addExports(Module m, String pn) {
+                    m.implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, false, true);
+                }
+                @Override
                 public void addExports(Module m, String pn, Module other) {
                     m.implAddExportsOrOpens(pn, other, false, true);
                 }
                 @Override
-                public void addOpens(Module m, String pn, Module other) {
-                    m.implAddExportsOrOpens(pn, other, true, true);
+                public void addExportsToAllUnnamed(Module m, String pn) {
+                    m.implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, false, true);
                 }
                 @Override
-                public void addExportsToAll(Module m, String pn) {
-                    m.implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, false, true);
-                }
-                @Override
-                public void addOpensToAll(Module m, String pn) {
+                public void addOpens(Module m, String pn) {
                     m.implAddExportsOrOpens(pn, Module.EVERYONE_MODULE, true, true);
                 }
                 @Override
-                public void addExportsToAllUnnamed(Module m, String pn) {
-                    m.implAddExportsOrOpens(pn, Module.ALL_UNNAMED_MODULE, false, true);
+                public void addOpens(Module m, String pn, Module other) {
+                    m.implAddExportsOrOpens(pn, other, true, true);
                 }
                 @Override
                 public void addOpensToAllUnnamed(Module m, String pn) {
@@ -1557,10 +1573,6 @@ public final class Module implements AnnotatedElement {
                 @Override
                 public void addUses(Module m, Class<?> service) {
                     m.implAddUses(service);
-                }
-                @Override
-                public void addPackage(Module m, String pn) {
-                    m.implAddPackage(pn, true);
                 }
                 @Override
                 public ServicesCatalog getServicesCatalog(Layer layer) {
@@ -1573,10 +1585,6 @@ public final class Module implements AnnotatedElement {
                 @Override
                 public Stream<Layer> layers(ClassLoader loader) {
                     return Layer.layers(loader);
-                }
-                @Override
-                public boolean isStaticallyExported(Module module, String pn, Module other) {
-                    return module.isStaticallyExportedOrOpen(pn, other, false);
                 }
             });
     }
