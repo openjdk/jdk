@@ -108,8 +108,7 @@ class OptionListModel extends DefaultListModel implements ListSelectionModel, Se
      * @since 1.4
      */
     public ListSelectionListener[] getListSelectionListeners() {
-        return (ListSelectionListener[])listenerList.getListeners(
-                ListSelectionListener.class);
+        return listenerList.getListeners(ListSelectionListener.class);
     }
 
     /**
@@ -131,7 +130,7 @@ class OptionListModel extends DefaultListModel implements ListSelectionModel, Se
 
     /**
      * @param firstIndex The first index in the interval.
-     * @param index1 The last index in the interval.
+     * @param lastIndex The last index in the interval.
      * @param isAdjusting True if this is the final change in a series of them.
      * @see EventListenerList
      */
@@ -528,8 +527,8 @@ class OptionListModel extends DefaultListModel implements ListSelectionModel, Se
             anchorIndex = leadIndex;
         }
 
-        int oldMin = Math.min(this.anchorIndex, this.leadIndex);;
-        int oldMax = Math.max(this.anchorIndex, this.leadIndex);;
+        int oldMin = Math.min(this.anchorIndex, this.leadIndex);
+        int oldMax = Math.max(this.anchorIndex, this.leadIndex);
         int newMin = Math.min(anchorIndex, leadIndex);
         int newMax = Math.max(anchorIndex, leadIndex);
         if (value.get(this.anchorIndex)) {

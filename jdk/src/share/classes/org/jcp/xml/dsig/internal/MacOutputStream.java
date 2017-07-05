@@ -24,15 +24,14 @@ import java.io.ByteArrayOutputStream;
 import javax.crypto.Mac;
 
 /**
- * Derived from Apache sources and changed to use Mac objects
- * objects instead of org.apache.xml.security.algorithms.SignatureAlgorithm
- * objects.
+ * Derived from Apache sources and changed to use Mac objects instead of
+ * com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithm objects.
  *
  * @author raul
+ * @author Sean Mullan
  *
  */
 public class MacOutputStream extends ByteArrayOutputStream {
-    private final static byte none[]="error".getBytes();
     private final Mac mac;
 
     public MacOutputStream(Mac mac) {
@@ -40,22 +39,20 @@ public class MacOutputStream extends ByteArrayOutputStream {
     }
 
     /** @inheritDoc */
-    public byte[] toByteArray() {
-        return none;
-    }
-
-    /** @inheritDoc */
     public void write(byte[] arg0)  {
+        super.write(arg0, 0, arg0.length);
         mac.update(arg0);
     }
 
     /** @inheritDoc */
     public void write(int arg0) {
-        mac.update((byte)arg0);
+        super.write(arg0);
+        mac.update((byte) arg0);
     }
 
     /** @inheritDoc */
     public void write(byte[] arg0, int arg1, int arg2) {
-        mac.update(arg0,arg1,arg2);
+        super.write(arg0, arg1, arg2);
+        mac.update(arg0, arg1, arg2);
     }
 }

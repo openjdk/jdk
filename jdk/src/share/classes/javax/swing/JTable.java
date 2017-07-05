@@ -1677,16 +1677,16 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 if (!forDrop && state != null) {
                     clearSelection();
 
-                    int[] rows = (int[])((int[][])state)[0];
-                    int[] cols = (int[])((int[][])state)[1];
-                    int[] anchleads = (int[])((int[][])state)[2];
+                    int[] rows = ((int[][])state)[0];
+                    int[] cols = ((int[][])state)[1];
+                    int[] anchleads = ((int[][])state)[2];
 
-                    for (int i = 0; i < rows.length; i++) {
-                        addRowSelectionInterval(rows[i], rows[i]);
+                    for (int row : rows) {
+                        addRowSelectionInterval(row, row);
                     }
 
-                    for (int i = 0; i < cols.length; i++) {
-                        addColumnSelectionInterval(cols[i], cols[i]);
+                    for (int col : cols) {
+                        addColumnSelectionInterval(col, col);
                     }
 
                     SwingUtilities2.setLeadAnchorWithoutSelection(
@@ -1776,7 +1776,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         boolean oldValue = this.autoCreateRowSorter;
         this.autoCreateRowSorter = autoCreateRowSorter;
         if (autoCreateRowSorter) {
-            setRowSorter(new TableRowSorter(getModel()));
+            setRowSorter(new TableRowSorter<TableModel>(getModel()));
         }
         firePropertyChange("autoCreateRowSorter", oldValue,
                            autoCreateRowSorter);
@@ -3198,7 +3198,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     private void accommodateDelta(int resizingColumnIndex, int delta) {
         int columnCount = getColumnCount();
         int from = resizingColumnIndex;
-        int to = columnCount;
+        int to;
 
         // Use the mode to determine how to absorb the changes.
         switch(autoResizeMode) {
@@ -3237,8 +3237,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
 
         adjustSizes(totalWidth + delta, r, false);
-
-        return;
     }
 
     private interface Resizable2 {
@@ -3492,7 +3490,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see     #editingRow
      */
     public boolean isEditing() {
-        return (cellEditor == null)? false : true;
+        return cellEditor != null;
     }
 
     /**
@@ -3642,7 +3640,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             firePropertyChange("model", old, dataModel);
 
             if (getAutoCreateRowSorter()) {
-                setRowSorter(new TableRowSorter(dataModel));
+                setRowSorter(new TableRowSorter<TableModel>(dataModel));
             }
         }
     }
@@ -5160,7 +5158,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     public boolean getScrollableTracksViewportHeight() {
         return getFillsViewportHeight()
                && getParent() instanceof JViewport
-               && (((JViewport)getParent()).getHeight() > getPreferredSize().height);
+               && (getParent().getHeight() > getPreferredSize().height);
     }
 
     /**
@@ -5214,7 +5212,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         // by setting the client property JTable.autoStartsEdit to Boolean.FALSE.
         if (!retValue && condition == WHEN_ANCESTOR_OF_FOCUSED_COMPONENT &&
             isFocusOwner() &&
-            !Boolean.FALSE.equals((Boolean)getClientProperty("JTable.autoStartsEdit"))) {
+            !Boolean.FALSE.equals(getClientProperty("JTable.autoStartsEdit"))) {
             // We do not have a binding for the event.
             Component editorComponent = getEditorComponent();
             if (editorComponent == null) {
@@ -5436,7 +5434,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             this.value = null;
             ((JComponent)getComponent()).setBorder(new LineBorder(Color.black));
             try {
-                Class type = table.getColumnClass(column);
+                Class<?> type = table.getColumnClass(column);
                 // Since our obligation is to produce a value which is
                 // assignable for the required type it is OK to use the
                 // String constructor for columns which are declared
@@ -6627,10 +6625,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             } else if (name.compareTo("tableCellEditor") == 0) {
 
                 if (oldValue != null && oldValue instanceof TableCellEditor) {
-                    ((TableCellEditor) oldValue).removeCellEditorListener((CellEditorListener) this);
+                    ((TableCellEditor) oldValue).removeCellEditorListener(this);
                 }
                 if (newValue != null && newValue instanceof TableCellEditor) {
-                    ((TableCellEditor) newValue).addCellEditorListener((CellEditorListener) this);
+                    ((TableCellEditor) newValue).addCellEditorListener(this);
                 }
             }
         }
@@ -7045,7 +7043,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
          */
         public Accessible getAccessibleSelection(int i) {
             if (i < 0 || i > getAccessibleSelectionCount()) {
-                return (Accessible) null;
+                return null;
             }
 
             int rowsSel = JTable.this.getSelectedRowCount();
@@ -7158,7 +7156,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                     return getAccessibleChild((r * ttlCols) + c);
                 }
             }
-            return (Accessible) null;
+            return null;
         }
 
         /**
@@ -7906,7 +7904,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                                   JTable.this, getValueAt(row, column),
                                   false, false, row, column);
                 if (component instanceof Accessible) {
-                    return ((Accessible) component).getAccessibleContext();
+                    return component.getAccessibleContext();
                 } else {
                     return null;
                 }

@@ -233,11 +233,20 @@ public class PropertyEditorSupport implements PropertyEditor {
     //----------------------------------------------------------------------
 
     /**
-     * Register a listener for the PropertyChange event.  The class will
-     * fire a PropertyChange value whenever the value is updated.
+     * Adds a listener for the value change.
+     * When the property editor changes its value
+     * it should fire a {@link PropertyChangeEvent}
+     * on all registered {@link PropertyChangeListener}s,
+     * specifying the {@code null} value for the property name.
+     * If the source property is set,
+     * it should be used as the source of the event.
+     * <p>
+     * The same listener object may be added more than once,
+     * and will be called as many times as it is added.
+     * If {@code listener} is {@code null},
+     * no exception is thrown and no action is taken.
      *
-     * @param listener  An object to be invoked when a PropertyChange
-     *          event is fired.
+     * @param listener  the {@link PropertyChangeListener} to add
      */
     public synchronized void addPropertyChangeListener(
                                 PropertyChangeListener listener) {
@@ -248,9 +257,14 @@ public class PropertyEditorSupport implements PropertyEditor {
     }
 
     /**
-     * Remove a listener for the PropertyChange event.
+     * Removes a listener for the value change.
+     * <p>
+     * If the same listener was added more than once,
+     * it will be notified one less time after being removed.
+     * If {@code listener} is {@code null}, or was never added,
+     * no exception is thrown and no action is taken.
      *
-     * @param listener  The PropertyChange listener to be removed.
+     * @param listener  the {@link PropertyChangeListener} to remove
      */
     public synchronized void removePropertyChangeListener(
                                 PropertyChangeListener listener) {

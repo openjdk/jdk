@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -28,7 +27,7 @@ package com.sun.org.apache.xml.internal.security.keys.content.x509;
 /**
  * Just used for tagging contents that are allowed inside a ds:X509Data Element.
  *
- * @author $Author: blautenb $
+ * @author $Author: mullan $
  */
 public interface XMLX509DataContent {
 }

@@ -76,7 +76,7 @@ public abstract class TableView extends BoxView {
      */
     public TableView(Element elem) {
         super(elem, View.Y_AXIS);
-        rows = new Vector();
+        rows = new Vector<TableRow>();
         gridValid = false;
     }
 
@@ -139,7 +139,7 @@ public abstract class TableView extends BoxView {
 
     TableRow getRow(int row) {
         if (row < rows.size()) {
-            return (TableRow) rows.elementAt(row);
+            return rows.elementAt(row);
         }
         return null;
     }
@@ -227,7 +227,7 @@ public abstract class TableView extends BoxView {
             for (int i = 0; i < n; i++) {
                 View v = getView(i);
                 if (v instanceof TableRow) {
-                    rows.addElement(v);
+                    rows.addElement((TableRow) v);
                     TableRow rv = (TableRow) v;
                     rv.clearFilledColumns();
                     rv.setRow(i);
@@ -368,8 +368,7 @@ public abstract class TableView extends BoxView {
         long min = 0;
         long pref = 0;
         long max = 0;
-        for (int i = 0; i < columnRequirements.length; i++) {
-            SizeRequirements req = columnRequirements[i];
+        for (SizeRequirements req : columnRequirements) {
             min += req.minimum;
             pref += req.preferred;
             max += req.maximum;
@@ -578,7 +577,7 @@ public abstract class TableView extends BoxView {
     int[] columnSpans;
     int[] columnOffsets;
     SizeRequirements[] columnRequirements;
-    Vector rows;
+    Vector<TableRow> rows;
     boolean gridValid;
     static final private BitSet EMPTY = new BitSet();
 

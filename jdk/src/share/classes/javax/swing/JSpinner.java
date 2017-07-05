@@ -433,8 +433,7 @@ public class JSpinner extends JComponent implements Accessible
      * @since 1.4
      */
     public ChangeListener[] getChangeListeners() {
-        return (ChangeListener[])listenerList.getListeners(
-                ChangeListener.class);
+        return listenerList.getListeners(ChangeListener.class);
     }
 
 
@@ -1536,7 +1535,7 @@ public class JSpinner extends JComponent implements Accessible
                     return textField.getAccessibleContext();
                 }
             } else if (editor instanceof Accessible) {
-                return ((Accessible)editor).getAccessibleContext();
+                return editor.getAccessibleContext();
             }
             return null;
         }
@@ -1693,7 +1692,7 @@ public class JSpinner extends JComponent implements Accessible
             if (i < 0 || i > 1) {
                 return false;
             }
-            Object o = null;
+            Object o;
             if (i == 0) {
                 o = getNextValue(); // AccessibleAction.INCREMENT
             } else {

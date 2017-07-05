@@ -1312,3 +1312,24 @@ InitLauncher(jboolean javaw)
 {
     JLI_SetTraceLauncher();
 }
+
+/*
+ * The implementation for finding classes from the bootstrap
+ * class loader, refer to java.h
+ */
+static FindClassFromBootLoader_t *findBootClass = NULL;
+
+jclass
+FindBootStrapClass(JNIEnv *env, const char* classname)
+{
+   if (findBootClass == NULL) {
+       findBootClass = (FindClassFromBootLoader_t *)dlsym(RTLD_DEFAULT,
+          "JVM_FindClassFromClassLoader");
+       if (findBootClass == NULL) {
+           JLI_ReportErrorMessage(DLL_ERROR4,
+               "JVM_FindClassFromClassLoader");
+           return NULL;
+       }
+   }
+   return findBootClass(env, classname, JNI_FALSE, (jobject)NULL, JNI_FALSE);
+}

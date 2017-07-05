@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-1997 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ package java.lang;
  */
 public
 class IllegalMonitorStateException extends RuntimeException {
+    private static final long serialVersionUID = 3713306369498869069L;
+
     /**
      * Constructs an <code>IllegalMonitorStateException</code> with no
      * detail message.

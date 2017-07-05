@@ -43,6 +43,7 @@ import java.security.PrivilegedAction;
  * @author Chris Hegarty
  */
 
+@SuppressWarnings("serial")  // never serialized
 public class KeepAliveStreamCleaner extends LinkedBlockingQueue<KeepAliveCleanerEntry> implements Runnable
 {
     // maximum amount of remaining data that we will try to cleanup

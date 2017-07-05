@@ -27,7 +27,7 @@ import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 
 /**
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class EncryptionConstants {
    //J-

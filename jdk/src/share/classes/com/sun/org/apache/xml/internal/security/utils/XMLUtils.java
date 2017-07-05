@@ -2,7 +2,6 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-
 /*
  * Copyright  1999-2004 The Apache Software Foundation.
  *
@@ -25,8 +24,12 @@ package com.sun.org.apache.xml.internal.security.utils;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
@@ -49,6 +52,14 @@ import org.w3c.dom.Text;
  */
 public class XMLUtils {
 
+   private static boolean ignoreLineBreaks =
+      AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+         public Boolean run() {
+            return Boolean.getBoolean
+               ("com.sun.org.apache.xml.internal.security.ignoreLineBreaks");
+         }
+      });
+
    /**
     * Constructor XMLUtils
     *
@@ -57,7 +68,13 @@ public class XMLUtils {
 
       // we don't allow instantiation
    }
+   public static Element getNextElement(Node el) {
+           while ((el!=null) && (el.getNodeType()!=Node.ELEMENT_NODE)) {
+                   el=el.getNextSibling();
+           }
+           return (Element)el;
 
+   }
 
    /**
     * @param rootNode
@@ -212,6 +229,8 @@ public class XMLUtils {
    }
 
 
+   static  String dsPrefix=null;
+   static Map namePrefixes=new HashMap();
    /**
     * Creates an Element in the XML Signature specification namespace.
     *
@@ -226,27 +245,19 @@ public class XMLUtils {
          throw new RuntimeException("Document is null");
       }
 
-      String ds = Constants.getSignatureSpecNSprefix();
-
-      if ((ds == null) || (ds.length() == 0)) {
-         Element element = doc.createElementNS(Constants.SignatureSpecNS,
-                                               elementName);
-
-         element.setAttributeNS(Constants.NamespaceSpecNS, "xmlns",
-                                Constants.SignatureSpecNS);
-
-         return element;
+      if ((dsPrefix == null) || (dsPrefix.length() == 0)) {
+         return doc.createElementNS(Constants.SignatureSpecNS, elementName);
       }
-         Element element = doc.createElementNS(Constants.SignatureSpecNS,
-                                               ds + ":" + elementName);
-
-         element.setAttributeNS(Constants.NamespaceSpecNS, "xmlns:" + ds,
-                                Constants.SignatureSpecNS);
-
-         return element;
-
+      String namePrefix=(String) namePrefixes.get(elementName);
+      if (namePrefix==null) {
+          StringBuffer tag=new StringBuffer(dsPrefix);
+          tag.append(':');
+          tag.append(elementName);
+          namePrefix=tag.toString();
+          namePrefixes.put(elementName,namePrefix);
+      }
+      return doc.createElementNS(Constants.SignatureSpecNS, namePrefix);
    }
-
 
    /**
     * Returns true if the element is in XML Signature namespace and the local
@@ -258,17 +269,7 @@ public class XMLUtils {
     */
    public static boolean elementIsInSignatureSpace(Element element,
            String localName) {
-
-      if ((element == null) ||
-          !Constants.SignatureSpecNS.equals(element.getNamespaceURI()) ){
-         return false;
-      }
-
-      if (!element.getLocalName().equals(localName)) {
-         return false;
-      }
-
-      return true;
+      return ElementProxy.checker.isNamespaceElement(element, localName, Constants.SignatureSpecNS);
    }
 
    /**
@@ -281,18 +282,7 @@ public class XMLUtils {
     */
    public static boolean elementIsInEncryptionSpace(Element element,
            String localName) {
-
-      if ((element == null) ||
-            !EncryptionConstants.EncryptionSpecNS.equals(element.getNamespaceURI())
-          ){
-         return false;
-      }
-
-      if (!element.getLocalName().equals(localName)) {
-         return false;
-      }
-
-      return true;
+           return ElementProxy.checker.isNamespaceElement(element, localName, EncryptionConstants.EncryptionSpecNS);
    }
 
    /**
@@ -352,32 +342,28 @@ public class XMLUtils {
                                        + (npe == null ? "" : npe.getMessage()) + "\"");
     }
 
+    /**
+     * Method createDSctx
+     *
+     * @param doc
+     * @param prefix
+     * @param namespace
+     * @return the element.
+     */
+    public static Element createDSctx(Document doc, String prefix,
+                                      String namespace) {
 
+       if ((prefix == null) || (prefix.trim().length() == 0)) {
+          throw new IllegalArgumentException("You must supply a prefix");
+       }
 
-   /**
-    * Method createDSctx
-    *
-    * @param doc
-    * @param prefix
-    * @param namespace
-    * @return the element.
-    */
-   public static Element createDSctx(Document doc, String prefix,
-                                     String namespace) {
+       Element ctx = doc.createElementNS(null, "namespaceContext");
 
-      if ((prefix == null) || (prefix.trim().length() == 0)) {
-         throw new IllegalArgumentException("You must supply a prefix");
-      }
+       ctx.setAttributeNS(Constants.NamespaceSpecNS, "xmlns:" + prefix.trim(),
+                          namespace);
 
-      Element ctx = doc.createElementNS(null, "namespaceContext");
-
-      ctx.setAttributeNS(Constants.NamespaceSpecNS, "xmlns:" + prefix.trim(),
-                         namespace);
-
-      return ctx;
-   }
-
-
+       return ctx;
+    }
 
    /**
     * Method addReturnToElement
@@ -386,9 +372,23 @@ public class XMLUtils {
     */
    public static void addReturnToElement(Element e) {
 
-      Document doc = e.getOwnerDocument();
+      if (!ignoreLineBreaks) {
+         Document doc = e.getOwnerDocument();
+         e.appendChild(doc.createTextNode("\n"));
+      }
+   }
 
-      e.appendChild(doc.createTextNode("\n"));
+   public static void addReturnToElement(Document doc, HelperNodeList nl) {
+      if (!ignoreLineBreaks) {
+         nl.appendChild(doc.createTextNode("\n"));
+      }
+   }
+
+   public static void addReturnBeforeChild(Element e, Node child) {
+      if (!ignoreLineBreaks) {
+         Document doc = e.getOwnerDocument();
+         e.insertBefore(doc.createTextNode("\n"), child);
+      }
    }
 
    /**
@@ -470,7 +470,7 @@ public class XMLUtils {
 
                 for (int i = 0; i < attributesLength; i++) {
                         Attr currentAttr = (Attr) attributes.item(i);
-                        if (!namespaceNs.equals(currentAttr.getNamespaceURI()))
+                        if (namespaceNs!=currentAttr.getNamespaceURI())
                                 continue;
                         if (childElement.hasAttributeNS(namespaceNs,
                                                         currentAttr.getLocalName())) {
@@ -511,8 +511,7 @@ public class XMLUtils {
     */
    public static Element selectDsNode(Node sibling, String nodeName, int number) {
         while (sibling!=null) {
-                if (nodeName.equals(sibling.getLocalName())
-                                && Constants.SignatureSpecNS.equals(sibling.getNamespaceURI())) {
+                if (ElementProxy.checker.isNamespaceElement(sibling, nodeName, Constants.SignatureSpecNS )) {
                         if (number==0){
                                 return (Element)sibling;
                         }
@@ -532,8 +531,7 @@ public class XMLUtils {
 
    public static Element selectXencNode(Node sibling, String nodeName, int number) {
         while (sibling!=null) {
-                if (nodeName.equals(sibling.getLocalName())
-                                && EncryptionConstants.EncryptionSpecNS.equals(sibling.getNamespaceURI())) {
+                if (ElementProxy.checker.isNamespaceElement(sibling, nodeName, EncryptionConstants.EncryptionSpecNS )) {
                         if (number==0){
                                 return (Element)sibling;
                         }
@@ -591,8 +589,7 @@ public class XMLUtils {
     */
    public static Element selectNode(Node sibling, String uri,String nodeName, int number) {
         while (sibling!=null) {
-                if (nodeName.equals(sibling.getLocalName())
-                                && uri.equals(sibling.getNamespaceURI())) {
+                if (ElementProxy.checker.isNamespaceElement(sibling, nodeName, uri)) {
                         if (number==0){
                                 return (Element)sibling;
                         }
@@ -611,7 +608,6 @@ public class XMLUtils {
    public static Element[] selectDsNodes(Node sibling,String nodeName) {
      return selectNodes(sibling,Constants.SignatureSpecNS,nodeName);
    }
-
    /**
     * @param sibling
     * @param uri
@@ -624,8 +620,7 @@ public class XMLUtils {
         int curr=0;
         //List list=new ArrayList();
         while (sibling!=null) {
-                if (nodeName.equals(sibling.getLocalName())
-                                && uri.equals(sibling.getNamespaceURI())) {
+                if (ElementProxy.checker.isNamespaceElement(sibling, nodeName, uri)) {
                         a[curr++]=(Element)sibling;
                         if (size<=curr) {
                                 int cursize= size<<2;
@@ -694,4 +689,8 @@ public class XMLUtils {
          }
       }
    }
+
+    public static boolean ignoreLineBreaks() {
+        return ignoreLineBreaks;
+    }
 }

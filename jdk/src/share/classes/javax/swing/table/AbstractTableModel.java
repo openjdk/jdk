@@ -176,8 +176,7 @@ public abstract class AbstractTableModel implements TableModel, Serializable
      * @since 1.4
      */
     public TableModelListener[] getTableModelListeners() {
-        return (TableModelListener[])listenerList.getListeners(
-                TableModelListener.class);
+        return listenerList.getListeners(TableModelListener.class);
     }
 
 //

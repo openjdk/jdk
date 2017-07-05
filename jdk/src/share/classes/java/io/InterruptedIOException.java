@@ -1,5 +1,5 @@
 /*
- * Copyright 1995-2000 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1995-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ package java.io;
  */
 public
 class InterruptedIOException extends IOException {
+    private static final long serialVersionUID = 4020568460727500567L;
+
     /**
      * Constructs an <code>InterruptedIOException</code> with
      * <code>null</code> as its error detail message.

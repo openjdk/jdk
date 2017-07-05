@@ -204,20 +204,21 @@ public interface PropertyEditor {
     //----------------------------------------------------------------------
 
     /**
-     * Register a listener for the PropertyChange event.  When a
-     * PropertyEditor changes its value it should fire a PropertyChange
-     * event on all registered PropertyChangeListeners, specifying the
-     * null value for the property name and itself as the source.
+     * Adds a listener for the value change.
+     * When the property editor changes its value
+     * it should fire a {@link PropertyChangeEvent}
+     * on all registered {@link PropertyChangeListener}s,
+     * specifying the {@code null} value for the property name
+     * and itself as the source.
      *
-     * @param listener  An object to be invoked when a PropertyChange
-     *          event is fired.
+     * @param listener  the {@link PropertyChangeListener} to add
      */
     void addPropertyChangeListener(PropertyChangeListener listener);
 
     /**
-     * Remove a listener for the PropertyChange event.
+     * Removes a listener for the value change.
      *
-     * @param listener  The PropertyChange listener to be removed.
+     * @param listener  the {@link PropertyChangeListener} to remove
      */
     void removePropertyChangeListener(PropertyChangeListener listener);
 

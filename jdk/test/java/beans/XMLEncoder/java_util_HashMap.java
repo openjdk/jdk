@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2006-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4631471 4921212
+ * @bug 4631471 4921212 4994637
  * @summary Tests HashMap encoding
  * @author Sergey Malenkov
  */
@@ -36,10 +36,17 @@ public final class java_util_HashMap extends AbstractTest<Map<String, String>> {
         new java_util_HashMap().test(true);
     }
 
+    @Override
     protected Map<String, String> getObject() {
-        return new HashMap<String, String>();
+        Map<String, String> map = new HashMap<String, String>();
+        map.put(null, null);
+        map.put("key", "value");
+        map.put("key-null", "null-value");
+        map.put("way", "remove");
+        return map;
     }
 
+    @Override
     protected Map<String, String> getAnotherObject() {
         Map<String, String> map = new HashMap<String, String>();
         map.put(null, "null-value");
@@ -48,6 +55,7 @@ public final class java_util_HashMap extends AbstractTest<Map<String, String>> {
         return map;
     }
 
+    @Override
     protected void validate(Map<String, String> before, Map<String, String> after) {
         super.validate(before, after);
         validate(before);
@@ -55,10 +63,18 @@ public final class java_util_HashMap extends AbstractTest<Map<String, String>> {
     }
 
     private static void validate(Map<String, String> map) {
-        if (!map.isEmpty()) {
+        switch (map.size()) {
+        case 3:
             validate(map, null, "null-value");
             validate(map, "key", "value");
             validate(map, "key-null", null);
+            break;
+        case 4:
+            validate(map, null, null);
+            validate(map, "key", "value");
+            validate(map, "key-null", "null-value");
+            validate(map, "way", "remove");
+            break;
         }
     }
 

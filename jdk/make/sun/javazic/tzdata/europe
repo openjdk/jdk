@@ -479,7 +479,7 @@ Rule	EU	1979	1995	-	Sep	lastSun	 1:00u	0	-
 Rule	EU	1981	max	-	Mar	lastSun	 1:00u	1:00	S
 Rule	EU	1996	max	-	Oct	lastSun	 1:00u	0	-
 # The most recent directive covers the years starting in 2002.  See:
-# <a href="http://europa.eu.int/eur-lex/en/lif/dat/2000/en_300L0084.html"
+# <a href="http://europa.eu.int/eur-lex/en/lif/dat/2000/en_300L0084.html">
 # Directive 2000/84/EC of the European Parliament and of the Council
 # of 19 January 2001 on summer-time arrangements.
 # </a>
@@ -502,9 +502,48 @@ Rule	C-Eur	1940	only	-	Apr	 1	 2:00s	1:00	S
 Rule	C-Eur	1942	only	-	Nov	 2	 2:00s	0	-
 Rule	C-Eur	1943	only	-	Mar	29	 2:00s	1:00	S
 Rule	C-Eur	1943	only	-	Oct	 4	 2:00s	0	-
-Rule	C-Eur	1944	only	-	Apr	 3	 2:00s	1:00	S
+Rule	C-Eur	1944	1945	-	Apr	Mon>=1	 2:00s	1:00	S
 # Whitman gives 1944 Oct 7; go with Shanks & Pottenger.
 Rule	C-Eur	1944	only	-	Oct	 2	 2:00s	0	-
+# From Jesper Norgaard Welen (2008-07-13):
+#
+# I found what is probably a typo of 2:00 which should perhaps be 2:00s
+# in the C-Eur rule from tz database version 2008d (this part was
+# corrected in version 2008d). The circumstancial evidence is simply the
+# tz database itself, as seen below:
+#
+# Zone Europe/Paris 0:09:21 - LMT 1891 Mar 15  0:01
+#    0:00 France WE%sT 1945 Sep 16  3:00
+#
+# Zone Europe/Monaco 0:29:32 - LMT 1891 Mar 15
+#    0:00 France WE%sT 1945 Sep 16 3:00
+#
+# Zone Europe/Belgrade 1:22:00 - LMT 1884
+#    1:00 1:00 CEST 1945 Sep 16  2:00s
+#
+# Rule France 1945 only - Sep 16  3:00 0 -
+# Rule Belgium 1945 only - Sep 16  2:00s 0 -
+# Rule Neth 1945 only - Sep 16 2:00s 0 -
+#
+# The rule line to be changed is:
+#
+# Rule C-Eur 1945 only - Sep 16  2:00 0 -
+#
+# It seems that Paris, Monaco, Rule France, Rule Belgium all agree on
+# 2:00 standard time, e.g. 3:00 local time.  However there are no
+# countries that use C-Eur rules in September 1945, so the only items
+# affected are apparently these ficticious zones that translates acronyms
+# CET and MET:
+#
+# Zone CET  1:00 C-Eur CE%sT
+# Zone MET  1:00 C-Eur ME%sT
+#
+# It this is right then the corrected version would look like:
+#
+# Rule C-Eur 1945 only - Sep 16  2:00s 0 -
+#
+# A small step for mankind though 8-)
+Rule	C-Eur	1945	only	-	Sep	16	 2:00s	0	-
 Rule	C-Eur	1977	1980	-	Apr	Sun>=1	 2:00s	1:00	S
 Rule	C-Eur	1977	only	-	Sep	lastSun	 2:00s	0	-
 Rule	C-Eur	1978	only	-	Oct	 1	 2:00s	0	-
@@ -747,7 +786,8 @@ Rule	Bulg	1981	only	-	Sep	27	 2:00	0	-
 Zone	Europe/Sofia	1:33:16 -	LMT	1880
 			1:56:56	-	IMT	1894 Nov 30 # Istanbul MT?
 			2:00	-	EET	1942 Nov  2  3:00
-			1:00	C-Eur	CE%sT	1945 Apr  2  3:00
+			1:00	C-Eur	CE%sT	1945
+			1:00	-	CET	1945 Apr 2 3:00
 			2:00	-	EET	1979 Mar 31 23:00
 			2:00	Bulg	EE%sT	1982 Sep 26  2:00
 			2:00	C-Eur	EE%sT	1991
@@ -1115,33 +1155,40 @@ Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 15  0:01
 # [See tz-link.htm for the URL.]
 
 # From Joerg Schilling (2002-10-23):
-# In 1945, Berlin was switched to Moscow Summer time (GMT+4) by <a
-# href="http://www.dhm.de/lemo/html/biografien/BersarinNikolai/">
+# In 1945, Berlin was switched to Moscow Summer time (GMT+4) by
+# <a href="http://www.dhm.de/lemo/html/biografien/BersarinNikolai/">
 # General [Nikolai] Bersarin</a>.
 
 # From Paul Eggert (2003-03-08):
 # <a href="http://www.parlament-berlin.de/pds-fraktion.nsf/727459127c8b66ee8525662300459099/defc77cb784f180ac1256c2b0030274b/$FILE/bersarint.pdf">
+# http://www.parlament-berlin.de/pds-fraktion.nsf/727459127c8b66ee8525662300459099/defc77cb784f180ac1256c2b0030274b/$FILE/bersarint.pdf
+# </a>
 # says that Bersarin issued an order to use Moscow time on May 20.
 # However, Moscow did not observe daylight saving in 1945, so
 # this was equivalent to CEMT (GMT+3), not GMT+4.
 
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule	Germany	1945	only	-	Apr	 2	2:00s	1:00	S
-Rule	Germany	1945	only	-	May	24	2:00	2:00	M # Midsummer
-Rule	Germany	1945	only	-	Sep	24	3:00	1:00	S
-Rule	Germany	1945	only	-	Nov	18	2:00s	0	-
 Rule	Germany	1946	only	-	Apr	14	2:00s	1:00	S
 Rule	Germany	1946	only	-	Oct	 7	2:00s	0	-
 Rule	Germany	1947	1949	-	Oct	Sun>=1	2:00s	0	-
-Rule	Germany	1947	only	-	Apr	 6	2:00s	1:00	S
+# http://www.ptb.de/de/org/4/44/441/salt.htm says the following transition
+# occurred at 3:00 MEZ, not the 2:00 MEZ given in Shanks & Pottenger.
+# Go with the PTB.
+Rule	Germany	1947	only	-	Apr	 6	3:00s	1:00	S
 Rule	Germany	1947	only	-	May	11	2:00s	2:00	M
 Rule	Germany	1947	only	-	Jun	29	3:00	1:00	S
 Rule	Germany	1948	only	-	Apr	18	2:00s	1:00	S
 Rule	Germany	1949	only	-	Apr	10	2:00s	1:00	S
+
+Rule SovietZone	1945	only	-	May	24	2:00	2:00	M # Midsummer
+Rule SovietZone	1945	only	-	Sep	24	3:00	1:00	S
+Rule SovietZone	1945	only	-	Nov	18	2:00s	0	-
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Berlin	0:53:28 -	LMT	1893 Apr
-			1:00	C-Eur	CE%sT	1945 Apr 2 2:00
+			1:00	C-Eur	CE%sT	1945 May 24 2:00
+			1:00 SovietZone	CE%sT	1946
 			1:00	Germany	CE%sT	1980
 			1:00	EU	CE%sT
 
@@ -1218,7 +1265,7 @@ Rule	Hungary	1980	only	-	Apr	 6	 1:00	1:00	S
 Zone	Europe/Budapest	1:16:20 -	LMT	1890 Oct
 			1:00	C-Eur	CE%sT	1918
 			1:00	Hungary	CE%sT	1941 Apr  6  2:00
-			1:00	C-Eur	CE%sT	1945 May  1 23:00
+			1:00	C-Eur	CE%sT	1945
 			1:00	Hungary	CE%sT	1980 Sep 28  2:00s
 			1:00	EU	CE%sT
 
@@ -1736,7 +1783,6 @@ Zone	Europe/Oslo	0:43:00 -	LMT	1895 Jan  1
 # come up with more definitive info about the timekeeping during the
 # war years it's probably best just do do the following for now:
 Link	Europe/Oslo	Arctic/Longyearbyen
-Link	Europe/Oslo	Atlantic/Jan_Mayen
 
 # Poland
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -2136,7 +2182,8 @@ Zone Asia/Anadyr	11:49:56 -	LMT	1924 May  2
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Belgrade	1:22:00	-	LMT	1884
 			1:00	-	CET	1941 Apr 18 23:00
-			1:00	C-Eur	CE%sT	1945 May  8  2:00s
+			1:00	C-Eur	CE%sT	1945
+			1:00	-	CET	1945 May 8 2:00s
 			1:00	1:00	CEST	1945 Sep 16  2:00s
 # Metod Kozelj reports that the legal date of
 # transition to EU rules was 1982-11-27, for all of Yugoslavia at the time.

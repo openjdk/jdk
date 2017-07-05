@@ -45,7 +45,7 @@ import java.lang.reflect.Modifier;
 
 /**
  *
- * @author $Author: dims $
+ * @author $Author: mullan $
  */
 public class CachedXPathFuncHereAPI {
 
@@ -291,6 +291,7 @@ public class CachedXPathFuncHereAPI {
                                       .getDocumentElement()
                                    : namespaceNode);
 
+      // only check if string points to different object (for performance)
       if (str!=xpathStr) {
         if (str.indexOf("here()")>0) {
             _context.reset();
@@ -340,6 +341,7 @@ public class CachedXPathFuncHereAPI {
       //    XPathContext should be done away with.)
       // Create the XPath object.
       //String str = CachedXPathFuncHereAPI.getStrFromNode(xpathnode);
+    // only check if string points to different object (for performance)
     if (str!=xpathStr) {
         if (str.indexOf("here()")>0) {
             _context.reset();
@@ -421,7 +423,7 @@ public class CachedXPathFuncHereAPI {
 
     private static void fixupFunctionTable() {
         boolean installed = false;
-        if (log.isLoggable(java.util.logging.Level.INFO))                                  log.log(java.util.logging.Level.INFO, "Registering Here function");
+        log.log(java.util.logging.Level.INFO, "Registering Here function");
         /**
          * Try to register our here() implementation as internal function.
          */
@@ -434,7 +436,7 @@ public class CachedXPathFuncHereAPI {
                 installed = true;
             }
         } catch (Throwable t) {
-            if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Error installing function using the static installFunction method", t);
+            log.log(java.util.logging.Level.FINE, "Error installing function using the static installFunction method", t);
         }
         if(!installed) {
             try {
@@ -445,15 +447,15 @@ public class CachedXPathFuncHereAPI {
                 installFunction.invoke(_funcTable, params);
                 installed = true;
             } catch (Throwable t) {
-                if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Error installing function using the static installFunction method", t);
+                log.log(java.util.logging.Level.FINE, "Error installing function using the static installFunction method", t);
             }
         }
-        if (true) {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
             if (installed) {
-                if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Registered class " + FuncHere.class.getName()
+                log.log(java.util.logging.Level.FINE, "Registered class " + FuncHere.class.getName()
                         + " for XPath function 'here()' function in internal table");
             } else {
-                if (log.isLoggable(java.util.logging.Level.FINE))                                     log.log(java.util.logging.Level.FINE, "Unable to register class " + FuncHere.class.getName()
+                log.log(java.util.logging.Level.FINE, "Unable to register class " + FuncHere.class.getName()
                         + " for XPath function 'here()' function in internal table");
             }
         }

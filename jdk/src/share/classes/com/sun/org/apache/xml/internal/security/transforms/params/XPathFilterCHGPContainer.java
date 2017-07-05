@@ -36,7 +36,7 @@ import org.w3c.dom.Node;
  * Implements the parameters for a custom Transform which has a better performance
  * thatn the xfilter2.
  *
- * @author $Author: raul $
+ * @author $Author: mullan $
  */
 public class XPathFilterCHGPContainer extends ElementProxy
         implements TransformParam {
@@ -104,7 +104,7 @@ public class XPathFilterCHGPContainer extends ElementProxy
          includeButSearchElem
             .appendChild(this._doc
                .createTextNode(indentXPathText(includeButSearch)));
-         this._constructionElement.appendChild(doc.createTextNode("\n"));
+         XMLUtils.addReturnToElement(this._constructionElement);
          this._constructionElement.appendChild(includeButSearchElem);
       }
 
@@ -118,7 +118,7 @@ public class XPathFilterCHGPContainer extends ElementProxy
          excludeButSearchElem
             .appendChild(this._doc
                .createTextNode(indentXPathText(excludeButSearch)));
-         this._constructionElement.appendChild(doc.createTextNode("\n"));
+         XMLUtils.addReturnToElement(this._constructionElement);
          this._constructionElement.appendChild(excludeButSearchElem);
       }
 
@@ -129,11 +129,11 @@ public class XPathFilterCHGPContainer extends ElementProxy
 
          excludeElem
             .appendChild(this._doc.createTextNode(indentXPathText(exclude)));
-         this._constructionElement.appendChild(doc.createTextNode("\n"));
+         XMLUtils.addReturnToElement(this._constructionElement);
          this._constructionElement.appendChild(excludeElem);
       }
 
-      this._constructionElement.appendChild(doc.createTextNode("\n"));
+      XMLUtils.addReturnToElement(this._constructionElement);
    }
 
    /**

@@ -30,14 +30,21 @@ import java.io.OutputStream;
  */
 public class UnsyncBufferedOutputStream extends OutputStream {
         final OutputStream out;
+
+        final byte[] buf;
         static final int size=8*1024;
-        final byte[] buf=new byte[size];
+        private static ThreadLocal bufCahce = new ThreadLocal() {
+        protected synchronized Object initialValue() {
+            return new byte[size];
+        }
+    };
         int pointer=0;
         /**
          * Creates a buffered output stream without synchronization
          * @param out the outputstream to buffer
          */
         public UnsyncBufferedOutputStream(OutputStream out) {
+                buf=(byte[])bufCahce.get();
                 this.out=out;
         }
 

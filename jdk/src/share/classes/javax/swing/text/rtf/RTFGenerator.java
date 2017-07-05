@@ -52,11 +52,11 @@ class RTFGenerator extends Object
 {
     /* These dictionaries map Colors, font names, or Style objects
        to Integers */
-    Dictionary colorTable;
+    Dictionary<Object, Integer> colorTable;
     int colorCount;
-    Dictionary fontTable;
+    Dictionary<String, Integer> fontTable;
     int fontCount;
-    Dictionary styleTable;
+    Dictionary<AttributeSet, Integer> styleTable;
     int styleCount;
 
     /* where all the text is going */
@@ -90,7 +90,7 @@ class RTFGenerator extends Object
        would require allocating an object for every character
        written (slow!). */
     static class CharacterKeywordPair
-      { public char character; public String keyword; };
+      { public char character; public String keyword; }
     static protected CharacterKeywordPair[] textKeywords;
 
     static {
@@ -98,7 +98,7 @@ class RTFGenerator extends Object
 
         Dictionary textKeywordDictionary = RTFReader.textKeywords;
         Enumeration keys = textKeywordDictionary.keys();
-        Vector tempPairs = new Vector();
+        Vector<CharacterKeywordPair> tempPairs = new Vector<CharacterKeywordPair>();
         while(keys.hasMoreElements()) {
             CharacterKeywordPair pair = new CharacterKeywordPair();
             pair.keyword = (String)keys.nextElement();
@@ -133,14 +133,14 @@ static public void writeDocument(Document d, OutputStream to)
 
 public RTFGenerator(OutputStream to)
 {
-    colorTable = new Hashtable();
+    colorTable = new Hashtable<Object, Integer>();
     colorTable.put(defaultRTFColor, Integer.valueOf(0));
     colorCount = 1;
 
-    fontTable = new Hashtable();
+    fontTable = new Hashtable<String, Integer>();
     fontCount = 0;
 
-    styleTable = new Hashtable();
+    styleTable = new Hashtable<AttributeSet, Integer>();
     /* TODO: put default style in style table */
     styleCount = 0;
 
@@ -197,7 +197,7 @@ public void examineElement(Element el)
 private void tallyStyles(AttributeSet a) {
     while (a != null) {
         if (a instanceof Style) {
-            Integer aNum = (Integer)styleTable.get(a);
+            Integer aNum = styleTable.get(a);
             if (aNum == null) {
                 styleCount = styleCount + 1;
                 aNum = new Integer(styleCount);
@@ -225,7 +225,7 @@ private Integer findStyleNumber(AttributeSet a, String domain)
 {
     while(a != null) {
         if (a instanceof Style) {
-            Integer aNum = (Integer)styleTable.get(a);
+            Integer aNum = styleTable.get(a);
             if (aNum != null) {
                 if (domain == null ||
                     domain.equals(a.getAttribute(Constants.StyleType)))
@@ -319,11 +319,11 @@ public void writeRTFHeader()
 
     /* write font table */
     String[] sortedFontTable = new String[fontCount];
-    Enumeration fonts = fontTable.keys();
+    Enumeration<String> fonts = fontTable.keys();
     String font;
     while(fonts.hasMoreElements()) {
-        font = (String)fonts.nextElement();
-        Integer num = (Integer)(fontTable.get(font));
+        font = fonts.nextElement();
+        Integer num = fontTable.get(font);
         sortedFontTable[num.intValue()] = font;
     }
     writeBegingroup();
@@ -344,7 +344,7 @@ public void writeRTFHeader()
         Color color;
         while(colors.hasMoreElements()) {
             color = (Color)colors.nextElement();
-            Integer num = (Integer)(colorTable.get(color));
+            Integer num = colorTable.get(color);
             sortedColorTable[num.intValue()] = color;
         }
         writeBegingroup();
@@ -366,10 +366,10 @@ public void writeRTFHeader()
     if (styleCount > 1) {
         writeBegingroup();
         writeControlWord("stylesheet");
-        Enumeration styles = styleTable.keys();
+        Enumeration<AttributeSet> styles = styleTable.keys();
         while(styles.hasMoreElements()) {
             Style style = (Style)styles.nextElement();
-            int styleNumber = ((Integer)styleTable.get(style)).intValue();
+            int styleNumber = styleTable.get(style).intValue();
             writeBegingroup();
             String styleType = (String)style.getAttribute(Constants.StyleType);
             if (styleType == null)
@@ -398,7 +398,7 @@ public void writeRTFHeader()
 
             basis = style.getResolveParent();
             if (basis != null && basis instanceof Style) {
-                Integer basedOn = (Integer)styleTable.get(basis);
+                Integer basedOn = styleTable.get(basis);
                 if (basedOn != null) {
                     writeControlWord("sbasedon", basedOn.intValue());
                 }
@@ -406,7 +406,7 @@ public void writeRTFHeader()
 
             Style nextStyle = (Style)style.getAttribute(Constants.StyleNext);
             if (nextStyle != null) {
-                Integer nextNum = (Integer)styleTable.get(nextStyle);
+                Integer nextNum = styleTable.get(nextStyle);
                 if (nextNum != null) {
                     writeControlWord("snext", nextNum.intValue());
                 }
@@ -725,7 +725,7 @@ void updateCharacterAttributes(MutableAttributeSet current,
 
     if ((parm = attrDiff(current, newAttributes,
                          StyleConstants.FontFamily, null)) != null) {
-        Number fontNum = (Number)fontTable.get(parm);
+        Integer fontNum = fontTable.get(parm);
         writeControlWord("f", fontNum.intValue());
     }
 
@@ -746,7 +746,7 @@ void updateCharacterAttributes(MutableAttributeSet current,
         if (parm == MagicToken)
             colorNum = 0;
         else
-            colorNum = ((Number)colorTable.get(parm)).intValue();
+            colorNum = colorTable.get(parm).intValue();
         writeControlWord("cb", colorNum);
     }
 
@@ -756,7 +756,7 @@ void updateCharacterAttributes(MutableAttributeSet current,
         if (parm == MagicToken)
             colorNum = 0;
         else
-            colorNum = ((Number)colorTable.get(parm)).intValue();
+            colorNum = colorTable.get(parm).intValue();
         writeControlWord("cf", colorNum);
     }
 }

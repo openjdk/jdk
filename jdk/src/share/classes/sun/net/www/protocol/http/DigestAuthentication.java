@@ -59,6 +59,8 @@ class DigestAuthentication extends AuthenticationInfo {
     // instances as a result of a single authorization (for multiple domains)
 
     static class Parameters implements java.io.Serializable {
+        private static final long serialVersionUID = -3584543755194526252L;
+
         private boolean serverQop; // server proposed qop=auth
         private String opaque;
         private String cnonce;
