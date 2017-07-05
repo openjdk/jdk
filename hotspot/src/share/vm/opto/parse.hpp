@@ -430,6 +430,11 @@ class Parse : public GraphKit {
     }
   }
 
+  // Return true if the parser should add a loop predicate
+  bool should_add_predicate(int target_bci);
+  // Insert a loop predicate into the graph
+  void add_predicate();
+
   // Note:  Intrinsic generation routines may be found in library_call.cpp.
 
   // Helper function to setup Ideal Call nodes
@@ -491,7 +496,7 @@ class Parse : public GraphKit {
 
   void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);
-  void    repush_if_args();
+  int     repush_if_args();
   void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
                               Block* path, Block* other_path);
   IfNode* jump_if_fork_int(Node* a, Node* b, BoolTest::mask mask);

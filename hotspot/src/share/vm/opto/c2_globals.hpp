@@ -154,6 +154,12 @@
   notproduct(bool, TraceProfileTripCount, false,                            \
           "Trace profile loop trip count information")                      \
                                                                             \
+  product(bool, UseLoopPredicate, true,                                     \
+          "Generate a predicate to select fast/slow loop versions")         \
+                                                                            \
+  develop(bool, TraceLoopPredicate, false,                                  \
+          "Trace generation of loop predicates")                            \
+                                                                            \
   develop(bool, OptoCoalesce, true,                                         \
           "Use Conservative Copy Coalescing in the Register Allocator")     \
                                                                             \

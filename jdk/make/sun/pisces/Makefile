@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../..
+MODULE  = java2d
 PACKAGE = sun.pisces
 PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk

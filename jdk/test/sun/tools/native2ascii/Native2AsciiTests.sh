@@ -32,7 +32,7 @@ if [ "${TESTSRC}" = "" ]; then TESTSRC=.; fi
 if [ "${TESTJAVA}" = "" ]; then TESTJAVA=$1; shift; fi
 
 case `uname -s` in
-  Windows*) OS=Windows;;
+  Windows* | CYGWIN*) OS=Windows;;
   SunOS|Linux) OS=Unix;;
 esac
 
@@ -45,12 +45,14 @@ check() {
 
   # Strip carriage returns from output when comparing with n2a test output
   # on win32 systems
-  if [ OS = Windows ]; then
-     tr -d '\015' <$out >$out.1
+  if [ ${OS} = Windows ]; then
+     sed -e 's@\\r@@g' $out >$out.1
+     sed -e 's@\\r@@g' $expected >$out.expected
   else
      cp $out $out.1
+     cp $expected $out.expected
   fi
-  if (set -x; diff -c $expected $out.1); then
+  if (set -x; diff -c $out.expected $out.1); then
     echo "$bug passed"
   else
     echo "$bug failed"

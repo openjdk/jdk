@@ -574,10 +574,18 @@ public final class OCSPResponse {
                             (singleExtDer.length);
                     for (int i = 0; i < singleExtDer.length; i++) {
                         Extension ext = new Extension(singleExtDer[i]);
-                        singleExtensions.put(ext.getId(), ext);
                         if (DEBUG != null) {
                             DEBUG.println("OCSP single extension: " + ext);
                         }
+                        // We don't support any extensions yet. Therefore, if it
+                        // is critical we must throw an exception because we
+                        // don't know how to process it.
+                        if (ext.isCritical()) {
+                            throw new IOException(
+                                "Unsupported OCSP critical extension: " +
+                                ext.getExtensionId());
+                        }
+                        singleExtensions.put(ext.getId(), ext);
                     }
                 } else {
                     singleExtensions = Collections.emptyMap();

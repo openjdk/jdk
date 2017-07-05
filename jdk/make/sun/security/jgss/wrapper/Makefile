@@ -24,6 +24,7 @@
 #
 
 BUILDDIR = ../../../..
+MODULE  = security-kerberos
 PACKAGE = sun.security.jgss.wrapper
 PRODUCT = sun
 
