@@ -40,10 +40,11 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.MethodHandleTransformer;
+import jdk.internal.dynalink.support.DefaultInternalObjectFilter;
 import jdk.internal.dynalink.support.Guards;
 import jdk.internal.dynalink.support.Lookup;
 import jdk.nashorn.api.scripting.ScriptUtils;
-import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -52,10 +53,14 @@ import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * This linker delegates to a {@code BeansLinker} but passes it a special linker services object that has a modified
- * {@code asType} method that will ensure that we never pass internal engine objects that should not be externally
- * observable (currently ConsString and ScriptObject) to Java APIs, but rather that we flatten it into a String. We can't just add
- * this functionality as custom converters via {@code GuaardingTypeConverterFactory}, since they are not consulted when
- * the target method handle parameter signature is {@code Object}.
+ * {@code compareConversion} method that favors conversion of {@link ConsString} to either {@link String} or
+ * {@link CharSequence}. It also provides a {@link #createHiddenObjectFilter()} method for use with bootstrap that will
+ * ensure that we never pass internal engine objects that should not be externally observable (currently ConsString and
+ * ScriptObject) to Java APIs, but rather that we flatten it into a String. We can't just add this functionality as
+ * custom converters via {@code GuaardingTypeConverterFactory}, since they are not consulted when
+ * the target method handle parameter signature is {@code Object}. This linker also makes sure that primitive
+ * {@link String} operations can be invoked on a {@link ConsString}, and allows invocation of objects implementing
+ * the {@link FunctionalInterface} attribute.
  */
 public class NashornBeansLinker implements GuardingDynamicLinker {
     // System property to control whether to wrap ScriptObject->ScriptObjectMirror for
@@ -63,16 +68,12 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
     private static final boolean MIRROR_ALWAYS = Options.getBooleanProperty("nashorn.mirror.always", true);
 
     private static final MethodHandle EXPORT_ARGUMENT;
-    private static final MethodHandle EXPORT_NATIVE_ARRAY;
-    private static final MethodHandle EXPORT_SCRIPT_OBJECT;
     private static final MethodHandle IMPORT_RESULT;
     private static final MethodHandle FILTER_CONSSTRING;
 
     static {
         final Lookup lookup  = new Lookup(MethodHandles.lookup());
         EXPORT_ARGUMENT      = lookup.findOwnStatic("exportArgument", Object.class, Object.class);
-        EXPORT_NATIVE_ARRAY  = lookup.findOwnStatic("exportNativeArray", Object.class, NativeArray.class);
-        EXPORT_SCRIPT_OBJECT = lookup.findOwnStatic("exportScriptObject", Object.class, ScriptObject.class);
         IMPORT_RESULT        = lookup.findOwnStatic("importResult", Object.class, Object.class);
         FILTER_CONSSTRING    = lookup.findOwnStatic("consStringFilter", Object.class, Object.class);
     }
@@ -115,9 +116,10 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
                 }
                 return new GuardedInvocation(
                         // drop 'thiz' passed from the script.
-                        MH.dropArguments(desc.getLookup().unreflect(m), 1, callType.parameterType(1)),
-                        Guards.getInstanceOfGuard(m.getDeclaringClass())).asTypeSafeReturn(
-                                new NashornBeansLinkerServices(linkerServices), callType);
+                        MH.dropArguments(linkerServices.filterInternalObjects(desc.getLookup().unreflect(m)), 1,
+                                callType.parameterType(1)), Guards.getInstanceOfGuard(
+                                        m.getDeclaringClass())).asTypeSafeReturn(
+                                                new NashornBeansLinkerServices(linkerServices), callType);
             }
         }
         return getGuardedInvocation(beansLinker, linkRequest, linkerServices);
@@ -138,21 +140,6 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
 
     @SuppressWarnings("unused")
     private static Object exportArgument(final Object arg) {
-        return exportArgument(arg, MIRROR_ALWAYS);
-    }
-
-    @SuppressWarnings("unused")
-    private static Object exportNativeArray(final NativeArray arg) {
-        return exportArgument(arg, MIRROR_ALWAYS);
-    }
-
-    @SuppressWarnings("unused")
-    private static Object exportScriptObject(final ScriptObject arg) {
-        return exportArgument(arg, MIRROR_ALWAYS);
-    }
-
-    @SuppressWarnings("unused")
-    private static Object exportScriptArray(final NativeArray arg) {
         return exportArgument(arg, MIRROR_ALWAYS);
     }
 
@@ -208,6 +195,10 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         return FUNCTIONAL_IFACE_METHOD.get(clazz);
     }
 
+    static MethodHandleTransformer createHiddenObjectFilter() {
+        return new DefaultInternalObjectFilter(EXPORT_ARGUMENT, MIRROR_ALWAYS ? IMPORT_RESULT : null);
+    }
+
     private static class NashornBeansLinkerServices implements LinkerServices {
         private final LinkerServices linkerServices;
 
@@ -217,50 +208,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
 
         @Override
         public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
-            final MethodType handleType = handle.type();
-            final int paramCount = handleType.parameterCount();
-            assert fromType.parameterCount() == handleType.parameterCount();
-
-            MethodType newFromType = fromType;
-            MethodHandle[] filters = null;
-            for(int i = 0; i < paramCount; ++i) {
-                final MethodHandle filter = argConversionFilter(handleType.parameterType(i), fromType.parameterType(i));
-                if (filter != null) {
-                    if (filters == null) {
-                        filters = new MethodHandle[paramCount];
-                    }
-                    // "erase" specific type with Object type or else we'll get filter mismatch
-                    newFromType = newFromType.changeParameterType(i, Object.class);
-                    filters[i] = filter;
-                }
-            }
-
-            final MethodHandle typed = linkerServices.asType(handle, newFromType);
-            MethodHandle result = filters != null ? MethodHandles.filterArguments(typed, 0, filters) : typed;
-            // Filter Object typed return value for possible ScriptObjectMirror. We convert
-            // ScriptObjectMirror as ScriptObject (if it is mirror from current global).
-            if (MIRROR_ALWAYS && areBothObjects(handleType.returnType(), fromType.returnType())) {
-                result = MethodHandles.filterReturnValue(result, IMPORT_RESULT);
-            }
-
-            return result;
-        }
-
-        private static MethodHandle argConversionFilter(final Class<?> handleType, final Class<?> fromType) {
-            if (handleType == Object.class) {
-                if (fromType == Object.class) {
-                    return EXPORT_ARGUMENT;
-                } else if (fromType == NativeArray.class) {
-                    return EXPORT_NATIVE_ARRAY;
-                } else if (fromType == ScriptObject.class) {
-                    return EXPORT_SCRIPT_OBJECT;
-                }
-            }
-            return null;
-        }
-
-        private static boolean areBothObjects(final Class<?> handleType, final Class<?> fromType) {
-            return handleType == Object.class && fromType == Object.class;
+            return linkerServices.asType(handle, fromType);
         }
 
         @Override
@@ -295,6 +243,11 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
                 }
             }
             return linkerServices.compareConversion(sourceType, targetType1, targetType2);
+        }
+
+        @Override
+        public MethodHandle filterInternalObjects(MethodHandle target) {
+            return linkerServices.filterInternalObjects(target);
         }
     }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@ else ifeq ($(OPENJDK_BUILD_OS_ENV), windows.msys)
   UNIX_PATH_PREFIX :=
 endif
 
+# This pattern is used to transform the output of the microsoft CL compiler
+# into a make syntax dependency file (.d)
 WINDOWS_SHOWINCLUDE_SED_PATTERN := \
     -e '/^Note: including file:/!d' \
     -e 's|Note: including file: *||' \
@@ -60,6 +62,16 @@ WINDOWS_SHOWINCLUDE_SED_PATTERN := \
     -e 's|^\([a-zA-Z]\):|$(UNIX_PATH_PREFIX)/\1|g' \
     -e '/$(subst /,\/,$(TOPDIR))/!d' \
     -e 's|$$$$| \\|g' \
+    #
+
+# This pattern is used to transform a dependency file (.d) to a list
+# of make targets for dependent files (.d.targets)
+DEPENDENCY_TARGET_SED_PATTERN := \
+    -e 's/\#.*//' \
+    -e 's/^[^:]*: *//' \
+    -e 's/ *\\$$$$//' \
+    -e '/^$$$$/ d' \
+    -e 's/$$$$/ :/' \
     #
 
 define add_native_source
@@ -75,12 +87,12 @@ define add_native_source
 
   ifneq (,$$(filter %.c,$2))
     # Compile as a C file
-    $1_$2_FLAGS=$4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
+    $1_$2_FLAGS=$(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
     $1_$2_COMP=$5
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.m,$2))
     # Compile as a objective-c file
-    $1_$2_FLAGS=-x objective-c $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
+    $1_$2_FLAGS=-x objective-c $(CFLAGS_CCACHE) $4 $$($1_$(notdir $2)_CFLAGS) -DTHIS_FILE='"$$(<F)"' -c
     $1_$2_COMP=$8
     $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
   else ifneq (,$$(filter %.s,$2))
@@ -90,7 +102,7 @@ define add_native_source
     $1_$2_DEP_FLAG:=
   else ifneq (,$$(filter %.cpp,$2)$$(filter %.mm,$2))
     # Compile as a C++ file
-    $1_$2_FLAGS=$6 $$($1_$(notdir $2)_CXXFLAGS) -DTHIS_FILE='"$$(<F)"' -c
+    $1_$2_FLAGS=$(CFLAGS_CCACHE) $6 $$($1_$(notdir $2)_CXXFLAGS) -DTHIS_FILE='"$$(<F)"' -c
     $1_$2_COMP=$7
     $1_$2_DEP_FLAG:=$(CXX_FLAG_DEPS)
   else
@@ -105,8 +117,13 @@ define add_native_source
     ifeq (,$$(filter %.s,$2))
       # And this is the dependency file for this obj file.
       $1_$2_DEP:=$$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_$2_OBJ))
+      # The dependency target file lists all dependencies as empty targets
+      # to avoid make error "No rule to make target" for removed files
+      $1_$2_DEP_TARGETS:=$$(patsubst %$(OBJ_SUFFIX),%.d.targets,$$($1_$2_OBJ))
+
       # Include previously generated dependency information. (if it exists)
       -include $$($1_$2_DEP)
+      -include $$($1_$2_DEP_TARGETS)
 
       ifeq ($(TOOLCHAIN_TYPE), microsoft)
         $1_$2_DEBUG_OUT_FLAGS:=-Fd$$(patsubst %$(OBJ_SUFFIX),%.pdb,$$($1_$2_OBJ)) \
@@ -138,6 +155,11 @@ define add_native_source
 	  $(RM) $$($1_$2_DEP).exitvalue
 	  ($(ECHO) $$@: \\ \
 	  && $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_$2_DEP).raw) > $$($1_$2_DEP)
+        endif
+        # Create a dependency target file from the dependency file.
+        # Solution suggested by http://make.mad-scientist.net/papers/advanced-auto-dependency-generation/
+        ifneq ($$($1_$2_DEP),)
+	  $(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_$2_DEP) > $$($1_$2_DEP_TARGETS)
         endif
   endif
 endef
@@ -428,7 +450,7 @@ define SetupNativeCompilationInner
   $1_BUILD_INFO := $$($1_OBJECT_DIR)/_build-info.marker
 
   # Track variable changes for all variables that affect the compilation command
-  # lines for all object files in this setup. This includes at least all the 
+  # lines for all object files in this setup. This includes at least all the
   # variables used in the call to add_native_source below.
   $1_COMPILE_VARDEPS := $$($1_CFLAGS) $$($1_EXTRA_CFLAGS) $(SYSROOT_CFLAGS) \
       $$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS) \
@@ -452,7 +474,10 @@ define SetupNativeCompilationInner
         ifeq ($$(wildcard $$($1_TARGET)),)
 	  $(ECHO) 'Creating $$($1_BASENAME) from $$(words $$(filter-out %.vardeps, $$?)) file(s)'
         else
-	  $(ECHO) 'Updating $$($1_BASENAME) from $$(words $$(filter-out %.vardeps, $$?)) file(s)'
+	  $(ECHO) $$(strip 'Updating $$($1_BASENAME)' \
+	      $$(if $$(filter-out %.vardeps, $$?), \
+	        'from $$(words $$(filter-out %.vardeps, $$?)) file(s)') \
+	      $$(if $$(filter %.vardeps, $$?), 'due to makefile changes'))
         endif
 	$(TOUCH) $$@
 
@@ -461,7 +486,9 @@ define SetupNativeCompilationInner
     ifneq (,$$($1_VERSIONINFO_RESOURCE))
       $1_RES:=$$($1_OBJECT_DIR)/$$($1_BASENAME).res
       $1_RES_DEP:=$$($1_RES).d
+      $1_RES_DEP_TARGETS:=$$($1_RES).d.targets
       -include $$($1_RES_DEP)
+      -include $$($1_RES_DEP_TARGETS)
 
       $1_RES_VARDEPS := $(RC) $$($1_RC_FLAGS)
       $1_RES_VARDEPS_FILE := $$(call DependOnVariable, $1_RES_VARDEPS, \
@@ -469,12 +496,14 @@ define SetupNativeCompilationInner
 
       $$($1_RES): $$($1_VERSIONINFO_RESOURCE) $$($1_RES_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Compiling resource $$(notdir $$($1_VERSIONINFO_RESOURCE)) (for $$(notdir $$($1_TARGET)))"
-		$(RC) $$($1_RC_FLAGS) $(CC_OUT_OPTION)$$@ $$($1_VERSIONINFO_RESOURCE)
+		$(RC) $$($1_RC_FLAGS) $(SYSROOT_CFLAGS) $(CC_OUT_OPTION)$$@ \
+		    $$($1_VERSIONINFO_RESOURCE)
                 # Windows RC compiler does not support -showIncludes, so we mis-use CL for this.
-		$(CC) $$($1_RC_FLAGS) -showIncludes -nologo -TC \
+		$(CC) $$($1_RC_FLAGS) $(SYSROOT_CFLAGS) -showIncludes -nologo -TC \
 		    $(CC_OUT_OPTION)$$($1_RES_DEP).obj $$($1_VERSIONINFO_RESOURCE) > $$($1_RES_DEP).raw 2>&1 || exit 0
 		($(ECHO) $$($1_RES): \\ \
 		&& $(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEP).raw) > $$($1_RES_DEP)
+		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEP) > $$($1_RES_DEP_TARGETS)
     endif
     ifneq (,$$($1_MANIFEST))
       $1_GEN_MANIFEST:=$$($1_OBJECT_DIR)/$$($1_PROGRAM).manifest
