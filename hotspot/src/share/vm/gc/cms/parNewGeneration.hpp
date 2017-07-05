@@ -411,9 +411,7 @@ class ParNewGeneration: public DefNewGeneration {
     return &_plab_stats;
   }
 
-  size_t desired_plab_sz() {
-    return _plab_stats.desired_plab_sz();
-  }
+  size_t desired_plab_sz();
 
   const ParNewTracer* gc_tracer() const {
     return &_gc_tracer;

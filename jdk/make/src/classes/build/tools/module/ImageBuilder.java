@@ -26,8 +26,6 @@
 package build.tools.module;
 
 import jdk.internal.jimage.Archive;
-import jdk.internal.jimage.ImageFile;
-import jdk.internal.jimage.ImageModules;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -35,13 +33,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.UncheckedIOException;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,6 +48,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import jdk.internal.jimage.ImageFileCreator;
 
 /**
  * A tool for building a runtime image.
@@ -84,11 +81,23 @@ class ImageBuilder {
         boolean showUsage;
     }
 
-    static abstract class Option {
+    static class Option {
+
+        interface Processing {
+
+            void process(ImageBuilder task, String opt, String arg) throws BadArgs;
+        }
+
         final boolean hasArg;
         final String[] aliases;
-        Option(boolean hasArg, String... aliases) {
+        final String description;
+        final Processing processing;
+
+        Option(boolean hasArg, String description, Processing processing,
+                String... aliases) {
             this.hasArg = hasArg;
+            this.description = description;
+            this.processing = processing;
             this.aliases = aliases;
         }
         boolean isHidden() {
@@ -107,8 +116,12 @@ class ImageBuilder {
         boolean ignoreRest() {
             return false;
         }
-        abstract void process(ImageBuilder task, String opt, String arg) throws BadArgs;
-        abstract String description();
+        void process(ImageBuilder task, String opt, String arg) throws BadArgs {
+            processing.process(task, opt, arg);
+        }
+        String description() {
+            return description;
+        }
     }
 
     private static Path CWD = Paths.get("");
@@ -133,64 +146,44 @@ class ImageBuilder {
     }
 
     static Option[] recognizedOptions = {
-        new Option(true, "--cmds") {
-            void process(ImageBuilder task, String opt, String arg) throws BadArgs {
-                task.options.cmds = splitPath(arg, File.pathSeparator);
-            }
-            String description() { return "Location of native commands"; }
-        },
-        new Option(true, "--configs") {
-            void process(ImageBuilder task, String opt, String arg) throws BadArgs {
-                task.options.configs = splitPath(arg, File.pathSeparator);
-            }
-            String description() { return "Location of config files"; }
-        },
-        new Option(false, "--help") {
-            void process(ImageBuilder task, String opt, String arg) {
-                task.options.help = true;
-            }
-            String description() { return "Print this usage message"; }
-        },
-        new Option(true, "--classes") {
-            void process(ImageBuilder task, String opt, String arg) throws BadArgs {
-                task.options.classes = splitPath(arg, File.pathSeparator);
-            }
-            String description() { return "Location of module classes files"; }
-        },
-        new Option(true, "--libs") {
-            void process(ImageBuilder task, String opt, String arg) throws BadArgs {
-                task.options.libs = splitPath(arg, File.pathSeparator);
-            }
-            String description() { return "Location of native libraries"; }
-        },
-        new Option(true, "--mods") {
-            void process(ImageBuilder task, String opt, String arg) throws BadArgs {
-                for (String mn : arg.split(",")) {
-                    if (mn.isEmpty())
-                        throw new BadArgs("Module not found", mn);
-                    task.options.mods.add(mn);
+        new Option(true, "Location of native commands", (task, opt, arg) -> {
+            task.options.cmds = splitPath(arg, File.pathSeparator);
+        }, "--cmds"),
+        new Option(true, "Location of config files", (task, opt, arg) -> {
+            task.options.configs = splitPath(arg, File.pathSeparator);
+        }, "--configs"),
+        new Option(false, "Print this usage message", (task, opt, arg) -> {
+            task.options.help = true;
+        }, "--help"),
+        new Option(true, "Location of module classes files", (task, opt, arg) -> {
+            task.options.classes = splitPath(arg, File.pathSeparator);
+        }, "--classes"),
+        new Option(true, "Location of native libraries", (task, opt, arg) -> {
+            task.options.libs = splitPath(arg, File.pathSeparator);
+        }, "--libs"),
+        new Option(true, "Comma separated list of module names",
+        (task, opt, arg) -> {
+            for (String mn : arg.split(",")) {
+                if (mn.isEmpty()) {
+                    throw new BadArgs("Module not found", mn);
                 }
+                task.options.mods.add(mn);
             }
-            String description() { return "Comma separated list of module names"; }
-        },
-        new Option(true, "--output") {
-            void process(ImageBuilder task, String opt, String arg) throws BadArgs {
-                Path path = Paths.get(arg);
-                task.options.output = path;
+        }, "--mods"),
+        new Option(true, "Location of the output path", (task, opt, arg) -> {
+            Path path = Paths.get(arg);
+            task.options.output = path;
+        }, "--output"),
+        new Option(true, "Byte order of the target runtime; {little,big}",
+        (task, opt, arg) -> {
+            if (arg.equals("little")) {
+                task.options.endian = ByteOrder.LITTLE_ENDIAN;
+            } else if (arg.equals("big")) {
+                task.options.endian = ByteOrder.BIG_ENDIAN;
+            } else {
+                throw new BadArgs("Unknown byte order " + arg);
             }
-            String description() { return "Location of the output path"; }
-        },
-        new Option(true, "--endian") {
-            void process(ImageBuilder task, String opt, String arg) throws BadArgs {
-                if (arg.equals("little"))
-                    task.options.endian = ByteOrder.LITTLE_ENDIAN;
-                else if (arg.equals("big"))
-                    task.options.endian = ByteOrder.BIG_ENDIAN;
-                else
-                    throw new BadArgs("Unknown byte order " + arg);
-            }
-            String description() { return "Byte order of the target runtime; {little,big}"; }
-        }
+        }, "--endian")
     };
 
     private final Options options = new Options();
@@ -370,28 +363,35 @@ class ImageBuilder {
         final Set<String> bootModules;
         final Set<String> extModules;
         final Set<String> appModules;
-        final ImageModules imf;
 
         ImageFileHelper(Collection<String> modules) throws IOException {
             this.modules = modules;
             this.bootModules = modulesFor(BOOT_MODULES).stream()
-                     .filter(modules::contains)
-                     .collect(Collectors.toSet());
+                    .filter(modules::contains)
+                    .collect(Collectors.toSet());
             this.extModules = modulesFor(EXT_MODULES).stream()
                     .filter(modules::contains)
                     .collect(Collectors.toSet());
             this.appModules = modules.stream()
-                    .filter(m -> !bootModules.contains(m) && !extModules.contains(m))
+                    .filter(m -> m.length() != 0 &&
+                                 !bootModules.contains(m) &&
+                                 !extModules.contains(m))
                     .collect(Collectors.toSet());
-
-            this.imf = new ImageModules(bootModules, extModules, appModules);
         }
 
         void createModularImage(Path output) throws IOException {
-            Set<Archive> archives = modules.stream()
-                                            .map(this::toModuleArchive)
-                                            .collect(Collectors.toSet());
-            ImageFile.create(output, archives, imf, options.endian);
+            Set<Archive> bootArchives = bootModules.stream()
+                    .map(this::toModuleArchive)
+                    .collect(Collectors.toSet());
+            Set<Archive> extArchives = extModules.stream()
+                    .map(this::toModuleArchive)
+                    .collect(Collectors.toSet());
+            Set<Archive> appArchives = appModules.stream()
+                    .map(this::toModuleArchive)
+                    .collect(Collectors.toSet());
+            ImageFileCreator.create(output, "bootmodules", bootArchives, options.endian);
+            ImageFileCreator.create(output, "extmodules", extArchives, options.endian);
+            ImageFileCreator.create(output, "appmodules", appArchives, options.endian);
         }
 
         ModuleArchive toModuleArchive(String mn) {

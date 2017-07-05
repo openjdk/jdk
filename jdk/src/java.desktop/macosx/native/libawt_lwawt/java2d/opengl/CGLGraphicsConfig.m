@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ OGLGC_DestroyOGLGraphicsConfig(jlong pConfigInfo)
 
         CGLCtxInfo *ctxinfo = (CGLCtxInfo *)oglc->ctxInfo;
         if (ctxinfo != NULL) {
-            NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];        
+            NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
             [NSOpenGLContext clearCurrentContext];
             [ctxinfo->context clearDrawable];
             [ctxinfo->context release];
@@ -342,18 +342,10 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
     if (value != 0) {
         caps |= CAPS_DOUBLEBUFFERED;
     }
-    [sharedPixelFormat
-        getValues: &value
-        forAttribute: NSOpenGLPFAAlphaSize
-        forVirtualScreen: contextVirtualScreen];
-    if (value != 0) {
-        caps |= CAPS_STORED_ALPHA;
-    }
 
-    J2dRlsTraceLn2(J2D_TRACE_INFO,
-                   "CGLGraphicsConfig_getCGLConfigInfo: db=%d alpha=%d",
-                   (caps & CAPS_DOUBLEBUFFERED) != 0,
-                   (caps & CAPS_STORED_ALPHA) != 0);
+    J2dRlsTraceLn1(J2D_TRACE_INFO,
+                   "CGLGraphicsConfig_getCGLConfigInfo: db=%d",
+                   (caps & CAPS_DOUBLEBUFFERED) != 0);
 
     // remove before shipping (?)
 #if 1

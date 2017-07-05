@@ -26,7 +26,10 @@
 package java.util.zip;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
+
 import sun.nio.ch.DirectBuffer;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * A class that can be used to compute the CRC-32 of a data stream.
@@ -123,9 +126,49 @@ class CRC32 implements Checksum {
         return (long)crc & 0xffffffffL;
     }
 
+    @HotSpotIntrinsicCandidate
     private native static int update(int crc, int b);
-    private native static int updateBytes(int crc, byte[] b, int off, int len);
 
-    private native static int updateByteBuffer(int adler, long addr,
-                                               int off, int len);
+    private static int updateBytes(int crc, byte[] b, int off, int len) {
+        updateBytesCheck(b, off, len);
+        return updateBytes0(crc, b, off, len);
+    }
+
+    @HotSpotIntrinsicCandidate
+    private native static int updateBytes0(int crc, byte[] b, int off, int len);
+
+    private static void updateBytesCheck(byte[] b, int off, int len) {
+        if (len <= 0) {
+            return;  // not an error because updateBytesImpl won't execute if len <= 0
+        }
+
+        Objects.requireNonNull(b);
+
+        if (off < 0 || off >= b.length) {
+            throw new ArrayIndexOutOfBoundsException(off);
+        }
+
+        int endIndex = off + len - 1;
+        if (endIndex < 0 || endIndex >= b.length) {
+            throw new ArrayIndexOutOfBoundsException(endIndex);
+        }
+    }
+
+    private static int updateByteBuffer(int alder, long addr,
+                                        int off, int len) {
+        updateByteBufferCheck(addr);
+        return updateByteBuffer0(alder, addr, off, len);
+    }
+
+    @HotSpotIntrinsicCandidate
+    private native static int updateByteBuffer0(int alder, long addr,
+                                                int off, int len);
+
+    private static void updateByteBufferCheck(long addr) {
+        // Performs only a null check because bounds checks
+        // are not easy to do on raw addresses.
+        if (addr == 0L) {
+            throw new NullPointerException();
+        }
+    }
 }

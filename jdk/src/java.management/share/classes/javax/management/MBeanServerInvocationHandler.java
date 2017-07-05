@@ -141,6 +141,12 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
         if (connection == null) {
             throw new IllegalArgumentException("Null connection");
         }
+        if (Proxy.isProxyClass(connection.getClass())) {
+            if (MBeanServerInvocationHandler.class.isAssignableFrom(
+                    Proxy.getInvocationHandler(connection).getClass())) {
+                throw new IllegalArgumentException("Wrapping MBeanServerInvocationHandler");
+            }
+        }
         if (objectName == null) {
             throw new IllegalArgumentException("Null object name");
         }
@@ -418,6 +424,10 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                              new Class<?>[] {Object.class})
             && isLocal(proxy, method))
             return true;
+        if (methodName.equals("finalize")
+            && method.getParameterTypes().length == 0) {
+            return true;
+        }
         return false;
     }
 
@@ -453,6 +463,9 @@ public class MBeanServerInvocationHandler implements InvocationHandler {
                 connection + "[" + objectName + "])";
         } else if (methodName.equals("hashCode")) {
             return objectName.hashCode()+connection.hashCode();
+        } else if (methodName.equals("finalize")) {
+            // ignore the finalizer invocation via proxy
+            return null;
         }
 
         throw new RuntimeException("Unexpected method name: " + methodName);

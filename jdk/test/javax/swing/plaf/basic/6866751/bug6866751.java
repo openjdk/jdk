@@ -27,6 +27,7 @@
    @author Semyon Sadetsky
   */
 import javax.swing.*;
+import java.awt.*;
 
 public class bug6866751 {
     private static JFrame frame;
@@ -54,8 +55,10 @@ public class bug6866751 {
                                         caretX + 1);
                     }
                     area.putClientProperty("caretWidth", 10);
+                    frame.pack();
                 }
             });
+            new Robot().waitForIdle();
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
                     int width = area.getWidth();

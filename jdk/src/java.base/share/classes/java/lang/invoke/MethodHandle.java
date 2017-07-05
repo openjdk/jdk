@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 
 import java.util.*;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 import static java.lang.invoke.MethodHandleStatics.*;
 
@@ -476,6 +477,7 @@ public abstract class MethodHandle {
      * @throws WrongMethodTypeException if the target's type is not identical with the caller's symbolic type descriptor
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
      */
+    @HotSpotIntrinsicCandidate
     public final native @PolymorphicSignature Object invokeExact(Object... args) throws Throwable;
 
     /**
@@ -513,6 +515,7 @@ public abstract class MethodHandle {
      * @throws ClassCastException if the target's type can be adjusted to the caller, but a reference cast fails
      * @throws Throwable anything thrown by the underlying method propagates unchanged through the method handle call
      */
+    @HotSpotIntrinsicCandidate
     public final native @PolymorphicSignature Object invoke(Object... args) throws Throwable;
 
     /**
@@ -532,6 +535,7 @@ public abstract class MethodHandle {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
+    @HotSpotIntrinsicCandidate
     /*non-public*/ final native @PolymorphicSignature Object invokeBasic(Object... args) throws Throwable;
 
     /**
@@ -541,6 +545,7 @@ public abstract class MethodHandle {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
+    @HotSpotIntrinsicCandidate
     /*non-public*/ static native @PolymorphicSignature Object linkToVirtual(Object... args) throws Throwable;
 
     /**
@@ -550,6 +555,7 @@ public abstract class MethodHandle {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
+    @HotSpotIntrinsicCandidate
     /*non-public*/ static native @PolymorphicSignature Object linkToStatic(Object... args) throws Throwable;
 
     /**
@@ -559,6 +565,7 @@ public abstract class MethodHandle {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
+    @HotSpotIntrinsicCandidate
     /*non-public*/ static native @PolymorphicSignature Object linkToSpecial(Object... args) throws Throwable;
 
     /**
@@ -568,6 +575,7 @@ public abstract class MethodHandle {
      * @param args the signature-polymorphic parameter list, statically represented using varargs
      * @return the signature-polymorphic result, statically represented using {@code Object}
      */
+    @HotSpotIntrinsicCandidate
     /*non-public*/ static native @PolymorphicSignature Object linkToInterface(Object... args) throws Throwable;
 
     /**

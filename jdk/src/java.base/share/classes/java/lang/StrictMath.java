@@ -24,8 +24,10 @@
  */
 
 package java.lang;
+
 import java.util.Random;
 import sun.misc.DoubleConsts;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * The class {@code StrictMath} contains methods for performing basic
@@ -243,7 +245,6 @@ public final class StrictMath {
      */
     public static native double log(double a);
 
-
     /**
      * Returns the base 10 logarithm of a {@code double} value.
      * Special cases:
@@ -280,6 +281,7 @@ public final class StrictMath {
      * @param   a   a value.
      * @return  the positive square root of {@code a}.
      */
+    @HotSpotIntrinsicCandidate
     public static native double sqrt(double a);
 
     /**
@@ -520,7 +522,6 @@ public final class StrictMath {
      *          (<i>x</i>,&nbsp;<i>y</i>) in Cartesian coordinates.
      */
     public static native double atan2(double y, double x);
-
 
     /**
      * Returns the value of the first argument raised to the power of the
@@ -1009,6 +1010,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the larger of {@code a} and {@code b}.
      */
+    @HotSpotIntrinsicCandidate
     public static int max(int a, int b) {
         return Math.max(a, b);
     }
@@ -1073,6 +1075,7 @@ public final class StrictMath {
      * @param   b   another argument.
      * @return  the smaller of {@code a} and {@code b}.
      */
+    @HotSpotIntrinsicCandidate
     public static int min(int a, int b) {
         return Math.min(a, b);
     }

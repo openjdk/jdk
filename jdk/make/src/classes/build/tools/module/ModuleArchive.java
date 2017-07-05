@@ -26,15 +26,17 @@
 package build.tools.module;
 
 import jdk.internal.jimage.Archive;
-import jdk.internal.jimage.Resource;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.function.Consumer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import jdk.internal.jimage.Archive.Entry.EntryType;
 
 /**
  * An Archive backed by an exploded representation on disk.
@@ -45,6 +47,8 @@ public class ModuleArchive implements Archive {
     private final Path libs;
     private final Path configs;
     private final String moduleName;
+
+    private final List<InputStream> opened = new ArrayList<>();
 
     public ModuleArchive(String moduleName, Path classes, Path cmds,
                          Path libs, Path configs) {
@@ -61,182 +65,118 @@ public class ModuleArchive implements Archive {
     }
 
     @Override
-    public void visitResources(Consumer<Resource> consumer) {
-        if (classes == null)
-            return;
-        try{
-            Files.walk(classes)
-                    .sorted()
-                    .filter(p -> !Files.isDirectory(p)
-                            && !classes.relativize(p).toString().startsWith("_the.")
-                            && !classes.relativize(p).toString().equals("javac_state"))
-                    .map(this::toResource)
-                    .forEach(consumer::accept);
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
-        }
-    }
-
-    private Resource toResource(Path path) {
-        try {
-            return new Resource(classes.relativize(path).toString().replace('\\','/'),
-                                Files.size(path),
-                                0 /* no compression support yet */);
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
-        }
-    }
-
-    private enum Section {
-        CLASSES,
-        CMDS,
-        LIBS,
-        CONFIGS
+    public void open() throws IOException {
+        // NOOP
     }
 
     @Override
-    public void visitEntries(Consumer<Entry> consumer) {
-        try{
-            if (classes != null)
-                Files.walk(classes)
-                        .sorted()
-                        .filter(p -> !Files.isDirectory(p)
-                                && !classes.relativize(p).toString().startsWith("_the.")
-                                && !classes.relativize(p).toString().equals("javac_state"))
-                        .map(p -> toEntry(p, classes, Section.CLASSES))
-                        .forEach(consumer::accept);
-            if (cmds != null)
-                Files.walk(cmds)
-                        .filter(p -> !Files.isDirectory(p))
-                        .map(p -> toEntry(p, cmds, Section.CMDS))
-                        .forEach(consumer::accept);
-            if (libs != null)
-                Files.walk(libs)
-                        .filter(p -> !Files.isDirectory(p))
-                        .map(p -> toEntry(p, libs, Section.LIBS))
-                        .forEach(consumer::accept);
-            if (configs != null)
-                Files.walk(configs)
-                        .filter(p -> !Files.isDirectory(p))
-                        .map(p -> toEntry(p, configs, Section.CONFIGS))
-                        .forEach(consumer::accept);
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
+    public void close() throws IOException {
+        IOException e = null;
+        for (InputStream stream : opened) {
+            try {
+                stream.close();
+            } catch (IOException ex) {
+                if (e == null) {
+                    e = ex;
+                } else {
+                    e.addSuppressed(ex);
+                }
+            }
+        }
+        if (e != null) {
+            throw e;
         }
     }
 
-    private static class FileEntry implements Entry {
-        private final String name;
-        private final InputStream is;
+    @Override
+    public Stream<Entry> entries() {
+        List<Entry> entries = new ArrayList<>();
+        try {
+            /*
+             * This code should be revisited to avoid buffering of the entries.
+             * 1) Do we really need sorting classes? This force buffering of entries.
+             *    libs, cmds and configs are not sorted.
+             * 2) I/O streams should be concatenated instead of buffering into
+             *    entries list.
+             * 3) Close I/O streams in a close handler.
+             */
+            if (classes != null) {
+                try (Stream<Path> stream = Files.walk(classes)) {
+                    entries.addAll(stream
+                            .filter(p -> !Files.isDirectory(p)
+                                    && !classes.relativize(p).toString().startsWith("_the.")
+                                    && !classes.relativize(p).toString().equals("javac_state"))
+                            .sorted()
+                            .map(p -> toEntry(p, classes, EntryType.CLASS_OR_RESOURCE))
+                            .collect(Collectors.toList()));
+                }
+            }
+            if (cmds != null) {
+                try (Stream<Path> stream = Files.walk(cmds)) {
+                    entries.addAll(stream
+                            .filter(p -> !Files.isDirectory(p))
+                            .map(p -> toEntry(p, cmds, EntryType.NATIVE_CMD))
+                            .collect(Collectors.toList()));
+                }
+            }
+            if (libs != null) {
+                try (Stream<Path> stream = Files.walk(libs)) {
+                    entries.addAll(stream
+                            .filter(p -> !Files.isDirectory(p))
+                            .map(p -> toEntry(p, libs, EntryType.NATIVE_LIB))
+                            .collect(Collectors.toList()));
+                }
+            }
+            if (configs != null) {
+                try (Stream<Path> stream = Files.walk(configs)) {
+                entries.addAll(stream
+                        .filter(p -> !Files.isDirectory(p))
+                        .map(p -> toEntry(p, configs, EntryType.CONFIG))
+                        .collect(Collectors.toList()));
+                }
+            }
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+        return entries.stream();
+    }
+
+    private class FileEntry extends Entry {
         private final boolean isDirectory;
-        private final Section section;
-        FileEntry(String name, InputStream is,
-                  boolean isDirectory, Section section) {
-            this.name = name;
-            this.is = is;
+        private final long size;
+        private final Path entryPath;
+        FileEntry(Path entryPath, String path, EntryType type,
+                  boolean isDirectory, long size) {
+            super(ModuleArchive.this, path, path, type);
+            this.entryPath = entryPath;
             this.isDirectory = isDirectory;
-            this.section = section;
+            this.size = size;
         }
-        public String getName() {
-            return name;
-        }
-        public Section getSection() {
-            return section;
-        }
-        public InputStream getInputStream() {
-            return is;
-        }
+
         public boolean isDirectory() {
             return isDirectory;
         }
-    }
 
-    private Entry toEntry(Path entryPath, Path basePath, Section section) {
-        try {
-            return new FileEntry(basePath.relativize(entryPath).toString().replace('\\', '/'),
-                                 Files.newInputStream(entryPath), false,
-                                 section);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public Consumer<Entry> defaultImageWriter(Path path, OutputStream out) {
-        return new DefaultEntryWriter(path, out);
-    }
-
-    private static class DefaultEntryWriter implements Consumer<Archive.Entry> {
-        private final Path root;
-        private final OutputStream out;
-
-        DefaultEntryWriter(Path root, OutputStream out) {
-            this.root = root;
-            this.out = out;
+        @Override
+        public long size() {
+            return size;
         }
 
         @Override
-        public void accept(Archive.Entry entry) {
-            try {
-                FileEntry e = (FileEntry)entry;
-                Section section = e.getSection();
-                String filename = e.getName();
-
-                try (InputStream in = entry.getInputStream()) {
-                    switch (section) {
-                        case CLASSES:
-                            if (!filename.startsWith("_the.") && !filename.equals("javac_state"))
-                                writeEntry(in);
-                            break;
-                        case LIBS:
-                            writeEntry(in, destFile(nativeDir(filename), filename));
-                            break;
-                        case CMDS:
-                            Path path = destFile("bin", filename);
-                            writeEntry(in, path);
-                            path.toFile().setExecutable(true, false);
-                            break;
-                        case CONFIGS:
-                            writeEntry(in, destFile("conf", filename));
-                            break;
-                        default:
-                            throw new InternalError("unexpected entry: " + filename);
-                    }
-                }
-            } catch (IOException x) {
-                throw new UncheckedIOException(x);
-            }
+        public InputStream stream() throws IOException {
+            InputStream stream = Files.newInputStream(entryPath);
+            opened.add(stream);
+            return stream;
         }
+    }
 
-        private Path destFile(String dir, String filename) {
-            return root.resolve(dir).resolve(filename);
-        }
-
-        private static void writeEntry(InputStream in, Path dstFile) throws IOException {
-            if (Files.notExists(dstFile.getParent()))
-                Files.createDirectories(dstFile.getParent());
-            Files.copy(in, dstFile);
-        }
-
-        private void writeEntry(InputStream in) throws IOException {
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = in.read(buf)) > 0)
-                out.write(buf, 0, n);
-        }
-
-        private static String nativeDir(String filename) {
-            if (System.getProperty("os.name").startsWith("Windows")) {
-                if (filename.endsWith(".dll") || filename.endsWith(".diz")
-                    || filename.endsWith(".pdb") || filename.endsWith(".map")
-                    || filename.endsWith(".cpl")) {
-                    return "bin";
-                } else {
-                    return "lib";
-                }
-            } else {
-                return "lib";
-            }
+    private Entry toEntry(Path entryPath, Path basePath, EntryType section) {
+        try {
+            String path = basePath.relativize(entryPath).toString().replace('\\', '/');
+            return new FileEntry(entryPath, path, section,
+                    false, Files.size(entryPath));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 }
