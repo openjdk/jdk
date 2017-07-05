@@ -36,6 +36,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "os_aix.inline.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "os_bsd.inline.hpp"
 #endif
@@ -215,9 +218,9 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
          noaccess_prefix == _alignment, "noaccess prefix wrong");
 
   assert(markOopDesc::encode_pointer_as_mark(_base)->decode_pointer() == _base,
-         "area must be distinguisable from marks for mark-sweep");
+         "area must be distinguishable from marks for mark-sweep");
   assert(markOopDesc::encode_pointer_as_mark(&_base[size])->decode_pointer() == &_base[size],
-         "area must be distinguisable from marks for mark-sweep");
+         "area must be distinguishable from marks for mark-sweep");
 }
 
 

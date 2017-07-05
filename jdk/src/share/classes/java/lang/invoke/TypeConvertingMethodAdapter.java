@@ -212,7 +212,7 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
      * @param functional
      */
     void convertType(Class<?> arg, Class<?> target, Class<?> functional) {
-        if (arg.equals(target)) {
+        if (arg.equals(target) && arg.equals(functional)) {
             return;
         }
         if (arg == Void.TYPE || target == Void.TYPE) {

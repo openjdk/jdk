@@ -56,10 +56,12 @@
 # define __LO(x) *(1+(int*)&x)
 #endif
 
+#if !defined(AIX)
 double copysign(double x, double y) {
   __HI(x) = (__HI(x)&0x7fffffff)|(__HI(y)&0x80000000);
   return x;
 }
+#endif
 
 /*
  * ====================================================
@@ -85,6 +87,7 @@ two54   =  1.80143985094819840000e+16, /* 0x43500000, 0x00000000 */
   hugeX   = 1.0e+300,
   tiny   = 1.0e-300;
 
+#if !defined(AIX)
 double scalbn (double x, int n) {
   int  k,hx,lx;
   hx = __HI(x);
@@ -111,6 +114,7 @@ double scalbn (double x, int n) {
   __HI(x) = (hx&0x800fffff)|(k<<20);
   return x*twom54;
 }
+#endif
 
 /* __ieee754_log(x)
  * Return the logarithm of x

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,16 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"Generates.certificate.from.a.certificate.request",
                 "\uC778\uC99D\uC11C \uC694\uCCAD\uC5D0\uC11C \uC778\uC99D\uC11C\uB97C \uC0DD\uC131\uD569\uB2C8\uB2E4."}, //-gencert
         {"Generates.CRL", "CRL\uC744 \uC0DD\uC131\uD569\uB2C8\uB2E4."}, //-gencrl
+        {"Generated.keyAlgName.secret.key",
+                "{0} \uBCF4\uC548 \uD0A4\uB97C \uC0DD\uC131\uD569\uB2C8\uB2E4."}, //-genseckey
+        {"Generated.keysize.bit.keyAlgName.secret.key",
+                "{0}\uBE44\uD2B8 {1} \uBCF4\uC548 \uD0A4\uB97C \uC0DD\uC131\uD569\uB2C8\uB2E4."}, //-genseckey
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "JDK 1.1.x \uC2A4\uD0C0\uC77C ID \uB370\uC774\uD130\uBCA0\uC774\uC2A4\uC5D0\uC11C \uD56D\uBAA9\uC744 \uC784\uD3EC\uD2B8\uD569\uB2C8\uB2E4."}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
                 "\uC778\uC99D\uC11C \uB610\uB294 \uC778\uC99D\uC11C \uCCB4\uC778\uC744 \uC784\uD3EC\uD2B8\uD569\uB2C8\uB2E4."}, //-importcert
+        {"Imports.a.password",
+                "\uBE44\uBC00\uBC88\uD638\uB97C \uC784\uD3EC\uD2B8\uD569\uB2C8\uB2E4."}, //-importpass
         {"Imports.one.or.all.entries.from.another.keystore",
                 "\uB2E4\uB978 \uD0A4 \uC800\uC7A5\uC18C\uC5D0\uC11C \uD558\uB098 \uB610\uB294 \uBAA8\uB4E0 \uD56D\uBAA9\uC744 \uC784\uD3EC\uD2B8\uD569\uB2C8\uB2E4."}, //-importkeystore
         {"Clones.a.key.entry",
@@ -220,6 +226,8 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"Must.specify.alias", "\uBCC4\uCE6D\uC744 \uC9C0\uC815\uD574\uC57C \uD569\uB2C8\uB2E4."},
         {"Keystore.password.must.be.at.least.6.characters",
                 "\uD0A4 \uC800\uC7A5\uC18C \uBE44\uBC00\uBC88\uD638\uB294 6\uC790 \uC774\uC0C1\uC774\uC5B4\uC57C \uD569\uB2C8\uB2E4."},
+        {"Enter.the.password.to.be.stored.",
+                "\uC800\uC7A5\uD560 \uBE44\uBC00\uBC88\uD638 \uC785\uB825:  "},
         {"Enter.keystore.password.", "\uD0A4 \uC800\uC7A5\uC18C \uBE44\uBC00\uBC88\uD638 \uC785\uB825:  "},
         {"Enter.source.keystore.password.", "\uC18C\uC2A4 \uD0A4 \uC800\uC7A5\uC18C \uBE44\uBC00\uBC88\uD638 \uC785\uB825:  "},
         {"Enter.destination.keystore.password.", "\uB300\uC0C1 \uD0A4 \uC800\uC7A5\uC18C \uBE44\uBC00\uBC88\uD638 \uC785\uB825:  "},
@@ -328,6 +336,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"New.prompt.", "\uC0C8 {0}: "},
         {"Passwords.must.differ", "\uBE44\uBC00\uBC88\uD638\uB294 \uB2EC\uB77C\uC57C \uD569\uB2C8\uB2E4."},
         {"Re.enter.new.prompt.", "\uC0C8 {0} \uB2E4\uC2DC \uC785\uB825: "},
+        {"Re.enter.passpword.", "\uBE44\uBC00\uBC88\uD638  \uB2E4\uC2DC \uC785\uB825: "},
         {"Re.enter.new.password.", "\uC0C8 \uBE44\uBC00\uBC88\uD638 \uB2E4\uC2DC \uC785\uB825: "},
         {"They.don.t.match.Try.again", "\uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD558\uC2ED\uC2DC\uC624."},
         {"Enter.prompt.alias.name.", "{0} \uBCC4\uCE6D \uC774\uB984 \uC785\uB825:  "},

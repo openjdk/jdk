@@ -128,6 +128,11 @@ class KlassClosure : public Closure {
   virtual void do_klass(Klass* k) = 0;
 };
 
+class CLDClosure : public Closure {
+ public:
+  virtual void do_cld(ClassLoaderData* cld) = 0;
+};
+
 class KlassToOopClosure : public KlassClosure {
   OopClosure* _oop_closure;
  public:
@@ -135,7 +140,7 @@ class KlassToOopClosure : public KlassClosure {
   virtual void do_klass(Klass* k);
 };
 
-class CLDToOopClosure {
+class CLDToOopClosure : public CLDClosure {
   OopClosure* _oop_closure;
   KlassToOopClosure _klass_closure;
   bool _must_claim_cld;

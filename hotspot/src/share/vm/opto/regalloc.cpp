@@ -77,7 +77,9 @@ int PhaseRegAlloc::reg2offset( OptoReg::Name reg ) const {
   assert( reg <  _matcher._old_SP ||
           (reg >= OptoReg::add(_matcher._old_SP,C->out_preserve_stack_slots()) &&
            reg <  _matcher._in_arg_limit) ||
-          reg >=  OptoReg::add(_matcher._new_SP,C->out_preserve_stack_slots()),
+          reg >=  OptoReg::add(_matcher._new_SP, C->out_preserve_stack_slots()) ||
+          // Allow return_addr in the out-preserve area.
+          reg == _matcher.return_addr(),
           "register allocated in a preserve area" );
   return reg2offset_unchecked( reg );
 }

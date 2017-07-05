@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ dojdbCmds()
    setBkpts @1
    runToBkpt @1
    cmd locals
-   cmd cont
+   cmd allowExit cont
 }
 
 mysetup()

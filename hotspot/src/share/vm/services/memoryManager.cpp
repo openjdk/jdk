@@ -36,13 +36,6 @@
 #include "services/gcNotifier.hpp"
 #include "utilities/dtrace.hpp"
 
-#ifndef USDT2
-HS_DTRACE_PROBE_DECL8(hotspot, mem__pool__gc__begin, char*, int, char*, int,
-  size_t, size_t, size_t, size_t);
-HS_DTRACE_PROBE_DECL8(hotspot, mem__pool__gc__end, char*, int, char*, int,
-  size_t, size_t, size_t, size_t);
-#endif /* !USDT2 */
-
 MemoryManager::MemoryManager() {
   _num_pools = 0;
   (void)const_cast<instanceOop&>(_memory_mgr_obj = NULL);
@@ -242,19 +235,11 @@ void GCMemoryManager::gc_begin(bool recordGCBeginTime, bool recordPreGCUsage,
       MemoryPool* pool = MemoryService::get_memory_pool(i);
       MemoryUsage usage = pool->get_memory_usage();
       _current_gc_stat->set_before_gc_usage(i, usage);
-#ifndef USDT2
-      HS_DTRACE_PROBE8(hotspot, mem__pool__gc__begin,
-        name(), strlen(name()),
-        pool->name(), strlen(pool->name()),
-        usage.init_size(), usage.used(),
-        usage.committed(), usage.max_size());
-#else /* USDT2 */
       HOTSPOT_MEM_POOL_GC_BEGIN(
         (char *) name(), strlen(name()),
         (char *) pool->name(), strlen(pool->name()),
         usage.init_size(), usage.used(),
         usage.committed(), usage.max_size());
-#endif /* USDT2 */
     }
   }
 }
@@ -280,19 +265,11 @@ void GCMemoryManager::gc_end(bool recordPostGCUsage,
       MemoryPool* pool = MemoryService::get_memory_pool(i);
       MemoryUsage usage = pool->get_memory_usage();
 
-#ifndef USDT2
-      HS_DTRACE_PROBE8(hotspot, mem__pool__gc__end,
-        name(), strlen(name()),
-        pool->name(), strlen(pool->name()),
-        usage.init_size(), usage.used(),
-        usage.committed(), usage.max_size());
-#else /* USDT2 */
       HOTSPOT_MEM_POOL_GC_END(
         (char *) name(), strlen(name()),
         (char *) pool->name(), strlen(pool->name()),
         usage.init_size(), usage.used(),
         usage.committed(), usage.max_size());
-#endif /* USDT2 */
 
       _current_gc_stat->set_after_gc_usage(i, usage);
     }

@@ -66,14 +66,15 @@ public class B4769350 {
             this.allowerror = allowerror;
         }
 
+        @Override
         public void run () {
             try {
                 URI u = new URI ("http", authority, path, null, null);
                 URL url = u.toURL();
                 URLConnection urlc = url.openConnection();
-                InputStream is = urlc.getInputStream();
-                read (is);
-                is.close();
+                try (InputStream is = urlc.getInputStream()) {
+                    read (is);
+                }
             } catch (URISyntaxException  e) {
                 System.out.println (e);
                 error = true;
@@ -91,8 +92,6 @@ public class B4769350 {
     class Server implements AutoCloseable {
         HttpServer server;
         Executor executor;
-        CyclicBarrier t1Cond1;
-        CyclicBarrier t1Cond2;
 
         public String getAddress() {
             return server.getAddress().getHostName();
@@ -126,8 +125,7 @@ public class B4769350 {
                     new AuthenticationHandlerT3bc());
             server.createContext("/test/realm4/t3c",
                     new AuthenticationHandlerT3bc());
-            t1Cond1 = new CyclicBarrier(2);
-            t1Cond2 = new CyclicBarrier(2);
+            t1Cond1 = new CyclicBarrier(3);
             server.start();
         }
 
@@ -135,6 +133,7 @@ public class B4769350 {
             return server.getAddress().getPort();
         }
 
+        @Override
         public void close() {
             if (executor != null)
                 ((ExecutorService)executor).shutdownNow();
@@ -163,7 +162,6 @@ public class B4769350 {
                             break;
                         case 1:
                             t1Cond1.await();
-                            t1cond2latch.await();
                             AuthenticationHandler.okReply(exchange);
                             break;
                         default:
@@ -192,8 +190,6 @@ public class B4769350 {
                             break;
                         case 1:
                             t1Cond1.await();
-                            t1cond1latch.countDown();
-                            t1cond2latch.await();
                             AuthenticationHandler.okReply(exchange);
                             break;
                         default:
@@ -216,13 +212,6 @@ public class B4769350 {
                     case 0:
                         AuthenticationHandler.errorReply(exchange,
                                 "Basic realm=\"realm1\"");
-                        try {
-                            t1Cond2.await();
-                        } catch (InterruptedException |
-                                 BrokenBarrierException e)
-                        {
-                            throw new RuntimeException(e);
-                        }
                         break;
                     case 1:
                         AuthenticationHandler.okReply(exchange);
@@ -244,14 +233,6 @@ public class B4769350 {
                     case 0:
                         AuthenticationHandler.errorReply(exchange,
                                 "Basic realm=\"realm2\"");
-                        try {
-                            t1Cond2.await();
-                        } catch (InterruptedException |
-                                 BrokenBarrierException e)
-                        {
-                            throw new RuntimeException(e);
-                        }
-                        t1cond2latch.countDown();
                         break;
                     case 1:
                         AuthenticationHandler.okReply(exchange);
@@ -377,9 +358,9 @@ public class B4769350 {
             exchange.getResponseHeaders().add("Connection", "close");
             String response = "Hello .";
             exchange.sendResponseHeaders(200, response.getBytes().length);
-            OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response.getBytes());
+            }
             exchange.close();
         }
     }
@@ -391,10 +372,9 @@ public class B4769350 {
 
     static Client c1,c2,c3,c4,c5,c6,c7,c8,c9;
 
-    static CountDownLatch t1cond1latch;
-    static CountDownLatch t1cond2latch;
     static CountDownLatch t2condlatch;
     static CountDownLatch t3cond1;
+    static CyclicBarrier t1Cond1;
 
     static void doServerTests (String authority, Server server) throws Exception
     {
@@ -404,10 +384,8 @@ public class B4769350 {
         c2 = new Client (authority, "/test/realm2/t1b", false);
         c3 = new Client (authority, "/test/realm1/t1c", false);
         c4 = new Client (authority, "/test/realm2/t1d", false);
-        t1cond1latch = new CountDownLatch(1);
-        t1cond2latch = new CountDownLatch(1);
         c1.start(); c2.start();
-        t1cond1latch.await();
+        t1Cond1.await();
         c3.start(); c4.start();
         c1.join(); c2.join(); c3.join(); c4.join();
 

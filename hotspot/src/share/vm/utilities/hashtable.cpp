@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.hpp"
+#include "code/dependencies.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
 #include "memory/resourceArea.hpp"
@@ -93,7 +94,7 @@ template <MEMFLAGS F> bool BasicHashtable<F>::check_rehash_table(int count) {
   return false;
 }
 
-template <class T, MEMFLAGS F> jint Hashtable<T, F>::_seed = 0;
+template <class T, MEMFLAGS F> juint Hashtable<T, F>::_seed = 0;
 
 // Create a new table and using alternate hash code, populate the new table
 // with the existing elements.   This can be used to change the hash code
@@ -338,7 +339,6 @@ template <MEMFLAGS F> void BasicHashtable<F>::verify() {
 
 #endif // PRODUCT
 
-
 #ifdef ASSERT
 
 template <MEMFLAGS F> void BasicHashtable<F>::verify_lookup_length(double load) {
@@ -351,6 +351,118 @@ template <MEMFLAGS F> void BasicHashtable<F>::verify_lookup_length(double load) 
 }
 
 #endif
+
+
+template<class T, class M> GenericHashtable<T, M>::GenericHashtable(int size, bool C_heap, MEMFLAGS memflag) {
+  assert(size > 0, " Invalid hashtable size");
+  _size    = size;
+  _C_heap  = C_heap;
+  _memflag = memflag;
+  // Perform subtype-specific resource allocation
+  _items = (C_heap) ?  NEW_C_HEAP_ARRAY(T*, size, memflag) : NEW_RESOURCE_ARRAY(T*, size);
+  memset(_items, 0, sizeof(T*) * size);
+
+  DEBUG_ONLY(_num_items = 0;)
+}
+
+template<class T, class M> GenericHashtable<T, M>::~GenericHashtable() {
+  if (on_C_heap()) {
+    // Check backing array
+    for (int i = 0; i < size(); i++) {
+      T* item = head(i);
+      // Delete all items in linked list
+      while (item != NULL) {
+        T* next_item = item->next();
+        delete item;
+        DEBUG_ONLY(_num_items--);
+        item = next_item;
+      }
+    }
+    FREE_C_HEAP_ARRAY(T*, _items, _memflag);
+    _items = NULL;
+    assert (_num_items == 0, "Not all memory released");
+  }
+}
+
+/**
+ * Return a pointer to the item 'I' that is stored in the hashtable for
+ * which match_item->equals(I) == true. If no such item is found, NULL
+ * is returned.
+ */
+template<class T, class F> T* GenericHashtable<T, F>::contains(T* match_item) {
+  if (match_item != NULL) {
+    int idx = index(match_item);
+    return contains_impl(match_item, idx);
+  }
+  return NULL;
+}
+
+/**
+ * Add item to the hashtable. Return 'true' if the item was added
+ * and false otherwise.
+ */
+template<class T, class F> bool GenericHashtable<T, F>::add(T* item) {
+  if (item != NULL) {
+    int idx = index(item);
+    T* found_item = contains_impl(item, idx);
+    if (found_item == NULL) {
+      T* list_head = head(idx);
+      item->set_next(list_head);
+      item->set_prev(NULL);
+
+      if (list_head != NULL) {
+        list_head->set_prev(item);
+      }
+      set_head(item, idx);
+      DEBUG_ONLY(_num_items++);
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Removes an item 'I' from the hashtable, if present. 'I' is removed, if
+ * match_item->equals(I) == true. Removing an item from the hashtable does
+ * not free memory.
+ */
+template<class T, class F> T* GenericHashtable<T, F>::remove(T* match_item) {
+  if (match_item != NULL) {
+    int idx = index(match_item);
+    T* found_item = contains_impl(match_item, idx);
+    if (found_item != NULL) {
+      // Remove item from linked list
+      T* prev = found_item->prev();
+      T* next = found_item->next();
+      if (prev != NULL) {
+        prev->set_next(next);
+      } else {
+        set_head(next, idx);
+      }
+      if (next != NULL) {
+        next->set_prev(prev);
+      }
+
+      DEBUG_ONLY(_num_items--);
+      return found_item;
+    }
+  }
+  return NULL;
+}
+
+
+template<class T, class F> T* GenericHashtable<T, F>::contains_impl(T* item, int idx) {
+  T* current_item = head(idx);
+  while (current_item != NULL) {
+    if (current_item->equals(item)) {
+      return current_item;
+    }
+    current_item = current_item->next();
+  }
+  return NULL;
+}
+
+
 // Explicitly instantiate these types
 template class Hashtable<ConstantPool*, mtClass>;
 template class Hashtable<Symbol*, mtSymbol>;
@@ -370,3 +482,5 @@ template class BasicHashtable<mtClass>;
 template class BasicHashtable<mtSymbol>;
 template class BasicHashtable<mtCode>;
 template class BasicHashtable<mtInternal>;
+
+template class GenericHashtable<DependencySignature, ResourceObj>;

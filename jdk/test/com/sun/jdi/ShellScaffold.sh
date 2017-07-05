@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -190,11 +190,15 @@ killOrphans()
         echo "$1: kill -9 $toBeKilled"  >& 2
         kill -9 $toBeKilled
     fi
-}    
+}
 
+# Returns 0 if $1 is the pid of a running process
 findPid()
 {
-    # Return 0 if $1 is the pid of a running process.
+    if [ -z "$1" ] ; then
+        return 1
+    fi
+
     if [ -z "$isWin98" ] ; then
         if [ "$osname" = SunOS ] ; then
             # Solaris and OpenSolaris use pgrep and not ps in psCmd
@@ -208,7 +212,7 @@ findPid()
             # cygwin ps puts an I in column 1 for some reason.
             findPidCmd="$psCmd -e"
         fi
-	$findPidCmd | $grep '^I* *'"$1 " > $devnull 2>&1
+        $findPidCmd | $grep '^I* *'"$1 " > $devnull 2>&1
         return $?
     fi
 
@@ -245,56 +249,55 @@ setup()
         echo "--Error: TESTJAVA must be defined as the pathname of a jdk to test."
         exit 1
     fi
-    
+
     ulimitCmd=
     osname=`uname -s`
     isWin98=
     isCygwin=
     case "$osname" in
-       Windows* | CYGWIN*)	   
-         devnull=NUL
-	 if [ "$osname" = Windows_98 -o "$osname" = Windows_ME ]; then
-             isWin98=1
-             debuggeeKeyword='we_cant_kill_debuggees_on_win98'
-             jdbKeyword='jdb\.exe'
-	 fi
+        Windows* | CYGWIN*)
+            devnull=NUL
+            if [ "$osname" = Windows_98 -o "$osname" = Windows_ME ]; then
+                isWin98=1
+                debuggeeKeyword='we_cant_kill_debuggees_on_win98'
+                jdbKeyword='jdb\.exe'
+            fi
+            case "$osname" in
+                CYGWIN*)
+                    isCygwin=1
+                    devnull=/dev/null
+                    ;;
+            esac
 
-         case "$osname" in
-           CYGWIN*)
-             isCygwin=1
-             devnull=/dev/null
-             ;;
-         esac
-
-         if [ -r $jdk/bin/dt_shmem.dll -o -r $jdk/jre/bin/dt_shmem.dll ] ; then
-            transport=dt_shmem
-            address=kkkk.$$
-         else
-            transport=dt_socket
-            address=
-         fi
-         baseArgs="$baseArgs -XX:-ShowMessageBoxOnError"
-         # jtreg puts \\s in TESTCLASSES and some uses, eg. echo
-         # treat them as control chars on mks (eg \t is tab)
-         # Oops; windows mks really seems to want this cat line
-         # to start in column 1
-         if [ -w "$SystemRoot" ] ; then
-            tmpFile=$SystemRoot/tmp.$$
-         elif [ -w "$SYSTEMROOT" ] ; then
-            tmpFile=$SYSTEMROOT/tmp.$$
-         else
-            tmpFile=tmp.$$
-         fi
+            if [ -r $jdk/bin/dt_shmem.dll -o -r $jdk/jre/bin/dt_shmem.dll ] ; then
+                transport=dt_shmem
+                address=kkkk.$$
+            else
+                transport=dt_socket
+                address=
+            fi
+            baseArgs="$baseArgs -XX:-ShowMessageBoxOnError"
+            # jtreg puts \\s in TESTCLASSES and some uses, eg. echo
+            # treat them as control chars on mks (eg \t is tab)
+            # Oops; windows mks really seems to want this cat line
+            # to start in column 1
+            if [ -w "$SystemRoot" ] ; then
+                tmpFile=$SystemRoot/tmp.$$
+            elif [ -w "$SYSTEMROOT" ] ; then
+                tmpFile=$SYSTEMROOT/tmp.$$
+            else
+                tmpFile=tmp.$$
+            fi
 cat <<EOF >$tmpFile
 $TESTCLASSES
 EOF
-         TESTCLASSES=`cat $tmpFile | sed -e 's@\\\\@/@g'`
-         rm -f $tmpFile
-         # on mks
-         grep=egrep
-         psCmd=ps
-         jstack=jstack.exe
-         ;;
+            TESTCLASSES=`cat $tmpFile | sed -e 's@\\\\@/@g'`
+            rm -f $tmpFile
+            # on mks
+            grep=egrep
+            psCmd=ps
+            jstack=jstack.exe
+            ;;
        SunOS | Linux | Darwin | AIX)
          transport=dt_socket
          address=
@@ -378,7 +381,7 @@ EOF
 #  linux same as above
 #  win mks:  No dice; processes still running
     trap "cleanup" 0 1 2 3 4 6 9 10 15
-    
+
     jdbOptions="$jdbOptions -J-D${jdbKeyword}"
 }
 
@@ -397,7 +400,7 @@ docompile()
     cp $classname.java.1 $classname.java
     echo "--Compiling first version of `pwd`/$classname.java with options: $compileOptions"
     # Result is in $pkgSlash$classname.class
-    
+
     if [ -z "$javacCmd" ] ; then
         javacCmd=$jdk/bin/javac
     fi
@@ -523,29 +526,52 @@ docompile()
 # If it ever becomes necessary to send a jdb command before
 # a  main[10] form of prompt appears, then this
 # code will have to be modified.
-cmd() 
+#
+# Specify $1 = allowExit to show that the command given
+# allows JDB to exit
+cmd()
 {
-    if [ $1 = quit -o -r "$failFile" ] ; then
-        # if jdb got a cont cmd that caused the debuggee
-        # to run to completion, jdb can be gone before
-        # we get here.
-        echo "--Sending cmd: quit" >& 2
-        echo quit
-        # See 6562090. Maybe there is a way that the exit
-        # can cause jdb to not get the quit.
-        sleep 5
+    allowExit=
+    case "$1" in
+        allowExit)
+            allowExit="allowExit"
+            shift
+            ;;
+        exitJdb)
+            # Quit JDB only with this cmd() invocation
+            echo "--Sending cmd: quit" >& 2
+            echo quit
+            echo "--Quit cmd was sent" >& 2
+            # See 6562090. Maybe there is a way that the exit
+            # can cause jdb to not get the quit.
+            sleep 5
 
-        # The exit code value here doesn't matter since this function
-        # is called as part of a pipeline and it is not the last command
-        # in the pipeline.
-        exit 1
+            # The exit code value here doesn't matter since this function
+            # is called as part of a pipeline and it is not the last command
+            # in the pipeline.
+            exit 1
+            ;;
+    esac
+    command=$*
+
+    if [ -z "$command" ] ; then
+        dofail "Command can't be a null string. Test failure"
     fi
-    
+    if [ "$command" = "quit" -o "$command" = "exit" ] ; then
+        # We don't want the test to manually quit jdb,
+        # we will do it in the end automatically
+        dofail "It's not allowed to send quit or exit commands from the test"
+    fi
+    if [ -r "$failFile" ] ; then
+        # failFile exists, it's better to finish execution
+        dofinish "quit"
+    fi
+
     # $jdbOutFile always exists here and is non empty
     # because after starting jdb, we waited 
     # for the prompt.
     fileSize=`wc -c $jdbOutFile | awk '{ print $1 }'`
-    echo "--Sending cmd: " $* >&2
+    echo "--Sending cmd: " $command >&2
 
     # jjh: We have a few intermittent failures here.
     # It is as if every so often, jdb doesn't
@@ -570,7 +596,7 @@ cmd()
     # And, we know jdb is started because the main[1] output is in the .jtr
     # file.  And, we wouldn't have gotten here if mydojdbcmds hadn't
     # seen the ].  
-    echo $*
+    echo $command
 
     # Now we have to wait for the next jdb prompt.  We wait for a pattern
     # to appear in the last line of jdb output.  Normally, the prompt is
@@ -644,7 +670,7 @@ cmd()
     # wait for 4 new chars to appear in the jdb output
     count=0
     desiredFileSize=`expr $fileSize + 4`
-    msg1=`echo At start: cmd/size/waiting : $* / $fileSize / \`date\``
+    msg1=`echo At start: cmd/size/waiting : $command / $fileSize / \`date\``
     while [ 1 = 1 ] ; do
         newFileSize=`wc -c $jdbOutFile | awk '{ print $1 } '`
         #echo jj: desired = $desiredFileSize, new = $newFileSize >& 2
@@ -657,7 +683,7 @@ cmd()
         count=`expr $count + 1`
         if [ $count = 30 -o $count = 60 ] ; then
             # record some debug info.
-            echo "--DEBUG: jdb $$ didn't responded to command in $count secs: $*" >& 2
+            echo "--DEBUG: jdb $$ didn't responded to command in $count secs: $command" >& 2
             echo "--DEBUG:" $msg1 >& 2
             echo "--DEBUG: "done size/waiting : / $newFileSize  / `date` >& 2
             echo "-- $jdbOutFile follows-------------------------------" >& 2
@@ -666,13 +692,12 @@ cmd()
             dojstack
             #$psCmd | sed -e '/com.sun.javatest/d' -e '/nsk/d' >& 2
             if [ $count = 60 ] ; then
-                dofail "jdb never responded to command: $*"
+                dofail "jdb never responded to command: $command"
             fi
         fi
     done
     # Note that this assumes just these chars in thread names.
-    waitForJdbMsg '[a-zA-Z0-9_-][a-zA-Z0-9_-]*\[[1-9][0-9]*\] [ >]*$' \
-        1 allowExit
+    waitForJdbMsg '[a-zA-Z0-9_-][a-zA-Z0-9_-]*\[[1-9][0-9]*\] [ >]*$' 1 $allowExit
 }
 
 setBkpts()
@@ -681,12 +706,13 @@ setBkpts()
     # $1 is the bkpt name, eg, @1
     allLines=`$grep -n "$1 *breakpoint" $tmpFileDir/$classname.java.1 | sed -e 's@^\([0-9]*\).*@\1@g'`
     for ii in $allLines ; do
-        cmd stop at $pkgDot$classname:$ii
+        cmd "stop at $pkgDot$classname:$ii"
     done
 }
 
 runToBkpt()
 {
+    # Don't pass allowExit here as we don't want JDB to unexpectedly exit
     cmd run
     # Don't need to do this - the above waits for the next prompt which comes out
     # AFTER the Breakpoint hit message.
@@ -696,6 +722,7 @@ runToBkpt()
 
 contToBkpt()
 {
+    # Don't pass allowExit here as we don't want JDB to unexpectedly exit
     cmd cont
     # Don't need to do this - the above waits for the next prompt which comes out
     # AFTER the Breakpoint hit message.
@@ -723,22 +750,24 @@ waitForJdbMsg()
                 # Found desired string
                 break
             fi
-	fi
-	tail -2 $jdbOutFile | $grep -s "The application exited" > $devnull 2>&1
-	if [ $? = 0 ] ; then
+        fi
+        tail -2 $jdbOutFile | $grep -s "The application exited" > $devnull 2>&1
+        if [ $? = 0 ] ; then
             # Found 'The application exited'
+            echo "--JDB finished: The application exited" >&2
             if [ ! -z "$allowExit" ] ; then
-                break
+                # Exit is allowed
+                dofinish
             fi
             # Otherwise, it is an error if we don't find $1
-	    if [  -r $jdbOutFile ] ; then 
-		tail -$nlines $jdbOutFile | $grep -s "$1" > $devnull 2>&1		
+            if [  -r $jdbOutFile ] ; then 
+                tail -$nlines $jdbOutFile | $grep -s "$1" > $devnull 2>&1
                 if [ $? = 0 ] ; then
-		   break
-		fi
-	    fi
-            dofail "Waited for jdb msg $1, but it never appeared"	            
-	fi
+                    break
+                fi
+            fi
+            dofail "JDB unexpectedly finished: Waited for jdb msg $1, but it never appeared"
+        fi
 
         sleep ${sleep_seconds}
         findPid $topPid
@@ -761,6 +790,19 @@ waitForJdbMsg()
 
 }
 
+# Finishes JDB execution
+# Specify command to finish if it's needed
+dofinish()
+{
+    if [ ! -z "$*" ] ; then
+        echo "--Finish execution with sending \"$*\" command to JDB" >&2
+        cmd "exitJdb" "$*"
+    else
+        echo "--Finish without sending \"quit\" command to JDB" >&2
+    fi
+    exit 0
+}
+
 # $1 is the string to print.  If $2 exists,
 # it is the name of a file to print, ie, the name
 # of the file that contains the $1 string.
@@ -774,10 +816,11 @@ dofail()
         # Kill the debuggee ; it could be hung so
         # we want to get rid of it as soon as possible.
         killOrphans "killing debuggee" $debuggeeKeyword
+        # Kill debugger, it could be hung
+        killOrphans "killing debugger" $jdbKeyword
 
         echo " "  >>$failFile
         echo "--Fail: $*" >> $failFile
-        echo quit
     fi
     if [ ! -z "$2" ] ; then
         echo  "---- contents of $2 follows -------" >> $failFile
@@ -788,7 +831,7 @@ dofail()
 }
 
 
-redefineClass() 
+redefineClass()
 {
     if [ -z "$1" ] ; then
         vers=2
@@ -796,8 +839,8 @@ redefineClass()
         vers=`echo $1 | sed -e 's/@//'`
         vers=`expr $vers + 1`
     fi
-        
-    cmd redefine $pkgDot$classname $tmpFileDir/vers$vers/$classname.class
+
+    cmd "redefine $pkgDot$classname $tmpFileDir/vers$vers/$classname.class"
 
     cp $tmpFileDir/$classname.java.$vers \
        $tmpFileDir/$classname.java
@@ -807,8 +850,10 @@ mydojdbCmds()
 {
    # Wait for jdb to start before we start sending cmds
    waitForJdbMsg ']' 1
+   # Send commands from the test
    dojdbCmds
-   cmd quit
+   # Finish jdb with quit command
+   dofinish "quit"
 }
 
 startJdb()
@@ -853,7 +898,7 @@ startDebuggee()
     if [ -r $TESTCLASSES/../@debuggeeVMOptions ] ; then
        args=`cat $TESTCLASSES/../@debuggeeVMOptions`
     fi
-    
+
     if [ ! -z "$args" ] ; then
        echo "--Starting debuggee with args from @debuggeeVMOptions: $args"
     else
@@ -932,16 +977,13 @@ waitForFinish()
             break
         fi
         if [ ! -z "$isWin98" ] ; then
-           $psCmd | $grep -i 'JDB\.EXE' >$devnull 2>&1 
-           if [ $? != 0 ] ; then
-               break;
-           fi
+            $psCmd | $grep -i 'JDB\.EXE' >$devnull 2>&1
+            if [ $? != 0 ] ; then
+                break
+            fi
         fi
-        $grep -s 'Input stream closed' $jdbOutFile > $devnull 2>&1
-        if [ $? = 0 ] ; then
-            #something went wrong
-            dofail "jdb input stream closed prematurely"
-        fi
+        # Something went wrong
+        jdbFailIfPresent "Input stream closed"
 
         # If a failure has occured, quit
         if [ -r "$failFile" ] ; then
@@ -950,6 +992,46 @@ waitForFinish()
 
         sleep ${sleep_seconds}
     done
+
+    # jdb exited because its input stream closed prematurely
+    jdbFailIfPresent "Input stream closed"
+
+    # It is necessary here to avoid the situation when JDB exited but
+    # mydojdbCmds() didn't finish because it waits for JDB message
+    # in waitForJdbMsg(), at the same time main process will finish
+    # the execution with no errors.
+    # To avoid that, wait for spawned processes to finish
+    case "$osname" in
+        SunOS)
+            # `wait` function doesn't work in Solaris shell as in bash,
+            # so create replacement that finds mydojdbCmds() shell process
+            # and waits for its finish
+            cmdsPid=
+            # get list of processes except main process with $topPid
+            processes=`$psCmd | $grep -v "$grep" | $grep -v $topPid | awk '{print $1}'`
+            for pid in $processes; do
+                # for each process grep its full args string for test name $0
+                # $0 contains full test name with path
+                pargs -l $pid 2>$devnull | $grep "$0" >$devnull 2>&1
+                if [ $? = 0 ] ; then
+                    cmdsPid=$pid
+                    break
+                fi
+            done
+            echo "--waitForFinish: Waiting for mydojdbCmds() to finish" >&2
+            while [ 1 = 1 ] ; do
+                findPid $cmdsPid
+                if [ $? != 0 ] ; then
+                    break
+                fi
+                sleep ${sleep_seconds}
+            done
+            ;;
+        *)
+            echo "--waitForFinish: Waiting for all processes to finish" >&2
+            wait
+            ;;
+    esac
 
     if [ -r "$failFile" ] ; then
         ls -l "$failFile" >&2
@@ -1130,13 +1212,8 @@ pass()
 runit()
 {
     setup
-    runitAfterSetup
-}
-
-runitAfterSetup()
-{
     docompile
-    startJdb 
+    startJdb
     startDebuggee
     waitForFinish
 

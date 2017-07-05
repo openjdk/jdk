@@ -56,6 +56,9 @@
 
 /* defines for UNIX platforms *************************************************/
 
+#ifndef _P11_MD_H
+#define _P11_MD_H 1
+
 #define CK_PTR *
 #define CK_DEFINE_FUNCTION(returnType, name) returnType name
 #define CK_DECLARE_FUNCTION(returnType, name) returnType name
@@ -83,3 +86,5 @@ struct ModuleData {
 
 };
 typedef struct ModuleData ModuleData;
+
+#endif  /* _P11_MD_H */

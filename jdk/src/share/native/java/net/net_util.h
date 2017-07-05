@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,12 +63,12 @@ JNIEXPORT void JNICALL initInetAddressIDs(JNIEnv *env);
  * get_ methods that return objects return NULL on error.
  */
 extern jobject getInet6Address_scopeifname(JNIEnv *env, jobject ia6Obj);
-extern int setInet6Address_scopeifname(JNIEnv *env, jobject ia6Obj, jobject scopeifname);
+extern jboolean setInet6Address_scopeifname(JNIEnv *env, jobject ia6Obj, jobject scopeifname);
 extern int getInet6Address_scopeid_set(JNIEnv *env, jobject ia6Obj);
 extern int getInet6Address_scopeid(JNIEnv *env, jobject ia6Obj);
-extern int setInet6Address_scopeid(JNIEnv *env, jobject ia6Obj, int scopeid);
-extern int getInet6Address_ipaddress(JNIEnv *env, jobject ia6Obj, char *dest);
-extern int setInet6Address_ipaddress(JNIEnv *env, jobject ia6Obj, char *address);
+extern jboolean setInet6Address_scopeid(JNIEnv *env, jobject ia6Obj, int scopeid);
+extern jboolean getInet6Address_ipaddress(JNIEnv *env, jobject ia6Obj, char *dest);
+extern jboolean setInet6Address_ipaddress(JNIEnv *env, jobject ia6Obj, char *address);
 
 extern void setInetAddress_addr(JNIEnv *env, jobject iaObj, int address);
 extern void setInetAddress_family(JNIEnv *env, jobject iaObj, int family);
@@ -165,7 +165,7 @@ NET_IsZeroAddr(jbyte* caddr);
 
 /* Socket operations
  *
- * These work just like the JVM_* procedures, except that they may do some
+ * These work just like the system calls, except that they may do some
  * platform-specific pre/post processing of the arguments and/or results.
  */
 

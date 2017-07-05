@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,9 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"If.keystore.is.not.password.protected.then.storepass.and.keypass.must.not.be.specified",
                  "\u5982\u679C\u5BC6\u94A5\u5E93\u672A\u53D7\u53E3\u4EE4\u4FDD\u62A4, \u5219\u4E0D\u80FD\u6307\u5B9A -storepass \u548C -keypass"},
         {"Usage.jarsigner.options.jar.file.alias",
-                "\u7528\u6CD5: jarsigner [\u9009\u9879] jar \u6587\u4EF6\u522B\u540D"},
+                "\u7528\u6CD5: jarsigner [\u9009\u9879] jar-file \u522B\u540D"},
         {".jarsigner.verify.options.jar.file.alias.",
-                "       jarsigner -verify [options] jar-file [alias...]"},
+                "       jarsigner -verify [\u9009\u9879] jar-file [\u522B\u540D...]"},
         {".keystore.url.keystore.location",
                 "[-keystore <url>]           \u5BC6\u94A5\u5E93\u4F4D\u7F6E"},
         {".storepass.password.password.for.keystore.integrity",
@@ -65,7 +65,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {".keypass.password.password.for.private.key.if.different.",
                 "[-keypass <\u53E3\u4EE4>]           \u79C1\u6709\u5BC6\u94A5\u7684\u53E3\u4EE4 (\u5982\u679C\u4E0D\u540C)"},
         {".certchain.file.name.of.alternative.certchain.file",
-                "[-certchain <file>]         \u66FF\u4EE3 certchain \u6587\u4EF6\u7684\u540D\u79F0"},
+                "[-certchain <\u6587\u4EF6>]         \u66FF\u4EE3 certchain \u6587\u4EF6\u7684\u540D\u79F0"},
         {".sigfile.file.name.of.SF.DSA.file",
                 "[-sigfile <\u6587\u4EF6>]           .SF/.DSA \u6587\u4EF6\u7684\u540D\u79F0"},
         {".signedjar.file.name.of.signed.JAR.file",
