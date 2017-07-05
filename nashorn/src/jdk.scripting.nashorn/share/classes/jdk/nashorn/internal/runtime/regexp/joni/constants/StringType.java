@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.constants;
 
+@SuppressWarnings("javadoc")
 public interface StringType {
     final int NSTR_RAW               = 1<<0;
     final int NSTR_AMBIG             = 1<<1;

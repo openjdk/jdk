@@ -27,13 +27,13 @@ import java.security.Policy;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.sql.rowset.spi.SyncFactory;
+import javax.sql.rowset.spi.SyncFactoryException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import util.BaseTest;
+import util.StubContext;
 import util.TestPolicy;
 
 public class SyncFactoryPermissionsTests extends BaseTest {
@@ -41,6 +41,7 @@ public class SyncFactoryPermissionsTests extends BaseTest {
     Context ctx;
     private static Policy policy;
     private static SecurityManager sm;
+    private final Logger alogger = Logger.getLogger(this.getClass().getName());
 
     /*
      * Install a SeeurityManager along with a base Policy to allow testNG to run
@@ -67,13 +68,7 @@ public class SyncFactoryPermissionsTests extends BaseTest {
     public SyncFactoryPermissionsTests() {
         policy = Policy.getPolicy();
         sm = System.getSecurityManager();
-
-        try {
-            ctx = new InitialContext();
-        } catch (NamingException ex) {
-            Logger.getLogger(SyncFactoryPermissionsTests.class.getName()).
-                    log(Level.SEVERE, null, ex);
-        }
+        ctx = new StubContext();
     }
 
     /*
@@ -87,12 +82,20 @@ public class SyncFactoryPermissionsTests extends BaseTest {
     }
 
     /*
+     * Validate that a SyncFactoryException is thrown if the Logger is null
+     */
+    @Test(expectedExceptions = SyncFactoryException.class)
+    public void test00() throws SyncFactoryException {
+        Logger l = SyncFactory.getLogger();
+    }
+
+    /*
      * Validate that setJNDIContext succeeds if SQLPermission("setSyncFactory")
      * has been granted
      */
     @Test
-    public void test1() throws Exception {
-        Policy.setPolicy(new TestPolicy("setSyncFactory"));
+    public void test01() throws Exception {
+        setPolicy(new TestPolicy("setSyncFactory"));
         SyncFactory.setJNDIContext(ctx);
     }
 
@@ -100,8 +103,77 @@ public class SyncFactoryPermissionsTests extends BaseTest {
      * Validate that setJNDIContext succeeds if AllPermissions has been granted
      */
     @Test
-    public void test2() throws Exception {
+    public void test02() throws Exception {
         setPolicy(new TestPolicy("all"));
         SyncFactory.setJNDIContext(ctx);
+    }
+
+    /*
+     * Validate that AccessControlException is thrown if
+     * SQLPermission("setSyncFactory") has not been granted
+     */
+    @Test(expectedExceptions = AccessControlException.class)
+    public void test03() throws Exception {
+        setPolicy(new TestPolicy());
+        SyncFactory.setLogger(alogger);
+    }
+
+    /*
+     * Validate that setLogger succeeds if SQLPermission("setSyncFactory")
+     * has been granted
+     */
+    @Test
+    public void test04() throws Exception {
+        setPolicy(new TestPolicy("setSyncFactory"));
+        SyncFactory.setLogger(alogger);
+    }
+
+    /*
+     * Validate that setLogger succeeds if AllPermissions has been granted
+     */
+    @Test
+    public void test05() throws Exception {
+        setPolicy(new TestPolicy("all"));
+        SyncFactory.setLogger(alogger);
+    }
+
+    /*
+     * Validate that AccessControlException is thrown if
+     * SQLPermission("setSyncFactory") has not been granted
+     */
+    @Test(expectedExceptions = AccessControlException.class)
+    public void test06() throws Exception {
+        setPolicy(new TestPolicy());
+        SyncFactory.setLogger(alogger, Level.INFO);
+    }
+
+    /*
+     * Validate that AccessControlException is thrown if
+     * SQLPermission("setSyncFactory")  and LoggingPermission("control", null)
+     * have not been granted
+     */
+    @Test(expectedExceptions = AccessControlException.class)
+    public void test07() throws Exception {
+        setPolicy(new TestPolicy("setSyncFactory"));
+        SyncFactory.setLogger(alogger, Level.INFO);
+    }
+
+    /*
+     * Validate that setLogger succeeds if SQLPermission("setSyncFactory")
+     * has been granted
+     */
+    @Test
+    public void test08() throws Exception {
+        setPolicy(new TestPolicy("setSyncFactoryLogger"));
+        SyncFactory.setLogger(alogger, Level.INFO);
+    }
+
+    /*
+     * Validate that setLogger succeeds if AllPermissions has been granted
+     */
+    @Test
+    public void test09() throws Exception {
+        setPolicy(new TestPolicy("all"));
+        SyncFactory.setLogger(alogger, Level.INFO);
     }
 }

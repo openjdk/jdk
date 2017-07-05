@@ -287,10 +287,21 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
      */
     private static SingleDynamicMethod createDynamicMethod(final AccessibleObject m) {
         if(CallerSensitiveDetector.isCallerSensitive(m)) {
+            // Method has @CallerSensitive annotation
             return new CallerSensitiveDynamicMethod(m);
         }
+        // Method has no @CallerSensitive annotation
+        final MethodHandle mh;
+        try {
+            mh = unreflectSafely(m);
+        } catch (final IllegalAccessError e) {
+            // java.lang.invoke can in some case conservatively treat as caller sensitive methods that aren't
+            // marked with the annotation. In this case, we'll fall back to treating it as caller sensitive.
+            return new CallerSensitiveDynamicMethod(m);
+        }
+        // Proceed with non-caller sensitive
         final Member member = (Member)m;
-        return new SimpleDynamicMethod(unreflectSafely(m), member.getDeclaringClass(), member.getName(), m instanceof Constructor);
+        return new SimpleDynamicMethod(mh, member.getDeclaringClass(), member.getName(), m instanceof Constructor);
     }
 
     /**

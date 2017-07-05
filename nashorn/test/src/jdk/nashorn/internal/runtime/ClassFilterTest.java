@@ -25,18 +25,17 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static org.testng.Assert.fail;
+import java.io.File;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import jdk.nashorn.api.scripting.URLReader;
 import jdk.nashorn.internal.test.framework.TestFinder;
 import org.testng.annotations.Test;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import java.io.File;
-
-import static org.testng.Assert.fail;
-
+@SuppressWarnings("javadoc")
 public class ClassFilterTest {
     private static final String NASHORN_CODE_CACHE = "nashorn.persistent.code.cache";
     private static final String CLASSFILTER_CODE_CACHE = "build/classfilter_nashorn_code_cache";
@@ -48,7 +47,7 @@ public class ClassFilterTest {
     // test contributes much. We need faster "ant clean test" cycle for
     // developers.
     public void runExternalJsTest() {
-        String[] paths = new String[]{
+        final String[] paths = new String[]{
                 "test/script/basic/compile-octane.js",
                 "test/script/basic/jquery.js",
                 "test/script/basic/prototype.js",
@@ -57,12 +56,12 @@ public class ClassFilterTest {
                 "test/script/basic/yui.js",
                 "test/script/basic/run-octane.js"
         };
-        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        for (String path : paths) {
-            ScriptEngine engine = factory.getScriptEngine(new String[]{"-scripting"}, getClass().getClassLoader(), getClassFilter());
+        final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        for (final String path : paths) {
+            final ScriptEngine engine = factory.getScriptEngine(new String[]{"-scripting"}, getClass().getClassLoader(), getClassFilter());
             try {
                 engine.eval(new URLReader(new File(path).toURI().toURL()));
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 fail("Script " + path + " fails with exception :" + e.getMessage());
             }
         }
@@ -70,12 +69,13 @@ public class ClassFilterTest {
 
     @Test
     public void noJavaOptionTest() {
-        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        ScriptEngine engine = factory.getScriptEngine(new String[]{"--no-java"}, getClass().getClassLoader(), getClassFilter());
+        final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        final ScriptEngine engine = factory.getScriptEngine(new String[]{"--no-java"}, getClass().getClassLoader(), getClassFilter());
         try {
             engine.eval("var str = Java.type('java.lang.String');");
             fail("TypeError should have been thrown");
-        } catch (ScriptException exc) {
+        } catch (final ScriptException e) {
+            //emtpy
         }
     }
 
@@ -85,27 +85,31 @@ public class ClassFilterTest {
             return;
         }
 
-        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        ScriptEngine engine = factory.getScriptEngine(getClassFilter());
+        final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        final ScriptEngine engine = factory.getScriptEngine(getClassFilter());
         try {
             engine.eval("var thread = Java.type('sun.misc.Unsafe')");
             fail("SecurityException should have been thrown");
-        } catch (final Exception exc) {
+        } catch (final Exception e) {
+            //empty
         }
         try {
             engine.eval("var thread = new sun.misc.Unsafe()");
             fail("SecurityException should have been thrown");
-        } catch (final Exception exc) {
+        } catch (final Exception e) {
+            //empty
         }
         try {
             engine.eval("var thread = Java.extend(sun.misc.Unsafe, {})");
             fail("TypeError should have been thrown");
-        } catch (final Exception exc) {
+        } catch (final Exception e) {
+            //empty
         }
         try {
             engine.eval("java.lang.System.exit(0)");
             fail("SecurityException should have been thrown");
-        } catch (final Exception exc) {
+        } catch (final Exception e) {
+            //empty
         }
 
     }
@@ -124,24 +128,24 @@ public class ClassFilterTest {
     }
 
     private void persistentCacheTestImpl() {
-        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        ScriptEngine engine = factory.getScriptEngine(
+        final NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+        final ScriptEngine engine = factory.getScriptEngine(
               TestFinder.addExplicitOptimisticTypes(new String[]{"--persistent-code-cache", "--optimistic-types=true"}),
                   getClass().getClassLoader(),
                   getClassFilter()
         );
-        String testScript = "var a = Java.type('java.lang.String');" + generateCodeForPersistentStore();
+        final String testScript = "var a = Java.type('java.lang.String');" + generateCodeForPersistentStore();
         try {
             engine.eval(testScript);
         } catch (final ScriptException exc) {
             fail(exc.getMessage());
         }
-        ScriptEngine engineSafe = factory.getScriptEngine(
+        final ScriptEngine engineSafe = factory.getScriptEngine(
                 TestFinder.addExplicitOptimisticTypes(new String[]{"--persistent-code-cache", "--optimistic-types=true"}),
                 getClass().getClassLoader(),
                 new ClassFilter() {
                     @Override
-                    public boolean exposeToScripts(String s) {
+                    public boolean exposeToScripts(final String s) {
                         return false;
                     }
                 }
@@ -156,8 +160,8 @@ public class ClassFilterTest {
         }
     }
 
-    private String generateCodeForPersistentStore() {
-        StringBuilder stringBuilder = new StringBuilder();
+    private static String generateCodeForPersistentStore() {
+        final StringBuilder stringBuilder = new StringBuilder();
         for (int i=0; i < 100; i++) {
             stringBuilder.append("function i")
                     .append(i)
@@ -170,10 +174,10 @@ public class ClassFilterTest {
         return stringBuilder.toString();
     }
 
-    private ClassFilter getClassFilter() {
+    private static ClassFilter getClassFilter() {
         return new ClassFilter() {
             @Override
-            public boolean exposeToScripts(String s) {
+            public boolean exposeToScripts(final String s) {
                 return true;
             }
         };

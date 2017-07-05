@@ -19,6 +19,7 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni;
 
+@SuppressWarnings("javadoc")
 public final class NodeOptInfo {
     final MinMaxLen length = new  MinMaxLen();
     final OptAnchorInfo anchor = new OptAnchorInfo();
@@ -91,8 +92,12 @@ public final class NodeOptInfo {
             if (other.length.max > 0) {
                 // TODO: make sure it is not an Oniguruma bug (casting unsigned int to int for arithmetic comparison)
                 int otherLengthMax = other.length.max;
-                if (otherLengthMax == MinMaxLen.INFINITE_DISTANCE) otherLengthMax = -1;
-                if (expr.length > otherLengthMax) expr.length = otherLengthMax;
+                if (otherLengthMax == MinMaxLen.INFINITE_DISTANCE) {
+                    otherLengthMax = -1;
+                }
+                if (expr.length > otherLengthMax) {
+                    expr.length = otherLengthMax;
+                }
                 if (expr.mmd.max == 0) {
                     exb.select(expr);
                 } else {
