@@ -145,6 +145,9 @@ import java.util.MissingResourceException;
 
 public class LocaleDataTest
 {
+    static final String TEXT_RESOURCES_PACKAGE ="sun.text.resources";
+    static final String UTIL_RESOURCES_PACKAGE ="sun.util.resources";
+
     public static void main(String[] args) throws Exception {
 
         // set up our flags and our input and output streams based on the
@@ -286,9 +289,9 @@ public class LocaleDataTest
                     || rbName.equals("CurrencyNames")
                     || rbName.equals("LocaleNames")
                     || rbName.equals("TimeZoneNames")) {
-                fullName = "sun.util.resources." + rbName;
+                fullName = UTIL_RESOURCES_PACKAGE + "." + rbName;
             } else {
-                fullName = "sun.text.resources." + rbName;
+                fullName = TEXT_RESOURCES_PACKAGE + "." + rbName;
             }
             Locale locale;
             if (use_tag) {
@@ -297,8 +300,8 @@ public class LocaleDataTest
                 locale = new Locale(language, country, variant);
             }
             ResourceBundle bundle = ResourceBundle.getBundle(fullName,
-                           locale,
-                           ResourceBundle.Control.getNoFallbackControl(Control.FORMAT_DEFAULT));
+                                                             locale,
+                                                             JRELocaleResourceBundleControl.INSTANCE);
             resource = bundle.getObject(resTag);
         }
         catch (MissingResourceException e) {
@@ -311,7 +314,7 @@ public class LocaleDataTest
             else if (resource instanceof String[]) {
                 int element = Integer.valueOf(qualifier).intValue();
                 String[] stringList = (String[])resource;
-                if (element >= 0 || element < stringList.length)
+                if (element >= 0 && element < stringList.length)
                     retrievedValue = stringList[element];
             }
             else if (resource instanceof String[][]) {
@@ -326,7 +329,7 @@ public class LocaleDataTest
                 else {
                     int row = Integer.valueOf(qualifier.substring(0, slash)).intValue();
                     int column = Integer.valueOf(qualifier.substring(slash + 1)).intValue();
-                    if (row >= 0 || row < stringArray.length || column >= 0 || column <
+                    if (row >= 0 && row < stringArray.length && column >= 0 && column <
                                     stringArray[row].length)
                         retrievedValue = stringArray[row][column];
                 }
@@ -351,6 +354,54 @@ public class LocaleDataTest
                 out.println(key + "=" + expectedValue);
         }
         return true;
+    }
+
+    private static class JRELocaleResourceBundleControl extends ResourceBundle.Control {
+        static final JRELocaleResourceBundleControl INSTANCE = new JRELocaleResourceBundleControl();
+
+        private JRELocaleResourceBundleControl() {
+        }
+
+        @Override
+        public Locale getFallbackLocale(String baseName, Locale locale) {
+            if (baseName == null || locale == null) {
+                throw new NullPointerException();
+            }
+            return null;
+        }
+
+        private static final String CLDR      = ".cldr";
+
+        /**
+         * Changes baseName to its per-language package name and
+         * calls the super class implementation. For example,
+         * if the baseName is "sun.text.resources.FormatData" and locale is ja_JP,
+         * the baseName is changed to "sun.text.resources.ja.FormatData". If
+         * baseName contains "cldr", such as "sun.text.resources.cldr.FormatData",
+         * the name is changed to "sun.text.resources.cldr.jp.FormatData".
+         */
+        @Override
+        public String toBundleName(String baseName, Locale locale) {
+            String newBaseName = baseName;
+            String lang = locale.getLanguage();
+            if (lang.length() > 0) {
+                if (baseName.startsWith(UTIL_RESOURCES_PACKAGE)
+                    || baseName.startsWith(TEXT_RESOURCES_PACKAGE)) {
+                    // Assume the lengths are the same.
+                    if (UTIL_RESOURCES_PACKAGE.length()
+                        != TEXT_RESOURCES_PACKAGE.length()) {
+                        throw new InternalError("The resources package names have different lengths.");
+                    }
+                    int index = TEXT_RESOURCES_PACKAGE.length();
+                    if (baseName.indexOf(CLDR, index) > 0) {
+                        index += CLDR.length();
+                    }
+                    newBaseName = baseName.substring(0, index + 1) + lang
+                                      + baseName.substring(index);
+                }
+            }
+            return super.toBundleName(newBaseName, locale);
+        }
     }
 }
 

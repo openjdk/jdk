@@ -31,6 +31,13 @@ PRODUCT = sun
 include $(BUILDDIR)/common/Defs.gmk
 
 #
+# libjawt links to other programs, but nothing links to it directly. An RPATH
+# entry has been added to the launcher so third-party programs linked against
+# it will be able to find it no matter where the JDK or the third-party program
+# is located.
+#
+
+#
 # Files
 #
 ifeq ($(PLATFORM), windows)

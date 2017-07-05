@@ -596,14 +596,7 @@ class LambdaForm {
     Object interpretWithArguments(Object... argumentValues) throws Throwable {
         if (TRACE_INTERPRETER)
             return interpretWithArgumentsTracing(argumentValues);
-        if (COMPILE_THRESHOLD != 0 &&
-            invocationCounter < COMPILE_THRESHOLD) {
-            invocationCounter++;  // benign race
-            if (invocationCounter >= COMPILE_THRESHOLD) {
-                // Replace vmentry with a bytecode version of this LF.
-                compileToBytecode();
-            }
-        }
+        checkInvocationCounter();
         assert(arityCheck(argumentValues));
         Object[] values = Arrays.copyOf(argumentValues, names.length);
         for (int i = argumentValues.length; i < values.length; i++) {
@@ -630,6 +623,16 @@ class LambdaForm {
         return name.function.invokeWithArguments(arguments);
     }
 
+    private void checkInvocationCounter() {
+        if (COMPILE_THRESHOLD != 0 &&
+            invocationCounter < COMPILE_THRESHOLD) {
+            invocationCounter++;  // benign race
+            if (invocationCounter >= COMPILE_THRESHOLD) {
+                // Replace vmentry with a bytecode version of this LF.
+                compileToBytecode();
+            }
+        }
+    }
     Object interpretWithArgumentsTracing(Object... argumentValues) throws Throwable {
         traceInterpreter("[ interpretWithArguments", this, argumentValues);
         if (invocationCounter < COMPILE_THRESHOLD) {
@@ -703,7 +706,7 @@ class LambdaForm {
     }
 
     public String toString() {
-        StringBuilder buf = new StringBuilder("Lambda(");
+        StringBuilder buf = new StringBuilder(debugName+"=Lambda(");
         for (int i = 0; i < names.length; i++) {
             if (i == arity)  buf.append(")=>{");
             Name n = names[i];

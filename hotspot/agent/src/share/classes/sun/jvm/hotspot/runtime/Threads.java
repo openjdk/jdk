@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,16 @@ public class Threads {
                 access = new LinuxAMD64JavaThreadPDAccess();
             } else if (cpu.equals("sparc")) {
                 access = new LinuxSPARCJavaThreadPDAccess();
+            } else {
+              try {
+                access = (JavaThreadPDAccess)
+                  Class.forName("sun.jvm.hotspot.runtime.linux_" +
+                     cpu.toLowerCase() + ".Linux" + cpu.toUpperCase() +
+                     "JavaThreadPDAccess").newInstance();
+              } catch (Exception e) {
+                throw new RuntimeException("OS/CPU combination " + os + "/" + cpu +
+                                           " not yet supported");
+              }
             }
         } else if (os.equals("bsd")) {
             if (cpu.equals("x86")) {

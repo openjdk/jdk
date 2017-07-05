@@ -1,0 +1,302 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="ig"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ak">Akan</language>
+			<language type="am">Amariikị</language>
+			<language type="ar">Arabiikị</language>
+			<language type="be">Belaruusu</language>
+			<language type="bg">Bọlụgarịa</language>
+			<language type="bn">Bengali</language>
+			<language type="cs">Cheekị</language>
+			<language type="de">Jamaan</language>
+			<language type="el">Giriikị</language>
+			<language type="en">Oyibo</language>
+			<language type="es">Panya</language>
+			<language type="fa">Peshan</language>
+			<language type="fr">Fụrench</language>
+			<language type="ha">Awụsa</language>
+			<language type="hi">Hindi</language>
+			<language type="hu">Magịya</language>
+			<language type="id">Indonisia</language>
+			<language type="ig">Igbo</language>
+			<language type="it">Italo</language>
+			<language type="ja">Japanese</language>
+			<language type="jv">Java</language>
+			<language type="km">Keme, Etiti</language>
+			<language type="ko">Koria</language>
+			<language type="ms">Maleyi</language>
+			<language type="my">Mịanma</language>
+			<language type="ne">Nepali</language>
+			<language type="nl">Dọọch</language>
+			<language type="pa">Punjabi</language>
+			<language type="pl">Poliishi</language>
+			<language type="pt">Potoki</language>
+			<language type="ro">Rumenia</language>
+			<language type="ru">Rọshan</language>
+			<language type="rw">Rụwanda</language>
+			<language type="so">Somali</language>
+			<language type="sv">Sụwidiishi</language>
+			<language type="ta">Tamụlụ</language>
+			<language type="th">Taị</language>
+			<language type="tr">Tọkiishi</language>
+			<language type="uk">Ukureenị</language>
+			<language type="ur">Urudu</language>
+			<language type="vi">Viyetịnaamụ</language>
+			<language type="yo">Yoruba</language>
+			<language type="zh">Mandarịịnị</language>
+			<language type="zu">Zulu</language>
+		</languages>
+		<territories>
+			<territory type="BJ">Binin</territory>
+			<territory type="BM">Bemuda</territory>
+			<territory type="CN">Chaina</territory>
+			<territory type="HT">Hati</territory>
+			<territory type="KM">Comorosu</territory>
+			<territory type="LY">Libyia</territory>
+			<territory type="MV">Maldivesa</territory>
+			<territory type="NG">Nigeria</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b {ch} d e ẹ f g {gb} {gh} {gw} h i ị j k {kp} {kw} l m n ṅ {nw} {ny} o ọ p r s {sh} t u ụ v w y z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>“</quotationStart>
+		<quotationEnd>”</quotationEnd>
+		<alternateQuotationStart>‘</alternateQuotationStart>
+		<alternateQuotationEnd>’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Jen</month>
+							<month type="2">Feb</month>
+							<month type="3">Maa</month>
+							<month type="4">Epr</month>
+							<month type="5">Mee</month>
+							<month type="6">Juu</month>
+							<month type="7">Jul</month>
+							<month type="8">Ọgọ</month>
+							<month type="9">Sep</month>
+							<month type="10">Ọkt</month>
+							<month type="11">Nov</month>
+							<month type="12">Dis</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Jenụwarị</month>
+							<month type="2">Febrụwarị</month>
+							<month type="3">Maachị</month>
+							<month type="4">Eprel</month>
+							<month type="5">Mee</month>
+							<month type="6">Juun</month>
+							<month type="7">Julaị</month>
+							<month type="8">Ọgọọst</month>
+							<month type="9">Septemba</month>
+							<month type="10">Ọktoba</month>
+							<month type="11">Novemba</month>
+							<month type="12">Disemba</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">Ụka</day>
+							<day type="mon">Mọn</day>
+							<day type="tue">Tiu</day>
+							<day type="wed">Wen</day>
+							<day type="thu">Tọọ</day>
+							<day type="fri">Fraị</day>
+							<day type="sat">Sat</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Mbọsị Ụka</day>
+							<day type="mon">Mọnde</day>
+							<day type="tue">Tiuzdee</day>
+							<day type="wed">Wenezdee</day>
+							<day type="thu">Tọọzdee</day>
+							<day type="fri">Fraịdee</day>
+							<day type="sat">Satọdee</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Ọ1</quarter>
+							<quarter type="2">Ọ2</quarter>
+							<quarter type="3">Ọ3</quarter>
+							<quarter type="4">Ọ4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">Ọkara 1</quarter>
+							<quarter type="2">Ọkara 2</quarter>
+							<quarter type="3">Ọkara 3</quarter>
+							<quarter type="4">Ọkara 4</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">A.M.</dayPeriod>
+							<dayPeriod type="pm">P.M.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">Tupu Kristi</era>
+						<era type="1">Afọ Kristi</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">T.K.</era>
+						<era type="1">A.K.</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">M/d</dateFormatItem>
+						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
+						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMEd">E, MMMM d</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yM">M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
+						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
+						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
+						<dateFormatItem id="yQ">Q y</dateFormatItem>
+						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName>Agba</displayName>
+					</field>
+					<field type="year">
+						<displayName>Afọ</displayName>
+					</field>
+					<field type="month">
+						<displayName>Ọnwa</displayName>
+					</field>
+					<field type="week">
+						<displayName>Izu</displayName>
+					</field>
+					<field type="day">
+						<displayName>Ụbọchị</displayName>
+						<relative type="-1">Nnyaafụ</relative>
+						<relative type="0">Taata</relative>
+						<relative type="1">Echi</relative>
+					</field>
+					<field type="weekday">
+						<displayName>Ụbọchị izu</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName>N'ụtụtụ/N'anyasị</displayName>
+					</field>
+					<field type="hour">
+						<displayName>Elekere</displayName>
+					</field>
+					<field type="minute">
+						<displayName>Nkeji</displayName>
+					</field>
+					<field type="second">
+						<displayName>Nkejinta</displayName>
+					</field>
+					<field type="zone">
+						<displayName>Mpaghara oge</displayName>
+					</field>
+				</fields>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="CVE">
+				<displayName>Escudo Caboverdiano</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName>Naịra</displayName>
+				<symbol>₦</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>Eye:E</yesstr>
+			<nostr>Mba:M</nostr>
+		</messages>
+	</posix>
+</ldml>

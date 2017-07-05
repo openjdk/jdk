@@ -1646,15 +1646,15 @@ Dependencies* GraphBuilder::dependency_recorder() const {
 
 
 void GraphBuilder::invoke(Bytecodes::Code code) {
-  const bool is_invokedynamic = (code == Bytecodes::_invokedynamic);
-
   bool will_link;
-  ciMethod*             target = stream()->get_method(will_link);
+  ciSignature* declared_signature = NULL;
+  ciMethod*             target = stream()->get_method(will_link, &declared_signature);
   ciKlass*              holder = stream()->get_declared_method_holder();
   const Bytecodes::Code bc_raw = stream()->cur_bc_raw();
+  assert(declared_signature != NULL, "cannot be null");
 
   // FIXME bail out for now
-  if ((bc_raw == Bytecodes::_invokehandle || is_invokedynamic) && !will_link) {
+  if (Bytecodes::has_optional_appendix(bc_raw) && !will_link) {
     BAILOUT("unlinked call site (FIXME needs patching or recompile support)");
   }
 
@@ -1840,7 +1840,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       bool success = false;
       if (target->is_method_handle_intrinsic()) {
         // method handle invokes
-        success = for_method_handle_inline(target);
+        success = try_method_handle_inline(target);
       } else {
         // static binding => check if callee is ok
         success = try_inline(inline_target, (cha_monomorphic_target != NULL) || (exact_target != NULL), code, better_receiver);
@@ -1877,7 +1877,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
 
   // inlining not successful => standard invoke
   bool is_loaded = target->is_loaded();
-  ValueType* result_type = as_ValueType(target->return_type());
+  ValueType* result_type = as_ValueType(declared_signature->return_type());
   ValueStack* state_before = copy_state_exhandling();
 
   // The bytecode (code) might change in this method so we are checking this very late.
@@ -3823,7 +3823,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 }
 
 
-bool GraphBuilder::for_method_handle_inline(ciMethod* callee) {
+bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
   ValueStack* state_before = state()->copy_for_parsing();
   vmIntrinsics::ID iid = callee->intrinsic_id();
   switch (iid) {
@@ -3858,7 +3858,7 @@ bool GraphBuilder::for_method_handle_inline(ciMethod* callee) {
         // If the target is another method handle invoke try recursivly to get
         // a better target.
         if (target->is_method_handle_intrinsic()) {
-          if (for_method_handle_inline(target)) {
+          if (try_method_handle_inline(target)) {
             return true;
           }
         } else {

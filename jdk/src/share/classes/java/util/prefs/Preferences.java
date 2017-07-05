@@ -300,7 +300,8 @@ public abstract class Preferences {
         }
         try {
             return (PreferencesFactory)
-                Class.forName(platformFactory, false, null).newInstance();
+                Class.forName(platformFactory, false,
+                              Preferences.class.getClassLoader()).newInstance();
         } catch (Exception e) {
             throw new InternalError(
                 "Can't instantiate platform default Preferences factory "

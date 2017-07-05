@@ -50,7 +50,8 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 import java.util.spi.LocaleServiceProvider;
-import sun.util.LocaleServiceProviderPool;
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.LocaleServiceProviderPool;
 
 /**
  * {@code DateFormat} is an abstract class for date/time formatting subclasses which
@@ -752,27 +753,28 @@ public abstract class DateFormat extends Format {
         } else {
             dateStyle = -1;
         }
-        try {
-            // Check whether a provider can provide an implementation that's closer
-            // to the requested locale than what the Java runtime itself can provide.
-            LocaleServiceProviderPool pool =
-                LocaleServiceProviderPool.getPool(DateFormatProvider.class);
-            if (pool.hasProviders()) {
-                DateFormat providersInstance = pool.getLocalizedObject(
-                                                    DateFormatGetter.INSTANCE,
-                                                    loc,
-                                                    timeStyle,
-                                                    dateStyle,
-                                                    flags);
-                if (providersInstance != null) {
-                    return providersInstance;
-                }
-            }
 
-            return new SimpleDateFormat(timeStyle, dateStyle, loc);
-        } catch (MissingResourceException e) {
-            return new SimpleDateFormat("M/d/yy h:mm a");
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DateFormatProvider.class, loc);
+        DateFormat dateFormat = get(adapter, timeStyle, dateStyle, loc);
+        if (dateFormat == null) {
+            dateFormat = get(LocaleProviderAdapter.forJRE(), timeStyle, dateStyle, loc);
         }
+        return dateFormat;
+    }
+
+    private static DateFormat get(LocaleProviderAdapter adapter, int timeStyle, int dateStyle, Locale loc) {
+        DateFormatProvider provider = adapter.getDateFormatProvider();
+        DateFormat dateFormat;
+        if (timeStyle == -1) {
+            dateFormat = provider.getDateInstance(dateStyle, loc);
+        } else {
+            if (dateStyle == -1) {
+                dateFormat = provider.getTimeInstance(timeStyle, loc);
+            } else {
+                dateFormat = provider.getDateTimeInstance(dateStyle, timeStyle, loc);
+            }
+        }
+        return dateFormat;
     }
 
     /**
@@ -871,6 +873,7 @@ public abstract class DateFormat extends Format {
          *         resolved.
          * @return resolved DateFormat.Field constant
          */
+        @Override
         protected Object readResolve() throws InvalidObjectException {
             if (this.getClass() != DateFormat.Field.class) {
                 throw new InvalidObjectException("subclass didn't correctly implement readResolve");
@@ -993,38 +996,5 @@ public abstract class DateFormat extends Format {
          * Constant identifying the time zone field.
          */
         public final static Field TIME_ZONE = new Field("time zone", -1);
-    }
-
-    /**
-     * Obtains a DateFormat instance from a DateFormatProvider
-     * implementation.
-     */
-    private static class DateFormatGetter
-        implements LocaleServiceProviderPool.LocalizedObjectGetter<DateFormatProvider, DateFormat> {
-        private static final DateFormatGetter INSTANCE = new DateFormatGetter();
-
-        public DateFormat getObject(DateFormatProvider dateFormatProvider,
-                                Locale locale,
-                                String key,
-                                Object... params) {
-            assert params.length == 3;
-
-            int timeStyle = (Integer)params[0];
-            int dateStyle = (Integer)params[1];
-            int flags = (Integer)params[2];
-
-            switch (flags) {
-            case 1:
-                return dateFormatProvider.getTimeInstance(timeStyle, locale);
-            case 2:
-                return dateFormatProvider.getDateInstance(dateStyle, locale);
-            case 3:
-                return dateFormatProvider.getDateTimeInstance(dateStyle, timeStyle, locale);
-            default:
-                assert false : "should not happen";
-            }
-
-            return null;
-        }
     }
 }

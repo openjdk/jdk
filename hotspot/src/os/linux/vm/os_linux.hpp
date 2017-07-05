@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ class Linux {
   // fast POSIX clocks support
   static void fast_thread_clock_init(void);
 
-  static bool supports_monotonic_clock() {
+  static inline bool supports_monotonic_clock() {
     return _clock_gettime != NULL;
   }
 

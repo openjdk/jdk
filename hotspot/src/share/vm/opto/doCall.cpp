@@ -341,25 +341,26 @@ void Parse::do_call() {
   kill_dead_locals();
 
   // Set frequently used booleans
-  bool is_virtual = bc() == Bytecodes::_invokevirtual;
-  bool is_virtual_or_interface = is_virtual || bc() == Bytecodes::_invokeinterface;
-  bool has_receiver = is_virtual_or_interface || bc() == Bytecodes::_invokespecial;
-  bool is_invokedynamic = bc() == Bytecodes::_invokedynamic;
+  const bool is_virtual = bc() == Bytecodes::_invokevirtual;
+  const bool is_virtual_or_interface = is_virtual || bc() == Bytecodes::_invokeinterface;
+  const bool has_receiver = is_virtual_or_interface || bc() == Bytecodes::_invokespecial;
 
   // Find target being called
   bool             will_link;
-  ciMethod*        bc_callee    = iter().get_method(will_link);  // actual callee from bytecode
-  ciInstanceKlass* holder_klass = bc_callee->holder();
-  ciKlass* holder = iter().get_declared_method_holder();
+  ciSignature*     declared_signature = NULL;
+  ciMethod*        orig_callee  = iter().get_method(will_link, &declared_signature);  // callee in the bytecode
+  ciInstanceKlass* holder_klass = orig_callee->holder();
+  ciKlass*         holder       = iter().get_declared_method_holder();
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
+  assert(declared_signature != NULL, "cannot be null");
 
   // uncommon-trap when callee is unloaded, uninitialized or will not link
   // bailout when too many arguments for register representation
-  if (!will_link || can_not_compile_call_site(bc_callee, klass)) {
+  if (!will_link || can_not_compile_call_site(orig_callee, klass)) {
 #ifndef PRODUCT
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name(); tty->print_cr(" can not compile call at bci %d to:", bci());
-      bc_callee->print_name(); tty->cr();
+      orig_callee->print_name(); tty->cr();
     }
 #endif
     return;
@@ -372,7 +373,7 @@ void Parse::do_call() {
   // Note:  In the absence of miranda methods, an abstract class K can perform
   // an invokevirtual directly on an interface method I.m if K implements I.
 
-  const int nargs = bc_callee->arg_size();
+  const int nargs = orig_callee->arg_size();
 
   // Push appendix argument (MethodType, CallSite, etc.), if one.
   if (iter().has_appendix()) {
@@ -392,13 +393,13 @@ void Parse::do_call() {
   // Choose call strategy.
   bool call_is_virtual = is_virtual_or_interface;
   int vtable_index = methodOopDesc::invalid_vtable_index;
-  ciMethod* callee = bc_callee;
+  ciMethod* callee = orig_callee;
 
   // Try to get the most accurate receiver type
   if (is_virtual_or_interface) {
     Node*             receiver_node = stack(sp() - nargs);
     const TypeOopPtr* receiver_type = _gvn.type(receiver_node)->isa_oopptr();
-    ciMethod* optimized_virtual_method = optimize_inlining(method(), bci(), klass, bc_callee, receiver_type);
+    ciMethod* optimized_virtual_method = optimize_inlining(method(), bci(), klass, orig_callee, receiver_type);
 
     // Have the call been sufficiently improved such that it is no longer a virtual?
     if (optimized_virtual_method != NULL) {
@@ -425,7 +426,8 @@ void Parse::do_call() {
   // It decides whether inlining is desirable or not.
   CallGenerator* cg = C->call_generator(callee, vtable_index, call_is_virtual, jvms, try_inline, prof_factor());
 
-  bc_callee = callee = NULL;  // don't use bc_callee and callee after this point
+  // NOTE:  Don't use orig_callee and callee after this point!  Use cg->method() instead.
+  orig_callee = callee = NULL;
 
   // ---------------------
   // Round double arguments before call
@@ -497,9 +499,9 @@ void Parse::do_call() {
     round_double_result(cg->method());
 
     ciType* rtype = cg->method()->return_type();
-    if (iter().cur_bc_raw() == Bytecodes::_invokehandle || is_invokedynamic) {
+    if (Bytecodes::has_optional_appendix(iter().cur_bc_raw())) {
       // Be careful here with return types.
-      ciType* ctype = iter().get_declared_method_signature()->return_type();
+      ciType* ctype = declared_signature->return_type();
       if (ctype != rtype) {
         BasicType rt = rtype->basic_type();
         BasicType ct = ctype->basic_type();
@@ -528,15 +530,13 @@ void Parse::do_call() {
         } else if (rt == T_OBJECT || rt == T_ARRAY) {
           assert(ct == T_OBJECT || ct == T_ARRAY, err_msg_res("rt=%s, ct=%s", type2name(rt), type2name(ct)));
           if (ctype->is_loaded()) {
-            Node* if_fail = top();
-            retnode = gen_checkcast(retnode, makecon(TypeKlassPtr::make(ctype->as_klass())), &if_fail);
-            if (if_fail != top()) {
-              PreserveJVMState pjvms(this);
-              set_control(if_fail);
-              builtin_throw(Deoptimization::Reason_class_check);
+            const TypeOopPtr* arg_type = TypeOopPtr::make_from_klass(rtype->as_klass());
+            const Type*       sig_type = TypeOopPtr::make_from_klass(ctype->as_klass());
+            if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
+              Node* cast_obj = _gvn.transform(new (C, 2) CheckCastPPNode(control(), retnode, sig_type));
+              pop();
+              push(cast_obj);
             }
-            pop();
-            push(retnode);
           }
         } else {
           assert(ct == rt, err_msg_res("unexpected mismatch rt=%d, ct=%d", rt, ct));

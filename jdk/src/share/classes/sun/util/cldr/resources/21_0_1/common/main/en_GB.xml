@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="en"/>
+		<territory type="GB"/>
+	</identity>
+	<characters>
+		<exemplarCharacters type="currencySymbol">[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart>‘</quotationStart>
+		<quotationEnd>’</quotationEnd>
+		<alternateQuotationStart>“</alternateQuotationStart>
+		<alternateQuotationEnd>”</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="buddhist">
+				<dateFormats>
+					<!-- per cldrbug 2835, added from gregorian and adjusted for G -->
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<!-- per cldrbug 2835, added from gregorian and adjusted for G -->
+					<availableFormats>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/y G</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yyyy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="yMd">d/M/yyyy</dateFormatItem>
+						<dateFormatItem id="yMEd">E, d/M/yyyy</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMEd">E, d MMM y</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM yy</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM/yyyy</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} - {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d-d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="h">h:mm-h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm-h:mm a</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="H">HH:mm-HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm-HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="h">h:mm-h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm-h:mm a v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="H">HH:mm-HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm-HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M-M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">dd/MM - dd/MM</greatestDifference>
+							<greatestDifference id="M">dd/MM - dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">E, dd/MM - E, dd/MM</greatestDifference>
+							<greatestDifference id="M">E, dd/MM - E, dd/MM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM-MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">d-d MMM</greatestDifference>
+							<greatestDifference id="M">d MMM - d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">E, d - E, d MMM</greatestDifference>
+							<greatestDifference id="M">E, d MMM - E, d MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y-y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">MM/yyyy - MM/yyyy</greatestDifference>
+							<greatestDifference id="y">MM/yyyy - MM/yyyy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">dd/MM/yyyy - dd/MM/yyyy</greatestDifference>
+							<greatestDifference id="M">dd/MM/yyyy - dd/MM/yyyy</greatestDifference>
+							<greatestDifference id="y">dd/MM/yyyy - dd/MM/yyyy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E, dd/MM/yyyy - E, dd/MM/yyyy</greatestDifference>
+							<greatestDifference id="M">E, dd/MM/yyyy - E, dd/MM/yyyy</greatestDifference>
+							<greatestDifference id="y">E, dd/MM/yyyy - E, dd/MM/yyyy</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">MMM-MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y - MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d-d MMM y</greatestDifference>
+							<greatestDifference id="M">d MMM - d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y - d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E, d - E, d MMM y</greatestDifference>
+							<greatestDifference id="M">E, d MMM - E, d MMM y</greatestDifference>
+							<greatestDifference id="y">E, d MMM y - E, d MMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="islamic">
+				<dateFormats>
+					<!-- per cldrbug 2835, added from gregorian and adjusted for G -->
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<!-- per cldrbug 2835, added from gregorian and adjusted for G -->
+					<availableFormats>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d/M/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM/y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="japanese">
+				<dateFormats>
+					<!-- per cldrbug 2835, added from gregorian and adjusted for G -->
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<!-- per cldrbug 2835, added from gregorian and adjusted for G -->
+					<availableFormats>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="roc">
+				<dateFormats>
+					<!-- per cldrbug 2835, added from gregorian and adjusted for G -->
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y G</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/y GGGGG</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<!-- per cldrbug 2835, added from gregorian and adjusted for G -->
+					<availableFormats>
+						<dateFormatItem id="Md">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
+						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
+						<dateFormatItem id="MMMEd">E d MMM</dateFormatItem>
+						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="yyMMM">MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMd">d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, d/M/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMM">MM/y GGGGG</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<zone type="Europe/London">
+				<short>
+					<daylight>BST</daylight>
+				</short>
+			</zone>
+			<metazone type="Europe_Central">
+				<short>
+					<generic>CET</generic>
+					<standard>CET</standard>
+					<daylight>CEST</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<short>
+					<generic>EET</generic>
+					<standard>EET</standard>
+					<daylight>EEST</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Western">
+				<short>
+					<generic>WET</generic>
+					<standard>WET</standard>
+					<daylight>WEST</daylight>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+</ldml>
+

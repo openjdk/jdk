@@ -33,8 +33,8 @@ package sun.lwawt.macosx;
 public class CFRetainedResource {
     private static native void nativeCFRelease(final long ptr, final boolean disposeOnAppKitThread);
 
-    final boolean disposeOnAppKitThread;
-    protected long ptr;
+    private final boolean disposeOnAppKitThread;
+    protected volatile long ptr;
 
     /**
      * @param ptr CFRetained native object pointer

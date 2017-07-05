@@ -21,6 +21,8 @@
 # questions.
 #  
 #
+include $(GAMMADIR)/make/defs.make
+include $(GAMMADIR)/make/altsrc.make
 
 # Rules to build serviceability agent library, used by vm.make
 
@@ -48,6 +50,8 @@ SASRCFILES = $(SASRCDIR)/salibelf.c                   \
              $(SASRCDIR)/ps_core.c                    \
              $(SASRCDIR)/LinuxDebuggerLocal.c
 
+-include $(HS_ALT_MAKE)/linux/makefiles/saproc.make
+
 SAMAPFILE = $(SASRCDIR)/mapfile
 
 DEST_SAPROC           = $(JDK_LIBDIR)/$(LIBSAPROC)
@@ -60,15 +64,19 @@ ifeq ($(DEBUG_BINARIES), true)
 endif
 
 # if $(AGENT_DIR) does not exist, we don't build SA
-# also, we don't build SA on Itanium, PPC, ARM or zero.
+# also, we don't build SA on Itanium or zero.
 
 ifneq ($(wildcard $(AGENT_DIR)),)
-ifneq ($(filter-out ia64 arm ppc zero,$(SRCARCH)),)
+ifneq ($(filter-out ia64 zero,$(SRCARCH)),)
   BUILDLIBSAPROC = $(LIBSAPROC)
 endif
 endif
 
-
+ifneq ($(ALT_SASRCDIR),)
+ALT_SAINCDIR=-I$(ALT_SASRCDIR)
+else
+ALT_SAINCDIR=
+endif
 SA_LFLAGS = $(MAPFLAG:FILENAME=$(SAMAPFILE)) $(LDFLAGS_HASH_STYLE)
 
 $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
@@ -84,6 +92,7 @@ $(LIBSAPROC): $(SASRCFILES) $(SAMAPFILE)
 	           -I$(GENERATED)                                       \
 	           -I$(BOOT_JAVA_HOME)/include                          \
 	           -I$(BOOT_JAVA_HOME)/include/$(Platform_os_family)    \
+			   $(ALT_SAINCDIR) 										\
 	           $(SASRCFILES)                                        \
 	           $(SA_LFLAGS)                                         \
 	           $(SA_DEBUG_CFLAGS)                                   \

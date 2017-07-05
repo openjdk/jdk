@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.text.MessageFormat;
 import java.util.spi.LocaleNameProvider;
 
 import sun.security.action.GetPropertyAction;
-import sun.util.LocaleServiceProviderPool;
+import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
 import sun.util.locale.LanguageTag;
@@ -59,8 +59,7 @@ import sun.util.locale.LocaleObjectCache;
 import sun.util.locale.LocaleSyntaxException;
 import sun.util.locale.LocaleUtils;
 import sun.util.locale.ParseStatus;
-import sun.util.locale.UnicodeLocaleExtension;
-import sun.util.resources.LocaleData;
+import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.resources.OpenListResourceBundle;
 
 /**
@@ -965,7 +964,7 @@ public final class Locale implements Cloneable, Serializable {
         return result;
     }
 
-    private static final String[] getISO2Table(String table) {
+    private static String[] getISO2Table(String table) {
         int len = table.length() / 5;
         String[] isoTable = new String[len];
         for (int i = 0, j = 0; i < len; i++, j += 5) {
@@ -1034,6 +1033,30 @@ public final class Locale implements Cloneable, Serializable {
     }
 
     /**
+     * Returns {@code true} if this {@code Locale} has any <a href="#def_extensions">
+     * extensions</a>.
+     *
+     * @return {@code true} if this {@code Locale} has any extensions
+     * @since 1.8
+     */
+    public boolean hasExtensions() {
+        return localeExtensions != null;
+    }
+
+    /**
+     * Returns a copy of this {@code Locale} with no <a href="#def_extensions">
+     * extensions</a>. If this {@code Locale} has no extensions, this {@code Locale}
+     * is returned.
+     *
+     * @return a copy of this {@code Locale} with no extensions, or {@code this}
+     *         if {@code this} has no extensions
+     * @since 1.8
+     */
+    public Locale stripExtensions() {
+        return hasExtensions() ? Locale.getInstance(baseLocale, null) : this;
+    }
+
+    /**
      * Returns the extension (or private use) value associated with
      * the specified key, or null if there is no extension
      * associated with the key. To be well-formed, the key must be one
@@ -1052,7 +1075,7 @@ public final class Locale implements Cloneable, Serializable {
         if (!LocaleExtensions.isValidKey(key)) {
             throw new IllegalArgumentException("Ill-formed extension key: " + key);
         }
-        return (localeExtensions == null) ? null : localeExtensions.getExtensionValue(key);
+        return hasExtensions() ? localeExtensions.getExtensionValue(key) : null;
     }
 
     /**
@@ -1065,7 +1088,7 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public Set<Character> getExtensionKeys() {
-        if (localeExtensions == null) {
+        if (!hasExtensions()) {
             return Collections.emptySet();
         }
         return localeExtensions.getKeys();
@@ -1080,7 +1103,7 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public Set<String> getUnicodeLocaleAttributes() {
-        if (localeExtensions == null) {
+        if (!hasExtensions()) {
             return Collections.emptySet();
         }
         return localeExtensions.getUnicodeLocaleAttributes();
@@ -1101,10 +1124,10 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String getUnicodeLocaleType(String key) {
-        if (!UnicodeLocaleExtension.isKey(key)) {
+        if (!isUnicodeExtensionKey(key)) {
             throw new IllegalArgumentException("Ill-formed Unicode locale key: " + key);
         }
-        return (localeExtensions == null) ? null : localeExtensions.getUnicodeLocaleType(key);
+        return hasExtensions() ? localeExtensions.getUnicodeLocaleType(key) : null;
     }
 
     /**
@@ -1285,6 +1308,10 @@ public final class Locale implements Cloneable, Serializable {
      * @since 1.7
      */
     public String toLanguageTag() {
+        if (languageTag != null) {
+            return languageTag;
+        }
+
         LanguageTag tag = LanguageTag.parseLocale(baseLocale, localeExtensions);
         StringBuilder buf = new StringBuilder();
 
@@ -1328,7 +1355,13 @@ public final class Locale implements Cloneable, Serializable {
             buf.append(subtag);
         }
 
-        return buf.toString();
+        String langTag = buf.toString();
+        synchronized (this) {
+            if (languageTag == null) {
+                languageTag = langTag;
+            }
+        }
+        return languageTag;
     }
 
     /**
@@ -1514,7 +1547,7 @@ public final class Locale implements Cloneable, Serializable {
         return country3;
     }
 
-    private static final String getISO3Code(String iso2Code, String table) {
+    private static String getISO3Code(String iso2Code, String table) {
         int codeLength = iso2Code.length();
         if (codeLength == 0) {
             return "";
@@ -1640,33 +1673,16 @@ public final class Locale implements Cloneable, Serializable {
             throw new NullPointerException();
         }
 
-        try {
-            OpenListResourceBundle bundle = LocaleData.getLocaleNames(inLocale);
-            String key = (type == DISPLAY_VARIANT ? "%%"+code : code);
-            String result = null;
-
-            // Check whether a provider can provide an implementation that's closer
-            // to the requested locale than what the Java runtime itself can provide.
-            LocaleServiceProviderPool pool =
-                LocaleServiceProviderPool.getPool(LocaleNameProvider.class);
-            if (pool.hasProviders()) {
-                result = pool.getLocalizedObject(
-                                    LocaleNameGetter.INSTANCE,
-                                    inLocale, bundle, key,
-                                    type, code);
-            }
-
-            if (result == null) {
-                result = bundle.getString(key);
-            }
-
+        LocaleServiceProviderPool pool =
+            LocaleServiceProviderPool.getPool(LocaleNameProvider.class);
+        String key = (type == DISPLAY_VARIANT ? "%%"+code : code);
+        String result = pool.getLocalizedObject(
+                                LocaleNameGetter.INSTANCE,
+                                inLocale, key, type, code);
             if (result != null) {
                 return result;
             }
-        }
-        catch (Exception e) {
-            // just fall through
-        }
+
         return code;
     }
 
@@ -1690,7 +1706,7 @@ public final class Locale implements Cloneable, Serializable {
         if (baseLocale.getVariant().length() == 0)
             return "";
 
-        OpenListResourceBundle bundle = LocaleData.getLocaleNames(inLocale);
+        OpenListResourceBundle bundle = LocaleProviderAdapter.forJRE().getLocaleData().getLocaleNames(inLocale);
 
         String names[] = getDisplayVariantArray(bundle, inLocale);
 
@@ -1748,7 +1764,7 @@ public final class Locale implements Cloneable, Serializable {
      * @throws NullPointerException if <code>inLocale</code> is <code>null</code>
      */
     public String getDisplayName(Locale inLocale) {
-        OpenListResourceBundle bundle = LocaleData.getLocaleNames(inLocale);
+        OpenListResourceBundle bundle = LocaleProviderAdapter.forJRE().getLocaleData().getLocaleNames(inLocale);
 
         String languageName = getDisplayLanguage(inLocale);
         String scriptName = getDisplayScript(inLocale);
@@ -1794,9 +1810,7 @@ public final class Locale implements Cloneable, Serializable {
             names.add(countryName);
         }
         if (variantNames.length != 0) {
-            for (String var : variantNames) {
-                names.add(var);
-            }
+            names.addAll(Arrays.asList(variantNames));
         }
 
         // The first one in the main name
@@ -1843,6 +1857,7 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Overrides Cloneable.
      */
+    @Override
     public Object clone()
     {
         try {
@@ -1910,6 +1925,8 @@ public final class Locale implements Cloneable, Serializable {
     private volatile static Locale defaultDisplayLocale = null;
     private volatile static Locale defaultFormatLocale = null;
 
+    private transient volatile String languageTag;
+
     /**
      * Return an array of the display names of the variant.
      * @param bundle the ResourceBundle to use to get the display names
@@ -1945,9 +1962,11 @@ public final class Locale implements Cloneable, Serializable {
         // If we have no list patterns, compose the list in a simple,
         // non-localized way.
         if (listPattern == null || listCompositionPattern == null) {
-            StringBuffer result = new StringBuffer();
-            for (int i=0; i<stringList.length; ++i) {
-                if (i>0) result.append(',');
+            StringBuilder result = new StringBuilder();
+            for (int i = 0; i < stringList.length; ++i) {
+                if (i > 0) {
+                    result.append(',');
+                }
                 result.append(stringList[i]);
             }
             return result.toString();
@@ -1992,6 +2011,13 @@ public final class Locale implements Cloneable, Serializable {
 
         // Recurse
         return composeList(format, newList);
+    }
+
+    // Duplicate of sun.util.locale.UnicodeLocaleExtension.isKey in order to
+    // avoid its class loading.
+    private static boolean isUnicodeExtensionKey(String s) {
+        // 2alphanum
+        return (s.length() == 2) && LocaleUtils.isAlphaNumericString(s);
     }
 
     /**
@@ -2136,6 +2162,7 @@ public final class Locale implements Cloneable, Serializable {
         implements LocaleServiceProviderPool.LocalizedObjectGetter<LocaleNameProvider, String> {
         private static final LocaleNameGetter INSTANCE = new LocaleNameGetter();
 
+        @Override
         public String getObject(LocaleNameProvider localeNameProvider,
                                 Locale locale,
                                 String key,

@@ -1,0 +1,5315 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6610 $"/>
+		<generation date="$Date: 2012-02-27 09:50:26 +0900 (Mon, 27 Feb 2012) $"/>
+		<language type="ko"/>
+	</identity>
+	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern>{0}({1})</localePattern>
+			<localeSeparator>, </localeSeparator>
+		</localeDisplayPattern>
+		<languages>
+			<language type="aa">아파르어</language>
+			<language type="ab">압카즈어</language>
+			<language type="ace">아체어</language>
+			<language type="ach">아콜리어</language>
+			<language type="ada">아당메어</language>
+			<language type="ady">아닥헤어</language>
+			<language type="ae">아베스타어</language>
+			<language type="af">남아공 공용어</language>
+			<language type="afa">아시아-아프리카어 (기타)</language>
+			<language type="afh">아프리히리어</language>
+			<language type="ain">아이누어</language>
+			<language type="ak">아칸어</language>
+			<language type="akk">아카드어</language>
+			<language type="ale">알류트어</language>
+			<language type="alg">알공킨어족</language>
+			<language type="alt">남부 알타이어</language>
+			<language type="am">암하라어</language>
+			<language type="an">아라곤어</language>
+			<language type="ang">고대 영어</language>
+			<language type="anp">앙가어</language>
+			<language type="apa">아파치어</language>
+			<language type="ar">아랍어</language>
+			<language type="arc">아람어</language>
+			<language type="arn">아라우칸어</language>
+			<language type="arp">아라파호어</language>
+			<language type="art">기계어 (기타)</language>
+			<language type="arw">아라와크어</language>
+			<language type="as">아샘어</language>
+			<language type="ast">아스투리아어</language>
+			<language type="ath">아타파스카어군</language>
+			<language type="aus">오스트레일리아어족</language>
+			<language type="av">아바릭어</language>
+			<language type="awa">아와히어</language>
+			<language type="ay">아이마라어</language>
+			<language type="az">아제르바이잔어</language>
+			<language type="az" alt="short" draft="contributed">아제리어</language>
+			<language type="ba">바슈키르어</language>
+			<language type="bad">반다어</language>
+			<language type="bai">바밀레케어족</language>
+			<language type="bal">발루치어</language>
+			<language type="ban">발리어</language>
+			<language type="bas">바사어</language>
+			<language type="bat">발트어 (기타)</language>
+			<language type="be">벨로루시어</language>
+			<language type="bej">베자어</language>
+			<language type="bem">벰바어</language>
+			<language type="ber">베르베르어</language>
+			<language type="bg">불가리아어</language>
+			<language type="bh">비하르어</language>
+			<language type="bho">호즈푸리어</language>
+			<language type="bi">비슬라마어</language>
+			<language type="bik">비콜어</language>
+			<language type="bin">비니어</language>
+			<language type="bla">식시카어</language>
+			<language type="bm">밤바라어</language>
+			<language type="bn">벵골어</language>
+			<language type="bnt">반투어</language>
+			<language type="bo">티베트어</language>
+			<language type="br">브르타뉴어</language>
+			<language type="bra">브라지어</language>
+			<language type="bs">보스니아어</language>
+			<language type="btk">바타크어</language>
+			<language type="bua">부리아타</language>
+			<language type="bug">부기어</language>
+			<language type="byn">브린어</language>
+			<language type="ca">카탈로니아어</language>
+			<language type="cad">카도어</language>
+			<language type="cai">중앙 아메리카 인디안어 (기타)</language>
+			<language type="car">카리브어</language>
+			<language type="cau">카프카스어 (기타)</language>
+			<language type="cch">아삼어</language>
+			<language type="ce">체첸어</language>
+			<language type="ceb">세부아노어</language>
+			<language type="cel">켈트어 (기타)</language>
+			<language type="ch">차모로어</language>
+			<language type="chb">치브차어</language>
+			<language type="chg">차가타이어</language>
+			<language type="chk">추크어</language>
+			<language type="chm">마리어</language>
+			<language type="chn">치누크어와 영어 프랑스어의 혼성어</language>
+			<language type="cho">촉토어</language>
+			<language type="chp">치페우얀</language>
+			<language type="chr">체로키어</language>
+			<language type="chy">샤이엔어</language>
+			<language type="cmc">참어군</language>
+			<language type="co">코르시카어</language>
+			<language type="cop">콥트어</language>
+			<language type="cpe">크리올어 및 피진어 (영어를 기반으로 한 기타)</language>
+			<language type="cpf">크리올어 및 피진어 (프랑스어를 기반으로 한 기타)</language>
+			<language type="cpp">크리올어 및 피진어 (포르투갈어를 기반으로 한 기타)</language>
+			<language type="cr">크리어</language>
+			<language type="crh">크리민 터키어; 크리민 타타르어</language>
+			<language type="crp">크리올어 및 피진어 (기타)</language>
+			<language type="cs">체코어</language>
+			<language type="csb">카슈비아어</language>
+			<language type="cu">교회 슬라브어</language>
+			<language type="cus">쿠시어족</language>
+			<language type="cv">추바시어</language>
+			<language type="cy">웨일스어</language>
+			<language type="da">덴마크어</language>
+			<language type="dak">다코타어</language>
+			<language type="dar">다르그와어</language>
+			<language type="day">다야크어</language>
+			<language type="de">독일어</language>
+			<language type="de_AT">독일어 (오스트리아)</language>
+			<language type="de_CH">고지 독일어 (스위스)</language>
+			<language type="del">델라웨어어</language>
+			<language type="den">슬라브어</language>
+			<language type="dgr">도그리브어</language>
+			<language type="din">딩카어</language>
+			<language type="doi">도그리어</language>
+			<language type="dra">드라비다어 (기타)</language>
+			<language type="dsb">저지 소르비아어</language>
+			<language type="dua">드와라어</language>
+			<language type="dum">중세 네덜란드어</language>
+			<language type="dv">디베히어</language>
+			<language type="dyu">드율라어</language>
+			<language type="dz">종카어</language>
+			<language type="ee">에웨어</language>
+			<language type="efi">이픽어</language>
+			<language type="egy">이집트어 (고대)</language>
+			<language type="eka">이카죽어</language>
+			<language type="el">그리스어</language>
+			<language type="elx">엘람어</language>
+			<language type="en">영어</language>
+			<language type="en_AU">영어(호주)</language>
+			<language type="en_CA">영어 (캐나다)</language>
+			<language type="en_GB">영어 (영국식)</language>
+			<language type="en_US">영어 (미국식)</language>
+			<language type="enm">영어, 중세 (1100-1500)</language>
+			<language type="eo">에스페란토어</language>
+			<language type="es">스페인어</language>
+			<language type="es_419">중남미 스페인어</language>
+			<language type="es_ES">스페인어 (이베리아)</language>
+			<language type="et">에스토니아어</language>
+			<language type="eu">바스크어</language>
+			<language type="ewo">이원도어</language>
+			<language type="fa">페르시아어</language>
+			<language type="fan">팡그어</language>
+			<language type="fat">판티어</language>
+			<language type="ff">풀라어</language>
+			<language type="fi">핀란드어</language>
+			<language type="fil">필리핀어</language>
+			<language type="fiu">피노우그리아어 (기타)</language>
+			<language type="fj">피지어</language>
+			<language type="fo">페로어</language>
+			<language type="fon">폰어</language>
+			<language type="fr">프랑스어</language>
+			<language type="fr_CA">프랑스어 (캐나다)</language>
+			<language type="fr_CH">프랑스어 (스위스)</language>
+			<language type="frm">중세 프랑스어</language>
+			<language type="fro">고대 프랑스어</language>
+			<language type="frr">북부 프리슬란드어</language>
+			<language type="frs">동부 프리슬란드어</language>
+			<language type="fur">프리우리안어</language>
+			<language type="fy">프리지아어</language>
+			<language type="ga">아일랜드어</language>
+			<language type="gaa">가어</language>
+			<language type="gay">가요어</language>
+			<language type="gba">그바야어</language>
+			<language type="gd">스코틀랜드 게일어</language>
+			<language type="gem">독일어 (기타)</language>
+			<language type="gez">게이즈어</language>
+			<language type="gil">키리바시어</language>
+			<language type="gl">갈리시아어</language>
+			<language type="gmh">중세 고지 독일어</language>
+			<language type="gn">과라니어</language>
+			<language type="goh">고대 고지 독일어</language>
+			<language type="gon">곤디어</language>
+			<language type="gor">고론탈로어</language>
+			<language type="got">고트어</language>
+			<language type="grb">게르보어</language>
+			<language type="grc">그리스어, 고대 (1453년 까지)</language>
+			<language type="gsw">독일어(스위스)</language>
+			<language type="gu">구자라트어</language>
+			<language type="gv">맹크스어</language>
+			<language type="gwi">그위친어</language>
+			<language type="ha">하우사어</language>
+			<language type="hai">하이다어</language>
+			<language type="haw">하와이어</language>
+			<language type="he">히브리어</language>
+			<language type="hi">힌디어</language>
+			<language type="hil">헤리가뇬어</language>
+			<language type="him">히마차리어</language>
+			<language type="hit">하타이트어</language>
+			<language type="hmn">히몸어</language>
+			<language type="ho">히리 모투어</language>
+			<language type="hr">크로아티아어</language>
+			<language type="hsb">고지 소르비아어</language>
+			<language type="ht">아이티어</language>
+			<language type="hu">헝가리어</language>
+			<language type="hup">후파어</language>
+			<language type="hy">아르메니아어</language>
+			<language type="hz">헤레로어</language>
+			<language type="ia">인테르링구아 (국제보조어협회)</language>
+			<language type="iba">이반어</language>
+			<language type="id">인도네시아어</language>
+			<language type="ie">인테르링구에</language>
+			<language type="ig">이그보어</language>
+			<language type="ii">쓰촨 이어</language>
+			<language type="ijo">이조어</language>
+			<language type="ik">이누피아크어</language>
+			<language type="ilo">이로코어</language>
+			<language type="inc">인도어 (기타)</language>
+			<language type="ine">인도유럽어 (기타)</language>
+			<language type="inh">인귀시어</language>
+			<language type="io">이도어</language>
+			<language type="ira">이란어</language>
+			<language type="iro">이러쿼이어</language>
+			<language type="is">아이슬란드어</language>
+			<language type="it">이탈리아어</language>
+			<language type="iu">이눅티투트어</language>
+			<language type="ja">일본어</language>
+			<language type="jbo">로반어</language>
+			<language type="jpr">유대-페르시아어</language>
+			<language type="jrb">유대-아라비아어</language>
+			<language type="jv">자바어</language>
+			<language type="ka">그루지야어</language>
+			<language type="kaa">카라칼파크어</language>
+			<language type="kab">커바일어</language>
+			<language type="kac">카친어</language>
+			<language type="kam">캄바어</language>
+			<language type="kar">카렌어</language>
+			<language type="kaw">카위어</language>
+			<language type="kbd">카바르디어</language>
+			<language type="kfo">코로어</language>
+			<language type="kg">콩고어</language>
+			<language type="kha">카시어</language>
+			<language type="khi">코이산어 (기타)</language>
+			<language type="kho">호탄어</language>
+			<language type="ki">키쿠유어</language>
+			<language type="kj">쿠안야마어</language>
+			<language type="kk">카자흐어</language>
+			<language type="kl">그린란드어</language>
+			<language type="km">캄보디아어</language>
+			<language type="kmb">킴분두어</language>
+			<language type="kn">카나다어</language>
+			<language type="ko">한국어</language>
+			<language type="kok">코카니어</language>
+			<language type="kos">코스라이엔어</language>
+			<language type="kpe">크펠레어</language>
+			<language type="kr">칸누리어</language>
+			<language type="krc">카라챠이-발카르어</language>
+			<language type="krl">카렐리야어</language>
+			<language type="kro">크루어</language>
+			<language type="kru">쿠르크어</language>
+			<language type="ks">카슈미르어</language>
+			<language type="ku">쿠르드어</language>
+			<language type="kum">쿠믹어</language>
+			<language type="kut">쿠테네어</language>
+			<language type="kv">코미어</language>
+			<language type="kw">콘월어</language>
+			<language type="ky">키르기스어</language>
+			<language type="la">라틴어</language>
+			<language type="lad">라디노어</language>
+			<language type="lah">라한다어</language>
+			<language type="lam">람바어</language>
+			<language type="lb">룩셈부르크어</language>
+			<language type="lez">레즈기안어</language>
+			<language type="lg">간다어</language>
+			<language type="li">림버거어</language>
+			<language type="ln">링갈라어</language>
+			<language type="lo">라오어</language>
+			<language type="lol">몽구어</language>
+			<language type="loz">로지어</language>
+			<language type="lt">리투아니아어</language>
+			<language type="lu">루바-카탄가어</language>
+			<language type="lua">루바-룰루아어</language>
+			<language type="lui">루이세노어</language>
+			<language type="lun">룬다어</language>
+			<language type="luo">루오어</language>
+			<language type="lus">루샤이어</language>
+			<language type="lv">라트비아어</language>
+			<language type="mad">마두라어</language>
+			<language type="mag">마가히</language>
+			<language type="mai">마이틸리</language>
+			<language type="mak">마카사어</language>
+			<language type="man">만딩고어</language>
+			<language type="map">남도어</language>
+			<language type="mas">마사이어</language>
+			<language type="mdf">모크샤어</language>
+			<language type="mdr">만다르어</language>
+			<language type="men">멘데어</language>
+			<language type="mg">마다가스카르어</language>
+			<language type="mga">아일랜드어, 중세 (900-1200)</language>
+			<language type="mh">마셜제도어</language>
+			<language type="mi">마오리어</language>
+			<language type="mic">미크맥어</language>
+			<language type="min">미낭카바우</language>
+			<language type="mis">기타 언어</language>
+			<language type="mk">마케도니아어</language>
+			<language type="mkh">몬크메르어 (기타)</language>
+			<language type="ml">말라얄람어</language>
+			<language type="mn">몽고어</language>
+			<language type="mnc">만주어</language>
+			<language type="mni">마니푸리어</language>
+			<language type="mno">마노보어</language>
+			<language type="mo">몰도바어</language>
+			<language type="moh">모호크어</language>
+			<language type="mos">모시어</language>
+			<language type="mr">마라티어</language>
+			<language type="ms">말레이어</language>
+			<language type="mt">몰타어</language>
+			<language type="mul">다중 언어</language>
+			<language type="mun">문다어</language>
+			<language type="mus">크리크어</language>
+			<language type="mwl">미란데어</language>
+			<language type="mwr">마르와리어</language>
+			<language type="my">버마어</language>
+			<language type="myn">마야어</language>
+			<language type="myv">엘즈야어</language>
+			<language type="na">나우루어</language>
+			<language type="nah">나우아틀어</language>
+			<language type="nai">북아메리카 인디언어 (기타)</language>
+			<language type="nap">나폴리어</language>
+			<language type="nb">노르웨이어(보크말)</language>
+			<language type="nd">북부 은데벨레어</language>
+			<language type="nds">저지 독일어</language>
+			<language type="ne">네팔어</language>
+			<language type="new">네와르어</language>
+			<language type="ng">느동가어</language>
+			<language type="nia">니아스어</language>
+			<language type="nic">니제르 - 코르도파니아어 (기타)</language>
+			<language type="niu">니웨언어</language>
+			<language type="nl">네덜란드어</language>
+			<language type="nl_BE">플라망어</language>
+			<language type="nn">노르웨이어(니노르스크)</language>
+			<language type="no">노르웨이어</language>
+			<language type="nog">노가이어</language>
+			<language type="non">노르웨이, 고대</language>
+			<language type="nqo">응코어</language>
+			<language type="nr">남부 은데벨레어</language>
+			<language type="nso">소토어 (북부)</language>
+			<language type="nub">누비안어</language>
+			<language type="nv">나바호어</language>
+			<language type="nwc">네와르어 (고전)</language>
+			<language type="ny">니안자어; 치츄어; 츄어</language>
+			<language type="nym">니암웨지어</language>
+			<language type="nyn">니안콜어</language>
+			<language type="nyo">뉴로어</language>
+			<language type="nzi">느지마어</language>
+			<language type="oc">오크어</language>
+			<language type="oj">오지브웨이어</language>
+			<language type="om">오로모어 (아판)</language>
+			<language type="or">오리야어</language>
+			<language type="os">오세트어</language>
+			<language type="osa">오세이지어</language>
+			<language type="ota">터키어, 오스만 (1500-1928)</language>
+			<language type="oto">오토미안어</language>
+			<language type="pa">펀잡어</language>
+			<language type="paa">파푸아어 (기타)</language>
+			<language type="pag">판가시난어</language>
+			<language type="pal">팔레비어</language>
+			<language type="pam">팜팡가어</language>
+			<language type="pap">파피아먼토어</language>
+			<language type="pau">파라우안어</language>
+			<language type="peo">고대 페르시아어</language>
+			<language type="phi">필리핀어 (기타)</language>
+			<language type="phn">페니키아어</language>
+			<language type="pi">팔리어</language>
+			<language type="pl">폴란드어</language>
+			<language type="pon">폼페이어</language>
+			<language type="pra">프라크리트어</language>
+			<language type="pro">고대 프로방스어</language>
+			<language type="ps">파시토어 (푸시토)</language>
+			<language type="ps" alt="variant" draft="contributed">파슈토어</language>
+			<language type="pt">포르투갈어</language>
+			<language type="pt_BR">포르투갈어 (브라질)</language>
+			<language type="pt_PT">포르투갈어 (이베리아)</language>
+			<language type="qu">케추아어</language>
+			<language type="raj">라자스탄어</language>
+			<language type="rap">라파뉴이</language>
+			<language type="rar">라로통가어</language>
+			<language type="rm">레토로만어</language>
+			<language type="rn">룬디어</language>
+			<language type="ro">루마니아어</language>
+			<language type="roa">로망스어 (기타)</language>
+			<language type="rom">집시어</language>
+			<language type="root">어근</language>
+			<language type="ru">러시아어</language>
+			<language type="rup">아로마니아어</language>
+			<language type="rw">르완다어</language>
+			<language type="sa">산스크리트어</language>
+			<language type="sad">산다웨어</language>
+			<language type="sah">야큐트어</language>
+			<language type="sai">남아메리카 인디언어 (기타)</language>
+			<language type="sal">샐리시어어</language>
+			<language type="sam">사마리아 아랍어</language>
+			<language type="sas">사사크어</language>
+			<language type="sat">산탈리어</language>
+			<language type="sc">사르디니아어</language>
+			<language type="scn">시칠리아어</language>
+			<language type="sco">스코틀랜드어</language>
+			<language type="sd">신디어</language>
+			<language type="se">북부 사미어</language>
+			<language type="sel">셀쿠프어</language>
+			<language type="sem">셈어 (기타)</language>
+			<language type="sg">산고어</language>
+			<language type="sga">아일랜드, 고대 (900년 까지)</language>
+			<language type="sgn">수화</language>
+			<language type="sh">세르비아-크로아티아어</language>
+			<language type="shn">샨어</language>
+			<language type="si">스리랑카어</language>
+			<language type="sid">시다모어</language>
+			<language type="sio">수족어</language>
+			<language type="sit">중국 티베트 어족</language>
+			<language type="sk">슬로바키아어</language>
+			<language type="sl">슬로베니아어</language>
+			<language type="sla">슬라브어 (기타)</language>
+			<language type="sm">사모아어</language>
+			<language type="sma">남부 사미어</language>
+			<language type="smi">사미어 (기타)</language>
+			<language type="smj">룰레 사미어</language>
+			<language type="smn">이나리 사미어</language>
+			<language type="sms">스콜트 사미어</language>
+			<language type="sn">쇼나어</language>
+			<language type="snk">소닌케어</language>
+			<language type="so">소말리아어</language>
+			<language type="sog">소그디엔어</language>
+			<language type="son">송가이족어</language>
+			<language type="sq">알바니아어</language>
+			<language type="sr">세르비아어</language>
+			<language type="srn">스라난 통가어</language>
+			<language type="srr">세레르어</language>
+			<language type="ss">시스와티어</language>
+			<language type="ssa">니로-사하람어 (기타)</language>
+			<language type="st">소토어 (남부)</language>
+			<language type="su">순다어</language>
+			<language type="suk">수쿠마족어</language>
+			<language type="sus">수수어</language>
+			<language type="sux">수메르어</language>
+			<language type="sv">스웨덴어</language>
+			<language type="sw">스와힐리어</language>
+			<language type="swb" draft="provisional">코모로어</language>
+			<language type="syc">시리아어 (고전)</language>
+			<language type="syr">시리아어</language>
+			<language type="ta">타밀어</language>
+			<language type="tai">태국어 (기타)</language>
+			<language type="te">텔루구어</language>
+			<language type="tem">팀니어</language>
+			<language type="ter">테레노어</language>
+			<language type="tet">테툼어</language>
+			<language type="tg">타지키스탄어</language>
+			<language type="th">태국어</language>
+			<language type="ti">티그리냐어</language>
+			<language type="tig">티그레어</language>
+			<language type="tiv">티비어</language>
+			<language type="tk">투르크멘어</language>
+			<language type="tkl">토켈라우제도어</language>
+			<language type="tl">타갈로그어</language>
+			<language type="tlh">클링온어</language>
+			<language type="tli">틀링깃족어</language>
+			<language type="tmh">타마섹어</language>
+			<language type="tn">세츠와나어</language>
+			<language type="to">통가어</language>
+			<language type="tog">통가어 (니아살랜드)</language>
+			<language type="tpi">토크 피신어</language>
+			<language type="tr">터키어</language>
+			<language type="ts">총가어</language>
+			<language type="tsi">트심시안어</language>
+			<language type="tt">타타르어</language>
+			<language type="tum">툼부카어</language>
+			<language type="tup">투피어</language>
+			<language type="tut">알타이제어 (기타)</language>
+			<language type="tvl">투발루어</language>
+			<language type="tw">트위어</language>
+			<language type="ty">타히티어</language>
+			<language type="tyv">투비니안어</language>
+			<language type="udm">우드말트어</language>
+			<language type="ug">위구르어</language>
+			<language type="ug" alt="variant" draft="contributed">위구르어</language>
+			<language type="uga">유가리틱어</language>
+			<language type="uk">우크라이나어</language>
+			<language type="umb">윤번두어</language>
+			<language type="und">알 수 없는 언어</language>
+			<language type="ur">우르두어</language>
+			<language type="uz">우즈베크어</language>
+			<language type="vai">바이어</language>
+			<language type="ve">벤다어</language>
+			<language type="vi">베트남어</language>
+			<language type="vo">볼라퓌크어</language>
+			<language type="vot">보틱어</language>
+			<language type="wa">왈론어</language>
+			<language type="wak">와카샨어</language>
+			<language type="wal">와라모어</language>
+			<language type="war">와라이어</language>
+			<language type="was">와쇼어</language>
+			<language type="wen">소르브어</language>
+			<language type="wo">올로프어</language>
+			<language type="xal">칼미크어</language>
+			<language type="xh">코사어</language>
+			<language type="yao">야오족어</language>
+			<language type="yap">얍페세어</language>
+			<language type="yi">이디시어</language>
+			<language type="yo">요루바어</language>
+			<language type="ypk">야픽어</language>
+			<language type="yue" draft="provisional">광둥어</language>
+			<language type="za">주앙어</language>
+			<language type="zap">사포테크어</language>
+			<language type="zbl">블리스 심볼</language>
+			<language type="zen">제나가어</language>
+			<language type="zh">중국어</language>
+			<language type="zh_Hans">중국어(간체)</language>
+			<language type="zh_Hant">중국어(번체)</language>
+			<language type="znd">아잔데족어</language>
+			<language type="zu">줄루어</language>
+			<language type="zun">주니어</language>
+			<language type="zxx">언어 관련 내용 없음</language>
+			<language type="zza">자자어</language>
+		</languages>
+		<scripts>
+			<script type="Arab">아랍 문자</script>
+			<script type="Arab" alt="variant" draft="contributed">페르소-아라비아어</script>
+			<script type="Armn">아르메니아 문자</script>
+			<script type="Bali">발리 문자</script>
+			<script type="Batk">바타크 문자</script>
+			<script type="Beng">벵골 문자</script>
+			<script type="Blis">블리스기호 문자</script>
+			<script type="Bopo">주음부호</script>
+			<script type="Brah">브라미</script>
+			<script type="Brai">브라유 점자</script>
+			<script type="Bugi">부기 문자</script>
+			<script type="Buhd">부히드 문자</script>
+			<script type="Cans">통합 캐나다 토착어</script>
+			<script type="Cari">카리 문자</script>
+			<script type="Cham">칸 고어</script>
+			<script type="Cher">체로키 문자</script>
+			<script type="Cirt">키르쓰</script>
+			<script type="Copt">콥트 문자</script>
+			<script type="Cprt">키프로스 문자</script>
+			<script type="Cyrl">키릴 문자</script>
+			<script type="Cyrs">고대교회슬라브어 키릴문자</script>
+			<script type="Deva">데바나가리 문자</script>
+			<script type="Dsrt">디저렛 문자</script>
+			<script type="Egyd">고대 이집트 민중문자</script>
+			<script type="Egyh">고대 이집트 신관문자</script>
+			<script type="Egyp">고대 이집트 신성문자</script>
+			<script type="Ethi">에티오피아 문자</script>
+			<script type="Geor">그루지야 문자</script>
+			<script type="Glag">글라골 문자</script>
+			<script type="Goth">고트 문자</script>
+			<script type="Grek">그리스 문자</script>
+			<script type="Gujr">구쟈라티 문자</script>
+			<script type="Guru">구르무키 문자</script>
+			<script type="Hang">한글</script>
+			<script type="Hani">한자</script>
+			<script type="Hano">하누누 문자</script>
+			<script type="Hans">한자(간체)</script>
+			<script type="Hans" alt="stand-alone" draft="contributed">한자 간체</script>
+			<script type="Hant">한자(번체)</script>
+			<script type="Hant" alt="stand-alone" draft="contributed">한자 번체</script>
+			<script type="Hebr">히브리 문자</script>
+			<script type="Hira">히라가나</script>
+			<script type="Hmng" draft="contributed">파하우 몽 문자</script>
+			<script type="Hrkt">가나</script>
+			<script type="Hung">고대 헝가리 문자</script>
+			<script type="Inds">인더스 문자</script>
+			<script type="Ital">고대 이탈리아 문자</script>
+			<script type="Java">자바 문자</script>
+			<script type="Jpan">일본 문자</script>
+			<script type="Kali">카야 리 문자</script>
+			<script type="Kana">가타카나</script>
+			<script type="Khar">카로슈티 문자</script>
+			<script type="Khmr">크메르 문자</script>
+			<script type="Knda">칸나다 문자</script>
+			<script type="Kore">한국어</script>
+			<script type="Lana">란나 문자</script>
+			<script type="Laoo">라오 문자</script>
+			<script type="Latf">독일식 로마자</script>
+			<script type="Latg">아일랜드식 로마자</script>
+			<script type="Latn">로마자</script>
+			<script type="Lepc">렙차 문자</script>
+			<script type="Limb">림부 문자</script>
+			<script type="Lina">선형 문자(A)</script>
+			<script type="Linb">선형 문자(B)</script>
+			<script type="Lyci">리키아 문자</script>
+			<script type="Lydi">리디아 문자</script>
+			<script type="Mand">만다이아 문자</script>
+			<script type="Maya">마야 상형 문자</script>
+			<script type="Mero">메로에 문자</script>
+			<script type="Mlym">말라얄람 문자</script>
+			<script type="Mong">몽골 문자</script>
+			<script type="Mymr">미얀마 문자</script>
+			<script type="Nkoo" draft="contributed">응코 문자</script>
+			<script type="Ogam" draft="contributed">오검 문자</script>
+			<script type="Olck" draft="contributed">올 치키 문자</script>
+			<script type="Orkh" draft="contributed">오르혼어</script>
+			<script type="Orya">오리야 문자</script>
+			<script type="Osma">오스마니아 문자</script>
+			<script type="Perm">고대 페름 문자</script>
+			<script type="Phag" draft="contributed">파스파 문자</script>
+			<script type="Phnx" draft="contributed">페니키아 문자</script>
+			<script type="Plrd" draft="contributed">폴라드 표음 문자</script>
+			<script type="Rjng" draft="contributed">레장 문자</script>
+			<script type="Roro" draft="contributed">롱고롱고</script>
+			<script type="Runr">룬 문자</script>
+			<script type="Sara" draft="contributed">사라티</script>
+			<script type="Saur" draft="contributed">사우라슈트라 문자</script>
+			<script type="Sgnw" draft="contributed">수화 문자</script>
+			<script type="Shaw">샤비안 문자</script>
+			<script type="Sinh">신할라 문자</script>
+			<script type="Sund" draft="contributed">순다 문자</script>
+			<script type="Sylo" draft="contributed">실헤티 나가리</script>
+			<script type="Syrc">시리아 문자</script>
+			<script type="Syre">에스트랑겔로식 시리아 문자</script>
+			<script type="Syrj">서부 시리아 문자</script>
+			<script type="Syrn">동부 시리아 문자</script>
+			<script type="Tagb">타그반와 문자</script>
+			<script type="Tale">타이 레 문자</script>
+			<script type="Talu">신 타이 루에</script>
+			<script type="Taml">타밀 문자</script>
+			<script type="Telu">텔루구 문자</script>
+			<script type="Teng">텡과르 문자</script>
+			<script type="Tfng">티피나그 문자</script>
+			<script type="Tglg">타갈로그 문자</script>
+			<script type="Thaa">타나 문자</script>
+			<script type="Thai">타이 문자</script>
+			<script type="Tibt">티베트 문자</script>
+			<script type="Ugar">우가리트 문자</script>
+			<script type="Vaii">바이 문자</script>
+			<script type="Visp" draft="contributed">시화법</script>
+			<script type="Xpeo">고대 페르시아 문자</script>
+			<script type="Xsux" draft="contributed">수메르-아카드어 설형문자</script>
+			<script type="Yiii">이 문자</script>
+			<script type="Zsym" draft="contributed">기호</script>
+			<script type="Zxxx" draft="contributed">구전</script>
+			<script type="Zyyy">일반 문자</script>
+			<script type="Zzzz">기록되지 않은 문자(구전)</script>
+		</scripts>
+		<territories>
+			<territory type="001">세계</territory>
+			<territory type="002">아프리카</territory>
+			<territory type="003">북아메리카</territory>
+			<territory type="005">남아메리카[남미]</territory>
+			<territory type="009">오세아니아</territory>
+			<territory type="011">서아프리카</territory>
+			<territory type="013">중앙 아메리카</territory>
+			<territory type="014">동부 아프리카</territory>
+			<territory type="015">북부 아프리카</territory>
+			<territory type="017">중부 아프리카</territory>
+			<territory type="018">남부 아프리카</territory>
+			<territory type="019">아메리카 대륙</territory>
+			<territory type="021">북부 아메리카</territory>
+			<territory type="029">카리브 해 제도</territory>
+			<territory type="030">동아시아</territory>
+			<territory type="034">남아시아</territory>
+			<territory type="035">동남 아시아</territory>
+			<territory type="039">남유럽</territory>
+			<territory type="053">오스트레일리아와 뉴질랜드</territory>
+			<territory type="054">멜라네시아</territory>
+			<territory type="057">미크로네시아 지역</territory>
+			<territory type="061">폴리네시아</territory>
+			<territory type="142">아시아</territory>
+			<territory type="143">중앙 아시아</territory>
+			<territory type="145">서아시아</territory>
+			<territory type="150">유럽</territory>
+			<territory type="151">동유럽</territory>
+			<territory type="154">북유럽</territory>
+			<territory type="155">서유럽</territory>
+			<territory type="419">라틴 아메리카</territory>
+			<territory type="AC" draft="contributed">어센션 섬</territory>
+			<territory type="AD">안도라</territory>
+			<territory type="AE">아랍에미리트 연합</territory>
+			<territory type="AF">아프가니스탄</territory>
+			<territory type="AG">앤티가 바부다</territory>
+			<territory type="AI">안길라</territory>
+			<territory type="AL">알바니아</territory>
+			<territory type="AM">아르메니아</territory>
+			<territory type="AN">네덜란드령 안틸레스</territory>
+			<territory type="AO">앙골라</territory>
+			<territory type="AQ">남극 대륙</territory>
+			<territory type="AR">아르헨티나</territory>
+			<territory type="AS">아메리칸 사모아</territory>
+			<territory type="AT">오스트리아</territory>
+			<territory type="AU">오스트레일리아</territory>
+			<territory type="AW">아루바</territory>
+			<territory type="AX">올란드 제도</territory>
+			<territory type="AZ">아제르바이잔</territory>
+			<territory type="BA">보스니아 헤르체고비나</territory>
+			<territory type="BB">바베이도스</territory>
+			<territory type="BD">방글라데시</territory>
+			<territory type="BE">벨기에</territory>
+			<territory type="BF">부르키나파소</territory>
+			<territory type="BG">불가리아</territory>
+			<territory type="BH">바레인</territory>
+			<territory type="BI">부룬디</territory>
+			<territory type="BJ">베냉</territory>
+			<territory type="BL">생 바르텔르미</territory>
+			<territory type="BM">버뮤다</territory>
+			<territory type="BN">브루나이</territory>
+			<territory type="BO">볼리비아</territory>
+			<territory type="BR">브라질</territory>
+			<territory type="BS">바하마</territory>
+			<territory type="BT">부탄</territory>
+			<territory type="BV">부베</territory>
+			<territory type="BW">보츠와나</territory>
+			<territory type="BY">벨라루스</territory>
+			<territory type="BZ">벨리즈</territory>
+			<territory type="CA">캐나다</territory>
+			<territory type="CC">코코스제도</territory>
+			<territory type="CD">콩고-킨샤사</territory>
+			<territory type="CD" alt="variant">콩고민주공화국</territory>
+			<territory type="CF">중앙 아프리카 공화국</territory>
+			<territory type="CG">콩고</territory>
+			<territory type="CG" alt="variant">콩고 공화국</territory>
+			<territory type="CH">스위스</territory>
+			<territory type="CI">코트디부아르</territory>
+			<territory type="CI" alt="variant">코트디부아르</territory>
+			<territory type="CK">쿡제도</territory>
+			<territory type="CL">칠레</territory>
+			<territory type="CM">카메룬</territory>
+			<territory type="CN">중국</territory>
+			<territory type="CO">콜롬비아</territory>
+			<territory type="CP">클립퍼튼 섬</territory>
+			<territory type="CR">코스타리카</territory>
+			<territory type="CS">세르비아 및 몬테네그로</territory>
+			<territory type="CU">쿠바</territory>
+			<territory type="CV">까뽀베르데</territory>
+			<territory type="CX">크리스마스섬</territory>
+			<territory type="CY">사이프러스</territory>
+			<territory type="CZ">체코</territory>
+			<territory type="DE">독일</territory>
+			<territory type="DG" draft="contributed">디에고 가르시아</territory>
+			<territory type="DJ">지부티</territory>
+			<territory type="DK">덴마크</territory>
+			<territory type="DM">도미니카</territory>
+			<territory type="DO">도미니카 공화국</territory>
+			<territory type="DZ">알제리</territory>
+			<territory type="EA">세우타 및 멜리야</territory>
+			<territory type="EC">에콰도르</territory>
+			<territory type="EE">에스토니아</territory>
+			<territory type="EG">이집트</territory>
+			<territory type="EH">서사하라</territory>
+			<territory type="ER">에리트리아</territory>
+			<territory type="ES">스페인</territory>
+			<territory type="ET">이디오피아</territory>
+			<territory type="EU">유럽 연합</territory>
+			<territory type="FI">핀란드</territory>
+			<territory type="FJ">피지</territory>
+			<territory type="FK">포클랜드 제도</territory>
+			<territory type="FK" alt="variant">포클랜드 제도[말비나스 군도]</territory>
+			<territory type="FM">미크로네시아</territory>
+			<territory type="FO">페로제도</territory>
+			<territory type="FR">프랑스</territory>
+			<territory type="GA">가봉</territory>
+			<territory type="GB">영국</territory>
+			<territory type="GD">그레나다</territory>
+			<territory type="GE">그루지야</territory>
+			<territory type="GF">프랑스령 기아나</territory>
+			<territory type="GG">건지</territory>
+			<territory type="GH">가나</territory>
+			<territory type="GI">지브롤터</territory>
+			<territory type="GL">그린란드</territory>
+			<territory type="GM">감비아</territory>
+			<territory type="GN">기니</territory>
+			<territory type="GP">과들루프</territory>
+			<territory type="GQ">적도 기니</territory>
+			<territory type="GR">그리스</territory>
+			<territory type="GS">사우스조지아 사우스샌드위치 제도</territory>
+			<territory type="GT">과테말라</territory>
+			<territory type="GU">괌</territory>
+			<territory type="GW">기네비쏘</territory>
+			<territory type="GY">가이아나</territory>
+			<territory type="HK">홍콩, 중국 특별행정구</territory>
+			<territory type="HK" alt="short">홍콩</territory>
+			<territory type="HM">허드섬-맥도널드제도</territory>
+			<territory type="HN">온두라스</territory>
+			<territory type="HR">크로아티아</territory>
+			<territory type="HT">아이티</territory>
+			<territory type="HU">헝가리</territory>
+			<territory type="IC" draft="contributed">카나리아 제도</territory>
+			<territory type="ID">인도네시아</territory>
+			<territory type="IE">아일랜드</territory>
+			<territory type="IL">이스라엘</territory>
+			<territory type="IM">맨 섬</territory>
+			<territory type="IN">인도</territory>
+			<territory type="IO">영국령인도양식민지</territory>
+			<territory type="IQ">이라크</territory>
+			<territory type="IR">이란</territory>
+			<territory type="IS">아이슬란드</territory>
+			<territory type="IT">이탈리아</territory>
+			<territory type="JE">저지</territory>
+			<territory type="JM">자메이카</territory>
+			<territory type="JO">요르단</territory>
+			<territory type="JP">일본</territory>
+			<territory type="KE">케냐</territory>
+			<territory type="KG">키르기스스탄</territory>
+			<territory type="KH">캄보디아</territory>
+			<territory type="KI">키리바시</territory>
+			<territory type="KM">코모로스</territory>
+			<territory type="KN">세인트크리스토퍼 네비스</territory>
+			<territory type="KP">조선 민주주의 인민 공화국</territory>
+			<territory type="KR">대한민국</territory>
+			<territory type="KW">쿠웨이트</territory>
+			<territory type="KY">케이맨제도</territory>
+			<territory type="KZ">카자흐스탄</territory>
+			<territory type="LA">라오스</territory>
+			<territory type="LB">레바논</territory>
+			<territory type="LC">세인트루시아</territory>
+			<territory type="LI">리히텐슈타인</territory>
+			<territory type="LK">스리랑카</territory>
+			<territory type="LR">라이베리아</territory>
+			<territory type="LS">레소토</territory>
+			<territory type="LT">리투아니아</territory>
+			<territory type="LU">룩셈부르크</territory>
+			<territory type="LV">라트비아</territory>
+			<territory type="LY">리비아</territory>
+			<territory type="MA">모로코</territory>
+			<territory type="MC">모나코</territory>
+			<territory type="MD">몰도바</territory>
+			<territory type="ME">몬테네그로</territory>
+			<territory type="MF">생 마르탱</territory>
+			<territory type="MG">마다가스카르</territory>
+			<territory type="MH">마샬 군도</territory>
+			<territory type="MK">마케도니아</territory>
+			<territory type="MK" alt="variant">마케도니아[FYROM]</territory>
+			<territory type="ML">말리</territory>
+			<territory type="MM">미얀마</territory>
+			<territory type="MN">몽골</territory>
+			<territory type="MO">마카오, 중국 특별행정구</territory>
+			<territory type="MO" alt="short">마카오</territory>
+			<territory type="MP">북마리아나제도</territory>
+			<territory type="MQ">말티니크</territory>
+			<territory type="MR">모리타니</territory>
+			<territory type="MS">몬트세라트</territory>
+			<territory type="MT">몰타</territory>
+			<territory type="MU">모리셔스</territory>
+			<territory type="MV">몰디브</territory>
+			<territory type="MW">말라위</territory>
+			<territory type="MX">멕시코</territory>
+			<territory type="MY">말레이시아</territory>
+			<territory type="MZ">모잠비크</territory>
+			<territory type="NA">나미비아</territory>
+			<territory type="NC">뉴 칼레도니아</territory>
+			<territory type="NE">니제르</territory>
+			<territory type="NF">노퍽섬</territory>
+			<territory type="NG">나이지리아</territory>
+			<territory type="NI">니카라과</territory>
+			<territory type="NL">네덜란드</territory>
+			<territory type="NO">노르웨이</territory>
+			<territory type="NP">네팔</territory>
+			<territory type="NR">나우루</territory>
+			<territory type="NU">니우에</territory>
+			<territory type="NZ">뉴질랜드</territory>
+			<territory type="OM">오만</territory>
+			<territory type="PA">파나마</territory>
+			<territory type="PE">페루</territory>
+			<territory type="PF">프랑스령 폴리네시아</territory>
+			<territory type="PG">파푸아뉴기니</territory>
+			<territory type="PH">필리핀</territory>
+			<territory type="PK">파키스탄</territory>
+			<territory type="PL">폴란드</territory>
+			<territory type="PM">세인트피에르-미케롱</territory>
+			<territory type="PN">핏케언섬</territory>
+			<territory type="PR">푸에르토리코</territory>
+			<territory type="PS">팔레스타인 지구</territory>
+			<territory type="PT">포르투갈</territory>
+			<territory type="PW">팔라우</territory>
+			<territory type="PY">파라과이</territory>
+			<territory type="QA">카타르</territory>
+			<territory type="QO">오세아니아 외곽</territory>
+			<territory type="RE">리유니온</territory>
+			<territory type="RO">루마니아</territory>
+			<territory type="RS">세르비아</territory>
+			<territory type="RU">러시아</territory>
+			<territory type="RW">르완다</territory>
+			<territory type="SA">사우디아라비아</territory>
+			<territory type="SB">솔로몬 제도</territory>
+			<territory type="SC">쉐이쉘</territory>
+			<territory type="SD">수단</territory>
+			<territory type="SE">스웨덴</territory>
+			<territory type="SG">싱가포르</territory>
+			<territory type="SH">세인트헬레나</territory>
+			<territory type="SI">슬로베니아</territory>
+			<territory type="SJ">스발바르제도-얀마웬섬</territory>
+			<territory type="SK">슬로바키아</territory>
+			<territory type="SL">시에라리온</territory>
+			<territory type="SM">산마리노</territory>
+			<territory type="SN">세네갈</territory>
+			<territory type="SO">소말리아</territory>
+			<territory type="SR">수리남</territory>
+			<territory type="ST">상투메 프린시페</territory>
+			<territory type="SV">엘살바도르</territory>
+			<territory type="SY">시리아</territory>
+			<territory type="SZ">스와질랜드</territory>
+			<territory type="TA">트리스탄다쿠나</territory>
+			<territory type="TC">터크스케이커스제도</territory>
+			<territory type="TD">차드</territory>
+			<territory type="TF">프랑스 남부 지방</territory>
+			<territory type="TG">토고</territory>
+			<territory type="TH">태국</territory>
+			<territory type="TJ">타지키스탄</territory>
+			<territory type="TK">토켈라우</territory>
+			<territory type="TL">동티모르</territory>
+			<territory type="TL" alt="variant">동티모르</territory>
+			<territory type="TM">투르크메니스탄</territory>
+			<territory type="TN">튀니지</territory>
+			<territory type="TO">통가</territory>
+			<territory type="TR">터키</territory>
+			<territory type="TT">트리니다드 토바고</territory>
+			<territory type="TV">투발루</territory>
+			<territory type="TW">대만</territory>
+			<territory type="TZ">탄자니아</territory>
+			<territory type="UA">우크라이나</territory>
+			<territory type="UG">우간다</territory>
+			<territory type="UM">미국령 해외 제도</territory>
+			<territory type="US">미국</territory>
+			<territory type="UY">우루과이</territory>
+			<territory type="UZ">우즈베키스탄</territory>
+			<territory type="VA">바티칸</territory>
+			<territory type="VC">세인트빈센트그레나딘</territory>
+			<territory type="VE">베네수엘라</territory>
+			<territory type="VG">영국령 버진 아일랜드</territory>
+			<territory type="VI">미국령 버진 아일랜드</territory>
+			<territory type="VN">베트남</territory>
+			<territory type="VU">바누아투</territory>
+			<territory type="WF">왈리스-푸투나 제도</territory>
+			<territory type="WS">사모아</territory>
+			<territory type="YE">예멘</territory>
+			<territory type="YT">마요티</territory>
+			<territory type="ZA">남아프리카</territory>
+			<territory type="ZM">잠비아</territory>
+			<territory type="ZW">짐바브웨</territory>
+			<territory type="ZZ">알수없거나 유효하지 않은 지역</territory>
+		</territories>
+		<variants>
+			<variant type="1901" draft="provisional">전통 독일어 표기법</variant>
+			<variant type="1994" draft="provisional">표준 레지아어 표기법</variant>
+			<variant type="1996" draft="provisional">독일어 표기법(1996년)</variant>
+			<variant type="1606NICT" draft="provisional">중세 후기 프랑스어(1606년까지)</variant>
+			<variant type="1694ACAD" draft="provisional">근대 초기 프랑스어</variant>
+			<variant type="1959ACAD" draft="provisional">관학식</variant>
+			<variant type="ALALC97" draft="contributed">ALA-LC 로마자 표기법(1997년 개정)</variant>
+			<variant type="AREVELA" draft="provisional">동아르메니아어</variant>
+			<variant type="AREVMDA" draft="provisional">서아르메니아어</variant>
+			<variant type="BAKU1926" draft="provisional">통합 투르크어 라틴 알파벳</variant>
+			<variant type="BISKE" draft="provisional">산조르지오/빌라 방언</variant>
+			<variant type="BOONT" draft="provisional">분틀링어</variant>
+			<variant type="FONIPA" draft="provisional">IPA 음성학</variant>
+			<variant type="FONUPA" draft="provisional">UPA 음성학</variant>
+			<variant type="KKCOR" draft="provisional">공통 표기법</variant>
+			<variant type="LIPAW" draft="provisional">레지아어 리포바치 방언</variant>
+			<variant type="MONOTON" draft="provisional">단음</variant>
+			<variant type="NEDIS" draft="provisional">나티소네 방언</variant>
+			<variant type="NJIVA" draft="provisional">니바 방언</variant>
+			<variant type="OSOJS" draft="provisional">오세아코/오소가네 방언</variant>
+			<variant type="PINYIN" draft="provisional">병음 로마자 표기법</variant>
+			<variant type="POLYTON" draft="provisional">복음</variant>
+			<variant type="POSIX" draft="provisional">컴퓨터</variant>
+			<variant type="REVISED">개정</variant>
+			<variant type="ROZAJ" draft="provisional">레지아어</variant>
+			<variant type="SAAHO" draft="provisional">사호어</variant>
+			<variant type="SCOTLAND" draft="provisional">스코틀랜드 표준 영어</variant>
+			<variant type="SCOUSE" draft="provisional">리버풀 방언</variant>
+			<variant type="SOLBA" draft="provisional">스톨비자/솔비카 방언</variant>
+			<variant type="TARASK" draft="provisional">타라쉬키에비샤 표기법</variant>
+			<variant type="UCCOR" draft="provisional">통합 표기법</variant>
+			<variant type="UCRCOR" draft="contributed">통합 개정 표기법</variant>
+			<variant type="VALENCIA" draft="provisional">발렌시아어</variant>
+			<variant type="WADEGILE" draft="provisional">웨이드-자일스식 로마자 표기법</variant>
+		</variants>
+		<keys>
+			<key type="calendar">달력</key>
+			<key type="collation">정렬</key>
+			<key type="currency">통화</key>
+			<key type="numbers">숫자</key>
+			<key type="x" draft="contributed">공개 여부</key>
+		</keys>
+		<types>
+			<type type="arab" key="numbers">아라비아-인도식 숫자</type>
+			<type type="arabext" key="numbers">확장형 아라비아-인도식 숫자</type>
+			<type type="armn" key="numbers">아르메니아 숫자</type>
+			<type type="armnlow" key="numbers">아르메니아 소문자 숫자</type>
+			<type type="beng" key="numbers">뱅골 숫자</type>
+			<type type="big5han" key="collation">중국어 번체 정렬 순서 [Big5]</type>
+			<type type="buddhist" key="calendar">불교력</type>
+			<type type="chinese" key="calendar">중국력</type>
+			<type type="coptic" key="calendar">콥트력</type>
+			<type type="deva" key="numbers">데바나가리 숫자</type>
+			<type type="dictionary" key="collation">사전 정렬순</type>
+			<type type="ducet" key="collation">기본 유니코드 정렬 순서</type>
+			<type type="ethi" key="numbers">에티오피아 숫자</type>
+			<type type="ethiopic" key="calendar">에티오피아력</type>
+			<type type="ethiopic-amete-alem" key="calendar">에티오피아 아메테 알렘력</type>
+			<type type="fullwide" key="numbers">전체 숫자</type>
+			<type type="gb2312han" key="collation">중국어 간체 정렬 순서 [GB2312]</type>
+			<type type="geor" key="numbers">그루지아 숫자</type>
+			<type type="gregorian" key="calendar">태양력</type>
+			<type type="grek" key="numbers">그리스 숫자</type>
+			<type type="greklow" key="numbers">그리스어 소문자 숫자</type>
+			<type type="gujr" key="numbers">구자라트 숫자</type>
+			<type type="guru" key="numbers">굴묵키 숫자</type>
+			<type type="hanidec" key="numbers">중국어 십진 숫자</type>
+			<type type="hans" key="numbers">중국어 간체 숫자</type>
+			<type type="hansfin" key="numbers">중국어 간체 재무 숫자</type>
+			<type type="hant" key="numbers">중국어 번체 숫자</type>
+			<type type="hantfin" key="numbers">중국어 번체 재무 숫자</type>
+			<type type="hebr" key="numbers">히브리 숫자</type>
+			<type type="hebrew" key="calendar">히브리력</type>
+			<type type="indian" key="calendar">인도력</type>
+			<type type="islamic" key="calendar">이슬람력</type>
+			<type type="islamic-civil" key="calendar">이슬람 상용력</type>
+			<type type="japanese" key="calendar">일본력</type>
+			<type type="jpan" key="numbers">일본 숫자</type>
+			<type type="jpanfin" key="numbers">일본 재무 숫자</type>
+			<type type="khmr" key="numbers">크메르 숫자</type>
+			<type type="knda" key="numbers">칸나다 숫자</type>
+			<type type="laoo" key="numbers">라오 숫자</type>
+			<type type="latn" key="numbers">서양 숫자</type>
+			<type type="mlym" key="numbers">말라얄람 숫자</type>
+			<type type="mong" key="numbers">몽골 숫자</type>
+			<type type="mymr" key="numbers">미얀마 숫자</type>
+			<type type="orya" key="numbers">오리야 숫자</type>
+			<type type="persian" key="calendar">페르시안력</type>
+			<type type="phonebook" key="collation">전화번호부순</type>
+			<type type="pinyin" key="collation">병음순</type>
+			<type type="reformed" key="collation">개정 정렬순</type>
+			<type type="roc" key="calendar">대만력</type>
+			<type type="roman" key="numbers">로마 숫자</type>
+			<type type="romanlow" key="numbers">로마 소문자 숫자</type>
+			<type type="search" key="collation">범용 검색</type>
+			<type type="stroke" key="collation">자획순</type>
+			<type type="taml" key="numbers">타밀어 숫자</type>
+			<type type="telu" key="numbers">텔루구 숫자</type>
+			<type type="thai" key="numbers">태국 숫자</type>
+			<type type="tibt" key="numbers">티벳 숫자</type>
+			<type type="traditional" key="collation">전통 역법</type>
+			<type type="unihan" key="collation">부수순</type>
+		</types>
+		<transformNames>
+			<transformName type="Numeric" draft="contributed">숫자</transformName>
+			<transformName type="Tone" draft="contributed">성조</transformName>
+			<transformName type="UNGEGN" draft="contributed">유엔지명전문가회의(UNGEGN)</transformName>
+			<transformName type="x-Accents" draft="contributed">악센트</transformName>
+			<transformName type="x-Fullwidth" draft="contributed">전각</transformName>
+			<transformName type="x-Halfwidth" draft="contributed">반각</transformName>
+			<transformName type="x-Jamo" draft="contributed">자모</transformName>
+			<transformName type="x-Pinyin" draft="contributed">병음</transformName>
+			<transformName type="x-Publishing" draft="contributed">게시</transformName>
+		</transformNames>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">미터법</measurementSystemName>
+			<measurementSystemName type="UK">영국</measurementSystemName>
+			<measurementSystemName type="US">미국</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language">언어: {0}</codePattern>
+			<codePattern type="script">스크립트: {0}</codePattern>
+			<codePattern type="territory">지역: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[가-힣]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[丘 串 乃 久 乖 九 乞 乫 乾 亂 亘 交 京 仇 今 介 件 价 企 伋 伎 伽 佳 佶 侃 來 侊 供 係 俓 俱 個 倞 倦 倨 假 偈 健 傀 傑 傾 僅 僑 價 儆 儉 儺 光 克 兢 內 公 共 其 具 兼 冀 冠 凱 刊 刮 券 刻 剋 剛 劇 劍 劒 功 加 劤 劫 勁 勍 勘 勤 勸 勻 勾 匡 匣 區 南 卦 却 卵 卷 卿 厥 去 及 口 句 叩 叫 可 各 吉 君 告 呱 呵 咎 咬 哥 哭 啓 喀 喇 喝 喫 喬 嗜 嘉 嘔 器 囊 困 固 圈 國 圭 圻 均 坎 坑 坤 坰 坵 垢 基 埼 堀 堅 堈 堪 堺 塊 塏 境 墾 壙 壞 夔 奇 奈 奎 契 奸 妓 妗 姑 姜 姦 娘 娜 嫁 嬌 孔 季 孤 宏 官 客 宮 家 寄 寇 寡 寬 尻 局 居 屆 屈 岐 岡 岬 崎 崑 崗 嵌 嵐 嶇 嶠 工 巧 巨 己 巾 干 幹 幾 庚 庫 康 廊 廐 廓 廣 建 弓 强 彊 徑 忌 急 怪 怯 恐 恝 恪 恭 悸 愆 感 愧 愷 愾 慊 慣 慤 慨 慶 慷 憩 憬 憾 懃 懇 懦 懶 懼 戈 戒 戟 戡 扱 技 抉 拉 拏 拐 拒 拘 括 拮 拱 拳 拷 拿 捏 据 捲 捺 掘 掛 控 揀 揆 揭 擊 擎 擒 據 擧 攪 攷 改 攻 故 敎 救 敢 敬 敲 斛 斤 旗 旣 昆 昑 景 晷 暇 暖 暠 暻 曠 曲 更 曷 朗 朞 期 机 杆 杞 杰 枏 果 枯 架 枸 柑 柩 柬 柯 校 根 格 桀 桂 桔 桿 梏 梗 械 梱 棄 棋 棍 棘 棨 棺 楗 楠 極 槁 構 槐 槨 槪 槻 槿 樂 橄 橋 橘 機 檄 檎 檢 櫃 欄 權 欺 款 歌 歐 歸 殼 毆 毬 氣 求 江 汨 汲 決 汽 沂 沽 洛 洸 浪 涇 淃 淇 減 渠 渴 湳 溝 溪 滑 滾 漑 潔 潰 澗 激 濫 灌 灸 炅 炚 炬 烙 烱 煖 爛 牽 犬 狂 狗 狡 狼 獗 玖 玘 珂 珏 珖 珙 珞 珪 球 琦 琨 琪 琯 琴 瑾 璂 璟 璣 璥 瓊 瓘 瓜 甄 甘 甲 男 畇 界 畸 畺 畿 疆 疥 疳 痂 痙 痼 癎 癩 癸 皆 皎 皐 盖 監 看 眷 睾 瞰 瞼 瞿 矜 矩 矯 硅 硬 碁 碣 磎 磬 磯 磵 祁 祇 祈 祛 祺 禁 禽 科 稈 稼 稽 稿 穀 究 穹 空 窘 窟 窮 窺 竅 竟 竭 競 竿 筋 筐 筠 箇 箕 箝 管 簡 粳 糠 系 糾 紀 納 紘 級 紺 絅 結 絞 給 絳 絹 絿 經 綱 綺 緊 繫 繭 繼 缺 罐 罫 羅 羈 羌 羔 群 羹 翹 考 耆 耉 耕 耭 耿 肌 肝 股 肩 肯 肱 胛 胱 脚 脛 腔 腱 膈 膏 膠 臘 臼 舅 舊 舡 艮 艱 芎 芥 芩 芹 苛 苟 苦 苽 茄 莖 菅 菊 菌 菓 菫 菰 落 葛 葵 蓋 蕎 蕨 薑 藁 藍 藿 蘭 蘿 虔 蚣 蛟 蝎 螺 蠟 蠱 街 衢 衲 衾 衿 袈 袞 袴 裙 裸 褐 襁 襟 襤 見 規 覡 覲 覺 觀 角 計 記 訣 訶 詭 誇 誡 誥 課 諫 諾 謙 講 謳 謹 譏 警 譴 谷 谿 豈 貢 貫 貴 賈 購 赳 起 跏 距 跨 踞 蹇 蹶 躬 軀 車 軌 軍 軻 較 輕 轎 轟 辜 近 迦 迲 适 逑 逕 逵 過 遣 遽 邏 那 邯 邱 郊 郎 郡 郭 酪 醵 金 鈐 鈞 鉀 鉅 鉗 鉤 銶 鋸 鋼 錡 錤 錦 錮 鍋 鍵 鎌 鎧 鏡 鑑 鑒 鑛 開 間 閘 閣 閨 闕 關 降 階 隔 隙 雇 難 鞏 鞠 鞨 鞫 頃 頸 顆 顧 飢 餃 館 饉 饋 饑 駒 駕 駱 騎 騏 騫 驅 驕 驚 驥 骨 高 鬼 魁 鮫 鯤 鯨 鱇 鳩 鵑 鵠 鷄 鷗 鸞 麒 麴 黔 鼓 龕 龜]</exemplarCharacters>
+		<exemplarCharacters type="currencySymbol">[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[ᄀ ᄂ ᄃ ᄅ ᄆ ᄇ ᄉ ᄋ ᄌ ᄎ ᄏ ᄐ ᄑ ᄒ]</exemplarCharacters>
+		<ellipsis type="medial">{0}...{1}</ellipsis>
+	</characters>
+	<delimiters>
+		<quotationStart>“</quotationStart>
+		<quotationEnd>”</quotationEnd>
+		<alternateQuotationStart>‘</alternateQuotationStart>
+		<alternateQuotationEnd>’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="buddhist">
+				<eras>
+					<eraAbbr>
+						<era type="0">불기</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<!-- per cldrbug 2835, adapted existing to better match gregorian/roc/japanese formats -->
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>G y년 M월 d일 EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>G y년 M월 d일</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>G y. M. d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>G y. M. d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<!-- per cldrbug 2835, added from gregorian and adjusted for G -->
+					<availableFormats>
+						<dateFormatItem id="d">d일</dateFormatItem>
+						<dateFormatItem id="Ed">d일 (E)</dateFormatItem>
+						<dateFormatItem id="EEEEd">d일 EEEE</dateFormatItem>
+						<dateFormatItem id="Gy">G y년</dateFormatItem>
+						<dateFormatItem id="h">a h시</dateFormatItem>
+						<dateFormatItem id="H">H시</dateFormatItem>
+						<dateFormatItem id="HHmmss">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hm">a h:mm</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hms">H시 m분 s초</dateFormatItem>
+						<dateFormatItem id="M">M월</dateFormatItem>
+						<dateFormatItem id="Md">M. d.</dateFormatItem>
+						<dateFormatItem id="MEd">M. d. (E)</dateFormatItem>
+						<dateFormatItem id="MEEEEd">M. d. EEEE</dateFormatItem>
+						<dateFormatItem id="MMdd">MM. dd</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d일</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">G y년</dateFormatItem>
+						<dateFormatItem id="yM">G y. M.</dateFormatItem>
+						<dateFormatItem id="yMd">G y. M. d.</dateFormatItem>
+						<dateFormatItem id="yMEd">G y. M. d. (E)</dateFormatItem>
+						<dateFormatItem id="yMMM">G y년 MMM</dateFormatItem>
+						<dateFormatItem id="yMMMd">G y년 MMM d일</dateFormatItem>
+						<dateFormatItem id="yMMMEd">G y년 MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="yMMMEEEEd">G y년 MMM d일 EEEE</dateFormatItem>
+						<dateFormatItem id="yQ">G y년 Q분기</dateFormatItem>
+						<dateFormatItem id="yQQQ">G y년 QQQ</dateFormatItem>
+						<dateFormatItem id="yyMM">G yy. M.</dateFormatItem>
+						<dateFormatItem id="yyMMM">G y년 MMM</dateFormatItem>
+						<dateFormatItem id="yyQ">G y년 Q분기</dateFormatItem>
+						<dateFormatItem id="yyyyMM">G y. MM</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="chinese">
+				<cyclicNameSets>
+					<cyclicNameSet type="years">
+						<cyclicNameContext type="format">
+							<cyclicNameWidth type="abbreviated">
+								<cyclicName type="1">갑자</cyclicName>
+								<cyclicName type="2">을축</cyclicName>
+								<cyclicName type="3">병인</cyclicName>
+								<cyclicName type="4">정묘</cyclicName>
+								<cyclicName type="5">무진</cyclicName>
+								<cyclicName type="6">기사</cyclicName>
+								<cyclicName type="7">경오</cyclicName>
+								<cyclicName type="8">신미</cyclicName>
+								<cyclicName type="9">임신</cyclicName>
+								<cyclicName type="10">계유</cyclicName>
+								<cyclicName type="11">갑술</cyclicName>
+								<cyclicName type="12">을해</cyclicName>
+								<cyclicName type="13">병자</cyclicName>
+								<cyclicName type="14">정축</cyclicName>
+								<cyclicName type="15">무인</cyclicName>
+								<cyclicName type="16">기묘</cyclicName>
+								<cyclicName type="17">경진</cyclicName>
+								<cyclicName type="18">신사</cyclicName>
+								<cyclicName type="19">임오</cyclicName>
+								<cyclicName type="20">계미</cyclicName>
+								<cyclicName type="21">갑신</cyclicName>
+								<cyclicName type="22">을유</cyclicName>
+								<cyclicName type="23">병술</cyclicName>
+								<cyclicName type="24">정해</cyclicName>
+								<cyclicName type="25">무자</cyclicName>
+								<cyclicName type="26">기축</cyclicName>
+								<cyclicName type="27">경인</cyclicName>
+								<cyclicName type="28">신묘</cyclicName>
+								<cyclicName type="29">임진</cyclicName>
+								<cyclicName type="30">계사</cyclicName>
+								<cyclicName type="31">갑오</cyclicName>
+								<cyclicName type="32">을미</cyclicName>
+								<cyclicName type="33">병신</cyclicName>
+								<cyclicName type="34">정유</cyclicName>
+								<cyclicName type="35">무술</cyclicName>
+								<cyclicName type="36">기해</cyclicName>
+								<cyclicName type="37">경자</cyclicName>
+								<cyclicName type="38">신축</cyclicName>
+								<cyclicName type="39">임인</cyclicName>
+								<cyclicName type="40">계묘</cyclicName>
+								<cyclicName type="41">갑진</cyclicName>
+								<cyclicName type="42">을사</cyclicName>
+								<cyclicName type="43">병오</cyclicName>
+								<cyclicName type="44">정미</cyclicName>
+								<cyclicName type="45">무신</cyclicName>
+								<cyclicName type="46">기유</cyclicName>
+								<cyclicName type="47">경술</cyclicName>
+								<cyclicName type="48">신해</cyclicName>
+								<cyclicName type="49">임자</cyclicName>
+								<cyclicName type="50">계축</cyclicName>
+								<cyclicName type="51">갑인</cyclicName>
+								<cyclicName type="52">을묘</cyclicName>
+								<cyclicName type="53">병진</cyclicName>
+								<cyclicName type="54">정사</cyclicName>
+								<cyclicName type="55">무오</cyclicName>
+								<cyclicName type="56">기미</cyclicName>
+								<cyclicName type="57">경신</cyclicName>
+								<cyclicName type="58">신유</cyclicName>
+								<cyclicName type="59">임술</cyclicName>
+								<cyclicName type="60">계해</cyclicName>
+							</cyclicNameWidth>
+						</cyclicNameContext>
+					</cyclicNameSet>
+				</cyclicNameSets>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>U년 M월 d일 EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>U년 M월 d일</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>y. M. d.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>y. M. d.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="d">d일</dateFormatItem>
+						<dateFormatItem id="Ed">d일 (E)</dateFormatItem>
+						<dateFormatItem id="EEEEd">d일 EEEE</dateFormatItem>
+						<dateFormatItem id="h">a h시</dateFormatItem>
+						<dateFormatItem id="H">H시</dateFormatItem>
+						<dateFormatItem id="hm">a h:mm</dateFormatItem>
+						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hms">H시 m분 s초</dateFormatItem>
+						<dateFormatItem id="M">M월</dateFormatItem>
+						<dateFormatItem id="Md">M. d.</dateFormatItem>
+						<dateFormatItem id="MEd">M. d. (E)</dateFormatItem>
+						<dateFormatItem id="MEEEEd">M. d. EEEE</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d일</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="y">U년</dateFormatItem>
+						<dateFormatItem id="yM">U. M.</dateFormatItem>
+						<dateFormatItem id="yMd">U. M. d.</dateFormatItem>
+						<dateFormatItem id="yMEd">U. M. d. (E)</dateFormatItem>
+						<dateFormatItem id="yMMM">U년 MMM</dateFormatItem>
+						<dateFormatItem id="yMMMd">U년 MMM d일</dateFormatItem>
+						<dateFormatItem id="yMMMEd">U년 MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="yMMMEEEEd">U년 MMM d일 EEEE</dateFormatItem>
+						<dateFormatItem id="yQ">U년 Q분기</dateFormatItem>
+						<dateFormatItem id="yQQQ">U년 QQQ</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">1월</month>
+							<month type="2">2월</month>
+							<month type="3">3월</month>
+							<month type="4">4월</month>
+							<month type="5">5월</month>
+							<month type="6">6월</month>
+							<month type="7">7월</month>
+							<month type="8">8월</month>
+							<month type="9">9월</month>
+							<month type="10">10월</month>
+							<month type="11">11월</month>
+							<month type="12">12월</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">1월</month>
+							<month type="2">2월</month>
+							<month type="3">3월</month>
+							<month type="4">4월</month>
+							<month type="5">5월</month>
+							<month type="6">6월</month>
+							<month type="7">7월</month>
+							<month type="8">8월</month>
+							<month type="9">9월</month>
+							<month type="10">10월</month>
+							<month type="11">11월</month>
+							<month type="12">12월</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">일</day>
+							<day type="mon">월</day>
+							<day type="tue">화</day>
+							<day type="wed">수</day>
+							<day type="thu">목</day>
+							<day type="fri">금</day>
+							<day type="sat">토</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">일요일</day>
+							<day type="mon">월요일</day>
+							<day type="tue">화요일</day>
+							<day type="wed">수요일</day>
+							<day type="thu">목요일</day>
+							<day type="fri">금요일</day>
+							<day type="sat">토요일</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">일</day>
+							<day type="mon">월</day>
+							<day type="tue">화</day>
+							<day type="wed">수</day>
+							<day type="thu">목</day>
+							<day type="fri">금</day>
+							<day type="sat">토</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">1분기</quarter>
+							<quarter type="2">2분기</quarter>
+							<quarter type="3">3분기</quarter>
+							<quarter type="4">4분기</quarter>
+						</quarterWidth>
+						<quarterWidth type="narrow">
+							<quarter type="1">1</quarter>
+							<quarter type="2">2</quarter>
+							<quarter type="3">3</quarter>
+							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">제 1/4분기</quarter>
+							<quarter type="2">제 2/4분기</quarter>
+							<quarter type="3">제 3/4분기</quarter>
+							<quarter type="4">제 4/4분기</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">오전</dayPeriod>
+							<dayPeriod type="pm">오후</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0">서력기원전</era>
+						<era type="1">서력기원</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">기원전</era>
+						<era type="1">서기</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>y년 M월 d일 EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>y년 M월 d일</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>yyyy. M. d.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>yy. M. d.</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>a h시 m분 s초 zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>a h시 m분 s초 z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>a h:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>a h:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<dateTimeFormatLength type="full">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="long">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="medium">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<dateTimeFormatLength type="short">
+						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="d">d일</dateFormatItem>
+						<dateFormatItem id="Ed">d일 (E)</dateFormatItem>
+						<dateFormatItem id="EEEEd">d일 EEEE</dateFormatItem>
+						<dateFormatItem id="h">a h시</dateFormatItem>
+						<dateFormatItem id="H">H시</dateFormatItem>
+						<dateFormatItem id="HHmmss">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hm">a h:mm</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hms">H시 m분 s초</dateFormatItem>
+						<dateFormatItem id="M">M월</dateFormatItem>
+						<dateFormatItem id="Md">M. d.</dateFormatItem>
+						<dateFormatItem id="MEd">M. d. (E)</dateFormatItem>
+						<dateFormatItem id="MEEEEd">M. d. EEEE</dateFormatItem>
+						<dateFormatItem id="MMdd">MM. dd</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d일</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y년</dateFormatItem>
+						<dateFormatItem id="yM">yyyy. M.</dateFormatItem>
+						<dateFormatItem id="yMd">yyyy. M. d.</dateFormatItem>
+						<dateFormatItem id="yMEd">yyyy. M. d. (E)</dateFormatItem>
+						<dateFormatItem id="yMMM">y년 MMM</dateFormatItem>
+						<dateFormatItem id="yMMMd">y년 MMM d일</dateFormatItem>
+						<dateFormatItem id="yMMMEd">y년 MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="yMMMEEEEd">y년 MMM d일 EEEE</dateFormatItem>
+						<dateFormatItem id="yQ">y년 Q분기</dateFormatItem>
+						<dateFormatItem id="yQQQ">y년 QQQ</dateFormatItem>
+						<dateFormatItem id="yyMM">yy. M.</dateFormatItem>
+						<dateFormatItem id="yyMMM">yy년 MMM</dateFormatItem>
+						<dateFormatItem id="yyQ">yy년 Q분기</dateFormatItem>
+						<dateFormatItem id="yyyyMM">yyyy. MM</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatItem id="d">
+							<greatestDifference id="d">d일 ~ d일</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="h">
+							<greatestDifference id="a">a h ~ a h</greatestDifference>
+							<greatestDifference id="h">a h~h</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="H">
+							<greatestDifference id="a">HH시 ~ HH시</greatestDifference>
+							<greatestDifference id="H">HH ~ HH시</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hm">
+							<greatestDifference id="a">a h:mm ~ a h:mm</greatestDifference>
+							<greatestDifference id="h">a h:mm~h:mm</greatestDifference>
+							<greatestDifference id="m">a h:mm~h:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hm">
+							<greatestDifference id="a">HH:mm ~ HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm ~ HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm ~ HH:mm</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hmv">
+							<greatestDifference id="a">a h:mm ~ a h:mm v</greatestDifference>
+							<greatestDifference id="h">a h:mm~h:mm v</greatestDifference>
+							<greatestDifference id="m">a h:mm~h:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmv">
+							<greatestDifference id="a">HH:mm ~ HH:mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm ~ HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm ~ HH:mm v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hv">
+							<greatestDifference id="a">a h ~ a h v</greatestDifference>
+							<greatestDifference id="h">a h~h v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hv">
+							<greatestDifference id="a">HH시 ~ HH시 v</greatestDifference>
+							<greatestDifference id="H">HH ~ HH시 v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="M">
+							<greatestDifference id="M">M월 ~ M월</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Md">
+							<greatestDifference id="d">M. d ~ M. d</greatestDifference>
+							<greatestDifference id="M">M. d ~ M. d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MEd">
+							<greatestDifference id="d">M. d (E) ~ M. d (E)</greatestDifference>
+							<greatestDifference id="M">M. d (E) ~ M. d (E)</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMM">
+							<greatestDifference id="M">MMM ~ MMM</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMd">
+							<greatestDifference id="d">M월 d일 ~ d일</greatestDifference>
+							<greatestDifference id="M">M월 d일 ~ M월 d일</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMEd">
+							<greatestDifference id="d">M월 d일 (E) ~ d일 (E)</greatestDifference>
+							<greatestDifference id="M">M월 d일 (E) ~ M월 d일 (E)</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="MMMM">
+							<greatestDifference id="M">LLLL-LLLL</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y년 ~ y년</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">yyyy. M ~ yyyy. M</greatestDifference>
+							<greatestDifference id="y">yyyy. M ~ yyyy. M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">yy. M. d. ~ yy. M. d.</greatestDifference>
+							<greatestDifference id="M">yy. M. d. ~ yy. M. d.</greatestDifference>
+							<greatestDifference id="y">yy. M. d. ~ yy. M. d.</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">yy. M. d. (E) ~ yy. M. d. (E)</greatestDifference>
+							<greatestDifference id="M">yy. M. d. (E) ~ yy. M. d. (E)</greatestDifference>
+							<greatestDifference id="y">yy. M. d. (E) ~ yy. M. d. (E)</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">y년 M월~M월</greatestDifference>
+							<greatestDifference id="y">y년 M월 ~ y년 M월</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">y년 M월 d일~d일</greatestDifference>
+							<greatestDifference id="M">y년 M월 d일 ~ M월 d일</greatestDifference>
+							<greatestDifference id="y">y년 M월 d일 ~ y년 M월 d일</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">y년 M월 d일 (E) ~ d일 (E)</greatestDifference>
+							<greatestDifference id="M">y년 M월 d일 (E) ~ M월 d일 (E)</greatestDifference>
+							<greatestDifference id="y">y년 M월 d일 (E) ~ y년 M월 d일 (E)</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEEEEd">
+							<greatestDifference id="d">y년 M월 d일 EEEE ~ d일 EEEE</greatestDifference>
+							<greatestDifference id="M">y년 M월 d일 EEEE ~ M월 d일 EEEE</greatestDifference>
+							<greatestDifference id="y">y년 M월 d일 EEEE ~ y년 M월 d일 EEEE</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">y년 MM월 ~ MM월</greatestDifference>
+							<greatestDifference id="y">y년 MM월 ~ y년 MM월</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+				<fields>
+					<field type="era">
+						<displayName>연호</displayName>
+					</field>
+					<field type="year">
+						<displayName>년</displayName>
+						<relative type="-1" draft="contributed">지난해</relative>
+						<relative type="0" draft="contributed">올해</relative>
+						<relative type="1" draft="contributed">내년</relative>
+					</field>
+					<field type="month">
+						<displayName>월</displayName>
+						<relative type="-1" draft="contributed">지난달</relative>
+						<relative type="0" draft="contributed">이번 달</relative>
+						<relative type="1" draft="contributed">다음 달</relative>
+					</field>
+					<field type="week">
+						<displayName>주</displayName>
+						<relative type="-1" draft="contributed">지난주</relative>
+						<relative type="0" draft="contributed">이번 주</relative>
+						<relative type="1" draft="contributed">다음 주</relative>
+					</field>
+					<field type="day">
+						<displayName>일</displayName>
+						<relative type="-2">그저께</relative>
+						<relative type="-1">어제</relative>
+						<relative type="0">오늘</relative>
+						<relative type="1">내일</relative>
+						<relative type="2">모레</relative>
+					</field>
+					<field type="weekday">
+						<displayName>요일</displayName>
+					</field>
+					<field type="dayperiod">
+						<displayName>오전/오후</displayName>
+					</field>
+					<field type="hour">
+						<displayName>시</displayName>
+					</field>
+					<field type="minute">
+						<displayName>분</displayName>
+					</field>
+					<field type="second">
+						<displayName>초</displayName>
+					</field>
+					<field type="zone">
+						<displayName>시간대</displayName>
+					</field>
+				</fields>
+			</calendar>
+			<calendar type="japanese">
+				<eras>
+					<!-- per cldrbug 2835, accept provisional -->
+					<eraAbbr>
+						<era type="0">다이카</era>
+						<era type="1">하쿠치</era>
+						<era type="2">하쿠호</era>
+						<era type="3">슈초</era>
+						<era type="4">다이호</era>
+						<era type="5">게이운</era>
+						<era type="6">와도</era>
+						<era type="7">레이키</era>
+						<era type="8">요로</era>
+						<era type="9">진키</era>
+						<era type="10">덴표</era>
+						<era type="11">덴표칸포</era>
+						<era type="12">덴표쇼호</era>
+						<era type="13">덴표호지</era>
+						<era type="14">덴표진고</era>
+						<era type="15">진고케이운</era>
+						<era type="16">호키</era>
+						<era type="17">덴오</era>
+						<era type="18">엔랴쿠</era>
+						<era type="19">다이도</era>
+						<era type="20">고닌</era>
+						<era type="21">덴초</era>
+						<era type="22">조와</era>
+						<era type="23">가쇼</era>
+						<era type="24">닌주</era>
+						<era type="25">사이코</era>
+						<era type="26">덴난</era>
+						<era type="27">조간</era>
+						<era type="28">간교</era>
+						<era type="29">닌나</era>
+						<era type="30">간표</era>
+						<era type="31">쇼타이</era>
+						<era type="32">엔기</era>
+						<era type="33">엔초</era>
+						<era type="34">조헤이</era>
+						<era type="35">덴교</era>
+						<era type="36">덴랴쿠</era>
+						<era type="37">덴토쿠</era>
+						<era type="38">오와</era>
+						<era type="39">고호</era>
+						<era type="40">안나</era>
+						<era type="41">덴로쿠</era>
+						<era type="42">덴엔</era>
+						<era type="43">조겐</era>
+						<era type="44">덴겐</era>
+						<era type="45">에이간</era>
+						<era type="46">간나</era>
+						<era type="47">에이엔</era>
+						<era type="48">에이소</era>
+						<era type="49">쇼랴쿠</era>
+						<era type="50">조토쿠</era>
+						<era type="51">조호</era>
+						<era type="52">간코</era>
+						<era type="53">조와</era>
+						<era type="54">간닌</era>
+						<era type="55">지안</era>
+						<era type="56">만주</era>
+						<era type="57">조겐</era>
+						<era type="58">조랴쿠</era>
+						<era type="59">조큐</era>
+						<era type="60">간토쿠</era>
+						<era type="61">에이쇼</era>
+						<era type="62">덴기</era>
+						<era type="63">고헤이</era>
+						<era type="64">지랴쿠</era>
+						<era type="65">엔큐</era>
+						<era type="66">조호</era>
+						<era type="67">쇼랴쿠</era>
+						<era type="68">에이호</era>
+						<era type="69">오토쿠</era>
+						<era type="70">간지</era>
+						<era type="71">가호</era>
+						<era type="72">에이초</era>
+						<era type="73">조토쿠</era>
+						<era type="74">고와</era>
+						<era type="75">조지</era>
+						<era type="76">가쇼</era>
+						<era type="77">덴닌</era>
+						<era type="78">덴에이</era>
+						<era type="79">에이큐</era>
+						<era type="80">겐에이</era>
+						<era type="81">호안</era>
+						<era type="82">덴지</era>
+						<era type="83">다이지</era>
+						<era type="84">덴쇼</era>
+						<era type="85">조쇼</era>
+						<era type="86">호엔</era>
+						<era type="87">에이지</era>
+						<era type="88">고지</era>
+						<era type="89">덴요</era>
+						<era type="90">규안</era>
+						<era type="91">닌페이</era>
+						<era type="92">규주</era>
+						<era type="93">호겐</era>
+						<era type="94">헤이지</era>
+						<era type="95">에이랴쿠</era>
+						<era type="96">오호</era>
+						<era type="97">조칸</era>
+						<era type="98">에이만</era>
+						<era type="99">닌난</era>
+						<era type="100">가오</era>
+						<era type="101">조안</era>
+						<era type="102">안겐</era>
+						<era type="103">지쇼</era>
+						<era type="104">요와</era>
+						<era type="105">주에이</era>
+						<era type="106">겐랴쿠</era>
+						<era type="107">분지</era>
+						<era type="108">겐큐</era>
+						<era type="109">쇼지</era>
+						<era type="110">겐닌</era>
+						<era type="111">겐큐</era>
+						<era type="112">겐에이</era>
+						<era type="113">조겐</era>
+						<era type="114">겐랴쿠</era>
+						<era type="115">겐포</era>
+						<era type="116">조큐</era>
+						<era type="117">조오</era>
+						<era type="118">겐닌</era>
+						<era type="119">가로쿠</era>
+						<era type="120">안테이</era>
+						<era type="121">간키</era>
+						<era type="122">조에이</era>
+						<era type="123">덴푸쿠</era>
+						<era type="124">분랴쿠</era>
+						<era type="125">가테이</era>
+						<era type="126">랴쿠닌</era>
+						<era type="127">엔오</era>
+						<era type="128">닌지</era>
+						<era type="129">간겐</era>
+						<era type="130">호지</era>
+						<era type="131">겐초</era>
+						<era type="132">고겐</era>
+						<era type="133">쇼카</era>
+						<era type="134">쇼겐</era>
+						<era type="135">분오</era>
+						<era type="136">고초</era>
+						<era type="137">분에이</era>
+						<era type="138">겐지</era>
+						<era type="139">고안</era>
+						<era type="140">쇼오</era>
+						<era type="141">에이닌</era>
+						<era type="142">쇼안</era>
+						<era type="143">겐겐</era>
+						<era type="144">가겐</era>
+						<era type="145">도쿠지</era>
+						<era type="146">엔쿄</era>
+						<era type="147">오초</era>
+						<era type="148">쇼와</era>
+						<era type="149">분포</era>
+						<era type="150">겐오</era>
+						<era type="151">겐코</era>
+						<era type="152">쇼추</era>
+						<era type="153">가랴쿠</era>
+						<era type="154">겐토쿠</era>
+						<era type="155">겐코</era>
+						<era type="156">겐무</era>
+						<era type="157">엔겐</era>
+						<era type="158">고코쿠</era>
+						<era type="159">쇼헤이</era>
+						<era type="160">겐토쿠</era>
+						<era type="161">분추</era>
+						<era type="162">덴주</era>
+						<era type="163">고랴쿠</era>
+						<era type="164">고와</era>
+						<era type="165">겐추</era>
+						<era type="166">메이토쿠</era>
+						<era type="167">가쿄</era>
+						<era type="168">고오</era>
+						<era type="169">메이토쿠</era>
+						<era type="170">오에이</era>
+						<era type="171">쇼초</era>
+						<era type="172">에이쿄</era>
+						<era type="173">가키쓰</era>
+						<era type="174">분안</era>
+						<era type="175">호토쿠</era>
+						<era type="176">교토쿠</era>
+						<era type="177">고쇼</era>
+						<era type="178">조로쿠</era>
+						<era type="179">간쇼</era>
+						<era type="180">분쇼</era>
+						<era type="181">오닌</era>
+						<era type="182">분메이</era>
+						<era type="183">조쿄</era>
+						<era type="184">엔토쿠</era>
+						<era type="185">메이오</era>
+						<era type="186">분키</era>
+						<era type="187">에이쇼</era>
+						<era type="188">다이에이</era>
+						<era type="189">교로쿠</era>
+						<era type="190">덴분</era>
+						<era type="191">고지</era>
+						<era type="192">에이로쿠</era>
+						<era type="193">겐키</era>
+						<era type="194">덴쇼</era>
+						<era type="195">분로쿠</era>
+						<era type="196">게이초</era>
+						<era type="197">겐나</era>
+						<era type="198">간에이</era>
+						<era type="199">쇼호</era>
+						<era type="200">게이안</era>
+						<era type="201">조오</era>
+						<era type="202">메이레키</era>
+						<era type="203">만지</era>
+						<era type="204">간분</era>
+						<era type="205">엔포</era>
+						<era type="206">덴나</era>
+						<era type="207">조쿄</era>
+						<era type="208">겐로쿠</era>
+						<era type="209">호에이</era>
+						<era type="210">쇼토쿠</era>
+						<era type="211">교호</era>
+						<era type="212">겐분</era>
+						<era type="213">간포</era>
+						<era type="214">엔쿄</era>
+						<era type="215">간엔</era>
+						<era type="216">호레키</era>
+						<era type="217">메이와</era>
+						<era type="218">안에이</era>
+						<era type="219">덴메이</era>
+						<era type="220">간세이</era>
+						<era type="221">교와</era>
+						<era type="222">분카</era>
+						<era type="223">분세이</era>
+						<era type="224">덴포</era>
+						<era type="225">고카</era>
+						<era type="226">가에이</era>
+						<era type="227">안세이</era>
+						<era type="228">만엔</era>
+						<era type="229">분큐</era>
+						<era type="230">겐지</era>
+						<era type="231">게이오</era>
+						<era type="232">메이지</era>
+						<era type="233">다이쇼</era>
+						<era type="234">쇼와</era>
+						<era type="235">헤이세이</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<!-- per cldrbug 2835, added from provisional & gregorian, adjusted for G -->
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>G y년 M월 d일 EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>G y년 M월 d일</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>G y. M. d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>G y. M. d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<!-- per cldrbug 2835, added from provisional & gregorian, adjusted for G -->
+					<availableFormats>
+						<dateFormatItem id="d">d일</dateFormatItem>
+						<dateFormatItem id="Ed">d일 (E)</dateFormatItem>
+						<dateFormatItem id="EEEEd">d일 EEEE</dateFormatItem>
+						<dateFormatItem id="Gy">G yy년</dateFormatItem>
+						<dateFormatItem id="h">a h시</dateFormatItem>
+						<dateFormatItem id="H">H시</dateFormatItem>
+						<dateFormatItem id="HHmmss">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hm">a h:mm</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hms">H시 m분 s초</dateFormatItem>
+						<dateFormatItem id="M">M월</dateFormatItem>
+						<dateFormatItem id="Md">M. d.</dateFormatItem>
+						<dateFormatItem id="MEd">M. d. (E)</dateFormatItem>
+						<dateFormatItem id="MEEEEd">M. d. EEEE</dateFormatItem>
+						<dateFormatItem id="MMdd">MM. dd</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d일</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">G yy년</dateFormatItem>
+						<dateFormatItem id="yyMM">G yy. M.</dateFormatItem>
+						<dateFormatItem id="yyMMM">G yy년 MMM</dateFormatItem>
+						<dateFormatItem id="yyQ">G yy년 Q분기</dateFormatItem>
+						<dateFormatItem id="yyyy">G yy년</dateFormatItem>
+						<dateFormatItem id="yyyyM">G y. M.</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">G y. M. d. (E)</dateFormatItem>
+						<dateFormatItem id="yyyyMM">G y. MM</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">G y년 MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">G yy년 MMM d일</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G y년 MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEEEEd">G y년 MMM d일 EEEE</dateFormatItem>
+						<dateFormatItem id="yyyyQ">G yy년 Q분기</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">G y년 QQQ</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="roc">
+				<eras>
+					<eraAbbr>
+						<era type="0">중화민국전</era>
+						<era type="1">중화민국</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>G y년 M월 d일 EEEE</pattern> <!-- per cldrbug 2835, add EEEE to match other calendars -->
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>G y년 M월 d일</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>G y. M. d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>G y. M. d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<!-- per cldrbug 2835, added from provisional & gregorian, adjusted for G -->
+					<availableFormats>
+						<dateFormatItem id="d">d일</dateFormatItem>
+						<dateFormatItem id="Ed">d일 (E)</dateFormatItem>
+						<dateFormatItem id="EEEEd">d일 EEEE</dateFormatItem>
+						<dateFormatItem id="h">a h시</dateFormatItem>
+						<dateFormatItem id="H">H시</dateFormatItem>
+						<dateFormatItem id="HHmmss">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hm">a h:mm</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Hms">H시 m분 s초</dateFormatItem>
+						<dateFormatItem id="M">M월</dateFormatItem>
+						<dateFormatItem id="Md">M. d.</dateFormatItem>
+						<dateFormatItem id="MEd">M. d. (E)</dateFormatItem>
+						<dateFormatItem id="MEEEEd">M. d. EEEE</dateFormatItem>
+						<dateFormatItem id="MMdd">MM. dd</dateFormatItem>
+						<dateFormatItem id="MMM">LLL</dateFormatItem>
+						<dateFormatItem id="MMMd">MMM d일</dateFormatItem>
+						<dateFormatItem id="MMMEd">MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="yyMM">G yy. M.</dateFormatItem>
+						<dateFormatItem id="yyMMM">G yy년 MMM</dateFormatItem>
+						<dateFormatItem id="yyQ">G y년 Q분기</dateFormatItem>
+						<dateFormatItem id="yyyy">G yy년</dateFormatItem>
+						<dateFormatItem id="yyyyM">G y. M.</dateFormatItem>
+						<dateFormatItem id="yyyyMd">G y. M. d.</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">G y. M. d. (E)</dateFormatItem>
+						<dateFormatItem id="yyyyMM">G y. MM</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">G y년 MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">G yy년 MMM d일</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">G y년 MMM d일 (E)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEEEEd">G y년 MMM d일 EEEE</dateFormatItem>
+						<dateFormatItem id="yyyyQ">G y년 Q분기</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">G y년 QQQ</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat>GMT{0}</gmtFormat>
+			<regionFormat>{0} 시간</regionFormat>
+			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<fallbackRegionFormat draft="contributed">{1} 시간 ({0})</fallbackRegionFormat>
+			<zone type="America/North_Dakota/Beulah">
+				<exemplarCity>노스다코타주, 베라</exemplarCity>
+			</zone>
+			<zone type="Etc/Unknown">
+				<exemplarCity>알 수 없는 장소</exemplarCity>
+			</zone>
+			<zone type="Europe/Andorra">
+				<exemplarCity>안도라</exemplarCity>
+			</zone>
+			<zone type="Asia/Dubai">
+				<exemplarCity>두바이</exemplarCity>
+			</zone>
+			<zone type="Asia/Kabul">
+				<exemplarCity>카불</exemplarCity>
+			</zone>
+			<zone type="America/Antigua">
+				<exemplarCity>안티과</exemplarCity>
+			</zone>
+			<zone type="America/Anguilla">
+				<exemplarCity>앙귈라</exemplarCity>
+			</zone>
+			<zone type="Europe/Tirane">
+				<exemplarCity>티라나</exemplarCity>
+			</zone>
+			<zone type="Asia/Yerevan">
+				<exemplarCity>예레반</exemplarCity>
+			</zone>
+			<zone type="America/Curacao">
+				<exemplarCity>큐라소</exemplarCity>
+			</zone>
+			<zone type="Africa/Luanda">
+				<exemplarCity>루안다</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Rothera">
+				<exemplarCity>로데라</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Palmer">
+				<exemplarCity>파머</exemplarCity>
+			</zone>
+			<zone type="Antarctica/South_Pole">
+				<exemplarCity>남극</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Syowa">
+				<exemplarCity>쇼와</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Mawson">
+				<exemplarCity>모슨</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Davis">
+				<exemplarCity>데이비스</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Vostok">
+				<exemplarCity>보스토크</exemplarCity>
+			</zone>
+			<zone type="Antarctica/Casey">
+				<exemplarCity>케이시</exemplarCity>
+			</zone>
+			<zone type="Antarctica/DumontDUrville">
+				<exemplarCity>뒤몽 뒤르빌</exemplarCity>
+			</zone>
+			<zone type="Antarctica/McMurdo">
+				<exemplarCity>맥머도</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Rio_Gallegos">
+				<exemplarCity>리오 가예고스</exemplarCity>
+			</zone>
+			<zone type="America/Mendoza">
+				<exemplarCity>멘도사</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Juan">
+				<exemplarCity>산후안</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Ushuaia">
+				<exemplarCity>우수아이아</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/La_Rioja">
+				<exemplarCity>라 리오하</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/San_Luis">
+				<exemplarCity>산루이스</exemplarCity>
+			</zone>
+			<zone type="America/Catamarca">
+				<exemplarCity>카타마르카</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Salta">
+				<exemplarCity>살타</exemplarCity>
+			</zone>
+			<zone type="America/Jujuy">
+				<exemplarCity>후후이</exemplarCity>
+			</zone>
+			<zone type="America/Argentina/Tucuman">
+				<exemplarCity>뚜꾸만</exemplarCity>
+			</zone>
+			<zone type="America/Cordoba">
+				<exemplarCity>코르도바</exemplarCity>
+			</zone>
+			<zone type="America/Buenos_Aires">
+				<exemplarCity>부에노스 아이레스</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity>파고파고</exemplarCity>
+			</zone>
+			<zone type="Europe/Vienna">
+				<exemplarCity>비엔나</exemplarCity>
+			</zone>
+			<zone type="Australia/Perth">
+				<exemplarCity>퍼스</exemplarCity>
+			</zone>
+			<zone type="Australia/Eucla">
+				<exemplarCity>유클라</exemplarCity>
+			</zone>
+			<zone type="Australia/Darwin">
+				<exemplarCity>다윈</exemplarCity>
+			</zone>
+			<zone type="Australia/Adelaide">
+				<exemplarCity>애들레이드</exemplarCity>
+			</zone>
+			<zone type="Australia/Broken_Hill">
+				<exemplarCity>브로컨힐</exemplarCity>
+			</zone>
+			<zone type="Australia/Currie">
+				<exemplarCity>퀴리</exemplarCity>
+			</zone>
+			<zone type="Australia/Melbourne">
+				<exemplarCity>멜버른</exemplarCity>
+			</zone>
+			<zone type="Australia/Hobart">
+				<exemplarCity>호바트</exemplarCity>
+			</zone>
+			<zone type="Australia/Lindeman">
+				<exemplarCity>린데만</exemplarCity>
+			</zone>
+			<zone type="Australia/Sydney">
+				<exemplarCity>시드니</exemplarCity>
+			</zone>
+			<zone type="Australia/Brisbane">
+				<exemplarCity>브리스베인</exemplarCity>
+			</zone>
+			<zone type="Australia/Lord_Howe">
+				<exemplarCity>로드 하우</exemplarCity>
+			</zone>
+			<zone type="America/Aruba">
+				<exemplarCity>아루바</exemplarCity>
+			</zone>
+			<zone type="Europe/Mariehamn">
+				<exemplarCity>마리에하먼</exemplarCity>
+			</zone>
+			<zone type="Asia/Baku">
+				<exemplarCity>바쿠</exemplarCity>
+			</zone>
+			<zone type="Europe/Sarajevo">
+				<exemplarCity>사라예보</exemplarCity>
+			</zone>
+			<zone type="America/Barbados">
+				<exemplarCity>바베이도스</exemplarCity>
+			</zone>
+			<zone type="Asia/Dhaka">
+				<exemplarCity>다카</exemplarCity>
+			</zone>
+			<zone type="Europe/Brussels">
+				<exemplarCity>브뤼셀</exemplarCity>
+			</zone>
+			<zone type="Africa/Ouagadougou">
+				<exemplarCity>와가두구</exemplarCity>
+			</zone>
+			<zone type="Europe/Sofia">
+				<exemplarCity>소피아</exemplarCity>
+			</zone>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>바레인</exemplarCity>
+			</zone>
+			<zone type="Africa/Bujumbura">
+				<exemplarCity>부줌부라</exemplarCity>
+			</zone>
+			<zone type="Africa/Porto-Novo">
+				<exemplarCity>포르토노보</exemplarCity>
+			</zone>
+			<zone type="America/St_Barthelemy">
+				<exemplarCity>생바르텔르미</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>버뮤다</exemplarCity>
+			</zone>
+			<zone type="Asia/Brunei">
+				<exemplarCity>브루나이</exemplarCity>
+			</zone>
+			<zone type="America/La_Paz">
+				<exemplarCity>라파스</exemplarCity>
+			</zone>
+			<zone type="America/Eirunepe">
+				<exemplarCity>아이루네페</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity>리오 브랑코</exemplarCity>
+			</zone>
+			<zone type="America/Porto_Velho">
+				<exemplarCity>포르토 벨로</exemplarCity>
+			</zone>
+			<zone type="America/Boa_Vista">
+				<exemplarCity>보아 비스타</exemplarCity>
+			</zone>
+			<zone type="America/Manaus">
+				<exemplarCity>마나우스</exemplarCity>
+			</zone>
+			<zone type="America/Cuiaba">
+				<exemplarCity>쿠이아바</exemplarCity>
+			</zone>
+			<zone type="America/Santarem">
+				<exemplarCity>산타렘</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity>캄포 그란데</exemplarCity>
+			</zone>
+			<zone type="America/Belem">
+				<exemplarCity>벨렘</exemplarCity>
+			</zone>
+			<zone type="America/Araguaina">
+				<exemplarCity>아라과이나</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity>상파울로</exemplarCity>
+			</zone>
+			<zone type="America/Bahia">
+				<exemplarCity>바히아</exemplarCity>
+			</zone>
+			<zone type="America/Fortaleza">
+				<exemplarCity>포르탈레자</exemplarCity>
+			</zone>
+			<zone type="America/Maceio">
+				<exemplarCity>마세이오</exemplarCity>
+			</zone>
+			<zone type="America/Recife">
+				<exemplarCity>레시페</exemplarCity>
+			</zone>
+			<zone type="America/Noronha">
+				<exemplarCity>노롱야</exemplarCity>
+			</zone>
+			<zone type="America/Nassau">
+				<exemplarCity>나소</exemplarCity>
+			</zone>
+			<zone type="Asia/Thimphu">
+				<exemplarCity>팀부</exemplarCity>
+			</zone>
+			<zone type="Africa/Gaborone">
+				<exemplarCity draft="contributed">가보로네</exemplarCity>
+			</zone>
+			<zone type="Europe/Minsk">
+				<exemplarCity>민스크</exemplarCity>
+			</zone>
+			<zone type="America/Belize">
+				<exemplarCity>벨리즈</exemplarCity>
+			</zone>
+			<zone type="America/Dawson">
+				<exemplarCity>도슨</exemplarCity>
+			</zone>
+			<zone type="America/Whitehorse">
+				<exemplarCity>화이트호스</exemplarCity>
+			</zone>
+			<zone type="America/Inuvik">
+				<exemplarCity>이누빅</exemplarCity>
+			</zone>
+			<zone type="America/Vancouver">
+				<exemplarCity>벤쿠버</exemplarCity>
+			</zone>
+			<zone type="America/Dawson_Creek">
+				<exemplarCity>도슨크릭</exemplarCity>
+			</zone>
+			<zone type="America/Yellowknife">
+				<exemplarCity>옐로나이프</exemplarCity>
+			</zone>
+			<zone type="America/Edmonton">
+				<exemplarCity>에드먼턴</exemplarCity>
+			</zone>
+			<zone type="America/Swift_Current">
+				<exemplarCity>스위프트커런트</exemplarCity>
+			</zone>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity>케임브리지 베이</exemplarCity>
+			</zone>
+			<zone type="America/Regina">
+				<exemplarCity>리자이나</exemplarCity>
+			</zone>
+			<zone type="America/Winnipeg">
+				<exemplarCity>위니펙</exemplarCity>
+			</zone>
+			<zone type="America/Resolute">
+				<exemplarCity>리졸루트</exemplarCity>
+			</zone>
+			<zone type="America/Rainy_River">
+				<exemplarCity>레이니강</exemplarCity>
+			</zone>
+			<zone type="America/Rankin_Inlet">
+				<exemplarCity>랭킹 인렛</exemplarCity>
+			</zone>
+			<zone type="America/Coral_Harbour">
+				<exemplarCity>코랄하버</exemplarCity>
+			</zone>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity>선더베이</exemplarCity>
+			</zone>
+			<zone type="America/Nipigon">
+				<exemplarCity>니피곤</exemplarCity>
+			</zone>
+			<zone type="America/Toronto">
+				<exemplarCity>토론토</exemplarCity>
+			</zone>
+			<zone type="America/Montreal">
+				<exemplarCity>몬트리올</exemplarCity>
+			</zone>
+			<zone type="America/Iqaluit">
+				<exemplarCity>이칼루이트</exemplarCity>
+			</zone>
+			<zone type="America/Pangnirtung">
+				<exemplarCity>팡니르퉁</exemplarCity>
+			</zone>
+			<zone type="America/Moncton">
+				<exemplarCity>몽턴</exemplarCity>
+			</zone>
+			<zone type="America/Halifax">
+				<exemplarCity>핼리팩스</exemplarCity>
+			</zone>
+			<zone type="America/Goose_Bay">
+				<exemplarCity>구즈베이</exemplarCity>
+			</zone>
+			<zone type="America/Glace_Bay">
+				<exemplarCity>글라스베이</exemplarCity>
+			</zone>
+			<zone type="America/Blanc-Sablon">
+				<exemplarCity>블랑 사블롱</exemplarCity>
+			</zone>
+			<zone type="America/St_Johns">
+				<exemplarCity>세인트존</exemplarCity>
+			</zone>
+			<zone type="Indian/Cocos">
+				<exemplarCity draft="contributed">코코스</exemplarCity>
+			</zone>
+			<zone type="Africa/Kinshasa">
+				<exemplarCity>킨샤사</exemplarCity>
+			</zone>
+			<zone type="Africa/Lubumbashi">
+				<exemplarCity>루붐바시</exemplarCity>
+			</zone>
+			<zone type="Africa/Bangui">
+				<exemplarCity>방기</exemplarCity>
+			</zone>
+			<zone type="Africa/Brazzaville">
+				<exemplarCity>브라자빌</exemplarCity>
+			</zone>
+			<zone type="Europe/Zurich">
+				<exemplarCity>취리히</exemplarCity>
+			</zone>
+			<zone type="Africa/Abidjan">
+				<exemplarCity>아비장</exemplarCity>
+			</zone>
+			<zone type="Pacific/Rarotonga">
+				<exemplarCity>라로통가</exemplarCity>
+			</zone>
+			<zone type="Pacific/Easter">
+				<exemplarCity>이스터 섬</exemplarCity>
+			</zone>
+			<zone type="America/Santiago">
+				<exemplarCity>산티아고</exemplarCity>
+			</zone>
+			<zone type="Africa/Douala">
+				<exemplarCity>두알라</exemplarCity>
+			</zone>
+			<zone type="Asia/Kashgar">
+				<exemplarCity>카슈가르</exemplarCity>
+			</zone>
+			<zone type="Asia/Urumqi">
+				<exemplarCity>우루무치</exemplarCity>
+			</zone>
+			<zone type="Asia/Chongqing">
+				<exemplarCity>충칭</exemplarCity>
+			</zone>
+			<zone type="Asia/Shanghai">
+				<exemplarCity>상하이</exemplarCity>
+			</zone>
+			<zone type="Asia/Harbin">
+				<exemplarCity>하얼빈</exemplarCity>
+			</zone>
+			<zone type="America/Bogota">
+				<exemplarCity>보고타</exemplarCity>
+			</zone>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>코스타리카</exemplarCity>
+			</zone>
+			<zone type="America/Havana">
+				<exemplarCity>하바나</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity>카보 베르데</exemplarCity>
+			</zone>
+			<zone type="Indian/Christmas">
+				<exemplarCity draft="contributed">크리스마스</exemplarCity>
+			</zone>
+			<zone type="Asia/Nicosia">
+				<exemplarCity>니코시아</exemplarCity>
+			</zone>
+			<zone type="Europe/Prague">
+				<exemplarCity>프라하</exemplarCity>
+			</zone>
+			<zone type="Europe/Berlin">
+				<exemplarCity>베를린</exemplarCity>
+			</zone>
+			<zone type="Africa/Djibouti">
+				<exemplarCity>지부티</exemplarCity>
+			</zone>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity>코펜하겐</exemplarCity>
+			</zone>
+			<zone type="America/Dominica">
+				<exemplarCity>도미니카</exemplarCity>
+			</zone>
+			<zone type="America/Santo_Domingo">
+				<exemplarCity>산토도밍고</exemplarCity>
+			</zone>
+			<zone type="Africa/Algiers">
+				<exemplarCity draft="contributed">알제</exemplarCity>
+			</zone>
+			<zone type="Pacific/Galapagos">
+				<exemplarCity>갈라파고스</exemplarCity>
+			</zone>
+			<zone type="America/Guayaquil">
+				<exemplarCity>과야킬</exemplarCity>
+			</zone>
+			<zone type="Europe/Tallinn">
+				<exemplarCity>탈린</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity>카이로</exemplarCity>
+			</zone>
+			<zone type="Africa/El_Aaiun">
+				<exemplarCity>엘아이운</exemplarCity>
+			</zone>
+			<zone type="Africa/Asmera">
+				<exemplarCity>아스메라</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Canary">
+				<exemplarCity>카나리아 제도</exemplarCity>
+			</zone>
+			<zone type="Africa/Ceuta">
+				<exemplarCity>세우타</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity>마드리드</exemplarCity>
+			</zone>
+			<zone type="Africa/Addis_Ababa">
+				<exemplarCity>아디스아바바</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity>헬싱키</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity>피지</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Stanley">
+				<exemplarCity>스탠리</exemplarCity>
+			</zone>
+			<zone type="Pacific/Truk">
+				<exemplarCity>트루크</exemplarCity>
+			</zone>
+			<zone type="Pacific/Ponape">
+				<exemplarCity>포나페</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kosrae">
+				<exemplarCity>코스레</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Faeroe">
+				<exemplarCity>페로 제도</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity>파리</exemplarCity>
+			</zone>
+			<zone type="Africa/Libreville">
+				<exemplarCity>리브르빌</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<exemplarCity>런던</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>그레나다</exemplarCity>
+			</zone>
+			<zone type="Asia/Tbilisi">
+				<exemplarCity>트빌리시</exemplarCity>
+			</zone>
+			<zone type="America/Cayenne">
+				<exemplarCity>카옌</exemplarCity>
+			</zone>
+			<zone type="Europe/Guernsey">
+				<exemplarCity>건지</exemplarCity>
+			</zone>
+			<zone type="Africa/Accra">
+				<exemplarCity>아크라</exemplarCity>
+			</zone>
+			<zone type="Europe/Gibraltar">
+				<exemplarCity>지브롤터</exemplarCity>
+			</zone>
+			<zone type="America/Thule">
+				<exemplarCity>툴레</exemplarCity>
+			</zone>
+			<zone type="America/Godthab">
+				<exemplarCity>고드호프</exemplarCity>
+			</zone>
+			<zone type="America/Scoresbysund">
+				<exemplarCity>스코레스바이선드</exemplarCity>
+			</zone>
+			<zone type="America/Danmarkshavn">
+				<exemplarCity>덴마크샤븐</exemplarCity>
+			</zone>
+			<zone type="Africa/Banjul">
+				<exemplarCity>반줄</exemplarCity>
+			</zone>
+			<zone type="Africa/Conakry">
+				<exemplarCity>코나크리</exemplarCity>
+			</zone>
+			<zone type="America/Guadeloupe">
+				<exemplarCity>과들루프</exemplarCity>
+			</zone>
+			<zone type="Africa/Malabo">
+				<exemplarCity>말라보</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity>아테네</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity>사우스조지아</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>과테말라</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity>괌</exemplarCity>
+			</zone>
+			<zone type="Africa/Bissau">
+				<exemplarCity draft="contributed">비사우</exemplarCity>
+			</zone>
+			<zone type="America/Guyana">
+				<exemplarCity draft="contributed">가이아나</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity>홍콩</exemplarCity>
+			</zone>
+			<zone type="America/Tegucigalpa">
+				<exemplarCity>테구시갈파</exemplarCity>
+			</zone>
+			<zone type="Europe/Zagreb">
+				<exemplarCity>자그레브</exemplarCity>
+			</zone>
+			<zone type="America/Port-au-Prince">
+				<exemplarCity>포르토프랭스</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity>부다페스트</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity>자카르타</exemplarCity>
+			</zone>
+			<zone type="Asia/Pontianak">
+				<exemplarCity>폰티아나크</exemplarCity>
+			</zone>
+			<zone type="Asia/Makassar">
+				<exemplarCity>마카사르</exemplarCity>
+			</zone>
+			<zone type="Asia/Jayapura">
+				<exemplarCity>자야푸라</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<exemplarCity>더블린</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity>예루살렘</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity>맨섬</exemplarCity>
+			</zone>
+			<zone type="Asia/Calcutta">
+				<exemplarCity>콜카타</exemplarCity>
+			</zone>
+			<zone type="Indian/Chagos">
+				<exemplarCity>차고스</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>바그다드</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity>테헤란</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Reykjavik">
+				<exemplarCity>레이캬비크</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity>로마</exemplarCity>
+			</zone>
+			<zone type="Europe/Jersey">
+				<exemplarCity>저지</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>자메이카</exemplarCity>
+			</zone>
+			<zone type="Asia/Amman">
+				<exemplarCity>암만</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity>도쿄</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity>나이로비</exemplarCity>
+			</zone>
+			<zone type="Asia/Bishkek">
+				<exemplarCity>비슈케크</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity>프놈펜</exemplarCity>
+			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity>엔더베리</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kiritimati">
+				<exemplarCity>키리티마티</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tarawa">
+				<exemplarCity>타라와</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity>코모로</exemplarCity>
+			</zone>
+			<zone type="America/St_Kitts">
+				<exemplarCity>세인트 키츠</exemplarCity>
+			</zone>
+			<zone type="Asia/Pyongyang">
+				<exemplarCity>평양</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>서울</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>쿠웨이트</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>케이맨</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtau">
+				<exemplarCity>아크타우</exemplarCity>
+			</zone>
+			<zone type="Asia/Oral">
+				<exemplarCity>오랄</exemplarCity>
+			</zone>
+			<zone type="Asia/Aqtobe">
+				<exemplarCity>악토브</exemplarCity>
+			</zone>
+			<zone type="Asia/Qyzylorda">
+				<exemplarCity>키질로르다</exemplarCity>
+			</zone>
+			<zone type="Asia/Almaty">
+				<exemplarCity>알마티</exemplarCity>
+			</zone>
+			<zone type="Asia/Vientiane">
+				<exemplarCity>비엔티안</exemplarCity>
+			</zone>
+			<zone type="Asia/Beirut">
+				<exemplarCity>베이루트</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>세인트 루시아</exemplarCity>
+			</zone>
+			<zone type="Europe/Vaduz">
+				<exemplarCity>파두츠</exemplarCity>
+			</zone>
+			<zone type="Asia/Colombo">
+				<exemplarCity>콜롬보</exemplarCity>
+			</zone>
+			<zone type="Africa/Monrovia">
+				<exemplarCity>몬로비아</exemplarCity>
+			</zone>
+			<zone type="Africa/Maseru">
+				<exemplarCity>마세루</exemplarCity>
+			</zone>
+			<zone type="Europe/Vilnius">
+				<exemplarCity>빌니우스</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity>룩셈부르크</exemplarCity>
+			</zone>
+			<zone type="Europe/Riga">
+				<exemplarCity>리가</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity>트리폴리</exemplarCity>
+			</zone>
+			<zone type="Africa/Casablanca">
+				<exemplarCity>카사블랑카</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity>모나코</exemplarCity>
+			</zone>
+			<zone type="Europe/Chisinau">
+				<exemplarCity>키시나우</exemplarCity>
+			</zone>
+			<zone type="Europe/Podgorica">
+				<exemplarCity>포드고리차</exemplarCity>
+			</zone>
+			<zone type="America/Marigot">
+				<exemplarCity>마리곳</exemplarCity>
+			</zone>
+			<zone type="Indian/Antananarivo">
+				<exemplarCity>안타나나리보</exemplarCity>
+			</zone>
+			<zone type="Pacific/Kwajalein">
+				<exemplarCity>콰잘렌</exemplarCity>
+			</zone>
+			<zone type="Pacific/Majuro">
+				<exemplarCity>마주로</exemplarCity>
+			</zone>
+			<zone type="Europe/Skopje">
+				<exemplarCity>스코페</exemplarCity>
+			</zone>
+			<zone type="Africa/Bamako">
+				<exemplarCity>바마코</exemplarCity>
+			</zone>
+			<zone type="Asia/Rangoon">
+				<exemplarCity>랑군</exemplarCity>
+			</zone>
+			<zone type="Asia/Hovd">
+				<exemplarCity>호브드</exemplarCity>
+			</zone>
+			<zone type="Asia/Ulaanbaatar">
+				<exemplarCity>울란바토르</exemplarCity>
+			</zone>
+			<zone type="Asia/Choibalsan">
+				<exemplarCity>초이발산</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity>마카오</exemplarCity>
+			</zone>
+			<zone type="Pacific/Saipan">
+				<exemplarCity>사이판</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>마티니크</exemplarCity>
+			</zone>
+			<zone type="Africa/Nouakchott">
+				<exemplarCity>누악쇼트</exemplarCity>
+			</zone>
+			<zone type="America/Montserrat">
+				<exemplarCity>몬세라트</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity>몰타</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity>모리셔스</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>몰디브</exemplarCity>
+			</zone>
+			<zone type="Africa/Blantyre">
+				<exemplarCity>블랜타이어</exemplarCity>
+			</zone>
+			<zone type="America/Tijuana">
+				<exemplarCity>티후아나</exemplarCity>
+			</zone>
+			<zone type="America/Hermosillo">
+				<exemplarCity>에르모시요</exemplarCity>
+			</zone>
+			<zone type="America/Mazatlan">
+				<exemplarCity>마사틀란</exemplarCity>
+			</zone>
+			<zone type="America/Chihuahua">
+				<exemplarCity>치와와</exemplarCity>
+			</zone>
+			<zone type="America/Monterrey">
+				<exemplarCity>몬테레이</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>멕시코 시티</exemplarCity>
+			</zone>
+			<zone type="America/Merida">
+				<exemplarCity>메리다</exemplarCity>
+			</zone>
+			<zone type="America/Cancun">
+				<exemplarCity>칸쿤</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity>쿠알라룸푸르</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuching">
+				<exemplarCity>쿠칭</exemplarCity>
+			</zone>
+			<zone type="Africa/Maputo">
+				<exemplarCity>마푸토</exemplarCity>
+			</zone>
+			<zone type="Africa/Windhoek">
+				<exemplarCity draft="contributed">빈트후크</exemplarCity>
+			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity>누메아</exemplarCity>
+			</zone>
+			<zone type="Africa/Niamey">
+				<exemplarCity>니아메</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity>노퍽</exemplarCity>
+			</zone>
+			<zone type="Africa/Lagos">
+				<exemplarCity>라고스</exemplarCity>
+			</zone>
+			<zone type="America/Managua">
+				<exemplarCity>마나과</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity>암스텔담</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity>오슬로</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>카트만두</exemplarCity>
+			</zone>
+			<zone type="Pacific/Nauru">
+				<exemplarCity>나우루</exemplarCity>
+			</zone>
+			<zone type="Pacific/Niue">
+				<exemplarCity>니우에</exemplarCity>
+			</zone>
+			<zone type="Pacific/Chatham">
+				<exemplarCity>채텀</exemplarCity>
+			</zone>
+			<zone type="Pacific/Auckland">
+				<exemplarCity>오클랜드</exemplarCity>
+			</zone>
+			<zone type="Asia/Muscat">
+				<exemplarCity>무스카트</exemplarCity>
+			</zone>
+			<zone type="America/Panama">
+				<exemplarCity>파나마</exemplarCity>
+			</zone>
+			<zone type="America/Lima">
+				<exemplarCity>리마</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tahiti">
+				<exemplarCity>타히티</exemplarCity>
+			</zone>
+			<zone type="Pacific/Marquesas">
+				<exemplarCity>마퀘사스</exemplarCity>
+			</zone>
+			<zone type="Pacific/Gambier">
+				<exemplarCity>감비어</exemplarCity>
+			</zone>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity>포트모르즈비</exemplarCity>
+			</zone>
+			<zone type="Asia/Manila">
+				<exemplarCity>마닐라</exemplarCity>
+			</zone>
+			<zone type="Asia/Karachi">
+				<exemplarCity>카라치</exemplarCity>
+			</zone>
+			<zone type="Europe/Warsaw">
+				<exemplarCity>바르샤바</exemplarCity>
+			</zone>
+			<zone type="America/Miquelon">
+				<exemplarCity>미클롱</exemplarCity>
+			</zone>
+			<zone type="Pacific/Pitcairn">
+				<exemplarCity>핏케언</exemplarCity>
+			</zone>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>푸에르토리코</exemplarCity>
+			</zone>
+			<zone type="Asia/Gaza">
+				<exemplarCity>가자</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Azores">
+				<exemplarCity>아조레스</exemplarCity>
+			</zone>
+			<zone type="Atlantic/Madeira">
+				<exemplarCity>마데이라</exemplarCity>
+			</zone>
+			<zone type="Europe/Lisbon">
+				<exemplarCity>리스본</exemplarCity>
+			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity>팔라우</exemplarCity>
+			</zone>
+			<zone type="America/Asuncion">
+				<exemplarCity>아순시온</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>카타르</exemplarCity>
+			</zone>
+			<zone type="Indian/Reunion">
+				<exemplarCity>불령 리유니온</exemplarCity>
+			</zone>
+			<zone type="Europe/Bucharest">
+				<exemplarCity>부쿠레슈티</exemplarCity>
+			</zone>
+			<zone type="Europe/Belgrade">
+				<exemplarCity>베오그라드</exemplarCity>
+			</zone>
+			<zone type="Europe/Kaliningrad">
+				<exemplarCity>칼리닌그라드</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>모스크바</exemplarCity>
+			</zone>
+			<zone type="Europe/Volgograd">
+				<exemplarCity>볼고그라트</exemplarCity>
+			</zone>
+			<zone type="Europe/Samara">
+				<exemplarCity>사마라</exemplarCity>
+			</zone>
+			<zone type="Asia/Yekaterinburg">
+				<exemplarCity>예카테린부르크</exemplarCity>
+			</zone>
+			<zone type="Asia/Omsk">
+				<exemplarCity>옴스크</exemplarCity>
+			</zone>
+			<zone type="Asia/Novosibirsk">
+				<exemplarCity>노보시비르스크</exemplarCity>
+			</zone>
+			<zone type="Asia/Krasnoyarsk">
+				<exemplarCity>크라스노야르스크</exemplarCity>
+			</zone>
+			<zone type="Asia/Irkutsk">
+				<exemplarCity>이르쿠츠크</exemplarCity>
+			</zone>
+			<zone type="Asia/Yakutsk">
+				<exemplarCity>야쿠츠크</exemplarCity>
+			</zone>
+			<zone type="Asia/Vladivostok">
+				<exemplarCity>블라디보스토크</exemplarCity>
+			</zone>
+			<zone type="Asia/Sakhalin">
+				<exemplarCity>사할린</exemplarCity>
+			</zone>
+			<zone type="Asia/Magadan">
+				<exemplarCity>마가단</exemplarCity>
+			</zone>
+			<zone type="Asia/Kamchatka">
+				<exemplarCity>캄차카</exemplarCity>
+			</zone>
+			<zone type="Asia/Anadyr">
+				<exemplarCity>아나디리</exemplarCity>
+			</zone>
+			<zone type="Africa/Kigali">
+				<exemplarCity>키갈리</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity>리야드</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guadalcanal">
+				<exemplarCity>과달카날</exemplarCity>
+			</zone>
+			<zone type="Indian/Mahe">
+				<exemplarCity>마헤</exemplarCity>
+			</zone>
+			<zone type="Africa/Khartoum">
+				<exemplarCity>카르툼</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity>스톡홀름</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity>싱가포르</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>세인트 헬레나</exemplarCity>
+			</zone>
+			<zone type="Europe/Ljubljana">
+				<exemplarCity>류블랴나</exemplarCity>
+			</zone>
+			<zone type="Arctic/Longyearbyen">
+				<exemplarCity>롱이어비엔</exemplarCity>
+			</zone>
+			<zone type="Europe/Bratislava">
+				<exemplarCity>브라티슬라바</exemplarCity>
+			</zone>
+			<zone type="Africa/Freetown">
+				<exemplarCity>프리타운</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity>산마리노</exemplarCity>
+			</zone>
+			<zone type="Africa/Dakar">
+				<exemplarCity>다카르</exemplarCity>
+			</zone>
+			<zone type="Africa/Mogadishu">
+				<exemplarCity>모가디슈</exemplarCity>
+			</zone>
+			<zone type="America/Paramaribo">
+				<exemplarCity>파라마리보</exemplarCity>
+			</zone>
+			<zone type="Africa/Sao_Tome">
+				<exemplarCity>상투메</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>엘살바도르</exemplarCity>
+			</zone>
+			<zone type="Asia/Damascus">
+				<exemplarCity>다마스쿠스</exemplarCity>
+			</zone>
+			<zone type="Africa/Mbabane">
+				<exemplarCity>음바바네</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity>그랜드 터크</exemplarCity>
+			</zone>
+			<zone type="Africa/Ndjamena">
+				<exemplarCity>엔자메나</exemplarCity>
+			</zone>
+			<zone type="Indian/Kerguelen">
+				<exemplarCity>케르켈렌</exemplarCity>
+			</zone>
+			<zone type="Africa/Lome">
+				<exemplarCity>로메</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity>방콕</exemplarCity>
+			</zone>
+			<zone type="Asia/Dushanbe">
+				<exemplarCity>두샨베</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fakaofo">
+				<exemplarCity>파카오푸</exemplarCity>
+			</zone>
+			<zone type="Asia/Dili">
+				<exemplarCity>딜리</exemplarCity>
+			</zone>
+			<zone type="Asia/Ashgabat">
+				<exemplarCity>아슈하바트</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity>튀니스</exemplarCity>
+			</zone>
+			<zone type="Pacific/Tongatapu">
+				<exemplarCity>통가타푸</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>이스탄불</exemplarCity>
+			</zone>
+			<zone type="America/Port_of_Spain">
+				<exemplarCity>포트오브스페인</exemplarCity>
+			</zone>
+			<zone type="Pacific/Funafuti">
+				<exemplarCity>푸나푸티</exemplarCity>
+			</zone>
+			<zone type="Asia/Taipei">
+				<exemplarCity>타이베이</exemplarCity>
+			</zone>
+			<zone type="Africa/Dar_es_Salaam">
+				<exemplarCity>다르에스살람</exemplarCity>
+			</zone>
+			<zone type="Europe/Uzhgorod">
+				<exemplarCity>우주고로트</exemplarCity>
+			</zone>
+			<zone type="Europe/Kiev">
+				<exemplarCity>키예프</exemplarCity>
+			</zone>
+			<zone type="Europe/Simferopol">
+				<exemplarCity>심페로폴</exemplarCity>
+			</zone>
+			<zone type="Europe/Zaporozhye">
+				<exemplarCity>자포로지예</exemplarCity>
+			</zone>
+			<zone type="Africa/Kampala">
+				<exemplarCity>캄팔라</exemplarCity>
+			</zone>
+			<zone type="Pacific/Midway">
+				<exemplarCity>미드웨이</exemplarCity>
+			</zone>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>존스톤</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wake">
+				<exemplarCity>웨이크</exemplarCity>
+			</zone>
+			<zone type="America/Adak">
+				<exemplarCity>에이닥</exemplarCity>
+			</zone>
+			<zone type="America/Nome">
+				<exemplarCity>놈</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>호놀룰루</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity>앵커리지</exemplarCity>
+			</zone>
+			<zone type="America/Yakutat">
+				<exemplarCity>야쿠타트</exemplarCity>
+			</zone>
+			<zone type="America/Juneau">
+				<exemplarCity>주노</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity>로스앤젤레스</exemplarCity>
+			</zone>
+			<zone type="America/Boise">
+				<exemplarCity>보이시</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity>피닉스</exemplarCity>
+			</zone>
+			<zone type="America/Shiprock">
+				<exemplarCity>십록</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity>덴버</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/New_Salem">
+				<exemplarCity>노스 다코타주, 뉴살렘</exemplarCity>
+			</zone>
+			<zone type="America/North_Dakota/Center">
+				<exemplarCity>중부, 노스다코타</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity>시카고</exemplarCity>
+			</zone>
+			<zone type="America/Menominee">
+				<exemplarCity>메노미니</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vincennes">
+				<exemplarCity>인디아나주, 뱅센</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Petersburg">
+				<exemplarCity>인디애나주, 피츠버그</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Tell_City">
+				<exemplarCity>인디아나주, 텔시티</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Knox">
+				<exemplarCity>인디애나주 녹스</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Winamac">
+				<exemplarCity>인디아나주, 워너맥</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Marengo">
+				<exemplarCity>인디애나주, 마렝고</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity>인디애나폴리스</exemplarCity>
+			</zone>
+			<zone type="America/Louisville">
+				<exemplarCity>루이빌</exemplarCity>
+			</zone>
+			<zone type="America/Indiana/Vevay">
+				<exemplarCity>자포로제</exemplarCity>
+			</zone>
+			<zone type="America/Kentucky/Monticello">
+				<exemplarCity>켄터키주, 몬티첼로</exemplarCity>
+			</zone>
+			<zone type="America/Detroit">
+				<exemplarCity>디트로이트</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>뉴욕</exemplarCity>
+			</zone>
+			<zone type="America/Montevideo">
+				<exemplarCity>몬테비데오</exemplarCity>
+			</zone>
+			<zone type="Asia/Samarkand">
+				<exemplarCity>사마르칸트</exemplarCity>
+			</zone>
+			<zone type="Asia/Tashkent">
+				<exemplarCity>타슈켄트</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity>바티칸</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>세인트 빈센트</exemplarCity>
+			</zone>
+			<zone type="America/Caracas">
+				<exemplarCity>카라카스</exemplarCity>
+			</zone>
+			<zone type="America/Tortola">
+				<exemplarCity>토르톨라</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>세인트 토마스</exemplarCity>
+			</zone>
+			<zone type="Asia/Saigon">
+				<exemplarCity>사이공</exemplarCity>
+			</zone>
+			<zone type="Pacific/Efate">
+				<exemplarCity>에파테</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity>월리스</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity>아피아</exemplarCity>
+			</zone>
+			<zone type="Asia/Aden">
+				<exemplarCity>아덴</exemplarCity>
+			</zone>
+			<zone type="Indian/Mayotte">
+				<exemplarCity>메요트</exemplarCity>
+			</zone>
+			<zone type="Africa/Johannesburg">
+				<exemplarCity>요하네스버그</exemplarCity>
+			</zone>
+			<zone type="Africa/Lusaka">
+				<exemplarCity>루사카</exemplarCity>
+			</zone>
+			<zone type="Africa/Harare">
+				<exemplarCity>하라레</exemplarCity>
+			</zone>
+			<metazone type="Acre">
+				<long>
+					<generic>아크레 시간</generic>
+					<standard>아크레 표준시</standard>
+					<daylight>아크레 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard draft="provisional">아프가니스탄 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>중앙아프리카 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>동아프리카 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>남아프리카 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>서아프리카 시간</generic>
+					<standard>서아프리카 표준시</standard>
+					<daylight>서아프리카 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aktyubinsk">
+				<long>
+					<generic draft="provisional">악튜빈스크 시간</generic>
+					<standard draft="provisional">악튜빈스크 표준시</standard>
+					<daylight draft="provisional">악튜빈스크 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>알래스카 시간</generic>
+					<standard>알래스카 표준시</standard>
+					<daylight>알래스카 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska_Hawaii">
+				<long>
+					<generic draft="contributed">알래스카-하와이 시간</generic>
+					<standard draft="contributed">알래스카-하와이 표준시</standard>
+					<daylight draft="contributed">알래스카-하와이 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Almaty">
+				<long>
+					<generic draft="provisional">알마티 표준 시간</generic>
+					<standard draft="provisional">알마티 표준 표준시</standard>
+					<daylight draft="provisional">알마티 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>아마존 시간</generic>
+					<standard>아마존 표준시</standard>
+					<daylight>아마존 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Central">
+				<long>
+					<generic>미 중부 시간</generic>
+					<standard>미 중부 표준시</standard>
+					<daylight>미 중부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic>미 동부 시간</generic>
+					<standard>미 동부 표준시</standard>
+					<daylight>미 동부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic>미 산지 시간</generic>
+					<standard>미 산악 표준시</standard>
+					<daylight>미 산지 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic>미 태평양 시간</generic>
+					<standard>미 태평양 표준시</standard>
+					<daylight>미 태평양 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Anadyr">
+				<long>
+					<generic draft="contributed">아나디리 시간</generic>
+					<standard draft="contributed">아나디리 표준시</standard>
+					<daylight draft="contributed">아나디리 서머 타임</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtau">
+				<long>
+					<generic draft="provisional">악타우 표준 시간</generic>
+					<standard draft="provisional">악타우 표준 표준시</standard>
+					<daylight draft="provisional">악타우 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Aqtobe">
+				<long>
+					<generic draft="provisional">악퇴베 표준 시간</generic>
+					<standard draft="provisional">악퇴베 표준 표준시</standard>
+					<daylight draft="provisional">악퇴베 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>아라비아 시간</generic>
+					<standard>아라비아 표준시</standard>
+					<daylight>아라비아 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>아르헨티나 시간</generic>
+					<standard>아르헨티나 표준시</standard>
+					<daylight>아르헨티나 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>아르헨티나 서부 시간</generic>
+					<standard>아르헨티나 서부 표준시</standard>
+					<daylight>아르헨티나 서부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>아르메니아 시간</generic>
+					<standard>아르메니아 표준시</standard>
+					<daylight>아르메니아 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ashkhabad">
+				<long>
+					<generic draft="provisional">아슈하바트 표준 시간</generic>
+					<standard draft="provisional">아슈하바트 표준 표준시</standard>
+					<daylight draft="provisional">아슈하바트 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic>대서양 시간</generic>
+					<standard>대서양 표준시</standard>
+					<daylight>미 대서양 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>중앙 오스트레일리아 시간</generic>
+					<standard>오스트레일리아 중부 표준시</standard>
+					<daylight>오스트레일리아 중부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>오스트레일리아 중서부 시간</generic>
+					<standard>오스트레일리아 중서부 표준시</standard>
+					<daylight>오스트레일리아 중서부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>동부 오스트레일리아 시간</generic>
+					<standard>오스트레일리아 동부 표준시</standard>
+					<daylight>오스트레일리아 동부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>서부 오스트레일리아 시간</generic>
+					<standard>오스트레일리아 서부 표준시</standard>
+					<daylight>오스트레일리아 서부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>아제르바이잔 시간</generic>
+					<standard>아제르바이잔 표준시</standard>
+					<daylight>아제르바이잔 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>아조레스 시간</generic>
+					<standard>아조레스 표준시</standard>
+					<daylight>아조레스 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Baku">
+				<long>
+					<generic draft="provisional">바쿠 시간</generic>
+					<standard draft="provisional">바쿠 표준시</standard>
+					<daylight draft="provisional">바쿠 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>방글라데시 시간</generic>
+					<standard>방글라데시 표준시</standard>
+					<daylight>방글라데시 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bering">
+				<long>
+					<generic draft="provisional">벨링 시간</generic>
+					<standard draft="provisional">벨링 표준 시간</standard>
+					<daylight draft="provisional">벨링 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>부탄 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>볼리비아 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Borneo">
+				<long>
+					<generic draft="provisional">보르네오 시간</generic>
+					<standard draft="provisional">보르네오 표준 시간</standard>
+					<daylight draft="provisional">보르네오 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>브라질리아 시간</generic>
+					<standard>브라질리아 표준시</standard>
+					<daylight>브라질리아 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>브루나이 다루살람 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>카보 베르데 시간</generic>
+					<standard>카보 베르데 표준시</standard>
+					<daylight>카보 베르데 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>차모로 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Changbai">
+				<long>
+					<standard draft="provisional">창바이 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>채텀 시간</generic>
+					<standard>채텀 표준시</standard>
+					<daylight>채텀 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>칠레 시간</generic>
+					<standard>칠레 표준시</standard>
+					<daylight>칠레 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>중국 시간</generic>
+					<standard>중국 표준시</standard>
+					<daylight>중국 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>초이발산 시간</generic>
+					<standard>초이발산 표준시</standard>
+					<daylight>초이발산 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>크리스마스섬 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>코코스섬 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>콜롬비아 시간</generic>
+					<standard>콜롬비아 표준시</standard>
+					<daylight>콜롬비아 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>쿡제도 시간</generic>
+					<standard>쿡제도 표준시</standard>
+					<daylight>쿡제도 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>쿠바 시간</generic>
+					<standard>쿠바 표준시</standard>
+					<daylight>쿠바 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Dacca">
+				<long>
+					<standard draft="provisional">다카 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>데이비스 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>뒤몽 뒤르빌 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Dushanbe">
+				<long>
+					<generic draft="provisional">두샨베 시간</generic>
+					<standard draft="provisional">두샨베 표준시</standard>
+					<daylight draft="provisional">두샨베 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Dutch_Guiana">
+				<long>
+					<standard draft="contributed">네덜란드령 기아나 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard draft="provisional">동티모르 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>이스터섬 시간</generic>
+					<standard>이스터섬 표준시</standard>
+					<daylight>이스터섬 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>에콰도르 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic>중부유럽 시간</generic>
+					<standard>중부유럽 표준시</standard>
+					<daylight>중부유럽 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic>동부유럽 시간</generic>
+					<standard>동부유럽 표준시</standard>
+					<daylight>동부유럽 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic>서부 유럽 시간</generic>
+					<standard>서부 유럽 표준시</standard>
+					<daylight>서부 유럽 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>포클랜드 시간</generic>
+					<standard>포클랜드 표준시</standard>
+					<daylight>포클랜드 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>피지 시간</generic>
+					<standard>피지 표준시</standard>
+					<daylight>피지 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard draft="contributed">프랑스령 기아나 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>프랑스령 남쪽식민지 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>갈라파고스 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard draft="provisional">강비에 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>그루지아 시간</generic>
+					<standard>그루지아 표준시</standard>
+					<daylight>그루지아 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard draft="provisional">길버트 제도 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>그리니치 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Central">
+				<long>
+					<generic>그린란드 중부 시간</generic>
+					<standard>그린란드 중부 표준시</standard>
+					<daylight>그린란드 중부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>그린란드 동부 시간</generic>
+					<standard>그린란드 동부 표준시</standard>
+					<daylight>그린란드 동부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>그린란드 서부 시간</generic>
+					<standard>그린란드 서부 표준시</standard>
+					<daylight>그린란드 서부 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Guam">
+				<long>
+					<standard draft="provisional">괌 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard draft="provisional">걸프 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard draft="provisional">가이아나 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic draft="contributed">하와이 알류샨 시간</generic>
+					<standard draft="contributed">하와이 알류샨 표준시</standard>
+					<daylight draft="contributed">하와이 알류샨 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>홍콩 시간</generic>
+					<standard>홍콩 표준시</standard>
+					<daylight>홍콩 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>호브드 시간</generic>
+					<standard>호브드 표준시</standard>
+					<daylight>호브드 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>인도 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>영국령 인도양 식민지 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard draft="contributed">인도차이나 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>인도네시아 중부 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>인도네시아 동부 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>인도네시아 서부 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>이란 시간</generic>
+					<standard>이란 표준시</standard>
+					<daylight>이란 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>이르쿠츠크 시간</generic>
+					<standard>이르쿠츠크 표준시</standard>
+					<daylight>이르쿠츠크 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>이스라엘 시간</generic>
+					<standard>이스라엘 표준시</standard>
+					<daylight>이스라엘 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>일본 시간</generic>
+					<standard>일본 표준시</standard>
+					<daylight>일본 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kamchatka">
+				<long>
+					<generic draft="contributed">페트로파블롭스크-캄차츠키 시간</generic>
+					<standard draft="contributed">페트로파블롭스크-캄차츠키 표준시</standard>
+					<daylight draft="contributed">페트로파블롭스크-캄차츠키 서머 타임</daylight>
+				</long>
+			</metazone>
+			<metazone type="Karachi">
+				<long>
+					<standard draft="provisional">카라치 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Kashgar">
+				<long>
+					<standard draft="provisional">카슈가르 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard draft="contributed">동부 카자흐스탄 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard draft="contributed">서부 카자흐스탄 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Kizilorda">
+				<long>
+					<generic draft="provisional">키질로르다 시간</generic>
+					<standard draft="provisional">키질로르다 표준시</standard>
+					<daylight draft="provisional">키질로르다 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>한국 시간</generic>
+					<standard>한국 표준시</standard>
+					<daylight>한국 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard draft="provisional">코스라에 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>크라스노야르스크 시간</generic>
+					<standard>크라스노야르스크 표준시</standard>
+					<daylight>크라스노야르스크 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kuybyshev">
+				<long>
+					<generic draft="provisional">쿠이비셰프 시간</generic>
+					<standard draft="provisional">쿠이비셰프 표준 시간</standard>
+					<daylight draft="provisional">쿠이비셰프 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kwajalein">
+				<long>
+					<standard draft="provisional">콰잘렌 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>키르기스스탄 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Lanka">
+				<long>
+					<standard draft="provisional">랑카 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard draft="provisional">라인 제도 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Long_Shu">
+				<long>
+					<standard draft="provisional">롱-슈 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>로드 하우 시간</generic>
+					<standard>로드 하우 표준시</standard>
+					<daylight>로드 하우 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macau">
+				<long>
+					<generic draft="provisional">마카오 시간</generic>
+					<standard draft="provisional">마카오 표준 시간</standard>
+					<daylight draft="provisional">마카오 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard draft="contributed">맥쿼리 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>마가단 시간</generic>
+					<standard>마가단 표준시</standard>
+					<daylight>마가단 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaya">
+				<long>
+					<standard draft="provisional">말레이 반도 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>말레이시아 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>몰디브 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard draft="provisional">마르케사스 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard draft="provisional">마셜 제도 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>모리셔스 시간</generic>
+					<standard>모리셔스 표준시</standard>
+					<daylight>모리셔스 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>모슨 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>울란바토르 시간</generic>
+					<standard>울란바토르 표준시</standard>
+					<daylight>울란바토르 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>모스크바 시간</generic>
+					<standard>모스크바 표준시</standard>
+					<daylight>모스크바 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>미얀마 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard draft="provisional">나우루 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>네팔 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic draft="provisional">뉴 칼레도니아 시간</generic>
+					<standard draft="provisional">뉴 칼레도니아 표준 시간</standard>
+					<daylight draft="provisional">뉴 칼레도니아 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>뉴질랜드 시간</generic>
+					<standard>뉴질랜드 표준시</standard>
+					<daylight>뉴질랜드 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>뉴펀들랜드 시간</generic>
+					<standard>뉴펀들랜드 표준시</standard>
+					<daylight>뉴펀들랜드 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard draft="provisional">니우에 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<standard draft="provisional">노퍽 제도 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>페르난도 데 노로냐 시간</generic>
+					<standard>페르난도 데 노로냐 표준시</standard>
+					<daylight>페르난도 데 노로냐 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="North_Mariana">
+				<long>
+					<standard draft="provisional">북마리아나 제도 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>노보시비르스크 시간</generic>
+					<standard>노보시비르스크 표준시</standard>
+					<daylight>노보시비르스크 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>옴스크 시간</generic>
+					<standard>옴스크 표준시</standard>
+					<daylight>옴스크 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>파키스탄 시간</generic>
+					<standard>파키스탄 표준시</standard>
+					<daylight>파키스탄 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard draft="provisional">팔라우 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard draft="provisional">파푸아뉴기니 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>파라과이 시간</generic>
+					<standard>파라과이 표준시</standard>
+					<daylight>파라과이 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>페루 시간</generic>
+					<standard>페루 표준시</standard>
+					<daylight>페루 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>필리핀 시간</generic>
+					<standard>필리핀 표준시</standard>
+					<daylight>필리핀 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard draft="provisional">피닉스 제도 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>피에르 미클롱 시간</generic>
+					<standard>피에르 미클롱 표준시</standard>
+					<daylight>피에르 미클롱 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard draft="provisional">핏케언 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard draft="provisional">포나페 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Qyzylorda">
+				<long>
+					<generic draft="provisional">키질로르다 시간</generic>
+					<standard draft="provisional">키질로르다 표준 시간</standard>
+					<daylight draft="provisional">키질로르다 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>리유니온 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>로데라 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>사할린 시간</generic>
+					<standard>사할린 표준시</standard>
+					<daylight>사할린 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samara">
+				<long>
+					<generic draft="contributed">사마라 시간</generic>
+					<standard draft="contributed">사마라 표준시</standard>
+					<daylight draft="contributed">사마라 서머 타임</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samarkand">
+				<long>
+					<generic draft="provisional">사마르칸트 시간</generic>
+					<standard draft="provisional">사마르칸트 표준 시간</standard>
+					<daylight draft="provisional">사마르칸트 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<standard draft="provisional">사모아 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>세이셸 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Shevchenko">
+				<long>
+					<generic draft="provisional">솁첸코 시간</generic>
+					<standard draft="provisional">솁첸코 표준 시간</standard>
+					<daylight draft="provisional">솁첸코 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>싱가포르 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard draft="provisional">솔로몬 제도 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>사우스 조지아 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>수리남 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Sverdlovsk">
+				<long>
+					<generic draft="provisional">스베르들로프스크 시간</generic>
+					<standard draft="provisional">스베르들로프스크 표준 시간</standard>
+					<daylight draft="provisional">스베르들로프스크 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>쇼와 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard draft="provisional">타히티 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>타이베이 시간</generic>
+					<standard>타이베이 표준시</standard>
+					<daylight>타이베이 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>타지키스탄 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Tashkent">
+				<long>
+					<generic draft="provisional">타슈켄트 시간</generic>
+					<standard draft="provisional">타슈켄트 표준 시간</standard>
+					<daylight draft="provisional">타슈켄트 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tbilisi">
+				<long>
+					<generic draft="provisional">트빌리시 시간</generic>
+					<standard draft="provisional">트빌리시 표준 시간</standard>
+					<daylight draft="provisional">트빌리시 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard draft="provisional">토켈라우 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic draft="provisional">통가 시간</generic>
+					<standard draft="provisional">통가 표준 시간</standard>
+					<daylight draft="provisional">통가 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard draft="provisional">트루크 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkey">
+				<long>
+					<generic draft="provisional">터키 시간</generic>
+					<standard draft="provisional">터키 표준시</standard>
+					<daylight draft="provisional">터키 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>투르크메니스탄 시간</generic>
+					<standard>투르크메니스탄 표준시</standard>
+					<daylight>투르크메니스탄 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard draft="provisional">투발루 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Uralsk">
+				<long>
+					<generic draft="provisional">우랄스크 시간</generic>
+					<standard draft="provisional">우랄스크 표준 시간</standard>
+					<daylight draft="provisional">우랄스크 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>우루과이 시간</generic>
+					<standard>우루과이 표준시</standard>
+					<daylight>우루과이 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Urumqi">
+				<long>
+					<standard draft="provisional">우루무치 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>우즈베키스탄 시간</generic>
+					<standard>우즈베키스탄 표준시</standard>
+					<daylight>우즈베키스탄 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic draft="provisional">바누아투 시간</generic>
+					<standard draft="provisional">바누아투 표준 시간</standard>
+					<daylight draft="provisional">바누아투 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>베네주엘라 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>블라디보스토크 시간</generic>
+					<standard>블라디보스토크 표준시</standard>
+					<daylight>블라디보스토크 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>볼고그라드 시간</generic>
+					<standard>볼고그라드 표준시</standard>
+					<daylight>볼고그라드 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>보스토크 표준시</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard draft="provisional">웨이크 섬 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard draft="provisional">왈리스 푸투나 표준 시간</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>야쿠츠크 시간</generic>
+					<standard>야쿠츠크 표준시</standard>
+					<daylight>야쿠츠크 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>예카테린부르크 시간</generic>
+					<standard>예카테린부르크 표준시</standard>
+					<daylight>예카테린부르크 하계 표준시</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yerevan">
+				<long>
+					<generic draft="provisional">예레반 시간</generic>
+					<standard draft="provisional">예레반 표준 시간</standard>
+					<daylight draft="provisional">예레반 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<generic draft="provisional">유콘 시간</generic>
+					<standard draft="provisional">유콘 표준 시간</standard>
+					<daylight draft="provisional">유콘 일광 절약 시간</daylight>
+				</long>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<symbols numberSystem="latn">
+			<decimal>.</decimal>
+			<group>,</group>
+			<list>;</list>
+			<percentSign>%</percentSign>
+			<plusSign>+</plusSign>
+			<minusSign>-</minusSign>
+			<exponential>E</exponential>
+			<perMille>‰</perMille>
+			<infinity>∞</infinity>
+			<nan>NaN</nan>
+		</symbols>
+		<decimalFormats numberSystem="latn">
+			<decimalFormatLength>
+				<decimalFormat>
+					<pattern>#,##0.###</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+			<decimalFormatLength type="short">
+				<decimalFormat>
+					<pattern type="1000" draft="contributed">0000</pattern>
+					<pattern type="10000" draft="contributed">0.0만</pattern>
+					<pattern type="100000" draft="contributed">00만</pattern>
+					<pattern type="1000000" draft="contributed">000만</pattern>
+					<pattern type="10000000" draft="contributed">0000만</pattern>
+					<pattern type="100000000" draft="contributed">0.0억</pattern>
+					<pattern type="1000000000" draft="contributed">00억</pattern>
+					<pattern type="10000000000" draft="contributed">000억</pattern>
+					<pattern type="100000000000" draft="contributed">0000억</pattern>
+					<pattern type="1000000000000" draft="contributed">0.0조</pattern>
+					<pattern type="10000000000000" draft="contributed">00조</pattern>
+					<pattern type="100000000000000" draft="contributed">000조</pattern>
+				</decimalFormat>
+			</decimalFormatLength>
+		</decimalFormats>
+		<scientificFormats numberSystem="latn">
+			<scientificFormatLength>
+				<scientificFormat>
+					<pattern>#E0</pattern>
+				</scientificFormat>
+			</scientificFormatLength>
+		</scientificFormats>
+		<percentFormats numberSystem="latn">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="contributed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other">{0} {1}</unitPattern>
+		</currencyFormats>
+		<currencies>
+			<currency type="ADP">
+				<displayName>안도라 페세타</displayName>
+			</currency>
+			<currency type="AED">
+				<displayName>아랍에미리트 디르함</displayName>
+			</currency>
+			<currency type="AFA">
+				<displayName>아프가니 (1927-2002)</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName>아프가니스탄 아프가니</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>알바니아 레크</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>아르메니아 드람</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>네덜란드령 안틸레스 길더</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>앙골라 콴자</displayName>
+			</currency>
+			<currency type="AOK">
+				<displayName>앙골라 콴자 (1977-1990)</displayName>
+			</currency>
+			<currency type="AON">
+				<displayName>앙골라 신콴자 (1990-2000)</displayName>
+			</currency>
+			<currency type="ARA">
+				<displayName>아르헨티나 오스트랄</displayName>
+			</currency>
+			<currency type="ARP">
+				<displayName>아르헨티나 페소 (1983-1985)</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>아르헨티나 페소</displayName>
+			</currency>
+			<currency type="ATS">
+				<displayName>호주 실링</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>호주 달러</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>아루바 플로린</displayName>
+			</currency>
+			<currency type="AZM">
+				<displayName>아제르바이젠 마나트(1993-2006)</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>아제르바이잔 마나트</displayName>
+			</currency>
+			<currency type="BAD">
+				<displayName>보스니아-헤르체고비나 디나르</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>보스니아-헤르체고비나 태환 마르크</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>바베이도스 달러</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>방글라데시 타카</displayName>
+			</currency>
+			<currency type="BEC">
+				<displayName>벨기에 프랑 (태환)</displayName>
+			</currency>
+			<currency type="BEF">
+				<displayName>벨기에 프랑</displayName>
+			</currency>
+			<currency type="BEL">
+				<displayName>벨기에 프랑 (금융)</displayName>
+			</currency>
+			<currency type="BGL">
+				<displayName>불가리아 동전 렛</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>불가리아 신권 렛</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>바레인 디나르</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName>부룬디 프랑</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>버뮤다 달러</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>부루나이 달러</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>볼리비아노</displayName>
+			</currency>
+			<currency type="BOP">
+				<displayName>볼리비아노 페소</displayName>
+			</currency>
+			<currency type="BOV">
+				<displayName>볼리비아노 Mvdol(기금)</displayName>
+			</currency>
+			<currency type="BRB">
+				<displayName>볼리비아노 크루제이루 노보 (1967-1986)</displayName>
+			</currency>
+			<currency type="BRC">
+				<displayName>브라질 크루자두</displayName>
+			</currency>
+			<currency type="BRE">
+				<displayName>브라질 크루제이루 (1990-1993)</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName>브라질 레알</displayName>
+			</currency>
+			<currency type="BRN">
+				<displayName>브라질 크루자두 노보</displayName>
+			</currency>
+			<currency type="BRR">
+				<displayName>브라질 크루제이루</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>바하마 달러</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>부탄 눌투눔</displayName>
+			</currency>
+			<currency type="BUK">
+				<displayName>버마 차트</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName>보츠와나 폴라</displayName>
+			</currency>
+			<currency type="BYB">
+				<displayName>벨라루스 신권 루블 (1994-1999)</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>벨라루스 루블</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>벨리즈 달러</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>캐나다 달러</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName>콩고 프랑 콩골라스</displayName>
+			</currency>
+			<currency type="CHE">
+				<displayName>유로 (WIR)</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName>스위스 프랑</displayName>
+			</currency>
+			<currency type="CHW">
+				<displayName>프랑 (WIR)</displayName>
+			</currency>
+			<currency type="CLF">
+				<displayName>칠레 (UF)</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName>칠레 페소</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>중국 위안 인민폐</displayName>
+			</currency>
+			<currency type="COP">
+				<displayName>콜롬비아 페소</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>코스타리카 콜론</displayName>
+			</currency>
+			<currency type="CSD">
+				<displayName>고 세르비아 디나르</displayName>
+			</currency>
+			<currency type="CSK">
+				<displayName>체코슬로바키아 동전 코루나</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>쿠바 태환 페소</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>쿠바 페소</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName>카보베르데 에스쿠도</displayName>
+			</currency>
+			<currency type="CYP">
+				<displayName>싸이프러스 파운드</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName>체코 공화국 코루나</displayName>
+			</currency>
+			<currency type="DDM">
+				<displayName>동독 오스트마르크</displayName>
+			</currency>
+			<currency type="DEM">
+				<displayName>독일 마르크</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName>지부티 프랑</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>덴마크 크로네</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>도미니카 페소</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>알제리 디나르</displayName>
+			</currency>
+			<currency type="ECS">
+				<displayName>에쿠아도르 수크레</displayName>
+			</currency>
+			<currency type="ECV">
+				<displayName>에콰도르 (UVC)</displayName>
+			</currency>
+			<currency type="EEK">
+				<displayName>에스토니아 크룬</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName>이집트 파운드</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName>에리트리아 나크파</displayName>
+			</currency>
+			<currency type="ESA">
+				<displayName>스페인 페세타(예금)</displayName>
+			</currency>
+			<currency type="ESB">
+				<displayName>스페인 페세타(변환 예금)</displayName>
+			</currency>
+			<currency type="ESP">
+				<displayName>스페인 페세타</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>이디오피아 비르</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>유로화</displayName>
+			</currency>
+			<currency type="FIM">
+				<displayName>핀란드 마르카</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName>피지 달러</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>포클랜드제도 파운드</displayName>
+			</currency>
+			<currency type="FRF">
+				<displayName>프랑스 프랑</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>영국령 파운드 스털링</displayName>
+			</currency>
+			<currency type="GEK">
+				<displayName>그루지야 지폐 라리트</displayName>
+			</currency>
+			<currency type="GEL">
+				<displayName>그루지야 라리</displayName>
+			</currency>
+			<currency type="GHC">
+				<displayName>가나 시디 (1979-2007)</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName>가나 시디</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>지브롤터 파운드</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName>감비아 달라시</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName>기니 프랑</displayName>
+			</currency>
+			<currency type="GNS">
+				<displayName>기니 시리</displayName>
+			</currency>
+			<currency type="GQE">
+				<displayName>적도 기니 에쿨 (Ekwele)</displayName>
+			</currency>
+			<currency type="GRD">
+				<displayName>그리스 드라크마</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName>과테말라 케트살</displayName>
+			</currency>
+			<currency type="GWE">
+				<displayName>포르투갈령 기니 에스쿠도</displayName>
+			</currency>
+			<currency type="GWP">
+				<displayName>기네비쏘 페소</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName>가이아나 달러</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>홍콩 달러</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>온두라스 렘피라</displayName>
+			</currency>
+			<currency type="HRD">
+				<displayName>크로아티아 디나르</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>크로아티아 쿠나</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>하이티 구르드</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>헝가리 포린트</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName>인도네시아 루피아</displayName>
+			</currency>
+			<currency type="IEP">
+				<displayName>아일랜드 파운드</displayName>
+			</currency>
+			<currency type="ILP">
+				<displayName>이스라엘 파운드</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>이스라엘 신권 세켈</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>인도 루피</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>이라크 디나르</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>이란 리얄</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>아이슬란드 크로나</displayName>
+			</currency>
+			<currency type="ITL">
+				<displayName>이탈리아 리라</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName>자메이카 달러</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>요르단 디나르</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>일본 엔화</displayName>
+			</currency>
+			<currency type="KES">
+				<displayName>케냐 실링</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName>키르기스스탄 솜</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>캄보디아 리얄</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName>코모르 프랑</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName>조선 민주주의 인민 공화국 원</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName>대한민국 원</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>쿠웨이트 디나르</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>케이맨 제도 달러</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>카자흐스탄 텐게</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName>라오스 키프</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>레바논 파운드</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>스리랑카 루피</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName>라이베리아 달러</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName>레소토 로티</displayName>
+			</currency>
+			<currency type="LTL">
+				<displayName>리투아니아 리타</displayName>
+			</currency>
+			<currency type="LTT">
+				<displayName>룩셈부르크 타로나</displayName>
+			</currency>
+			<currency type="LUC">
+				<displayName>룩셈부르크 변환 프랑</displayName>
+			</currency>
+			<currency type="LUF">
+				<displayName>룩셈부르크 프랑</displayName>
+			</currency>
+			<currency type="LUL">
+				<displayName>룩셈부르크 재정 프랑</displayName>
+			</currency>
+			<currency type="LVL">
+				<displayName>라트비아 라트</displayName>
+			</currency>
+			<currency type="LVR">
+				<displayName>라트비아 루블</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName>리비아 디나르</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName>모로코 디렘</displayName>
+			</currency>
+			<currency type="MAF">
+				<displayName>모로코 프랑</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName>몰도바 레이</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName>마다가스카르 아리아리</displayName>
+			</currency>
+			<currency type="MGF">
+				<displayName>마다가스카르 프랑</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName>마케도니아 디나르</displayName>
+			</currency>
+			<currency type="MLF">
+				<displayName>말리 프랑</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName>미얀마 키얏</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName>몽골 투그릭</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName>마카오 파타카</displayName>
+			</currency>
+			<currency type="MRO">
+				<displayName>모리타니 우기야</displayName>
+			</currency>
+			<currency type="MTL">
+				<displayName>몰타 리라</displayName>
+			</currency>
+			<currency type="MTP">
+				<displayName>몰타 파운드</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName>모리셔스 루피</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName>몰디브 제도 루피아</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName>말라위 콰쳐</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>멕시코 페소</displayName>
+			</currency>
+			<currency type="MXP">
+				<displayName>멕시코 실버 페소 (1861-1992)</displayName>
+			</currency>
+			<currency type="MXV">
+				<displayName>멕시코 (UDI)</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>말레이시아 링깃</displayName>
+			</currency>
+			<currency type="MZE">
+				<displayName>모잠비크 에스쿠도</displayName>
+			</currency>
+			<currency type="MZM">
+				<displayName>고 모잠비크 메티칼</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName>모잠비크 메티칼</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName>나미비아 달러</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName>니제르 나이라</displayName>
+			</currency>
+			<currency type="NIC">
+				<displayName>니카라과 코르도바</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>니카라과 코르도바 오로</displayName>
+			</currency>
+			<currency type="NLG">
+				<displayName>네델란드 길더</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>노르웨이 크로네</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>네팔 루피</displayName>
+			</currency>
+			<currency type="NZD">
+				<displayName>뉴질랜드 달러</displayName>
+			</currency>
+			<currency type="OMR">
+				<displayName>오만 리얄</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>파나마 발보아</displayName>
+			</currency>
+			<currency type="PEI">
+				<displayName>페루 인티</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName>페루 솔 누에보</displayName>
+			</currency>
+			<currency type="PES">
+				<displayName>페루 솔</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>파푸아뉴기니 키나</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>필리핀 페소</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>파키스탄 루피</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName>폴란드 즐로티</displayName>
+			</currency>
+			<currency type="PLZ">
+				<displayName>폴란드 즐로티 (1950-1995)</displayName>
+			</currency>
+			<currency type="PTE">
+				<displayName>포르투갈 에스쿠도</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName>파라과이 과라니</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName>카타르 리얄</displayName>
+			</currency>
+			<currency type="RHD">
+				<displayName>로디지아 달러</displayName>
+			</currency>
+			<currency type="ROL">
+				<displayName>루마니아 레이</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>루마니아 레우</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName>세르비아 디나르</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>러시아 루블</displayName>
+			</currency>
+			<currency type="RUR">
+				<displayName>러시아 루블 (1991-1998)</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName>르완다 프랑</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>사우디아라비아 리얄</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>솔로몬 제도 달러</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>세이쉴 루피</displayName>
+			</currency>
+			<currency type="SDD">
+				<displayName>수단 디나르</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName>수단 파운드</displayName>
+			</currency>
+			<currency type="SDP">
+				<displayName>고 수단 파운드</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>스웨덴 크로나</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>싱가폴 달러</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName>세인트헬레나 파운드</displayName>
+			</currency>
+			<currency type="SIT">
+				<displayName>슬로베니아 톨라르</displayName>
+			</currency>
+			<currency type="SKK">
+				<displayName>슬로바키아 코루나</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>시에라리온 리온</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName>소말리아 실링</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName>수리남 달러</displayName>
+			</currency>
+			<currency type="SRG">
+				<displayName>수리남 길더</displayName>
+			</currency>
+			<currency type="STD">
+				<displayName>상투메 프린시페 도브라</displayName>
+			</currency>
+			<currency type="SUR">
+				<displayName>소련 루블</displayName>
+			</currency>
+			<currency type="SVC">
+				<displayName>엘살바도르 콜론</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName>시리아 파운드</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName>스와질란드 릴랑게니</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>태국 바트</displayName>
+			</currency>
+			<currency type="TJR">
+				<displayName>타지키스탄 루블</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName>타지키스탄 소모니</displayName>
+			</currency>
+			<currency type="TMM">
+				<displayName>투르크메니스탄 마나트 (1993-2009)</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName>투르크메니스탄 마나트</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName>튀니지 디나르</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName>통가 파앙가</displayName>
+			</currency>
+			<currency type="TPE">
+				<displayName>티모르 에스쿠도</displayName>
+			</currency>
+			<currency type="TRL">
+				<displayName>터키 리라</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>신 터키 리라</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName>트리니다드 토바고 달러</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName>대만 신권 달러</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName>탄자니아 실링</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>우크라이나 그리브나</displayName>
+			</currency>
+			<currency type="UAK">
+				<displayName>우크라이나 카보바네츠</displayName>
+			</currency>
+			<currency type="UGS">
+				<displayName>우간다 실링 (1966-1987)</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName>우간다 실링</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>미국 달러</displayName>
+			</currency>
+			<currency type="USN">
+				<displayName>미국 달러(다음날)</displayName>
+			</currency>
+			<currency type="USS">
+				<displayName>미국 달러(당일)</displayName>
+			</currency>
+			<currency type="UYI">
+				<displayName>우루과이 페소 (UI)</displayName>
+			</currency>
+			<currency type="UYP">
+				<displayName>우루과이 페소 (1975-1993)</displayName>
+			</currency>
+			<currency type="UYU">
+				<displayName>우루과이 페소 우루과요</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName>우즈베키스탄 숨</displayName>
+			</currency>
+			<currency type="VEB">
+				<displayName>베네주엘라 볼리바르</displayName>
+			</currency>
+			<currency type="VEF">
+				<displayName>베네주엘라 볼리바르 푸에르떼</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>베트남 동</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>바누아투 바투</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>서 사모아 탈라</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName>프랑 (CFA-BEAC)</displayName>
+			</currency>
+			<currency type="XAG">
+				<displayName>은화</displayName>
+			</currency>
+			<currency type="XAU">
+				<displayName>금</displayName>
+			</currency>
+			<currency type="XBA">
+				<displayName>유르코 (유럽 회계 단위)</displayName>
+			</currency>
+			<currency type="XBB">
+				<displayName>유럽 통화 동맹</displayName>
+			</currency>
+			<currency type="XBC">
+				<displayName>유럽 계산 단위 (XBC)</displayName>
+			</currency>
+			<currency type="XBD">
+				<displayName>유럽 계산 단위 (XBD)</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>동카리브 달러</displayName>
+			</currency>
+			<currency type="XDR">
+				<displayName>특별인출권</displayName>
+			</currency>
+			<currency type="XEU">
+				<displayName>유럽 환율 단위</displayName>
+			</currency>
+			<currency type="XFO">
+				<displayName>프랑스 프랑 (Gold)</displayName>
+			</currency>
+			<currency type="XFU">
+				<displayName>프랑스 프랑 (UIC)</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>프랑 (CFA-BCEAO)</displayName>
+			</currency>
+			<currency type="XPD">
+				<displayName>팔라듐</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>프랑 (CFP)</displayName>
+			</currency>
+			<currency type="XPT">
+				<displayName>백금</displayName>
+			</currency>
+			<currency type="XRE">
+				<displayName>RINET 기금</displayName>
+			</currency>
+			<currency type="XTS">
+				<displayName>테스트 통화 코드</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName>알수없거나 유효하지않은 통화단위</displayName>
+			</currency>
+			<currency type="YDD">
+				<displayName>예멘 디나르</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>예멘 리알</displayName>
+			</currency>
+			<currency type="YUD">
+				<displayName>유고슬라비아 동전 디나르</displayName>
+			</currency>
+			<currency type="YUM">
+				<displayName>유고슬라비아 노비 디나르</displayName>
+			</currency>
+			<currency type="YUN">
+				<displayName>유고슬라비아 전환 디나르</displayName>
+			</currency>
+			<currency type="ZAL">
+				<displayName>남아프리카 랜드 (금융)</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName>남아프리카 랜드</displayName>
+			</currency>
+			<currency type="ZMK">
+				<displayName>쟘비아 콰쳐</displayName>
+			</currency>
+			<currency type="ZRN">
+				<displayName>자이르 신권 자이르</displayName>
+			</currency>
+			<currency type="ZRZ">
+				<displayName>자이르 자이르</displayName>
+			</currency>
+			<currency type="ZWD">
+				<displayName>짐바브웨 달러</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="other">{0}일</unitPattern>
+			<unitPattern count="other" alt="short">{0}일</unitPattern>
+		</unit>
+		<unit type="day-future">
+			<unitPattern count="0" draft="contributed">0일 후</unitPattern>
+			<unitPattern count="1" draft="contributed">1일 후</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}일 후</unitPattern>
+		</unit>
+		<unit type="day-past">
+			<unitPattern count="0" draft="contributed">0일 전</unitPattern>
+			<unitPattern count="1" draft="contributed">1일 전</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}일 전</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="other">{0}시간</unitPattern>
+			<unitPattern count="other" alt="short">{0}시간</unitPattern>
+		</unit>
+		<unit type="hour-future">
+			<unitPattern count="0" draft="contributed">0시간 후</unitPattern>
+			<unitPattern count="1" draft="contributed">1시간 후</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}시간 후</unitPattern>
+		</unit>
+		<unit type="hour-past">
+			<unitPattern count="0" draft="contributed">0시간 전</unitPattern>
+			<unitPattern count="1" draft="contributed">1시간 전</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}시간 전</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="other">{0}분</unitPattern>
+			<unitPattern count="other" alt="short">{0}분</unitPattern>
+		</unit>
+		<unit type="minute-future">
+			<unitPattern count="0" draft="contributed">0분 후</unitPattern>
+			<unitPattern count="1" draft="contributed">1분 후</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}분 후</unitPattern>
+		</unit>
+		<unit type="minute-past">
+			<unitPattern count="0" draft="contributed">0분 전</unitPattern>
+			<unitPattern count="1" draft="contributed">1분 전</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}분 전</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="other">{0}개월</unitPattern>
+			<unitPattern count="other" alt="short">{0}개월</unitPattern>
+		</unit>
+		<unit type="month-future">
+			<unitPattern count="0" draft="contributed">0개월 후</unitPattern>
+			<unitPattern count="1" draft="contributed">1개월 후</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}개월 후</unitPattern>
+		</unit>
+		<unit type="month-past">
+			<unitPattern count="0" draft="contributed">0개월 전</unitPattern>
+			<unitPattern count="1" draft="contributed">1개월 전</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}개월 전</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="other">{0}초</unitPattern>
+			<unitPattern count="other" alt="short">{0}초</unitPattern>
+		</unit>
+		<unit type="second-future">
+			<unitPattern count="0" draft="contributed">0초 후</unitPattern>
+			<unitPattern count="1" draft="contributed">1초 후</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}초 후</unitPattern>
+		</unit>
+		<unit type="second-past">
+			<unitPattern count="0" draft="contributed">0초 전</unitPattern>
+			<unitPattern count="1" draft="contributed">1초 전</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}초 전</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="other">{0}주</unitPattern>
+			<unitPattern count="other" alt="short">{0}주</unitPattern>
+		</unit>
+		<unit type="week-future">
+			<unitPattern count="0" draft="contributed">0주 후</unitPattern>
+			<unitPattern count="1" draft="contributed">1주 후</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}주 후</unitPattern>
+		</unit>
+		<unit type="week-past">
+			<unitPattern count="0" draft="contributed">0주 전</unitPattern>
+			<unitPattern count="1" draft="contributed">1주 전</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}주 전</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="other">{0}년</unitPattern>
+			<unitPattern count="other" alt="short">{0}년</unitPattern>
+		</unit>
+		<unit type="year-future">
+			<unitPattern count="0" draft="contributed">0년 후</unitPattern>
+			<unitPattern count="1" draft="contributed">1년 후</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}년 후</unitPattern>
+		</unit>
+		<unit type="year-past">
+			<unitPattern count="0" draft="contributed">0년 전</unitPattern>
+			<unitPattern count="1" draft="contributed">1년 전</unitPattern>
+			<unitPattern count="other" draft="contributed">{0}년 전</unitPattern>
+		</unit>
+	</units>
+	<listPatterns>
+		<listPattern>
+			<listPatternPart type="2">{0} 및 {1}</listPatternPart>
+			<listPatternPart type="end">{0} 및 {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
+	<posix>
+		<messages>
+			<yesstr>예</yesstr>
+			<nostr>아니오</nostr>
+		</messages>
+	</posix>
+</ldml>
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public final class BeanInfoFinder
         extends InstanceFinder<BeanInfo> {
 
     private static final String DEFAULT = "sun.beans.infos";
+    private static final String DEFAULT_NEW = "com.sun.beans.infos";
 
     public BeanInfoFinder() {
         super(BeanInfo.class, true, "BeanInfo", DEFAULT);
@@ -53,10 +54,13 @@ public final class BeanInfoFinder
 
     @Override
     protected BeanInfo instantiate(Class<?> type, String prefix, String name) {
+        if (DEFAULT.equals(prefix)) {
+            prefix = DEFAULT_NEW;
+        }
         // this optimization will only use the BeanInfo search path
         // if is has changed from the original
         // or trying to get the ComponentBeanInfo
-        BeanInfo info = !DEFAULT.equals(prefix) || "ComponentBeanInfo".equals(name)
+        BeanInfo info = !DEFAULT_NEW.equals(prefix) || "ComponentBeanInfo".equals(name)
                 ? super.instantiate(type, prefix, name)
                 : null;
 

@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="om"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="af">Afrikoota</language>
+			<language type="am">Afaan Sidaamaa</language>
+			<language type="ar">Arabiffaa</language>
+			<language type="az">Afaan Azerbaijani</language>
+			<language type="be">Afaan Belarusia</language>
+			<language type="bg">Afaan Bulgariya</language>
+			<language type="bh">Afaan Bihari</language>
+			<language type="bn">Afaan Baangladeshi</language>
+			<language type="bs">Afaan Bosniyaa</language>
+			<language type="ca">Afaan Katalaa</language>
+			<language type="cs">Afaan Czech</language>
+			<language type="cy">Welishiffaa</language>
+			<language type="da">Afaan Deenmaark</language>
+			<language type="de">Afaan Jarmanii</language>
+			<language type="el">Afaan Giriiki</language>
+			<language type="en">Ingliffa</language>
+			<language type="eo">Afaan Esperantoo</language>
+			<language type="es">Afaan Ispeen</language>
+			<language type="et">Afaan Istooniya</language>
+			<language type="eu">Afaan Baskuu</language>
+			<language type="fa">Afaan Persia</language>
+			<language type="fi">Afaan Fiilaandi</language>
+			<language type="fil">Afaan Filippinii</language>
+			<language type="fo">Afaan Faroese</language>
+			<language type="fr">Afaan Faransaayii</language>
+			<language type="fy">Afaan Firisiyaani</language>
+			<language type="ga">Afaan Ayirishii</language>
+			<language type="gd">Scots Gaelic</language>
+			<language type="gl">Afaan Galishii</language>
+			<language type="gn">Afaan Guarani</language>
+			<language type="gu">Afaan Gujarati</language>
+			<language type="he">Afaan Hebrew</language>
+			<language type="hi">Afaan Hindii</language>
+			<language type="hr">Afaan Croatian</language>
+			<language type="hu">Afaan Hangaari</language>
+			<language type="ia">Interlingua</language>
+			<language type="id">Afaan Indoneziya</language>
+			<language type="is">Ayiislandiffaa</language>
+			<language type="it">Afaan Xaaliyaani</language>
+			<language type="ja">Afaan Japanii</language>
+			<language type="jv">Afaan Java</language>
+			<language type="ka">Afaan Georgian</language>
+			<language type="kn">Afaan Kannada</language>
+			<language type="ko">Afaan Korea</language>
+			<language type="la">Afaan Laatini</language>
+			<language type="lt">Afaan Liituniyaa</language>
+			<language type="lv">Afaan Lativiyaa</language>
+			<language type="mk">Afaan Macedooniyaa</language>
+			<language type="ml">Malayaalamiffaa</language>
+			<language type="mr">Afaan Maratii</language>
+			<language type="ms">Malaayiffaa</language>
+			<language type="mt">Afaan Maltesii</language>
+			<language type="ne">Afaan Nepalii</language>
+			<language type="nl">Afaan Dachii</language>
+			<language type="nn">Afaan Norwegian</language>
+			<language type="no">Afaan Norweyii</language>
+			<language type="oc">Afaan Occit</language>
+			<language type="om">Oromoo</language>
+			<language type="pa">Afaan Punjabii</language>
+			<language type="pl">Afaan Polandii</language>
+			<language type="pt">Afaan Porchugaal</language>
+			<language type="pt_BR">Afaan Portugali (Braazil)</language>
+			<language type="pt_PT">Afaan Protuguese</language>
+			<language type="ro">Afaan Romaniyaa</language>
+			<language type="ru">Afaan Rushiyaa</language>
+			<language type="si">Afaan Sinhalese</language>
+			<language type="sk">Afaan Slovak</language>
+			<language type="sl">Afaan Islovaniyaa</language>
+			<language type="sq">Afaan Albaniyaa</language>
+			<language type="sr">Afaan Serbiya</language>
+			<language type="su">Afaan Sudaanii</language>
+			<language type="sv">Afaan Suwidiin</language>
+			<language type="sw">Suwahilii</language>
+			<language type="ta">Afaan Tamilii</language>
+			<language type="te">Afaan Telugu</language>
+			<language type="th">Afaan Tayii</language>
+			<language type="ti">Afaan Tigiree</language>
+			<language type="tk">Lammii Turkii</language>
+			<language type="tlh">Afaan Kilingon</language>
+			<language type="tr">Afaan Turkii</language>
+			<language type="uk">Afaan Ukreenii</language>
+			<language type="ur">Afaan Urdu</language>
+			<language type="uz">Afaan Uzbek</language>
+			<language type="vi">Afaan Veetinam</language>
+			<language type="xh">Afaan Xhosa</language>
+			<language type="zh">Chinese</language>
+			<language type="zu">Afaan Zuulu</language>
+		</languages>
+		<scripts>
+			<script type="Latn">Latin</script>
+		</scripts>
+		<territories>
+			<territory type="BR">Brazil</territory>
+			<territory type="CN">China</territory>
+			<territory type="DE">Germany</territory>
+			<territory type="ET">Itoophiyaa</territory>
+			<territory type="FR">France</territory>
+			<territory type="GB">United Kingdom</territory>
+			<territory type="IN">India</territory>
+			<territory type="IT">Italy</territory>
+			<territory type="JP">Japan</territory>
+			<territory type="KE">Keeniyaa</territory>
+			<territory type="RU">Russia</territory>
+			<territory type="US">United States</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Ama</month>
+							<month type="2">Gur</month>
+							<month type="3">Bit</month>
+							<month type="4">Elb</month>
+							<month type="5">Cam</month>
+							<month type="6">Wax</month>
+							<month type="7">Ado</month>
+							<month type="8">Hag</month>
+							<month type="9">Ful</month>
+							<month type="10">Onk</month>
+							<month type="11">Sad</month>
+							<month type="12">Mud</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Amajjii</month>
+							<month type="2">Guraandhala</month>
+							<month type="3">Bitooteessa</month>
+							<month type="4">Elba</month>
+							<month type="5">Caamsa</month>
+							<month type="6">Waxabajjii</month>
+							<month type="7">Adooleessa</month>
+							<month type="8">Hagayya</month>
+							<month type="9">Fuulbana</month>
+							<month type="10">Onkololeessa</month>
+							<month type="11">Sadaasa</month>
+							<month type="12">Muddee</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1">J</month>
+							<month type="2">F</month>
+							<month type="3">M</month>
+							<month type="4">A</month>
+							<month type="5">M</month>
+							<month type="6">J</month>
+							<month type="7">J</month>
+							<month type="8">A</month>
+							<month type="9">S</month>
+							<month type="10">O</month>
+							<month type="11">N</month>
+							<month type="12">D</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">Dil</day>
+							<day type="mon">Wix</day>
+							<day type="tue">Qib</day>
+							<day type="wed">Rob</day>
+							<day type="thu">Kam</day>
+							<day type="fri">Jim</day>
+							<day type="sat">San</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Dilbata</day>
+							<day type="mon">Wiixata</day>
+							<day type="tue">Qibxata</day>
+							<day type="wed">Roobii</day>
+							<day type="thu">Kamiisa</day>
+							<day type="fri">Jimaata</day>
+							<day type="sat">Sanbata</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun">S</day>
+							<day type="mon">M</day>
+							<day type="tue">T</day>
+							<day type="wed">W</day>
+							<day type="thu">T</day>
+							<day type="fri">F</day>
+							<day type="sat">S</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am">WD</dayPeriod>
+							<dayPeriod type="pm">WB</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraAbbr>
+						<era type="0">KD</era>
+						<era type="1">KB</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>EEEE, MMMM d, y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>dd MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>dd-MMM-y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>dd/MM/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
+						<dateFormatItem id="MMMMdd">dd MMMM</dateFormatItem>
+						<dateFormatItem id="yyMM">MM/yy</dateFormatItem>
+						<dateFormatItem id="yyQ">Q yy</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">MMMM y</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<timeZoneNames>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat>GMT{0}</gmtFormat>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<defaultNumberingSystem>latn</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native>latn</native>
+			<traditional>ethi</traditional>
+		</otherNumberingSystems>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencies>
+			<currency type="BRL">
+				<displayName>Brazilian Real</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName>Chinese Yuan Renminbi</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>Itoophiyaa Birrii</displayName>
+				<symbol>Br</symbol>
+			</currency>
+			<currency type="EUR">
+				<displayName>Euro</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName>British Pound Sterling</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>Indian Rupee</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>Japanese Yen</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName>Russian Ruble</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName>US Dollar</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

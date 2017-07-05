@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,17 @@ import java.util.spi.LocaleServiceProvider;
  * provide instances of the
  * {@link java.text.DecimalFormatSymbols DecimalFormatSymbols} class.
  *
+ * <p>The requested {@code Locale} may contain an <a
+ * href="../../util/Locale.html#def_locale_extension"> extension</a> for
+ * specifying the desired numbering system. For example, {@code "ar-u-nu-arab"}
+ * (in the BCP 47 language tag form) specifies Arabic with the Arabic-Indic
+ * digits and symbols, while {@code "ar-u-nu-latn"} specifies Arabic with the
+ * Latin digits and symbols. Refer to the <em>Unicode Locale Data Markup
+ * Language (LDML)</em> specification for numbering systems.
+ *
  * @since        1.6
+ * @see Locale#forLanguageTag(String)
+ * @see Locale#getExtension(char)
  */
 public abstract class DecimalFormatSymbolsProvider extends LocaleServiceProvider {
 

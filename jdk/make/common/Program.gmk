@@ -91,7 +91,7 @@ ifeq ($(PLATFORM), macosx)
   LDFLAGS += $(OUTPUTDIR)/tmp/java/jli/$(OBJDIRNAME)/static/libjli.a
 
   ifeq ($(SYSTEM_ZLIB),true)
-    OTHER_LDLIBS += -lz
+    OTHER_LDLIBS += $(ZLIB_LIBS)
   endif
 endif
 
@@ -124,6 +124,26 @@ ifeq ($(PLATFORM), windows)
   endif
   OTHER_LDLIBS += jli.lib
 endif
+
+#
+# Applications expect to be able to link against libjawt without invoking
+# System.loadLibrary("jawt") first. This was the behaviour described in the
+# devloper documentation of JAWT and what worked with OpenJDK6.
+#
+ifeq ($(PLATFORM), solaris)
+  ifeq ($(ARCH_DATA_MODEL), 32)
+    LDFLAGS += -R \$$ORIGIN/../lib/$(LIBARCH)
+    LDFLAGS += -R \$$ORIGIN/../jre/lib/$(LIBARCH)
+  else # ! ARCH_DATA_MODEL 64-bit
+    LDFLAGS += -R \$$ORIGIN/../../lib/$(LIBARCH)
+    LDFLAGS += -R \$$ORIGIN/../../jre/lib/$(LIBARCH)
+  endif # ARCH_DATA_MODEL
+endif # PLATFORM SOLARIS
+ifeq ($(PLATFORM), linux)
+  LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/../lib/$(LIBARCH)
+  LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/../jre/lib/$(LIBARCH)
+endif # PLATFORM LINUX
+
 
 #
 # Launcher specific files.

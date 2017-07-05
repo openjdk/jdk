@@ -34,7 +34,7 @@ import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
 
-import sun.util.LocaleServiceProviderPool;
+import sun.util.locale.provider.LocaleServiceProviderPool;
 
 public class Bug6989440 {
     static volatile boolean failed;  // false
