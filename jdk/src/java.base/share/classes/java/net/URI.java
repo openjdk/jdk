@@ -1080,11 +1080,8 @@ public final class URI
      *          If a protocol handler for the URL could not be found,
      *          or if some other error occurred while constructing the URL
      */
-    public URL toURL()
-        throws MalformedURLException {
-        if (!isAbsolute())
-            throw new IllegalArgumentException("URI is not absolute");
-        return new URL(toString());
+    public URL toURL() throws MalformedURLException {
+        return URL.fromURI(this);
     }
 
     // -- Component access methods --

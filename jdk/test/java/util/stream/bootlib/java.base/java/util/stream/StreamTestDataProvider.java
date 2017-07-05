@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ public class StreamTestDataProvider {
     private static final Integer[] pseudoRandom;
 
     private static final Object[][] testData;
+    private static final Object[][] testSmallData;
     private static final Object[][] withNullTestData;
     private static final Object[][] spliteratorTestData;
 
@@ -84,11 +85,15 @@ public class StreamTestDataProvider {
 
     static {
         {
-            List<Object[]> list = new ArrayList<>();
+            List<Object[]> listSmall = new ArrayList<>();
+            List<Object[]> list1000 = new ArrayList<>();
+            List<Object[]> list = null;
             for (Object[] data : arrays) {
                 final Object name = data[0];
                 final Integer[] ints = (Integer[])data[1];
                 final List<Integer> intsAsList = Arrays.asList(ints);
+
+                list = ints.length >= 1000 ? list1000 : listSmall;
 
                 list.add(arrayDataDescr("array:" + name, ints));
                 list.add(collectionDataDescr("ArrayList.asList:" + name, intsAsList));
@@ -114,7 +119,9 @@ public class StreamTestDataProvider {
 
                 // @@@ Add more
             }
-            testData = list.toArray(new Object[0][]);
+            testSmallData = listSmall.toArray(new Object[0][]);
+            list1000.addAll(listSmall);
+            testData = list1000.toArray(new Object[0][]);
         }
 
         // Simple combination of numbers and null values, probably excessive but may catch
@@ -190,6 +197,11 @@ public class StreamTestDataProvider {
     @DataProvider(name = "StreamTestData<Integer>")
     public static Object[][] makeStreamTestData() {
         return testData;
+    }
+
+    @DataProvider(name = "StreamTestData<Integer>.small")
+    public static Object[][] makeSmallStreamTestData() {
+        return testSmallData;
     }
 
     @DataProvider(name = "withNull:StreamTestData<Integer>")

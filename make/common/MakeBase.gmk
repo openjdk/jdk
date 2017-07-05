@@ -685,14 +685,15 @@ DependOnVariable = \
 # LogFailures will run a command and store a copy of output in a specified file.
 # If the command succeeds, the file is deleted, otherwise it is moved to the
 # failure-logs directory.
-# Param 1 - The log file of the failed command
+# Param 1 - The base name of the log file / command line file
 # Param 2 - A compact but representative name to describe this command
 # Param 3 - Command to run
 LogFailures = \
-  ( $3 > >($(TEE) $1) 2> >($(TEE) $1 >&2) || \
+  ( $(ECHO) '$3' > $1.cmdline  && \
+      ( $3 > >($(TEE) $1.log) 2> >($(TEE) $1.log >&2) || \
       (exitcode=$(DOLLAR)$(DOLLAR)? && \
-      $(CP) $1 $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(strip $2).log && \
-      exit $(DOLLAR)$(DOLLAR)exitcode) )
+      $(CP) $1.log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(strip $2).log && \
+      exit $(DOLLAR)$(DOLLAR)exitcode) ) )
 
 ################################################################################
 # Find lib dir for module

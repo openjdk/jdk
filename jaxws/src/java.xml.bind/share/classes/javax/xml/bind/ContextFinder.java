@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -105,9 +106,9 @@ class ContextFinder {
 
     /**
      * If the {@link InvocationTargetException} wraps an exception that shouldn't be wrapped,
-     * throw the wrapped exception.
+     * throw the wrapped exception. Otherwise returns exception to be wrapped for further processing.
      */
-    private static void handleInvocationTargetException(InvocationTargetException x) throws JAXBException {
+    private static Throwable handleInvocationTargetException(InvocationTargetException x) throws JAXBException {
         Throwable t = x.getTargetException();
         if (t != null) {
             if (t instanceof JAXBException)
@@ -118,7 +119,9 @@ class ContextFinder {
                 throw (RuntimeException) t;
             if (t instanceof Error)
                 throw (Error) t;
+            return t;
         }
+        return x;
     }
 
 
@@ -157,9 +160,10 @@ class ContextFinder {
         } catch (ClassNotFoundException x) {
             throw new JAXBException(Messages.format(Messages.PROVIDER_NOT_FOUND, className), x);
 
-        } catch (RuntimeException x) {
+        } catch (RuntimeException | JAXBException x) {
             // avoid wrapping RuntimeException to JAXBException,
             // because it indicates a bug in this code.
+            // JAXBException re-thrown as is
             throw x;
         } catch (Exception x) {
             // can't catch JAXBException because the method is hidden behind
@@ -189,8 +193,9 @@ class ContextFinder {
             try {
                 Method m = spFactory.getMethod("createContext", String.class, ClassLoader.class, Map.class);
                 // any failure in invoking this method would be considered fatal
-                context = m.invoke(null, contextPath, classLoader, properties);
-            } catch (NoSuchMethodException e) {
+                Object obj = instantiateProviderIfNecessary(m);
+                context = m.invoke(obj, contextPath, classLoader, properties);
+            } catch (NoSuchMethodException ignored) {
                 // it's not an error for the provider not to have this method.
             }
 
@@ -198,8 +203,9 @@ class ContextFinder {
                 // try the old method that doesn't take properties. compatible with 1.0.
                 // it is an error for an implementation not to have both forms of the createContext method.
                 Method m = spFactory.getMethod("createContext", String.class, ClassLoader.class);
+                Object obj = instantiateProviderIfNecessary(m);
                 // any failure in invoking this method would be considered fatal
-                context = m.invoke(null, contextPath, classLoader);
+                context = m.invoke(obj, contextPath, classLoader);
             }
 
             if (!(context instanceof JAXBContext)) {
@@ -208,24 +214,34 @@ class ContextFinder {
             }
             return (JAXBContext) context;
         } catch (InvocationTargetException x) {
-            handleInvocationTargetException(x);
-            // for other exceptions, wrap the internal target exception
-            // with a JAXBException
-            Throwable e = x;
-            if (x.getTargetException() != null)
-                e = x.getTargetException();
-
+            // throw if it is exception not to be wrapped
+            // otherwise, wrap with a JAXBException
+            Throwable e = handleInvocationTargetException(x);
             throw new JAXBException(Messages.format(Messages.COULD_NOT_INSTANTIATE, spFactory, e), e);
-        } catch (RuntimeException x) {
-            // avoid wrapping RuntimeException to JAXBException,
-            // because it indicates a bug in this code.
-            throw x;
+
         } catch (Exception x) {
             // can't catch JAXBException because the method is hidden behind
             // reflection.  Root element collisions detected in the call to
             // createContext() are reported as JAXBExceptions - just re-throw it
             // some other type of exception - just wrap it
             throw new JAXBException(Messages.format(Messages.COULD_NOT_INSTANTIATE, spFactory, x), x);
+        }
+    }
+
+    private static Object instantiateProviderIfNecessary(Method m) throws JAXBException {
+        Class<?> declaringClass = m.getDeclaringClass();
+        try {
+            if (JAXBContextFactory.class.isAssignableFrom(declaringClass)) {
+                return AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
+                    @Override
+                    public Object run() throws Exception {
+                        return declaringClass.newInstance();
+                    }
+                });
+            }
+            return null;
+        } catch (PrivilegedActionException e) {
+            throw new JAXBException(Messages.format(Messages.COULD_NOT_INSTANTIATE, declaringClass, e), e);
         }
     }
 
@@ -255,7 +271,8 @@ class ContextFinder {
         try {
 
             Method m = spFactory.getMethod("createContext", Class[].class, Map.class);
-            Object context = m.invoke(null, classes, properties);
+            Object obj = instantiateProviderIfNecessary(m);
+            Object context = m.invoke(obj, classes, properties);
             if (!(context instanceof JAXBContext)) {
                 // the cast would fail, so generate an exception with a nice message
                 throw handleClassCastException(context.getClass(), JAXBContext.class);
@@ -264,13 +281,10 @@ class ContextFinder {
 
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new JAXBException(e);
-
         } catch (InvocationTargetException e) {
-            handleInvocationTargetException(e);
-
-            Throwable x = e;
-            if (e.getTargetException() != null)
-                x = e.getTargetException();
+            // throw if it is exception not to be wrapped
+            // otherwise, wrap with a JAXBException
+            Throwable x = handleInvocationTargetException(e);
 
             throw new JAXBException(x);
         }
