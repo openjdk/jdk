@@ -25,5 +25,3 @@ Simple Build Instructions:
   5. Construct the images:
        cd make && gnumake images
      The resulting JDK image should be found in build/*/j2sdk-image
-
-

@@ -108,6 +108,7 @@ private:
                             BasicType copy_type, const Type* value_type, int count);
   bool finish_transform(PhaseGVN *phase, bool can_reshape,
                         Node* ctl, Node *mem);
+  static bool may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase);
 
 public:
 
@@ -161,6 +162,9 @@ public:
   virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase);
 
   bool is_alloc_tightly_coupled() const { return _alloc_tightly_coupled; }
+
+  static bool may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase);
+  bool modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

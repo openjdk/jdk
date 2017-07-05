@@ -221,5 +221,3 @@ freePort()
   fi
   echo "${port1}"
 }
-
-

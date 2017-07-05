@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,9 +218,19 @@ import java.util.Map;
  * <p>The <b>serialVersionUID</b> of this class is <code>1081892073854801359L</code>.
  *
  * @since 1.5
+ *
+ * @implNote The maximum allowed length of the domain name in this implementation
+ *           is {@code Integer.MAX_VALUE/4}
  */
 @SuppressWarnings("serial") // don't complain serialVersionUID not constant
 public class ObjectName implements Comparable<ObjectName>, QueryExp {
+    private static final int DOMAIN_PATTERN = 0x8000_0000;
+    private static final int PROPLIST_PATTERN = 0x4000_0000;
+    private static final int PROPVAL_PATTERN = 0x2000_0000;
+
+    private static final int FLAG_MASK = DOMAIN_PATTERN | PROPLIST_PATTERN |
+                                         PROPVAL_PATTERN;
+    private static final int DOMAIN_LENGTH_MASK = ~FLAG_MASK;
 
     /**
      * A structure recording property structure and
@@ -365,33 +375,25 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
 
     /**
-     * The length of the domain part of built objectname
-     */
-    private transient int _domain_length = 0;
-
-
-    /**
      * The propertyList of built object name. Initialized lazily.
      * Table that contains all the pairs (key,value) for this ObjectName.
      */
     private transient Map<String,String> _propertyList;
 
     /**
-     * boolean that declares if this ObjectName domain part is a pattern
+     * This field encodes _domain_pattern, _property_list_pattern and
+     * _property_value_pattern booleans and _domain_length integer.
+     * <p>
+     * The following masks can be used to extract the value:
+     * <ul>
+     * <li>{@linkplain ObjectName#DOMAIN_PATTERN}</li>
+     * <li>{@linkplain ObjectName#PROPLIST_PATTERN}</li>
+     * <li>{@linkplain ObjectName#PROPVAL_PATTERN}</li>
+     * <li>{@linkplain ObjectName#DOMAIN_LENGTH_MASK}</li>
+     * </ul>
+     * </p>.
      */
-    private transient boolean _domain_pattern = false;
-
-    /**
-     * boolean that declares if this ObjectName contains a pattern on the
-     * key property list
-     */
-    private transient boolean _property_list_pattern = false;
-
-    /**
-     * boolean that declares if this ObjectName contains a pattern on the
-     * value of at least one key property
-     */
-    private transient boolean _property_value_pattern = false;
+    private transient int _compressed_storage = 0x0;
 
     // Instance private fields <=======================================
 
@@ -426,11 +428,11 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
             _canonicalName = "*:*";
             _kp_array = _Empty_property_array;
             _ca_array = _Empty_property_array;
-            _domain_length = 1;
+            setDomainLength(1);
             _propertyList = null;
-            _domain_pattern = true;
-            _property_list_pattern = true;
-            _property_value_pattern = false;
+            setDomainPattern(true);
+            setPropertyListPattern(true);
+            setPropertyValuePattern(false);
             return;
         }
 
@@ -448,7 +450,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         while (index < len) {
             switch (name_chars[index]) {
                 case ':' :
-                    _domain_length = index++;
+                    setDomainLength(index++);
                     break domain_parsing;
                 case '=' :
                     // ":" omission check.
@@ -469,7 +471,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
                               "Invalid character '\\n' in domain name");
                 case '*' :
                 case '?' :
-                    _domain_pattern = true;
+                    setDomainPattern(true);
                     index++;
                     break;
                 default :
@@ -484,6 +486,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
                                          "Key properties cannot be empty");
 
         // we have got the domain part, begins building of _canonicalName
+        int _domain_length = getDomainLength();
         System.arraycopy(name_chars, 0, canonical_chars, 0, _domain_length);
         canonical_chars[_domain_length] = ':';
         cname_index = _domain_length + 1;
@@ -500,20 +503,20 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
         keys = new String[10];
         _kp_array = new Property[10];
-        _property_list_pattern = false;
-        _property_value_pattern = false;
+        setPropertyListPattern(false);
+        setPropertyValuePattern(false);
 
         while (index < len) {
             c = name_chars[index];
 
             // case of pattern properties
             if (c == '*') {
-                if (_property_list_pattern)
+                if (isPropertyListPattern())
                     throw new MalformedObjectNameException(
                               "Cannot have several '*' characters in pattern " +
                               "property list");
                 else {
-                    _property_list_pattern = true;
+                    setPropertyListPattern(true);
                     if ((++index < len ) && (name_chars[index] != ','))
                         throw new MalformedObjectNameException(
                                   "Invalid character found after '*': end of " +
@@ -639,7 +642,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
             if (!value_pattern) {
                 prop = new Property(key_index, key_length, value_length);
             } else {
-                _property_value_pattern = true;
+                setPropertyValuePattern(true);
                 prop = new PatternProperty(key_index, key_length, value_length);
             }
             key_name = name.substring(key_index, key_index + key_length);
@@ -670,7 +673,8 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @exception MalformedObjectNameException The <code>domain</code>
      * contains an illegal character, or one of the keys or values in
      * <code>table</code> contains an illegal character, or one of the
-     * values in <code>table</code> does not follow the rules for quoting.
+     * values in <code>table</code> does not follow the rules for quoting,
+     * or the domain's length exceeds the maximum allowed length.
      * @exception NullPointerException One of the parameters is null.
      */
     private void construct(String domain, Map<String,String> props)
@@ -696,7 +700,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         // init canonicalname
         final StringBuilder sb = new StringBuilder();
         sb.append(domain).append(':');
-        _domain_length = domain.length();
+        setDomainLength(domain.length());
 
         // allocates the property array
         int nb_props = props.size();
@@ -729,7 +733,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
                                     key.length(),
                                     value.length());
             } else {
-                _property_value_pattern = true;
+                setPropertyValuePattern(true);
                 prop = new PatternProperty(key_index,
                                            key.length(),
                                            value.length());
@@ -743,10 +747,10 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         char[] initial_chars = new char[len];
         sb.getChars(0, len, initial_chars, 0);
         char[] canonical_chars = new char[len];
-        System.arraycopy(initial_chars, 0, canonical_chars, 0,
-                         _domain_length + 1);
+        int copyLen = getDomainLength() + 1;
+        System.arraycopy(initial_chars, 0, canonical_chars, 0, copyLen);
         setCanonicalName(initial_chars, canonical_chars, keys, keys_map,
-                         _domain_length + 1, _kp_array.length);
+                         copyLen, _kp_array.length);
     }
     // Category : Instance construction <==============================
 
@@ -822,7 +826,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         }
 
         // terminate canonicalname with '*' in case of pattern
-        if (_property_list_pattern) {
+        if (isPropertyListPattern()) {
             if (_kp_array != _Empty_property_array)
                 canonical_chars[prop_index++] = ',';
             canonical_chars[prop_index++] = '*';
@@ -1051,11 +1055,30 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
                     return false;
                 case '*' :
                 case '?' :
-                    _domain_pattern = true;
+                    setDomainPattern(true);
                     break;
             }
         }
         return true;
+    }
+
+    private int getDomainLength() {
+        return _compressed_storage & DOMAIN_LENGTH_MASK;
+    }
+
+    /**
+     * Validates and sets the domain length
+     * @param length The domain length
+     * @throws MalformedObjectNameException
+     *    When the given domain length exceeds the maximum allowed length
+     */
+    private void setDomainLength(int length) throws MalformedObjectNameException {
+        if ((length & FLAG_MASK) != 0 ) {
+            throw new MalformedObjectNameException(
+                "Domain name too long. Maximum allowed domain name length is:" +
+                DOMAIN_LENGTH_MASK);
+        }
+        _compressed_storage = (_compressed_storage & FLAG_MASK) | length;
     }
 
     // Category : Internal accessors <==============================
@@ -1225,12 +1248,12 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         // Serializes this instance in the old serial form
         // Read CR 6441274 before making any changes to this code
         ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("domain", _canonicalName.substring(0, _domain_length));
+        fields.put("domain", _canonicalName.substring(0, getDomainLength()));
         fields.put("propertyList", getKeyPropertyList());
         fields.put("propertyListString", getKeyPropertyListString());
         fields.put("canonicalName", _canonicalName);
-        fields.put("pattern", (_domain_pattern || _property_list_pattern));
-        fields.put("propertyPattern", _property_list_pattern);
+        fields.put("pattern", (_compressed_storage & (DOMAIN_PATTERN | PROPLIST_PATTERN)) != 0);
+        fields.put("propertyPattern", isPropertyListPattern());
         out.writeFields();
       }
       else
@@ -1291,7 +1314,8 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @exception MalformedObjectNameException The
      * <code>domain</code>, <code>key</code>, or <code>value</code>
      * contains an illegal character, or <code>value</code> does not
-     * follow the rules for quoting.
+     * follow the rules for quoting, or the domain's length exceeds
+     * the maximum allowed length.
      * @exception NullPointerException One of the parameters is null.
      *
      */
@@ -1322,7 +1346,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * contains an illegal character, or one of the keys or values in
      * <code>table</code> contains an illegal character, or one of the
      * values in <code>table</code> does not follow the rules for
-     * quoting.
+     * quoting, or the domain's length exceeds the maximum allowed length.
      * @exception NullPointerException One of the parameters is null.
      *
      */
@@ -1392,7 +1416,8 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @exception MalformedObjectNameException The
      * <code>domain</code>, <code>key</code>, or <code>value</code>
      * contains an illegal character, or <code>value</code> does not
-     * follow the rules for quoting.
+     * follow the rules for quoting, or the domain's length exceeds
+     * the maximum allowed length.
      * @exception NullPointerException One of the parameters is null.
      */
     public ObjectName(String domain, String key, String value)
@@ -1417,7 +1442,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * contains an illegal character, or one of the keys or values in
      * <code>table</code> contains an illegal character, or one of the
      * values in <code>table</code> does not follow the rules for
-     * quoting.
+     * quoting, or the domain's length exceeds the maximum allowed length.
      * @exception NullPointerException One of the parameters is null.
      */
     public ObjectName(String domain, Hashtable<String,String> table)
@@ -1443,9 +1468,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @return  True if the name is a pattern, otherwise false.
      */
     public boolean isPattern() {
-        return (_domain_pattern ||
-                _property_list_pattern ||
-                _property_value_pattern);
+        return (_compressed_storage & FLAG_MASK) != 0;
     }
 
     /**
@@ -1455,7 +1478,20 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      *
      */
     public boolean isDomainPattern() {
-        return _domain_pattern;
+        return (_compressed_storage & DOMAIN_PATTERN) != 0;
+    }
+
+    /**
+     * Marks the object name as representing a pattern on the domain part.
+     * @param value {@code true} if the domain name is a pattern,
+     *              {@code false} otherwise
+     */
+    private void setDomainPattern(boolean value) {
+        if (value) {
+            _compressed_storage |= DOMAIN_PATTERN;
+        } else {
+            _compressed_storage &= ~DOMAIN_PATTERN;
+        }
     }
 
     /**
@@ -1468,7 +1504,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @return  True if the name is a property pattern, otherwise false.
      */
     public boolean isPropertyPattern() {
-        return _property_list_pattern || _property_value_pattern;
+        return (_compressed_storage & (PROPVAL_PATTERN | PROPLIST_PATTERN)) != 0;
     }
 
     /**
@@ -1482,7 +1518,20 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @since 1.6
      */
     public boolean isPropertyListPattern() {
-        return _property_list_pattern;
+        return (_compressed_storage & PROPLIST_PATTERN) != 0;
+    }
+
+    /**
+     * Marks the object name as representing a pattern on the key property list.
+     * @param value {@code true} if the key property list is a pattern,
+     *              {@code false} otherwise
+     */
+    private void setPropertyListPattern(boolean value) {
+        if (value) {
+            _compressed_storage |= PROPLIST_PATTERN;
+        } else {
+            _compressed_storage &= ~PROPLIST_PATTERN;
+        }
     }
 
     /**
@@ -1497,7 +1546,20 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @since 1.6
      */
     public boolean isPropertyValuePattern() {
-        return _property_value_pattern;
+        return (_compressed_storage & PROPVAL_PATTERN) != 0;
+    }
+
+    /**
+     * Marks the object name as representing a pattern on the value part.
+     * @param value {@code true} if the value part of at least one of the
+     *              key properties is a pattern, {@code false} otherwise
+     */
+    private void setPropertyValuePattern(boolean value) {
+        if (value) {
+            _compressed_storage |= PROPVAL_PATTERN;
+        } else {
+            _compressed_storage &= ~PROPVAL_PATTERN;
+        }
     }
 
     /**
@@ -1563,7 +1625,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      * @return The domain.
      */
     public String getDomain()  {
-        return _canonicalName.substring(0, _domain_length);
+        return _canonicalName.substring(0, getDomainLength());
     }
 
     /**
@@ -1640,8 +1702,8 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
         // the size of the string is the canonical one minus domain
         // part and pattern part
-        final int total_size = _canonicalName.length() - _domain_length - 1
-            - (_property_list_pattern?2:0);
+        final int total_size = _canonicalName.length() - getDomainLength() - 1
+            - (isPropertyListPattern()?2:0);
 
         final char[] dest_chars = new char[total_size];
         final char[] value = _canonicalName.toCharArray();
@@ -1665,7 +1727,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         final int total_size = _canonicalName.length();
         final char[] dest_chars = new char[total_size];
         final char[] value = _canonicalName.toCharArray();
-        final int offset = _domain_length+1;
+        final int offset = getDomainLength() + 1;
 
         // copy "domain:" into dest_chars
         //
@@ -1675,7 +1737,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         final int end = writeKeyPropertyListString(value,dest_chars,offset);
 
         // Add ",*" if necessary
-        if (_property_list_pattern) {
+        if (isPropertyListPattern()) {
             if (end == offset)  {
                 // Property list string is empty.
                 dest_chars[end] = '*';
@@ -1737,8 +1799,8 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         if (_ca_array.length == 0) return "";
 
         int len = _canonicalName.length();
-        if (_property_list_pattern) len -= 2;
-        return _canonicalName.substring(_domain_length +1, len);
+        if (isPropertyListPattern()) len -= 2;
+        return _canonicalName.substring(getDomainLength() + 1, len);
     }
     // Category : Getter methods <===================================
 
@@ -1944,22 +2006,18 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
         if (name == null) throw new NullPointerException();
 
-        if (name._domain_pattern ||
-            name._property_list_pattern ||
-            name._property_value_pattern)
+        if (name.isPattern())
             return false;
 
         // No pattern
-        if (!_domain_pattern &&
-            !_property_list_pattern &&
-            !_property_value_pattern)
+        if (!isPattern())
             return _canonicalName.equals(name._canonicalName);
 
         return matchDomains(name) && matchKeys(name);
     }
 
     private final boolean matchDomains(ObjectName name) {
-        if (_domain_pattern) {
+        if (isDomainPattern()) {
             // wildmatch domains
             // This ObjectName is the pattern
             // The other ObjectName is the string.
@@ -1972,15 +2030,15 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         // If key property value pattern but not key property list
         // pattern, then the number of key properties must be equal
         //
-        if (_property_value_pattern &&
-            !_property_list_pattern &&
+        if (isPropertyValuePattern() &&
+            !isPropertyListPattern() &&
             (name._ca_array.length != _ca_array.length))
                 return false;
 
         // If key property value pattern or key property list pattern,
         // then every property inside pattern should exist in name
         //
-        if (_property_value_pattern || _property_list_pattern) {
+        if (isPropertyPattern()) {
             final Map<String,String> nameProps = name._getKeyPropertyList();
             final Property[] props = _ca_array;
             final String cn = _canonicalName;
@@ -1996,7 +2054,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
                 if (v == null) return false;
                 // If this property is ok (same key, same value), go to next
                 //
-                if (_property_value_pattern && (p instanceof PatternProperty)) {
+                if (isPropertyValuePattern() && (p instanceof PatternProperty)) {
                     // wildmatch key property values
                     // p is the property pattern, v is the string
                     if (Util.wildmatch(v,p.getValueString(cn)))

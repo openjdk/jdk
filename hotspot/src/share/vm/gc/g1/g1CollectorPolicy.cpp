@@ -1582,7 +1582,7 @@ void
 G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
   _collectionSetChooser->clear();
 
-  FlexibleWorkGang* workers = _g1->workers();
+  WorkGang* workers = _g1->workers();
   uint n_workers = workers->active_workers();
 
   uint n_regions = _g1->num_regions();

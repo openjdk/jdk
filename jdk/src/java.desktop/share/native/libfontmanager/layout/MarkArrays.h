@@ -62,5 +62,3 @@ LE_VAR_ARRAY(MarkArray, markRecordArray)
 
 U_NAMESPACE_END
 #endif
-
-

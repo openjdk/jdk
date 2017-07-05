@@ -629,7 +629,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   gclog_or_tty->print_cr("CL Sleep Factor          %1.4lf", cleanup_sleep_factor());
 #endif
 
-  _parallel_workers = new FlexibleWorkGang("G1 Marker",
+  _parallel_workers = new WorkGang("G1 Marker",
        _max_parallel_marking_threads, false, true);
   if (_parallel_workers == NULL) {
     vm_exit_during_initialization("Failed necessary allocation.");
@@ -3087,29 +3087,6 @@ void ConcurrentMark::print_finger() {
   gclog_or_tty->cr();
 }
 #endif
-
-template<bool scan>
-inline void CMTask::process_grey_object(oop obj) {
-  assert(scan || obj->is_typeArray(), "Skipping scan of grey non-typeArray");
-  assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
-
-  if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%u] processing grey object " PTR_FORMAT,
-                           _worker_id, p2i((void*) obj));
-  }
-
-  size_t obj_size = obj->size();
-  _words_scanned += obj_size;
-
-  if (scan) {
-    obj->oop_iterate(_cm_oop_closure);
-  }
-  statsOnly( ++_objs_scanned );
-  check_limits();
-}
-
-template void CMTask::process_grey_object<true>(oop);
-template void CMTask::process_grey_object<false>(oop);
 
 // Closure for iteration over bitmaps
 class CMBitMapClosure : public BitMapClosure {
