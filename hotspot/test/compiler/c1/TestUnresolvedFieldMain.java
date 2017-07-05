@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,4 +21,28 @@
  * questions.
  */
 
-module mod {}
+/*
+ * @test
+ * @bug 8173373
+ * @compile TestUnresolvedField.jasm
+ * @run main/othervm -XX:TieredStopAtLevel=1 -Xcomp
+ *                   -XX:CompileCommand=compileonly,compiler.c1.TestUnresolvedField::test*
+ *                   compiler.c1.TestUnresolvedFieldMain
+ */
+
+package compiler.c1;
+
+public class TestUnresolvedFieldMain {
+    public static void main(String[] args) {
+        try {
+          TestUnresolvedField.testGetField();
+        } catch (java.lang.NoClassDefFoundError error) {
+          // Expected
+        }
+        try {
+          TestUnresolvedField.testPutField();
+        } catch (java.lang.NoClassDefFoundError error) {
+          // Expected
+        }
+    }
+}
