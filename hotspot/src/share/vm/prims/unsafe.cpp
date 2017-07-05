@@ -1117,6 +1117,44 @@ UNSAFE_END
 
 // JSR166 ------------------------------------------------------------------
 
+UNSAFE_ENTRY(jobject, Unsafe_CompareAndExchangeObject(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject e_h, jobject x_h))
+  UnsafeWrapper("Unsafe_CompareAndExchangeObject");
+  oop x = JNIHandles::resolve(x_h);
+  oop e = JNIHandles::resolve(e_h);
+  oop p = JNIHandles::resolve(obj);
+  HeapWord* addr = (HeapWord *)index_oop_from_field_offset_long(p, offset);
+  oop res = oopDesc::atomic_compare_exchange_oop(x, addr, e, true);
+  if (res == e)
+    update_barrier_set((void*)addr, x);
+  return JNIHandles::make_local(env, res);
+UNSAFE_END
+
+UNSAFE_ENTRY(jint, Unsafe_CompareAndExchangeInt(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jint e, jint x))
+  UnsafeWrapper("Unsafe_CompareAndExchangeInt");
+  oop p = JNIHandles::resolve(obj);
+  jint* addr = (jint *) index_oop_from_field_offset_long(p, offset);
+  return (jint)(Atomic::cmpxchg(x, addr, e));
+UNSAFE_END
+
+UNSAFE_ENTRY(jlong, Unsafe_CompareAndExchangeLong(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jlong e, jlong x))
+  UnsafeWrapper("Unsafe_CompareAndExchangeLong");
+  Handle p (THREAD, JNIHandles::resolve(obj));
+  jlong* addr = (jlong*)(index_oop_from_field_offset_long(p(), offset));
+#ifdef SUPPORTS_NATIVE_CX8
+  return (jlong)(Atomic::cmpxchg(x, addr, e));
+#else
+  if (VM_Version::supports_cx8())
+    return (jlong)(Atomic::cmpxchg(x, addr, e));
+  else {
+    MutexLockerEx mu(UnsafeJlong_lock, Mutex::_no_safepoint_check_flag);
+    jlong val = Atomic::load(addr);
+    if (val == e)
+      Atomic::store(x, addr);
+    return val;
+  }
+#endif
+UNSAFE_END
+
 UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSwapObject(JNIEnv *env, jobject unsafe, jobject obj, jlong offset, jobject e_h, jobject x_h))
   UnsafeWrapper("Unsafe_CompareAndSwapObject");
   oop x = JNIHandles::resolve(x_h);
@@ -1384,6 +1422,10 @@ static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "compareAndSwapObject", CC "(" OBJ "J" OBJ "" OBJ ")Z", FN_PTR(Unsafe_CompareAndSwapObject)},
     {CC "compareAndSwapInt",  CC "(" OBJ "J""I""I"")Z",  FN_PTR(Unsafe_CompareAndSwapInt)},
     {CC "compareAndSwapLong", CC "(" OBJ "J""J""J"")Z",  FN_PTR(Unsafe_CompareAndSwapLong)},
+    {CC "compareAndExchangeObjectVolatile", CC "(" OBJ "J" OBJ "" OBJ ")" OBJ, FN_PTR(Unsafe_CompareAndExchangeObject)},
+    {CC "compareAndExchangeIntVolatile",  CC "(" OBJ "J""I""I"")I", FN_PTR(Unsafe_CompareAndExchangeInt)},
+    {CC "compareAndExchangeLongVolatile", CC "(" OBJ "J""J""J"")J", FN_PTR(Unsafe_CompareAndExchangeLong)},
+
     {CC "putOrderedObject",   CC "(" OBJ "J" OBJ ")V",   FN_PTR(Unsafe_SetOrderedObject)},
     {CC "putOrderedInt",      CC "(" OBJ "JI)V",         FN_PTR(Unsafe_SetOrderedInt)},
     {CC "putOrderedLong",     CC "(" OBJ "JJ)V",         FN_PTR(Unsafe_SetOrderedLong)},

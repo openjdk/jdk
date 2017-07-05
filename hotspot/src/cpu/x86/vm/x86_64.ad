@@ -7281,6 +7281,7 @@ instruct compareAndSwapP(rRegI res,
 %{
   predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapP mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
@@ -7305,6 +7306,7 @@ instruct compareAndSwapL(rRegI res,
 %{
   predicate(VM_Version::supports_cx8());
   match(Set res (CompareAndSwapL mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapL mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
@@ -7328,6 +7330,7 @@ instruct compareAndSwapI(rRegI res,
                          rFlagsReg cr)
 %{
   match(Set res (CompareAndSwapI mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapI mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
@@ -7351,6 +7354,7 @@ instruct compareAndSwapN(rRegI res,
                           rax_RegN oldval, rRegN newval,
                           rFlagsReg cr) %{
   match(Set res (CompareAndSwapN mem_ptr (Binary oldval newval)));
+  match(Set res (WeakCompareAndSwapN mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
@@ -7365,6 +7369,83 @@ instruct compareAndSwapN(rRegI res,
              REX_breg(res), Opcode(0x0F), Opcode(0x94), reg(res), // sete
              REX_reg_breg(res, res), // movzbl
              Opcode(0xF), Opcode(0xB6), reg_reg(res, res));
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct compareAndExchangeI(
+                         memory mem_ptr,
+                         rax_RegI oldval, rRegI newval,
+                         rFlagsReg cr)
+%{
+  match(Set oldval (CompareAndExchangeI mem_ptr (Binary oldval newval)));
+  effect(KILL cr);
+
+  format %{ "cmpxchgl $mem_ptr,$newval\t# "
+            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"  %}
+  opcode(0x0F, 0xB1);
+  ins_encode(lock_prefix,
+             REX_reg_mem(newval, mem_ptr),
+             OpcP, OpcS,
+             reg_mem(newval, mem_ptr) // lock cmpxchg
+             );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct compareAndExchangeL(
+                         memory mem_ptr,
+                         rax_RegL oldval, rRegL newval,
+                         rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_cx8());
+  match(Set oldval (CompareAndExchangeL mem_ptr (Binary oldval newval)));
+  effect(KILL cr);
+
+  format %{ "cmpxchgq $mem_ptr,$newval\t# "
+            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"  %}
+  opcode(0x0F, 0xB1);
+  ins_encode(lock_prefix,
+             REX_reg_mem_wide(newval, mem_ptr),
+             OpcP, OpcS,
+             reg_mem(newval, mem_ptr)  // lock cmpxchg
+            );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct compareAndExchangeN(
+                          memory mem_ptr,
+                          rax_RegN oldval, rRegN newval,
+                          rFlagsReg cr) %{
+  match(Set oldval (CompareAndExchangeN mem_ptr (Binary oldval newval)));
+  effect(KILL cr);
+
+  format %{ "cmpxchgl $mem_ptr,$newval\t# "
+            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t" %}
+  opcode(0x0F, 0xB1);
+  ins_encode(lock_prefix,
+             REX_reg_mem(newval, mem_ptr),
+             OpcP, OpcS,
+             reg_mem(newval, mem_ptr)  // lock cmpxchg
+          );
+  ins_pipe( pipe_cmpxchg );
+%}
+
+instruct compareAndExchangeP(
+                         memory mem_ptr,
+                         rax_RegP oldval, rRegP newval,
+                         rFlagsReg cr)
+%{
+  predicate(VM_Version::supports_cx8());
+  match(Set oldval (CompareAndExchangeP mem_ptr (Binary oldval newval)));
+  effect(KILL cr);
+
+  format %{ "cmpxchgq $mem_ptr,$newval\t# "
+            "If rax == $mem_ptr then store $newval into $mem_ptr\n\t" %}
+  opcode(0x0F, 0xB1);
+  ins_encode(lock_prefix,
+             REX_reg_mem_wide(newval, mem_ptr),
+             OpcP, OpcS,
+             reg_mem(newval, mem_ptr)  // lock cmpxchg
+          );
   ins_pipe( pipe_cmpxchg );
 %}
 

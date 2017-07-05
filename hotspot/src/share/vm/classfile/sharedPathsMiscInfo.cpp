@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,15 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/sharedPathsMiscInfo.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "runtime/arguments.hpp"
+#include "utilities/ostream.hpp"
 
 void SharedPathsMiscInfo::add_path(const char* path, int type) {
-  if (TraceClassPaths) {
-    tty->print("[type=%s] ", type_name(type));
-    trace_class_path("[Add misc shared path ", path);
-  }
+  log_info(classpath)("type=%s ", type_name(type));
+  ClassLoader::trace_class_path("add misc shared path ", path);
   write(path, strlen(path) + 1);
   write_jint(jint(type));
 }
@@ -67,9 +67,27 @@ bool SharedPathsMiscInfo::read(void* ptr, size_t size) {
 }
 
 bool SharedPathsMiscInfo::fail(const char* msg, const char* name) {
-  ClassLoader::trace_class_path(tty, msg, name);
+  ClassLoader::trace_class_path(msg, name);
   MetaspaceShared::set_archive_loading_failed();
   return false;
+}
+
+void SharedPathsMiscInfo::print_path(int type, const char* path) {
+  ResourceMark rm;
+  outputStream* out = LogHandle(classpath)::info_stream();
+  switch (type) {
+  case BOOT:
+    out->print("Expecting -Dsun.boot.class.path=%s", path);
+    break;
+  case NON_EXIST:
+    out->print("Expecting that %s does not exist", path);
+    break;
+  case REQUIRED:
+    out->print("Expecting that file %s must exist and is not altered", path);
+    break;
+  default:
+    ShouldNotReachHere();
+  }
 }
 
 bool SharedPathsMiscInfo::check() {
@@ -90,17 +108,14 @@ bool SharedPathsMiscInfo::check() {
     if (!read_jint(&type)) {
       return fail("Corrupted archive file header");
     }
-    if (TraceClassPaths) {
-      tty->print("[type=%s ", type_name(type));
-      print_path(tty, type, path);
-      tty->print_cr("]");
-    }
+    log_info(classpath)("type=%s ", type_name(type));
+    print_path(type, path);
     if (!check(type, path)) {
       if (!PrintSharedArchiveAndExit) {
         return false;
       }
     } else {
-      trace_class_path("[ok");
+      ClassLoader::trace_class_path("ok");
     }
   }
 

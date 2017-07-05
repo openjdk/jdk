@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -60,27 +60,16 @@ Now we can use the content + data type in declaring event fields.
  <types>
   <content_types>
     <content_type id="Thread" hr_name="Thread"
-                  type="U4" builtin_type="OSTHREAD">
-      <value type="UTF8" field="name" label="Thread name"/>
-    </content_type>
-
-    <content_type id="VMThread" hr_name="VM Thread"
-                  type="U8" jvm_type="VMTHREAD">
-      <value type="OSTHREAD" field="thread" label="VM Thread"/>
-    </content_type>
-
-    <content_type id="JavaThread" hr_name="Java thread"
-                  type="U8" builtin_type="JAVALANGTHREAD">
-      <value type="OSTHREAD" field="thread" label="OS Thread ID"/>
-      <value type="BYTES64" field="allocInsideTla"
-             label="Allocated bytes inside TLAs"/>
-      <value type="BYTES64" field="allocOutsideTla"
-             label="Allocated bytes outside TLAs"/>
+                  type="U8" builtin_type="THREAD">
+      <value type="UTF8" field="osName" label="OS Thread Name"/>
+      <value type="LONG" field="osThreadID" label="OS Thread ID"/>
+      <value type="UTF8" field="javaName" label="Java Lang Thread Name"/>
+      <value type="LONG" field="javaThreadID" label="Java Lang Thread ID"/>
       <value type="THREADGROUP" field="group" label="Java Thread Group"/>
     </content_type>
 
     <content_type id="ThreadGroup" hr_name="Thread group"
-                  type="U4" jvm_type="THREADGROUP">
+                  type="U8" jvm_type="THREADGROUP">
       <value type="THREADGROUP" field="parent" label="Parent"/>
       <value type="UTF8" field="name" label="Name"/>
     </content_type>
@@ -107,82 +96,82 @@ Now we can use the content + data type in declaring event fields.
     </content_type>
 
     <content_type id="ThreadState" hr_name="Java Thread State"
-                  type="U2" jvm_type="THREADSTATE">
+                  type="U8" jvm_type="THREADSTATE">
       <value type="UTF8" field="name" label="Name"/>
     </content_type>
 
     <content_type id="GCName" hr_name="GC Name"
-                  type="U1" jvm_type="GCNAME">
+                  type="U8" jvm_type="GCNAME">
       <value type="UTF8" field="name" label="name" />
     </content_type>
 
     <content_type id="GCCause" hr_name="GC Cause"
-                  type="U2" jvm_type="GCCAUSE">
+                  type="U8" jvm_type="GCCAUSE">
       <value type="UTF8" field="cause" label="cause" />
     </content_type>
 
     <content_type id="GCWhen" hr_name="GC When"
-                  type="U1" jvm_type="GCWHEN">
+                  type="U8" jvm_type="GCWHEN">
       <value type="UTF8" field="when" label="when" />
     </content_type>
 
     <content_type id="G1HeapRegionType" hr_name="G1 Heap Region Type"
-                  type="U1" jvm_type="G1HEAPREGIONTYPE">
+                  type="U8" jvm_type="G1HEAPREGIONTYPE">
       <value type="UTF8" field="type" label="type" />
     </content_type>
     
     <content_type id="G1YCType" hr_name="G1 YC Type"
-                  type="U1" jvm_type="G1YCTYPE">
+                  type="U8" jvm_type="G1YCTYPE">
       <value type="UTF8" field="type" label="type" />
     </content_type>
 
     <content_type id="GCThresholdUpdater" hr_name="GC Treshold Updater"
-                  type="U1" jvm_type="GCTHRESHOLDUPDATER">
+                  type="U8" jvm_type="GCTHRESHOLDUPDATER">
       <value type="UTF8" field="updater" label="updater" />
     </content_type>
 
     <content_type id="ReferenceType" hr_name="Reference Type"
-                  type="U1" jvm_type="REFERENCETYPE">
+                  type="U8" jvm_type="REFERENCETYPE">
       <value type="UTF8" field="type" label="type" />
     </content_type>
 
     <content_type id="MetadataType" hr_name="Metadata Type"
-                  type="U1" jvm_type="METADATATYPE">
+                  type="U8" jvm_type="METADATATYPE">
       <value type="UTF8" field="type" label="type" />
     </content_type>
 
     <content_type id="MetaspaceObjectType" hr_name="Metaspace Object Type"
-                  type="U1" jvm_type="METASPACEOBJTYPE">
+                  type="U8" jvm_type="METASPACEOBJTYPE">
       <value type="UTF8" field="type" label="type" />
     </content_type>
 
     <content_type id="NARROW_OOP_MODE" hr_name="Narrow Oop Mode"
-                  type="U1" jvm_type="NARROWOOPMODE">
+                  type="U8" jvm_type="NARROWOOPMODE">
       <value type="UTF8" field="mode" label="mode" />
     </content_type>
 
     <content_type id="VMOperationType" hr_name="VM Operation Type"
-                  type="U2" jvm_type="VMOPERATIONTYPE">
+                  type="U8" jvm_type="VMOPERATIONTYPE">
       <value type="UTF8" field="type" label="type" />
     </content_type>
 
     <content_type id="CompilerPhaseType" hr_name="Compiler Phase Type"
-                  type="U1" jvm_type="COMPILERPHASETYPE">
+                  type="U8" jvm_type="COMPILERPHASETYPE">
       <value type="UTF8" field="phase" label="phase" />
     </content_type>
 
     <content_type id="FlagValueOrigin" hr_name="Flag Value Origin"
-                  type="U1" jvm_type="FLAGVALUEORIGIN">
+                  type="U8" jvm_type="FLAGVALUEORIGIN">
       <value type="UTF8" field="origin" label="origin" />
     </content_type>
 
     <content_type id="CodeBlobType" hr_name="Code Blob Type"
-                  type="U1" jvm_type="CODEBLOBTYPE">
+                  type="U8" jvm_type="CODEBLOBTYPE">
       <value type="UTF8" field="type" label="type" />
     </content_type>
 
     <content_type id="InflateCause" hr_name="Inflation Cause"
-                  type="U1" jvm_type="INFLATECAUSE">
+                  type="U8" jvm_type="INFLATECAUSE">
       <value type="UTF8" field="cause" label="cause" />
     </content_type>
   </content_types>
@@ -245,11 +234,11 @@ Now we can use the content + data type in declaring event fields.
                   type="bool" sizeop="1"/>
 
     <!-- 32-bit unsigned integer, SEMANTIC value BYTES -->
-    <primary_type symbol="BYTES" datatype="U4" contenttype="BYTES"
-                  type="u4" sizeop="sizeof(u4)"/>
+    <primary_type symbol="BYTES" datatype="U8" contenttype="BYTES"
+                  type="u8" sizeop="sizeof(u8)"/>
 
-    <primary_type symbol="IOBYTES" datatype="U4" contenttype="BYTES"
-                  type="u4" sizeop="sizeof(u4)"/>
+    <primary_type symbol="IOBYTES" datatype="U8" contenttype="BYTES"
+                  type="u8" sizeop="sizeof(u8)"/>
 
     <!-- 64-bit unsigned integer, SEMANTIC value BYTES -->
     <primary_type symbol="BYTES64" datatype="U8" contenttype="BYTES"
@@ -280,122 +269,109 @@ Now we can use the content + data type in declaring event fields.
                   type="u8" sizeop="sizeof(u8)"/>
 
     <!-- 32-bit float, SEMANTIC value PERCENTAGE (0.0-1.0) -->
-    <primary_type symbol="PERCENT" datatype="FLOAT" contenttype="PERCENTAGE"
+    <primary_type symbol="PERCENTAGE" datatype="FLOAT" contenttype="PERCENTAGE"
                   type="float" sizeop="sizeof(float)"/>
 
-    <!-- UTF-encoded string, max length 64k -->
+    <!-- UTF8-encoded string, max length Integer.MAX_VALUE -->
     <primary_type symbol="UTF8" datatype="UTF8" contenttype="NONE"
-                  type="const char *" sizeop="sizeof_utf(%)"/>
-
-    <!-- UTF-16 encoded (Unicode) string, max length maxjuint -->
-    <primary_type symbol="STRING" datatype="STRING" contenttype="NONE"
-                  type="TraceUnicodeString*" sizeop="sizeof_unicode(%)"/>
+                  type="const char*" sizeop="sizeof_utf(%)"/>
 
     <!-- Symbol* constant. Note that this may currently ONLY be used by
           classes, methods fields.  This restriction might be lifted. -->
     <primary_type symbol="SYMBOL" datatype="U8" contenttype="SYMBOL"
-                  type="Symbol *" sizeop="sizeof(u8)"/>
+                  type="const Symbol*" sizeop="sizeof(u8)"/>
 
     <!-- A Klass *. The actual class is marked as "used" and will
          eventually be written into the recording constant pool -->
     <primary_type symbol="CLASS" datatype="U8" contenttype="CLASS"
-                  type="Klass *" sizeop="sizeof(u8)"/>
+                  type="const Klass*" sizeop="sizeof(u8)"/>
 
     <!-- A Method *. The method is marked as "used" and will eventually be
          written into the recording constant pool. -->
     <primary_type symbol="METHOD" datatype="U8" contenttype="METHOD"
-                  type="Method *" sizeop="sizeof(u8)"/>
+                  type="const Method*" sizeop="sizeof(u8)"/>
 
     <!--  The type for stacktraces in the recording. Shoudl not be used by
           events explicitly -->
     <primary_type symbol="STACKTRACE" datatype="U8" contenttype="STACKTRACE"
                   type="u8" sizeop="sizeof(u8)"/>
 
-    <!-- OS Thread ID -->
-    <primary_type symbol="OSTHREAD" datatype="U4" contenttype="OSTHREAD"
-                  type="u4" sizeop="sizeof(u4)"/>
-
-    <!-- VM Thread ID Note: changed from U2 to U8 for hotspot -->
-    <primary_type symbol="VMTHREAD" datatype="U8" contenttype="VMTHREAD"
-                  type="u8"  sizeop="sizeof(u8)"/>
-
-    <!-- Java Thread ID -->
-    <primary_type symbol="JAVALANGTHREAD" datatype="LONG"
-                  contenttype="JAVALANGTHREAD" type="s8"
-                  sizeop="sizeof(s8)"/>
+    <!-- Thread ID -->
+    <primary_type symbol="THREAD" datatype="U8" contenttype="THREAD"
+                  type="u8" sizeop="sizeof(u8)"/>
 
     <!-- Threadgroup THIS TYPE MAY NOT BE USED IN NORMAL EVENTS (ATM). Only
           for thread constant pool // KK TODO: u8 should be ObjectP -->
-    <primary_type symbol="THREADGROUP" datatype="U4" contenttype="THREADGROUP"
+    <primary_type symbol="THREADGROUP" datatype="U8" contenttype="THREADGROUP"
                   type="u8"
-                  sizeop="sizeof(u4)"/>
+                  sizeop="sizeof(u8)"/>
 
     <!-- FRAMETYPE enum -->
-    <primary_type symbol="FRAMETYPE" datatype="U1" contenttype="FRAMETYPE"
-                  type="u1" sizeop="sizeof(u1)"/>
+    <primary_type symbol="FRAMETYPE" datatype="U8" contenttype="FRAMETYPE"
+                  type="u8" sizeop="sizeof(u8)"/>
 
     <!-- THREADSTATE enum -->
-    <primary_type symbol="THREADSTATE" datatype="U2" contenttype="THREADSTATE"
-                  type="u2" sizeop="sizeof(u2)"/>
+    <primary_type symbol="THREADSTATE" datatype="U8" contenttype="THREADSTATE"
+                  type="u8" sizeop="sizeof(u8)"/>
 
     <!-- GCName -->
-    <primary_type symbol="GCNAME" datatype="U1" contenttype="GCNAME"
-                  type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="GCNAME" datatype="U8" contenttype="GCNAME"
+                  type="u8" sizeop="sizeof(u8)" />
 
     <!-- GCCAUSE -->
-    <primary_type symbol="GCCAUSE" datatype="U2" contenttype="GCCAUSE"
-                  type="u2" sizeop="sizeof(u2)" />
+    <primary_type symbol="GCCAUSE" datatype="U8" contenttype="GCCAUSE"
+                  type="u8" sizeop="sizeof(u8)" />
 
     <!-- GCWHEN -->
-    <primary_type symbol="GCWHEN" datatype="U1" contenttype="GCWHEN"
-                  type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="GCWHEN" datatype="U8" contenttype="GCWHEN"
+                  type="u8" sizeop="sizeof(u8)" />
 
     <!-- G1HEAPREGIONTYPE -->
-    <primary_type symbol="G1HEAPREGIONTYPE" datatype="U1" contenttype="G1HEAPREGIONTYPE"
-                  type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="G1HEAPREGIONTYPE" datatype="U8" contenttype="G1HEAPREGIONTYPE"
+                  type="u8" sizeop="sizeof(u8)" />
 
     <!-- G1YCType -->
-    <primary_type symbol="G1YCTYPE" datatype="U1" contenttype="G1YCTYPE"
-                  type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="G1YCTYPE" datatype="U8" contenttype="G1YCTYPE"
+                  type="u8" sizeop="sizeof(u8)" />
 
     <!-- GCTHRESHOLDUPDATER -->
-    <primary_type symbol="GCTHRESHOLDUPDATER" datatype="U1" contenttype="GCTHRESHOLDUPDATER"
-                  type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="GCTHRESHOLDUPDATER" datatype="U8" contenttype="GCTHRESHOLDUPDATER"
+                  type="u8" sizeop="sizeof(u8)" />
 
     <!-- REFERENCETYPE -->
-    <primary_type symbol="REFERENCETYPE" datatype="U1"
-                  contenttype="REFERENCETYPE" type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="REFERENCETYPE" datatype="U8"
+                  contenttype="REFERENCETYPE" type="u8" sizeop="sizeof(u8)" />
 
     <!-- METADATATYPE -->
-    <primary_type symbol="METADATATYPE" datatype="U1"
-                  contenttype="METADATATYPE" type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="METADATATYPE" datatype="U8"
+                  contenttype="METADATATYPE" type="u8" sizeop="sizeof(u8)" />
 
     <!-- METADATAOBJTYPE -->
-    <primary_type symbol="METASPACEOBJTYPE" datatype="U1"
-                  contenttype="METASPACEOBJTYPE" type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="METASPACEOBJTYPE" datatype="U8"
+                  contenttype="METASPACEOBJTYPE" type="u8" sizeop="sizeof(u8)" />
 
     <!-- NARROWOOPMODE -->
-    <primary_type symbol="NARROWOOPMODE" datatype="U1"
-                  contenttype="NARROWOOPMODE" type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="NARROWOOPMODE" datatype="U8"
+                  contenttype="NARROWOOPMODE" type="u8" sizeop="sizeof(u8)" />
 
     <!-- COMPILERPHASETYPE -->
-    <primary_type symbol="COMPILERPHASETYPE" datatype="U1"
-                  contenttype="COMPILERPHASETYPE" type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="COMPILERPHASETYPE" datatype="U8"
+                  contenttype="COMPILERPHASETYPE" type="u8" sizeop="sizeof(u8)" />
 
     <!-- VMOPERATIONTYPE -->
-    <primary_type symbol="VMOPERATIONTYPE" datatype="U2" contenttype="VMOPERATIONTYPE"
-                  type="u2" sizeop="sizeof(u2)" />
+    <primary_type symbol="VMOPERATIONTYPE" datatype="U8" contenttype="VMOPERATIONTYPE"
+                  type="u8" sizeop="sizeof(u8)" />
                   
     <!-- FLAGVALUEORIGIN -->
-    <primary_type symbol="FLAGVALUEORIGIN" datatype="U1"
-                  contenttype="FLAGVALUEORIGIN" type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="FLAGVALUEORIGIN" datatype="U8"
+                  contenttype="FLAGVALUEORIGIN" type="u8" sizeop="sizeof(u8)" />
                   
     <!-- CODEBLOBTYPE -->
-    <primary_type symbol="CODEBLOBTYPE" datatype="U1"
-                  contenttype="CODEBLOBTYPE" type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="CODEBLOBTYPE" datatype="U8"
+                  contenttype="CODEBLOBTYPE" type="u8" sizeop="sizeof(u8)" />
 
     <!-- INFLATECAUSE -->
-    <primary_type symbol="INFLATECAUSE" datatype="U1"
-                  contenttype="INFLATECAUSE" type="u1" sizeop="sizeof(u1)" />
+    <primary_type symbol="INFLATECAUSE" datatype="U8"
+                  contenttype="INFLATECAUSE" type="u8" sizeop="sizeof(u8)" />
   </primary_types>
 </types>

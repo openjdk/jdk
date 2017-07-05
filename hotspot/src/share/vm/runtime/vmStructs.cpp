@@ -960,7 +960,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
   nonstatic_field(nmethod,                     _exception_cache,                              ExceptionCache*)                       \
-  nonstatic_field(nmethod,                     _marked_for_deoptimization,                    bool)                                  \
                                                                                                                                      \
   unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
                                                                                                                                      \
@@ -2006,10 +2005,20 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(LoadStoreNode, Node)                                    \
   declare_c2_type(StorePConditionalNode, LoadStoreNode)                   \
   declare_c2_type(StoreLConditionalNode, LoadStoreNode)                   \
-  declare_c2_type(CompareAndSwapLNode, LoadStoreNode)                     \
-  declare_c2_type(CompareAndSwapINode, LoadStoreNode)                     \
-  declare_c2_type(CompareAndSwapPNode, LoadStoreNode)                     \
-  declare_c2_type(CompareAndSwapNNode, LoadStoreNode)                     \
+  declare_c2_type(CompareAndSwapNode, LoadStoreConditionalNode)           \
+  declare_c2_type(CompareAndSwapLNode, CompareAndSwapNode)                \
+  declare_c2_type(CompareAndSwapINode, CompareAndSwapNode)                \
+  declare_c2_type(CompareAndSwapPNode, CompareAndSwapNode)                \
+  declare_c2_type(CompareAndSwapNNode, CompareAndSwapNode)                \
+  declare_c2_type(WeakCompareAndSwapLNode, CompareAndSwapNode)            \
+  declare_c2_type(WeakCompareAndSwapINode, CompareAndSwapNode)            \
+  declare_c2_type(WeakCompareAndSwapPNode, CompareAndSwapNode)            \
+  declare_c2_type(WeakCompareAndSwapNNode, CompareAndSwapNode)            \
+  declare_c2_type(CompareAndExchangeNode, LoadStoreNode)                  \
+  declare_c2_type(CompareAndExchangeLNode, CompareAndExchangeNode)        \
+  declare_c2_type(CompareAndExchangeINode, CompareAndExchangeNode)        \
+  declare_c2_type(CompareAndExchangePNode, CompareAndExchangeNode)        \
+  declare_c2_type(CompareAndExchangeNNode, CompareAndExchangeNode)        \
   declare_c2_type(MulNode, Node)                                          \
   declare_c2_type(MulINode, MulNode)                                      \
   declare_c2_type(MulLNode, MulNode)                                      \

@@ -173,9 +173,7 @@ void CodeBlobCollector::collect() {
   _global_code_blobs = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<JvmtiCodeBlobDesc*>(50,true);
 
   // iterate over the stub code descriptors and put them in the list first.
-  int index = 0;
-  StubCodeDesc* desc;
-  while ((desc = StubCodeDesc::desc_for_index(++index)) != NULL) {
+  for (StubCodeDesc* desc = StubCodeDesc::first(); desc != NULL; desc = StubCodeDesc::next(desc)) {
     _global_code_blobs->append(new JvmtiCodeBlobDesc(desc->name(), desc->begin(), desc->end()));
   }
 

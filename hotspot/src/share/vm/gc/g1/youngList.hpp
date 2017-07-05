@@ -37,13 +37,8 @@ private:
   HeapRegion* _survivor_head;
   HeapRegion* _survivor_tail;
 
-  HeapRegion* _curr;
-
   uint        _length;
   uint        _survivor_length;
-
-  size_t      _last_sampled_rs_lengths;
-  size_t      _sampled_rs_lengths;
 
   void         empty_list(HeapRegion* list);
 
@@ -72,15 +67,6 @@ public:
     return (size_t) survivor_length() * HeapRegion::GrainBytes;
   }
 
-  void rs_length_sampling_init();
-  bool rs_length_sampling_more();
-  void rs_length_sampling_next();
-
-  void reset_sampled_info() {
-    _last_sampled_rs_lengths =   0;
-  }
-  size_t sampled_rs_lengths() { return _last_sampled_rs_lengths; }
-
   // for development purposes
   void reset_auxilary_lists();
   void clear() { _head = NULL; _length = 0; }
@@ -97,7 +83,7 @@ public:
 
   // debugging
   bool          check_list_well_formed();
-  bool          check_list_empty(bool check_sample = true);
+  bool          check_list_empty();
   void          print();
 };
 
