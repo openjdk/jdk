@@ -205,6 +205,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   // policy is created before the heap, we have to set this up here,
   // so it's done as soon as possible.
   HeapRegion::setup_heap_region_size(Arguments::min_heap_size());
+  HeapRegionRemSet::setup_remset_size();
 
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;

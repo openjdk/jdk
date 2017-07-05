@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
     int offset = t_oop->offset();
     phi = new (C,region->req()) PhiNode(region, type, NULL, iid, index, offset);
   } else {
-    phi = new (C,region->req()) PhiNode(region, type);
+    phi = PhiNode::make_blank(region, n);
   }
   uint old_unique = C->unique();
   for( uint i = 1; i < region->req(); i++ ) {

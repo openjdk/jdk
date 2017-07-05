@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -439,8 +439,18 @@ void Parse::do_multianewarray() {
 
   // Can use multianewarray instead of [a]newarray if only one dimension,
   // or if all non-final dimensions are small constants.
-  if (expand_count == 1 || (1 <= expand_count && expand_count <= expand_limit)) {
-    Node* obj = expand_multianewarray(array_klass, &length[0], ndimensions, ndimensions);
+  if (ndimensions == 1 || (1 <= expand_count && expand_count <= expand_limit)) {
+    Node* obj = NULL;
+    // Set the original stack and the reexecute bit for the interpreter
+    // to reexecute the multianewarray bytecode if deoptimization happens.
+    // Do it unconditionally even for one dimension multianewarray.
+    // Note: the reexecute bit will be set in GraphKit::add_safepoint_edges()
+    // when AllocateArray node for newarray is created.
+    { PreserveReexecuteState preexecs(this);
+      _sp += ndimensions;
+      // Pass 0 as nargs since uncommon trap code does not need to restore stack.
+      obj = expand_multianewarray(array_klass, &length[0], ndimensions, 0);
+    } //original reexecute and sp are set back here
     push(obj);
     return;
   }

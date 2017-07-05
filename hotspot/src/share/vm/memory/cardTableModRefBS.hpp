@@ -339,6 +339,16 @@ public:
     return (val & (clean_card_mask_val() | claimed_card_val())) == claimed_card_val();
   }
 
+  void set_card_claimed(size_t card_index) {
+      jbyte val = _byte_map[card_index];
+      if (val == clean_card_val()) {
+        val = (jbyte)claimed_card_val();
+      } else {
+        val |= (jbyte)claimed_card_val();
+      }
+      _byte_map[card_index] = val;
+  }
+
   bool claim_card(size_t card_index);
 
   bool is_card_clean(size_t card_index) {
