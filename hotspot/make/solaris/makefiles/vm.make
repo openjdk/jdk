@@ -93,7 +93,7 @@ CFLAGS += $(CFLAGS_WARN)
 CFLAGS += $(CFLAGS/NOEX)
 
 # Extra flags from gnumake's invocation or environment
-CFLAGS += $(EXTRA_CFLAGS)
+CFLAGS += $(EXTRA_CFLAGS) -DINCLUDE_TRACE
 
 # Math Library (libm.so), do not use -lm.
 #    There might be two versions of libm.so on the build system:
@@ -159,6 +159,10 @@ SOURCE_PATHS+=$(HS_COMMON_SRC)/os/$(Platform_os_family)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os/posix/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/cpu/$(Platform_arch)/vm
 SOURCE_PATHS+=$(HS_COMMON_SRC)/os_cpu/$(Platform_os_arch)/vm
+
+SOURCE_PATHS+=$(shell if [ -d $(HS_ALT_SRC)/share/vm/jfr ]; then \
+  find $(HS_ALT_SRC)/share/vm/jfr -type d; \
+  fi)
 
 CORE_PATHS=$(foreach path,$(SOURCE_PATHS),$(call altsrc,$(path)) $(path))
 CORE_PATHS+=$(GENERATED)/jvmtifiles

@@ -68,6 +68,7 @@ import sun.management.snmp.jvmmib.JvmRTLibraryPathTableMeta;
  */
 public class JvmRuntimeMetaImpl extends JvmRuntimeMeta {
 
+     static final long serialVersionUID = -6570428414857608618L;
     /**
      * Constructor for the metadata associated to "JvmRuntime".
      */

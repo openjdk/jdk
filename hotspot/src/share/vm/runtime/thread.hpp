@@ -41,6 +41,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/unhandledOops.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/top.hpp"
 #ifndef SERIALGC
@@ -246,6 +247,8 @@ class Thread: public ThreadShadow {
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
 
+  TRACE_BUFFER _trace_buffer;                   // Thread-local buffer for tracing
+
   int   _vm_operation_started_count;            // VM_Operation support
   int   _vm_operation_completed_count;          // VM_Operation support
 
@@ -413,6 +416,9 @@ class Thread: public ThreadShadow {
     }
     return allocated_bytes;
   }
+
+  TRACE_BUFFER trace_buffer()              { return _trace_buffer; }
+  void set_trace_buffer(TRACE_BUFFER buf)  { _trace_buffer = buf; }
 
   // VM operation support
   int vm_operation_ticket()                      { return ++_vm_operation_started_count; }

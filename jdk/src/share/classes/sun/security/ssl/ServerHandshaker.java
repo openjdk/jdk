@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1024,37 +1024,39 @@ final class ServerHandshaker extends Handshaker {
             }
             break;
         case K_DHE_RSA:
+            // need RSA certs for authentication
+            if (setupPrivateKeyAndChain("RSA") == false) {
+                return false;
+            }
+
             // get preferable peer signature algorithm for server key exchange
             if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
                 preferableSignatureAlgorithm =
                     SignatureAndHashAlgorithm.getPreferableAlgorithm(
-                                                supportedSignAlgs, "RSA");
+                                        supportedSignAlgs, "RSA", privateKey);
                 if (preferableSignatureAlgorithm == null) {
                     return false;
                 }
             }
 
-            // need RSA certs for authentication
-            if (setupPrivateKeyAndChain("RSA") == false) {
-                return false;
-            }
             setupEphemeralDHKeys(suite.exportable);
             break;
         case K_ECDHE_RSA:
+            // need RSA certs for authentication
+            if (setupPrivateKeyAndChain("RSA") == false) {
+                return false;
+            }
+
             // get preferable peer signature algorithm for server key exchange
             if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
                 preferableSignatureAlgorithm =
                     SignatureAndHashAlgorithm.getPreferableAlgorithm(
-                                                supportedSignAlgs, "RSA");
+                                        supportedSignAlgs, "RSA", privateKey);
                 if (preferableSignatureAlgorithm == null) {
                     return false;
                 }
             }
 
-            // need RSA certs for authentication
-            if (setupPrivateKeyAndChain("RSA") == false) {
-                return false;
-            }
             if (setupEphemeralECDHKeys() == false) {
                 return false;
             }
