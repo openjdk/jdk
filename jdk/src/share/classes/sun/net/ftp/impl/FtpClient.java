@@ -905,7 +905,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             out = new PrintStream(new BufferedOutputStream(server.getOutputStream()),
                     true, encoding);
         } catch (UnsupportedEncodingException e) {
-            throw new InternalError(encoding + "encoding not found");
+            throw new InternalError(encoding + "encoding not found", e);
         }
         in = new BufferedInputStream(server.getInputStream());
     }
@@ -1621,7 +1621,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
                     out = new PrintStream(new BufferedOutputStream(server.getOutputStream()),
                             true, encoding);
                 } catch (UnsupportedEncodingException e) {
-                    throw new InternalError(encoding + "encoding not found");
+                    throw new InternalError(encoding + "encoding not found", e);
                 }
                 in = new BufferedInputStream(server.getInputStream());
             }
@@ -2056,7 +2056,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             out = new PrintStream(new BufferedOutputStream(server.getOutputStream()),
                     true, encoding);
         } catch (UnsupportedEncodingException e) {
-            throw new InternalError(encoding + "encoding not found");
+            throw new InternalError(encoding + "encoding not found", e);
         }
         in = new BufferedInputStream(server.getInputStream());
 
@@ -2090,7 +2090,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             out = new PrintStream(new BufferedOutputStream(server.getOutputStream()),
                     true, encoding);
         } catch (UnsupportedEncodingException e) {
-            throw new InternalError(encoding + "encoding not found");
+            throw new InternalError(encoding + "encoding not found", e);
         }
         in = new BufferedInputStream(server.getInputStream());
 

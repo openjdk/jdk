@@ -307,7 +307,7 @@ public class ArrayList<E> extends AbstractList<E>
             return v;
         } catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

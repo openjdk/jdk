@@ -133,7 +133,7 @@ class PerfDataEntry {
         catch (UnsupportedEncodingException e) {
             // should not reach here
             // "UTF-8" is always a known encoding
-            throw new InternalError(e.getMessage());
+            throw new InternalError(e.getMessage(), e);
         }
 
         if (variability == Variability.INVALID) {

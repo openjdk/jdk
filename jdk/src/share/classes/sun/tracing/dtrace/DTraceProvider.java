@@ -26,18 +26,15 @@
 package sun.tracing.dtrace;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.annotation.Annotation;
-import java.util.HashMap;
 
 import sun.tracing.ProviderSkeleton;
 import sun.tracing.ProbeSkeleton;
 import com.sun.tracing.Provider;
-import com.sun.tracing.ProviderName;
 import com.sun.tracing.ProbeName;
 import com.sun.tracing.dtrace.Attributes;
 import com.sun.tracing.dtrace.ModuleName;
@@ -140,14 +137,8 @@ class DTraceProvider extends ProviderSkeleton {
         try {
             Constructor cons = proxyClass.getConstructor(constructorParams);
             return (T)cons.newInstance(new Object[] { this });
-        } catch (NoSuchMethodException e) {
-            throw new InternalError(e.toString());
-        } catch (IllegalAccessException e) {
-            throw new InternalError(e.toString());
-        } catch (InstantiationException e) {
-            throw new InternalError(e.toString());
-        } catch (InvocationTargetException e) {
-            throw new InternalError(e.toString());
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError(e.toString(), e);
         }
     }
 
