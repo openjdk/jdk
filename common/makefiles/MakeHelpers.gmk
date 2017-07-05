@@ -50,7 +50,7 @@ BUILDTIMESDIR=$(OUTPUT_ROOT)/tmp/buildtimes
 
 # Global targets are possible to run either with or without a SPEC. The prototypical
 # global target is "help". 
-global_targets=help configure
+global_targets=help jprt% bridgeBuild
 
 ##############################
 # Functions
@@ -112,7 +112,7 @@ endef
 
 # Do not indent this function, this will add whitespace at the start which the caller won't handle
 define GetRealTarget
-$(strip $(if $(MAKECMDGOALS),$(MAKECMDGOALS),all))
+$(strip $(if $(MAKECMDGOALS),$(MAKECMDGOALS),default))
 endef
 
 # Do not indent this function, this will add whitespace at the start which the caller won't handle
@@ -126,10 +126,7 @@ define CheckIfMakeAtEnd
     # Check if the current target is the last goal
     $(if $(filter $@,$(call LastGoal)),$(call AtMakeEnd))
     # If the target is 'foo-only', check if our goal was stated as 'foo'
-    $(if $(filter $(patsubst %-only,%,$@),$(call LastGoal)),$(call AtMakeEnd))
-    # If no goal is given, 'all' is default, but the last target executed for all is 'jdk-only'. Check for that, too.
-    # At most one of the tests can be true.
-    $(if $(subst all,,$(call LastGoal)),,$(if $(filter $@,jdk-only),$(call AtMakeEnd)))
+    $(if $(filter $@,$(call LastGoal)-only),$(call AtMakeEnd))
 endef
 
 # Hook to be called when starting to execute a top-level target

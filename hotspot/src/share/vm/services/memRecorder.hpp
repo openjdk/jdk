@@ -203,6 +203,7 @@ class MemRecorder : public CHeapObj<mtNMT|otNMTRecorder> {
   friend class MemSnapshot;
   friend class MemTracker;
   friend class MemTrackWorker;
+  friend class GenerationData;
 
  protected:
   // the array that holds memory records

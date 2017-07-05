@@ -65,6 +65,17 @@ AnnotationArray* fieldDescriptor::annotations() const {
   return md->at(index());
 }
 
+AnnotationArray* fieldDescriptor::type_annotations() const {
+  InstanceKlass* ik = field_holder();
+  Annotations* type_annos = ik->type_annotations();
+  if (type_annos == NULL)
+    return NULL;
+  Array<AnnotationArray*>* md = type_annos->fields_annotations();
+  if (md == NULL)
+    return NULL;
+  return md->at(index());
+}
+
 constantTag fieldDescriptor::initial_value_tag() const {
   return constants()->tag_at(initial_value_index());
 }
