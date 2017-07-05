@@ -182,6 +182,14 @@ ifeq ($(JDK_SRC_AVAILABLE), true)
 	   "" >> $(WARNING_FILE)
   endif
 endif
+ifeq ($(NASHORN_SRC_AVAILABLE), true)
+  ifneq ($(BUILD_NASHORN), true)
+	@$(ECHO) "WARNING: You are not building the NASHORN sources.\n" \
+           "        The nashorn files will be obtained from \n" \
+           "        the location set in ALT_JDK_IMPORT_PATH. \n" \
+           "" >> $(WARNING_FILE)
+  endif
+endif
 ifeq ($(DEPLOY_SRC_AVAILABLE), true)
   ifneq ($(BUILD_DEPLOY), true)
 	@$(ECHO) "WARNING: You are not building the DEPLOY sources.\n" \
@@ -268,6 +276,9 @@ endif
 ifeq ($(JDK_SRC_AVAILABLE), true)
 	@$(ECHO) "   JDK_TOPDIR = $(JDK_TOPDIR)"  >> $(MESSAGE_FILE)
 endif
+ifeq ($(NASHORN_SRC_AVAILABLE), true)
+	@$(ECHO) "   NASHORN_TOPDIR = $(NASHORN_TOPDIR)"  >> $(MESSAGE_FILE)
+endif
 ifeq ($(DEPLOY_SRC_AVAILABLE), true)
 	@$(ECHO) "   DEPLOY_TOPDIR = $(DEPLOY_TOPDIR)"  >> $(MESSAGE_FILE)
 endif
@@ -302,6 +313,9 @@ ifeq ($(HOTSPOT_SRC_AVAILABLE), true)
 endif
 ifeq ($(JDK_SRC_AVAILABLE), true)
 	@$(ECHO) "   BUILD_JDK    = $(BUILD_JDK) " >> $(MESSAGE_FILE)
+endif
+ifeq ($(NASHORN_SRC_AVAILABLE), true)
+	@$(ECHO) "   BUILD_NASHORN = $(BUILD_NASHORN) " >> $(MESSAGE_FILE)
 endif
 ifeq ($(DEPLOY_SRC_AVAILABLE), true)
 	@$(ECHO) "   BUILD_DEPLOY  = $(BUILD_DEPLOY) " >> $(MESSAGE_FILE)

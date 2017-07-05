@@ -641,4 +641,6 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
     public Rectangle getBoundsPrivate() {
         return getBounds();
     }
+
+    public void emulateActivation(boolean doActivate) {}
 }

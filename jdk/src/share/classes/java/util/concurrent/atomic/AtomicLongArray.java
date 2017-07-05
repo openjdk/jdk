@@ -262,7 +262,7 @@ public class AtomicLongArray implements java.io.Serializable {
         long prev, next;
         do {
             prev = getRaw(offset);
-            next = updateFunction.operateAsLong(prev);
+            next = updateFunction.applyAsLong(prev);
         } while (!compareAndSetRaw(offset, prev, next));
         return prev;
     }
@@ -283,7 +283,7 @@ public class AtomicLongArray implements java.io.Serializable {
         long prev, next;
         do {
             prev = getRaw(offset);
-            next = updateFunction.operateAsLong(prev);
+            next = updateFunction.applyAsLong(prev);
         } while (!compareAndSetRaw(offset, prev, next));
         return next;
     }
@@ -309,7 +309,7 @@ public class AtomicLongArray implements java.io.Serializable {
         long prev, next;
         do {
             prev = getRaw(offset);
-            next = accumulatorFunction.operateAsLong(prev, x);
+            next = accumulatorFunction.applyAsLong(prev, x);
         } while (!compareAndSetRaw(offset, prev, next));
         return prev;
     }
@@ -335,7 +335,7 @@ public class AtomicLongArray implements java.io.Serializable {
         long prev, next;
         do {
             prev = getRaw(offset);
-            next = accumulatorFunction.operateAsLong(prev, x);
+            next = accumulatorFunction.applyAsLong(prev, x);
         } while (!compareAndSetRaw(offset, prev, next));
         return next;
     }

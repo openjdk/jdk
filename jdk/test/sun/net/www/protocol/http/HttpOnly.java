@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /**
  * @test
- * @bug 7095980
+ * @bug 7095980 8007315
  * @summary Ensure HttpURLConnection (and supporting APIs) don't expose
  *          HttpOnly cookies
  */
@@ -52,6 +52,8 @@ import com.sun.net.httpserver.HttpServer;
  * 4) check HttpOnly cookies received by server
  * 5) server reply with Set-Cookie containing HttpOnly cookie
  * 6) check HttpOnly cookies are not accessible from Http client
+ * 7) check that non-null (empty string) values are returned for
+      scenario where all values are stripped from original key values
  */
 
 public class HttpOnly {
@@ -175,6 +177,36 @@ public class HttpOnly {
                     check(!val.toLowerCase().contains("httponly"),
                           "HttpOnly cookie returned from getRequestProperties," +
                           " value " + val);
+            }
+        }
+
+        // TEST 7 : check that header keys containing empty key values don't return null
+        int i = 1;
+        String key = "";
+        String value = "";
+
+        while (true) {
+            key = uc.getHeaderFieldKey(i);
+            value = uc.getHeaderField(i++);
+            if (key == null && value == null)
+                break;
+
+            if (key != null)
+                check(value != null,
+                    "Encountered a null value for key value : " + key);
+        }
+
+        // TEST 7.5 similar test but use getHeaderFields
+        respHeaders = uc.getHeaderFields();
+        respEntries = respHeaders.entrySet();
+        for (Map.Entry<String,List<String>> entry : respEntries) {
+            String header = entry.getKey();
+            if (header != null) {
+                List<String> listValues = entry.getValue();
+                for (String value1 : listValues)
+                    check(value1 != null,
+                        "getHeaderFields returned null values for header:, "
+                        + header);
             }
         }
     }

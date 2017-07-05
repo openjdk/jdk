@@ -101,7 +101,6 @@ int awtPreloadD3D = -1;
 /* funtion in awt.dll (src/windows/native/sun/java2d/d3d/D3DPipelineManager.cpp) */
 #define D3D_PRELOAD_FUNC "preloadD3D"
 
-
 /* Extracts value of a parameter with the specified name
  * from command line argument (returns pointer in the argument).
  * Returns NULL if the argument does not contains the parameter.
@@ -276,7 +275,8 @@ LoadMSVCRT()
 #endif
 #ifdef CRT_DLL
         if (GetJREPath(crtpath, MAXPATHLEN)) {
-            if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") + JLI_StrLen(CRT_DLL) >= MAXPATHLEN) {
+            if (JLI_StrLen(crtpath) + JLI_StrLen("\\bin\\") +
+                    JLI_StrLen(CRT_DLL) >= MAXPATHLEN) {
                 JLI_ReportErrorMessage(JRE_ERROR11);
                 return JNI_FALSE;
             }
@@ -347,7 +347,8 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
     if (JLI_StrChr(jvmtype, '/') || JLI_StrChr(jvmtype, '\\')) {
         JLI_Snprintf(jvmpath, jvmpathsize, "%s\\" JVM_DLL, jvmtype);
     } else {
-        JLI_Snprintf(jvmpath, jvmpathsize, "%s\\bin\\%s\\" JVM_DLL, jrepath, jvmtype);
+        JLI_Snprintf(jvmpath, jvmpathsize, "%s\\bin\\%s\\" JVM_DLL,
+                     jrepath, jvmtype);
     }
     if (stat(jvmpath, &s) == 0) {
         return JNI_TRUE;
@@ -524,6 +525,37 @@ jlong Counter2Micros(jlong counts)
         return 0;
     }
     return (counts * 1000 * 1000)/counterFrequency.QuadPart;
+}
+/*
+ * windows snprintf does not guarantee a null terminator in the buffer,
+ * if the computed size is equal to or greater than the buffer size,
+ * as well as error conditions. This function guarantees a null terminator
+ * under all these conditions. An unreasonable buffer or size will return
+ * an error value. Under all other conditions this function will return the
+ * size of the bytes actually written minus the null terminator, similar
+ * to ansi snprintf api. Thus when calling this function the caller must
+ * ensure storage for the null terminator.
+ */
+int
+JLI_Snprintf(char* buffer, size_t size, const char* format, ...) {
+    int rc;
+    va_list vl;
+    if (size == 0 || buffer == NULL)
+        return -1;
+    buffer[0] = '\0';
+    va_start(vl, format);
+    rc = vsnprintf(buffer, size, format, vl);
+    va_end(vl);
+    /* force a null terminator, if something is amiss */
+    if (rc < 0) {
+        /* apply ansi semantics */
+        buffer[size - 1] = '\0';
+        return size;
+    } else if (rc == size) {
+        /* force a null terminator */
+        buffer[size - 1] = '\0';
+    }
+    return rc;
 }
 
 void
@@ -880,7 +912,7 @@ unquote(const char *s) {
  */
 void
 ExecJRE(char *jre, char **argv) {
-    int     len;
+    jint     len;
     char    path[MAXPATHLEN + 1];
 
     const char *progname = GetProgramName();
@@ -1417,7 +1449,10 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
         // we add the indicator
         tlen = 1 + JLI_StrLen(strv[i]) + 1;
         nargv[i] = (char *) JLI_MemAlloc(tlen);
-        JLI_Snprintf(nargv[i], tlen, "%c%s", arg_expand ? 'T' : 'F', strv[i]);
+        if (JLI_Snprintf(nargv[i], tlen, "%c%s", arg_expand ? 'T' : 'F',
+                         strv[i]) < 0) {
+            return NULL;
+        }
         JLI_TraceLauncher("%s\n", nargv[i]);
     }
 

@@ -63,7 +63,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509CRLEntry;
 import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
-import sun.misc.BASE64Encoder;
+import java.util.Base64;
 import sun.security.util.ObjectIdentifier;
 import sun.security.pkcs10.PKCS10;
 import sun.security.pkcs10.PKCS10Attribute;
@@ -73,7 +73,6 @@ import sun.security.util.Password;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
-import sun.misc.BASE64Decoder;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.tools.KeyStoreUtil;
 import sun.security.tools.PathList;
@@ -555,11 +554,11 @@ public final class Main {
         return cmd != PRINTCERT && cmd != PRINTCERTREQ;
     }
 
+
     /**
      * Execute the commands.
      */
     void doCommands(PrintStream out) throws Exception {
-
         if (storetype == null) {
             storetype = KeyStore.getDefaultType();
         }
@@ -1189,7 +1188,7 @@ public final class Main {
                 sb.append(s);
             }
         }
-        byte[] rawReq = new BASE64Decoder().decodeBuffer(new String(sb));
+        byte[] rawReq = Base64.getMimeDecoder().decode(new String(sb));
         PKCS10 req = new PKCS10(rawReq);
 
         info.set(X509CertInfo.KEY, new CertificateX509Key(req.getSubjectPublicKeyInfo()));
@@ -1266,7 +1265,7 @@ public final class Main {
         crl.sign(privateKey, sigAlgName);
         if (rfc) {
             out.println("-----BEGIN X509 CRL-----");
-            new BASE64Encoder().encodeBuffer(crl.getEncodedInternal(), out);
+            out.println(Base64.getMimeEncoder().encodeToString(crl.getEncodedInternal()));
             out.println("-----END X509 CRL-----");
         } else {
             out.write(crl.getEncodedInternal());
@@ -2148,7 +2147,7 @@ public final class Main {
         if (rfc) {
             X509CRL xcrl = (X509CRL)crl;
             out.println("-----BEGIN X509 CRL-----");
-            new BASE64Encoder().encodeBuffer(xcrl.getEncoded(), out);
+            out.println(Base64.getMimeEncoder().encodeToString(xcrl.getEncoded()));
             out.println("-----END X509 CRL-----");
         } else {
             out.println(crl.toString());
@@ -2175,7 +2174,7 @@ public final class Main {
                 sb.append(s);
             }
         }
-        PKCS10 req = new PKCS10(new BASE64Decoder().decodeBuffer(new String(sb)));
+        PKCS10 req = new PKCS10(Base64.getMimeDecoder().decode(new String(sb)));
 
         PublicKey pkey = req.getSubjectPublicKeyInfo();
         out.printf(rb.getString("PKCS.10.Certificate.Request.Version.1.0.Subject.s.Public.Key.s.format.s.key."),
@@ -2227,8 +2226,10 @@ public final class Main {
                 Object[] source = {new Integer(i + 1)};
                 out.println(form.format(source));
             }
-            if (rfc) dumpCert(x509Cert, out);
-            else printX509Cert(x509Cert, out);
+            if (rfc)
+                dumpCert(x509Cert, out);
+            else
+                printX509Cert(x509Cert, out);
             if (i < (certs.length-1)) {
                 out.println();
             }
@@ -2946,9 +2947,8 @@ public final class Main {
         throws IOException, CertificateException
     {
         if (rfc) {
-            BASE64Encoder encoder = new BASE64Encoder();
             out.println(X509Factory.BEGIN_CERT);
-            encoder.encodeBuffer(cert.getEncoded(), out);
+            out.println(Base64.getMimeEncoder().encodeToString(cert.getEncoded()));
             out.println(X509Factory.END_CERT);
         } else {
             out.write(cert.getEncoded()); // binary

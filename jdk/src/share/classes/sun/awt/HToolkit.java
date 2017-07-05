@@ -64,6 +64,11 @@ public class HToolkit extends SunToolkit
         throw new HeadlessException();
     }
 
+    public FramePeer createLightweightFrame(LightweightFrame target)
+        throws HeadlessException {
+        throw new HeadlessException();
+    }
+
     public FramePeer createFrame(Frame target)
         throws HeadlessException {
         throw new HeadlessException();

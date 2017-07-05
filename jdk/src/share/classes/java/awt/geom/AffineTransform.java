@@ -876,6 +876,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * they have not been cached.
      * @see #getType
      */
+    @SuppressWarnings("fallthrough")
     private void calculateType() {
         int ret = TYPE_IDENTITY;
         boolean sgn0, sgn1;
@@ -1038,6 +1039,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @see #TYPE_UNIFORM_SCALE
      * @since 1.2
      */
+    @SuppressWarnings("fallthrough")
     public double getDeterminant() {
         switch (state) {
         default:
@@ -1250,6 +1252,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
             m02 = tx * m00 + ty * m01 + m02;
             m12 = tx * m10 + ty * m11 + m12;
@@ -1631,6 +1634,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * Y axis direction
      * @since 1.2
      */
+    @SuppressWarnings("fallthrough")
     public void scale(double sx, double sy) {
         int state = this.state;
         switch (state) {
@@ -1705,6 +1709,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
         case (APPLY_SHEAR | APPLY_SCALE):
             double M0, M1;
@@ -2224,6 +2229,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @see #preConcatenate
      * @since 1.2
      */
+    @SuppressWarnings("fallthrough")
     public void concatenate(AffineTransform Tx) {
         double M0, M1;
         double T00, T01, T10, T11;
@@ -2432,6 +2438,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      * @see #concatenate
      * @since 1.2
      */
+    @SuppressWarnings("fallthrough")
     public void preConcatenate(AffineTransform Tx) {
         double M0, M1;
         double T00, T01, T10, T11;
@@ -2655,6 +2662,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return null;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
             det = m00 * m11 - m01 * m10;
             if (Math.abs(det) <= Double.MIN_VALUE) {
@@ -2751,6 +2759,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
             M00 = m00; M01 = m01; M02 = m02;
             M10 = m10; M11 = m11; M12 = m12;
@@ -2885,6 +2894,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return null;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
             ptDst.setLocation(x * m00 + y * m01 + m02,
                               x * m10 + y * m11 + m12);
@@ -2968,6 +2978,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
             default:
                 stateError();
                 /* NOTREACHED */
+                return;
             case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
                 dst.setLocation(x * m00 + y * m01 + m02,
                                 x * m10 + y * m11 + m12);
@@ -3043,6 +3054,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
             M00 = m00; M01 = m01; M02 = m02;
             M10 = m10; M11 = m11; M12 = m12;
@@ -3157,6 +3169,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
             M00 = m00; M01 = m01; M02 = m02;
             M10 = m10; M11 = m11; M12 = m12;
@@ -3252,6 +3265,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
             M00 = m00; M01 = m01; M02 = m02;
             M10 = m10; M11 = m11; M12 = m12;
@@ -3347,6 +3361,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
             M00 = m00; M01 = m01; M02 = m02;
             M10 = m10; M11 = m11; M12 = m12;
@@ -3436,6 +3451,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
      *                                         inverted.
      * @since 1.2
      */
+    @SuppressWarnings("fallthrough")
     public Point2D inverseTransform(Point2D ptSrc, Point2D ptDst)
         throws NoninvertibleTransformException
     {
@@ -3547,6 +3563,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
             M00 = m00; M01 = m01; M02 = m02;
             M10 = m10; M11 = m11; M12 = m12;
@@ -3679,6 +3696,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return null;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
         case (APPLY_SHEAR | APPLY_SCALE):
             ptDst.setLocation(x * m00 + y * m01, x * m10 + y * m11);
@@ -3754,6 +3772,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
         default:
             stateError();
             /* NOTREACHED */
+            return;
         case (APPLY_SHEAR | APPLY_SCALE | APPLY_TRANSLATE):
         case (APPLY_SHEAR | APPLY_SCALE):
             M00 = m00; M01 = m01;

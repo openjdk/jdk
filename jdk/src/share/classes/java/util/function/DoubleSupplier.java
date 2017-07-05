@@ -25,11 +25,10 @@
 package java.util.function;
 
 /**
- * A supplier of {@code double} values.
+ * A supplier of {@code double} values. This is the {@code double}-providing
+ * primitive specialization of {@link Supplier}.
  *
- * <p/>This is the primitive type specialization of {@link Supplier} for
- * {@code double} and also may be used as a {@code Supplier<Double>}.
- *
+ * @see Supplier
  * @since 1.8
  */
 @FunctionalInterface

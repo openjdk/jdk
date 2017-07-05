@@ -181,6 +181,16 @@ public class AccessibleObject implements AnnotatedElement {
     }
 
     /**
+     * {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     * @since 1.5
+     */
+    @Override
+    public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass) {
+        return AnnotatedElement.super.isAnnotationPresent(annotationClass);
+    }
+
+   /**
      * @throws NullPointerException {@inheritDoc}
      * @since 1.8
      */

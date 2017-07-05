@@ -157,7 +157,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         V prev, next;
         do {
             prev = get();
-            next = updateFunction.operate(prev);
+            next = updateFunction.apply(prev);
         } while (!compareAndSet(prev, next));
         return prev;
     }
@@ -176,7 +176,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         V prev, next;
         do {
             prev = get();
-            next = updateFunction.operate(prev);
+            next = updateFunction.apply(prev);
         } while (!compareAndSet(prev, next));
         return next;
     }
@@ -200,7 +200,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         V prev, next;
         do {
             prev = get();
-            next = accumulatorFunction.operate(prev, x);
+            next = accumulatorFunction.apply(prev, x);
         } while (!compareAndSet(prev, next));
         return prev;
     }
@@ -224,7 +224,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         V prev, next;
         do {
             prev = get();
-            next = accumulatorFunction.operate(prev, x);
+            next = accumulatorFunction.apply(prev, x);
         } while (!compareAndSet(prev, next));
         return next;
     }

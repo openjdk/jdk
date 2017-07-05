@@ -661,8 +661,8 @@ public final class URL implements java.io.Serializable {
      * @param file the file on the host
      * @param ref the internal reference in the URL
      */
-    protected void set(String protocol, String host,
-                       int port, String file, String ref) {
+    void set(String protocol, String host, int port,
+             String file, String ref) {
         synchronized (this) {
             this.protocol = protocol;
             this.host = host;
@@ -698,9 +698,9 @@ public final class URL implements java.io.Serializable {
      * @param query the query part of this URL
      * @since 1.3
      */
-    protected void set(String protocol, String host, int port,
-                       String authority, String userInfo, String path,
-                       String query, String ref) {
+    void set(String protocol, String host, int port,
+             String authority, String userInfo, String path,
+             String query, String ref) {
         synchronized (this) {
             this.protocol = protocol;
             this.host = host;

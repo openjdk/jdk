@@ -44,7 +44,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.security.spec.*;
 import java.security.interfaces.*;
-import sun.misc.BASE64Decoder;
+import java.util.Base64;
 
 
 public class TrustTrustedCert {
@@ -230,7 +230,7 @@ public class TrustTrustedCert {
 
         // generate the private key.
         PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                            new BASE64Decoder().decodeBuffer(targetPrivateKey));
+                                Base64.getMimeDecoder().decode(targetPrivateKey));
         KeyFactory kf = KeyFactory.getInstance("RSA");
         RSAPrivateKey priKey =
                 (RSAPrivateKey)kf.generatePrivate(priKeySpec);
