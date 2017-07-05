@@ -1969,14 +1969,9 @@ void Method::collect_statistics(KlassSizeStats *sz) const {
 
 void Method::verify_on(outputStream* st) {
   guarantee(is_method(), "object must be method");
-  guarantee(is_metadata(),  "should be metadata");
   guarantee(constants()->is_constantPool(), "should be constant pool");
-  guarantee(constants()->is_metadata(), "should be metadata");
   guarantee(constMethod()->is_constMethod(), "should be ConstMethod*");
-  guarantee(constMethod()->is_metadata(), "should be metadata");
   MethodData* md = method_data();
-  guarantee(md == NULL ||
-      md->is_metadata(), "should be metadata");
   guarantee(md == NULL ||
       md->is_methodData(), "should be method data");
 }

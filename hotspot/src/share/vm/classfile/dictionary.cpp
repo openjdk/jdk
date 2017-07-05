@@ -555,7 +555,7 @@ void Dictionary::verify() {
                 loader_data->class_loader() == NULL ||
                 loader_data->class_loader()->is_instance(),
                 "checking type of class_loader");
-      e->verify();
+      e->verify(/*check_dictionary*/false);
       probe->verify_protection_domain_set();
       element_count++;
     }
