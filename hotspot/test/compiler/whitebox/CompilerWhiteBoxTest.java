@@ -37,6 +37,8 @@ public abstract class CompilerWhiteBoxTest {
             = Integer.parseInt(getVMOption("CompileThreshold", "10000"));
     protected static final boolean BACKGROUND_COMPILATION
             = Boolean.valueOf(getVMOption("BackgroundCompilation", "true"));
+    protected static final boolean TIERED_COMPILATION
+            = Boolean.valueOf(getVMOption("TieredCompilation", "false"));
 
     protected static Method getMethod(String name) {
         try {
@@ -81,6 +83,9 @@ public abstract class CompilerWhiteBoxTest {
     }
 
     protected static void checkNotCompiled(Method method) {
+        if (WHITE_BOX.isMethodQueuedForCompilation(method)) {
+            throw new RuntimeException(method + " must not be in queue");
+        }
         if (WHITE_BOX.isMethodCompiled(method)) {
             throw new RuntimeException(method + " must be not compiled");
         }
@@ -139,8 +144,11 @@ public abstract class CompilerWhiteBoxTest {
     protected abstract void test() throws Exception;
 
     protected final int compile() {
+        return compile(Math.max(COMPILE_THRESHOLD, 150000));
+    }
+
+    protected final int compile(int count) {
         int result = 0;
-        int count = Math.max(COMPILE_THRESHOLD, 150000);
         for (int i = 0; i < count; ++i) {
             result += method();
         }

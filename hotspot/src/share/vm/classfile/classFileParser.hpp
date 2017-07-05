@@ -150,7 +150,6 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     void set_contended_group(u2 group) { _contended_group = group; }
     u2 contended_group() { return _contended_group; }
 
-    void set_contended(bool contended) { set_annotation(_sun_misc_Contended); }
     bool is_contended() { return has_annotation(_sun_misc_Contended); }
   };
 

@@ -126,14 +126,12 @@ endif
 # Compiler warnings are treated as errors
 WARNINGS_ARE_ERRORS = -Werror
 
-# Except for a few acceptable ones
+WARNING_FLAGS = -Wpointer-arith -Wsign-compare -Wundef -Wunused-function
+
 # Since GCC 4.3, -Wconversion has changed its meanings to warn these implicit
-# conversions which might affect the values. To avoid that, we need to turn
-# it off explicitly. 
-ifneq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "0"
-WARNING_FLAGS = -Wpointer-arith -Wsign-compare -Wundef
-else
-WARNING_FLAGS = -Wpointer-arith -Wconversion -Wsign-compare -Wundef
+# conversions which might affect the values. Only enable it in earlier versions.
+ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "0"
+WARNING_FLAGS += -Wconversion
 endif
 
 CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(WARNING_FLAGS)

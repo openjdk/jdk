@@ -394,22 +394,56 @@ public final class NativeJava {
      * </pre>
      * We can see several important concepts in the above example:
      * <ul>
-     * <li>Every Java class will have exactly one extender subclass in Nashorn - repeated invocations of {@code extend}
-     * for the same type will yield the same extender type. It's a generic adapter that delegates to whatever JavaScript
-     * functions its implementation object has on a per-instance basis.</li>
+     * <li>Every specified list of Java types will have exactly one extender subclass in Nashorn - repeated invocations
+     * of {@code extend} for the same list of types will yield the same extender type. It's a generic adapter that
+     * delegates to whatever JavaScript functions its implementation object has on a per-instance basis.</li>
      * <li>If the Java method is overloaded (as in the above example {@code List.add()}), then your JavaScript adapter
      * must be prepared to deal with all overloads.</li>
      * <li>You can't invoke {@code super.*()} from adapters for now.</li>
+     * <li>It is also possible to specify an ordinary JavaScript object as the last argument to {@code extend}. In that
+     * case, it is treated as a class-level override. {@code extend} will return an extender class where all instances
+     * will have the methods implemented by functions on that object, just as if that object were passed as the last
+     * argument to their constructor. Example:
+     * <pre>
+     * var Runnable = Java.type("java.lang.Runnable")
+     * var R1 = Java.extend(Runnable, {
+     *     run: function() {
+     *         print("R1.run() invoked!")
+     *     }
+     * })
+     * var r1 = new R1
+     * var t = new java.lang.Thread(r1)
+     * t.start()
+     * t.join()
+     * </pre>
+     * As you can see, you don't have to pass any object when you create a new instance of {@code R1} as its
+     * {@code run()} function was defined already when extending the class. Of course, you can still provide
+     * instance-level overrides on these objects. The order of precedence is instance-level method, class-level method,
+     * superclass method, or {@code UnsupportedOperationException} if the superclass method is abstract. If we continue
+     * our previous example:
+     * <pre>
+     * var r2 = new R1(function() { print("r2.run() invoked!") })
+     * r2.run()
+     * </pre>
+     * We'll see it'll print {@code "r2.run() invoked!"}, thus overriding on instance-level the class-level behavior.
+     * </li>
      * </ul>
      * @param self not used
      * @param types the original types. The caller must pass at least one Java type object of class {@link StaticClass}
      * representing either a public interface or a non-final public class with at least one public or protected
      * constructor. If more than one type is specified, at most one can be a class and the rest have to be interfaces.
-     * Invoking the method twice with exactly the same types in the same order will return the same adapter
-     * class, any reordering of types or even addition or removal of redundant types (i.e. interfaces that other types
-     * in the list already implement/extend, or {@code java.lang.Object} in a list of types consisting purely of
-     * interfaces) will result in a different adapter class, even though those adapter classes are functionally
-     * identical; we deliberately don't want to incur the additional processing cost of canonicalizing type lists.
+     * Invoking the method twice with exactly the same types in the same order - in absence of class-level overrides -
+     * will return the same adapter class, any reordering of types or even addition or removal of redundant types (i.e.
+     * interfaces that other types in the list already implement/extend, or {@code java.lang.Object} in a list of types
+     * consisting purely of interfaces) will result in a different adapter class, even though those adapter classes are
+     * functionally identical; we deliberately don't want to incur the additional processing cost of canonicalizing type
+     * lists. As a special case, the last argument can be a {@code ScriptObject} instead of a type. In this case, a
+     * separate adapter class is generated - new one for each invocation - that will use the passed script object as its
+     * implementation for all instances. Instances of such adapter classes can then be created without passing another
+     * script object in the constructor, as the class has a class-level behavior defined by the script object. However,
+     * you can still pass a script object (or if it's a SAM type, a function) to the constructor to provide further
+     * instance-level overrides.
+     *
      * @return a new {@link StaticClass} that represents the adapter for the original types.
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
@@ -417,14 +451,27 @@ public final class NativeJava {
         if(types == null || types.length == 0) {
             throw typeError("extend.expects.at.least.one.argument");
         }
-        final Class<?>[] stypes = new Class<?>[types.length];
+        final int l = types.length;
+        final int typesLen;
+        final ScriptObject classOverrides;
+        if(types[l - 1] instanceof ScriptObject) {
+            classOverrides = (ScriptObject)types[l - 1];
+            typesLen = l - 1;
+            if(typesLen == 0) {
+                throw typeError("extend.expects.at.least.one.type.argument");
+            }
+        } else {
+            classOverrides = null;
+            typesLen = l;
+        }
+        final Class<?>[] stypes = new Class<?>[typesLen];
         try {
-            for(int i = 0; i < types.length; ++i) {
+            for(int i = 0; i < typesLen; ++i) {
                 stypes[i] = ((StaticClass)types[i]).getRepresentedClass();
             }
         } catch(final ClassCastException e) {
             throw typeError("extend.expects.java.types");
         }
-        return JavaAdapterFactory.getAdapterClassFor(stypes);
+        return JavaAdapterFactory.getAdapterClassFor(stypes, classOverrides);
     }
 }

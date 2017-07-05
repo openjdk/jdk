@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package sun.java2d.d3d;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
@@ -38,8 +38,6 @@ import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
  * Note that the RenderQueue lock must be acquired before calling any of
  * the methods in this class.
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 class D3DContext extends BufferedContext {
 
     private final D3DGraphicsDevice device;
@@ -143,31 +141,29 @@ class D3DContext extends BufferedContext {
         return device;
     }
 
-    /* No native methods here, but the constants are needed in the supporting JNI code */
-    @GenerateNativeHeader
     static class D3DContextCaps extends ContextCapabilities {
         /**
          * Indicates the presence of pixel shaders (v2.0 or greater).
          * This cap will only be set if the hardware supports the minimum number
          * of texture units.
          */
-        static final int CAPS_LCD_SHADER       = (FIRST_PRIVATE_CAP << 0);
+    @Native static final int CAPS_LCD_SHADER       = (FIRST_PRIVATE_CAP << 0);
         /**
          * Indicates the presence of pixel shaders (v2.0 or greater).
          * This cap will only be set if the hardware meets our
          * minimum requirements.
          */
-        static final int CAPS_BIOP_SHADER      = (FIRST_PRIVATE_CAP << 1);
+    @Native static final int CAPS_BIOP_SHADER      = (FIRST_PRIVATE_CAP << 1);
         /**
          * Indicates that the device was successfully initialized and can
          * be safely used.
          */
-        static final int CAPS_DEVICE_OK        = (FIRST_PRIVATE_CAP << 2);
+    @Native static final int CAPS_DEVICE_OK        = (FIRST_PRIVATE_CAP << 2);
         /**
          * Indicates that the device has all of the necessary capabilities
          * to support the Antialiasing Pixel Shader program.
          */
-        static final int CAPS_AA_SHADER        = (FIRST_PRIVATE_CAP << 3);
+    @Native static final int CAPS_AA_SHADER        = (FIRST_PRIVATE_CAP << 3);
 
         D3DContextCaps(int caps, String adapterId) {
             super(caps, adapterId);

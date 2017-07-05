@@ -110,4 +110,12 @@ public class CClipboard extends SunClipboard {
 
     public native void declareTypes(long[] formats, SunClipboard newOwner);
     public native void setData(byte[] data, long format);
+
+    /**
+     * Invokes native check whether a change count on the general pasteboard is different
+     * than when we set it. The different count value means the current owner lost
+     * pasteboard ownership and someone else put data on the clipboard.
+     * @since 1.7
+     */
+    public native void checkPasteboard();
 }

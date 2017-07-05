@@ -96,7 +96,7 @@ protected:
   void reset_counter_for_back_branch_event(methodHandle method);
 public:
   NonTieredCompPolicy() : _compiler_count(0) { }
-  virtual CompLevel initial_compile_level() { return CompLevel_initial_compile; }
+  virtual CompLevel initial_compile_level() { return CompLevel_highest_tier; }
   virtual int compiler_count(CompLevel comp_level);
   virtual void do_safepoint_work();
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);

@@ -152,7 +152,7 @@ class OverloadedMethod {
         final Class<?>[] argTypes = new Class[args.length];
         for(int i = 0; i < argTypes.length; ++i) {
             final Object arg = args[i];
-            argTypes[i] = arg == null ? callSiteType.parameterType(i) : arg.getClass();
+            argTypes[i] = arg == null ? ClassString.NULL_CLASS : arg.getClass();
         }
         final ClassString classString = new ClassString(argTypes);
         MethodHandle method = argTypesToMethods.get(classString);

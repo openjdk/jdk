@@ -140,6 +140,11 @@ public class LoggingSupport {
         return proxy.getLevelName(level);
     }
 
+    public static int getLevelValue(Object level) {
+        ensureAvailable();
+        return proxy.getLevelValue(level);
+    }
+
     private static final String DEFAULT_FORMAT =
         "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s%n%4$s: %5$s%6$s%n";
 
