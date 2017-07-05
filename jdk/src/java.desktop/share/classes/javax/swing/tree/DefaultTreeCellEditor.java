@@ -72,7 +72,7 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      * Component used in editing, obtained from the
      * <code>editingContainer</code>.
      */
-    transient protected Component          editingComponent;
+    protected transient Component          editingComponent;
 
     /**
      * As of Java 2 platform v1.4 this field should no longer be used. If

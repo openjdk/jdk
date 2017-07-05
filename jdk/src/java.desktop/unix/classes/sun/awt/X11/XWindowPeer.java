@@ -429,7 +429,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     }
 
     private static ArrayList<IconInfo> defaultIconInfo;
-    protected synchronized static java.util.List<IconInfo> getDefaultIconInfo() {
+    protected static synchronized java.util.List<IconInfo> getDefaultIconInfo() {
         if (defaultIconInfo == null) {
             defaultIconInfo = new ArrayList<IconInfo>();
             if (XlibWrapper.dataModel == 32) {

@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.io.FileDescriptor;
 import java.security.AccessController;
 
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
 
 
 /**

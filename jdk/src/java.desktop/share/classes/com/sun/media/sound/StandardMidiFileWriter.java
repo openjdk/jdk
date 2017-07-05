@@ -307,7 +307,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
         return ERROR;
     }
 
-    private final static long mask = 0x7F;
+    private static final long mask = 0x7F;
 
     private int writeVarInt(long value) throws IOException {
         int len = 1;

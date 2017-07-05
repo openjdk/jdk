@@ -56,7 +56,7 @@ public class MotifInternalFrameTitlePane
     Color shadow;
 
     // The width and height of a title pane button
-    public final static int BUTTON_SIZE = 19;  // 17 + 1 pixel border
+    public static final int BUTTON_SIZE = 19;  // 17 + 1 pixel border
 
 
     public MotifInternalFrameTitlePane(JInternalFrame frame) {

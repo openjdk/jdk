@@ -25,8 +25,8 @@
 package java.net;
 
 import java.io.IOException;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
 
 /**
  * This class defines the plain DatagramSocketImpl that is used on

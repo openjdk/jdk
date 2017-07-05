@@ -43,7 +43,7 @@ class CustomMediaSizeName extends MediaSizeName {
 
     }
 
-    private synchronized static int nextValue(String name) {
+    private static synchronized int nextValue(String name) {
       customStringTable.add(name);
 
       return (customStringTable.size()-1);

@@ -69,31 +69,31 @@ public class FileManager {
      * @since Java for Mac OS X 10.5 - 1.5
          * @since Java for Mac OS X 10.5 Update 1 - 1.6
      */
-    public final static short kOnAppropriateDisk = -32767;
+    public static final short kOnAppropriateDisk = -32767;
     /**
      * Read-only system hierarchy.
      * @since Java for Mac OS X 10.5 - 1.5
          * @since Java for Mac OS X 10.5 Update 1 - 1.6
      */
-    public final static short kSystemDomain = -32766;
+    public static final short kSystemDomain = -32766;
     /**
      * All users of a single machine have access to these resources.
      * @since Java for Mac OS X 10.5 - 1.5
          * @since Java for Mac OS X 10.5 Update 1 - 1.6
      */
-    public final static short kLocalDomain = -32765;
+    public static final short kLocalDomain = -32765;
     /**
      * All users configured to use a common network server has access to these resources.
      * @since Java for Mac OS X 10.5 - 1.5
          * @since Java for Mac OS X 10.5 Update 1 - 1.6
      */
-    public final static short kNetworkDomain = -32764;
+    public static final short kNetworkDomain = -32764;
     /**
      * Read/write. Resources that are private to the user.
      * @since Java for Mac OS X 10.5 - 1.5
          * @since Java for Mac OS X 10.5 Update 1 - 1.6
      */
-    public final static short kUserDomain = -32763;
+    public static final short kUserDomain = -32763;
 
 
         /**

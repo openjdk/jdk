@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,6 @@ public class Pack200Props {
     private static void verifyDefaults() {
         Map<String, String> expectedDefaults = new HashMap<>();
         Packer p = Pack200.newPacker();
-        expectedDefaults.put("com.sun.java.util.jar.pack.default.timezone",
-                p.FALSE);
         expectedDefaults.put("com.sun.java.util.jar.pack.disable.native",
                 p.FALSE);
         expectedDefaults.put("com.sun.java.util.jar.pack.verbose", "0");

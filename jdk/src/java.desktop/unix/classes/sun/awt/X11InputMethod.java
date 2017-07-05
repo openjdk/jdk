@@ -125,7 +125,7 @@ public abstract class X11InputMethod extends InputMethodAdapter {
     // private data (X11InputMethodData structure defined in
     // awt_InputMethod.c) for native methods
     // this structure needs to be accessed within AWT_LOCK/UNLOCK
-    transient private long pData = 0; // accessed by native
+    private transient long pData = 0; // accessed by native
 
     // Initialize highlight mapping table
     static {

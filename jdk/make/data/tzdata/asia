@@ -154,7 +154,8 @@ Zone	Asia/Yerevan	2:58:00 -	LMT	1924 May  2
 # Azerbaijan
 # From Rustam Aliyev of the Azerbaijan Internet Forum (2005-10-23):
 # According to the resolution of Cabinet of Ministers, 1997
-# Resolution available at: http://aif.az/docs/daylight_res.pdf
+# From Paul Eggert (2015-09-17): It was Resolution No. 21 (1997-03-17).
+# http://code.az/files/daylight_res.pdf
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Azer	1997	max	-	Mar	lastSun	 4:00	1:00	S
 Rule	Azer	1997	max	-	Oct	lastSun	 5:00	0	-
@@ -1740,11 +1741,12 @@ Rule	ROK	1987	1988	-	Oct	Sun>=8	3:00	0	S
 # the 8:30 time zone on August 15, one example:
 # http://www.bbc.com/news/world-asia-33815049
 #
-# From Paul Eggert (2015-08-07):
-# No transition time is specified; assume 00:00.
+# From Paul Eggert (2015-08-15):
+# Bells rang out midnight (00:00) Friday as part of the celebrations.  See:
+# Talmadge E. North Korea celebrates new time zone, 'Pyongyang Time'
+# http://news.yahoo.com/north-korea-celebrates-time-zone-pyongyang-time-164038128.html
 # There is no common English-language abbreviation for this time zone.
-# Use %z rather than invent one.  We can't assume %z works everywhere yet,
-# so for now substitute its output manually.
+# Use KST, as that's what we already use for 1954-1961 in ROK.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Seoul	8:27:52	-	LMT	1908 Apr  1
@@ -1758,7 +1760,7 @@ Zone	Asia/Pyongyang	8:23:00 -	LMT	1908 Apr  1
 			8:30	-	KST	1912 Jan  1
 			9:00	-	JCST	1937 Oct  1
 			9:00	-	JST	1945 Aug 24
-			9:00	-	KST	2015 Aug 15
+			9:00	-	KST	2015 Aug 15 00:00
 			8:30	-	KST
 
 ###############################################################################

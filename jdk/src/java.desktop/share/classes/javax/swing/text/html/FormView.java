@@ -129,7 +129,7 @@ public class FormView extends ComponentView implements ActionListener {
      * Document attribute name for storing POST data. JEditorPane.getPostData()
      * uses the same name, should be kept in sync.
      */
-    final static String PostDataProperty = "javax.swing.JEditorPane.postdata";
+    static final String PostDataProperty = "javax.swing.JEditorPane.postdata";
 
     /**
      * Used to indicate if the maximum span should be the same as the

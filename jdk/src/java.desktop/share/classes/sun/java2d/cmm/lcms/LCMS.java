@@ -136,7 +136,7 @@ public class LCMS implements PCMM {
     private native void setTagDataNative(long ptr, int tagSignature,
                                                byte[] data);
 
-    public synchronized static native LCMSProfile getProfileID(ICC_Profile profile);
+    public static synchronized native LCMSProfile getProfileID(ICC_Profile profile);
 
     /* Helper method used from LCMSColorTransfrom */
     static long createTransform(

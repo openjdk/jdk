@@ -172,16 +172,16 @@ public class Timer implements Serializable
     // notify is set to true when the Timer fires and the Runnable is queued.
     // It will be set to false after notifying the listeners (if coalesce is
     // true) or if the developer invokes stop.
-    private transient final AtomicBoolean notify = new AtomicBoolean(false);
+    private final transient AtomicBoolean notify = new AtomicBoolean(false);
 
     private volatile int     initialDelay, delay;
     private volatile boolean repeats = true, coalesce = true;
 
-    private transient final Runnable doPostEvent;
+    private final transient Runnable doPostEvent;
 
     private static volatile boolean logTimers;
 
-    private transient final Lock lock = new ReentrantLock();
+    private final transient Lock lock = new ReentrantLock();
 
     // This field is maintained by TimerQueue.
     // eventQueued can also be reset by the TimerQueue, but will only ever

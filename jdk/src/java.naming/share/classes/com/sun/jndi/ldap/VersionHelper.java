@@ -25,7 +25,7 @@
 
 package com.sun.jndi.ldap;
 
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.SharedSecrets;
 
 import java.net.MalformedURLException;
 import java.net.URL;

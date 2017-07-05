@@ -113,7 +113,7 @@ public class JSplitPane extends JComponent implements Accessible
      * split along the y axis.  For example the two
      * <code>Component</code>s will be split one on top of the other.
      */
-    public final static int VERTICAL_SPLIT = 0;
+    public static final int VERTICAL_SPLIT = 0;
 
     /**
      * Horizontal split indicates the <code>Component</code>s are
@@ -121,75 +121,75 @@ public class JSplitPane extends JComponent implements Accessible
      * <code>Component</code>s will be split one to the left of the
      * other.
      */
-    public final static int HORIZONTAL_SPLIT = 1;
+    public static final int HORIZONTAL_SPLIT = 1;
 
     /**
      * Used to add a <code>Component</code> to the left of the other
      * <code>Component</code>.
      */
-    public final static String LEFT = "left";
+    public static final String LEFT = "left";
 
     /**
      * Used to add a <code>Component</code> to the right of the other
      * <code>Component</code>.
      */
-    public final static String RIGHT = "right";
+    public static final String RIGHT = "right";
 
     /**
      * Used to add a <code>Component</code> above the other
      * <code>Component</code>.
      */
-    public final static String TOP = "top";
+    public static final String TOP = "top";
 
     /**
      * Used to add a <code>Component</code> below the other
      * <code>Component</code>.
      */
-    public final static String BOTTOM = "bottom";
+    public static final String BOTTOM = "bottom";
 
     /**
      * Used to add a <code>Component</code> that will represent the divider.
      */
-    public final static String DIVIDER = "divider";
+    public static final String DIVIDER = "divider";
 
     /**
      * Bound property name for orientation (horizontal or vertical).
      */
-    public final static String ORIENTATION_PROPERTY = "orientation";
+    public static final String ORIENTATION_PROPERTY = "orientation";
 
     /**
      * Bound property name for continuousLayout.
      */
-    public final static String CONTINUOUS_LAYOUT_PROPERTY = "continuousLayout";
+    public static final String CONTINUOUS_LAYOUT_PROPERTY = "continuousLayout";
 
     /**
      * Bound property name for border.
      */
-    public final static String DIVIDER_SIZE_PROPERTY = "dividerSize";
+    public static final String DIVIDER_SIZE_PROPERTY = "dividerSize";
 
     /**
      * Bound property for oneTouchExpandable.
      */
-    public final static String ONE_TOUCH_EXPANDABLE_PROPERTY =
+    public static final String ONE_TOUCH_EXPANDABLE_PROPERTY =
                                "oneTouchExpandable";
 
     /**
      * Bound property for lastLocation.
      */
-    public final static String LAST_DIVIDER_LOCATION_PROPERTY =
+    public static final String LAST_DIVIDER_LOCATION_PROPERTY =
                                "lastDividerLocation";
 
     /**
      * Bound property for the dividerLocation.
      * @since 1.3
      */
-    public final static String DIVIDER_LOCATION_PROPERTY = "dividerLocation";
+    public static final String DIVIDER_LOCATION_PROPERTY = "dividerLocation";
 
     /**
      * Bound property for weight.
      * @since 1.3
      */
-    public final static String RESIZE_WEIGHT_PROPERTY = "resizeWeight";
+    public static final String RESIZE_WEIGHT_PROPERTY = "resizeWeight";
 
     /**
      * How the views are split.

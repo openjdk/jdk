@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,6 @@ class Utils {
      * (installer only)
      */
     static final String DEBUG_DISABLE_NATIVE = COM_PREFIX+"disable.native";
-
-    /*
-     * Use the default working TimeZone instead of UTC.
-     * Note: This has installer unpacker implications.
-     * see: zip.cpp which uses gmtime vs. localtime.
-     */
-    static final String PACK_DEFAULT_TIMEZONE = COM_PREFIX+"default.timezone";
 
     /*
      * Property indicating that the unpacker should

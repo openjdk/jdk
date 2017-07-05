@@ -44,7 +44,7 @@ public final class StateTrackableDelegate implements StateTrackable {
      * of the StateTrackable interface that is permanently in the
      * {@link State#UNTRACKABLE UNTRACKABLE} state.
      */
-    public final static StateTrackableDelegate UNTRACKABLE_DELEGATE =
+    public static final StateTrackableDelegate UNTRACKABLE_DELEGATE =
         new StateTrackableDelegate(UNTRACKABLE);
 
     /**
@@ -52,7 +52,7 @@ public final class StateTrackableDelegate implements StateTrackable {
      * of the StateTrackable interface that is permanently in the
      * {@link State#IMMUTABLE IMMUTABLE} state.
      */
-    public final static StateTrackableDelegate IMMUTABLE_DELEGATE =
+    public static final StateTrackableDelegate IMMUTABLE_DELEGATE =
         new StateTrackableDelegate(IMMUTABLE);
 
     /**

@@ -72,9 +72,6 @@ buildtools-langtools:
 interim-langtools:
 	+($(CD) $(LANGTOOLS_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterim.gmk)
 
-interim-corba:
-	+($(CD) $(CORBA_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterim.gmk)
-
 interim-rmic:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CompileInterimRmic.gmk)
 
@@ -84,7 +81,7 @@ interim-cldrconverter:
 buildtools-jdk:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Tools.gmk java-tools)
 
-ALL_TARGETS += buildtools-langtools interim-langtools interim-corba \
+ALL_TARGETS += buildtools-langtools interim-langtools \
     interim-rmic interim-cldrconverter buildtools-jdk
 
 ################################################################################
@@ -357,13 +354,11 @@ else
 
   $(JDK_GENSRC_TARGETS): interim-langtools buildtools-jdk
 
-  interim-corba: $(CORBA_GENSRC_TARGETS)
-
   $(GENDATA_TARGETS): interim-langtools buildtools-jdk
 
   interim-rmic: interim-langtools
 
-  $(RMIC_TARGETS): interim-langtools interim-corba interim-rmic
+  $(RMIC_TARGETS): interim-langtools interim-rmic
 
   $(JAVA_TARGETS): interim-langtools
 
@@ -463,7 +458,7 @@ endif
 ################################################################################
 # Virtual targets without recipes
 
-buildtools: buildtools-langtools interim-langtools interim-corba interim-rmic \
+buildtools: buildtools-langtools interim-langtools interim-rmic \
     buildtools-jdk
 
 gensrc: $(GENSRC_TARGETS)

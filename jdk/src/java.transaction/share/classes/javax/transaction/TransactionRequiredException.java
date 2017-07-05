@@ -39,6 +39,11 @@ package javax.transaction;
 public class TransactionRequiredException extends java.rmi.RemoteException {
 
     /**
+     * Specify serialVersionUID for backward compatibility
+     */
+    private static final long serialVersionUID = -1898806419937446439L;
+
+    /**
      * Constructs a {@code TransactionRequiredException}.
      */
     public TransactionRequiredException() {

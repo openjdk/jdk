@@ -31,7 +31,11 @@ package javax.transaction.xa;
  *
  */
 public class XAException extends Exception {
-    //private static final long serialVersionUID = -8249683284832867751L;
+
+    /**
+     * Specify serialVersionUID for backward compatibility
+     */
+    private static final long serialVersionUID = -8249683284832867751L;
 
     /**
      * The error code with which to create the SystemException.

@@ -25,7 +25,7 @@
 
 package sun.awt.X11;
 
-final public class XConstants {
+public final class XConstants {
 
     private XConstants(){}
 

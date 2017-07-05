@@ -129,7 +129,7 @@ import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Lexer.RegexToken;
 import jdk.nashorn.internal.parser.TokenType;
@@ -1433,8 +1433,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final Block currentBlock = lc.getCurrentBlock();
         final CodeGeneratorLexicalContext codegenLexicalContext = lc;
 
-        function.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-
+        function.accept(new SimpleNodeVisitor() {
             private MethodEmitter sharedScopeCall(final IdentNode identNode, final int flags) {
                 final Symbol symbol = identNode.getSymbol();
                 final boolean isFastScope = isFastScope(symbol);
@@ -2461,7 +2460,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             public Boolean get() {
-                value.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                value.accept(new SimpleNodeVisitor() {
                     @Override
                     public boolean enterFunctionNode(final FunctionNode functionNode) {
                         return false;
@@ -2799,7 +2798,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             boolean contains;
             @Override
             public Boolean get() {
-                rootExpr.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                rootExpr.accept(new SimpleNodeVisitor() {
                     @Override
                     public boolean enterFunctionNode(final FunctionNode functionNode) {
                         return false;
@@ -4347,7 +4346,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
              * on the stack throughout the store and used at the end to execute it
              */
 
-            target.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            target.accept(new SimpleNodeVisitor() {
                 @Override
                 public boolean enterIdentNode(final IdentNode node) {
                     if (node.getSymbol().isScope()) {
@@ -4446,7 +4445,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
              * need to do a conversion on non-equivalent types exists, but is
              * very rare. See for example test/script/basic/access-specializer.js
              */
-            target.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            target.accept(new SimpleNodeVisitor() {
                 @Override
                 protected boolean enterDefault(final Node node) {
                     throw new AssertionError("Unexpected node " + node + " in store epilogue");

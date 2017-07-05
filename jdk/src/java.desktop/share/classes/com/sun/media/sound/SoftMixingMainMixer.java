@@ -39,29 +39,29 @@ import javax.sound.sampled.AudioSystem;
  */
 public final class SoftMixingMainMixer {
 
-    public final static int CHANNEL_LEFT = 0;
+    public static final int CHANNEL_LEFT = 0;
 
-    public final static int CHANNEL_RIGHT = 1;
+    public static final int CHANNEL_RIGHT = 1;
 
-    public final static int CHANNEL_EFFECT1 = 2;
+    public static final int CHANNEL_EFFECT1 = 2;
 
-    public final static int CHANNEL_EFFECT2 = 3;
+    public static final int CHANNEL_EFFECT2 = 3;
 
-    public final static int CHANNEL_EFFECT3 = 4;
+    public static final int CHANNEL_EFFECT3 = 4;
 
-    public final static int CHANNEL_EFFECT4 = 5;
+    public static final int CHANNEL_EFFECT4 = 5;
 
-    public final static int CHANNEL_LEFT_DRY = 10;
+    public static final int CHANNEL_LEFT_DRY = 10;
 
-    public final static int CHANNEL_RIGHT_DRY = 11;
+    public static final int CHANNEL_RIGHT_DRY = 11;
 
-    public final static int CHANNEL_SCRATCH1 = 12;
+    public static final int CHANNEL_SCRATCH1 = 12;
 
-    public final static int CHANNEL_SCRATCH2 = 13;
+    public static final int CHANNEL_SCRATCH2 = 13;
 
-    public final static int CHANNEL_CHANNELMIXER_LEFT = 14;
+    public static final int CHANNEL_CHANNELMIXER_LEFT = 14;
 
-    public final static int CHANNEL_CHANNELMIXER_RIGHT = 15;
+    public static final int CHANNEL_CHANNELMIXER_RIGHT = 15;
 
     private final SoftMixingMixer mixer;
 

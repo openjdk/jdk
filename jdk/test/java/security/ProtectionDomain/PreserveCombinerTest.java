@@ -26,7 +26,7 @@ import java.security.AccessController;
 import java.security.DomainCombiner;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.SharedSecrets;
 
 /*
  * @test
@@ -34,7 +34,7 @@ import sun.misc.SharedSecrets;
  * @summary Make sure that JavaSecurityAccess.doIntersectionPrivilege()
  *          is not dropping the information about the domain combiner of
  *          the stack ACC
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  */
 
 public class PreserveCombinerTest {
