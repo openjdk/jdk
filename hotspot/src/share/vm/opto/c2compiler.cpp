@@ -161,7 +161,7 @@ bool C2Compiler::is_intrinsic_supported(methodHandle method, bool is_virtual) {
   vmIntrinsics::ID id = method->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
-  if (id < vmIntrinsics::FIRST_ID || id >= vmIntrinsics::LAST_COMPILER_INLINE) {
+  if (id < vmIntrinsics::FIRST_ID || id > vmIntrinsics::LAST_COMPILER_INLINE) {
     return false;
   }
 
