@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,7 +227,7 @@ final class PKCS12PBECipherCore {
             // follow the recommendation in PKCS12 v1.0
             // section B.4 to generate salt and iCount.
             salt = new byte[DEFAULT_SALT_LENGTH];
-            SunJCE.RANDOM.nextBytes(salt);
+            SunJCE.getRandom().nextBytes(salt);
             iCount = DEFAULT_COUNT;
         }
         PBEParameterSpec pbeSpec = new PBEParameterSpec(salt, iCount);
@@ -294,7 +294,7 @@ final class PKCS12PBECipherCore {
                 if (random != null) {
                     random.nextBytes(salt);
                 } else {
-                    SunJCE.RANDOM.nextBytes(salt);
+                    SunJCE.getRandom().nextBytes(salt);
                 }
             }
             if (iCount == 0) iCount = DEFAULT_COUNT;

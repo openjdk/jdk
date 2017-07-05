@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.crypto.provider;
 
+import java.util.Arrays;
 import java.util.Locale;
 
 import java.security.*;
@@ -59,7 +60,7 @@ final class CipherCore {
     private byte[] buffer = null;
 
     /*
-     * internal buffer
+     * block size of cipher in bytes
      */
     private int blockSize = 0;
 
@@ -76,10 +77,12 @@ final class CipherCore {
     /*
      * minimum number of bytes in the buffer required for
      * FeedbackCipher.encryptFinal()/decryptFinal() call.
-     * update() must buffer this many bytes before before starting
+     * update() must buffer this many bytes before starting
      * to encrypt/decrypt data.
-     * currently, only CTS mode has a non-zero value due to its special
-     * handling on the last two blocks (the last one may be incomplete).
+     * currently, only the following cases have non-zero values:
+     * 1) CTS mode - due to its special handling on the last two blocks
+     * (the last one may be incomplete).
+     * 2) GCM mode + decryption - due to its trailing tag bytes
      */
     private int minBytes = 0;
 
@@ -121,6 +124,24 @@ final class CipherCore {
     private static final int PCBC_MODE = 4;
     private static final int CTR_MODE = 5;
     private static final int CTS_MODE = 6;
+    private static final int GCM_MODE = 7;
+
+    /*
+     * variables used for performing the GCM (key+iv) uniqueness check.
+     * To use GCM mode safely, the cipher object must be re-initialized
+     * with a different combination of key + iv values for each
+     * encryption operation. However, checking all past key + iv values
+     * isn't feasible. Thus, we only do a per-instance check of the
+     * key + iv values used in previous encryption.
+     * For decryption operations, no checking is necessary.
+     * NOTE: this key+iv check have to be done inside CipherCore class
+     * since CipherCore class buffers potential tag bytes in GCM mode
+     * and may not call GaloisCounterMode when there isn't sufficient
+     * input to process.
+     */
+    private boolean requireReinit = false;
+    private byte[] lastEncKey = null;
+    private byte[] lastEncIv = null;
 
     /**
      * Creates an instance of CipherCore with default ECB mode and
@@ -149,7 +170,7 @@ final class CipherCore {
      * @param mode the cipher mode
      *
      * @exception NoSuchAlgorithmException if the requested cipher mode does
-     * not exist
+     * not exist for this cipher
      */
     void setMode(String mode) throws NoSuchAlgorithmException {
         if (mode == null)
@@ -165,30 +186,34 @@ final class CipherCore {
         if (modeUpperCase.equals("CBC")) {
             cipherMode = CBC_MODE;
             cipher = new CipherBlockChaining(rawImpl);
-        }
-        else if (modeUpperCase.equals("CTS")) {
+        } else if (modeUpperCase.equals("CTS")) {
             cipherMode = CTS_MODE;
             cipher = new CipherTextStealing(rawImpl);
             minBytes = blockSize+1;
             padding = null;
-        }
-        else if (modeUpperCase.equals("CTR")) {
+        } else if (modeUpperCase.equals("CTR")) {
             cipherMode = CTR_MODE;
             cipher = new CounterMode(rawImpl);
             unitBytes = 1;
             padding = null;
-        }
-        else if (modeUpperCase.startsWith("CFB")) {
+        }  else if (modeUpperCase.startsWith("GCM")) {
+            // can only be used for block ciphers w/ 128-bit block size
+            if (blockSize != 16) {
+                throw new NoSuchAlgorithmException
+                    ("GCM mode can only be used for AES cipher");
+            }
+            cipherMode = GCM_MODE;
+            cipher = new GaloisCounterMode(rawImpl);
+            padding = null;
+        } else if (modeUpperCase.startsWith("CFB")) {
             cipherMode = CFB_MODE;
             unitBytes = getNumOfUnit(mode, "CFB".length(), blockSize);
             cipher = new CipherFeedback(rawImpl, unitBytes);
-        }
-        else if (modeUpperCase.startsWith("OFB")) {
+        } else if (modeUpperCase.startsWith("OFB")) {
             cipherMode = OFB_MODE;
             unitBytes = getNumOfUnit(mode, "OFB".length(), blockSize);
             cipher = new OutputFeedback(rawImpl, unitBytes);
-        }
-        else if (modeUpperCase.equals("PCBC")) {
+        } else if (modeUpperCase.equals("PCBC")) {
             cipherMode = PCBC_MODE;
             cipher = new PCBC(rawImpl);
         }
@@ -219,6 +244,7 @@ final class CipherCore {
         return result;
     }
 
+
     /**
      * Sets the padding mechanism of this cipher.
      *
@@ -242,11 +268,27 @@ final class CipherCore {
                                              + " not implemented");
         }
         if ((padding != null) &&
-            ((cipherMode == CTR_MODE) || (cipherMode == CTS_MODE))) {
+            ((cipherMode == CTR_MODE) || (cipherMode == CTS_MODE)
+             || (cipherMode == GCM_MODE))) {
             padding = null;
-            throw new NoSuchPaddingException
-                ((cipherMode == CTR_MODE? "CTR":"CTS") +
-                 " mode must be used with NoPadding");
+            String modeStr = null;
+            switch (cipherMode) {
+            case CTR_MODE:
+                modeStr = "CTR";
+                break;
+            case GCM_MODE:
+                modeStr = "GCM";
+                break;
+            case CTS_MODE:
+                modeStr = "CTS";
+                break;
+            default:
+                // should never happen
+            }
+            if (modeStr != null) {
+                throw new NoSuchPaddingException
+                    (modeStr + " mode must be used with NoPadding");
+            }
         }
     }
 
@@ -257,7 +299,7 @@ final class CipherCore {
      * <code>inputLen</code> (in bytes).
      *
      * <p>This call takes into account any unprocessed (buffered) data from a
-     * previous <code>update</code> call, and padding.
+     * previous <code>update</code> call, padding, and AEAD tagging.
      *
      * <p>The actual output length of the next <code>update</code> or
      * <code>doFinal</code> call may be smaller than the length returned by
@@ -270,21 +312,58 @@ final class CipherCore {
     int getOutputSize(int inputLen) {
         int totalLen = buffered + inputLen;
 
-        if (padding == null)
-            return totalLen;
+        // GCM: this call may be for either update() or doFinal(), so have to
+        // return the larger value of both
+        // Encryption: based on doFinal value: inputLen + tag
+        // Decryption: based on update value: inputLen
+        if (!decrypting && (cipherMode == GCM_MODE)) {
+            return (totalLen + ((GaloisCounterMode) cipher).getTagLen());
+        }
 
-        if (decrypting)
+        if (padding == null) {
             return totalLen;
+        }
+
+        if (decrypting) {
+            return totalLen;
+        }
 
         if (unitBytes != blockSize) {
-            if (totalLen < diffBlocksize)
+            if (totalLen < diffBlocksize) {
                 return diffBlocksize;
-            else
+            } else {
                 return (totalLen + blockSize -
                         ((totalLen - diffBlocksize) % blockSize));
+            }
         } else {
             return totalLen + padding.padLength(totalLen);
         }
+    }
+
+    private int getOutputSizeByOperation(int inputLen, boolean isDoFinal) {
+        int totalLen = 0;
+        switch (cipherMode) {
+        case GCM_MODE:
+            totalLen = buffered + inputLen;
+            if (isDoFinal) {
+                int tagLen = ((GaloisCounterMode) cipher).getTagLen();
+                if (decrypting) {
+                    // need to get the actual value from cipher??
+                    // deduct tagLen
+                    totalLen -= tagLen;
+                } else {
+                    totalLen += tagLen;
+                }
+            }
+            if (totalLen < 0) {
+                totalLen = 0;
+            }
+            break;
+        default:
+             totalLen  = getOutputSize(inputLen);
+             break;
+        }
+        return totalLen;
     }
 
     /**
@@ -318,34 +397,49 @@ final class CipherCore {
      * does not use any parameters.
      */
     AlgorithmParameters getParameters(String algName) {
+        if (cipherMode == ECB_MODE) {
+            return null;
+        }
         AlgorithmParameters params = null;
-        if (cipherMode == ECB_MODE) return null;
+        AlgorithmParameterSpec spec;
         byte[] iv = getIV();
-        if (iv != null) {
-            AlgorithmParameterSpec ivSpec;
-            if (algName.equals("RC2")) {
-                RC2Crypt rawImpl = (RC2Crypt) cipher.getEmbeddedCipher();
-                ivSpec = new RC2ParameterSpec(rawImpl.getEffectiveKeyBits(),
-                                              iv);
+        if (iv == null) {
+            // generate spec using default value
+            if (cipherMode == GCM_MODE) {
+                iv = new byte[GaloisCounterMode.DEFAULT_IV_LEN];
             } else {
-                ivSpec = new IvParameterSpec(iv);
+                iv = new byte[blockSize];
             }
-            try {
-                params = AlgorithmParameters.getInstance(algName, "SunJCE");
-            } catch (NoSuchAlgorithmException nsae) {
-                // should never happen
-                throw new RuntimeException("Cannot find " + algName +
-                    " AlgorithmParameters implementation in SunJCE provider");
-            } catch (NoSuchProviderException nspe) {
-                // should never happen
-                throw new RuntimeException("Cannot find SunJCE provider");
-            }
-            try {
-                params.init(ivSpec);
-            } catch (InvalidParameterSpecException ipse) {
-                // should never happen
-                throw new RuntimeException("IvParameterSpec not supported");
-            }
+            SunJCE.getRandom().nextBytes(iv);
+        }
+        if (cipherMode == GCM_MODE) {
+            algName = "GCM";
+            spec = new GCMParameterSpec
+                (((GaloisCounterMode) cipher).getTagLen()*8, iv);
+        } else {
+           if (algName.equals("RC2")) {
+               RC2Crypt rawImpl = (RC2Crypt) cipher.getEmbeddedCipher();
+               spec = new RC2ParameterSpec
+                   (rawImpl.getEffectiveKeyBits(), iv);
+           } else {
+               spec = new IvParameterSpec(iv);
+           }
+        }
+        try {
+            params = AlgorithmParameters.getInstance(algName, "SunJCE");
+        } catch (NoSuchAlgorithmException nsae) {
+            // should never happen
+            throw new RuntimeException("Cannot find " + algName +
+                " AlgorithmParameters implementation in SunJCE provider");
+        } catch (NoSuchProviderException nspe) {
+            // should never happen
+            throw new RuntimeException("Cannot find SunJCE provider");
+        }
+        try {
+            params.init(spec);
+        } catch (InvalidParameterSpecException ipse) {
+            // should never happen
+            throw new RuntimeException(spec.getClass() + " not supported");
         }
         return params;
     }
@@ -420,44 +514,63 @@ final class CipherCore {
                   || (opmode == Cipher.UNWRAP_MODE);
 
         byte[] keyBytes = getKeyBytes(key);
-
-        byte[] ivBytes;
-        if (params == null) {
-            ivBytes = null;
-        } else if (params instanceof IvParameterSpec) {
-            ivBytes = ((IvParameterSpec)params).getIV();
-            if ((ivBytes == null) || (ivBytes.length != blockSize)) {
-                throw new InvalidAlgorithmParameterException
-                    ("Wrong IV length: must be " + blockSize +
-                    " bytes long");
+        int tagLen = -1;
+        byte[] ivBytes = null;
+        if (params != null) {
+            if (cipherMode == GCM_MODE) {
+                if (params instanceof GCMParameterSpec) {
+                    tagLen = ((GCMParameterSpec)params).getTLen();
+                    if (tagLen < 96 || tagLen > 128 || ((tagLen & 0x07) != 0)) {
+                        throw new InvalidAlgorithmParameterException
+                            ("Unsupported TLen value; must be one of " +
+                             "{128, 120, 112, 104, 96}");
+                    }
+                    tagLen = tagLen >> 3;
+                    ivBytes = ((GCMParameterSpec)params).getIV();
+                } else {
+                    throw new InvalidAlgorithmParameterException
+                        ("Unsupported parameter: " + params);
+               }
+            } else {
+                if (params instanceof IvParameterSpec) {
+                    ivBytes = ((IvParameterSpec)params).getIV();
+                    if ((ivBytes == null) || (ivBytes.length != blockSize)) {
+                        throw new InvalidAlgorithmParameterException
+                            ("Wrong IV length: must be " + blockSize +
+                             " bytes long");
+                    }
+                } else if (params instanceof RC2ParameterSpec) {
+                    ivBytes = ((RC2ParameterSpec)params).getIV();
+                    if ((ivBytes != null) && (ivBytes.length != blockSize)) {
+                        throw new InvalidAlgorithmParameterException
+                            ("Wrong IV length: must be " + blockSize +
+                             " bytes long");
+                    }
+                } else {
+                    throw new InvalidAlgorithmParameterException
+                        ("Unsupported parameter: " + params);
+                }
             }
-        } else if (params instanceof RC2ParameterSpec) {
-            ivBytes = ((RC2ParameterSpec)params).getIV();
-            if ((ivBytes != null) && (ivBytes.length != blockSize)) {
-                throw new InvalidAlgorithmParameterException
-                    ("Wrong IV length: must be " + blockSize +
-                    " bytes long");
-            }
-        } else {
-            throw new InvalidAlgorithmParameterException("Wrong parameter "
-                                                         + "type: IV "
-                                                         + "expected");
         }
-
         if (cipherMode == ECB_MODE) {
             if (ivBytes != null) {
                 throw new InvalidAlgorithmParameterException
                                                 ("ECB mode cannot use IV");
             }
-        } else if (ivBytes == null) {
+        } else if (ivBytes == null)  {
             if (decrypting) {
                 throw new InvalidAlgorithmParameterException("Parameters "
                                                              + "missing");
             }
+
             if (random == null) {
-                random = SunJCE.RANDOM;
+                random = SunJCE.getRandom();
             }
-            ivBytes = new byte[blockSize];
+            if (cipherMode == GCM_MODE) {
+                ivBytes = new byte[GaloisCounterMode.DEFAULT_IV_LEN];
+            } else {
+                ivBytes = new byte[blockSize];
+            }
             random.nextBytes(ivBytes);
         }
 
@@ -466,23 +579,57 @@ final class CipherCore {
 
         String algorithm = key.getAlgorithm();
 
-        cipher.init(decrypting, algorithm, keyBytes, ivBytes);
+        // GCM mode needs additional handling
+        if (cipherMode == GCM_MODE) {
+            if(tagLen == -1) {
+                tagLen = GaloisCounterMode.DEFAULT_TAG_LEN;
+            }
+            if (decrypting) {
+                minBytes = tagLen;
+            } else {
+                // check key+iv for encryption in GCM mode
+                requireReinit =
+                    Arrays.equals(ivBytes, lastEncIv) &&
+                    Arrays.equals(keyBytes, lastEncKey);
+                if (requireReinit) {
+                    throw new InvalidAlgorithmParameterException
+                        ("Cannot reuse iv for GCM encryption");
+                }
+                lastEncIv = ivBytes;
+                lastEncKey = keyBytes;
+            }
+            ((GaloisCounterMode) cipher).init
+                (decrypting, algorithm, keyBytes, ivBytes, tagLen);
+        } else {
+            cipher.init(decrypting, algorithm, keyBytes, ivBytes);
+        }
+        // skip checking key+iv from now on until after doFinal()
+        requireReinit = false;
     }
 
     void init(int opmode, Key key, AlgorithmParameters params,
               SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException {
-        IvParameterSpec ivSpec = null;
+        AlgorithmParameterSpec spec = null;
+        String paramType = null;
         if (params != null) {
             try {
-                ivSpec = params.getParameterSpec(IvParameterSpec.class);
+                if (cipherMode == GCM_MODE) {
+                    paramType = "GCM";
+                    spec = params.getParameterSpec(GCMParameterSpec.class);
+                } else {
+                    // NOTE: RC2 parameters are always handled through
+                    // init(..., AlgorithmParameterSpec,...) method, so
+                    // we can assume IvParameterSpec type here.
+                    paramType = "IV";
+                    spec = params.getParameterSpec(IvParameterSpec.class);
+                }
             } catch (InvalidParameterSpecException ipse) {
-                throw new InvalidAlgorithmParameterException("Wrong parameter "
-                                                             + "type: IV "
-                                                             + "expected");
+                throw new InvalidAlgorithmParameterException
+                    ("Wrong parameter type: " + paramType + " expected");
             }
         }
-        init(opmode, key, ivSpec, random);
+        init(opmode, key, spec, random);
     }
 
     /**
@@ -504,6 +651,7 @@ final class CipherCore {
         return keyBytes;
     }
 
+
     /**
      * Continues a multiple-part encryption or decryption operation
      * (depending on how this cipher was initialized), processing another data
@@ -524,22 +672,25 @@ final class CipherCore {
      * (e.g., has not been initialized)
      */
     byte[] update(byte[] input, int inputOffset, int inputLen) {
+        if (requireReinit) {
+            throw new IllegalStateException
+                ("Must use either different key or iv for GCM encryption");
+        }
+
         byte[] output = null;
-        byte[] out = null;
         try {
-            output = new byte[getOutputSize(inputLen)];
+            output = new byte[getOutputSizeByOperation(inputLen, false)];
             int len = update(input, inputOffset, inputLen, output,
                              0);
             if (len == output.length) {
-                out = output;
+                return output;
             } else {
-                out = new byte[len];
-                System.arraycopy(output, 0, out, 0, len);
+                return Arrays.copyOf(output, len);
             }
         } catch (ShortBufferException e) {
-            // never thrown
+            // should never happen
+            throw new ProviderException("Unexpected exception", e);
         }
-        return out;
     }
 
     /**
@@ -567,6 +718,11 @@ final class CipherCore {
      */
     int update(byte[] input, int inputOffset, int inputLen, byte[] output,
                int outputOffset) throws ShortBufferException {
+        if (requireReinit) {
+            throw new IllegalStateException
+                ("Must use either different key or iv for GCM encryption");
+        }
+
         // figure out how much can be sent to crypto function
         int len = buffered + inputLen - minBytes;
         if (padding != null && decrypting) {
@@ -582,6 +738,7 @@ final class CipherCore {
                                            + "(at least) " + len
                                            + " bytes long");
         }
+
         if (len != 0) {
             // there is some work to do
             byte[] in = new byte[len];
@@ -600,7 +757,6 @@ final class CipherCore {
                 System.arraycopy(input, inputOffset, in,
                                  bufferedConsumed, inputConsumed);
             }
-
             if (decrypting) {
                 cipher.decrypt(in, 0, len, output, outputOffset);
             } else {
@@ -611,11 +767,12 @@ final class CipherCore {
             // the total input length a multiple of blocksize when
             // padding is applied
             if (unitBytes != blockSize) {
-                if (len < diffBlocksize)
+                if (len < diffBlocksize) {
                     diffBlocksize -= len;
-                else
+                } else {
                     diffBlocksize = blockSize -
                         ((len - diffBlocksize) % blockSize);
+                }
             }
 
             inputLen -= inputConsumed;
@@ -669,21 +826,18 @@ final class CipherCore {
     byte[] doFinal(byte[] input, int inputOffset, int inputLen)
         throws IllegalBlockSizeException, BadPaddingException {
         byte[] output = null;
-        byte[] out = null;
         try {
-            output = new byte[getOutputSize(inputLen)];
+            output = new byte[getOutputSizeByOperation(inputLen, true)];
             int len = doFinal(input, inputOffset, inputLen, output, 0);
             if (len < output.length) {
-                out = new byte[len];
-                if (len != 0)
-                    System.arraycopy(output, 0, out, 0, len);
+                return Arrays.copyOf(output, len);
             } else {
-                out = output;
+                return output;
             }
         } catch (ShortBufferException e) {
             // never thrown
+            throw new ProviderException("Unexpected exception", e);
         }
-        return out;
     }
 
     /**
@@ -726,6 +880,10 @@ final class CipherCore {
                 int outputOffset)
         throws IllegalBlockSizeException, ShortBufferException,
                BadPaddingException {
+        if (requireReinit) {
+            throw new IllegalStateException
+                ("Must use either different key or iv for GCM encryption");
+        }
 
         // calculate the total input length
         int totalLen = buffered + inputLen;
@@ -752,8 +910,9 @@ final class CipherCore {
         }
 
         // if encrypting and padding not null, add padding
-        if (!decrypting && padding != null)
+        if (!decrypting && padding != null) {
             paddedLen += paddingLen;
+        }
 
         // check output buffer capacity.
         // if we are decrypting with padding applied, we can perform this
@@ -763,8 +922,8 @@ final class CipherCore {
             throw new ShortBufferException("Output buffer is null");
         }
         int outputCapacity = output.length - outputOffset;
-        if (((!decrypting) || (padding == null)) &&
-            (outputCapacity < paddedLen) ||
+
+        if (((!decrypting) && (outputCapacity < paddedLen)) ||
             (decrypting && (outputCapacity < (paddedLen - blockSize)))) {
             throw new ShortBufferException("Output buffer too short: "
                                            + outputCapacity + " bytes given, "
@@ -812,6 +971,7 @@ final class CipherCore {
                 }
                 totalLen = padStart;
             }
+
             if ((output.length - outputOffset) < totalLen) {
                 // restore so users can retry with a larger buffer
                 cipher.restore();
@@ -824,8 +984,13 @@ final class CipherCore {
                 output[outputOffset + i] = outWithPadding[i];
             }
         } else { // encrypting
-            totalLen = finalNoPadding(finalBuf, finalOffset, output,
-                                      outputOffset, paddedLen);
+            try {
+                totalLen = finalNoPadding(finalBuf, finalOffset, output,
+                                          outputOffset, paddedLen);
+            } finally {
+                // reset after doFinal() for GCM encryption
+                requireReinit = (cipherMode == GCM_MODE);
+            }
         }
 
         buffered = 0;
@@ -836,33 +1001,33 @@ final class CipherCore {
         return totalLen;
     }
 
-    private int finalNoPadding(byte[] in, int inOff, byte[] out, int outOff,
+    private int finalNoPadding(byte[] in, int inOfs, byte[] out, int outOfs,
                                int len)
-        throws IllegalBlockSizeException
-    {
-        if (in == null || len == 0)
+        throws IllegalBlockSizeException, AEADBadTagException {
+
+        if ((cipherMode != GCM_MODE) && (in == null || len == 0)) {
             return 0;
-
-        if ((cipherMode != CFB_MODE) && (cipherMode != OFB_MODE)
-            && ((len % unitBytes) != 0) && (cipherMode != CTS_MODE)) {
-            if (padding != null) {
-                throw new IllegalBlockSizeException
-                    ("Input length (with padding) not multiple of " +
-                     unitBytes + " bytes");
-            } else {
-                throw new IllegalBlockSizeException
-                    ("Input length not multiple of " + unitBytes
-                     + " bytes");
-            }
         }
-
+        if ((cipherMode != CFB_MODE) && (cipherMode != OFB_MODE) &&
+            (cipherMode != GCM_MODE) &&
+            ((len % unitBytes) != 0) && (cipherMode != CTS_MODE)) {
+                if (padding != null) {
+                    throw new IllegalBlockSizeException
+                        ("Input length (with padding) not multiple of " +
+                         unitBytes + " bytes");
+                } else {
+                    throw new IllegalBlockSizeException
+                        ("Input length not multiple of " + unitBytes
+                         + " bytes");
+                }
+        }
+        int outLen = 0;
         if (decrypting) {
-            cipher.decryptFinal(in, inOff, len, out, outOff);
+            outLen = cipher.decryptFinal(in, inOfs, len, out, outOfs);
         } else {
-            cipher.encryptFinal(in, inOff, len, out, outOff);
+            outLen = cipher.encryptFinal(in, inOfs, len, out, outOfs);
         }
-
-        return len;
+        return outLen;
     }
 
     // Note: Wrap() and Unwrap() are the same in
@@ -938,5 +1103,37 @@ final class CipherCore {
         }
         return ConstructKeys.constructKey(encodedKey, wrappedKeyAlgorithm,
                                           wrappedKeyType);
+    }
+
+    /**
+     * Continues a multi-part update of the Additional Authentication
+     * Data (AAD), using a subset of the provided buffer.
+     * <p>
+     * Calls to this method provide AAD to the cipher when operating in
+     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
+     * either GCM or CCM mode, all AAD must be supplied before beginning
+     * operations on the ciphertext (via the {@code update} and {@code
+     * doFinal} methods).
+     *
+     * @param src the buffer containing the AAD
+     * @param offset the offset in {@code src} where the AAD input starts
+     * @param len the number of AAD bytes
+     *
+     * @throws IllegalStateException if this cipher is in a wrong state
+     * (e.g., has not been initialized), does not accept AAD, or if
+     * operating in either GCM or CCM mode and one of the {@code update}
+     * methods has already been called for the active
+     * encryption/decryption operation
+     * @throws UnsupportedOperationException if this method
+     * has not been overridden by an implementation
+     *
+     * @since 1.8
+     */
+    void updateAAD(byte[] src, int offset, int len) {
+        if (requireReinit) {
+            throw new IllegalStateException
+                ("Must use either different key or iv for GCM encryption");
+        }
+        cipher.updateAAD(src, offset, len);
     }
 }

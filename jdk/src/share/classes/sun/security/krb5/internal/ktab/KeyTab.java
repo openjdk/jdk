@@ -382,9 +382,15 @@ public class KeyTab implements KeyTabConstants {
      */
     public void addEntry(PrincipalName service, char[] psswd,
             int kvno, boolean append) throws KrbException {
+        addEntry(service, service.getSalt(), psswd, kvno, append);
+    }
+
+    // Called by KDC test
+    public void addEntry(PrincipalName service, String salt, char[] psswd,
+            int kvno, boolean append) throws KrbException {
 
         EncryptionKey[] encKeys = EncryptionKey.acquireSecretKeys(
-            psswd, service.getSalt());
+            psswd, salt);
 
         // There should be only one maximum KVNO value for all etypes, so that
         // all added keys can have the same KVNO.

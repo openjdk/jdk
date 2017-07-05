@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,17 @@ import java.io.*;
 import java.lang.RuntimePermission;
 import java.net.SocketPermission;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.Principal;
+import java.text.MessageFormat;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.ListIterator;
 import java.util.Vector;
 import java.util.StringTokenizer;
-import java.text.MessageFormat;
 import javax.security.auth.x500.X500Principal;
 
-import java.security.GeneralSecurityException;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 import sun.security.util.ResourcesMgr;
@@ -72,7 +73,7 @@ import sun.security.util.ResourcesMgr;
  *  Permissions perms = policy.getPermissions(protectiondomain)
  * </pre>
  *
- * <p>The protection domain contains CodeSource
+ * <p>The protection domain contains a CodeSource
  * object, which encapsulates its codebase (URL) and public key attributes.
  * It also contains the principals associated with the domain.
  * The Policy object evaluates the global policy in light of who the
@@ -86,9 +87,6 @@ import sun.security.util.ResourcesMgr;
  */
 
 public class PolicyParser {
-
-    // needs to be public for PolicyTool
-    public static final String REPLACE_NAME = "PolicyParser.REPLACE_NAME";
 
     private static final String EXTDIRS_PROPERTY = "java.ext.dirs";
     private static final String OLD_EXTDIRS_EXPANSION =
@@ -452,7 +450,7 @@ public class PolicyParser {
                 peekAndMatch(",");
             } else if (peekAndMatch("Principal")) {
                 if (principals == null) {
-                    principals = new LinkedList<PrincipalEntry>();
+                    principals = new LinkedList<>();
                 }
 
                 String principalClass;
@@ -461,7 +459,7 @@ public class PolicyParser {
                 if (peek("\"")) {
                     // both the principalClass and principalName
                     // will be replaced later
-                    principalClass = REPLACE_NAME;
+                    principalClass = PrincipalEntry.REPLACE_NAME;
                     principalName = match("principal type");
                 } else {
                     // check for principalClass wildcard
@@ -916,7 +914,7 @@ public class PolicyParser {
                     out.print(",\n");
             }
             if (principals != null && principals.size() > 0) {
-                ListIterator<PrincipalEntry> pli = principals.listIterator();
+                Iterator<PrincipalEntry> pli = principals.iterator();
                 while (pli.hasNext()) {
                     out.print("      ");
                     PrincipalEntry pe = pli.next();
@@ -949,23 +947,22 @@ public class PolicyParser {
     /**
      * Principal info (class and name) in a grant entry
      */
-    public static class PrincipalEntry {
+    public static class PrincipalEntry implements Principal {
 
         public static final String WILDCARD_CLASS = "WILDCARD_PRINCIPAL_CLASS";
         public static final String WILDCARD_NAME = "WILDCARD_PRINCIPAL_NAME";
+        public static final String REPLACE_NAME = "PolicyParser.REPLACE_NAME";
 
         String principalClass;
         String principalName;
 
         /**
-         * A PrincipalEntry consists of the <code>Principal</code>
-         * class and <code>Principal</code> name.
+         * A PrincipalEntry consists of the Principal class and Principal name.
          *
-         * <p>
-         *
-         * @param principalClass the <code>Principal</code> class. <p>
-         *
-         * @param principalName the <code>Principal</code> name. <p>
+         * @param principalClass the Principal class
+         * @param principalName the Principal name
+         * @throws NullPointerException if principalClass or principalName
+         *                              are null
          */
         public PrincipalEntry(String principalClass, String principalName) {
             if (principalClass == null || principalName == null)
@@ -973,6 +970,18 @@ public class PolicyParser {
                                   "null.principalClass.or.principalName"));
             this.principalClass = principalClass;
             this.principalName = principalName;
+        }
+
+        boolean isWildcardName() {
+            return principalName.equals(WILDCARD_NAME);
+        }
+
+        boolean isWildcardClass() {
+            return principalClass.equals(WILDCARD_CLASS);
+        }
+
+        boolean isReplaceName() {
+            return principalClass.equals(REPLACE_NAME);
         }
 
         public String getPrincipalClass() {
@@ -984,9 +993,9 @@ public class PolicyParser {
         }
 
         public String getDisplayClass() {
-            if (principalClass.equals(WILDCARD_CLASS)) {
+            if (isWildcardClass()) {
                 return "*";
-            } else if (principalClass.equals(REPLACE_NAME)) {
+            } else if (isReplaceName()) {
                 return "";
             }
             else return principalClass;
@@ -997,7 +1006,7 @@ public class PolicyParser {
         }
 
         public String getDisplayName(boolean addQuote) {
-            if (principalName.equals(WILDCARD_NAME)) {
+            if (isWildcardName()) {
                 return "*";
             }
             else {
@@ -1006,8 +1015,14 @@ public class PolicyParser {
             }
         }
 
+        @Override
+        public String getName() {
+            return principalName;
+        }
+
+        @Override
         public String toString() {
-            if (!principalClass.equals(REPLACE_NAME)) {
+            if (!isReplaceName()) {
                 return getDisplayClass() + "/" + getDisplayName();
             } else {
                 return getDisplayName();
@@ -1016,15 +1031,13 @@ public class PolicyParser {
 
         /**
          * Test for equality between the specified object and this object.
-         * Two PrincipalEntries are equal if their PrincipalClass and
-         * PrincipalName values are equal.
+         * Two PrincipalEntries are equal if their class and name values
+         * are equal.
          *
-         * <p>
-         *
-         * @param obj the object to test for equality with this object.
-         *
-         * @return true if the objects are equal, false otherwise.
+         * @param obj the object to test for equality with this object
+         * @return true if the objects are equal, false otherwise
          */
+        @Override
         public boolean equals(Object obj) {
             if (this == obj)
                 return true;
@@ -1033,27 +1046,23 @@ public class PolicyParser {
                 return false;
 
             PrincipalEntry that = (PrincipalEntry)obj;
-            if (this.principalClass.equals(that.principalClass) &&
-                this.principalName.equals(that.principalName)) {
-                return true;
-            }
-
-            return false;
+            return (principalClass.equals(that.principalClass) &&
+                    principalName.equals(that.principalName));
         }
 
         /**
-         * Return a hashcode for this <code>PrincipalEntry</code>.
+         * Return a hashcode for this PrincipalEntry.
          *
-         * <p>
-         *
-         * @return a hashcode for this <code>PrincipalEntry</code>.
+         * @return a hashcode for this PrincipalEntry
          */
+        @Override
         public int hashCode() {
             return principalClass.hashCode();
         }
+
         public void write(PrintWriter out) {
             out.print("principal " + getDisplayClass() + " " +
-                getDisplayName(true));
+                      getDisplayName(true));
         }
     }
 
@@ -1101,6 +1110,7 @@ public class PolicyParser {
          * Calculates a hash code value for the object.  Objects
          * which are equal will also have the same hashcode.
          */
+        @Override
         public int hashCode() {
             int retval = permission.hashCode();
             if (name != null) retval ^= name.hashCode();
@@ -1108,6 +1118,7 @@ public class PolicyParser {
             return retval;
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
@@ -1210,28 +1221,18 @@ public class PolicyParser {
             i18nMessage = form.format(source);
         }
 
+        @Override
         public String getLocalizedMessage() {
             return i18nMessage;
         }
     }
 
     public static void main(String arg[]) throws Exception {
-        FileReader fr = null;
-        FileWriter fw = null;
-        try {
+        try (FileReader fr = new FileReader(arg[0]);
+             FileWriter fw = new FileWriter(arg[1])) {
             PolicyParser pp = new PolicyParser(true);
-            fr = new FileReader(arg[0]);
             pp.read(fr);
-            fw = new FileWriter(arg[1]);
             pp.write(fw);
-        } finally {
-            if (fr != null) {
-                fr.close();
-            }
-
-            if (fw != null) {
-                fw.close();
-            }
         }
     }
 }
