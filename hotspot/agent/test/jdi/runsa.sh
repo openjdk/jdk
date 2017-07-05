@@ -1,6 +1,6 @@
 #!/bin/ksh
 #
-# Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,6 @@ if [ -z "$jdk" ] ; then
 fi
 
 set -x
-#setenv USE_LIBPROC_DEBUGGER "-Dsun.jvm.hotspot.debugger.useProcDebugger -Djava.library.path=$saprocdir"
 
 # If jjh makes this, then the classes are in .../build/agent.
 # if someone else does, they are in  .

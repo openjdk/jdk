@@ -43,10 +43,6 @@ import sun.jvm.hotspot.utilities.*;
  * highest-level factory for VM data structures. It makes it simple
  * to start up the debugging system. </P>
  *
- * <P> FIXME: need to add a way to configure the paths to dbx and the
- * DSO from the outside. However, this should work for now for
- * internal use. </P>
- *
  * <P> FIXME: especially with the addition of remote debugging, this
  * has turned into a mess; needs rethinking. </P>
  */
@@ -87,30 +83,7 @@ public class HotSpotAgent {
 
     private String[] jvmLibNames;
 
-    // FIXME: make these configurable, i.e., via a dotfile; also
-    // consider searching within the JDK from which this Java executable
-    // comes to find them
-    private static final String defaultDbxPathPrefix                = "/net/jano.sfbay/export/disk05/hotspot/sa";
-    private static final String defaultDbxSvcAgentDSOPathPrefix     = "/net/jano.sfbay/export/disk05/hotspot/sa";
-
     static void showUsage() {
-        System.out.println("    You can also pass these -D options to java to specify where to find dbx and the \n" +
-        "    Serviceability Agent plugin for dbx:");
-        System.out.println("       -DdbxPathName=<path-to-dbx-executable>\n" +
-        "             Default is derived from dbxPathPrefix");
-        System.out.println("    or");
-        System.out.println("       -DdbxPathPrefix=<xxx>\n" +
-        "             where xxx is the path name of a dir structure that contains:\n" +
-        "                   <os>/<arch>/bin/dbx\n" +
-        "             The default is " + defaultDbxPathPrefix);
-        System.out.println("    and");
-        System.out.println("       -DdbxSvcAgentDSOPathName=<path-to-dbx-serviceability-agent-module>\n" +
-        "             Default is determined from dbxSvcAgentDSOPathPrefix");
-        System.out.println("    or");
-        System.out.println("       -DdbxSvcAgentDSOPathPrefix=<xxx>\n" +
-        "             where xxx is the pathname of a dir structure that contains:\n" +
-        "                   <os>/<arch>/bin/lib/libsvc_agent_dbx.so\n" +
-        "             The default is " + defaultDbxSvcAgentDSOPathPrefix);
     }
 
     public HotSpotAgent() {

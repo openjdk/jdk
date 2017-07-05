@@ -371,6 +371,8 @@ private:
     _nodes.at_put(n->_idx, ptn);
   }
 
+  // Utility function for nodes that load an object
+  void add_objload_to_connection_graph(Node *n, Unique_Node_List *delayed_worklist);
   // Create PointsToNode node and add it to Connection Graph.
   void add_node_to_connection_graph(Node *n, Unique_Node_List *delayed_worklist);
 

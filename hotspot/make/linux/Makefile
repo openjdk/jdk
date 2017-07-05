@@ -288,42 +288,54 @@ platform_zero: $(GAMMADIR)/make/$(OSNAME)/platform_zero.in
 
 $(TARGETS_C2):  $(SUBDIRS_C2)
 	cd $(OSNAME)_$(BUILDARCH)_compiler2/$@ && $(MAKE) $(MFLAGS)
+ifeq ($(TEST_IN_BUILD),true)
 	cd $(OSNAME)_$(BUILDARCH)_compiler2/$@ && ./test_gamma
+endif
 ifdef INSTALL
 	cd $(OSNAME)_$(BUILDARCH)_compiler2/$@ && $(MAKE) $(MFLAGS) install
 endif
 
 $(TARGETS_TIERED):  $(SUBDIRS_TIERED)
 	cd $(OSNAME)_$(BUILDARCH)_tiered/$(patsubst %tiered,%,$@) && $(MAKE) $(MFLAGS)
+ifeq ($(TEST_IN_BUILD),true)
 	cd $(OSNAME)_$(BUILDARCH)_tiered/$(patsubst %tiered,%,$@) && ./test_gamma
+endif
 ifdef INSTALL
 	cd $(OSNAME)_$(BUILDARCH)_tiered/$(patsubst %tiered,%,$@) && $(MAKE) $(MFLAGS) install
 endif
 
 $(TARGETS_C1):  $(SUBDIRS_C1)
 	cd $(OSNAME)_$(BUILDARCH)_compiler1/$(patsubst %1,%,$@) && $(MAKE) $(MFLAGS)
+ifeq ($(TEST_IN_BUILD),true)
 	cd $(OSNAME)_$(BUILDARCH)_compiler1/$(patsubst %1,%,$@) && ./test_gamma
+endif
 ifdef INSTALL
 	cd $(OSNAME)_$(BUILDARCH)_compiler1/$(patsubst %1,%,$@) && $(MAKE) $(MFLAGS) install
 endif
 
 $(TARGETS_CORE):  $(SUBDIRS_CORE)
 	cd $(OSNAME)_$(BUILDARCH)_core/$(patsubst %core,%,$@) && $(MAKE) $(MFLAGS)
+ifeq ($(TEST_IN_BUILD),true)
 	cd $(OSNAME)_$(BUILDARCH)_core/$(patsubst %core,%,$@) && ./test_gamma
+endif
 ifdef INSTALL
 	cd $(OSNAME)_$(BUILDARCH)_core/$(patsubst %core,%,$@) && $(MAKE) $(MFLAGS) install
 endif
 
 $(TARGETS_ZERO):  $(SUBDIRS_ZERO)
 	cd $(OSNAME)_$(VARIANTARCH)_zero/$(patsubst %zero,%,$@) && $(MAKE) $(MFLAGS)
+ifeq ($(TEST_IN_BUILD),true)
 	cd $(OSNAME)_$(VARIANTARCH)_zero/$(patsubst %zero,%,$@) && ./test_gamma
+endif
 ifdef INSTALL
 	cd $(OSNAME)_$(VARIANTARCH)_zero/$(patsubst %zero,%,$@) && $(MAKE) $(MFLAGS) install
 endif
 
 $(TARGETS_SHARK):  $(SUBDIRS_SHARK)
 	cd $(OSNAME)_$(VARIANTARCH)_shark/$(patsubst %shark,%,$@) && $(MAKE) $(MFLAGS)
+ifeq ($(TEST_IN_BUILD),true)
 	cd $(OSNAME)_$(VARIANTARCH)_shark/$(patsubst %shark,%,$@) && ./test_gamma
+endif
 ifdef INSTALL
 	cd $(OSNAME)_$(VARIANTARCH)_shark/$(patsubst %shark,%,$@) && $(MAKE) $(MFLAGS) install
 endif

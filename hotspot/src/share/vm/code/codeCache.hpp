@@ -130,9 +130,7 @@ class CodeCache : AllStatic {
   // If "unloading_occurred" is true, then unloads (i.e., breaks root links
   // to) any unmarked codeBlobs in the cache.  Sets "marked_for_unloading"
   // to "true" iff some code got unloaded.
-  static void do_unloading(BoolObjectClosure* is_alive,
-                           OopClosure* keep_alive,
-                           bool unloading_occurred);
+  static void do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred);
   static void oops_do(OopClosure* f) {
     CodeBlobToOopClosure oopc(f, /*do_marking=*/ false);
     blobs_do(&oopc);
