@@ -45,8 +45,8 @@
  * Platform Debugger Architecture documentation</a> for this release and the <a
  * href="http://java.sun.com/products/jpda">Java Platform Debugger Architecture
  * website</a>.
- * <p>
- * <font size="+1"><b>Global Exceptions:</b></font>
+ * <p style="font-size:larger">
+ * <b>Global Exceptions:</b>
  * <p>
  * This section documents exceptions which apply to the entire API and are thus
  * not documented on individual methods.

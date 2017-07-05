@@ -31,7 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.testlibrary.CompilerUtils;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.Assert;
 import org.testng.annotations.BeforeTest;
@@ -41,8 +41,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @run testng XMLReaderFactoryTest
  * @bug 8152912 8015099 8156119
  * @summary Tests XMLReaderFactory can work as ServiceLoader compliant, as well as backward compatible

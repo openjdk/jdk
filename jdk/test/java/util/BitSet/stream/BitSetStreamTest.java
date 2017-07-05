@@ -42,6 +42,7 @@ import static java.util.stream.Collectors.toList;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 
 /**
@@ -49,7 +50,7 @@ import static org.testng.Assert.assertTrue;
  * @summary test BitSet stream
  * @bug 8012645 8076442
  * @requires os.maxMemory >= 2g
- * @library ../../stream/bootlib
+ * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.SpliteratorTestHelper
  *        java.base/java.util.SpliteratorOfIntDataBuilder
  * @run testng/othervm -Xms512m -Xmx1024m BitSetStreamTest
@@ -167,8 +168,8 @@ public class BitSetStreamTest extends SpliteratorTestHelper {
 
     @Test(dataProvider = "BitSet.stream.spliterator")
     public void testIntNullPointerException(String description, Collection<Integer> exp, Supplier<Spliterator.OfInt> s) {
-        executeAndCatch(NullPointerException.class, () -> s.get().forEachRemaining((IntConsumer) null));
-        executeAndCatch(NullPointerException.class, () -> s.get().tryAdvance((IntConsumer) null));
+        assertThrows(NullPointerException.class, () -> s.get().forEachRemaining((IntConsumer) null));
+        assertThrows(NullPointerException.class, () -> s.get().tryAdvance((IntConsumer) null));
     }
 
     @Test(dataProvider = "BitSet.stream.spliterator")

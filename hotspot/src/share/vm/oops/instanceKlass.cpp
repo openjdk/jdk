@@ -2331,21 +2331,21 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
              name()->as_C_string(), loader_data->loader_name());
     }
 
-    if (log_is_enabled(Debug, modules)) {
+    if (log_is_enabled(Debug, module)) {
       ResourceMark rm;
       ModuleEntry* m = _package_entry->module();
-      log_trace(modules)("Setting package: class: %s, package: %s, loader: %s, module: %s",
-                         external_name(),
-                         pkg_name->as_C_string(),
-                         loader_data->loader_name(),
-                         (m->is_named() ? m->name()->as_C_string() : UNNAMED_MODULE));
+      log_trace(module)("Setting package: class: %s, package: %s, loader: %s, module: %s",
+                        external_name(),
+                        pkg_name->as_C_string(),
+                        loader_data->loader_name(),
+                        (m->is_named() ? m->name()->as_C_string() : UNNAMED_MODULE));
     }
   } else {
     ResourceMark rm;
-    log_trace(modules)("Setting package: class: %s, package: unnamed, loader: %s, module: %s",
-                       external_name(),
-                       (loader_data != NULL) ? loader_data->loader_name() : "NULL",
-                       UNNAMED_MODULE);
+    log_trace(module)("Setting package: class: %s, package: unnamed, loader: %s, module: %s",
+                      external_name(),
+                      (loader_data != NULL) ? loader_data->loader_name() : "NULL",
+                      UNNAMED_MODULE);
   }
 }
 

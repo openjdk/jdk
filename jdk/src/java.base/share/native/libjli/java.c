@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,10 @@ static jboolean printTo = USE_STDERR;     /* where to print version/usage */
 static jboolean printXUsage = JNI_FALSE;  /* print and exit*/
 static jboolean dryRun = JNI_FALSE;       /* initialize VM and exit */
 static char     *showSettings = NULL;     /* print but continue */
-static char     *listModules = NULL;
+static jboolean showResolvedModules = JNI_FALSE;
+static jboolean listModules = JNI_FALSE;
+static char     *describeModule = NULL;
+static jboolean validateModules = JNI_FALSE;
 
 static const char *_program_name;
 static const char *_launcher_name;
@@ -118,12 +121,14 @@ static void SetApplicationClassPath(const char**);
 static void PrintJavaVersion(JNIEnv *env, jboolean extraLF);
 static void PrintUsage(JNIEnv* env, jboolean doXUsage);
 static void ShowSettings(JNIEnv* env, char *optString);
-static void ListModules(JNIEnv* env, char *optString);
+static void ShowResolvedModules(JNIEnv* env);
+static void ListModules(JNIEnv* env);
+static void DescribeModule(JNIEnv* env, char* optString);
+static jboolean ValidateModules(JNIEnv* env);
 
 static void SetPaths(int argc, char **argv);
 
 static void DumpState();
-static jboolean RemovableOption(char *option);
 
 enum OptionKind {
     LAUNCHER_OPTION = 0,
@@ -409,9 +414,31 @@ JavaMain(void * _args)
         CHECK_EXCEPTION_LEAVE(1);
     }
 
-    if (listModules != NULL) {
-        ListModules(env, listModules);
+    // show resolved modules and continue
+    if (showResolvedModules) {
+        ShowResolvedModules(env);
         CHECK_EXCEPTION_LEAVE(1);
+    }
+
+    // list observable modules, then exit
+    if (listModules) {
+        ListModules(env);
+        CHECK_EXCEPTION_LEAVE(1);
+        LEAVE();
+    }
+
+    // describe a module, then exit
+    if (describeModule != NULL) {
+        DescribeModule(env, describeModule);
+        CHECK_EXCEPTION_LEAVE(1);
+        LEAVE();
+    }
+
+    // validate modules on the module path, then exit
+    if (validateModules) {
+        jboolean okay = ValidateModules(env);
+        CHECK_EXCEPTION_LEAVE(1);
+        if (!okay) ret = 1;
         LEAVE();
     }
 
@@ -552,7 +579,8 @@ static jboolean
 IsLauncherOption(const char* name) {
     return IsClassPathOption(name) ||
            IsLauncherMainOption(name) ||
-           JLI_StrCmp(name, "--list-modules") == 0;
+           JLI_StrCmp(name, "--describe-module") == 0 ||
+           JLI_StrCmp(name, "-d") == 0;
 }
 
 /*
@@ -742,17 +770,16 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
 }
 
 /*
- * static void SetJvmEnvironment(int argc, char **argv);
- *   Is called just before the JVM is loaded.  We can set env variables
- *   that are consumed by the JVM.  This function is non-destructive,
- *   leaving the arg list intact.  The first use is for the JVM flag
- *   -XX:NativeMemoryTracking=value.
+ * This method must be called before the VM is loaded, primarily
+ * used to parse and set any VM related options or env variables.
+ * This function is non-destructive leaving the argument list intact.
  */
 static void
 SetJvmEnvironment(int argc, char **argv) {
 
     static const char*  NMT_Env_Name    = "NMT_LEVEL_";
     int i;
+    /* process only the launcher arguments */
     for (i = 0; i < argc; i++) {
         char *arg = argv[i];
         /*
@@ -811,11 +838,8 @@ SetJvmEnvironment(int argc, char **argv) {
                     printf("TRACER_MARKER: NativeMemoryTracking: got value %s\n",envBuf);
                     free(envName);
                 }
-
             }
-
         }
-
     }
 }
 
@@ -1199,7 +1223,7 @@ GetOpt(int *pargc, char ***pargv, char **poption, char **pvalue) {
 
     } else if (JLI_StrCCmp(arg, "--") == 0 && (equals = JLI_StrChr(arg, '=')) != NULL) {
         value = equals+1;
-        if (JLI_StrCCmp(arg, "--list-modules=") == 0 ||
+        if (JLI_StrCCmp(arg, "--describe-module=") == 0 ||
             JLI_StrCCmp(arg, "--module=") == 0 ||
             JLI_StrCCmp(arg, "--class-path=") == 0) {
             kind = LAUNCHER_OPTION_WITH_ARGUMENT;
@@ -1263,18 +1287,18 @@ ParseArguments(int *pargc, char ***pargv,
             REPORT_ERROR (has_arg_any_len, ARG_ERROR1, arg);
             SetClassPath(value);
             mode = LM_CLASS;
-        } else if (JLI_StrCmp(arg, "--list-modules") == 0 ||
-                   JLI_StrCCmp(arg, "--list-modules=") == 0) {
-            listModules = arg;
-
-            // set listModules to --list-modules=<module-names> if argument is specified
-            if (JLI_StrCmp(arg, "--list-modules") == 0 && has_arg) {
-                static const char format[] = "%s=%s";
-                size_t buflen = JLI_StrLen(option) + 2 + JLI_StrLen(value);
-                listModules = JLI_MemAlloc(buflen);
-                JLI_Snprintf(listModules, buflen, format, option, value);
-            }
-            return JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--list-modules") == 0) {
+            listModules = JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--show-resolved-modules") == 0) {
+            showResolvedModules = JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--validate-modules") == 0) {
+            AddOption("-Djdk.module.minimumBoot=true", NULL);
+            validateModules = JNI_TRUE;
+        } else if (JLI_StrCmp(arg, "--describe-module") == 0 ||
+                   JLI_StrCCmp(arg, "--describe-module=") == 0 ||
+                   JLI_StrCmp(arg, "-d") == 0) {
+            REPORT_ERROR (has_arg_any_len, ARG_ERROR12, arg);
+            describeModule = value;
 /*
  * Parse white-space options
  */
@@ -1336,9 +1360,8 @@ ParseArguments(int *pargc, char ***pargv,
             showSettings = arg;
         } else if (JLI_StrCmp(arg, "-Xdiag") == 0) {
             AddOption("-Dsun.java.launcher.diag=true", NULL);
-            AddOption("-Djdk.launcher.traceResolver=true", NULL);
-        } else if (JLI_StrCmp(arg, "-Xdiag:resolver") == 0) {
-            AddOption("-Djdk.launcher.traceResolver=true", NULL);
+        } else if (JLI_StrCmp(arg, "--show-module-resolution") == 0) {
+            AddOption("-Djdk.module.showModuleResolution=true", NULL);
 /*
  * The following case provide backward compatibility with old-style
  * command line options.
@@ -1383,8 +1406,6 @@ ParseArguments(int *pargc, char ***pargv,
             ; /* Ignore machine independent options already handled */
         } else if (ProcessPlatformOption(arg)) {
             ; /* Processing of platform dependent options */
-        } else if (RemovableOption(arg)) {
-            ; /* Do not pass option to vm. */
         } else {
             /* java.class.path set on the command line */
             if (JLI_StrCCmp(arg, "-Djava.class.path=") == 0) {
@@ -1399,7 +1420,10 @@ ParseArguments(int *pargc, char ***pargv,
     }
 
     if (*pwhat == NULL) {
-        *pret = 1;
+        /* LM_UNKNOWN okay for options that exit */
+        if (!listModules && !describeModule && !validateModules) {
+            *pret = 1;
+        }
     } else if (mode == LM_UNKNOWN) {
         /* default to LM_CLASS if -m, -jar and -cp options are
          * not specified */
@@ -1828,21 +1852,61 @@ ShowSettings(JNIEnv *env, char *optString)
 }
 
 /**
- * List modules supported by the runtime
+ * Show resolved modules
  */
 static void
-ListModules(JNIEnv *env, char *optString)
+ShowResolvedModules(JNIEnv *env)
+{
+    jmethodID showResolvedModulesID;
+    jclass cls = GetLauncherHelperClass(env);
+    NULL_CHECK(cls);
+    NULL_CHECK(showResolvedModulesID = (*env)->GetStaticMethodID(env, cls,
+            "showResolvedModules", "()V"));
+    (*env)->CallStaticVoidMethod(env, cls, showResolvedModulesID);
+}
+
+/**
+ * List observable modules
+ */
+static void
+ListModules(JNIEnv *env)
 {
     jmethodID listModulesID;
-    jstring joptString = NULL;
     jclass cls = GetLauncherHelperClass(env);
     NULL_CHECK(cls);
     NULL_CHECK(listModulesID = (*env)->GetStaticMethodID(env, cls,
-            "listModules", "(ZLjava/lang/String;)V"));
+            "listModules", "()V"));
+    (*env)->CallStaticVoidMethod(env, cls, listModulesID);
+}
+
+/**
+ * Describe a module
+ */
+static void
+DescribeModule(JNIEnv *env, char *optString)
+{
+    jmethodID describeModuleID;
+    jstring joptString = NULL;
+    jclass cls = GetLauncherHelperClass(env);
+    NULL_CHECK(cls);
+    NULL_CHECK(describeModuleID = (*env)->GetStaticMethodID(env, cls,
+            "describeModule", "(Ljava/lang/String;)V"));
     NULL_CHECK(joptString = (*env)->NewStringUTF(env, optString));
-    (*env)->CallStaticVoidMethod(env, cls, listModulesID,
-                                 USE_STDOUT,
-                                 joptString);
+    (*env)->CallStaticVoidMethod(env, cls, describeModuleID, joptString);
+}
+
+/**
+ * Validate modules
+ */
+static jboolean
+ValidateModules(JNIEnv *env)
+{
+    jmethodID validateModulesID;
+    jclass cls = GetLauncherHelperClass(env);
+    NULL_CHECK_RETURN_VALUE(cls, JNI_FALSE);
+    validateModulesID = (*env)->GetStaticMethodID(env, cls, "validateModules", "()Z");
+    NULL_CHECK_RETURN_VALUE(cls, JNI_FALSE);
+    return (*env)->CallStaticBooleanMethod(env, cls, validateModulesID);
 }
 
 /*
@@ -2260,34 +2324,6 @@ DumpState()
     printf("\tlauncher name:%s\n", GetLauncherName());
     printf("\tjavaw:%s\n", (IsJavaw() == JNI_TRUE) ? "on" : "off");
     printf("\tfullversion:%s\n", GetFullVersion());
-}
-
-/*
- * Return JNI_TRUE for an option string that has no effect but should
- * _not_ be passed on to the vm; return JNI_FALSE otherwise.  On
- * Solaris SPARC, this screening needs to be done if:
- *    -d32 or -d64 is passed to a binary with an unmatched data model
- *    (the exec in CreateExecutionEnvironment removes -d<n> options and points the
- *    exec to the proper binary).  In the case of when the data model and the
- *    requested version is matched, an exec would not occur, and these options
- *    were erroneously passed to the vm.
- */
-jboolean
-RemovableOption(char * option)
-{
-  /*
-   * Unconditionally remove both -d32 and -d64 options since only
-   * the last such options has an effect; e.g.
-   * java -d32 -d64 -d32 -version
-   * is equivalent to
-   * java -d32 -version
-   */
-
-  if( (JLI_StrCCmp(option, "-d32")  == 0 ) ||
-      (JLI_StrCCmp(option, "-d64")  == 0 ) )
-    return JNI_TRUE;
-  else
-    return JNI_FALSE;
 }
 
 /*
