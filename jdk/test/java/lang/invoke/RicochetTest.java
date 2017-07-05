@@ -40,7 +40,6 @@ import org.junit.*;
 import static java.lang.invoke.MethodType.*;
 import static java.lang.invoke.MethodHandles.*;
 import static org.junit.Assert.*;
-import static org.junit.Assume.*;
 
 
 /**
@@ -48,7 +47,7 @@ import static org.junit.Assume.*;
  * @author jrose
  */
 public class RicochetTest {
-    private static final Class CLASS = RicochetTest.class;
+    private static final Class<?> CLASS = RicochetTest.class;
     private static final int MAX_ARITY = Integer.getInteger(CLASS.getSimpleName()+".MAX_ARITY", 40);
 
     public static void main(String... av) throws Throwable {
@@ -148,7 +147,7 @@ public class RicochetTest {
         for (int nargs = 0; nargs <= MAX; nargs++) {
             if (nargs > 30 && nargs < MAX-20)  nargs += 10;
             int[] args = new int[nargs];
-            for (int j = 0; j < args.length; j++)  args[j] = (int)(j + 11);
+            for (int j = 0; j < args.length; j++)  args[j] = j + 11;
             //System.out.println("testIntSpreads "+Arrays.toString(args));
             int[] args1 = (int[]) id.invokeExact(args);
             assertArrayEquals(args, args1);
@@ -388,6 +387,7 @@ public class RicochetTest {
         java.util.Random random;
         final MethodHandle[] fns;
         int depth;
+        @SuppressWarnings("LeakingThisInConstructor")
         RFCB(int seed) throws Throwable {
             this.random = new java.util.Random(seed);
             this.fns = new MethodHandle[Math.max(29, (1 << MAX_DEPTH-2)/3)];
@@ -408,7 +408,7 @@ public class RicochetTest {
                 case 1:
                     Throwable ex = new RuntimeException();
                     ex.fillInStackTrace();
-                    if (VERBOSITY >= 2) ex.printStackTrace();
+                    if (VERBOSITY >= 2) ex.printStackTrace(System.out);
                     x = "ST; " + x;
                     break;
                 case 2:
@@ -467,7 +467,7 @@ public class RicochetTest {
             return mh.invokeWithArguments(args);
         } catch (Throwable ex) {
             System.out.println("threw: "+mh+Arrays.asList(args));
-            ex.printStackTrace();
+            ex.printStackTrace(System.out);
             return ex;
         }
     }
@@ -515,8 +515,8 @@ public class RicochetTest {
     private static long opJ(long x) { return (long) opI((int)x); }
     private static Object opL2(Object x, Object y) { return (Object) opI2((int)x, (int)y); }
     private static Object opL(Object x) { return (Object) opI((int)x); }
-    private static int opL2_I(Object x, Object y) { return (int) opI2((int)x, (int)y); }
-    private static int opL_I(Object x) { return (int) opI((int)x); }
+    private static int opL2_I(Object x, Object y) { return opI2((int)x, (int)y); }
+    private static int opL_I(Object x) { return opI((int)x); }
     private static long opL_J(Object x) { return (long) opI((int)x); }
     private static final MethodHandle opI, opI2, opI3, opI4, opI_L, opJ, opJ2, opJ3, opL2, opL, opL2_I, opL_I, opL_J;
     static {
@@ -570,8 +570,8 @@ public class RicochetTest {
             INT_LISTERS[i] = lister;
             LONG_LISTERS[i] = llister;
             if (i == 0)  break;
-            lister  = insertArguments(lister,  i-1, (int)0);
-            llister = insertArguments(llister, i-1, (long)0);
+            lister  = insertArguments(lister,  i-1, 0);
+            llister = insertArguments(llister, i-1, 0L);
         }
     }
 

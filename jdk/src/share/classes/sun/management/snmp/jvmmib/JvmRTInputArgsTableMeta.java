@@ -68,6 +68,7 @@ import com.sun.jmx.snmp.agent.SnmpStandardObjectServer;
  */
 public class JvmRTInputArgsTableMeta extends SnmpMibTable implements Serializable {
 
+    static final long serialVersionUID = 5395531763015738645L;
     /**
      * Constructor for the table. Initialize metadata for "JvmRTInputArgsTableMeta".
      * The reference on the MBean server is updated so the entries created through an SNMP SET will be AUTOMATICALLY REGISTERED in Java DMK.

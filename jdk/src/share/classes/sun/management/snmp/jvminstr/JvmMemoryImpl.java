@@ -275,7 +275,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
      */
     public EnumJvmMemoryGCCall getJvmMemoryGCCall()
         throws SnmpStatusException {
-        final Map m = JvmContextFactory.getUserData();
+        final Map<Object,Object> m = JvmContextFactory.getUserData();
 
         if (m != null) {
             final EnumJvmMemoryGCCall cached

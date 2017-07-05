@@ -76,7 +76,6 @@ public class Context {
 
     private Subject s;
     private ExtendedGSSContext x;
-    private boolean f;      // context established?
     private String name;
     private GSSCredential cred;     // see static method delegated().
 
@@ -194,7 +193,6 @@ public class Context {
                 return null;
             }
         }, null);
-        f = false;
     }
 
     /**
@@ -228,7 +226,6 @@ public class Context {
                 return null;
             }
         }, null);
-        f = false;
     }
 
     /**
@@ -502,6 +499,29 @@ public class Context {
         return sb.toString();
     }
 
+    public byte[] take(final byte[] in) throws Exception {
+        return doAs(new Action() {
+            @Override
+            public byte[] run(Context me, byte[] input) throws Exception {
+                if (me.x.isEstablished()) {
+                    System.out.println(name + " side established");
+                    if (input != null) {
+                        throw new Exception("Context established but " +
+                                "still receive token at " + name);
+                    }
+                    return null;
+                } else {
+                    System.out.println(name + " call initSecContext");
+                    if (me.x.isInitiator()) {
+                        return me.x.initSecContext(input, 0, input.length);
+                    } else {
+                        return me.x.acceptSecContext(input, 0, input.length);
+                    }
+                }
+            }
+        }, in);
+    }
+
     /**
      * Handshake (security context establishment process) between two Contexts
      * @param c the initiator
@@ -510,54 +530,9 @@ public class Context {
      */
     static public void handshake(final Context c, final Context s) throws Exception {
         byte[] t = new byte[0];
-        while (!c.f || !s.f) {
-            t = c.doAs(new Action() {
-                @Override
-                public byte[] run(Context me, byte[] input) throws Exception {
-                    if (me.x.isEstablished()) {
-                        me.f = true;
-                        System.out.println(c.name + " side established");
-                        if (input != null) {
-                            throw new Exception("Context established but " +
-                                    "still receive token at " + c.name);
-                        }
-                        return null;
-                    } else {
-                        System.out.println(c.name + " call initSecContext");
-                        if (usingStream) {
-                            ByteArrayOutputStream os = new ByteArrayOutputStream();
-                            me.x.initSecContext(new ByteArrayInputStream(input), os);
-                            return os.size() == 0 ? null : os.toByteArray();
-                        } else {
-                            return me.x.initSecContext(input, 0, input.length);
-                        }
-                    }
-                }
-            }, t);
-
-            t = s.doAs(new Action() {
-                @Override
-                public byte[] run(Context me, byte[] input) throws Exception {
-                    if (me.x.isEstablished()) {
-                        me.f = true;
-                        System.out.println(s.name + " side established");
-                        if (input != null) {
-                            throw new Exception("Context established but " +
-                                    "still receive token at " + s.name);
-                        }
-                        return null;
-                    } else {
-                        System.out.println(s.name + " called acceptSecContext");
-                        if (usingStream) {
-                            ByteArrayOutputStream os = new ByteArrayOutputStream();
-                            me.x.acceptSecContext(new ByteArrayInputStream(input), os);
-                            return os.size() == 0 ? null : os.toByteArray();
-                        } else {
-                            return me.x.acceptSecContext(input, 0, input.length);
-                        }
-                    }
-                }
-            }, t);
+        while (!c.x.isEstablished() || !s.x.isEstablished()) {
+            t = c.take(t);
+            t = s.take(t);
         }
     }
 }
