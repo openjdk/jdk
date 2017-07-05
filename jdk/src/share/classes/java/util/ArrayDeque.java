@@ -813,7 +813,8 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      */
     public ArrayDeque<E> clone() {
         try {
-            ArrayDeque<E> result = (ArrayDeque<E>) super.clone();
+            @SuppressWarnings("unchecked")
+                ArrayDeque<E> result = (ArrayDeque<E>) super.clone();
             result.elements = Arrays.copyOf(elements, elements.length);
             return result;
 
@@ -849,6 +850,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     /**
      * Deserialize this deque.
      */
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         s.defaultReadObject();

@@ -33,6 +33,7 @@
  * 5013885 5003322 4988891 5098443 5110268 6173522 4829857 5027748 6376940
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
+ * 7067045
  */
 
 import java.util.regex.*;
@@ -851,6 +852,17 @@ public class RegExTest {
         result = matcher.replaceAll(literalReplacement);
         if (!result.equals(toSupplementaries("zzz\\t$\\$zzz")))
             failCount++;
+
+        // IAE should be thrown if backslash or '$' is the last character
+        // in replacement string
+        try {
+            "\uac00".replaceAll("\uac00", "$");
+            "\uac00".replaceAll("\uac00", "\\");
+            failCount++;
+        } catch (IllegalArgumentException iie) {
+        } catch (Exception e) {
+            failCount++;
+        }
 
         report("Literal replacement");
     }

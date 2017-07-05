@@ -334,7 +334,7 @@ void HeapRegion::setup_heap_region_size(uintx min_heap_size) {
 
   guarantee(GrainWords == 0, "we should only set it once");
   GrainWords = GrainBytes >> LogHeapWordSize;
-  guarantee((size_t)(1 << LogOfHRGrainWords) == GrainWords, "sanity");
+  guarantee((size_t) 1 << LogOfHRGrainWords == GrainWords, "sanity");
 
   guarantee(CardsPerRegion == 0, "we should only set it once");
   CardsPerRegion = GrainBytes >> CardTableModRefBS::card_shift;
@@ -370,7 +370,6 @@ void HeapRegion::hr_clear(bool par, bool clear_space) {
     _claimed = InitialClaimValue;
   }
   zero_marked_bytes();
-  set_sort_index(-1);
 
   _offsets.resize(HeapRegion::GrainWords);
   init_top_at_mark_start();
@@ -482,17 +481,16 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 #endif // _MSC_VER
 
 
-HeapRegion::
-HeapRegion(size_t hrs_index, G1BlockOffsetSharedArray* sharedOffsetArray,
-           MemRegion mr, bool is_zeroed)
-  : G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
+HeapRegion::HeapRegion(uint hrs_index,
+                       G1BlockOffsetSharedArray* sharedOffsetArray,
+                       MemRegion mr, bool is_zeroed) :
+    G1OffsetTableContigSpace(sharedOffsetArray, mr, is_zeroed),
     _hrs_index(hrs_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false),
     _next_in_special_set(NULL), _orig_end(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
-    _prev_marked_bytes(0), _next_marked_bytes(0), _sort_index(-1),
-    _gc_efficiency(0.0),
+    _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
     _young_type(NotYoung), _next_young_region(NULL),
     _next_dirty_cards_region(NULL), _next(NULL), _pending_removal(false),
 #ifdef ASSERT
@@ -779,16 +777,15 @@ void HeapRegion::print_on(outputStream* st) const {
   G1OffsetTableContigSpace::print_on(st);
 }
 
-void HeapRegion::verify(bool allow_dirty) const {
+void HeapRegion::verify() const {
   bool dummy = false;
-  verify(allow_dirty, VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
+  verify(VerifyOption_G1UsePrevMarking, /* failures */ &dummy);
 }
 
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
 // We would need a mechanism to make that code skip dead objects.
 
-void HeapRegion::verify(bool allow_dirty,
-                        VerifyOption vo,
+void HeapRegion::verify(VerifyOption vo,
                         bool* failures) const {
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   *failures = false;

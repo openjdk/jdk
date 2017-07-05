@@ -824,7 +824,7 @@ class Properties extends Hashtable<Object,Object> {
         bw.write("#" + new Date().toString());
         bw.newLine();
         synchronized (this) {
-            for (Enumeration e = keys(); e.hasMoreElements();) {
+            for (Enumeration<?> e = keys(); e.hasMoreElements();) {
                 String key = (String)e.nextElement();
                 String val = (String)get(key);
                 key = saveConvert(key, true, escUnicode);
@@ -987,7 +987,7 @@ class Properties extends Hashtable<Object,Object> {
      * @see     #stringPropertyNames
      */
     public Enumeration<?> propertyNames() {
-        Hashtable h = new Hashtable();
+        Hashtable<String,Object> h = new Hashtable<>();
         enumerate(h);
         return h.keys();
     }
@@ -1026,10 +1026,10 @@ class Properties extends Hashtable<Object,Object> {
      */
     public void list(PrintStream out) {
         out.println("-- listing properties --");
-        Hashtable h = new Hashtable();
+        Hashtable<String,Object> h = new Hashtable<>();
         enumerate(h);
-        for (Enumeration e = h.keys() ; e.hasMoreElements() ;) {
-            String key = (String)e.nextElement();
+        for (Enumeration<String> e = h.keys() ; e.hasMoreElements() ;) {
+            String key = e.nextElement();
             String val = (String)h.get(key);
             if (val.length() > 40) {
                 val = val.substring(0, 37) + "...";
@@ -1054,10 +1054,10 @@ class Properties extends Hashtable<Object,Object> {
      */
     public void list(PrintWriter out) {
         out.println("-- listing properties --");
-        Hashtable h = new Hashtable();
+        Hashtable<String,Object> h = new Hashtable<>();
         enumerate(h);
-        for (Enumeration e = h.keys() ; e.hasMoreElements() ;) {
-            String key = (String)e.nextElement();
+        for (Enumeration<String> e = h.keys() ; e.hasMoreElements() ;) {
+            String key = e.nextElement();
             String val = (String)h.get(key);
             if (val.length() > 40) {
                 val = val.substring(0, 37) + "...";
@@ -1072,11 +1072,11 @@ class Properties extends Hashtable<Object,Object> {
      * @throws ClassCastException if any of the property keys
      *         is not of String type.
      */
-    private synchronized void enumerate(Hashtable h) {
+    private synchronized void enumerate(Hashtable<String,Object> h) {
         if (defaults != null) {
             defaults.enumerate(h);
         }
-        for (Enumeration e = keys() ; e.hasMoreElements() ;) {
+        for (Enumeration<?> e = keys() ; e.hasMoreElements() ;) {
             String key = (String)e.nextElement();
             h.put(key, get(key));
         }
@@ -1091,7 +1091,7 @@ class Properties extends Hashtable<Object,Object> {
         if (defaults != null) {
             defaults.enumerateStringProperties(h);
         }
-        for (Enumeration e = keys() ; e.hasMoreElements() ;) {
+        for (Enumeration<?> e = keys() ; e.hasMoreElements() ;) {
             Object k = e.nextElement();
             Object v = get(k);
             if (k instanceof String && v instanceof String) {

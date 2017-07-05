@@ -329,13 +329,13 @@ public:
 
   // Declare the heap size (in # of regions) to the HeapRegionRemSet(s).
   // (Uses it to initialize from_card_cache).
-  static void init_heap(size_t max_regions) {
-    OtherRegionsTable::init_from_card_cache(max_regions);
+  static void init_heap(uint max_regions) {
+    OtherRegionsTable::init_from_card_cache((size_t) max_regions);
   }
 
   // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
-  static void shrink_heap(size_t new_n_regs) {
-    OtherRegionsTable::shrink_from_card_cache(new_n_regs);
+  static void shrink_heap(uint new_n_regs) {
+    OtherRegionsTable::shrink_from_card_cache((size_t) new_n_regs);
   }
 
 #ifndef PRODUCT

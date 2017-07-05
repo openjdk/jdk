@@ -69,20 +69,26 @@ public class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
     }
 
     public void drawLine(SunGraphics2D sg2d, int x1, int y1, int x2, int y2) {
-        try {
-            SunToolkit.awtLock();
+        Region compClip = sg2d.getCompClip();
+        int transX1 = x1 + sg2d.transX;
+        int transY1 = y1 + sg2d.transY;
+        int transX2 = x2 + sg2d.transX;
+        int transY2 = y2 + sg2d.transY;
 
-            validateSurface(sg2d);
-            int transx = sg2d.transX;
-            int transy = sg2d.transY;
+        // Non clipped fast path
+        if (compClip.contains(transX1, transY1)
+                && compClip.contains(transX2, transY2)) {
+            try {
+                SunToolkit.awtLock();
 
-            XRSurfaceData xrsd = (XRSurfaceData) sg2d.surfaceData;
-
-            tileManager.addLine(x1 + transx, y1 + transy,
-                                x2 + transx, y2 + transy);
-            tileManager.fillMask(xrsd);
-        } finally {
-            SunToolkit.awtUnlock();
+                validateSurface(sg2d);
+                tileManager.addLine(transX1, transY1, transX2, transY2);
+                tileManager.fillMask((XRSurfaceData) sg2d.surfaceData);
+            } finally {
+                SunToolkit.awtUnlock();
+            }
+        } else {
+            draw(sg2d, new Line2D.Float(x1, y1, x2, y2));
         }
     }
 

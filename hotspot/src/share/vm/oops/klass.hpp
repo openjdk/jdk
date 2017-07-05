@@ -805,8 +805,6 @@ class Klass : public Klass_vtbl {
   // Verification
   virtual const char* internal_name() const = 0;
   virtual void oop_verify_on(oop obj, outputStream* st);
-  virtual void oop_verify_old_oop(oop obj, oop* p, bool allow_dirty);
-  virtual void oop_verify_old_oop(oop obj, narrowOop* p, bool allow_dirty);
   // tells whether obj is partially constructed (gc during class loading)
   virtual bool oop_partially_loaded(oop obj) const { return false; }
   virtual void oop_set_partially_loaded(oop obj) {};

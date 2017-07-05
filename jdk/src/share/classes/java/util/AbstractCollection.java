@@ -170,6 +170,7 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * @throws ArrayStoreException  {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         // Estimate size of array; be prepared to see more or fewer elements
         int size = size();
@@ -180,13 +181,21 @@ public abstract class AbstractCollection<E> implements Collection<E> {
 
         for (int i = 0; i < r.length; i++) {
             if (! it.hasNext()) { // fewer elements than expected
-                if (a != r)
+                if (a == r) {
+                    r[i] = null; // null-terminate
+                } else if (a.length < i) {
                     return Arrays.copyOf(r, i);
-                r[i] = null; // null-terminate
-                return r;
+                } else {
+                    System.arraycopy(r, 0, a, 0, i);
+                    if (a.length > i) {
+                        a[i] = null;
+                    }
+                }
+                return a;
             }
             r[i] = (T)it.next();
         }
+        // more elements than expected
         return it.hasNext() ? finishToArray(r, it) : r;
     }
 
@@ -208,6 +217,7 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      * @return array containing the elements in the given array, plus any
      *         further elements returned by the iterator, trimmed to size
      */
+    @SuppressWarnings("unchecked")
     private static <T> T[] finishToArray(T[] r, Iterator<?> it) {
         int i = r.length;
         while (it.hasNext()) {
