@@ -587,7 +587,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate ConstantPoolCache*
   ConstantPoolCache* cp = *interpreter_frame_cache_addr();
-  if (cp == NULL || !cp->is_metadata()) return false;
+  if (cp == NULL || !cp->is_metaspace_object()) return false;
 
   // validate locals
 

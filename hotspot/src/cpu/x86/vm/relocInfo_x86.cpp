@@ -177,30 +177,6 @@ address Relocation::pd_get_address_from_code() {
   return *pd_address_in_code();
 }
 
-int Relocation::pd_breakpoint_size() {
-  // minimum breakpoint size, in short words
-  return NativeIllegalInstruction::instruction_size / sizeof(short);
-}
-
-void Relocation::pd_swap_in_breakpoint(address x, short* instrs, int instrlen) {
-  Untested("pd_swap_in_breakpoint");
-  if (instrs != NULL) {
-    assert(instrlen * sizeof(short) == NativeIllegalInstruction::instruction_size, "enough instrlen in reloc. data");
-    for (int i = 0; i < instrlen; i++) {
-      instrs[i] = ((short*)x)[i];
-    }
-  }
-  NativeIllegalInstruction::insert(x);
-}
-
-
-void Relocation::pd_swap_out_breakpoint(address x, short* instrs, int instrlen) {
-  Untested("pd_swap_out_breakpoint");
-  assert(NativeIllegalInstruction::instruction_size == sizeof(short), "right address unit for update");
-  NativeInstruction* ni = nativeInstruction_at(x);
-  *(short*)ni->addr_at(0) = instrs[0];
-}
-
 void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
 #ifdef _LP64
   if (!Assembler::is_polling_page_far()) {

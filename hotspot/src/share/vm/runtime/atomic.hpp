@@ -64,11 +64,13 @@ class Atomic : AllStatic {
 
   // Atomically increment location
   inline static void inc    (volatile jint*     dest);
+         static void inc    (volatile jshort*   dest);
   inline static void inc_ptr(volatile intptr_t* dest);
   inline static void inc_ptr(volatile void*     dest);
 
   // Atomically decrement a location
   inline static void dec    (volatile jint*     dest);
+         static void dec    (volatile jshort*    dest);
   inline static void dec_ptr(volatile intptr_t* dest);
   inline static void dec_ptr(volatile void*     dest);
 
@@ -94,5 +96,25 @@ class Atomic : AllStatic {
   inline static intptr_t cmpxchg_ptr(intptr_t exchange_value, volatile intptr_t* dest, intptr_t compare_value);
   inline static void*    cmpxchg_ptr(void*    exchange_value, volatile void*     dest, void*    compare_value);
 };
+
+// To use Atomic::inc(jshort* dest) and Atomic::dec(jshort* dest), the address must be specially
+// aligned, such that (*dest) occupies the upper 16 bits of an aligned 32-bit word. The best way to
+// achieve is to place your short value next to another short value, which doesn't need atomic ops.
+//
+// Example
+//  ATOMIC_SHORT_PAIR(
+//    volatile short _refcount,  // needs atomic operation
+//    unsigned short _length     // number of UTF8 characters in the symbol (does not need atomic op)
+//  );
+
+#ifdef VM_LITTLE_ENDIAN
+#define ATOMIC_SHORT_PAIR(atomic_decl, non_atomic_decl) \
+    non_atomic_decl; \
+    atomic_decl
+#else
+#define ATOMIC_SHORT_PAIR(atomic_decl, non_atomic_decl) \
+    atomic_decl ; \
+    non_atomic_decl
+#endif
 
 #endif // SHARE_VM_RUNTIME_ATOMIC_HPP
