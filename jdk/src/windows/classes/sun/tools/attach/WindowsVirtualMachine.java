@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
  */
 package sun.tools.attach;
 
-import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
+
 import sun.tools.attach.HotSpotVirtualMachine;
+
 import java.io.IOException;
-import java.io.File;
 import java.io.InputStream;
-import java.util.Properties;
 import java.util.Random;
 
 public class WindowsVirtualMachine extends HotSpotVirtualMachine {
@@ -105,11 +105,17 @@ public class WindowsVirtualMachine extends HotSpotVirtualMachine {
             // read completion status
             int status = readInt(is);
             if (status != 0) {
+                // read from the stream and use that as the error message
+                String message = readErrorMessage(is);
                 // special case the load command so that the right exception is thrown
                 if (cmd.equals("load")) {
                     throw new AgentLoadException("Failed to load agent library");
                 } else {
-                    throw new IOException("Command failed in target VM");
+                    if (message == null) {
+                        throw new AttachOperationFailedException("Command failed in target VM");
+                    } else {
+                        throw new AttachOperationFailedException(message);
+                    }
                 }
             }
 

@@ -30,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/vframe.hpp"
 #include "utilities/preserveException.hpp"

@@ -26,6 +26,7 @@
 #define SHARE_VM_UTILITIES_HASHTABLE_INLINE_HPP
 
 #include "memory/allocation.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/dtrace.hpp"
 

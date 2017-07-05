@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,29 +81,29 @@ public class CompositeType extends OpenType<CompositeData> {
      * The Java class name of composite data values this composite type represents
      * (ie the class name returned by the {@link OpenType#getClassName() getClassName} method)
      * is set to the string value returned by <code>CompositeData.class.getName()</code>.
-     * <p>
+     *
      * @param  typeName  The name given to the composite type this instance represents; cannot be a null or empty string.
-     * <br>&nbsp;
+     *
      * @param  description  The human readable description of the composite type this instance represents;
      *                      cannot be a null or empty string.
-     * <br>&nbsp;
+     *
      * @param  itemNames  The names of the items contained in the
      *                    composite data values described by this <code>CompositeType</code> instance;
      *                    cannot be null and should contain at least one element; no element can be a null or empty string.
      *                    Note that the order in which the item names are given is not important to differentiate a
      *                    <code>CompositeType</code> instance from another;
      *                    the item names are internally stored sorted in ascending alphanumeric order.
-     * <br>&nbsp;
+     *
      * @param  itemDescriptions  The descriptions, in the same order as <var>itemNames</var>, of the items contained in the
      *                           composite data values described by this <code>CompositeType</code> instance;
      *                           should be of the same size as <var>itemNames</var>;
      *                           no element can be null or an empty string.
-     * <br>&nbsp;
+     *
      * @param  itemTypes  The open type instances, in the same order as <var>itemNames</var>, describing the items contained
      *                    in the composite data values described by this <code>CompositeType</code> instance;
      *                    should be of the same size as <var>itemNames</var>;
      *                    no element can be null.
-     * <br>&nbsp;
+     *
      * @throws IllegalArgumentException  If <var>typeName</var> or <var>description</var> is a null or empty string,
      *                                   or <var>itemNames</var> or <var>itemDescriptions</var> or <var>itemTypes</var> is null,
      *                                   or any element of <var>itemNames</var> or <var>itemDescriptions</var>
@@ -111,7 +111,7 @@ public class CompositeType extends OpenType<CompositeData> {
      *                                   or any element of <var>itemTypes</var> is null,
      *                                   or <var>itemNames</var> or <var>itemDescriptions</var> or <var>itemTypes</var>
      *                                   are not of the same size.
-     * <br>&nbsp;
+     *
      * @throws OpenDataException  If <var>itemNames</var> contains duplicate item names
      *                            (case sensitive, but leading and trailing whitespaces removed).
      */
@@ -356,7 +356,7 @@ public class CompositeType extends OpenType<CompositeData> {
      * <li>their type names are equal</li>
      * <li>their items' names and types are equal</li>
      * </ul>
-     * <br>&nbsp;
+     *
      * @param  obj  the object to be compared for equality with this <code>CompositeType</code> instance;
      *              if <var>obj</var> is <code>null</code>, <code>equals</code> returns <code>false</code>.
      *

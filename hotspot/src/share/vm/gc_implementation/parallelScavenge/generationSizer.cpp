@@ -45,7 +45,7 @@ void GenerationSizer::initialize_alignments() {
 
 void GenerationSizer::initialize_flags() {
   // Do basic sizing work
-  TwoGenerationCollectorPolicy::initialize_flags();
+  GenCollectorPolicy::initialize_flags();
 
   assert(UseSerialGC ||
           !FLAG_IS_DEFAULT(ParallelGCThreads) ||
@@ -79,7 +79,7 @@ void GenerationSizer::initialize_size_info() {
     // Redo everything from the start
     initialize_flags();
   }
-  TwoGenerationCollectorPolicy::initialize_size_info();
+  GenCollectorPolicy::initialize_size_info();
 
   trace_gen_sizes("ps heap rnd");
 }

@@ -32,7 +32,7 @@
 #include "oops/oop.inline2.hpp"
 #include "prims/forte.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 

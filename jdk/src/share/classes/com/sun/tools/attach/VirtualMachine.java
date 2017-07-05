@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -564,8 +564,15 @@ public abstract class VirtualMachine {
      *
      * @return  The system properties
      *
+     * @throws  AttachOperationFailedException
+     *          If the target virtual machine is unable to complete the
+     *          attach operation. A more specific error message will be
+     *          given by {@link AttachOperationFailedException#getMessage()}.
+     *
      * @throws  IOException
-     *          If an I/O error occurs
+     *          If an I/O error occurs, a communication error for example,
+     *          that cannot be identified as an error to indicate that the
+     *          operation failed in the target VM.
      *
      * @see     java.lang.System#getProperties
      * @see     #loadAgentLibrary
@@ -591,8 +598,15 @@ public abstract class VirtualMachine {
      *
      * @return       The agent properties
      *
+     * @throws       AttachOperationFailedException
+     *               If the target virtual machine is unable to complete the
+     *               attach operation. A more specific error message will be
+     *               given by {@link AttachOperationFailedException#getMessage()}.
+     *
      * @throws       IOException
-     *               If an I/O error occurs
+     *               If an I/O error occurs, a communication error for example,
+     *               that cannot be identified as an error to indicate that the
+     *               operation failed in the target VM.
      */
     public abstract Properties getAgentProperties() throws IOException;
 

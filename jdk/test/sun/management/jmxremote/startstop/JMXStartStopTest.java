@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -616,7 +616,7 @@ public class JMXStartStopTest {
             final boolean[] checks = new boolean[3];
             jcmd(
                 line -> {
-                    if (line.equals("java.lang.RuntimeException: Invalid agent state")) {
+                    if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
                         checks[0] = true;
                     }
                 },
@@ -627,7 +627,7 @@ public class JMXStartStopTest {
 
             jcmd(
                 line -> {
-                    if (line.equals("java.lang.RuntimeException: Invalid agent state")) {
+                    if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
                         checks[1] = true;
                     }
                 },

@@ -123,12 +123,12 @@ void MemoryService::set_universe_heap(CollectedHeap* heap) {
 void MemoryService::add_gen_collected_heap_info(GenCollectedHeap* heap) {
   CollectorPolicy* policy = heap->collector_policy();
 
-  assert(policy->is_two_generation_policy(), "Only support two generations");
+  assert(policy->is_generation_policy(), "Only support two generations");
   guarantee(heap->n_gens() == 2, "Only support two-generation heap");
 
-  TwoGenerationCollectorPolicy* two_gen_policy = policy->as_two_generation_policy();
-  if (two_gen_policy != NULL) {
-    GenerationSpec** specs = two_gen_policy->generations();
+  GenCollectorPolicy* gen_policy = policy->as_generation_policy();
+  if (gen_policy != NULL) {
+    GenerationSpec** specs = gen_policy->generations();
     Generation::Name kind = specs[0]->name();
     switch (kind) {
       case Generation::DefNew:
