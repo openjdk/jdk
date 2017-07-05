@@ -511,6 +511,12 @@ class VM_RedefineClasses: public VM_Operation {
     void do_klass(Klass* k);
   };
 
+  // Clean MethodData out
+  class MethodDataCleaner : public KlassClosure {
+   public:
+    MethodDataCleaner() {}
+    void do_klass(Klass* k);
+  };
  public:
   VM_RedefineClasses(jint class_count,
                      const jvmtiClassDefinition *class_defs,
