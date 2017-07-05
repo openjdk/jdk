@@ -181,7 +181,7 @@ define SetupJavaCompilationBody
   # Extract the info from the java compiler setup.
   $1_JVM := $$($$($1_SETUP)_JVM)
   $1_JAVAC := $$($$($1_SETUP)_JAVAC)
-  $1_FLAGS := $$($$($1_SETUP)_FLAGS) $(JAVAC_FLAGS) $$($1_ADD_JAVAC_FLAGS)
+  $1_FLAGS := $$($$($1_SETUP)_FLAGS) $$($1_ADD_JAVAC_FLAGS) $(JAVAC_FLAGS)
   ifneq ($$($1_CLASSPATH), )
     $1_FLAGS += -cp $$(call PathList, $$($1_CLASSPATH))
   endif

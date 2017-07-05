@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,23 @@
 
 /*
  * @test
- * @bug 8067187
- * @summary Testing CDS dumping with the -XX:MaxMetaspaceSize=<size> option
+ * @summary VM exit initialization results if java.base is specificed more than once to Xpatch.
  * @library /testlibrary
- * @modules java.base/jdk.internal.misc
- *          java.management
  */
 
 import jdk.test.lib.*;
 
-public class MaxMetaspaceSize {
-  public static void main(String[] args) throws Exception {
+public class XpatchDupJavaBase {
+  // The VM should exit initialization if java.base is specified
+  // more than once to -Xpatch.
+  public static void main(String args[]) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:MaxMetaspaceSize=10m", "-Xshare:dump");
+      "-Xpatch:java.base=javabase_dir",
+      "-Xpatch:java.base=javabase_dir",
+      "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-      output.shouldContain("is not large enough.\nEither don't specify the -XX:MaxMetaspaceSize=<size>\nor increase the size to at least");
-      output.shouldHaveExitValue(2);
+    output.shouldContain("Cannot specify java.base more than once to -Xpatch");
+    output.shouldHaveExitValue(1);
   }
 }
+
