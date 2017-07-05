@@ -1,0 +1,114 @@
+#
+# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+ifeq (,$(BUILD_TOOLS))
+$(eval $(call SetupJavaCompilation,BUILD_TOOLS,\
+                SETUP:=GENERATE_OLDBYTECODE,\
+		SRC:=$(JDK_TOPDIR)/make/tools/src,\
+		BIN:=$(JDK_OUTPUTDIR)/btclasses))
+endif
+
+ifndef DISABLE_NIMBUS
+
+$(JDK_OUTPUTDIR)/btclasses/build/tools/generatenimbus/resources/%.template : \
+	$(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/nimbus/%.template
+	mkdir -p $(@D)
+	cp $< $@
+
+BUILD_TOOLS += $(foreach i,$(wildcard $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/nimbus/*.template),$(JDK_OUTPUTDIR)/btclasses/build/tools/generatenimbus/resources/$(notdir $i))
+
+endif
+
+
+# Add a checksum ("jsum") to the end of a text file. Prevents trivial tampering with class lists.
+TOOL_ADDJSUM=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.addjsum.AddJsum
+
+# The buildmetaindex tool creates a meta-index to make core class loaders lazier.
+TOOL_BUILDMETAINDEX=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.buildmetaindex.BuildMetaIndex
+
+# The comment checker is not currently used. Should it be removed or added to javac?
+TOOL_COMMENTCHECKER=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.commentchecker.CommentChecker
+
+TOOL_COMPILEFONTCONFIG=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.compilefontconfig.CompileFontConfig
+
+TOOL_COMPILEPROPERTIES=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.compileproperties.CompileProperties
+
+TOOL_STRIPPROPERTIES=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.stripproperties.StripProperties
+
+TOOL_JARREORDER=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.jarreorder.JarReorder
+
+TOOL_GENERATECHARACTER=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.generatecharacter.GenerateCharacter
+
+TOOL_CHARACTERNAME=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.generatecharacter.CharacterName
+
+TOOL_DIRDIFF=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.dirdiff.DirDiff
+
+TOOL_DTDBUILDER=$(JAVA) -Ddtd_home=$(JDK_TOPDIR)/make/tools/dtdbuilder/dtds \
+	-cp $(JDK_OUTPUTDIR)/btclasses build.tools.dtdbuilder.DTDBuilder
+
+TOOL_GENERATEBREAKITERATORDATA=$(JAVA) \
+	-cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.generatebreakiteratordata.GenerateBreakIteratorData
+
+TOOL_GENERATECURRENCYDATA=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.generatecurrencydata.GenerateCurrencyData
+
+TOOL_HASHER=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.hasher.Hasher
+
+# Jarsplit used in jdk/makefiles/common/Release.gmk
+TOOL_JARSPLIT=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.jarsplit.JarSplit
+
+TOOL_JAVAZIC=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.javazic.Main
+
+# TODO: There are references to the jdwpgen.jar in jdk/make/netbeans/jdwpgen/build.xml 
+# and nbproject/project.properties in the same dir. Needs to be looked at.
+TOOL_JDWPGEN=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.jdwpgen.Main
+
+# TODO: Lots of files in jdk/make/tools/CharsetMapping dir
+TOOL_CHARSETMAPPING=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.charsetmapping.Main
+
+TOOL_SPP=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.spp.Spp
+
+# TODO: Only referenced in jdk/make/tools/sharing/README.txt. Find out what it means.
+TOOL_MAKECLASSLIST=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.makeclasslist.MakeClasslist
+
+# Nimbus is used somewhere in the swing build.
+TOOL_GENERATENIMBUS=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.generatenimbus.Generator

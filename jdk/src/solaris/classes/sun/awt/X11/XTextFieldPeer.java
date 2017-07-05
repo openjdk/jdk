@@ -104,6 +104,8 @@ public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
 
     public void dispose() {
         XToolkit.specialPeerMap.remove(xtext);
+        // visible caret has a timer thread which must be stopped
+        xtext.getCaret().setVisible(false);
         xtext.removeNotify();
         super.dispose();
     }
