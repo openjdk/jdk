@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/referencePendingListLocker.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "runtime/vm_operations.hpp"
 
@@ -51,6 +52,9 @@
 class CMSCollector;
 
 class VM_CMS_Operation: public VM_Operation {
+ private:
+  ReferencePendingListLocker _pending_list_locker;
+
  protected:
   CMSCollector*  _collector;                 // associated collector
   bool           _prologue_succeeded;     // whether doit_prologue succeeded
@@ -73,7 +77,7 @@ class VM_CMS_Operation: public VM_Operation {
   virtual const CMSCollector::CollectorState legal_state() const = 0;
 
   // Whether the pending list lock needs to be held
-  virtual const bool needs_pll() const = 0;
+  virtual const bool needs_pending_list_lock() const = 0;
 
   // Execute operations in the context of the caller,
   // prior to execution of the vm operation itself.
@@ -105,7 +109,7 @@ class VM_CMS_Initial_Mark: public VM_CMS_Operation {
     return CMSCollector::InitialMarking;
   }
 
-  virtual const bool needs_pll() const {
+  virtual const bool needs_pending_list_lock() const {
     return false;
   }
 };
@@ -122,7 +126,7 @@ class VM_CMS_Final_Remark: public VM_CMS_Operation {
     return CMSCollector::FinalMarking;
   }
 
-  virtual const bool needs_pll() const {
+  virtual const bool needs_pending_list_lock() const {
     return true;
   }
 };

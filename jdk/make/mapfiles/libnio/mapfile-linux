@@ -161,7 +161,9 @@ SUNWprivate_1.1 {
 		Java_sun_nio_fs_UnixNativeDispatcher_strerror;
 		Java_sun_nio_fs_UnixNativeDispatcher_dup;
 		Java_sun_nio_fs_UnixNativeDispatcher_access0;
+		Java_sun_nio_fs_UnixNativeDispatcher_exists0;
 		Java_sun_nio_fs_UnixNativeDispatcher_stat0;
+		Java_sun_nio_fs_UnixNativeDispatcher_stat1;
 		Java_sun_nio_fs_UnixNativeDispatcher_lstat0;
 		Java_sun_nio_fs_UnixNativeDispatcher_fstat;
 		Java_sun_nio_fs_UnixNativeDispatcher_fstatat0;

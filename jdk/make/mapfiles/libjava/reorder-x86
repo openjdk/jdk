@@ -78,8 +78,7 @@ text: .text%Java_java_io_UnixFileSystem_checkAccess;
 text: .text%Java_sun_reflect_NativeMethodAccessorImpl_invoke0;
 text: .text%Java_java_io_FileInputStream_available;
 text: .text%Java_java_lang_reflect_Array_newArray;
-text: .text%Java_java_lang_Throwable_getStackTraceDepth;
-text: .text%Java_java_lang_Throwable_getStackTraceElement;
+text: .text%Java_java_lang_Throwable_getStackTraceElements;
 text: .text%Java_java_lang_System_identityHashCode;
 text: .text%JNU_NotifyAll;
 # Test LoadFrame

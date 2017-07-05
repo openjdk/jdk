@@ -27,6 +27,7 @@
 /*
  * @test
  * @bug 8043758
+ * @key intermittent
  * @summary Datagram Transport Layer Security (DTLS)
  * @modules java.base/sun.security.util
  * @build DTLSOverDatagram

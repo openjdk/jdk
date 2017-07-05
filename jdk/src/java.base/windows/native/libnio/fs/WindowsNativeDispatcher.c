@@ -69,10 +69,6 @@ static jfieldID completionStatus_error;
 static jfieldID completionStatus_bytesTransferred;
 static jfieldID completionStatus_completionKey;
 
-static jfieldID backupResult_bytesTransferred;
-static jfieldID backupResult_context;
-
-
 static void throwWindowsException(JNIEnv* env, DWORD lastError) {
     jobject x = JNU_NewObjectByName(env, "sun/nio/fs/WindowsException",
         "(I)V", lastError);
@@ -148,13 +144,6 @@ Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     CHECK_NULL(completionStatus_bytesTransferred);
     completionStatus_completionKey = (*env)->GetFieldID(env, clazz, "completionKey", "J");
     CHECK_NULL(completionStatus_completionKey);
-
-    clazz = (*env)->FindClass(env, "sun/nio/fs/WindowsNativeDispatcher$BackupResult");
-    CHECK_NULL(clazz);
-    backupResult_bytesTransferred = (*env)->GetFieldID(env, clazz, "bytesTransferred", "I");
-    CHECK_NULL(backupResult_bytesTransferred);
-    backupResult_context = (*env)->GetFieldID(env, clazz, "context", "J");
-    CHECK_NULL(backupResult_context);
 }
 
 JNIEXPORT jlong JNICALL
@@ -1224,55 +1213,6 @@ Java_sun_nio_fs_WindowsNativeDispatcher_ReadDirectoryChangesW(JNIEnv* env, jclas
                                 (LPDWORD)jlong_to_ptr(bytesReturnedAddress),
                                 (LPOVERLAPPED)jlong_to_ptr(pOverlapped),
                                 NULL);
-    if (res == 0) {
-        throwWindowsException(env, GetLastError());
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_WindowsNativeDispatcher_BackupRead0(JNIEnv* env, jclass this,
-    jlong hFile, jlong bufferAddress, jint bufferSize, jboolean abort,
-    jlong context, jobject obj)
-{
-    BOOL res;
-    DWORD bytesTransferred;
-    BOOL a = (abort == JNI_TRUE) ? TRUE : FALSE;
-    VOID* pContext = (VOID*)jlong_to_ptr(context);
-
-    res = BackupRead((HANDLE)jlong_to_ptr(hFile),
-                     (LPBYTE)jlong_to_ptr(bufferAddress),
-                     (DWORD)bufferSize,
-                     &bytesTransferred,
-                     a,
-                     FALSE,
-                     &pContext);
-    if (res == 0) {
-        throwWindowsException(env, GetLastError());
-    } else {
-        (*env)->SetIntField(env, obj, backupResult_bytesTransferred,
-            bytesTransferred);
-        (*env)->SetLongField(env, obj, backupResult_context,
-            ptr_to_jlong(pContext));
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_WindowsNativeDispatcher_BackupSeek(JNIEnv* env, jclass this,
-    jlong hFile, jlong bytesToSeek, jlong context)
-{
-    BOOL res;
-    jint lowBytesToSeek = (jint)bytesToSeek;
-    jint highBytesToSeek = (jint)(bytesToSeek >> 32);
-    DWORD lowBytesSeeked;
-    DWORD highBytesSeeked;
-    VOID* pContext = jlong_to_ptr(context);
-
-    res = BackupSeek((HANDLE)jlong_to_ptr(hFile),
-                     (DWORD)lowBytesToSeek,
-                     (DWORD)highBytesToSeek,
-                     &lowBytesSeeked,
-                     &highBytesSeeked,
-                     &pContext);
     if (res == 0) {
         throwWindowsException(env, GetLastError());
     }

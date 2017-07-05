@@ -242,7 +242,7 @@ size_t ThreadLocalAllocBuffer::initial_desired_size() {
 }
 
 void ThreadLocalAllocBuffer::print_stats(const char* tag) {
-  LogHandle(gc, tlab) log;
+  Log(gc, tlab) log;
   if (!log.is_trace()) {
     return;
   }
@@ -385,7 +385,7 @@ void GlobalTLABStats::publish() {
 }
 
 void GlobalTLABStats::print() {
-  LogHandle(gc, tlab) log;
+  Log(gc, tlab) log;
   if (!log.is_debug()) {
     return;
   }

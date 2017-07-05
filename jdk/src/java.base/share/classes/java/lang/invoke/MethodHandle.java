@@ -219,7 +219,8 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * Method handles produced by lookups or constant loads from methods or
  * constructors with the variable arity modifier bit ({@code 0x0080})
  * have a corresponding variable arity, as if they were defined with
- * the help of {@link #asVarargsCollector asVarargsCollector}.
+ * the help of {@link #asVarargsCollector asVarargsCollector}
+ * or {@link #withVarargs withVarargs}.
  * <p>
  * A method reference may refer either to a static or non-static method.
  * In the non-static case, the method handle type includes an explicit
@@ -972,6 +973,36 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
                 throw newIllegalArgumentException("array length is not legal for long[] or double[]", arrayLength);
         }
     }
+    /**
+      * Adapts this method handle to be {@linkplain #asVarargsCollector variable arity}
+      * if the boolean flag is true, else {@linkplain #asFixedArity fixed arity}.
+      * If the method handle is already of the proper arity mode, it is returned
+      * unchanged.
+      * @apiNote
+      * <p>This method is sometimes useful when adapting a method handle that
+      * may be variable arity, to ensure that the resulting adapter is also
+      * variable arity if and only if the original handle was.  For example,
+      * this code changes the first argument of a handle {@code mh} to {@code int} without
+      * disturbing its variable arity property:
+      * {@code mh.asType(mh.type().changeParameterType(0,int.class))
+      *     .withVarargs(mh.isVarargsCollector())}
+      * @param makeVarargs true if the return method handle should have variable arity behavior
+      * @return a method handle of the same type, with possibly adjusted variable arity behavior
+      * @throws IllegalArgumentException if {@code makeVarargs} is true and
+      *         this method handle does not have a trailing array parameter
+      * @since 9
+      * @see #asVarargsCollector
+      * @see #asFixedArity
+     */
+     public MethodHandle withVarargs(boolean makeVarargs) {
+        if (!makeVarargs) {
+            return asFixedArity();
+        } else if (!isVarargsCollector()) {
+            return asVarargsCollector(type().lastParameterType());
+        } else {
+            return this;
+        }
+    }
 
     /**
      * Makes an <em>array-collecting</em> method handle, which accepts a given number of trailing
@@ -1000,7 +1031,8 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
      * to allow the target to use a simple {@code Object} as its last parameter type.)
      * <p>
      * In order to create a collecting adapter which is not restricted to a particular
-     * number of collected arguments, use {@link #asVarargsCollector asVarargsCollector} instead.
+     * number of collected arguments, use {@link #asVarargsCollector asVarargsCollector}
+     * or {@link #withVarargs withVarargs} instead.
      * <p>
      * Here are some examples of array-collecting method handles:
      * <blockquote><pre>{@code
@@ -1216,7 +1248,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
      * <p>
      * No method handle transformations produce new method handles with
      * variable arity, unless they are documented as doing so.
-     * Therefore, besides {@code asVarargsCollector},
+     * Therefore, besides {@code asVarargsCollector} and {@code withVarargs},
      * all methods in {@code MethodHandle} and {@code MethodHandles}
      * will return a method handle with fixed arity,
      * except in the cases where they are specified to return their original
@@ -1273,6 +1305,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      *         or {@code arrayType} is not assignable to this method handle's trailing parameter type
      * @see #asCollector
      * @see #isVarargsCollector
+     * @see #withVarargs
      * @see #asFixedArity
      */
     public MethodHandle asVarargsCollector(Class<?> arrayType) {
@@ -1344,6 +1377,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * @return a new method handle which accepts only a fixed number of arguments
      * @see #asVarargsCollector
      * @see #isVarargsCollector
+     * @see #withVarargs
      */
     public MethodHandle asFixedArity() {
         assert(!isVarargsCollector());
@@ -1428,11 +1462,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     MethodHandle setVarargs(MemberName member) throws IllegalAccessException {
         if (!member.isVarargs())  return this;
-        Class<?> arrayType = type().lastParameterType();
-        if (arrayType.isArray()) {
-            return MethodHandleImpl.makeVarargsCollector(this, arrayType);
+        try {
+            return this.withVarargs(true);
+        } catch (IllegalArgumentException ex) {
+            throw member.makeAccessException("cannot make variable arity", null);
         }
-        throw member.makeAccessException("cannot make variable arity", null);
     }
 
     /*non-public*/

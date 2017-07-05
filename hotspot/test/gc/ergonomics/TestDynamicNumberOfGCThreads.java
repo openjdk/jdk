@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,14 @@ public class TestDynamicNumberOfGCThreads {
     System.arraycopy(extraArgs, 0, finalArgs, 0,                extraArgs.length);
     System.arraycopy(baseArgs,  0, finalArgs, extraArgs.length, baseArgs.length);
     pb_enabled = ProcessTools.createJavaProcessBuilder(finalArgs);
+    verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
+
+    // Turn on parallel reference processing
+    String[] parRefProcArg = {"-XX:+ParallelRefProcEnabled", "-XX:-ShowMessageBoxOnError"};
+    String[] parRefArgs = new String[baseArgs.length + parRefProcArg.length];
+    System.arraycopy(parRefProcArg, 0, parRefArgs, 0,                parRefProcArg.length);
+    System.arraycopy(baseArgs,  0, parRefArgs, parRefProcArg.length, baseArgs.length);
+    pb_enabled = ProcessTools.createJavaProcessBuilder(parRefArgs);
     verifyDynamicNumberOfGCThreads(new OutputAnalyzer(pb_enabled.start()));
   }
 

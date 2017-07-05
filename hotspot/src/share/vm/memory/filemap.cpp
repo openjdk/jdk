@@ -372,7 +372,7 @@ bool FileMapInfo::open_for_read() {
       fail_continue("Specified shared archive not found.");
     } else {
       fail_continue("Failed to open shared archive file (%s).",
-                    strerror(errno));
+                    os::strerror(errno));
     }
     return false;
   }
@@ -402,7 +402,7 @@ void FileMapInfo::open_for_write() {
   int fd = open(_full_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0444);
   if (fd < 0) {
     fail_stop("Unable to create shared archive file %s: (%s).", _full_path,
-              strerror(errno));
+              os::strerror(errno));
   }
   _fd = fd;
   _file_offset = 0;

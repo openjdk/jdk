@@ -43,6 +43,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
@@ -460,11 +461,11 @@ void DefNewGeneration::compute_new_size() {
                   (HeapWord*)_virtual_space.high());
     gch->barrier_set()->resize_covered_region(cmr);
 
-    log_debug(gc, heap, ergo)(
+    log_debug(gc, ergo, heap)(
         "New generation size " SIZE_FORMAT "K->" SIZE_FORMAT "K [eden=" SIZE_FORMAT "K,survivor=" SIZE_FORMAT "K]",
         new_size_before/K, _virtual_space.committed_size()/K,
         eden()->capacity()/K, from()->capacity()/K);
-    log_trace(gc, heap, ergo)(
+    log_trace(gc, ergo, heap)(
         "  [allowed " SIZE_FORMAT "K extra for %d threads]",
           thread_increase_size/K, threads_count);
       }
@@ -594,7 +595,7 @@ void DefNewGeneration::collect(bool   full,
 
   init_assuming_no_promotion_failure();
 
-  GCTraceTime(Trace, gc) tm("DefNew", NULL, gch->gc_cause());
+  GCTraceTime(Trace, gc, phases) tm("DefNew", NULL, gch->gc_cause());
 
   gch->trace_heap_before_gc(&gc_tracer);
 

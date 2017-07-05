@@ -181,8 +181,13 @@ public abstract class PKCS11Test {
 
     public static void main(PKCS11Test test, String[] args) throws Exception {
         if (args != null) {
-            if (args.length > 0 && "sm".equals(args[0])) {
-                test.enableSM = true;
+            if (args.length > 0) {
+                if ("sm".equals(args[0])) {
+                    test.enableSM = true;
+                } else {
+                    throw new RuntimeException("Unknown Command, use 'sm' as "
+                            + "first arguemtn to enable security manager");
+                }
             }
             if (test.enableSM) {
                 System.setProperty("java.security.policy",

@@ -75,8 +75,6 @@ public class JSJavaVM extends DefaultScriptObject {
             return vm.getVMRelease();
         case FIELD_CLASS_PATH:
             return getClassPath();
-        case FIELD_BOOT_CLASS_PATH:
-            return getBootClassPath();
         case FIELD_USER_DIR:
             return getUserDir();
         case FIELD_UNDEFINED:
@@ -143,7 +141,6 @@ public class JSJavaVM extends DefaultScriptObject {
         addField("type", FIELD_TYPE);
         addField("version", FIELD_VERSION);
         addField("classPath", FIELD_CLASS_PATH);
-        addField("bootClassPath", FIELD_BOOT_CLASS_PATH);
         addField("userDir", FIELD_USER_DIR);
     }
 
@@ -215,10 +212,6 @@ public class JSJavaVM extends DefaultScriptObject {
 
     private String getClassPath() {
         return vm.getSystemProperty("java.class.path");
-    }
-
-    private String getBootClassPath() {
-        return vm.getSystemProperty("sun.boot.class.path");
     }
 
     private String getUserDir() {
