@@ -76,7 +76,7 @@ class InstructForm : public Form {
 private:
   bool           _ideal_only;       // Not a user-defined instruction
   // Members used for tracking CISC-spilling
-  uint           _cisc_spill_operand;// Which operand may cisc-spill
+  int            _cisc_spill_operand;// Which operand may cisc-spill
   void           set_cisc_spill_operand(uint op_index) { _cisc_spill_operand = op_index; }
   bool           _is_cisc_alternate;
   InstructForm  *_cisc_spill_alternate;// cisc possible replacement
@@ -103,7 +103,7 @@ public:
   RewriteRule   *_rewrule;         // Rewrite rule for this instruction
   FormatRule    *_format;          // Format for assembly generation
   Peephole      *_peephole;        // List of peephole rules for instruction
-  const char    *_ins_pipe;        // Instruction Scheduline description class
+  const char    *_ins_pipe;        // Instruction Scheduling description class
 
   uint          *_uniq_idx;        // Indexes of unique operands
   int            _uniq_idx_length; // Length of _uniq_idx array
@@ -198,6 +198,7 @@ public:
 
   virtual const char *cost();      // Access ins_cost attribute
   virtual uint        num_opnds(); // Count of num_opnds for MachNode class
+                                   // Counts USE_DEF opnds twice.  See also num_unique_opnds().
   virtual uint        num_post_match_opnds();
   virtual uint        num_consts(FormDict &globals) const;// Constants in match rule
   // Constants in match rule with specified type
@@ -228,6 +229,7 @@ public:
   // Return number of relocation entries needed for this instruction.
   virtual uint        reloc(FormDict &globals);
 
+  const char         *opnd_ident(int idx);  // Name of operand #idx.
   const char         *reduce_result();
   // Return the name of the operand on the right hand side of the binary match
   // Return NULL if there is no right hand side
@@ -240,7 +242,7 @@ public:
   // Check if this instruction can cisc-spill to 'alternate'
   bool                cisc_spills_to(ArchDesc &AD, InstructForm *alternate);
   InstructForm       *cisc_spill_alternate() { return _cisc_spill_alternate; }
-  uint                cisc_spill_operand() const { return _cisc_spill_operand; }
+  int                 cisc_spill_operand() const { return _cisc_spill_operand; }
   bool                is_cisc_alternate() const { return _is_cisc_alternate; }
   void                set_cisc_alternate(bool val) { _is_cisc_alternate = val; }
   const char         *cisc_reg_mask_name() const { return _cisc_reg_mask_name; }
@@ -277,6 +279,7 @@ public:
                           return idx;
                         }
   }
+  const char         *unique_opnd_ident(int idx);  // Name of operand at unique idx.
 
   // Operands which are only KILLs aren't part of the input array and
   // require special handling in some cases.  Their position in this
@@ -889,6 +892,7 @@ public:
 
   void dump();                     // Debug printer
   void output(FILE *fp);           // Write to output files
+  const char* getUsedefName();
 
 public:
   // Implementation depends upon working bit intersection and union.
@@ -1030,6 +1034,7 @@ public:
   void       matchrule_swap_commutative_op(const char* instr_ident, int count, int& match_rules_cnt);
 
   void dump();
+  void output_short(FILE *fp);
   void output(FILE *fp);
 };
 

@@ -30,6 +30,8 @@
 #include "services/memTracker.hpp"
 #include "utilities/ostream.hpp"
 
+#if INCLUDE_NMT
+
 /*
  * MemBaselineReporter reports data to this outputer class,
  * ReportOutputer is responsible for format, store and redirect
@@ -264,5 +266,7 @@ class BaselineTTYOutputer : public BaselineOutputer {
   void done_callsite();
 };
 
+
+#endif // INCLUDE_NMT
 
 #endif // SHARE_VM_SERVICES_MEM_REPORTER_HPP

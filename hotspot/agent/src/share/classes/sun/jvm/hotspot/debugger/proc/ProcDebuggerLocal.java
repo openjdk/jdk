@@ -351,6 +351,12 @@ public class ProcDebuggerLocal extends DebuggerBase implements ProcDebugger {
         return (value == 0 ? null : new ProcAddress(this, value));
     }
 
+    public ProcAddress readCompKlassAddress(long address)
+    throws UnmappedAddressException, UnalignedAddressException {
+        long value = readCompKlassAddressValue(address);
+        return (value == 0 ? null : new ProcAddress(this, value));
+    }
+
     /** From the ProcDebugger interface */
     public ProcOopHandle readOopHandle(long address)
     throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {

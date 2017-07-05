@@ -265,7 +265,8 @@ const Node* MachNode::get_base_and_disp(intptr_t &offset, const TypePtr* &adr_ty
     // See if it adds up to a base + offset.
     if (index != NULL) {
       const Type* t_index = index->bottom_type();
-      if (t_index->isa_narrowoop()) { // EncodeN, LoadN, LoadConN, LoadNKlass.
+      if (t_index->isa_narrowoop() || t_index->isa_narrowklass()) { // EncodeN, LoadN, LoadConN, LoadNKlass,
+                                                                    // EncodeNKlass, LoadConNklass.
         // Memory references through narrow oops have a
         // funny base so grab the type from the index:
         // [R12 + narrow_oop_reg<<3 + offset]
@@ -349,6 +350,10 @@ const class TypePtr *MachNode::adr_type() const {
 
   const Type* t = base->bottom_type();
   if (UseCompressedOops && Universe::narrow_oop_shift() == 0) {
+    // 32-bit unscaled narrow oop can be the base of any address expression
+    t = t->make_ptr();
+  }
+  if (UseCompressedKlassPointers && Universe::narrow_klass_shift() == 0) {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }

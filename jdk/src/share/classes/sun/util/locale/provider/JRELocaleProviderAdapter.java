@@ -71,7 +71,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
      */
     @Override
     public LocaleProviderAdapter.Type getAdapterType() {
-        return LocaleProviderAdapter.Type.JRE;
+        return Type.JRE;
     }
 
     /**
@@ -125,7 +125,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     public BreakIteratorProvider getBreakIteratorProvider() {
         if (breakIteratorProvider == null) {
             BreakIteratorProvider provider = new BreakIteratorProviderImpl(getAdapterType(),
-                                                            getLanguateTagSet("FormatData"));
+                                                            getLanguageTagSet("FormatData"));
             synchronized (this) {
                 if (breakIteratorProvider == null) {
                     breakIteratorProvider = provider;
@@ -139,7 +139,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     public CollatorProvider getCollatorProvider() {
         if (collatorProvider == null) {
             CollatorProvider provider = new CollatorProviderImpl(getAdapterType(),
-                                                getLanguateTagSet("CollationData"));
+                                                getLanguageTagSet("CollationData"));
             synchronized (this) {
                 if (collatorProvider == null) {
                     collatorProvider = provider;
@@ -153,7 +153,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     public DateFormatProvider getDateFormatProvider() {
         if (dateFormatProvider == null) {
             DateFormatProvider provider = new DateFormatProviderImpl(getAdapterType(),
-                                                    getLanguateTagSet("FormatData"));
+                                                    getLanguageTagSet("FormatData"));
             synchronized (this) {
                 if (dateFormatProvider == null) {
                     dateFormatProvider = provider;
@@ -167,7 +167,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     public DateFormatSymbolsProvider getDateFormatSymbolsProvider() {
         if (dateFormatSymbolsProvider == null) {
             DateFormatSymbolsProvider provider = new DateFormatSymbolsProviderImpl(getAdapterType(),
-                                                                getLanguateTagSet("FormatData"));
+                                                                getLanguageTagSet("FormatData"));
             synchronized (this) {
                 if (dateFormatSymbolsProvider == null) {
                     dateFormatSymbolsProvider = provider;
@@ -180,7 +180,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     @Override
     public DecimalFormatSymbolsProvider getDecimalFormatSymbolsProvider() {
         if (decimalFormatSymbolsProvider == null) {
-            DecimalFormatSymbolsProvider provider = new DecimalFormatSymbolsProviderImpl(getAdapterType(), getLanguateTagSet("FormatData"));
+            DecimalFormatSymbolsProvider provider = new DecimalFormatSymbolsProviderImpl(getAdapterType(), getLanguageTagSet("FormatData"));
             synchronized (this) {
                 if (decimalFormatSymbolsProvider == null) {
                     decimalFormatSymbolsProvider = provider;
@@ -194,7 +194,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     public NumberFormatProvider getNumberFormatProvider() {
         if (numberFormatProvider == null) {
             NumberFormatProvider provider = new NumberFormatProviderImpl(getAdapterType(),
-                                                        getLanguateTagSet("FormatData"));
+                                                        getLanguageTagSet("FormatData"));
             synchronized (this) {
                 if (numberFormatProvider == null) {
                     numberFormatProvider = provider;
@@ -211,7 +211,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     public CurrencyNameProvider getCurrencyNameProvider() {
         if (currencyNameProvider == null) {
             CurrencyNameProvider provider = new CurrencyNameProviderImpl(getAdapterType(),
-                                            getLanguateTagSet("CurrencyNames"));
+                                            getLanguageTagSet("CurrencyNames"));
             synchronized (this) {
                 if (currencyNameProvider == null) {
                     currencyNameProvider = provider;
@@ -225,7 +225,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     public LocaleNameProvider getLocaleNameProvider() {
         if (localeNameProvider == null) {
             LocaleNameProvider provider = new LocaleNameProviderImpl(getAdapterType(),
-                                                    getLanguateTagSet("LocaleNames"));
+                                                    getLanguageTagSet("LocaleNames"));
             synchronized (this) {
                 if (localeNameProvider == null) {
                     localeNameProvider = provider;
@@ -239,7 +239,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     public TimeZoneNameProvider getTimeZoneNameProvider() {
         if (timeZoneNameProvider == null) {
             TimeZoneNameProvider provider = new TimeZoneNameProviderImpl(getAdapterType(),
-                                                    getLanguateTagSet("TimeZoneNames"));
+                                                    getLanguageTagSet("TimeZoneNames"));
             synchronized (this) {
                 if (timeZoneNameProvider == null) {
                     timeZoneNameProvider = provider;
@@ -253,8 +253,8 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
     public CalendarDataProvider getCalendarDataProvider() {
         if (calendarDataProvider == null) {
             Set<String> set = new HashSet<>();
-            set.addAll(getLanguateTagSet("FormatData"));
-            set.addAll(getLanguateTagSet("CalendarData"));
+            set.addAll(getLanguageTagSet("FormatData"));
+            set.addAll(getLanguageTagSet("CalendarData"));
             CalendarDataProvider provider = new CalendarDataProviderImpl(getAdapterType(),
                                                                          set);
             synchronized (this) {
@@ -302,7 +302,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
         return AvailableJRELocales.localeList.clone();
     }
 
-    public Set<String> getLanguateTagSet(String category) {
+    public Set<String> getLanguageTagSet(String category) {
         Set<String> tagset = langtagSets.get(category);
         if (tagset == null) {
             tagset = createLanguageTagSet(category);
@@ -328,6 +328,10 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter {
             }
             tagset.add(token);
         }
+
+        // ensure en-US is there (mandated by the spec, e.g. Collator.getAvailableLocales())
+        tagset.add("en-US");
+
         return tagset;
     }
 

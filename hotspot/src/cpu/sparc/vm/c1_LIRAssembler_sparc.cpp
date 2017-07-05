@@ -105,6 +105,11 @@ bool LIR_Assembler::is_single_instruction(LIR_Op* op) {
         if (src->is_address() && !src->is_stack() && (src->type() == T_OBJECT || src->type() == T_ARRAY)) return false;
       }
 
+      if (UseCompressedKlassPointers) {
+        if (src->is_address() && !src->is_stack() && src->type() == T_ADDRESS &&
+            src->as_address_ptr()->disp() == oopDesc::klass_offset_in_bytes()) return false;
+      }
+
       if (dst->is_register()) {
         if (src->is_address() && Assembler::is_simm13(src->as_address_ptr()->disp())) {
           return !PatchALot;
@@ -969,8 +974,18 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
 #endif
         }
         break;
-      case T_METADATA:
-      case T_ADDRESS:  __ ld_ptr(base, offset, to_reg->as_register()); break;
+      case T_METADATA:  __ ld_ptr(base, offset, to_reg->as_register()); break;
+      case T_ADDRESS:
+#ifdef _LP64
+        if (offset == oopDesc::klass_offset_in_bytes() && UseCompressedKlassPointers) {
+          __ lduw(base, offset, to_reg->as_register());
+          __ decode_klass_not_null(to_reg->as_register());
+        } else
+#endif
+        {
+          __ ld_ptr(base, offset, to_reg->as_register());
+        }
+        break;
       case T_ARRAY : // fall through
       case T_OBJECT:
         {
@@ -2290,7 +2305,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         __ mov(length, len);
         __ load_klass(dst, tmp);
 
-        int ek_offset = in_bytes(objArrayKlass::element_klass_offset());
+        int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
         __ ld_ptr(tmp, ek_offset, super_k);
 
         int sco_offset = in_bytes(Klass::super_check_offset_offset());
@@ -2344,7 +2359,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     if (UseCompressedKlassPointers) {
       // tmp holds the default type. It currently comes uncompressed after the
       // load of a constant, so encode it.
-      __ encode_heap_oop(tmp);
+      __ encode_klass_not_null(tmp);
       // load the raw value of the dst klass, since we will be comparing
       // uncompressed values directly.
       __ lduw(dst, oopDesc::klass_offset_in_bytes(), tmp2);
@@ -2781,7 +2796,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ load_klass(value, klass_RInfo);
 
     // get instance klass
-    __ ld_ptr(Address(k_RInfo, objArrayKlass::element_klass_offset()), k_RInfo);
+    __ ld_ptr(Address(k_RInfo, ObjArrayKlass::element_klass_offset()), k_RInfo);
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, O7, success_target, failure_target, NULL);
 

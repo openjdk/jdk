@@ -368,7 +368,9 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_CastPP:
     case Op_CheckCastPP:
     case Op_EncodeP:
-    case Op_DecodeN: {
+    case Op_DecodeN:
+    case Op_EncodePKlass:
+    case Op_DecodeNKlass: {
       add_local_var_and_edge(n, PointsToNode::NoEscape,
                              n->in(1), delayed_worklist);
       break;
@@ -381,7 +383,8 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_ConP:
-    case Op_ConN: {
+    case Op_ConN:
+    case Op_ConNKlass: {
       // assume all oop constants globally escape except for null
       PointsToNode::EscapeState es;
       if (igvn->type(n) == TypePtr::NULL_PTR ||
@@ -458,6 +461,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     }
     case Op_StoreP:
     case Op_StoreN:
+    case Op_StoreNKlass:
     case Op_StorePConditional:
     case Op_CompareAndSwapP:
     case Op_CompareAndSwapN: {
@@ -465,7 +469,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       const Type *adr_type = igvn->type(adr);
       adr_type = adr_type->make_ptr();
       if (adr_type->isa_oopptr() ||
-          (opcode == Op_StoreP || opcode == Op_StoreN) &&
+          (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass) &&
                         (adr_type == TypeRawPtr::NOTNULL &&
                          adr->in(AddPNode::Address)->is_Proj() &&
                          adr->in(AddPNode::Address)->in(0)->is_Allocate())) {
@@ -572,7 +576,9 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_CastPP:
     case Op_CheckCastPP:
     case Op_EncodeP:
-    case Op_DecodeN: {
+    case Op_DecodeN:
+    case Op_EncodePKlass:
+    case Op_DecodeNKlass: {
       add_local_var_and_edge(n, PointsToNode::NoEscape,
                              n->in(1), NULL);
       break;
@@ -646,6 +652,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     }
     case Op_StoreP:
     case Op_StoreN:
+    case Op_StoreNKlass:
     case Op_StorePConditional:
     case Op_CompareAndSwapP:
     case Op_CompareAndSwapN:
@@ -661,7 +668,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
       const Type *adr_type = _igvn->type(adr);
       adr_type = adr_type->make_ptr();
       if (adr_type->isa_oopptr() ||
-          (opcode == Op_StoreP || opcode == Op_StoreN) &&
+          (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass) &&
                         (adr_type == TypeRawPtr::NOTNULL &&
                          adr->in(AddPNode::Address)->is_Proj() &&
                          adr->in(AddPNode::Address)->in(0)->is_Allocate())) {
@@ -2088,7 +2095,7 @@ Node* ConnectionGraph::get_addp_base(Node *addp) {
     Node* uncast_base = base->uncast();
     int opcode = uncast_base->Opcode();
     assert(opcode == Op_ConP || opcode == Op_ThreadLocal ||
-           opcode == Op_CastX2P || uncast_base->is_DecodeN() ||
+           opcode == Op_CastX2P || uncast_base->is_DecodeNarrowPtr() ||
            (uncast_base->is_Mem() && uncast_base->bottom_type() == TypeRawPtr::NOTNULL) ||
            (uncast_base->is_Proj() && uncast_base->in(0)->is_Allocate()), "sanity");
   }
@@ -2837,8 +2844,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         alloc_worklist.append_if_missing(use);
       } else if (use->is_Phi() ||
                  use->is_CheckCastPP() ||
-                 use->is_EncodeP() ||
-                 use->is_DecodeN() ||
+                 use->is_EncodeNarrowPtr() ||
+                 use->is_DecodeNarrowPtr() ||
                  (use->is_ConstraintCast() && use->Opcode() == Op_CastPP)) {
         alloc_worklist.append_if_missing(use);
 #ifdef ASSERT

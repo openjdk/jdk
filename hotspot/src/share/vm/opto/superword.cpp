@@ -179,7 +179,6 @@ void SuperWord::find_adjacent_refs() {
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     if (n->is_Mem() && !n->is_LoadStore() && in_bb(n) &&
-        n->Opcode() != Op_LoadUI2L &&
         is_java_primitive(n->as_Mem()->memory_type())) {
       int align = memory_alignment(n->as_Mem(), 0);
       if (align != bottom_align) {

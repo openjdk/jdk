@@ -802,7 +802,7 @@ static void getBaseAndScale(int& base, int& scale, jclass acls, TRAPS) {
     base  = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     scale = heapOopSize;
   } else if (k->oop_is_typeArray()) {
-    typeArrayKlass* tak = typeArrayKlass::cast(k);
+    TypeArrayKlass* tak = TypeArrayKlass::cast(k);
     base  = tak->array_header_in_bytes();
     assert(base == arrayOopDesc::base_offset_in_bytes(tak->element_type()), "array_header_size semantics ok");
     scale = (1 << tak->log2_element_size());

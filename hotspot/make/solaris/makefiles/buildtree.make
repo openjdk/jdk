@@ -148,6 +148,13 @@ ifndef HOTSPOT_VM_DISTRO
   endif
 endif
 
+# if hotspot-only build and/or OPENJDK isn't passed down, need to set OPENJDK
+ifndef OPENJDK
+  ifneq ($(call if-has-altsrc,$(HS_COMMON_SRC)/,true,false),true)
+    OPENJDK=true
+  endif
+endif
+
 BUILDTREE_VARS += HOTSPOT_RELEASE_VERSION=$(HS_BUILD_VER) HOTSPOT_BUILD_VERSION= JRE_RELEASE_VERSION=$(JRE_RELEASE_VERSION) 
 
 BUILDTREE	= \
@@ -190,6 +197,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo "SA_BUILD_VERSION = $(HS_BUILD_VER)"; \
 	echo "HOTSPOT_BUILD_USER = $(HOTSPOT_BUILD_USER)"; \
 	echo "HOTSPOT_VM_DISTRO = $(HOTSPOT_VM_DISTRO)"; \
+	echo "OPENJDK = $(OPENJDK)"; \
 	echo "$(LP64_SETTING/$(DATA_MODE))"; \
 	echo; \
 	echo "# Used for platform dispatching"; \

@@ -867,7 +867,7 @@ void TemplateTable::aastore() {
 
   // do fast instanceof cache test
 
-  __ ld_ptr(O4,     in_bytes(objArrayKlass::element_klass_offset()),  O4);
+  __ ld_ptr(O4,     in_bytes(ObjArrayKlass::element_klass_offset()),  O4);
 
   assert(Otos_i == O0, "just checking");
 

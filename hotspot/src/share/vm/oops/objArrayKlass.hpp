@@ -29,20 +29,20 @@
 #include "memory/specialized_oop_closures.hpp"
 #include "oops/arrayKlass.hpp"
 
-// objArrayKlass is the klass for objArrays
+// ObjArrayKlass is the klass for objArrays
 
-class objArrayKlass : public arrayKlass {
+class ObjArrayKlass : public ArrayKlass {
   friend class VMStructs;
  private:
   Klass* _element_klass;            // The klass of the elements of this array type
-  Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or typeArrayKlass)
+  Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
 
   // Constructor
-  objArrayKlass(int n, KlassHandle element_klass, Symbol* name);
-  static objArrayKlass* allocate(ClassLoaderData* loader_data, int n, KlassHandle klass_handle, Symbol* name, TRAPS);
+  ObjArrayKlass(int n, KlassHandle element_klass, Symbol* name);
+  static ObjArrayKlass* allocate(ClassLoaderData* loader_data, int n, KlassHandle klass_handle, Symbol* name, TRAPS);
  public:
   // For dummy objects
-  objArrayKlass() {}
+  ObjArrayKlass() {}
 
   // Instance variables
   Klass* element_klass() const      { return _element_klass; }
@@ -54,7 +54,7 @@ class objArrayKlass : public arrayKlass {
   Klass** bottom_klass_addr()       { return &_bottom_klass; }
 
   // Compiler/Interpreter offset
-  static ByteSize element_klass_offset() { return in_ByteSize(offset_of(objArrayKlass, _element_klass)); }
+  static ByteSize element_klass_offset() { return in_ByteSize(offset_of(ObjArrayKlass, _element_klass)); }
 
   // Dispatched operation
   bool can_be_primary_super_slow() const;
@@ -78,11 +78,11 @@ class objArrayKlass : public arrayKlass {
 
  private:
   // Either oop or narrowOop depending on UseCompressedOops.
-  // must be called from within objArrayKlass.cpp
+  // must be called from within ObjArrayKlass.cpp
   template <class T> void do_copy(arrayOop s, T* src, arrayOop d,
                                   T* dst, int length, TRAPS);
  protected:
-  // Returns the objArrayKlass for n'th dimension.
+  // Returns the ObjArrayKlass for n'th dimension.
   virtual Klass* array_klass_impl(bool or_null, int n, TRAPS);
 
   // Returns the array class with this class as element type.
@@ -90,14 +90,14 @@ class objArrayKlass : public arrayKlass {
 
  public:
   // Casting from Klass*
-  static objArrayKlass* cast(Klass* k) {
-    assert(k->oop_is_objArray(), "cast to objArrayKlass");
-    return (objArrayKlass*) k;
+  static ObjArrayKlass* cast(Klass* k) {
+    assert(k->oop_is_objArray(), "cast to ObjArrayKlass");
+    return (ObjArrayKlass*) k;
   }
 
   // Sizing
-  static int header_size()                { return sizeof(objArrayKlass)/HeapWordSize; }
-  int size() const                        { return arrayKlass::static_size(header_size()); }
+  static int header_size()                { return sizeof(ObjArrayKlass)/HeapWordSize; }
+  int size() const                        { return ArrayKlass::static_size(header_size()); }
 
   // Initialization (virtual from Klass)
   void initialize(TRAPS);

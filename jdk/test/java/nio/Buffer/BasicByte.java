@@ -335,7 +335,7 @@ public class BasicByte
         fail(problem + String.format(": x=%s y=%s", x, y), xb, yb);
     }
 
-    private static void tryCatch(Buffer b, Class ex, Runnable thunk) {
+    private static void tryCatch(Buffer b, Class<?> ex, Runnable thunk) {
         boolean caught = false;
         try {
             thunk.run();
@@ -350,7 +350,7 @@ public class BasicByte
             fail(ex.getName() + " not thrown", b);
     }
 
-    private static void tryCatch(byte [] t, Class ex, Runnable thunk) {
+    private static void tryCatch(byte [] t, Class<?> ex, Runnable thunk) {
         tryCatch(ByteBuffer.wrap(t), ex, thunk);
     }
 
@@ -681,6 +681,14 @@ public class BasicByte
                     bulkPutBuffer(rb);
                 }});
 
+        // put(ByteBuffer) should not change source position
+        final ByteBuffer src = ByteBuffer.allocate(1);
+        tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
+                public void run() {
+                    rb.put(src);
+                 }});
+        ck(src, src.position(), 0);
+
         tryCatch(b, ReadOnlyBufferException.class, new Runnable() {
                 public void run() {
                     rb.compact();
@@ -741,6 +749,22 @@ public class BasicByte
                 public void run() {
                     rb.putDouble(0, (double)1);
                 }});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

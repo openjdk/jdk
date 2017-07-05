@@ -68,7 +68,7 @@ class DevPollArrayWrapper {
     static final short REVENT_OFFSET = 6;
 
     // Special value to indicate that an update should be ignored
-    static final byte  CANCELLED     = (byte)-1;
+    static final byte  IGNORE        = (byte)-1;
 
     // Maximum number of open file descriptors
     static final int   OPEN_MAX      = IOUtil.fdLimit();
@@ -192,15 +192,15 @@ class DevPollArrayWrapper {
 
             // events are stored as bytes for efficiency reasons
             byte b = (byte)mask;
-            assert (b == mask) && (b != CANCELLED);
+            assert (b == mask) && (b != IGNORE);
             setUpdateEvents(fd, b);
         }
     }
 
     void release(int fd) {
         synchronized (updateLock) {
-            // cancel any pending update for this file descriptor
-            setUpdateEvents(fd, CANCELLED);
+            // ignore any pending update for this file descriptor
+            setUpdateEvents(fd, IGNORE);
 
             // remove from /dev/poll
             if (registered.get(fd)) {
@@ -236,32 +236,40 @@ class DevPollArrayWrapper {
             while (j < updateCount) {
                 int fd = updateDescriptors[j];
                 short events = getUpdateEvents(fd);
-                boolean isRegistered = registered.get(fd);
+                boolean wasRegistered = registered.get(fd);
 
                 // events = 0 => POLLREMOVE or do-nothing
-                if (events != CANCELLED) {
+                if (events != IGNORE) {
                     if (events == 0) {
-                        if (isRegistered) {
+                        if (wasRegistered) {
                             events = POLLREMOVE;
                             registered.clear(fd);
                         } else {
-                            events = CANCELLED;
+                            events = IGNORE;
                         }
                     } else {
-                        if (!isRegistered) {
+                        if (!wasRegistered) {
                             registered.set(fd);
                         }
                     }
                 }
 
                 // populate pollfd array with updated event
-                if (events != CANCELLED) {
+                if (events != IGNORE) {
+                    // insert POLLREMOVE if changing events
+                    if (wasRegistered && events != POLLREMOVE) {
+                        putPollFD(pollArray, index, fd, POLLREMOVE);
+                        index++;
+                    }
                     putPollFD(pollArray, index, fd, events);
                     index++;
-                    if (index >= NUM_POLLFDS) {
+                    if (index >= (NUM_POLLFDS-1)) {
                         registerMultiple(wfd, pollArray.address(), index);
                         index = 0;
                     }
+
+                    // events for this fd now up to date
+                    setUpdateEvents(fd, IGNORE);
                 }
                 j++;
             }

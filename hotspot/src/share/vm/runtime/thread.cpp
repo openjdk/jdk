@@ -321,12 +321,14 @@ void Thread::record_stack_base_and_size() {
   // set up any platform-specific state.
   os::initialize_thread(this);
 
+#if INCLUDE_NMT
    // record thread's native stack, stack grows downward
   if (MemTracker::is_on()) {
     address stack_low_addr = stack_base() - stack_size();
     MemTracker::record_thread_stack(stack_low_addr, stack_size(), this,
       CURRENT_PC);
   }
+#endif // INCLUDE_NMT
 }
 
 
@@ -338,10 +340,12 @@ Thread::~Thread() {
   // record_stack_base_and_size called. Although, we would like to ensure
   // that all started threads do call record_stack_base_and_size(), there is
   // not proper way to enforce that.
+#if INCLUDE_NMT
   if (_stack_base != NULL) {
     address low_stack_addr = stack_base() - stack_size();
     MemTracker::release_thread_stack(low_stack_addr, stack_size(), this);
   }
+#endif // INCLUDE_NMT
 
   // deallocate data structures
   delete resource_area();
@@ -1357,7 +1361,9 @@ void JavaThread::initialize() {
   set_monitor_chunks(NULL);
   set_next(NULL);
   set_thread_state(_thread_new);
+#if INCLUDE_NMT
   set_recorder(NULL);
+#endif
   _terminated = _not_terminated;
   _privileged_stack_top = NULL;
   _array_for_gc = NULL;
@@ -2583,6 +2589,12 @@ void JavaThread::deoptimized_wrt_marked_nmethods() {
   StackFrameStream fst(this, UseBiasedLocking);
   for(; !fst.is_done(); fst.next()) {
     if (fst.current()->should_be_deoptimized()) {
+      if (LogCompilation && xtty != NULL) {
+        nmethod* nm = fst.current()->cb()->as_nmethod_or_null();
+        xtty->elem("deoptimized thread='" UINTX_FORMAT "' compile_id='%d'",
+                   this->name(), nm != NULL ? nm->compile_id() : -1);
+      }
+
       Deoptimization::deoptimize(this, *fst.current(), fst.register_map());
     }
   }
@@ -3523,7 +3535,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif /* USDT2 */
 
   // record VM initialization completion time
+#if INCLUDE_MANAGEMENT
   Management::record_vm_init_completed();
+#endif // INCLUDE_MANAGEMENT
 
   // Compute system loader. Note that this has to occur after set_init_completed, since
   // valid exceptions may be thrown in the process.
@@ -3584,9 +3598,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   // initialize compiler(s)
+#if defined(COMPILER1) || defined(COMPILER2)
   CompileBroker::compilation_init();
+#endif
 
+#if INCLUDE_MANAGEMENT
   Management::initialize(THREAD);
+#endif // INCLUDE_MANAGEMENT
+
   if (HAS_PENDING_EXCEPTION) {
     // management agent fails to start possibly due to
     // configuration problem and is responsible for printing
@@ -3756,6 +3775,7 @@ void Threads::create_vm_init_agents() {
   AgentLibrary* agent;
 
   JvmtiExport::enter_onload_phase();
+
   for (agent = Arguments::agents(); agent != NULL; agent = agent->next()) {
     OnLoadEntry_t  on_load_entry = lookup_agent_on_load(agent);
 
