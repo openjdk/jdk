@@ -25,6 +25,7 @@
 
 package java.lang.reflect;
 
+import java.lang.module.ModuleDescriptor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
@@ -51,6 +52,9 @@ import jdk.internal.loader.ClassLoaderValue;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
+
+import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
+
 
 /**
  *
@@ -164,7 +168,8 @@ import sun.security.util.SecurityConstants;
  * methods is specified as follows:
  *
  * <ol>
- * <li>If all the proxy interfaces are in <em>exported</em> packages:
+ * <li>If all the proxy interfaces are in <em>exported</em> or <em>open</em>
+ *     packages:
  * <ol type="a">
  * <li>if all the proxy interfaces are <em>public</em>, then the proxy class is
  *     <em>public</em> in a package exported by the
@@ -178,10 +183,11 @@ import sun.security.util.SecurityConstants;
  *     <a href="#restrictions">not possible</a>.</li>
  * </ol>
  * </li>
- * <li>If at least one proxy interface is a <em>non-exported</em> package:
+ * <li>If at least one proxy interface is in a package that is
+ *     <em>non-exported</em> and <em>non-open</em>:
  * <ol type="a">
  * <li>if all the proxy interfaces are <em>public</em>, then the proxy class is
- *     <em>public</em> in a <em>non-exported</em> package of
+ *     <em>public</em> in a <em>non-exported</em>, <em>non-open</em> package of
  *     <a href="#dynamicmodule"><em>dynamic module</em>.</a>
  *     The names of the package and the module are unspecified.</li>
  *
@@ -195,21 +201,22 @@ import sun.security.util.SecurityConstants;
  * </ol>
  *
  * <p>
- * Note that if proxy interfaces with a mix of accessibilities --
- * exported public, exported non-public, non-exported public, non-exported non-public --
- * are proxied by the same instance, then the proxy class's accessibility is
+ * Note that if proxy interfaces with a mix of accessibilities -- for example,
+ * an exported public interface and a non-exported non-public interface -- are
+ * proxied by the same instance, then the proxy class's accessibility is
  * governed by the least accessible proxy interface.
  * <p>
  * Note that it is possible for arbitrary code to obtain access to a proxy class
- * in an exported package with {@link AccessibleObject#setAccessible setAccessible},
- * whereas a proxy class in a non-exported package is never accessible to
+ * in an open package with {@link AccessibleObject#setAccessible setAccessible},
+ * whereas a proxy class in a non-open package is never accessible to
  * code outside the module of the proxy class.
  *
  * <p>
- * Throughout this specification, a "non-exported package" refers to a package that
- * is not exported to all modules. Specifically, it refers to a package that
- * either is not exported at all by its containing module or is exported in a
- * qualified fashion by its containing module.
+ * Throughout this specification, a "non-exported package" refers to a package
+ * that is not exported to all modules, and a "non-open package" refers to
+ * a package that is not open to all modules.  Specifically, these terms refer to
+ * a package that either is not exported/open by its containing module or is
+ * exported/open in a qualified fashion by its containing module.
  *
  * <h3><a name="dynamicmodule">Dynamic Modules</a></h3>
  * <p>
@@ -272,6 +279,8 @@ import sun.security.util.SecurityConstants;
  * @author      Peter Jones
  * @see         InvocationHandler
  * @since       1.3
+ * @revised 9
+ * @spec JPMS
  */
 public class Proxy implements java.io.Serializable {
     private static final long serialVersionUID = -2222568056686623797L;
@@ -358,6 +367,8 @@ public class Proxy implements java.io.Serializable {
      *      to create a proxy instance instead.
      *
      * @see <a href="#membership">Package and Module Membership of Proxy Class</a>
+     * @revised 9
+     * @spec JPMS
      */
     @Deprecated
     @CallerSensitive
@@ -855,7 +866,11 @@ public class Proxy implements java.io.Serializable {
                 // create a dynamic module and setup module access
                 String mn = "jdk.proxy" + counter.incrementAndGet();
                 String pn = PROXY_PACKAGE_PREFIX + "." + mn;
-                Module m = Modules.defineModule(ld, mn, Collections.singleton(pn));
+                ModuleDescriptor descriptor =
+                    ModuleDescriptor.newModule(mn, Set.of(SYNTHETIC))
+                                    .packages(Set.of(pn))
+                                    .build();
+                Module m = Modules.defineModule(ld, descriptor, null);
                 Modules.addReads(m, Proxy.class.getModule());
                 // java.base to create proxy instance
                 Modules.addExports(m, pn, Object.class.getModule());
@@ -955,6 +970,8 @@ public class Proxy implements java.io.Serializable {
      *          {@code null}
      *
      * @see <a href="#membership">Package and Module Membership of Proxy Class</a>
+     * @revised 9
+     * @spec JPMS
      */
     @CallerSensitive
     public static Object newProxyInstance(ClassLoader loader,
@@ -1039,6 +1056,9 @@ public class Proxy implements java.io.Serializable {
      * @return  {@code true} if the class is a proxy class and
      *          {@code false} otherwise
      * @throws  NullPointerException if {@code cl} is {@code null}
+     *
+     * @revised 9
+     * @spec JPMS
      */
     public static boolean isProxyClass(Class<?> cl) {
         return Proxy.class.isAssignableFrom(cl) && ProxyBuilder.isProxyClass(cl);
