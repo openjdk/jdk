@@ -304,7 +304,7 @@ class Properties extends Hashtable<Object,Object> {
      * preceded by a backslash still yield single and double quote
      * characters, respectively.
      *
-     * <li> Only a single 'u' character is allowed in a Uniocde escape
+     * <li> Only a single 'u' character is allowed in a Unicode escape
      * sequence.
      *
      * </ul>

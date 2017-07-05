@@ -21,16 +21,23 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4969799
  * @summary javax.net.ssl.SSLSocket.SSLSocket(InetAddress,int) shouldn't
  *              throw exception
- *
- * This is making sure that starting a new handshake throws the right
- * exception.  There is a similar test for SSLSocket.
- *
+ * @run main/othervm CloseEngineException
  */
+
+//
+// This is making sure that starting a new handshake throws the right
+// exception.  There is a similar test for SSLSocket.
+//
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;

@@ -35,7 +35,7 @@
 
 package java.awt.color;
 
-import java.awt.image.LookupTable;
+import sun.java2d.cmm.Profile;
 import sun.java2d.cmm.ProfileDeferralInfo;
 
 /**
@@ -76,8 +76,8 @@ extends ICC_Profile {
     /**
      * Constructs a new ICC_ProfileGray from a CMM ID.
      */
-    ICC_ProfileGray(long ID) {
-        super(ID);
+    ICC_ProfileGray(Profile p) {
+        super(p);
     }
 
     /**

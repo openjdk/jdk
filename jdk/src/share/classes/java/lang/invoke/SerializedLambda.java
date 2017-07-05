@@ -225,7 +225,7 @@ public final class SerializedLambda implements Serializable {
 
     @Override
     public String toString() {
-        String implKind=MethodHandleInfo.getReferenceKindString(implMethodKind);
+        String implKind=MethodHandleInfo.referenceKindToString(implMethodKind);
         return String.format("SerializedLambda[%s=%s, %s=%s.%s:%s, " +
                              "%s=%s %s.%s:%s, %s=%s, %s=%d]",
                              "capturingClass", capturingClass,

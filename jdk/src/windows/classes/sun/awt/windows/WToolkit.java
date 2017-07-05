@@ -64,6 +64,7 @@ import sun.font.FontManagerFactory;
 import sun.font.SunFontManager;
 import sun.misc.PerformanceLogger;
 import sun.util.logging.PlatformLogger;
+import sun.security.util.SecurityConstants;
 
 public class WToolkit extends SunToolkit implements Runnable {
 
@@ -681,7 +682,7 @@ public class WToolkit extends SunToolkit implements Runnable {
     public Clipboard getSystemClipboard() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-          security.checkSystemClipboardAccess();
+            security.checkPermission(SecurityConstants.AWT.ACCESS_CLIPBOARD_PERMISSION);
         }
         synchronized (this) {
             if (clipboard == null) {

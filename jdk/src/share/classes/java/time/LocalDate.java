@@ -78,7 +78,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Era;
@@ -2019,8 +2019,9 @@ public final class LocalDate
     /**
      * Writes the object using a
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
+     * @serialData
      * <pre>
-     *  out.writeByte(3);  // identifies this as a LocalDate
+     *  out.writeByte(3);  // identifies a LocalDate
      *  out.writeInt(year);
      *  out.writeByte(month);
      *  out.writeByte(day);
@@ -2037,7 +2038,7 @@ public final class LocalDate
      * @return never
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private Object readResolve() throws InvalidObjectException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

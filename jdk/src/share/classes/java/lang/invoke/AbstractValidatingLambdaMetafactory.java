@@ -124,7 +124,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         this.samMethodType  = samMethodType;
 
         this.implMethod = implMethod;
-        this.implInfo = new MethodHandleInfo(implMethod);
+        this.implInfo = caller.revealDirect(implMethod);
         // @@@ Temporary work-around pending resolution of 8005119
         this.implKind = (implInfo.getReferenceKind() == MethodHandleInfo.REF_invokeSpecial)
                         ? MethodHandleInfo.REF_invokeVirtual

@@ -193,16 +193,18 @@ public class Locks {
         public CheckerThread() {
             super("CheckerThread");
         }
+
+        private void waitForState(Thread.State state) {
+            thrsync.waitForSignal();
+            while (waiter.getState() != state) {
+               goSleep(10);
+            }
+        }
+
         public void run() {
             synchronized (ready) {
                 // wait until WaitingThread about to wait for objC
-                thrsync.waitForSignal();
-
-                int retryCount = 0;
-                while (waiter.getState() != Thread.State.WAITING
-                       && retryCount++ < 500) {
-                   goSleep(100);
-                }
+                waitForState(Thread.State.WAITING);
                 checkBlockedObject(waiter, objC, null, Thread.State.WAITING);
 
                 synchronized (objC) {
@@ -211,16 +213,13 @@ public class Locks {
 
                 // wait for waiter thread to about to enter
                 // synchronized object ready.
-                thrsync.waitForSignal();
-                // give chance for waiter thread to get blocked on
-                // object ready.
-                goSleep(50);
+                waitForState(Thread.State.BLOCKED);
                 checkBlockedObject(waiter, ready, this, Thread.State.BLOCKED);
             }
 
             // wait for signal from waiting thread that it is about
             // wait for objC.
-            thrsync.waitForSignal();
+            waitForState(Thread.State.WAITING);
             synchronized(objC) {
                 checkBlockedObject(waiter, objC, Thread.currentThread(), Thread.State.WAITING);
                 objC.notify();
