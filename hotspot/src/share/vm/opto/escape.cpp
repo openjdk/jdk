@@ -905,15 +905,22 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       // see if it is unescaped.
       if (es != PointsToNode::NoEscape || !ptn->_scalar_replaceable)
         continue;
-      if (alloc->is_Allocate()) {
-        // Set the scalar_replaceable flag before the next check.
-        alloc->as_Allocate()->_is_scalar_replaceable = true;
-      }
-      // find CheckCastPP of call return value
+
+      // Find CheckCastPP for the allocate or for the return value of a call
       n = alloc->result_cast();
-      if (n == NULL ||          // No uses accept Initialize or
-          !n->is_CheckCastPP()) // not unique CheckCastPP.
+      if (n == NULL) {            // No uses except Initialize node
+        if (alloc->is_Allocate()) {
+          // Set the scalar_replaceable flag for allocation
+          // so it could be eliminated if it has no uses.
+          alloc->as_Allocate()->_is_scalar_replaceable = true;
+        }
         continue;
+      }
+      if (!n->is_CheckCastPP()) { // not unique CheckCastPP.
+        assert(!alloc->is_Allocate(), "allocation should have unique type");
+        continue;
+      }
+
       // The inline code for Object.clone() casts the allocation result to
       // java.lang.Object and then to the actual type of the allocated
       // object. Detect this case and use the second cast.
@@ -934,8 +941,16 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
         if (cast2 != NULL) {
           n = cast2;
         } else {
+          // Non-scalar replaceable if the allocation type is unknown statically
+          // (reflection allocation), the object can't be restored during
+          // deoptimization without precise type.
           continue;
         }
+      }
+      if (alloc->is_Allocate()) {
+        // Set the scalar_replaceable flag for allocation
+        // so it could be eliminated.
+        alloc->as_Allocate()->_is_scalar_replaceable = true;
       }
       set_escape_state(n->_idx, es);
       // in order for an object to be scalar-replaceable, it must be:

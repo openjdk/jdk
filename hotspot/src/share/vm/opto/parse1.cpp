@@ -439,7 +439,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   // Always register dependence if JVMTI is enabled, because
   // either breakpoint setting or hotswapping of methods may
   // cause deoptimization.
-  if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
+  if (C->env()->jvmti_can_hotswap_or_post_breakpoint()) {
     C->dependencies()->assert_evol_method(method());
   }
 
@@ -953,7 +953,7 @@ void Parse::do_exits() {
   bool do_synch = method()->is_synchronized() && GenerateSynchronizationCode;
 
   // record exit from a method if compiled while Dtrace is turned on.
-  if (do_synch || DTraceMethodProbes) {
+  if (do_synch || C->env()->dtrace_method_probes()) {
     // First move the exception list out of _exits:
     GraphKit kit(_exits.transfer_exceptions_into_jvms());
     SafePointNode* normal_map = kit.map();  // keep this guy safe
@@ -975,7 +975,7 @@ void Parse::do_exits() {
         // Unlock!
         kit.shared_unlock(_synch_lock->box_node(), _synch_lock->obj_node());
       }
-      if (DTraceMethodProbes) {
+      if (C->env()->dtrace_method_probes()) {
         kit.make_dtrace_method_exit(method());
       }
       // Done with exception-path processing.
@@ -1074,7 +1074,7 @@ void Parse::do_method_entry() {
 
   NOT_PRODUCT( count_compiled_calls(true/*at_method_entry*/, false/*is_inline*/); )
 
-  if (DTraceMethodProbes) {
+  if (C->env()->dtrace_method_probes()) {
     make_dtrace_method_entry(method());
   }
 
@@ -1960,7 +1960,7 @@ void Parse::return_current(Node* value) {
   if (method()->is_synchronized() && GenerateSynchronizationCode) {
     shared_unlock(_synch_lock->box_node(), _synch_lock->obj_node());
   }
-  if (DTraceMethodProbes) {
+  if (C->env()->dtrace_method_probes()) {
     make_dtrace_method_exit(method());
   }
   SafePointNode* exit_return = _exits.map();

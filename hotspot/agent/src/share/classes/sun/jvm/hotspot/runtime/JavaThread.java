@@ -317,11 +317,11 @@ public class JavaThread extends Thread {
   }
 
   public Address getStackBase() {
-    return stackBaseField.getValue();
+    return stackBaseField.getValue(addr);
   }
 
   public long getStackSize() {
-    return stackSizeField.getValue();
+    return stackSizeField.getValue(addr);
   }
 
   /** Gets the Java-side thread object for this JavaThread */
