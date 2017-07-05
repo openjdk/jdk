@@ -41,14 +41,13 @@ private:
   address generate_native_entry(bool synchronized);
   address generate_abstract_entry(void);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
-  address generate_jump_to_normal_entry(void);
-  address generate_accessor_entry(void) { return generate_jump_to_normal_entry(); }
-  address generate_empty_entry(void) { return generate_jump_to_normal_entry(); }
+  address generate_accessor_entry(void) { return NULL; }
+  address generate_empty_entry(void) { return NULL; }
   void generate_transcendental_entry(AbstractInterpreter::MethodKind kind, int fpargs);
   address generate_Reference_get_entry();
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
-  void lock_method(void);
+  address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
   void generate_stack_overflow_check(void);
 
   void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);

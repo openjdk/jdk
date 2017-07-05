@@ -21,6 +21,7 @@
  * questions.
  */
 
+import compiler.testlibrary.CompilerUtils;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.OutputAnalyzer;
@@ -47,7 +48,7 @@ import java.util.stream.Collectors;
  * @test SegmentedCodeCacheDtraceTest
  * @bug 8015774
  * @requires os.family=="solaris"
- * @library /testlibrary /compiler/testlibrary /../../test/lib
+ * @library /testlibrary / /../../test/lib
  * @build SegmentedCodeCacheDtraceTestWorker
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *     sun.hotspot.WhiteBox$WhiteBoxPermission

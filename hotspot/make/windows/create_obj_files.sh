@@ -111,6 +111,7 @@ esac
 
 COMPILER2_SPECIFIC_FILES="opto libadt bcEscapeAnalyzer.cpp c2_* runtime_*"
 COMPILER1_SPECIFIC_FILES="c1_*"
+JVMCI_SPECIFIC_FILES="*jvmci* *JVMCI*"
 SHARK_SPECIFIC_FILES="shark"
 ZERO_SPECIFIC_FILES="zero"
 
@@ -119,11 +120,11 @@ Src_Files_EXCLUDE="jsig.c jvmtiEnvRecommended.cpp jvmtiEnvStub.cpp"
 
 # Exclude per type.
 case "${TYPE}" in
-    "compiler1") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER2_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES} ciTypeFlow.cpp" ;;
+    "compiler1") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER2_SPECIFIC_FILES} ${JVMCI_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES} ciTypeFlow.cpp" ;;
     "compiler2") Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER1_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES}" ;;
     "tiered")    Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${ZERO_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES}" ;;
-    "zero")      Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER1_SPECIFIC_FILES} ${COMPILER2_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES} ciTypeFlow.cpp" ;;
-    "shark")     Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER1_SPECIFIC_FILES} ${COMPILER2_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES}" ;;
+    "zero")      Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER1_SPECIFIC_FILES} ${COMPILER2_SPECIFIC_FILES} ${JVMCI_SPECIFIC_FILES} ${SHARK_SPECIFIC_FILES} ciTypeFlow.cpp" ;;
+    "shark")     Src_Files_EXCLUDE="${Src_Files_EXCLUDE} ${COMPILER1_SPECIFIC_FILES} ${COMPILER2_SPECIFIC_FILES} ${JVMCI_SPECIFIC_FILES} ${ZERO_SPECIFIC_FILES}" ;;
 esac
 
 # Special handling of arch model.

@@ -41,7 +41,13 @@ class Deoptimization : AllStatic {
   enum DeoptReason {
     Reason_many = -1,             // indicates presence of several reasons
     Reason_none = 0,              // indicates absence of a relevant deopt.
-    // Next 7 reasons are recorded per bytecode in DataLayout::trap_bits
+    // Next 7 reasons are recorded per bytecode in DataLayout::trap_bits.
+    // This is more complicated for JVMCI as JVMCI may deoptimize to *some* bytecode before the
+    // bytecode that actually caused the deopt (with inlining, JVMCI may even deoptimize to a
+    // bytecode in another method):
+    //  - bytecode y in method b() causes deopt
+    //  - JVMCI deoptimizes to bytecode x in method a()
+    // -> the deopt reason will be recorded for method a() at bytecode x
     Reason_null_check,            // saw unexpected null or zero divisor (@bci)
     Reason_null_assert,           // saw unexpected non-null or non-zero (@bci)
     Reason_range_check,           // saw unexpected array index (@bci)
@@ -50,6 +56,13 @@ class Deoptimization : AllStatic {
     Reason_intrinsic,             // saw unexpected operand to intrinsic (@bci)
     Reason_bimorphic,             // saw unexpected object class in bimorphic inlining (@bci)
 
+#if INCLUDE_JVMCI
+    Reason_unreached0             = Reason_null_assert,
+    Reason_type_checked_inlining  = Reason_intrinsic,
+    Reason_optimized_type_check   = Reason_bimorphic,
+#endif
+
+    // recorded per method
     Reason_unloaded,              // unloaded class or constant pool entry
     Reason_uninitialized,         // bad class state (uninitialized)
     Reason_unreached,             // code is not reached, compiler
@@ -64,11 +77,19 @@ class Deoptimization : AllStatic {
     Reason_rtm_state_change,      // rtm state change detected
     Reason_unstable_if,           // a branch predicted always false was taken
     Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
+#if INCLUDE_JVMCI
+    Reason_aliasing,              // optimistic assumption about aliasing failed
+    Reason_transfer_to_interpreter, // explicit transferToInterpreter()
+    Reason_not_compiled_exception_handler,
+    Reason_unresolved,
+    Reason_jsr_mismatch,
+#endif
 
     // Reason_tenured is counted separately, add normal counted Reasons above.
     // Related to MethodData::_trap_hist_limit where Reason_tenured isn't included
     Reason_tenured,               // age of the code has reached the limit
     Reason_LIMIT,
+
     // Note:  Keep this enum in sync. with _trap_reason_name.
     Reason_RECORDED_LIMIT = Reason_bimorphic  // some are not recorded per bc
     // Note:  Reason_RECORDED_LIMIT should be < 8 to fit into 3 bits of
@@ -91,8 +112,10 @@ class Deoptimization : AllStatic {
   enum {
     _action_bits = 3,
     _reason_bits = 5,
+    _debug_id_bits = 23,
     _action_shift = 0,
     _reason_shift = _action_shift+_action_bits,
+    _debug_id_shift = _reason_shift+_reason_bits,
     BC_CASE_LIMIT = PRODUCT_ONLY(1) NOT_PRODUCT(4) // for _deoptimization_hist
   };
 
@@ -109,10 +132,11 @@ class Deoptimization : AllStatic {
 
   // Deoptimizes a frame lazily. nmethod gets patched deopt happens on return to the frame
   static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map);
+  static void deoptimize(JavaThread* thread, frame fr, RegisterMap *reg_map, DeoptReason reason);
 
   private:
   // Does the actual work for deoptimizing a single frame
-  static void deoptimize_single_frame(JavaThread* thread, frame fr);
+  static void deoptimize_single_frame(JavaThread* thread, frame fr, DeoptReason reason);
 
   // Helper function to revoke biases of all monitors in frame if UseBiasedLocking
   // is enabled
@@ -121,16 +145,18 @@ class Deoptimization : AllStatic {
   // executing in a particular CodeBlob if UseBiasedLocking is enabled
   static void revoke_biases_of_monitors(CodeBlob* cb);
 
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
+JVMCI_ONLY(public:)
+
   // Support for restoring non-escaping objects
   static bool realloc_objects(JavaThread* thread, frame* fr, GrowableArray<ScopeValue*>* objects, TRAPS);
   static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
   static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
-  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures);
+  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal);
   static void relock_objects(GrowableArray<MonitorInfo*>* monitors, JavaThread* thread, bool realloc_failures);
   static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
   NOT_PRODUCT(static void print_objects(GrowableArray<ScopeValue*>* objects, bool realloc_failures);)
-#endif // COMPILER2
+#endif // COMPILER2 || INCLUDE_JVMCI
 
   public:
   static vframeArray* create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures);
@@ -140,6 +166,7 @@ class Deoptimization : AllStatic {
   // UnrollBlock is returned by fetch_unroll_info() to the deoptimization handler (blob).
   // This is only a CheapObj to ease debugging after a deopt failure
   class UnrollBlock : public CHeapObj<mtCompiler> {
+    friend class VMStructs;
    private:
     int       _size_of_deoptimized_frame; // Size, in bytes, of current deoptimized frame
     int       _caller_adjustment;         // Adjustment, in bytes, to caller's SP by initial interpreted frame
@@ -243,10 +270,11 @@ class Deoptimization : AllStatic {
   // Only called from VMDeoptimizeFrame
   // @argument thread.     Thread where stub_frame resides.
   // @argument id.         id of frame that should be deoptimized.
-  static void deoptimize_frame_internal(JavaThread* thread, intptr_t* id);
+  static void deoptimize_frame_internal(JavaThread* thread, intptr_t* id, DeoptReason reason);
 
-  // If thread is not the current thread then execute
+  // if thread is not the current thread then execute
   // VM_DeoptimizeFrame otherwise deoptimize directly.
+  static void deoptimize_frame(JavaThread* thread, intptr_t* id, DeoptReason reason);
   static void deoptimize_frame(JavaThread* thread, intptr_t* id);
 
   // Statistics
@@ -275,6 +303,14 @@ class Deoptimization : AllStatic {
     else
       // standard action for unloaded CP entry
       return _unloaded_action;
+  }
+  static int trap_request_debug_id(int trap_request) {
+    if (trap_request < 0) {
+      return ((~(trap_request) >> _debug_id_shift) & right_n_bits(_debug_id_bits));
+    } else {
+      // standard action for unloaded CP entry
+      return 0;
+    }
   }
   static int trap_request_index(int trap_request) {
     if (trap_request < 0)
@@ -374,6 +410,10 @@ class Deoptimization : AllStatic {
   static ProfileData* query_update_method_data(MethodData* trap_mdo,
                                                int trap_bci,
                                                DeoptReason reason,
+                                               bool update_total_trap_count,
+#if INCLUDE_JVMCI
+                                               bool is_osr,
+#endif
                                                Method* compiled_method,
                                                //outputs:
                                                uint& ret_this_trap_count,

@@ -236,17 +236,6 @@ void InterpreterGenerator::generate_transcendental_entry(AbstractInterpreter::Me
   __ blrt(rscratch1, gpargs, fpargs, rtype);
 }
 
-// Jump into normal path for accessor and empty entry to jump to normal entry
-// The "fast" optimization don't update compilation count therefore can disable inlining
-// for these functions that should be inlined.
-address InterpreterGenerator::generate_jump_to_normal_entry(void) {
-  address entry_point = __ pc();
-
-  assert(Interpreter::entry_for_kind(Interpreter::zerolocals) != NULL, "should already be generated");
-  __ b(Interpreter::entry_for_kind(Interpreter::zerolocals));
-  return entry_point;
-}
-
 // Abstract method entry
 // Attempt to execute abstract method. Throw exception
 address InterpreterGenerator::generate_abstract_entry(void) {

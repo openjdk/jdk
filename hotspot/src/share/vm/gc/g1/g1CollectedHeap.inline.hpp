@@ -67,8 +67,8 @@ inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at
 
 inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
   assert(is_in_reserved(addr),
-         err_msg("Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",
-                 p2i(addr), p2i(reserved_region().start()), p2i(reserved_region().end())));
+         "Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(addr), p2i(reserved_region().start()), p2i(reserved_region().end()));
   return (uint)(pointer_delta(addr, reserved_region().start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
 }
 
@@ -80,8 +80,8 @@ template <class T>
 inline HeapRegion* G1CollectedHeap::heap_region_containing_raw(const T addr) const {
   assert(addr != NULL, "invariant");
   assert(is_in_g1_reserved((const void*) addr),
-      err_msg("Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
-          p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end())));
+         "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
+         p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end()));
   return _hrm.addr_to_region((HeapWord*) addr);
 }
 

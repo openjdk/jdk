@@ -272,7 +272,8 @@ class VM_DeoptimizeFrame: public VM_Operation {
  private:
   JavaThread* _thread;
   intptr_t*   _id;
-  VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id);
+  int _reason;
+  VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id, int reason);
 
  public:
   VMOp_Type type() const                         { return VMOp_DeoptimizeFrame; }

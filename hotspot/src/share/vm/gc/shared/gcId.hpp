@@ -27,25 +27,36 @@
 
 #include "memory/allocation.hpp"
 
-class GCId VALUE_OBJ_CLASS_SPEC {
- private:
-  uint _id;
-  GCId(uint id) : _id(id) {}
-  GCId() { } // Unused
-
+class GCId : public AllStatic {
+  friend class GCIdMark;
+  friend class GCIdMarkAndRestore;
   static uint _next_id;
   static const uint UNDEFINED = (uint)-1;
+  static const uint create();
 
  public:
-  uint id() const {
-    assert(_id != UNDEFINED, "Using undefined GC ID");
-    return _id;
-  }
-  bool is_undefined() const;
+  // Returns the currently active GC id. Asserts that there is an active GC id.
+  static const uint current();
+  // Same as current() but can return undefined() if no GC id is currently active
+  static const uint current_raw();
+  static const uint undefined() { return UNDEFINED; }
+};
 
-  static const GCId create();
-  static const GCId peek();
-  static const GCId undefined();
+class GCIdMark : public StackObj {
+  uint _gc_id;
+ public:
+  GCIdMark();
+  GCIdMark(uint gc_id);
+  ~GCIdMark();
+};
+
+class GCIdMarkAndRestore : public StackObj {
+  uint _gc_id;
+  uint _previous_gc_id;
+ public:
+  GCIdMarkAndRestore();
+  GCIdMarkAndRestore(uint gc_id);
+  ~GCIdMarkAndRestore();
 };
 
 #endif // SHARE_VM_GC_SHARED_GCID_HPP

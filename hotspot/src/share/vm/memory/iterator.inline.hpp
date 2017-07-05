@@ -58,7 +58,7 @@ void ExtendedOopClosure::verify(T* p) {
     if (!oopDesc::is_null(heap_oop)) {
       oop o = oopDesc::decode_heap_oop_not_null(heap_oop);
       assert(Universe::heap()->is_in_closed_subset(o),
-             err_msg("should be in closed *p " PTR_FORMAT " " PTR_FORMAT, p2i(p), p2i(o)));
+             "should be in closed *p " PTR_FORMAT " " PTR_FORMAT, p2i(p), p2i(o));
     }
   }
 }

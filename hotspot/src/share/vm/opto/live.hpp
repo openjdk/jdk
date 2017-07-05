@@ -46,7 +46,8 @@ typedef GrowableArray<uint> LRG_List;
 class PhaseLive : public Phase {
   // Array of Sets of values live at the start of a block.
   // Indexed by block pre-order number.
-  IndexSet *_live;
+  IndexSet *_live; // live out
+  IndexSet *_livein; // live in
 
   // Array of Sets of values defined locally in the block
   // Indexed by block pre-order number.
@@ -62,15 +63,17 @@ class PhaseLive : public Phase {
   const LRG_List &_names;       // Mapping from Nodes to live ranges
   uint _maxlrg;                 // Largest live-range number
   Arena *_arena;
+  bool _keep_deltas;            // Retain live in information
 
   IndexSet *getset( Block *p );
   IndexSet *getfreeset( );
-  void freeset( const Block *p );
+  void freeset( Block *p );
   void add_liveout( Block *p, uint r, VectorSet &first_pass );
   void add_liveout( Block *p, IndexSet *lo, VectorSet &first_pass );
+  void add_livein( Block *p, IndexSet *lo );
 
 public:
-  PhaseLive(const PhaseCFG &cfg, const LRG_List &names, Arena *arena);
+  PhaseLive(const PhaseCFG &cfg, const LRG_List &names, Arena *arena, bool keep_deltas);
   ~PhaseLive() {}
   // Compute liveness info
   void compute(uint maxlrg);
@@ -79,6 +82,7 @@ public:
 
   // Return the live-out set for this block
   IndexSet *live( const Block * b ) { return &_live[b->_pre_order-1]; }
+  IndexSet *livein( const Block * b ) { return &_livein[b->_pre_order - 1]; }
 
 #ifndef PRODUCT
   void dump( const Block *b ) const;

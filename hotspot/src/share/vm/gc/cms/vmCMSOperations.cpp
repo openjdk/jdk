@@ -58,7 +58,7 @@ void VM_CMS_Operation::release_and_notify_pending_list_lock() {
 void VM_CMS_Operation::verify_before_gc() {
   if (VerifyBeforeGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    GCTraceTime tm("Verify Before", false, false, _collector->_gc_timer_cm, _collector->_gc_tracer_cm->gc_id());
+    GCTraceTime tm("Verify Before", false, false, _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
@@ -70,7 +70,7 @@ void VM_CMS_Operation::verify_before_gc() {
 void VM_CMS_Operation::verify_after_gc() {
   if (VerifyAfterGC &&
       GenCollectedHeap::heap()->total_collections() >= VerifyGCStartAt) {
-    GCTraceTime tm("Verify After", false, false, _collector->_gc_timer_cm, _collector->_gc_tracer_cm->gc_id());
+    GCTraceTime tm("Verify After", false, false, _collector->_gc_timer_cm);
     HandleMark hm;
     FreelistLocker x(_collector);
     MutexLockerEx  y(_collector->bitMapLock(), Mutex::_no_safepoint_check_flag);
@@ -134,6 +134,7 @@ void VM_CMS_Initial_Mark::doit() {
     return;
   }
   HS_PRIVATE_CMS_INITMARK_BEGIN();
+  GCIdMark gc_id_mark(_gc_id);
 
   _collector->_gc_timer_cm->register_gc_pause_start("Initial Mark");
 
@@ -161,6 +162,7 @@ void VM_CMS_Final_Remark::doit() {
     return;
   }
   HS_PRIVATE_CMS_REMARK_BEGIN();
+  GCIdMark gc_id_mark(_gc_id);
 
   _collector->_gc_timer_cm->register_gc_pause_start("Final Mark");
 

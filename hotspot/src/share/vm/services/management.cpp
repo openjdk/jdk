@@ -58,8 +58,6 @@
 #include "services/threadService.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 PerfVariable* Management::_begin_vm_creation_time = NULL;
 PerfVariable* Management::_end_vm_creation_time = NULL;
 PerfVariable* Management::_vm_init_done_time = NULL;
@@ -752,7 +750,7 @@ JVM_ENTRY(jlong, jmm_SetPoolThreshold(JNIEnv* env, jobject obj, jmmThresholdType
 
   if ((size_t)threshold > max_uintx) {
     stringStream st;
-    st.print("Invalid valid threshold value. Threshold value (" UINT64_FORMAT ") > max value of size_t (" SIZE_FORMAT ")", (size_t)threshold, max_uintx);
+    st.print("Invalid valid threshold value. Threshold value (" JLONG_FORMAT ") > max value of size_t (" UINTX_FORMAT ")", threshold, max_uintx);
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), st.as_string(), -1);
   }
 

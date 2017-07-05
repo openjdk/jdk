@@ -60,6 +60,7 @@ class NativeInstruction VALUE_OBJ_CLASS_SPEC {
 
   bool is_nop()                        { return ubyte_at(0) == nop_instruction_code; }
   inline bool is_call();
+  inline bool is_call_reg();
   inline bool is_illegal();
   inline bool is_return();
   inline bool is_jump();
@@ -179,6 +180,24 @@ inline NativeCall* nativeCall_before(address return_address) {
 #endif
   return call;
 }
+
+class NativeCallReg: public NativeInstruction {
+ public:
+  enum Intel_specific_constants {
+    instruction_code            = 0xFF,
+    instruction_offset          =    0,
+    return_address_offset_norex =    2,
+    return_address_offset_rex   =    3
+  };
+
+  int next_instruction_offset() const  {
+    if (ubyte_at(0) == NativeCallReg::instruction_code) {
+      return return_address_offset_norex;
+    } else {
+      return return_address_offset_rex;
+    }
+  }
+};
 
 // An interface for accessing/manipulating native mov reg, imm32 instructions.
 // (used to manipulate inlined 32bit data dll calls, etc.)
@@ -519,6 +538,9 @@ class NativeTstRegMem: public NativeInstruction {
 
 inline bool NativeInstruction::is_illegal()      { return (short)int_at(0) == (short)NativeIllegalInstruction::instruction_code; }
 inline bool NativeInstruction::is_call()         { return ubyte_at(0) == NativeCall::instruction_code; }
+inline bool NativeInstruction::is_call_reg()     { return ubyte_at(0) == NativeCallReg::instruction_code ||
+                                                          (ubyte_at(1) == NativeCallReg::instruction_code &&
+                                                           (ubyte_at(0) == Assembler::REX || ubyte_at(0) == Assembler::REX_B)); }
 inline bool NativeInstruction::is_return()       { return ubyte_at(0) == NativeReturn::instruction_code ||
                                                           ubyte_at(0) == NativeReturnX::instruction_code; }
 inline bool NativeInstruction::is_jump()         { return ubyte_at(0) == NativeJump::instruction_code ||
@@ -527,26 +549,24 @@ inline bool NativeInstruction::is_cond_jump()    { return (int_at(0) & 0xF0FF) =
                                                           (ubyte_at(0) & 0xF0) == 0x70;  /* short jump */ }
 inline bool NativeInstruction::is_safepoint_poll() {
 #ifdef AMD64
-  if (Assembler::is_polling_page_far()) {
-    // two cases, depending on the choice of the base register in the address.
-    if (((ubyte_at(0) & NativeTstRegMem::instruction_rex_prefix_mask) == NativeTstRegMem::instruction_rex_prefix &&
-         ubyte_at(1) == NativeTstRegMem::instruction_code_memXregl &&
-         (ubyte_at(2) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg) ||
-        ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
-        (ubyte_at(1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg) {
-      return true;
-    } else {
-      return false;
-    }
-  } else {
-    if (ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
-        ubyte_at(1) == 0x05) { // 00 rax 101
-      address fault = addr_at(6) + int_at(2);
-      return os::is_poll_address(fault);
-    } else {
-      return false;
-    }
+  // Try decoding a near safepoint first:
+  if (ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
+      ubyte_at(1) == 0x05) { // 00 rax 101
+    address fault = addr_at(6) + int_at(2);
+    NOT_JVMCI(assert(!Assembler::is_polling_page_far(), "unexpected poll encoding");)
+    return os::is_poll_address(fault);
   }
+  // Now try decoding a far safepoint:
+  // two cases, depending on the choice of the base register in the address.
+  if (((ubyte_at(0) & NativeTstRegMem::instruction_rex_prefix_mask) == NativeTstRegMem::instruction_rex_prefix &&
+       ubyte_at(1) == NativeTstRegMem::instruction_code_memXregl &&
+       (ubyte_at(2) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg) ||
+      ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl &&
+      (ubyte_at(1) & NativeTstRegMem::modrm_mask) == NativeTstRegMem::modrm_reg) {
+    NOT_JVMCI(assert(Assembler::is_polling_page_far(), "unexpected poll encoding");)
+    return true;
+  }
+  return false;
 #else
   return ( ubyte_at(0) == NativeMovRegMem::instruction_code_mem2reg ||
            ubyte_at(0) == NativeTstRegMem::instruction_code_memXregl ) &&

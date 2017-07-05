@@ -309,6 +309,38 @@ class DivVDNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------AbsVFNode--------------------------------------
+// Vector Abs float
+class AbsVFNode : public VectorNode {
+ public:
+  AbsVFNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------AbsVDNode--------------------------------------
+// Vector Abs double
+class AbsVDNode : public VectorNode {
+ public:
+  AbsVDNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------NegVFNode--------------------------------------
+// Vector Neg float
+class NegVFNode : public VectorNode {
+ public:
+  NegVFNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------NegVDNode--------------------------------------
+// Vector Neg double
+class NegVDNode : public VectorNode {
+ public:
+  NegVDNode(Node* in, const TypeVect* vt) : VectorNode(in,vt) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------SqrtVDNode--------------------------------------
 // Vector Sqrt double
 class SqrtVDNode : public VectorNode {

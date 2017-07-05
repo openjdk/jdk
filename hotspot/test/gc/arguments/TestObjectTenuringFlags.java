@@ -25,6 +25,7 @@
  * @test TestObjectTenuringFlags
  * @key gc
  * @bug 6521376
+ * @requires vm.gc=="Parallel"
  * @summary Tests argument processing for NeverTenure, AlwaysTenure,
  * and MaxTenuringThreshold
  * @library /testlibrary
@@ -157,7 +158,7 @@ public class TestObjectTenuringFlags {
     if (tenuringFlags.length > 0) {
       Collections.addAll(vmOpts, tenuringFlags);
     }
-    Collections.addAll(vmOpts, "-XX:+PrintFlagsFinal", "-version");
+    Collections.addAll(vmOpts, "-XX:+UseParallelGC", "-XX:+PrintFlagsFinal", "-version");
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmOpts.toArray(new String[vmOpts.size()]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());

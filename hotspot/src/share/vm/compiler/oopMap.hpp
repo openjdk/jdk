@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 // Interface for generating the frame map for compiled code.  A frame map
 // describes for a specific pc whether each register and frame stack slot is:
 //   Oop         - A GC root for current frame
-//   Value       - Live non-oop, non-float value: int, either half of double
 //   Dead        - Dead; can be Zapped for debugging
 //   CalleeXX    - Callee saved; also describes which caller register is saved
 //   DerivedXX   - A derived oop; original oop is described.
@@ -54,7 +53,7 @@ private:
 
 public:
   // Constants
-  enum { type_bits                = 5,
+  enum { type_bits                = 4,
          register_bits            = BitsPerShort - type_bits };
 
   enum { type_shift               = 0,
@@ -68,10 +67,9 @@ public:
   enum oop_types {              // must fit in type_bits
          unused_value =0,       // powers of 2, for masking OopMapStream
          oop_value = 1,
-         value_value = 2,
-         narrowoop_value = 4,
-         callee_saved_value = 8,
-         derived_oop_value= 16 };
+         narrowoop_value = 2,
+         callee_saved_value = 4,
+         derived_oop_value= 8 };
 
   // Constructors
   OopMapValue () { set_value(0); set_content_reg(VMRegImpl::Bad()); }
@@ -96,13 +94,11 @@ public:
 
   // Querying
   bool is_oop()               { return mask_bits(value(), type_mask_in_place) == oop_value; }
-  bool is_value()             { return mask_bits(value(), type_mask_in_place) == value_value; }
   bool is_narrowoop()           { return mask_bits(value(), type_mask_in_place) == narrowoop_value; }
   bool is_callee_saved()      { return mask_bits(value(), type_mask_in_place) == callee_saved_value; }
   bool is_derived_oop()       { return mask_bits(value(), type_mask_in_place) == derived_oop_value; }
 
   void set_oop()              { set_value((value() & register_mask_in_place) | oop_value); }
-  void set_value()            { set_value((value() & register_mask_in_place) | value_value); }
   void set_narrowoop()          { set_value((value() & register_mask_in_place) | narrowoop_value); }
   void set_callee_saved()     { set_value((value() & register_mask_in_place) | callee_saved_value); }
   void set_derived_oop()      { set_value((value() & register_mask_in_place) | derived_oop_value); }
@@ -187,6 +183,8 @@ class OopMap: public ResourceObj {
   int heap_size() const;
   void copy_data_to(address addr) const;
   OopMap* deep_copy();
+
+  bool has_derived_pointer() const PRODUCT_RETURN0;
 
   bool legal_vm_reg_name(VMReg local) {
      return OopMapValue::legal_vm_reg_name(local);
@@ -354,13 +352,82 @@ class OopMapStream : public StackObj {
 #endif
 };
 
+class ImmutableOopMapBuilder {
+private:
+  class Mapping;
+
+private:
+  const OopMapSet* _set;
+  const OopMap* _empty;
+  const OopMap* _last;
+  int _empty_offset;
+  int _last_offset;
+  int _offset;
+  int _required;
+  Mapping* _mapping;
+  ImmutableOopMapSet* _new_set;
+
+  /* Used for bookkeeping when building ImmutableOopMaps */
+  class Mapping : public ResourceObj {
+  public:
+    enum kind_t { OOPMAP_UNKNOWN = 0, OOPMAP_NEW = 1, OOPMAP_EMPTY = 2, OOPMAP_DUPLICATE = 3 };
+
+    kind_t _kind;
+    int _offset;
+    int _size;
+    const OopMap* _map;
+    const OopMap* _other;
+
+    Mapping() : _kind(OOPMAP_UNKNOWN), _offset(-1), _size(-1), _map(NULL) {}
+
+    void set(kind_t kind, int offset, int size, const OopMap* map = 0, const OopMap* other = 0) {
+      _kind = kind;
+      _offset = offset;
+      _size = size;
+      _map = map;
+      _other = other;
+    }
+  };
+
+public:
+  ImmutableOopMapBuilder(const OopMapSet* set);
+
+  int heap_size();
+  ImmutableOopMapSet* build();
+  ImmutableOopMapSet* generate_into(address buffer);
+private:
+  bool is_empty(const OopMap* map) const {
+    return map->count() == 0;
+  }
+
+  bool is_last_duplicate(const OopMap* map) {
+    if (_last != NULL && _last->count() > 0 && _last->equals(map)) {
+      return true;
+    }
+    return false;
+  }
+
+#ifdef ASSERT
+  void verify(address buffer, int size, const ImmutableOopMapSet* set);
+#endif
+
+  bool has_empty() const {
+    return _empty_offset != -1;
+  }
+
+  int size_for(const OopMap* map) const;
+  void fill_pair(ImmutableOopMapPair* pair, const OopMap* map, int offset, const ImmutableOopMapSet* set);
+  int fill_map(ImmutableOopMapPair* pair, const OopMap* map, int offset, const ImmutableOopMapSet* set);
+  void fill(ImmutableOopMapSet* set, int size);
+};
+
 
 // Derived pointer support. This table keeps track of all derived points on a
 // stack.  It is cleared before each scavenge/GC.  During the traversal of all
 // oops, it is filled in with references to all locations that contains a
 // derived oop (assumed to be very few).  When the GC is complete, the derived
 // pointers are updated based on their base pointers new value and an offset.
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
 class DerivedPointerTable : public AllStatic {
   friend class VMStructs;
  private:
@@ -396,6 +463,6 @@ class DerivedPointerTableDeactivate: public StackObj {
     }
   }
 };
-#endif // COMPILER2
+#endif // COMPILER2 || INCLUDE_JVMCI
 
 #endif // SHARE_VM_COMPILER_OOPMAP_HPP

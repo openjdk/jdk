@@ -39,8 +39,6 @@
 #include "runtime/vm_operations.hpp"
 #include "services/threadService.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // TODO: we need to define a naming convention for perf counters
 // to distinguish counters for:
 //   - standard JSR174 use
@@ -508,7 +506,7 @@ void StackFrameInfo::print_on(outputStream* st) const {
   for (int i = 0; i < len; i++) {
     oop o = _locked_monitors->at(i);
     InstanceKlass* ik = InstanceKlass::cast(o->klass());
-    st->print_cr("\t- locked <" INTPTR_FORMAT "> (a %s)", (address)o, ik->external_name());
+    st->print_cr("\t- locked <" INTPTR_FORMAT "> (a %s)", p2i(o), ik->external_name());
   }
 
 }
@@ -732,7 +730,7 @@ void ConcurrentLocksDump::print_locks_on(JavaThread* t, outputStream* st) {
   for (int i = 0; i < locks->length(); i++) {
     instanceOop obj = locks->at(i);
     InstanceKlass* ik = InstanceKlass::cast(obj->klass());
-    st->print_cr("\t- <" INTPTR_FORMAT "> (a %s)", (address)obj, ik->external_name());
+    st->print_cr("\t- <" INTPTR_FORMAT "> (a %s)", p2i(obj), ik->external_name());
   }
   st->cr();
 }
@@ -885,10 +883,10 @@ void DeadlockCycle::print_on(outputStream* st) const {
     st->print_cr("\"%s\":", currentThread->get_thread_name());
     const char* owner_desc = ",\n  which is held by";
     if (waitingToLockMonitor != NULL) {
-      st->print("  waiting to lock monitor " INTPTR_FORMAT, waitingToLockMonitor);
+      st->print("  waiting to lock monitor " INTPTR_FORMAT, p2i(waitingToLockMonitor));
       oop obj = (oop)waitingToLockMonitor->object();
       if (obj != NULL) {
-        st->print(" (object " INTPTR_FORMAT ", a %s)", (address)obj,
+        st->print(" (object " INTPTR_FORMAT ", a %s)", p2i(obj),
                    (InstanceKlass::cast(obj->klass()))->external_name());
 
         if (!currentThread->current_pending_monitor_is_from_java()) {
@@ -907,12 +905,12 @@ void DeadlockCycle::print_on(outputStream* st) const {
         // if it is not findable, then the previous currentThread is
         // blocked permanently.
         st->print("%s UNKNOWN_owner_addr=" PTR_FORMAT, owner_desc,
-                  (address)waitingToLockMonitor->owner());
+                  p2i(waitingToLockMonitor->owner()));
         continue;
       }
     } else {
       st->print("  waiting for ownable synchronizer " INTPTR_FORMAT ", (a %s)",
-                (address)waitingToLockBlocker,
+                p2i(waitingToLockBlocker),
                 (InstanceKlass::cast(waitingToLockBlocker->klass()))->external_name());
       assert(waitingToLockBlocker->is_a(SystemDictionary::abstract_ownable_synchronizer_klass()),
              "Must be an AbstractOwnableSynchronizer");

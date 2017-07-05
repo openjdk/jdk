@@ -632,6 +632,7 @@ LIBOBJS
 CFLAGS_CCACHE
 CCACHE
 USE_PRECOMPILED_HEADER
+ENABLE_JAVAC_SERVER
 ENABLE_SJAVAC
 SJAVAC_SERVER_JAVA_FLAGS
 SJAVAC_SERVER_JAVA
@@ -815,6 +816,7 @@ JAXWS_TOPDIR
 JAXP_TOPDIR
 CORBA_TOPDIR
 LANGTOOLS_TOPDIR
+BOOT_JDK_BITS
 JAVAC_FLAGS
 BOOT_JDK_SOURCETARGET
 JARSIGNER
@@ -968,6 +970,7 @@ TAR
 TAIL
 SORT
 SH
+RMDIR
 RM
 PRINTF
 NAWK
@@ -1115,6 +1118,7 @@ with_jobs
 with_boot_jdk_jvmargs
 with_sjavac_server_java
 enable_sjavac
+enable_javac_server
 enable_precompiled_headers
 enable_ccache
 with_ccache_dir
@@ -1146,6 +1150,7 @@ MV
 NAWK
 PRINTF
 RM
+RMDIR
 SH
 SORT
 TAIL
@@ -1864,6 +1869,8 @@ Optional Features:
                           --with-freetype, disabled otherwise]
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
+  --enable-javac-server   use only the server part of sjavac for faster javac
+                          compiles [disabled]
   --disable-precompiled-headers
                           disable using precompiled headers when compiling C++
                           [enabled]
@@ -2025,6 +2032,7 @@ Some influential environment variables:
   NAWK        Override default value for NAWK
   PRINTF      Override default value for PRINTF
   RM          Override default value for RM
+  RMDIR       Override default value for RMDIR
   SH          Override default value for SH
   SORT        Override default value for SORT
   TAIL        Override default value for TAIL
@@ -4587,7 +4595,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1444643341
+DATE_WHEN_GENERATED=1445964676
 
 ###############################################################################
 #
@@ -9505,6 +9513,209 @@ $as_echo "$tool_specified" >&6; }
 
   if test "x$RM" = x; then
     as_fn_error $? "Could not find required tool for RM" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${RMDIR+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in rmdir
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_RMDIR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RMDIR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RMDIR="$RMDIR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_RMDIR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+RMDIR=$ac_cv_path_RMDIR
+if test -n "$RMDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RMDIR" >&5
+$as_echo "$RMDIR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$RMDIR" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !RMDIR! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!RMDIR!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xRMDIR" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of RMDIR from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of RMDIR from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in rmdir
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_RMDIR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RMDIR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RMDIR="$RMDIR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_RMDIR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+RMDIR=$ac_cv_path_RMDIR
+if test -n "$RMDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RMDIR" >&5
+$as_echo "$RMDIR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$RMDIR" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$RMDIR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool RMDIR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool RMDIR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RMDIR" >&5
+$as_echo_n "checking for RMDIR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$RMDIR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool RMDIR=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool RMDIR=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_RMDIR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RMDIR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RMDIR="$RMDIR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_RMDIR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+RMDIR=$ac_cv_path_RMDIR
+if test -n "$RMDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RMDIR" >&5
+$as_echo "$RMDIR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$RMDIR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool RMDIR=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool RMDIR=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RMDIR" >&5
+$as_echo_n "checking for RMDIR... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool RMDIR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+  fi
+
+
+
+  if test "x$RMDIR" = x; then
+    as_fn_error $? "Could not find required tool for RMDIR" "$LINENO" 5
   fi
 
 
@@ -26918,6 +27129,18 @@ $as_echo "$tool_specified" >&6; }
   # When compiling code to be executed by the Boot JDK, force jdk8 compatibility.
   BOOT_JDK_SOURCETARGET="-source 8 -target 8"
 
+
+
+  # Check if the boot jdk is 32 or 64 bit
+  if "$JAVA" -d64 -version > /dev/null 2>&1; then
+    BOOT_JDK_BITS="64"
+  else
+    BOOT_JDK_BITS="32"
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Boot JDK is 32 or 64 bits" >&5
+$as_echo_n "checking if Boot JDK is 32 or 64 bits... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_BITS" >&5
+$as_echo "$BOOT_JDK_BITS" >&6; }
 
 
 
@@ -53099,7 +53322,7 @@ $as_echo_n "checking flags for boot jdk java command for big workloads... " >&6;
   # Maximum amount of heap memory.
   # Maximum stack size.
   JVM_MAX_HEAP=`expr $MEMORY_SIZE / 2`
-  if test "x$BUILD_NUM_BITS" = x32; then
+  if test "x$BOOT_JDK_BITS" = "x32"; then
     if test "$JVM_MAX_HEAP" -gt "1100"; then
       JVM_MAX_HEAP=1100
     elif test "$JVM_MAX_HEAP" -lt "512"; then
@@ -53107,10 +53330,7 @@ $as_echo_n "checking flags for boot jdk java command for big workloads... " >&6;
     fi
     STACK_SIZE=768
   else
-    # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
-    # pointers are used. Apparently, we need to increase the heap and stack
-    # space for the jvm. More specifically, when running javac to build huge
-    # jdk batch
+    # Running a 64 bit JVM allows for and requires a bigger heap
     if test "$JVM_MAX_HEAP" -gt "1600"; then
       JVM_MAX_HEAP=1600
     elif test "$JVM_MAX_HEAP" -lt "512"; then
@@ -53299,18 +53519,36 @@ fi
 if test "${enable_sjavac+set}" = set; then :
   enableval=$enable_sjavac; ENABLE_SJAVAC="${enableval}"
 else
-  ENABLE_SJAVAC='no'
+  ENABLE_SJAVAC="no"
 fi
 
   if test "x$JVM_ARG_OK" = "xfalse"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling sjavac" >&5
 $as_echo "$as_me: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling sjavac" >&2;}
-    ENABLE_SJAVAC=no;
+    ENABLE_SJAVAC="no"
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use sjavac" >&5
 $as_echo_n "checking whether to use sjavac... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_SJAVAC" >&5
 $as_echo "$ENABLE_SJAVAC" >&6; }
+
+
+  # Check whether --enable-javac-server was given.
+if test "${enable_javac_server+set}" = set; then :
+  enableval=$enable_javac_server; ENABLE_JAVAC_SERVER="${enableval}"
+else
+  ENABLE_JAVAC_SERVER="no"
+fi
+
+  if test "x$JVM_ARG_OK" = "xfalse"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling javac server" >&5
+$as_echo "$as_me: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling javac server" >&2;}
+    ENABLE_JAVAC_SERVER="no"
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use javac server" >&5
+$as_echo_n "checking whether to use javac server... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_JAVAC_SERVER" >&5
+$as_echo "$ENABLE_JAVAC_SERVER" >&6; }
 
 
 
