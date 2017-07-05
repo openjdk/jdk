@@ -26,6 +26,12 @@
 package sun.java2d.pisces;
 
 import java.util.Arrays;
+import static java.lang.Math.PI;
+import static java.lang.Math.cos;
+import static java.lang.Math.sqrt;
+import static java.lang.Math.cbrt;
+import static java.lang.Math.acos;
+
 
 final class Helpers {
     private Helpers() {
@@ -75,100 +81,74 @@ final class Helpers {
         return ret - off;
     }
 
-    // find the roots of g(t) = a*t^3 + b*t^2 + c*t + d in [A,B)
-    // We will not use Cardano's method, since it is complicated and
-    // involves too many square and cubic roots. We will use Newton's method.
-    // TODO: this should probably return ALL roots. Then the user can do
-    // his own filtering of roots outside [A,B).
-    static int cubicRootsInAB(final float a, final float b,
-                              final float c, final float d,
-                              float[] pts, final int off, final float E,
+    // find the roots of g(t) = d*t^3 + a*t^2 + b*t + c in [A,B)
+    static int cubicRootsInAB(float d, float a, float b, float c,
+                              float[] pts, final int off,
                               final float A, final float B)
     {
-        if (a == 0) {
-            return quadraticRoots(b, c, d, pts, off);
+        if (d == 0) {
+            int num = quadraticRoots(a, b, c, pts, off);
+            return filterOutNotInAB(pts, off, num, A, B) - off;
         }
-        // the coefficients of g'(t). no dc variable because dc=c
-        // we use these to get the critical points of g(t), which
-        // we then use to chose starting points for Newton's method. These
-        // should be very close to the actual roots.
-        final float da = 3 * a;
-        final float db = 2 * b;
-        int numCritPts = quadraticRoots(da, db, c, pts, off+1);
-        numCritPts = filterOutNotInAB(pts, off+1, numCritPts, A, B) - off - 1;
-        // need them sorted.
-        if (numCritPts == 2 && pts[off+1] > pts[off+2]) {
-            float tmp = pts[off+1];
-            pts[off+1] = pts[off+2];
-            pts[off+2] = tmp;
-        }
+        // From Graphics Gems:
+        // http://tog.acm.org/resources/GraphicsGems/gems/Roots3And4.c
+        // (also from awt.geom.CubicCurve2D. But here we don't need as
+        // much accuracy and we don't want to create arrays so we use
+        // our own customized version).
 
-        int ret = off;
+        /* normal form: x^3 + ax^2 + bx + c = 0 */
+        a /= d;
+        b /= d;
+        c /= d;
 
-        // we don't actually care much about the extrema themselves. We
-        // only use them to ensure that g(t) is monotonic in each
-        // interval [pts[i],pts[i+1] (for i in off...off+numCritPts+1).
-        // This will allow us to determine intervals containing exactly
-        // one root.
-        // The end points of the interval are always local extrema.
-        pts[off] = A;
-        pts[off + numCritPts + 1] = B;
-        numCritPts += 2;
+        //  substitute x = y - A/3 to eliminate quadratic term:
+        //     x^3 +Px + Q = 0
+        //
+        // Since we actually need P/3 and Q/2 for all of the
+        // calculations that follow, we will calculate
+        // p = P/3
+        // q = Q/2
+        // instead and use those values for simplicity of the code.
+        double sq_A = a * a;
+        double p = 1.0/3 * (-1.0/3 * sq_A + b);
+        double q = 1.0/2 * (2.0/27 * a * sq_A - 1.0/3 * a * b + c);
 
-        float x0 = pts[off], fx0 = evalCubic(a, b, c, d, x0);
-        for (int i = off; i < off + numCritPts - 1; i++) {
-            float x1 = pts[i+1], fx1 = evalCubic(a, b, c, d, x1);
-            if (fx0 == 0f) {
-                pts[ret++] = x0;
-            } else if (fx1 * fx0 < 0f) { // have opposite signs
-                pts[ret++] = CubicNewton(a, b, c, d,
-                        x0 + fx0 * (x1 - x0) / (fx0 - fx1), E);
-            }
-            x0 = x1;
-            fx0 = fx1;
-        }
-        return ret - off;
-    }
+        /* use Cardano's formula */
 
-    // precondition: the polynomial to be evaluated must not be 0 at x0.
-    static float CubicNewton(final float a, final float b,
-                             final float c, final float d,
-                             float x0, final float err)
-    {
-        // considering how this function is used, 10 should be more than enough
-        final int itlimit = 10;
-        float fx0 = evalCubic(a, b, c, d, x0);
-        float x1;
-        int count = 0;
-        while(true) {
-            x1 = x0 - (fx0 / evalCubic(0, 3 * a, 2 * b, c, x0));
-            if (Math.abs(x1 - x0) < err * Math.abs(x1 + x0) || count == itlimit) {
-                break;
-            }
-            x0 = x1;
-            fx0 = evalCubic(a, b, c, d, x0);
-            count++;
-        }
-        return x1;
-    }
+        double cb_p = p * p * p;
+        double D = q * q + cb_p;
 
-    // fills the input array with numbers 0, INC, 2*INC, ...
-    static void fillWithIdxes(final float[] data, final int[] idxes) {
-        if (idxes.length > 0) {
-            idxes[0] = 0;
-            for (int i = 1; i < idxes.length; i++) {
-                idxes[i] = idxes[i-1] + (int)data[idxes[i-1]];
+        int num;
+        if (D < 0) {
+            // see: http://en.wikipedia.org/wiki/Cubic_function#Trigonometric_.28and_hyperbolic.29_method
+            final double phi = 1.0/3 * acos(-q / sqrt(-cb_p));
+            final double t = 2 * sqrt(-p);
+
+            pts[ off+0 ] =  (float)( t * cos(phi));
+            pts[ off+1 ] =  (float)(-t * cos(phi + PI / 3));
+            pts[ off+2 ] =  (float)(-t * cos(phi - PI / 3));
+            num = 3;
+        } else {
+            final double sqrt_D = sqrt(D);
+            final double u = cbrt(sqrt_D - q);
+            final double v = - cbrt(sqrt_D + q);
+
+            pts[ off ] = (float)(u + v);
+            num = 1;
+
+            if (within(D, 0, 1e-8)) {
+                pts[off+1] = -(pts[off] / 2);
+                num = 2;
             }
         }
-    }
 
-    static void fillWithIdxes(final int[] idxes, final int inc) {
-        if (idxes.length > 0) {
-            idxes[0] = 0;
-            for (int i = 1; i < idxes.length; i++) {
-                idxes[i] = idxes[i-1] + inc;
-            }
+        final float sub = 1.0f/3 * a;
+
+        for (int i = 0; i < num; ++i) {
+            pts[ off+i ] -= sub;
         }
+
+        return filterOutNotInAB(pts, off, num, A, B) - off;
     }
 
     // These use a hardcoded factor of 2 for increasing sizes. Perhaps this
@@ -182,6 +162,7 @@ final class Helpers {
         }
         return Arrays.copyOf(in, 2 * (cursize + numToAdd));
     }
+
     static int[] widenArray(int[] in, final int cursize, final int numToAdd) {
         if (in.length >= cursize + numToAdd) {
             return in;
@@ -208,7 +189,7 @@ final class Helpers {
     {
         int ret = off;
         for (int i = off; i < off + len; i++) {
-            if (nums[i] > a && nums[i] < b) {
+            if (nums[i] >= a && nums[i] < b) {
                 nums[ret++] = nums[i];
             }
         }
@@ -225,7 +206,9 @@ final class Helpers {
     }
 
     static float linelen(float x1, float y1, float x2, float y2) {
-        return (float)Math.hypot(x2 - x1, y2 - y1);
+        final float dx = x2 - x1;
+        final float dy = y2 - y1;
+        return (float)Math.sqrt(dx*dx + dy*dy);
     }
 
     static void subdivide(float[] src, int srcoff, float[] left, int leftoff,

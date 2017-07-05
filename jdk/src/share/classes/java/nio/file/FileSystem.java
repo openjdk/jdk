@@ -38,8 +38,8 @@ import java.io.IOException;
  * <p> The default file system, obtained by invoking the {@link FileSystems#getDefault
  * FileSystems.getDefault} method, provides access to the file system that is
  * accessible to the Java virtual machine. The {@link FileSystems} class defines
- * methods to create file systems that provide access to other types of file
- * systems.
+ * methods to create file systems that provide access to other types of (custom)
+ * file systems.
  *
  * <p> A file system is the factory for several types of objects:
  *
@@ -214,10 +214,9 @@ public abstract class FileSystem
      * Suppose we want to print the space usage for all file stores:
      * <pre>
      *     for (FileStore store: FileSystems.getDefault().getFileStores()) {
-     *         FileStoreSpaceAttributes attrs = Attributes.readFileStoreSpaceAttributes(store);
-     *         long total = attrs.totalSpace() / 1024;
-     *         long used = (attrs.totalSpace() - attrs.unallocatedSpace()) / 1024;
-     *         long avail = attrs.usableSpace() / 1024;
+     *         long total = store.getTotalSpace() / 1024;
+     *         long used = (store.getTotalSpace() - store.getUnallocatedSpace()) / 1024;
+     *         long avail = store.getUsableSpace() / 1024;
      *         System.out.format("%-20s %12d %12d %12d%n", store, total, used, avail);
      *     }
      * </pre>
@@ -244,7 +243,20 @@ public abstract class FileSystem
     public abstract Set<String> supportedFileAttributeViews();
 
     /**
-     * Converts a path string to a {@code Path}.
+     * Converts a path string, or a sequence of strings that when joined form
+     * a path string, to a {@code Path}. If {@code more} does not specify any
+     * elements then the value of the {@code first} parameter is the path string
+     * to convert. If {@code more} specifies one or more elements then each
+     * non-empty string, including {@code first}, is considered to be a sequence
+     * of name elements (see {@link Path}) and is joined to form a path string.
+     * The details as to how the Strings are joined is provider specific but
+     * typically they will be joined using the {@link #getSeparator
+     * name-separator} as the separator. For example, if the name separator is
+     * "{@code /}" and {@code getPath("/foo","bar","gus")} is invoked, then the
+     * path string {@code "/foo/bar/gus"} is converted to a {@code Path}.
+     * A {@code Path} representing an empty path is returned if {@code first}
+     * is the empty string and {@code more} does not contain any non-empty
+     * strings.
      *
      * <p> The parsing and conversion to a path object is inherently
      * implementation dependent. In the simplest case, the path string is rejected,
@@ -270,18 +282,17 @@ public abstract class FileSystem
      * index} value indicating the first position in the {@code path} parameter
      * that caused the path string to be rejected.
      *
-     * <p> Invoking this method with an empty path string throws
-     * {@code InvalidPathException}.
+     * @param   first
+     *          the path string or initial part of the path string
+     * @param   more
+     *          additional strings to be joined to form the path string
      *
-     * @param   path
-     *          The path string
-     *
-     * @return  A {@code Path} object
+     * @return  the resulting {@code Path}
      *
      * @throws  InvalidPathException
      *          If the path string cannot be converted
      */
-    public abstract Path getPath(String path);
+    public abstract Path getPath(String first, String... more);
 
     /**
      * Returns a {@code PathMatcher} that performs match operations on the
@@ -290,9 +301,9 @@ public abstract class FileSystem
      *
      * The {@code syntaxAndPattern} parameter identifies the syntax and the
      * pattern and takes the form:
-     * <blockquote>
+     * <blockquote><pre>
      * <i>syntax</i><b>:</b><i>pattern</i>
-     * </blockquote>
+     * </pre></blockquote>
      * where {@code ':'} stands for itself.
      *
      * <p> A {@code FileSystem} implementation supports the "{@code glob}" and
@@ -409,7 +420,7 @@ public abstract class FileSystem
      * @throws  UnsupportedOperationException
      *          If the pattern syntax is not known to the implementation
      *
-     * @see Path#newDirectoryStream(String)
+     * @see Files#newDirectoryStream(Path,String)
      */
     public abstract PathMatcher getPathMatcher(String syntaxAndPattern);
 
@@ -421,10 +432,8 @@ public abstract class FileSystem
      * <p> <b>Usage Example:</b>
      * Suppose we want to make "joe" the owner of a file:
      * <pre>
-     *     Path file = ...
-     *     UserPrincipal joe = file.getFileSystem().getUserPrincipalLookupService()
-     *         .lookupPrincipalByName("joe");
-     *     Attributes.setOwner(file, joe);
+     *     UserPrincipalLookupService lookupService = FileSystems.getDefault().getUserPrincipalLookupService();
+     *     Files.setOwner(path, lookupService.lookupPrincipalByName("joe"));
      * </pre>
      *
      * @throws  UnsupportedOperationException

@@ -365,8 +365,6 @@ bool os::is_allocatable(size_t bytes) {
 
 }
 
-extern "C" int JVM_handle_solaris_signal(int signo, siginfo_t* siginfo, void* ucontext, int abort_if_unrecognized);
-
 extern "C" void Fetch32PFI () ;
 extern "C" void Fetch32Resume () ;
 #ifdef AMD64
@@ -374,7 +372,9 @@ extern "C" void FetchNPFI () ;
 extern "C" void FetchNResume () ;
 #endif // AMD64
 
-int JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrecognized) {
+extern "C" JNIEXPORT int
+JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
+                          int abort_if_unrecognized) {
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
 #ifndef AMD64

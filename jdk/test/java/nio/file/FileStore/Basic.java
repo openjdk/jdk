@@ -22,17 +22,20 @@
  */
 
 /* @test
- * @bug 4313887 6873621 6979526
+ * @bug 4313887 6873621 6979526 7006126
  * @summary Unit test for java.nio.file.FileStore
  * @library ..
  */
 
 import java.nio.file.*;
 import java.nio.file.attribute.*;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 public class Basic {
+
+    static final long G = 1024L * 1024L * 1024L;
 
     public static void main(String[] args) throws IOException {
         Path dir = TestUtil.createTemporaryDirectory();
@@ -48,17 +51,25 @@ public class Basic {
             throw new RuntimeException("Assertion failed");
     }
 
+    static void checkWithin1GB(long value1, long value2) {
+        long diff = Math.abs(value1 - value2);
+        if (diff > G)
+            throw new RuntimeException("values differ by more than 1GB");
+    }
+
     static void doTests(Path dir) throws IOException {
         /**
          * Test: Directory should be on FileStore that is writable
          */
-        assertTrue(!dir.getFileStore().isReadOnly());
+        assertTrue(!Files.getFileStore(dir).isReadOnly());
 
         /**
          * Test: Two files should have the same FileStore
          */
-        FileStore store1 = dir.resolve("foo").createFile().getFileStore();
-        FileStore store2 = dir.resolve("bar").createFile().getFileStore();
+        Path file1 = Files.createFile(dir.resolve("foo"));
+        Path file2 = Files.createFile(dir.resolve("bar"));
+        FileStore store1 = Files.getFileStore(file1);
+        FileStore store2 = Files.getFileStore(file2);
         assertTrue(store1.equals(store2));
         assertTrue(store2.equals(store1));
         assertTrue(store1.hashCode() == store2.hashCode());
@@ -78,6 +89,24 @@ public class Basic {
             store1.supportsFileAttributeView(UserDefinedFileAttributeView.class));
 
         /**
+         * Test: Space atributes
+         */
+        File f = file1.toFile();
+        long total = f.getTotalSpace();
+        long free = f.getFreeSpace();
+        long usable = f.getUsableSpace();
+
+        // check values are "close"
+        checkWithin1GB(total,  store1.getTotalSpace());
+        checkWithin1GB(free,   store1.getUnallocatedSpace());
+        checkWithin1GB(usable, store1.getUsableSpace());
+
+        // get values by name
+        checkWithin1GB(total,  (Long)store1.getAttribute("totalSpace"));
+        checkWithin1GB(free,   (Long)store1.getAttribute("unallocatedSpace"));
+        checkWithin1GB(usable, (Long)store1.getAttribute("usableSpace"));
+
+        /**
          * Test: Enumerate all FileStores
          */
         FileStore prev = null;
@@ -85,8 +114,10 @@ public class Basic {
             System.out.format("%s (name=%s type=%s)\n", store, store.name(),
                 store.type());
 
-            // check space attributes
-            Attributes.readFileStoreSpaceAttributes(store);
+            // check space attributes are accessible
+            store.getTotalSpace();
+            store.getUnallocatedSpace();
+            store.getUsableSpace();
 
             // two distinct FileStores should not be equal
             assertTrue(!store.equals(prev));

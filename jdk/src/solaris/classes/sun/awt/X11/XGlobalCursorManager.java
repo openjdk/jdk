@@ -104,7 +104,9 @@ public final class XGlobalCursorManager extends GlobalCursorManager {
                     nativeContainer = new WeakReference<Component>(nc);
                 }
 
-                ((XComponentPeer)nc_peer).pSetCursor(cur);
+                //6431076. A subcomponents (a XTextArea in particular)
+                //may want to override the cursor over some of their parts.
+                ((XComponentPeer)nc_peer).pSetCursor(cur, false);
                 // in case of grab we do for Swing we need to update keep cursor updated
                 // (we don't need this in case of AWT menus).  Window Manager consider
                 // the grabber as a current window and use its cursor.  So we need to

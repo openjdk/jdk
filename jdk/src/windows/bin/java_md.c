@@ -49,7 +49,6 @@ static jboolean GetPublicJREHome(char *path, jint pathsize);
 static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
                            char *jvmpath, jint jvmpathsize);
 static jboolean GetJREPath(char *path, jint pathsize);
-static void EnsureJreInstallation(const char *jrepath);
 
 /* We supports warmup for UI stack that is performed in parallel
  * to VM initialization.
@@ -201,9 +200,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         exit(2);
     }
 
-    /* Do this before we read jvm.cfg and after jrepath is initialized */
-    EnsureJreInstallation(jrepath);
-
     /* Find the specified JVM type */
     if (ReadKnownVMs(jrepath, (char*)GetArch(), JNI_FALSE) < 1) {
         JLI_ReportErrorMessage(CFG_ERROR7);
@@ -296,68 +292,6 @@ LoadMSVCRT()
     return JNI_TRUE;
 }
 
-/*
- * The preJVMStart is a function in the jkernel.dll, which
- * performs the final step of synthesizing back the decomposed
- * modules  (partial install) to the full JRE. Any tool which
- * uses the  JRE must peform this step to ensure the complete synthesis.
- * The EnsureJreInstallation function calls preJVMStart based on
- * the conditions outlined below, noting that the operation
- * will fail silently if any of conditions are not met.
- * NOTE: this call must be made before jvm.dll is loaded, or jvm.cfg
- * is read, since jvm.cfg will be modified by the preJVMStart.
- * 1. Are we on a supported platform.
- * 2. Find the location of the JRE or the Kernel JRE.
- * 3. check existence of JREHOME/lib/bundles
- * 4. check jkernel.dll and invoke the entry-point
- */
-typedef VOID (WINAPI *PREJVMSTART)();
-
-static void
-EnsureJreInstallation(const char* jrepath)
-{
-    HINSTANCE handle;
-    char tmpbuf[MAXPATHLEN];
-    PREJVMSTART PreJVMStart;
-    struct stat s;
-
-    /* Make sure the jrepath contains something */
-    if ((void*)jrepath[0] == NULL) {
-        return;
-    }
-    /* 32 bit windows only please */
-    if (JLI_StrCmp(GetArch(), "i386") != 0 ) {
-        return;
-    }
-    /* Does our bundle directory exist ? */
-    JLI_Snprintf(tmpbuf, sizeof(tmpbuf), "%s\\lib\\bundles", jrepath);
-    JLI_TraceLauncher("EnsureJreInstallation: %s\n", tmpbuf);
-    if (stat(tmpbuf, &s) != 0) {
-        return;
-    }
-    /* Does our jkernel dll exist ? */
-    JLI_Snprintf(tmpbuf, sizeof(tmpbuf), "%s\\bin\\jkernel.dll", jrepath);
-    if (stat(tmpbuf, &s) != 0) {
-        return;
-    }
-    /* The Microsoft C Runtime Library needs to be loaded first. */
-    if (!LoadMSVCRT()) {
-        return;
-    }
-    /* Load the jkernel.dll */
-    if ((handle = LoadLibrary(tmpbuf)) == 0) {
-        return;
-    }
-    /* Get the function address */
-    PreJVMStart = (PREJVMSTART)GetProcAddress(handle, "preJVMStart");
-    if (PreJVMStart == NULL) {
-        FreeLibrary(handle);
-        return;
-    }
-    PreJVMStart();
-    FreeLibrary(handle);
-    return;
-}
 
 /*
  * Find path to JRE based on .exe's location or registry settings.

@@ -70,6 +70,12 @@
 #ifdef TARGET_ARCH_zero
 # include "vm_version_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "vm_version_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vm_version_ppc.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_linux
 # include "thread_linux.inline.hpp"
 #endif

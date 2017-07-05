@@ -58,8 +58,6 @@
 #ifndef _MP_GF2M_PRIV_H_
 #define _MP_GF2M_PRIV_H_
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "mpi-priv.h"
 
 extern const mp_digit mp_gf2m_sqr_tb[16];

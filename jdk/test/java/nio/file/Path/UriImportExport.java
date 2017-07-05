@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 7003155
  * @summary Unit test for java.nio.file.Path
  */
 
@@ -36,42 +36,105 @@ public class UriImportExport {
     static final PrintStream log = System.out;
     static int failures = 0;
 
-    static void test(String fn, String expected) {
+    /**
+     * Test Path -> URI -> Path
+     */
+    static void testPath(String s) {
+        Path path = Paths.get(s);
+        log.println(path);
+        URI uri = path.toUri();
+        log.println("  --> " + uri);
+        Path result = Paths.get(uri);
+        log.println("  --> " + result);
+        if (!result.equals(path.toAbsolutePath())) {
+            log.println("FAIL: Expected " + path + ", got " + result);
+            failures++;
+        }
         log.println();
-        Path p = Paths.get(fn);
-        log.println(p);
-        URI u = p.toUri();
-        log.println("  --> " + u);
-        if (expected != null && !(u.toString().equals(expected))) {
-            log.println("FAIL: Expected " + expected);
-            failures++;
-            return;
-        }
-        Path q = Paths.get(u);
-        log.println("  --> " + q);
-        if (!p.toAbsolutePath().equals(q)) {
-            log.println("FAIL: Expected " + p + ", got " + q);
-            failures++;
-            return;
-        }
     }
 
-    static void test(String fn) {
-        test(fn, null);
+    /**
+     * Test Path -> (expected) URI -> Path
+     */
+    static void testPath(String s, String expectedUri) {
+        Path path = Paths.get(s);
+        log.println(path);
+        URI uri = path.toUri();
+        log.println("  --> " + uri);
+        if (!uri.toString().equals(expectedUri)) {
+            log.println("FAILED: Expected " + expectedUri + ", got " + uri);
+            failures++;
+            return;
+        }
+        Path result = Paths.get(uri);
+        log.println("  --> " + result);
+        if (!result.equals(path.toAbsolutePath())) {
+            log.println("FAIL: Expected " + path + ", got " + result);
+            failures++;
+        }
+        log.println();
+    }
+
+    /**
+     * Test URI -> Path -> URI
+     */
+    static void testUri(String s) throws Exception {
+        URI uri = URI.create(s);
+        log.println(uri);
+        Path path = Paths.get(uri);
+        log.println("  --> " + path);
+        URI result = path.toUri();
+        log.println("  --> " + result);
+        if (!result.equals(uri)) {
+            log.println("FAIL: Expected " + uri + ", got " + result);
+            failures++;
+        }
+        log.println();
+    }
+
+    /**
+     * Test URI -> Path fails with IllegalArgumentException
+     */
+    static void testBadUri(String s) throws Exception {
+        URI uri = URI.create(s);
+        log.println(uri);
+        try {
+            Path path = Paths.get(uri);
+            log.format(" --> %s  FAIL: Expected IllegalArgumentException\n", path);
+            failures++;
+        } catch (IllegalArgumentException expected) {
+            log.println("  --> IllegalArgumentException (expected)");
+        }
+        log.println();
     }
 
     public static void main(String[] args) throws Exception {
-        test("foo");
-        test("/foo");
-        test("/foo bar");
+        testBadUri("file:foo");
+        testBadUri("file:/foo?q");
+        testBadUri("file:/foo#f");
 
         String osname = System.getProperty("os.name");
         if (osname.startsWith("Windows")) {
-            test("C:\\foo");
-            test("C:foo");
-            test("\\\\rialto.dublin.com\\share\\");
-            test("\\\\fe80--203-baff-fe5a-749ds1.ipv6-literal.net\\share\\missing",
+            testPath("C:\\doesnotexist");
+            testPath("C:doesnotexist");
+            testPath("\\\\server.nowhere.oracle.com\\share\\");
+            testPath("\\\\fe80--203-baff-fe5a-749ds1.ipv6-literal.net\\share\\missing",
                 "file://[fe80::203:baff:fe5a:749d%1]/share/missing");
+        } else {
+            testPath("doesnotexist");
+            testPath("/doesnotexist");
+            testPath("/does not exist");
+            testUri("file:///");
+            testUri("file:///foo/bar/doesnotexist");
+            testUri("file:/foo/bar/doesnotexist");
+
+            // file:///foo/bar/\u0440\u0443\u0441\u0441\u043A\u0438\u0439 (Russian)
+            testUri("file:///foo/bar/%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9");
+
+            // invalid
+            testBadUri("file:foo");
+            testBadUri("file://server/foo");
+            testBadUri("file:///foo%00");
         }
 
         if (failures > 0)

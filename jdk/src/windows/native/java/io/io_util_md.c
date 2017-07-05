@@ -104,7 +104,7 @@ currentDirLength(const WCHAR* ps, int pathlen) {
         else return 0; /* invalid drive name. */
         dir = currentDir(di);
         if (dir != NULL){
-            dirlen = wcslen(dir);
+            dirlen = (int)wcslen(dir);
             free(dir);
         }
         return dirlen;
@@ -115,7 +115,7 @@ currentDirLength(const WCHAR* ps, int pathlen) {
             int dirlen = -1;
             dir = _wgetcwd(NULL, MAX_PATH);
             if (dir != NULL) {
-                curDirLenCached = wcslen(dir);
+                curDirLenCached = (int)wcslen(dir);
                 free(dir);
             }
         }
@@ -165,7 +165,7 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
     int max_path = 248; /* CreateDirectoryW() has the limit of 248 */
 
     WITH_UNICODE_STRING(env, path, ps) {
-        pathlen = wcslen(ps);
+        pathlen = (int)wcslen(ps);
         if (pathlen != 0) {
             if (pathlen > 2 &&
                 (ps[0] == L'\\' && ps[1] == L'\\' ||   //UNC

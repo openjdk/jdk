@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,30 +58,31 @@ public class Truncate {
         for(int i=0; i<100; i++) {
             long testSize = generator.nextInt(1000) + 10;
             initTestFile(blah, testSize);
-            FileChannel fc = (i < 50) ?
-                new RandomAccessFile(blah, "rw").getChannel() :
-                FileChannel.open(blah.toPath(), READ, WRITE);
-            try (fc) {
-                if (fc.size() != testSize)
-                    throw new RuntimeException("Size failed");
 
-                long position = generator.nextInt((int)testSize);
-                fc.position(position);
+            try (FileChannel fc = (i < 50) ?
+                 new RandomAccessFile(blah, "rw").getChannel() :
+                 FileChannel.open(blah.toPath(), READ, WRITE))
+                {
+                    if (fc.size() != testSize)
+                        throw new RuntimeException("Size failed");
 
-                long newSize = generator.nextInt((int)testSize);
-                fc.truncate(newSize);
+                    long position = generator.nextInt((int)testSize);
+                    fc.position(position);
 
-                if (fc.size() != newSize)
-                    throw new RuntimeException("Truncate failed");
+                    long newSize = generator.nextInt((int)testSize);
+                    fc.truncate(newSize);
 
-                if (position > newSize) {
-                    if (fc.position() != newSize)
-                        throw new RuntimeException("Position greater than size");
-                } else {
-                    if (fc.position() != position)
-                        throw new RuntimeException("Truncate changed position");
-                };
-            }
+                    if (fc.size() != newSize)
+                        throw new RuntimeException("Truncate failed");
+
+                    if (position > newSize) {
+                        if (fc.position() != newSize)
+                            throw new RuntimeException("Position greater than size");
+                    } else {
+                        if (fc.position() != position)
+                            throw new RuntimeException("Truncate changed position");
+                    };
+                }
         }
     }
 
@@ -92,24 +93,24 @@ public class Truncate {
         for (int i=0; i<10; i++) {
             long testSize = generator.nextInt(1000) + 10;
             initTestFile(blah, testSize);
-            FileChannel fc = (i < 5) ?
-                new FileOutputStream(blah, true).getChannel() :
-                FileChannel.open(blah.toPath(), APPEND);
-            try (fc) {
-                // truncate file
-                long newSize = generator.nextInt((int)testSize);
-                fc.truncate(newSize);
-                if (fc.size() != newSize)
-                    throw new RuntimeException("Truncate failed");
+            try (FileChannel fc = (i < 5) ?
+                 new FileOutputStream(blah, true).getChannel() :
+                 FileChannel.open(blah.toPath(), APPEND))
+                {
+                    // truncate file
+                    long newSize = generator.nextInt((int)testSize);
+                    fc.truncate(newSize);
+                    if (fc.size() != newSize)
+                        throw new RuntimeException("Truncate failed");
 
-                // write one byte
-                ByteBuffer buf = ByteBuffer.allocate(1);
-                buf.put((byte)'x');
-                buf.flip();
-                fc.write(buf);
-                if (fc.size() != (newSize+1))
-                    throw new RuntimeException("Unexpected size");
-            }
+                    // write one byte
+                    ByteBuffer buf = ByteBuffer.allocate(1);
+                    buf.put((byte)'x');
+                    buf.flip();
+                    fc.write(buf);
+                    if (fc.size() != (newSize+1))
+                        throw new RuntimeException("Unexpected size");
+                }
         }
     }
 

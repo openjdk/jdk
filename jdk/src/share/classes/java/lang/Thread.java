@@ -690,7 +690,7 @@ class Thread implements Runnable {
         /* Notify the group that this thread is about to be started
          * so that it can be added to the group's list of threads
          * and the group's unstarted count can be decremented. */
-        group.threadStarting(this);
+        group.add(this);
 
         boolean started = false;
         try {

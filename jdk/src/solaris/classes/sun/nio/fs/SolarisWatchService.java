@@ -128,7 +128,6 @@ class SolarisWatchService
     private class SolarisWatchKey extends AbstractWatchKey
         implements DirectoryNode
     {
-        private final UnixPath dir;
         private final UnixFileKey fileKey;
 
         // pointer to native file_obj object
@@ -147,15 +146,14 @@ class SolarisWatchService
                         long object,
                         Set<? extends WatchEvent.Kind<?>> events)
         {
-            super(watcher);
-            this.dir = dir;
+            super(dir, watcher);
             this.fileKey = fileKey;
             this.object = object;
             this.events = events;
         }
 
-        UnixPath getFileRef() {
-            return dir;
+        UnixPath getDirectory() {
+            return (UnixPath)watchable();
         }
 
         UnixFileKey getFileKey() {
@@ -487,7 +485,7 @@ class SolarisWatchService
          */
         void processDirectoryEvents(SolarisWatchKey key, int mask) {
             if ((mask & (FILE_MODIFIED | FILE_ATTRIB)) != 0) {
-                registerChildren(key.getFileRef(), key,
+                registerChildren(key.getDirectory(), key,
                     key.events().contains(StandardWatchEventKind.ENTRY_CREATE));
             }
         }
@@ -524,7 +522,7 @@ class SolarisWatchService
                 boolean removed = true;
                 try {
                     UnixFileAttributes
-                        .get(key.getFileRef().resolve(node.name()), false);
+                        .get(key.getDirectory().resolve(node.name()), false);
                     removed = false;
                 } catch (UnixException x) { }
 
@@ -554,14 +552,14 @@ class SolarisWatchService
 
             DirectoryStream<Path> stream = null;
             try {
-                stream = dir.newDirectoryStream();
+                stream = Files.newDirectoryStream(dir);
             } catch (IOException x) {
                 // nothing we can do
                 return;
             }
             try {
                 for (Path entry: stream) {
-                    Path name = entry.getName();
+                    Path name = entry.getFileName();
 
                     // skip entry if already registered
                     if (parent.getChild(name) != null)
@@ -582,9 +580,9 @@ class SolarisWatchService
                     }
 
                     // create node
-                    EntryNode node = new EntryNode(object, entry.getName(), parent);
+                    EntryNode node = new EntryNode(object, entry.getFileName(), parent);
                     // tell the parent about it
-                    parent.addChild(entry.getName(), node);
+                    parent.addChild(entry.getFileName(), node);
                     object2Node.put(object, node);
                 }
             } catch (ConcurrentModificationException x) {
