@@ -25,7 +25,7 @@
  * @test
  * @bug 4906940 8130302
  * @summary -providerPath, -providerClass, -addprovider, and -providerArg
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  */
 
@@ -33,6 +33,7 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import java.nio.file.*;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package sun.security.util;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.regex.Pattern;
 
 /**
@@ -132,6 +134,23 @@ public class AlgorithmDecomposer {
         }
 
         return elements;
+    }
+
+    /**
+     * Get aliases of the specified algorithm.
+     *
+     * May support more algorithms in the future.
+     */
+    public static Collection<String> getAliases(String algorithm) {
+        String[] aliases;
+        if (algorithm.equalsIgnoreCase("DH") ||
+                algorithm.equalsIgnoreCase("DiffieHellman")) {
+            aliases = new String[] {"DH", "DiffieHellman"};
+        } else {
+            aliases = new String[] {algorithm};
+        }
+
+        return Arrays.asList(aliases);
     }
 
     private static void hasLoop(Set<String> elements, String find, String replace) {

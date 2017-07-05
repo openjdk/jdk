@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build UpgradeModulePathTest CompilerUtils jdk.testlibrary.*
+ * @build UpgradeModulePathTest jdk.testlibrary.*
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng UpgradeModulePathTest
  * @summary Basic test for java --upgrade-module-path
  */
@@ -34,6 +35,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import static jdk.testlibrary.ProcessTools.executeTestJava;
 
 import org.testng.annotations.BeforeTest;
@@ -45,7 +47,6 @@ import static org.testng.Assert.*;
  * dependency on module java.enterprise that is deployed on the application
  * modue path.
  */
-
 
 @Test
 public class UpgradeModulePathTest {

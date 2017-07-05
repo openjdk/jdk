@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import jdk.testlibrary.JDKToolFinder;
+import jdk.test.lib.compiler.CompilerUtils;
 
 import static jdk.testlibrary.ProcessTools.executeCommand;
 

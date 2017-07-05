@@ -30,7 +30,7 @@
  * @library ../../../../com/sun/net/httpserver
  *          /lib/testlibrary
  *          /test/lib
- * @build FileServerHandler JarUtils CompilerUtils
+ * @build FileServerHandler JarUtils jdk.test.lib.compiler.CompilerUtils
  * @run main/othervm CloseTest
  * @summary URL-downloaded jar files can consume all available file descriptors
  */
@@ -44,6 +44,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import jdk.test.lib.compiler.CompilerUtils;
 
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpServer;
