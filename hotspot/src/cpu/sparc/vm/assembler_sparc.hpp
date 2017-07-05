@@ -309,12 +309,14 @@ class Address VALUE_OBJ_CLASS_SPEC {
 #endif
 
   // accessors
-  Register base()      const { return _base; }
-  Register index()     const { return _index_or_disp.as_register(); }
-  int      disp()      const { return _index_or_disp.as_constant(); }
+  Register base()             const { return _base; }
+  Register index()            const { return _index_or_disp.as_register(); }
+  int      disp()             const { return _index_or_disp.as_constant(); }
 
-  bool     has_index() const { return _index_or_disp.is_register(); }
-  bool     has_disp()  const { return _index_or_disp.is_constant(); }
+  bool     has_index()        const { return _index_or_disp.is_register(); }
+  bool     has_disp()         const { return _index_or_disp.is_constant(); }
+
+  bool     uses(Register reg) const { return base() == reg || (has_index() && index() == reg); }
 
   const relocInfo::relocType rtype() { return _rspec.type(); }
   const RelocationHolder&    rspec() { return _rspec; }
@@ -329,6 +331,10 @@ class Address VALUE_OBJ_CLASS_SPEC {
     assert(_index_or_disp.is_constant(), "must have a displacement");
     Address a(base(), disp() + plusdisp);
     return a;
+  }
+  bool is_same_address(Address a) const {
+    // disregard _rspec
+    return base() == a.base() && (has_index() ? index() == a.index() : disp() == a.disp());
   }
 
   Address after_save() const {
@@ -436,6 +442,10 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
 
+  AddressLiteral(oop* addr, relocInfo::relocType rtype = relocInfo::none)
+    : _address((address) addr),
+      _rspec(rspec_from_rtype(rtype, (address) addr)) {}
+
   AddressLiteral(float* addr, relocInfo::relocType rtype = relocInfo::none)
     : _address((address) addr),
       _rspec(rspec_from_rtype(rtype, (address) addr)) {}
@@ -455,6 +465,21 @@ class AddressLiteral VALUE_OBJ_CLASS_SPEC {
   }
 };
 
+// Convenience classes
+class ExternalAddress: public AddressLiteral {
+ private:
+  static relocInfo::relocType reloc_for_target(address target) {
+    // Sometimes ExternalAddress is used for values which aren't
+    // exactly addresses, like the card table base.
+    // external_word_type can't be used for values in the first page
+    // so just skip the reloc in that case.
+    return external_word_Relocation::can_be_relocated(target) ? relocInfo::external_word_type : relocInfo::none;
+  }
+
+ public:
+  ExternalAddress(address target) : AddressLiteral(target, reloc_for_target(          target)) {}
+  ExternalAddress(oop*    target) : AddressLiteral(target, reloc_for_target((address) target)) {}
+};
 
 inline Address RegisterImpl::address_in_saved_window() const {
    return (Address(SP, (sp_offset_in_saved_window() * wordSize) + STACK_BIAS));
@@ -691,6 +716,8 @@ class Assembler : public AbstractAssembler  {
     casa_op3     = 0x3c,
     casxa_op3    = 0x3e,
 
+    mftoi_op3    = 0x36,
+
     alt_bit_op3  = 0x10,
      cc_bit_op3  = 0x10
   };
@@ -725,7 +752,13 @@ class Assembler : public AbstractAssembler  {
     fitod_opf   = 0xc8,
     fstod_opf   = 0xc9,
     fstoi_opf   = 0xd1,
-    fdtoi_opf   = 0xd2
+    fdtoi_opf   = 0xd2,
+
+    mdtox_opf   = 0x110,
+    mstouw_opf  = 0x111,
+    mstosw_opf  = 0x113,
+    mxtod_opf   = 0x118,
+    mwtos_opf   = 0x119
   };
 
   enum RCondition {  rc_z = 1,  rc_lez = 2,  rc_lz = 3, rc_nz = 5, rc_gz = 6, rc_gez = 7  };
@@ -855,9 +888,8 @@ class Assembler : public AbstractAssembler  {
   // and be sign-extended. Check the range.
 
   static void assert_signed_range(intptr_t x, int nbits) {
-    assert( nbits == 32
-        ||  -(1 << nbits-1) <= x  &&  x < ( 1 << nbits-1),
-      "value out of range");
+    assert(nbits == 32 || (-(1 << nbits-1) <= x  &&  x < ( 1 << nbits-1)),
+           err_msg("value out of range: x=" INTPTR_FORMAT ", nbits=%d", x, nbits));
   }
 
   static void assert_signed_word_disp_range(intptr_t x, int nbits) {
@@ -1036,6 +1068,9 @@ class Assembler : public AbstractAssembler  {
   static int low10( int x ) {
     return x & ((1 << 10) - 1);
   }
+
+  // instruction only in VIS3
+  static void vis3_only() { assert( VM_Version::has_vis3(), "This instruction only works on SPARC with VIS3"); }
 
   // instruction only in v9
   static void v9_only() { assert( VM_Version::v9_instructions_work(), "This instruction only works on SPARC V9"); }
@@ -1223,8 +1258,8 @@ public:
 
   // pp 159
 
-  void ftox( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w) | fs2(s, w)); }
-  void ftoi( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xd0 + w) | fs2(s, w)); }
+  void ftox( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(fpop1_op3) | opf(0x80 + w) | fs2(s, w)); }
+  void ftoi( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(fpop1_op3) | opf(0xd0 + w) | fs2(s, w)); }
 
   // pp 160
 
@@ -1232,8 +1267,8 @@ public:
 
   // pp 161
 
-  void fxtof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w*4) | fs2(s, w)); }
-  void fitof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xc0 + w*4) | fs2(s, w)); }
+  void fxtof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) { v9_only();  emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0x80 + w*4) | fs2(s, FloatRegisterImpl::D)); }
+  void fitof( FloatRegisterImpl::Width w, FloatRegister s, FloatRegister d ) {             emit_long( op(arith_op) | fd(d, w) | op3(fpop1_op3) | opf(0xc0 + w*4) | fs2(s, FloatRegisterImpl::S)); }
 
   // pp 162
 
@@ -1684,6 +1719,19 @@ public:
                                                                            simm(simm13a, 13)); }
   inline void wrasi(  Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(3, 29, 25)); }
   inline void wrfprs( Register d) { v9_only(); emit_long( op(arith_op) | rs1(d) | op3(wrreg_op3) | u_field(6, 29, 25)); }
+
+
+  // VIS3 instructions
+
+  void movstosw( FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstosw_opf) | fs2(s, FloatRegisterImpl::S)); }
+  void movstouw( FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mstouw_opf) | fs2(s, FloatRegisterImpl::S)); }
+  void movdtox(  FloatRegister s, Register d ) { vis3_only();  emit_long( op(arith_op) | rd(d) | op3(mftoi_op3) | opf(mdtox_opf) | fs2(s, FloatRegisterImpl::D)); }
+
+  void movwtos( Register s, FloatRegister d ) { vis3_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::S) | op3(mftoi_op3) | opf(mwtos_opf) | rs2(s)); }
+  void movxtod( Register s, FloatRegister d ) { vis3_only();  emit_long( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(mftoi_op3) | opf(mxtod_opf) | rs2(s)); }
+
+
+
 
   // For a given register condition, return the appropriate condition code
   // Condition (the one you would use to get the same effect after "tst" on
@@ -2287,7 +2335,7 @@ public:
   int total_frame_size_in_bytes(int extraWords);
 
   // used when extraWords known statically
-  void save_frame(int extraWords);
+  void save_frame(int extraWords = 0);
   void save_frame_c1(int size_in_bytes);
   // make a frame, and simultaneously pass up one or two register value
   // into the new register window
@@ -2456,9 +2504,11 @@ public:
   // offset relative to Gargs of argument at tos[arg_slot].
   // (arg_slot == 0 means the last argument, not the first).
   RegisterOrConstant argument_offset(RegisterOrConstant arg_slot,
+                                     Register temp_reg,
                                      int extra_slot_offset = 0);
   // Address of Gargs and argument_offset.
   Address            argument_address(RegisterOrConstant arg_slot,
+                                      Register temp_reg,
                                       int extra_slot_offset = 0);
 
   // Stack overflow checking

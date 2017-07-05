@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,15 +51,15 @@ public class Hasher {
 
     boolean verbose = false;
 
-    List keys = new ArrayList();        // Key strings
-    List values = new ArrayList();      // Value expressions
-    String pkg = null;                  // Package prefix for generated class
-    String cln = null;                  // Name of generated class
-    String vtype = "String";            // Value type
-    int maxBits = 11;                   // lg table size
-    int maxDepth = 3;                   // Max chain depth
-    boolean inner = false;              // Generating an inner class?
-    boolean empty = false;              // Generating an empty table?
+    List<String> keys = new ArrayList<>();      // Key strings
+    List<String> values = new ArrayList<>();    // Value expressions
+    String pkg = null;                          // Package prefix for generated class
+    String cln = null;                          // Name of generated class
+    String vtype = "String";                    // Value type
+    int maxBits = 11;                           // lg table size
+    int maxDepth = 3;                           // Max chain depth
+    boolean inner = false;                      // Generating an inner class?
+    boolean empty = false;                      // Generating an empty table?
 
     void usage() {
         err.println("usage: java Hasher [options] [[pkgName.]ClassName]");
@@ -76,9 +76,9 @@ public class Hasher {
     }
 
     Hasher(String[] args) {
-        List as = Arrays.asList(args);
-        for (Iterator i = as.iterator(); i.hasNext();) {
-            String a = (String)i.next();
+        List<String> as = Arrays.asList(args);
+        for (Iterator<String> i = as.iterator(); i.hasNext();) {
+            String a = i.next();
             if (a.equals("-e")) {
                 empty = true;
             } else if (a.equals("-i")) {
@@ -88,15 +88,15 @@ public class Hasher {
             } else if (a.equals("-md")) {
                 if (!i.hasNext())
                     usage();
-                maxDepth = Integer.parseInt((String)i.next());
+                maxDepth = Integer.parseInt(i.next());
             } else if (a.equals("-mb")) {
                 if (!i.hasNext())
                     usage();
-                maxBits = Integer.parseInt((String)i.next());
+                maxBits = Integer.parseInt(i.next());
             } else if (a.equals("-t")) {
                 if (!i.hasNext())
                     usage();
-                vtype = (String)i.next();
+                vtype = i.next();
             } else if (a.startsWith("-")) {
                 usage();
             } else {
@@ -153,8 +153,8 @@ public class Hasher {
         int nw = keys.size();
 
         for (int i = 0; i < nw; i++) {
-            String w = (String)keys.get(i);
-            String v = (String)values.get(i);
+            String w = keys.get(i);
+            String v = values.get(i);
             int h = hash(w);
             if (ht[h] == null)
                 ht[h] = new Object[] { w, v };
@@ -217,7 +217,7 @@ public class Hasher {
         if (verbose)
             err.println();
         for (int i = 0, n = keys.size(); i < n; i++) {
-            String w = (String)keys.get(i);
+            String w = keys.get(i);
             String v = get(w);
             if (verbose)
                 err.println(hash(w) + "\t" + w);

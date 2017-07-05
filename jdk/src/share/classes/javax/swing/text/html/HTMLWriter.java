@@ -527,17 +527,17 @@ public class HTMLWriter extends AbstractWriter {
         Object model = attr.getAttribute(StyleConstants.ModelAttribute);
         incrIndent();
         if (model instanceof OptionListModel) {
-            OptionListModel listModel = (OptionListModel)model;
+            OptionListModel<Option> listModel = (OptionListModel<Option>) model;
             int size = listModel.getSize();
             for (int i = 0; i < size; i++) {
-                Option option = (Option)listModel.getElementAt(i);
+                Option option = listModel.getElementAt(i);
                 writeOption(option);
             }
         } else if (model instanceof OptionComboBoxModel) {
-            OptionComboBoxModel comboBoxModel = (OptionComboBoxModel)model;
+            OptionComboBoxModel<Option> comboBoxModel = (OptionComboBoxModel<Option>) model;
             int size = comboBoxModel.getSize();
             for (int i = 0; i < size; i++) {
-                Option option = (Option)comboBoxModel.getElementAt(i);
+                Option option = comboBoxModel.getElementAt(i);
                 writeOption(option);
             }
         }

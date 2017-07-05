@@ -295,6 +295,50 @@ void ConstantPoolCacheEntry::set_dynamic_call(Handle call_site, methodHandle sig
 }
 
 
+methodOop ConstantPoolCacheEntry::get_method_if_resolved(Bytecodes::Code invoke_code, constantPoolHandle cpool) {
+  assert(invoke_code > (Bytecodes::Code)0, "bad query");
+  if (is_secondary_entry()) {
+    return cpool->cache()->entry_at(main_entry_index())->get_method_if_resolved(invoke_code, cpool);
+  }
+  // Decode the action of set_method and set_interface_call
+  if (bytecode_1() == invoke_code) {
+    oop f1 = _f1;
+    if (f1 != NULL) {
+      switch (invoke_code) {
+      case Bytecodes::_invokeinterface:
+        assert(f1->is_klass(), "");
+        return klassItable::method_for_itable_index(klassOop(f1), (int) f2());
+      case Bytecodes::_invokestatic:
+      case Bytecodes::_invokespecial:
+        assert(f1->is_method(), "");
+        return methodOop(f1);
+      }
+    }
+  }
+  if (bytecode_2() == invoke_code) {
+    switch (invoke_code) {
+    case Bytecodes::_invokevirtual:
+      if (is_vfinal()) {
+        // invokevirtual
+        methodOop m = methodOop((intptr_t) f2());
+        assert(m->is_method(), "");
+        return m;
+      } else {
+        int holder_index = cpool->uncached_klass_ref_index_at(constant_pool_index());
+        if (cpool->tag_at(holder_index).is_klass()) {
+          klassOop klass = cpool->resolved_klass_at(holder_index);
+          if (!Klass::cast(klass)->oop_is_instance())
+            klass = SystemDictionary::Object_klass();
+          return instanceKlass::cast(klass)->method_at_vtable((int) f2());
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+
+
 class LocalOopClosure: public OopClosure {
  private:
   void (*_f)(oop*);

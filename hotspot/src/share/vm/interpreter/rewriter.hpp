@@ -85,13 +85,15 @@ class Rewriter: public StackObj {
 
   void compute_index_maps();
   void make_constant_pool_cache(TRAPS);
-  void scan_method(methodOop m);
-  methodHandle rewrite_jsrs(methodHandle m, TRAPS);
+  void scan_method(methodOop m, bool reverse = false);
   void rewrite_Object_init(methodHandle m, TRAPS);
-  void rewrite_member_reference(address bcp, int offset);
-  void rewrite_invokedynamic(address bcp, int offset);
-  void maybe_rewrite_ldc(address bcp, int offset, bool is_wide);
+  void rewrite_member_reference(address bcp, int offset, bool reverse = false);
+  void rewrite_invokedynamic(address bcp, int offset, bool reverse = false);
+  void maybe_rewrite_ldc(address bcp, int offset, bool is_wide, bool reverse = false);
+  // Revert bytecodes in case of an exception.
+  void restore_bytecodes();
 
+  static methodHandle rewrite_jsrs(methodHandle m, TRAPS);
  public:
   // Driver routine:
   static void rewrite(instanceKlassHandle klass, TRAPS);
@@ -100,6 +102,13 @@ class Rewriter: public StackObj {
   enum {
     _secondary_entry_tag = nth_bit(30)
   };
+
+  // Second pass, not gated by is_rewritten flag
+  static void relocate_and_link(instanceKlassHandle klass, TRAPS);
+  // JSR292 version to call with it's own methods.
+  static void relocate_and_link(instanceKlassHandle klass,
+                                objArrayHandle methods, TRAPS);
+
 };
 
 #endif // SHARE_VM_INTERPRETER_REWRITER_HPP

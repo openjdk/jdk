@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @bug 4894125
+ * @bug 4894125 7054918
+ * @library ../testlibrary
  * @summary test that failover for KeyFactory works
  * @author Andreas Sterbenz
  */
@@ -37,6 +38,15 @@ import java.security.spec.*;
 public class Failover {
 
     public static void main(String[] args) throws Exception {
+        ProvidersSnapshot snapshot = ProvidersSnapshot.create();
+        try {
+            main0(args);
+        } finally {
+            snapshot.restore();
+        }
+    }
+
+    public static void main0(String[] args) throws Exception {
         Security.insertProviderAt(new ProviderFail(), 1);
         Security.addProvider(new ProviderPass());
         System.out.println(Arrays.asList(Security.getProviders()));

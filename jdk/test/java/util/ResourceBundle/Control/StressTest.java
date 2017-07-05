@@ -69,36 +69,44 @@ public class StressTest {
         if (args.length > 1) {
             duration = Math.max(5, Integer.parseInt(args[1]));
         }
-        Locale.setDefault(Locale.US);
-        Thread[] tasks = new Thread[locales.length * threadsFactor];
-        counters = new AtomicIntegerArray(tasks.length);
 
-        for (int i = 0; i < tasks.length; i++) {
-            tasks[i] = new Thread(new Worker(i));
-        }
-        for (int i = 0; i < tasks.length; i++) {
-            tasks[i].start();
-        }
-
-        int nProcessors = Runtime.getRuntime().availableProcessors();
-        intervalForCounterCheck = Math.max(tasks.length / nProcessors, 1);
-        System.out.printf("%d processors, intervalForCounterCheck = %d [sec]%n",
-                          nProcessors, intervalForCounterCheck);
+        Locale reservedLocale = Locale.getDefault();
         try {
-            for (int i = 0; runrun && i < duration; i++) {
-                Thread.sleep(1000); // 1 second
-                if ((i % intervalForCounterCheck) == 0) {
-                    checkCounters();
-                }
-            }
-            runrun = false;
-            for (int i = 0; i < tasks.length; i++) {
-                tasks[i].join();
-            }
-        } catch (InterruptedException e) {
-        }
+            Locale.setDefault(Locale.US);
+            Thread[] tasks = new Thread[locales.length * threadsFactor];
+            counters = new AtomicIntegerArray(tasks.length);
 
-        printCounters();
+            for (int i = 0; i < tasks.length; i++) {
+                tasks[i] = new Thread(new Worker(i));
+            }
+            for (int i = 0; i < tasks.length; i++) {
+                tasks[i].start();
+            }
+
+            int nProcessors = Runtime.getRuntime().availableProcessors();
+            intervalForCounterCheck = Math.max(tasks.length / nProcessors, 1);
+            System.out.printf(
+                "%d processors, intervalForCounterCheck = %d [sec]%n",
+                          nProcessors, intervalForCounterCheck);
+            try {
+                for (int i = 0; runrun && i < duration; i++) {
+                    Thread.sleep(1000); // 1 second
+                    if ((i % intervalForCounterCheck) == 0) {
+                        checkCounters();
+                    }
+                }
+                runrun = false;
+                for (int i = 0; i < tasks.length; i++) {
+                    tasks[i].join();
+                }
+            } catch (InterruptedException e) {
+            }
+
+            printCounters();
+        } finally {
+            // restore the reserved locale
+            Locale.setDefault(reservedLocale);
+        }
     }
 
     static void checkCounters() {

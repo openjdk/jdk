@@ -52,25 +52,20 @@
 // MADV_DONTNEED on Linux keeps the virtual memory mapping, but zaps the
 // physical memory page (i.e. similar to MADV_FREE on Solaris).
 
-#ifndef AMD64
+#if !defined(AMD64) && !defined(MINIMIZE_RAM_USAGE)
 Thread* ThreadLocalStorage::_sp_map[1UL << (SP_BITLENGTH - PAGE_SHIFT)];
-#endif // !AMD64
 
 void ThreadLocalStorage::generate_code_for_get_thread() {
     // nothing we can do here for user-level thread
 }
 
 void ThreadLocalStorage::pd_init() {
-#ifndef AMD64
   assert(align_size_down(os::vm_page_size(), PAGE_SIZE) == os::vm_page_size(),
          "page size must be multiple of PAGE_SIZE");
-#endif // !AMD64
 }
 
 void ThreadLocalStorage::pd_set_thread(Thread* thread) {
   os::thread_local_storage_at_put(ThreadLocalStorage::thread_index(), thread);
-
-#ifndef AMD64
   address stack_top = os::current_stack_base();
   size_t stack_size = os::current_stack_size();
 
@@ -88,5 +83,17 @@ void ThreadLocalStorage::pd_set_thread(Thread* thread) {
            "thread exited without detaching from VM??");
     _sp_map[(uintptr_t)p >> PAGE_SHIFT] = thread;
   }
-#endif // !AMD64
 }
+#else
+
+void ThreadLocalStorage::generate_code_for_get_thread() {
+    // nothing we can do here for user-level thread
+}
+
+void ThreadLocalStorage::pd_init() {
+}
+
+void ThreadLocalStorage::pd_set_thread(Thread* thread) {
+  os::thread_local_storage_at_put(ThreadLocalStorage::thread_index(), thread);
+}
+#endif // !AMD64 && !MINIMIZE_RAM_USAGE

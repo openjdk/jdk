@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 4162583
+ * @bug 4162583 7054918
+ * @library ../testlibrary
  * @summary Make sure Provider api implementations are synchronized properly
  */
 
@@ -31,7 +32,16 @@ import java.security.*;
 
 public class SynchronizedAccess {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        ProvidersSnapshot snapshot = ProvidersSnapshot.create();
+        try {
+            main0(args);
+        } finally {
+            snapshot.restore();
+        }
+    }
+
+    public static void main0(String[] args) throws Exception {
         AccessorThread[] acc = new AccessorThread[200];
         for (int i=0; i < acc.length; i++)
             acc[i] = new AccessorThread("thread"+i);
