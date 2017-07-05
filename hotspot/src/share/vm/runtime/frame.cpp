@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "compiler/abstractCompiler.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
@@ -559,7 +560,7 @@ void frame::print_value_on(outputStream* st, JavaThread *thread) const {
 
   st->print("%s frame (sp=" INTPTR_FORMAT " unextended sp=" INTPTR_FORMAT, print_name(), sp(), unextended_sp());
   if (sp() != NULL)
-    st->print(", fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT, fp(), pc());
+    st->print(", fp=" INTPTR_FORMAT ", real_fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT, fp(), real_fp(), pc());
 
   if (StubRoutines::contains(pc())) {
     st->print_cr(")");
@@ -720,11 +721,14 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
     } else if (_cb->is_buffer_blob()) {
       st->print("v  ~BufferBlob::%s", ((BufferBlob *)_cb)->name());
     } else if (_cb->is_nmethod()) {
-      Method* m = ((nmethod *)_cb)->method();
+      nmethod* nm = (nmethod*)_cb;
+      Method* m = nm->method();
       if (m != NULL) {
         m->name_and_sig_as_C_string(buf, buflen);
-        st->print("J  %s @ " PTR_FORMAT " [" PTR_FORMAT "+" SIZE_FORMAT "]",
-                  buf, _pc, _cb->code_begin(), _pc - _cb->code_begin());
+        st->print("J %d%s %s %s (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+0x%x]",
+                  nm->compile_id(), (nm->is_osr_method() ? "%" : ""),
+                  ((nm->compiler() != NULL) ? nm->compiler()->name() : ""),
+                  buf, m->code_size(), _pc, _cb->code_begin(), _pc - _cb->code_begin());
       } else {
         st->print("J  " PTR_FORMAT, pc());
       }

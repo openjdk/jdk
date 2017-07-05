@@ -89,6 +89,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                             ret_type);
 #else
   ShouldNotCallThis();
+  return NULL;
 #endif // SHARK
 }
 
@@ -99,6 +100,7 @@ int Deoptimization::last_frame_adjust(int callee_parameters,
 
 uint SharedRuntime::out_preserve_stack_slots() {
   ShouldNotCallThis();
+  return 0;
 }
 
 JRT_LEAF(void, zero_stub())
@@ -135,4 +137,5 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
                                          int total_args_passed) {
   ShouldNotCallThis();
+  return 0;
 }

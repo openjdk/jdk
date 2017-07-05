@@ -26,7 +26,7 @@
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandle.invoke
  * @compile InvokeGenericTest.java
- * @run junit/othervm test.java.lang.invoke.InvokeGenericTest
+ * @run testng/othervm test.java.lang.invoke.InvokeGenericTest
  */
 
 package test.java.lang.invoke;
@@ -36,10 +36,9 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 import java.lang.reflect.*;
 import java.util.*;
-import org.junit.*;
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
-
+import org.testng.*;
+import static org.testng.AssertJUnit.*;
+import org.testng.annotations.*;
 
 /**
  *
@@ -71,7 +70,7 @@ public class InvokeGenericTest {
     String testName;
     static int allPosTests, allNegTests;
     int posTests, negTests;
-    @After
+    @AfterMethod
     public void printCounts() {
         if (verbosity >= 2 && (posTests | negTests) != 0) {
             System.out.println();

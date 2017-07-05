@@ -26,18 +26,8 @@
 /* @test
  * @summary example code used in javadoc for java.lang.invoke API
  * @compile JavaDocExamplesTest.java
- * @run junit/othervm test.java.lang.invoke.JavaDocExamplesTest
+ * @run testng/othervm test.java.lang.invoke.JavaDocExamplesTest
  */
-
-/*
----- To run outside jtreg:
-$ $JAVA7X_HOME/bin/javac -cp $JUNIT4_JAR -d /tmp/Classes \
-   $DAVINCI/sources/jdk/test/java/lang/invoke/JavaDocExamplesTest.java
-$ $JAVA7X_HOME/bin/java   -cp $JUNIT4_JAR:/tmp/Classes \
-   -DJavaDocExamplesTest.verbosity=1 \
-     test.java.lang.invoke.JavaDocExamplesTest
-----
-*/
 
 package test.java.lang.invoke;
 
@@ -47,22 +37,21 @@ import static java.lang.invoke.MethodType.*;
 
 import java.util.*;
 
-import org.junit.*;
-import static org.junit.Assert.*;
-
+import org.testng.*;
+import static org.testng.AssertJUnit.*;
+import org.testng.annotations.*;
 
 /**
  * @author jrose
  */
 public class JavaDocExamplesTest {
-    /** Wrapper for running the JUnit tests in this module.
-     *  Put JUnit on the classpath!
+    /** Wrapper for running the TestNG tests in this module.
+     *  Put TestNG on the classpath!
      */
     public static void main(String... ignore) throws Throwable {
-        System.out.println("can run this as:");
-        System.out.println("$ java org.junit.runner.JUnitCore "+JavaDocExamplesTest.class.getName());
         new JavaDocExamplesTest().run();
     }
+
     public void run() throws Throwable {
         testFindVirtual();
         testPermuteArguments();

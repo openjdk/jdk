@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@ import java.io.*;
 import java.util.*;
 import java.util.jar.*;
 
-/** Reads a set of files containing the output of java -verbose:class
-    runs. Finds all classes that were loaded from the bootstrap class
-    path by comparing the prefix of the load path to the current JRE's
-    java.home system property. Prints the names of these classes to
-    stdout.
+/** Reads a set of files containing the output of java
+    -XX:+TraceClassLoadingPreorder runs. Finds all classes that were
+    loaded from the bootstrap class path by comparing the prefix of
+    the load path to the current JRE's java.home system property.
+    Prints the names of these classes to stdout.
 */
 
 public class MakeClasslist {
@@ -86,7 +86,7 @@ public class MakeClasslist {
 
     Set<String> seenClasses = new HashSet<>();
 
-    for (String str : seenClasses) {
+    for (String str : classes) {
       if (seenClasses.add(str)) {
         System.out.println(str);
       }

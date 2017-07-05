@@ -64,7 +64,8 @@ public class PBEParameterSpec implements AlgorithmParameterSpec {
      * @param salt the salt. The contents of <code>salt</code> are copied
      * to protect against subsequent modification.
      * @param iterationCount the iteration count.
-     * @param paramSpec the cipher algorithm parameter specification.
+     * @param paramSpec the cipher algorithm parameter specification, which
+     * may be null.
      * @exception NullPointerException if <code>salt</code> is null.
      *
      * @since 1.8

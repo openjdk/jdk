@@ -62,18 +62,18 @@ import sun.security.util.SecurityConstants;
 import sun.util.logging.PlatformLogger;
 
 /**
- * A <code>Window</code> object is a top-level window with no borders and no
+ * A {@code Window} object is a top-level window with no borders and no
  * menubar.
- * The default layout for a window is <code>BorderLayout</code>.
+ * The default layout for a window is {@code BorderLayout}.
  * <p>
  * A window must have either a frame, dialog, or another window defined as its
  * owner when it's constructed.
  * <p>
- * In a multi-screen environment, you can create a <code>Window</code>
- * on a different screen device by constructing the <code>Window</code>
+ * In a multi-screen environment, you can create a {@code Window}
+ * on a different screen device by constructing the {@code Window}
  * with {@link #Window(Window, GraphicsConfiguration)}.  The
- * <code>GraphicsConfiguration</code> object is one of the
- * <code>GraphicsConfiguration</code> objects of the target screen device.
+ * {@code GraphicsConfiguration} object is one of the
+ * {@code GraphicsConfiguration} objects of the target screen device.
  * <p>
  * In a virtual device multi-screen environment in which the desktop
  * area could span multiple physical screen devices, the bounds of all
@@ -87,21 +87,21 @@ import sun.util.logging.PlatformLogger;
  * alt="Diagram shows virtual device containing 4 physical screens. Primary physical screen shows coords (0,0), other screen shows (-80,-100)."
  * ALIGN=center HSPACE=10 VSPACE=7>
  * <p>
- * In such an environment, when calling <code>setLocation</code>,
+ * In such an environment, when calling {@code setLocation},
  * you must pass a virtual coordinate to this method.  Similarly,
- * calling <code>getLocationOnScreen</code> on a <code>Window</code> returns
- * virtual device coordinates.  Call the <code>getBounds</code> method
- * of a <code>GraphicsConfiguration</code> to find its origin in the virtual
+ * calling {@code getLocationOnScreen} on a {@code Window} returns
+ * virtual device coordinates.  Call the {@code getBounds} method
+ * of a {@code GraphicsConfiguration} to find its origin in the virtual
  * coordinate system.
  * <p>
- * The following code sets the location of a <code>Window</code>
+ * The following code sets the location of a {@code Window}
  * at (10, 10) relative to the origin of the physical screen
- * of the corresponding <code>GraphicsConfiguration</code>.  If the
- * bounds of the <code>GraphicsConfiguration</code> is not taken
- * into account, the <code>Window</code> location would be set
+ * of the corresponding {@code GraphicsConfiguration}.  If the
+ * bounds of the {@code GraphicsConfiguration} is not taken
+ * into account, the {@code Window} location would be set
  * at (10, 10) relative to the virtual-coordinate system and would appear
  * on the primary physical screen, which might be different from the
- * physical screen of the specified <code>GraphicsConfiguration</code>.
+ * physical screen of the specified {@code GraphicsConfiguration}.
  *
  * <pre>
  *      Window w = new Window(Window owner, GraphicsConfiguration gc);
@@ -111,19 +111,19 @@ import sun.util.logging.PlatformLogger;
  *
  * <p>
  * Note: the location and size of top-level windows (including
- * <code>Window</code>s, <code>Frame</code>s, and <code>Dialog</code>s)
+ * {@code Window}s, {@code Frame}s, and {@code Dialog}s)
  * are under the control of the desktop's window management system.
- * Calls to <code>setLocation</code>, <code>setSize</code>, and
- * <code>setBounds</code> are requests (not directives) which are
+ * Calls to {@code setLocation}, {@code setSize}, and
+ * {@code setBounds} are requests (not directives) which are
  * forwarded to the window management system.  Every effort will be
  * made to honor such requests.  However, in some cases the window
  * management system may ignore such requests, or modify the requested
- * geometry in order to place and size the <code>Window</code> in a way
+ * geometry in order to place and size the {@code Window} in a way
  * that more closely matches the desktop settings.
  * <p>
  * Due to the asynchronous nature of native event handling, the results
- * returned by <code>getBounds</code>, <code>getLocation</code>,
- * <code>getLocationOnScreen</code>, and <code>getSize</code> might not
+ * returned by {@code getBounds}, {@code getLocation},
+ * {@code getLocationOnScreen}, and {@code getSize} might not
  * reflect the actual geometry of the Window on screen until the last
  * request has been processed.  During the processing of subsequent
  * requests these values might change accordingly while the window
@@ -340,7 +340,7 @@ public class Window extends Container implements Accessible {
      */
     transient boolean isInShow = false;
 
-    /*
+    /**
      * The opacity level of the window
      *
      * @serial
@@ -350,7 +350,7 @@ public class Window extends Container implements Accessible {
      */
     private float opacity = 1.0f;
 
-    /*
+    /**
      * The shape assigned to this window. This field is set to {@code null} if
      * no shape is set (rectangular window).
      *
@@ -415,21 +415,21 @@ public class Window extends Container implements Accessible {
 
     /**
      * Constructs a new, initially invisible window in default size with the
-     * specified <code>GraphicsConfiguration</code>.
+     * specified {@code GraphicsConfiguration}.
      * <p>
      * If there is a security manager, this method first calls
-     * the security manager's <code>checkTopLevelWindow</code>
-     * method with <code>this</code>
+     * the security manager's {@code checkTopLevelWindow}
+     * method with {@code this}
      * as its argument to determine whether or not the window
      * must be displayed with a warning banner.
      *
-     * @param gc the <code>GraphicsConfiguration</code> of the target screen
-     *     device. If <code>gc</code> is <code>null</code>, the system default
-     *     <code>GraphicsConfiguration</code> is assumed
-     * @exception IllegalArgumentException if <code>gc</code>
+     * @param gc the {@code GraphicsConfiguration} of the target screen
+     *     device. If {@code gc} is {@code null}, the system default
+     *     {@code GraphicsConfiguration} is assumed
+     * @exception IllegalArgumentException if {@code gc}
      *    is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see java.lang.SecurityManager#checkTopLevelWindow
@@ -513,20 +513,20 @@ public class Window extends Container implements Accessible {
      * Constructs a new, initially invisible window in the default size.
      *
      * <p>First, if there is a security manager, its
-     * <code>checkTopLevelWindow</code>
-     * method is called with <code>this</code>
+     * {@code checkTopLevelWindow}
+     * method is called with {@code this}
      * as its argument
      * to see if it's ok to display the window without a warning banner.
-     * If the default implementation of <code>checkTopLevelWindow</code>
+     * If the default implementation of {@code checkTopLevelWindow}
      * is used (that is, that method is not overriden), then this results in
-     * a call to the security manager's <code>checkPermission</code> method
-     * with an <code>AWTPermission("showWindowWithoutWarningBanner")</code>
+     * a call to the security manager's {@code checkPermission} method
+     * with an {@code AWTPermission("showWindowWithoutWarningBanner")}
      * permission. It that method raises a SecurityException,
-     * <code>checkTopLevelWindow</code> returns false, otherwise it
+     * {@code checkTopLevelWindow} returns false, otherwise it
      * returns true. If it returns false, a warning banner is created.
      *
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see java.lang.SecurityManager#checkTopLevelWindow
@@ -538,21 +538,21 @@ public class Window extends Container implements Accessible {
 
     /**
      * Constructs a new, initially invisible window with the specified
-     * <code>Frame</code> as its owner. The window will not be focusable
+     * {@code Frame} as its owner. The window will not be focusable
      * unless its owner is showing on the screen.
      * <p>
      * If there is a security manager, this method first calls
-     * the security manager's <code>checkTopLevelWindow</code>
-     * method with <code>this</code>
+     * the security manager's {@code checkTopLevelWindow}
+     * method with {@code this}
      * as its argument to determine whether or not the window
      * must be displayed with a warning banner.
      *
-     * @param owner the <code>Frame</code> to act as owner or <code>null</code>
+     * @param owner the {@code Frame} to act as owner or {@code null}
      *    if this window has no owner
-     * @exception IllegalArgumentException if the <code>owner</code>'s
-     *    <code>GraphicsConfiguration</code> is not from a screen device
+     * @exception IllegalArgumentException if the {@code owner}'s
+     *    {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *    <code>GraphicsEnvironment.isHeadless</code> returns <code>true</code>
+     *    {@code GraphicsEnvironment.isHeadless} returns {@code true}
      *
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see java.lang.SecurityManager#checkTopLevelWindow
@@ -566,23 +566,23 @@ public class Window extends Container implements Accessible {
 
     /**
      * Constructs a new, initially invisible window with the specified
-     * <code>Window</code> as its owner. This window will not be focusable
-     * unless its nearest owning <code>Frame</code> or <code>Dialog</code>
+     * {@code Window} as its owner. This window will not be focusable
+     * unless its nearest owning {@code Frame} or {@code Dialog}
      * is showing on the screen.
      * <p>
      * If there is a security manager, this method first calls
-     * the security manager's <code>checkTopLevelWindow</code>
-     * method with <code>this</code>
+     * the security manager's {@code checkTopLevelWindow}
+     * method with {@code this}
      * as its argument to determine whether or not the window
      * must be displayed with a warning banner.
      *
-     * @param owner the <code>Window</code> to act as owner or
-     *     <code>null</code> if this window has no owner
-     * @exception IllegalArgumentException if the <code>owner</code>'s
-     *     <code>GraphicsConfiguration</code> is not from a screen device
+     * @param owner the {@code Window} to act as owner or
+     *     {@code null} if this window has no owner
+     * @exception IllegalArgumentException if the {@code owner}'s
+     *     {@code GraphicsConfiguration} is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns
-     *     <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns
+     *     {@code true}
      *
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @see       java.lang.SecurityManager#checkTopLevelWindow
@@ -598,27 +598,27 @@ public class Window extends Container implements Accessible {
 
     /**
      * Constructs a new, initially invisible window with the specified owner
-     * <code>Window</code> and a <code>GraphicsConfiguration</code>
+     * {@code Window} and a {@code GraphicsConfiguration}
      * of a screen device. The Window will not be focusable unless
-     * its nearest owning <code>Frame</code> or <code>Dialog</code>
+     * its nearest owning {@code Frame} or {@code Dialog}
      * is showing on the screen.
      * <p>
      * If there is a security manager, this method first calls
-     * the security manager's <code>checkTopLevelWindow</code>
-     * method with <code>this</code>
+     * the security manager's {@code checkTopLevelWindow}
+     * method with {@code this}
      * as its argument to determine whether or not the window
      * must be displayed with a warning banner.
      *
-     * @param owner the window to act as owner or <code>null</code>
+     * @param owner the window to act as owner or {@code null}
      *     if this window has no owner
-     * @param gc the <code>GraphicsConfiguration</code> of the target
-     *     screen device; if <code>gc</code> is <code>null</code>,
-     *     the system default <code>GraphicsConfiguration</code> is assumed
-     * @exception IllegalArgumentException if <code>gc</code>
+     * @param gc the {@code GraphicsConfiguration} of the target
+     *     screen device; if {@code gc} is {@code null},
+     *     the system default {@code GraphicsConfiguration} is assumed
+     * @exception IllegalArgumentException if {@code gc}
      *     is not from a screen device
      * @exception HeadlessException when
-     *     <code>GraphicsEnvironment.isHeadless()</code> returns
-     *     <code>true</code>
+     *     {@code GraphicsEnvironment.isHeadless()} returns
+     *     {@code true}
      *
      * @see       java.awt.GraphicsEnvironment#isHeadless
      * @see       java.lang.SecurityManager#checkTopLevelWindow
@@ -936,7 +936,7 @@ public class Window extends Container implements Accessible {
 
     /**
      * @deprecated As of JDK version 1.1,
-     * replaced by <code>setBounds(int, int, int, int)</code>.
+     * replaced by {@code setBounds(int, int, int, int)}.
      */
     @Deprecated
     public void reshape(int x, int y, int width, int height) {
@@ -1122,16 +1122,16 @@ public class Window extends Container implements Accessible {
 
     /**
      * Releases all of the native screen resources used by this
-     * <code>Window</code>, its subcomponents, and all of its owned
-     * children. That is, the resources for these <code>Component</code>s
+     * {@code Window}, its subcomponents, and all of its owned
+     * children. That is, the resources for these {@code Component}s
      * will be destroyed, any memory they consume will be returned to the
      * OS, and they will be marked as undisplayable.
      * <p>
-     * The <code>Window</code> and its subcomponents can be made displayable
+     * The {@code Window} and its subcomponents can be made displayable
      * again by rebuilding the native resources with a subsequent call to
-     * <code>pack</code> or <code>show</code>. The states of the recreated
-     * <code>Window</code> and its subcomponents will be identical to the
-     * states of these objects at the point where the <code>Window</code>
+     * {@code pack} or {@code show}. The states of the recreated
+     * {@code Window} and its subcomponents will be identical to the
+     * states of these objects at the point where the {@code Window}
      * was disposed (not accounting for additional modifications between
      * those actions).
      * <p>
@@ -1363,14 +1363,14 @@ public class Window extends Container implements Accessible {
      * If this window is insecure, the warning string is displayed
      * somewhere in the visible area of the window. A window is
      * insecure if there is a security manager, and the security
-     * manager's <code>checkTopLevelWindow</code> method returns
-     * <code>false</code> when this window is passed to it as an
+     * manager's {@code checkTopLevelWindow} method returns
+     * {@code false} when this window is passed to it as an
      * argument.
      * <p>
-     * If the window is secure, then <code>getWarningString</code>
-     * returns <code>null</code>. If the window is insecure, this
+     * If the window is secure, then {@code getWarningString}
+     * returns {@code null}. If the window is insecure, this
      * method checks for the system property
-     * <code>awt.appletWarning</code>
+     * {@code awt.appletWarning}
      * and returns the string value of that property.
      * @return    the warning string for this window.
      * @see       java.lang.SecurityManager#checkTopLevelWindow(java.lang.Object)
@@ -1395,7 +1395,7 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Gets the <code>Locale</code> object that is associated
+     * Gets the {@code Locale} object that is associated
      * with this window, if the locale has been set.
      * If no locale has been set, then the default locale
      * is returned.
@@ -1432,7 +1432,7 @@ public class Window extends Container implements Accessible {
      * implementation and/or the native system do not support
      * changing the mouse cursor shape.
      * @param     cursor One of the constants defined
-     *            by the <code>Cursor</code> class. If this parameter is null
+     *            by the {@code Cursor} class. If this parameter is null
      *            then the cursor for this window will be set to the type
      *            Cursor.DEFAULT_CURSOR.
      * @see       Component#getCursor
@@ -1579,7 +1579,7 @@ public class Window extends Container implements Accessible {
      * <b>Warning:</b> this method may return system created windows, such
      * as a print dialog. Applications should not assume the existence of
      * these dialogs, nor should an application assume anything about these
-     * dialogs such as component positions, <code>LayoutManager</code>s
+     * dialogs such as component positions, {@code LayoutManager}s
      * or serialization.
      *
      * @see Frame#getFrames
@@ -1601,7 +1601,7 @@ public class Window extends Container implements Accessible {
      * <b>Warning:</b> this method may return system created windows, such
      * as a print dialog. Applications should not assume the existence of
      * these dialogs, nor should an application assume anything about these
-     * dialogs such as component positions, <code>LayoutManager</code>s
+     * dialogs such as component positions, {@code LayoutManager}s
      * or serialization.
      *
      * @see Frame#getFrames
@@ -1646,17 +1646,17 @@ public class Window extends Container implements Accessible {
      * java.awt.Dialog.ModalExclusionType Dialog.ModalExclusionType} for
      * possible modal exclusion types.
      * <p>
-     * If the given type is not supported, <code>NO_EXCLUDE</code> is used.
+     * If the given type is not supported, {@code NO_EXCLUDE} is used.
      * <p>
      * Note: changing the modal exclusion type for a visible window may have no
      * effect until it is hidden and then shown again.
      *
-     * @param exclusionType the modal exclusion type for this window; a <code>null</code>
+     * @param exclusionType the modal exclusion type for this window; a {@code null}
      *     value is equivivalent to {@link Dialog.ModalExclusionType#NO_EXCLUDE
      *     NO_EXCLUDE}
      * @throws SecurityException if the calling thread does not have permission
      *     to set the modal exclusion property to the window with the given
-     *     <code>exclusionType</code>
+     *     {@code exclusionType}
      * @see java.awt.Dialog.ModalExclusionType
      * @see java.awt.Window#getModalExclusionType
      * @see java.awt.Toolkit#isModalExclusionTypeSupported
@@ -1762,7 +1762,7 @@ public class Window extends Container implements Accessible {
 
     /**
      * Adds the specified window state listener to receive window
-     * events from this window.  If <code>l</code> is <code>null</code>,
+     * events from this window.  If {@code l} is {@code null},
      * no exception is thrown and no action is performed.
      * <p>Refer to <a href="doc-files/AWTThreadIssues.html#ListenersThreads"
      * >AWT Threading Issues</a> for details on AWT's threading model.
@@ -1821,7 +1821,7 @@ public class Window extends Container implements Accessible {
     /**
      * Removes the specified window state listener so that it no
      * longer receives window events from this window.  If
-     * <code>l</code> is <code>null</code>, no exception is thrown and
+     * {@code l} is {@code null}, no exception is thrown and
      * no action is performed.
      * <p>Refer to <a href="doc-files/AWTThreadIssues.html#ListenersThreads"
      * >AWT Threading Issues</a> for details on AWT's threading model.
@@ -1861,7 +1861,7 @@ public class Window extends Container implements Accessible {
      * Returns an array of all the window listeners
      * registered on this window.
      *
-     * @return all of this window's <code>WindowListener</code>s
+     * @return all of this window's {@code WindowListener}s
      *         or an empty array if no window
      *         listeners are currently registered
      *
@@ -1877,7 +1877,7 @@ public class Window extends Container implements Accessible {
      * Returns an array of all the window focus listeners
      * registered on this window.
      *
-     * @return all of this window's <code>WindowFocusListener</code>s
+     * @return all of this window's {@code WindowFocusListener}s
      *         or an empty array if no window focus
      *         listeners are currently registered
      *
@@ -1893,7 +1893,7 @@ public class Window extends Container implements Accessible {
      * Returns an array of all the window state listeners
      * registered on this window.
      *
-     * @return all of this window's <code>WindowStateListener</code>s
+     * @return all of this window's {@code WindowStateListener}s
      *         or an empty array if no window state
      *         listeners are currently registered
      *
@@ -1909,17 +1909,17 @@ public class Window extends Container implements Accessible {
     /**
      * Returns an array of all the objects currently registered
      * as <code><em>Foo</em>Listener</code>s
-     * upon this <code>Window</code>.
+     * upon this {@code Window}.
      * <code><em>Foo</em>Listener</code>s are registered using the
      * <code>add<em>Foo</em>Listener</code> method.
      *
      * <p>
      *
-     * You can specify the <code>listenerType</code> argument
+     * You can specify the {@code listenerType} argument
      * with a class literal, such as
      * <code><em>Foo</em>Listener.class</code>.
      * For example, you can query a
-     * <code>Window</code> <code>w</code>
+     * {@code Window} {@code w}
      * for its window listeners with the following code:
      *
      * <pre>WindowListener[] wls = (WindowListener[])(w.getListeners(WindowListener.class));</pre>
@@ -1928,14 +1928,14 @@ public class Window extends Container implements Accessible {
      *
      * @param listenerType the type of listeners requested; this parameter
      *          should specify an interface that descends from
-     *          <code>java.util.EventListener</code>
+     *          {@code java.util.EventListener}
      * @return an array of all objects registered as
      *          <code><em>Foo</em>Listener</code>s on this window,
      *          or an empty array if no such
      *          listeners have been added
-     * @exception ClassCastException if <code>listenerType</code>
+     * @exception ClassCastException if {@code listenerType}
      *          doesn't specify a class or interface that implements
-     *          <code>java.util.EventListener</code>
+     *          {@code java.util.EventListener}
      * @exception NullPointerException if {@code listenerType} is {@code null}
      *
      * @see #getWindowListeners
@@ -1991,10 +1991,10 @@ public class Window extends Container implements Accessible {
 
     /**
      * Processes events on this window. If the event is an
-     * <code>WindowEvent</code>, it invokes the
-     * <code>processWindowEvent</code> method, else it invokes its
-     * superclass's <code>processEvent</code>.
-     * <p>Note that if the event parameter is <code>null</code>
+     * {@code WindowEvent}, it invokes the
+     * {@code processWindowEvent} method, else it invokes its
+     * superclass's {@code processEvent}.
+     * <p>Note that if the event parameter is {@code null}
      * the behavior is unspecified and may result in an
      * exception.
      *
@@ -2033,10 +2033,10 @@ public class Window extends Container implements Accessible {
      * following occurs:
      * <ul>
      * <li>A WindowListener object is registered via
-     *     <code>addWindowListener</code>
-     * <li>Window events are enabled via <code>enableEvents</code>
+     *     {@code addWindowListener}
+     * <li>Window events are enabled via {@code enableEvents}
      * </ul>
-     * <p>Note that if the event parameter is <code>null</code>
+     * <p>Note that if the event parameter is {@code null}
      * the behavior is unspecified and may result in an
      * exception.
      *
@@ -2082,10 +2082,10 @@ public class Window extends Container implements Accessible {
      * following occurs:
      * <ul>
      * <li>a WindowFocusListener is registered via
-     *     <code>addWindowFocusListener</code>
-     * <li>Window focus events are enabled via <code>enableEvents</code>
+     *     {@code addWindowFocusListener}
+     * <li>Window focus events are enabled via {@code enableEvents}
      * </ul>
-     * <p>Note that if the event parameter is <code>null</code>
+     * <p>Note that if the event parameter is {@code null}
      * the behavior is unspecified and may result in an
      * exception.
      *
@@ -2111,17 +2111,17 @@ public class Window extends Container implements Accessible {
 
     /**
      * Processes window state event occuring on this window by
-     * dispatching them to any registered <code>WindowStateListener</code>
+     * dispatching them to any registered {@code WindowStateListener}
      * objects.
      * NOTE: this method will not be called unless window state events
      * are enabled for this window.  This happens when one of the
      * following occurs:
      * <ul>
-     * <li>a <code>WindowStateListener</code> is registered via
-     *    <code>addWindowStateListener</code>
-     * <li>window state events are enabled via <code>enableEvents</code>
+     * <li>a {@code WindowStateListener} is registered via
+     *    {@code addWindowStateListener}
+     * <li>window state events are enabled via {@code enableEvents}
      * </ul>
-     * <p>Note that if the event parameter is <code>null</code>
+     * <p>Note that if the event parameter is {@code null}
      * the behavior is unspecified and may result in an
      * exception.
      *
@@ -2145,7 +2145,7 @@ public class Window extends Container implements Accessible {
     /**
      * Implements a debugging hook -- checks to see if
      * the user has typed <i>control-shift-F1</i>.  If so,
-     * the list of child windows is dumped to <code>System.out</code>.
+     * the list of child windows is dumped to {@code System.out}.
      * @param e  the keyboard event
      */
     void preProcessKeyEvent(KeyEvent e) {
@@ -2176,21 +2176,21 @@ public class Window extends Container implements Accessible {
      * automatically become always-on-top.  If a window ceases to be
      * always-on-top, the windows that it owns will no longer be
      * always-on-top.  When an always-on-top window is sent {@link #toBack
-     * toBack}, its always-on-top state is set to <code>false</code>.
+     * toBack}, its always-on-top state is set to {@code false}.
      *
      * <p> When this method is called on a window with a value of
-     * <code>true</code>, and the window is visible and the platform
+     * {@code true}, and the window is visible and the platform
      * supports always-on-top for this window, the window is immediately
      * brought forward, "sticking" it in the top-most position. If the
      * window isn`t currently visible, this method sets the always-on-top
-     * state to <code>true</code> but does not bring the window forward.
+     * state to {@code true} but does not bring the window forward.
      * When the window is later shown, it will be always-on-top.
      *
      * <p> When this method is called on a window with a value of
-     * <code>false</code> the always-on-top state is set to normal. The
+     * {@code false} the always-on-top state is set to normal. The
      * window remains in the top-most position but it`s z-order can be
      * changed as for any other window.  Calling this method with a value
-     * of <code>false</code> on a window that has a normal state has no
+     * of {@code false} on a window that has a normal state has no
      * effect.  Setting the always-on-top state to false has no effect on
      * the relative z-order of the windows if there are no other
      * always-on-top windows.
@@ -2250,9 +2250,9 @@ public class Window extends Container implements Accessible {
      * window. Some platforms may not support always-on-top windows, some
      * may support only some kinds of top-level windows; for example,
      * a platform may not support always-on-top modal dialogs.
-     * @return <code>true</code>, if the always-on-top mode is
+     * @return {@code true}, if the always-on-top mode is
      *         supported by the toolkit and for this window,
-     *         <code>false</code>, if always-on-top mode is not supported
+     *         {@code false}, if always-on-top mode is not supported
      *         for this window or toolkit doesn't support always-on-top windows.
      * @see #setAlwaysOnTop(boolean)
      * @see Toolkit#isAlwaysOnTopSupported
@@ -2265,8 +2265,8 @@ public class Window extends Container implements Accessible {
 
     /**
      * Returns whether this window is an always-on-top window.
-     * @return <code>true</code>, if the window is in always-on-top state,
-     *         <code>false</code> otherwise
+     * @return {@code true}, if the window is in always-on-top state,
+     *         {@code false} otherwise
      * @see #setAlwaysOnTop
      * @since 1.5
      */
@@ -2294,7 +2294,7 @@ public class Window extends Container implements Accessible {
     /**
      * Returns the child Component of this Window that will receive the focus
      * when this Window is focused. If this Window is currently focused, this
-     * method returns the same Component as <code>getFocusOwner()</code>. If
+     * method returns the same Component as {@code getFocusOwner()}. If
      * this Window is not focused, then the child Component that most recently
      * requested focus will be returned. If no child Component has ever
      * requested focus, and this is a focusable Window, then this Window's
@@ -2359,8 +2359,8 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Gets a focus traversal key for this Window. (See <code>
-     * setFocusTraversalKeys</code> for a full description of each key.)
+     * Gets a focus traversal key for this Window. (See {@code
+     * setFocusTraversalKeys} for a full description of each key.)
      * <p>
      * If the traversal key has not been explicitly set for this Window,
      * then this Window's parent's traversal key is returned. If the
@@ -2419,10 +2419,10 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Always returns <code>true</code> because all Windows must be roots of a
+     * Always returns {@code true} because all Windows must be roots of a
      * focus traversal cycle.
      *
-     * @return <code>true</code>
+     * @return {@code true}
      * @see #setFocusCycleRoot
      * @see Container#setFocusTraversalPolicy
      * @see Container#getFocusTraversalPolicy
@@ -2433,10 +2433,10 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Always returns <code>null</code> because Windows have no ancestors; they
+     * Always returns {@code null} because Windows have no ancestors; they
      * represent the top of the Component hierarchy.
      *
-     * @return <code>null</code>
+     * @return {@code null}
      * @see Container#isFocusCycleRoot()
      * @since 1.4
      */
@@ -2448,16 +2448,16 @@ public class Window extends Container implements Accessible {
      * Returns whether this Window can become the focused Window, that is,
      * whether this Window or any of its subcomponents can become the focus
      * owner. For a Frame or Dialog to be focusable, its focusable Window state
-     * must be set to <code>true</code>. For a Window which is not a Frame or
+     * must be set to {@code true}. For a Window which is not a Frame or
      * Dialog to be focusable, its focusable Window state must be set to
-     * <code>true</code>, its nearest owning Frame or Dialog must be
+     * {@code true}, its nearest owning Frame or Dialog must be
      * showing on the screen, and it must contain at least one Component in
      * its focus traversal cycle. If any of these conditions is not met, then
      * neither this Window nor any of its subcomponents can become the focus
      * owner.
      *
-     * @return <code>true</code> if this Window can be the focused Window;
-     *         <code>false</code> otherwise
+     * @return {@code true} if this Window can be the focused Window;
+     *         {@code false} otherwise
      * @see #getFocusableWindowState
      * @see #setFocusableWindowState
      * @see #isShowing
@@ -2497,16 +2497,16 @@ public class Window extends Container implements Accessible {
 
     /**
      * Returns whether this Window can become the focused Window if it meets
-     * the other requirements outlined in <code>isFocusableWindow</code>. If
-     * this method returns <code>false</code>, then
-     * <code>isFocusableWindow</code> will return <code>false</code> as well.
-     * If this method returns <code>true</code>, then
-     * <code>isFocusableWindow</code> may return <code>true</code> or
-     * <code>false</code> depending upon the other requirements which must be
+     * the other requirements outlined in {@code isFocusableWindow}. If
+     * this method returns {@code false}, then
+     * {@code isFocusableWindow} will return {@code false} as well.
+     * If this method returns {@code true}, then
+     * {@code isFocusableWindow} may return {@code true} or
+     * {@code false} depending upon the other requirements which must be
      * met in order for a Window to be focusable.
      * <p>
      * By default, all Windows have a focusable Window state of
-     * <code>true</code>.
+     * {@code true}.
      *
      * @return whether this Window can be the focused Window
      * @see #isFocusableWindow
@@ -2521,25 +2521,25 @@ public class Window extends Container implements Accessible {
 
     /**
      * Sets whether this Window can become the focused Window if it meets
-     * the other requirements outlined in <code>isFocusableWindow</code>. If
-     * this Window's focusable Window state is set to <code>false</code>, then
-     * <code>isFocusableWindow</code> will return <code>false</code>. If this
-     * Window's focusable Window state is set to <code>true</code>, then
-     * <code>isFocusableWindow</code> may return <code>true</code> or
-     * <code>false</code> depending upon the other requirements which must be
+     * the other requirements outlined in {@code isFocusableWindow}. If
+     * this Window's focusable Window state is set to {@code false}, then
+     * {@code isFocusableWindow} will return {@code false}. If this
+     * Window's focusable Window state is set to {@code true}, then
+     * {@code isFocusableWindow} may return {@code true} or
+     * {@code false} depending upon the other requirements which must be
      * met in order for a Window to be focusable.
      * <p>
-     * Setting a Window's focusability state to <code>false</code> is the
+     * Setting a Window's focusability state to {@code false} is the
      * standard mechanism for an application to identify to the AWT a Window
      * which will be used as a floating palette or toolbar, and thus should be
      * a non-focusable Window.
      *
-     * Setting the focusability state on a visible <code>Window</code>
+     * Setting the focusability state on a visible {@code Window}
      * can have a delayed effect on some platforms &#151; the actual
-     * change may happen only when the <code>Window</code> becomes
+     * change may happen only when the {@code Window} becomes
      * hidden and then visible again.  To ensure consistent behavior
-     * across platforms, set the <code>Window</code>'s focusable state
-     * when the <code>Window</code> is invisible and then show it.
+     * across platforms, set the {@code Window}'s focusable state
+     * when the {@code Window} is invisible and then show it.
      *
      * @param focusableWindowState whether this Window can be the focused
      *        Window
@@ -2726,7 +2726,7 @@ public class Window extends Container implements Accessible {
 
     /**
      * @deprecated As of JDK version 1.1
-     * replaced by <code>dispatchEvent(AWTEvent)</code>.
+     * replaced by {@code dispatchEvent(AWTEvent)}.
      */
     @Deprecated
     public boolean postEvent(Event e) {
@@ -2876,22 +2876,22 @@ public class Window extends Container implements Accessible {
 
     /**
      * Writes default serializable fields to stream.  Writes
-     * a list of serializable <code>WindowListener</code>s and
-     * <code>WindowFocusListener</code>s as optional data.
+     * a list of serializable {@code WindowListener}s and
+     * {@code WindowFocusListener}s as optional data.
      * Writes a list of child windows as optional data.
      * Writes a list of icon images as optional data
      *
-     * @param s the <code>ObjectOutputStream</code> to write
-     * @serialData <code>null</code> terminated sequence of
-     *    0 or more pairs; the pair consists of a <code>String</code>
-     *    and and <code>Object</code>; the <code>String</code>
+     * @param s the {@code ObjectOutputStream} to write
+     * @serialData {@code null} terminated sequence of
+     *    0 or more pairs; the pair consists of a {@code String}
+     *    and {@code Object}; the {@code String}
      *    indicates the type of object and is one of the following:
-     *    <code>windowListenerK</code> indicating a
-     *      <code>WindowListener</code> object;
-     *    <code>windowFocusWindowK</code> indicating a
-     *      <code>WindowFocusListener</code> object;
-     *    <code>ownedWindowK</code> indicating a child
-     *      <code>Window</code> object
+     *    {@code windowListenerK} indicating a
+     *      {@code WindowListener} object;
+     *    {@code windowFocusWindowK} indicating a
+     *      {@code WindowFocusListener} object;
+     *    {@code ownedWindowK} indicating a child
+     *      {@code Window} object
      *
      * @see AWTEventMulticaster#save(java.io.ObjectOutputStream, java.lang.String, java.util.EventListener)
      * @see Component#windowListenerK
@@ -3029,16 +3029,16 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Reads the <code>ObjectInputStream</code> and an optional
+     * Reads the {@code ObjectInputStream} and an optional
      * list of listeners to receive various events fired by
      * the component; also reads a list of
-     * (possibly <code>null</code>) child windows.
+     * (possibly {@code null}) child windows.
      * Unrecognized keys or values will be ignored.
      *
-     * @param s the <code>ObjectInputStream</code> to read
+     * @param s the {@code ObjectInputStream} to read
      * @exception HeadlessException if
-     *   <code>GraphicsEnvironment.isHeadless</code> returns
-     *   <code>true</code>
+     *   {@code GraphicsEnvironment.isHeadless} returns
+     *   {@code true}
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @see #writeObject
      */
@@ -3100,7 +3100,7 @@ public class Window extends Container implements Accessible {
 
     /**
      * This class implements accessibility support for the
-     * <code>Window</code> class.  It provides an implementation of the
+     * {@code Window} class.  It provides an implementation of the
      * Java Accessibility API appropriate to window user-interface elements.
      * @since 1.3
      */
@@ -3186,7 +3186,7 @@ public class Window extends Container implements Accessible {
      * not changed.
      * <p>
      * <b>Note</b>: If the lower edge of the window is out of the screen,
-     * then the window is placed to the side of the <code>Component</code>
+     * then the window is placed to the side of the {@code Component}
      * that is closest to the center of the screen. So if the
      * component is on the right part of the screen, the window
      * is placed to its left, and vice versa.
@@ -3289,7 +3289,7 @@ public class Window extends Container implements Accessible {
      * Creates a new strategy for multi-buffering on this component.
      * Multi-buffering is useful for rendering performance.  This method
      * attempts to create the best strategy available with the number of
-     * buffers supplied.  It will always create a <code>BufferStrategy</code>
+     * buffers supplied.  It will always create a {@code BufferStrategy}
      * with that number of buffers.
      * A page-flipping strategy is attempted first, then a blitting strategy
      * using accelerated buffers.  Finally, an unaccelerated blitting
@@ -3318,13 +3318,13 @@ public class Window extends Container implements Accessible {
      * is called, the existing buffer strategy for this component is discarded.
      * @param numBuffers number of buffers to create, including the front buffer
      * @param caps the required capabilities for creating the buffer strategy;
-     * cannot be <code>null</code>
+     * cannot be {@code null}
      * @exception AWTException if the capabilities supplied could not be
      * supported or met; this may happen, for example, if there is not enough
      * accelerated memory currently available, or if page flipping is specified
      * but not possible.
      * @exception IllegalArgumentException if numBuffers is less than 1, or if
-     * caps is <code>null</code>
+     * caps is {@code null}
      * @see #getBufferStrategy
      * @since 1.4
      */
@@ -3334,8 +3334,8 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Returns the <code>BufferStrategy</code> used by this component.  This
-     * method will return null if a <code>BufferStrategy</code> has not yet
+     * Returns the {@code BufferStrategy} used by this component.  This
+     * method will return null if a {@code BufferStrategy} has not yet
      * been created or has been disposed.
      *
      * @return the buffer strategy used by this component
@@ -3376,7 +3376,7 @@ public class Window extends Container implements Accessible {
     /**
      * Sets whether this Window should appear at the default location for the
      * native windowing system or at the current location (returned by
-     * <code>getLocation</code>) the next time the Window is made visible.
+     * {@code getLocation}) the next time the Window is made visible.
      * This behavior resembles a native window shown without programmatically
      * setting its location.  Most windowing systems cascade windows if their
      * locations are not explicitly set. The actual location is determined once the
@@ -3386,8 +3386,8 @@ public class Window extends Container implements Accessible {
      * "java.awt.Window.locationByPlatform" to "true", though calls to this method
      * take precedence.
      * <p>
-     * Calls to <code>setVisible</code>, <code>setLocation</code> and
-     * <code>setBounds</code> after calling <code>setLocationByPlatform</code> clear
+     * Calls to {@code setVisible}, {@code setLocation} and
+     * {@code setBounds} after calling {@code setLocationByPlatform} clear
      * this property of the Window.
      * <p>
      * For example, after the following code is executed:
@@ -3397,7 +3397,7 @@ public class Window extends Container implements Accessible {
      * boolean flag = isLocationByPlatform();
      * </blockquote></pre>
      * The window will be shown at platform's default location and
-     * <code>flag</code> will be <code>false</code>.
+     * {@code flag} will be {@code false}.
      * <p>
      * In the following sample:
      * <pre><blockquote>
@@ -3406,13 +3406,13 @@ public class Window extends Container implements Accessible {
      * boolean flag = isLocationByPlatform();
      * setVisible(true);
      * </blockquote></pre>
-     * The window will be shown at (10, 10) and <code>flag</code> will be
-     * <code>false</code>.
+     * The window will be shown at (10, 10) and {@code flag} will be
+     * {@code false}.
      *
-     * @param locationByPlatform <code>true</code> if this Window should appear
-     *        at the default location, <code>false</code> if at the current location
-     * @throws <code>IllegalComponentStateException</code> if the window
-     *         is showing on screen and locationByPlatform is <code>true</code>.
+     * @param locationByPlatform {@code true} if this Window should appear
+     *        at the default location, {@code false} if at the current location
+     * @throws {@code IllegalComponentStateException} if the window
+     *         is showing on screen and locationByPlatform is {@code true}.
      * @see #setLocation
      * @see #isShowing
      * @see #setVisible
@@ -3430,9 +3430,9 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * Returns <code>true</code> if this Window will appear at the default location
+     * Returns {@code true} if this Window will appear at the default location
      * for the native windowing system the next time this Window is made visible.
-     * This method always returns <code>false</code> if the Window is showing on the
+     * This method always returns {@code false} if the Window is showing on the
      * screen.
      *
      * @return whether this Window will appear at the default location
@@ -3509,8 +3509,8 @@ public class Window extends Container implements Accessible {
 
     /**
      * Determines whether this component will be displayed on the screen.
-     * @return <code>true</code> if the component and all of its ancestors
-     *          until a toplevel window are visible, <code>false</code> otherwise
+     * @return {@code true} if the component and all of its ancestors
+     *          until a toplevel window are visible, {@code false} otherwise
      */
     boolean isRecursivelyVisible() {
         // 5079694 fix: for a toplevel to be displayed, its parent doesn't have to be visible.

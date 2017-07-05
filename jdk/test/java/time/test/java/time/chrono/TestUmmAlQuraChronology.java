@@ -438,13 +438,13 @@ public class TestUmmAlQuraChronology {
     // Test to verify the formatted dates
     @Test(dataProvider="patternMonthNames")
     public void test_ofPattern(int year, int month, int day, String expected) {
-        DateTimeFormatter test = DateTimeFormatter.ofPattern("dd G E MMMM yyyy");
+        DateTimeFormatter test = DateTimeFormatter.ofPattern("dd G E MMMM yyyy", Locale.US);
         assertEquals(test.format(HijrahDate.of(year, month, day)), expected);
     }
 
     // Data provider for localized dates
     @DataProvider(name="chronoDateTimes")
-    Object[][] data_chronodatetimes() {
+   Object[][] data_chronodatetimes() {
         return new Object[][] {
             {1432, 12, 29, "Safar 1, 1434 AH"},
             {1433, 1, 30, "Safar 30, 1434 AH"},
@@ -463,7 +463,7 @@ public class TestUmmAlQuraChronology {
         hdt = hdt.plus(1, ChronoUnit.HOURS);
         hdt = hdt.plus(1, ChronoUnit.MINUTES);
         hdt = hdt.plus(1, ChronoUnit.SECONDS);
-        DateTimeFormatter df = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withChronology(Chronology.of("Hijrah-umalqura")).withLocale(Locale.forLanguageTag("en-US"));
+        DateTimeFormatter df = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withChronology(Chronology.of("Hijrah-umalqura")).withLocale(Locale.US);
         assertEquals(df.format(hdt), expected);
     }
 

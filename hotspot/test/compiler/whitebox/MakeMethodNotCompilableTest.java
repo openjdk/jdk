@@ -23,16 +23,16 @@
 
 /*
  * @test MakeMethodNotCompilableTest
- * @bug 8012322
+ * @bug 8012322 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
  * @build MakeMethodNotCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* MakeMethodNotCompilableTest
+ * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* MakeMethodNotCompilableTest
  * @summary testing of WB::makeMethodNotCompilable()
  * @author igor.ignatyev@oracle.com
  */
 public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
-
+    private int bci;
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             for (TestCase test : TestCase.values()) {
@@ -63,9 +63,11 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
     @Override
     protected void test() throws Exception {
         checkNotCompiled();
-        if (!WHITE_BOX.isMethodCompilable(method)) {
+        if (!isCompilable()) {
             throw new RuntimeException(method + " must be compilable");
         }
+
+        bci = getBci();
 
         if (TIERED_COMPILATION) {
             final int tierLimit = TIERED_STOP_AT_LEVEL + 1;
@@ -73,15 +75,15 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
                 testTier(testedTier);
             }
             for (int testedTier = 1; testedTier < tierLimit; ++testedTier) {
-                WHITE_BOX.makeMethodNotCompilable(method, testedTier);
-                if (WHITE_BOX.isMethodCompilable(method, testedTier)) {
+                makeNotCompilable(testedTier);
+                if (isCompilable(testedTier)) {
                     throw new RuntimeException(method
                             + " must be not compilable at level" + testedTier);
                 }
-                WHITE_BOX.enqueueMethodForCompilation(method, testedTier);
+                WHITE_BOX.enqueueMethodForCompilation(method, testedTier, bci);
                 checkNotCompiled();
 
-                if (!WHITE_BOX.isMethodCompilable(method)) {
+                if (!isCompilable()) {
                     System.out.println(method
                             + " is not compilable after level " + testedTier);
                 }
@@ -89,15 +91,20 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
         } else {
             compile();
             checkCompiled();
-            int compLevel = WHITE_BOX.getMethodCompilationLevel(method);
-            WHITE_BOX.deoptimizeMethod(method);
-            WHITE_BOX.makeMethodNotCompilable(method, compLevel);
-            if (WHITE_BOX.isMethodCompilable(method, COMP_LEVEL_ANY)) {
+            int compLevel = getCompLevel();
+            deoptimize();
+            makeNotCompilable(compLevel);
+            if (isCompilable(COMP_LEVEL_ANY)) {
                 throw new RuntimeException(method
                         + " must be not compilable at CompLevel::CompLevel_any,"
                         + " after it is not compilable at " + compLevel);
             }
+
             WHITE_BOX.clearMethodState(method);
+            if (!isCompilable()) {
+                throw new RuntimeException(method
+                        + " is not compilable after clearMethodState()");
+            }
 
             // nocompilable at opposite level must make no sense
             int oppositeLevel;
@@ -106,16 +113,16 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
             } else {
               oppositeLevel = COMP_LEVEL_SIMPLE;
             }
-            WHITE_BOX.makeMethodNotCompilable(method, oppositeLevel);
+            makeNotCompilable(oppositeLevel);
 
-            if (!WHITE_BOX.isMethodCompilable(method, COMP_LEVEL_ANY)) {
+            if (!isCompilable(COMP_LEVEL_ANY)) {
                   throw new RuntimeException(method
                         + " must be compilable at CompLevel::CompLevel_any,"
                         + " even it is not compilable at opposite level ["
                         + compLevel + "]");
             }
 
-            if (!WHITE_BOX.isMethodCompilable(method, compLevel)) {
+            if (!isCompilable(compLevel)) {
                   throw new RuntimeException(method
                         + " must be compilable at level " + compLevel
                         + ", even it is not compilable at opposite level ["
@@ -126,24 +133,24 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
         // clearing after tiered/non-tiered tests
         // WB.clearMethodState() must reset no-compilable flags
         WHITE_BOX.clearMethodState(method);
-        if (!WHITE_BOX.isMethodCompilable(method)) {
+        if (!isCompilable()) {
             throw new RuntimeException(method
                     + " is not compilable after clearMethodState()");
         }
 
-        WHITE_BOX.makeMethodNotCompilable(method);
-        if (WHITE_BOX.isMethodCompilable(method)) {
+        makeNotCompilable();
+        if (isCompilable()) {
             throw new RuntimeException(method + " must be not compilable");
         }
 
         compile();
         checkNotCompiled();
-        if (WHITE_BOX.isMethodCompilable(method)) {
+        if (isCompilable()) {
             throw new RuntimeException(method + " must be not compilable");
         }
         // WB.clearMethodState() must reset no-compilable flags
         WHITE_BOX.clearMethodState(method);
-        if (!WHITE_BOX.isMethodCompilable(method)) {
+        if (!isCompilable()) {
             throw new RuntimeException(method
                     + " is not compilable after clearMethodState()");
         }
@@ -153,24 +160,23 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
 
     // separately tests each tier
     private void testTier(int testedTier) {
-        if (!WHITE_BOX.isMethodCompilable(method, testedTier)) {
+        if (!isCompilable(testedTier)) {
             throw new RuntimeException(method
                     + " is not compilable on start");
         }
-        WHITE_BOX.makeMethodNotCompilable(method, testedTier);
+        makeNotCompilable(testedTier);
 
         // tests for all other tiers
         for (int anotherTier = 1, tierLimit = TIERED_STOP_AT_LEVEL + 1;
                     anotherTier < tierLimit; ++anotherTier) {
-            boolean isCompilable = WHITE_BOX.isMethodCompilable(method,
-                    anotherTier);
+            boolean isCompilable = isCompilable(anotherTier);
             if (sameCompile(testedTier, anotherTier)) {
                 if (isCompilable) {
                     throw new RuntimeException(method
                             + " must be not compilable at level " + anotherTier
                             + ", if it is not compilable at " + testedTier);
                 }
-                WHITE_BOX.enqueueMethodForCompilation(method, anotherTier);
+                WHITE_BOX.enqueueMethodForCompilation(method, anotherTier, bci);
                 checkNotCompiled();
             } else {
                 if (!isCompilable) {
@@ -179,12 +185,12 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
                             + ", even if it is not compilable at "
                             + testedTier);
                 }
-                WHITE_BOX.enqueueMethodForCompilation(method, anotherTier);
+                WHITE_BOX.enqueueMethodForCompilation(method, anotherTier, bci);
                 checkCompiled();
-                WHITE_BOX.deoptimizeMethod(method);
+                deoptimize();
             }
 
-            if (!WHITE_BOX.isMethodCompilable(method, COMP_LEVEL_ANY)) {
+            if (!isCompilable(COMP_LEVEL_ANY)) {
                 throw new RuntimeException(method
                         + " must be compilable at 'CompLevel::CompLevel_any'"
                         + ", if it is not compilable only at " + testedTier);
@@ -193,7 +199,7 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
 
         // clear state after test
         WHITE_BOX.clearMethodState(method);
-        if (!WHITE_BOX.isMethodCompilable(method, testedTier)) {
+        if (!isCompilable(testedTier)) {
             throw new RuntimeException(method
                     + " is not compilable after clearMethodState()");
         }
@@ -210,5 +216,14 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
             return true;
         }
         return false;
+    }
+
+    private int getBci() {
+        compile();
+        checkCompiled();
+        int result = WHITE_BOX.getMethodEntryBci(method);
+        deoptimize();
+        WHITE_BOX.clearMethodState(method);
+        return result;
     }
 }

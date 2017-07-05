@@ -24,6 +24,8 @@
  */
 package com.sun.media.sound;
 
+import java.util.Arrays;
+
 /**
  * A standard director who chooses performers
  * by there keyfrom,keyto,velfrom,velto properties.
@@ -32,17 +34,16 @@ package com.sun.media.sound;
  */
 public final class ModelStandardDirector implements ModelDirector {
 
-    ModelPerformer[] performers;
-    ModelDirectedPlayer player;
-    boolean noteOnUsed = false;
-    boolean noteOffUsed = false;
+    private final ModelPerformer[] performers;
+    private final ModelDirectedPlayer player;
+    private boolean noteOnUsed = false;
+    private boolean noteOffUsed = false;
 
-    public ModelStandardDirector(ModelPerformer[] performers,
-            ModelDirectedPlayer player) {
-        this.performers = performers;
+    public ModelStandardDirector(final ModelPerformer[] performers,
+                                 final ModelDirectedPlayer player) {
+        this.performers = Arrays.copyOf(performers, performers.length);
         this.player = player;
-        for (int i = 0; i < performers.length; i++) {
-            ModelPerformer p = performers[i];
+        for (final ModelPerformer p : this.performers) {
             if (p.isReleaseTriggered()) {
                 noteOffUsed = true;
             } else {
