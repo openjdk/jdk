@@ -25,11 +25,12 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_GSPACECOUNTERS_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_SHARED_GSPACECOUNTERS_HPP
 
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/shared/generationCounters.hpp"
 #include "memory/generation.hpp"
 #include "runtime/perfData.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 // A GSpaceCounter is a holder class for performance counters
 // that track a space;

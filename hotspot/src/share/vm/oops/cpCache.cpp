@@ -33,9 +33,10 @@
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/handles.inline.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 # include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 
 // Implememtation of ConstantPoolCacheEntry

@@ -26,6 +26,7 @@
 #define SHARE_VM_OOPS_INSTANCEREFKLASS_HPP
 
 #include "oops/instanceKlass.hpp"
+#include "utilities/macros.hpp"
 
 // An InstanceRefKlass is a specialized InstanceKlass for Java
 // classes that are subclasses of java/lang/ref/Reference.
@@ -83,13 +84,13 @@ class InstanceRefKlass: public InstanceKlass {
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_DECL)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)      \
   int oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceRefKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   static void release_and_notify_pending_list_lock(BasicLock *pending_list_basic_lock);
   static void acquire_pending_list_lock(BasicLock *pending_list_basic_lock);

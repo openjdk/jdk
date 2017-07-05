@@ -35,7 +35,8 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/cmsOopClosures.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
@@ -45,7 +46,7 @@
 #include "gc_implementation/parallelScavenge/psPromotionManager.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 int InstanceMirrorKlass::_offset_of_static_fields = 0;
 
@@ -168,7 +169,7 @@ void InstanceMirrorKlass::oop_follow_contents(oop obj) {
     assert_is_in_closed_subset)
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 void InstanceMirrorKlass::oop_follow_contents(ParCompactionManager* cm,
                                               oop obj) {
   InstanceKlass::oop_follow_contents(cm, obj);
@@ -189,7 +190,7 @@ void InstanceMirrorKlass::oop_follow_contents(ParCompactionManager* cm,
     PSParallelCompact::mark_and_push(cm, p),                                          \
     assert_is_in)
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 int InstanceMirrorKlass::oop_adjust_pointers(oop obj) {
   int size = oop_size(obj);
@@ -262,7 +263,7 @@ oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {                  
   }                                                                                   \
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix) \
                                                                                       \
 int InstanceMirrorKlass::                                                             \
@@ -278,7 +279,7 @@ oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {        
     InstanceMirrorKlass_SPECIALIZED_OOP_ITERATE_DEFN(oop, nv_suffix);                 \
   }                                                                                   \
 }
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 
 #define InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)         \
@@ -310,14 +311,14 @@ oop_oop_iterate##nv_suffix##_m(oop obj,                                         
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN)
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceMirrorKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN)
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN_m)
 ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceMirrorKlass_OOP_OOP_ITERATE_DEFN_m)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 void InstanceMirrorKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   // Note that we don't have to follow the mirror -> klass pointer, since all
   // klasses that are dirty will be scavenged when we iterate over the
@@ -353,7 +354,7 @@ int InstanceMirrorKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) 
     assert_nothing)
   return size;
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 int InstanceMirrorKlass::instance_size(KlassHandle k) {
   if (k() != NULL && k->oop_is_instance()) {

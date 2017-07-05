@@ -43,7 +43,8 @@
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/growableArray.hpp"
-#ifndef SERIALGC
+#include "utilities/macros.hpp"
+#if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/parNew/parNewGeneration.hpp"
@@ -52,7 +53,7 @@
 #include "gc_implementation/parallelScavenge/psYoungGen.hpp"
 #include "services/g1MemoryPool.hpp"
 #include "services/psMemoryPool.hpp"
-#endif
+#endif // INCLUDE_ALL_GCS
 
 GrowableArray<MemoryPool*>* MemoryService::_pools_list =
   new (ResourceObj::C_HEAP, mtInternal) GrowableArray<MemoryPool*>(init_pools_list_size, true);
@@ -83,7 +84,7 @@ void MemoryService::set_universe_heap(CollectedHeap* heap) {
       add_gen_collected_heap_info(GenCollectedHeap::heap());
       break;
     }
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case CollectedHeap::ParallelScavengeHeap : {
       add_parallel_scavenge_heap_info(ParallelScavengeHeap::heap());
       break;
@@ -92,7 +93,7 @@ void MemoryService::set_universe_heap(CollectedHeap* heap) {
       add_g1_heap_info(G1CollectedHeap::heap());
       break;
     }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
     default: {
       guarantee(false, "Unrecognized kind of heap");
     }
@@ -130,22 +131,22 @@ void MemoryService::add_gen_collected_heap_info(GenCollectedHeap* heap) {
       case Generation::DefNew:
         _minor_gc_manager = MemoryManager::get_copy_memory_manager();
         break;
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
       case Generation::ParNew:
       case Generation::ASParNew:
         _minor_gc_manager = MemoryManager::get_parnew_memory_manager();
         break;
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
       default:
         guarantee(false, "Unrecognized generation spec");
         break;
     }
     if (policy->is_mark_sweep_policy()) {
       _major_gc_manager = MemoryManager::get_msc_memory_manager();
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     } else if (policy->is_concurrent_mark_sweep_policy()) {
       _major_gc_manager = MemoryManager::get_cms_memory_manager();
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
     } else {
       guarantee(false, "Unknown two-gen policy");
     }
@@ -159,7 +160,7 @@ void MemoryService::add_gen_collected_heap_info(GenCollectedHeap* heap) {
   add_generation_memory_pool(heap->get_gen(major), _major_gc_manager);
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 // Add memory pools for ParallelScavengeHeap
 // This function currently only supports two generations collected heap.
 // The collector for ParallelScavengeHeap will have two memory managers.
@@ -185,7 +186,7 @@ void MemoryService::add_g1_heap_info(G1CollectedHeap* g1h) {
   add_g1YoungGen_memory_pool(g1h, _major_gc_manager, _minor_gc_manager);
   add_g1OldGen_memory_pool(g1h, _major_gc_manager);
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 MemoryPool* MemoryService::add_gen(Generation* gen,
                                    const char* name,
@@ -222,7 +223,7 @@ MemoryPool* MemoryService::add_survivor_spaces(DefNewGeneration* gen,
   return (MemoryPool*) pool;
 }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 MemoryPool* MemoryService::add_cms_space(CompactibleFreeListSpace* space,
                                          const char* name,
                                          bool is_heap,
@@ -233,7 +234,7 @@ MemoryPool* MemoryService::add_cms_space(CompactibleFreeListSpace* space,
   _pools_list->append(pool);
   return (MemoryPool*) pool;
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 // Add memory pool(s) for one generation
 void MemoryService::add_generation_memory_pool(Generation* gen,
@@ -261,7 +262,7 @@ void MemoryService::add_generation_memory_pool(Generation* gen,
       break;
     }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case Generation::ParNew:
     case Generation::ASParNew:
     {
@@ -282,7 +283,7 @@ void MemoryService::add_generation_memory_pool(Generation* gen,
 
       break;
     }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
     case Generation::MarkSweepCompact: {
       assert(major_mgr != NULL && minor_mgr == NULL, "Should have only one manager");
@@ -293,7 +294,7 @@ void MemoryService::add_generation_memory_pool(Generation* gen,
       break;
     }
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case Generation::ConcurrentMarkSweep:
     case Generation::ASConcurrentMarkSweep:
     {
@@ -306,7 +307,7 @@ void MemoryService::add_generation_memory_pool(Generation* gen,
                                        true  /* support_usage_threshold */);
       break;
     }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
     default:
       assert(false, "should not reach here");
@@ -326,7 +327,7 @@ void MemoryService::add_generation_memory_pool(Generation* gen,
 }
 
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 void MemoryService::add_psYoung_memory_pool(PSYoungGen* gen, MemoryManager* major_mgr, MemoryManager* minor_mgr) {
   assert(major_mgr != NULL && minor_mgr != NULL, "Should have two managers");
 
@@ -384,7 +385,7 @@ void MemoryService::add_g1OldGen_memory_pool(G1CollectedHeap* g1h,
   mgr->add_pool(old_gen);
   _pools_list->append(old_gen);
 }
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
 void MemoryService::add_code_heap_memory_pool(CodeHeap* heap) {
   _code_heap_pool = new CodeHeapPool(heap,
@@ -534,17 +535,17 @@ Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
 TraceMemoryManagerStats::TraceMemoryManagerStats(Generation::Name kind, GCCause::Cause cause) {
   switch (kind) {
     case Generation::DefNew:
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case Generation::ParNew:
     case Generation::ASParNew:
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
       _fullGC=false;
       break;
     case Generation::MarkSweepCompact:
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
     case Generation::ConcurrentMarkSweep:
     case Generation::ASConcurrentMarkSweep:
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
       _fullGC=true;
       break;
     default:
