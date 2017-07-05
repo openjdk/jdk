@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 7038914 8016341
  * @summary Verify that the reference handler does not die after an OOME allocating the InterruptedException object
- * @run main/othervm -Xmx24M -XX:-UseTLAB OOMEInReferenceHandler
+ * @run main/othervm -XX:-UseGCOverheadLimit -Xmx24M -XX:-UseTLAB OOMEInReferenceHandler
  * @author peter.levart@gmail.com
  */
 

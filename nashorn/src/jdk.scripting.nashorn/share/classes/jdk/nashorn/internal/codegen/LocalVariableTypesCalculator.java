@@ -62,6 +62,7 @@ import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.JoinPredecessor;
 import jdk.nashorn.internal.ir.JoinPredecessorExpression;
 import jdk.nashorn.internal.ir.JumpStatement;
+import jdk.nashorn.internal.ir.JumpToInlinedFinally;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
@@ -529,8 +530,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             return false;
         }
         assertTypeStackIsEmpty();
-        final BreakableNode target = jump.getTarget(lc);
-        jumpToLabel(jump, jump.getTargetLabel(target), getBreakTargetTypes(target));
+        jumpToLabel(jump, jump.getTargetLabel(lc), getBreakTargetTypes(jump.getPopScopeLimit(lc)));
         doesNotContinueSequentially();
         return false;
     }
@@ -781,6 +781,11 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             typeStack.push(LvarType.UNDEFINED);
         }
         return false;
+    }
+
+    @Override
+    public boolean enterJumpToInlinedFinally(final JumpToInlinedFinally jumpToInlinedFinally) {
+        return enterJumpStatement(jumpToInlinedFinally);
     }
 
     @Override
@@ -1042,6 +1047,17 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         }
         doesNotContinueSequentially();
 
+        for (final Block inlinedFinally : tryNode.getInlinedFinallies()) {
+            final Block finallyBody = TryNode.getLabelledInlinedFinallyBlock(inlinedFinally);
+            joinOnLabel(finallyBody.getEntryLabel());
+            // NOTE: the jump to inlined finally can end up in dead code, so it is not necessarily reachable.
+            if (reachable) {
+                finallyBody.accept(this);
+                // All inlined finallies end with a jump or a return
+                assert !reachable;
+            }
+        }
+
         joinOnLabel(catchLabel);
         for(final CatchNode catchNode: tryNode.getCatches()) {
             final IdentNode exception = catchNode.getException();
@@ -1125,7 +1141,7 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
         return false;
     };
 
-    private Map<Symbol, LvarType> getBreakTargetTypes(final BreakableNode target) {
+    private Map<Symbol, LvarType> getBreakTargetTypes(final LexicalContextNode target) {
         // Remove symbols defined in the the blocks that are being broken out of.
         Map<Symbol, LvarType> types = localVariableTypes;
         for(final Iterator<LexicalContextNode> it = lc.getAllNodes(); it.hasNext();) {
@@ -1380,7 +1396,11 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                 if(node instanceof JoinPredecessor) {
                     final JoinPredecessor original = joinPredecessors.pop();
                     assert original.getClass() == node.getClass() : original.getClass().getName() + "!=" + node.getClass().getName();
-                    return (Node)setLocalVariableConversion(original, (JoinPredecessor)node);
+                    final JoinPredecessor newNode = setLocalVariableConversion(original, (JoinPredecessor)node);
+                    if (newNode instanceof LexicalContextNode) {
+                        lc.replace((LexicalContextNode)node, (LexicalContextNode)newNode);
+                    }
+                    return (Node)newNode;
                 }
                 return node;
             }
