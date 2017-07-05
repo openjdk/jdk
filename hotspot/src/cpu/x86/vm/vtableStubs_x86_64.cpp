@@ -56,7 +56,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   // get receiver klass
   address npe_addr = __ pc();
-  __ movq(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rax, j_rarg0);
 
   // compute entry offset (in words)
   int entry_offset =
@@ -131,7 +131,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   // get receiver klass (also an implicit null-check)
   address npe_addr = __ pc();
 
-  __ movq(rbx, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rbx, j_rarg0);
 
   // If we take a trap while this arg is on the stack we will not
   // be able to walk the stack properly. This is not an issue except
@@ -181,7 +181,7 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   // Get methodOop and entrypoint for compiler
 
   // Get klass pointer again
-  __ movq(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(rax, j_rarg0);
 
   const Register method = rbx;
   __ movq(method, Address(rax, j_rarg1, Address::times_1, method_offset));
@@ -226,10 +226,12 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
 int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
   if (is_vtable_stub) {
     // Vtable stub size
-    return (DebugVtables ? 512 : 24) + (CountCompiledCalls ? 13 : 0);
+    return (DebugVtables ? 512 : 24) + (CountCompiledCalls ? 13 : 0) +
+           (UseCompressedOops ? 16 : 0);  // 1 leaq can be 3 bytes + 1 long
   } else {
     // Itable stub size
-    return (DebugVtables ? 636 : 72) + (CountCompiledCalls ? 13 : 0);
+    return (DebugVtables ? 636 : 72) + (CountCompiledCalls ? 13 : 0) +
+           (UseCompressedOops ? 32 : 0);  // 2 leaqs
   }
 }
 

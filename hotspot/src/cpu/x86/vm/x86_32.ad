@@ -4538,8 +4538,8 @@ frame %{
   // Location of C & interpreter return values
   c_return_value %{
     assert( ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values" );
-    static int lo[Op_RegL+1] = { 0, 0, EAX_num,      EAX_num,      FPR1L_num,    FPR1L_num, EAX_num };
-    static int hi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, FPR1H_num, EDX_num };
+    static int lo[Op_RegL+1] = { 0, 0, OptoReg::Bad, EAX_num,      EAX_num,      FPR1L_num,    FPR1L_num, EAX_num };
+    static int hi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, FPR1H_num, EDX_num };
 
     // in SSE2+ mode we want to keep the FPU stack clean so pretend
     // that C functions return float and double results in XMM0.
@@ -4554,8 +4554,8 @@ frame %{
   // Location of return values
   return_value %{
     assert( ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values" );
-    static int lo[Op_RegL+1] = { 0, 0, EAX_num,      EAX_num,      FPR1L_num,    FPR1L_num, EAX_num };
-    static int hi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, FPR1H_num, EDX_num };
+    static int lo[Op_RegL+1] = { 0, 0, OptoReg::Bad, EAX_num,      EAX_num,      FPR1L_num,    FPR1L_num, EAX_num };
+    static int hi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, OptoReg::Bad, FPR1H_num, EDX_num };
     if( ideal_reg == Op_RegD && UseSSE>=2 )
       return OptoRegPair(XMM0b_num,XMM0a_num);
     if( ideal_reg == Op_RegF && UseSSE>=1 )

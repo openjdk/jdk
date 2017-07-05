@@ -53,7 +53,6 @@ class CollectedHeap : public CHeapObj {
   bool _is_gc_active;
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
-  size_t _max_heap_capacity;
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_count;)
   NOT_PRODUCT(volatile size_t _promotion_failure_alot_gc_number;)
 
@@ -149,10 +148,7 @@ class CollectedHeap : public CHeapObj {
   virtual void post_initialize() = 0;
 
   MemRegion reserved_region() const { return _reserved; }
-
-  // Return the number of bytes currently reserved, committed, and used,
-  // respectively, for holding objects.
-  size_t reserved_obj_bytes() const { return _reserved.byte_size(); }
+  address base() const { return (address)reserved_region().start(); }
 
   // Future cleanup here. The following functions should specify bytes or
   // heapwords as part of their signature.

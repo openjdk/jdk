@@ -1153,9 +1153,8 @@ oop* frame::oopmapreg_to_location(VMReg reg, const RegisterMap* reg_map) const {
     // If it is passed in a register, it got spilled in the stub frame.
     return (oop *)reg_map->location(reg);
   } else {
-    int sp_offset_in_stack_slots = reg->reg2stack();
-    int sp_offset = sp_offset_in_stack_slots >> (LogBytesPerWord - LogBytesPerInt);
-    return (oop *)&unextended_sp()[sp_offset];
+    int sp_offset_in_bytes = reg->reg2stack() * VMRegImpl::stack_slot_size;
+    return (oop*)(((address)unextended_sp()) + sp_offset_in_bytes);
   }
 }
 
@@ -1331,8 +1330,7 @@ void frame::zap_dead_compiled_locals(JavaThread* thread, const RegisterMap* reg_
   ResourceMark rm(thread);
   assert(_cb != NULL, "sanity check");
   if (_cb->oop_maps() != NULL) {
-    OopMapSet::all_do(this, reg_map, &_check_oop, check_derived_oop,
-                      &_check_value, &_zap_dead);
+    OopMapSet::all_do(this, reg_map, &_check_oop, check_derived_oop, &_check_value);
   }
 }
 

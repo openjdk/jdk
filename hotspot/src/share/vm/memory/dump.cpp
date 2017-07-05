@@ -60,9 +60,9 @@ public:
     hash_offset = java_lang_String::hash_offset_in_bytes();
   }
 
-  void do_oop(oop* pobj) {
-    if (pobj != NULL) {
-      oop obj = *pobj;
+  void do_oop(oop* p) {
+    if (p != NULL) {
+      oop obj = *p;
       if (obj->klass() == SystemDictionary::string_klass()) {
 
         int hash;
@@ -79,6 +79,7 @@ public:
       }
     }
   }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
 
@@ -121,9 +122,8 @@ static bool mark_object(oop obj) {
 
 class MarkObjectsOopClosure : public OopClosure {
 public:
-  void do_oop(oop* pobj) {
-    mark_object(*pobj);
-  }
+  void do_oop(oop* p)       { mark_object(*p); }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
 
 
@@ -136,6 +136,7 @@ public:
       mark_object(obj);
     }
   }
+  void do_oop(narrowOop* pobj) { ShouldNotReachHere(); }
 };
 
 
@@ -554,6 +555,7 @@ public:
       }
     }
   }
+  void do_oop(narrowOop* pobj) { ShouldNotReachHere(); }
 };
 
 
@@ -689,6 +691,8 @@ public:
     *top = obj;
     ++top;
   }
+
+  void do_oop(narrowOop* pobj) { ShouldNotReachHere(); }
 
   void do_int(int* p) {
     check_space();

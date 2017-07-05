@@ -1205,7 +1205,7 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
         case Bytecodes::_arraylength :
           type = current_frame.pop_stack(
             VerificationType::reference_check(), CHECK_VERIFY(this));
-          if (!type.is_array()) {
+          if (!(type.is_null() || type.is_array())) {
             verify_error(bci, bad_type_msg, "arraylength");
           }
           current_frame.push_stack(

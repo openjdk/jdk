@@ -156,6 +156,9 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
                                   throw new RuntimeException(exp);
                               }
                           }
+                              public void visitCompOopAddress(Address handleAddr) {
+                             throw new RuntimeException("Should not reach here. JNIHandles are not compressed");
+                          }
                        });
             } catch (RuntimeException re) {
                 handleRuntimeException(re);

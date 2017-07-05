@@ -462,8 +462,8 @@ void TemplateTable::aaload() {
   transition(itos, atos);
   // Otos_i: index
   // tos: array
-  __ index_check(O2, Otos_i, LogBytesPerWord, G3_scratch, O3);
-  __ ld_ptr(O3, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i);
+  __ index_check(O2, Otos_i, UseCompressedOops ? 2 : LogBytesPerWord, G3_scratch, O3);
+  __ load_heap_oop(O3, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i);
   __ verify_oop(Otos_i);
 }
 
@@ -736,15 +736,16 @@ void TemplateTable::aastore() {
   // O2: index
   // O3: array
   __ verify_oop(Otos_i);
-  __ index_check_without_pop(O3, O2, LogBytesPerWord, G3_scratch, O1);
+  __ index_check_without_pop(O3, O2, UseCompressedOops ? 2 : LogBytesPerWord, G3_scratch, O1);
 
   // do array store check - check for NULL value first
   __ br_null( Otos_i, false, Assembler::pn, is_null );
-  __ delayed()->
-     ld_ptr(O3,     oopDesc::klass_offset_in_bytes(), O4); // get array klass
+  __ delayed()->nop();
+
+  __ load_klass(O3, O4); // get array klass
+  __ load_klass(Otos_i, O5); // get value klass
 
   // do fast instanceof cache test
-  __ ld_ptr(Otos_i, oopDesc::klass_offset_in_bytes(), O5); // get value klass
 
   __ ld_ptr(O4,     sizeof(oopDesc) + objArrayKlass::element_klass_offset_in_bytes(),  O4);
 
@@ -766,7 +767,7 @@ void TemplateTable::aastore() {
 
   // Store is OK.
   __ bind(store_ok);
-  __ st_ptr(Otos_i, O1, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
+  __ store_heap_oop(Otos_i, O1, arrayOopDesc::base_offset_in_bytes(T_OBJECT));
   // Quote from rememberedSet.hpp: For objArrays, the precise card
   // corresponding to the pointer store is dirtied so we don't need to
   // scavenge the entire array.
@@ -777,7 +778,7 @@ void TemplateTable::aastore() {
   __ delayed()->inc(Lesp, 3* Interpreter::stackElementSize()); // adj sp (pops array, index and value)
 
   __ bind(is_null);
-  __ st_ptr(Otos_i, element);
+  __ store_heap_oop(Otos_i, element);
   __ profile_null_seen(G3_scratch);
   __ inc(Lesp, 3* Interpreter::stackElementSize());     // adj sp (pops array, index and value)
   __ bind(done);
@@ -1833,7 +1834,7 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ mov(G0, G3_scratch);
     __ access_local_ptr(G3_scratch, Otos_i);
-    __ ld_ptr(Otos_i, oopDesc::klass_offset_in_bytes(), O2);
+    __ load_klass(Otos_i, O2);
     __ set(JVM_ACC_HAS_FINALIZER, G3);
     __ ld(O2, Klass::access_flags_offset_in_bytes() + sizeof(oopDesc), O2);
     __ andcc(G3, O2, G0);
@@ -2078,7 +2079,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static) {
   __ delayed() ->cmp(Rflags, itos);
 
   // atos
-  __ ld_ptr(Rclass, Roffset, Otos_i);
+  __ load_heap_oop(Rclass, Roffset, Otos_i);
   __ verify_oop(Otos_i);
   __ push(atos);
   if (!is_static) {
@@ -2259,7 +2260,7 @@ void TemplateTable::fast_accessfield(TosState state) {
       __ ldf(FloatRegisterImpl::D, Otos_i, Roffset, Ftos_d);
       break;
     case Bytecodes::_fast_agetfield:
-      __ ld_ptr(Otos_i, Roffset, Otos_i);
+      __ load_heap_oop(Otos_i, Roffset, Otos_i);
       break;
     default:
       ShouldNotReachHere();
@@ -2448,7 +2449,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
     // atos
     __ pop_ptr();
     __ verify_oop(Otos_i);
-    __ st_ptr(Otos_i, Rclass, Roffset);
+    __ store_heap_oop(Otos_i, Rclass, Roffset);
     __ store_check(G1_scratch, Rclass, Roffset);
     __ ba(false, checkVolatile);
     __ delayed()->tst(Lscratch);
@@ -2490,7 +2491,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static) {
     __ pop_ptr();
     pop_and_check_object(Rclass);
     __ verify_oop(Otos_i);
-    __ st_ptr(Otos_i, Rclass, Roffset);
+    __ store_heap_oop(Otos_i, Rclass, Roffset);
     __ store_check(G1_scratch, Rclass, Roffset);
     patch_bytecode(Bytecodes::_fast_aputfield, G3_scratch, G4_scratch);
     __ ba(false, checkVolatile);
@@ -2645,7 +2646,7 @@ void TemplateTable::fast_storefield(TosState state) {
       __ stf(FloatRegisterImpl::D, Ftos_d, Rclass, Roffset);
       break;
     case Bytecodes::_fast_aputfield:
-      __ st_ptr(Otos_i, Rclass, Roffset);
+      __ store_heap_oop(Otos_i, Rclass, Roffset);
       __ store_check(G1_scratch, Rclass, Roffset);
       break;
     default:
@@ -2688,7 +2689,7 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ verify_oop(Rreceiver);
   __ null_check(Rreceiver);
   if (state == atos) {
-    __ ld_ptr(Rreceiver, Roffset, Otos_i);
+    __ load_heap_oop(Rreceiver, Roffset, Otos_i);
   } else if (state == itos) {
     __ ld (Rreceiver, Roffset, Otos_i) ;
   } else if (state == ftos) {
@@ -2790,7 +2791,7 @@ void TemplateTable::invokevirtual(int byte_no) {
 
   // get receiver klass
   __ null_check(O0, oopDesc::klass_offset_in_bytes());
-  __ ld_ptr(Address(O0, 0, oopDesc::klass_offset_in_bytes()), Rrecv);
+  __ load_klass(O0, Rrecv);
   __ verify_oop(Rrecv);
 
   __ profile_virtual_call(Rrecv, O4);
@@ -2958,7 +2959,7 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   // get receiver klass
   __ null_check(O0, oopDesc::klass_offset_in_bytes());
-  __ ld_ptr(O0, oopDesc::klass_offset_in_bytes(), RklassOop);
+  __ load_klass(O0, RklassOop);
   __ verify_oop(RklassOop);
 
   // Special case of invokeinterface called for virtual method of
@@ -3221,7 +3222,7 @@ void TemplateTable::_new() {
     __ set((intptr_t)markOopDesc::prototype(), G4_scratch);
   }
   __ st_ptr(G4_scratch, RallocatedObject, oopDesc::mark_offset_in_bytes());       // mark
-  __ st_ptr(RinstanceKlass, RallocatedObject, oopDesc::klass_offset_in_bytes()); // klass
+  __ store_klass(RinstanceKlass, RallocatedObject); // klass
 
   {
     SkipIfEqual skip_if(
@@ -3277,7 +3278,7 @@ void TemplateTable::checkcast() {
   __ delayed()->nop();
 
   // Get value klass in RobjKlass
-  __ ld_ptr(Otos_i, oopDesc::klass_offset_in_bytes(), RobjKlass); // get value klass
+  __ load_klass(Otos_i, RobjKlass); // get value klass
 
   // Get constant pool tag
   __ get_2_byte_integer_at_bcp(1, Lscratch, Roffset, InterpreterMacroAssembler::Unsigned);
@@ -3295,13 +3296,14 @@ void TemplateTable::checkcast() {
   __ pop_ptr(Otos_i, G3_scratch); // restore receiver
 
   __ br(Assembler::always, false, Assembler::pt, resolved);
-  __ delayed()->ld_ptr(Otos_i, oopDesc::klass_offset_in_bytes(), RobjKlass); // get value klass
+  __ delayed()->nop();
 
   // Extract target class from constant pool
   __ bind(quicked);
   __ add(Roffset, sizeof(constantPoolOopDesc), Roffset);
   __ ld_ptr(Lscratch, Roffset, RspecifiedKlass);
   __ bind(resolved);
+  __ load_klass(Otos_i, RobjKlass); // get value klass
 
   // Generate a fast subtype check.  Branch to cast_ok if no
   // failure.  Throw exception if failure.
@@ -3334,7 +3336,7 @@ void TemplateTable::instanceof() {
   __ delayed()->nop();
 
   // Get value klass in RobjKlass
-  __ ld_ptr(Otos_i, oopDesc::klass_offset_in_bytes(), RobjKlass); // get value klass
+  __ load_klass(Otos_i, RobjKlass); // get value klass
 
   // Get constant pool tag
   __ get_2_byte_integer_at_bcp(1, Lscratch, Roffset, InterpreterMacroAssembler::Unsigned);
@@ -3352,7 +3354,7 @@ void TemplateTable::instanceof() {
   __ pop_ptr(Otos_i, G3_scratch); // restore receiver
 
   __ br(Assembler::always, false, Assembler::pt, resolved);
-  __ delayed()->ld_ptr(Otos_i, oopDesc::klass_offset_in_bytes(), RobjKlass); // get value klass
+  __ delayed()->nop();
 
 
   // Extract target class from constant pool
@@ -3361,6 +3363,7 @@ void TemplateTable::instanceof() {
   __ get_constant_pool(Lscratch);
   __ ld_ptr(Lscratch, Roffset, RspecifiedKlass);
   __ bind(resolved);
+  __ load_klass(Otos_i, RobjKlass); // get value klass
 
   // Generate a fast subtype check.  Branch to cast_ok if no
   // failure.  Return 0 if failure.
