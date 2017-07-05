@@ -133,8 +133,6 @@ void WorkGang::run_task(AbstractGangTask* task) {
 }
 
 void WorkGang::run_task(AbstractGangTask* task, uint no_of_parallel_workers) {
-  task->set_for_termination(no_of_parallel_workers);
-
   // This thread is executed by the VM thread which does not block
   // on ordinary MutexLocker's.
   MutexLockerEx ml(monitor(), Mutex::_no_safepoint_check_flag);
@@ -434,7 +432,7 @@ void WorkGangBarrierSync::abort() {
 // SubTasksDone functions.
 
 SubTasksDone::SubTasksDone(uint n) :
-  _n_tasks(n), _n_threads(1), _tasks(NULL) {
+  _n_tasks(n), _tasks(NULL) {
   _tasks = NEW_C_HEAP_ARRAY(uint, n, mtInternal);
   guarantee(_tasks != NULL, "alloc failure");
   clear();
@@ -442,12 +440,6 @@ SubTasksDone::SubTasksDone(uint n) :
 
 bool SubTasksDone::valid() {
   return _tasks != NULL;
-}
-
-void SubTasksDone::set_n_threads(uint t) {
-  assert(_claimed == 0 || _threads_completed == _n_threads,
-         "should not be called while tasks are being processed!");
-  _n_threads = (t == 0 ? 1 : t);
 }
 
 void SubTasksDone::clear() {
@@ -477,7 +469,7 @@ bool SubTasksDone::is_task_claimed(uint t) {
   return res;
 }
 
-void SubTasksDone::all_tasks_completed() {
+void SubTasksDone::all_tasks_completed(uint n_threads) {
   jint observed = _threads_completed;
   jint old;
   do {
@@ -485,7 +477,10 @@ void SubTasksDone::all_tasks_completed() {
     observed = Atomic::cmpxchg(old+1, &_threads_completed, old);
   } while (observed != old);
   // If this was the last thread checking in, clear the tasks.
-  if (observed+1 == (jint)_n_threads) clear();
+  uint adjusted_thread_count = (n_threads == 0 ? 1 : n_threads);
+  if (observed + 1 == (jint)adjusted_thread_count) {
+    clear();
+  }
 }
 
 

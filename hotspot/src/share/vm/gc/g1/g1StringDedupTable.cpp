@@ -112,7 +112,7 @@ public:
 };
 
 G1StringDedupEntryCache::G1StringDedupEntryCache() {
-  _nlists = MAX2(ParallelGCThreads, (size_t)1);
+  _nlists = ParallelGCThreads;
   _lists = PaddedArray<G1StringDedupEntryFreeList, mtGC>::create_unfreeable((uint)_nlists);
 }
 

@@ -101,7 +101,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
  protected:
   BarrierSet* _barrier_set;
   bool _is_gc_active;
-  uint _n_par_threads;
 
   unsigned int _total_collections;          // ... started
   unsigned int _total_full_collections;     // ... started
@@ -290,12 +289,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     _gc_cause = v;
   }
   GCCause::Cause gc_cause() { return _gc_cause; }
-
-  // Number of threads currently working on GC tasks.
-  uint n_par_threads() { return _n_par_threads; }
-
-  // May be overridden to set additional parallelism.
-  virtual void set_par_threads(uint t) { _n_par_threads = t; };
 
   // General obj/array allocation facilities.
   inline static oop obj_allocate(KlassHandle klass, int size, TRAPS);
