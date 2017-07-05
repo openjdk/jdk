@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,7 @@ public final class KeyTab {
     /**
      * Returns a hashcode for this KeyTab.
      *
-     * @return a hashCode() for the <code>KeyTab</code>
+     * @return a hashCode() for the {@code KeyTab}
      */
     public int hashCode() {
         return Objects.hash(file, princ, bound);
@@ -321,8 +321,8 @@ public final class KeyTab {
     /**
      * Compares the specified Object with this KeyTab for equality.
      * Returns true if the given object is also a
-     * <code>KeyTab</code> and the two
-     * <code>KeyTab</code> instances are equivalent.
+     * {@code KeyTab} and the two
+     * {@code KeyTab} instances are equivalent.
      *
      * @param other the Object to compare to
      * @return true if the specified object is equal to this KeyTab

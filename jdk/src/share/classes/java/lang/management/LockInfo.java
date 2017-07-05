@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import sun.management.LockInfoCompositeData;
  * {@link ReentrantReadWriteLock ReentrantReadWriteLock} are
  * two examples of ownable synchronizers provided by the platform.
  *
- * <h4><a name="MappedType">MXBean Mapping</a></h4>
+ * <h3><a name="MappedType">MXBean Mapping</a></h3>
  * <tt>LockInfo</tt> is mapped to a {@link CompositeData CompositeData}
  * as specified in the {@link #from from} method.
  *
@@ -105,7 +105,7 @@ public class LockInfo {
      * given {@code CompositeData}.
      * The given {@code CompositeData} must contain the following attributes:
      * <blockquote>
-     * <table border>
+     * <table border summary="The attributes and the types the given CompositeData contains">
      * <tr>
      *   <th align=left>Attribute Name</th>
      *   <th align=left>Type</th>

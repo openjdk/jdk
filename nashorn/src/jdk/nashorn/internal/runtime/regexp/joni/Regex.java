@@ -19,19 +19,9 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni;
 
-import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsAt;
-import static jdk.nashorn.internal.runtime.regexp.joni.Option.isCaptureGroup;
-import static jdk.nashorn.internal.runtime.regexp.joni.Option.isDontCaptureGroup;
-
-import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Iterator;
-
-import jdk.nashorn.internal.runtime.regexp.joni.ast.Node;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.AnchorType;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.RegexState;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ErrorMessages;
-import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.ValueException;
 
 public final class Regex implements RegexState {
@@ -39,31 +29,26 @@ public final class Regex implements RegexState {
     int[] code;             /* compiled pattern */
     int codeLength;
     boolean stackNeeded;
-    Object[]operands;       /* e.g. shared CClassNode */
+    Object[] operands;       /* e.g. shared CClassNode */
     int operandLength;
 
-    int state;              /* normal, searching, compiling */ // remove
     int numMem;             /* used memory(...) num counted from 1 */
     int numRepeat;          /* OP_REPEAT/OP_REPEAT_NG id-counter */
     int numNullCheck;       /* OP_NULL_CHECK_START/END id counter */
-    int numCall;            /* number of subexp call */
     int captureHistory;     /* (?@...) flag (1-31) */
     int btMemStart;         /* need backtrack flag */
     int btMemEnd;           /* need backtrack flag */
 
     int stackPopLevel;
 
-    int[]repeatRangeLo;
-    int[]repeatRangeHi;
+    int[] repeatRangeLo;
+    int[] repeatRangeHi;
 
     WarnCallback warnings;
     MatcherFactory factory;
     protected Analyser analyser;
 
     int options;
-    int userOptions;
-    Object userObject;
-    //final Syntax syntax;
     final int caseFoldFlag;
 
     /* optimization info (string search, char-map and anchors) */
@@ -247,46 +232,48 @@ public final class Regex implements RegexState {
     }
 
     public String optimizeInfoToString() {
-        String s = "";
-        s += "optimize: " + searchAlgorithm.getName() + "\n";
-        s += "  anchor:     " + OptAnchorInfo.anchorToString(anchor);
+        StringBuilder s = new StringBuilder();
+        s.append("optimize: ").append(searchAlgorithm.getName()).append("\n");
+        s.append("  anchor:     ").append(OptAnchorInfo.anchorToString(anchor));
 
         if ((anchor & AnchorType.END_BUF_MASK) != 0) {
-            s += MinMaxLen.distanceRangeToString(anchorDmin, anchorDmax);
+            s.append(MinMaxLen.distanceRangeToString(anchorDmin, anchorDmax));
         }
 
-        s += "\n";
+        s.append("\n");
 
         if (searchAlgorithm != SearchAlgorithm.NONE) {
-            s += "  sub anchor: " + OptAnchorInfo.anchorToString(subAnchor) + "\n";
+            s.append("  sub anchor: ").append(OptAnchorInfo.anchorToString(subAnchor)).append("\n");
         }
 
-        s += "dmin: " + dMin + " dmax: " + dMax + "\n";
-        s += "threshold length: " + thresholdLength + "\n";
+        s.append("dmin: ").append(dMin).append(" dmax: ").append(dMax).append("\n");
+        s.append("threshold length: ").append(thresholdLength).append("\n");
 
         if (exact != null) {
-            s += "exact: [" + new String(exact, exactP, exactEnd - exactP) + "]: length: " + (exactEnd - exactP) + "\n";
+            s.append("exact: [").append(exact, exactP, exactEnd - exactP).append("]: length: ").append(exactEnd - exactP).append("\n");
         } else if (searchAlgorithm == SearchAlgorithm.MAP) {
             int n=0;
             for (int i=0; i<Config.CHAR_TABLE_SIZE; i++) if (map[i] != 0) n++;
 
-            s += "map: n = " + n + "\n";
+            s.append("map: n = ").append(n).append("\n");
             if (n > 0) {
                 int c=0;
-                s += "[";
+                s.append("[");
                 for (int i=0; i<Config.CHAR_TABLE_SIZE; i++) {
                     if (map[i] != 0) {
-                        if (c > 0) s += ", ";
+                        if (c > 0) {
+                            s.append(", ");
+                        }
                         c++;
                         // TODO if (enc.isPrint(i)
-                        s += ((char)i);
+                        s.append((char)i);
                     }
                 }
-                s += "]\n";
+                s.append("]\n");
             }
         }
 
-        return s;
+        return s.toString();
     }
 
     public int getOptions() {

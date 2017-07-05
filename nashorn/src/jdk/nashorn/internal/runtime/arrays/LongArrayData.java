@@ -55,7 +55,9 @@ final class LongArrayData extends ArrayData {
     }
 
     private static Object[] toObjectArray(final long[] array, final int length) {
-        final Object[] oarray = new Object[length];
+        assert length <= array.length : "length exceeds internal array size";
+        final Object[] oarray = new Object[array.length];
+
         for (int index = 0; index < length; index++) {
             oarray[index] = Long.valueOf(array[index]);
         }
@@ -71,9 +73,11 @@ final class LongArrayData extends ArrayData {
         return super.asArrayOfType(componentType);
     }
 
-    private static double[] toDoubleArray(final long[] array) {
+    private static double[] toDoubleArray(final long[] array, final int length) {
+        assert length <= array.length : "length exceeds internal array size";
         final double[] darray = new double[array.length];
-        for (int index = 0; index < array.length; index++) {
+
+        for (int index = 0; index < length; index++) {
             darray[index] = array[index];
         }
 
@@ -84,10 +88,12 @@ final class LongArrayData extends ArrayData {
     public ArrayData convert(final Class<?> type) {
         if (type == Long.class) {
             return this;
-        } else if (type == Double.class) {
-            return new NumberArrayData(LongArrayData.toDoubleArray(array), (int) length());
+        }
+        final int length = (int) length();
+        if (type == Double.class) {
+            return new NumberArrayData(LongArrayData.toDoubleArray(array, length), length);
         } else {
-            return new ObjectArrayData(LongArrayData.toObjectArray(array, array.length), (int) length());
+            return new ObjectArrayData(LongArrayData.toObjectArray(array, length), length);
         }
     }
 
@@ -138,19 +144,13 @@ final class LongArrayData extends ArrayData {
 
     @Override
     public ArrayData set(final int index, final Object value, final boolean strict) {
-        try {
-            final long longValue = ((Long)value).longValue();
-            array[index] = longValue;
-            setLength(Math.max(index + 1, length()));
-            return this;
-        } catch (final NullPointerException | ClassCastException e) {
-            if (value == ScriptRuntime.UNDEFINED) {
-                return new UndefinedArrayFilter(this).set(index, value, strict);
-            }
+        if (value instanceof Long || value instanceof Integer) {
+            return set(index, ((Number)value).longValue(), strict);
+        } else if (value == ScriptRuntime.UNDEFINED) {
+            return new UndefinedArrayFilter(this).set(index, value, strict);
         }
 
         final ArrayData newData = convert(value == null ? Object.class : value.getClass());
-
         return newData.set(index, value, strict);
     }
 

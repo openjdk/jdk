@@ -381,12 +381,12 @@ const uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlass
 #endif
 
 /*
- * If a platform does not support NMT_detail
+ * If a platform does not support native stack walking
  * the platform specific globalDefinitions (above)
- * can set PLATFORM_NMT_DETAIL_SUPPORTED to false
+ * can set PLATFORM_NATIVE_STACK_WALKING_SUPPORTED to 0
  */
-#ifndef PLATFORM_NMT_DETAIL_SUPPORTED
-#define PLATFORM_NMT_DETAIL_SUPPORTED true
+#ifndef PLATFORM_NATIVE_STACK_WALKING_SUPPORTED
+#define PLATFORM_NATIVE_STACK_WALKING_SUPPORTED 1
 #endif
 
 // The byte alignment to be used by Arena::Amalloc.  See bugid 4169348.

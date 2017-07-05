@@ -167,10 +167,6 @@ abstract class FacetIntrospector {
         return editMethodHandle(SafeUnreflector.unreflectSetter(field));
     }
 
-    MethodHandle unreflect(Method method) {
-        return editMethodHandle(SafeUnreflector.unreflect(method));
-    }
-
     /**
      * Returns an edited method handle. A facet might need to edit an unreflected method handle before it is usable with
      * the facet. By default, returns the passed method handle unchanged. The class' static facet will introduce a

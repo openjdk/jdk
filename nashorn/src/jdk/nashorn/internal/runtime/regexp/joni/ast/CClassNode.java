@@ -77,37 +77,10 @@ public final class CClassNode extends Node {
     // node_new_cclass
     public CClassNode() {}
 
-    public CClassNode(int ctype, boolean not, int sbOut, int[]ranges) {
-        this(not, sbOut, ranges);
-        this.ctype = ctype;
-    }
-
     public void clear() {
         bs.clear();
         flags = 0;
         mbuf = null;
-    }
-
-    // node_new_cclass_by_codepoint_range, only used by shared Char Classes
-    public CClassNode(boolean not, int sbOut, int[]ranges) {
-        if (not) setNot();
-        // bs.clear();
-
-        if (sbOut > 0 && ranges != null) {
-            int n = ranges[0];
-            for (int i=0; i<n; i++) {
-                int from = ranges[i * 2 + 1];
-                int to = ranges[i * 2 + 2];
-                for (int j=from; j<=to; j++) {
-                    if (j >= sbOut) {
-                        setupBuffer(ranges);
-                        return;
-                    }
-                    bs.set(j);
-                }
-            }
-        }
-        setupBuffer(ranges);
     }
 
     @Override
@@ -154,13 +127,6 @@ public final class CClassNode extends Node {
         if (isNot()) flags.append("NOT ");
         if (isShare()) flags.append("SHARE ");
         return flags.toString();
-    }
-
-    private void setupBuffer(int[]ranges) {
-        if (ranges != null) {
-            if (ranges[0] == 0) return;
-            mbuf = new CodeRangeBuffer(ranges);
-        }
     }
 
     public boolean isEmpty() {
@@ -531,11 +497,7 @@ public final class CClassNode extends Node {
         boolean found;
 
         if (code > 0xff) {
-            if (mbuf == null) {
-                found = false;
-            } else {
-                found = EncodingHelper.isInCodeRange(mbuf.getCodeRange(), code);
-            }
+            found = mbuf != null && mbuf.isInCodeRange(code);
         } else {
             found = bs.at(code);
         }

@@ -1795,20 +1795,10 @@ public final class SunGraphics2D
     }
 
     public Rectangle getClipBounds() {
-        Rectangle r;
         if (clipState == CLIP_DEVICE) {
-            r = null;
-        } else if (transformState <= TRANSFORM_INT_TRANSLATE) {
-            if (usrClip instanceof Rectangle) {
-                r = new Rectangle((Rectangle) usrClip);
-            } else {
-                r = usrClip.getBounds();
-            }
-            r.translate(-transX, -transY);
-        } else {
-            r = getClip().getBounds();
+            return null;
         }
-        return r;
+        return getClipBounds(new Rectangle());
     }
 
     public Rectangle getClipBounds(Rectangle r) {
@@ -1817,11 +1807,11 @@ public final class SunGraphics2D
                 if (usrClip instanceof Rectangle) {
                     r.setBounds((Rectangle) usrClip);
                 } else {
-                    r.setBounds(usrClip.getBounds());
+                    r.setFrame(usrClip.getBounds2D());
                 }
                 r.translate(-transX, -transY);
             } else {
-                r.setBounds(getClip().getBounds());
+                r.setFrame(getClip().getBounds2D());
             }
         } else if (r == null) {
             throw new NullPointerException("null rectangle parameter");
@@ -1996,10 +1986,10 @@ public final class SunGraphics2D
             matrix[2] = matrix[0] + rect.getWidth();
             matrix[3] = matrix[1] + rect.getHeight();
             tx.transform(matrix, 0, matrix, 0, 2);
-            rect = new Rectangle2D.Float();
-            rect.setFrameFromDiagonal(matrix[0], matrix[1],
-                                      matrix[2], matrix[3]);
-            return rect;
+            fixRectangleOrientation(matrix, rect);
+            return new Rectangle2D.Double(matrix[0], matrix[1],
+                                          matrix[2] - matrix[0],
+                                          matrix[3] - matrix[1]);
         }
 
         if (tx.isIdentity()) {
@@ -2007,6 +1997,22 @@ public final class SunGraphics2D
         }
 
         return tx.createTransformedShape(clip);
+    }
+
+    /**
+     * Sets orientation of the rectangle according to the clip.
+     */
+    private static void fixRectangleOrientation(double[] m, Rectangle2D clip) {
+        if (clip.getWidth() > 0 != (m[2] - m[0] > 0)) {
+            double t = m[0];
+            m[0] = m[2];
+            m[2] = t;
+        }
+        if (clip.getHeight() > 0 != (m[3] - m[1] > 0)) {
+            double t = m[1];
+            m[1] = m[3];
+            m[3] = t;
+        }
     }
 
     public void clipRect(int x, int y, int w, int h) {

@@ -32,7 +32,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation for a labeled statement.
  */
 @Immutable
-public final class LabelNode extends LexicalContextNode {
+public final class LabelNode extends LexicalContextStatement {
     /** Label ident. */
     private final IdentNode label;
 

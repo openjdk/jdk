@@ -31,7 +31,7 @@ package jdk.nashorn.internal.ir;
  *
  * @param <D> the destination type
  */
-public interface Assignment<D extends Node> {
+public interface Assignment<D extends Expression> {
 
     /**
      * Get assignment destination
@@ -45,7 +45,7 @@ public interface Assignment<D extends Node> {
      *
      * @return get the assignment source node
      */
-    public Node getAssignmentSource();
+    public Expression getAssignmentSource();
 
     /**
      * Set assignment destination node.

@@ -73,13 +73,39 @@ public final class XalanConstants {
      * Default value when FEATURE_SECURE_PROCESSING (FSP) is set to true
      */
     public static final String EXTERNAL_ACCESS_DEFAULT_FSP = "";
-    /**
-     * JDK version by which the default is to restrict external connection
-     */
-    public static final int RESTRICT_BY_DEFAULT_JDK_VERSION = 8;
+
     /**
      * FEATURE_SECURE_PROCESSING (FSP) is false by default
      */
     public static final String EXTERNAL_ACCESS_DEFAULT = ACCESS_EXTERNAL_ALL;
 
+    public static final String XML_SECURITY_PROPERTY_MANAGER =
+            ORACLE_JAXP_PROPERTY_PREFIX + "xmlSecurityPropertyManager";
+
+    /**
+     * Check if we're in jdk8 or above
+     */
+    public static final boolean IS_JDK8_OR_ABOVE = isJavaVersionAtLeast(8);
+
+    /*
+     * Check the version of the current JDK against that specified in the
+     * parameter
+     *
+     * There is a proposal to change the java version string to:
+     * MAJOR.MINOR.FU.CPU.PSU-BUILDNUMBER_BUGIDNUMBER_OPTIONAL
+     * This method would work with both the current format and that proposed
+     *
+     * @param compareTo a JDK version to be compared to
+     * @return true if the current version is the same or above that represented
+     * by the parameter
+     */
+    public static boolean isJavaVersionAtLeast(int compareTo) {
+        String javaVersion = SecuritySupport.getSystemProperty("java.version");
+        String versions[] = javaVersion.split("\\.", 3);
+        if (Integer.parseInt(versions[0]) >= compareTo ||
+            Integer.parseInt(versions[1]) >= compareTo) {
+            return true;
+        }
+        return false;
+    }
 } // class Constants

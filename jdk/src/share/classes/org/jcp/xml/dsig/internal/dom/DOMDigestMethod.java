@@ -2,27 +2,29 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright 2005 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 /*
  * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMDigestMethod.java,v 1.2 2008/07/24 15:20:32 mullan Exp $
+ * $Id: DOMDigestMethod.java 1333415 2012-05-03 12:03:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -45,7 +47,7 @@ import org.w3c.dom.Node;
 public abstract class DOMDigestMethod extends DOMStructure
     implements DigestMethod {
 
-    final static String SHA384 =
+    static final String SHA384 =
         "http://www.w3.org/2001/04/xmldsig-more#sha384"; // see RFC 4051
     private DigestMethodParameterSpec params;
 
@@ -57,13 +59,14 @@ public abstract class DOMDigestMethod extends DOMStructure
      *    appropriate for this digest method
      */
     DOMDigestMethod(AlgorithmParameterSpec params)
-        throws InvalidAlgorithmParameterException {
+        throws InvalidAlgorithmParameterException
+    {
         if (params != null && !(params instanceof DigestMethodParameterSpec)) {
             throw new InvalidAlgorithmParameterException
                 ("params must be of type DigestMethodParameterSpec");
         }
-        checkParams((DigestMethodParameterSpec) params);
-        this.params = (DigestMethodParameterSpec) params;
+        checkParams((DigestMethodParameterSpec)params);
+        this.params = (DigestMethodParameterSpec)params;
     }
 
     /**
@@ -96,8 +99,8 @@ public abstract class DOMDigestMethod extends DOMStructure
         } else if (alg.equals(DigestMethod.SHA512)) {
             return new SHA512(dmElem);
         } else {
-            throw new MarshalException
-                ("unsupported DigestMethod algorithm: " + alg);
+            throw new MarshalException("unsupported DigestMethod algorithm: " +
+                                       alg);
         }
     }
 
@@ -112,11 +115,12 @@ public abstract class DOMDigestMethod extends DOMStructure
      *    appropriate for this digest method
      */
     void checkParams(DigestMethodParameterSpec params)
-        throws InvalidAlgorithmParameterException {
+        throws InvalidAlgorithmParameterException
+    {
         if (params != null) {
             throw new InvalidAlgorithmParameterException("no parameters " +
-                "should be specified for the " + getMessageDigestAlgorithm()
-                 + " DigestMethod algorithm");
+                "should be specified for the " + getMessageDigestAlgorithm() +
+                " DigestMethod algorithm");
         }
     }
 
@@ -134,11 +138,13 @@ public abstract class DOMDigestMethod extends DOMStructure
      * @return the algorithm-specific <code>DigestMethodParameterSpec</code>
      * @throws MarshalException if the parameters cannot be unmarshalled
      */
-    DigestMethodParameterSpec
-        unmarshalParams(Element paramsElem) throws MarshalException {
+    DigestMethodParameterSpec unmarshalParams(Element paramsElem)
+        throws MarshalException
+    {
         throw new MarshalException("no parameters should " +
-            "be specified for the " + getMessageDigestAlgorithm() +
-            " DigestMethod algorithm");
+                                   "be specified for the " +
+                                   getMessageDigestAlgorithm() +
+                                   " DigestMethod algorithm");
     }
 
     /**
@@ -146,11 +152,12 @@ public abstract class DOMDigestMethod extends DOMStructure
      * method to marshal any algorithm-specific parameters.
      */
     public void marshal(Node parent, String prefix, DOMCryptoContext context)
-        throws MarshalException {
+        throws MarshalException
+    {
         Document ownerDoc = DOMUtils.getOwnerDocument(parent);
 
-        Element dmElem = DOMUtils.createElement
-            (ownerDoc, "DigestMethod", XMLSignature.XMLNS, prefix);
+        Element dmElem = DOMUtils.createElement(ownerDoc, "DigestMethod",
+                                                XMLSignature.XMLNS, prefix);
         DOMUtils.setAttribute(dmElem, "Algorithm", getAlgorithm());
 
         if (params != null) {
@@ -160,6 +167,7 @@ public abstract class DOMDigestMethod extends DOMStructure
         parent.appendChild(dmElem);
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -168,12 +176,23 @@ public abstract class DOMDigestMethod extends DOMStructure
         if (!(o instanceof DigestMethod)) {
             return false;
         }
-        DigestMethod odm = (DigestMethod) o;
+        DigestMethod odm = (DigestMethod)o;
 
         boolean paramsEqual = (params == null ? odm.getParameterSpec() == null :
             params.equals(odm.getParameterSpec()));
 
         return (getAlgorithm().equals(odm.getAlgorithm()) && paramsEqual);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 17;
+        if (params != null) {
+            result = 31 * result + params.hashCode();
+        }
+        result = 31 * result + getAlgorithm().hashCode();
+
+        return result;
     }
 
     /**
@@ -187,10 +206,12 @@ public abstract class DOMDigestMethod extends DOMStructure
      * @throws MarshalException if the parameters cannot be marshalled
      */
     void marshalParams(Element parent, String prefix)
-        throws MarshalException {
+        throws MarshalException
+    {
         throw new MarshalException("no parameters should " +
-            "be specified for the " + getMessageDigestAlgorithm() +
-            " DigestMethod algorithm");
+                                   "be specified for the " +
+                                   getMessageDigestAlgorithm() +
+                                   " DigestMethod algorithm");
     }
 
     /**

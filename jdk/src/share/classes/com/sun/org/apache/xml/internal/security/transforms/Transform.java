@@ -263,7 +263,7 @@ public final class Transform extends SignatureElementProxy {
      * @return the URI representation of Transformation algorithm
      */
     public String getURI() {
-        return this._constructionElement.getAttributeNS(null, Constants._ATT_ALGORITHM);
+        return this.constructionElement.getAttributeNS(null, Constants._ATT_ALGORITHM);
     }
 
     /**
@@ -329,7 +329,7 @@ public final class Transform extends SignatureElementProxy {
     private TransformSpi initializeTransform(String algorithmURI, NodeList contextNodes)
         throws InvalidTransformException {
 
-        this._constructionElement.setAttributeNS(null, Constants._ATT_ALGORITHM, algorithmURI);
+        this.constructionElement.setAttributeNS(null, Constants._ATT_ALGORITHM, algorithmURI);
 
         Class<? extends TransformSpi> transformSpiClass = transformSpiHash.get(algorithmURI);
         if (transformSpiClass == null) {
@@ -360,7 +360,7 @@ public final class Transform extends SignatureElementProxy {
         // give it to the current document
         if (contextNodes != null) {
             for (int i = 0; i < contextNodes.getLength(); i++) {
-                this._constructionElement.appendChild(contextNodes.item(i).cloneNode(true));
+                this.constructionElement.appendChild(contextNodes.item(i).cloneNode(true));
             }
         }
         return newTransformSpi;

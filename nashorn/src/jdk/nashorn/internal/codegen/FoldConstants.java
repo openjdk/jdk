@@ -28,8 +28,8 @@ package jdk.nashorn.internal.codegen;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
+import jdk.nashorn.internal.ir.BlockStatement;
 import jdk.nashorn.internal.ir.EmptyNode;
-import jdk.nashorn.internal.ir.ExecuteNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IfNode;
@@ -91,7 +91,7 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
         if (test instanceof LiteralNode) {
             final Block shortCut = ((LiteralNode<?>)test).isTrue() ? ifNode.getPass() : ifNode.getFail();
             if (shortCut != null) {
-                return new ExecuteNode(shortCut.getLineNumber(), shortCut.getToken(), shortCut.getFinish(), shortCut);
+                return new BlockStatement(ifNode.getLineNumber(), shortCut);
             }
             return new EmptyNode(ifNode);
         }
@@ -100,9 +100,9 @@ final class FoldConstants extends NodeVisitor<LexicalContext> {
 
     @Override
     public Node leaveTernaryNode(final TernaryNode ternaryNode) {
-        final Node test = ternaryNode.lhs();
+        final Node test = ternaryNode.getTest();
         if (test instanceof LiteralNode) {
-            return ((LiteralNode<?>)test).isTrue() ? ternaryNode.rhs() : ternaryNode.third();
+            return ((LiteralNode<?>)test).isTrue() ? ternaryNode.getTrueExpression() : ternaryNode.getFalseExpression();
         }
         return ternaryNode;
     }

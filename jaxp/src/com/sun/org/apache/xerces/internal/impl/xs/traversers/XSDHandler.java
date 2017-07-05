@@ -78,6 +78,7 @@ import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.util.URI.MalformedURIException;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.QName;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
@@ -112,6 +113,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
@@ -223,11 +225,9 @@ public class XSDHandler {
     protected static final String LOCALE =
         Constants.XERCES_PROPERTY_PREFIX + Constants.LOCALE_PROPERTY;
 
-    /** property identifier: access external dtd. */
-    public static final String ACCESS_EXTERNAL_DTD = XMLConstants.ACCESS_EXTERNAL_DTD;
-
-    /** Property identifier: access to external schema */
-    public static final String ACCESS_EXTERNAL_SCHEMA = XMLConstants.ACCESS_EXTERNAL_SCHEMA;
+        /** Property identifier: Security property manager. */
+    private static final String XML_SECURITY_PROPERTY_MANAGER =
+            Constants.XML_SECURITY_PROPERTY_MANAGER;
 
     protected static final boolean DEBUG_NODE_POOL = false;
 
@@ -260,6 +260,7 @@ public class XSDHandler {
     protected SecurityManager fSecureProcessing = null;
 
     private String fAccessExternalSchema;
+    private String fAccessExternalDTD;
 
     // These tables correspond to the symbol spaces defined in the
     // spec.
@@ -2249,6 +2250,13 @@ public class XSDHandler {
                         }
                     }
                     catch (SAXException se) {}
+
+                    try {
+                        parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, fAccessExternalDTD);
+                    } catch (SAXNotRecognizedException exc) {
+                        System.err.println("Warning: " + parser.getClass().getName() + ": " +
+                                exc.getMessage());
+                    }
                 }
                 // If XML names and Namespace URIs are already internalized we
                 // can avoid running them through the SymbolTable.
@@ -3580,11 +3588,17 @@ public class XSDHandler {
         } catch (XMLConfigurationException e) {
         }
 
-        //For Schema validation, the secure feature is set to true by default
-        fSchemaParser.setProperty(ACCESS_EXTERNAL_DTD,
-                componentManager.getProperty(ACCESS_EXTERNAL_DTD, Constants.EXTERNAL_ACCESS_DEFAULT));
-        fAccessExternalSchema = (String) componentManager.getProperty(
-                ACCESS_EXTERNAL_SCHEMA, Constants.EXTERNAL_ACCESS_DEFAULT);
+        XMLSecurityPropertyManager securityPropertyMgr = (XMLSecurityPropertyManager)
+                componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
+        //Passing on the setting to the parser
+        fSchemaParser.setProperty(XML_SECURITY_PROPERTY_MANAGER, securityPropertyMgr);
+
+        fAccessExternalDTD = securityPropertyMgr.getValue(
+                XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD);
+
+        fAccessExternalSchema = securityPropertyMgr.getValue(
+                XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
+
     } // reset(XMLComponentManager)
 
 

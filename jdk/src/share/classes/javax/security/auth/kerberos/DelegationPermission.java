@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.io.IOException;
  * This class is used to restrict the usage of the Kerberos
  * delegation model, ie: forwardable and proxiable tickets.
  * <p>
- * The target name of this <code>Permission</code> specifies a pair of
+ * The target name of this {@code Permission} specifies a pair of
  * kerberos service principals. The first is the subordinate service principal
  * being entrusted to use the TGT. The second service principal designates
  * the target service the subordinate service principal is to
@@ -71,15 +71,15 @@ public final class DelegationPermission extends BasicPermission
     private transient String subordinate, service;
 
     /**
-     * Create a new <code>DelegationPermission</code>
+     * Create a new {@code DelegationPermission}
      * with the specified subordinate and target principals.
      *
      * <p>
      *
      * @param principals the name of the subordinate and target principals
      *
-     * @throws NullPointerException if <code>principals</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>principals</code> is empty.
+     * @throws NullPointerException if {@code principals} is {@code null}.
+     * @throws IllegalArgumentException if {@code principals} is empty.
      */
     public DelegationPermission(String principals) {
         super(principals);
@@ -87,7 +87,7 @@ public final class DelegationPermission extends BasicPermission
     }
 
     /**
-     * Create a new <code>DelegationPermission</code>
+     * Create a new {@code DelegationPermission}
      * with the specified subordinate and target principals.
      * <p>
      *
@@ -95,8 +95,8 @@ public final class DelegationPermission extends BasicPermission
      * <p>
      * @param actions should be null.
      *
-     * @throws NullPointerException if <code>principals</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>principals</code> is empty.
+     * @throws NullPointerException if {@code principals} is {@code null}.
+     * @throws IllegalArgumentException if {@code principals} is empty.
      */
     public DelegationPermission(String principals, String actions) {
         super(principals, actions);
@@ -134,7 +134,7 @@ public final class DelegationPermission extends BasicPermission
      * Checks if this Kerberos delegation permission object "implies" the
      * specified permission.
      * <P>
-     * If none of the above are true, <code>implies</code> returns false.
+     * If none of the above are true, {@code implies} returns false.
      * @param p the permission to check against.
      *
      * @return true if the specified permission is implied by this object,

@@ -146,7 +146,7 @@ final class ObjectArrayData extends ArrayData {
 
     @Override
     public ArrayData setEmpty(final long lo, final long hi) {
-        Arrays.fill(array, (int)Math.max(lo, 0L), (int)Math.min(hi, (long)Integer.MAX_VALUE), ScriptRuntime.EMPTY);
+        Arrays.fill(array, (int)Math.max(lo, 0L), (int)Math.min(hi, Integer.MAX_VALUE), ScriptRuntime.EMPTY);
         return this;
     }
 

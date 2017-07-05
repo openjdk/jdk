@@ -49,10 +49,12 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 public final class NativeDebug extends ScriptObject {
 
     // initialized by nasgen
+    @SuppressWarnings("unused")
     private static PropertyMap $nasgenmap$;
 
-    NativeDebug() {
-        super(Global.objectPrototype(), $nasgenmap$);
+    private NativeDebug() {
+        // don't create me!
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -143,7 +145,7 @@ public final class NativeDebug extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object equals(final Object self, final Object obj1, final Object obj2) {
-        return (obj1 != null) ? obj1.equals(obj2) : false;
+        return Objects.equals(obj1, obj2);
     }
 
     /**
@@ -176,6 +178,18 @@ public final class NativeDebug extends ScriptObject {
     }
 
     /**
+     * Returns the property listener count for a script object
+     *
+     * @param self self reference
+     * @param obj  script object whose listener count is returned
+     * @return listener count
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object getListenerCount(final Object self, final Object obj) {
+        return (obj instanceof ScriptObject)? ((ScriptObject)obj).getListenerCount() : 0;
+    }
+
+    /**
      * Dump all Nashorn debug mode counters. Calling this may be better if
      * you want to print all counters. This way you can avoid too many callsites
      * due to counter access itself!!
@@ -196,6 +210,8 @@ public final class NativeDebug extends ScriptObject {
         out.println("ScriptFunction allocations " + ScriptFunction.getAllocations());
         out.println("PropertyMap count " + PropertyMap.getCount());
         out.println("PropertyMap cloned " + PropertyMap.getClonedCount());
+        out.println("PropertyMap shared " + PropertyMap.getSharedCount());
+        out.println("PropertyMap duplicated " + PropertyMap.getDuplicatedCount());
         out.println("PropertyMap history hit " + PropertyMap.getHistoryHit());
         out.println("PropertyMap proto invalidations " + PropertyMap.getProtoInvalidations());
         out.println("PropertyMap proto history hit " + PropertyMap.getProtoHistoryHit());

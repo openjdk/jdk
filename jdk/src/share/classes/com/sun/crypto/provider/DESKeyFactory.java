@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import javax.crypto.spec.DESKeySpec;
 import java.security.InvalidKeyException;
 import java.security.spec.KeySpec;
 import java.security.spec.InvalidKeySpecException;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * This class implements the DES key factory of the Sun provider.
@@ -60,20 +61,22 @@ public final class DESKeyFactory extends SecretKeyFactorySpi {
      */
     protected SecretKey engineGenerateSecret(KeySpec keySpec)
         throws InvalidKeySpecException {
-        DESKey desKey = null;
 
         try {
-            if (!(keySpec instanceof DESKeySpec)) {
-                throw new InvalidKeySpecException
-                    ("Inappropriate key specification");
+            if (keySpec instanceof DESKeySpec) {
+                return new DESKey(((DESKeySpec)keySpec).getKey());
             }
-            else {
-                DESKeySpec desKeySpec = (DESKeySpec)keySpec;
-                desKey = new DESKey(desKeySpec.getKey());
+
+            if (keySpec instanceof SecretKeySpec) {
+                return new DESKey(((SecretKeySpec)keySpec).getEncoded());
             }
+
+            throw new InvalidKeySpecException(
+                    "Inappropriate key specification");
+
         } catch (InvalidKeyException e) {
+            throw new InvalidKeySpecException(e.getMessage());
         }
-        return desKey;
     }
 
     /**

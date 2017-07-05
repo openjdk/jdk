@@ -62,4 +62,10 @@ public interface CodeInstaller<T> {
      * @param code bytecode to verify
      */
     public void verify(final byte[] code);
+
+    /**
+     * Get next unique script id
+     * @return unique script id
+     */
+    public long getUniqueScriptId();
 }
