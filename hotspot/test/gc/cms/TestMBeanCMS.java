@@ -24,7 +24,7 @@
 /*
  * @test TestMBeanCMS.java
  * @bug 6581734
- * @requires vm.gc=="ConcMarkSweep" | vm.gc=="null"
+ * @requires vm.gc.ConcMarkSweep
  * @summary CMS Old Gen's collection usage is zero after GC which is incorrect
  * @modules java.management
  * @run main/othervm -Xmx512m -verbose:gc -XX:+UseConcMarkSweepGC TestMBeanCMS

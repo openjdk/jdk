@@ -26,12 +26,12 @@
  * @bug 8137167
  * @summary Tests directives to be able to add and remove directives
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /compiler/testlibrary ../share /
+ * @library /testlibrary /test/lib ../share /
  * @build compiler.compilercontrol.jcmd.AddAndRemoveTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver compiler.compilercontrol.jcmd.AddAndRemoveTest
  */
 

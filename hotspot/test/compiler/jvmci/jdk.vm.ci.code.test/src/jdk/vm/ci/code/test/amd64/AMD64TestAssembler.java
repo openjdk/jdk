@@ -32,17 +32,17 @@ import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.site.ConstantReference;
 import jdk.vm.ci.code.site.DataSectionReference;
 import jdk.vm.ci.code.test.TestAssembler;
+import jdk.vm.ci.code.test.TestHotSpotVMConfig;
 import jdk.vm.ci.hotspot.HotSpotCallingConventionType;
 import jdk.vm.ci.hotspot.HotSpotConstant;
 import jdk.vm.ci.hotspot.HotSpotForeignCallTarget;
-import jdk.vm.ci.hotspot.HotSpotVMConfig;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.VMConstant;
 
 public class AMD64TestAssembler extends TestAssembler {
 
-    public AMD64TestAssembler(CodeCacheProvider codeCache) {
-        super(codeCache, 16, 16, AMD64Kind.DWORD, AMD64.rax, AMD64.rcx, AMD64.rdi, AMD64.r8, AMD64.r9, AMD64.r10);
+    public AMD64TestAssembler(CodeCacheProvider codeCache, TestHotSpotVMConfig config) {
+        super(codeCache, config, 16, 16, AMD64Kind.DWORD, AMD64.rax, AMD64.rcx, AMD64.rdi, AMD64.r8, AMD64.r9, AMD64.r10);
     }
 
     private void emitFatNop() {
@@ -68,7 +68,6 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public void emitEpilogue() {
-        HotSpotVMConfig config = HotSpotVMConfig.config();
         recordMark(config.MARKID_DEOPT_HANDLER_ENTRY);
         recordCall(new HotSpotForeignCallTarget(config.handleDeoptStub), 5, true, null);
         code.emitByte(0xE8); // CALL rel32
@@ -86,12 +85,12 @@ public class AMD64TestAssembler extends TestAssembler {
 
     @Override
     public Register emitIntArg0() {
-        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCall, JavaKind.Int)[0];
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCall, JavaKind.Int).get(0);
     }
 
     @Override
     public Register emitIntArg1() {
-        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCall, JavaKind.Int)[1];
+        return codeCache.getRegisterConfig().getCallingConventionRegisters(HotSpotCallingConventionType.JavaCall, JavaKind.Int).get(1);
     }
 
     private void emitREX(boolean w, int r, int x, int b) {

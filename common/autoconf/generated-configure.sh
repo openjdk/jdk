@@ -976,7 +976,6 @@ JVM_VARIANTS
 DEBUG_LEVEL
 HOTSPOT_DEBUG_LEVEL
 JDK_VARIANT
-SET_OPENJDK
 USERNAME
 CANONICAL_TOPDIR
 ORIGINAL_TOPDIR
@@ -5095,7 +5094,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1467223237
+DATE_WHEN_GENERATED=1467960715
 
 ###############################################################################
 #
@@ -16592,41 +16591,17 @@ else
 fi
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for presence of closed sources" >&5
-$as_echo_n "checking for presence of closed sources... " >&6; }
-  if test -d "$SRC_ROOT/jdk/src/closed"; then
-    CLOSED_SOURCE_PRESENT=yes
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if custom source is suppressed (openjdk-only)" >&5
+$as_echo_n "checking if custom source is suppressed (openjdk-only)... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_openjdk_only" >&5
+$as_echo "$enable_openjdk_only" >&6; }
+  if test "x$enable_openjdk_only" = "xyes"; then
+    SUPPRESS_CUSTOM_EXTENSIONS="true"
+  elif test "x$enable_openjdk_only" = "xno"; then
+    SUPPRESS_CUSTOM_EXTENSIONS="false"
   else
-    CLOSED_SOURCE_PRESENT=no
+    as_fn_error $? "Invalid value for --enable-openjdk-only: $enable_openjdk_only" "$LINENO" 5
   fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CLOSED_SOURCE_PRESENT" >&5
-$as_echo "$CLOSED_SOURCE_PRESENT" >&6; }
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if closed source is suppressed (openjdk-only)" >&5
-$as_echo_n "checking if closed source is suppressed (openjdk-only)... " >&6; }
-  SUPPRESS_CLOSED_SOURCE="$enable_openjdk_only"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SUPPRESS_CLOSED_SOURCE" >&5
-$as_echo "$SUPPRESS_CLOSED_SOURCE" >&6; }
-
-  if test "x$CLOSED_SOURCE_PRESENT" = xno; then
-    OPENJDK=true
-    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No closed source present, --enable-openjdk-only makes no sense" >&5
-$as_echo "$as_me: WARNING: No closed source present, --enable-openjdk-only makes no sense" >&2;}
-    fi
-  else
-    if test "x$SUPPRESS_CLOSED_SOURCE" = "xyes"; then
-      OPENJDK=true
-    else
-      OPENJDK=false
-    fi
-  fi
-
-  if test "x$OPENJDK" = "xtrue"; then
-    SET_OPENJDK="OPENJDK=true"
-  fi
-
-
 
   # custom-make-dir is deprecated. Please use your custom-hook.m4 to override
   # the IncludeCustomExtension macro.
@@ -53313,11 +53288,7 @@ $as_echo "yes, forced" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
 $as_echo "no, forced" >&6; }
   elif test "x$enable_dtrace" = "xauto" || test "x$enable_dtrace" = "x"; then
-    if test "x$OPENJDK_TARGET_OS" = "xlinux" && test "x$OPENJDK" != "xtrue"; then
-      INCLUDE_DTRACE=false
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, non-open linux build" >&5
-$as_echo "no, non-open linux build" >&6; }
-    elif test "x$DTRACE_DEP_MISSING" = "xtrue"; then
+    if test "x$DTRACE_DEP_MISSING" = "xtrue"; then
       INCLUDE_DTRACE=false
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, missing dependencies" >&5
 $as_echo "no, missing dependencies" >&6; }
@@ -53596,11 +53567,9 @@ $as_echo "yes" >&6; }
     NEEDS_LIB_CUPS=true
   fi
 
-  # Check if freetype is needed
-  if test "x$OPENJDK" = "xtrue"; then
+  # A custom hook may have set this already
+  if test "x$NEEDS_LIB_FREETYPE" = "x"; then
     NEEDS_LIB_FREETYPE=true
-  else
-    NEEDS_LIB_FREETYPE=false
   fi
 
   # Check if alsa is needed

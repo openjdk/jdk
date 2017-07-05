@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test to check that a live humongous object is not eagerly reclaimed. This is a regression test for
  *          8139424 and the test will crash if an eager reclaim occur. The test is not 100% deterministic and
  *          might pass even if there are problems in the code, but it will never crash unless there is a problem.
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @key gc
  * @library /testlibrary /test/lib
  * @modules java.base/jdk.internal.misc

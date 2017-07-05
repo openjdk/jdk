@@ -43,13 +43,13 @@ import static org.testng.Assert.*;
 import static java.lang.invoke.MethodType.*;
 
 public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
-    static final char static_final_v = 'a';
+    static final char static_final_v = '\u0123';
 
-    static char static_v = 'a';
+    static char static_v = '\u0123';
 
-    final char final_v = 'a';
+    final char final_v = '\u0123';
 
-    char v = 'a';
+    char v = '\u0123';
 
     VarHandle vhFinalField;
 
@@ -154,23 +154,23 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
         // Set
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            vh.set(null, 'a');
+            vh.set(null, '\u0123');
         });
         checkCCE(() -> { // receiver reference class
-            vh.set(Void.class, 'a');
+            vh.set(Void.class, '\u0123');
         });
         checkWMTE(() -> { // value reference class
             vh.set(recv, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
-            vh.set(0, 'a');
+            vh.set(0, '\u0123');
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
             vh.set();
         });
         checkWMTE(() -> { // >
-            vh.set(recv, 'a', Void.class);
+            vh.set(recv, '\u0123', Void.class);
         });
 
 
@@ -204,23 +204,23 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
         // SetVolatile
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            vh.setVolatile(null, 'a');
+            vh.setVolatile(null, '\u0123');
         });
         checkCCE(() -> { // receiver reference class
-            vh.setVolatile(Void.class, 'a');
+            vh.setVolatile(Void.class, '\u0123');
         });
         checkWMTE(() -> { // value reference class
             vh.setVolatile(recv, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
-            vh.setVolatile(0, 'a');
+            vh.setVolatile(0, '\u0123');
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
             vh.setVolatile();
         });
         checkWMTE(() -> { // >
-            vh.setVolatile(recv, 'a', Void.class);
+            vh.setVolatile(recv, '\u0123', Void.class);
         });
 
 
@@ -254,23 +254,23 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
         // SetOpaque
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            vh.setOpaque(null, 'a');
+            vh.setOpaque(null, '\u0123');
         });
         checkCCE(() -> { // receiver reference class
-            vh.setOpaque(Void.class, 'a');
+            vh.setOpaque(Void.class, '\u0123');
         });
         checkWMTE(() -> { // value reference class
             vh.setOpaque(recv, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
-            vh.setOpaque(0, 'a');
+            vh.setOpaque(0, '\u0123');
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
             vh.setOpaque();
         });
         checkWMTE(() -> { // >
-            vh.setOpaque(recv, 'a', Void.class);
+            vh.setOpaque(recv, '\u0123', Void.class);
         });
 
 
@@ -304,27 +304,342 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
         // SetRelease
         // Incorrect argument types
         checkNPE(() -> { // null receiver
-            vh.setRelease(null, 'a');
+            vh.setRelease(null, '\u0123');
         });
         checkCCE(() -> { // receiver reference class
-            vh.setRelease(Void.class, 'a');
+            vh.setRelease(Void.class, '\u0123');
         });
         checkWMTE(() -> { // value reference class
             vh.setRelease(recv, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
-            vh.setRelease(0, 'a');
+            vh.setRelease(0, '\u0123');
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
             vh.setRelease();
         });
         checkWMTE(() -> { // >
-            vh.setRelease(recv, 'a', Void.class);
+            vh.setRelease(recv, '\u0123', Void.class);
         });
 
 
+        // CompareAndSet
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.compareAndSet(null, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.compareAndSet(Void.class, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.compareAndSet(recv, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.compareAndSet(recv, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.compareAndSet(0, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.compareAndSet();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.compareAndSet(recv, '\u0123', '\u0123', Void.class);
+        });
 
+
+        // WeakCompareAndSet
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSet(null, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSet(Void.class, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSet(recv, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSet(recv, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSet(0, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSet();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSet(recv, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // WeakCompareAndSetVolatile
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetVolatile(null, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetVolatile(Void.class, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetVolatile(recv, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetVolatile(recv, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetVolatile(0, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetVolatile();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetVolatile(recv, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // WeakCompareAndSetAcquire
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetAcquire(null, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetAcquire(Void.class, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetAcquire(recv, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetAcquire(recv, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetAcquire(0, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetAcquire();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetAcquire(recv, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // WeakCompareAndSetRelease
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetRelease(null, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetRelease(Void.class, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetRelease(recv, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetRelease(recv, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetRelease(0, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetRelease();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetRelease(recv, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // CompareAndExchange
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            char x = (char) vh.compareAndExchange(null, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            char x = (char) vh.compareAndExchange(Void.class, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            char x = (char) vh.compareAndExchange(recv, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            char x = (char) vh.compareAndExchange(recv, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // reciever primitive class
+            char x = (char) vh.compareAndExchange(0, '\u0123', '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.compareAndExchange(recv, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.compareAndExchange(recv, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.compareAndExchange();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.compareAndExchange(recv, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // CompareAndExchangeAcquire
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            char x = (char) vh.compareAndExchangeAcquire(null, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            char x = (char) vh.compareAndExchangeAcquire(Void.class, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            char x = (char) vh.compareAndExchangeAcquire(recv, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            char x = (char) vh.compareAndExchangeAcquire(recv, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // reciever primitive class
+            char x = (char) vh.compareAndExchangeAcquire(0, '\u0123', '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.compareAndExchangeAcquire(recv, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.compareAndExchangeAcquire(recv, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.compareAndExchangeAcquire();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.compareAndExchangeAcquire(recv, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // CompareAndExchangeRelease
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            char x = (char) vh.compareAndExchangeRelease(null, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            char x = (char) vh.compareAndExchangeRelease(Void.class, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            char x = (char) vh.compareAndExchangeRelease(recv, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            char x = (char) vh.compareAndExchangeRelease(recv, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // reciever primitive class
+            char x = (char) vh.compareAndExchangeRelease(0, '\u0123', '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.compareAndExchangeRelease(recv, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.compareAndExchangeRelease(recv, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.compareAndExchangeRelease();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.compareAndExchangeRelease(recv, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // GetAndSet
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            char x = (char) vh.getAndSet(null, '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            char x = (char) vh.getAndSet(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // value reference class
+            char x = (char) vh.getAndSet(recv, Void.class);
+        });
+        checkWMTE(() -> { // reciever primitive class
+            char x = (char) vh.getAndSet(0, '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.getAndSet(recv, '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndSet(recv, '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.getAndSet();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.getAndSet(recv, '\u0123', Void.class);
+        });
+
+        // GetAndAdd
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            char x = (char) vh.getAndAdd(null, '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            char x = (char) vh.getAndAdd(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // value reference class
+            char x = (char) vh.getAndAdd(recv, Void.class);
+        });
+        checkWMTE(() -> { // reciever primitive class
+            char x = (char) vh.getAndAdd(0, '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.getAndAdd(recv, '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndAdd(recv, '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.getAndAdd();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.getAndAdd(recv, '\u0123', Void.class);
+        });
+
+
+        // AddAndGet
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            char x = (char) vh.addAndGet(null, '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            char x = (char) vh.addAndGet(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // value reference class
+            char x = (char) vh.addAndGet(recv, Void.class);
+        });
+        checkWMTE(() -> { // reciever primitive class
+            char x = (char) vh.addAndGet(0, '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.addAndGet(recv, '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.addAndGet(recv, '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.addAndGet();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.addAndGet(recv, '\u0123', Void.class);
+        });
     }
 
     static void testInstanceFieldWrongMethodType(VarHandleTestMethodTypeChar recv, Handles hs) throws Throwable {
@@ -366,11 +681,11 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             // Incorrect argument types
             checkNPE(() -> { // null receiver
                 hs.get(am, methodType(void.class, VarHandleTestMethodTypeChar.class, char.class)).
-                    invokeExact((VarHandleTestMethodTypeChar) null, 'a');
+                    invokeExact((VarHandleTestMethodTypeChar) null, '\u0123');
             });
             hs.checkWMTEOrCCE(() -> { // receiver reference class
                 hs.get(am, methodType(void.class, Class.class, char.class)).
-                    invokeExact(Void.class, 'a');
+                    invokeExact(Void.class, '\u0123');
             });
             checkWMTE(() -> { // value reference class
                 hs.get(am, methodType(void.class, VarHandleTestMethodTypeChar.class, Class.class)).
@@ -378,7 +693,7 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             });
             checkWMTE(() -> { // receiver primitive class
                 hs.get(am, methodType(void.class, int.class, char.class)).
-                    invokeExact(0, 'a');
+                    invokeExact(0, '\u0123');
             });
             // Incorrect arity
             checkWMTE(() -> { // 0
@@ -387,11 +702,157 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             });
             checkWMTE(() -> { // >
                 hs.get(am, methodType(void.class, VarHandleTestMethodTypeChar.class, char.class, Class.class)).
-                    invokeExact(recv, 'a', Void.class);
+                    invokeExact(recv, '\u0123', Void.class);
             });
         }
 
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
+            // Incorrect argument types
+            checkNPE(() -> { // null receiver
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, VarHandleTestMethodTypeChar.class, char.class, char.class)).
+                    invokeExact((VarHandleTestMethodTypeChar) null, '\u0123', '\u0123');
+            });
+            hs.checkWMTEOrCCE(() -> { // receiver reference class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, Class.class, char.class, char.class)).
+                    invokeExact(Void.class, '\u0123', '\u0123');
+            });
+            checkWMTE(() -> { // expected reference class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, VarHandleTestMethodTypeChar.class, Class.class, char.class)).
+                    invokeExact(recv, Void.class, '\u0123');
+            });
+            checkWMTE(() -> { // actual reference class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, VarHandleTestMethodTypeChar.class, char.class, Class.class)).
+                    invokeExact(recv, '\u0123', Void.class);
+            });
+            checkWMTE(() -> { // receiver primitive class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, int.class , char.class, char.class)).
+                    invokeExact(0, '\u0123', '\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                boolean r = (boolean) hs.get(am, methodType(boolean.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, VarHandleTestMethodTypeChar.class, char.class, char.class, Class.class)).
+                    invokeExact(recv, '\u0123', '\u0123', Void.class);
+            });
+        }
 
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
+            checkNPE(() -> { // null receiver
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, char.class, char.class)).
+                    invokeExact((VarHandleTestMethodTypeChar) null, '\u0123', '\u0123');
+            });
+            hs.checkWMTEOrCCE(() -> { // receiver reference class
+                char x = (char) hs.get(am, methodType(char.class, Class.class, char.class, char.class)).
+                    invokeExact(Void.class, '\u0123', '\u0123');
+            });
+            checkWMTE(() -> { // expected reference class
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, Class.class, char.class)).
+                    invokeExact(recv, Void.class, '\u0123');
+            });
+            checkWMTE(() -> { // actual reference class
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, char.class, Class.class)).
+                    invokeExact(recv, '\u0123', Void.class);
+            });
+            checkWMTE(() -> { // reciever primitive class
+                char x = (char) hs.get(am, methodType(char.class, int.class , char.class, char.class)).
+                    invokeExact(0, '\u0123', '\u0123');
+            });
+            // Incorrect return type
+            checkWMTE(() -> { // reference class
+                Void r = (Void) hs.get(am, methodType(Void.class, VarHandleTestMethodTypeChar.class , char.class, char.class)).
+                    invokeExact(recv, '\u0123', '\u0123');
+            });
+            checkWMTE(() -> { // primitive class
+                boolean x = (boolean) hs.get(am, methodType(boolean.class, VarHandleTestMethodTypeChar.class , char.class, char.class)).
+                    invokeExact(recv, '\u0123', '\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                char x = (char) hs.get(am, methodType(char.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, char.class, char.class, Class.class)).
+                    invokeExact(recv, '\u0123', '\u0123', Void.class);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
+            checkNPE(() -> { // null receiver
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, char.class)).
+                    invokeExact((VarHandleTestMethodTypeChar) null, '\u0123');
+            });
+            hs.checkWMTEOrCCE(() -> { // receiver reference class
+                char x = (char) hs.get(am, methodType(char.class, Class.class, char.class)).
+                    invokeExact(Void.class, '\u0123');
+            });
+            checkWMTE(() -> { // value reference class
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, Class.class)).
+                    invokeExact(recv, Void.class);
+            });
+            checkWMTE(() -> { // reciever primitive class
+                char x = (char) hs.get(am, methodType(char.class, int.class, char.class)).
+                    invokeExact(0, '\u0123');
+            });
+            // Incorrect return type
+            checkWMTE(() -> { // reference class
+                Void r = (Void) hs.get(am, methodType(Void.class, VarHandleTestMethodTypeChar.class, char.class)).
+                    invokeExact(recv, '\u0123');
+            });
+            checkWMTE(() -> { // primitive class
+                boolean x = (boolean) hs.get(am, methodType(boolean.class, VarHandleTestMethodTypeChar.class, char.class)).
+                    invokeExact(recv, '\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                char x = (char) hs.get(am, methodType(char.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, char.class)).
+                    invokeExact(recv, '\u0123', Void.class);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+            checkNPE(() -> { // null receiver
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, char.class)).
+                    invokeExact((VarHandleTestMethodTypeChar) null, '\u0123');
+            });
+            hs.checkWMTEOrCCE(() -> { // receiver reference class
+                char x = (char) hs.get(am, methodType(char.class, Class.class, char.class)).
+                    invokeExact(Void.class, '\u0123');
+            });
+            checkWMTE(() -> { // value reference class
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, Class.class)).
+                    invokeExact(recv, Void.class);
+            });
+            checkWMTE(() -> { // reciever primitive class
+                char x = (char) hs.get(am, methodType(char.class, int.class, char.class)).
+                    invokeExact(0, '\u0123');
+            });
+            // Incorrect return type
+            checkWMTE(() -> { // reference class
+                Void r = (Void) hs.get(am, methodType(Void.class, VarHandleTestMethodTypeChar.class, char.class)).
+                    invokeExact(recv, '\u0123');
+            });
+            checkWMTE(() -> { // primitive class
+                boolean x = (boolean) hs.get(am, methodType(boolean.class, VarHandleTestMethodTypeChar.class, char.class)).
+                    invokeExact(recv, '\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                char x = (char) hs.get(am, methodType(char.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                char x = (char) hs.get(am, methodType(char.class, VarHandleTestMethodTypeChar.class, char.class)).
+                    invokeExact(recv, '\u0123', Void.class);
+            });
+        }
     }
 
 
@@ -420,7 +881,7 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             vh.set();
         });
         checkWMTE(() -> { // >
-            vh.set('a', Void.class);
+            vh.set('\u0123', Void.class);
         });
 
 
@@ -447,7 +908,7 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             vh.setVolatile();
         });
         checkWMTE(() -> { // >
-            vh.setVolatile('a', Void.class);
+            vh.setVolatile('\u0123', Void.class);
         });
 
 
@@ -474,7 +935,7 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             vh.setOpaque();
         });
         checkWMTE(() -> { // >
-            vh.setOpaque('a', Void.class);
+            vh.setOpaque('\u0123', Void.class);
         });
 
 
@@ -501,11 +962,227 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             vh.setRelease();
         });
         checkWMTE(() -> { // >
-            vh.setRelease('a', Void.class);
+            vh.setRelease('\u0123', Void.class);
         });
 
 
+        // CompareAndSet
+        // Incorrect argument types
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.compareAndSet(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.compareAndSet('\u0123', Void.class);
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.compareAndSet();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.compareAndSet('\u0123', '\u0123', Void.class);
+        });
 
+
+        // WeakCompareAndSet
+        // Incorrect argument types
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSet(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSet('\u0123', Void.class);
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSet();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSet('\u0123', '\u0123', Void.class);
+        });
+
+
+        // WeakCompareAndSetVolatile
+        // Incorrect argument types
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetVolatile(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetVolatile('\u0123', Void.class);
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetVolatile();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetVolatile('\u0123', '\u0123', Void.class);
+        });
+
+
+        // WeakCompareAndSetAcquire
+        // Incorrect argument types
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetAcquire(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetAcquire('\u0123', Void.class);
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetAcquire();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetAcquire('\u0123', '\u0123', Void.class);
+        });
+
+
+        // WeakCompareAndSetRelease
+        // Incorrect argument types
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetRelease(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetRelease('\u0123', Void.class);
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetRelease();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetRelease('\u0123', '\u0123', Void.class);
+        });
+
+
+        // CompareAndExchange
+        // Incorrect argument types
+        checkWMTE(() -> { // expected reference class
+            char x = (char) vh.compareAndExchange(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            char x = (char) vh.compareAndExchange('\u0123', Void.class);
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.compareAndExchange('\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.compareAndExchange('\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.compareAndExchange();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.compareAndExchange('\u0123', '\u0123', Void.class);
+        });
+
+
+        // CompareAndExchangeAcquire
+        // Incorrect argument types
+        checkWMTE(() -> { // expected reference class
+            char x = (char) vh.compareAndExchangeAcquire(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            char x = (char) vh.compareAndExchangeAcquire('\u0123', Void.class);
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.compareAndExchangeAcquire('\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.compareAndExchangeAcquire('\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.compareAndExchangeAcquire();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.compareAndExchangeAcquire('\u0123', '\u0123', Void.class);
+        });
+
+
+        // CompareAndExchangeRelease
+        // Incorrect argument types
+        checkWMTE(() -> { // expected reference class
+            char x = (char) vh.compareAndExchangeRelease(Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            char x = (char) vh.compareAndExchangeRelease('\u0123', Void.class);
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.compareAndExchangeRelease('\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.compareAndExchangeRelease('\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.compareAndExchangeRelease();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.compareAndExchangeRelease('\u0123', '\u0123', Void.class);
+        });
+
+
+        // GetAndSet
+        // Incorrect argument types
+        checkWMTE(() -> { // value reference class
+            char x = (char) vh.getAndSet(Void.class);
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.getAndSet('\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndSet('\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.getAndSet();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.getAndSet('\u0123', Void.class);
+        });
+
+        // GetAndAdd
+        // Incorrect argument types
+        checkWMTE(() -> { // value reference class
+            char x = (char) vh.getAndAdd(Void.class);
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.getAndAdd('\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndAdd('\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.getAndAdd();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.getAndAdd('\u0123', Void.class);
+        });
+
+
+        // AddAndGet
+        // Incorrect argument types
+        checkWMTE(() -> { // value reference class
+            char x = (char) vh.addAndGet(Void.class);
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.addAndGet('\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.addAndGet('\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.addAndGet();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.addAndGet('\u0123', Void.class);
+        });
     }
 
     static void testStaticFieldWrongMethodType(Handles hs) throws Throwable {
@@ -540,16 +1217,117 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             });
             checkWMTE(() -> { // >
                 hs.get(am, methodType(void.class, char.class, Class.class)).
-                    invokeExact('a', Void.class);
+                    invokeExact('\u0123', Void.class);
+            });
+        }
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
+            // Incorrect argument types
+            checkWMTE(() -> { // expected reference class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, Class.class, char.class)).
+                    invokeExact(Void.class, '\u0123');
+            });
+            checkWMTE(() -> { // actual reference class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, char.class, Class.class)).
+                    invokeExact('\u0123', Void.class);
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                boolean r = (boolean) hs.get(am, methodType(boolean.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, char.class, char.class, Class.class)).
+                    invokeExact('\u0123', '\u0123', Void.class);
             });
         }
 
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
+            // Incorrect argument types
+            checkWMTE(() -> { // expected reference class
+                char x = (char) hs.get(am, methodType(char.class, Class.class, char.class)).
+                    invokeExact(Void.class, '\u0123');
+            });
+            checkWMTE(() -> { // actual reference class
+                char x = (char) hs.get(am, methodType(char.class, char.class, Class.class)).
+                    invokeExact('\u0123', Void.class);
+            });
+            // Incorrect return type
+            checkWMTE(() -> { // reference class
+                Void r = (Void) hs.get(am, methodType(Void.class, char.class, char.class)).
+                    invokeExact('\u0123', '\u0123');
+            });
+            checkWMTE(() -> { // primitive class
+                boolean x = (boolean) hs.get(am, methodType(boolean.class, char.class, char.class)).
+                    invokeExact('\u0123', '\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                char x = (char) hs.get(am, methodType(char.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                char x = (char) hs.get(am, methodType(char.class, char.class, char.class, Class.class)).
+                    invokeExact('\u0123', '\u0123', Void.class);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
+            // Incorrect argument types
+            checkWMTE(() -> { // value reference class
+                char x = (char) hs.get(am, methodType(char.class, Class.class)).
+                    invokeExact(Void.class);
+            });
+            // Incorrect return type
+            checkWMTE(() -> { // reference class
+                Void r = (Void) hs.get(am, methodType(Void.class, char.class)).
+                    invokeExact('\u0123');
+            });
+            checkWMTE(() -> { // primitive class
+                boolean x = (boolean) hs.get(am, methodType(boolean.class, char.class)).
+                    invokeExact('\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                char x = (char) hs.get(am, methodType(char.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                char x = (char) hs.get(am, methodType(char.class, char.class, Class.class)).
+                    invokeExact('\u0123', Void.class);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+            // Incorrect argument types
+            checkWMTE(() -> { // value reference class
+                char x = (char) hs.get(am, methodType(char.class, Class.class)).
+                    invokeExact(Void.class);
+            });
+            // Incorrect return type
+            checkWMTE(() -> { // reference class
+                Void r = (Void) hs.get(am, methodType(Void.class, char.class)).
+                    invokeExact('\u0123');
+            });
+            checkWMTE(() -> { // primitive class
+                boolean x = (boolean) hs.get(am, methodType(boolean.class, char.class)).
+                    invokeExact('\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                char x = (char) hs.get(am, methodType(char.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                char x = (char) hs.get(am, methodType(char.class, char.class, Class.class)).
+                    invokeExact('\u0123', Void.class);
+            });
+        }
     }
 
 
     static void testArrayWrongMethodType(VarHandle vh) throws Throwable {
         char[] array = new char[10];
-        Arrays.fill(array, 'a');
+        Arrays.fill(array, '\u0123');
 
         // Get
         // Incorrect argument types
@@ -584,26 +1362,26 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
         // Set
         // Incorrect argument types
         checkNPE(() -> { // null array
-            vh.set(null, 0, 'a');
+            vh.set(null, 0, '\u0123');
         });
         checkCCE(() -> { // array reference class
-            vh.set(Void.class, 0, 'a');
+            vh.set(Void.class, 0, '\u0123');
         });
         checkWMTE(() -> { // value reference class
             vh.set(array, 0, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
-            vh.set(0, 0, 'a');
+            vh.set(0, 0, '\u0123');
         });
         checkWMTE(() -> { // index reference class
-            vh.set(array, Void.class, 'a');
+            vh.set(array, Void.class, '\u0123');
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
             vh.set();
         });
         checkWMTE(() -> { // >
-            vh.set(array, 0, 'a', Void.class);
+            vh.set(array, 0, '\u0123', Void.class);
         });
 
 
@@ -640,26 +1418,26 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
         // SetVolatile
         // Incorrect argument types
         checkNPE(() -> { // null array
-            vh.setVolatile(null, 0, 'a');
+            vh.setVolatile(null, 0, '\u0123');
         });
         checkCCE(() -> { // array reference class
-            vh.setVolatile(Void.class, 0, 'a');
+            vh.setVolatile(Void.class, 0, '\u0123');
         });
         checkWMTE(() -> { // value reference class
             vh.setVolatile(array, 0, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
-            vh.setVolatile(0, 0, 'a');
+            vh.setVolatile(0, 0, '\u0123');
         });
         checkWMTE(() -> { // index reference class
-            vh.setVolatile(array, Void.class, 'a');
+            vh.setVolatile(array, Void.class, '\u0123');
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
             vh.setVolatile();
         });
         checkWMTE(() -> { // >
-            vh.setVolatile(array, 0, 'a', Void.class);
+            vh.setVolatile(array, 0, '\u0123', Void.class);
         });
 
 
@@ -696,26 +1474,26 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
         // SetOpaque
         // Incorrect argument types
         checkNPE(() -> { // null array
-            vh.setOpaque(null, 0, 'a');
+            vh.setOpaque(null, 0, '\u0123');
         });
         checkCCE(() -> { // array reference class
-            vh.setOpaque(Void.class, 0, 'a');
+            vh.setOpaque(Void.class, 0, '\u0123');
         });
         checkWMTE(() -> { // value reference class
             vh.setOpaque(array, 0, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
-            vh.setOpaque(0, 0, 'a');
+            vh.setOpaque(0, 0, '\u0123');
         });
         checkWMTE(() -> { // index reference class
-            vh.setOpaque(array, Void.class, 'a');
+            vh.setOpaque(array, Void.class, '\u0123');
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
             vh.setOpaque();
         });
         checkWMTE(() -> { // >
-            vh.setOpaque(array, 0, 'a', Void.class);
+            vh.setOpaque(array, 0, '\u0123', Void.class);
         });
 
 
@@ -752,35 +1530,383 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
         // SetRelease
         // Incorrect argument types
         checkNPE(() -> { // null array
-            vh.setRelease(null, 0, 'a');
+            vh.setRelease(null, 0, '\u0123');
         });
         checkCCE(() -> { // array reference class
-            vh.setRelease(Void.class, 0, 'a');
+            vh.setRelease(Void.class, 0, '\u0123');
         });
         checkWMTE(() -> { // value reference class
             vh.setRelease(array, 0, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
-            vh.setRelease(0, 0, 'a');
+            vh.setRelease(0, 0, '\u0123');
         });
         checkWMTE(() -> { // index reference class
-            vh.setRelease(array, Void.class, 'a');
+            vh.setRelease(array, Void.class, '\u0123');
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
             vh.setRelease();
         });
         checkWMTE(() -> { // >
-            vh.setRelease(array, 0, 'a', Void.class);
+            vh.setRelease(array, 0, '\u0123', Void.class);
         });
 
 
+        // CompareAndSet
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.compareAndSet(null, 0, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.compareAndSet(Void.class, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.compareAndSet(array, 0, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.compareAndSet(array, 0, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.compareAndSet(0, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            boolean r = vh.compareAndSet(array, Void.class, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.compareAndSet();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.compareAndSet(array, 0, '\u0123', '\u0123', Void.class);
+        });
 
+
+        // WeakCompareAndSet
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSet(null, 0, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSet(Void.class, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSet(array, 0, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSet(array, 0, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSet(0, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            boolean r = vh.weakCompareAndSet(array, Void.class, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSet();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSet(array, 0, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // WeakCompareAndSetVolatile
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetVolatile(null, 0, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetVolatile(Void.class, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetVolatile(array, 0, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetVolatile(array, 0, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetVolatile(0, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            boolean r = vh.weakCompareAndSetVolatile(array, Void.class, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetVolatile();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetVolatile(array, 0, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // WeakCompareAndSetAcquire
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetAcquire(null, 0, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetAcquire(Void.class, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetAcquire(array, 0, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetAcquire(array, 0, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetAcquire(0, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            boolean r = vh.weakCompareAndSetAcquire(array, Void.class, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetAcquire();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetAcquire(array, 0, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // WeakCompareAndSetRelease
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            boolean r = vh.weakCompareAndSetRelease(null, 0, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // receiver reference class
+            boolean r = vh.weakCompareAndSetRelease(Void.class, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            boolean r = vh.weakCompareAndSetRelease(array, 0, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            boolean r = vh.weakCompareAndSetRelease(array, 0, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // receiver primitive class
+            boolean r = vh.weakCompareAndSetRelease(0, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            boolean r = vh.weakCompareAndSetRelease(array, Void.class, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            boolean r = vh.weakCompareAndSetRelease();
+        });
+        checkWMTE(() -> { // >
+            boolean r = vh.weakCompareAndSetRelease(array, 0, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // CompareAndExchange
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            char x = (char) vh.compareAndExchange(null, 0, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // array reference class
+            char x = (char) vh.compareAndExchange(Void.class, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            char x = (char) vh.compareAndExchange(array, 0, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            char x = (char) vh.compareAndExchange(array, 0, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // array primitive class
+            char x = (char) vh.compareAndExchange(0, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            char x = (char) vh.compareAndExchange(array, Void.class, '\u0123', '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.compareAndExchange(array, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.compareAndExchange(array, 0, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.compareAndExchange();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.compareAndExchange(array, 0, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // CompareAndExchangeAcquire
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            char x = (char) vh.compareAndExchangeAcquire(null, 0, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // array reference class
+            char x = (char) vh.compareAndExchangeAcquire(Void.class, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            char x = (char) vh.compareAndExchangeAcquire(array, 0, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            char x = (char) vh.compareAndExchangeAcquire(array, 0, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // array primitive class
+            char x = (char) vh.compareAndExchangeAcquire(0, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            char x = (char) vh.compareAndExchangeAcquire(array, Void.class, '\u0123', '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.compareAndExchangeAcquire(array, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.compareAndExchangeAcquire(array, 0, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.compareAndExchangeAcquire();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.compareAndExchangeAcquire(array, 0, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // CompareAndExchangeRelease
+        // Incorrect argument types
+        checkNPE(() -> { // null receiver
+            char x = (char) vh.compareAndExchangeRelease(null, 0, '\u0123', '\u0123');
+        });
+        checkCCE(() -> { // array reference class
+            char x = (char) vh.compareAndExchangeRelease(Void.class, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // expected reference class
+            char x = (char) vh.compareAndExchangeRelease(array, 0, Void.class, '\u0123');
+        });
+        checkWMTE(() -> { // actual reference class
+            char x = (char) vh.compareAndExchangeRelease(array, 0, '\u0123', Void.class);
+        });
+        checkWMTE(() -> { // array primitive class
+            char x = (char) vh.compareAndExchangeRelease(0, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            char x = (char) vh.compareAndExchangeRelease(array, Void.class, '\u0123', '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.compareAndExchangeRelease(array, 0, '\u0123', '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.compareAndExchangeRelease(array, 0, '\u0123', '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.compareAndExchangeRelease();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.compareAndExchangeRelease(array, 0, '\u0123', '\u0123', Void.class);
+        });
+
+
+        // GetAndSet
+        // Incorrect argument types
+        checkNPE(() -> { // null array
+            char x = (char) vh.getAndSet(null, 0, '\u0123');
+        });
+        checkCCE(() -> { // array reference class
+            char x = (char) vh.getAndSet(Void.class, 0, '\u0123');
+        });
+        checkWMTE(() -> { // value reference class
+            char x = (char) vh.getAndSet(array, 0, Void.class);
+        });
+        checkWMTE(() -> { // reciarrayever primitive class
+            char x = (char) vh.getAndSet(0, 0, '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            char x = (char) vh.getAndSet(array, Void.class, '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.getAndSet(array, 0, '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndSet(array, 0, '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.getAndSet();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.getAndSet(array, 0, '\u0123', Void.class);
+        });
+
+        // GetAndAdd
+        // Incorrect argument types
+        checkNPE(() -> { // null array
+            char x = (char) vh.getAndAdd(null, 0, '\u0123');
+        });
+        checkCCE(() -> { // array reference class
+            char x = (char) vh.getAndAdd(Void.class, 0, '\u0123');
+        });
+        checkWMTE(() -> { // value reference class
+            char x = (char) vh.getAndAdd(array, 0, Void.class);
+        });
+        checkWMTE(() -> { // array primitive class
+            char x = (char) vh.getAndAdd(0, 0, '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            char x = (char) vh.getAndAdd(array, Void.class, '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.getAndAdd(array, 0, '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.getAndAdd(array, 0, '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.getAndAdd();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.getAndAdd(array, 0, '\u0123', Void.class);
+        });
+
+
+        // AddAndGet
+        // Incorrect argument types
+        checkNPE(() -> { // null array
+            char x = (char) vh.addAndGet(null, 0, '\u0123');
+        });
+        checkCCE(() -> { // array reference class
+            char x = (char) vh.addAndGet(Void.class, 0, '\u0123');
+        });
+        checkWMTE(() -> { // value reference class
+            char x = (char) vh.addAndGet(array, 0, Void.class);
+        });
+        checkWMTE(() -> { // array primitive class
+            char x = (char) vh.addAndGet(0, 0, '\u0123');
+        });
+        checkWMTE(() -> { // index reference class
+            char x = (char) vh.addAndGet(array, Void.class, '\u0123');
+        });
+        // Incorrect return type
+        checkWMTE(() -> { // reference class
+            Void r = (Void) vh.addAndGet(array, 0, '\u0123');
+        });
+        checkWMTE(() -> { // primitive class
+            boolean x = (boolean) vh.addAndGet(array, 0, '\u0123');
+        });
+        // Incorrect arity
+        checkWMTE(() -> { // 0
+            char x = (char) vh.addAndGet();
+        });
+        checkWMTE(() -> { // >
+            char x = (char) vh.addAndGet(array, 0, '\u0123', Void.class);
+        });
     }
 
     static void testArrayWrongMethodType(Handles hs) throws Throwable {
         char[] array = new char[10];
-        Arrays.fill(array, 'a');
+        Arrays.fill(array, '\u0123');
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect argument types
@@ -824,11 +1950,11 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             // Incorrect argument types
             checkNPE(() -> { // null array
                 hs.get(am, methodType(void.class, char[].class, int.class, char.class)).
-                    invokeExact((char[]) null, 0, 'a');
+                    invokeExact((char[]) null, 0, '\u0123');
             });
             hs.checkWMTEOrCCE(() -> { // array reference class
                 hs.get(am, methodType(void.class, Class.class, int.class, char.class)).
-                    invokeExact(Void.class, 0, 'a');
+                    invokeExact(Void.class, 0, '\u0123');
             });
             checkWMTE(() -> { // value reference class
                 hs.get(am, methodType(void.class, char[].class, int.class, Class.class)).
@@ -836,11 +1962,11 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             });
             checkWMTE(() -> { // receiver primitive class
                 hs.get(am, methodType(void.class, int.class, int.class, char.class)).
-                    invokeExact(0, 0, 'a');
+                    invokeExact(0, 0, '\u0123');
             });
             checkWMTE(() -> { // index reference class
                 hs.get(am, methodType(void.class, char[].class, Class.class, char.class)).
-                    invokeExact(array, Void.class, 'a');
+                    invokeExact(array, Void.class, '\u0123');
             });
             // Incorrect arity
             checkWMTE(() -> { // 0
@@ -849,10 +1975,175 @@ public class VarHandleTestMethodTypeChar extends VarHandleBaseTest {
             });
             checkWMTE(() -> { // >
                 hs.get(am, methodType(void.class, char[].class, int.class, Class.class)).
-                    invokeExact(array, 0, 'a', Void.class);
+                    invokeExact(array, 0, '\u0123', Void.class);
+            });
+        }
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
+            // Incorrect argument types
+            checkNPE(() -> { // null receiver
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, char[].class, int.class, char.class, char.class)).
+                    invokeExact((char[]) null, 0, '\u0123', '\u0123');
+            });
+            hs.checkWMTEOrCCE(() -> { // receiver reference class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, Class.class, int.class, char.class, char.class)).
+                    invokeExact(Void.class, 0, '\u0123', '\u0123');
+            });
+            checkWMTE(() -> { // expected reference class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, char[].class, int.class, Class.class, char.class)).
+                    invokeExact(array, 0, Void.class, '\u0123');
+            });
+            checkWMTE(() -> { // actual reference class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, char[].class, int.class, char.class, Class.class)).
+                    invokeExact(array, 0, '\u0123', Void.class);
+            });
+            checkWMTE(() -> { // receiver primitive class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, int.class, int.class, char.class, char.class)).
+                    invokeExact(0, 0, '\u0123', '\u0123');
+            });
+            checkWMTE(() -> { // index reference class
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, char[].class, Class.class, char.class, char.class)).
+                    invokeExact(array, Void.class, '\u0123', '\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                boolean r = (boolean) hs.get(am, methodType(boolean.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                boolean r = (boolean) hs.get(am, methodType(boolean.class, char[].class, int.class, char.class, char.class, Class.class)).
+                    invokeExact(array, 0, '\u0123', '\u0123', Void.class);
             });
         }
 
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
+            // Incorrect argument types
+            checkNPE(() -> { // null receiver
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, char.class, char.class)).
+                    invokeExact((char[]) null, 0, '\u0123', '\u0123');
+            });
+            hs.checkWMTEOrCCE(() -> { // array reference class
+                char x = (char) hs.get(am, methodType(char.class, Class.class, int.class, char.class, char.class)).
+                    invokeExact(Void.class, 0, '\u0123', '\u0123');
+            });
+            checkWMTE(() -> { // expected reference class
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, Class.class, char.class)).
+                    invokeExact(array, 0, Void.class, '\u0123');
+            });
+            checkWMTE(() -> { // actual reference class
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, char.class, Class.class)).
+                    invokeExact(array, 0, '\u0123', Void.class);
+            });
+            checkWMTE(() -> { // array primitive class
+                char x = (char) hs.get(am, methodType(char.class, int.class, int.class, char.class, char.class)).
+                    invokeExact(0, 0, '\u0123', '\u0123');
+            });
+            checkWMTE(() -> { // index reference class
+                char x = (char) hs.get(am, methodType(char.class, char[].class, Class.class, char.class, char.class)).
+                    invokeExact(array, Void.class, '\u0123', '\u0123');
+            });
+            // Incorrect return type
+            checkWMTE(() -> { // reference class
+                Void r = (Void) hs.get(am, methodType(Void.class, char[].class, int.class, char.class, char.class)).
+                    invokeExact(array, 0, '\u0123', '\u0123');
+            });
+            checkWMTE(() -> { // primitive class
+                boolean x = (boolean) hs.get(am, methodType(boolean.class, char[].class, int.class, char.class, char.class)).
+                    invokeExact(array, 0, '\u0123', '\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                char x = (char) hs.get(am, methodType(char.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, char.class, char.class, Class.class)).
+                    invokeExact(array, 0, '\u0123', '\u0123', Void.class);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
+            // Incorrect argument types
+            checkNPE(() -> { // null array
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, char.class)).
+                    invokeExact((char[]) null, 0, '\u0123');
+            });
+            hs.checkWMTEOrCCE(() -> { // array reference class
+                char x = (char) hs.get(am, methodType(char.class, Class.class, int.class, char.class)).
+                    invokeExact(Void.class, 0, '\u0123');
+            });
+            checkWMTE(() -> { // value reference class
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, Class.class)).
+                    invokeExact(array, 0, Void.class);
+            });
+            checkWMTE(() -> { // array primitive class
+                char x = (char) hs.get(am, methodType(char.class, int.class, int.class, char.class)).
+                    invokeExact(0, 0, '\u0123');
+            });
+            checkWMTE(() -> { // index reference class
+                char x = (char) hs.get(am, methodType(char.class, char[].class, Class.class, char.class)).
+                    invokeExact(array, Void.class, '\u0123');
+            });
+            // Incorrect return type
+            checkWMTE(() -> { // reference class
+                Void r = (Void) hs.get(am, methodType(Void.class, char[].class, int.class, char.class)).
+                    invokeExact(array, 0, '\u0123');
+            });
+            checkWMTE(() -> { // primitive class
+                boolean x = (boolean) hs.get(am, methodType(boolean.class, char[].class, int.class, char.class)).
+                    invokeExact(array, 0, '\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                char x = (char) hs.get(am, methodType(char.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, char.class, Class.class)).
+                    invokeExact(array, 0, '\u0123', Void.class);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
+            // Incorrect argument types
+            checkNPE(() -> { // null array
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, char.class)).
+                    invokeExact((char[]) null, 0, '\u0123');
+            });
+            hs.checkWMTEOrCCE(() -> { // array reference class
+                char x = (char) hs.get(am, methodType(char.class, Class.class, int.class, char.class)).
+                    invokeExact(Void.class, 0, '\u0123');
+            });
+            checkWMTE(() -> { // value reference class
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, Class.class)).
+                    invokeExact(array, 0, Void.class);
+            });
+            checkWMTE(() -> { // array primitive class
+                char x = (char) hs.get(am, methodType(char.class, int.class, int.class, char.class)).
+                    invokeExact(0, 0, '\u0123');
+            });
+            checkWMTE(() -> { // index reference class
+                char x = (char) hs.get(am, methodType(char.class, char[].class, Class.class, char.class)).
+                    invokeExact(array, Void.class, '\u0123');
+            });
+            // Incorrect return type
+            checkWMTE(() -> { // reference class
+                Void r = (Void) hs.get(am, methodType(Void.class, char[].class, int.class, char.class)).
+                    invokeExact(array, 0, '\u0123');
+            });
+            checkWMTE(() -> { // primitive class
+                boolean x = (boolean) hs.get(am, methodType(boolean.class, char[].class, int.class, char.class)).
+                    invokeExact(array, 0, '\u0123');
+            });
+            // Incorrect arity
+            checkWMTE(() -> { // 0
+                char x = (char) hs.get(am, methodType(char.class)).
+                    invokeExact();
+            });
+            checkWMTE(() -> { // >
+                char x = (char) hs.get(am, methodType(char.class, char[].class, int.class, char.class, Class.class)).
+                    invokeExact(array, 0, '\u0123', Void.class);
+            });
+        }
     }
 }
 

@@ -33,6 +33,7 @@
  *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.org.objectweb.asm
  *          jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.runtime
  *          jdk.vm.ci/jdk.vm.ci.meta
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build sun.hotspot.WhiteBox

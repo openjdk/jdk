@@ -22,15 +22,14 @@
  */
 
 /*
-  @test
-  @bug 8149456 8147834 8150230
-  @requires os.family == "mac"
-  @summary KeyEvents for all keys
-  @run main AllKeyCode
-*/
+ @test
+ @bug 8149456 8147834 8150230 8155740
+ @requires os.family == "mac"
+ @summary Tests key codes for all keys supported in Java for Mac OS X.
+ @run main AllKeyCode
+ */
 
 import java.awt.AWTException;
-import java.awt.GridBagLayout;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -149,7 +148,8 @@ public class AllKeyCode extends Frame {
             KeyEvent.VK_F17,
             KeyEvent.VK_F18,
             KeyEvent.VK_F19,
-            KeyEvent.VK_F20
+            KeyEvent.VK_F20,
+            KeyEvent.VK_ALT_GRAPH
         };
 
         keyPressedIndex = -1;
