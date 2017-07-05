@@ -1534,12 +1534,8 @@ void LIRGenerator::do_StoreField(StoreField* x) {
   }
 
   if (is_oop) {
-#ifdef PRECISE_CARDMARK
-    // Precise cardmarks don't work
-    post_barrier(LIR_OprFact::address(address), value.result());
-#else
+    // Store to object so mark the card of the header
     post_barrier(object.result(), value.result());
-#endif // PRECISE_CARDMARK
   }
 
   if (is_volatile && os::is_MP()) {
