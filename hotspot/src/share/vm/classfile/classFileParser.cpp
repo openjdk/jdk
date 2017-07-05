@@ -92,6 +92,7 @@
 
 // Used for backward compatibility reasons:
 // - to check NameAndType_info signatures more aggressively
+// - to disallow argument and require ACC_STATIC for <clinit> methods
 #define JAVA_7_VERSION                    51
 
 // Extension method support.
@@ -1997,9 +1998,7 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
     } else if ((flags & JVM_ACC_STATIC) == JVM_ACC_STATIC) {
       flags &= JVM_ACC_STATIC | JVM_ACC_STRICT;
     } else {
-      // As of major_version 51, a method named <clinit> without ACC_STATIC is
-      // just another method. So, do a normal method modifer check.
-      verify_legal_method_modifiers(flags, is_interface, name, CHECK_(nullHandle));
+      classfile_parse_error("Method <clinit> is not static in class file %s", CHECK_(nullHandle));
     }
   } else {
     verify_legal_method_modifiers(flags, is_interface, name, CHECK_(nullHandle));
@@ -5159,6 +5158,14 @@ int ClassFileParser::verify_legal_method_signature(Symbol* name, Symbol* signatu
     return -2;
   }
 
+  // Class initializers cannot have args for class format version >= 51.
+  if (name == vmSymbols::class_initializer_name() &&
+      signature != vmSymbols::void_method_signature() &&
+      _major_version >= JAVA_7_VERSION) {
+    throwIllegalSignature("Method", name, signature, CHECK_0);
+    return 0;
+  }
+
   unsigned int args_size = 0;
   char buf[fixed_buffer_size];
   char* p = signature->as_utf8_flexible_buffer(THREAD, buf, fixed_buffer_size);
@@ -5182,8 +5189,8 @@ int ClassFileParser::verify_legal_method_signature(Symbol* name, Symbol* signatu
     // The first non-signature thing better be a ')'
     if ((length > 0) && (*p++ == JVM_SIGNATURE_ENDFUNC)) {
       length--;
-      if (name == vmSymbols::object_initializer_name()) {
-        // All "<init>" methods must return void
+      if (name->utf8_length() > 0 && name->byte_at(0) == '<') {
+        // All internal methods must return void
         if ((length == 1) && (p[0] == JVM_SIGNATURE_VOID)) {
           return args_size;
         }

@@ -33,7 +33,7 @@ import java.net.URLConnection;
  * @test TestAnonymousClassUnloading
  * @bug 8054402
  * @summary "Tests unloading of anonymous classes."
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  * @compile TestAnonymousClassUnloading.java
  * @run main ClassFileInstaller TestAnonymousClassUnloading

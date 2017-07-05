@@ -26,7 +26,7 @@
 /*
  * @test TestStableFloat
  * @summary tests on stable fields and arrays
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build TestStableFloat StableConfiguration sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main ClassFileInstaller

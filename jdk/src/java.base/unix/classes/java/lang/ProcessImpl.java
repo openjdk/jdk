@@ -224,48 +224,75 @@ final class ProcessImpl extends Process {
         FileOutputStream f2 = null;
 
         try {
+            boolean forceNullOutputStream = false;
             if (redirects == null) {
                 std_fds = new int[] { -1, -1, -1 };
             } else {
                 std_fds = new int[3];
 
-                if (redirects[0] == Redirect.PIPE)
+                if (redirects[0] == Redirect.PIPE) {
                     std_fds[0] = -1;
-                else if (redirects[0] == Redirect.INHERIT)
+                } else if (redirects[0] == Redirect.INHERIT) {
                     std_fds[0] = 0;
-                else {
+                } else if (redirects[0] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    std_fds[0] = fdAccess.get(((ProcessBuilder.RedirectPipeImpl) redirects[0]).getFd());
+                } else {
                     f0 = new FileInputStream(redirects[0].file());
                     std_fds[0] = fdAccess.get(f0.getFD());
                 }
 
-                if (redirects[1] == Redirect.PIPE)
+                if (redirects[1] == Redirect.PIPE) {
                     std_fds[1] = -1;
-                else if (redirects[1] == Redirect.INHERIT)
+                } else if (redirects[1] == Redirect.INHERIT) {
                     std_fds[1] = 1;
-                else {
+                } else if (redirects[1] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    std_fds[1] = fdAccess.get(((ProcessBuilder.RedirectPipeImpl) redirects[1]).getFd());
+                    // Force getInputStream to return a null stream,
+                    // the fd is directly assigned to the next process.
+                    forceNullOutputStream = true;
+                } else {
                     f1 = new FileOutputStream(redirects[1].file(),
                             redirects[1].append());
                     std_fds[1] = fdAccess.get(f1.getFD());
                 }
 
-                if (redirects[2] == Redirect.PIPE)
+                if (redirects[2] == Redirect.PIPE) {
                     std_fds[2] = -1;
-                else if (redirects[2] == Redirect.INHERIT)
+                } else if (redirects[2] == Redirect.INHERIT) {
                     std_fds[2] = 2;
-                else {
+                } else if (redirects[2] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    std_fds[2] = fdAccess.get(((ProcessBuilder.RedirectPipeImpl) redirects[2]).getFd());
+                } else {
                     f2 = new FileOutputStream(redirects[2].file(),
                             redirects[2].append());
                     std_fds[2] = fdAccess.get(f2.getFD());
                 }
             }
 
-            return new ProcessImpl
+            Process p = new ProcessImpl
                     (toCString(cmdarray[0]),
                             argBlock, args.length,
                             envBlock, envc[0],
                             toCString(dir),
                             std_fds,
+                            forceNullOutputStream,
                             redirectErrorStream);
+            if (redirects != null) {
+                // Copy the fd's if they are to be redirected to another process
+                if (std_fds[0] >= 0 &&
+                        redirects[0] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    fdAccess.set(((ProcessBuilder.RedirectPipeImpl) redirects[0]).getFd(), std_fds[0]);
+                }
+                if (std_fds[1] >= 0 &&
+                        redirects[1] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    fdAccess.set(((ProcessBuilder.RedirectPipeImpl) redirects[1]).getFd(), std_fds[1]);
+                }
+                if (std_fds[2] >= 0 &&
+                        redirects[2] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    fdAccess.set(((ProcessBuilder.RedirectPipeImpl) redirects[2]).getFd(), std_fds[2]);
+                }
+            }
+            return p;
         } finally {
             // In theory, close() can throw IOException
             // (although it is rather unlikely to happen here)
@@ -311,6 +338,7 @@ final class ProcessImpl extends Process {
                 final byte[] envBlock, final int envc,
                 final byte[] dir,
                 final int[] fds,
+                final boolean forceNullOutputStream,
                 final boolean redirectErrorStream)
             throws IOException {
 
@@ -326,7 +354,7 @@ final class ProcessImpl extends Process {
 
         try {
             doPrivileged((PrivilegedExceptionAction<Void>) () -> {
-                initStreams(fds);
+                initStreams(fds, forceNullOutputStream);
                 return null;
             });
         } catch (PrivilegedActionException ex) {
@@ -340,7 +368,14 @@ final class ProcessImpl extends Process {
         return fileDescriptor;
     }
 
-    void initStreams(int[] fds) throws IOException {
+    /**
+     * Initialize the streams from the file descriptors.
+     * @param fds array of stdin, stdout, stderr fds
+     * @param forceNullOutputStream true if the stdout is being directed to
+     *        a subsequent process. The stdout stream should be a null output stream .
+     * @throws IOException
+     */
+    void initStreams(int[] fds, boolean forceNullOutputStream) throws IOException {
         switch (platform) {
             case LINUX:
             case BSD:
@@ -348,7 +383,7 @@ final class ProcessImpl extends Process {
                         ProcessBuilder.NullOutputStream.INSTANCE :
                         new ProcessPipeOutputStream(fds[0]);
 
-                stdout = (fds[1] == -1) ?
+                stdout = (fds[1] == -1 || forceNullOutputStream) ?
                          ProcessBuilder.NullInputStream.INSTANCE :
                          new ProcessPipeInputStream(fds[1]);
 

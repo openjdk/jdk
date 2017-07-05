@@ -32,6 +32,7 @@
 #include "code/vtableStubs.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #ifdef ASSERT
 #include "memory/guardedMemory.hpp"
@@ -1363,9 +1364,8 @@ static volatile intptr_t SerializePageLock = 0;
 // thread tries to store to the "read-only" memory serialize page during state
 // transition.
 void os::block_on_serialize_page_trap() {
-  if (TraceSafepoint) {
-    tty->print_cr("Block until the serialize page permission restored");
-  }
+  log_debug(safepoint)("Block until the serialize page permission restored");
+
   // When VMThread is holding the SerializePageLock during modifying the
   // access permission of the memory serialize page, the following call
   // will block until the permission of that page is restored to rw.

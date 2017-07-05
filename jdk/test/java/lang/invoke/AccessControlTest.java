@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,6 +225,31 @@ public class AccessControlTest {
                 System.out.println(this+" willAccess "+lc+" m1="+m1+" m2="+m2+" => "+((m2 & m1) != 0));
             return (m2 & m1) != 0;
         }
+
+        /** Predict the success or failure of accessing this class. */
+        public boolean willAccessClass(Class<?> c2, boolean load) {
+            Class<?> c1 = lookupClass();
+            if (load && c1.getClassLoader() == null) {
+                return false;
+            }
+            LookupCase lc = this.in(c2);
+            int m1 = lc.lookupModes();
+            boolean r = false;
+            if (m1 == 0) {
+                r = false;
+            } else {
+                int m2 = fixMods(c2.getModifiers());
+                if ((m2 & PUBLIC) != 0) {
+                    r = true;
+                } else if ((m1 & PACKAGE) != 0 && c1.getPackage() == c2.getPackage()) {
+                    r = true;
+                }
+            }
+            if (verbosity >= 2) {
+                System.out.println(this+" willAccessClass "+lc+" c1="+c1+" c2="+c2+" => "+r);
+            }
+            return r;
+        }
     }
 
     private static Class<?> topLevelClass(Class<?> cls) {
@@ -342,6 +367,8 @@ public class AccessControlTest {
                 Method method = targetMethod(targetClass, targetAccess, methodType);
                 // Try to access target method from various contexts.
                 for (LookupCase sourceCase : CASES) {
+                    testOneAccess(sourceCase, method, "findClass");
+                    testOneAccess(sourceCase, method, "accessClass");
                     testOneAccess(sourceCase, method, "find");
                     testOneAccess(sourceCase, method, "unreflect");
                 }
@@ -356,11 +383,19 @@ public class AccessControlTest {
         Class<?> targetClass = method.getDeclaringClass();
         String methodName = method.getName();
         MethodType methodType = methodType(method.getReturnType(), method.getParameterTypes());
-        boolean willAccess = sourceCase.willAccess(method);
+        boolean isFindOrAccessClass = "findClass".equals(kind) || "accessClass".equals(kind);
+        boolean willAccess = isFindOrAccessClass ?
+                sourceCase.willAccessClass(targetClass, "findClass".equals(kind)) : sourceCase.willAccess(method);
         boolean didAccess = false;
         ReflectiveOperationException accessError = null;
         try {
             switch (kind) {
+            case "accessClass":
+                sourceCase.lookup().accessClass(targetClass);
+                break;
+            case "findClass":
+                sourceCase.lookup().findClass(targetClass.getName());
+                break;
             case "find":
                 if ((method.getModifiers() & Modifier.STATIC) != 0)
                     sourceCase.lookup().findStatic(targetClass, methodName, methodType);
@@ -378,8 +413,8 @@ public class AccessControlTest {
             accessError = ex;
         }
         if (willAccess != didAccess) {
-            System.out.println(sourceCase+" => "+targetClass.getSimpleName()+"."+methodName+methodType);
-            System.out.println("fail on "+method+" ex="+accessError);
+            System.out.println(sourceCase+" => "+targetClass.getSimpleName()+(isFindOrAccessClass?"":"."+methodName+methodType));
+            System.out.println("fail "+(isFindOrAccessClass?kind:"on "+method)+" ex="+accessError);
             assertEquals(willAccess, didAccess);
         }
         testCount++;

@@ -102,7 +102,6 @@ public final class ExtractedImage {
             }
             chop = dirPath.toString().length() + 1;
             this.moduleName = dirPath.getFileName().toString();
-            System.out.println("Module name " + this.moduleName);
             this.dirPath = dirPath;
         }
 
