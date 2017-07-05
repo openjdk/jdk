@@ -3381,7 +3381,6 @@ bool ConcurrentMarkSweepGeneration::grow_by(size_t bytes) {
   assert_locked_or_safepoint(Heap_lock);
   bool result = _virtual_space.expand_by(bytes);
   if (result) {
-    HeapWord* old_end = _cmsSpace->end();
     size_t new_word_size =
       heap_word_size(_virtual_space.committed_size());
     MemRegion mr(_cmsSpace->bottom(), new_word_size);
