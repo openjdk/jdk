@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 # @requires os.family == "windows"
 # @run shell SignUsingSHA2withRSA.sh
 # @summary Support SHA256 (and higher) in SunMSCAPI
-# @key intermittent
 
 # set a few environment variables so that the shell-script can run stand-alone
 # in the source directory

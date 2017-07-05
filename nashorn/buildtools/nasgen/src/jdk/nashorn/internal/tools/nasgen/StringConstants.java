@@ -31,12 +31,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.Type;
+import jdk.nashorn.internal.objects.NativeSymbol;
 import jdk.nashorn.internal.runtime.AccessorProperty;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.PrototypeObject;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.Specialization;
+import jdk.nashorn.internal.runtime.Symbol;
 
 /**
  * String constants used for code generation/instrumentation.
@@ -88,6 +90,8 @@ public interface StringConstants {
     static final Type TYPE_PROTOTYPEOBJECT    = Type.getType(PrototypeObject.class);
     static final Type TYPE_SCRIPTFUNCTION     = Type.getType(ScriptFunction.class);
     static final Type TYPE_SCRIPTOBJECT       = Type.getType(ScriptObject.class);
+    static final Type TYPE_NATIVESYMBOL       = Type.getType(NativeSymbol.class);
+    static final Type TYPE_SYMBOL             = Type.getType(Symbol.class);
 
     static final String PROTOTYPE_SUFFIX = "$Prototype";
     static final String CONSTRUCTOR_SUFFIX = "$Constructor";
@@ -101,7 +105,7 @@ public interface StringConstants {
     static final String ACCESSORPROPERTY_TYPE = TYPE_ACCESSORPROPERTY.getInternalName();
     static final String ACCESSORPROPERTY_CREATE = "create";
     static final String ACCESSORPROPERTY_CREATE_DESC =
-        Type.getMethodDescriptor(TYPE_ACCESSORPROPERTY, TYPE_STRING, Type.INT_TYPE, TYPE_METHODHANDLE, TYPE_METHODHANDLE);
+        Type.getMethodDescriptor(TYPE_ACCESSORPROPERTY, TYPE_OBJECT, Type.INT_TYPE, TYPE_METHODHANDLE, TYPE_METHODHANDLE);
 
     // PropertyMap
     static final String PROPERTYMAP_TYPE = TYPE_PROPERTYMAP.getInternalName();
@@ -143,4 +147,9 @@ public interface StringConstants {
     // ScriptObject.getClassName() method.
     static final String GET_CLASS_NAME = "getClassName";
     static final String GET_CLASS_NAME_DESC = Type.getMethodDescriptor(TYPE_STRING);
+
+    // NativeSymbol
+    static final String NATIVESYMBOL_TYPE = TYPE_NATIVESYMBOL.getInternalName();
+    static final String SYMBOL_DESC = TYPE_SYMBOL.getDescriptor();
+    static final String SYMBOL_PREFIX = "@@";
 }

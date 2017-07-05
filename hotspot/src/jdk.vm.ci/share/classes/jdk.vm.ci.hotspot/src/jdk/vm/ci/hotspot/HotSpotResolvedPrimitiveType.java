@@ -27,7 +27,6 @@ import static java.util.Objects.requireNonNull;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
-import java.net.URL;
 
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
@@ -237,11 +236,6 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     @Override
     public Class<?> mirror() {
         return kind.toJavaClass();
-    }
-
-    @Override
-    public URL getClassFilePath() {
-        return null;
     }
 
     @Override

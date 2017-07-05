@@ -1191,6 +1191,8 @@ public:
                      Register tmp1);
   void char_arrays_equals(Register ary1, Register ary2,
                           Register result, Register tmp1);
+  void byte_arrays_equals(Register ary1, Register ary2,
+                          Register result, Register tmp1);
   void encode_iso_array(Register src, Register dst,
                         Register len, Register result,
                         FloatRegister Vtmp1, FloatRegister Vtmp2,

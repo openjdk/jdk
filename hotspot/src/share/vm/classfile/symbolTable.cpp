@@ -544,7 +544,7 @@ bool SymbolTable::copy_compact_table(char** top, char*end) {
 
   ch_table.dump(top, end);
 
-  *top = (char*)align_pointer_up(*top, sizeof(void*));
+  *top = (char*)align_ptr_up(*top, sizeof(void*));
 #endif
   return true;
 }
@@ -552,7 +552,7 @@ bool SymbolTable::copy_compact_table(char** top, char*end) {
 const char* SymbolTable::init_shared_table(const char* buffer) {
   const char* end = _shared_table.init(
           CompactHashtable<Symbol*, char>::_symbol_table, buffer);
-  return (const char*)align_pointer_up(end, sizeof(void*));
+  return (const char*)align_ptr_up(end, sizeof(void*));
 }
 
 //---------------------------------------------------------------------------
@@ -600,7 +600,7 @@ void SymbolTable::print_histogram() {
   tty->print_cr("Symbol Table Histogram:");
   tty->print_cr("  Total number of symbols  %7d", total_count);
   tty->print_cr("  Total size in memory     %7dK",
-          (total_size*HeapWordSize)/1024);
+          (total_size*wordSize)/1024);
   tty->print_cr("  Total counted            %7d", _symbols_counted);
   tty->print_cr("  Total removed            %7d", _symbols_removed);
   if (_symbols_counted > 0) {
@@ -617,11 +617,11 @@ void SymbolTable::print_histogram() {
   tty->print_cr("    %6s %10s %10s", "Length", "#Symbols", "Size");
   for (i = 0; i < results_length; i++) {
     if (counts[i] > 0) {
-      tty->print_cr("    %6d %10d %10dK", i, counts[i], (sizes[i]*HeapWordSize)/1024);
+      tty->print_cr("    %6d %10d %10dK", i, counts[i], (sizes[i]*wordSize)/1024);
     }
   }
   tty->print_cr("  >=%6d %10d %10dK\n", results_length,
-          out_of_range_count, (out_of_range_size*HeapWordSize)/1024);
+          out_of_range_count, (out_of_range_size*wordSize)/1024);
 }
 
 void SymbolTable::print() {

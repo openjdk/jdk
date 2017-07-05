@@ -72,7 +72,7 @@ public enum JavaKind {
     private final Class<?> boxedJavaClass;
     private final int slotCount;
 
-    private JavaKind(char typeChar, String javaName, int slotCount, boolean isStackInt, Class<?> primitiveJavaClass, Class<?> boxedJavaClass) {
+    JavaKind(char typeChar, String javaName, int slotCount, boolean isStackInt, Class<?> primitiveJavaClass, Class<?> boxedJavaClass) {
         this.typeChar = typeChar;
         this.javaName = javaName;
         this.slotCount = slotCount;

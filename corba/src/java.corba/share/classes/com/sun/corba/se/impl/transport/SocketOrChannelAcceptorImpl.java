@@ -264,7 +264,12 @@ public class SocketOrChannelAcceptorImpl
 
             if (connection.shouldRegisterServerReadEvent()) {
                 Selector selector = orb.getTransportManager().getSelector(0);
-                selector.registerForEvent(connection.getEventHandler());
+                if (selector != null) {
+                    if (orb.transportDebugFlag) {
+                        dprint(".accept: registerForEvent: " + connection);
+                    }
+                    selector.registerForEvent(connection.getEventHandler());
+                }
             }
 
             getConnectionCache().reclaim();
@@ -273,12 +278,15 @@ public class SocketOrChannelAcceptorImpl
             if (orb.transportDebugFlag) {
                 dprint(".accept:", e);
             }
-            orb.getTransportManager().getSelector(0).unregisterForEvent(this);
-            // REVISIT - need to close - recreate - then register new one.
-            orb.getTransportManager().getSelector(0).registerForEvent(this);
-            // NOTE: if register cycling we do not want to shut down ORB
-            // since local beans will still work.  Instead one will see
-            // a growing log file to alert admin of problem.
+            Selector selector = orb.getTransportManager().getSelector(0);
+            if (selector != null) {
+                selector.unregisterForEvent(this);
+                // REVISIT - need to close - recreate - then register new one.
+                selector.registerForEvent(this);
+                // NOTE: if register cycling we do not want to shut down ORB
+                // since local beans will still work.  Instead one will see
+                // a growing log file to alert admin of problem.
+            }
         }
     }
 
@@ -289,7 +297,9 @@ public class SocketOrChannelAcceptorImpl
                 dprint(".close->:");
             }
             Selector selector = orb.getTransportManager().getSelector(0);
-            selector.unregisterForEvent(this);
+            if (selector != null) {
+                selector.unregisterForEvent(this);
+            }
             if (serverSocketChannel != null) {
                 serverSocketChannel.close();
             }
@@ -480,7 +490,9 @@ public class SocketOrChannelAcceptorImpl
             // of calling SelectionKey.interestOps(<interest op>).
 
             Selector selector = orb.getTransportManager().getSelector(0);
-            selector.registerInterestOps(this);
+            if (selector != null) {
+                selector.registerInterestOps(this);
+            }
 
             if (orb.transportDebugFlag) {
                 dprint(".doWork<-:" + this);

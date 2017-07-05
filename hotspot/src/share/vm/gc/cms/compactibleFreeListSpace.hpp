@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,9 +313,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
     return adjustObjectSize(size);
   }
 
-  inline size_t obj_size(const HeapWord* addr) const {
-    return adjustObjectSize(oop(addr)->size());
-  }
+  inline size_t obj_size(const HeapWord* addr) const;
 
  protected:
   // Reset the indexed free list to its initial empty condition.

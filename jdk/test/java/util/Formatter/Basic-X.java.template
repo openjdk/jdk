@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DateFormatSymbols;
 import java.util.*;
-#if[double]
-import jdk.internal.math.DoubleConsts;
-#end[double]
 
 import static java.util.Calendar.*;
 #if[datetime]
@@ -1359,12 +1356,12 @@ public class Basic$Type$ extends Basic {
         test("%.1a", "-0x1.0p0", -1.0);
         test("%.11a", "0x1.80000000000p1", 3.0);
         test("%.1a", "0x1.8p1", 3.0);
-        test("%.11a", "0x1.00000000000p-1022", DoubleConsts.MIN_NORMAL);
-        test("%.1a", "0x1.0p-1022", DoubleConsts.MIN_NORMAL);
+        test("%.11a", "0x1.00000000000p-1022", Double.MIN_NORMAL);
+        test("%.1a", "0x1.0p-1022", Double.MIN_NORMAL);
         test("%.11a", "0x1.00000000000p-1022",
-             Math.nextDown(DoubleConsts.MIN_NORMAL));
+             Math.nextDown(Double.MIN_NORMAL));
         test("%.1a", "0x1.0p-1022",
-             Math.nextDown(DoubleConsts.MIN_NORMAL));
+             Math.nextDown(Double.MIN_NORMAL));
         test("%.11a", "0x1.ffffffffffep-1023", 0x0.fffffffffffp-1022);
         test("%.1a", "0x1.0p-1022", 0x0.fffffffffffp-1022);
         test("%.30a", "0x0.000000000000100000000000000000p-1022", Double.MIN_VALUE);

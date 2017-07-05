@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,11 +184,14 @@ class CatalogReader extends DefaultHandler implements EntityResolver, URIResolve
                     if (resolve == null) {
                         resolve = catalog.getResolve().literal;
                     }
+                    //override property settings with those from the catalog file
                     catalog.setResolve(resolve);
+                    catalog.setPrefer(defer);
                     catalogEntry = new CatalogEntry(base, prefer, defer, resolve);
                 } else {
                     catalogEntry = new CatalogEntry(base, prefer);
                 }
+                catalog.setPrefer(prefer);
                 return;
             } else {
                 inGroup = true;

@@ -42,7 +42,6 @@ import jdk.nashorn.internal.runtime.GlobalConstants;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
-import jdk.nashorn.internal.runtime.UserAccessorProperty;
 
 /**
  * Implements lookup of methods to link for dynamic operations on JavaScript primitive values (booleans, strings, and
@@ -118,7 +117,7 @@ public final class PrimitiveLookup {
                     return new GuardedInvocation(GlobalConstants.staticConstantGetter(find.getObjectValue()), guard, sp, null);
                 }
 
-                if (find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
+                if (find.isInherited() && !(find.getProperty().isAccessorProperty())) {
                     // If property is found in the prototype object bind the method handle directly to
                     // the proto filter instead of going through wrapper instantiation below.
                     final ScriptObject proto = wrappedReceiver.getProto();
@@ -180,9 +179,13 @@ public final class PrimitiveLookup {
         // See ES5.1 8.7.2 PutValue (V, W)
         final String name = JSType.toString(key);
         final FindProperty find = wrappedSelf.findProperty(name, true);
-        if (find == null || !(find.getProperty() instanceof UserAccessorProperty) || !find.getProperty().isWritable()) {
+        if (find == null || !find.getProperty().isAccessorProperty() || !find.getProperty().hasNativeSetter()) {
             if (strict) {
-                throw typeError("property.not.writable", name, ScriptRuntime.safeToString(self));
+                if (find == null || !find.getProperty().isAccessorProperty()) {
+                    throw typeError("property.not.writable", name, ScriptRuntime.safeToString(self));
+                } else {
+                    throw typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
+                }
             }
             return;
         }

@@ -987,10 +987,12 @@ void VMError::print_vm_info(outputStream* st) {
 volatile intptr_t VMError::first_error_tid = -1;
 
 // An error could happen before tty is initialized or after it has been
-// destroyed. Here we use a very simple unbuffered fdStream for printing.
-// Only out.print_raw() and out.print_raw_cr() should be used, as other
-// printing methods need to allocate large buffer on stack. To format a
-// string, use jio_snprintf() with a static buffer or use staticBufferStream.
+// destroyed.
+// Please note: to prevent large stack allocations, the log- and
+// output-stream use a global scratch buffer for format printing.
+// (see VmError::report_and_die(). Access to those streams is synchronized
+// in  VmError::report_and_die() - there is only one reporting thread at
+// any given time.
 fdStream VMError::out(defaultStream::output_fd());
 fdStream VMError::log; // error log used by VMError::report_and_die()
 
@@ -1100,6 +1102,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 {
   // Don't allocate large buffer on stack
   static char buffer[O_BUFLEN];
+  out.set_scratch_buffer(buffer, sizeof(buffer));
+  log.set_scratch_buffer(buffer, sizeof(buffer));
 
   // How many errors occurred in error handler when reporting first_error.
   static int recursive_error_count;
@@ -1186,8 +1190,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
   // print to screen
   if (!out_done) {
-    staticBufferStream sbs(buffer, sizeof(buffer), &out);
-    report(&sbs, false);
+    report(&out, false);
 
     out_done = true;
 
@@ -1215,8 +1218,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       }
     }
 
-    staticBufferStream sbs(buffer, O_BUFLEN, &log);
-    report(&sbs, true);
+    report(&log, true);
     _current_step = 0;
     _current_step_info = "";
 
