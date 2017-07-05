@@ -215,8 +215,11 @@ class MacroAssembler: public Assembler {
   inline void moviw(Register Rd, unsigned imm) { orrw(Rd, zr, imm); }
   inline void movi(Register Rd, unsigned imm) { orr(Rd, zr, imm); }
 
-  inline void tstw(Register Rd, unsigned imm) { andsw(zr, Rd, imm); }
-  inline void tst(Register Rd, unsigned imm) { ands(zr, Rd, imm); }
+  inline void tstw(Register Rd, Register Rn) { andsw(zr, Rd, Rn); }
+  inline void tst(Register Rd, Register Rn) { ands(zr, Rd, Rn); }
+
+  inline void tstw(Register Rd, uint64_t imm) { andsw(zr, Rd, imm); }
+  inline void tst(Register Rd, uint64_t imm) { ands(zr, Rd, imm); }
 
   inline void bfiw(Register Rd, Register Rn, unsigned lsb, unsigned width) {
     bfmw(Rd, Rn, ((32 - lsb) & 31), (width - 1));

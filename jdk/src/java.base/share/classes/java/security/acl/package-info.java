@@ -24,12 +24,11 @@
  */
 
 /**
- * The classes and interfaces in this package have been deprecated.
- * The {@code java.security} package contains suitable replacements.
- * See that package and, for example, {@code java.security.Permission}
- * for details.
+ * The classes and interfaces in this package have been deprecated. New
+ * classes should not be added to this package. The {@code java.security}
+ * package contains suitable replacements. See {@link java.security.Policy}
+ * and related classes for details.
  *
  * @since 1.1
  */
-@Deprecated
 package java.security.acl;
