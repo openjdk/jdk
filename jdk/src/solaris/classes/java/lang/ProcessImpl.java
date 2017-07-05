@@ -111,7 +111,8 @@ final class ProcessImpl {
                 else if (redirects[1] == Redirect.INHERIT)
                     std_fds[1] = 1;
                 else {
-                    f1 = redirects[1].toFileOutputStream();
+                    f1 = new FileOutputStream(redirects[1].file(),
+                                              redirects[1].append());
                     std_fds[1] = fdAccess.get(f1.getFD());
                 }
 
@@ -120,7 +121,8 @@ final class ProcessImpl {
                 else if (redirects[2] == Redirect.INHERIT)
                     std_fds[2] = 2;
                 else {
-                    f2 = redirects[2].toFileOutputStream();
+                    f2 = new FileOutputStream(redirects[2].file(),
+                                              redirects[2].append());
                     std_fds[2] = fdAccess.get(f2.getFD());
                 }
             }

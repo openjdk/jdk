@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,20 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_CITYPEFLOW_HPP
+#define SHARE_VM_CI_CITYPEFLOW_HPP
+
+#ifdef COMPILER2
+#include "ci/ciEnv.hpp"
+#include "ci/ciKlass.hpp"
+#include "ci/ciMethodBlocks.hpp"
+#endif
+#ifdef SHARK
+#include "ci/ciEnv.hpp"
+#include "ci/ciKlass.hpp"
+#include "ci/ciMethodBlocks.hpp"
+#endif
 
 
 class ciTypeFlow : public ResourceObj {
@@ -924,3 +938,5 @@ public:
 
   void rpo_print_on(outputStream* st) const PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_CI_CITYPEFLOW_HPP

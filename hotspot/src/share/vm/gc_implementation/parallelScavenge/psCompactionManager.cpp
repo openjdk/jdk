@@ -22,8 +22,20 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_psCompactionManager.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
+#include "gc_implementation/parallelScavenge/objectStartArray.hpp"
+#include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#include "gc_implementation/parallelScavenge/psCompactionManager.hpp"
+#include "gc_implementation/parallelScavenge/psOldGen.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "oops/objArrayKlass.inline.hpp"
+#include "oops/oop.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.pcgc.inline.hpp"
+#include "utilities/stack.inline.hpp"
 
 PSOldGen*            ParCompactionManager::_old_gen = NULL;
 ParCompactionManager**  ParCompactionManager::_manager_array = NULL;

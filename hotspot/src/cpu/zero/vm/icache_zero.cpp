@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,9 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_icache_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "assembler_zero.inline.hpp"
+#include "runtime/icache.hpp"
 
 void ICacheStubGenerator::generate_icache_flush(
   ICache::flush_icache_stub_t* flush_icache_stub) {

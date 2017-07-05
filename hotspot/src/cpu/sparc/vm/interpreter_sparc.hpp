@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_INTERPRETER_SPARC_HPP
+#define CPU_SPARC_VM_INTERPRETER_SPARC_HPP
+
  public:
 
   static int expr_offset_in_bytes(int i) { return stackElementSize * i + wordSize; }
@@ -34,3 +37,5 @@
     assert(i <= 0, "local direction already negated");
     return stackElementWords * i;
   }
+
+#endif // CPU_SPARC_VM_INTERPRETER_SPARC_HPP

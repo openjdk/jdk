@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_vtableStubs_zero.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "assembler_zero.inline.hpp"
+#include "code/vtableStubs.hpp"
+#include "interp_masm_zero.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klassVtable.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "vmreg_zero.inline.hpp"
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   ShouldNotCallThis();

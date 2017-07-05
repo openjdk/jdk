@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,9 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_classFileStream.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classFileStream.hpp"
+#include "classfile/vmSymbols.hpp"
 
 void ClassFileStream::truncated_file_error(TRAPS) {
   THROW_MSG(vmSymbols::java_lang_ClassFormatError(), "Truncated class file");

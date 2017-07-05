@@ -22,12 +22,21 @@
  *
  */
 
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/divnode.hpp"
+#include "opto/machnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/subnode.hpp"
+
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
 
-#include "incls/_precompiled.incl"
-#include "incls/_divnode.cpp.incl"
 #include <math.h>
 
 //----------------------magic_int_divide_constants-----------------------------

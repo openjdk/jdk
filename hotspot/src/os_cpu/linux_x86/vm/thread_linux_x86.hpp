@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_CPU_LINUX_X86_VM_THREAD_LINUX_X86_HPP
+#define OS_CPU_LINUX_X86_VM_THREAD_LINUX_X86_HPP
 
  private:
   void pd_initialize() {
@@ -63,3 +66,5 @@
   static bool register_stack_overflow() { return false; }
   static void enable_register_stack_guard() {}
   static void disable_register_stack_guard() {}
+
+#endif // OS_CPU_LINUX_X86_VM_THREAD_LINUX_X86_HPP

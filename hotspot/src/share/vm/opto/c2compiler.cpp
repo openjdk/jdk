@@ -22,8 +22,21 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c2compiler.cpp.incl"
+#include "precompiled.hpp"
+#include "opto/c2compiler.hpp"
+#include "opto/runtime.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/ad_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/ad_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/ad_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/ad_zero.hpp"
+#endif
 
 
 volatile int C2Compiler::_runtimes = uninitialized;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_dictionary.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/dictionary.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "services/classLoadingService.hpp"
+#include "utilities/hashtable.inline.hpp"
 
 
 DictionaryEntry*  Dictionary::_current_class_entry = NULL;

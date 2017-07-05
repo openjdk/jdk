@@ -537,7 +537,11 @@ public final class ProcessBuilder
          */
         public File file() { return null; }
 
-        FileOutputStream toFileOutputStream() throws IOException {
+        /**
+         * When redirected to a destination file, indicates if the output
+         * is to be written to the end of the file.
+         */
+        boolean append() {
             throw new UnsupportedOperationException();
         }
 
@@ -588,9 +592,7 @@ public final class ProcessBuilder
                     public String toString() {
                         return "redirect to write to file \"" + file + "\"";
                     }
-                    FileOutputStream toFileOutputStream() throws IOException {
-                        return new FileOutputStream(file, false);
-                    }
+                    boolean append() { return false; }
                 };
         }
 
@@ -620,9 +622,7 @@ public final class ProcessBuilder
                     public String toString() {
                         return "redirect to append to file \"" + file + "\"";
                     }
-                    FileOutputStream toFileOutputStream() throws IOException {
-                        return new FileOutputStream(file, true);
-                    }
+                    boolean append() { return true; }
                 };
         }
 

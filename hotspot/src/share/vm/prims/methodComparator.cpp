@@ -22,8 +22,13 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_methodComparator.cpp.incl"
+#include "precompiled.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "prims/methodComparator.hpp"
+#include "runtime/handles.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 BytecodeStream *MethodComparator::_s_old;
 BytecodeStream *MethodComparator::_s_new;

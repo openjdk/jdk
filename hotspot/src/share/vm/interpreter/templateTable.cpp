@@ -22,8 +22,10 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_templateTable.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "interpreter/templateTable.hpp"
+#include "runtime/timer.hpp"
 
 
 #ifdef CC_INTERP

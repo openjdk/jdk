@@ -22,8 +22,26 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_globals.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/globals_extension.hpp"
+#include "utilities/ostream.hpp"
+#include "utilities/top.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/g1_globals.hpp"
+#endif
+#ifdef COMPILER1
+#include "c1/c1_globals.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
+#ifdef SHARK
+#include "shark/shark_globals.hpp"
+#endif
 
 
 RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1MMUTRACKER_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1MMUTRACKER_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
 
 // Keeps track of the GC work and decides when it is OK to do GC work
 // and for how long so that the MMU invariants are maintained.
@@ -127,3 +133,5 @@ public:
   virtual double longest_pause(double current_time);
   virtual double when_sec(double current_time, double pause_time);
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1MMUTRACKER_HPP

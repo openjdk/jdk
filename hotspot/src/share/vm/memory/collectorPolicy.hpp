@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_COLLECTORPOLICY_HPP
+#define SHARE_VM_MEMORY_COLLECTORPOLICY_HPP
+
+#include "memory/barrierSet.hpp"
+#include "memory/genRemSet.hpp"
+#include "memory/permGen.hpp"
+
 // This class (or more correctly, subtypes of this class)
 // are used to define global garbage collector attributes.
 // This includes initialization of generations and any other
@@ -334,3 +341,5 @@ class MarkSweepPolicy : public TwoGenerationCollectorPolicy {
 
   void initialize_gc_policy_counters();
 };
+
+#endif // SHARE_VM_MEMORY_COLLECTORPOLICY_HPP

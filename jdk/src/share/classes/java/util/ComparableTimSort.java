@@ -207,7 +207,7 @@ class ComparableTimSort {
      * @param lo the index of the first element in the range to be sorted
      * @param hi the index after the last element in the range to be sorted
      * @param start the index of the first element in the range that is
-     *        not already known to be sorted (@code lo <= start <= hi}
+     *        not already known to be sorted ({@code lo <= start <= hi})
      */
     @SuppressWarnings("fallthrough")
     private static void binarySort(Object[] a, int lo, int hi, int start) {
@@ -245,7 +245,7 @@ class ComparableTimSort {
              */
             int n = start - left;  // The number of elements to move
             // Switch is just an optimization for arraycopy in default case
-            switch(n) {
+            switch (n) {
                 case 2:  a[left + 2] = a[left + 1];
                 case 1:  a[left + 1] = a[left];
                          break;
@@ -275,7 +275,7 @@ class ComparableTimSort {
      * @param a the array in which a run is to be counted and possibly reversed
      * @param lo index of the first element in the run
      * @param hi index after the last element that may be contained in the run.
-              It is required that @code{lo < hi}.
+              It is required that {@code lo < hi}.
      * @return  the length of the run beginning at the specified position in
      *          the specified array
      */
@@ -288,7 +288,7 @@ class ComparableTimSort {
 
         // Find end of run, and reverse range if descending
         if (((Comparable) a[runHi++]).compareTo(a[lo]) < 0) { // Descending
-            while(runHi < hi && ((Comparable) a[runHi]).compareTo(a[runHi - 1]) < 0)
+            while (runHi < hi && ((Comparable) a[runHi]).compareTo(a[runHi - 1]) < 0)
                 runHi++;
             reverseRange(a, lo, runHi);
         } else {                              // Ascending

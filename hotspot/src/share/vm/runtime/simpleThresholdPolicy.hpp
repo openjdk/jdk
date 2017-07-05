@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_HPP
+#define SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_HPP
+
+#include "code/nmethod.hpp"
+#include "oops/methodDataOop.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 class CompileTask;
 class CompileQueue;
 
@@ -105,3 +113,5 @@ public:
   // Initialize: set compiler thread count
   virtual void initialize();
 };
+
+#endif // SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_HPP

@@ -22,6 +22,22 @@
  *
  */
 
+#ifndef SHARE_VM_OPTO_GRAPHKIT_HPP
+#define SHARE_VM_OPTO_GRAPHKIT_HPP
+
+#include "ci/ciEnv.hpp"
+#include "ci/ciMethodData.hpp"
+#include "opto/addnode.hpp"
+#include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/compile.hpp"
+#include "opto/divnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/subnode.hpp"
+#include "opto/type.hpp"
+#include "runtime/deoptimization.hpp"
+
 class FastLockNode;
 class FastUnlockNode;
 class IdealKit;
@@ -824,3 +840,5 @@ class PreserveReexecuteState: public StackObj {
   PreserveReexecuteState(GraphKit* kit);
   ~PreserveReexecuteState();
 };
+
+#endif // SHARE_VM_OPTO_GRAPHKIT_HPP

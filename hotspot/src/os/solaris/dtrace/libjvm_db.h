@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_SOLARIS_DTRACE_LIBJVM_DB_H
+#define OS_SOLARIS_DTRACE_LIBJVM_DB_H
 
 #include <proc_service.h>
 
@@ -61,3 +64,5 @@ void Jagent_destroy(jvm_agent_t *J);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
+
+#endif // OS_SOLARIS_DTRACE_LIBJVM_DB_H

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_BARRIERSET_INLINE_HPP
+#define SHARE_VM_MEMORY_BARRIERSET_INLINE_HPP
+
+#include "memory/barrierSet.hpp"
+#include "memory/cardTableModRefBS.hpp"
 
 // Inline functions of BarrierSet, which de-virtualize certain
 // performance-critical calls when the barrier is the most common
@@ -77,3 +83,5 @@ void BarrierSet::write_region(MemRegion mr) {
     write_region_work(mr);
   }
 }
+
+#endif // SHARE_VM_MEMORY_BARRIERSET_INLINE_HPP

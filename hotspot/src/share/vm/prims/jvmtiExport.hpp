@@ -22,8 +22,21 @@
  *
  */
 
-#ifndef _JAVA_JVMTIEXPORT_H_
-#define _JAVA_JVMTIEXPORT_H_
+#ifndef SHARE_VM_PRIMS_JVMTIEXPORT_HPP
+#define SHARE_VM_PRIMS_JVMTIEXPORT_HPP
+
+#include "jvmtifiles/jvmti.h"
+#include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
+#include "oops/oop.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/handles.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
+
+// Must be included after jvmti.h.
+#include "code/jvmticmlr.h"
 
 // Forward declarations
 
@@ -553,4 +566,4 @@ class JvmtiHideSingleStepping : public StackObj {
   }
 };
 
-#endif   /* _JAVA_JVMTIEXPORT_H_ */
+#endif // SHARE_VM_PRIMS_JVMTIEXPORT_HPP

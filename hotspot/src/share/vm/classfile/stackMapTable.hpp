@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,24 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CLASSFILE_STACKMAPTABLE_HPP
+#define SHARE_VM_CLASSFILE_STACKMAPTABLE_HPP
+
+#include "classfile/stackMapFrame.hpp"
+#include "memory/allocation.hpp"
+#include "oops/constantPoolOop.hpp"
+#include "oops/methodOop.hpp"
+#include "utilities/globalDefinitions.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
 
 class StackMapReader;
 
@@ -159,3 +177,5 @@ class StackMapReader : StackObj {
     }
   }
 };
+
+#endif // SHARE_VM_CLASSFILE_STACKMAPTABLE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_BLOCK_HPP
+#define SHARE_VM_OPTO_BLOCK_HPP
+
+#include "opto/multnode.hpp"
+#include "opto/node.hpp"
+#include "opto/phase.hpp"
 
 // Optimization - Graph Style
 
@@ -716,3 +723,5 @@ class PhaseBlockLayout : public Phase {
   void reorder_traces(int count);
   void union_traces(Trace* from, Trace* to);
 };
+
+#endif // SHARE_VM_OPTO_BLOCK_HPP

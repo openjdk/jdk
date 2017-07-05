@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSGENERATIONCOUNTERS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSGENERATIONCOUNTERS_HPP
+
+#include "gc_implementation/parallelScavenge/psVirtualspace.hpp"
+#include "gc_implementation/shared/generationCounters.hpp"
+#include "runtime/perfData.hpp"
+
 // A PSGenerationCounter is a holder class for performance counters
 // that track a generation
 
@@ -41,3 +48,5 @@ class PSGenerationCounters: public GenerationCounters {
     _current_size->set_value(_ps_virtual_space->committed_size());
   }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSGENERATIONCOUNTERS_HPP

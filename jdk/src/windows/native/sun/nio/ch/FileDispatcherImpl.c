@@ -184,18 +184,28 @@ Java_sun_nio_ch_FileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo
 
 JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_write0(JNIEnv *env, jclass clazz, jobject fdo,
-                                       jlong address, jint len)
+                                          jlong address, jint len, jboolean append)
 {
     BOOL result = 0;
     DWORD written = 0;
     HANDLE h = (HANDLE)(handleval(env, fdo));
 
     if (h != INVALID_HANDLE_VALUE) {
+        OVERLAPPED ov;
+        LPOVERLAPPED lpOv;
+        if (append == JNI_TRUE) {
+            ov.Offset = (DWORD)0xFFFFFFFF;
+            ov.OffsetHigh = (DWORD)0xFFFFFFFF;
+            ov.hEvent = NULL;
+            lpOv = &ov;
+        } else {
+            lpOv = NULL;
+        }
         result = WriteFile(h,           /* File handle to write */
                       (LPCVOID)address, /* pointers to the buffers */
                       len,              /* number of bytes to write */
                       &written,         /* receives number of bytes written */
-                      NULL);            /* no overlapped struct */
+                      lpOv);            /* overlapped struct */
     }
 
     if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
@@ -207,7 +217,7 @@ Java_sun_nio_ch_FileDispatcherImpl_write0(JNIEnv *env, jclass clazz, jobject fdo
 
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz, jobject fdo,
-                                       jlong address, jint len)
+                                           jlong address, jint len, jboolean append)
 {
     BOOL result = 0;
     DWORD written = 0;
@@ -219,7 +229,16 @@ Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz, jobject fd
         int i = 0;
         DWORD num = 0;
         struct iovec *iovecp = (struct iovec *)jlong_to_ptr(address);
-
+        OVERLAPPED ov;
+        LPOVERLAPPED lpOv;
+        if (append == JNI_TRUE) {
+            ov.Offset = (DWORD)0xFFFFFFFF;
+            ov.OffsetHigh = (DWORD)0xFFFFFFFF;
+            ov.hEvent = NULL;
+            lpOv = &ov;
+        } else {
+            lpOv = NULL;
+        }
         for(i=0; i<len; i++) {
             loc = (LPVOID)jlong_to_ptr(iovecp[i].iov_base);
             num = iovecp[i].iov_len;
@@ -227,7 +246,7 @@ Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz, jobject fd
                                loc,     /* pointers to the buffers */
                                num,     /* number of bytes to write */
                                &written,/* receives number of bytes written */
-                               NULL);   /* no overlapped struct */
+                               lpOv);   /* overlapped struct */
             if (written > 0) {
                 totalWritten += written;
             }
@@ -444,9 +463,10 @@ Java_sun_nio_ch_FileDispatcherImpl_closeByHandle(JNIEnv *env, jclass clazz,
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_duplicateHandle(JNIEnv *env, jclass this, jlong hFile)
+Java_sun_nio_ch_FileDispatcherImpl_duplicateHandle(JNIEnv *env, jclass this, jlong handle)
 {
     HANDLE hProcess = GetCurrentProcess();
+    HANDLE hFile = jlong_to_ptr(handle);
     HANDLE hResult;
     BOOL res = DuplicateHandle(hProcess, hFile, hProcess, &hResult, 0, FALSE,
                                DUPLICATE_SAME_ACCESS);

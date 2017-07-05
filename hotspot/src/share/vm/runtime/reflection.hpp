@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,15 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_REFLECTION_HPP
+#define SHARE_VM_RUNTIME_REFLECTION_HPP
+
+#include "oops/oop.hpp"
+#include "runtime/fieldDescriptor.hpp"
+#include "runtime/reflectionCompat.hpp"
+#include "utilities/accessFlags.hpp"
+#include "utilities/growableArray.hpp"
 
 // Class Reflection contains utility methods needed for implementing the
 // reflection api.
@@ -166,3 +175,5 @@ public:
 #endif /* SUPPORT_OLD_REFLECTION */
 
 };
+
+#endif // SHARE_VM_RUNTIME_REFLECTION_HPP

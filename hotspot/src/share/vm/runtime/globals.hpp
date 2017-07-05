@@ -22,6 +22,86 @@
  *
  */
 
+#ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
+#define SHARE_VM_RUNTIME_GLOBALS_HPP
+
+#include "utilities/debug.hpp"
+#ifdef TARGET_ARCH_x86
+# include "globals_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "globals_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "globals_zero.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "globals_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "globals_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "globals_windows.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_x86
+# include "globals_linux_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_sparc
+# include "globals_linux_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "globals_linux_zero.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_x86
+# include "globals_solaris_x86.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_solaris_sparc
+# include "globals_solaris_sparc.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "globals_windows_x86.hpp"
+#endif
+#ifdef COMPILER1
+#ifdef TARGET_ARCH_x86
+# include "c1_globals_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c1_globals_sparc.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "c1_globals_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "c1_globals_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "c1_globals_windows.hpp"
+#endif
+#endif
+#ifdef COMPILER2
+#ifdef TARGET_ARCH_x86
+# include "c2_globals_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "c2_globals_sparc.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_linux
+# include "c2_globals_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "c2_globals_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "c2_globals_windows.hpp"
+#endif
+#endif
+#ifdef SHARK
+#ifdef TARGET_ARCH_zero
+# include "shark_globals_zero.hpp"
+#endif
+#endif
+
 #if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK)
 define_pd_global(bool, BackgroundCompilation,        false);
 define_pd_global(bool, UseTLAB,                      false);
@@ -1200,9 +1280,6 @@ class CommandLineFlags {
   develop(bool, TraceStartupTime, false,                                    \
           "Trace setup time")                                               \
                                                                             \
-  develop(bool, TraceHPI, false,                                            \
-          "Trace Host Porting Interface (HPI)")                             \
-                                                                            \
   product(ccstr, HPILibPath, NULL,                                          \
           "Specify alternate path to HPI library")                          \
                                                                             \
@@ -1322,6 +1399,10 @@ class CommandLineFlags {
   product(bool, GCLockerInvokesConcurrent, false,                           \
           "The exit of a JNI CS necessitating a scavenge also"              \
           " kicks off a bkgrd concurrent collection")                       \
+                                                                            \
+  product(uintx, GCLockerEdenExpansionPercent, 5,                           \
+          "How much the GC can expand the eden by while the GC locker  "    \
+          "is active (as a percentage)")                                    \
                                                                             \
   develop(bool, UseCMSAdaptiveFreeLists, true,                              \
           "Use Adaptive Free Lists in the CMS generation")                  \
@@ -3676,3 +3757,5 @@ class CommandLineFlags {
 RUNTIME_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_EXPERIMENTAL_FLAG, DECLARE_NOTPRODUCT_FLAG, DECLARE_MANAGEABLE_FLAG, DECLARE_PRODUCT_RW_FLAG, DECLARE_LP64_PRODUCT_FLAG)
 
 RUNTIME_OS_FLAGS(DECLARE_DEVELOPER_FLAG, DECLARE_PD_DEVELOPER_FLAG, DECLARE_PRODUCT_FLAG, DECLARE_PD_PRODUCT_FLAG, DECLARE_DIAGNOSTIC_FLAG, DECLARE_NOTPRODUCT_FLAG)
+
+#endif // SHARE_VM_RUNTIME_GLOBALS_HPP

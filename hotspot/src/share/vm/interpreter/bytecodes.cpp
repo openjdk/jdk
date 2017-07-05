@@ -22,8 +22,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_bytecodes.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/methodOop.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
 
 
 #if defined(WIN32) && (defined(_MSC_VER) && (_MSC_VER < 1600))

@@ -349,7 +349,8 @@ D3DPipelineManager::CheckOSVersion()
 {
     // require Windows XP or newer client-class OS
     if (IS_WINVER_ATLEAST(5, 1) &&
-        !D3DPPLM_OsVersionMatches(OS_WINSERV_2008|OS_WINSERV_2003))
+        !D3DPPLM_OsVersionMatches(OS_WINSERV_2008R2|OS_WINSERV_2008|
+                                  OS_WINSERV_2003))
     {
         J2dTraceLn(J2D_TRACE_INFO,
                    "D3DPPLM::CheckOSVersion: Windows XP or newer client-classs"\
@@ -442,13 +443,21 @@ BOOL D3DPPLM_OsVersionMatches(USHORT osInfo) {
         if (bVersOk && osvi.dwPlatformId == VER_PLATFORM_WIN32_NT &&
             osvi.dwMajorVersion > 4)
         {
-            if (osvi.dwMajorVersion >= 6 && osvi.dwMinorVersion >= 0) {
+            if (osvi.dwMajorVersion >= 6 && osvi.dwMinorVersion == 0) {
                 if (osvi.wProductType == VER_NT_WORKSTATION) {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_VISTA or newer\n");
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_VISTA\n");
                     currentOS = OS_VISTA;
                 } else {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008 or newer\n");
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008\n");
                     currentOS = OS_WINSERV_2008;
+                }
+            } else if (osvi.dwMajorVersion >= 6 && osvi.dwMinorVersion >= 1) {
+                if (osvi.wProductType == VER_NT_WORKSTATION) {
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS7 or newer\n");
+                    currentOS = OS_WINDOWS7;
+                } else {
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2008R2 or newer\n");
+                    currentOS = OS_WINSERV_2008R2;
                 }
             } else if (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2) {
                 if (osvi.wProductType == VER_NT_WORKSTATION) {

@@ -185,6 +185,11 @@ public abstract class RSASignature extends SignatureSpi {
 
     // verify the data and return the result. See JCA doc
     protected boolean engineVerify(byte[] sigBytes) throws SignatureException {
+        if (sigBytes.length != RSACore.getByteLength(publicKey)) {
+            throw new SignatureException("Signature length not correct: got " +
+                    sigBytes.length + " but was expecting " +
+                    RSACore.getByteLength(publicKey));
+        }
         byte[] digest = getDigestValue();
         try {
             byte[] decrypted = RSACore.rsa(sigBytes, publicKey);

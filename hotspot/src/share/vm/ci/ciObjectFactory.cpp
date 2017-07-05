@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,33 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciObjectFactory.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciCPCache.hpp"
+#include "ci/ciCallSite.hpp"
+#include "ci/ciInstance.hpp"
+#include "ci/ciInstanceKlass.hpp"
+#include "ci/ciInstanceKlassKlass.hpp"
+#include "ci/ciMethod.hpp"
+#include "ci/ciMethodData.hpp"
+#include "ci/ciMethodHandle.hpp"
+#include "ci/ciMethodKlass.hpp"
+#include "ci/ciNullObject.hpp"
+#include "ci/ciObjArray.hpp"
+#include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciObjArrayKlassKlass.hpp"
+#include "ci/ciObjectFactory.hpp"
+#include "ci/ciSymbol.hpp"
+#include "ci/ciSymbolKlass.hpp"
+#include "ci/ciTypeArray.hpp"
+#include "ci/ciTypeArrayKlass.hpp"
+#include "ci/ciTypeArrayKlassKlass.hpp"
+#include "ci/ciUtilities.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/allocation.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "runtime/fieldType.hpp"
 
 // ciObjectFactory
 //

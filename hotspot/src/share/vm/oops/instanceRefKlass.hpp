@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_INSTANCEREFKLASS_HPP
+#define SHARE_VM_OOPS_INSTANCEREFKLASS_HPP
+
+#include "oops/instanceKlass.hpp"
 
 // An instanceRefKlass is a specialized instanceKlass for Java
 // classes that are subclasses of java/lang/ref/Reference.
@@ -84,6 +89,7 @@ class instanceRefKlass: public instanceKlass {
 
   static void release_and_notify_pending_list_lock(BasicLock *pending_list_basic_lock);
   static void acquire_pending_list_lock(BasicLock *pending_list_basic_lock);
+  static bool owns_pending_list_lock(JavaThread* thread);
 
   // Update non-static oop maps so 'referent', 'nextPending' and
   // 'discovered' will look like non-oops
@@ -93,3 +99,5 @@ class instanceRefKlass: public instanceKlass {
   // Verification
   void oop_verify_on(oop obj, outputStream* st);
 };
+
+#endif // SHARE_VM_OOPS_INSTANCEREFKLASS_HPP

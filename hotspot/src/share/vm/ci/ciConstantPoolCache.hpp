@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CI_CICONSTANTPOOLCACHE_HPP
+#define SHARE_VM_CI_CICONSTANTPOOLCACHE_HPP
+
+#include "memory/resourceArea.hpp"
+#include "utilities/growableArray.hpp"
 
 // ciConstantPoolCache
 //
@@ -45,3 +51,5 @@ public:
 
   void print();
 };
+
+#endif // SHARE_VM_CI_CICONSTANTPOOLCACHE_HPP
