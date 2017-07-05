@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,18 @@ public class SecureClassLoader extends ClassLoader {
      * succeed. Otherwise the object is not initialized and the object is
      * useless.
      */
-    private boolean initialized = false;
+    private final boolean initialized;
 
     // HashMap that maps CodeSource to ProtectionDomain
-    private HashMap<CodeSource, ProtectionDomain> pdcache =
+    // @GuardedBy("pdcache")
+    private final HashMap<CodeSource, ProtectionDomain> pdcache =
                         new HashMap<CodeSource, ProtectionDomain>(11);
 
     private static final Debug debug = Debug.getInstance("scl");
+
+    static {
+        ClassLoader.registerAsParallelCapable();
+    }
 
     /**
      * Creates a new SecureClassLoader using the specified parent
@@ -136,10 +141,7 @@ public class SecureClassLoader extends ClassLoader {
                                          byte[] b, int off, int len,
                                          CodeSource cs)
     {
-        if (cs == null)
-            return defineClass(name, b, off, len);
-        else
-            return defineClass(name, b, off, len, getProtectionDomain(cs));
+        return defineClass(name, b, off, len, getProtectionDomain(cs));
     }
 
     /**
@@ -172,10 +174,7 @@ public class SecureClassLoader extends ClassLoader {
     protected final Class<?> defineClass(String name, java.nio.ByteBuffer b,
                                          CodeSource cs)
     {
-        if (cs == null)
-            return defineClass(name, b, (ProtectionDomain)null);
-        else
-            return defineClass(name, b, getProtectionDomain(cs));
+        return defineClass(name, b, getProtectionDomain(cs));
     }
 
     /**
@@ -209,12 +208,10 @@ public class SecureClassLoader extends ClassLoader {
             if (pd == null) {
                 PermissionCollection perms = getPermissions(cs);
                 pd = new ProtectionDomain(cs, perms, this, null);
-                if (pd != null) {
-                    pdcache.put(cs, pd);
-                    if (debug != null) {
-                        debug.println(" getPermissions "+ pd);
-                        debug.println("");
-                    }
+                pdcache.put(cs, pd);
+                if (debug != null) {
+                    debug.println(" getPermissions "+ pd);
+                    debug.println("");
                 }
             }
         }

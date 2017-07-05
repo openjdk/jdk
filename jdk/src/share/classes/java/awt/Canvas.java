@@ -25,6 +25,7 @@
 package java.awt;
 
 import java.awt.image.BufferStrategy;
+import java.awt.peer.CanvasPeer;
 import javax.accessibility.*;
 
 /**
@@ -65,7 +66,17 @@ public class Canvas extends Component implements Accessible {
      */
     public Canvas(GraphicsConfiguration config) {
         this();
-        graphicsConfig = config;
+        setGraphicsConfiguration(config);
+    }
+
+    @Override
+    void setGraphicsConfiguration(GraphicsConfiguration gc) {
+        CanvasPeer peer = (CanvasPeer)getPeer();
+        if (peer != null) {
+            gc = peer.getAppropriateGraphicsConfiguration(gc);
+        }
+
+        super.setGraphicsConfiguration(gc);
     }
 
     /**

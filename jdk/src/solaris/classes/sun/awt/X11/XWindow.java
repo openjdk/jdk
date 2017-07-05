@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,15 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     int oldWidth = -1;
     int oldHeight = -1;
 
+    protected PropMwmHints mwm_hints;
+    protected static XAtom wm_protocols;
+    protected static XAtom wm_delete_window;
+    protected static XAtom wm_take_focus;
+
+    private boolean stateChanged; // Indicates whether the value on savedState is valid
+    private int savedState; // Holds last known state of the top-level window
+
+    XWindowAttributesData winAttr;
 
     protected X11GraphicsConfig graphicsConfig;
     protected AwtGraphicsConfigData graphicsConfigData;
@@ -119,6 +128,9 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     private native static void initIDs();
 
     private static Field isPostedField;
+    private static Field rawCodeField;
+    private static Field primaryLevelUnicodeField;
+    private static Field extendedKeyCodeField;
     static {
         initIDs();
     }
@@ -218,6 +230,20 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
 
         params.putIfNull(BACKING_STORE, XToolkit.getBackingStoreType());
+
+        XToolkit.awtLock();
+        try {
+            if (wm_protocols == null) {
+                wm_protocols = XAtom.get("WM_PROTOCOLS");
+                wm_delete_window = XAtom.get("WM_DELETE_WINDOW");
+                wm_take_focus = XAtom.get("WM_TAKE_FOCUS");
+            }
+        }
+        finally {
+            XToolkit.awtUnlock();
+        }
+        winAttr = new XWindowAttributesData();
+        savedState = XUtilConstants.WithdrawnState;
     }
 
     void postInit(XCreateWindowParams params) {
@@ -832,11 +858,41 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     public native boolean x11inputMethodLookupString(long event, long [] keysymArray);
     native boolean haveCurrentX11InputMethodInstance();
 
+    private boolean mouseAboveMe;
+
+    public boolean isMouseAbove() {
+        synchronized (getStateLock()) {
+            return mouseAboveMe;
+        }
+    }
+    protected void setMouseAbove(boolean above) {
+        synchronized (getStateLock()) {
+            mouseAboveMe = above;
+        }
+    }
+
+    protected void enterNotify(long window) {
+        if (window == getWindow()) {
+            setMouseAbove(true);
+        }
+    }
+    protected void leaveNotify(long window) {
+        if (window == getWindow()) {
+            setMouseAbove(false);
+        }
+    }
+
     public void handleXCrossingEvent(XEvent xev) {
         super.handleXCrossingEvent(xev);
         XCrossingEvent xce = xev.get_xcrossing();
 
         if (eventLog.isLoggable(Level.FINEST)) eventLog.finest(xce.toString());
+
+        if (xce.get_type() == XConstants.EnterNotify) {
+            enterNotify(xce.get_window());
+        } else { // LeaveNotify:
+            leaveNotify(xce.get_window());
+        }
 
         // Skip event If it was caused by a grab
         // This is needed because on displays with focus-follows-mouse on MousePress X system generates
@@ -984,7 +1040,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
        Parameter is a keysym basically from keysymdef.h
        XXX: how about vendor keys? Is there some with Unicode value and not in the list?
     */
-    char keysymToUnicode( long keysym, int state ) {
+    int keysymToUnicode( long keysym, int state ) {
         return XKeysym.convertKeysym( keysym, state );
     }
     int keyEventType2Id( int xEventType ) {
@@ -993,6 +1049,13 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
     static private long xkeycodeToKeysym(XKeyEvent ev) {
         return XKeysym.getKeysym( ev );
+    }
+    private long xkeycodeToPrimaryKeysym(XKeyEvent ev) {
+        return XKeysym.xkeycode2primary_keysym( ev );
+    }
+    static private int primaryUnicode2JavaKeycode(int uni) {
+        return (uni > 0? sun.awt.ExtendedKeyCodes.getExtendedKeyCodeForChar(uni) : 0);
+        //return (uni > 0? uni + 0x01000000 : 0);
     }
     void logIncomingKeyEvent(XKeyEvent ev) {
         keyEventLog.fine("--XWindow.java:handleKeyEvent:"+ev);
@@ -1012,7 +1075,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     // un-final it if you need to override it in a subclass.
     final void handleKeyPress(XKeyEvent ev) {
         long keysym[] = new long[2];
-        char unicodeKey = 0;
+        int unicodeKey = 0;
         keysym[0] = XConstants.NoSymbol;
 
         if (keyEventLog.isLoggable(Level.FINE)) {
@@ -1057,19 +1120,36 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         if( jkc == null ) {
             jkc = new XKeysym.Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_UNDEFINED, java.awt.event.KeyEvent.KEY_LOCATION_UNKNOWN);
         }
+
+        // Take the first keysym from a keysym array associated with the XKeyevent
+        // and convert it to Unicode. Then, even if a Java keycode for the keystroke
+        // is undefined, we still have a guess of what has been engraved on a keytop.
+        int unicodeFromPrimaryKeysym = keysymToUnicode( xkeycodeToPrimaryKeysym(ev) ,0);
+
         if (keyEventLog.isLoggable(Level.FINE)) {
             keyEventLog.fine(">>>Fire Event:"+
                (ev.get_type() == XConstants.KeyPress ? "KEY_PRESSED; " : "KEY_RELEASED; ")+
                "jkeycode:decimal="+jkc.getJavaKeycode()+
-               ", hex=0x"+Integer.toHexString(jkc.getJavaKeycode())+"; "
+               ", hex=0x"+Integer.toHexString(jkc.getJavaKeycode())+"; "+
+               " legacy jkeycode: decimal="+XKeysym.getLegacyJavaKeycodeOnly(ev)+
+               ", hex=0x"+Integer.toHexString(XKeysym.getLegacyJavaKeycodeOnly(ev))+"; "
             );
         }
+
+        int jkeyToReturn = XKeysym.getLegacyJavaKeycodeOnly(ev); // someway backward compatible
+        int jkeyExtended = jkc.getJavaKeycode() == java.awt.event.KeyEvent.VK_UNDEFINED ?
+                           primaryUnicode2JavaKeycode( unicodeFromPrimaryKeysym ) :
+                             jkc.getJavaKeycode();
         postKeyEvent( java.awt.event.KeyEvent.KEY_PRESSED,
                           ev.get_time(),
-                          jkc.getJavaKeycode(),
+                          jkeyToReturn,
                           (unicodeKey == 0 ? java.awt.event.KeyEvent.CHAR_UNDEFINED : unicodeKey),
                           jkc.getKeyLocation(),
-                          ev.get_state(),ev.getPData(), XKeyEvent.getSize());
+                          ev.get_state(),ev.getPData(), XKeyEvent.getSize(), (long)(ev.get_keycode()),
+                          unicodeFromPrimaryKeysym,
+                          jkeyExtended);
+
+
         if( unicodeKey > 0 ) {
                 keyEventLog.fine("fire _TYPED on "+unicodeKey);
                 postKeyEvent( java.awt.event.KeyEvent.KEY_TYPED,
@@ -1077,7 +1157,10 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
                               java.awt.event.KeyEvent.VK_UNDEFINED,
                               unicodeKey,
                               java.awt.event.KeyEvent.KEY_LOCATION_UNKNOWN,
-                              ev.get_state(),ev.getPData(), XKeyEvent.getSize());
+                              ev.get_state(),ev.getPData(), XKeyEvent.getSize(), (long)0,
+                              unicodeFromPrimaryKeysym,
+                              java.awt.event.KeyEvent.VK_UNDEFINED);
+
         }
 
 
@@ -1095,7 +1178,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     // un-private it if you need to call it from elsewhere
     private void handleKeyRelease(XKeyEvent ev) {
         long keysym[] = new long[2];
-        char unicodeKey = 0;
+        int unicodeKey = 0;
         keysym[0] = XConstants.NoSymbol;
 
         if (keyEventLog.isLoggable(Level.FINE)) {
@@ -1113,7 +1196,9 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             keyEventLog.fine(">>>Fire Event:"+
                (ev.get_type() == XConstants.KeyPress ? "KEY_PRESSED; " : "KEY_RELEASED; ")+
                "jkeycode:decimal="+jkc.getJavaKeycode()+
-               ", hex=0x"+Integer.toHexString(jkc.getJavaKeycode())+"; "
+               ", hex=0x"+Integer.toHexString(jkc.getJavaKeycode())+"; "+
+               " legacy jkeycode: decimal="+XKeysym.getLegacyJavaKeycodeOnly(ev)+
+               ", hex=0x"+Integer.toHexString(XKeysym.getLegacyJavaKeycodeOnly(ev))+"; "
             );
         }
         // We obtain keysym from IM and derive unicodeKey from it for KeyPress only.
@@ -1124,13 +1209,74 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         // That's why we use the same procedure as if there was no IM instance: do-it-yourself unicode.
         unicodeKey = keysymToUnicode( xkeycodeToKeysym(ev), ev.get_state() );
 
+        // Take a first keysym from a keysym array associated with the XKeyevent
+        // and convert it to Unicode. Then, even if Java keycode for the keystroke
+        // is undefined, we still will have a guess of what was engraved on a keytop.
+        int unicodeFromPrimaryKeysym = keysymToUnicode( xkeycodeToPrimaryKeysym(ev) ,0);
+
+        int jkeyToReturn = XKeysym.getLegacyJavaKeycodeOnly(ev); // someway backward compatible
+        int jkeyExtended = jkc.getJavaKeycode() == java.awt.event.KeyEvent.VK_UNDEFINED ?
+                           primaryUnicode2JavaKeycode( unicodeFromPrimaryKeysym ) :
+                             jkc.getJavaKeycode();
         postKeyEvent(  java.awt.event.KeyEvent.KEY_RELEASED,
                           ev.get_time(),
-                          jkc.getJavaKeycode(),
+                          jkeyToReturn,
                           (unicodeKey == 0 ? java.awt.event.KeyEvent.CHAR_UNDEFINED : unicodeKey),
                           jkc.getKeyLocation(),
-                          ev.get_state(),ev.getPData(), XKeyEvent.getSize());
+                          ev.get_state(),ev.getPData(), XKeyEvent.getSize(), (long)(ev.get_keycode()),
+                          unicodeFromPrimaryKeysym,
+                          jkeyExtended);
 
+
+    }
+
+    /*
+     * XmNiconic and Map/UnmapNotify (that XmNiconic relies on) are
+     * unreliable, since mapping changes can happen for a virtual desktop
+     * switch or MacOS style shading that became quite popular under X as
+     * well.  Yes, it probably should not be this way, as it violates
+     * ICCCM, but reality is that quite a lot of window managers abuse
+     * mapping state.
+     */
+    int getWMState() {
+        if (stateChanged) {
+            stateChanged = false;
+            WindowPropertyGetter getter =
+                new WindowPropertyGetter(window, XWM.XA_WM_STATE, 0, 1, false,
+                                         XWM.XA_WM_STATE);
+            try {
+                int status = getter.execute();
+                if (status != XConstants.Success || getter.getData() == 0) {
+                    return savedState = XUtilConstants.WithdrawnState;
+                }
+
+                if (getter.getActualType() != XWM.XA_WM_STATE.getAtom() && getter.getActualFormat() != 32) {
+                    return savedState = XUtilConstants.WithdrawnState;
+                }
+                savedState = (int)Native.getCard32(getter.getData());
+            } finally {
+                getter.dispose();
+            }
+        }
+        return savedState;
+    }
+
+    /**
+     * Override this methods to get notifications when top-level window state changes. The state is
+     * meant in terms of ICCCM: WithdrawnState, IconicState, NormalState
+     */
+    protected void stateChanged(long time, int oldState, int newState) {
+    }
+
+    @Override
+    public void handlePropertyNotify(XEvent xev) {
+        super.handlePropertyNotify(xev);
+        XPropertyEvent ev = xev.get_xproperty();
+        if (ev.get_atom() == XWM.XA_WM_STATE.getAtom()) {
+            // State has changed, invalidate saved value
+            stateChanged = true;
+            stateChanged(ev.get_time(), savedState, getWMState());
+        }
     }
 
     public void reshape(Rectangle bounds) {
@@ -1277,20 +1423,77 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         }
     }
 
-    public void postKeyEvent(int id, long when, int keyCode, char keyChar,
-        int keyLocation, int state, long event, int eventSize)
+    public void postKeyEvent(int id, long when, int keyCode, int keyChar,
+        int keyLocation, int state, long event, int eventSize, long rawCode,
+        int unicodeFromPrimaryKeysym, int extendedKeyCode)
+
     {
         long jWhen = XToolkit.nowMillisUTC_offset(when);
         int modifiers = getModifiers(state, 0, keyCode);
+        if (rawCodeField == null) {
+            rawCodeField = XToolkit.getField(KeyEvent.class, "rawCode");
+        }
+        if (primaryLevelUnicodeField == null) {
+            primaryLevelUnicodeField = XToolkit.getField(KeyEvent.class, "primaryLevelUnicode");
+        }
+        if (extendedKeyCodeField == null) {
+            extendedKeyCodeField = XToolkit.getField(KeyEvent.class, "extendedKeyCode");
+        }
+
         KeyEvent ke = new KeyEvent((Component)getEventSource(), id, jWhen,
-                                   modifiers, keyCode, keyChar, keyLocation);
+                                   modifiers, keyCode, (char)keyChar, keyLocation);
         if (event != 0) {
             byte[] data = Native.toBytes(event, eventSize);
             setBData(ke, data);
+        }
+        try {
+            rawCodeField.set(ke, rawCode);
+            primaryLevelUnicodeField.set(ke, (long)unicodeFromPrimaryKeysym);
+            extendedKeyCodeField.set(ke, (long)extendedKeyCode);
+        } catch (IllegalArgumentException e) {
+            assert(false);
+        } catch (IllegalAccessException e) {
+            assert(false);
         }
         postEventToEventQueue(ke);
     }
 
     static native int getAWTKeyCodeForKeySym(int keysym);
     static native int getKeySymForAWTKeyCode(int keycode);
+
+    /* These two methods are actually applicable to toplevel windows only.
+     * However, the functionality is required by both the XWindowPeer and
+     * XWarningWindow, both of which have the XWindow as a common ancestor.
+     * See XWM.setMotifDecor() for details.
+     */
+    public PropMwmHints getMWMHints() {
+        if (mwm_hints == null) {
+            mwm_hints = new PropMwmHints();
+            if (!XWM.XA_MWM_HINTS.getAtomData(getWindow(), mwm_hints.pData, MWMConstants.PROP_MWM_HINTS_ELEMENTS)) {
+                mwm_hints.zero();
+            }
+        }
+        return mwm_hints;
+    }
+
+    public void setMWMHints(PropMwmHints hints) {
+        mwm_hints = hints;
+        if (hints != null) {
+            XWM.XA_MWM_HINTS.setAtomData(getWindow(), mwm_hints.pData, MWMConstants.PROP_MWM_HINTS_ELEMENTS);
+        }
+    }
+
+    protected final void initWMProtocols() {
+        wm_protocols.setAtomListProperty(this, getWMProtocols());
+    }
+
+    /**
+     * Returns list of protocols which should be installed on this window.
+     * Descendants can override this method to add class-specific protocols
+     */
+    protected XAtomList getWMProtocols() {
+        // No protocols on simple window
+        return new XAtomList();
+    }
+
 }

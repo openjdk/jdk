@@ -25,6 +25,8 @@
 
 package java.lang;
 
+import java.util.Properties;
+
 /**
  * The {@code Integer} class wraps a value of the primitive type
  * {@code int} in an object. An object of type {@code Integer}
@@ -442,6 +444,12 @@ public final class Integer extends Number implements Comparable<Integer> {
     public static int parseInt(String s, int radix)
                 throws NumberFormatException
     {
+        /*
+         * WARNING: This method may be invoked early during VM initialization
+         * before IntegerCache is initialized. Care must be taken to not use
+         * the valueOf method.
+         */
+
         if (s == null) {
             throw new NumberFormatException("null");
         }
@@ -545,7 +553,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *            does not contain a parsable {@code int}.
      */
     public static Integer valueOf(String s, int radix) throws NumberFormatException {
-        return new Integer(parseInt(s,radix));
+        return Integer.valueOf(parseInt(s,radix));
     }
 
     /**
@@ -570,20 +578,56 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @exception  NumberFormatException  if the string cannot be parsed
      *             as an integer.
      */
-    public static Integer valueOf(String s) throws NumberFormatException
-    {
-        return new Integer(parseInt(s, 10));
+    public static Integer valueOf(String s) throws NumberFormatException {
+        return Integer.valueOf(parseInt(s, 10));
+    }
+
+    /**
+     * Cache to support the object identity semantics of autoboxing for values between
+     * -128 and 127 (inclusive) as required by JLS.
+     *
+     * The cache is initialized on first usage. During VM initialization the
+     * getAndRemoveCacheProperties method may be used to get and remove any system
+     * properites that configure the cache size. At this time, the size of the
+     * cache may be controlled by the -XX:AutoBoxCacheMax=<size> option.
+     */
+
+    // value of java.lang.Integer.IntegerCache.high property (obtained during VM init)
+    private static String integerCacheHighPropValue;
+
+    static void getAndRemoveCacheProperties() {
+        if (!sun.misc.VM.isBooted()) {
+            Properties props = System.getProperties();
+            integerCacheHighPropValue =
+                (String)props.remove("java.lang.Integer.IntegerCache.high");
+            if (integerCacheHighPropValue != null)
+                System.setProperties(props);  // remove from system props
+        }
     }
 
     private static class IntegerCache {
-        private IntegerCache(){}
-
-        static final Integer cache[] = new Integer[-(-128) + 127 + 1];
+        static final int low = -128;
+        static final int high;
+        static final Integer cache[];
 
         static {
-            for(int i = 0; i < cache.length; i++)
-                cache[i] = new Integer(i - 128);
+            // high value may be configured by property
+            int h = 127;
+            if (integerCacheHighPropValue != null) {
+                int i = parseInt(integerCacheHighPropValue);
+                i = Math.max(i, 127);
+                // Maximum array size is Integer.MAX_VALUE
+                h = Math.min(i, Integer.MAX_VALUE - (-low));
+            }
+            high = h;
+
+            cache = new Integer[(high - low) + 1];
+            int j = low;
+            for(int k = 0; k < cache.length; k++)
+                cache[k] = new Integer(j++);
         }
+
+        private IntegerCache() {}
     }
 
     /**
@@ -599,10 +643,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @since  1.5
      */
     public static Integer valueOf(int i) {
-        final int offset = 128;
-        if (i >= -128 && i <= 127) { // must cache
-            return IntegerCache.cache[i + offset];
-        }
+        assert IntegerCache.high >= 127;
+        if (i >= IntegerCache.low && i <= IntegerCache.high)
+            return IntegerCache.cache[i + (-IntegerCache.low)];
         return new Integer(i);
     }
 
@@ -806,7 +849,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      */
     public static Integer getInteger(String nm, int val) {
         Integer result = getInteger(nm, null);
-        return (result == null) ? new Integer(val) : result;
+        return (result == null) ? Integer.valueOf(val) : result;
     }
 
     /**
@@ -938,7 +981,7 @@ public final class Integer extends Number implements Comparable<Integer> {
 
         try {
             result = Integer.valueOf(nm.substring(index), radix);
-            result = negative ? new Integer(-result.intValue()) : result;
+            result = negative ? Integer.valueOf(-result.intValue()) : result;
         } catch (NumberFormatException e) {
             // If number is Integer.MIN_VALUE, we'll end up here. The next line
             // handles this case, and causes any genuine format error to be

@@ -269,10 +269,4 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
         }
     }
 
-    /**
-     * @see java.awt.peer.ContainerPeer#restack
-     */
-    public void restack() {
-        // Since ScrollPane can only have one child its restacking does nothing.
-    }
 }

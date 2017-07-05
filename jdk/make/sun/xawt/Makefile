@@ -79,6 +79,7 @@ vpath %.c   $(SHARE_SRC)/native/sun/java2d
 vpath %.c   $(SHARE_SRC)/native/sun/java2d/loops
 vpath %.c   $(SHARE_SRC)/native/sun/java2d/pipe
 vpath %.c   $(SHARE_SRC)/native/sun/awt/medialib
+vpath %.c   $(SHARE_SRC)/native/sun/awt/utility
 vpath %.cpp $(SHARE_SRC)/native/sun/image
 vpath %.c   $(SHARE_SRC)/native/sun/font
 vpath %.c   $(PLATFORM_SRC)/native/sun/awt/robot_child
@@ -273,6 +274,23 @@ ICONS = \
     $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon24.png \
     $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon32.png \
     $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
+
+
+ICONPATH=$(PLATFORM_SRC)/classes/sun/awt/X11
+
+ICONS += \
+   $(ICONPATH)/security-icon-bw16.png \
+   $(ICONPATH)/security-icon-interim16.png \
+   $(ICONPATH)/security-icon-yellow16.png \
+   $(ICONPATH)/security-icon-bw24.png \
+   $(ICONPATH)/security-icon-interim24.png \
+   $(ICONPATH)/security-icon-yellow24.png \
+   $(ICONPATH)/security-icon-bw32.png \
+   $(ICONPATH)/security-icon-interim32.png \
+   $(ICONPATH)/security-icon-yellow32.png \
+   $(ICONPATH)/security-icon-bw48.png \
+   $(ICONPATH)/security-icon-interim48.png \
+   $(ICONPATH)/security-icon-yellow48.png
 
 TEMPDIR_CLASSES = $(TEMPDIR)/classes
 

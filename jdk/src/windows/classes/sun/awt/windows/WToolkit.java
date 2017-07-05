@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -494,6 +494,12 @@ public class WToolkit extends SunToolkit implements Runnable {
         return true;
     }
 
+    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager)
+      throws HeadlessException
+    {
+        return new WKeyboardFocusManagerPeer(manager);
+    }
+
     protected native void setDynamicLayoutNative(boolean b);
 
     public void setDynamicLayout(boolean b) {
@@ -974,5 +980,35 @@ public class WToolkit extends SunToolkit implements Runnable {
 
     public boolean areExtraMouseButtonsEnabled() throws HeadlessException {
         return areExtraMouseButtonsEnabled;
+    }
+
+    @Override
+    public boolean isWindowOpacitySupported() {
+        // supported in Win2K and later
+        return true;
+    }
+
+    @Override
+    public boolean isWindowShapingSupported() {
+        return true;
+    }
+
+    @Override
+    public boolean isWindowTranslucencySupported() {
+        // supported in Win2K and later
+        return true;
+    }
+
+    @Override
+    public boolean isTranslucencyCapable(GraphicsConfiguration gc) {
+        //XXX: worth checking if 8-bit? Anyway, it doesn't hurt.
+        return true;
+    }
+
+    // On MS Windows one must use the peer.updateWindow() to implement
+    // non-opaque windows.
+    @Override
+    public boolean needUpdateWindow() {
+        return true;
     }
 }
