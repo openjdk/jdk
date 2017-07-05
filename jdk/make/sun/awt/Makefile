@@ -369,10 +369,6 @@ FONTCONFIGS_SRC	= $(CLOSED_SRC)/solaris/classes/sun/awt/fontconfigs
 _FONTCONFIGS	= \
 	fontconfig.properties				\
 	fontconfig.RedHat.properties			\
-	fontconfig.RedHat.2.1.properties		\
-	fontconfig.RedHat.3.properties		        \
-	fontconfig.RedHat.4.properties			\
-	fontconfig.Sun.properties			\
 	fontconfig.Turbo.properties			\
 	fontconfig.SuSE.10.properties                   \
 	fontconfig.SuSE.11.properties
@@ -388,9 +384,7 @@ ifeq ($(PLATFORM), solaris)
 
 FONTCONFIGS_SRC	= $(PLATFORM_SRC)/classes/sun/awt/fontconfigs
 _FONTCONFIGS	= \
-	fontconfig.properties	\
-	fontconfig.5.9.properties	\
-	fontconfig.5.8.properties
+	fontconfig.properties
 
 FONTCONFIGS_SRC_PREFIX = $(PLATFORM).
 

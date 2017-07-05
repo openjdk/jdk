@@ -52,7 +52,7 @@ public final class SunRsaSign extends Provider {
             SunRsaSignEntries.putEntries(this);
         } else {
             // use LinkedHashMap to preserve the order of the PRNGs
-            Map<Object, Object> map = new HashMap<Object, Object>();
+            Map<Object, Object> map = new HashMap<>();
             SunRsaSignEntries.putEntries(map);
             AccessController.doPrivileged(new PutAllAction(this, map));
         }

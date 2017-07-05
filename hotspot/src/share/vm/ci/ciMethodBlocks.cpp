@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,15 +175,15 @@ void ciMethodBlocks::do_analysis() {
       case Bytecodes::_tableswitch :
         {
           cur_block->set_control_bci(bci);
-          Bytecode_tableswitch* switch_ = Bytecode_tableswitch_at(s.cur_bcp());
-          int len = switch_->length();
+          Bytecode_tableswitch sw(&s);
+          int len = sw.length();
           ciBlock *dest;
           int dest_bci;
           for (int i = 0; i < len; i++) {
-            dest_bci = s.cur_bci() + switch_->dest_offset_at(i);
+            dest_bci = s.cur_bci() + sw.dest_offset_at(i);
             dest = make_block_at(dest_bci);
           }
-          dest_bci = s.cur_bci() + switch_->default_offset();
+          dest_bci = s.cur_bci() + sw.default_offset();
           make_block_at(dest_bci);
           if (s.next_bci() < limit_bci) {
             dest = make_block_at(s.next_bci());
@@ -194,15 +194,15 @@ void ciMethodBlocks::do_analysis() {
       case Bytecodes::_lookupswitch:
         {
           cur_block->set_control_bci(bci);
-          Bytecode_lookupswitch* switch_ = Bytecode_lookupswitch_at(s.cur_bcp());
-          int len = switch_->number_of_pairs();
+          Bytecode_lookupswitch sw(&s);
+          int len = sw.number_of_pairs();
           ciBlock *dest;
           int dest_bci;
           for (int i = 0; i < len; i++) {
-            dest_bci = s.cur_bci() + switch_->pair_at(i)->offset();
+            dest_bci = s.cur_bci() + sw.pair_at(i).offset();
             dest = make_block_at(dest_bci);
           }
-          dest_bci = s.cur_bci() + switch_->default_offset();
+          dest_bci = s.cur_bci() + sw.default_offset();
           dest = make_block_at(dest_bci);
           if (s.next_bci() < limit_bci) {
             dest = make_block_at(s.next_bci());

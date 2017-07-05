@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,12 +151,20 @@ inline void*    Atomic::cmpxchg_ptr(void*    exchange_value, volatile void*     
   return (void*)cmpxchg((jint)exchange_value, (volatile jint*)dest, (jint)compare_value);
 }
 
-extern "C" void _Atomic_load_long(volatile jlong* src, volatile jlong* dst);
+extern "C" void _Atomic_move_long(volatile jlong* src, volatile jlong* dst);
 
 inline jlong Atomic::load(volatile jlong* src) {
   volatile jlong dest;
-  _Atomic_load_long(src, &dest);
+  _Atomic_move_long(src, &dest);
   return dest;
+}
+
+inline void Atomic::store(jlong store_value, jlong* dest) {
+  _Atomic_move_long((volatile jlong*)&store_value, (volatile jlong*)dest);
+}
+
+inline void Atomic::store(jlong store_value, volatile jlong* dest) {
+  _Atomic_move_long((volatile jlong*)&store_value, dest);
 }
 
 #endif // AMD64

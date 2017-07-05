@@ -117,6 +117,7 @@ public:
   void clear();
   // apply f to every element and update the cache
   void oops_do(OopClosure* f);
+  // update the cache after a full gc
   void gc_epilogue();
 };
 
@@ -278,13 +279,13 @@ public:
 
   int length();
   void oops_do(OopClosure* f);
-  void gc_epilogue();
   void print();
 
   int  set(JvmtiBreakpoint& bp);
   int  clear(JvmtiBreakpoint& bp);
   void clearall_in_class_at_safepoint(klassOop klass);
   void clearall();
+  void gc_epilogue();
 };
 
 
