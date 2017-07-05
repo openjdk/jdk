@@ -50,6 +50,7 @@ public:
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
   virtual const Type *Value( PhaseTransform *phase ) const;
+  const Type* Value_common( PhaseTransform *phase ) const;
 
   // Supplied function returns the subtractend of the inputs.
   // This also type-checks the inputs for sanity.  Guaranteed never to
@@ -158,6 +159,7 @@ public:
   CmpUNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual const Type *sub( const Type *, const Type * ) const;
+  const Type *Value( PhaseTransform *phase ) const;
   bool is_index_range_check() const;
 };
 

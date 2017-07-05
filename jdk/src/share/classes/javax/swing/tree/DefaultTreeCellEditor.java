@@ -405,7 +405,9 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
     /**
      * Returns true if <code>event</code> is a <code>MouseEvent</code>
      * and the click count is 1.
-     * @param event  the event being studied
+     *
+     * @param event the event being studied
+     * @return whether {@code event} should starts the editing timer
      */
     protected boolean shouldStartEditingTimer(EventObject event) {
         if((event instanceof MouseEvent) &&
@@ -433,7 +435,9 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
      * Returns true if <code>event</code> is <code>null</code>,
      * or it is a <code>MouseEvent</code> with a click count &gt; 2
      * and <code>inHitRegion</code> returns true.
+     *
      * @param event the event being studied
+     * @return whether editing can be started for the given {@code event}
      */
     protected boolean canEditImmediately(EventObject event) {
         if((event instanceof MouseEvent) &&
@@ -513,6 +517,8 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
     /**
      * Creates the container to manage placement of
      * <code>editingComponent</code>.
+     *
+     * @return new Container object
      */
     protected Container createContainer() {
         return new EditorContainer();

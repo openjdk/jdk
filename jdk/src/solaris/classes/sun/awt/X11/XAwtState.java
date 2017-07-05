@@ -40,7 +40,7 @@ class XAwtState {
      * The mouse is over this component.
      * If the component is not disabled, it received MOUSE_ENTERED but no MOUSE_EXITED.
      */
-    private static WeakReference componentMouseEnteredRef = null;
+    private static WeakReference<Component> componentMouseEnteredRef = null;
 
     static void setComponentMouseEntered(Component component) {
         XToolkit.awtLock();
@@ -50,7 +50,7 @@ class XAwtState {
                 return;
             }
             if (component != getComponentMouseEntered()) {
-                componentMouseEnteredRef = new WeakReference(component);
+                componentMouseEnteredRef = new WeakReference<>(component);
             }
         } finally {
             XToolkit.awtUnlock();
@@ -63,7 +63,7 @@ class XAwtState {
             if (componentMouseEnteredRef == null) {
                 return null;
             }
-            return (Component)componentMouseEnteredRef.get();
+            return componentMouseEnteredRef.get();
         } finally {
             XToolkit.awtUnlock();
         }
@@ -83,7 +83,7 @@ class XAwtState {
         return inManualGrab;
     }
 
-    private static WeakReference grabWindowRef = null;
+    private static WeakReference<XBaseWindow> grabWindowRef = null;
 
     /**
      * The X Active Grab overrides any other active grab by the same
@@ -112,7 +112,7 @@ class XAwtState {
                 return;
             }
             if (grabWindow != getGrabWindow()) {
-                grabWindowRef = new WeakReference(grabWindow);
+                grabWindowRef = new WeakReference<>(grabWindow);
             }
         } finally {
             XToolkit.awtUnlock();
@@ -125,7 +125,7 @@ class XAwtState {
             if (grabWindowRef == null) {
                 return null;
             }
-            XBaseWindow xbw = (XBaseWindow)grabWindowRef.get();
+            XBaseWindow xbw = grabWindowRef.get();
             if( xbw != null && xbw.isDisposed() ) {
                 xbw = null;
                 grabWindowRef = null;

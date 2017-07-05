@@ -168,7 +168,7 @@ public abstract class SearchAlgorithm {
                                        char[] chars, int p, int end) {
 
             while (tP < tEnd) {
-                if (t[tP++] != Character.toLowerCase(chars[p++])) return false;
+                if (t[tP++] != EncodingHelper.toLowerCase(chars[p++])) return false;
             }
             return true;
         }

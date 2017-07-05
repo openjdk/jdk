@@ -134,7 +134,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
     public void show(Event e) {
         target = (Component)e.target;
         // Get menus from the target.
-        Vector targetItemVector = getMenuTargetItems();
+        Vector<MenuItem> targetItemVector = getMenuTargetItems();
         if (targetItemVector != null) {
             reloadItems(targetItemVector);
             //Fix for 6287092: JCK15a: api/java_awt/interactive/event/EventTests.html#EventTest0015 fails, mustang
@@ -188,7 +188,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
         return AWTAccessor.getMenuItemAccessor().isEnabled(popupMenuTarget);
     }
 
-    Vector getMenuTargetItems() {
+    Vector<MenuItem> getMenuTargetItems() {
         if (popupMenuTarget == null) {
             return null;
         }

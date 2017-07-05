@@ -84,7 +84,7 @@ uint ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
 
   if (AlwaysTenure || NeverTenure) {
     assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markOopDesc::max_age + 1,
-        err_msg("MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is ", MaxTenuringThreshold));
+        err_msg("MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is " UINTX_FORMAT, MaxTenuringThreshold));
     result = MaxTenuringThreshold;
   } else {
     size_t total = 0;
@@ -106,7 +106,7 @@ uint ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
       gclog_or_tty->cr();
       gclog_or_tty->print_cr("Desired survivor size " SIZE_FORMAT " bytes, new threshold "
         UINTX_FORMAT " (max threshold " UINTX_FORMAT ")",
-        desired_survivor_size*oopSize, result, MaxTenuringThreshold);
+        desired_survivor_size*oopSize, (uintx) result, MaxTenuringThreshold);
     }
 
     size_t total = 0;
@@ -115,8 +115,8 @@ uint ageTable::compute_tenuring_threshold(size_t survivor_capacity) {
       total += sizes[age];
       if (sizes[age] > 0) {
         if (PrintTenuringDistribution) {
-          gclog_or_tty->print_cr("- age %3u: %10ld bytes, %10ld total",
-            age, sizes[age]*oopSize, total*oopSize);
+          gclog_or_tty->print_cr("- age %3u: " SIZE_FORMAT_W(10) " bytes, " SIZE_FORMAT_W(10) " total",
+                                        age,    sizes[age]*oopSize,          total*oopSize);
         }
       }
       if (UsePerfData) {

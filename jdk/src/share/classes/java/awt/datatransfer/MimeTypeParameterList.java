@@ -296,14 +296,14 @@ class MimeTypeParameterList implements Cloneable {
     /**
      * @return a clone of this object
      */
-
+    @SuppressWarnings("unchecked") // Cast from clone
      public Object clone() {
          MimeTypeParameterList newObj = null;
          try {
              newObj = (MimeTypeParameterList)super.clone();
          } catch (CloneNotSupportedException cannotHappen) {
          }
-         newObj.parameters = (Hashtable)parameters.clone();
+         newObj.parameters = (Hashtable<String, String>)parameters.clone();
          return newObj;
      }
 

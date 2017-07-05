@@ -98,7 +98,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
          * should be "good enough" for most cases.
          */
 
-        Map updatedSettings = null;
+        Map<String, Object> updatedSettings = null;
         XToolkit.awtLock();
         try {
             long display = XToolkit.getDisplay();
@@ -112,7 +112,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
     }
 
     private void updateXSettings(int screen, long owner) {
-        final Map updatedSettings = getUpdatedSettings(owner);
+        final Map<String, Object> updatedSettings = getUpdatedSettings(owner);
         // this method is called under awt lock and usually on toolkit thread
         // but parseXSettings() causes public code execution, so we need to transfer
         // this to EDT
@@ -123,7 +123,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
         });
     }
 
-    private Map getUpdatedSettings(final long owner) {
+    private Map<String, Object> getUpdatedSettings(final long owner) {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {
             log.fine("owner =" + owner);
         }
@@ -131,7 +131,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
             return null;
         }
 
-        Map settings = null;
+        Map<String, Object> settings = null;
         try {
             WindowPropertyGetter getter =
                 new WindowPropertyGetter(owner, xSettingsPropertyAtom, 0, MAX_LENGTH,

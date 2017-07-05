@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,9 @@ public abstract class FileView {
     /**
      * The name of the file. Normally this would be simply
      * <code>f.getName()</code>.
+     *
+     * @param f a {@code File} object
+     * @return a {@code String} representing the name of the file
      */
     public String getName(File f) {
         return null;
@@ -78,6 +81,11 @@ public abstract class FileView {
      * A human readable description of the file. For example,
      * a file named <i>jag.jpg</i> might have a description that read:
      * "A JPEG image file of James Gosling's face".
+     *
+     * @param f a {@code File} object
+     * @return a {@code String} containing a description of the file or
+     *         {@code null} if it is not available.
+     *
      */
     public String getDescription(File f) {
         return null;
@@ -87,6 +95,10 @@ public abstract class FileView {
      * A human readable description of the type of the file. For
      * example, a <code>jpg</code> file might have a type description of:
      * "A JPEG Compressed Image File"
+     *
+     * @param f a {@code File} object
+     * @return a {@code String} containing a description of the type of the file
+     *         or {@code null} if it is not available   .
      */
     public String getTypeDescription(File f) {
         return null;
@@ -94,6 +106,10 @@ public abstract class FileView {
 
     /**
      * The icon that represents this file in the <code>JFileChooser</code>.
+     *
+     * @param f a {@code File} object
+     * @return an {@code Icon} which represents the specified {@code File} or
+     *         {@code null} if it is not available.
      */
     public Icon getIcon(File f) {
         return null;
@@ -103,6 +119,12 @@ public abstract class FileView {
      * Whether the directory is traversable or not. This might be
      * useful, for example, if you want a directory to represent
      * a compound document and don't want the user to descend into it.
+     *
+     * @param f a {@code File} object representing a directory
+     * @return {@code true} if the directory is traversable,
+     *         {@code false} if it is not, and {@code null} if the
+     *         file system should be checked.
+     * @see FileSystemView#isTraversable
      */
     public Boolean isTraversable(File f) {
         return null;

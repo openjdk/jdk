@@ -26,6 +26,8 @@
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 uint FreeRegionList::_unrealistically_long_length = 0;
 
 void HeapRegionSetBase::fill_in_ext_msg(hrs_ext_msg* msg, const char* message) {

@@ -60,6 +60,8 @@
   #define ATTR
 #endif
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 // The "core" versions of monitor enter and exit reside in this file.
 // The interpreter and compilers contain specialized transliterated
 // variants of the enter-exit fast-path operations.  See i486.ad fast_lock(),

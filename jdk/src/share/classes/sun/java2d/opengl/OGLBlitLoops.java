@@ -728,7 +728,7 @@ class OGLTextureToSurfaceTransform extends TransformBlit {
 class OGLGeneralBlit extends Blit {
 
     private Blit performop;
-    private WeakReference srcTmp;
+    private WeakReference<SurfaceData> srcTmp;
 
     OGLGeneralBlit(SurfaceType dstType,
                    CompositeType compType,
@@ -750,7 +750,7 @@ class OGLGeneralBlit extends Blit {
         SurfaceData cachedSrc = null;
         if (srcTmp != null) {
             // use cached intermediate surface, if available
-            cachedSrc = (SurfaceData)srcTmp.get();
+            cachedSrc = srcTmp.get();
         }
 
         // convert source to IntArgbPre
@@ -763,7 +763,7 @@ class OGLGeneralBlit extends Blit {
 
         if (src != cachedSrc) {
             // cache the intermediate surface
-            srcTmp = new WeakReference(src);
+            srcTmp = new WeakReference<>(src);
         }
     }
 }
@@ -802,7 +802,7 @@ class OGLAnyCompositeBlit extends Blit {
 
         if (dstBuffer != cachedDst) {
             // cache the intermediate surface
-            dstTmp = new WeakReference(dstBuffer);
+            dstTmp = new WeakReference<>(dstBuffer);
         }
 
         // now blit the buffer back to the destination

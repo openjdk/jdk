@@ -59,7 +59,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     static int lastX = 0, lastY = 0;
     static long lastTime = 0;
     static long lastButton = 0;
-    static WeakReference lastWindowRef = null;
+    static WeakReference<XWindow> lastWindowRef = null;
     static int clickCount = 0;
 
     // used to check if we need to re-create surfaceData.
@@ -692,7 +692,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         if (type == XConstants.ButtonPress) {
             //Allow this mouse button to generate CLICK event on next ButtonRelease
             mouseButtonClickAllowed |= XlibUtil.getButtonMask(lbutton);
-            XWindow lastWindow = (lastWindowRef != null) ? ((XWindow)lastWindowRef.get()):(null);
+            XWindow lastWindow = (lastWindowRef != null) ? (lastWindowRef.get()):(null);
             /*
                multiclick checking
             */
@@ -705,7 +705,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
                 clickCount++;
             } else {
                 clickCount = 1;
-                lastWindowRef = new WeakReference(this);
+                lastWindowRef = new WeakReference<>(this);
                 lastButton = lbutton;
                 lastX = x;
                 lastY = y;
@@ -820,7 +820,7 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
         */
         int x = xme.get_x();
         int y = xme.get_y();
-        XWindow lastWindow = (lastWindowRef != null) ? ((XWindow)lastWindowRef.get()):(null);
+        XWindow lastWindow = (lastWindowRef != null) ? (lastWindowRef.get()):(null);
 
         if (!(lastWindow == this &&
               (xme.get_time() - lastTime) < XToolkit.getMultiClickTime()  &&

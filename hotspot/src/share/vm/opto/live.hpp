@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_OPTO_LIVE_HPP
 #define SHARE_VM_OPTO_LIVE_HPP
 
-#include "libadt/port.hpp"
 #include "libadt/vectset.hpp"
 #include "opto/block.hpp"
 #include "opto/indexSet.hpp"

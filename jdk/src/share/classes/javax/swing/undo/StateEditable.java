@@ -43,12 +43,16 @@ public interface StateEditable {
     /**
      * Upon receiving this message the receiver should place any relevant
      * state into <EM>state</EM>.
+     *
+     * @param state Hashtable object to store the state
      */
     public void storeState(Hashtable<Object,Object> state);
 
     /**
      * Upon receiving this message the receiver should extract any relevant
      * state out of <EM>state</EM>.
+     *
+     * @param state Hashtable object to restore the state from it
      */
     public void restoreState(Hashtable<?,?> state);
 } // End of interface StateEditable

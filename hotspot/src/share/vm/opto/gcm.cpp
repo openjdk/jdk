@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2014,7 +2014,7 @@ void CFGLoop::dump() const {
   tty->print("%s: %d  trip_count: %6.0f freq: %6.0f\n",
              _depth == 0 ? "Method" : "Loop", _id, trip_count(), _freq);
   for (int i = 0; i < _depth; i++) tty->print("   ");
-  tty->print("         members:", _id);
+  tty->print("         members:");
   int k = 0;
   for (int i = 0; i < _members.length(); i++) {
     if (k++ >= 6) {

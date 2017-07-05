@@ -560,6 +560,7 @@ public class CardLayout implements LayoutManager2,
     /**
      * Reads serializable fields from stream.
      */
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {
