@@ -30,7 +30,7 @@
 // ciObjArrayKlass
 //
 // This class represents a Klass* in the HotSpot virtual machine
-// whose Klass part is an objArrayKlass.
+// whose Klass part is an ObjArrayKlass.
 class ciObjArrayKlass : public ciArrayKlass {
   CI_PACKAGE_ACCESS
   friend class ciEnv;
@@ -45,8 +45,8 @@ protected:
                   ciKlass* base_element_klass,
                   int dimension);
 
-  objArrayKlass* get_objArrayKlass() {
-    return (objArrayKlass*)get_Klass();
+  ObjArrayKlass* get_ObjArrayKlass() {
+    return (ObjArrayKlass*)get_Klass();
   }
 
   static ciObjArrayKlass* make_impl(ciKlass* element_klass);

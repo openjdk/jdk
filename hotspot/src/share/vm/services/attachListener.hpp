@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,21 +52,21 @@ struct AttachOperationFunctionInfo {
 
 class AttachListener: AllStatic {
  public:
-  static void init()  KERNEL_RETURN;
-  static void abort() KERNEL_RETURN;
+  static void init()  NOT_SERVICES_RETURN;
+  static void abort() NOT_SERVICES_RETURN;
 
   // invoke to perform clean-up tasks when all clients detach
-  static void detachall() KERNEL_RETURN;
+  static void detachall() NOT_SERVICES_RETURN;
 
   // indicates if the Attach Listener needs to be created at startup
-  static bool init_at_startup() KERNEL_RETURN_(false);
+  static bool init_at_startup() NOT_SERVICES_RETURN_(false);
 
   // indicates if we have a trigger to start the Attach Listener
-  static bool is_init_trigger() KERNEL_RETURN_(false);
+  static bool is_init_trigger() NOT_SERVICES_RETURN_(false);
 
-#ifdef SERVICES_KERNEL
+#if !INCLUDE_SERVICES
   static bool is_attach_supported()             { return false; }
-#else // SERVICES_KERNEL
+#else
  private:
   static volatile bool _initialized;
 
@@ -94,10 +94,10 @@ class AttachListener: AllStatic {
 
   // dequeue the next operation
   static AttachOperation* dequeue();
-#endif // SERVICES_KERNEL
+#endif // !INCLUDE_SERVICES
 };
 
-#ifndef SERVICES_KERNEL
+#if INCLUDE_SERVICES
 class AttachOperation: public CHeapObj<mtInternal> {
  public:
   enum {
@@ -151,6 +151,6 @@ class AttachOperation: public CHeapObj<mtInternal> {
   // complete operation by sending result code and any result data to the client
   virtual void complete(jint result, bufferedStream* result_stream) = 0;
 };
-#endif // SERVICES_KERNEL
+#endif // INCLUDE_SERVICES
 
 #endif // SHARE_VM_SERVICES_ATTACHLISTENER_HPP

@@ -2970,7 +2970,7 @@ public final
     /**
      * Returns a map from simple name to enum constant.  This package-private
      * method is used internally by Enum to implement
-     *     public static <T extends Enum<T>> T valueOf(Class<T>, String)
+     * {@code public static <T extends Enum<T>> T valueOf(Class<T>, String)}
      * efficiently.  Note that the map is returned by this method is
      * created lazily on first use.  Typically it won't ever get created.
      */

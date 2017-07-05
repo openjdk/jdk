@@ -989,13 +989,13 @@ Klass* InstanceKlass::array_klass_impl(instanceKlassHandle this_oop, bool or_nul
 
       // Check if update has already taken place
       if (this_oop->array_klasses() == NULL) {
-        Klass*    k = objArrayKlass::allocate_objArray_klass(this_oop->class_loader_data(), 1, this_oop, CHECK_NULL);
+        Klass*    k = ObjArrayKlass::allocate_objArray_klass(this_oop->class_loader_data(), 1, this_oop, CHECK_NULL);
         this_oop->set_array_klasses(k);
       }
     }
   }
   // _this will always be set at this point
-  objArrayKlass* oak = (objArrayKlass*)this_oop->array_klasses();
+  ObjArrayKlass* oak = (ObjArrayKlass*)this_oop->array_klasses();
   if (or_null) {
     return oak->array_klass_or_null(n);
   }
@@ -1224,12 +1224,12 @@ void InstanceKlass::do_nonstatic_fields(FieldClosure* cl) {
 
 void InstanceKlass::array_klasses_do(void f(Klass* k, TRAPS), TRAPS) {
   if (array_klasses() != NULL)
-    arrayKlass::cast(array_klasses())->array_klasses_do(f, THREAD);
+    ArrayKlass::cast(array_klasses())->array_klasses_do(f, THREAD);
 }
 
 void InstanceKlass::array_klasses_do(void f(Klass* k)) {
   if (array_klasses() != NULL)
-    arrayKlass::cast(array_klasses())->array_klasses_do(f);
+    ArrayKlass::cast(array_klasses())->array_klasses_do(f);
 }
 
 
@@ -2310,7 +2310,7 @@ bool InstanceKlass::is_same_class_package(Klass* class2) {
   Symbol* classname1 = Klass::cast(class1)->name();
 
   if (Klass::cast(class2)->oop_is_objArray()) {
-    class2 = objArrayKlass::cast(class2)->bottom_klass();
+    class2 = ObjArrayKlass::cast(class2)->bottom_klass();
   }
   oop classloader2;
   if (Klass::cast(class2)->oop_is_instance()) {

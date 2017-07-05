@@ -121,6 +121,9 @@ public interface Debugger extends SymbolLookup, ThreadAccess {
   public long getHeapOopSize();
   public long getNarrowOopBase();
   public int  getNarrowOopShift();
+  public long getKlassPtrSize();
+  public long getNarrowKlassBase();
+  public int  getNarrowKlassShift();
 
   public ReadResult readBytesFromProcess(long address, long numBytes)
     throws DebuggerException;

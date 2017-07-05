@@ -28,22 +28,22 @@ package sun.util.xml;
 import java.io.*;
 import java.util.*;
 import org.xml.sax.*;
-import org.xml.sax.helpers.*;
 import org.w3c.dom.*;
 import javax.xml.parsers.*;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.*;
 import javax.xml.transform.stream.*;
 
+import sun.util.spi.XmlPropertiesProvider;
+
 /**
- * A class used to aid in Properties load and save in XML. Keeping this
- * code outside of Properties helps reduce the number of classes loaded
- * when Properties is loaded.
+ * A {@code XmlPropertiesProvider} implementation that uses the JAXP API
+ * for parsing.
  *
  * @author  Michael McCloskey
  * @since   1.3
  */
-public class XMLUtils {
+public class PlatformXmlPropertiesProvider extends XmlPropertiesProvider {
 
     // XML loading and saving methods for Properties
 
@@ -67,7 +67,8 @@ public class XMLUtils {
      */
     private static final String EXTERNAL_XML_VERSION = "1.0";
 
-    public static void load(Properties props, InputStream in)
+    @Override
+    public void load(Properties props, InputStream in)
         throws IOException, InvalidPropertiesFormatException
     {
         Document doc = null;
@@ -121,8 +122,9 @@ public class XMLUtils {
         }
     }
 
-    public static void save(Properties props, OutputStream os, String comment,
-                     String encoding)
+    @Override
+    public void store(Properties props, OutputStream os, String comment,
+                      String encoding)
         throws IOException
     {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -172,9 +174,7 @@ public class XMLUtils {
         try {
             t.transform(doms, sr);
         } catch (TransformerException te) {
-            IOException ioe = new IOException();
-            ioe.initCause(te);
-            throw ioe;
+            throw new IOException(te);
         }
     }
 

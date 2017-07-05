@@ -55,8 +55,6 @@ public:
                                   Register temp2,
                                   bool for_compiler_entry);
 
-  static void trace_method_handle(MacroAssembler* _masm, const char* adaptername) PRODUCT_RETURN;
-
   static Register saved_last_sp_register() {
     // Should be in sharedRuntime, not here.
     return LP64_ONLY(r13) NOT_LP64(rsi);

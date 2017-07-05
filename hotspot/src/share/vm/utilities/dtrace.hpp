@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +33,17 @@
 #define DTRACE_ONLY(x) x
 #define NOT_DTRACE(x)
 
+#if defined(SOLARIS)
 // Work around dtrace tail call bug 6672627 until it is fixed in solaris 10.
 #define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG() \
   do { volatile size_t dtrace_workaround_tail_call_bug = 1; } while (0)
 
-#if defined(SOLARIS)
+#define USDT1 1
+#elif defined(LINUX)
+#define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG()
 #define USDT1 1
 #elif defined(__APPLE__)
+#define HS_DTRACE_WORKAROUND_TAIL_CALL_BUG()
 #define USDT2 1
 #include <sys/types.h>
 #include "dtracefiles/hotspot.h"
@@ -63,6 +68,11 @@
 #define DTRACE_PROBE3(a,b,c,d,e) {;}
 #define DTRACE_PROBE4(a,b,c,d,e,f) {;}
 #define DTRACE_PROBE5(a,b,c,d,e,f,g) {;}
+#define DTRACE_PROBE6(a,b,c,d,e,f,g,h) {;}
+#define DTRACE_PROBE7(a,b,c,d,e,f,g,h,i) {;}
+#define DTRACE_PROBE8(a,b,c,d,e,f,g,h,i,j) {;}
+#define DTRACE_PROBE9(a,b,c,d,e,f,g,h,i,j,k) {;}
+#define DTRACE_PROBE10(a,b,c,d,e,f,g,h,i,j,k,l) {;}
 
 #else /* USDT2 */
 
@@ -76,10 +86,18 @@
 #define HS_DTRACE_PROBE_FN(provider,name)\
   __dtrace_##provider##___##name
 
+#ifdef SOLARIS
+// Solaris dtrace needs actual extern function decls.
 #define HS_DTRACE_PROBE_DECL_N(provider,name,args) \
   DTRACE_ONLY(extern "C" void HS_DTRACE_PROBE_FN(provider,name) args)
 #define HS_DTRACE_PROBE_CDECL_N(provider,name,args) \
   DTRACE_ONLY(extern void HS_DTRACE_PROBE_FN(provider,name) args)
+#else
+// Systemtap dtrace compatible probes on GNU/Linux don't.
+// If dtrace is disabled this macro becomes NULL
+#define HS_DTRACE_PROBE_DECL_N(provider,name,args)
+#define HS_DTRACE_PROBE_CDECL_N(provider,name,args)
+#endif
 
 /* Dtrace probe declarations */
 #define HS_DTRACE_PROBE_DECL(provider,name) \
@@ -118,6 +136,8 @@
     uintptr_t,uintptr_t,uintptr_t))
 
 /* Dtrace probe definitions */
+#if defined(SOLARIS)
+// Solaris dtrace uses actual function calls.
 #define HS_DTRACE_PROBE_N(provider,name, args) \
   DTRACE_ONLY(HS_DTRACE_PROBE_FN(provider,name) args)
 
@@ -153,6 +173,33 @@
   HS_DTRACE_PROBE_N(provider,name,((uintptr_t)a0,(uintptr_t)a1,(uintptr_t)a2,\
     (uintptr_t)a3,(uintptr_t)a4,(uintptr_t)a5,(uintptr_t)a6,(uintptr_t)a7,\
     (uintptr_t)a8,(uintptr_t)a9))
+#else
+// Systemtap dtrace compatible probes on GNU/Linux use direct macros.
+// If dtrace is disabled this macro becomes NULL
+#define HS_DTRACE_PROBE(provider,name) HS_DTRACE_PROBE0(provider,name)
+#define HS_DTRACE_PROBE0(provider,name)\
+  DTRACE_PROBE(provider,name)
+#define HS_DTRACE_PROBE1(provider,name,a0)\
+  DTRACE_PROBE1(provider,name,a0)
+#define HS_DTRACE_PROBE2(provider,name,a0,a1)\
+  DTRACE_PROBE2(provider,name,a0,a1)
+#define HS_DTRACE_PROBE3(provider,name,a0,a1,a2)\
+  DTRACE_PROBE3(provider,name,a0,a1,a2)
+#define HS_DTRACE_PROBE4(provider,name,a0,a1,a2,a3)\
+  DTRACE_PROBE4(provider,name,a0,a1,a2,a3)
+#define HS_DTRACE_PROBE5(provider,name,a0,a1,a2,a3,a4)\
+  DTRACE_PROBE5(provider,name,a0,a1,a2,a3,a4)
+#define HS_DTRACE_PROBE6(provider,name,a0,a1,a2,a3,a4,a5)\
+  DTRACE_PROBE6(provider,name,a0,a1,a2,a3,a4,a5)
+#define HS_DTRACE_PROBE7(provider,name,a0,a1,a2,a3,a4,a5,a6)\
+  DTRACE_PROBE7(provider,name,a0,a1,a2,a3,a4,a5,a6)
+#define HS_DTRACE_PROBE8(provider,name,a0,a1,a2,a3,a4,a5,a6,a7)\
+  DTRACE_PROBE8(provider,name,a0,a1,a2,a3,a4,a5,a6,a7)
+#define HS_DTRACE_PROBE9(provider,name,a0,a1,a2,a3,a4,a5,a6,a7,a8)\
+  DTRACE_PROBE9(provider,name,a0,a1,a2,a3,a4,a5,a6,a7,a8)
+#define HS_DTRACE_PROBE10(provider,name,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9)\
+  DTRACE_PROBE10(provider,name,a0,a1,a2,a3,a4,a5,a6,a7,a8,a9)
+#endif
 
 #endif /* !USDT2 */
 

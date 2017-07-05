@@ -383,6 +383,7 @@ static unichar NsGetDeadKeyChar(unsigned short keyCode)
 {
     TISInputSourceRef currentKeyboard = TISCopyCurrentKeyboardInputSource();
     CFDataRef uchr = (CFDataRef)TISGetInputSourceProperty(currentKeyboard, kTISPropertyUnicodeKeyLayoutData);
+    if (uchr == nil) { return; }
     const UCKeyboardLayout *keyboardLayout = (const UCKeyboardLayout*)CFDataGetBytePtr(uchr);
     // Carbon modifiers should be used instead of NSEvent modifiers
     UInt32 modifierKeyState = (GetCurrentEventKeyModifiers() >> 8) & 0xFF;
@@ -563,18 +564,18 @@ NSUInteger JavaModifiersToNsKeyModifiers(jint javaModifiers, BOOL isExtMods)
     const struct _nsKeyToJavaModifier* cur;
 
     for (cur = nsKeyToJavaModifierTable; cur->nsMask != 0; ++cur) {
-        jint mask = isExtMods? cur->javaExtMask : cur->javaMask; 
+        jint mask = isExtMods? cur->javaExtMask : cur->javaMask;
         if ((mask & javaModifiers) != 0) {
             nsFlags |= cur->nsMask;
         }
     }
 
     // special case
-    jint mask = isExtMods? java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK : 
+    jint mask = isExtMods? java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK :
                            java_awt_event_InputEvent_ALT_GRAPH_MASK;
 
     if ((mask & javaModifiers) != 0) {
-        nsFlags |= NSAlternateKeyMask;      
+        nsFlags |= NSAlternateKeyMask;
     }
 
     return nsFlags;

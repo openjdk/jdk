@@ -175,6 +175,10 @@ VARIANTARCH = $(subst i386,i486,$(ZERO_LIBARCH))
 #       profiledshark   shark           <os>_<arch>_shark/profiled
 #       productshark    shark           <os>_<arch>_shark/product
 #
+#       fastdebugminimal1 minimal1      <os>_<arch>_minimal1/fastdebug
+#       jvmgminimal1      minimal1      <os>_<arch>_minimal1/jvmg
+#       productminimal1   minimal1      <os>_<arch>_minimal1/product
+#
 # What you get with each target:
 #
 # debug*     - "thin" libjvm_g - debug info linked into the gamma_g launcher
@@ -199,6 +203,7 @@ SUBDIRS_TIERED    = $(addprefix $(OSNAME)_$(BUILDARCH)_tiered/,$(TARGETS))
 SUBDIRS_CORE      = $(addprefix $(OSNAME)_$(BUILDARCH)_core/,$(TARGETS))
 SUBDIRS_ZERO      = $(addprefix $(OSNAME)_$(VARIANTARCH)_zero/,$(TARGETS))
 SUBDIRS_SHARK     = $(addprefix $(OSNAME)_$(VARIANTARCH)_shark/,$(TARGETS))
+SUBDIRS_MINIMAL1  = $(addprefix $(OSNAME)_$(BUILDARCH)_minimal1/,$(TARGETS))
 
 TARGETS_C2        = $(TARGETS)
 TARGETS_C1        = $(addsuffix 1,$(TARGETS))
@@ -206,6 +211,7 @@ TARGETS_TIERED    = $(addsuffix tiered,$(TARGETS))
 TARGETS_CORE      = $(addsuffix core,$(TARGETS))
 TARGETS_ZERO      = $(addsuffix zero,$(TARGETS))
 TARGETS_SHARK     = $(addsuffix shark,$(TARGETS))
+TARGETS_MINIMAL1 =  $(addsuffix minimal1,$(TARGETS))
 
 BUILDTREE_MAKE    = $(GAMMADIR)/make/$(OSNAME)/makefiles/buildtree.make
 BUILDTREE_VARS    = GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OSNAME) SRCARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH)
@@ -224,6 +230,7 @@ all:
 	@echo "  $(TARGETS_CORE)"
 	@echo "  $(TARGETS_ZERO)"
 	@echo "  $(TARGETS_SHARK)"
+	@echo "  $(TARGETS_MINIMAL1)"
 
 checks: check_os_version check_j2se_version
 
@@ -280,6 +287,11 @@ $(SUBDIRS_ZERO): $(BUILDTREE_MAKE) platform_zero
 $(SUBDIRS_SHARK): $(BUILDTREE_MAKE) platform_zero
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
 	$(BUILDTREE) VARIANT=shark VARIANTARCH=$(VARIANTARCH)
+
+$(SUBDIRS_MINIMAL1): $(BUILDTREE_MAKE)
+	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
+	$(BUILDTREE) VARIANT=minimal1
+
 
 platform_zero: $(GAMMADIR)/make/$(OSNAME)/platform_zero.in
 	$(SED) 's/@ZERO_ARCHDEF@/$(ZERO_ARCHDEF)/g;s/@ZERO_LIBARCH@/$(ZERO_LIBARCH)/g;' < $< > $@
@@ -340,12 +352,22 @@ ifdef INSTALL
 	cd $(OSNAME)_$(VARIANTARCH)_shark/$(patsubst %shark,%,$@) && $(MAKE) $(MFLAGS) install
 endif
 
+$(TARGETS_MINIMAL1):  $(SUBDIRS_MINIMAL1)
+	cd $(OSNAME)_$(BUILDARCH)_minimal1/$(patsubst %minimal1,%,$@) && $(MAKE) $(MFLAGS)
+ifeq ($(TEST_IN_BUILD),true)
+	cd $(OSNAME)_$(BUILDARCH)_minimal1/$(patsubst %minimal1,%,$@) && ./test_gamma
+endif
+ifdef INSTALL
+	cd $(OSNAME)_$(BUILDARCH)_minimal1/$(patsubst %minimal1,%,$@) && $(MAKE) $(MFLAGS) install
+endif
+
 # Just build the tree, and nothing else:
 tree:      $(SUBDIRS_C2)
 tree1:     $(SUBDIRS_C1)
 treecore:  $(SUBDIRS_CORE)
 treezero:  $(SUBDIRS_ZERO)
 treeshark: $(SUBDIRS_SHARK)
+treeminimal1: $(SUBDIRS_MINIMAL1)
 
 # Doc target.  This is the same for all build options.
 #     Hence create a docs directory beside ...$(ARCH)_[...]
@@ -369,17 +391,23 @@ shark: jvmgshark productshark
 clean_docs:
 	rm -rf $(SUBDIR_DOCS)
 
-clean_compiler1 clean_compiler2 clean_core clean_zero clean_shark:
+clean_compiler1 clean_compiler2 clean_core clean_zero clean_shark clean_minimal1:
 	rm -rf $(OSNAME)_$(BUILDARCH)_$(subst clean_,,$@)
 
-clean:  clean_compiler2 clean_compiler1 clean_core clean_zero clean_shark clean_docs
+clean:  clean_compiler2 clean_compiler1 clean_core clean_zero clean_shark clean_minimal1 clean_docs
 
 include $(GAMMADIR)/make/cscope.make
 
+#
+# Include alternate Makefile if it exists.
+#
+-include $(HS_ALT_MAKE)/$(OSNAME)/Makefile.make
+
 #-------------------------------------------------------------------------------
 
-.PHONY: $(TARGETS_C2) $(TARGETS_C1) $(TARGETS_CORE) $(TARGETS_ZERO) $(TARGETS_SHARK)
+.PHONY: $(TARGETS_C2) $(TARGETS_C1) $(TARGETS_CORE) $(TARGETS_ZERO) $(TARGETS_SHARK) $(TARGETS_MINIMAL1)
 .PHONY: tree tree1 treecore treezero treeshark
 .PHONY: all compiler1 compiler2 core zero shark
 .PHONY: clean clean_compiler1 clean_compiler2 clean_core clean_zero clean_shark docs clean_docs
 .PHONY: checks check_os_version check_j2se_version
+.PHONY: $(HS_ALT_MAKE)/$(OSNAME)/Makefile.make

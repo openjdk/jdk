@@ -126,6 +126,18 @@ public class RemoteDebuggerServer extends UnicastRemoteObject
     return debugger.getNarrowOopShift();
   }
 
+  public long getKlassPtrSize() throws RemoteException {
+    return debugger.getHeapOopSize();
+  }
+
+  public long getNarrowKlassBase() throws RemoteException {
+    return debugger.getNarrowKlassBase();
+  }
+
+  public int  getNarrowKlassShift() throws RemoteException {
+    return debugger.getNarrowKlassShift();
+  }
+
   public boolean   areThreadsEqual(long addrOrId1, boolean isAddress1,
                                    long addrOrId2, boolean isAddress2) throws RemoteException {
     ThreadProxy t1 = getThreadProxy(addrOrId1, isAddress1);

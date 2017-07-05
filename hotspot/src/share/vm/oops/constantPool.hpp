@@ -468,7 +468,7 @@ class ConstantPool : public Metadata {
     assert(tag_at(which).is_string(), "Corrupted constant pool");
     // Must do an acquire here in case another thread resolved the klass
     // behind our back, lest we later load stale values thru the oop.
-    // we might want a volatile_obj_at in objArrayKlass.
+    // we might want a volatile_obj_at in ObjArrayKlass.
     int obj_index = cp_to_object_index(which);
     return resolved_references()->obj_at(obj_index);
   }

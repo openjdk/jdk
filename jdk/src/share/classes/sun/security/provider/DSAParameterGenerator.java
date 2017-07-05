@@ -116,12 +116,13 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
             throw new InvalidAlgorithmParameterException("Invalid parameter");
         }
         DSAGenParameterSpec dsaGenParams = (DSAGenParameterSpec) genParamSpec;
-        if (dsaGenParams.getPrimePLength() > 2048) {
+        int primePLen = dsaGenParams.getPrimePLength();
+        if (primePLen > 2048) {
             throw new InvalidParameterException
-                ("Prime size should be 512 - 1024, or 2048");
+                ("No support for prime size " + primePLen);
         }
         // directly initialize using the already validated values
-        this.valueL = dsaGenParams.getPrimePLength();
+        this.valueL = primePLen;
         this.valueN = dsaGenParams.getSubprimeQLength();
         this.seedLen = dsaGenParams.getSeedLength();
         this.random = random;

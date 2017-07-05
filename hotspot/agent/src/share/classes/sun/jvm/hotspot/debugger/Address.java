@@ -89,6 +89,7 @@ public interface Address {
   public Address    getAddressAt       (long offset) throws UnmappedAddressException, UnalignedAddressException;
   /** Returns the decoded address at the given offset */
   public Address    getCompOopAddressAt (long offset) throws UnmappedAddressException, UnalignedAddressException;
+  public Address    getCompKlassAddressAt (long offset) throws UnmappedAddressException, UnalignedAddressException;
 
   //
   // Java-related routines

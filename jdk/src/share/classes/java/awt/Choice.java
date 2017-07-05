@@ -104,7 +104,16 @@ public class Choice extends Component implements ItemSelectable, Accessible {
     /*
      * JDK 1.1 serialVersionUID
      */
-     private static final long serialVersionUID = -4075310674757313071L;
+    private static final long serialVersionUID = -4075310674757313071L;
+
+    static {
+        /* ensure that the necessary native libraries are loaded */
+        Toolkit.loadLibraries();
+        /* initialize JNI field and method ids */
+        if (!GraphicsEnvironment.isHeadless()) {
+            initIDs();
+        }
+    }
 
     /**
      * Creates a new choice menu. The menu initially has no items in it.
@@ -711,6 +720,10 @@ public class Choice extends Component implements ItemSelectable, Accessible {
       }
     }
 
+    /**
+     * Initialize JNI field and method IDs
+     */
+    private static native void initIDs();
 
 /////////////////
 // Accessibility support

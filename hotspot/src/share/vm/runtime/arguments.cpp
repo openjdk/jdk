@@ -1066,7 +1066,7 @@ void Arguments::set_tiered_flags() {
   }
 }
 
-#ifndef KERNEL
+#if INCLUDE_ALTERNATE_GCS
 static void disable_adaptive_size_policy(const char* collector_name) {
   if (UseAdaptiveSizePolicy) {
     if (FLAG_IS_CMDLINE(UseAdaptiveSizePolicy)) {
@@ -1141,7 +1141,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     FLAG_SET_ERGO(bool, UseParNewGC, true);
   }
 
-  // Turn off AdaptiveSizePolicy for CMS until it is complete.
+  // Turn off AdaptiveSizePolicy by default for cms until it is complete.
   disable_adaptive_size_policy("UseConcMarkSweepGC");
 
   // In either case, adjust ParallelGCThreads and/or UseParNewGC
@@ -1283,7 +1283,7 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
   }
 }
-#endif // KERNEL
+#endif // INCLUDE_ALTERNATE_GCS
 
 void set_object_alignment() {
   // Object alignment.
@@ -1300,10 +1300,10 @@ void set_object_alignment() {
   // Oop encoding heap max
   OopEncodingHeapMax = (uint64_t(max_juint) + 1) << LogMinObjAlignmentInBytes;
 
-#ifndef KERNEL
+#if INCLUDE_ALTERNATE_GCS
   // Set CMS global values
   CompactibleFreeListSpace::set_cms_values();
-#endif // KERNEL
+#endif // INCLUDE_ALTERNATE_GCS
 }
 
 bool verify_object_alignment() {
@@ -1423,10 +1423,9 @@ void Arguments::set_ergonomics_flags() {
     FLAG_SET_DEFAULT(UseCompressedKlassPointers, false);
   } else {
     // Turn on UseCompressedKlassPointers too
-    // The compiler is broken for this so turn it on when the compiler is fixed.
-    // if (FLAG_IS_DEFAULT(UseCompressedKlassPointers)) {
-    //   FLAG_SET_ERGO(bool, UseCompressedKlassPointers, true);
-    // }
+    if (FLAG_IS_DEFAULT(UseCompressedKlassPointers)) {
+      FLAG_SET_ERGO(bool, UseCompressedKlassPointers, true);
+    }
     // Set the ClassMetaspaceSize to something that will not need to be
     // expanded, since it cannot be expanded.
     if (UseCompressedKlassPointers && FLAG_IS_DEFAULT(ClassMetaspaceSize)) {
@@ -1991,9 +1990,15 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif // SPARC
 
-  if (PrintNMTStatistics && MemTracker::tracking_level() == MemTracker::NMT_off) {
-    warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
-    PrintNMTStatistics = false;
+  if (PrintNMTStatistics) {
+#if INCLUDE_NMT
+    if (MemTracker::tracking_level() == MemTracker::NMT_off) {
+#endif // INCLUDE_NMT
+      warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
+      PrintNMTStatistics = false;
+#if INCLUDE_NMT
+    }
+#endif
   }
 
   return status;
@@ -2220,12 +2225,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           size_t len2 = strlen(pos+1) + 1; // options start after ':'.  Final zero must be copied.
           options = (char*)memcpy(NEW_C_HEAP_ARRAY(char, len2, mtInternal), pos+1, len2);
         }
-#ifdef JVMTI_KERNEL
+#if !INCLUDE_JVMTI
         if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
-          warning("profiling and debugging agents are not supported with Kernel VM");
+          warning("profiling and debugging agents are not supported in this VM");
         } else
-#endif // JVMTI_KERNEL
-        add_init_library(name, options);
+#endif // !INCLUDE_JVMTI
+          add_init_library(name, options);
       }
     // -agentlib and -agentpath
     } else if (match_option(option, "-agentlib:", &tail) ||
@@ -2240,20 +2245,24 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         if(pos != NULL) {
           options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(pos + 1) + 1, mtInternal), pos + 1);
         }
-#ifdef JVMTI_KERNEL
+#if !INCLUDE_JVMTI
         if ((strcmp(name, "hprof") == 0) || (strcmp(name, "jdwp") == 0)) {
-          warning("profiling and debugging agents are not supported with Kernel VM");
+          warning("profiling and debugging agents are not supported in this VM");
         } else
-#endif // JVMTI_KERNEL
+#endif // !INCLUDE_JVMTI
         add_init_agent(name, options, is_absolute_path);
 
       }
     // -javaagent
     } else if (match_option(option, "-javaagent:", &tail)) {
+#if !INCLUDE_JVMTI
+      warning("Instrumentation agents are not supported in this VM");
+#else
       if(tail != NULL) {
         char *options = strcpy(NEW_C_HEAP_ARRAY(char, strlen(tail) + 1, mtInternal), tail);
         add_init_agent("instrument", options, false);
       }
+#endif // !INCLUDE_JVMTI
     // -Xnoclassgc
     } else if (match_option(option, "-Xnoclassgc", &tail)) {
       FLAG_SET_CMDLINE(bool, ClassUnloading, false);
@@ -2385,12 +2394,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           // EVM option, ignore silently for compatibility
     // -Xprof
     } else if (match_option(option, "-Xprof", &tail)) {
-#ifndef FPROF_KERNEL
+#if INCLUDE_FPROF
       _has_profile = true;
-#else // FPROF_KERNEL
+#else // INCLUDE_FPROF
       // do we have to exit?
-      warning("Kernel VM does not support flat profiling.");
-#endif // FPROF_KERNEL
+      warning("Flat profiling is not supported in this VM.");
+#endif // INCLUDE_FPROF
     // -Xaprof
     } else if (match_option(option, "-Xaprof", &tail)) {
       _has_alloc_profile = true;
@@ -2438,6 +2447,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
 #if defined(KERNEL)
       vm_exit_during_initialization(
           "Dumping a shared archive is not supported on the Kernel JVM.", NULL);
+#elif !INCLUDE_CDS
+      vm_exit_during_initialization(
+          "Dumping a shared archive is not supported in this VM.", NULL);
 #else
       FLAG_SET_CMDLINE(bool, DumpSharedSpaces, true);
       set_mode_flags(_int);     // Prevent compilation, which creates objects
@@ -2490,7 +2502,11 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // JNI hooks
     } else if (match_option(option, "-Xcheck", &tail)) {
       if (!strcmp(tail, ":jni")) {
+#if !INCLUDE_JNI_CHECK
+        warning("JNI CHECKING is not supported in this VM");
+#else
         CheckJNICalls = true;
+#endif // INCLUDE_JNI_CHECK
       } else if (is_bad_option(option, args->ignoreUnrecognized,
                                      "check")) {
         return JNI_EINVAL;
@@ -3045,7 +3061,11 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       vm_exit(0);
     }
     if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
+#if INCLUDE_NMT
       MemTracker::init_tracking_options(tail);
+#else
+      warning("Native Memory Tracking is not supported in this VM");
+#endif
     }
 
 
@@ -3108,6 +3128,21 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
 #endif
 
+#if !INCLUDE_ALTERNATE_GCS
+  if (UseParallelGC) {
+    warning("Parallel GC is not supported in this VM.  Using Serial GC.");
+  }
+  if (UseParallelOldGC) {
+    warning("Parallel Old GC is not supported in this VM.  Using Serial GC.");
+  }
+  if (UseConcMarkSweepGC) {
+    warning("Concurrent Mark Sweep GC is not supported in this VM.  Using Serial GC.");
+  }
+  if (UseParNewGC) {
+    warning("Par New GC is not supported in this VM.  Using Serial GC.");
+  }
+#endif // INCLUDE_ALTERNATE_GCS
+
 #ifndef PRODUCT
   if (TraceBytecodesAt != 0) {
     TraceBytecodes = true;
@@ -3156,9 +3191,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 #ifdef SERIALGC
   force_serial_gc();
 #endif // SERIALGC
-#ifdef KERNEL
+#if !INCLUDE_CDS
   no_shared_spaces();
-#endif // KERNEL
+#endif // INCLUDE_CDS
 
   // Set flags based on ergonomics.
   set_ergonomics_flags();
@@ -3180,9 +3215,10 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     }
   }
 
-#ifndef KERNEL
   // Set heap size based on available physical memory
   set_heap_size();
+
+#if INCLUDE_ALTERNATE_GCS
   // Set per-collector flags
   if (UseParallelGC || UseParallelOldGC) {
     set_parallel_gc_flags();
@@ -3193,7 +3229,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   } else if (UseG1GC) {
     set_g1_gc_flags();
   }
-#endif // KERNEL
+#endif // INCLUDE_ALTERNATE_GCS
 
 #ifdef SERIALGC
   assert(verify_serial_gc_flags(), "SerialGC unset");

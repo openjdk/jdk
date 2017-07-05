@@ -33,7 +33,7 @@ import java.security.spec.*;
  * tranform the plaintext.
  *
  * @author  Li Gong
- * @see Nullcipher
+ * @see NullCipher
  *
  * @since 1.4
  */
