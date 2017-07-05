@@ -2926,21 +2926,42 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     }
 
     if (AggressiveOpts) {
-      // Forcibly initialize java/util/HashMap and mutate the private
-      // static final "frontCacheEnabled" field before we start creating instances
+      {
+        // Forcibly initialize java/util/HashMap and mutate the private
+        // static final "frontCacheEnabled" field before we start creating instances
 #ifdef ASSERT
-      klassOop tmp_k = SystemDictionary::find(vmSymbolHandles::java_util_HashMap(), Handle(), Handle(), CHECK_0);
-      assert(tmp_k == NULL, "java/util/HashMap should not be loaded yet");
+        klassOop tmp_k = SystemDictionary::find(vmSymbolHandles::java_util_HashMap(), Handle(), Handle(), CHECK_0);
+        assert(tmp_k == NULL, "java/util/HashMap should not be loaded yet");
 #endif
-      klassOop k_o = SystemDictionary::resolve_or_null(vmSymbolHandles::java_util_HashMap(), Handle(), Handle(), CHECK_0);
-      KlassHandle k = KlassHandle(THREAD, k_o);
-      guarantee(k.not_null(), "Must find java/util/HashMap");
-      instanceKlassHandle ik = instanceKlassHandle(THREAD, k());
-      ik->initialize(CHECK_0);
-      fieldDescriptor fd;
-      // Possible we might not find this field; if so, don't break
-      if (ik->find_local_field(vmSymbols::frontCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
-        k()->bool_field_put(fd.offset(), true);
+        klassOop k_o = SystemDictionary::resolve_or_null(vmSymbolHandles::java_util_HashMap(), Handle(), Handle(), CHECK_0);
+        KlassHandle k = KlassHandle(THREAD, k_o);
+        guarantee(k.not_null(), "Must find java/util/HashMap");
+        instanceKlassHandle ik = instanceKlassHandle(THREAD, k());
+        ik->initialize(CHECK_0);
+        fieldDescriptor fd;
+        // Possible we might not find this field; if so, don't break
+        if (ik->find_local_field(vmSymbols::frontCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
+          k()->bool_field_put(fd.offset(), true);
+        }
+      }
+
+      if (UseStringCache) {
+        // Forcibly initialize java/lang/String and mutate the private
+        // static final "stringCacheEnabled" field before we start creating instances
+#ifdef ASSERT
+        klassOop tmp_k = SystemDictionary::find(vmSymbolHandles::java_lang_String(), Handle(), Handle(), CHECK_0);
+        assert(tmp_k == NULL, "java/lang/String should not be loaded yet");
+#endif
+        klassOop k_o = SystemDictionary::resolve_or_null(vmSymbolHandles::java_lang_String(), Handle(), Handle(), CHECK_0);
+        KlassHandle k = KlassHandle(THREAD, k_o);
+        guarantee(k.not_null(), "Must find java/lang/String");
+        instanceKlassHandle ik = instanceKlassHandle(THREAD, k());
+        ik->initialize(CHECK_0);
+        fieldDescriptor fd;
+        // Possible we might not find this field; if so, don't break
+        if (ik->find_local_field(vmSymbols::stringCacheEnabled_name(), vmSymbols::bool_signature(), &fd)) {
+          k()->bool_field_put(fd.offset(), true);
+        }
       }
     }
 

@@ -218,6 +218,13 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   ciInstanceKlass* callee_holder = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   ciInstanceKlass* actual_recv = callee_holder;
 
+  // some methods are obviously bindable without any type checks so
+  // convert them directly to an invokespecial.
+  if (target->is_loaded() && !target->is_abstract() &&
+      target->can_be_statically_bound() && code == Bytecodes::_invokevirtual) {
+    code = Bytecodes::_invokespecial;
+  }
+
   // compute size of arguments
   int arg_size = target->arg_size();
   if (!target->is_loaded() && code == Bytecodes::_invokestatic) {

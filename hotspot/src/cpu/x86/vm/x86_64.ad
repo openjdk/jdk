@@ -3808,6 +3808,78 @@ encode %{
     masm.bind(DONE_LABEL);
   %}
 
+  enc_class enc_Array_Equals(rdi_RegP ary1, rsi_RegP ary2, rax_RegI tmp1, rbx_RegI tmp2, rcx_RegI result) %{
+    Label TRUE_LABEL, FALSE_LABEL, DONE_LABEL, COMPARE_LOOP_HDR, COMPARE_LOOP;
+    MacroAssembler masm(&cbuf);
+
+    Register ary1Reg   = as_Register($ary1$$reg);
+    Register ary2Reg   = as_Register($ary2$$reg);
+    Register tmp1Reg   = as_Register($tmp1$$reg);
+    Register tmp2Reg   = as_Register($tmp2$$reg);
+    Register resultReg = as_Register($result$$reg);
+
+    int length_offset  = arrayOopDesc::length_offset_in_bytes();
+    int base_offset    = arrayOopDesc::base_offset_in_bytes(T_CHAR);
+
+    // Check the input args
+    masm.cmpq(ary1Reg, ary2Reg);                        
+    masm.jcc(Assembler::equal, TRUE_LABEL);
+    masm.testq(ary1Reg, ary1Reg);                       
+    masm.jcc(Assembler::zero, FALSE_LABEL);
+    masm.testq(ary2Reg, ary2Reg);                       
+    masm.jcc(Assembler::zero, FALSE_LABEL);
+
+    // Check the lengths
+    masm.movl(tmp2Reg, Address(ary1Reg, length_offset));
+    masm.movl(resultReg, Address(ary2Reg, length_offset));
+    masm.cmpl(tmp2Reg, resultReg);
+    masm.jcc(Assembler::notEqual, FALSE_LABEL);
+    masm.testl(resultReg, resultReg);
+    masm.jcc(Assembler::zero, TRUE_LABEL);
+
+    // Get the number of 4 byte vectors to compare
+    masm.shrl(resultReg, 1);
+
+    // Check for odd-length arrays
+    masm.andl(tmp2Reg, 1);
+    masm.testl(tmp2Reg, tmp2Reg);
+    masm.jcc(Assembler::zero, COMPARE_LOOP_HDR);
+
+    // Compare 2-byte "tail" at end of arrays
+    masm.load_unsigned_word(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
+    masm.load_unsigned_word(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
+    masm.cmpl(tmp1Reg, tmp2Reg);
+    masm.jcc(Assembler::notEqual, FALSE_LABEL);
+    masm.testl(resultReg, resultReg);
+    masm.jcc(Assembler::zero, TRUE_LABEL);
+
+    // Setup compare loop
+    masm.bind(COMPARE_LOOP_HDR);
+    // Shift tmp1Reg and tmp2Reg to the last 4-byte boundary of the arrays
+    masm.leaq(tmp1Reg, Address(ary1Reg, resultReg, Address::times_4, base_offset));
+    masm.leaq(tmp2Reg, Address(ary2Reg, resultReg, Address::times_4, base_offset));
+    masm.negq(resultReg);
+
+    // 4-byte-wide compare loop
+    masm.bind(COMPARE_LOOP);
+    masm.movl(ary1Reg, Address(tmp1Reg, resultReg, Address::times_4, 0));
+    masm.movl(ary2Reg, Address(tmp2Reg, resultReg, Address::times_4, 0));
+    masm.cmpl(ary1Reg, ary2Reg);
+    masm.jcc(Assembler::notEqual, FALSE_LABEL);
+    masm.incrementq(resultReg);
+    masm.jcc(Assembler::notZero, COMPARE_LOOP);
+
+    masm.bind(TRUE_LABEL);
+    masm.movl(resultReg, 1);   // return true
+    masm.jmp(DONE_LABEL);
+
+    masm.bind(FALSE_LABEL);
+    masm.xorl(resultReg, resultReg); // return false
+
+    // That's it
+    masm.bind(DONE_LABEL);
+  %}
+
   enc_class enc_rethrow()
   %{
     cbuf.set_inst_mark();
@@ -5202,15 +5274,15 @@ operand indIndexScaleOffset(any_RegP reg, immL32 off, rRegL lreg, immI2 scale)
   %}
 %}
 
-// Indirect Memory Times Scale Plus Index Register Plus Offset Operand
-operand indIndexScaleOffsetComp(rRegN src, immL32 off, r12RegL base) %{
+// Indirect Narrow Oop Plus Offset Operand
+operand indNarrowOopOffset(rRegN src, immL32 off) %{
   constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP (DecodeN src base) off);
+  match(AddP (DecodeN src) off);
 
   op_cost(10);
-  format %{"[$base + $src << 3 + $off] (compressed)" %}
+  format %{"[R12 + $src << 3 + $off] (compressed oop addressing)" %}
   interface(MEMORY_INTER) %{
-    base($base);
+    base(0xc); // R12
     index($src);
     scale(0x3);
     disp($off);
@@ -5365,7 +5437,7 @@ operand cmpOpU()
 
 opclass memory(indirect, indOffset8, indOffset32, indIndexOffset, indIndex,
                indIndexScale, indIndexScaleOffset, indPosIndexScaleOffset,
-               indIndexScaleOffsetComp);
+               indNarrowOopOffset);
 
 //----------PIPELINE-----------------------------------------------------------
 // Rules which define the behavior of the target architectures pipeline.
@@ -6044,10 +6116,9 @@ instruct loadP(rRegP dst, memory mem)
 %}
 
 // Load Compressed Pointer
-instruct loadN(rRegN dst, memory mem, rFlagsReg cr)
+instruct loadN(rRegN dst, memory mem)
 %{
    match(Set dst (LoadN mem));
-   effect(KILL cr);
 
    ins_cost(125); // XXX
    format %{ "movl    $dst, $mem\t# compressed ptr" %}
@@ -6064,7 +6135,6 @@ instruct loadN(rRegN dst, memory mem, rFlagsReg cr)
 instruct loadKlass(rRegP dst, memory mem)
 %{
   match(Set dst (LoadKlass mem));
-  predicate(!n->in(MemNode::Address)->bottom_type()->is_narrow());
 
   ins_cost(125); // XXX
   format %{ "movq    $dst, $mem\t# class" %}
@@ -6073,22 +6143,17 @@ instruct loadKlass(rRegP dst, memory mem)
   ins_pipe(ialu_reg_mem); // XXX
 %}
 
-// Load Klass Pointer
-instruct loadKlassComp(rRegP dst, memory mem)
+// Load narrow Klass Pointer
+instruct loadNKlass(rRegN dst, memory mem)
 %{
-  match(Set dst (LoadKlass mem));
-  predicate(n->in(MemNode::Address)->bottom_type()->is_narrow());
+  match(Set dst (LoadNKlass mem));
 
   ins_cost(125); // XXX
-  format %{ "movl    $dst, $mem\t# compressed class\n\t"
-            "decode_heap_oop $dst,$dst" %}
+  format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
     Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
     Register dst = as_Register($dst$$reg);
     __ movl(dst, addr);
-    // klass is never null in the header but this is generated for all
-    // klass loads not just the _klass field in the header.
-    __ decode_heap_oop(dst);
   %}
   ins_pipe(ialu_reg_mem); // XXX
 %}
@@ -6362,16 +6427,14 @@ instruct loadConN(rRegN dst, immN src) %{
   match(Set dst src);
 
   ins_cost(125);
-  format %{ "movq    $dst, $src\t# compressed ptr\n\t"
-            "encode_heap_oop_not_null $dst,$dst" %}
+  format %{ "movl    $dst, $src\t# compressed ptr" %}
   ins_encode %{
     address con = (address)$src$$constant;
     Register dst = $dst$$Register;
     if (con == NULL) {
       ShouldNotReachHere();
     } else {
-      __ movoop(dst, (jobject)$src$$constant);
-      __ encode_heap_oop_not_null(dst);
+      __ set_narrow_oop(dst, (jobject)$src$$constant);
     }
   %}
   ins_pipe(ialu_reg_fat); // XXX
@@ -6633,13 +6696,12 @@ instruct storeImmP(memory mem, immP31 src)
 %}
 
 // Store Compressed Pointer
-instruct storeN(memory mem, rRegN src, rFlagsReg cr)
+instruct storeN(memory mem, rRegN src)
 %{
   match(Set mem (StoreN mem src));
-  effect(KILL cr);
 
   ins_cost(125); // XXX
-  format %{ "movl    $mem, $src\t# ptr" %}
+  format %{ "movl    $mem, $src\t# compressed ptr" %}
   ins_encode %{
     Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
     Register src = as_Register($src$$reg);
@@ -7027,7 +7089,8 @@ instruct encodeHeapOop_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull);
+  predicate(n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
+            n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
   effect(KILL cr);
   format %{ "decode_heap_oop $dst,$src" %}
@@ -7043,7 +7106,8 @@ instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop_not_null(rRegP dst, rRegN src) %{
-  predicate(n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull);
+  predicate(n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
+            n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
   format %{ "decode_heap_oop_not_null $dst,$src" %}
   ins_encode %{
@@ -7140,6 +7204,30 @@ instruct cmovI_memU(cmpOpU cop, rFlagsRegU cr, rRegI dst, memory src)
   opcode(0x0F, 0x40);
   ins_encode(REX_reg_mem(dst, src), enc_cmov(cop), reg_mem(dst, src));
   ins_pipe(pipe_cmov_mem);
+%}
+
+// Conditional move
+instruct cmovN_reg(rRegN dst, rRegN src, rFlagsReg cr, cmpOp cop)
+%{
+  match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovl$cop $dst, $src\t# signed, compressed ptr" %}
+  opcode(0x0F, 0x40);
+  ins_encode(REX_reg_reg(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_pipe(pipe_cmov_reg);
+%}
+
+// Conditional move
+instruct cmovN_regU(rRegN dst, rRegN src, rFlagsRegU cr, cmpOpU cop)
+%{
+  match(Set dst (CMoveN (Binary cop cr) (Binary dst src)));
+
+  ins_cost(200); // XXX
+  format %{ "cmovl$cop $dst, $src\t# unsigned, compressed ptr" %}
+  opcode(0x0F, 0x40);
+  ins_encode(REX_reg_reg(dst, src), enc_cmov(cop), reg_reg(dst, src));
+  ins_pipe(pipe_cmov_reg);
 %}
 
 // Conditional move
@@ -10862,6 +10950,18 @@ instruct string_compare(rdi_RegP str1, rsi_RegP str2, rax_RegI tmp1,
   ins_pipe( pipe_slow );
 %}
 
+// fast array equals
+instruct array_equals(rdi_RegP ary1, rsi_RegP ary2, rax_RegI tmp1, 
+                      rbx_RegI tmp2, rcx_RegI result, rFlagsReg cr) %{
+  match(Set result (AryEq ary1 ary2));
+  effect(USE_KILL ary1, USE_KILL ary2, KILL tmp1, KILL tmp2, KILL cr);
+  //ins_cost(300);
+
+  format %{ "Array Equals $ary1,$ary2 -> $result    // KILL RAX, RBX" %}
+  ins_encode( enc_Array_Equals(ary1, ary2, tmp1, tmp2, result) );
+  ins_pipe( pipe_slow );
+%}
+
 //----------Control Flow Instructions------------------------------------------
 // Signed compare Instructions
 
@@ -11055,12 +11155,48 @@ instruct testP_reg_mem(rFlagsReg cr, memory op, immP0 zero)
   ins_pipe(ialu_cr_reg_imm);
 %}
 
+
+instruct compN_rReg(rFlagsRegU cr, rRegN op1, rRegN op2)
+%{
+  match(Set cr (CmpN op1 op2));
+
+  format %{ "cmpl    $op1, $op2\t# compressed ptr" %}
+  ins_encode %{ __ cmpl(as_Register($op1$$reg), as_Register($op2$$reg)); %}
+  ins_pipe(ialu_cr_reg_reg);
+%}
+
+instruct compN_rReg_mem(rFlagsRegU cr, rRegN src, memory mem)
+%{
+  match(Set cr (CmpN src (LoadN mem)));
+
+  ins_cost(500); // XXX
+  format %{ "cmpl    $src, mem\t# compressed ptr" %}
+  ins_encode %{
+    Address adr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
+    __ cmpl(as_Register($src$$reg), adr);
+  %}
+  ins_pipe(ialu_cr_reg_mem);
+%}
+
 instruct testN_reg(rFlagsReg cr, rRegN src, immN0 zero) %{
   match(Set cr (CmpN src zero));
 
-  format %{ "testl   $src, $src" %}
+  format %{ "testl   $src, $src\t# compressed ptr" %}
   ins_encode %{ __ testl($src$$Register, $src$$Register); %}
   ins_pipe(ialu_cr_reg_imm);
+%}
+
+instruct testN_reg_mem(rFlagsReg cr, memory mem, immN0 zero)
+%{
+  match(Set cr (CmpN (LoadN mem) zero));
+
+  ins_cost(500); // XXX
+  format %{ "testl   $mem, 0xffffffff\t# compressed ptr" %}
+  ins_encode %{
+    Address addr = build_address($mem$$base, $mem$$index, $mem$$scale, $mem$$disp);
+    __ cmpl(addr, (int)0xFFFFFFFF);
+  %}
+  ins_pipe(ialu_cr_reg_mem);
 %}
 
 // Yanked all unsigned pointer compare operations.
