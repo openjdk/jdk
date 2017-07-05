@@ -806,8 +806,7 @@ void PhaseMacroExpand::process_users_of_allocation(AllocateNode *alloc) {
         }
       } else if (use->is_AddP()) {
         // raw memory addresses used only by the initialization
-        _igvn.hash_delete(use);
-        _igvn.subsume_node(use, C->top());
+        _igvn.replace_node(use, C->top());
       } else  {
         assert(false, "only Initialize or AddP expected");
       }
@@ -1291,8 +1290,7 @@ void PhaseMacroExpand::expand_allocate_common(
   if (_fallthroughcatchproj != NULL) {
     ctrl = _fallthroughcatchproj->clone();
     transform_later(ctrl);
-    _igvn.hash_delete(_fallthroughcatchproj);
-    _igvn.subsume_node(_fallthroughcatchproj, result_region);
+    _igvn.replace_node(_fallthroughcatchproj, result_region);
   } else {
     ctrl = top();
   }
@@ -1303,8 +1301,7 @@ void PhaseMacroExpand::expand_allocate_common(
   } else {
     slow_result = _resproj->clone();
     transform_later(slow_result);
-    _igvn.hash_delete(_resproj);
-    _igvn.subsume_node(_resproj, result_phi_rawoop);
+    _igvn.replace_node(_resproj, result_phi_rawoop);
   }
 
   // Plug slow-path into result merge point
@@ -1613,18 +1610,15 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     assert(membar != NULL && membar->Opcode() == Op_MemBarAcquire, "");
     Node* ctrlproj = membar->proj_out(TypeFunc::Control);
     Node* memproj = membar->proj_out(TypeFunc::Memory);
-    _igvn.hash_delete(ctrlproj);
-    _igvn.subsume_node(ctrlproj, fallthroughproj);
-    _igvn.hash_delete(memproj);
-    _igvn.subsume_node(memproj, memproj_fallthrough);
+    _igvn.replace_node(ctrlproj, fallthroughproj);
+    _igvn.replace_node(memproj, memproj_fallthrough);
 
     // Delete FastLock node also if this Lock node is unique user
     // (a loop peeling may clone a Lock node).
     Node* flock = alock->as_Lock()->fastlock_node();
     if (flock->outcnt() == 1) {
       assert(flock->unique_out() == alock, "sanity");
-      _igvn.hash_delete(flock);
-      _igvn.subsume_node(flock, top());
+      _igvn.replace_node(flock, top());
     }
   }
 
@@ -1634,20 +1628,16 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     MemBarNode* membar = ctrl->in(0)->as_MemBar();
     assert(membar->Opcode() == Op_MemBarRelease &&
            mem->is_Proj() && membar == mem->in(0), "");
-    _igvn.hash_delete(fallthroughproj);
-    _igvn.subsume_node(fallthroughproj, ctrl);
-    _igvn.hash_delete(memproj_fallthrough);
-    _igvn.subsume_node(memproj_fallthrough, mem);
+    _igvn.replace_node(fallthroughproj, ctrl);
+    _igvn.replace_node(memproj_fallthrough, mem);
     fallthroughproj = ctrl;
     memproj_fallthrough = mem;
     ctrl = membar->in(TypeFunc::Control);
     mem  = membar->in(TypeFunc::Memory);
   }
 
-  _igvn.hash_delete(fallthroughproj);
-  _igvn.subsume_node(fallthroughproj, ctrl);
-  _igvn.hash_delete(memproj_fallthrough);
-  _igvn.subsume_node(memproj_fallthrough, mem);
+  _igvn.replace_node(fallthroughproj, ctrl);
+  _igvn.replace_node(memproj_fallthrough, mem);
   return true;
 }
 
@@ -1879,13 +1869,12 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);
-  _igvn.subsume_node(_fallthroughproj, region);
+  _igvn.replace_node(_fallthroughproj, region);
 
   Node *memproj = transform_later( new(C, 1) ProjNode(call, TypeFunc::Memory) );
   mem_phi->init_req(1, memproj );
   transform_later(mem_phi);
-  _igvn.hash_delete(_memproj_fallthrough);
-  _igvn.subsume_node(_memproj_fallthrough, mem_phi);
+  _igvn.replace_node(_memproj_fallthrough, mem_phi);
 }
 
 //------------------------------expand_unlock_node----------------------
@@ -1943,14 +1932,13 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   region->init_req(1, slow_ctrl);
   // region inputs are now complete
   transform_later(region);
-  _igvn.subsume_node(_fallthroughproj, region);
+  _igvn.replace_node(_fallthroughproj, region);
 
   Node *memproj = transform_later( new(C, 1) ProjNode(call, TypeFunc::Memory) );
   mem_phi->init_req(1, memproj );
   mem_phi->init_req(2, mem);
   transform_later(mem_phi);
-  _igvn.hash_delete(_memproj_fallthrough);
-  _igvn.subsume_node(_memproj_fallthrough, mem_phi);
+  _igvn.replace_node(_memproj_fallthrough, mem_phi);
 }
 
 //------------------------------expand_macro_nodes----------------------
@@ -1969,9 +1957,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
       } else if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
-        _igvn.add_users_to_worklist(n);
-        _igvn.hash_delete(n);
-        _igvn.subsume_node(n, n->in(1));
+        _igvn.replace_node(n, n->in(1));
         success = true;
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");

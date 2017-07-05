@@ -26,7 +26,7 @@
  * @bug 6636138
  * @summary SuperWord::co_locate_pack(Node_List* p) generates memory graph that leads to memory order violation.
  *
- * @run main/othervm -server -Xbatch -XX:CompileOnly=Test1.init -XX:+UseSuperword Test1
+ * @run main/othervm -server -Xbatch -XX:CompileOnly=Test1.init Test1
  */
 
 class Test1 {

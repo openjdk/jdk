@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,6 +235,19 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 }
 
 
+
+// Method handle invoker
+// Dispatch a method of the form java.dyn.MethodHandles::invoke(...)
+address InterpreterGenerator::generate_method_handle_entry(void) {
+  if (!EnableMethodHandles) {
+    return generate_abstract_entry();
+  }
+  return generate_abstract_entry(); //6815692//
+}
+
+
+
+
 //----------------------------------------------------------------------------------------------------
 // Entry points & stack frame layout
 //
@@ -364,6 +377,7 @@ address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter:
     case Interpreter::empty                  : entry_point = ((InterpreterGenerator*)this)->generate_empty_entry();        break;
     case Interpreter::accessor               : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();     break;
     case Interpreter::abstract               : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();     break;
+    case Interpreter::method_handle          : entry_point = ((InterpreterGenerator*)this)->generate_method_handle_entry(); break;
     case Interpreter::java_lang_math_sin     :                                                                             break;
     case Interpreter::java_lang_math_cos     :                                                                             break;
     case Interpreter::java_lang_math_tan     :                                                                             break;

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,11 +201,12 @@ address InterpreterGenerator::generate_abstract_entry(void) {
   address entry_point = __ pc();
 
   // abstract method entry
-  // remove return address. Not really needed, since exception handling throws away expression stack
-  __ pop(rbx);
 
-  // adjust stack to what a normal return would do
-  __ mov(rsp, rsi);
+  //  pop return address, reset last_sp to NULL
+  __ empty_expression_stack();
+  __ restore_bcp();      // rsi must be correct for exception handler   (was destroyed)
+  __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
+
   // throw exception
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodError));
   // the call_VM checks for exception, so we should never return here.
@@ -213,6 +214,20 @@ address InterpreterGenerator::generate_abstract_entry(void) {
 
   return entry_point;
 }
+
+
+// Method handle invoker
+// Dispatch a method of the form java.dyn.MethodHandles::invoke(...)
+address InterpreterGenerator::generate_method_handle_entry(void) {
+  if (!EnableMethodHandles) {
+    return generate_abstract_entry();
+  }
+
+  address entry_point = MethodHandles::generate_method_handle_interpreter_entry(_masm);
+
+  return entry_point;
+}
+
 
 // This method tells the deoptimizer how big an interpreted frame must be:
 int AbstractInterpreter::size_activation(methodOop method,

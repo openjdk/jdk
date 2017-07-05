@@ -671,6 +671,15 @@ inline void MacroAssembler::jump_to( Address& a, int offset ) {
 }
 
 
+inline void MacroAssembler::jump_indirect_to(  Address& a, Register temp,
+                                               int ld_offset, int jmp_offset ) {
+  assert_not_delayed();
+  //sethi(a);                   // sethi is caller responsibility for this one
+  ld_ptr(a, temp, ld_offset);
+  jmp(temp, jmp_offset);
+}
+
+
 inline void MacroAssembler::set_oop( jobject obj, Register d ) {
   set_oop(allocate_oop_address(obj, d));
 }
