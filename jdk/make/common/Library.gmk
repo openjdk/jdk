@@ -179,6 +179,9 @@ else # LIBRARY
 # build it into $(OBJDIR) so that the other generated files get put 
 # there, then copy just the DLL (and MAP file) to the requested directory.
 #
+# In VS2005 or VS2008 the link command creates a .manifest file that we want
+# to insert into the linked artifact so we do not need to track it separately.
+# Use ";#2" for .dll and ";#1" for .exe in the MT command below:
 $(ACTUAL_LIBRARY):: $(OBJDIR)/$(LIBRARY).lcf
 	@$(prep-target)
 	@$(MKDIR) -p $(OBJDIR)
@@ -186,6 +189,9 @@ $(ACTUAL_LIBRARY):: $(OBJDIR)/$(LIBRARY).lcf
 	  -map:$(OBJDIR)/$(LIBRARY).map \
 	  $(LFLAGS) @$(OBJDIR)/$(LIBRARY).lcf \
 	  $(OTHER_LCF) $(JAVALIB) $(LDLIBS)
+ifdef MT
+	$(MT) /manifest $(OBJDIR)/$(@F).manifest /outputresource:$(OBJDIR)/$(@F);#2
+endif
 	$(CP) $(OBJDIR)/$(@F) $@
 	$(CP) $(OBJDIR)/$(LIBRARY).map $(@D)
 	$(CP) $(OBJDIR)/$(LIBRARY).pdb $(@D)

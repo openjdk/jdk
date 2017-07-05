@@ -46,9 +46,18 @@ class Main {
     String zname = "";
     String[] files;
     String rootjar = null;
-    Hashtable filesTable = new Hashtable();
-    Vector paths = new Vector();
-    Vector v;
+
+    // An entryName(path)->File map generated during "expand", it helps to
+    // decide whether or not an existing entry in a jar file needs to be
+    // replaced, during the "update" operation.
+    Map<String, File> entryMap = new HashMap<String, File>();
+
+    // All files need to be added/updated.
+    Set<File> entries = new LinkedHashSet<File>();
+
+    // Directories specified by "-C" operation.
+    List<String> paths = new ArrayList<String>();
+
     CRC32 crc32 = new CRC32();
     /*
      * cflag: create
@@ -175,7 +184,8 @@ class Main {
                         vflag = false;
                     }
                 }
-                create(new BufferedOutputStream(out), expand(files), manifest);
+                expand(null, files, false);
+                create(new BufferedOutputStream(out, 4096), manifest);
                 if (in != null) {
                     in.close();
                 }
@@ -198,8 +208,8 @@ class Main {
                 }
                 InputStream manifest = (!Mflag && (mname != null)) ?
                     (new FileInputStream(mname)) : null;
-                expand(files);
-                boolean updateOk = update(in, new BufferedOutputStream(out), manifest);
+                expand(null, files, true);
+                boolean updateOk = update(in, new BufferedOutputStream(out), manifest, null);
                 if (ok) {
                     ok = updateOk;
                 }
@@ -354,7 +364,7 @@ class Main {
                         while (dir.indexOf("//") > -1) {
                             dir = dir.replace("//", "/");
                         }
-                        paths.addElement(dir.replace(File.separatorChar, '/'));
+                        paths.add(dir.replace(File.separatorChar, '/'));
                         nameBuf[k++] = dir + args[++i];
                     } else {
                         nameBuf[k++] = args[i];
@@ -387,17 +397,7 @@ class Main {
      * Expands list of files to process into full list of all files that
      * can be found by recursively descending directories.
      */
-    String[] expand(String[] files) {
-        v = new Vector();
-        expand(null, files, v, filesTable);
-        files = new String[v.size()];
-        for (int i = 0; i < files.length; i++) {
-            files[i] = ((File)v.elementAt(i)).getPath();
-        }
-        return files;
-    }
-
-    void expand(File dir, String[] files, Vector v, Hashtable t) {
+    void expand(File dir, String[] files, boolean isUpdate) {
         if (files == null) {
             return;
         }
@@ -409,17 +409,20 @@ class Main {
                 f = new File(dir, files[i]);
             }
             if (f.isFile()) {
-                if (!t.contains(f)) {
-                    t.put(entryName(f.getPath()), f);
-                    v.addElement(f);
+                if (entries.add(f)) {
+                    if (isUpdate)
+                        entryMap.put(entryName(f.getPath()), f);
                 }
             } else if (f.isDirectory()) {
-                String dirPath = f.getPath();
-                dirPath = (dirPath.endsWith(File.separator)) ? dirPath :
-                    (dirPath + File.separator);
-                t.put(entryName(dirPath), f);
-                v.addElement(f);
-                expand(f, f.list(), v, t);
+                if (entries.add(f)) {
+                    if (isUpdate) {
+                        String dirPath = f.getPath();
+                        dirPath = (dirPath.endsWith(File.separator)) ? dirPath :
+                            (dirPath + File.separator);
+                        entryMap.put(entryName(dirPath), f);
+                    }
+                    expand(f, f.list(), isUpdate);
+                }
             } else {
                 error(formatMsg("error.nosuch.fileordir", String.valueOf(f)));
                 ok = false;
@@ -430,7 +433,7 @@ class Main {
     /*
      * Creates a new JAR file.
      */
-    void create(OutputStream out, String[] files, Manifest manifest)
+    void create(OutputStream out, Manifest manifest)
         throws IOException
     {
         ZipOutputStream zos = new JarOutputStream(out);
@@ -455,8 +458,8 @@ class Main {
             manifest.write(zos);
             zos.closeEntry();
         }
-        for (int i = 0; i < files.length; i++) {
-            addFile(zos, new File(files[i]));
+        for (File file: entries) {
+            addFile(zos, file);
         }
         zos.close();
     }
@@ -465,10 +468,9 @@ class Main {
      * update an existing jar file.
      */
     boolean update(InputStream in, OutputStream out,
-                InputStream newManifest) throws IOException
+                   InputStream newManifest,
+                   JarIndex jarIndex) throws IOException
     {
-        Hashtable t = filesTable;
-        Vector v = this.v;
         ZipInputStream zis = new ZipInputStream(in);
         ZipOutputStream zos = new JarOutputStream(out);
         ZipEntry e = null;
@@ -477,8 +479,8 @@ class Main {
         int n = 0;
         boolean updateOk = true;
 
-        if (t.containsKey(INDEX)) {
-            addIndex((JarIndex)t.get(INDEX), zos);
+        if (jarIndex != null) {
+            addIndex(jarIndex, zos);
         }
 
         // put the old entries first, replace if necessary
@@ -488,9 +490,8 @@ class Main {
             boolean isManifestEntry = name.toUpperCase(
                                             java.util.Locale.ENGLISH).
                                         equals(MANIFEST);
-            if ((name.toUpperCase().equals(INDEX)
-                    && t.containsKey(INDEX))
-                    || (Mflag && isManifestEntry)) {
+            if ((name.toUpperCase().equals(INDEX) && jarIndex != null)
+                || (Mflag && isManifestEntry)) {
                 continue;
             } else if (isManifestEntry && ((newManifest != null) ||
                         (ename != null))) {
@@ -514,8 +515,7 @@ class Main {
                 }
                 updateManifest(old, zos);
             } else {
-                if (!t.containsKey(name)) { // copy the old stuff
-
+                if (!entryMap.containsKey(name)) { // copy the old stuff
                     // do our own compression
                     ZipEntry e2 = new ZipEntry(name);
                     e2.setMethod(e.getMethod());
@@ -531,21 +531,17 @@ class Main {
                         zos.write(buf, 0, n);
                     }
                 } else { // replace with the new files
-                    addFile(zos, (File)(t.get(name)));
-                    t.remove(name);
+                    File f = entryMap.get(name);
+                    addFile(zos, f);
+                    entryMap.remove(name);
+                    entries.remove(f);
                 }
             }
         }
-        t.remove(INDEX);
 
         // add the remaining new files
-        if (!t.isEmpty()) {
-            for (int i = 0; i < v.size(); i++) {
-                File f = (File)v.elementAt(i);
-                if (t.containsValue(f)) {
-                    addFile(zos, f);
-                }
-            }
+        for (File f: entries) {
+            addFile(zos, f);
         }
         if (!foundManifest) {
             if (newManifest != null) {
@@ -611,8 +607,7 @@ class Main {
     private String entryName(String name) {
         name = name.replace(File.separatorChar, '/');
         String matchPath = "";
-        for (int i = 0; i < paths.size(); i++) {
-            String path = (String)paths.elementAt(i);
+        for (String path : paths) {
             if (name.startsWith(path) && (path.length() > matchPath.length())) {
                 matchPath = path;
             }
@@ -669,7 +664,6 @@ class Main {
     void addFile(ZipOutputStream zos, File file) throws IOException {
         String name = file.getPath();
         boolean isDir = file.isDirectory();
-
         if (isDir) {
             name = name.endsWith(File.separator) ? name :
                 (name + File.separator);
@@ -704,7 +698,7 @@ class Main {
         }
         zos.putNextEntry(e);
         if (!isDir) {
-            byte[] buf = new byte[1024];
+            byte[] buf = new byte[8192];
             int len;
             InputStream is = new BufferedInputStream(new FileInputStream(file));
             while ((len = is.read(buf, 0, buf.length)) != -1) {
@@ -749,7 +743,7 @@ class Main {
      */
     private void crc32File(ZipEntry e, File f) throws IOException {
         InputStream is = new BufferedInputStream(new FileInputStream(f));
-        byte[] buf = new byte[1024];
+        byte[] buf = new byte[8192];
         crc32.reset();
         int r = 0;
         int nread = 0;
@@ -772,7 +766,7 @@ class Main {
     void extract(InputStream in, String files[]) throws IOException {
         ZipInputStream zis = new ZipInputStream(in);
         ZipEntry e;
-        // Set of all directory entries specified in archive.  Dissallows
+        // Set of all directory entries specified in archive.  Disallows
         // null entries.  Disallows all entries if using pre-6.0 behavior.
         Set<ZipEntry> dirs = new HashSet<ZipEntry>() {
             public boolean add(ZipEntry e) {
@@ -897,17 +891,16 @@ class Main {
         }
     }
 
-
     /**
      * Output the class index table to the INDEX.LIST file of the
      * root jar file.
      */
     void dumpIndex(String rootjar, JarIndex index) throws IOException {
-        filesTable.put(INDEX, index);
         File scratchFile = File.createTempFile("scratch", null, new File("."));
         File jarFile = new File(rootjar);
         boolean updateOk = update(new FileInputStream(jarFile),
-                new FileOutputStream(scratchFile), null);
+                                  new FileOutputStream(scratchFile),
+                                  null, index);
         jarFile.delete();
         if (!scratchFile.renameTo(jarFile)) {
             scratchFile.delete();
