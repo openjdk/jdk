@@ -108,20 +108,12 @@ class BinaryRelQueryExp extends QueryEval implements QueryExp {
         BadAttributeValueExpException, InvalidApplicationException  {
         Object val1 = exp1.apply(name);
         Object val2 = exp2.apply(name);
-        String sval1;
-        String sval2;
-        double dval1;
-        double dval2;
-        long   lval1;
-        long   lval2;
-        boolean bval1;
-        boolean bval2;
         boolean numeric = val1 instanceof NumericValueExp;
         boolean bool = val1 instanceof BooleanValueExp;
         if (numeric) {
             if (((NumericValueExp)val1).isLong()) {
-                lval1 = ((NumericValueExp)val1).longValue();
-                lval2 = ((NumericValueExp)val2).longValue();
+                long lval1 = ((NumericValueExp)val1).longValue();
+                long lval2 = ((NumericValueExp)val2).longValue();
 
                 switch (relOp) {
                 case Query.GT:
@@ -136,8 +128,8 @@ class BinaryRelQueryExp extends QueryEval implements QueryExp {
                     return lval1 == lval2;
                 }
             } else {
-                dval1 = ((NumericValueExp)val1).doubleValue();
-                dval2 = ((NumericValueExp)val2).doubleValue();
+                double dval1 = ((NumericValueExp)val1).doubleValue();
+                double dval2 = ((NumericValueExp)val2).doubleValue();
 
                 switch (relOp) {
                 case Query.GT:
@@ -155,8 +147,8 @@ class BinaryRelQueryExp extends QueryEval implements QueryExp {
 
         } else if (bool) {
 
-            bval1 = ((BooleanValueExp)val1).getValue().booleanValue();
-            bval2 = ((BooleanValueExp)val2).getValue().booleanValue();
+            boolean bval1 = ((BooleanValueExp)val1).getValue().booleanValue();
+            boolean bval2 = ((BooleanValueExp)val2).getValue().booleanValue();
 
             switch (relOp) {
             case Query.GT:
@@ -172,8 +164,8 @@ class BinaryRelQueryExp extends QueryEval implements QueryExp {
             }
 
         } else {
-            sval1 = ((StringValueExp)val1).getValue();
-            sval2 = ((StringValueExp)val2).getValue();
+            String sval1 = ((StringValueExp)val1).getValue();
+            String sval2 = ((StringValueExp)val2).getValue();
 
             switch (relOp) {
             case Query.GT:
@@ -197,6 +189,11 @@ class BinaryRelQueryExp extends QueryEval implements QueryExp {
      */
     public String toString()  {
         return "(" + exp1 + ") " + relOpString() + " (" + exp2 + ")";
+    }
+
+    @Override
+    String toQueryString() {
+        return exp1 + " " + relOpString() + " " + exp2;
     }
 
     private String relOpString() {

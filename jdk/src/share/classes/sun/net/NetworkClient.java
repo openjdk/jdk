@@ -64,8 +64,8 @@ public class NetworkClient {
         final String encs[] = { null };
 
         AccessController.doPrivileged(
-                new PrivilegedAction() {
-                    public Object run() {
+                new PrivilegedAction<Void>() {
+                    public Void run() {
                         vals[0] = Integer.getInteger("sun.net.client.defaultReadTimeout", 0).intValue();
                         vals[1] = Integer.getInteger("sun.net.client.defaultConnectTimeout", 0).intValue();
                         encs[0] = System.getProperty("file.encoding", "ISO8859_1");
@@ -152,9 +152,9 @@ public class NetworkClient {
         Socket s;
         if (proxy != null) {
             if (proxy.type() == Proxy.Type.SOCKS) {
-                s = (Socket) AccessController.doPrivileged(
-                               new PrivilegedAction() {
-                                   public Object run() {
+                s = AccessController.doPrivileged(
+                    new PrivilegedAction<Socket>() {
+                        public Socket run() {
                                        return new Socket(proxy);
                                    }});
             } else

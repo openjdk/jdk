@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,6 +354,7 @@ AwtToolkit::AwtToolkit() {
     m_dllHandle = NULL;
 
     m_displayChanged = FALSE;
+    m_embedderProcessID = 0;
 
     // XXX: keyboard mapping should really be moved out of AwtComponent
     AwtComponent::InitDynamicKeyMapTable();
@@ -1442,49 +1443,17 @@ void hang_if_shutdown(void)
     }
 }
 
-/*
- * Returns a reference to the class java.awt.Component.
- */
-jclass
-getComponentClass(JNIEnv *env)
+// for now we support only one embedder, but should be ready for future
+void AwtToolkit::RegisterEmbedderProcessId(HWND embedder)
 {
-    static jclass componentCls = NULL;
-
-    // get global reference of java/awt/Component class (run only once)
-    if (componentCls == NULL) {
-        jclass componentClsLocal = env->FindClass("java/awt/Component");
-        DASSERT(componentClsLocal != NULL);
-        if (componentClsLocal == NULL) {
-            /* exception already thrown */
-            return NULL;
-        }
-        componentCls = (jclass)env->NewGlobalRef(componentClsLocal);
-        env->DeleteLocalRef(componentClsLocal);
+    if (m_embedderProcessID) {
+        // we already set embedder process and do not expect
+        // two different processes to embed the same AwtToolkit
+        return;
     }
-    return componentCls;
-}
 
-
-/*
- * Returns a reference to the class java.awt.MenuComponent.
- */
-jclass
-getMenuComponentClass(JNIEnv *env)
-{
-    static jclass menuComponentCls = NULL;
-
-    // get global reference of java/awt/MenuComponent class (run only once)
-    if (menuComponentCls == NULL) {
-        jclass menuComponentClsLocal = env->FindClass("java/awt/MenuComponent");
-        DASSERT(menuComponentClsLocal != NULL);
-        if (menuComponentClsLocal == NULL) {
-            /* exception already thrown */
-            return NULL;
-        }
-        menuComponentCls = (jclass)env->NewGlobalRef(menuComponentClsLocal);
-        env->DeleteLocalRef(menuComponentClsLocal);
-    }
-    return menuComponentCls;
+    embedder = ::GetAncestor(embedder, GA_ROOT);
+    ::GetWindowThreadProcessId(embedder, &m_embedderProcessID);
 }
 
 JNIEnv* AwtToolkit::m_env;

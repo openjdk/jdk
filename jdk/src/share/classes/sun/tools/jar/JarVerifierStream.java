@@ -32,7 +32,6 @@ import java.util.jar.*;
 import java.security.cert.Certificate;
 import java.security.AccessController;
 import java.security.cert.X509Certificate;
-import java.security.Identity;
 import java.security.PublicKey;
 import java.security.Principal;
 import sun.security.provider.SystemIdentity;
@@ -49,7 +48,8 @@ import sun.security.provider.SystemIdentity;
 public class JarVerifierStream extends ZipInputStream {
 
     private JarEntry current;
-    private Hashtable verified = new Hashtable();
+    private Hashtable<String, Vector<SystemIdentity>> verified
+        = new Hashtable<String, Vector<SystemIdentity>>();
     private JarInputStream jis;
     private sun.tools.jar.Manifest man = null;
 
@@ -120,7 +120,7 @@ public class JarVerifierStream extends ZipInputStream {
         if (current != null) {
             Certificate[] certs = current.getCertificates();
             if (certs != null) {
-                Vector ids = getIds(certs);
+                Vector<SystemIdentity> ids = getIds(certs);
                 if (ids != null) {
                     verified.put(current.getName(), ids);
                 }
@@ -189,7 +189,7 @@ public class JarVerifierStream extends ZipInputStream {
 
     static class CertCache {
         Certificate [] certs;
-        Vector ids;
+        Vector<SystemIdentity> ids;
 
         boolean equals(Certificate[] certs) {
                 if (this.certs == null) {
@@ -229,21 +229,21 @@ public class JarVerifierStream extends ZipInputStream {
         }
     }
 
-    private ArrayList certCache = null;
+    private ArrayList<CertCache> certCache = null;
 
 
     /**
      * Returns the Identity vector for the given array of Certificates
      */
-    protected Vector getIds(Certificate[] certs) {
+    protected Vector<SystemIdentity> getIds(Certificate[] certs) {
         if (certs == null)
             return null;
 
         if (certCache == null)
-            certCache = new ArrayList();
+            certCache = new ArrayList<CertCache>();
         CertCache cc;
         for (int i = 0; i < certCache.size(); i++) {
-            cc = (CertCache) certCache.get(i);
+            cc = certCache.get(i);
             if (cc.equals(certs)) {
                 return cc.ids;
             }
@@ -265,8 +265,8 @@ public class JarVerifierStream extends ZipInputStream {
                         new sun.security.x509.X509Cert(encoded);
                     try {
                         AccessController.doPrivileged(
-                         new java.security.PrivilegedExceptionAction() {
-                            public Object run()
+                         new java.security.PrivilegedExceptionAction<Void>() {
+                            public Void run()
                                 throws java.security.KeyManagementException
                             {
                                 id.addCertificate(oldC);
@@ -278,7 +278,7 @@ public class JarVerifierStream extends ZipInputStream {
                             pae.getException();
                     }
                     if (cc.ids == null)
-                        cc.ids = new Vector();
+                        cc.ids = new Vector<SystemIdentity>();
                     cc.ids.addElement(id);
                 } catch (java.security.KeyManagementException kme) {
                     // ignore if we can't create Identity

@@ -155,7 +155,8 @@ public abstract class AbstractPreferences extends Preferences {
      * All known unremoved children of this node.  (This "cache" is consulted
      * prior to calling childSpi() or getChild().
      */
-    private Map kidCache  = new HashMap();
+    private Map<String, AbstractPreferences> kidCache
+        = new HashMap<String, AbstractPreferences>();
 
     /**
      * This field is used to keep track of whether or not this node has
@@ -712,11 +713,10 @@ public abstract class AbstractPreferences extends Preferences {
             if (removed)
                 throw new IllegalStateException("Node has been removed.");
 
-            Set s = new TreeSet(kidCache.keySet());
-            String[] kids = childrenNamesSpi();
-            for(int i=0; i<kids.length; i++)
-                s.add(kids[i]);
-            return (String[]) s.toArray(EMPTY_STRING_ARRAY);
+            Set<String> s = new TreeSet<String>(kidCache.keySet());
+            for (String kid : childrenNamesSpi())
+                s.add(kid);
+            return s.toArray(EMPTY_STRING_ARRAY);
         }
     }
 
@@ -728,8 +728,7 @@ public abstract class AbstractPreferences extends Preferences {
      * @return all known unremoved children of this node.
      */
     protected final AbstractPreferences[] cachedChildren() {
-        return (AbstractPreferences[]) kidCache.values().
-            toArray(EMPTY_ABSTRACT_PREFS_ARRAY);
+        return kidCache.values().toArray(EMPTY_ABSTRACT_PREFS_ARRAY);
     }
 
     private static final AbstractPreferences[] EMPTY_ABSTRACT_PREFS_ARRAY
@@ -825,7 +824,7 @@ public abstract class AbstractPreferences extends Preferences {
         if (token.equals("/"))  // Check for consecutive slashes
             throw new IllegalArgumentException("Consecutive slashes in path");
         synchronized(lock) {
-            AbstractPreferences child=(AbstractPreferences)kidCache.get(token);
+            AbstractPreferences child = kidCache.get(token);
             if (child == null) {
                 if (token.length() > MAX_NAME_LENGTH)
                     throw new IllegalArgumentException(
@@ -893,7 +892,7 @@ public abstract class AbstractPreferences extends Preferences {
         if (token.equals("/"))  // Check for consecutive slashes
             throw new IllegalArgumentException("Consecutive slashes in path");
         synchronized(lock) {
-            AbstractPreferences child=(AbstractPreferences)kidCache.get(token);
+            AbstractPreferences child = kidCache.get(token);
             if (child == null)
                 child = getChild(token);
             if (child==null)
@@ -964,9 +963,10 @@ public abstract class AbstractPreferences extends Preferences {
                     kidCache.put(kidNames[i], childSpi(kidNames[i]));
 
             // Recursively remove all cached children
-            for (Iterator i = kidCache.values().iterator(); i.hasNext();) {
+            for (Iterator<AbstractPreferences> i = kidCache.values().iterator();
+                 i.hasNext();) {
                 try {
-                    ((AbstractPreferences)i.next()).removeNode2();
+                    i.next().removeNode2();
                     i.remove();
                 } catch (BackingStoreException x) { }
             }
@@ -1020,13 +1020,12 @@ public abstract class AbstractPreferences extends Preferences {
      *         preference tree.
      */
     public boolean isUserNode() {
-        Boolean result = (Boolean)
-          AccessController.doPrivileged( new PrivilegedAction() {
-            public Object run() {
-                return Boolean.valueOf(root == Preferences.userRoot());
+        return AccessController.doPrivileged(
+            new PrivilegedAction<Boolean>() {
+                public Boolean run() {
+                    return root == Preferences.userRoot();
             }
-        });
-        return result.booleanValue();
+            }).booleanValue();
     }
 
     public void addPreferenceChangeListener(PreferenceChangeListener pcl) {
@@ -1443,7 +1442,8 @@ public abstract class AbstractPreferences extends Preferences {
      * event delivery from preference activity, greatly simplifying
      * locking and reducing opportunity for deadlock.
      */
-    private static final List eventQueue = new LinkedList();
+    private static final List<EventObject> eventQueue
+        = new LinkedList<EventObject>();
 
     /**
      * These two classes are used to distinguish NodeChangeEvents on
@@ -1476,7 +1476,7 @@ public abstract class AbstractPreferences extends Preferences {
                     try {
                         while (eventQueue.isEmpty())
                             eventQueue.wait();
-                        event = (EventObject) eventQueue.remove(0);
+                        event = eventQueue.remove(0);
                     } catch (InterruptedException e) {
                         // XXX Log "Event dispatch thread interrupted. Exiting"
                         return;

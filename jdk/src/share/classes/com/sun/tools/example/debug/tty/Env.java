@@ -89,7 +89,7 @@ class Env {
         sourceCache.clear();
     }
 
-    static void setSourcePath(List srcList) {
+    static void setSourcePath(List<String> srcList) {
         sourceMapper = new SourceMapper(srcList);
         sourceCache.clear();
     }
@@ -106,10 +106,8 @@ class Env {
     }
 
     static String excludesString() {
-        Iterator iter = excludes().iterator();
         StringBuffer buffer = new StringBuffer();
-        while (iter.hasNext()) {
-            String pattern = (String)iter.next();
+        for (String pattern : excludes()) {
             buffer.append(pattern);
             buffer.append(",");
         }
@@ -117,25 +115,19 @@ class Env {
     }
 
     static void addExcludes(StepRequest request) {
-        Iterator iter = excludes().iterator();
-        while (iter.hasNext()) {
-            String pattern = (String)iter.next();
+        for (String pattern : excludes()) {
             request.addClassExclusionFilter(pattern);
         }
     }
 
     static void addExcludes(MethodEntryRequest request) {
-        Iterator iter = excludes().iterator();
-        while (iter.hasNext()) {
-            String pattern = (String)iter.next();
+        for (String pattern : excludes()) {
             request.addClassExclusionFilter(pattern);
         }
     }
 
     static void addExcludes(MethodExitRequest request) {
-        Iterator iter = excludes().iterator();
-        while (iter.hasNext()) {
-            String pattern = (String)iter.next();
+        for (String pattern : excludes()) {
             request.addClassExclusionFilter(pattern);
         }
     }
@@ -175,10 +167,10 @@ class Env {
         try {
             String fileName = location.sourceName();
 
-            Iterator iter = sourceCache.iterator();
+            Iterator<SourceCode> iter = sourceCache.iterator();
             SourceCode code = null;
             while (iter.hasNext()) {
-                SourceCode candidate = (SourceCode)iter.next();
+                SourceCode candidate = iter.next();
                 if (candidate.fileName().equals(fileName)) {
                     code = candidate;
                     iter.remove();
@@ -269,10 +261,7 @@ class Env {
         // loaded class whose name matches this limited regular
         // expression is selected.
         idToken = idToken.substring(1);
-        List classes = Env.vm().allClasses();
-        Iterator iter = classes.iterator();
-        while (iter.hasNext()) {
-            ReferenceType type = ((ReferenceType)iter.next());
+        for (ReferenceType type : Env.vm().allClasses()) {
             if (type.name().endsWith(idToken)) {
                 cls = type;
                 break;
@@ -280,21 +269,21 @@ class Env {
         }
     } else {
             // It's a class name
-            List classes = Env.vm().classesByName(idToken);
+            List<ReferenceType> classes = Env.vm().classesByName(idToken);
             if (classes.size() > 0) {
                 // TO DO: handle multiples
-                cls = (ReferenceType)classes.get(0);
+                cls = classes.get(0);
             }
         }
         return cls;
     }
 
-    static Set getSaveKeys() {
+    static Set<String> getSaveKeys() {
         return savedValues.keySet();
     }
 
     static Value getSavedValue(String key) {
-        return (Value)savedValues.get(key);
+        return savedValues.get(key);
     }
 
     static void setSavedValue(String key, Value value) {
@@ -327,7 +316,7 @@ class Env {
             if (index >= sourceLines.size()) {
                 return null;
             } else {
-                return (String)sourceLines.get(index);
+                return sourceLines.get(index);
             }
         }
     }

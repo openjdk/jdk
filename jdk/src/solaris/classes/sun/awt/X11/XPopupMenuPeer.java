@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
     //Fix for 6267144: PIT: Popup menu label is not shown, XToolkit
     Font getTargetFont() {
         if (popupMenuTarget == null) {
-            return XWindow.defaultFont;
+            return XWindow.getDefaultFont();
         }
         try {
             return (Font)m_getFont.invoke(popupMenuTarget, new Object[0]);
@@ -196,7 +196,7 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        return XWindow.defaultFont;
+        return XWindow.getDefaultFont();
     }
 
     String getTargetLabel() {

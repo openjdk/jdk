@@ -363,7 +363,7 @@ public abstract class X509Certificate extends Certificate {
      * subject    Name
      * </pre>
      *
-     * <p>See <a href = "#getIssuerDN">getIssuerDN</a> for <code>Name</code>
+     * <p>See {@link #getIssuerDN() getIssuerDN} for <code>Name</code>
      * and other relevant definitions.
      *
      * @return a Principal whose name is the subject name.
@@ -393,7 +393,7 @@ public abstract class X509Certificate extends Certificate {
 
     /**
      * Gets the <code>notAfter</code> date from the validity period of
-     * the certificate. See <a href = "#getNotBefore">getNotBefore</a>
+     * the certificate. See {@link #getNotBefore() getNotBefore}
      * for relevant ASN.1 definitions.
      *
      * @return the end date of the validity period.
@@ -429,7 +429,7 @@ public abstract class X509Certificate extends Certificate {
      * For example, the string "1.2.840.10040.4.3" identifies the SHA-1
      * with DSA signature algorithm, as per the PKIX part I.
      *
-     * <p>See <a href = "#getSigAlgName">getSigAlgName</a> for
+     * <p>See {@link #getSigAlgName() getSigAlgName} for
      * relevant ASN.1 definitions.
      *
      * @return the signature algorithm OID string.
@@ -442,7 +442,7 @@ public abstract class X509Certificate extends Certificate {
      * algorithm parameters are null; the parameters are usually
      * supplied with the certificate's public key.
      *
-     * <p>See <a href = "#getSigAlgName">getSigAlgName</a> for
+     * <p>See {@link #getSigAlgName() getSigAlgName} for
      * relevant ASN.1 definitions.
      *
      * @return the DER-encoded signature algorithm parameters, or

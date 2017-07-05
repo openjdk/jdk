@@ -82,9 +82,7 @@ class JDIEventSource extends Thread {
                 boolean interrupted = es.suspendedAll();
                 es.notify(firstListener);
                 boolean wantInterrupt = JDIEventSource.this.wantInterrupt;
-                for (Iterator it = session.runtime.jdiListeners.iterator();
-                     it.hasNext(); ) {
-                    JDIListener jl = (JDIListener)it.next();
+                for (JDIListener jl : session.runtime.jdiListeners) {
                     es.notify(jl);
                 }
                 if (interrupted && !wantInterrupt) {

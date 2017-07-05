@@ -75,107 +75,107 @@ public class KrbTgsReq extends KrbKdcReq {
             null); // EncryptionKey subSessionKey
     }
 
-     // Called by Credentials, KrbCred
-         KrbTgsReq(
-                KDCOptions options,
-                Credentials asCreds,
-                PrincipalName sname,
-                KerberosTime from,
-                KerberosTime till,
-                KerberosTime rtime,
-                int[] eTypes,
-                HostAddresses addresses,
-                AuthorizationData authorizationData,
-                Ticket[] additionalTickets,
-                EncryptionKey subKey) throws KrbException, IOException {
+    // Called by Credentials, KrbCred
+    KrbTgsReq(
+            KDCOptions options,
+            Credentials asCreds,
+            PrincipalName sname,
+            KerberosTime from,
+            KerberosTime till,
+            KerberosTime rtime,
+            int[] eTypes,
+            HostAddresses addresses,
+            AuthorizationData authorizationData,
+            Ticket[] additionalTickets,
+            EncryptionKey subKey) throws KrbException, IOException {
 
-                princName = asCreds.client;
-                servName = sname;
-                ctime = new KerberosTime(KerberosTime.NOW);
-
-
-                // check if they are valid arguments. The optional fields
-                // should be  consistent with settings in KDCOptions.
-                if (options.get(KDCOptions.FORWARDABLE) &&
-                        (!(asCreds.flags.get(Krb5.TKT_OPTS_FORWARDABLE)))) {
-                    throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-                }
-                if (options.get(KDCOptions.FORWARDED)) {
-                    if (!(asCreds.flags.get(KDCOptions.FORWARDABLE)))
-                        throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-                }
-                if (options.get(KDCOptions.PROXIABLE) &&
-                        (!(asCreds.flags.get(Krb5.TKT_OPTS_PROXIABLE)))) {
-                    throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-                }
-                if (options.get(KDCOptions.PROXY)) {
-                    if (!(asCreds.flags.get(KDCOptions.PROXIABLE)))
-                        throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-                }
-                if (options.get(KDCOptions.ALLOW_POSTDATE) &&
-                        (!(asCreds.flags.get(Krb5.TKT_OPTS_MAY_POSTDATE)))) {
-                    throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-                }
-                if (options.get(KDCOptions.RENEWABLE) &&
-                        (!(asCreds.flags.get(Krb5.TKT_OPTS_RENEWABLE)))) {
-                    throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-                }
-
-                if (options.get(KDCOptions.POSTDATED)) {
-                    if (!(asCreds.flags.get(KDCOptions.POSTDATED)))
-                        throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-                } else {
-                    if (from != null)  from = null;
-                }
-                if (options.get(KDCOptions.RENEWABLE)) {
-                    if (!(asCreds.flags.get(KDCOptions.RENEWABLE)))
-                        throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-                } else {
-                    if (rtime != null)  rtime = null;
-                }
-                if (options.get(KDCOptions.ENC_TKT_IN_SKEY)) {
-                    if (additionalTickets == null)
-                        throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
-                    // in TGS_REQ there could be more than one additional
-                    // tickets,  but in file-based credential cache,
-                    // there is only one additional ticket field.
-                        secondTicket = additionalTickets[0];
-                } else {
-                    if (additionalTickets != null)
-                        additionalTickets = null;
-                }
-
-                tgsReqMessg = createRequest(
-                        options,
-                        asCreds.ticket,
-                        asCreds.key,
-                        ctime,
-                        princName,
-                        princName.getRealm(),
-                        servName,
-                        from,
-                        till,
-                        rtime,
-                        eTypes,
-                        addresses,
-                        authorizationData,
-                        additionalTickets,
-                        subKey);
-                obuf = tgsReqMessg.asn1Encode();
-
-                // XXX We need to revisit this to see if can't move it
-                // up such that FORWARDED flag set in the options
-                // is included in the marshaled request.
-                /*
-                 * If this is based on a forwarded ticket, record that in the
-                 * options, because the returned TgsRep will contain the
-                 * FORWARDED flag set.
-                 */
-                if (asCreds.flags.get(KDCOptions.FORWARDED))
-                    options.set(KDCOptions.FORWARDED, true);
+        princName = asCreds.client;
+        servName = sname;
+        ctime = new KerberosTime(KerberosTime.NOW);
 
 
+        // check if they are valid arguments. The optional fields
+        // should be  consistent with settings in KDCOptions.
+        if (options.get(KDCOptions.FORWARDABLE) &&
+                (!(asCreds.flags.get(Krb5.TKT_OPTS_FORWARDABLE)))) {
+            throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
         }
+        if (options.get(KDCOptions.FORWARDED)) {
+            if (!(asCreds.flags.get(KDCOptions.FORWARDABLE)))
+                throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
+        }
+        if (options.get(KDCOptions.PROXIABLE) &&
+                (!(asCreds.flags.get(Krb5.TKT_OPTS_PROXIABLE)))) {
+            throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
+        }
+        if (options.get(KDCOptions.PROXY)) {
+            if (!(asCreds.flags.get(KDCOptions.PROXIABLE)))
+                throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
+        }
+        if (options.get(KDCOptions.ALLOW_POSTDATE) &&
+                (!(asCreds.flags.get(Krb5.TKT_OPTS_MAY_POSTDATE)))) {
+            throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
+        }
+        if (options.get(KDCOptions.RENEWABLE) &&
+                (!(asCreds.flags.get(Krb5.TKT_OPTS_RENEWABLE)))) {
+            throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
+        }
+
+        if (options.get(KDCOptions.POSTDATED)) {
+            if (!(asCreds.flags.get(KDCOptions.POSTDATED)))
+                throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
+        } else {
+            if (from != null)  from = null;
+        }
+        if (options.get(KDCOptions.RENEWABLE)) {
+            if (!(asCreds.flags.get(KDCOptions.RENEWABLE)))
+                throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
+        } else {
+            if (rtime != null)  rtime = null;
+        }
+        if (options.get(KDCOptions.ENC_TKT_IN_SKEY)) {
+            if (additionalTickets == null)
+                throw new KrbException(Krb5.KRB_AP_ERR_REQ_OPTIONS);
+            // in TGS_REQ there could be more than one additional
+            // tickets,  but in file-based credential cache,
+            // there is only one additional ticket field.
+                secondTicket = additionalTickets[0];
+        } else {
+            if (additionalTickets != null)
+                additionalTickets = null;
+        }
+
+        tgsReqMessg = createRequest(
+                options,
+                asCreds.ticket,
+                asCreds.key,
+                ctime,
+                princName,
+                princName.getRealm(),
+                servName,
+                from,
+                till,
+                rtime,
+                eTypes,
+                addresses,
+                authorizationData,
+                additionalTickets,
+                subKey);
+        obuf = tgsReqMessg.asn1Encode();
+
+        // XXX We need to revisit this to see if can't move it
+        // up such that FORWARDED flag set in the options
+        // is included in the marshaled request.
+        /*
+         * If this is based on a forwarded ticket, record that in the
+         * options, because the returned TgsRep will contain the
+         * FORWARDED flag set.
+         */
+        if (asCreds.flags.get(KDCOptions.FORWARDED))
+            options.set(KDCOptions.FORWARDED, true);
+
+
+    }
 
     /**
      * Sends a TGS request to the realm of the target.

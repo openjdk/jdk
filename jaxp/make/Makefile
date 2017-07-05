@@ -90,7 +90,6 @@ ifdef ALT_OUTPUTDIR
 else
   OUTPUTDIR = ..
 endif
-ABS_OUTPUTDIR = $(call FullPath,$(OUTPUTDIR))
 
 ifdef ALT_LANGTOOLS_DIST
   ANT_OPTIONS += -Dbootstrap.dir=$(ALT_LANGTOOLS_DIST)/bootstrap
@@ -127,7 +126,11 @@ $(ANT_TARGETS):
 	$(ANT_JAVA_HOME) $(ANT) $(ANT_OPTIONS) $@
 
 # Targets for Sun's internal JPRT build system
+JPRT_ARCHIVE_BUNDLE=$(OUTPUTDIR)/jprt.zip
 jprt_build_product jprt_build_debug jprt_build_fastdebug: all
+	$(RM) $(JPRT_ARCHIVE_BUNDLE)
+	( cd $(OUTPUTDIR)/dist && \
+	  zip -q -r $(JPRT_ARCHIVE_BUNDLE) . )
 
 # Declare these phony (not filenames)
 .PHONY: $(ANT_TARGETS) all clobber \

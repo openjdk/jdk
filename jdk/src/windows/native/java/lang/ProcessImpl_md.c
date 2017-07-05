@@ -33,7 +33,12 @@
 #include <windows.h>
 #include <io.h>
 
-#define PIPE_SIZE 4096
+/* We try to make sure that we can read and write 4095 bytes (the
+ * fixed limit on Linux) to the pipe on all operating systems without
+ * deadlock.  Windows 2000 inexplicably appears to need an extra 24
+ * bytes of slop to avoid deadlock.
+ */
+#define PIPE_SIZE (4096+24)
 
 char *
 extractExecutablePath(JNIEnv *env, char *source)
@@ -120,7 +125,7 @@ win32Error(JNIEnv *env, const char *functionName)
 static void
 closeSafely(HANDLE handle)
 {
-    if (handle)
+    if (handle != INVALID_HANDLE_VALUE)
         CloseHandle(handle);
 }
 
@@ -129,23 +134,22 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
                                   jstring cmd,
                                   jstring envBlock,
                                   jstring dir,
-                                  jboolean redirectErrorStream,
-                                  jobject in_fd,
-                                  jobject out_fd,
-                                  jobject err_fd)
+                                  jlongArray stdHandles,
+                                  jboolean redirectErrorStream)
 {
-    HANDLE inRead   = 0;
-    HANDLE inWrite  = 0;
-    HANDLE outRead  = 0;
-    HANDLE outWrite = 0;
-    HANDLE errRead  = 0;
-    HANDLE errWrite = 0;
+    HANDLE inRead   = INVALID_HANDLE_VALUE;
+    HANDLE inWrite  = INVALID_HANDLE_VALUE;
+    HANDLE outRead  = INVALID_HANDLE_VALUE;
+    HANDLE outWrite = INVALID_HANDLE_VALUE;
+    HANDLE errRead  = INVALID_HANDLE_VALUE;
+    HANDLE errWrite = INVALID_HANDLE_VALUE;
     SECURITY_ATTRIBUTES sa;
     PROCESS_INFORMATION pi;
     STARTUPINFO si;
     LPTSTR  pcmd      = NULL;
     LPCTSTR pdir      = NULL;
     LPVOID  penvBlock = NULL;
+    jlong  *handles   = NULL;
     jlong ret = 0;
     OSVERSIONINFO ver;
     jboolean onNT = JNI_FALSE;
@@ -155,17 +159,6 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
     GetVersionEx(&ver);
     if (ver.dwPlatformId == VER_PLATFORM_WIN32_NT)
         onNT = JNI_TRUE;
-
-    sa.nLength = sizeof(sa);
-    sa.lpSecurityDescriptor = 0;
-    sa.bInheritHandle = TRUE;
-
-    if (!(CreatePipe(&inRead,  &inWrite,  &sa, PIPE_SIZE) &&
-          CreatePipe(&outRead, &outWrite, &sa, PIPE_SIZE) &&
-          CreatePipe(&errRead, &errWrite, &sa, PIPE_SIZE))) {
-        win32Error(env, "CreatePipe");
-        goto Catch;
-    }
 
     assert(cmd != NULL);
     pcmd = (LPTSTR) JNU_GetStringPlatformChars(env, cmd, NULL);
@@ -184,19 +177,62 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
         if (penvBlock == NULL) goto Catch;
     }
 
+    assert(stdHandles != NULL);
+    handles = (*env)->GetLongArrayElements(env, stdHandles, NULL);
+    if (handles == NULL) goto Catch;
+
     memset(&si, 0, sizeof(si));
     si.cb = sizeof(si);
     si.dwFlags = STARTF_USESTDHANDLES;
-    si.hStdInput  = inRead;
-    si.hStdOutput = outWrite;
-    si.hStdError  = redirectErrorStream ? outWrite : errWrite;
 
-    SetHandleInformation(inWrite, HANDLE_FLAG_INHERIT, FALSE);
-    SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, FALSE);
-    SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, FALSE);
+    sa.nLength = sizeof(sa);
+    sa.lpSecurityDescriptor = 0;
+    sa.bInheritHandle = TRUE;
 
-    if (redirectErrorStream)
-        SetHandleInformation(errWrite, HANDLE_FLAG_INHERIT, FALSE);
+    if (handles[0] != (jlong) -1) {
+        si.hStdInput = (HANDLE) handles[0];
+        handles[0] = (jlong) -1;
+    } else {
+        if (! CreatePipe(&inRead,  &inWrite,  &sa, PIPE_SIZE)) {
+            win32Error(env, "CreatePipe");
+            goto Catch;
+        }
+        si.hStdInput = inRead;
+        SetHandleInformation(inWrite, HANDLE_FLAG_INHERIT, FALSE);
+        handles[0] = (jlong) inWrite;
+    }
+    SetHandleInformation(si.hStdInput, HANDLE_FLAG_INHERIT, TRUE);
+
+    if (handles[1] != (jlong) -1) {
+        si.hStdOutput = (HANDLE) handles[1];
+        handles[1] = (jlong) -1;
+    } else {
+        if (! CreatePipe(&outRead, &outWrite, &sa, PIPE_SIZE)) {
+            win32Error(env, "CreatePipe");
+            goto Catch;
+        }
+        si.hStdOutput = outWrite;
+        SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, FALSE);
+        handles[1] = (jlong) outRead;
+    }
+    SetHandleInformation(si.hStdOutput, HANDLE_FLAG_INHERIT, TRUE);
+
+    if (redirectErrorStream) {
+        si.hStdError = si.hStdOutput;
+        handles[2] = (jlong) -1;
+    } else if (handles[2] != (jlong) -1) {
+        si.hStdError = (HANDLE) handles[2];
+        handles[2] = (jlong) -1;
+    } else {
+        if (! CreatePipe(&errRead, &errWrite, &sa, PIPE_SIZE)) {
+            win32Error(env, "CreatePipe");
+            goto Catch;
+        }
+        si.hStdError = errWrite;
+        SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, FALSE);
+        handles[2] = (jlong) errRead;
+    }
+    SetHandleInformation(si.hStdError, HANDLE_FLAG_INHERIT, TRUE);
 
     if (onNT)
         processFlag = CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT;
@@ -232,9 +268,6 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
 
     CloseHandle(pi.hThread);
     ret = (jlong)pi.hProcess;
-    (*env)->SetLongField(env, in_fd,  IO_handle_fdID, (jlong)inWrite);
-    (*env)->SetLongField(env, out_fd, IO_handle_fdID, (jlong)outRead);
-    (*env)->SetLongField(env, err_fd, IO_handle_fdID, (jlong)errRead);
 
  Finally:
     /* Always clean up the child's side of the pipes */
@@ -252,6 +285,9 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
         else
             JNU_ReleaseStringPlatformChars(env, dir, (char *) penvBlock);
     }
+    if (handles != NULL)
+        (*env)->ReleaseLongArrayElements(env, stdHandles, handles, 0);
+
     return ret;
 
  Catch:

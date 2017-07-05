@@ -91,9 +91,7 @@ abstract public class EventRequestSpec {
 
     void attemptImmediateResolve(VirtualMachine vm) {
         // try to resolve immediately
-        Iterator iter = vm.allClasses().iterator();
-        while (iter.hasNext()) {
-            ReferenceType refType = (ReferenceType)iter.next();
+        for (ReferenceType refType : vm.allClasses()) {
             if (refSpec.matches(refType)) {
                 try {
                     resolve(refType);

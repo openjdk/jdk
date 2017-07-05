@@ -617,7 +617,8 @@ abstract class Handshaker {
         r.write(1);     // single byte of data
 
         if (conn != null) {
-            synchronized (conn.writeLock) {
+            conn.writeLock.lock();
+            try {
                 conn.writeRecord(r);
                 conn.changeWriteCiphers();
                 if (debug != null && Debug.isOn("handshake")) {
@@ -625,6 +626,8 @@ abstract class Handshaker {
                 }
                 mesg.write(output);
                 output.flush();
+            } finally {
+                conn.writeLock.unlock();
             }
         } else {
             synchronized (engine.writeLock) {
