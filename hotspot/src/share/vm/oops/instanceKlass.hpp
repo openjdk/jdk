@@ -168,8 +168,19 @@ class instanceKlass: public Klass {
   objArrayOop     _local_interfaces;
   // Interface (klassOops) this class implements transitively.
   objArrayOop     _transitive_interfaces;
-  // Instance and static variable information, 5-tuples of shorts [access, name
-  // index, sig index, initval index, offset].
+  // Instance and static variable information, starts with 6-tuples of shorts
+  // [access, name index, sig index, initval index, low_offset, high_offset]
+  // for all fields, followed by the generic signature data at the end of
+  // the array. Only fields with generic signature attributes have the generic
+  // signature data set in the array. The fields array looks like following:
+  //
+  // f1: [access, name index, sig index, initial value index, low_offset, high_offset]
+  // f2: [access, name index, sig index, initial value index, low_offset, high_offset]
+  //      ...
+  // fn: [access, name index, sig index, initial value index, low_offset, high_offset]
+  //     [generic signature index]
+  //     [generic signature index]
+  //     ...
   typeArrayOop    _fields;
   // Constant pool for this class.
   constantPoolOop _constants;
@@ -350,9 +361,6 @@ class instanceKlass: public Klass {
 
   // Number of Java declared fields
   int java_fields_count() const           { return (int)_java_fields_count; }
-
-  // Number of fields including any injected fields
-  int all_fields_count() const            { return _fields->length() / FieldInfo::field_slots; }
 
   typeArrayOop fields() const              { return _fields; }
 
