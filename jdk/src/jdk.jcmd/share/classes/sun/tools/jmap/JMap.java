@@ -91,16 +91,15 @@ public class JMap {
         // As more options are added we should create an abstract tool class and
         // have a table to map the options
         ProcessArgumentMatcher ap = new ProcessArgumentMatcher(pidArg);
-        Collection<VirtualMachineDescriptor> vids = ap.getVirtualMachineDescriptors(JMap.class);
+        Collection<String> pids = ap.getVirtualMachinePids(JMap.class);
 
-        if (vids.isEmpty()) {
+        if (pids.isEmpty()) {
             System.err.println("Could not find any processes matching : '" + pidArg + "'");
             System.exit(1);
         }
 
-        for (VirtualMachineDescriptor vid : vids) {
-            String pid = vid.id();
-            if (vids.size() > 1) {
+        for (String pid : pids) {
+            if (pids.size() > 1) {
                 System.out.println("Pid:" + pid);
             }
             if (option.equals("-histo")) {

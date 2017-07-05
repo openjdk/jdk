@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,8 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
-import java.lang.reflect.Layer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
@@ -428,7 +426,7 @@ public final class LauncherHelper {
                 abort(null, "java.launcher.jar.error3", jarname);
             }
 
-            // Add-Exports and Add-Opens to break encapsulation
+            // Add-Exports and Add-Opens
             String exports = mainAttrs.getValue(ADD_EXPORTS);
             if (exports != null) {
                 addExportsOrOpens(exports, false);
@@ -466,7 +464,8 @@ public final class LauncherHelper {
             if (s.length == 2) {
                 String mn = s[0];
                 String pn = s[1];
-                Layer.boot().findModule(mn).ifPresent(m -> {
+
+                ModuleLayer.boot().findModule(mn).ifPresent(m -> {
                     if (m.getDescriptor().packages().contains(pn)) {
                         if (open) {
                             Modules.addOpensToAllUnnamed(m, pn);
@@ -563,7 +562,7 @@ public final class LauncherHelper {
         }
 
         // main module is in the boot layer
-        Layer layer = Layer.boot();
+        ModuleLayer layer = ModuleLayer.boot();
         Optional<Module> om = layer.findModule(mainModule);
         if (!om.isPresent()) {
             // should not happen
@@ -591,8 +590,8 @@ public final class LauncherHelper {
                 c = Class.forName(m, cn);
             }
         } catch (LinkageError le) {
-            abort(null, "java.launcher.module.error3",
-                    mainClass, m.getName(), le.getLocalizedMessage());
+            abort(null, "java.launcher.module.error3", mainClass, m.getName(),
+                    le.getClass().getName() + ": " + le.getLocalizedMessage());
         }
         if (c == null) {
             abort(null, "java.launcher.module.error2", mainClass, mainModule);
@@ -638,14 +637,17 @@ public final class LauncherHelper {
                         String ncn = Normalizer.normalize(cn, Normalizer.Form.NFC);
                         mainClass = Class.forName(ncn, false, scl);
                     } catch (NoClassDefFoundError | ClassNotFoundException cnfe1) {
-                        abort(cnfe1, "java.launcher.cls.error1", cn);
+                        abort(cnfe1, "java.launcher.cls.error1", cn,
+                                cnfe1.getClass().getCanonicalName(), cnfe1.getMessage());
                     }
                 } else {
-                    abort(cnfe, "java.launcher.cls.error1", cn);
+                    abort(cnfe, "java.launcher.cls.error1", cn,
+                            cnfe.getClass().getCanonicalName(), cnfe.getMessage());
                 }
             }
         } catch (LinkageError le) {
-            abort(le, "java.launcher.cls.error6", cn, le.getLocalizedMessage());
+            abort(le, "java.launcher.cls.error6", cn,
+                    le.getClass().getName() + ": " + le.getLocalizedMessage());
         }
         return mainClass;
     }
@@ -850,7 +852,7 @@ public final class LauncherHelper {
         private static void setFXLaunchParameters(String what, int mode) {
 
             // find the module with the FX launcher
-            Optional<Module> om = Layer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME);
+            Optional<Module> om = ModuleLayer.boot().findModule(JAVAFX_GRAPHICS_MODULE_NAME);
             if (!om.isPresent()) {
                 abort(null, "java.launcher.cls.error5");
             }
@@ -934,8 +936,7 @@ public final class LauncherHelper {
      * Called by the launcher to list the observable modules.
      * If called without any sub-options then the output is a simple list of
      * the modules. If called with sub-options then the sub-options are the
-     * names of the modules to list (-listmods:java.base,java.desktop for
-     * example).
+     * names of the modules to list (e.g. --list-modules java.base,java.desktop)
      */
     static void listModules(boolean printToStderr, String optionFlag)
         throws IOException, ClassNotFoundException
@@ -943,83 +944,95 @@ public final class LauncherHelper {
         initOutput(printToStderr);
 
         ModuleFinder finder = jdk.internal.module.ModuleBootstrap.finder();
-
         int colon = optionFlag.indexOf('=');
         if (colon == -1) {
             finder.findAll().stream()
-                .sorted(Comparator.comparing(ModuleReference::descriptor))
-                .forEach(md -> {
-                    ostream.println(midAndLocation(md.descriptor(),
-                                                   md.location()));
-                });
+                  .sorted(Comparator.comparing(ModuleReference::descriptor))
+                  .forEach(mref -> describeModule(finder, mref, false));
         } else {
             String[] names = optionFlag.substring(colon+1).split(",");
             for (String name: names) {
                 ModuleReference mref = finder.find(name).orElse(null);
                 if (mref == null) {
-                    System.err.format("%s not observable!%n", name);
+                    System.err.format("%s not found%n", name);
                     continue;
                 }
-
-                ModuleDescriptor md = mref.descriptor();
-                if (md.isOpen())
-                    ostream.print("open ");
-                if (md.isAutomatic())
-                    ostream.print("automatic ");
-                ostream.println("module " + midAndLocation(md, mref.location()));
-
-                // unqualified exports (sorted by package)
-                Set<Exports> exports = new TreeSet<>(Comparator.comparing(Exports::source));
-                md.exports().stream().filter(e -> !e.isQualified()).forEach(exports::add);
-                for (Exports e : exports) {
-                    String modsAndSource = Stream.concat(toStringStream(e.modifiers()),
-                            Stream.of(e.source()))
-                            .collect(Collectors.joining(" "));
-                    ostream.format("  exports %s%n", modsAndSource);
-                }
-
-                for (Requires d : md.requires()) {
-                    ostream.format("  requires %s%n", d);
-                }
-                for (String s : md.uses()) {
-                    ostream.format("  uses %s%n", s);
-                }
-
-                for (Provides ps : md.provides()) {
-                    ostream.format("  provides %s with %s%n", ps.service(),
-                            ps.providers().stream().collect(Collectors.joining(", ")));
-                }
-
-                // qualified exports
-                for (Exports e : md.exports()) {
-                    if (e.isQualified()) {
-                        String modsAndSource = Stream.concat(toStringStream(e.modifiers()),
-                                Stream.of(e.source()))
-                                .collect(Collectors.joining(" "));
-                        ostream.format("  exports %s", modsAndSource);
-                        formatCommaList(ostream, " to", e.targets());
-                    }
-                }
-
-                // open packages
-                for (Opens obj: md.opens()) {
-                    String modsAndSource = Stream.concat(toStringStream(obj.modifiers()),
-                            Stream.of(obj.source()))
-                            .collect(Collectors.joining(" "));
-                    ostream.format("  opens %s", modsAndSource);
-                    if (obj.isQualified())
-                        formatCommaList(ostream, " to", obj.targets());
-                    else
-                        ostream.println();
-                }
-
-                // non-exported/non-open packages
-                Set<String> concealed = new TreeSet<>(md.packages());
-                md.exports().stream().map(Exports::source).forEach(concealed::remove);
-                md.opens().stream().map(Opens::source).forEach(concealed::remove);
-                concealed.forEach(p -> ostream.format("  contains %s%n", p));
+                describeModule(finder, mref, true);
             }
         }
+    }
+
+    /**
+     * Describes the given module.
+     */
+    static void describeModule(ModuleFinder finder,
+                               ModuleReference mref,
+                               boolean verbose)
+    {
+        ModuleDescriptor md = mref.descriptor();
+        ostream.print("module " + midAndLocation(md, mref.location()));
+        if (md.isAutomatic())
+            ostream.print(" automatic");
+        ostream.println();
+
+        if (!verbose)
+            return;
+
+        // unqualified exports (sorted by package)
+        Set<Exports> exports = new TreeSet<>(Comparator.comparing(Exports::source));
+        md.exports().stream().filter(e -> !e.isQualified()).forEach(exports::add);
+        for (Exports e : exports) {
+            String modsAndSource = Stream.concat(toStringStream(e.modifiers()),
+                    Stream.of(e.source()))
+                    .collect(Collectors.joining(" "));
+            ostream.format("  exports %s%n", modsAndSource);
+        }
+
+        for (Requires d : md.requires()) {
+            ostream.format("  requires %s", d);
+            String suffix = finder.find(d.name())
+                    .map(ModuleReference::descriptor)
+                    .map(any -> any.isAutomatic() ? " automatic" : "")
+                    .orElse(" not found");
+            ostream.println(suffix);
+        }
+        for (String s : md.uses()) {
+            ostream.format("  uses %s%n", s);
+        }
+
+        for (Provides ps : md.provides()) {
+            ostream.format("  provides %s with %s%n", ps.service(),
+                    ps.providers().stream().collect(Collectors.joining(", ")));
+        }
+
+        // qualified exports
+        for (Exports e : md.exports()) {
+            if (e.isQualified()) {
+                String modsAndSource = Stream.concat(toStringStream(e.modifiers()),
+                        Stream.of(e.source()))
+                        .collect(Collectors.joining(" "));
+                ostream.format("  exports %s", modsAndSource);
+                formatCommaList(ostream, " to", e.targets());
+            }
+        }
+
+        // open packages
+        for (Opens obj: md.opens()) {
+            String modsAndSource = Stream.concat(toStringStream(obj.modifiers()),
+                    Stream.of(obj.source()))
+                    .collect(Collectors.joining(" "));
+            ostream.format("  opens %s", modsAndSource);
+            if (obj.isQualified())
+                formatCommaList(ostream, " to", obj.targets());
+            else
+                ostream.println();
+        }
+
+        // non-exported/non-open packages
+        Set<String> concealed = new TreeSet<>(md.packages());
+        md.exports().stream().map(Exports::source).forEach(concealed::remove);
+        md.opens().stream().map(Opens::source).forEach(concealed::remove);
+        concealed.forEach(p -> ostream.format("  contains %s%n", p));
     }
 
     static <T> String toString(Set<T> s) {
