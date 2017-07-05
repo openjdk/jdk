@@ -290,6 +290,7 @@ abstract class IntPipeline<E_IN>
 
     @Override
     public final IntStream flatMap(IntFunction<? extends IntStream> mapper) {
+        Objects.requireNonNull(mapper);
         return new StatelessOp<Integer>(this, StreamShape.INT_VALUE,
                                         StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT | StreamOpFlag.NOT_SIZED) {
             @Override
@@ -465,6 +466,7 @@ abstract class IntPipeline<E_IN>
     public final <R> R collect(Supplier<R> supplier,
                                ObjIntConsumer<R> accumulator,
                                BiConsumer<R, R> combiner) {
+        Objects.requireNonNull(combiner);
         BinaryOperator<R> operator = (left, right) -> {
             combiner.accept(left, right);
             return left;

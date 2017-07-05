@@ -742,7 +742,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
             if(!root.isExpanded())
                 root.expand();
             else {
-                Enumeration cursor = root.children();
+                Enumeration<?> cursor = root.children();
                 while(cursor.hasMoreElements()) {
                     visibleNodes.addElement(cursor.nextElement());
                 }
@@ -1099,7 +1099,8 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
          * If the receiver is not currently expanded, this will return an
          * empty enumeration.
          */
-        public Enumeration children() {
+        @Override
+        public Enumeration<TreeNode> children() {
             if (!this.isExpanded()) {
                 return DefaultMutableTreeNode.EMPTY_ENUMERATION;
             } else {
@@ -1405,7 +1406,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
          * <code>createIfNeeded</code> is true, the children are first
          * loaded.
          */
-        protected Enumeration getLoadedChildren(boolean createIfNeeded) {
+        protected Enumeration<TreeNode> getLoadedChildren(boolean createIfNeeded) {
             if(!createIfNeeded || hasBeenExpanded)
                 return super.children();
 
@@ -1499,7 +1500,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                 }
 
                 int i = originalRow;
-                Enumeration cursor = preorderEnumeration();
+                Enumeration<TreeNode> cursor = preorderEnumeration();
                 cursor.nextElement(); // don't add me, I'm already in
 
                 int newYOrigin;
@@ -1513,7 +1514,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                 TreeStateNode   aNode;
                 if(!isFixed) {
                     while (cursor.hasMoreElements()) {
-                        aNode = (TreeStateNode)cursor.nextElement();
+                        aNode = (TreeStateNode) cursor.nextElement();
                         if(!updateNodeSizes && !aNode.hasValidSize())
                             aNode.updatePreferredSize(i + 1);
                         aNode.setYOrigin(newYOrigin);
@@ -1523,7 +1524,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                 }
                 else {
                     while (cursor.hasMoreElements()) {
-                        aNode = (TreeStateNode)cursor.nextElement();
+                        aNode = (TreeStateNode) cursor.nextElement();
                         visibleNodes.insertElementAt(aNode, ++i);
                     }
                 }
@@ -1559,7 +1560,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
          */
         protected void collapse(boolean adjustTree) {
             if (isExpanded()) {
-                Enumeration cursor = preorderEnumeration();
+                Enumeration<TreeNode> cursor = preorderEnumeration();
                 cursor.nextElement(); // don't remove me, I'm still visible
                 int rowsDeleted = 0;
                 boolean isFixed = isFixedRowHeight();

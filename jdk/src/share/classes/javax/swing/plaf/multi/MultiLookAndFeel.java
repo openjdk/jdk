@@ -221,7 +221,7 @@ public class MultiLookAndFeel extends LookAndFeel {
      * @see MultiButtonUI#createUI
      */
     public static ComponentUI createUIs(ComponentUI mui,
-                                        Vector      uis,
+                                        Vector<ComponentUI> uis,
                                         JComponent  target) {
         ComponentUI ui;
 
@@ -248,7 +248,7 @@ public class MultiLookAndFeel extends LookAndFeel {
         // get a UI from just the default look and feel.
         //
         if (uis.size() == 1) {
-            return (ComponentUI) uis.elementAt(0);
+            return uis.elementAt(0);
         } else {
             return mui;
         }
@@ -269,7 +269,7 @@ public class MultiLookAndFeel extends LookAndFeel {
      * @return an array equivalent to the passed-in vector
      *
      */
-    protected static ComponentUI[] uisToArray(Vector uis) {
+    protected static ComponentUI[] uisToArray(Vector<? extends ComponentUI> uis) {
         if (uis == null) {
             return new ComponentUI[0];
         } else {
@@ -277,7 +277,7 @@ public class MultiLookAndFeel extends LookAndFeel {
             if (count > 0) {
                 ComponentUI[] u = new ComponentUI[count];
                 for (int i = 0; i < count; i++) {
-                    u[i] = (ComponentUI)uis.elementAt(i);
+                    u[i] = uis.elementAt(i);
                 }
                 return u;
             } else {

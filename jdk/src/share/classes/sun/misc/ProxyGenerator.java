@@ -1743,7 +1743,7 @@ public class ProxyGenerator {
          * Get or assign the index for a CONSTANT_Integer entry.
          */
         public short getInteger(int i) {
-            return getValue(new Integer(i));
+            return getValue(i);
         }
 
         /**

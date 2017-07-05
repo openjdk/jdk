@@ -80,18 +80,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/histogram.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "os_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "os_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "os_bsd.inline.hpp"
-#endif
 
 static jint CurrentVersion = JNI_VERSION_1_8;
 
@@ -3337,7 +3325,7 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
     directBufferSupportInitializeEnded = 1;
   } else {
     while (!directBufferSupportInitializeEnded && !directBufferSupportInitializeFailed) {
-      os::yield();
+      os::naked_yield();
     }
   }
 

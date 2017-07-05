@@ -87,7 +87,7 @@ public class EncryptedData implements Cloneable {
         EncryptedData new_encryptedData = new EncryptedData();
         new_encryptedData.eType = eType;
         if (kvno != null) {
-            new_encryptedData.kvno = new Integer(kvno.intValue());
+            new_encryptedData.kvno = kvno.intValue();
         }
         if (cipher != null) {
             new_encryptedData.cipher = new byte[cipher.length];
@@ -241,7 +241,7 @@ public class EncryptedData implements Cloneable {
         if ((encoding.getData().peekByte() & 0x1F) == 1) {
             der = encoding.getData().getDerValue();
             int i = (der.getData().getBigInteger()).intValue();
-            kvno = new Integer(i);
+            kvno = i;
         } else {
             kvno = null;
         }

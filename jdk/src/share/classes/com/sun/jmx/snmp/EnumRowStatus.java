@@ -284,20 +284,20 @@ public class EnumRowStatus extends Enumerated implements Serializable {
     final static Hashtable<Integer, String> intTable = new Hashtable<>();
     final static Hashtable<String, Integer> stringTable = new Hashtable<>();
     static  {
-        intTable.put(new Integer(0), "unspecified");
-        intTable.put(new Integer(3), "notReady");
-        intTable.put(new Integer(6), "destroy");
-        intTable.put(new Integer(2), "notInService");
-        intTable.put(new Integer(5), "createAndWait");
-        intTable.put(new Integer(1), "active");
-        intTable.put(new Integer(4), "createAndGo");
-        stringTable.put("unspecified", new Integer(0));
-        stringTable.put("notReady", new Integer(3));
-        stringTable.put("destroy", new Integer(6));
-        stringTable.put("notInService", new Integer(2));
-        stringTable.put("createAndWait", new Integer(5));
-        stringTable.put("active", new Integer(1));
-        stringTable.put("createAndGo", new Integer(4));
+        intTable.put(0, "unspecified");
+        intTable.put(3, "notReady");
+        intTable.put(6, "destroy");
+        intTable.put(2, "notInService");
+        intTable.put(5, "createAndWait");
+        intTable.put(1, "active");
+        intTable.put(4, "createAndGo");
+        stringTable.put("unspecified", 0);
+        stringTable.put("notReady", 3);
+        stringTable.put("destroy", 6);
+        stringTable.put("notInService", 2);
+        stringTable.put("createAndWait", 5);
+        stringTable.put("active", 1);
+        stringTable.put("createAndGo", 4);
     }
 
 

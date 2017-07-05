@@ -68,13 +68,13 @@ class KeyboardManager {
     /**
       * maps top-level containers to a sub-hashtable full of keystrokes
       */
-    Hashtable<Container, Hashtable> containerMap = new Hashtable<Container, Hashtable>();
+    Hashtable<Container, Hashtable<Object, Object>> containerMap = new Hashtable<>();
 
     /**
       * Maps component/keystroke pairs to a topLevel container
       * This is mainly used for fast unregister operations
       */
-    Hashtable<ComponentKeyStrokePair, Container> componentKeyStrokeMap = new Hashtable<ComponentKeyStrokePair, Container>();
+    Hashtable<ComponentKeyStrokePair, Container> componentKeyStrokeMap = new Hashtable<>();
 
     public static KeyboardManager getCurrentManager() {
         return currentManager;
@@ -95,7 +95,7 @@ class KeyboardManager {
          if (topContainer == null) {
              return;
          }
-         Hashtable keyMap = containerMap.get(topContainer);
+         Hashtable<Object, Object> keyMap = containerMap.get(topContainer);
 
          if (keyMap ==  null) {  // lazy evaluate one
              keyMap = registerNewTopContainer(topContainer);
@@ -105,7 +105,8 @@ class KeyboardManager {
          if (tmp == null) {
              keyMap.put(k,c);
          } else if (tmp instanceof Vector) {  // if there's a Vector there then add to it.
-             Vector v = (Vector)tmp;
+             @SuppressWarnings("unchecked")
+             Vector<Object> v = (Vector)tmp;
              if (!v.contains(c)) {  // only add if this keystroke isn't registered for this component
                  v.addElement(c);
              }
@@ -114,7 +115,7 @@ class KeyboardManager {
            // Then add the old compoennt and the new compoent to the vector
            // then insert the vector in the table
            if (tmp != c) {  // this means this is already registered for this component, no need to dup
-               Vector<JComponent> v = new Vector<JComponent>();
+               Vector<JComponent> v = new Vector<>();
                v.addElement((JComponent) tmp);
                v.addElement(c);
                keyMap.put(k, v);
@@ -160,7 +161,7 @@ class KeyboardManager {
              return;
          }
 
-         Hashtable keyMap = containerMap.get(topContainer);
+         Hashtable<Object, Object> keyMap = containerMap.get(topContainer);
          if  (keyMap == null) { // this should never happen, but I'm being safe
              Thread.dumpStack();
              return;
@@ -176,7 +177,7 @@ class KeyboardManager {
              keyMap.remove(ks);  // remove the KeyStroke from the Map
              //System.out.println("removed a stroke" + ks);
          } else if (tmp instanceof Vector ) {  // this means there is more than one component reg for this key
-             Vector v = (Vector)tmp;
+             Vector<?> v = (Vector)tmp;
              v.removeElement(c);
              if ( v.isEmpty() ) {
                  keyMap.remove(ks);  // remove the KeyStroke from the Map
@@ -227,7 +228,7 @@ class KeyboardManager {
                ks=KeyStroke.getKeyStroke(e.getKeyCode(), e.getModifiers(), !pressed);
          }
 
-         Hashtable keyMap = containerMap.get(topAncestor);
+         Hashtable<Object, Object> keyMap = containerMap.get(topAncestor);
          if (keyMap != null) { // this container isn't registered, so bail
 
              Object tmp = null;
@@ -250,7 +251,7 @@ class KeyboardManager {
                      fireBinding(c, ks, e, pressed);
                  }
              } else if ( tmp instanceof Vector) { //more than one comp registered for this
-                 Vector v = (Vector)tmp;
+                 Vector<?> v = (Vector)tmp;
                  // There is no well defined order for WHEN_IN_FOCUSED_WINDOW
                  // bindings, but we give precedence to those bindings just
                  // added. This is done so that JMenus WHEN_IN_FOCUSED_WINDOW
@@ -279,11 +280,12 @@ class KeyboardManager {
          // The're handled differently.  The key is to let any JMenuBars
          // process the event
          if ( keyMap != null) {
-             Vector v = (Vector)keyMap.get(JMenuBar.class);
+             @SuppressWarnings("unchecked")
+             Vector<JMenuBar> v = (Vector)keyMap.get(JMenuBar.class);
              if (v != null) {
-                 Enumeration iter = v.elements();
+                 Enumeration<JMenuBar> iter = v.elements();
                  while (iter.hasMoreElements()) {
-                     JMenuBar mb = (JMenuBar)iter.nextElement();
+                     JMenuBar mb = iter.nextElement();
                      if ( mb.isShowing() && mb.isEnabled() ) { // don't want to give these out
                          boolean extended = (ksE != null) && !ksE.equals(ks);
                          if (extended) {
@@ -315,17 +317,18 @@ class KeyboardManager {
         if (top == null) {
             return;
         }
-        Hashtable keyMap = containerMap.get(top);
+        Hashtable<Object, Object> keyMap = containerMap.get(top);
 
         if (keyMap ==  null) {  // lazy evaluate one
              keyMap = registerNewTopContainer(top);
         }
         // use the menubar class as the key
-        Vector menuBars = (Vector)keyMap.get(JMenuBar.class);
+        @SuppressWarnings("unchecked")
+        Vector<Object> menuBars = (Vector)keyMap.get(JMenuBar.class);
 
         if (menuBars == null) {  // if we don't have a list of menubars,
                                  // then make one.
-            menuBars = new Vector();
+            menuBars = new Vector<>();
             keyMap.put(JMenuBar.class, menuBars);
         }
 
@@ -340,9 +343,9 @@ class KeyboardManager {
         if (topContainer == null) {
             return;
         }
-        Hashtable keyMap = containerMap.get(topContainer);
+        Hashtable<Object, Object> keyMap = containerMap.get(topContainer);
         if (keyMap!=null) {
-            Vector v = (Vector)keyMap.get(JMenuBar.class);
+            Vector<?> v = (Vector)keyMap.get(JMenuBar.class);
             if (v != null) {
                 v.removeElement(mb);
                 if (v.isEmpty()) {
@@ -355,8 +358,8 @@ class KeyboardManager {
             }
         }
     }
-    protected Hashtable registerNewTopContainer(Container topContainer) {
-             Hashtable keyMap = new Hashtable();
+    protected Hashtable<Object, Object> registerNewTopContainer(Container topContainer) {
+             Hashtable<Object, Object> keyMap = new Hashtable<>();
              containerMap.put(topContainer, keyMap);
              return keyMap;
     }

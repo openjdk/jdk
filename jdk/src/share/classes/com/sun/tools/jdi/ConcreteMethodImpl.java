@@ -143,7 +143,7 @@ public class ConcreteMethodImpl extends MethodImpl {
          * Find the locations which match the line number
          * passed in.
          */
-        List<Location> list = info.lineMapper.get(new Integer(lineNumber));
+        List<Location> list = info.lineMapper.get(lineNumber);
 
         if (list == null) {
             list = new ArrayList<Location>(0);
@@ -329,7 +329,7 @@ public class ConcreteMethodImpl extends MethodImpl {
                 lineLocations.add(loc);
 
                 // Add to the line -> locations map
-                Integer key = new Integer(lineNumber);
+                Integer key = lineNumber;
                 List<Location> mappedLocs = lineMapper.get(key);
                 if (mappedLocs == null) {
                     mappedLocs = new ArrayList<Location>(1);
@@ -399,7 +399,7 @@ public class ConcreteMethodImpl extends MethodImpl {
                 lineLocations.add(loc);
 
                 // Add to the line -> locations map
-                Integer key = new Integer(lineNumber);
+                Integer key = lineNumber;
                 List<Location> mappedLocs = lineMapper.get(key);
                 if (mappedLocs == null) {
                     mappedLocs = new ArrayList<Location>(1);

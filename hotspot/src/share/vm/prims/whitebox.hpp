@@ -62,6 +62,8 @@ class WhiteBox : public AllStatic {
     Symbol* signature_symbol);
   static const char* lookup_jstring(const char* field_name, oop object);
   static bool lookup_bool(const char* field_name, oop object);
+
+  static int array_bytes_to_length(size_t bytes);
 };
 
 

@@ -25,13 +25,8 @@
 #ifndef OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
 #define OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
 
-#include "runtime/atomic.inline.hpp"
-#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 
-inline const char* os::file_separator()                { return "\\"; }
-inline const char* os::line_separator()                { return "\r\n"; }
-inline const char* os::path_separator()                { return ";"; }
 inline const char* os::dll_file_extension()            { return ".dll"; }
 
 inline const int os::default_file_open_flags() { return O_BINARY | O_NOINHERIT;}

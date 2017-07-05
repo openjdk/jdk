@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,18 @@ package com.sun.jndi.toolkit.corba;
 // Needed for RMI/IIOP
 import java.rmi.Remote;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
+import java.rmi.RemoteException;
 import java.util.Hashtable;
 import java.util.Properties;
 import java.util.Enumeration;
+import java.applet.Applet;
 
 import org.omg.CORBA.ORB;
 
 import javax.naming.Context;
 import javax.naming.ConfigurationException;
+import javax.rmi.CORBA.Stub;
+import javax.rmi.PortableRemoteObject;
 
 /**
   * Contains utilities for performing CORBA-related tasks:
@@ -76,71 +78,43 @@ public class CorbaUtils {
       * @param orb       The non-null ORB to connect the remote object to
       * @return The CORBA Object for remoteObj; null if <tt>remoteObj</tt>
       *                 is a JRMP implementation or JRMP stub.
-      * @exception ClassNotFoundException The RMI-IIOP package is not available
       * @exception ConfigurationException The CORBA Object cannot be obtained
       *         because of configuration problems.
       */
     public static org.omg.CORBA.Object remoteToCorba(Remote remoteObj, ORB orb)
-        throws ClassNotFoundException, ConfigurationException {
-            synchronized (CorbaUtils.class) {
-                if (toStubMethod == null) {
-                    initMethodHandles();
-                }
-            }
+        throws ConfigurationException {
 
 // First, get remoteObj's stub
 
             // javax.rmi.CORBA.Stub stub = PortableRemoteObject.toStub(remoteObj);
 
-            java.lang.Object stub;
+            Remote stub;
 
             try {
-                stub = toStubMethod.invoke(null, new java.lang.Object[]{remoteObj});
-
-            } catch (InvocationTargetException e) {
-                Throwable realException = e.getTargetException();
-                // realException.printStackTrace();
-
+                stub = PortableRemoteObject.toStub(remoteObj);
+            } catch (Throwable t) {
                 ConfigurationException ce = new ConfigurationException(
     "Problem with PortableRemoteObject.toStub(); object not exported or stub not found");
-                ce.setRootCause(realException);
-                throw ce;
-
-            } catch (IllegalAccessException e) {
-                ConfigurationException ce = new ConfigurationException(
-    "Cannot invoke javax.rmi.PortableRemoteObject.toStub(java.rmi.Remote)");
-
-                ce.setRootCause(e);
+                ce.setRootCause(t);
                 throw ce;
             }
 
 // Next, make sure that the stub is javax.rmi.CORBA.Stub
 
-            if (!corbaStubClass.isInstance(stub)) {
+            if (!(stub instanceof Stub)) {
                 return null;  // JRMP implementation or JRMP stub
             }
 
 // Next, make sure that the stub is connected
-            // Invoke stub.connect(orb)
             try {
-                connectMethod.invoke(stub, new java.lang.Object[]{orb});
-
-            } catch (InvocationTargetException e) {
-                Throwable realException = e.getTargetException();
-                // realException.printStackTrace();
-
-                if (!(realException instanceof java.rmi.RemoteException)) {
-                    ConfigurationException ce = new ConfigurationException(
-                        "Problem invoking javax.rmi.CORBA.Stub.connect()");
-                    ce.setRootCause(realException);
-                    throw ce;
-                }
+                ((Stub) stub).connect(orb);
+            } catch (RemoteException e) {
                 // ignore RemoteException because stub might have already
                 // been connected
-            } catch (IllegalAccessException e) {
+            } catch (Throwable t) {
                 ConfigurationException ce = new ConfigurationException(
-                    "Cannot invoke javax.rmi.CORBA.Stub.connect()");
-                ce.setRootCause(e);
+                        "Problem invoking javax.rmi.CORBA.Stub.connect()");
+                ce.setRootCause(t);
                 throw ce;
             }
 // Finally, return stub
@@ -192,83 +166,13 @@ public class CorbaUtils {
 
         // Get Applet from environment
         if (env != null) {
-            Object applet = env.get(Context.APPLET);
+            Applet applet = (Applet) env.get(Context.APPLET);
             if (applet != null) {
-                // Create ORBs for an applet
-                return initAppletORB(applet, orbProp);
+            // Create ORBs using applet and orbProp
+                return ORB.init(applet, orbProp);
             }
         }
 
-        // Create ORBs using orbProp for a standalone application
         return ORB.init(new String[0], orbProp);
-    }
-
-    /**
-     * This method returns a new ORB instance for the given applet
-     * without creating a static dependency on java.applet.
-     */
-    private static ORB initAppletORB(Object applet, Properties orbProp) {
-        try {
-            Class<?> appletClass  = Class.forName("java.applet.Applet", true, null);
-            if (!appletClass.isInstance(applet)) {
-                throw new ClassCastException(applet.getClass().getName());
-            }
-
-            // invoke the static method ORB.init(applet, orbProp);
-            Method method = ORB.class.getMethod("init", appletClass, Properties.class);
-            return (ORB) method.invoke(null, applet, orbProp);
-        } catch (ClassNotFoundException e) {
-            // java.applet.Applet doesn't exist and the applet parameter is
-            // non-null; so throw CCE
-            throw new ClassCastException(applet.getClass().getName());
-        } catch (NoSuchMethodException e) {
-            throw new AssertionError(e);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof RuntimeException) {
-                throw (RuntimeException) cause;
-            } else if (cause instanceof Error) {
-                throw (Error) cause;
-            }
-            throw new AssertionError(e);
-        } catch (IllegalAccessException iae) {
-            throw new AssertionError(iae);
-        }
-    }
-
-    // Fields used for reflection of RMI-IIOP
-    private static Method toStubMethod = null;
-    private static Method connectMethod = null;
-    private static Class<?> corbaStubClass = null;
-    /**
-     * Initializes reflection method handles for RMI-IIOP.
-     * @exception ClassNotFoundException javax.rmi.CORBA.* not available
-     */
-    private static void initMethodHandles() throws ClassNotFoundException {
-        // Get javax.rmi.CORBA.Stub class
-        corbaStubClass = Class.forName("javax.rmi.CORBA.Stub");
-
-        // Get javax.rmi.CORBA.Stub.connect(org.omg.CORBA.ORB) method
-
-        try {
-            connectMethod = corbaStubClass.getMethod("connect",
-                new Class<?>[] {org.omg.CORBA.ORB.class});
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(
-        "No method definition for javax.rmi.CORBA.Stub.connect(org.omg.CORBA.ORB)");
-        }
-
-        // Get javax.rmi.PortableRemoteObject class
-        Class<?> proClass = Class.forName("javax.rmi.PortableRemoteObject");
-
-        // Get javax.rmi.PortableRemoteObject.toStub(java.rmi.Remote) method
-        try {
-            toStubMethod = proClass.getMethod("toStub",
-                new Class<?>[] {java.rmi.Remote.class});
-
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException(
-"No method definition for javax.rmi.PortableRemoteObject.toStub(java.rmi.Remote)");
-        }
     }
 }

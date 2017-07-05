@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,12 @@ class DefaultSynthStyleFactory extends SynthStyleFactory {
     /**
      * Used during lookup.
      */
-    private BakedArrayList _tmpList;
+    private BakedArrayList<SynthStyle> _tmpList;
 
     /**
      * Maps from a List (BakedArrayList to be precise) to the merged style.
      */
-    private Map<BakedArrayList, SynthStyle> _resolvedStyles;
+    private Map<BakedArrayList<SynthStyle>, SynthStyle> _resolvedStyles;
 
     /**
      * Used if there are no styles matching a widget.
@@ -72,9 +72,9 @@ class DefaultSynthStyleFactory extends SynthStyleFactory {
 
 
     DefaultSynthStyleFactory() {
-        _tmpList = new BakedArrayList(5);
-        _styles = new ArrayList<StyleAssociation>();
-        _resolvedStyles = new HashMap<BakedArrayList, SynthStyle>();
+        _tmpList = new BakedArrayList<SynthStyle>(5);
+        _styles = new ArrayList<>();
+        _resolvedStyles = new HashMap<>();
     }
 
     public synchronized void addStyle(DefaultSynthStyle style,
@@ -100,7 +100,7 @@ class DefaultSynthStyleFactory extends SynthStyleFactory {
      * @param id ID of the Component
      */
     public synchronized SynthStyle getStyle(JComponent c, Region id) {
-        BakedArrayList matches = _tmpList;
+        BakedArrayList<SynthStyle> matches = _tmpList;
 
         matches.clear();
         getMatchingStyles(matches, c, id);
@@ -138,7 +138,7 @@ class DefaultSynthStyleFactory extends SynthStyleFactory {
      * Fetches any styles that match the passed into arguments into
      * <code>matches</code>.
      */
-    private void getMatchingStyles(List matches, JComponent c,
+    private void getMatchingStyles(List<SynthStyle> matches, JComponent c,
                                    Region id) {
         String idName = id.getLowerCaseName();
         String cName = c.getName();
@@ -166,8 +166,8 @@ class DefaultSynthStyleFactory extends SynthStyleFactory {
     /**
      * Caches the specified style.
      */
-    private void cacheStyle(List styles, SynthStyle style) {
-        BakedArrayList cachedStyles = new BakedArrayList(styles);
+    private void cacheStyle(List<SynthStyle> styles, SynthStyle style) {
+        BakedArrayList<SynthStyle> cachedStyles = new BakedArrayList<>(styles);
 
         _resolvedStyles.put(cachedStyles, style);
     }
@@ -175,7 +175,7 @@ class DefaultSynthStyleFactory extends SynthStyleFactory {
     /**
      * Returns the cached style from the passed in arguments.
      */
-    private SynthStyle getCachedStyle(List styles) {
+    private SynthStyle getCachedStyle(List<SynthStyle> styles) { // ??
         if (styles.size() == 0) {
             return null;
         }
@@ -187,7 +187,7 @@ class DefaultSynthStyleFactory extends SynthStyleFactory {
      * is reverse sorted, that is the most recently added style found to
      * match will be first.
      */
-    private SynthStyle mergeStyles(List styles) {
+    private SynthStyle mergeStyles(List<SynthStyle> styles) {
         int size = styles.size();
 
         if (size == 0) {
